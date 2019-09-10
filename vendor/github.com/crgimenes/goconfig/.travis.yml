@@ -1,0 +1,22 @@
+dist: trusty
+language: go
+os:
+    - linux
+go:
+    - 1.9
+ 
+env:
+    global:
+        - CC_TEST_REPORTER_ID=57b6a89e43c24b24647ea070957d811759cd8a5ca439ddacb87939cea45d2e5c
+        - GIT_COMMITTED_AT=$(if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then git log -1 --pretty=format:%ct; else git log -1 --skip 1 --pretty=format:%ct; fi)
+
+before_script:
+    - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+    - chmod +x ./cc-test-reporter
+    - go get github.com/axw/gocov/gocov
+    - chmod +x ./cover.sh
+
+script:
+    - go test $(go list ./... | grep -v vendor)
+    - "./cover.sh"
+    - if [ "$TRAVIS_PULL_REQUEST" == "false" ]; then ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT; fi
