@@ -4,10 +4,12 @@ ClairCore provides a set of go modules which handle scanning container layers fo
 ClairCore is designed to be embedded into a service wrapper.
 
 # Usage
+
 Two go modules exist `libscan` and `libvuln`.
 These modules export the methods for scanning and image for packages and matching the results of the scan to vulnerabilities respectively. 
 
 ## libscan usage
+
 The libscan module exports a single interface
 ```
 type Libscan interface {
@@ -32,6 +34,7 @@ lib := libscan.New(opts)
 ``` 
 
 ## libvuln usage
+
 The libvuln module exports a single interface
 ```
 type Libvuln interface {
@@ -52,6 +55,7 @@ Libvuln will first initialize all updaters before returning from its constructor
 Controlling how many updaters initialize in parallel is provided via the libvuln.Opts struct
 
 # Local development and testing
+
 The included makefile has targets for spawning a libscan and a libvuln database instance.
 ```
 make libscan-db-restart
@@ -69,12 +73,14 @@ make unit
 ```
 
 ## running libscan on darwin/MacOS
+
 Layer stacking will fail on Darwin/MacOS with a file permissions issue and subsequently fail the scanner. 
 In order to get around this the layer stacking integration test has a build tag "unix".
 The makefile target `integration-unix` runs tests that will only pass on a unix env. 
 You may use the make target 'docker-shell' to drop into a linux shell where `make integration-unix` may be ran.
 
 # Deeper dives
-    [Vulnerability Matching](./docs/matching_vulns.md)
-    [Vulnerability Tombstoning](./docs/tombstoning.md)
+
+[Vulnerability Matching](./docs/matching_vulns.md)
+[Vulnerability Tombstoning](./docs/tombstoning.md)
 
