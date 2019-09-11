@@ -13,6 +13,6 @@ When the vulnstore is finished updating all new and existing records it them rem
 This effectively removes stale vulnerabilities from the Vulnstore with the implication that Updaters always parse the entire database and not perform incremental updates.
 
 ## Update Cursors 
+
 A table called "update_cursor" is used to faciliate tombstoning and identifying if a discovered hash is equal to the existing one. 
 See `csec.internal.vulnstore.Updater` for context.
-
