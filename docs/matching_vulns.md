@@ -1,9 +1,11 @@
 # CSEC Vulnerability Matching
+
 This is a high level document expressing how we match packages in a particular package databse with vulnerabilities from a particular security tracker.
 
 ## The Big Picture
 
 ### PackageScanner
+
 PackageScanner(s) are the method for indexing discovered packages in a layer.
 It starts with the `csec.internal.scanner.PackageScanner` interface.
 ```
@@ -31,6 +33,7 @@ However you must do your best to assertain this information.
 More on this in a bit.
 
 ### Updaters
+
 Updater(s) are the method for indexing CVE data for matching. 
 Implementing an updater involves two Interfaces.
 ```
@@ -55,6 +58,7 @@ A parser can be provided any io.ReadCloser allowing for simple scripts to be imp
 In order to run your updater on an interval and as part of the csec runtime you must implement both methods.
 
 ### Matchers
+
 Matcher(s) inform csec exactly how to match packages to vulnerabilities
 Matcher interface looks like this
 ```
@@ -104,6 +108,7 @@ It is our assumption that implementors of Updaters will also implement Matchers.
 The implementor knows the details of how CVE data is indexed, what fields the CVE data uses for package identification, and whether CVE data references source or binary package names.
 
 ## An end to end success
+
 A successful scan looks like this:
 
 1. updaters have ran either in the background on an interval or have had their Parse methods called and offline-loaded CVE data into the vulnstore
@@ -113,7 +118,6 @@ A successful scan looks like this:
 5. libvuln concurrently creates all the configured Matchers and feeds them the packages summarized in the csec.ScanReport.
 6. libvuln collects all the matched vulnerabilities returned from each Matcher and creates a request scoped csec.VulnerabilityReport. this is returned to the client
 7. sometime later the vulnstore is updated. the next time a client asks for a response from libvuln a new csec.VulnerabilityReport is generated. no caching or peristence takes place.
-
 
 ## The scanning process
 
@@ -136,4 +140,3 @@ Matching vulnerabilities is facilitated by methods in the `csec.internal.vulnsto
 3. with the ScanReport retrieved a `csec.internal.vulnscanner.VulnScanner` is created.
 4. the VulnScanner launches all configured Matcher(s) by way of a MatchController. The MatchController drives the Matcher(s) calling the appropriate functions and handling results and errors
 5. the VulnScanner dedupes and merges all vulnerabilities discovered by MatchControllers and returns a VulernabilityReport
-
