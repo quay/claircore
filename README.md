@@ -32,6 +32,23 @@ opts := &libscan.Opts{
 }
 lib := libscan.New(opts)
 ``` 
+call libscan with a populated Manifest
+```
+m := &claircore.Manifest{
+    ...
+}
+
+srC, err := lib.Scan(m)
+if err != nil {
+    log.Printf("%v", err)
+}
+
+// block on channel
+sr := <-srC
+if sr.State == "ScannError" {
+    log.Printf("scan failed: %s", sr.Err)
+}
+```
 
 ## libvuln usage
 
@@ -51,6 +68,17 @@ opts := &libvuln.Opts{
 }
 lib := libvuln.New(opts)
 ```
+call libvuln with a populated ScanReport
+```
+sr := &claircore.ScanReport{
+    ...
+}
+vr, err := libvuln.Scan(sr)
+if err != nil {
+    log.Printf("%v", err)
+}
+```
+
 Libvuln will first initialize all updaters before returning from its constructor.
 Controlling how many updaters initialize in parallel is provided via the libvuln.Opts struct
 
