@@ -7,13 +7,13 @@ This is a high level document expressing how we match packages in a particular p
 ### PackageScanner
 
 PackageScanner(s) are the method for indexing discovered packages in a layer.
-It starts with the `csec.internal.scanner.PackageScanner` interface.
+It starts with the `claircore.internal.scanner.PackageScanner` interface.
 ```
 type PackageScanner interface {
 	VersionedScanner
 	// Scan performs a package scan on the given layer and returns all
 	// the found packages
-	Scan(*csec.Layer) ([]*csec.Package, error)
+	Scan(*claircore.Layer) ([]*claircore.Package, error)
 }
 
 type VersionedScanner interface {
@@ -26,7 +26,7 @@ type VersionedScanner interface {
 }
 ```
 The goals of a package scanner is to identify both package and distribution information from a layer.
-Distribution information is contextual details around a package. See csec.Package and csec.Distribution for more details.
+Distribution information is contextual details around a package. See claircore.Package and claircore.Distribution for more details.
 A layer may not have the necessary files to identify it's Distribution details. 
 In this case returning empty distribution information is fine. 
 However you must do your best to assertain this information. 
@@ -47,35 +47,35 @@ type Fetcher interface {
 
 type Parser interface {
 	// Parse should take an io.ReadCloser, read the contents, parse the contents
-	// into a list of csec.Vulnerability structs and then return
+	// into a list of claircore.Vulnerability structs and then return
 	// the list. Parse should assume contents are uncompressed and ready for parsing.
-	Parse(contents io.ReadCloser) ([]*csec.Vulnerability, error)
+	Parse(contents io.ReadCloser) ([]*claircore.Vulnerability, error)
 }
 ```
 
 The reason we split fetching and parsing is to easily support offline modes of operation.
 A parser can be provided any io.ReadCloser allowing for simple scripts to be implemented for on demand parsing and indexing of CVE data.
-In order to run your updater on an interval and as part of the csec runtime you must implement both methods.
+In order to run your updater on an interval and as part of the claircore runtime you must implement both methods.
 
 ### Matchers
 
-Matcher(s) inform csec exactly how to match packages to vulnerabilities
+Matcher(s) inform claircore exactly how to match packages to vulnerabilities
 Matcher interface looks like this
 ```
 type Matcher interface {
 	// Interested informs the MatchController if implemented Matcher is interested in the
 	// provided package.
-	Interested(pkg *csec.Package) bool
+	Interested(pkg *claircore.Package) bool
 	// How informs the MatchController how it should match packages with vulnerabilities.
 	// MatchSource tells the MatchController to use the package's source name when querying vulnerabilities.
 	How() (MatchSource bool, Matchers []*vulnstore.Matcher)
 	// Decide informs the MatchController if the given package is affected by the given vulnerability.
 	// Typically this involves checking the "FixedInVersion" field.
-	Decide(pkg *csec.Package, vuln *csec.Vulnerability) bool
+	Decide(pkg *claircore.Package, vuln *claircore.Vulnerability) bool
 }
 ```
 
-An implemented Matcher must tell csec if they are interested in a specific package. 
+An implemented Matcher must tell claircore if they are interested in a specific package. 
 For instance a Ubuntu matcher maybe interested in a package if it's Distribution.Name == "Ubuntu".
 
 A Matcher must also tell us how to query the vulnerability database or as we call, the vulnstore.
@@ -85,21 +85,21 @@ type Matcher int
 
 const (
 	Unknown Matcher = iota
-	// should match csec.Package.Source.Name => csec.Vulnerability.Package.Name
+	// should match claircore.Package.Source.Name => claircore.Vulnerability.Package.Name
 	PackageSourceName
-	// should match csec.Package.Name => csec.Vulnerability.Package.Name
+	// should match claircore.Package.Name => claircore.Vulnerability.Package.Name
 	PackageName
-	// should match csec.Package.Distribution.DID => csec.Vulnerability.Package.Distribution.DID
+	// should match claircore.Package.Distribution.DID => claircore.Vulnerability.Package.Distribution.DID
 	PackageDistributionDID
-	// should match csec.Package.Distribution.Name => csec.Vulnerability.Package.Distribution.Name
+	// should match claircore.Package.Distribution.Name => claircore.Vulnerability.Package.Distribution.Name
 	PackageDistributionName
-	// should match csec.Package.Distribution.Version => csec.Vulnerability.Package.Distribution.Version
+	// should match claircore.Package.Distribution.Version => claircore.Vulnerability.Package.Distribution.Version
 	PackageDistributionVersion
-	// should match csec.Package.Distribution.VersionCodeName => csec.Vulnerability.Package.Distribution.VersionCodeName
+	// should match claircore.Package.Distribution.VersionCodeName => claircore.Vulnerability.Package.Distribution.VersionCodeName
 	PackageDistributionVersionCodeName
-	// should match csec.Package.Distribution.VersionID => csec.Vulnerability.Package.Distribution.VersionID
+	// should match claircore.Package.Distribution.VersionID => claircore.Vulnerability.Package.Distribution.VersionID
 	PackageDistributionVersionID
-	// should match csec.Package.Distribution.Arch => csec.Vulnerability.Package.Distribution.Arch
+	// should match claircore.Package.Distribution.Arch => claircore.Vulnerability.Package.Distribution.Arch
 	PackageDistributionArch
 )
 ```
@@ -112,16 +112,16 @@ The implementor knows the details of how CVE data is indexed, what fields the CV
 A successful scan looks like this:
 
 1. updaters have ran either in the background on an interval or have had their Parse methods called and offline-loaded CVE data into the vulnstore
-2. a manifest is provided to libscan. libscan fetches all the layers, stacks the image like a container runtime would, and runs each `csec.internal.scanner.PackageScanner` on each layer.
+2. a manifest is provided to libscan. libscan fetches all the layers, stacks the image like a container runtime would, and runs each `claircore.internal.scanner.PackageScanner` on each layer.
 3. libscan indexes all the packages found by each scanner and creates the necessary relations. a ScanReport is persisted to libscan's database summarizing what was found.
 4. a client request is made to libvuln. libvuln retrieves the ScanReport from libscan. libscan maybe running alongside libvuln in process or may be distributed the library is designed for modularity.
-5. libvuln concurrently creates all the configured Matchers and feeds them the packages summarized in the csec.ScanReport.
-6. libvuln collects all the matched vulnerabilities returned from each Matcher and creates a request scoped csec.VulnerabilityReport. this is returned to the client
-7. sometime later the vulnstore is updated. the next time a client asks for a response from libvuln a new csec.VulnerabilityReport is generated. no caching or peristence takes place.
+5. libvuln concurrently creates all the configured Matchers and feeds them the packages summarized in the claircore.ScanReport.
+6. libvuln collects all the matched vulnerabilities returned from each Matcher and creates a request scoped claircore.VulnerabilityReport. this is returned to the client
+7. sometime later the vulnstore is updated. the next time a client asks for a response from libvuln a new claircore.VulnerabilityReport is generated. no caching or peristence takes place.
 
 ## The scanning process
 
-Scanning is implemented in the `csec.internal.scanner.defaultscanner` package and is implemented as an FSM to support easy changes in operation.
+Scanning is implemented in the `claircore.internal.scanner.defaultscanner` package and is implemented as an FSM to support easy changes in operation.
 The default scanner works as follows:
 
 1. Determines if the manifest should be scanned. It will be scanned if we've never seen the manifest's hash or if we detect a new scanner is preset which has not scanned said manifest
@@ -133,10 +133,10 @@ The default scanner works as follows:
 
 ## The vulnerability matching process
 
-Matching vulnerabilities is facilitated by methods in the `csec.internal.vulnstore`, `csec.internal.matcher`, and `csec.internal.vulnscanner` packages. They process looks like this:
+Matching vulnerabilities is facilitated by methods in the `claircore.internal.vulnstore`, `claircore.internal.matcher`, and `claircore.internal.vulnscanner` packages. They process looks like this:
 
-1. libvuln is instantiated and configured with a set of `csec.internal.matcher` implementations. 
+1. libvuln is instantiated and configured with a set of `claircore.internal.matcher` implementations. 
 2. lubvuln gets a request to find vulnerabilities for a manifest. first it reaches out to libscan to retrieve the ScanReport
-3. with the ScanReport retrieved a `csec.internal.vulnscanner.VulnScanner` is created.
+3. with the ScanReport retrieved a `claircore.internal.vulnscanner.VulnScanner` is created.
 4. the VulnScanner launches all configured Matcher(s) by way of a MatchController. The MatchController drives the Matcher(s) calling the appropriate functions and handling results and errors
 5. the VulnScanner dedupes and merges all vulnerabilities discovered by MatchControllers and returns a VulernabilityReport

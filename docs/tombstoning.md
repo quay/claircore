@@ -1,8 +1,8 @@
 # The Vulnstore
 
 An interface infront of Postgres implements how we store and retrieve vulnerabilities.
-Updaterrs use the `csec.internal.vulnstore.Updater` interface to write Vulnerability data into the Vulnstore.
-Matchers use the `csec.internal.vulnstore.Vulnerability` interface to read Vulnerability data from the Vulnstore.
+Updaterrs use the `claircore.internal.vulnstore.Updater` interface to write Vulnerability data into the Vulnstore.
+Matchers use the `claircore.internal.vulnstore.Vulnerability` interface to read Vulnerability data from the Vulnstore.
 
 ## Tombstoning
 
@@ -15,4 +15,4 @@ This effectively removes stale vulnerabilities from the Vulnstore with the impli
 ## Update Cursors 
 
 A table called "update_cursor" is used to faciliate tombstoning and identifying if a discovered hash is equal to the existing one. 
-See `csec.internal.vulnstore.Updater` for context.
+See `claircore.internal.vulnstore.Updater` for context.
