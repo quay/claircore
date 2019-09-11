@@ -48,6 +48,8 @@ opts := &libvuln.Opts{
 }
 lib := libvuln.New(opts)
 ```
+Libvuln will first initialize all updaters before returning from its constructor.
+Controlling how many updaters initialize in parallel is provided via the libvuln.Opts struct
 
 # Local development and testing
 The included makefile has targets for spawning a libscan and a libvuln database instance.
