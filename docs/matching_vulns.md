@@ -1,4 +1,4 @@
-# CSEC Vulnerability Matching
+# Vulnerability Matching
 
 This is a high level document expressing how we match packages in a particular package databse with vulnerabilities from a particular security tracker.
 
