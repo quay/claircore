@@ -94,7 +94,11 @@ func httpServer(conf Config, lib libscan.Libscan) *http.Server {
 }
 
 func confToLibscanOpts(conf Config) *libscan.Opts {
-	opts := &libscan.Opts{}
+	opts := &libscan.Opts{
+		DataStore:  libscan.Postgres,
+		ConnString: "postgres://host:port",
+		ScanLock:   libscan.PostgresSL,
+	}
 
 	// parse DataStore
 	switch conf.DataStore {

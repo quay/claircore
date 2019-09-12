@@ -33,7 +33,7 @@ integration:
 # you may run this target if you are on darwin/macOS
 .PHONY: integration-unix
 integration-unix:
-	go test -p 1 -race -tags integration-unix ./...
+	go test -p 1 -race -tags unix ./...
 
 # runs unit tests. no db necessary
 .PHONY: unit
