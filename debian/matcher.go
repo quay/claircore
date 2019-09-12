@@ -14,9 +14,9 @@ func (*Matcher) Interested(pkg *claircore.Package) bool {
 	}
 
 	switch {
-	case pkg.Dist.DID == "debian":
+	case pkg.Dist.DID == OSReleaseID:
 		return true
-	case pkg.Dist.Name == "Debian GNU/Linux":
+	case pkg.Dist.Name == OSReleaseName:
 		return true
 	default:
 		return false
