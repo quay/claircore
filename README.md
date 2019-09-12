@@ -114,6 +114,6 @@ You may use the make target 'docker-shell' to drop into a linux shell where `mak
 
 # Deeper dives
 
-[Vulnerability Matching](./docs/matching_vulns.md)
-[Vulnerability Tombstoning](./docs/tombstoning.md)
-[Content-Addressability](./docs/content_addressability.md)
+[Vulnerability Matching](./docs/matching_vulns.md)  
+[Vulnerability Tombstoning](./docs/tombstoning.md)  
+[Content-Addressability](./docs/content_addressability.md)  
