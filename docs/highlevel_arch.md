@@ -6,5 +6,5 @@ Architecture can be determined by SRE/Operations; libs may be ran in the same pr
 Libraries can be tested independently making development easier.
 
 # Diagram
-![alt text](./e2e_arch.png "architecture diagram")
+![alt text](./highlevel_arch.png "architecture diagram")
 
