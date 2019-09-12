@@ -5,7 +5,7 @@ ClairCore is designed to be embedded into a service wrapper.
 
 # Usage
 
-Two go modules exist `libscan` and `libvuln`.
+Two packages exist `libscan` and `libvuln`.
 These modules export the methods for scanning and image for packages and matching the results of the scan to vulnerabilities respectively. 
 
 ## libscan usage
