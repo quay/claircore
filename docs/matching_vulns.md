@@ -1,13 +1,13 @@
 # Vulnerability Matching
 
-This is a high level document expressing how we match packages in a particular package databse with vulnerabilities from a particular security tracker.
+This is a high level document expressing how we match packages in a particular package databse with vulnerabilities from a particular security tracker.  
 
 ## The Big Picture
 
 ### PackageScanner
 
-PackageScanner(s) are the method for indexing discovered packages in a layer.
-It starts with the `claircore.internal.scanner.PackageScanner` interface.
+PackageScanner(s) are the method for indexing discovered packages in a layer.  
+It starts with the `claircore.internal.scanner.PackageScanner` interface.  
 ```
 type PackageScanner interface {
 	VersionedScanner
@@ -25,17 +25,17 @@ type VersionedScanner interface {
 	Kind() string
 }
 ```
-The goals of a package scanner is to identify both package and distribution information from a layer.
-Distribution information is contextual details around a package. See claircore.Package and claircore.Distribution for more details.
-A layer may not have the necessary files to identify it's Distribution details. 
-In this case returning empty distribution information is fine. 
-However you must do your best to assertain this information. 
+The goals of a package scanner is to identify both package and distribution information from a layer.  
+Distribution information is contextual details around a package. See claircore.Package and claircore.Distribution for more details.  
+A layer may not have the necessary files to identify it's Distribution details.  
+In this case returning empty distribution information is fine.  
+However you must do your best to assertain this information.  
 More on this in a bit.
 
 ### Updaters
 
-Updater(s) are the method for indexing CVE data for matching. 
-Implementing an updater involves two Interfaces.
+Updater(s) are the method for indexing CVE data for matching.  
+Implementing an updater involves two Interfaces.  
 ```
 type Fetcher interface {
 	// Fetch should retrieve the target vulnerability data and return an io.ReadCloser
@@ -53,14 +53,14 @@ type Parser interface {
 }
 ```
 
-The reason we split fetching and parsing is to easily support offline modes of operation.
-A parser can be provided any io.ReadCloser allowing for simple scripts to be implemented for on demand parsing and indexing of CVE data.
-In order to run your updater on an interval and as part of the claircore runtime you must implement both methods.
+The reason we split fetching and parsing is to easily support offline modes of operation.  
+A parser can be provided any io.ReadCloser allowing for simple scripts to be implemented for on demand parsing and indexing of CVE data.  
+In order to run your updater on an interval and as part of the claircore runtime you must implement both methods.  
 
 ### Matchers
 
-Matcher(s) inform claircore exactly how to match packages to vulnerabilities
-Matcher interface looks like this
+Matcher(s) inform claircore exactly how to match packages to vulnerabilities  
+Matcher interface looks like this  
 ```
 type Matcher interface {
 	// Interested informs the MatchController if implemented Matcher is interested in the
@@ -75,11 +75,11 @@ type Matcher interface {
 }
 ```
 
-An implemented Matcher must tell claircore if they are interested in a specific package. 
-For instance a Ubuntu matcher maybe interested in a package if it's Distribution.Name == "Ubuntu".
+An implemented Matcher must tell claircore if they are interested in a specific package.   
+For instance a Ubuntu matcher maybe interested in a package if it's Distribution.Name == "Ubuntu".  
 
-A Matcher must also tell us how to query the vulnerability database or as we call, the vulnstore.
-In order to do this the matcher must provide whether it's looking for the Binary package's name or it's affiliated source along with a list of vulnstore.Matcher structs.
+A Matcher must also tell us how to query the vulnerability database or as we call, the vulnstore.  
+In order to do this the matcher must provide whether it's looking for the Binary package's name or it's affiliated source along with a list of vulnstore.Matcher structs.  
 ```
 type Matcher int
 
@@ -103,13 +103,13 @@ const (
 	PackageDistributionArch
 )
 ```
-Providing multiple vulnstore.Matcher structs logically "ANDs" them together. 
-It is our assumption that implementors of Updaters will also implement Matchers. 
-The implementor knows the details of how CVE data is indexed, what fields the CVE data uses for package identification, and whether CVE data references source or binary package names.
+Providing multiple vulnstore.Matcher structs logically "ANDs" them together.  
+It is our assumption that implementors of Updaters will also implement Matchers.  
+The implementor knows the details of how CVE data is indexed, what fields the CVE data uses for package identification, and whether CVE data references source or binary package names.  
 
 ## An end to end success
 
-A successful scan looks like this:
+A successful scan looks like this:  
 
 1. updaters have ran either in the background on an interval or have had their Parse methods called and offline-loaded CVE data into the vulnstore
 2. a manifest is provided to libscan. libscan fetches all the layers, stacks the image like a container runtime would, and runs each `claircore.internal.scanner.PackageScanner` on each layer.
@@ -121,8 +121,8 @@ A successful scan looks like this:
 
 ## The scanning process
 
-Scanning is implemented in the `claircore.internal.scanner.defaultscanner` package and is implemented as an FSM to support easy changes in operation.
-The default scanner works as follows:
+Scanning is implemented in the `claircore.internal.scanner.defaultscanner` package and is implemented as an FSM to support easy changes in operation.  
+The default scanner works as follows:  
 
 1. Determines if the manifest should be scanned. It will be scanned if we've never seen the manifest's hash or if we detect a new scanner is preset which has not scanned said manifest
 2. The manifest's layers are then fetched and written to disk. The Moby Framework is then used to stack the layers giving us an accurate depiction of the filesystem at runtime. 
@@ -133,7 +133,7 @@ The default scanner works as follows:
 
 ## The vulnerability matching process
 
-Matching vulnerabilities is facilitated by methods in the `claircore.internal.vulnstore`, `claircore.internal.matcher`, and `claircore.internal.vulnscanner` packages. They process looks like this:
+Matching vulnerabilities is facilitated by methods in the `claircore.internal.vulnstore`, `claircore.internal.matcher`, and `claircore.internal.vulnscanner` packages. They process looks like this:  
 
 1. libvuln is instantiated and configured with a set of `claircore.internal.matcher` implementations. 
 2. lubvuln gets a request to find vulnerabilities for a manifest. first it reaches out to libscan to retrieve the ScanReport
