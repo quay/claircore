@@ -100,7 +100,12 @@ unit tests do not require a database
 make unit
 ```
 
-## running libscan on darwin/MacOS
+## Dev servers
+
+ClairCore provides two http servers for local development and quick testing/hacking. 
+You may build these from `./cmd/libscanhttp` and `./cmd/libvulnhttp`
+
+## Running libscan on darwin/MacOS
 
 Layer stacking will fail on Darwin/MacOS with a file permissions issue and subsequently fail the scanner. 
 In order to get around this the layer stacking integration test has a build tag "unix".
@@ -111,4 +116,4 @@ You may use the make target 'docker-shell' to drop into a linux shell where `mak
 
 [Vulnerability Matching](./docs/matching_vulns.md)
 [Vulnerability Tombstoning](./docs/tombstoning.md)
-
+[Content-Addressability](./docs/content_addressability.md)
