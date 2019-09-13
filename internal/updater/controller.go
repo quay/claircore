@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/quay/claircore/internal/vulnstore"
+	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/distlock"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -22,7 +23,7 @@ type Controller struct {
 // Opts are options used to create an Updater
 type Opts struct {
 	// an embedded updater interface
-	Updater
+	driver.Updater
 	// a unique name for this controller. must be unique between controllers
 	Name string
 	// store for persistence

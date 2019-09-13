@@ -5,19 +5,20 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/vulnstore"
+	"github.com/quay/claircore/libvuln/driver"
 )
 
 // Controller is a control structure used to find vulnerabilities affecting
 // a set of packages.
 type Controller struct {
 	// an implemented Matcher
-	m Matcher
+	m driver.Matcher
 	// a vulnstore.Vulnerability instance for querying vulnerabilities
 	store vulnstore.Vulnerability
 }
 
 // NewController is a constructor for a Controller
-func NewController(m Matcher, store vulnstore.Vulnerability) *Controller {
+func NewController(m driver.Matcher, store vulnstore.Vulnerability) *Controller {
 	return &Controller{
 		m:     m,
 		store: store,
@@ -43,7 +44,7 @@ func (mc *Controller) findInterested(pkgs map[int]*claircore.Package) map[int]*c
 	out := map[int]*claircore.Package{}
 
 	for _, pkg := range pkgs {
-		if mc.m.Interested(pkg) {
+		if mc.m.Filter(pkg) {
 			out[pkg.ID] = pkg
 		}
 	}
@@ -55,7 +56,7 @@ func (mc *Controller) findInterested(pkgs map[int]*claircore.Package) map[int]*c
 // matched vulnerabilities.
 func (mc *Controller) query(interestedPkgs map[int]*claircore.Package) (map[int][]*claircore.Vulnerability, error) {
 	// ask the matcher how we should query the vulnstore
-	matchers := mc.m.How()
+	matchers := mc.m.Query()
 	getOpts := vulnstore.GetOpts{
 		Matchers: matchers,
 	}
@@ -87,10 +88,10 @@ func (mc *Controller) filter(interestedPkgs map[int]*claircore.Package, vulns ma
 }
 
 // filter returns only the vulnerabilities affected by the provided package.
-func filterVulns(m Matcher, pkg *claircore.Package, vulns []*claircore.Vulnerability) []*claircore.Vulnerability {
+func filterVulns(m driver.Matcher, pkg *claircore.Package, vulns []*claircore.Vulnerability) []*claircore.Vulnerability {
 	filtered := []*claircore.Vulnerability{}
 	for _, vuln := range vulns {
-		if m.Decide(pkg, vuln) {
+		if m.Vulnerable(pkg, vuln) {
 			filtered = append(filtered, vuln)
 		}
 	}

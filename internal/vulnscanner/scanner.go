@@ -6,6 +6,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/matcher"
 	"github.com/quay/claircore/internal/vulnstore"
+	"github.com/quay/claircore/libvuln/driver"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -14,12 +15,12 @@ import (
 // and VulnScanner dedupes and maps.
 type VulnScanner struct {
 	store    vulnstore.Vulnerability
-	matchers []matcher.Matcher
+	matchers []driver.Matcher
 	vr       *claircore.VulnerabilityReport
 	sr       *claircore.ScanReport
 }
 
-func New(store vulnstore.Vulnerability, matchers []matcher.Matcher) *VulnScanner {
+func New(store vulnstore.Vulnerability, matchers []driver.Matcher) *VulnScanner {
 	return &VulnScanner{
 		store:    store,
 		matchers: matchers,

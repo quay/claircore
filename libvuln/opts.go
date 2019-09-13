@@ -3,6 +3,8 @@ package libvuln
 import (
 	"fmt"
 	"time"
+
+	"github.com/quay/claircore/libvuln/driver"
 )
 
 // DataStore tells libvuln which backing persistence store to instantiate
@@ -32,9 +34,9 @@ type Opts struct {
 	// the update lock (distlock) implementation libvuln should instantiate
 	UpdateLock UpdateLock
 	// returns the matchers to be used during libvuln runtime
-	Matchers MatcherFactory
+	Matchers []driver.Matcher
 	// returns the updaters to run on an interval
-	Updaters UpdaterFactory
+	Updaters []driver.Updater
 	// the interval at which updaters will update the vulnstore
 	UpdateInterval time.Duration
 	// number of updaters ran in parallel while libscan initializes. use this to tune io/cpu on library start when using many updaters
@@ -52,20 +54,11 @@ func (o *Opts) Parse() error {
 	if o.UpdateLock == "" {
 		return fmt.Errorf("not distributed lock provided")
 	}
-
-	// optional
-	if o.Matchers == nil {
-		o.Matchers = matcherFactory
-	}
-	if o.Updaters == nil {
-		o.Updaters = updaterFactory
-	}
 	if o.UpdateInterval == 0 {
 		o.UpdateInterval = DefaultUpdateInterval
 	}
 	if o.UpdaterInitConcurrency == 0 {
 		o.UpdaterInitConcurrency = DefaultUpdaterInitConcurrency
 	}
-
 	return nil
 }

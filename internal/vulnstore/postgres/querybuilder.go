@@ -5,14 +5,14 @@ import (
 
 	"github.com/doug-martin/goqu/v8"
 	_ "github.com/doug-martin/goqu/v8/dialect/postgres"
-	"github.com/quay/claircore/internal/vulnstore"
+	"github.com/quay/claircore/libvuln/driver"
 )
 
 // getBuilder returns a query suitable for being prepared.
 // the bindvars in the resulting string will be in the same order as the provided matchers array.
 // if the matchers array contains duplicates they are ignored.
 // see tests for what queries will look like and to further understand determinism
-func getBuilder(matchers []vulnstore.MatchExp) (string, []vulnstore.MatchExp, error) {
+func getBuilder(matchers []driver.MatchExp) (string, []driver.MatchExp, error) {
 	psql := goqu.Dialect("postgres")
 
 	// creating an array of expressions will keep the order
@@ -21,41 +21,41 @@ func getBuilder(matchers []vulnstore.MatchExp) (string, []vulnstore.MatchExp, er
 	exps := []goqu.Expression{}
 
 	// do not allow duplicates but retain ordering.
-	seen := make(map[vulnstore.MatchExp]struct{})
-	deduped := []vulnstore.MatchExp{}
+	seen := make(map[driver.MatchExp]struct{})
+	deduped := []driver.MatchExp{}
 	for _, m := range matchers {
 		switch m {
-		case vulnstore.PackageDistributionDID:
+		case driver.PackageDistributionDID:
 			if _, ok := seen[m]; !ok {
 				exps = append(exps, goqu.Ex{"dist_did": ""})
 				seen[m] = struct{}{}
 				deduped = append(deduped, m)
 			}
-		case vulnstore.PackageDistributionName:
+		case driver.PackageDistributionName:
 			if _, ok := seen[m]; !ok {
 				exps = append(exps, goqu.Ex{"dist_name": ""})
 				seen[m] = struct{}{}
 				deduped = append(deduped, m)
 			}
-		case vulnstore.PackageDistributionVersion:
+		case driver.PackageDistributionVersion:
 			if _, ok := seen[m]; !ok {
 				exps = append(exps, goqu.Ex{"dist_version": ""})
 				seen[m] = struct{}{}
 				deduped = append(deduped, m)
 			}
-		case vulnstore.PackageDistributionVersionCodeName:
+		case driver.PackageDistributionVersionCodeName:
 			if _, ok := seen[m]; !ok {
 				exps = append(exps, goqu.Ex{"dist_version_code_name": ""})
 				seen[m] = struct{}{}
 				deduped = append(deduped, m)
 			}
-		case vulnstore.PackageDistributionVersionID:
+		case driver.PackageDistributionVersionID:
 			if _, ok := seen[m]; !ok {
 				exps = append(exps, goqu.Ex{"dist_version_id": ""})
 				seen[m] = struct{}{}
 				deduped = append(deduped, m)
 			}
-		case vulnstore.PackageDistributionArch:
+		case driver.PackageDistributionArch:
 			if _, ok := seen[m]; !ok {
 				exps = append(exps, goqu.Ex{"dist_arch": ""})
 				seen[m] = struct{}{}

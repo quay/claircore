@@ -7,6 +7,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/vulnscanner"
 	"github.com/quay/claircore/internal/vulnstore"
+	"github.com/quay/claircore/libvuln/driver"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -20,7 +21,7 @@ type Libvuln interface {
 type libvuln struct {
 	store        vulnstore.Store
 	db           *sqlx.DB
-	matchers     MatcherFactory
+	matchers     []driver.Matcher
 	killUpdaters context.CancelFunc
 	logger       zerolog.Logger
 }
@@ -67,6 +68,6 @@ func New(opts *Opts) (Libvuln, error) {
 }
 
 func (l *libvuln) Scan(ctx context.Context, sr *claircore.ScanReport) (*claircore.VulnerabilityReport, error) {
-	vs := vulnscanner.New(l.store, l.matchers())
+	vs := vulnscanner.New(l.store, l.matchers)
 	return vs.Scan(ctx, sr)
 }

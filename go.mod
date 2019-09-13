@@ -19,6 +19,8 @@ require (
 	github.com/knqyf263/go-deb-version v0.0.0-20190517075300-09fca494f03d
 	github.com/lib/pq v1.1.1
 	github.com/moby/moby v1.13.1
+	github.com/onsi/ginkgo v1.10.1 // indirect
+	github.com/onsi/gomega v1.7.0 // indirect
 	github.com/opencontainers/runc v0.1.1 // indirect
 	github.com/rs/zerolog v1.15.0
 	github.com/satori/go.uuid v1.2.0 // indirect
@@ -28,4 +30,6 @@ require (
 	github.com/tadasv/go-dpkg v0.0.0-20160704224136-c2cf9188b763
 	github.com/ymomoi/goval-parser v0.0.0-20170813122243-0a0be1dd9d08
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58
+	gopkg.in/airbrake/gobrake.v2 v2.0.9 // indirect
+	gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2 // indirect
 )

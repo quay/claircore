@@ -63,15 +63,14 @@ Matcher(s) inform claircore exactly how to match packages to vulnerabilities
 Matcher interface looks like this  
 ```
 type Matcher interface {
-	// Interested informs the MatchController if implemented Matcher is interested in the
-	// provided package.
-	Interested(pkg *claircore.Package) bool
-	// How informs the MatchController how it should match packages with vulnerabilities.
-	// MatchSource tells the MatchController to use the package's source name when querying vulnerabilities.
-	How() (MatchSource bool, Matchers []*vulnstore.Matcher)
-	// Decide informs the MatchController if the given package is affected by the given vulnerability.
-	// Typically this involves checking the "FixedInVersion" field.
-	Decide(pkg *claircore.Package, vuln *claircore.Vulnerability) bool
+	// Filter informs the Controller if the implemented Matcher is interested in the provided package.
+	Filter(pkg *claircore.Package) bool
+	// Query informs the Controller how it should match packages with vulnerabilities.
+	// All conditions are logical AND'd together.
+	Query() []MatchExp
+	// Vulnerable informs the Controller if the given package is affected by the given vulnerability.
+	// for example checking the "FixedInVersion" field.
+	Vulnerable(pkg *claircore.Package, vuln *claircore.Vulnerability) bool
 }
 ```
 
@@ -84,7 +83,7 @@ In order to do this the matcher must provide whether it's looking for the Binary
 type Matcher int
 
 const (
-	Unknown Matcher = iota
+	_ Matcher = iota
 	// should match claircore.Package.Source.Name => claircore.Vulnerability.Package.Name
 	PackageSourceName
 	// should match claircore.Package.Name => claircore.Vulnerability.Package.Name

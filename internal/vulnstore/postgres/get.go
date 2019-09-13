@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/vulnstore"
+	"github.com/quay/claircore/libvuln/driver"
 )
 
 func get(pool *pgx.ConnPool, packages []*claircore.Package, opts vulnstore.GetOpts) (map[int][]*claircore.Vulnerability, error) {
@@ -36,17 +37,17 @@ func get(pool *pgx.ConnPool, packages []*claircore.Package, opts vulnstore.GetOp
 		args := []interface{}{}
 		for _, m := range dedupedMatchers {
 			switch m {
-			case vulnstore.PackageDistributionDID:
+			case driver.PackageDistributionDID:
 				args = append(args, pkg.Dist.DID)
-			case vulnstore.PackageDistributionName:
+			case driver.PackageDistributionName:
 				args = append(args, pkg.Dist.Name)
-			case vulnstore.PackageDistributionVersion:
+			case driver.PackageDistributionVersion:
 				args = append(args, pkg.Dist.Version)
-			case vulnstore.PackageDistributionVersionCodeName:
+			case driver.PackageDistributionVersionCodeName:
 				args = append(args, pkg.Dist.VersionCodeName)
-			case vulnstore.PackageDistributionVersionID:
+			case driver.PackageDistributionVersionID:
 				args = append(args, pkg.Dist.VersionID)
-			case vulnstore.PackageDistributionArch:
+			case driver.PackageDistributionArch:
 				args = append(args, pkg.Dist.Arch)
 			}
 		}

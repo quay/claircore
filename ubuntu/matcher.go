@@ -1,14 +1,17 @@
 package ubuntu
 
 import (
-	version "github.com/knqyf263/go-deb-version"
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/vulnstore"
+	"github.com/quay/claircore/libvuln/driver"
+
+	version "github.com/knqyf263/go-deb-version"
 )
+
+var _ driver.Matcher = (*Matcher)(nil)
 
 type Matcher struct{}
 
-func (*Matcher) Interested(pkg *claircore.Package) bool {
+func (*Matcher) Filter(pkg *claircore.Package) bool {
 	if pkg.Dist == nil {
 		return false
 	}
@@ -23,13 +26,13 @@ func (*Matcher) Interested(pkg *claircore.Package) bool {
 	}
 }
 
-func (*Matcher) How() []vulnstore.MatchExp {
-	return []vulnstore.MatchExp{
-		vulnstore.PackageDistributionVersionCodeName,
+func (*Matcher) Query() []driver.MatchExp {
+	return []driver.MatchExp{
+		driver.PackageDistributionVersionCodeName,
 	}
 }
 
-func (*Matcher) Decide(pkg *claircore.Package, vuln *claircore.Vulnerability) bool {
+func (*Matcher) Vulnerable(pkg *claircore.Package, vuln *claircore.Vulnerability) bool {
 	if vuln.FixedInVersion == "" {
 		return true
 	}
