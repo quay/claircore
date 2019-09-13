@@ -43,7 +43,7 @@ func ResolveVersionCodeName(osrelease map[string]string) string {
 	for _, s := range osrelease {
 		for _, r := range resolvers {
 			if ok := r.match(s); ok {
-				return s
+				return string(r.release)
 			}
 		}
 	}
