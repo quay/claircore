@@ -5,6 +5,7 @@ package debian
 import (
 	"context"
 	"encoding/json"
+	golog "log"
 	"os"
 	"path/filepath"
 	"testing"
@@ -24,16 +25,16 @@ import (
 // store from postgres.NewTestStore must have Ubuntu
 // CVE data
 func Test_Matcher_Integration(t *testing.T) {
-	db, store, teardown := vulnstore.NewTestStore(t)
-	defer teardown()
+	db, store, _ := vulnstore.NewTestStore(t)
+	// defer teardown()
 
 	m := &Matcher{}
 
 	// seed the test vulnstore with CVE data
-	deb := NewUpdater(Wheezy)
+	deb := NewUpdater(Buster)
 
 	up := updater.New(&updater.Opts{
-		Name:    "test-debian-wheezy",
+		Name:    "test-debian-buster",
 		Updater: deb,
 		Store:   store,
 		// set high, we will call update manually
@@ -45,7 +46,7 @@ func Test_Matcher_Integration(t *testing.T) {
 	defer cancel()
 	up.Update(ctx)
 
-	path := filepath.Join("testdata", "scanreport-bionic.json")
+	path := filepath.Join("testdata", "scanreport-buster-jackson-databind.json")
 	f, err := os.Open(path)
 	if err != nil {
 		t.Fatalf("%v", err)
@@ -61,8 +62,9 @@ func Test_Matcher_Integration(t *testing.T) {
 	vr, err := vs.Scan(context.Background(), &sr)
 	assert.NoError(t, err)
 
-	_, err = json.Marshal(&vr)
-	if err != nil {
-		t.Fatalf("failed to marshal VR: %v", err)
-	}
+	b, err := json.Marshal(&vr)
+	// if err != nil {
+	// 	t.Fatalf("failed to marshal VR: %v", err)
+	// }
+	golog.Printf("%v", string(b))
 }

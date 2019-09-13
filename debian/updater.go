@@ -20,7 +20,7 @@ func init() {
 
 const (
 	OVALTemplate   = "https://www.debian.org/security/oval/oval-definitions-%s.xml"
-	PkgNameVersion = `(\w+) DPKG is earlier than (.+)`
+	PkgNameVersion = `([^\s]+) DPKG is earlier than (.+)`
 )
 
 var pkgVersionRegex *regexp.Regexp
@@ -52,6 +52,10 @@ func NewUpdater(release Release) *Updater {
 		c:       &http.Client{},
 		logger:  log.With().Str("component", updaterComp).Str("database", url).Logger(),
 	}
+}
+
+func (u *Updater) Name() string {
+	return fmt.Sprintf("debian-%s-updater", string(u.release))
 }
 
 func (u *Updater) Fetch() (io.ReadCloser, string, error) {

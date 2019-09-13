@@ -157,6 +157,9 @@ func (ps *PackageScanner) parsePackages() ([]*claircore.Package, error) {
 			ccPkg.Source = &claircore.Package{
 				Name: dpkgPkg.Source,
 				Kind: "source",
+				// right now this is an assumption that discovered source package
+				// packages relate to their binary versions. we see this in debian
+				Version: dpkgPkg.Version,
 			}
 		}
 

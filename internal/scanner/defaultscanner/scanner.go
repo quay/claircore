@@ -148,7 +148,6 @@ func (s *defaultScanner) run(ctx context.Context) {
 	}
 
 	if state == Terminal {
-		log.Printf("got here")
 		return
 	}
 
