@@ -5,7 +5,6 @@ package debian
 import (
 	"context"
 	"encoding/json"
-	golog "log"
 	"os"
 	"path/filepath"
 	"testing"
@@ -25,8 +24,8 @@ import (
 // store from postgres.NewTestStore must have Ubuntu
 // CVE data
 func Test_Matcher_Integration(t *testing.T) {
-	db, store, _ := vulnstore.NewTestStore(t)
-	// defer teardown()
+	db, store, teardown := vulnstore.NewTestStore(t)
+	defer teardown()
 
 	m := &Matcher{}
 
@@ -62,9 +61,8 @@ func Test_Matcher_Integration(t *testing.T) {
 	vr, err := vs.Scan(context.Background(), &sr)
 	assert.NoError(t, err)
 
-	b, err := json.Marshal(&vr)
-	// if err != nil {
-	// 	t.Fatalf("failed to marshal VR: %v", err)
-	// }
-	golog.Printf("%v", string(b))
+	_, err = json.Marshal(&vr)
+	if err != nil {
+		t.Fatalf("failed to marshal VR: %v", err)
+	}
 }
