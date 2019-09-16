@@ -36,6 +36,7 @@ func (s *VulnScanner) Scan(ctx context.Context, sr *claircore.ScanReport) (*clai
 	eC := make(chan error)
 	dC := make(chan struct{})
 	s.sr = sr
+	s.vr.Hash = s.sr.Hash
 
 	go s.match(ctx, vC, eC)
 	go s.reduce(ctx, vC, dC)
