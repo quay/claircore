@@ -18,6 +18,11 @@ func (u *Updater) fetch() (io.ReadCloser, string, error) {
 		return nil, "", fmt.Errorf("failed to retrieve OVAL database: %v", err)
 	}
 
+	// check resp
+	if resp.StatusCode <= 199 && resp.StatusCode >= 300 {
+		return nil, "", fmt.Errorf("http request returned non-200: %v %v", resp.StatusCode, resp.Status)
+	}
+
 	// copy into byte array
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
