@@ -30,12 +30,24 @@ func (*Matcher) How() []driver.MatchExp {
 }
 
 func (*Matcher) Decide(pkg *claircore.Package, vuln *claircore.Vulnerability) bool {
+	v1, err := version.NewVersion(pkg.Version)
+	if err != nil {
+		return false
+	}
+
+	v2, err := version.NewVersion(vuln.FixedInVersion)
+	if err != nil {
+		return false
+	}
+
 	if vuln.FixedInVersion == "" {
 		return true
 	}
 
-	v1, _ := version.NewVersion(pkg.Version)
-	v2, _ := version.NewVersion(vuln.FixedInVersion)
+	if v2.String() == "0" {
+		return true
+	}
+
 	if v1.LessThan(v2) {
 		return true
 	}

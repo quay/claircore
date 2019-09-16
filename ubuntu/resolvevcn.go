@@ -6,7 +6,7 @@ import (
 
 func init() {
 	artfulRegex := regexp.MustCompile("[Aa]rtful")
-	bionicRegex := regexp.MustCompile("[Bb]Bionic")
+	bionicRegex := regexp.MustCompile("[Bb]ionic")
 	cosmicRegex := regexp.MustCompile("[Cc]osmic")
 	discoRegex := regexp.MustCompile("[Dd]isco")
 	preciseRegex := regexp.MustCompile("[Pp]recise")
