@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	connString = "host=localhost port=5434 user=libscan dbname=libscan sslmode=disable"
+	connString = "host=localhost port=5434 user=claircore dbname=claircore sslmode=disable"
 	Truncate   = `TRUNCATE dist, package, scanner, scannerlist, scanartifact, scanreport;`
 )
 
