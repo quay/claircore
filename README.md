@@ -120,3 +120,4 @@ You may use the make target 'docker-shell' to drop into a linux shell where `mak
 [Vulnerability Tombstoning](./docs/tombstoning.md)  
 [Content-Addressability](./docs/content_addressability.md)  
 [Libscan Data Model](./docs/scanner_data_model.md)  
+[Local Development](./docs/local-dev.md)  

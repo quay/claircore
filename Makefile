@@ -1,15 +1,11 @@
 docker ?= docker
+docker-compose ?= docker-compose
 
 # generates mocks of interfaces for testing
 .PHONY: genmocks
 genmocks:
 	@command -v mockgen >/dev/null || go install github.com/golang/mock/mockgen
 	go generate ./...
-
-# spawns a shell in the golang container with our source mounted in. leaves you at a tty
-.PHONY: docker-shell
-docker-shell:
-	$(docker) run --rm -it -p 8080:8080 -v $(shell pwd):/claircore golang:1.12 bash -c 'cd /claircore/cmd/libscanhttp; go install; cd -; /bin/bash'
 
 # runs integration tests. database must be available. use the db commands below to ensure this
 .PHONY: integration
@@ -43,43 +39,34 @@ integration-v:
 unit-v:
 	go test -race -v ./...
 
-# spawns a postgres database bootstrapped with the libscan schema. makes itself available locally at 5434
-# currently integration tests hardcode this port
-.PHONY: libscan-db-up
-libscan-db-up:
-	$(docker) run -d --name libscan -e POSTGRES_USER=libscan -e POSTGRES_DB=libscan -p 5434:5432 postgres
-	$(docker) exec -it libscan bash -c 'while ! pg_isready; do echo "waiting for postgres"; sleep 2; done'
-	psql -h localhost -p 5434 -U libscan -d libscan -f internal/scanner/postgres/bootstrap.sql
+.PHONY: local-dev-up
+local-dev-up:
+	$(docker-compose) up -d claircore-db
+	$(docker) exec -it claircore_claircore-db_1 bash -c 'while ! pg_isready; do echo "waiting for postgres"; sleep 2; done'
+	$(docker-compose) up -d libscanhttp
+	$(docker-compose) up -d libvulnhttp
 
-# kills the libscan database
-.PHONY: libscan-db-down
-libscan-db-down:
-	$(docker) kill libscan
-	$(docker) rm libscan
+.PHONY: local-dev-down
+local-dev-down:
+	$(docker-compose) down
 
-# kills the libscan database and spawn a new one
-.PHONY: libscan-db-restart
-libscan-db-restart:
-	-make libscan-db-down
-	make libscan-db-up
+.PHONY: local-dev-logs
+local-dev-logs:
+	$(docker-compose) logs -f
 
-# spawns a postgres database bootstrapped with the libvuln schema. makes itself available locally at 5435
-# currently integration tests hardcode this port
-.PHONY: libvuln-db-up
-libvuln-db-up:
-	$(docker) run -d --name libvuln -e POSTGRES_USER=libvuln -e POSTGRES_DB=libvuln -p 5435:5432 postgres
-	$(docker) exec -it libvuln bash -c 'while ! pg_isready; do echo "waiting for postgres"; sleep 2; done'
-	psql -h localhost -p 5435 -U libvuln -d libvuln -f internal/vulnstore/postgres/bootstrap.sql
+.PHONY: claircore-db-up
+claircore-db-up:
+	$(docker-compose) up -d claircore-db
+	$(docker) exec -it claircore_claircore-db_1 bash -c 'while ! pg_isready; do echo "waiting for postgres"; sleep 2; done'
 
-# kills the libvuln database
-.PHONY: libvuln-db-down
-libvuln-db-down:
-	$(docker) kill libvuln
-	$(docker) rm libvuln
+.PHONY: claircore-db-restart
+claircore-db-restart:
+	$(docker-compose) up -d --force-recreate claircore-db
 
-# kills the libvuln database and spawns a new one 
-.PHONY: libvuln-db-restart
-libvuln-db-restart:
-	-make libvuln-db-down
-	make libvuln-db-up
+.PHONY: libscanhttp-restart
+libscanhttp-restart:
+	$(docker-compose) up -d --force-recreate libscanhttp
 
+.PHONY: libvulnhttp-restart
+libvulnhttp-restart:
+	$(docker-compose) up -d --force-recreate libvulnhttp
