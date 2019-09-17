@@ -3,6 +3,7 @@
 package postgres
 
 import (
+	"context"
 	"strconv"
 	"strings"
 	"testing"
@@ -39,6 +40,7 @@ const (
 // the same vulnerability to the store prevents it from going stale
 // indirectly we confirm the datbase is de-duping identical entries on write
 func Test_PutVulnerabilities_Tombstone_Bump(t *testing.T) {
+	ctx := context.Background()
 	var tt = []struct {
 		// the name of the test
 		name string
@@ -82,11 +84,11 @@ func Test_PutVulnerabilities_Tombstone_Bump(t *testing.T) {
 			vulns := test.GenUniqueVulnerabilities(table.totalVulns, table.updater)
 
 			// add all vulns into store.
-			err := store.PutVulnerabilities(table.updater, table.cursorHash2, vulns)
+			err := store.PutVulnerabilities(ctx, table.updater, table.cursorHash2, vulns)
 			assert.NoError(t, err)
 
 			// add the same set of vulns.
-			err = store.PutVulnerabilities(table.updater, table.cursorHash2, vulns)
+			err = store.PutVulnerabilities(ctx, table.updater, table.cursorHash2, vulns)
 			assert.NoError(t, err)
 
 			// retrieve vulns to investigate
@@ -135,6 +137,7 @@ func Test_PutVulnerabilities_Tombstone_Bump(t *testing.T) {
 // Test_PutVulnerabilities_Tombstone_Stale confirms if a vulnerability
 // is not seen in a subsequent update it is removed from the store
 func Test_PutVulnerabilities_Tombstone_Stale(t *testing.T) {
+	ctx := context.Background()
 	var tt = []struct {
 		// the name of the test
 		name string
@@ -180,13 +183,13 @@ func Test_PutVulnerabilities_Tombstone_Stale(t *testing.T) {
 			// put 1/2 the total into the db. these will be written to the store
 			// with a unique tombstone.
 			n := table.totalVulns / 2
-			err := store.PutVulnerabilities(table.updater, table.cursorHash1, vulns[:n])
+			err := store.PutVulnerabilities(ctx, table.updater, table.cursorHash1, vulns[:n])
 			assert.NoError(t, err)
 
 			// put the other half of packages. these will be written to the store with a new
 			// unique tombstone. PutVulnerabilities should then remove the previous 1/2 packages
 			// as they are "stale".
-			err = store.PutVulnerabilities(table.updater, table.cursorHash2, vulns[n:])
+			err = store.PutVulnerabilities(ctx, table.updater, table.cursorHash2, vulns[n:])
 			assert.NoError(t, err)
 
 			// retrieve vulns to investigate

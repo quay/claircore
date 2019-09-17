@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/jackc/pgx"
@@ -23,6 +24,11 @@ func NewVulnStore(db *sqlx.DB, pool *pgx.ConnPool) *Store {
 	}
 }
 
+var (
+	_ vulnstore.Updater       = (*Store)(nil)
+	_ vulnstore.Vulnerability = (*Store)(nil)
+)
+
 // vulnstore.Updater interface methods //
 
 func (s *Store) PutHash(updater string, hash string) error {
@@ -33,16 +39,16 @@ func (s *Store) PutHash(updater string, hash string) error {
 	return nil
 }
 
-func (s *Store) GetHash(updater string) (string, error) {
-	v, err := getHash(s.db, updater)
+func (s *Store) GetHash(ctx context.Context, updater string) (string, error) {
+	v, err := getHash(ctx, s.db, updater)
 	if err != nil {
 		return "", fmt.Errorf("failed to get hash: %v", err)
 	}
 	return v, nil
 }
 
-func (s *Store) PutVulnerabilities(updater string, hash string, vulns []*claircore.Vulnerability) error {
-	err := putVulnerabilities(s.pool, updater, hash, vulns)
+func (s *Store) PutVulnerabilities(ctx context.Context, updater string, hash string, vulns []*claircore.Vulnerability) error {
+	err := putVulnerabilities(ctx, s.pool, updater, hash, vulns)
 	if err != nil {
 		return fmt.Errorf("failed to put vulnerabilities: %v", err)
 	}
@@ -51,8 +57,8 @@ func (s *Store) PutVulnerabilities(updater string, hash string, vulns []*clairco
 
 // vulnstore.Vulnerability interface methods //
 
-func (s *Store) Get(packages []*claircore.Package, opts vulnstore.GetOpts) (map[int][]*claircore.Vulnerability, error) {
-	vulns, err := get(s.pool, packages, opts)
+func (s *Store) Get(ctx context.Context, packages []*claircore.Package, opts vulnstore.GetOpts) (map[int][]*claircore.Vulnerability, error) {
+	vulns, err := get(ctx, s.pool, packages, opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get vulnerabilites: %v", err)
 	}

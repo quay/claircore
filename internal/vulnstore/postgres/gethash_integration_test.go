@@ -3,6 +3,7 @@
 package postgres
 
 import (
+	"context"
 	"testing"
 
 	"github.com/google/uuid"
@@ -10,6 +11,7 @@ import (
 )
 
 func Test_GetHash_KeyNotExists(t *testing.T) {
+	ctx := context.Background()
 	var tt = []struct {
 		name       string
 		iterations int
@@ -32,7 +34,7 @@ func Test_GetHash_KeyNotExists(t *testing.T) {
 			key := uuid.New().String()
 
 			// attempt get k,v
-			v, err := store.GetHash(key)
+			v, err := store.GetHash(ctx, key)
 			assert.NoError(t, err)
 			assert.Equal(t, "", v)
 		}
@@ -40,6 +42,7 @@ func Test_GetHash_KeyNotExists(t *testing.T) {
 }
 
 func Test_GetHash_KeyExists(t *testing.T) {
+	ctx := context.Background()
 	var tt = []struct {
 		// the name of the test
 		name string
@@ -70,7 +73,7 @@ func Test_GetHash_KeyExists(t *testing.T) {
 			}
 
 			// attempt get k,v
-			v, err := store.GetHash(key)
+			v, err := store.GetHash(ctx, key)
 			assert.NoError(t, err)
 			assert.Equal(t, value, v)
 		}

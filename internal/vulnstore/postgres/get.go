@@ -11,12 +11,12 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 )
 
-func get(pool *pgx.ConnPool, packages []*claircore.Package, opts vulnstore.GetOpts) (map[int][]*claircore.Vulnerability, error) {
+func get(ctx context.Context, pool *pgx.ConnPool, packages []*claircore.Package, opts vulnstore.GetOpts) (map[int][]*claircore.Vulnerability, error) {
 	// build our query we will make into a prepared statement. see build func definition for details and context
 	query, dedupedMatchers, err := getBuilder(opts.Matchers)
 
 	// create a prepared statement
-	tx, err := pool.Begin()
+	tx, err := pool.BeginEx(ctx, nil)
 	if err != nil {
 		tx.Rollback()
 		return nil, err

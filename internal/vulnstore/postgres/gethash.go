@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"context"
 	"database/sql"
 
 	"github.com/jmoiron/sqlx"
@@ -12,9 +13,9 @@ const (
 
 // getHash selects the value at the given key. if not value is present we
 // return an empty string
-func getHash(db *sqlx.DB, updater string) (string, error) {
+func getHash(ctx context.Context, db *sqlx.DB, updater string) (string, error) {
 	var v sql.NullString
-	err := db.Get(&v, selectHash, updater)
+	err := db.GetContext(ctx, &v, selectHash, updater)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return "", nil
