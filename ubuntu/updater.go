@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/libvuln/driver"
 	CCoval "github.com/quay/claircore/pkg/oval"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -27,6 +28,8 @@ var shouldBzipFetch = map[Release]bool{
 	Trusty:  true,
 	Xenial:  true,
 }
+
+var _ driver.Updater = (*Updater)(nil)
 
 // Updater implements the claircore.Updater.Fetcher and claircore.Updater.Parser
 // interfaces making it eligible to be used as an Updater.

@@ -8,7 +8,9 @@ import (
 
 type Matcher struct{}
 
-func (*Matcher) Interested(pkg *claircore.Package) bool {
+var _ driver.Matcher = (*Matcher)(nil)
+
+func (*Matcher) Filter(pkg *claircore.Package) bool {
 	if pkg.Dist == nil {
 		return false
 	}
@@ -23,13 +25,13 @@ func (*Matcher) Interested(pkg *claircore.Package) bool {
 	}
 }
 
-func (*Matcher) How() []driver.MatchExp {
+func (*Matcher) Query() []driver.MatchExp {
 	return []driver.MatchExp{
 		driver.PackageDistributionVersionCodeName,
 	}
 }
 
-func (*Matcher) Decide(pkg *claircore.Package, vuln *claircore.Vulnerability) bool {
+func (*Matcher) Vulnerable(pkg *claircore.Package, vuln *claircore.Vulnerability) bool {
 	v1, err := version.NewVersion(pkg.Version)
 	if err != nil {
 		return false

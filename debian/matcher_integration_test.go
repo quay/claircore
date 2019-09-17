@@ -11,10 +11,10 @@ import (
 	"time"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/matcher"
 	"github.com/quay/claircore/internal/updater"
 	"github.com/quay/claircore/internal/vulnscanner"
 	vulnstore "github.com/quay/claircore/internal/vulnstore/postgres"
+	"github.com/quay/claircore/libvuln/driver"
 	distlock "github.com/quay/claircore/pkg/distlock/postgres"
 	"github.com/stretchr/testify/assert"
 )
@@ -57,7 +57,7 @@ func Test_Matcher_Integration(t *testing.T) {
 		t.Fatalf("failed to decode ScanReport: %v", err)
 	}
 
-	vs := vulnscanner.New(store, []matcher.Matcher{m})
+	vs := vulnscanner.New(store, []driver.Matcher{m})
 	vr, err := vs.Scan(context.Background(), &sr)
 	assert.NoError(t, err)
 
