@@ -87,7 +87,7 @@ func (u *Controller) Update(ctx context.Context) error {
 	}
 
 	// fetch and check if we need to update.
-	vulnDB, shouldUpdate, updateHash, err := u.fetchAndCheck()
+	vulnDB, shouldUpdate, updateHash, err := u.fetchAndCheck(ctx)
 	if err != nil {
 		vulnDB.Close()
 		u.logger.Error().Msgf("%v. lock released", err)
@@ -102,7 +102,7 @@ func (u *Controller) Update(ctx context.Context) error {
 	}
 
 	// parse the vulnDB and put the parsed contents into the vulnstore
-	err = u.parseAndStore(vulnDB, updateHash)
+	err = u.parseAndStore(ctx, vulnDB, updateHash)
 	if err != nil {
 		u.logger.Error().Msgf("%v", err)
 		return err
@@ -128,7 +128,7 @@ func (u *Controller) tryLock(ctx context.Context) (bool, error) {
 }
 
 // fetchAndCheck calls the Fetch method on the embedded Updater interface and checks whether we should update
-func (u *Controller) fetchAndCheck() (io.ReadCloser, bool, string, error) {
+func (u *Controller) fetchAndCheck(ctx context.Context) (io.ReadCloser, bool, string, error) {
 	// retrieve vulnerability database
 	vulnDB, updateHash, err := u.Fetch()
 	if err != nil {
@@ -136,7 +136,7 @@ func (u *Controller) fetchAndCheck() (io.ReadCloser, bool, string, error) {
 	}
 
 	// see if we need to update the vulnstore
-	prevUpdateHash, err := u.Store.GetHash(u.Name)
+	prevUpdateHash, err := u.Store.GetHash(ctx, u.Name)
 	if err != nil {
 		return vulnDB, false, "", fmt.Errorf("failed to get previous update hash: %v", err)
 	}
@@ -148,7 +148,7 @@ func (u *Controller) fetchAndCheck() (io.ReadCloser, bool, string, error) {
 }
 
 // parseAndStore calls the parse method on the embedded Updater interface and stores the result
-func (u *Controller) parseAndStore(vulnDB io.ReadCloser, updateHash string) error {
+func (u *Controller) parseAndStore(ctx context.Context, vulnDB io.ReadCloser, updateHash string) error {
 	// parse the vulnDB into claircore.Vulnerability structs
 	vulns, err := u.Parse(vulnDB)
 	if err != nil {
@@ -156,7 +156,7 @@ func (u *Controller) parseAndStore(vulnDB io.ReadCloser, updateHash string) erro
 	}
 
 	// store the vulnerabilities and update latest hash
-	err = u.Store.PutVulnerabilities(u.Name, updateHash, vulns)
+	err = u.Store.PutVulnerabilities(ctx, u.Name, updateHash, vulns)
 	if err != nil {
 		return fmt.Errorf("failed to store vulernabilities: %v", err)
 	}

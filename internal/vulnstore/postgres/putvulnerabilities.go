@@ -72,10 +72,10 @@ const (
 // is placed on this table to ensure deduplication. each new vulnerability is written with a new tombstone
 // and each existing vulnerability has their tombstone updated. finally we delete all records with the
 // told tombstone as they can be considered stale.
-func putVulnerabilities(pool *pgx.ConnPool, updater string, hash string, vulns []*claircore.Vulnerability) error {
+func putVulnerabilities(ctx context.Context, pool *pgx.ConnPool, updater string, hash string, vulns []*claircore.Vulnerability) error {
 	// get old tombstone
 	var oldTombstone string
-	row := pool.QueryRow(selectTombstone, updater)
+	row := pool.QueryRowEx(ctx, selectTombstone, nil, updater)
 	err := row.Scan(&oldTombstone)
 	if err != nil {
 		if err == pgx.ErrNoRows {

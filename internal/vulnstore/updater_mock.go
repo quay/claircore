@@ -5,6 +5,7 @@
 package vulnstore
 
 import (
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	claircore "github.com/quay/claircore"
 	reflect "reflect"
@@ -34,30 +35,30 @@ func (m *MockUpdater) EXPECT() *MockUpdaterMockRecorder {
 }
 
 // GetHash mocks base method
-func (m *MockUpdater) GetHash(arg0 string) (string, error) {
+func (m *MockUpdater) GetHash(arg0 context.Context, arg1 string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetHash", arg0)
+	ret := m.ctrl.Call(m, "GetHash", arg0, arg1)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetHash indicates an expected call of GetHash
-func (mr *MockUpdaterMockRecorder) GetHash(arg0 interface{}) *gomock.Call {
+func (mr *MockUpdaterMockRecorder) GetHash(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHash", reflect.TypeOf((*MockUpdater)(nil).GetHash), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetHash", reflect.TypeOf((*MockUpdater)(nil).GetHash), arg0, arg1)
 }
 
 // PutVulnerabilities mocks base method
-func (m *MockUpdater) PutVulnerabilities(arg0, arg1 string, arg2 []*claircore.Vulnerability) error {
+func (m *MockUpdater) PutVulnerabilities(arg0 context.Context, arg1, arg2 string, arg3 []*claircore.Vulnerability) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PutVulnerabilities", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "PutVulnerabilities", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // PutVulnerabilities indicates an expected call of PutVulnerabilities
-func (mr *MockUpdaterMockRecorder) PutVulnerabilities(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockUpdaterMockRecorder) PutVulnerabilities(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutVulnerabilities", reflect.TypeOf((*MockUpdater)(nil).PutVulnerabilities), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PutVulnerabilities", reflect.TypeOf((*MockUpdater)(nil).PutVulnerabilities), arg0, arg1, arg2, arg3)
 }

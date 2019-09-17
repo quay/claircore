@@ -30,7 +30,7 @@ func (mc *Controller) Match(ctx context.Context, pkgs map[int]*claircore.Package
 	interestedPkgs := mc.findInterested(pkgs)
 
 	// query the vulnstore
-	vulns, err := mc.query(interestedPkgs)
+	vulns, err := mc.query(ctx, interestedPkgs)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +54,7 @@ func (mc *Controller) findInterested(pkgs map[int]*claircore.Package) map[int]*c
 
 // Query asks the Matcher how we should query the vulnstore then performs the query and returns all
 // matched vulnerabilities.
-func (mc *Controller) query(interestedPkgs map[int]*claircore.Package) (map[int][]*claircore.Vulnerability, error) {
+func (mc *Controller) query(ctx context.Context, interestedPkgs map[int]*claircore.Package) (map[int][]*claircore.Vulnerability, error) {
 	// ask the matcher how we should query the vulnstore
 	matchers := mc.m.Query()
 	getOpts := vulnstore.GetOpts{
@@ -67,7 +67,7 @@ func (mc *Controller) query(interestedPkgs map[int]*claircore.Package) (map[int]
 		tmp = append(tmp, v)
 	}
 
-	matches, err := mc.store.Get(tmp, getOpts)
+	matches, err := mc.store.Get(ctx, tmp, getOpts)
 	if err != nil {
 		return nil, err
 	}
