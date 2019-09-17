@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/libvuln/driver"
+	CCoval "github.com/quay/claircore/pkg/oval"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/ymomoi/goval-parser/oval"
@@ -27,6 +28,8 @@ var shouldBzipFetch = map[Release]bool{
 	Trusty:  true,
 	Xenial:  true,
 }
+
+var _ driver.Updater = (*Updater)(nil)
 
 // Updater implements the claircore.Updater.Fetcher and claircore.Updater.Parser
 // interfaces making it eligible to be used as an Updater.
@@ -113,7 +116,7 @@ func (u *Updater) Parse(contents io.ReadCloser) ([]*claircore.Vulnerability, err
 		// as we unpack the CVE definition and add the copy with the pkg and dist into to the result array
 		u.curVuln.Name = def.References[0].RefID
 		u.curVuln.Description = def.Description
-		u.curVuln.Links = links(def)
+		u.curVuln.Links = CCoval.Links(def)
 		u.curVuln.Severity = def.Advisory.Severity
 
 		// now that we have our curVuln setup, unpack each nested package
@@ -193,23 +196,4 @@ func (u *Updater) classifyVuln(name string, fixVersion string) *claircore.Vulner
 
 func (u *Updater) Name() string {
 	return fmt.Sprintf("ubuntu-%s-updater", u.release)
-}
-
-// links joins all the links in the cve definition into a single string.
-func links(def oval.Definition) string {
-	links := []string{}
-
-	for _, ref := range def.References {
-		links = append(links, ref.RefURL)
-	}
-
-	for _, ref := range def.Advisory.Refs {
-		links = append(links, ref.URL)
-	}
-	for _, bug := range def.Advisory.Bugs {
-		links = append(links, bug.URL)
-	}
-
-	s := strings.Join(links, " ")
-	return s
 }

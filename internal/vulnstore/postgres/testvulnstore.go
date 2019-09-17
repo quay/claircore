@@ -3,7 +3,6 @@
 package postgres
 
 import (
-	"log"
 	"testing"
 
 	"github.com/jackc/pgx"
@@ -73,7 +72,6 @@ func NewTestStore(t *testing.T) (*sqlx.DB, *Store, func()) {
 	s := NewVulnStore(sqlxDB, pool)
 
 	return sqlxDB, s, func() {
-		log.Printf("calling truncate")
 		_, err := db.Exec(truncate)
 		if err != nil {
 			t.Fatalf("failed to truncate libcsan db tables. manual cleanup maybe necessary: %v", err)

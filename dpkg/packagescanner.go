@@ -6,6 +6,8 @@ import (
 
 	"github.com/acobaugh/osrelease"
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/debian"
+	"github.com/quay/claircore/ubuntu"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/tadasv/go-dpkg"
@@ -103,17 +105,25 @@ func (ps *PackageScanner) parseDistribution() error {
 		return nil
 	}
 
-	attr, err := osrelease.ReadString(string(ps.osRelease))
+	osr, err := osrelease.ReadString(string(ps.osRelease))
 	if err != nil {
 		return err
 	}
 
 	d := &claircore.Distribution{
-		Name:            attr["NAME"],
-		DID:             attr["ID"],
-		Version:         attr["VERSION"],
-		VersionCodeName: attr["VERSION_CODENAME"],
-		VersionID:       attr["VERSION_ID"],
+		Name:            osr["NAME"],
+		DID:             osr["ID"],
+		Version:         osr["VERSION"],
+		VersionCodeName: osr["VERSION_CODENAME"],
+		VersionID:       osr["VERSION_ID"],
+	}
+
+	// if os-release file did not provide attempt a further parse
+	if d.VersionCodeName == "" {
+		d.VersionCodeName = debian.ResolveVersionCodeName(osr)
+	}
+	if d.VersionCodeName == "" {
+		d.VersionCodeName = ubuntu.ResolveVersionCodeName(osr)
 	}
 
 	ps.dist = d
@@ -147,6 +157,9 @@ func (ps *PackageScanner) parsePackages() ([]*claircore.Package, error) {
 			ccPkg.Source = &claircore.Package{
 				Name: dpkgPkg.Source,
 				Kind: "source",
+				// right now this is an assumption that discovered source package
+				// packages relate to their binary versions. we see this in debian
+				Version: dpkgPkg.Version,
 			}
 		}
 
