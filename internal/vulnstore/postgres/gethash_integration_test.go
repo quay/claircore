@@ -1,16 +1,17 @@
-//+build integration
-
 package postgres
 
 import (
 	"context"
 	"testing"
 
+	"github.com/quay/claircore/test/integration"
+
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_GetHash_KeyNotExists(t *testing.T) {
+	integration.Skip(t)
 	ctx := context.Background()
 	var tt = []struct {
 		name       string
@@ -42,6 +43,7 @@ func Test_GetHash_KeyNotExists(t *testing.T) {
 }
 
 func Test_GetHash_KeyExists(t *testing.T) {
+	integration.Skip(t)
 	ctx := context.Background()
 	var tt = []struct {
 		// the name of the test

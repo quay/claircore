@@ -1,5 +1,3 @@
-// +build integration
-
 package postgres
 
 import (
@@ -9,10 +7,13 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/scanner"
+	"github.com/quay/claircore/test/integration"
+
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_SetScanFinished_Success(t *testing.T) {
+	integration.Skip(t)
 	// function to initialize database. we must add all scanners to they are available in the database. we must then
 	// create scannlist records for any of the previousScnrs to prove we deleted them and linked the updatedScnrs
 	var init = func(t *testing.T, db *sqlx.DB, hash string, previousScnrs []scnrInfo, updatedScnrs []scnrInfo) {

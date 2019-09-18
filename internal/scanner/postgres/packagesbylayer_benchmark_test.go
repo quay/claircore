@@ -1,15 +1,15 @@
-// +build integration
-
 package postgres
 
 import (
 	"testing"
 
 	"github.com/quay/claircore/test"
+	"github.com/quay/claircore/test/integration"
 	pgtest "github.com/quay/claircore/test/postgres"
 )
 
 func Benchmark_PackagesByLayer(b *testing.B) {
+	integration.Skip(b)
 	benchmarks := []struct {
 		name  string
 		hash  string

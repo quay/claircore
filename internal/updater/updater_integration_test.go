@@ -1,5 +1,3 @@
-//+build integration
-
 package updater
 
 import (
@@ -9,13 +7,16 @@ import (
 
 	"github.com/quay/claircore/internal/vulnstore/postgres"
 	distlock "github.com/quay/claircore/pkg/distlock/postgres"
+	"github.com/quay/claircore/test/integration"
 	"github.com/quay/claircore/ubuntu"
+
 	"github.com/stretchr/testify/assert"
 )
 
 // Test_Updater_Integration starts with an empty database and runs until a
 // large timeout. We then confirm the store has populated vulns
 func Test_Updater_Integration(t *testing.T) {
+	integration.Skip(t)
 	ubuntuPrecise := ubuntu.NewUpdater(ubuntu.Precise)
 
 	db, store, teardown := postgres.NewTestStore(t)

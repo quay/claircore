@@ -1,5 +1,3 @@
-// +build integration
-
 package postgres
 
 import (
@@ -9,6 +7,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
+	"github.com/quay/claircore/test/integration"
 	pgtest "github.com/quay/claircore/test/postgres"
 	"github.com/stretchr/testify/assert"
 )
@@ -23,6 +22,7 @@ type scnrInfo struct {
 }
 
 func Test_IndexPackages_Success_Parallel(t *testing.T) {
+	integration.Skip(t)
 	tt := []struct {
 		// the name of this benchmark
 		name string
@@ -120,6 +120,7 @@ func Test_IndexPackages_Success_Parallel(t *testing.T) {
 }
 
 func Test_IndexPackages_Success(t *testing.T) {
+	integration.Skip(t)
 	tt := []struct {
 		// the name of this benchmark
 		name string

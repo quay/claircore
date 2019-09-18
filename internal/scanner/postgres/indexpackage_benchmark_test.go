@@ -1,5 +1,3 @@
-// +build integration
-
 package postgres
 
 import (
@@ -7,10 +5,12 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
+	"github.com/quay/claircore/test/integration"
 	pgtest "github.com/quay/claircore/test/postgres"
 )
 
 func Benchmark_IndexPackages(b *testing.B) {
+	integration.Skip(b)
 	benchmarks := []struct {
 		// the name of this benchmark
 		name string

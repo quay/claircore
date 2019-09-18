@@ -1,5 +1,3 @@
-// +build integration
-
 package defaultfetcher
 
 import (
@@ -11,10 +9,13 @@ import (
 
 	"github.com/quay/claircore/internal/scanner"
 	"github.com/quay/claircore/test"
+	"github.com/quay/claircore/test/integration"
+
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_Fetcher_Integration(t *testing.T) {
+	integration.Skip(t)
 	var tt = []struct {
 		// name of test
 		name string

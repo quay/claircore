@@ -1,5 +1,3 @@
-// +build integration
-
 // we will use the claircore_test package here to avoid import cycles when
 // importing the defaultfetcher.fetcher. using the fetcher is an attempt to not repeat
 // a lot of layer fetching code. if this pattern continues reconsider importing anything
@@ -15,10 +13,13 @@ import (
 	"github.com/quay/claircore/internal/scanner"
 	"github.com/quay/claircore/internal/scanner/defaultfetcher"
 	"github.com/quay/claircore/test"
+	"github.com/quay/claircore/test/integration"
+
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_Layer_Files_Miss(t *testing.T) {
+	integration.Skip(t)
 	// flip this bool if you'd like the test to print the found files to std out
 	var printFile = false
 	var tt = []struct {
@@ -92,6 +93,7 @@ func Test_Layer_Files_Miss(t *testing.T) {
 }
 
 func Test_Layer_Files_Hit(t *testing.T) {
+	integration.Skip(t)
 	// flip this bool if you'd like the test to print the found files to std out
 	var printFile = false
 	var tt = []struct {

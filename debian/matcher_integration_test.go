@@ -1,5 +1,3 @@
-// +build integration
-
 package debian
 
 import (
@@ -16,6 +14,8 @@ import (
 	vulnstore "github.com/quay/claircore/internal/vulnstore/postgres"
 	"github.com/quay/claircore/libvuln/driver"
 	distlock "github.com/quay/claircore/pkg/distlock/postgres"
+	"github.com/quay/claircore/test/integration"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,6 +24,7 @@ import (
 // store from postgres.NewTestStore must have Ubuntu
 // CVE data
 func Test_Matcher_Integration(t *testing.T) {
+	integration.Skip(t)
 	db, store, teardown := vulnstore.NewTestStore(t)
 	defer teardown()
 

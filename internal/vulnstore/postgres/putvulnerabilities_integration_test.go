@@ -1,5 +1,3 @@
-//+build integration
-
 package postgres
 
 import (
@@ -11,6 +9,8 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
+	"github.com/quay/claircore/test/integration"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -40,6 +40,7 @@ const (
 // the same vulnerability to the store prevents it from going stale
 // indirectly we confirm the datbase is de-duping identical entries on write
 func Test_PutVulnerabilities_Tombstone_Bump(t *testing.T) {
+	integration.Skip(t)
 	ctx := context.Background()
 	var tt = []struct {
 		// the name of the test
@@ -137,6 +138,7 @@ func Test_PutVulnerabilities_Tombstone_Bump(t *testing.T) {
 // Test_PutVulnerabilities_Tombstone_Stale confirms if a vulnerability
 // is not seen in a subsequent update it is removed from the store
 func Test_PutVulnerabilities_Tombstone_Stale(t *testing.T) {
+	integration.Skip(t)
 	ctx := context.Background()
 	var tt = []struct {
 		// the name of the test

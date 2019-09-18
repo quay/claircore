@@ -1,15 +1,15 @@
-//+build integration
-
 package ubuntu
 
 import (
 	"testing"
 
+	"github.com/quay/claircore/test/integration"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_Updater(t *testing.T) {
+	integration.Skip(t)
 	var tt = []struct {
 		name    string
 		release Release

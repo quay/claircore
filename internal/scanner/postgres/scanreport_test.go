@@ -1,5 +1,3 @@
-// +build integration
-
 package postgres
 
 import (
@@ -7,10 +5,13 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/test/integration"
+
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_ScanReport_Success(t *testing.T) {
+	integration.Skip(t)
 	var tt = []struct {
 		// the name of the test
 		name string

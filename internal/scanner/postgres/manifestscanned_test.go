@@ -1,16 +1,17 @@
-// +build integration
-
 package postgres
 
 import (
 	"testing"
 
 	"github.com/quay/claircore/test"
+	"github.com/quay/claircore/test/integration"
 	pgtest "github.com/quay/claircore/test/postgres"
+
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_ManifestScanned_Failure(t *testing.T) {
+	integration.Skip(t)
 	var tt = []struct {
 		// the name of this test
 		name string
@@ -58,6 +59,7 @@ func Test_ManifestScanned_Failure(t *testing.T) {
 }
 
 func Test_ManifestScanned_Success(t *testing.T) {
+	integration.Skip(t)
 	var tt = []struct {
 		// the name of this test
 		name string

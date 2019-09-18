@@ -1,18 +1,19 @@
-// +build integration
-
 package postgres
 
 import (
 	"testing"
 
 	"github.com/quay/claircore/test"
+	"github.com/quay/claircore/test/integration"
 	pgtest "github.com/quay/claircore/test/postgres"
+
 	"github.com/stretchr/testify/assert"
 )
 
 // Test_LayerScanner_False tests that we correctly
 // identify if a layer has not been scanned by a particular versioned scanner
 func Test_LayerScanned_False(t *testing.T) {
+	integration.Skip(t)
 	var tt = []struct {
 		// the name of the test
 		name string
@@ -74,6 +75,7 @@ func Test_LayerScanned_False(t *testing.T) {
 // Test_LayerScanner_True tests that we correctly
 // identify if a layer has been scanned by a particular versioned scanner
 func Test_LayerScanned_True(t *testing.T) {
+	integration.Skip(t)
 	var tt = []struct {
 		// the name of the test
 		name string
