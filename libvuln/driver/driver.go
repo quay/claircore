@@ -1,6 +1,8 @@
 package driver
 
 import (
+	"context"
+	"errors"
 	"io"
 
 	"github.com/quay/claircore"
@@ -73,3 +75,16 @@ type Fetcher interface {
 	// a sha265 sum of a OVAL xml file.
 	Fetch() (io.ReadCloser, string, error)
 }
+
+// FetcherNG is an experimental fetcher interface.
+//
+// This may go away or be renamed without warning.
+type FetcherNG interface {
+	FetchContext(context.Context, Fingerprint) (io.ReadCloser, Fingerprint, error)
+}
+
+// Unchanged is returned by Fetchers when the database has not changed.
+var Unchanged = errors.New("database contents unchanged")
+
+// Fingerprint is some identifiying information about a vulnerability database.
+type Fingerprint string

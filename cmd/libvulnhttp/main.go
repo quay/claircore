@@ -11,6 +11,7 @@ import (
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/libvuln/driver"
 	libhttp "github.com/quay/claircore/libvuln/http"
+	"github.com/quay/claircore/rhel"
 	"github.com/quay/claircore/ubuntu"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -109,6 +110,18 @@ func confToLibvulnOpts(conf Config) *libvuln.Opts {
 		debian.NewUpdater(debian.Jessie),
 		debian.NewUpdater(debian.Stretch),
 		debian.NewUpdater(debian.Wheezy),
+	}
+
+	for _, v := range []rhel.Release{
+		rhel.RHEL6,
+		rhel.RHEL7,
+		rhel.RHEL8,
+	} {
+		u, err := rhel.NewUpdater(v)
+		if err != nil {
+			log.Fatal().Msgf("unable to create rhel updater: %v", err)
+		}
+		updaters = append(updaters, u)
 	}
 
 	opts := &libvuln.Opts{
