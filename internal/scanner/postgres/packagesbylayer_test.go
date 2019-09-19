@@ -89,7 +89,7 @@ func Test_PackagesByLayer_Success(t *testing.T) {
 				t.Fatalf("failed to insert scan artifacts for test: %v", err)
 			}
 
-			returnedPkgs, err := store.PackagesByLayer(table.hash, vscnrs)
+			returnedPkgs, err := store.PackagesByLayer(ctx, table.hash, vscnrs)
 
 			assert.NoError(t, err)
 			assert.ElementsMatch(t, pkgs, returnedPkgs)

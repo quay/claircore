@@ -1,11 +1,13 @@
 package postgres
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/scanner"
+
+	"github.com/jmoiron/sqlx"
 )
 
 const (
@@ -14,7 +16,8 @@ const (
 	scannerIDByNameVersionKind = `SELECT id FROM scanner WHERE name = $1 AND version = $2 AND kind = $3;`
 )
 
-func setScanFinished(db *sqlx.DB, sr *claircore.ScanReport, scnrs scanner.VersionedScanners) error {
+func setScanFinished(ctx context.Context, db *sqlx.DB, sr *claircore.ScanReport, scnrs scanner.VersionedScanners) error {
+	// TODO Use passed-in Context.
 	// extract scanner ids from manifest outside of transaction
 	scannerIDs := []int{}
 

@@ -7,7 +7,7 @@ import (
 
 func buildImageResult(s *defaultScanner, ctx context.Context) (ScannerState, error) {
 	for _, scnr := range s.PackageScanners {
-		pkgs, err := s.Store.PackagesByLayer(s.imageLayer.Hash, s.vscnrs)
+		pkgs, err := s.Store.PackagesByLayer(ctx, s.imageLayer.Hash, s.vscnrs)
 		if err != nil {
 			return Terminal, fmt.Errorf("failed to get packages for image layer %v and scnr %v: %v",
 				s.imageLayer.Hash, scnr, err)

@@ -12,6 +12,7 @@ import (
 
 func ScanReport(lib libscan.Libscan) h.HandlerFunc {
 	return func(w h.ResponseWriter, r *h.Request) {
+		ctx := r.Context()
 		if r.Method != h.MethodGet {
 			h.Error(w, "endpoint only allows GET", h.StatusMethodNotAllowed)
 			return
@@ -25,7 +26,7 @@ func ScanReport(lib libscan.Libscan) h.HandlerFunc {
 		}
 
 		// issue retrieval
-		sr, ok, err := lib.ScanReport(hash)
+		sr, ok, err := lib.ScanReport(ctx, hash)
 		if err != nil {
 			h.Error(w, fmt.Sprintf("error receiving scanreport"), h.StatusInternalServerError)
 			log.Printf("failed to retrieve scanreport for %v: %v", hash, err)

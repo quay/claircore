@@ -32,8 +32,8 @@ func Test_BuildLayerResult_Success(t *testing.T) {
 			mock: func(t *testing.T, pkgs []*claircore.Package) *scanner.MockStore {
 				ctrl := gomock.NewController(t)
 				m := scanner.NewMockStore(ctrl)
-				m.EXPECT().SetScanReport(gomock.Any()).Return(nil)
-				m.EXPECT().PackagesByLayer(gomock.Any(), gomock.Any()).Return(pkgs, nil)
+				m.EXPECT().SetScanReport(gomock.Any(), gomock.Any()).Return(nil)
+				m.EXPECT().PackagesByLayer(gomock.Any(), gomock.Any(), gomock.Any()).Return(pkgs, nil)
 				return m
 			},
 		},

@@ -1,12 +1,14 @@
 package postgres
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/scanner"
+
+	"github.com/jmoiron/sqlx"
 )
 
 const (
@@ -39,7 +41,8 @@ WHERE
   scanartifact.layer_hash = '%s' AND scanartifact.scanner_id IN (?);`
 )
 
-func packagesByLayer(db *sqlx.DB, hash string, scnrs scanner.VersionedScanners) ([]*claircore.Package, error) {
+func packagesByLayer(ctx context.Context, db *sqlx.DB, hash string, scnrs scanner.VersionedScanners) ([]*claircore.Package, error) {
+	// TODO Use passed-in Context.
 	// get scanner ids
 	scannerIDs := []int{}
 	for _, scnr := range scnrs {

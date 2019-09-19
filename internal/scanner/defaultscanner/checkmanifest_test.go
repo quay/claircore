@@ -27,9 +27,9 @@ func Test_CheckManifest_Seen(t *testing.T) {
 			mock: func(t *testing.T) *scanner.MockStore {
 				ctrl := gomock.NewController(t)
 				m := scanner.NewMockStore(ctrl)
-				m.EXPECT().SetScanReport(gomock.Any()).Return(nil)
-				m.EXPECT().ManifestScanned(gomock.Any(), gomock.Any()).Return(true, nil)
-				m.EXPECT().ScanReport(gomock.Any()).Return(&claircore.ScanReport{}, true, nil)
+				m.EXPECT().SetScanReport(gomock.Any(), gomock.Any()).Return(nil)
+				m.EXPECT().ManifestScanned(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
+				m.EXPECT().ScanReport(gomock.Any(), gomock.Any()).Return(&claircore.ScanReport{}, true, nil)
 				return m
 			},
 		},
@@ -72,9 +72,9 @@ func Test_CheckManifest_UnSeen(t *testing.T) {
 			mock: func(t *testing.T) *scanner.MockStore {
 				ctrl := gomock.NewController(t)
 				m := scanner.NewMockStore(ctrl)
-				m.EXPECT().SetScanReport(gomock.Any()).Return(nil)
-				m.EXPECT().ManifestScanned(gomock.Any(), gomock.Any()).Return(false, nil)
-				m.EXPECT().ScanReport(gomock.Any()).Return(&claircore.ScanReport{}, true, nil)
+				m.EXPECT().SetScanReport(gomock.Any(), gomock.Any()).Return(nil)
+				m.EXPECT().ManifestScanned(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, nil)
+				m.EXPECT().ScanReport(gomock.Any(), gomock.Any()).Return(&claircore.ScanReport{}, true, nil)
 				return m
 			},
 		},

@@ -50,7 +50,7 @@ func Test_ScanReport_Success(t *testing.T) {
 
 			table.init(t, db, table.expectedSR, table.hash)
 
-			sr, ok, err := store.ScanReport(table.hash)
+			sr, ok, err := store.ScanReport(ctx, table.hash)
 			assert.NoError(t, err)
 			assert.True(t, ok)
 			assert.Equal(t, table.expectedSR, sr)

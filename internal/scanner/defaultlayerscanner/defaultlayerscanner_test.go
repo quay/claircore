@@ -34,7 +34,7 @@ func Test_Deferred_Work(t *testing.T) {
 
 		// these should be scnrsN * layersN  queries or in other words, for each scnr
 		// ask if each layer has been scanned in cases where no work can be deferred (LayerScanned returns false)
-		store.EXPECT().LayerScanned(gomock.Any(), gomock.Any()).MaxTimes(layersN*scnrsN).MinTimes(layersN*scnrsN).Return(false, nil)
+		store.EXPECT().LayerScanned(gomock.Any(), gomock.Any(), gomock.Any()).MaxTimes(layersN*scnrsN).MinTimes(layersN*scnrsN).Return(false, nil)
 		store.EXPECT().IndexPackages(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).MaxTimes(layersN * scnrsN).MinTimes(layersN * scnrsN).Return(nil)
 
 		// we should only call Fetch to retrive a layer once per layer

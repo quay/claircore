@@ -10,6 +10,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+var _ scanner.Store = (*store)(nil)
+
 // store implements the claircore.Store interface.
 // implements all persistence features
 type store struct {
@@ -25,13 +27,13 @@ func NewStore(db *sqlx.DB, pool *pgxpool.Pool) *store {
 	}
 }
 
-func (s *store) ManifestScanned(hash string, scnrs scanner.VersionedScanners) (bool, error) {
-	b, err := manifestScanned(s.db, hash, scnrs)
+func (s *store) ManifestScanned(ctx context.Context, hash string, scnrs scanner.VersionedScanners) (bool, error) {
+	b, err := manifestScanned(ctx, s.db, hash, scnrs)
 	return b, err
 }
 
-func (s *store) LayerScanned(hash string, scnr scanner.VersionedScanner) (bool, error) {
-	b, err := layerScanned(s.db, hash, scnr)
+func (s *store) LayerScanned(ctx context.Context, hash string, scnr scanner.VersionedScanner) (bool, error) {
+	b, err := layerScanned(ctx, s.db, hash, scnr)
 	return b, err
 }
 
@@ -40,27 +42,27 @@ func (s *store) IndexPackages(ctx context.Context, pkgs []*claircore.Package, l 
 	return err
 }
 
-func (s *store) PackagesByLayer(hash string, scnrs scanner.VersionedScanners) ([]*claircore.Package, error) {
-	pkgs, err := packagesByLayer(s.db, hash, scnrs)
+func (s *store) PackagesByLayer(ctx context.Context, hash string, scnrs scanner.VersionedScanners) ([]*claircore.Package, error) {
+	pkgs, err := packagesByLayer(ctx, s.db, hash, scnrs)
 	return pkgs, err
 }
 
-func (s *store) RegisterScanners(scnrs scanner.VersionedScanners) error {
-	err := registerScanners(s.db, scnrs)
+func (s *store) RegisterScanners(ctx context.Context, scnrs scanner.VersionedScanners) error {
+	err := registerScanners(ctx, s.db, scnrs)
 	return err
 }
 
-func (s *store) ScanReport(hash string) (*claircore.ScanReport, bool, error) {
-	sr, b, err := scanReport(s.db, hash)
+func (s *store) ScanReport(ctx context.Context, hash string) (*claircore.ScanReport, bool, error) {
+	sr, b, err := scanReport(ctx, s.db, hash)
 	return sr, b, err
 }
 
-func (s *store) SetScanReport(sr *claircore.ScanReport) error {
-	err := setScanReport(s.db, sr)
+func (s *store) SetScanReport(ctx context.Context, sr *claircore.ScanReport) error {
+	err := setScanReport(ctx, s.db, sr)
 	return err
 }
 
-func (s *store) SetScanFinished(sr *claircore.ScanReport, scnrs scanner.VersionedScanners) error {
-	err := setScanFinished(s.db, sr, scnrs)
+func (s *store) SetScanFinished(ctx context.Context, sr *claircore.ScanReport, scnrs scanner.VersionedScanners) error {
+	err := setScanFinished(ctx, s.db, sr, scnrs)
 	return err
 }

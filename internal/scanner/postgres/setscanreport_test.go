@@ -39,13 +39,13 @@ func Test_SetScanReport_StateUpdate(t *testing.T) {
 			db, store, teardown := TestStore(ctx, t)
 			defer teardown()
 
-			err := store.SetScanReport(table.initState)
+			err := store.SetScanReport(ctx, table.initState)
 			assert.NoError(t, err)
 
 			sr := getScanReport(t, db, table.initState.Hash)
 			assert.Equal(t, table.initState.State, sr.State)
 
-			err = store.SetScanReport(table.transitionState)
+			err = store.SetScanReport(ctx, table.transitionState)
 			assert.NoError(t, err)
 
 			sr = getScanReport(t, db, table.initState.Hash)
@@ -105,7 +105,7 @@ func Test_SetScanReport_Success(t *testing.T) {
 			_, store, teardown := TestStore(ctx, t)
 			defer teardown()
 
-			err := store.SetScanReport(table.sr)
+			err := store.SetScanReport(ctx, table.sr)
 			assert.NoError(t, err)
 		})
 	}

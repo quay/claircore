@@ -53,7 +53,7 @@ func Test_ManifestScanned_Failure(t *testing.T) {
 			err := pgtest.InsertUniqueScanners(db, vscnrs)
 			assert.NoError(t, err)
 
-			ok, err := store.ManifestScanned(table.hash, vscnrs)
+			ok, err := store.ManifestScanned(ctx, table.hash, vscnrs)
 			assert.NoError(t, err)
 			assert.False(t, ok)
 		})
@@ -104,7 +104,7 @@ func Test_ManifestScanned_Success(t *testing.T) {
 			err = pgtest.InsertScannerList(db, table.hash, table.scanners)
 			assert.NoError(t, err)
 
-			ok, err := store.ManifestScanned(table.hash, vscnrs)
+			ok, err := store.ManifestScanned(ctx, table.hash, vscnrs)
 			assert.NoError(t, err)
 			assert.True(t, ok)
 		})

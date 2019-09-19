@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/quay/claircore/internal/scanner"
@@ -15,7 +16,8 @@ const (
 
 // manifestScanned determines if a manifest has been scanned by ALL the provided
 // scnrs.
-func manifestScanned(db *sqlx.DB, hash string, scnrs scanner.VersionedScanners) (bool, error) {
+func manifestScanned(ctx context.Context, db *sqlx.DB, hash string, scnrs scanner.VersionedScanners) (bool, error) {
+	// TODO Use passed-in Context.
 	// get the ids of the scanners we are testing for.
 	var expectedIDs []int
 	for _, scnr := range scnrs {

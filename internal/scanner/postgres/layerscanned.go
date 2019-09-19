@@ -1,11 +1,13 @@
 package postgres
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/quay/claircore/internal/scanner"
+
+	"github.com/jmoiron/sqlx"
 )
 
 const (
@@ -16,7 +18,8 @@ const (
 	selectScanArtifact = `SELECT layer_hash FROM scanartifact WHERE layer_hash = $1 AND scanner_id = $2 LIMIT 1;`
 )
 
-func layerScanned(db *sqlx.DB, hash string, scnr scanner.VersionedScanner) (bool, error) {
+func layerScanned(ctx context.Context, db *sqlx.DB, hash string, scnr scanner.VersionedScanner) (bool, error) {
+	// TODO Use passed-in Context.
 	var scannerID int
 	err := db.Get(&scannerID, selectScannerID, scnr.Name(), scnr.Version())
 	if err != nil {

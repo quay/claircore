@@ -1,11 +1,13 @@
 package postgres
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/quay/claircore/internal/scanner"
+
+	"github.com/jmoiron/sqlx"
 )
 
 const (
@@ -13,7 +15,8 @@ const (
 	selectScanner = `SELECT id FROM scanner WHERE name = $1 AND version = $2 AND kind = $3;`
 )
 
-func registerScanners(db *sqlx.DB, scnrs scanner.VersionedScanners) error {
+func registerScanners(ctx context.Context, db *sqlx.DB, scnrs scanner.VersionedScanners) error {
+	// TODO Use passed-in Context.
 	// check if all scanners scanners exist
 	ids := make([]sql.NullInt64, len(scnrs))
 	for i, scnr := range scnrs {

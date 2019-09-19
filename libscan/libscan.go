@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/scanner"
+
+	"github.com/jmoiron/sqlx"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -20,7 +21,7 @@ type Libscan interface {
 	Scan(ctx context.Context, manifest *claircore.Manifest) (ResultChannel <-chan *claircore.ScanReport, err error)
 	// ScanReport tries to retrieve a claircore.ScanReport given the image hash.
 	// bool informs caller if found.
-	ScanReport(hash string) (*claircore.ScanReport, bool, error)
+	ScanReport(ctx context.Context, hash string) (*claircore.ScanReport, bool, error)
 }
 
 // libscan implements libscan.Libscan interface
@@ -71,7 +72,7 @@ func New(ctx context.Context, opts *Opts) (Libscan, error) {
 	var vscnrs scanner.VersionedScanners
 	vscnrs.PStoVS(l.packageScanners())
 
-	err = l.store.RegisterScanners(vscnrs)
+	err = l.store.RegisterScanners(ctx, vscnrs)
 	if err != nil {
 		l.logger.Error().Msgf("failed to register configured scanners: %v", err)
 		return nil, fmt.Errorf("failed to register configured scanners: %v", err)
@@ -116,7 +117,7 @@ func (l *libscan) scan(ctx context.Context, s scanner.Scanner, rc chan *claircor
 			Err:     fmt.Sprintf("unexpected error acquiring lock: %v", err),
 		}
 		// best effort to push to persistence since we are about to bail anyway
-		_ = l.store.SetScanReport(sr)
+		_ = l.store.SetScanReport(ctx, sr)
 
 		select {
 		case rc <- sr:
@@ -138,7 +139,7 @@ func (l *libscan) scan(ctx context.Context, s scanner.Scanner, rc chan *claircor
 
 // ScanReport retrieves a ScanReport struct from persistence if it exists. if the ScanReport does not exist
 // the bool value will be false.
-func (l *libscan) ScanReport(hash string) (*claircore.ScanReport, bool, error) {
-	res, ok, err := l.store.ScanReport(hash)
+func (l *libscan) ScanReport(ctx context.Context, hash string) (*claircore.ScanReport, bool, error) {
+	res, ok, err := l.store.ScanReport(ctx, hash)
 	return res, ok, err
 }

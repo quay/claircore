@@ -143,7 +143,7 @@ func (s *defaultScanner) Scan(ctx context.Context, manifest *claircore.Manifest)
 func (s *defaultScanner) run(ctx context.Context) {
 	state, err := stateToStateFunc[s.getState()](s, ctx)
 	if err != nil {
-		s.handleError(err)
+		s.handleError(ctx, err)
 		return
 	}
 
@@ -152,9 +152,9 @@ func (s *defaultScanner) run(ctx context.Context) {
 	}
 
 	s.setState(state)
-	err = s.Store.SetScanReport(s.report)
+	err = s.Store.SetScanReport(ctx, s.report)
 	if err != nil {
-		s.handleError(err)
+		s.handleError(ctx, err)
 		return
 	}
 
@@ -163,13 +163,13 @@ func (s *defaultScanner) run(ctx context.Context) {
 
 // handleError updates the ScanReport to communicate an error and attempts
 // to persist this information.
-func (s *defaultScanner) handleError(err error) {
+func (s *defaultScanner) handleError(ctx context.Context, err error) {
 	s.logger.Error().Str("state", s.getState().String()).Msg("handling scan error")
 	s.report.Success = false
 	s.report.Err = err.Error()
 	s.report.State = ScanError.String()
 	log.Printf("error before set: %v %v", err.Error(), s.report.Err)
-	err = s.Store.SetScanReport(s.report)
+	err = s.Store.SetScanReport(ctx, s.report)
 	if err != nil {
 		// just log, we are about to bail anyway
 		s.logger.Error().Msgf("failed to push scan report when handling error: %v", err)

@@ -79,7 +79,7 @@ func (ls *defaultLayerScanner) Scan(ctx context.Context, manifest string, layers
 func (ls *defaultLayerScanner) scanPackages(ctx context.Context, layer *claircore.Layer) error {
 	for _, scnr := range ls.PackageScanners {
 		// confirm if we have scanned this layer with this scanner before
-		if ok, _ := ls.Store.LayerScanned(layer.Hash, scnr); ok {
+		if ok, _ := ls.Store.LayerScanned(ctx, layer.Hash, scnr); ok {
 			ls.logger.Debug().Msgf("layer %s already scanned by %v", layer.Hash, scnr)
 			continue
 		}

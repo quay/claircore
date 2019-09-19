@@ -98,7 +98,7 @@ func Test_SetScanFinished_Success(t *testing.T) {
 			scnrs.PStoVS(temp)
 			log.Printf("%v", len(scnrs))
 
-			err := store.SetScanFinished(&claircore.ScanReport{
+			err := store.SetScanFinished(ctx, &claircore.ScanReport{
 				Hash: table.hash,
 			}, scnrs)
 

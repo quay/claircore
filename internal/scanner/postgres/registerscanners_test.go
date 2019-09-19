@@ -155,7 +155,7 @@ func Test_RegisterScanners_Success(t *testing.T) {
 				vscnrs = append(vscnrs, scanner.VersionedScanner(m))
 			}
 
-			err := store.RegisterScanners(vscnrs)
+			err := store.RegisterScanners(ctx, vscnrs)
 			assert.NoError(t, err)
 			checkScanners(t, db, table.scnrs)
 		})

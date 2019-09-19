@@ -64,7 +64,7 @@ func Test_LayerScanned_False(t *testing.T) {
 
 			// for each scanner confirm we see the layer as scanned
 			for _, scnr := range scnrs {
-				b, err := store.LayerScanned(table.hash, scnr)
+				b, err := store.LayerScanned(ctx, table.hash, scnr)
 
 				assert.NoError(t, err)
 				assert.False(t, b)
@@ -133,7 +133,7 @@ func Test_LayerScanned_True(t *testing.T) {
 
 			// for each scanner confirm we see the layer as scanned
 			for _, scnr := range scnrs {
-				b, err := store.LayerScanned(table.hash, scnr)
+				b, err := store.LayerScanned(ctx, table.hash, scnr)
 
 				assert.NoError(t, err)
 				assert.True(t, b)

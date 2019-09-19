@@ -8,7 +8,7 @@ import (
 func checkManifest(s *defaultScanner, ctx context.Context) (ScannerState, error) {
 	// determine if we've seen this manifest and if we've
 	// scanned it with the desired scanners
-	ok, err := s.Store.ManifestScanned(s.manifest.Hash, s.vscnrs)
+	ok, err := s.Store.ManifestScanned(ctx, s.manifest.Hash, s.vscnrs)
 	if err != nil {
 		s.logger.Error().Str("state", s.getState().String()).Msgf("failed to determine if manifest has been scanned: %v", err)
 		return Terminal, err
@@ -22,7 +22,7 @@ func checkManifest(s *defaultScanner, ctx context.Context) (ScannerState, error)
 
 	// we have seen this manifest before and it's been been processed with the desired scanners
 	s.logger.Info().Str("state", s.getState().String()).Msg("manifest already scanned... retreiving")
-	sr, ok, err := s.Store.ScanReport(s.manifest.Hash)
+	sr, ok, err := s.Store.ScanReport(ctx, s.manifest.Hash)
 	if err != nil {
 		s.logger.Error().Str("state", s.getState().String()).Msgf("failed to retreieve manifest: %v", err)
 		return Terminal, fmt.Errorf("failed to retrieve manifest: %v", err)
