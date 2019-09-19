@@ -12,7 +12,7 @@ import (
 func buildResult(s *defaultScanner, ctx context.Context) (ScannerState, error) {
 	stacker := scanner.NewStacker()
 	for _, layer := range s.manifest.Layers {
-		pkgs, err := s.Store.PackagesByLayer(layer.Hash, s.vscnrs)
+		pkgs, err := s.Store.PackagesByLayer(ctx, layer.Hash, s.vscnrs)
 		if err != nil {
 			return Terminal, fmt.Errorf("failed to get packages for layer %v: %v", layer.Hash, err)
 		}

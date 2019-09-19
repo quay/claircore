@@ -12,10 +12,11 @@ import (
 // fetchLayers fetches all the necessary layers in a manifest.
 // if the scanneer has the UseImage configuration a layer representing the stacked layers is created
 func fetchLayers(s *defaultScanner, ctx context.Context) (ScannerState, error) {
-	s.logger.Info().Str("state", s.getState().String()).Msg("fetching and stacking layers")
+	s.logger.Info().Str("state", s.getState().String()).Msg("fetching layers")
 
 	// if UseImage option configured fetch all layers and stack them
 	if s.UseImage {
+		s.logger.Info().Str("state", s.getState().String()).Msg("UseImage configured. an image layer will be created")
 		err := s.Fetcher.Fetch(ctx, s.manifest.Layers)
 		if err != nil {
 			s.logger.Error().Str("state", s.getState().String()).Msgf("faild to fetch layers: %v", err)
@@ -37,7 +38,7 @@ func fetchLayers(s *defaultScanner, ctx context.Context) (ScannerState, error) {
 		return LayerScan, nil
 	}
 
-	toFetch := reduce(s.Store, s.vscnrs, s.manifest.Layers)
+	toFetch := reduce(ctx, s.Store, s.vscnrs, s.manifest.Layers)
 	err := s.Fetcher.Fetch(ctx, toFetch)
 	if err != nil {
 		s.logger.Error().Str("state", s.getState().String()).Msgf("faild to fetch layers: %v", err)
@@ -48,11 +49,11 @@ func fetchLayers(s *defaultScanner, ctx context.Context) (ScannerState, error) {
 }
 
 // reduce determines which layers should be fetched and returns these layers
-func reduce(store scanner.Store, scnrs scanner.VersionedScanners, layers []*claircore.Layer) []*claircore.Layer {
+func reduce(ctx context.Context, store scanner.Store, scnrs scanner.VersionedScanners, layers []*claircore.Layer) []*claircore.Layer {
 	toFetch := []*claircore.Layer{}
 	for _, scnr := range scnrs {
 		for _, l := range layers {
-			if ok, _ := store.LayerScanned(l.Hash, scnr); ok {
+			if ok, _ := store.LayerScanned(ctx, l.Hash, scnr); ok {
 				continue
 			}
 			toFetch = append(toFetch, l)
