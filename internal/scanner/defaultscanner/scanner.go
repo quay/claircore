@@ -25,19 +25,16 @@ const (
 	// if no Terminal is returned and we return the existing ScanReport.
 	// Transitions: FetchAndStackLayers, Terminal
 	CheckManifest
-	// FetchAndStackLayers retrieves all the layers in a manifest and stacks them the same obtain the file image contents.
+	// FetchAndStackLayers retrieves all the necessary layers
 	// creates the "image" layer
 	// Transitions: LayerScan
-	FetchAndStackLayers
+	FetchLayers
 	// LayerScan scans each image including the image layer and indexes the contents
 	// Transitions: BuildLayerResult
 	LayerScan
-	// BuildImageResult inventories the discovered packages in the image layer
-	// Transitions BuildLayerResult
-	BuildImageResult
-	// BuildLayerResult finds the layer a package was introduced in
+	// BuildResult creates the ScanReport
 	// Transitions: ScanError
-	BuildLayerResult
+	BuildResult
 	// ScanError state indicates a impassable error has occured.
 	// returns a ScanResult with the error field
 	// Transitions: Terminal
@@ -48,14 +45,24 @@ const (
 	ScanFinished
 )
 
-// provides a mapping of ScannerStates to their implemented stateFunc methods
-var stateToStateFunc = map[ScannerState]stateFunc{
-	CheckManifest:       checkManifest,
-	FetchAndStackLayers: fetchAndStackLayers,
-	LayerScan:           layerScan,
-	BuildImageResult:    buildImageResult,
-	BuildLayerResult:    buildLayerResult,
-	ScanFinished:        scanFinished,
+// stateToStateFunc returns the transition map according to any provided configuration options
+func stateToStatFunc(opts *scanner.Opts) map[ScannerState]stateFunc {
+	if opts.UseImage {
+		return map[ScannerState]stateFunc{
+			CheckManifest: checkManifest,
+			FetchLayers:   fetchLayers,
+			LayerScan:     layerScan,
+			BuildResult:   buildResultWithImage,
+			ScanFinished:  scanFinished,
+		}
+	}
+	return map[ScannerState]stateFunc{
+		CheckManifest: checkManifest,
+		FetchLayers:   fetchLayers,
+		LayerScan:     layerScan,
+		BuildResult:   buildResult,
+		ScanFinished:  scanFinished,
+	}
 }
 
 // StartState is a global variable which is normally set to the starting state
@@ -88,6 +95,8 @@ type defaultScanner struct {
 	vscnrs scanner.VersionedScanners
 	// a logger with context. set on Scan() method call
 	logger zerolog.Logger
+	// a map of states and their corresponding stateFunc
+	transition map[ScannerState]stateFunc
 }
 
 // NewScanner constructs a scanner given an Opts struct
@@ -112,6 +121,7 @@ func New(opts *scanner.Opts) *defaultScanner {
 		manifest:     &claircore.Manifest{},
 		vscnrs:       vscnrs,
 		distLock:     opts.ScanLock,
+		transition:   stateToStatFunc(opts),
 	}
 
 	return s
@@ -141,7 +151,7 @@ func (s *defaultScanner) Scan(ctx context.Context, manifest *claircore.Manifest)
 // run executes each stateFunc and blocks until either an error occurs or
 // a Terminal state is encountered.
 func (s *defaultScanner) run(ctx context.Context) {
-	state, err := stateToStateFunc[s.getState()](s, ctx)
+	state, err := s.transition[s.getState()](s, ctx)
 	if err != nil {
 		s.handleError(ctx, err)
 		return

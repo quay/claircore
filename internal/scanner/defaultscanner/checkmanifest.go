@@ -17,7 +17,7 @@ func checkManifest(s *defaultScanner, ctx context.Context) (ScannerState, error)
 	// if we haven't seen this manifest enter layer scanning state
 	if !ok {
 		s.logger.Info().Str("state", s.getState().String()).Msg("manifest will be scanned")
-		return FetchAndStackLayers, nil
+		return FetchLayers, nil
 	}
 
 	// we have seen this manifest before and it's been been processed with the desired scanners

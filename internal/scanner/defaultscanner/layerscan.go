@@ -19,15 +19,16 @@ func layerScan(s *defaultScanner, ctx context.Context) (ScannerState, error) {
 		return Terminal, fmt.Errorf("failed to scan all layer contents: %v", err)
 	}
 
-	// scan the stacked image layer. packages will be indexed associated with the
-	// image's hash.
-	s.logger.Debug().Str("state", s.getState().String()).Msg("scanning image layer in manifest")
-	err = s.LayerScanner.Scan(ctx, s.manifest.Hash, []*claircore.Layer{s.imageLayer})
-	if err != nil {
-		s.logger.Error().Str("state", s.getState().String()).Msgf("failed to scan image layer: %v", err)
-		return Terminal, fmt.Errorf("failed to scan image layer: %v", err)
+	// if an image layer has been created scan this as well
+	if s.imageLayer != nil {
+		s.logger.Debug().Str("state", s.getState().String()).Msg("scanning image layer in manifest")
+		err = s.LayerScanner.Scan(ctx, s.manifest.Hash, []*claircore.Layer{s.imageLayer})
+		if err != nil {
+			s.logger.Error().Str("state", s.getState().String()).Msgf("failed to scan image layer: %v", err)
+			return Terminal, fmt.Errorf("failed to scan image layer: %v", err)
+		}
 	}
 
 	s.logger.Info().Str("state", s.getState().String()).Msg("done scanning layers")
-	return BuildImageResult, nil
+	return BuildResult, nil
 }

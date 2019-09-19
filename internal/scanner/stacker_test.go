@@ -16,7 +16,7 @@ func Test_Stacker(t *testing.T) {
 	var tt = []struct {
 		name                 string
 		args                 []stackArgs
-		expectedPkgs         []*claircore.Package
+		expectedPkgs         map[int]*claircore.Package
 		expectedIntroducedIn map[int]string
 	}{
 		{
@@ -42,8 +42,8 @@ func Test_Stacker(t *testing.T) {
 					},
 				},
 			},
-			expectedPkgs: []*claircore.Package{
-				&claircore.Package{
+			expectedPkgs: map[int]*claircore.Package{
+				0: &claircore.Package{
 					ID:      0,
 					Name:    "test-package-1",
 					Version: "v0.0.1",
@@ -85,8 +85,8 @@ func Test_Stacker(t *testing.T) {
 					},
 				},
 			},
-			expectedPkgs: []*claircore.Package{
-				&claircore.Package{
+			expectedPkgs: map[int]*claircore.Package{
+				0: &claircore.Package{
 					ID:      0,
 					Name:    "test-package-1",
 					Version: "v0.0.1",
@@ -147,8 +147,8 @@ func Test_Stacker(t *testing.T) {
 					},
 				},
 			},
-			expectedPkgs: []*claircore.Package{
-				&claircore.Package{
+			expectedPkgs: map[int]*claircore.Package{
+				0: &claircore.Package{
 					ID:      0,
 					Name:    "test-package-1",
 					Version: "v0.0.1",
@@ -209,8 +209,8 @@ func Test_Stacker(t *testing.T) {
 					},
 				},
 			},
-			expectedPkgs: []*claircore.Package{
-				&claircore.Package{
+			expectedPkgs: map[int]*claircore.Package{
+				0: &claircore.Package{
 					ID:      0,
 					Name:    "test-package-1",
 					Version: "v0.0.1",
@@ -290,8 +290,89 @@ func Test_Stacker(t *testing.T) {
 					},
 				},
 			},
-			expectedPkgs: []*claircore.Package{
-				&claircore.Package{
+			expectedPkgs: map[int]*claircore.Package{
+				0: &claircore.Package{
+					ID:      0,
+					Name:    "test-package-1",
+					Version: "v0.0.1",
+					Dist: &claircore.Distribution{
+						ID:              10,
+						DID:             "test-did",
+						Name:            "test-name",
+						Version:         "test-version",
+						VersionCodeName: "test-verion-code-name",
+						VersionID:       "test-version-id",
+						Arch:            "test-arch",
+					},
+				},
+			},
+			expectedIntroducedIn: map[int]string{
+				0: "test-layer-hash-1",
+			},
+		},
+		{
+			name: "3 layers 1 package dist info in layer 2",
+			args: []stackArgs{
+				{
+					layer: &claircore.Layer{Hash: "test-layer-hash-1"},
+					pkgs: []*claircore.Package{
+						&claircore.Package{
+							ID:      0,
+							Name:    "test-package-1",
+							Version: "v0.0.1",
+							Dist: &claircore.Distribution{
+								ID:              0,
+								DID:             "",
+								Name:            "",
+								Version:         "",
+								VersionCodeName: "",
+								VersionID:       "",
+								Arch:            "",
+							},
+						},
+					},
+				},
+				{
+					layer: &claircore.Layer{Hash: "test-layer-hash-2"},
+					pkgs: []*claircore.Package{
+						&claircore.Package{
+							ID:      0,
+							Name:    "test-package-1",
+							Version: "v0.0.1",
+							Dist: &claircore.Distribution{
+								ID:              10,
+								DID:             "test-did",
+								Name:            "test-name",
+								Version:         "test-version",
+								VersionCodeName: "test-verion-code-name",
+								VersionID:       "test-version-id",
+								Arch:            "test-arch",
+							},
+						},
+					},
+				},
+				{
+					layer: &claircore.Layer{Hash: "test-layer-hash-2"},
+					pkgs: []*claircore.Package{
+						&claircore.Package{
+							ID:      0,
+							Name:    "test-package-1",
+							Version: "v0.0.1",
+							Dist: &claircore.Distribution{
+								ID:              0,
+								DID:             "",
+								Name:            "",
+								Version:         "",
+								VersionCodeName: "",
+								VersionID:       "",
+								Arch:            "",
+							},
+						},
+					},
+				},
+			},
+			expectedPkgs: map[int]*claircore.Package{
+				0: &claircore.Package{
 					ID:      0,
 					Name:    "test-package-1",
 					Version: "v0.0.1",
@@ -318,18 +399,9 @@ func Test_Stacker(t *testing.T) {
 			for _, arg := range table.args {
 				st.Stack(arg.layer, arg.pkgs)
 			}
-			pkgs, intoducedIn := st.Result()
-			assert.ElementsMatch(t, table.expectedPkgs, pkgs)
-
-			for k, v := range table.expectedIntroducedIn {
-				vv, ok := intoducedIn[k]
-				if !ok {
-					t.Fatalf("failed to find expected introducedIn package id: %v", k)
-				}
-				if v != vv {
-					t.Fatalf("failed to find correct introducedIn layer for package id %v. found %v expected %v", k, vv, v)
-				}
-			}
+			pkgs, introducedIn := st.Result()
+			assert.Equal(t, table.expectedPkgs, pkgs)
+			assert.Equal(t, table.expectedIntroducedIn, introducedIn)
 		})
 	}
 }

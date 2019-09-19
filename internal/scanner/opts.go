@@ -9,4 +9,5 @@ type Opts struct {
 	LayerScanner    LayerScanner
 	Fetcher         Fetcher
 	PackageScanners []PackageScanner
+	UseImage        bool
 }
