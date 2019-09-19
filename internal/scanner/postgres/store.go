@@ -1,10 +1,12 @@
 package postgres
 
 import (
-	"github.com/jackc/pgx"
+	"context"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/scanner"
 
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -13,10 +15,10 @@ import (
 type store struct {
 	db *sqlx.DB
 	// lower level access to the pgx pool
-	pool *pgx.ConnPool
+	pool *pgxpool.Pool
 }
 
-func NewStore(db *sqlx.DB, pool *pgx.ConnPool) *store {
+func NewStore(db *sqlx.DB, pool *pgxpool.Pool) *store {
 	return &store{
 		db:   db,
 		pool: pool,
@@ -33,8 +35,8 @@ func (s *store) LayerScanned(hash string, scnr scanner.VersionedScanner) (bool, 
 	return b, err
 }
 
-func (s *store) IndexPackages(pkgs []*claircore.Package, l *claircore.Layer, scnr scanner.VersionedScanner) error {
-	err := indexPackages(s.db, s.pool, pkgs, l, scnr)
+func (s *store) IndexPackages(ctx context.Context, pkgs []*claircore.Package, l *claircore.Layer, scnr scanner.VersionedScanner) error {
+	err := indexPackages(ctx, s.db, s.pool, pkgs, l, scnr)
 	return err
 }
 

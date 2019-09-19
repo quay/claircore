@@ -48,18 +48,18 @@ func (mr *MockMatcherMockRecorder) Filter(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Filter", reflect.TypeOf((*MockMatcher)(nil).Filter), arg0)
 }
 
-// Matching mocks base method
-func (m *MockMatcher) Matching() []driver.MatchExp {
+// Query mocks base method
+func (m *MockMatcher) Query() []driver.MatchExp {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Matching")
+	ret := m.ctrl.Call(m, "Query")
 	ret0, _ := ret[0].([]driver.MatchExp)
 	return ret0
 }
 
-// Matching indicates an expected call of Matching
-func (mr *MockMatcherMockRecorder) Matching() *gomock.Call {
+// Query indicates an expected call of Query
+func (mr *MockMatcherMockRecorder) Query() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Matching", reflect.TypeOf((*MockMatcher)(nil).Matching))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Query", reflect.TypeOf((*MockMatcher)(nil).Query))
 }
 
 // Vulnerable mocks base method

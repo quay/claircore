@@ -27,7 +27,7 @@ type libvuln struct {
 }
 
 // New creates a new instance of the Libvuln library
-func New(opts *Opts) (Libvuln, error) {
+func New(ctx context.Context, opts *Opts) (Libvuln, error) {
 	logger := log.With().Str("component", "libvuln").Logger()
 
 	err := opts.Parse()
@@ -35,7 +35,7 @@ func New(opts *Opts) (Libvuln, error) {
 		return nil, err
 	}
 
-	db, vulnstore, err := initStore(opts)
+	db, vulnstore, err := initStore(ctx, opts)
 	if err != nil {
 		return nil, err
 	}

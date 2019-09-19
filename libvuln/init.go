@@ -6,13 +6,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jackc/pgx"
-	"github.com/jackc/pgx/stdlib"
-	"github.com/jmoiron/sqlx"
 	"github.com/quay/claircore/internal/updater"
 	"github.com/quay/claircore/internal/vulnstore"
 	"github.com/quay/claircore/internal/vulnstore/postgres"
 	pglock "github.com/quay/claircore/pkg/distlock/postgres"
+
+	"github.com/jackc/pgx/v4/pgxpool"
+	_ "github.com/jackc/pgx/v4/stdlib"
+	"github.com/jmoiron/sqlx"
 )
 
 // initUpdaters provides initial burst control to not launch too many updaters at once.
@@ -73,31 +74,28 @@ func initUpdaters(opts *Opts, db *sqlx.DB, store vulnstore.Updater, dC chan cont
 }
 
 // initStore initializes a vulsntore and returns the underlying db object also
-func initStore(opts *Opts) (*sqlx.DB, vulnstore.Store, error) {
+func initStore(ctx context.Context, opts *Opts) (*sqlx.DB, vulnstore.Store, error) {
 	switch opts.DataStore {
 	case Postgres:
 		// we are going to use pgx for more control over connection pool and
 		// and a cleaner api around bulk inserts
-		connconfig, err := pgx.ParseConnectionString(opts.ConnString)
+		cfg, err := pgxpool.ParseConfig(opts.ConnString)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to parse ConnString: %v", err)
 		}
-		pool, err := pgx.NewConnPool(pgx.ConnPoolConfig{
-			ConnConfig:     connconfig,
-			MaxConnections: 30,
-			AfterConnect:   nil,
-			AcquireTimeout: 30 * time.Second,
-		})
+		cfg.MaxConns = 30
+		pool, err := pgxpool.ConnectConfig(ctx, cfg)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to create ConnPool: %v", err)
 		}
 
-		// setup sqlx
-		db := stdlib.OpenDBFromPool(pool)
-		sqlxDB := sqlx.NewDb(db, "pgx")
+		db, err := sqlx.Open("pgx", opts.ConnString)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to Open db: %v", err)
+		}
 
-		store := postgres.NewVulnStore(sqlxDB, pool)
-		return sqlxDB, store, nil
+		store := postgres.NewVulnStore(db, pool)
+		return db, store, nil
 	default:
 		return nil, nil, fmt.Errorf("provided unknown DataStore")
 	}

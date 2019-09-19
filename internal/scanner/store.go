@@ -1,6 +1,10 @@
 package scanner
 
-import "github.com/quay/claircore"
+import (
+	"context"
+
+	"github.com/quay/claircore"
+)
 
 // Store is an interface for dealing with objects libscan needs to persist.
 // Stores may be implemented per storage backend.
@@ -10,7 +14,7 @@ type Store interface {
 	// LayerScanned returns whether the given layer was scanned by the provided scanner.
 	LayerScanned(hash string, scnr VersionedScanner) (bool, error)
 	// IndexPackages indexes a package into the persistence layer.
-	IndexPackages(pkgs []*claircore.Package, layer *claircore.Layer, scnr VersionedScanner) error
+	IndexPackages(ctx context.Context, pkgs []*claircore.Package, layer *claircore.Layer, scnr VersionedScanner) error
 	// PackagesByLayer gets all the packages found in a layer limited by the provided scanners
 	PackagesByLayer(hash string, scnrs VersionedScanners) ([]*claircore.Package, error)
 	// RegisterPackageScanners registers the provided scanners with the persistence layer

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"os"
 	"strings"
@@ -26,6 +27,7 @@ type Config struct {
 }
 
 func main() {
+	ctx := context.Background()
 	// parse our config
 	conf := Config{}
 	err := goconfig.Parse(&conf)
@@ -40,7 +42,7 @@ func main() {
 	opts := confToLibvulnOpts(conf)
 
 	// create libvuln
-	lib, err := libvuln.New(opts)
+	lib, err := libvuln.New(ctx, opts)
 	if err != nil {
 		log.Fatal().Msgf("failed to create libvuln %v", err)
 	}

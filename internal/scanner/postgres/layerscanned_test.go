@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"context"
 	"testing"
 
 	"github.com/quay/claircore/test"
@@ -14,6 +15,7 @@ import (
 // identify if a layer has not been scanned by a particular versioned scanner
 func Test_LayerScanned_False(t *testing.T) {
 	integration.Skip(t)
+	ctx := context.Background()
 	var tt = []struct {
 		// the name of the test
 		name string
@@ -46,7 +48,7 @@ func Test_LayerScanned_False(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			db, store, teardown := NewTestStore(t)
+			db, store, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			// create scanners
@@ -76,6 +78,7 @@ func Test_LayerScanned_False(t *testing.T) {
 // identify if a layer has been scanned by a particular versioned scanner
 func Test_LayerScanned_True(t *testing.T) {
 	integration.Skip(t)
+	ctx := context.Background()
 	var tt = []struct {
 		// the name of the test
 		name string
@@ -108,7 +111,7 @@ func Test_LayerScanned_True(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			db, store, teardown := NewTestStore(t)
+			db, store, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			// create scanners

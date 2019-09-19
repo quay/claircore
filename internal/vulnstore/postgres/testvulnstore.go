@@ -1,12 +1,14 @@
 package postgres
 
 import (
+	"context"
 	"testing"
 
-	"github.com/jackc/pgx"
-	"github.com/jackc/pgx/stdlib"
+	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/log/testingadapter"
+	"github.com/jackc/pgx/v4/pgxpool"
+	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
 )
 
 const (
@@ -14,62 +16,29 @@ const (
 	truncate   = `TRUNCATE updatecursor, vuln;`
 )
 
-func NewBenchStore(b *testing.B) (*sqlx.DB, *Store, func()) {
+func TestStore(ctx context.Context, t testing.TB) (*sqlx.DB, *Store, func()) {
 	// we are going to use pgx for more control over connection pool and
 	// and a cleaner api around bulk inserts
-	connconfig, err := pgx.ParseConnectionString(connString)
+	cfg, err := pgxpool.ParseConfig(connString)
 	if err != nil {
-		b.Fatalf("failed to parse conn string: %v", err)
+		t.Fatalf("failed to connect: %v", err)
 	}
-	pool, err := pgx.NewConnPool(pgx.ConnPoolConfig{
-		ConnConfig:     connconfig,
-		MaxConnections: 30,
-		AfterConnect:   nil,
-		AcquireTimeout: 0,
-	})
+	cfg.ConnConfig.LogLevel = pgx.LogLevelError
+	cfg.ConnConfig.Logger = testingadapter.NewLogger(t)
+	pool, err := pgxpool.Connect(ctx, connString)
 	if err != nil {
-		b.Fatalf("failed to create connpool: %v", err)
+		t.Fatalf("failed to connect: %v", err)
 	}
 
 	// setup sqlx
-	db := stdlib.OpenDBFromPool(pool)
-	sqlxDB := sqlx.NewDb(db, "pgx")
-
-	s := NewVulnStore(sqlxDB, pool)
-
-	return sqlxDB, s, func() {
-		_, err := db.Exec(truncate)
-		if err != nil {
-			b.Fatalf("failed to truncate libcsan db tables. manual cleanup maybe necessary: %v", err)
-		}
-		db.Close()
-	}
-}
-
-func NewTestStore(t *testing.T) (*sqlx.DB, *Store, func()) {
-	// we are going to use pgx for more control over connection pool and
-	// and a cleaner api around bulk inserts
-	connconfig, err := pgx.ParseConnectionString(connString)
+	db, err := sqlx.Open("pgx", connString)
 	if err != nil {
-		t.Fatalf("failed to parse conn string: %v", err)
-	}
-	pool, err := pgx.NewConnPool(pgx.ConnPoolConfig{
-		ConnConfig:     connconfig,
-		MaxConnections: 30,
-		AfterConnect:   nil,
-		AcquireTimeout: 0,
-	})
-	if err != nil {
-		t.Fatalf("failed to create connpool: %v", err)
+		t.Fatalf("failed to connect: %v", err)
 	}
 
-	// setup sqlx
-	db := stdlib.OpenDBFromPool(pool)
-	sqlxDB := sqlx.NewDb(db, "pgx")
+	s := NewVulnStore(db, pool)
 
-	s := NewVulnStore(sqlxDB, pool)
-
-	return sqlxDB, s, func() {
+	return db, s, func() {
 		_, err := db.Exec(truncate)
 		if err != nil {
 			t.Fatalf("failed to truncate libcsan db tables. manual cleanup maybe necessary: %v", err)

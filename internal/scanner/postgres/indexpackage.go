@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jackc/pgx"
-	"github.com/jmoiron/sqlx"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/scanner"
+
+	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jmoiron/sqlx"
 )
 
 const (
@@ -55,23 +57,23 @@ INSERT INTO scanartifact (layer_hash, kind, package_id, dist_id, source_id, scan
 //
 // scan artifacts are used to determine if a particular layer has been scanned by a
 // particular scnr. see layerScanned method for more details.
-func indexPackages(db *sqlx.DB, pool *pgx.ConnPool, pkgs []*claircore.Package, layer *claircore.Layer, scnr scanner.VersionedScanner) error {
-
+func indexPackages(ctx context.Context, db *sqlx.DB, pool *pgxpool.Pool, pkgs []*claircore.Package, layer *claircore.Layer, scnr scanner.VersionedScanner) error {
 	// obtain a transaction scopped batch
-	tx, err := pool.Begin()
+	tx, err := pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("store:indexPackage failed to create transaction: %v", err)
 	}
+	defer tx.Rollback(ctx)
 
-	insertPackageStmt, err := tx.Prepare("insertPackageStmt", insertPackage)
+	insertPackageStmt, err := tx.Prepare(ctx, "insertPackageStmt", insertPackage)
 	if err != nil {
 		return fmt.Errorf("failed to create statement: %v", err)
 	}
-	insertDistributionStmt, err := tx.Prepare("insertDistStmt", insertDistribution)
+	insertDistributionStmt, err := tx.Prepare(ctx, "insertDistStmt", insertDistribution)
 	if err != nil {
 		return fmt.Errorf("failed to create statement: %v", err)
 	}
-	insertScanArtifactWithStmt, err := tx.Prepare("insertScanArtifactWith", insertScanArtifactWith)
+	insertScanArtifactWithStmt, err := tx.Prepare(ctx, "insertScanArtifactWith", insertScanArtifactWith)
 	if err != nil {
 		return fmt.Errorf("failed to create statement: %v", err)
 	}
@@ -79,110 +81,97 @@ func indexPackages(db *sqlx.DB, pool *pgx.ConnPool, pkgs []*claircore.Package, l
 		return fmt.Errorf("failed to create statement: %v", err)
 	}
 
-	batch := tx.BeginBatch()
+	batch := &pgx.Batch{}
 	// index all nested elements, use zero value structs to enforce unique constraint since
 	// postgres does not view "null" as a unique field
 	for _, pkg := range pkgs {
 		if pkg.Source != nil {
 			batch.Queue(
 				insertPackageStmt.Name,
-				[]interface{}{pkg.Source.Name, pkg.Source.Kind, pkg.Source.Version},
-				nil,
-				nil,
+				pkg.Source.Name, pkg.Source.Kind, pkg.Source.Version,
 			)
 		} else {
 			pkg.Source = &claircore.Package{}
 			batch.Queue(
 				insertPackageStmt.Name,
-				[]interface{}{pkg.Source.Name, pkg.Source.Kind, pkg.Source.Version},
-				nil,
-				nil,
+				pkg.Source.Name, pkg.Source.Kind, pkg.Source.Version,
 			)
 		}
 
 		if pkg.Dist != nil {
 			batch.Queue(
 				insertDistributionStmt.Name,
-				[]interface{}{pkg.Dist.Name, pkg.Dist.Version, pkg.Dist.VersionCodeName, pkg.Dist.VersionID, pkg.Dist.Arch},
-				nil,
-				nil,
+				pkg.Dist.Name, pkg.Dist.Version, pkg.Dist.VersionCodeName, pkg.Dist.VersionID, pkg.Dist.Arch,
 			)
 		} else {
 			pkg.Dist = &claircore.Distribution{}
 			batch.Queue(
 				insertDistributionStmt.Name,
-				[]interface{}{pkg.Dist.Name, pkg.Dist.Version, pkg.Dist.VersionCodeName, pkg.Dist.VersionID, pkg.Dist.Arch},
-				nil,
-				nil,
+				pkg.Dist.Name, pkg.Dist.Version, pkg.Dist.VersionCodeName, pkg.Dist.VersionID, pkg.Dist.Arch,
 			)
 		}
 
 		batch.Queue(
 			insertPackageStmt.Name,
-			[]interface{}{pkg.Name, pkg.Kind, pkg.Version},
-			nil,
-			nil,
+			pkg.Name, pkg.Kind, pkg.Version,
 		)
 	}
 
 	// allow up to 30 seconds for batch.Send() to complete. see warning:
 	// https://godoc.org/github.com/jackc/pgx#Batch.Send
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	tctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-
-	err = batch.Send(ctx, nil)
-	if err != nil {
-		tx.Rollback()
-		return fmt.Errorf("store:indexPackages fail to batch insert source packages: %v", err)
+	res := tx.SendBatch(tctx, batch)
+	for i, lim := 0, len(pkgs)*3; i < lim; i++ {
+		if _, err := res.Exec(); err != nil {
+			res.Close()
+			return fmt.Errorf("batch insert failed: %v", err)
+		}
 	}
-	batch.Close()
+	if err := res.Close(); err != nil {
+		return fmt.Errorf("store: indexPackage failed to close batch: %v", err)
+	}
 
-	batch = tx.BeginBatch()
+	batch = &pgx.Batch{}
 	// create all scan artifacts
 	for _, pkg := range pkgs {
 		batch.Queue(
 			insertScanArtifactWithStmt.Name,
-			[]interface{}{
-				pkg.Source.Name,
-				pkg.Source.Kind,
-				pkg.Source.Version,
-				pkg.Name,
-				pkg.Kind,
-				pkg.Version,
-				pkg.Dist.Name,
-				pkg.Dist.Version,
-				pkg.Dist.VersionCodeName,
-				pkg.Dist.VersionID,
-				pkg.Dist.Arch,
-				scnr.Name(),
-				scnr.Version(),
-				scnr.Kind(),
-				layer.Hash,
-				"package",
-			},
-			nil,
-			nil,
+			pkg.Source.Name,
+			pkg.Source.Kind,
+			pkg.Source.Version,
+			pkg.Name,
+			pkg.Kind,
+			pkg.Version,
+			pkg.Dist.Name,
+			pkg.Dist.Version,
+			pkg.Dist.VersionCodeName,
+			pkg.Dist.VersionID,
+			pkg.Dist.Arch,
+			scnr.Name(),
+			scnr.Version(),
+			scnr.Kind(),
+			layer.Hash,
+			"package",
 		)
 	}
 
 	// allow up to 30 seconds for batch.Send() to complete. see warning:
 	// https://godoc.org/github.com/jackc/pgx#Batch.Send
-	ctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
+	tctx, cancel = context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-
-	err = batch.Send(ctx, nil)
-	if err != nil {
-		tx.Rollback()
-		return fmt.Errorf("store:indexPackages fail to batch insert scanartifact: %v", err)
+	res = tx.SendBatch(tctx, batch)
+	for i, lim := 0, len(pkgs); i < lim; i++ {
+		if _, err := res.Exec(); err != nil {
+			res.Close()
+			return fmt.Errorf("store:indexPackages fail to batch insert scanartifact: %v", err)
+		}
 	}
-
-	err = batch.Close()
-	if err != nil {
+	if err := res.Close(); err != nil {
 		return fmt.Errorf("store:indexPackage failed to close batch: %v", err)
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("store:indexPackages failed to commit tx: %v", err)
 	}
 	return nil

@@ -5,6 +5,7 @@
 package scanner
 
 import (
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	claircore "github.com/quay/claircore"
 	reflect "reflect"
@@ -34,17 +35,17 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 }
 
 // IndexPackages mocks base method
-func (m *MockStore) IndexPackages(arg0 []*claircore.Package, arg1 *claircore.Layer, arg2 VersionedScanner) error {
+func (m *MockStore) IndexPackages(arg0 context.Context, arg1 []*claircore.Package, arg2 *claircore.Layer, arg3 VersionedScanner) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IndexPackages", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "IndexPackages", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // IndexPackages indicates an expected call of IndexPackages
-func (mr *MockStoreMockRecorder) IndexPackages(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockStoreMockRecorder) IndexPackages(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexPackages", reflect.TypeOf((*MockStore)(nil).IndexPackages), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexPackages", reflect.TypeOf((*MockStore)(nil).IndexPackages), arg0, arg1, arg2, arg3)
 }
 
 // LayerScanned mocks base method

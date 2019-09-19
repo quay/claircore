@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"context"
 	"testing"
 
 	"github.com/jmoiron/sqlx"
@@ -12,6 +13,7 @@ import (
 
 func Test_ScanReport_Success(t *testing.T) {
 	integration.Skip(t)
+	ctx := context.Background()
 	var tt = []struct {
 		// the name of the test
 		name string
@@ -43,7 +45,7 @@ func Test_ScanReport_Success(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			db, store, teardown := NewTestStore(t)
+			db, store, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			table.init(t, db, table.expectedSR, table.hash)

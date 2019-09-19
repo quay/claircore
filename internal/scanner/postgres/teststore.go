@@ -1,12 +1,12 @@
 package postgres
 
 import (
+	"context"
 	"testing"
 
-	"github.com/jackc/pgx"
-	"github.com/jackc/pgx/stdlib"
+	"github.com/jackc/pgx/v4/pgxpool"
+	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
 )
 
 const (
@@ -14,62 +14,27 @@ const (
 	Truncate   = `TRUNCATE dist, package, scanner, scannerlist, scanartifact, scanreport;`
 )
 
-func NewBenchStore(b *testing.B) (*sqlx.DB, *store, func()) {
+func TestStore(ctx context.Context, t testing.TB) (*sqlx.DB, *store, func()) {
 	// we are going to use pgx for more control over connection pool and
 	// and a cleaner api around bulk inserts
-	connconfig, err := pgx.ParseConnectionString(connString)
-	if err != nil {
-		b.Fatalf("failed to parse conn string: %v", err)
-	}
-	pool, err := pgx.NewConnPool(pgx.ConnPoolConfig{
-		ConnConfig:     connconfig,
-		MaxConnections: 30,
-		AfterConnect:   nil,
-		AcquireTimeout: 0,
-	})
-	if err != nil {
-		b.Fatalf("failed to create connpool: %v", err)
-	}
-
-	// setup sqlx
-	db := stdlib.OpenDBFromPool(pool)
-	sqlxDB := sqlx.NewDb(db, "pgx")
-
-	s := NewStore(sqlxDB, pool)
-
-	return sqlxDB, s, func() {
-		_, err := db.Exec(Truncate)
-		if err != nil {
-			b.Fatalf("failed to truncate libcsan db tables. manual cleanup maybe necessary: %v", err)
-		}
-		db.Close()
-	}
-}
-
-func NewTestStore(t *testing.T) (*sqlx.DB, *store, func()) {
-	// we are going to use pgx for more control over connection pool and
-	// and a cleaner api around bulk inserts
-	connconfig, err := pgx.ParseConnectionString(connString)
+	cfg, err := pgxpool.ParseConfig(connString)
 	if err != nil {
 		t.Fatalf("failed to parse conn string: %v", err)
 	}
-	pool, err := pgx.NewConnPool(pgx.ConnPoolConfig{
-		ConnConfig:     connconfig,
-		MaxConnections: 30,
-		AfterConnect:   nil,
-		AcquireTimeout: 0,
-	})
+	cfg.MaxConns = 30
+	pool, err := pgxpool.ConnectConfig(ctx, cfg)
 	if err != nil {
 		t.Fatalf("failed to create connpool: %v", err)
 	}
 
-	// setup sqlx
-	db := stdlib.OpenDBFromPool(pool)
-	sqlxDB := sqlx.NewDb(db, "pgx")
+	db, err := sqlx.Open("pgx", connString)
+	if err != nil {
+		t.Fatalf("failed to sqlx Open: %v", err)
+	}
 
-	s := NewStore(sqlxDB, pool)
+	s := NewStore(db, pool)
 
-	return sqlxDB, s, func() {
+	return db, s, func() {
 		_, err := db.Exec(Truncate)
 		if err != nil {
 			t.Fatalf("failed to truncate libcsan db tables. manual cleanup maybe necessary: %v", err)

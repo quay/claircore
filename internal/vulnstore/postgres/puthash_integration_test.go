@@ -1,15 +1,18 @@
-//+build integration
-
 package postgres
 
 import (
+	"context"
 	"testing"
+
+	"github.com/quay/claircore/test/integration"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_PutHash_Upsert(t *testing.T) {
+	integration.Skip(t)
+	ctx := context.Background()
 	var tt = []struct {
 		name       string
 		iterations int
@@ -25,7 +28,7 @@ func Test_PutHash_Upsert(t *testing.T) {
 	}
 
 	for _, table := range tt {
-		db, store, teardown := NewTestStore(t)
+		db, store, teardown := TestStore(ctx, t)
 		defer teardown()
 
 		for i := 0; i < table.iterations; i++ {
@@ -72,6 +75,8 @@ func Test_PutHash_Upsert(t *testing.T) {
 }
 
 func Test_PutHash_Insert(t *testing.T) {
+	integration.Skip(t)
+	ctx := context.Background()
 	var tt = []struct {
 		name       string
 		iterations int
@@ -87,7 +92,7 @@ func Test_PutHash_Insert(t *testing.T) {
 	}
 
 	for _, table := range tt {
-		db, store, teardown := NewTestStore(t)
+		db, store, teardown := TestStore(ctx, t)
 		defer teardown()
 
 		for i := 0; i < table.iterations; i++ {

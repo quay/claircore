@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"context"
 	"testing"
 
 	"github.com/quay/claircore/test"
@@ -12,6 +13,7 @@ import (
 
 func Test_ManifestScanned_Failure(t *testing.T) {
 	integration.Skip(t)
+	ctx := context.Background()
 	var tt = []struct {
 		// the name of this test
 		name string
@@ -44,7 +46,7 @@ func Test_ManifestScanned_Failure(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			db, store, teardown := NewTestStore(t)
+			db, store, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			vscnrs := test.GenUniqueScanners(table.scanners)
@@ -60,6 +62,7 @@ func Test_ManifestScanned_Failure(t *testing.T) {
 
 func Test_ManifestScanned_Success(t *testing.T) {
 	integration.Skip(t)
+	ctx := context.Background()
 	var tt = []struct {
 		// the name of this test
 		name string
@@ -92,7 +95,7 @@ func Test_ManifestScanned_Success(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			db, store, teardown := NewTestStore(t)
+			db, store, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			vscnrs := test.GenUniqueScanners(table.scanners)

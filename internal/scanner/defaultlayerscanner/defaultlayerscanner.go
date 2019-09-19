@@ -7,6 +7,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/scanner"
+
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/errgroup"
@@ -91,7 +92,7 @@ func (ls *defaultLayerScanner) scanPackages(ctx context.Context, layer *claircor
 			return fmt.Errorf("scr %v reported an error for layer %v: %v", scnr.Name(), layer.Hash, err)
 		}
 
-		err = ls.Store.IndexPackages(pkgs, layer, scnr)
+		err = ls.Store.IndexPackages(ctx, pkgs, layer, scnr)
 		if err != nil {
 			ls.logger.Error().Msgf("failed to index packages for layer %v scr: %v: %v", layer.Hash, scnr, err)
 			return fmt.Errorf("failed to index packages for layer %v and scanner %v: %v", layer.Hash, scnr, err)

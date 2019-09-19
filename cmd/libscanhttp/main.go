@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"os"
 	"strings"
@@ -28,6 +29,7 @@ type Config struct {
 }
 
 func main() {
+	ctx := context.Background()
 	// parse our config
 	conf := Config{}
 	err := goconfig.Parse(&conf)
@@ -42,7 +44,7 @@ func main() {
 	opts := confToLibscanOpts(conf)
 
 	// create libscan
-	lib, err := libscan.New(opts)
+	lib, err := libscan.New(ctx, opts)
 	if err != nil {
 		log.Fatal().Msgf("failed to create libscan %v", err)
 	}

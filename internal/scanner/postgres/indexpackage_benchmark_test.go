@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"context"
 	"testing"
 
 	"github.com/quay/claircore"
@@ -11,6 +12,7 @@ import (
 
 func Benchmark_IndexPackages(b *testing.B) {
 	integration.Skip(b)
+	ctx := context.Background()
 	benchmarks := []struct {
 		// the name of this benchmark
 		name string
@@ -175,7 +177,7 @@ func Benchmark_IndexPackages(b *testing.B) {
 
 	for _, bench := range benchmarks {
 		b.Run(bench.name, func(b *testing.B) {
-			db, store, teardown := NewBenchStore(b)
+			db, store, teardown := TestStore(ctx, b)
 			defer teardown()
 
 			// gen a scnr and insert
@@ -196,7 +198,7 @@ func Benchmark_IndexPackages(b *testing.B) {
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				// run the indexing
-				err = store.IndexPackages(pkgs, bench.layer, vscnrs[0])
+				err = store.IndexPackages(ctx, pkgs, bench.layer, vscnrs[0])
 				if err != nil {
 					b.Fatalf("failed to index packages: %v", err)
 				}

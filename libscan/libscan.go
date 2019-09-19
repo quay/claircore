@@ -42,7 +42,7 @@ type libscan struct {
 }
 
 // New creates a new instance of Libscan
-func New(opts *Opts) (Libscan, error) {
+func New(ctx context.Context, opts *Opts) (Libscan, error) {
 	logger := log.With().Str("component", "libscan").Logger()
 
 	err := opts.Parse()
@@ -51,7 +51,7 @@ func New(opts *Opts) (Libscan, error) {
 		return nil, fmt.Errorf("failed to parse opts: %v", err)
 	}
 
-	db, store, err := initStore(opts)
+	db, store, err := initStore(ctx, opts)
 	if err != nil {
 		return nil, err
 	}

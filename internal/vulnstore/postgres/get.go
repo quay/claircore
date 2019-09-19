@@ -5,31 +5,32 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jackc/pgx"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/vulnstore"
 	"github.com/quay/claircore/libvuln/driver"
+
+	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-func get(ctx context.Context, pool *pgx.ConnPool, packages []*claircore.Package, opts vulnstore.GetOpts) (map[int][]*claircore.Vulnerability, error) {
+func get(ctx context.Context, pool *pgxpool.Pool, packages []*claircore.Package, opts vulnstore.GetOpts) (map[int][]*claircore.Vulnerability, error) {
 	// build our query we will make into a prepared statement. see build func definition for details and context
 	query, dedupedMatchers, err := getBuilder(opts.Matchers)
 
 	// create a prepared statement
-	tx, err := pool.BeginEx(ctx, nil)
+	tx, err := pool.Begin(ctx)
 	if err != nil {
-		tx.Rollback()
 		return nil, err
 	}
+	defer tx.Rollback(ctx)
 
-	getStmt, err := tx.Prepare("getStmt", query)
+	getStmt, err := tx.Prepare(ctx, "getStmt", query)
 	if err != nil {
-		tx.Rollback()
 		return nil, err
 	}
 
 	// start a batch
-	batch := tx.BeginBatch()
+	batch := &pgx.Batch{}
 
 	// create our bind arguments. the order of dedupedMatchers
 	// dictates the order of our bindvar values.
@@ -56,20 +57,22 @@ func get(ctx context.Context, pool *pgx.ConnPool, packages []*claircore.Package,
 		args = append(args, pkg.Name)
 
 		// queue the select query
-		batch.Queue(getStmt.Name, args, nil, nil)
+		batch.Queue(getStmt.Name, args...)
 	}
 	// send the batch
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	tctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	batch.Send(ctx, nil)
+	res := tx.SendBatch(tctx, batch)
+	// Can't just defer the close, because the batch must be fully handled
+	// before resolving the transaction. Maybe we can move this result handling
+	// into its own function to be able to just defer it.
 
 	// gather all the returned vulns for each queued select statement
 	results := make(map[int][]*claircore.Vulnerability)
 	for _, pkg := range packages {
-		rows, err := batch.QueryResults()
+		rows, err := res.Query()
 		if err != nil {
-			batch.Close()
-			tx.Rollback()
+			res.Close()
 			return nil, err
 		}
 
@@ -100,8 +103,7 @@ func get(ctx context.Context, pool *pgx.ConnPool, packages []*claircore.Package,
 				&v.FixedInVersion,
 			)
 			if err != nil {
-				batch.Close()
-				tx.Rollback()
+				res.Close()
 				return nil, fmt.Errorf("failed to scan vulnerability")
 			}
 
@@ -114,18 +116,12 @@ func get(ctx context.Context, pool *pgx.ConnPool, packages []*claircore.Package,
 			}
 		}
 	}
-
-	err = batch.Close()
-	if err != nil {
-		batch.Close()
-		tx.Rollback()
-		return nil, fmt.Errorf("failed to close batch: %v", err)
+	if err := res.Close(); err != nil {
+		return nil, fmt.Errorf("some weird batch error: %v", err)
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err := tx.Commit(ctx); err != nil {
 		return nil, fmt.Errorf("failed to commit tx: %v", err)
 	}
-
 	return results, nil
 }

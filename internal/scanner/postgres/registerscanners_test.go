@@ -1,15 +1,20 @@
 package postgres
 
 import (
+	"context"
 	"database/sql"
 	"testing"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/quay/claircore/internal/scanner"
+	"github.com/quay/claircore/test/integration"
+
+	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 )
 
 func Test_RegisterScanners_Success(t *testing.T) {
+	integration.Skip(t)
+	ctx := context.Background()
 
 	var tt = []struct {
 		// name of the test
@@ -138,7 +143,7 @@ func Test_RegisterScanners_Success(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			db, store, teardown := NewTestStore(t)
+			db, store, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			table.init(t, db, table.scnrs)

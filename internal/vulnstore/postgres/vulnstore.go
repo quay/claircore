@@ -4,20 +4,21 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgx"
-	"github.com/jmoiron/sqlx"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/vulnstore"
+
+	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jmoiron/sqlx"
 )
 
 // store implements all interfaces in the vulnstore package
 type Store struct {
 	db *sqlx.DB
 	// lower level access to the conn pool
-	pool *pgx.ConnPool
+	pool *pgxpool.Pool
 }
 
-func NewVulnStore(db *sqlx.DB, pool *pgx.ConnPool) *Store {
+func NewVulnStore(db *sqlx.DB, pool *pgxpool.Pool) *Store {
 	return &Store{
 		db:   db,
 		pool: pool,

@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"context"
 	"testing"
 
 	"github.com/quay/claircore/test"
@@ -12,6 +13,7 @@ import (
 
 func Test_PackagesByLayer_Success(t *testing.T) {
 	integration.Skip(t)
+	ctx := context.Background()
 	var tt = []struct {
 		// name of the test
 		name string
@@ -62,7 +64,7 @@ func Test_PackagesByLayer_Success(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			db, store, teardown := NewTestStore(t)
+			db, store, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			// generate a specific number of packages

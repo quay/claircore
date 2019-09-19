@@ -27,7 +27,7 @@ func Test_GetHash_KeyNotExists(t *testing.T) {
 		},
 	}
 	for _, table := range tt {
-		_, store, teardown := NewTestStore(t)
+		_, store, teardown := TestStore(ctx, t)
 		defer teardown()
 
 		for i := 0; i < table.iterations; i++ {
@@ -62,7 +62,7 @@ func Test_GetHash_KeyExists(t *testing.T) {
 	}
 
 	for _, table := range tt {
-		db, store, teardown := NewTestStore(t)
+		db, store, teardown := TestStore(ctx, t)
 		defer teardown()
 
 		for i := 0; i < table.iterations; i++ {

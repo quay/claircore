@@ -17,9 +17,10 @@ import (
 // large timeout. We then confirm the store has populated vulns
 func Test_Updater_Integration(t *testing.T) {
 	integration.Skip(t)
+	ctx := context.Background()
 	ubuntuPrecise := ubuntu.NewUpdater(ubuntu.Precise)
 
-	db, store, teardown := postgres.NewTestStore(t)
+	db, store, teardown := postgres.TestStore(ctx, t)
 	defer teardown()
 
 	opts := &Opts{

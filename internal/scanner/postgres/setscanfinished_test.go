@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"context"
 	"log"
 	"testing"
 
@@ -14,6 +15,7 @@ import (
 
 func Test_SetScanFinished_Success(t *testing.T) {
 	integration.Skip(t)
+	ctx := context.Background()
 	// function to initialize database. we must add all scanners to they are available in the database. we must then
 	// create scannlist records for any of the previousScnrs to prove we deleted them and linked the updatedScnrs
 	var init = func(t *testing.T, db *sqlx.DB, hash string, previousScnrs []scnrInfo, updatedScnrs []scnrInfo) {
@@ -81,7 +83,7 @@ func Test_SetScanFinished_Success(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			db, store, teardown := NewTestStore(t)
+			db, store, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			table.init(t, db, table.hash, table.previousScnrs, table.updatedScnrs)

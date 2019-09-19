@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"context"
 	"testing"
 
 	"github.com/jmoiron/sqlx"
@@ -12,6 +13,7 @@ import (
 
 func Test_SetScanReport_StateUpdate(t *testing.T) {
 	integration.Skip(t)
+	ctx := context.Background()
 	var tt = []struct {
 		// the name of the test
 		name string
@@ -34,7 +36,7 @@ func Test_SetScanReport_StateUpdate(t *testing.T) {
 	}
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			db, store, teardown := NewTestStore(t)
+			db, store, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			err := store.SetScanReport(table.initState)
@@ -65,6 +67,7 @@ func getScanReport(t *testing.T, db *sqlx.DB, hash string) claircore.ScanReport 
 
 func Test_SetScanReport_Success(t *testing.T) {
 	integration.Skip(t)
+	ctx := context.Background()
 	var tt = []struct {
 		// the name of the test
 		name string
@@ -99,7 +102,7 @@ func Test_SetScanReport_Success(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			_, store, teardown := NewTestStore(t)
+			_, store, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			err := store.SetScanReport(table.sr)

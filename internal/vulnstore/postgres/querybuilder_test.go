@@ -1,7 +1,6 @@
 package postgres
 
 import (
-	"log"
 	"testing"
 
 	"github.com/quay/claircore/libvuln/driver"
@@ -89,7 +88,7 @@ func Test_GetBuilder_Determinist_Arguments(t *testing.T) {
 			assert.NoError(t, err)
 
 			// assert.Equal(t, table.expected, q)
-			log.Printf("%v", q)
+			t.Log(q)
 		})
 	}
 }

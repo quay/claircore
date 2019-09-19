@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"context"
 	"testing"
 
 	"github.com/quay/claircore/test"
@@ -10,6 +11,7 @@ import (
 
 func Benchmark_PackagesByLayer(b *testing.B) {
 	integration.Skip(b)
+	ctx := context.Background()
 	benchmarks := []struct {
 		name  string
 		hash  string
@@ -86,7 +88,7 @@ func Benchmark_PackagesByLayer(b *testing.B) {
 
 	for _, bench := range benchmarks {
 		b.Run(bench.name, func(b *testing.B) {
-			db, store, teardown := NewBenchStore(b)
+			db, store, teardown := TestStore(ctx, b)
 			defer teardown()
 
 			// generate a specific number of packages

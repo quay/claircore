@@ -78,7 +78,7 @@ func Test_PutVulnerabilities_Tombstone_Bump(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			db, store, teardown := NewTestStore(t)
+			db, store, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			// generate total unique vulns
@@ -176,7 +176,7 @@ func Test_PutVulnerabilities_Tombstone_Stale(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			db, store, teardown := NewTestStore(t)
+			db, store, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			// generate total unique vulns

@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"context"
 	"database/sql"
 	"testing"
 
@@ -23,6 +24,7 @@ type scnrInfo struct {
 
 func Test_IndexPackages_Success_Parallel(t *testing.T) {
 	integration.Skip(t)
+	ctx := context.Background()
 	tt := []struct {
 		// the name of this benchmark
 		name string
@@ -89,7 +91,7 @@ func Test_IndexPackages_Success_Parallel(t *testing.T) {
 		},
 	}
 
-	db, store, teardown := NewTestStore(t)
+	db, store, teardown := TestStore(ctx, t)
 	defer teardown()
 
 	// we will create a subtest which blocks the teardown() until
@@ -107,7 +109,7 @@ func Test_IndexPackages_Success_Parallel(t *testing.T) {
 				pkgs := test.GenUniquePackages(table.pkgs)
 
 				// run the indexing
-				err = store.IndexPackages(pkgs, table.layer, vscnrs[0])
+				err = store.IndexPackages(ctx, pkgs, table.layer, vscnrs[0])
 				if err != nil {
 					t.Fatalf("failed to index packages: %v", err)
 				}
@@ -121,6 +123,7 @@ func Test_IndexPackages_Success_Parallel(t *testing.T) {
 
 func Test_IndexPackages_Success(t *testing.T) {
 	integration.Skip(t)
+	ctx := context.Background()
 	tt := []struct {
 		// the name of this benchmark
 		name string
@@ -189,7 +192,7 @@ func Test_IndexPackages_Success(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			db, store, teardown := NewTestStore(t)
+			db, store, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			// gen a scnr and insert
@@ -200,7 +203,7 @@ func Test_IndexPackages_Success(t *testing.T) {
 			pkgs := test.GenUniquePackages(table.pkgs)
 
 			// run the indexing
-			err = store.IndexPackages(pkgs, table.layer, vscnrs[0])
+			err = store.IndexPackages(ctx, pkgs, table.layer, vscnrs[0])
 			if err != nil {
 				t.Fatalf("failed to index packages: %v", err)
 			}
