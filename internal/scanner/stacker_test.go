@@ -127,6 +127,168 @@ func Test_Stacker(t *testing.T) {
 						},
 					},
 				},
+				{
+					layer: &claircore.Layer{Hash: "test-layer-hash-2"},
+					pkgs: []*claircore.Package{
+						&claircore.Package{
+							ID:      0,
+							Name:    "test-package-1",
+							Version: "v0.0.1",
+							Dist: &claircore.Distribution{
+								ID:              10,
+								DID:             "",
+								Name:            "",
+								Version:         "",
+								VersionCodeName: "",
+								VersionID:       "",
+								Arch:            "",
+							},
+						},
+					},
+				},
+			},
+			expectedPkgs: []*claircore.Package{
+				&claircore.Package{
+					ID:      0,
+					Name:    "test-package-1",
+					Version: "v0.0.1",
+					Dist: &claircore.Distribution{
+						ID:              10,
+						DID:             "test-did",
+						Name:            "test-name",
+						Version:         "test-version",
+						VersionCodeName: "test-verion-code-name",
+						VersionID:       "test-version-id",
+						Arch:            "test-arch",
+					},
+				},
+			},
+			expectedIntroducedIn: map[int]string{
+				0: "test-layer-hash-1",
+			},
+		},
+		{
+			name: "2 layers 1 package dist info in layer 2",
+			args: []stackArgs{
+				{
+					layer: &claircore.Layer{Hash: "test-layer-hash-1"},
+					pkgs: []*claircore.Package{
+						&claircore.Package{
+							ID:      0,
+							Name:    "test-package-1",
+							Version: "v0.0.1",
+							Dist: &claircore.Distribution{
+								ID:              10,
+								DID:             "",
+								Name:            "",
+								Version:         "",
+								VersionCodeName: "",
+								VersionID:       "",
+								Arch:            "",
+							},
+						},
+					},
+				},
+				{
+					layer: &claircore.Layer{Hash: "test-layer-hash-2"},
+					pkgs: []*claircore.Package{
+						&claircore.Package{
+							ID:      0,
+							Name:    "test-package-1",
+							Version: "v0.0.1",
+							Dist: &claircore.Distribution{
+								ID:              10,
+								DID:             "test-did",
+								Name:            "test-name",
+								Version:         "test-version",
+								VersionCodeName: "test-verion-code-name",
+								VersionID:       "test-version-id",
+								Arch:            "test-arch",
+							},
+						},
+					},
+				},
+			},
+			expectedPkgs: []*claircore.Package{
+				&claircore.Package{
+					ID:      0,
+					Name:    "test-package-1",
+					Version: "v0.0.1",
+					Dist: &claircore.Distribution{
+						ID:              10,
+						DID:             "test-did",
+						Name:            "test-name",
+						Version:         "test-version",
+						VersionCodeName: "test-verion-code-name",
+						VersionID:       "test-version-id",
+						Arch:            "test-arch",
+					},
+				},
+			},
+			expectedIntroducedIn: map[int]string{
+				0: "test-layer-hash-1",
+			},
+		},
+		{
+			name: "3 layers 1 package dist info in layer 3",
+			args: []stackArgs{
+				{
+					layer: &claircore.Layer{Hash: "test-layer-hash-1"},
+					pkgs: []*claircore.Package{
+						&claircore.Package{
+							ID:      0,
+							Name:    "test-package-1",
+							Version: "v0.0.1",
+							Dist: &claircore.Distribution{
+								ID:              0,
+								DID:             "",
+								Name:            "",
+								Version:         "",
+								VersionCodeName: "",
+								VersionID:       "",
+								Arch:            "",
+							},
+						},
+					},
+				},
+				{
+					layer: &claircore.Layer{Hash: "test-layer-hash-2"},
+					pkgs: []*claircore.Package{
+						&claircore.Package{
+							ID:      0,
+							Name:    "test-package-1",
+							Version: "v0.0.1",
+							Dist: &claircore.Distribution{
+								ID:              0,
+								DID:             "",
+								Name:            "",
+								Version:         "",
+								VersionCodeName: "",
+								VersionID:       "",
+								Arch:            "",
+							},
+						},
+					},
+				},
+				{
+					layer: &claircore.Layer{Hash: "test-layer-hash-2"},
+					pkgs: []*claircore.Package{
+						&claircore.Package{
+							ID:      0,
+							Name:    "test-package-1",
+							Version: "v0.0.1",
+							Dist: &claircore.Distribution{
+								ID:              10,
+								DID:             "test-did",
+								Name:            "test-name",
+								Version:         "test-version",
+								VersionCodeName: "test-verion-code-name",
+								VersionID:       "test-version-id",
+								Arch:            "test-arch",
+							},
+						},
+					},
+				},
 			},
 			expectedPkgs: []*claircore.Package{
 				&claircore.Package{
