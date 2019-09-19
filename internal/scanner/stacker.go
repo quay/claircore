@@ -11,19 +11,28 @@ type stacker struct {
 	iteration int
 	// holds a mapping between package ids and counts.
 	counters map[int]int
+	// signifies if we are working on the base layer
+	baseLayer bool
 	// package ID to Package pointer map to build a result
-	items map[int]*claircore.Package
+	packages map[int]*claircore.Package
+	// keeps track of the distribution information associated with a package.
+	distByPackage map[int]*claircore.Distribution
+	// keeps track of the first time we see a package
+	introducedIn map[int]string
 }
 
 func NewStacker() *stacker {
 	return &stacker{
-		iteration: 0,
-		counters:  make(map[int]int),
-		items:     make(map[int]*claircore.Package),
+		iteration:     0,
+		counters:      make(map[int]int),
+		baseLayer:     true,
+		packages:      make(map[int]*claircore.Package),
+		distByPackage: make(map[int]*claircore.Distribution),
+		introducedIn:  make(map[int]string),
 	}
 }
 
-func (pi *stacker) Stack(pkgs []*claircore.Package) {
+func (pi *stacker) Stack(layer *claircore.Layer, pkgs []*claircore.Package) {
 	if len(pkgs) == 0 {
 		return
 	}
@@ -32,18 +41,52 @@ func (pi *stacker) Stack(pkgs []*claircore.Package) {
 
 	for _, pkg := range pkgs {
 		pi.counters[pkg.ID] = pi.iteration
-		pi.items[pkg.ID] = pkg
+		pi.packages[pkg.ID] = pkg
+
+		// record if this is the first time we see this package
+		if _, ok := pi.introducedIn[pkg.ID]; !ok {
+			pi.introducedIn[pkg.ID] = layer.Hash
+		}
+
+		// first call to Stack will signify its the base layer. get initial distribution info
+		// for the package.
+		if pi.baseLayer {
+			pi.distByPackage[pkg.ID] = pkg.Dist
+			pi.baseLayer = false
+			continue
+		}
+
+		// if this is not the base layer and we see a non-empty distribution
+		// update the package's dist info
+		if !checkEmptyDist(pkg.Dist) {
+			pi.distByPackage[pkg.ID] = pkg.Dist
+		}
 	}
 }
 
-func (pi *stacker) Result() []*claircore.Package {
+func (pi *stacker) Result() ([]*claircore.Package, map[int]string) {
 	res := make([]*claircore.Package, 0)
 
 	for id, iter := range pi.counters {
 		if iter == pi.iteration {
-			res = append(res, pi.items[id])
+			stackedPkg := pi.packages[id]
+			stackedPkg.Dist = pi.distByPackage[id]
+			res = append(res, pi.packages[id])
 		}
 	}
 
-	return res
+	return res, pi.introducedIn
+}
+
+func checkEmptyDist(dist *claircore.Distribution) bool {
+	if dist.DID == "" &&
+		dist.Name == "" &&
+		dist.Version == "" &&
+		dist.VersionCodeName == "" &&
+		dist.VersionID == "" &&
+		dist.Arch == "" {
+		return true
+	}
+
+	return false
 }

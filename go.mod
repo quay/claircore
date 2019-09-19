@@ -8,7 +8,6 @@ require (
 	github.com/acobaugh/osrelease v0.0.0-20181218015638-a93a0a55a249
 	github.com/crgimenes/goconfig v1.2.1
 	github.com/docker/docker v1.13.1 // indirect
-	github.com/docker/go-units v0.4.0 // indirect
 	github.com/doug-martin/goqu/v8 v8.6.0
 	github.com/golang/mock v1.3.1
 	github.com/google/uuid v1.1.1
@@ -18,7 +17,6 @@ require (
 	github.com/moby/moby v1.13.1
 	github.com/onsi/ginkgo v1.10.1 // indirect
 	github.com/onsi/gomega v1.7.0 // indirect
-	github.com/opencontainers/runc v0.1.1 // indirect
 	github.com/rs/zerolog v1.15.0
 	github.com/shopspring/decimal v0.0.0-20190905144223-a36b5d85f337 // indirect
 	github.com/stretchr/testify v1.4.0
@@ -28,3 +26,5 @@ require (
 	gopkg.in/airbrake/gobrake.v2 v2.0.9 // indirect
 	gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2 // indirect
 )
+
+replace github.com/containers/storage => /home/louis/git/go/storage
