@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	connString = "host=localhost port=5435 user=libvuln dbname=libvuln sslmode=disable"
+	connString = "host=localhost port=5434 user=claircore dbname=claircore sslmode=disable"
 	truncate   = `TRUNCATE updatecursor, vuln;`
 )
 

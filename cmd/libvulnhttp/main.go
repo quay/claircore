@@ -6,8 +6,11 @@ import (
 	"strings"
 
 	"github.com/crgimenes/goconfig"
+	"github.com/quay/claircore/debian"
 	"github.com/quay/claircore/libvuln"
+	"github.com/quay/claircore/libvuln/driver"
 	libhttp "github.com/quay/claircore/libvuln/http"
+	"github.com/quay/claircore/ubuntu"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -88,7 +91,28 @@ func httpServer(conf Config, lib libvuln.Libvuln) *http.Server {
 }
 
 func confToLibvulnOpts(conf Config) *libvuln.Opts {
-	opts := &libvuln.Opts{}
+	matchers := []driver.Matcher{
+		&debian.Matcher{},
+		&ubuntu.Matcher{},
+	}
+	updaters := []driver.Updater{
+		ubuntu.NewUpdater(ubuntu.Artful),
+		ubuntu.NewUpdater(ubuntu.Bionic),
+		ubuntu.NewUpdater(ubuntu.Cosmic),
+		ubuntu.NewUpdater(ubuntu.Disco),
+		ubuntu.NewUpdater(ubuntu.Precise),
+		ubuntu.NewUpdater(ubuntu.Trusty),
+		ubuntu.NewUpdater(ubuntu.Xenial),
+		debian.NewUpdater(debian.Buster),
+		debian.NewUpdater(debian.Jessie),
+		debian.NewUpdater(debian.Stretch),
+		debian.NewUpdater(debian.Wheezy),
+	}
+
+	opts := &libvuln.Opts{
+		Matchers: matchers,
+		Updaters: updaters,
+	}
 
 	// parse DataStore
 	switch conf.DataStore {

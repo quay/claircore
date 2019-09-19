@@ -1,0 +1,52 @@
+version: "3.7"
+services:
+
+  claircore-db:
+    image: postgres:11.5
+    environment:
+      POSTGRES_USER: "claircore"
+      POSTGRES_DB: "claircore"
+    ports:
+      - "5434:5432"
+    volumes:
+      # bootstrap initial schema
+      - "./internal/scanner/postgres/bootstrap.sql:/docker-entrypoint-initdb.d/libscan-bootstrap.sql"
+      - "./internal/vulnstore/postgres/bootstrap.sql:/docker-entrypoint-initdb.d/libvuln-bootstrap.sql"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U claircore -d claircore" ]
+      interval: 10s
+      timeout: 9s
+      retries: 3
+      start_period: 10s
+
+  libscanhttp:
+    image: golang:1.13.0
+    ports:
+      - "8080:8080"
+    environment:
+      HTTP_LISTEN_ADDR: "0.0.0.0:8080"
+      DATASTORE: "postgres"
+      CONNECTION_STRING: "host=claircore-db port=5432 user=claircore dbname=claircore sslmode=disable"
+      SCANLOCK: "postgres"
+      SCAN_LOCK_RETRY: 1
+      LAYER_SCAN_CONCURRENCY: 10
+      LOG_LEVEL: "debug"
+    volumes:
+      - "./:/src/claircore/"
+    command:
+      [ "bash", "-c", "cd /src/claircore/cmd/libscanhttp; go run *" ]
+
+  libvulnhttp:
+    image: golang:1.13.0
+    ports:
+      - "8081:8081"
+    environment:
+      HTTP_LISTEN_ADDR: "0.0.0.0:8081"
+      DATASTORE: "postgres"
+      CONNECTION_STRING: "host=claircore-db port=5432 user=claircore dbname=claircore sslmode=disable"
+      UPDATELOCK: "postgres"
+      LOG_LEVEL: "debug"
+    volumes:
+      - "./:/src/claircore/"
+    command:
+      [ "bash", "-c", "cd /src/claircore/cmd/libvulnhttp; go run *" ]
