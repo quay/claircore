@@ -10,14 +10,14 @@ genmocks:
 # runs integration tests. database must be available. use the db commands below to ensure this
 .PHONY: integration
 integration:
-	go test -p 1 -race -tags integration ./...
+	go test -count=1 -p 1 -race -tags integration ./...
 
 # runs integration test which may fail on darwin but must succeed on linux/unix
 # using the docker-shell makefile first will drop you into a unix container where
 # you may run this target if you are on darwin/macOS
 .PHONY: integration-unix
 integration-unix:
-	go test -p 1 -race -tags unix ./...
+	go test -count=1 -p 1 -race -tags unix ./...
 
 # runs unit tests. no db necessary
 .PHONY: unit
@@ -32,7 +32,7 @@ bench:
 # same as integration but with verbose
 .PHONY: integration-v
 integration-v:
-	go test -race -v -tags integration ./...
+	go test -count=1 -race -v -tags integration ./...
 
 # same as unit but with verbose
 .PHONY: unit-v
@@ -70,3 +70,61 @@ libscanhttp-restart:
 .PHONY: libvulnhttp-restart
 libvulnhttp-restart:
 	$(docker-compose) up -d --force-recreate libvulnhttp
+
+.PHONY: podman-dev-up
+podman-dev-up:
+	podman pod create\
+		--publish 5434\
+		--publish 8080\
+		--publish 8081\
+		--name claircore-dev
+	podman create\
+		--pod claircore-dev\
+		--name claircore-database\
+		--env POSTGRES_USER=claircore\
+		--env POSTGRES_DB=claircore\
+		--env POSTGRES_INITDB_ARGS="--no-sync"\
+		--env PGPORT=5434\
+		--expose 5434\
+		--volume $$(git rev-parse --show-toplevel)/internal/scanner/postgres/bootstrap.sql:/docker-entrypoint-initdb.d/libscan-bootstrap.sql:z\
+		--volume $$(git rev-parse --show-toplevel)/internal/vulnstore/postgres/bootstrap.sql:/docker-entrypoint-initdb.d/libvuln-bootstrap.sql:z\
+		--health-cmd "pg_isready -U claircore -d claircore"\
+		postgres:11
+	podman pod start claircore-dev
+	until podman healthcheck run claircore-database; do sleep 2; done
+	podman create\
+		--pod claircore-dev\
+		--name libscanhttp\
+		--env HTTP_LISTEN_ADDR="0.0.0.0:8080"\
+		--env DATASTORE="postgres"\
+		--env CONNECTION_STRING="host=localhost port=5434 user=claircore dbname=claircore sslmode=disable"\
+		--env SCANLOCK="postgres"\
+		--env SCAN_LOCK_RETRY=1\
+		--env LAYER_SCAN_CONCURRENCY=10\
+		--env LOG_LEVEL="debug"\
+		--expose 8080\
+		--volume $$(git rev-parse --show-toplevel)/:/src/claircore/:z\
+		golang:1.13\
+		bash -c 'cd /src/claircore/cmd/libscanhttp; exec go run *'
+	podman create\
+		--pod claircore-dev\
+		--name libvulnhttp\
+		--env HTTP_LISTEN_ADDR="0.0.0.0:8081"\
+		--env DATASTORE="postgres"\
+		--env CONNECTION_STRING="host=localhost port=5434 user=claircore dbname=claircore sslmode=disable"\
+		--env UPDATELOCK="postgres"\
+		--env LOG_LEVEL="debug"\
+		--expose 8081\
+		--volume $$(git rev-parse --show-toplevel)/:/src/claircore/:z\
+		golang:1.13\
+		bash -c 'cd /src/claircore/cmd/libvulnhttp; exec go run *'
+	podman pod start claircore-dev
+
+# TODO(hank) When the latest podman lands with 'generate systemd' support for
+# pods, use it here.
+
+.PHONY: podman-dev-down
+podman-dev-down:
+	podman pod stop -t 10 claircore-dev
+	true $(foreach c,claircore-database libscanhttp libvulnhttp,&& podman rm $c)
+	podman pod rm claircore-dev
