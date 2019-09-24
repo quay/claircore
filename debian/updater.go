@@ -10,9 +10,10 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	CCoval "github.com/quay/claircore/pkg/oval"
+
+	"github.com/quay/goval-parser/oval"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/ymomoi/goval-parser/oval"
 )
 
 func init() {

@@ -19,12 +19,13 @@ require (
 	github.com/onsi/ginkgo v1.10.1 // indirect
 	github.com/onsi/gomega v1.7.0 // indirect
 	github.com/opencontainers/runc v0.1.1 // indirect
+	github.com/quay/goval-parser v0.0.0-20190924192656-8ef6bb75a005
 	github.com/rs/zerolog v1.15.0
 	github.com/shopspring/decimal v0.0.0-20190905144223-a36b5d85f337 // indirect
 	github.com/stretchr/testify v1.4.0
 	github.com/tadasv/go-dpkg v0.0.0-20160704224136-c2cf9188b763
-	github.com/ymomoi/goval-parser v0.0.0-20170813122243-0a0be1dd9d08
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58
+	golang.org/x/tools v0.0.0-20190924170908-c006dc79eb54 // indirect
 	gopkg.in/airbrake/gobrake.v2 v2.0.9 // indirect
 	gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2 // indirect
 )

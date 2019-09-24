@@ -3,7 +3,7 @@ package oval
 import (
 	"strings"
 
-	"github.com/ymomoi/goval-parser/oval"
+	"github.com/quay/goval-parser/oval"
 )
 
 // Links joins all the links in the cve definition into a single string.
