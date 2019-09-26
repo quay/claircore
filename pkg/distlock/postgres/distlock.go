@@ -107,7 +107,7 @@ func (l *lock) TryLock(ctx context.Context, key string) (bool, error) {
 
 	kh := fnv.New64a()
 	_, _ = fmt.Fprint(kh, key) // Writing to a hash.Hash never errors.
-	keyInt64 := kh.Sum64()
+	keyInt64 := int64(kh.Sum64())
 
 	// start transaction
 	tx, err := l.db.Beginx()
