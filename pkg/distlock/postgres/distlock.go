@@ -2,8 +2,8 @@ package postgres
 
 import (
 	"context"
-	"encoding/binary"
 	"fmt"
+	"hash/fnv"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -105,6 +105,10 @@ func (l *lock) TryLock(ctx context.Context, key string) (bool, error) {
 		return false, nil
 	}
 
+	kh := fnv.New64a()
+	_, _ = fmt.Fprint(kh, key) // Writing to a hash.Hash never errors.
+	keyInt64 := kh.Sum64()
+
 	// start transaction
 	tx, err := l.db.Beginx()
 	if err != nil {
@@ -113,12 +117,6 @@ func (l *lock) TryLock(ctx context.Context, key string) (bool, error) {
 
 	// attempt to acquire lock
 	var acquired bool
-
-	keyInt64 := binary.BigEndian.Uint64([]byte(key))
-	if err != nil {
-		tx.Rollback()
-		return false, fmt.Errorf("failed to convert key into int: %v", err)
-	}
 
 	err = tx.Get(&acquired, manifestAdvisoryLock, keyInt64)
 	if err != nil {
