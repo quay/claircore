@@ -34,7 +34,7 @@ services:
     volumes:
       - "./:/src/claircore/"
     command:
-      [ "bash", "-c", "cd /src/claircore/cmd/libscanhttp; go run *" ]
+      [ "bash", "-c", "cd /src/claircore/cmd/libscanhttp; go run -mod vendor ." ]
 
   libvulnhttp:
     image: golang:1.13.0
@@ -49,4 +49,4 @@ services:
     volumes:
       - "./:/src/claircore/"
     command:
-      [ "bash", "-c", "cd /src/claircore/cmd/libvulnhttp; go run *" ]
+      [ "bash", "-c", "cd /src/claircore/cmd/libvulnhttp; go run -mod vendor ." ]

@@ -43,6 +43,7 @@ unit-v:
 local-dev-up:
 	$(docker-compose) up -d claircore-db
 	$(docker) exec -it claircore_claircore-db_1 bash -c 'while ! pg_isready; do echo "waiting for postgres"; sleep 2; done'
+	go mod vendor
 	$(docker-compose) up -d libscanhttp
 	$(docker-compose) up -d libvulnhttp
 
