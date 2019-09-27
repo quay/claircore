@@ -54,7 +54,7 @@ const (
 					$16)
 	ON conflict (updater,
 				 name,
-				 description,
+				 md5(description),
 				 links,
 				 severity,
 				 package_name,
