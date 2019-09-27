@@ -85,21 +85,19 @@ func (u *Controller) Update(ctx context.Context) error {
 		u.logger.Debug().Msgf("another process is updating. waiting till next update interval")
 		return nil
 	}
+	defer u.Lock.Unlock()
 
 	// fetch and check if we need to update.
 	vulnDB, shouldUpdate, updateHash, err := u.fetchAndCheck(ctx)
 	if err != nil {
-		vulnDB.Close()
 		u.logger.Error().Msgf("%v. lock released", err)
-		u.Lock.Unlock()
 		return err
 	}
 	if !shouldUpdate {
-		vulnDB.Close()
 		u.logger.Info().Msgf("no updates were necessary. lock released")
-		u.Lock.Unlock()
 		return nil
 	}
+	defer vulnDB.Close()
 
 	// parse the vulnDB and put the parsed contents into the vulnstore
 	err = u.parseAndStore(ctx, vulnDB, updateHash)
@@ -108,11 +106,7 @@ func (u *Controller) Update(ctx context.Context) error {
 		return err
 	}
 
-	// cleanup resources
-	vulnDB.Close()
-	u.Lock.Unlock()
 	u.logger.Info().Msg("successfully updated the vulnstore")
-
 	return nil
 }
 
@@ -132,16 +126,18 @@ func (u *Controller) fetchAndCheck(ctx context.Context) (io.ReadCloser, bool, st
 	// retrieve vulnerability database
 	vulnDB, updateHash, err := u.Fetch()
 	if err != nil {
-		return vulnDB, false, "", fmt.Errorf("failed to fetch database: %v", err)
+		return nil, false, "", fmt.Errorf("failed to fetch database: %v", err)
 	}
 
 	// see if we need to update the vulnstore
 	prevUpdateHash, err := u.Store.GetHash(ctx, u.Name)
 	if err != nil {
-		return vulnDB, false, "", fmt.Errorf("failed to get previous update hash: %v", err)
+		vulnDB.Close()
+		return nil, false, "", fmt.Errorf("failed to get previous update hash: %v", err)
 	}
 	if prevUpdateHash == updateHash {
-		return vulnDB, false, "", nil
+		vulnDB.Close()
+		return nil, false, "", nil
 	}
 
 	return vulnDB, true, updateHash, nil
