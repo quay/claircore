@@ -1,8 +1,8 @@
 package aws
 
-type Releases string
+type Release string
 
 const (
-	Linux1 Releases = "linux1"
-	Linux2 Releases = "linux2"
+	Linux1 Release = "linux1"
+	Linux2 Release = "linux2"
 )
