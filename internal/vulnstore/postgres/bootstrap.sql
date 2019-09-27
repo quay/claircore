@@ -1,4 +1,3 @@
---- Vulnerability
 --- a unique vulnerability indexed by an updater
 CREATE TABLE vuln (
     updater text,
@@ -19,11 +18,13 @@ CREATE TABLE vuln (
     arch text,
     fixed_in_version text,
     --- a tombstone field that will be updated to signify a vulnerability is not stale
-    tombstone text,
-    unique(
+    tombstone text
+);
+CREATE INDEX vuln_lookup_idx on vuln(package_name, dist_version_code_name, dist_name, dist_version_id, dist_version, arch);
+CREATE UNIQUE INDEX vuln_unique_idx on vuln(  
         updater, 
         name, 
-        description, 
+        md5(description), 
         links,
         severity,
         package_name, 
@@ -36,9 +37,7 @@ CREATE TABLE vuln (
         dist_version_id, 
         arch,
         fixed_in_version
-    )
-);
-CREATE INDEX vuln_lookup_idx on vuln(package_name, dist_version_code_name, dist_name, dist_version_id, dist_version, arch);
+    );
 
 --- UpdateHash
 --- a key/value hstore holding the latest update hash for a particular updater
