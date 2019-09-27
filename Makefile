@@ -92,6 +92,7 @@ podman-dev-up:
 		postgres:11
 	podman pod start claircore-dev
 	until podman healthcheck run claircore-database; do sleep 2; done
+	go mod vendor
 	podman create\
 		--pod claircore-dev\
 		--name libscanhttp\
@@ -105,7 +106,7 @@ podman-dev-up:
 		--expose 8080\
 		--volume $$(git rev-parse --show-toplevel)/:/src/claircore/:z\
 		golang:1.13\
-		bash -c 'cd /src/claircore/cmd/libscanhttp; exec go run *'
+		bash -c 'cd /src/claircore/cmd/libscanhttp; exec go run -mod vendor .'
 	podman create\
 		--pod claircore-dev\
 		--name libvulnhttp\
@@ -117,7 +118,7 @@ podman-dev-up:
 		--expose 8081\
 		--volume $$(git rev-parse --show-toplevel)/:/src/claircore/:z\
 		golang:1.13\
-		bash -c 'cd /src/claircore/cmd/libvulnhttp; exec go run *'
+		bash -c 'cd /src/claircore/cmd/libvulnhttp; exec go run -mod vendor .'
 	podman pod start claircore-dev
 
 # TODO(hank) When the latest podman lands with 'generate systemd' support for
