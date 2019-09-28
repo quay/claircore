@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"strings"
 
 	"github.com/quay/alas"
@@ -29,7 +28,7 @@ func NewUpdater(release Release) (*Updater, error) {
 }
 
 func (u *Updater) Name() string {
-	panic("not implemented")
+	return fmt.Sprintf("aws-%v-updater", u.release)
 }
 
 func (u *Updater) Fetch() (io.ReadCloser, string, error) {
@@ -42,7 +41,6 @@ func (u *Updater) Fetch() (io.ReadCloser, string, error) {
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to retrieve repo metadata: %v", err)
 	}
-	log.Printf("%v", repoMD)
 
 	updatesRepoMD, err := repoMD.Repo(alas.UpdateInfo, "")
 	if err != nil {
@@ -56,7 +54,6 @@ func (u *Updater) Fetch() (io.ReadCloser, string, error) {
 
 	gzip, err := gzip.NewReader(resp.Body)
 	if err != nil {
-		// log.Printf("got here!!!!!!!!!")
 		return nil, "", fmt.Errorf("failed to create gzip reader: %v", err)
 	}
 	rc := ioutil.NopCloser(gzip)
@@ -81,7 +78,6 @@ func (u *Updater) Parse(contents io.ReadCloser) ([]*claircore.Vulnerability, err
 			Severity:    update.Severity,
 		}
 		vulns = append(vulns, u.unpack(partial, update.Packages)...)
-		log.Printf("%v", vulns)
 	}
 
 	return vulns, nil

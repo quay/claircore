@@ -43,31 +43,28 @@ func NewClient(release Release) (*Client, error) {
 // RepoMD returns a alas.RepoMD containing sha256 information of a repositories contents
 func (c *Client) RepoMD() (alas.RepoMD, error) {
 	for _, mirror := range c.mirrors {
-		path := path.Join(mirror.String(), repoDataPath)
-		uu, err := url.Parse(path)
-		if err != nil {
-			return alas.RepoMD{}, fmt.Errorf("failed to parse url: %v", err)
-		}
+		m := *mirror
+		m.Path = path.Join(m.Path, repoDataPath)
 
-		c.logger.Debug().Msgf("attempting repomd download from mirror %v", path)
-		resp, err := c.c.Get(uu.String())
+		c.logger.Debug().Msgf("attempting repomd download from mirror %v", m)
+		resp, err := c.c.Get(m.String())
 		if err != nil {
-			c.logger.Error().Msgf("failed to retrieve repomd from mirror %v", path)
+			c.logger.Error().Msgf("failed to retrieve repomd from mirror %v: %v", m, err)
 			continue
 		}
 		if (resp.StatusCode <= 199) || (resp.StatusCode >= 300) {
-			c.logger.Error().Msgf("received bad status code %v when retrieving repomd at mirror %v", resp.StatusCode, path)
+			c.logger.Error().Msgf("received bad status code %v when retrieving repomd at mirror %v", resp.StatusCode, m)
 			continue
 		}
 
 		repoMD := alas.RepoMD{}
 		err = xml.NewDecoder(resp.Body).Decode(&repoMD)
 		if err != nil {
-			c.logger.Error().Msgf("failed to xml unmarshall repodm at mirror %v: %v", path, err)
+			c.logger.Error().Msgf("failed to xml unmarshall repodm at mirror %v: %v", m, err)
 			continue
 		}
 
-		c.logger.Info().Msgf("successfully retrieved repomd data from mirror %v", path)
+		c.logger.Info().Msgf("successfully retrieved repomd data from mirror %v", m)
 		return repoMD, nil
 	}
 
@@ -78,19 +75,26 @@ func (c *Client) RepoMD() (alas.RepoMD, error) {
 // Updates returns the *http.Response of the first mirror to establish a connection
 func (c *Client) Updates() (*http.Response, error) {
 	for _, mirror := range c.mirrors {
-		path := path.Join(mirror.String(), updatesPath)
+		m := *mirror
+		m.Path = path.Join(m.Path, updatesPath)
 
-		resp, err := c.c.Get(path)
+		req, err := http.NewRequest(http.MethodGet, m.String(), nil)
 		if err != nil {
-			c.logger.Error().Msgf("failed to make request for updates to mirror %v: %v", path, err)
+			c.logger.Error().Msgf("failed to make request object: %v %v", m, err)
+			continue
+		}
+
+		resp, err := c.c.Do(req)
+		if err != nil {
+			c.logger.Error().Msgf("failed to make request for updates to mirror %v: %v", m, err)
 			continue
 		}
 		if (resp.StatusCode <= 199) || (resp.StatusCode >= 300) {
-			c.logger.Error().Msgf("received bad status code %v when retrieving updates at mirror %v", err, path)
+			c.logger.Error().Msgf("received bad status code %v when retrieving updates at mirror %v", err, m)
 			continue
 		}
 
-		c.logger.Info().Msgf("successfully retrieved updates from mirror %v", path)
+		c.logger.Info().Msgf("successfully retrieved updates from mirror %v", m)
 		return resp, nil
 	}
 
@@ -126,7 +130,9 @@ func (c *Client) getMirrors(release Release) error {
 		c.logger.Error().Msgf("failed to read http body: %v", err)
 		return fmt.Errorf("failed to read http body: %v", err)
 	}
+
 	urls := strings.Split(string(body), "\n")
+	urls = urls[:len(urls)-1]
 
 	for _, u := range urls {
 		uu, err := url.Parse(u)
