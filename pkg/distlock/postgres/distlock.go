@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"hash/fnv"
+	"sync"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -20,9 +21,11 @@ type lock struct {
 	db *sqlx.DB
 	// the frequency we would like to attempt a lock acquistion
 	retry time.Duration
+	// mu ensures TryLock() and UnLock() have exclusive access to the locked bool.
+	mu sync.Mutex
 	// whether a lock has been acquired or not
 	locked bool
-	// the manifest hash string we'll use as the lock key
+	// the key used to identify this unique lock
 	key string
 	// the transcation in which the lock is beind held. commiting this
 	// transaction will release the advisory lock
@@ -46,7 +49,7 @@ func (l *lock) Lock(ctx context.Context, key string) error {
 	}
 
 	// attempt initial lock acquisition. we throw away the bool and prefer
-	// checking l.locked bool which l.TryLock flips.
+	// checking l.locked bool which l.TryLock flips under mu lock
 	_, err := l.TryLock(ctx, key)
 	if err != nil {
 		return fmt.Errorf("failed at attmpeting initial lock acquition: %v", err)
@@ -76,8 +79,11 @@ func (l *lock) Lock(ctx context.Context, key string) error {
 
 // UnLock first checks if the scanLock is in a locked state, secondly checks to
 // confirm the tx field is not nil, and lastly will commit the tx allowing
-// other calls to Lock() to succeed. to acquire.
+// other calls to Lock() to succeed and sets l.locked = false.
 func (l *lock) Unlock() error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
 	if !l.locked {
 		return fmt.Errorf("attempted to unlock when no lock has been acquired")
 	}
@@ -91,6 +97,7 @@ func (l *lock) Unlock() error {
 	if err != nil {
 		return fmt.Errorf("failed to commit transaction and free lock: %v", err)
 	}
+	l.locked = false
 
 	return nil
 }
@@ -101,6 +108,9 @@ func (l *lock) Unlock() error {
 // and return the error. if this process dies a TCP reset will be sent to postgres and the transaction
 // will be closed allowing other scanLocks to acquire.
 func (l *lock) TryLock(ctx context.Context, key string) (bool, error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
 	if l.locked {
 		return false, nil
 	}
