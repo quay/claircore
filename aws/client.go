@@ -19,11 +19,15 @@ import (
 )
 
 const (
+	repoDataPath     = "/repodata/repomd.xml"
+	updatesPath      = "/repodata/updateinfo.xml.gz"
+	defaultOpTimeout = 15 * time.Second
+)
+
+// overwritten in tests
+var (
 	amazonLinux1Mirrors = "http://repo.us-west-2.amazonaws.com/2018.03/updates/x86_64/mirror.list"
 	amazonLinux2Mirrors = "https://cdn.amazonlinux.com/2/core/latest/x86_64/mirror.list"
-	repoDataPath        = "/repodata/repomd.xml"
-	updatesPath         = "/repodata/updateinfo.xml.gz"
-	defaultOpTimeout    = 15 * time.Second
 )
 
 var logger = log.With().Str("component", "aws-alas-client").Logger()
@@ -188,7 +192,7 @@ func (c *Client) getMirrors(ctx context.Context, release Release) error {
 	}
 
 	urls := strings.Split(string(body), "\n")
-	urls = urls[:len(urls)-1]
+	urls = urls[:len(urls)-2]
 
 	for _, u := range urls {
 		uu, err := url.Parse(u)
