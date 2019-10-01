@@ -65,9 +65,15 @@ func (c *Client) RepoMD(ctx context.Context) (alas.RepoMD, error) {
 			c.logger.Error().Msgf("failed to retrieve repomd from mirror %v: %v", m, err)
 			continue
 		}
-		if (resp.StatusCode <= 199) || (resp.StatusCode >= 300) {
-			c.logger.Error().Msgf("received bad status code %v when retrieving repomd at mirror %v", resp.StatusCode, m)
+		defer resp.Body.Close()
+
+		switch resp.StatusCode {
+		case http.StatusOK:
+			// break
+		default:
+			c.logger.Error().Msgf("repoMD mirror %v got unexpected HTTP response: %d (%s)", m, resp.StatusCode, resp.Status)
 			continue
+
 		}
 
 		repoMD := alas.RepoMD{}
@@ -156,15 +162,19 @@ func (c *Client) getMirrors(ctx context.Context, release Release) error {
 		}
 		resp, err = c.c.Do(req)
 	}
+	defer resp.Body.Close()
 
 	if err != nil {
 		c.logger.Error().Msgf("failed to make request for %v mirrors: %v", release, err)
 		return fmt.Errorf("failed to make request for %v mirrors: %v", release, err)
 	}
 
-	if (resp.StatusCode <= 199) || (resp.StatusCode >= 300) {
-		c.logger.Error().Msgf("http error %v when retrieving mirror list: %v", resp.StatusCode, resp.Status)
-		return fmt.Errorf("http error %v when retrieving mirror list: %v", resp.StatusCode, resp.Status)
+	switch resp.StatusCode {
+	case http.StatusOK:
+		// break
+	default:
+		c.logger.Error().Msgf("failed to get amazon mirrors. got unexpected HTTP response: %d (%s)", resp.StatusCode, resp.Status)
+		return fmt.Errorf("failed to make request for %v mirrors: %v", release, err)
 	}
 
 	if err := ctx.Err(); err != nil {
