@@ -29,9 +29,6 @@ func Test_Updater(t *testing.T) {
 			assert.NoError(t, err)
 
 			contents, updateHash, err := updater.Fetch()
-			if err != nil {
-				t.Fatalf("fetch failed: %v", err)
-			}
 			assert.NoError(t, err)
 			assert.NotEmpty(t, contents)
 			assert.NotEmpty(t, updateHash)
