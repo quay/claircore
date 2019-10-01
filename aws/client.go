@@ -1,15 +1,19 @@
 package aws
 
 import (
+	"context"
 	"encoding/xml"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/quay/alas"
+	"github.com/quay/claircore/pkg/tmp"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -19,6 +23,7 @@ const (
 	amazonLinux2Mirrors = "https://cdn.amazonlinux.com/2/core/latest/x86_64/mirror.list"
 	repoDataPath        = "/repodata/repomd.xml"
 	updatesPath         = "/repodata/updateinfo.xml.gz"
+	defaultOpTimeout    = 15 * time.Second
 )
 
 var logger = log.With().Str("component", "aws-alas-client").Logger()
@@ -36,18 +41,26 @@ func NewClient(release Release) (*Client, error) {
 		mirrors: []*url.URL{},
 		logger:  log.With().Str("component", "aws-alas-client").Str("release", string(release)).Logger(),
 	}
-	err := client.getMirrors(release)
+	tctx, cancel := context.WithTimeout(context.Background(), defaultOpTimeout)
+	defer cancel()
+	err := client.getMirrors(tctx, release)
 	return client, err
 }
 
 // RepoMD returns a alas.RepoMD containing sha256 information of a repositories contents
-func (c *Client) RepoMD() (alas.RepoMD, error) {
+func (c *Client) RepoMD(ctx context.Context) (alas.RepoMD, error) {
 	for _, mirror := range c.mirrors {
 		m := *mirror
 		m.Path = path.Join(m.Path, repoDataPath)
 
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, m.String(), nil)
+		if err != nil {
+			c.logger.Error().Msgf("failed to make request object: %v %v", m, err)
+			continue
+		}
+
 		c.logger.Debug().Msgf("attempting repomd download from mirror %v", m)
-		resp, err := c.c.Get(m.String())
+		resp, err := c.c.Do(req)
 		if err != nil {
 			c.logger.Error().Msgf("failed to retrieve repomd from mirror %v: %v", m, err)
 			continue
@@ -73,15 +86,20 @@ func (c *Client) RepoMD() (alas.RepoMD, error) {
 }
 
 // Updates returns the *http.Response of the first mirror to establish a connection
-func (c *Client) Updates() (*http.Response, error) {
+func (c *Client) Updates(ctx context.Context) (io.ReadCloser, error) {
 	for _, mirror := range c.mirrors {
 		m := *mirror
 		m.Path = path.Join(m.Path, updatesPath)
 
-		req, err := http.NewRequest(http.MethodGet, m.String(), nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, m.String(), nil)
 		if err != nil {
 			c.logger.Error().Msgf("failed to make request object: %v %v", m, err)
 			continue
+		}
+
+		tf, err := tmp.NewFile("", "")
+		if err != nil {
+			c.logger.Error().Msgf("failed to make request for updates to mirror %v: %v", m, err)
 		}
 
 		resp, err := c.c.Do(req)
@@ -89,20 +107,36 @@ func (c *Client) Updates() (*http.Response, error) {
 			c.logger.Error().Msgf("failed to make request for updates to mirror %v: %v", m, err)
 			continue
 		}
-		if (resp.StatusCode <= 199) || (resp.StatusCode >= 300) {
-			c.logger.Error().Msgf("received bad status code %v when retrieving updates at mirror %v", err, m)
+		defer resp.Body.Close()
+
+		switch resp.StatusCode {
+		case http.StatusOK:
+			// break
+		default:
+			c.logger.Error().Msgf("updates mirror %v got unexpected HTTP response: %d (%s)", m, resp.StatusCode, resp.Status)
+			tf.Close()
 			continue
+
+		}
+
+		if _, err := io.Copy(tf, resp.Body); err != nil {
+			tf.Close()
+			return nil, err
+		}
+		if o, err := tf.Seek(0, io.SeekStart); err != nil || o != 0 {
+			tf.Close()
+			return nil, err
 		}
 
 		c.logger.Info().Msgf("successfully retrieved updates from mirror %v", m)
-		return resp, nil
+		return tf, nil
 	}
 
 	c.logger.Error().Msg("exhausted all mirrors requesting updates")
 	return nil, fmt.Errorf("all update_info mirrors failed to return a response")
 }
 
-func (c *Client) getMirrors(release Release) error {
+func (c *Client) getMirrors(ctx context.Context, release Release) error {
 	var (
 		resp *http.Response
 		err  error
@@ -110,9 +144,17 @@ func (c *Client) getMirrors(release Release) error {
 
 	switch release {
 	case Linux1:
-		resp, err = c.c.Get(amazonLinux1Mirrors)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, amazonLinux1Mirrors, nil)
+		if err != nil {
+			return fmt.Errorf("failed to create request for mirror list %v : %v", amazonLinux1Mirrors, err)
+		}
+		resp, err = c.c.Do(req)
 	case Linux2:
-		resp, err = c.c.Get(amazonLinux2Mirrors)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, amazonLinux2Mirrors, nil)
+		if err != nil {
+			return fmt.Errorf("failed to create request for mirror list %v : %v", amazonLinux2Mirrors, err)
+		}
+		resp, err = c.c.Do(req)
 	}
 
 	if err != nil {
@@ -123,6 +165,10 @@ func (c *Client) getMirrors(release Release) error {
 	if (resp.StatusCode <= 199) || (resp.StatusCode >= 300) {
 		c.logger.Error().Msgf("http error %v when retrieving mirror list: %v", resp.StatusCode, resp.Status)
 		return fmt.Errorf("http error %v when retrieving mirror list: %v", resp.StatusCode, resp.Status)
+	}
+
+	if err := ctx.Err(); err != nil {
+		return err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)

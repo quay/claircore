@@ -2,6 +2,7 @@ package aws
 
 import (
 	"compress/gzip"
+	"context"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -37,26 +38,30 @@ func (u *Updater) Fetch() (io.ReadCloser, string, error) {
 		return nil, "", fmt.Errorf("failed to create client: %v", err)
 	}
 
-	repoMD, err := client.RepoMD()
+	tctx, cancel := context.WithTimeout(context.Background(), defaultOpTimeout)
+	repoMD, err := client.RepoMD(tctx)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to retrieve repo metadata: %v", err)
 	}
+	cancel()
 
 	updatesRepoMD, err := repoMD.Repo(alas.UpdateInfo, "")
 	if err != nil {
 		return nil, "", fmt.Errorf("updates repo metadata could not be retrieved: %v", err)
 	}
 
-	resp, err := client.Updates()
+	tctx, cancel = context.WithTimeout(context.Background(), defaultOpTimeout)
+	rc, err := client.Updates(tctx)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to retrieve update info: %v", err)
 	}
+	defer cancel()
 
-	gzip, err := gzip.NewReader(resp.Body)
+	gzip, err := gzip.NewReader(rc)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to create gzip reader: %v", err)
 	}
-	rc := ioutil.NopCloser(gzip)
+	rc = ioutil.NopCloser(gzip)
 
 	return rc, updatesRepoMD.Checksum.Sum, nil
 }
