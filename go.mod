@@ -19,6 +19,7 @@ require (
 	github.com/onsi/ginkgo v1.10.1 // indirect
 	github.com/onsi/gomega v1.7.0 // indirect
 	github.com/opencontainers/runc v0.1.1 // indirect
+	github.com/quay/alas v1.0.1
 	github.com/quay/goval-parser v0.0.0-20190924192656-8ef6bb75a005
 	github.com/rs/zerolog v1.15.0
 	github.com/shopspring/decimal v0.0.0-20190905144223-a36b5d85f337 // indirect
