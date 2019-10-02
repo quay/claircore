@@ -14,7 +14,6 @@ import (
 )
 
 func Test_Client_Linux1_GetMirrors(t *testing.T) {
-	integration.Skip(t)
 	tests := []struct {
 		release  Release
 		expected []string
@@ -68,7 +67,6 @@ func Test_Client_Linux1_GetMirrors(t *testing.T) {
 }
 
 func Test_Client_Linux2_GetMirrors(t *testing.T) {
-	integration.Skip(t)
 	tests := []struct {
 		release  Release
 		expected []string
@@ -143,5 +141,4 @@ func Test_Client_Updates(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotEmpty(t, rc)
 	}
-
 }

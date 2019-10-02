@@ -77,7 +77,6 @@ func (c *Client) RepoMD(ctx context.Context) (alas.RepoMD, error) {
 		default:
 			c.logger.Error().Msgf("repoMD mirror %v got unexpected HTTP response: %d (%s)", m, resp.StatusCode, resp.Status)
 			continue
-
 		}
 
 		repoMD := alas.RepoMD{}
@@ -126,7 +125,6 @@ func (c *Client) Updates(ctx context.Context) (io.ReadCloser, error) {
 			c.logger.Error().Msgf("updates mirror %v got unexpected HTTP response: %d (%s)", m, resp.StatusCode, resp.Status)
 			tf.Close()
 			continue
-
 		}
 
 		if _, err := io.Copy(tf, resp.Body); err != nil {
@@ -166,12 +164,11 @@ func (c *Client) getMirrors(ctx context.Context, release Release) error {
 		}
 		resp, err = c.c.Do(req)
 	}
-	defer resp.Body.Close()
-
 	if err != nil {
 		c.logger.Error().Msgf("failed to make request for %v mirrors: %v", release, err)
 		return fmt.Errorf("failed to make request for %v mirrors: %v", release, err)
 	}
+	defer resp.Body.Close()
 
 	switch resp.StatusCode {
 	case http.StatusOK:

@@ -39,11 +39,11 @@ func (u *Updater) Fetch() (io.ReadCloser, string, error) {
 	}
 
 	tctx, cancel := context.WithTimeout(context.Background(), defaultOpTimeout)
+	defer cancel()
 	repoMD, err := client.RepoMD(tctx)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to retrieve repo metadata: %v", err)
 	}
-	cancel()
 
 	updatesRepoMD, err := repoMD.Repo(alas.UpdateInfo, "")
 	if err != nil {
@@ -51,11 +51,11 @@ func (u *Updater) Fetch() (io.ReadCloser, string, error) {
 	}
 
 	tctx, cancel = context.WithTimeout(context.Background(), defaultOpTimeout)
+	defer cancel()
 	rc, err := client.Updates(tctx)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to retrieve update info: %v", err)
 	}
-	defer cancel()
 
 	gzip, err := gzip.NewReader(rc)
 	if err != nil {

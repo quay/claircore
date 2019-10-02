@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-// TmpFile wraps a *os.File and also implements a Close method which cleans up the file
+// File wraps a *os.File and also implements a Close method which cleans up the file
 // from the filesystem
 type File struct {
 	*os.File
