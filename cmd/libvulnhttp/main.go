@@ -4,15 +4,18 @@ import (
 	"context"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 
-	"github.com/crgimenes/goconfig"
 	"github.com/quay/claircore/debian"
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/libvuln/driver"
 	libhttp "github.com/quay/claircore/libvuln/http"
+	"github.com/quay/claircore/oracle"
 	"github.com/quay/claircore/rhel"
 	"github.com/quay/claircore/ubuntu"
+
+	"github.com/crgimenes/goconfig"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -23,8 +26,9 @@ type Config struct {
 	HTTPListenAddr string `cfgDefault:"0.0.0.0:8081" cfg:"HTTP_LISTEN_ADDR"`
 	DataStore      string `cfgDefault:"postgres" cfg:"DATASTORE" cfgHelper:"DataStore that libvuln will connect to. currently implemented: 'postgres'`
 	ConnString     string `cfgDefault:"host=localhost port=5435 user=libvuln dbname=libvuln password=libvuln sslmode=disable" cfg:"CONNECTION_STRING" cfgHelper:"Connection string for the provided DataStore"`
-	UpdateLock     string `cfgDefault:"postgres" cfg"UPDATE_LOCK" cfgHelper:"ScanLock that libvuln should use. currently implemented: 'postgres'"`
+	UpdateLock     string `cfgDefault:"postgres" cfg:"UPDATE_LOCK" cfgHelper:"ScanLock that libvuln should use. currently implemented: 'postgres'"`
 	LogLevel       string `cfgDefault:"debug" cfg:"LOG_LEVEL" cfgHelper:"Log levels: debug, info, warning, error, fatal, panic" `
+	Run            string `cfg:"RUN" cfgDefault:"." cfgHelper:"Regexp of updaters to run."`
 }
 
 func main() {
@@ -124,9 +128,25 @@ func confToLibvulnOpts(conf Config) *libvuln.Opts {
 		updaters = append(updaters, u)
 	}
 
+	if u, err := oracle.NewUpdater(oracle.WithLogger(&log.Logger)); err != nil {
+		log.Fatal().Msgf("unable to create oracle updater: %v", err)
+	} else {
+		updaters = append(updaters, u)
+	}
+
 	opts := &libvuln.Opts{
 		Matchers: matchers,
-		Updaters: updaters,
+		Updaters: make([]driver.Updater, 0, len(updaters)),
+	}
+
+	re, err := regexp.Compile(conf.Run)
+	if err != nil {
+		log.Fatal().Err(err).Msg("regexp failed to compile")
+	}
+	for _, u := range updaters {
+		if re.MatchString(u.Name()) {
+			opts.Updaters = append(opts.Updaters, u)
+		}
 	}
 
 	// parse DataStore
