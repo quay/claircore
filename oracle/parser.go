@@ -193,7 +193,7 @@ func (db *db) populate(_ context.Context, v *claircore.Vulnerability, crit []*ov
 		}
 		obj = &db.root.Objects.RPMInfoObjects[objidx]
 
-		//  If the object is "redhat-release", special case it to pull out
+		//  If the object is "oraclelinux-release", special case it to pull out
 		//  distro version information, and associte that with the current
 		//  package.
 		switch {
