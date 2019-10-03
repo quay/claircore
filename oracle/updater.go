@@ -7,7 +7,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/quay/claircore/libvuln/driver"
@@ -86,17 +85,6 @@ func (u *Updater) Name() string {
 	return "oracle-updater"
 }
 
-type tempfile struct {
-	*os.File
-}
-
-func (t *tempfile) Close() error {
-	if err := t.File.Close(); err != nil {
-		return err
-	}
-	return os.Remove(t.File.Name())
-}
-
 // Fetch satifies the driver.Updater interface.
 func (u *Updater) Fetch() (io.ReadCloser, string, error) {
 	ctx := u.logger.WithContext(context.Background())
@@ -136,20 +124,21 @@ func (u *Updater) FetchContext(ctx context.Context, hint driver.Fingerprint) (io
 	}
 	log.Debug().Msg("request ok")
 
-	f, err := ioutil.TempFile("", u.Name()+".")
+	// f, err := ioutil.TempFile("", u.Name()+".")
+	tf, err := ioutil.TempFile("", u.Name()+".")
 	if err != nil {
 		return nil, hint, fmt.Errorf("oracle: unable to open tempfile: %w", err)
 	}
-	log.Debug().Msgf("creating tempfile %q", f.Name())
+	log.Debug().Msgf("creating tempfile %q", tf.Name())
 
 	var r io.Reader = res.Body
 	if u.bzip {
 		r = bzip2.NewReader(res.Body)
 	}
-	if _, err := io.Copy(f, r); err != nil {
+	if _, err := io.Copy(tf, r); err != nil {
 		return nil, hint, fmt.Errorf("oracle: unable to open tempfile: %w", err)
 	}
-	if n, err := f.Seek(0, io.SeekStart); err != nil || n != 0 {
+	if n, err := tf.Seek(0, io.SeekStart); err != nil || n != 0 {
 		return nil, hint, fmt.Errorf("oracle: unable to seek database to start: at %d, %v", n, err)
 	}
 	log.Debug().Msg("decompressed and buffered database")
@@ -161,5 +150,5 @@ func (u *Updater) FetchContext(ctx context.Context, hint driver.Fingerprint) (io
 	}
 	log.Debug().Msgf("using new hint %q", hint)
 
-	return &tempfile{f}, hint, nil
+	return tf, hint, nil
 }
