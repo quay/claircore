@@ -189,7 +189,7 @@ func (c *Client) getMirrors(ctx context.Context, release Release) error {
 	}
 
 	urls := strings.Split(string(body), "\n")
-	urls = urls[:len(urls)-2]
+	urls = urls[:len(urls)-1]
 
 	for _, u := range urls {
 		uu, err := url.Parse(u)
