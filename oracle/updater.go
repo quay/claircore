@@ -5,11 +5,11 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"time"
 
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/pkg/tmp"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -124,8 +124,7 @@ func (u *Updater) FetchContext(ctx context.Context, hint driver.Fingerprint) (io
 	}
 	log.Debug().Msg("request ok")
 
-	// f, err := ioutil.TempFile("", u.Name()+".")
-	tf, err := ioutil.TempFile("", u.Name()+".")
+	tf, err := tmp.NewFile("", u.Name()+".")
 	if err != nil {
 		return nil, hint, fmt.Errorf("oracle: unable to open tempfile: %w", err)
 	}
