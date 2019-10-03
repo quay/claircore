@@ -1,4 +1,4 @@
-package oval
+package ovalutil
 
 import (
 	"strings"

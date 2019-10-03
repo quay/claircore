@@ -16,7 +16,7 @@ func TestFetch(t *testing.T) {
 		http.ServeFile(w, r, "testdata/com.oracle.elsa-2018.xml")
 	}))
 	l := log.TestLogger(t)
-	u, err := NewUpdater(WithLogger(&l), WithURL(srv.URL))
+	u, err := NewUpdater(WithLogger(&l), WithURL(srv.URL, ""))
 	if err != nil {
 		t.Fatal(err)
 	}

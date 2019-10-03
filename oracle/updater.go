@@ -1,15 +1,14 @@
 package oracle
 
 import (
-	"compress/bzip2"
 	"context"
-	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/quay/claircore/libvuln/driver"
-	"github.com/quay/claircore/pkg/tmp"
+	"github.com/quay/claircore/pkg/ovalutil"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -19,9 +18,7 @@ const dbURL = `https://linux.oracle.com/security/oval/com.oracle.elsa-all.xml.bz
 
 // Updater implements driver.Updater for Oracle Linux.
 type Updater struct {
-	client *http.Client
-	url    string
-	bzip   bool
+	ovalutil.Fetcher
 
 	logger *zerolog.Logger // hack until the context-ified interfaces are used
 }
@@ -31,11 +28,13 @@ type Option func(*Updater) error
 
 // NewUpdater returns an updater configured according to the provided Options.
 func NewUpdater(opts ...Option) (*Updater, error) {
-	u := Updater{
-		client: http.DefaultClient,
-		url:    dbURL,
-		bzip:   true,
+	u := Updater{}
+	var err error
+	u.Fetcher.URL, err = url.Parse(dbURL)
+	if err != nil {
+		return nil, err
 	}
+	u.Fetcher.Compression = ovalutil.CompressionBzip2
 	for _, o := range opts {
 		if err := o(&u); err != nil {
 			return nil, err
@@ -43,6 +42,11 @@ func NewUpdater(opts ...Option) (*Updater, error) {
 	}
 	if u.logger == nil {
 		u.logger = &log.Logger
+	}
+	l := u.logger.With().Str("component", u.Name()).Logger()
+	u.logger = &l
+	if u.Fetcher.Client == nil {
+		u.Fetcher.Client = http.DefaultClient
 	}
 
 	return &u, nil
@@ -52,16 +56,25 @@ func NewUpdater(opts ...Option) (*Updater, error) {
 // http.Client, instead of http.DefaultClient.
 func WithClient(c *http.Client) Option {
 	return func(u *Updater) error {
-		u.client = c
+		u.Fetcher.Client = c
 		return nil
 	}
 }
 
 // WithURL overrides the default URL to fetch an OVAL database.
-func WithURL(url string) Option {
-	return func(u *Updater) error {
-		u.bzip = false
-		u.url = url
+func WithURL(uri, compression string) Option {
+	c, cerr := ovalutil.ParseCompressor(compression)
+	u, uerr := url.Parse(uri)
+	return func(up *Updater) error {
+		// Return any errors from the outer function.
+		switch {
+		case cerr != nil:
+			return cerr
+		case uerr != nil:
+			return uerr
+		}
+		up.Fetcher.Compression = c
+		up.Fetcher.URL = u
 		return nil
 	}
 }
@@ -92,62 +105,4 @@ func (u *Updater) Fetch() (io.ReadCloser, string, error) {
 	defer done()
 	r, hint, err := u.FetchContext(ctx, "")
 	return r, string(hint), err
-}
-
-// FetchContext is like Fetch, but with Context.
-//
-// FetchContext satisfies the driver.FetcherNG interface.
-func (u *Updater) FetchContext(ctx context.Context, hint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
-	log := zerolog.Ctx(ctx).With().Str("component", u.Name()).Logger()
-
-	log.Info().Str("database", u.url).Msg("starting fetch")
-	req, err := http.NewRequestWithContext(ctx, "GET", u.url, nil)
-	if err != nil {
-		return nil, hint, fmt.Errorf("oracle: unable to construct request: %w", err)
-	}
-	if hint != "" {
-		log.Debug().Msgf("using hint %q", hint)
-		req.Header.Set("If-Modified-Since", string(hint))
-	}
-	res, err := u.client.Do(req)
-	if err != nil {
-		return nil, hint, fmt.Errorf("oracle: error making request: %w", err)
-	}
-	defer res.Body.Close()
-	switch res.StatusCode {
-	case http.StatusOK:
-	case http.StatusNotModified:
-		log.Info().Msg("unchanged")
-		return nil, hint, driver.Unchanged
-	default:
-		return nil, hint, fmt.Errorf("oracle: error making request: %w", err)
-	}
-	log.Debug().Msg("request ok")
-
-	tf, err := tmp.NewFile("", u.Name()+".")
-	if err != nil {
-		return nil, hint, fmt.Errorf("oracle: unable to open tempfile: %w", err)
-	}
-	log.Debug().Msgf("creating tempfile %q", tf.Name())
-
-	var r io.Reader = res.Body
-	if u.bzip {
-		r = bzip2.NewReader(res.Body)
-	}
-	if _, err := io.Copy(tf, r); err != nil {
-		return nil, hint, fmt.Errorf("oracle: unable to open tempfile: %w", err)
-	}
-	if n, err := tf.Seek(0, io.SeekStart); err != nil || n != 0 {
-		return nil, hint, fmt.Errorf("oracle: unable to seek database to start: at %d, %v", n, err)
-	}
-	log.Debug().Msg("decompressed and buffered database")
-
-	if h := res.Header.Get("Last-Modified"); h != "" {
-		hint = driver.Fingerprint(h)
-	} else {
-		hint = driver.Fingerprint(res.Header.Get("Date"))
-	}
-	log.Debug().Msgf("using new hint %q", hint)
-
-	return tf, hint, nil
 }

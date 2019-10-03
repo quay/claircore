@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/xml"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/quay/claircore/test/log"
@@ -32,41 +31,6 @@ func TestParse(t *testing.T) {
 	t.Logf("found %d vulnerabilities", len(vs))
 	if got, want := len(vs), 3128; got != want {
 		t.Fatalf("got: %d vulnerabilities, want: %d vulnerabilities", got, want)
-	}
-}
-
-// TestWalk tests the recursive criterion walker.
-func TestWalk(t *testing.T) {
-	t.Parallel()
-	want := []string{
-		`Oracle Linux 7 is installed AND 389-ds-base is earlier than 0:1.3.5.10-11.el7 AND 389-ds-base is signed with the Oracle Linux 7 key`,
-		`Oracle Linux 7 is installed AND 389-ds-base-libs is earlier than 0:1.3.5.10-11.el7 AND 389-ds-base-libs is signed with the Oracle Linux 7 key`,
-		`Oracle Linux 7 is installed AND 389-ds-base-snmp is earlier than 0:1.3.5.10-11.el7 AND 389-ds-base-snmp is signed with the Oracle Linux 7 key`,
-		`Oracle Linux 7 is installed AND 389-ds-base-devel is earlier than 0:1.3.5.10-11.el7 AND 389-ds-base-devel is signed with the Oracle Linux 7 key`,
-	}
-	c, err := walk(&ovalDef.Criteria)
-	if err != nil {
-		t.Fatal(err)
-	}
-	got := make([]string, len(c))
-	for i, cs := range c {
-		b := strings.Builder{}
-		for i, c := range cs {
-			if i != 0 {
-				b.WriteString(" AND ")
-			}
-			b.WriteString(c.Comment)
-		}
-		got[i] = b.String()
-		t.Log(b.String())
-	}
-	if got, want := len(got), len(want); got != want {
-		t.Fatalf("got: len(got) == %d, want: len(got) == %d", got, want)
-	}
-	for i := range want {
-		if got, want := got[i], want[i]; got != want {
-			t.Fatalf("got: %q, want: %q", got, want)
-		}
 	}
 }
 

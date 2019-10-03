@@ -20,7 +20,7 @@ func TestFetch(t *testing.T) {
 	defer srv.Close()
 
 	t.Run("FetchContext", func(t *testing.T) {
-		u, err := NewUpdater(3, WithClient(srv.Client()), WithURL(srv.URL))
+		u, err := NewUpdater(3, WithClient(srv.Client()), WithURL(srv.URL, ""))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -49,7 +49,7 @@ func TestFetch(t *testing.T) {
 	})
 
 	t.Run("Fetch", func(t *testing.T) {
-		u, err := NewUpdater(3, WithClient(srv.Client()), WithURL(srv.URL))
+		u, err := NewUpdater(3, WithClient(srv.Client()), WithURL(srv.URL, ""))
 		if err != nil {
 			t.Fatal(err)
 		}

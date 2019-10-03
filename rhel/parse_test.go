@@ -4,15 +4,17 @@ import (
 	"context"
 	"encoding/xml"
 	"os"
-	"strings"
 	"testing"
+
+	"github.com/quay/claircore/test/log"
 
 	"github.com/quay/goval-parser/oval"
 )
 
 func TestParse(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
+	l := log.TestLogger(t)
+	ctx := l.WithContext(context.Background())
 	u, err := NewUpdater(3)
 	if err != nil {
 		t.Fatal(err)
@@ -27,46 +29,10 @@ func TestParse(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Logf("found %d vulnerabilities", len(vs))
-	// I think there's 3490 vulnerabilities in the rhel3 database...
-	if got, want := len(vs), 3490; got != want {
+	// I think there's 3510 vulnerabilities in the rhel3 database, including the
+	// EOL notices.
+	if got, want := len(vs), 3510; got != want {
 		t.Fatalf("got: %d vulnerabilities, want: %d vulnerabilities", got, want)
-	}
-}
-
-// TestWalk tests the recursive criterion walker.
-func TestWalk(t *testing.T) {
-	t.Parallel()
-	want := []string{
-		`Red Hat Enterprise Linux 3 is installed AND tetex-xdvi is earlier than 0:1.0.7-67.19 AND tetex-xdvi is signed with Red Hat master key`,
-		`Red Hat Enterprise Linux 3 is installed AND tetex-fonts is earlier than 0:1.0.7-67.19 AND tetex-fonts is signed with Red Hat master key`,
-		`Red Hat Enterprise Linux 3 is installed AND tetex-dvips is earlier than 0:1.0.7-67.19 AND tetex-dvips is signed with Red Hat master key`,
-		`Red Hat Enterprise Linux 3 is installed AND tetex is earlier than 0:1.0.7-67.19 AND tetex is signed with Red Hat master key`,
-		`Red Hat Enterprise Linux 3 is installed AND tetex-afm is earlier than 0:1.0.7-67.19 AND tetex-afm is signed with Red Hat master key`,
-		`Red Hat Enterprise Linux 3 is installed AND tetex-latex is earlier than 0:1.0.7-67.19 AND tetex-latex is signed with Red Hat master key`,
-	}
-	c, err := walk(&ovalDef.Criteria)
-	if err != nil {
-		t.Fatal(err)
-	}
-	got := make([]string, len(c))
-	for i, cs := range c {
-		b := strings.Builder{}
-		for i, c := range cs {
-			if i != 0 {
-				b.WriteString(" AND ")
-			}
-			b.WriteString(c.Comment)
-		}
-		got[i] = b.String()
-		t.Log(b.String())
-	}
-	if got, want := len(got), len(want); got != want {
-		t.Fatalf("got: len(got) == %d, want: len(got) == %d", got, want)
-	}
-	for i := range want {
-		if got, want := got[i], want[i]; got != want {
-			t.Fatalf("got: %q, want: %q", got, want)
-		}
 	}
 }
 

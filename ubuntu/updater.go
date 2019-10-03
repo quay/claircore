@@ -8,7 +8,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
-	CCoval "github.com/quay/claircore/pkg/oval"
+	"github.com/quay/claircore/pkg/ovalutil"
 
 	"github.com/quay/goval-parser/oval"
 	"github.com/rs/zerolog"
@@ -117,7 +117,7 @@ func (u *Updater) Parse(contents io.ReadCloser) ([]*claircore.Vulnerability, err
 		// as we unpack the CVE definition and add the copy with the pkg and dist into to the result array
 		u.curVuln.Name = def.References[0].RefID
 		u.curVuln.Description = def.Description
-		u.curVuln.Links = CCoval.Links(def)
+		u.curVuln.Links = ovalutil.Links(def)
 		u.curVuln.Severity = def.Advisory.Severity
 
 		// now that we have our curVuln setup, unpack each nested package

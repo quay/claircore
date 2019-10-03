@@ -9,7 +9,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
-	CCoval "github.com/quay/claircore/pkg/oval"
+	"github.com/quay/claircore/pkg/ovalutil"
 
 	"github.com/quay/goval-parser/oval"
 	"github.com/rs/zerolog"
@@ -125,7 +125,7 @@ func (u *Updater) classifyVuln(pkgInfo pkgInfo, def oval.Definition) *claircore.
 	vuln := &claircore.Vulnerability{
 		Name:           def.Title,
 		Description:    def.Description,
-		Links:          CCoval.Links(def),
+		Links:          ovalutil.Links(def),
 		Severity:       "Unknown", // oval db doesnt provide
 		Package:        ccPkg,
 		FixedInVersion: pkgInfo.version,
