@@ -4,15 +4,12 @@ import (
 	"context"
 	"net/http"
 	"os"
-	"regexp"
 	"strings"
 
 	"github.com/quay/claircore/debian"
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/libvuln/driver"
 	libhttp "github.com/quay/claircore/libvuln/http"
-	"github.com/quay/claircore/oracle"
-	"github.com/quay/claircore/rhel"
 	"github.com/quay/claircore/ubuntu"
 
 	"github.com/crgimenes/goconfig"
@@ -102,51 +99,21 @@ func confToLibvulnOpts(conf Config) *libvuln.Opts {
 		&debian.Matcher{},
 		&ubuntu.Matcher{},
 	}
-	updaters := []driver.Updater{
-		ubuntu.NewUpdater(ubuntu.Artful),
-		ubuntu.NewUpdater(ubuntu.Bionic),
-		ubuntu.NewUpdater(ubuntu.Cosmic),
-		ubuntu.NewUpdater(ubuntu.Disco),
-		ubuntu.NewUpdater(ubuntu.Precise),
-		ubuntu.NewUpdater(ubuntu.Trusty),
-		ubuntu.NewUpdater(ubuntu.Xenial),
-		debian.NewUpdater(debian.Buster),
-		debian.NewUpdater(debian.Jessie),
-		debian.NewUpdater(debian.Stretch),
-		debian.NewUpdater(debian.Wheezy),
+
+	ups, err := updaters()
+	if err != nil {
+		log.Fatal().Msgf("%v", err)
 	}
 
-	for _, v := range []rhel.Release{
-		rhel.RHEL6,
-		rhel.RHEL7,
-		rhel.RHEL8,
-	} {
-		u, err := rhel.NewUpdater(v)
-		if err != nil {
-			log.Fatal().Msgf("unable to create rhel updater: %v", err)
-		}
-		updaters = append(updaters, u)
-	}
-
-	if u, err := oracle.NewUpdater(oracle.WithLogger(&log.Logger)); err != nil {
-		log.Fatal().Msgf("unable to create oracle updater: %v", err)
-	} else {
-		updaters = append(updaters, u)
+	// filter out updaters not matching provided regex
+	ups, err = regexFilter(conf.Run, ups)
+	if err != nil {
+		log.Fatal().Msgf("%v", err)
 	}
 
 	opts := &libvuln.Opts{
 		Matchers: matchers,
-		Updaters: make([]driver.Updater, 0, len(updaters)),
-	}
-
-	re, err := regexp.Compile(conf.Run)
-	if err != nil {
-		log.Fatal().Err(err).Msg("regexp failed to compile")
-	}
-	for _, u := range updaters {
-		if re.MatchString(u.Name()) {
-			opts.Updaters = append(opts.Updaters, u)
-		}
+		Updaters: ups,
 	}
 
 	// parse DataStore
