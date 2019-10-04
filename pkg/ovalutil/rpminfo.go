@@ -119,24 +119,28 @@ func walk(root *oval.Criteria) ([][]*oval.Criterion, error) {
 		// without bothing to connect them to packages.
 		return out, nil
 	}
-	testRefs := []*oval.Criterion{}
+	// This is the stack we use for the tree walk. It should never get so deep
+	// that it needs to be grown.
+	workstack := make([]*oval.Criterion, 0, 8)
 	var fn func([]*oval.Criterion, *oval.Criteria) error
 	fn = func(stack []*oval.Criterion, cur *oval.Criteria) error {
 		switch cur.Operator {
 		case "AND":
+			// Push all of our AND'd nodes onto the stack.
 			for i := range cur.Criterions {
 				c := &cur.Criterions[i]
 				stack = append(stack, c)
 			}
-			if len(cur.Criterias) == 0 {
-				// the current node's Criterions are leaves
+			switch len(cur.Criterias) {
+			case 0: // the current node's Criterions are leaves
 				r := make([]*oval.Criterion, len(stack))
 				copy(r, stack)
 				out = append(out, r)
-			}
-			for _, c := range cur.Criterias {
-				if err := fn(stack, &c); err != nil {
-					return err
+			default:
+				for _, c := range cur.Criterias {
+					if err := fn(stack, &c); err != nil {
+						return err
+					}
 				}
 			}
 		case "OR":
@@ -149,12 +153,22 @@ func walk(root *oval.Criteria) ([][]*oval.Criterion, error) {
 					}
 				}
 			}
+			// Usual case:
 			for i := range cur.Criterions {
 				c := &cur.Criterions[i]
-				stack = append(stack, c)
-				for _, c := range cur.Criterias {
-					if err := fn(stack, &c); err != nil {
-						return err
+				// Make sure to only use this for this iteration.
+				stack := append(stack, c)
+				switch len(cur.Criterias) {
+				case 0:
+					// the current node's Criterions are leaves
+					r := make([]*oval.Criterion, len(stack))
+					copy(r, stack)
+					out = append(out, r)
+				default:
+					for _, c := range cur.Criterias {
+						if err := fn(stack, &c); err != nil {
+							return err
+						}
 					}
 				}
 			}
@@ -164,7 +178,7 @@ func walk(root *oval.Criteria) ([][]*oval.Criterion, error) {
 		return nil
 	}
 
-	return out, fn(testRefs, root)
+	return out, fn(workstack, root)
 }
 
 func (r *RPMInfo) populate(ctx context.Context, v *claircore.Vulnerability, crit []*oval.Criterion) (*claircore.Vulnerability, error) {
