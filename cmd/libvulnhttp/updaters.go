@@ -52,7 +52,14 @@ func updaters() ([]driver.Updater, error) {
 	for _, rel := range amazonReleases {
 		up, err := aws.NewUpdater(rel)
 		if err != nil {
-			return nil, fmt.Errorf("unable to create amazon updater: %v", err)
+			return nil, fmt.Errorf("unable to create amazon updater %v: %v", rel, err)
+		}
+		updaters = append(updaters, up)
+	}
+	for _, rel := range rhelReleases {
+		up, err := rhel.NewUpdater(rel)
+		if err != nil {
+			return nil, fmt.Errorf("unable to create rhel updater %v: %v", rel, err)
 		}
 		updaters = append(updaters, up)
 	}
