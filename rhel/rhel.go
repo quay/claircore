@@ -5,15 +5,14 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
-	"os"
 	"strconv"
 	"time"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	ovalhelper "github.com/quay/claircore/pkg/oval"
+	"github.com/quay/claircore/pkg/tmp"
 
 	"github.com/quay/goval-parser/oval"
 )
@@ -96,17 +95,6 @@ func (u *Updater) Fetch() (io.ReadCloser, string, error) {
 	return rc, string(hint), nil
 }
 
-type tempfile struct {
-	*os.File
-}
-
-func (t *tempfile) Close() error {
-	if err := t.File.Close(); err != nil {
-		return err
-	}
-	return os.Remove(t.File.Name())
-}
-
 // FetchContext is like Fetch, but with context.
 func (u *Updater) FetchContext(ctx context.Context, hint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", u.dbURL, nil)
@@ -116,11 +104,11 @@ func (u *Updater) FetchContext(ctx context.Context, hint driver.Fingerprint) (io
 	if hint != "" {
 		req.Header.Set("If-Modified-Since", string(hint))
 	}
-	f, err := ioutil.TempFile("", u.Name()+".")
+
+	tf, err := tmp.NewFile("", u.Name()+".")
 	if err != nil {
 		return nil, hint, err
 	}
-	tf := tempfile{f}
 
 	res, err := u.client.Do(req)
 	if err != nil {
@@ -149,7 +137,7 @@ func (u *Updater) FetchContext(ctx context.Context, hint driver.Fingerprint) (io
 	if t := res.Header.Get("Last-Modified"); t != "" {
 		hint = driver.Fingerprint(t)
 	}
-	return &tf, hint, nil
+	return tf, hint, nil
 }
 
 // Parse satisifies the driver.Updater interface.
