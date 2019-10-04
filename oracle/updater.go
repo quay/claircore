@@ -2,9 +2,11 @@ package oracle
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
 
 	"github.com/quay/claircore/libvuln/driver"
@@ -14,10 +16,14 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-const dbURL = `https://linux.oracle.com/security/oval/com.oracle.elsa-all.xml.bz2`
+const (
+	allDB   = `https://linux.oracle.com/security/oval/com.oracle.elsa-all.xml.bz2`
+	baseURL = `https://linux.oracle.com/security/oval/com.oracle.elsa-%d.xml.bz2`
+)
 
 // Updater implements driver.Updater for Oracle Linux.
 type Updater struct {
+	year int
 	ovalutil.Fetcher
 
 	logger *zerolog.Logger // hack until the context-ified interfaces are used
@@ -27,10 +33,18 @@ type Updater struct {
 type Option func(*Updater) error
 
 // NewUpdater returns an updater configured according to the provided Options.
-func NewUpdater(opts ...Option) (*Updater, error) {
-	u := Updater{}
+//
+// If year is -1, the "all" database will be pulled.
+func NewUpdater(year int, opts ...Option) (*Updater, error) {
+	uri := allDB
+	if year != -1 {
+		uri = fmt.Sprintf(baseURL, year)
+	}
+	u := Updater{
+		year: year,
+	}
 	var err error
-	u.Fetcher.URL, err = url.Parse(dbURL)
+	u.Fetcher.URL, err = url.Parse(uri)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +109,11 @@ var _ driver.FetcherNG = (*Updater)(nil)
 
 // Name satifies the driver.Updater interface.
 func (u *Updater) Name() string {
-	return "oracle-updater"
+	which := `all`
+	if u.year != -1 {
+		which = strconv.Itoa(u.year)
+	}
+	return fmt.Sprintf("oracle-%s-updater", which)
 }
 
 // Fetch satifies the driver.Updater interface.

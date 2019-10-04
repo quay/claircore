@@ -15,7 +15,7 @@ func TestParse(t *testing.T) {
 	t.Parallel()
 	l := log.TestLogger(t)
 	ctx := l.WithContext(context.Background())
-	u, err := NewUpdater()
+	u, err := NewUpdater(-1)
 	if err != nil {
 		t.Fatal(err)
 	}
