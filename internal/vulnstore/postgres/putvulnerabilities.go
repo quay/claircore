@@ -97,59 +97,61 @@ func putVulnerabilities(ctx context.Context, pool *pgxpool.Pool, updater string,
 	}
 	defer tx.Rollback(ctx)
 
-	/*
-		// create preparted statement for batch instert
-		insertVulnerabilityStmt, err := tx.Prepare(ctx, "insertVulnerabilityStmt", insertVulnerability)
-		if err != nil {
-			return fmt.Errorf("failed to create insertVulnerabilty preparted statement. tx rollback: %v", err)
-		}
-	*/
-
 	// begin batch insert
-	batch := &pgx.Batch{}
-	// use zero value structs to enforce unique constraint since postgres does not view
-	// "null" as a unique field.
-	for _, vuln := range vulns {
-		if vuln.Package == nil {
-			vuln.Package = &claircore.Package{
-				Dist: &claircore.Distribution{},
+	const flushSize = 100000
+	for i, rounds := 0, len(vulns)/flushSize; i <= rounds; i++ {
+		off := i * flushSize
+		lim := off + flushSize
+		var vs []*claircore.Vulnerability
+		if len(vulns) < lim {
+			vs = vulns[off:]
+		} else {
+			vs = vulns[off:lim]
+		}
+		batch := &pgx.Batch{}
+
+		for _, vuln := range vs {
+			if vuln.Package == nil {
+				vuln.Package = &claircore.Package{
+					Dist: &claircore.Distribution{},
+				}
+			}
+			if vuln.Package.Dist == nil {
+				vuln.Package.Dist = &claircore.Distribution{}
+			}
+			// queue the insert
+			batch.Queue(insertVulnerability,
+				updater,
+				vuln.Name,
+				vuln.Description,
+				vuln.Links,
+				vuln.Severity,
+				vuln.Package.Name,
+				vuln.Package.Version,
+				vuln.Package.Kind,
+				vuln.Package.Dist.DID,
+				vuln.Package.Dist.Name,
+				vuln.Package.Dist.Version,
+				vuln.Package.Dist.VersionCodeName,
+				vuln.Package.Dist.VersionID,
+				vuln.Package.Dist.Arch,
+				vuln.FixedInVersion,
+				newTombstone,
+			)
+		}
+
+		// Allow up to 30 seconds for SendBatch() to complete.
+		tctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		res := tx.SendBatch(tctx, batch)
+		for range vs {
+			if _, err := res.Exec(); err != nil {
+				cancel()
+				res.Close()
+				return fmt.Errorf("failed processing batch response: %v", err)
 			}
 		}
-		if vuln.Package.Dist == nil {
-			vuln.Package.Dist = &claircore.Distribution{}
-		}
-
-		// queue the insert
-		batch.Queue(insertVulnerability,
-			updater,
-			vuln.Name,
-			vuln.Description,
-			vuln.Links,
-			vuln.Severity,
-			vuln.Package.Name,
-			vuln.Package.Version,
-			vuln.Package.Kind,
-			vuln.Package.Dist.DID,
-			vuln.Package.Dist.Name,
-			vuln.Package.Dist.Version,
-			vuln.Package.Dist.VersionCodeName,
-			vuln.Package.Dist.VersionID,
-			vuln.Package.Dist.Arch,
-			vuln.FixedInVersion,
-			newTombstone,
-		)
-	}
-
-	// allow up to 30 seconds for batch.Send() to complete. see warning:
-	// https://godoc.org/github.com/jackc/pgx#Batch.Send
-	tctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	res := pool.SendBatch(tctx, batch)
-	defer res.Close()
-	for range vulns {
-		if _, err := res.Exec(); err != nil {
-			return fmt.Errorf("failed processing batch response: %v", err)
-		}
+		cancel()
+		res.Close()
 	}
 
 	// delete any stale records. if oldTombstone is emptry string this indicates it's
