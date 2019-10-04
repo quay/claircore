@@ -2,7 +2,6 @@ package aws
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -42,7 +41,11 @@ func Test_Client_Linux1_GetMirrors(t *testing.T) {
 	defer srv.Close()
 
 	// send requests to test server
-	amazonLinux1Mirrors = srv.URL
+	var prev string
+	amazonLinux1Mirrors, prev = srv.URL, amazonLinux1Mirrors
+	defer func() {
+		amazonLinux1Mirrors = prev
+	}()
 
 	for _, test := range tests {
 		client := Client{
@@ -62,7 +65,7 @@ func Test_Client_Linux1_GetMirrors(t *testing.T) {
 		err := client.getMirrors(tctx, test.release)
 		assert.NoError(t, err)
 		assert.ElementsMatch(t, urls, client.mirrors)
-		log.Printf("%v", client.mirrors)
+		t.Log(client.mirrors)
 	}
 }
 
@@ -85,7 +88,11 @@ func Test_Client_Linux2_GetMirrors(t *testing.T) {
 	defer srv.Close()
 
 	// send requests to test server
-	amazonLinux2Mirrors = srv.URL
+	var prev string
+	amazonLinux2Mirrors, prev = srv.URL, amazonLinux2Mirrors
+	defer func() {
+		amazonLinux2Mirrors = prev
+	}()
 
 	for _, test := range tests {
 		client := Client{
@@ -105,7 +112,7 @@ func Test_Client_Linux2_GetMirrors(t *testing.T) {
 		err := client.getMirrors(tctx, test.release)
 		assert.NoError(t, err)
 		assert.ElementsMatch(t, urls, client.mirrors)
-		log.Printf("%v", client.mirrors)
+		t.Log(client.mirrors)
 	}
 }
 
