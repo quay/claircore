@@ -42,7 +42,11 @@ func Test_Client_Linux1_GetMirrors(t *testing.T) {
 	defer srv.Close()
 
 	// send requests to test server
+	tmp := amazonLinux1Mirrors
 	amazonLinux1Mirrors = srv.URL
+	defer func() {
+		amazonLinux1Mirrors = tmp
+	}()
 
 	for _, test := range tests {
 		client := Client{
@@ -85,7 +89,11 @@ func Test_Client_Linux2_GetMirrors(t *testing.T) {
 	defer srv.Close()
 
 	// send requests to test server
+	tmp := amazonLinux2Mirrors
 	amazonLinux2Mirrors = srv.URL
+	defer func() {
+		amazonLinux2Mirrors = tmp
+	}()
 
 	for _, test := range tests {
 		client := Client{
