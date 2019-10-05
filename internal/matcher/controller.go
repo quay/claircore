@@ -29,6 +29,11 @@ func (mc *Controller) Match(ctx context.Context, pkgs map[int]*claircore.Package
 	// find the packages the matcher is interested in.
 	interestedPkgs := mc.findInterested(pkgs)
 
+	// early return; do not call db at all
+	if len(interestedPkgs) == 0 {
+		return map[int][]*claircore.Vulnerability{}, nil
+	}
+
 	// query the vulnstore
 	vulns, err := mc.query(ctx, interestedPkgs)
 	if err != nil {
