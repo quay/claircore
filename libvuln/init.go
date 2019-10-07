@@ -83,7 +83,8 @@ func initStore(ctx context.Context, opts *Opts) (*sqlx.DB, vulnstore.Store, erro
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to parse ConnString: %v", err)
 		}
-		cfg.MaxConns = 30
+		// set conn pool size via libvuln.Opts
+		cfg.MaxConns = opts.MaxConnPool
 		pool, err := pgxpool.ConnectConfig(ctx, cfg)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to create ConnPool: %v", err)

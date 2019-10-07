@@ -29,6 +29,8 @@ const (
 type Opts struct {
 	// the datastore implementation libvuln should instantiate
 	DataStore DataStore
+	// the maximum size of the connection pool used by the database
+	MaxConnPool int32
 	// the connectiong string to the above data store implementation
 	ConnString string
 	// the update lock (distlock) implementation libvuln should instantiate

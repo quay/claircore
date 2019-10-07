@@ -25,6 +25,7 @@ type Config struct {
 	ConnString     string `cfgDefault:"host=localhost port=5435 user=libvuln dbname=libvuln password=libvuln sslmode=disable" cfg:"CONNECTION_STRING" cfgHelper:"Connection string for the provided DataStore"`
 	UpdateLock     string `cfgDefault:"postgres" cfg:"UPDATE_LOCK" cfgHelper:"ScanLock that libvuln should use. currently implemented: 'postgres'"`
 	LogLevel       string `cfgDefault:"debug" cfg:"LOG_LEVEL" cfgHelper:"Log levels: debug, info, warning, error, fatal, panic" `
+	MaxConnPool    int    `cfgDefault:"100" cfg:"MAX_CONN_POOL" cfgHelper:"the maximum size of the connection pool used for database connections"`
 	Run            string `cfg:"RUN" cfgDefault:"." cfgHelper:"Regexp of updaters to run."`
 }
 
@@ -124,6 +125,9 @@ func confToLibvulnOpts(conf Config) *libvuln.Opts {
 	default:
 		log.Fatal().Msgf("the DataStore %s is not implemented", conf.DataStore)
 	}
+
+	// set max connection pool option
+	opts.MaxConnPool = int32(conf.MaxConnPool)
 
 	// parse UpdateLock
 	switch conf.UpdateLock {
