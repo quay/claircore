@@ -11,6 +11,7 @@ require (
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/doug-martin/goqu/v8 v8.6.0
 	github.com/golang/mock v1.3.1
+	github.com/google/go-cmp v0.3.1
 	github.com/google/uuid v1.1.1
 	github.com/jackc/pgx/v4 v4.0.0
 	github.com/jmoiron/sqlx v1.2.0
@@ -28,4 +29,5 @@ require (
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58
 	gopkg.in/airbrake/gobrake.v2 v2.0.9 // indirect
 	gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2 // indirect
+	gopkg.in/yaml.v2 v2.2.4
 )
