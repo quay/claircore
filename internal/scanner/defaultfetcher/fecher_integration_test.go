@@ -2,7 +2,6 @@ package defaultfetcher
 
 import (
 	"context"
-	"log"
 	"os"
 	"testing"
 	"time"
@@ -80,7 +79,7 @@ func Test_Fetcher_Integration(t *testing.T) {
 					t.Fatalf("expected file %v to be removed after call to Purge", layer.LocalPath)
 				}
 
-				log.Printf("%v", layer.LocalPath)
+				t.Log(layer.LocalPath)
 			}
 		}
 	}

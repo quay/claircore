@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"context"
-	"log"
 	"testing"
 
 	"github.com/jmoiron/sqlx"
@@ -96,7 +95,7 @@ func Test_SetScanFinished_Success(t *testing.T) {
 				temp = append(temp, m)
 			}
 			scnrs.PStoVS(temp)
-			log.Printf("%v", len(scnrs))
+			t.Log(scnrs)
 
 			err := store.SetScanFinished(ctx, &claircore.ScanReport{
 				Hash: table.hash,

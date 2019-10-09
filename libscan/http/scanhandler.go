@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	h "net/http"
 	"time"
 
@@ -34,7 +33,6 @@ func Scan(lib libscan.Libscan) h.HandlerFunc {
 				Code:    "bad-request",
 				Message: fmt.Sprintf("could not deserialize manifest: %v", err),
 			}
-			log.Printf("could not deserialize manifest: %v", err)
 			je.Error(w, resp, h.StatusBadRequest)
 			return
 		}
