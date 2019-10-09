@@ -6,7 +6,6 @@ package claircore_test
 
 import (
 	"context"
-	"log"
 	"testing"
 	"time"
 
@@ -20,8 +19,6 @@ import (
 
 func Test_Layer_Files_Miss(t *testing.T) {
 	integration.Skip(t)
-	// flip this bool if you'd like the test to print the found files to std out
-	var printFile = false
 	var tt = []struct {
 		// name of the test
 		name string
@@ -84,9 +81,7 @@ func Test_Layer_Files_Miss(t *testing.T) {
 					t.Fatalf("returned buffer for path %v has len %v", path, len(b))
 				}
 
-				if printFile {
-					log.Printf("File:\n%v\n", string(b))
-				}
+				t.Logf("File:\n%v\n", string(b))
 			}
 		})
 	}
@@ -94,8 +89,6 @@ func Test_Layer_Files_Miss(t *testing.T) {
 
 func Test_Layer_Files_Hit(t *testing.T) {
 	integration.Skip(t)
-	// flip this bool if you'd like the test to print the found files to std out
-	var printFile = false
 	var tt = []struct {
 		// name of the test
 		name string
@@ -158,9 +151,7 @@ func Test_Layer_Files_Hit(t *testing.T) {
 					t.Fatalf("returned buffer for path %v has len %v", path, len(b))
 				}
 
-				if printFile {
-					log.Printf("File:\n%v\n", string(b))
-				}
+				t.Logf("File:\n%v\n", string(b))
 			}
 		})
 	}

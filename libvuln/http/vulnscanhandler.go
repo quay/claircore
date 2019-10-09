@@ -3,16 +3,18 @@ package http
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	h "net/http"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln"
+
 	je "github.com/quay/claircore/pkg/jsonerr"
+	"github.com/rs/zerolog/log"
 )
 
 func VulnScan(lib libvuln.Libvuln) h.HandlerFunc {
 	return func(w h.ResponseWriter, r *h.Request) {
+		log := log.Logger
 		if r.Method != h.MethodPost {
 			resp := &je.Response{
 				Code:    "method-not-allowed",
@@ -30,7 +32,7 @@ func VulnScan(lib libvuln.Libvuln) h.HandlerFunc {
 				Code:    "bad-request",
 				Message: fmt.Sprintf("could not deserialize manifest: %v", err),
 			}
-			log.Printf("could not deserialize manifest: %v", err)
+			log.Warn().Err(err).Msg("could not deserialize manifest")
 			je.Error(w, resp, h.StatusBadRequest)
 			return
 		}

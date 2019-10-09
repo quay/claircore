@@ -2,7 +2,6 @@ package aws
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"testing"
 
@@ -22,7 +21,6 @@ func Test_Client_Linux1_Integration_GetMirrors(t *testing.T) {
 		err := client.getMirrors(context.Background(), test)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, client.mirrors)
-		log.Printf("%v", client.mirrors)
-		log.Printf("%v", len(client.mirrors))
+		t.Log(client.mirrors)
 	}
 }

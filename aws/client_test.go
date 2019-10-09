@@ -2,7 +2,6 @@ package aws
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -66,7 +65,7 @@ func Test_Client_Linux1_GetMirrors(t *testing.T) {
 		err := client.getMirrors(tctx, test.release)
 		assert.NoError(t, err)
 		assert.ElementsMatch(t, urls, client.mirrors)
-		log.Printf("%v", client.mirrors)
+		t.Log(client.mirrors)
 	}
 }
 
@@ -113,7 +112,7 @@ func Test_Client_Linux2_GetMirrors(t *testing.T) {
 		err := client.getMirrors(tctx, test.release)
 		assert.NoError(t, err)
 		assert.ElementsMatch(t, urls, client.mirrors)
-		log.Printf("%v", client.mirrors)
+		t.Log(client.mirrors)
 	}
 }
 
