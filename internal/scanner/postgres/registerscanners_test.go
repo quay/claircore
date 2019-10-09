@@ -112,7 +112,7 @@ func Test_RegisterScanners_Success(t *testing.T) {
 				for i := 0; i < n; i++ {
 					_, err := db.Exec(`INSERT INTO scanner (name, version, kind) VALUES ($1, $2, $3);`, scnrs[i].name, scnrs[i].version, scnrs[i].kind)
 					if err != nil {
-						t.Fatalf("failed to insert scanner into database")
+						t.Fatalf("failed to insert scanner into database: %v", err)
 					}
 				}
 			},

@@ -21,7 +21,7 @@ import (
 
 // Test_Matcher_Integration confirms packages are matched
 // with vulnerabilities correctly. the returned
-// store from postgres.NewTestStore must have Ubuntu
+// store from postgres.TestStore must have Ubuntu
 // CVE data
 func Test_Matcher_Integration(t *testing.T) {
 	integration.Skip(t)
