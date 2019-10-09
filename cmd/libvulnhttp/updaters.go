@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 
+	"github.com/quay/claircore/alpine"
 	"github.com/quay/claircore/aws"
 	"github.com/quay/claircore/debian"
 	"github.com/quay/claircore/libvuln/driver"
@@ -41,6 +42,11 @@ var amazonReleases = []aws.Release{
 	aws.Linux2,
 }
 
+var alpineMatrix = map[alpine.Repo][]alpine.Release{
+	alpine.Main:      []alpine.Release{alpine.V3_10, alpine.V3_9, alpine.V3_8, alpine.V3_7, alpine.V3_6, alpine.V3_5, alpine.V3_4, alpine.V3_3},
+	alpine.Community: []alpine.Release{alpine.V3_10, alpine.V3_9, alpine.V3_8, alpine.V3_7, alpine.V3_6, alpine.V3_5, alpine.V3_4, alpine.V3_3},
+}
+
 func updaters() ([]driver.Updater, error) {
 	updaters := []driver.Updater{}
 	for _, rel := range ubuntuReleases {
@@ -62,6 +68,15 @@ func updaters() ([]driver.Updater, error) {
 			return nil, fmt.Errorf("unable to create rhel updater %v: %v", rel, err)
 		}
 		updaters = append(updaters, up)
+	}
+	for repo, releases := range alpineMatrix {
+		for _, rel := range releases {
+			up, err := alpine.NewUpdater(rel, repo)
+			if err != nil {
+				return nil, fmt.Errorf("unable to create alpine updater %v %v: %v", repo, rel, err)
+			}
+			updaters = append(updaters, up)
+		}
 	}
 
 	if u, err := oracle.NewUpdater(oracle.WithLogger(&log.Logger)); err != nil {
