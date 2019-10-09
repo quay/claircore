@@ -10,7 +10,7 @@ genmocks:
 # runs integration tests. database must be available. use the db commands below to ensure this
 .PHONY: integration
 integration:
-	go test -count=1 -p 1 -race -tags integration ./...
+	go test -count=1 -race -tags integration ./...
 
 # runs integration test which may fail on darwin but must succeed on linux/unix
 # using the docker-shell makefile first will drop you into a unix container where
