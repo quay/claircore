@@ -150,8 +150,8 @@ func putVulnerabilities(ctx context.Context, pool *pgxpool.Pool, updater string,
 				return fmt.Errorf("failed processing batch response: %v", err)
 			}
 		}
-		cancel()
 		res.Close()
+		cancel()
 	}
 
 	// delete any stale records. if oldTombstone is emptry string this indicates it's
