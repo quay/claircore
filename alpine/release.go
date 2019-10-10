@@ -1,6 +1,6 @@
 package alpine
 
-// Release is a particular
+// Release is a particular release of the Alpine linux distribution
 type Release string
 
 const (
