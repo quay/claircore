@@ -3,7 +3,7 @@ package alpine
 import (
 	"io"
 
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 // Details define a package's name and security fixes for said package
