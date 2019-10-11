@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/pkg/microbatch"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
@@ -97,61 +98,44 @@ func putVulnerabilities(ctx context.Context, pool *pgxpool.Pool, updater string,
 	}
 	defer tx.Rollback(ctx)
 
-	// begin batch insert
-	const flushSize = 100000
-	for i, rounds := 0, len(vulns)/flushSize; i <= rounds; i++ {
-		off := i * flushSize
-		lim := off + flushSize
-		var vs []*claircore.Vulnerability
-		if len(vulns) < lim {
-			vs = vulns[off:]
-		} else {
-			vs = vulns[off:lim]
-		}
-		batch := &pgx.Batch{}
-
-		for _, vuln := range vs {
-			if vuln.Package == nil {
-				vuln.Package = &claircore.Package{
-					Dist: &claircore.Distribution{},
-				}
-			}
-			if vuln.Package.Dist == nil {
-				vuln.Package.Dist = &claircore.Distribution{}
-			}
-			// queue the insert
-			batch.Queue(insertVulnerability,
-				updater,
-				vuln.Name,
-				vuln.Description,
-				vuln.Links,
-				vuln.Severity,
-				vuln.Package.Name,
-				vuln.Package.Version,
-				vuln.Package.Kind,
-				vuln.Package.Dist.DID,
-				vuln.Package.Dist.Name,
-				vuln.Package.Dist.Version,
-				vuln.Package.Dist.VersionCodeName,
-				vuln.Package.Dist.VersionID,
-				vuln.Package.Dist.Arch,
-				vuln.FixedInVersion,
-				newTombstone,
-			)
-		}
-
-		// Allow up to 30 seconds for SendBatch() to complete.
-		tctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		res := tx.SendBatch(tctx, batch)
-		for range vs {
-			if _, err := res.Exec(); err != nil {
-				res.Close()
-				cancel()
-				return fmt.Errorf("failed processing batch response: %v", err)
+	// safe sized batch inserts to postgres
+	mBatcher := microbatch.NewInsert(tx, 2000, time.Minute)
+	for _, vuln := range vulns {
+		vv := vuln
+		if vv.Package == nil {
+			vv.Package = &claircore.Package{
+				Dist: &claircore.Distribution{},
 			}
 		}
-		res.Close()
-		cancel()
+		if vv.Package.Dist == nil {
+			vv.Package.Dist = &claircore.Distribution{}
+		}
+		err := mBatcher.Queue(ctx,
+			insertVulnerability,
+			updater,
+			vv.Name,
+			vv.Description,
+			vv.Links,
+			vv.Severity,
+			vv.Package.Name,
+			vv.Package.Version,
+			vv.Package.Kind,
+			vv.Package.Dist.DID,
+			vv.Package.Dist.Name,
+			vv.Package.Dist.Version,
+			vv.Package.Dist.VersionCodeName,
+			vv.Package.Dist.VersionID,
+			vv.Package.Dist.Arch,
+			vv.FixedInVersion,
+			newTombstone,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to queue vulnerability: %v", err)
+		}
+	}
+	err = mBatcher.Done(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to finish batch vulnerability insert: %v", err)
 	}
 
 	// delete any stale records. if oldTombstone is emptry string this indicates it's
