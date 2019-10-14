@@ -30,17 +30,18 @@ func Test_Updater_Integration(t *testing.T) {
 		Interval: 30 * time.Second,
 		Lock:     distlock.NewLock(db, 10*time.Second),
 	}
-	updater := New(opts)
+	controller := New(opts)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
-	defer cancel()
-	updater.Start(ctx)
+	ctx, cancel := context.WithCancel(ctx)
+	tm := time.AfterFunc(2*time.Minute, cancel)
+	defer tm.Stop()
 
-	select {
-	case <-ctx.Done():
+	if err := controller.Update(ctx); err != nil {
+		t.Error(err)
 	}
 
 	var count int
 	err := db.Get(&count, "SELECT COUNT(*) FROM vuln;")
 	assert.NoError(t, err)
+	t.Logf("found: %d entries", count)
 }
