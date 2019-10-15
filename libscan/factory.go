@@ -26,15 +26,30 @@ func scannerFactory(lib *libscan, opts *Opts) (scanner.Scanner, error) {
 		return nil, fmt.Errorf("provided ScanLock opt is unsupported")
 	}
 
+	var pscnrs scanner.VersionedScanners
+	pscnrs.PStoVS(opts.PackageScannerFactory())
+
+	var dscnrs scanner.VersionedScanners
+	dscnrs.DStoVS(opts.DistributionScannerFactory())
+
+	var rscnrs scanner.VersionedScanners
+	rscnrs.RStoVS(opts.RepositoryScannerFactory())
+
+	vscnrs := scanner.MergeVS(pscnrs, dscnrs, rscnrs)
+
 	// add other fetcher implementations here as they grow
 	var ft scanner.Fetcher
 	ft = defaultfetcher.New(lib.client, nil, opts.LayerFetchOpt)
 
+	// convert libscan.Opts to scanner.Opts
 	sOpts := &scanner.Opts{
-		Store:           lib.store,
-		ScanLock:        sc,
-		Fetcher:         ft,
-		PackageScanners: lib.packageScanners(),
+		Store:                lib.store,
+		ScanLock:             sc,
+		Fetcher:              ft,
+		PackageScanners:      opts.PackageScannerFactory(),
+		DistributionScanners: opts.DistributionScannerFactory(),
+		RepositoryScanners:   opts.RepositoryScannerFactory(),
+		Vscnrs:               vscnrs,
 	}
 
 	// add other layer scanner implementations as they grow
@@ -54,12 +69,14 @@ func packageScannerFactory() []scanner.PackageScanner {
 	}
 }
 
+// DistributionScannerFactory is a factory method to return a set of DistributionScanners which are used during libscan runtime
 type DistributionScannerFactory func() []scanner.DistributionScanner
 
 func distributionScannerFactory() []scanner.DistributionScanner {
 	return []scanner.DistributionScanner{}
 }
 
+// RepositoryScannerFactory is a factory method to return a set of RepositoryScanners which are used during libscan runtime
 type RepositoryScannerFactory func() []scanner.RepositoryScanner
 
 func repositoryScannerFactory() []scanner.RepositoryScanner {

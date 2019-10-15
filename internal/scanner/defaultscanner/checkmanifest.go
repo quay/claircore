@@ -8,7 +8,7 @@ import (
 func checkManifest(s *defaultScanner, ctx context.Context) (ScannerState, error) {
 	// determine if we've seen this manifest and if we've
 	// scanned it with the desired scanners
-	ok, err := s.Store.ManifestScanned(ctx, s.manifest.Hash, s.vscnrs)
+	ok, err := s.Store.ManifestScanned(ctx, s.manifest.Hash, s.Vscnrs)
 	if err != nil {
 		s.logger.Error().Str("state", s.getState().String()).Msgf("failed to determine if manifest has been scanned: %v", err)
 		return Terminal, err

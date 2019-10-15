@@ -12,7 +12,7 @@ func scanFinished(s *defaultScanner, ctx context.Context) (ScannerState, error) 
 	s.report.Success = true
 	s.logger.Info().Str("state", s.getState().String()).Msg("finishing scan")
 
-	err := s.Store.SetScanFinished(ctx, s.report, s.vscnrs)
+	err := s.Store.SetScanFinished(ctx, s.report, s.Vscnrs)
 	if err != nil {
 		s.logger.Error().Str("state", s.getState().String()).Msgf("failed to finish scan. atttempt a rescan of the manifest: %v", err)
 		return Terminal, fmt.Errorf("failed finish scann. attempt a rescan of the manifest: %v", err)

@@ -9,7 +9,7 @@ import (
 // limited by the supplied scanners and populates the result.PackageIntroduced map.
 func buildLayerResult(s *defaultScanner, ctx context.Context) (ScannerState, error) {
 	for _, layer := range s.manifest.Layers {
-		pkgs, err := s.Store.PackagesByLayer(ctx, layer.Hash, s.vscnrs)
+		pkgs, err := s.Store.PackagesByLayer(ctx, layer.Hash, s.Vscnrs)
 		if err != nil {
 			s.logger.Error().Str("state", s.getState().String()).Msgf("failed to obtain packages for layer %v: %v", layer.Hash, err)
 			return Terminal, fmt.Errorf("failed to obtain packages for layer %v: %v", layer.Hash, err)

@@ -26,19 +26,14 @@ type Libscan interface {
 
 // libscan implements libscan.Libscan interface
 type libscan struct {
-	// client provided configuration options for libscan
+	// holds dependencies for creating a libscan instance
 	*Opts
 	// convenience field for creating scan-time resources that require a database
 	db *sqlx.DB
-	// a Store which will be shared between scanners
+	// a Store which will be shared between scanner instances
 	store scanner.Store
 	// a sharable http client
 	client *http.Client
-	// the factory used to generate a scanner during runtime. default used if not provided in opts
-	scanner ScannerFactory
-	// the factory used to generate package scanners during runtime. default used if not provided in opts
-	packageScanners PackageScannerFactory
-	// a logger with context
 	logger zerolog.Logger
 }
 
@@ -59,18 +54,24 @@ func New(ctx context.Context, opts *Opts) (Libscan, error) {
 	logger.Info().Msg("created database connection")
 
 	l := &libscan{
-		Opts:            opts,
-		db:              db,
-		store:           store,
-		client:          &http.Client{},
-		scanner:         opts.ScannerFactory,
-		packageScanners: opts.PackageScannerFactory,
-		logger:          logger,
+		Opts:   opts,
+		db:     db,
+		store:  store,
+		client: &http.Client{},
+		logger: logger,
 	}
 
 	// register any new scanners.
-	var vscnrs scanner.VersionedScanners
-	vscnrs.PStoVS(l.packageScanners())
+	var pscnrs scanner.VersionedScanners
+	pscnrs.PStoVS(opts.PackageScannerFactory())
+
+	var dscnrs scanner.VersionedScanners
+	dscnrs.DStoVS(opts.DistributionScannerFactory())
+
+	var rscnrs scanner.VersionedScanners
+	rscnrs.RStoVS(opts.RepositoryScannerFactory())
+
+	vscnrs := scanner.MergeVS(pscnrs, dscnrs, rscnrs)
 
 	err = l.store.RegisterScanners(ctx, vscnrs)
 	if err != nil {
@@ -88,7 +89,7 @@ func (l *libscan) Scan(ctx context.Context, manifest *claircore.Manifest) (<-cha
 
 	rc := make(chan *claircore.ScanReport, 1)
 
-	s, err := l.scanner(l, l.Opts)
+	s, err := l.ScannerFactory(l, l.Opts)
 	if err != nil {
 		l.logger.Error().Msgf("scanner factory failed to construct a scanner: %v", err)
 		return nil, fmt.Errorf("scanner factory failed to construct a scanner: %v", err)

@@ -47,6 +47,14 @@ type Opts struct {
 	// provides an alternative method for specifying the package scanners used during libscan runtime
 	// if nil the default factory will be used
 	PackageScannerFactory PackageScannerFactory
+	// provides an alternative method for specifying the distribution scanners used during libscan runtime
+	// if nil the default factory will be used
+	DistributionScannerFactory DistributionScannerFactory
+	// provides an alternative method for specifying the repository scanners used during libscan runtime
+	// if nil the default factory will be used
+	RepositoryScannerFactory RepositoryScannerFactory
+	// Computed after libscan initialization
+	vscnrs scanner.VersionedScanners
 }
 
 func (o *Opts) Parse() error {
@@ -73,6 +81,12 @@ func (o *Opts) Parse() error {
 	}
 	if o.PackageScannerFactory == nil {
 		o.PackageScannerFactory = packageScannerFactory
+	}
+	if o.DistributionScannerFactory == nil {
+		o.DistributionScannerFactory = distributionScannerFactory
+	}
+	if o.RepositoryScannerFactory == nil {
+		o.RepositoryScannerFactory = repositoryScannerFactory
 	}
 
 	// for now force this to Tee to support layer stacking
