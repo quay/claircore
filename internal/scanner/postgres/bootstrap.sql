@@ -30,6 +30,16 @@ CREATE INDEX package_name_idx ON package (name);
 CREATE INDEX package_version_idx ON package (version);
 CREATE INDEX package_kind_idx ON package (kind);
 
+--- Repository
+--- a unique package repository discovered by a scanner
+CREATE TABLE repository (
+    id SERIAL PRIMARY KEY,
+    name text NOT NULL,
+    key text,
+    uri text
+);
+CREATE INDEX repo_unique_idx ON repository (name, key, uri);
+
 --- Scanner
 --- a unique versioned scanner which is responsible
 --- for finding packages and distributions in a layer
@@ -55,23 +65,46 @@ CREATE TABLE scannerlist (
 );
 CREATE INDEX scannerlist_manifest_hash_idx ON scannerlist (manifest_hash);
 
---- ScanArtifact
---- a relation representing the artifacts a scanner discovered
---- loosely couples packages to their distribution context and 
---- lastly to the layer the pair was found in
-CREATE TABLE scanartifact (
+--- PackageScanArtifact
+--- A relation linking discovered packages with the 
+--- layer hash it was found
+CREATE TABLE package_scanartifact (
     id SERIAL PRIMARY KEY,
     layer_hash text,
-    kind text,
     package_id int REFERENCES package(id),
-    dist_id int REFERENCES dist(id),
     source_id int REFERENCES package(id),
+    db_path text,
+    repository_hint text,
     scanner_id int REFERENCES scanner(id),
-    unique(layer_hash, kind, package_id, dist_id, source_id, scanner_id)
+    unique(layer_hash, package_id, source_id, scanner_id)
 );
-CREATE INDEX scanartifact_unique_idx ON scanartifact (layer_hash, kind, package_id, dist_id, source_id, scanner_id);
-CREATE INDEX scanartifact_layer_hash_idx ON scanartifact (layer_hash);
-CREATE INDEX scanartifact_layer_hash_scanner_id_idx ON scanartifact (layer_hash, scanner_id);
+CREATE INDEX package_scanartifact_unique_idx ON package_scanartifact (layer_hash, package_id, source_id, scanner_id);
+CREATE INDEX package_scanartifact_layer_hash_idx ON package_scanartifact (layer_hash);
+CREATE INDEX package_scanartifact_layer_hash_scanner_id_idx ON package_scanartifact (layer_hash, scanner_id);
+
+--- DistributionScanArtifact
+--- A relation linking discovered distributions to a layer
+CREATE TABLE dist_scanartifact (
+    id SERIAL PRIMARY KEY,
+    layer_hash text,
+    dist_id int REFERENCES dist(id),
+    scanner_id int REFERENCES scanner(id)
+);
+CREATE INDEX dist_scanartifact_unique_idx ON dist_scanartifact (layer_hash, dist_id, scanner_id);
+CREATE INDEX dist_scanartifact_layer_hash_idx ON dist_scanartifact (layer_hash);
+CREATE INDEX dist_scanartifact_layer_hash_scanner_id_idx ON dist_scanartifact (layer_hash, scanner_id);
+
+--- RepositoryScanArtifact
+--- A relation linking discovered distributions to a layer
+CREATE TABLE repo_scanartifact (
+    id SERIAL PRIMARY KEY,
+    layer_hash text,
+    repo_id int REFERENCES repository(id),
+    scanner_id int REFERENCES scanner(id)
+);
+CREATE INDEX repo_scanartifact_unique_idx ON repo_scanartifact (layer_hash, repo_id, scanner_id);
+CREATE INDEX repo_scanartifact_layer_hash_idx ON repo_scanartifact (layer_hash);
+CREATE INDEX repo_scanartifact_layer_hash_scanner_id_idx ON repo_scanartifact (layer_hash, scanner_id);
 
 --- ScanReport
 CREATE TABLE scanreport (
