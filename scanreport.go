@@ -33,22 +33,27 @@ type ScanReport struct {
 	Err string `json:"err"`
 }
 
-// ScanRecord seeks into the ScanReport and returns a ScanRecord when provided with a package
-func (report *ScanReport) ScanRecord(pkg *Package) (*ScanRecord, error) {
-	record := &ScanRecord{}
-	record.Package = pkg
+// ScanRecords returns a list of ScanRecords derived from the ScanReport
+// If a value in the ScanRecord is not found in the ScanReport the empty value
+// is returned
+func (report *ScanReport) ScanRecords() []*ScanRecord {
+	out := []*ScanRecord{}
+	for _, pkg := range report.Packages {
+		record := &ScanRecord{}
+		record.Package = pkg
 
-	if id, ok := report.DistributionByPackage[pkg.ID]; ok {
-		record.Distribution = report.Distributions[id]
-	} else {
-		record.Distribution = &Distribution{}
+		if id, ok := report.DistributionByPackage[pkg.ID]; ok {
+			record.Distribution = report.Distributions[id]
+		} else {
+			record.Distribution = &Distribution{}
+		}
+
+		if id, ok := report.RepositoryByPackage[pkg.ID]; ok {
+			record.Repository = report.Repositories[id]
+		} else {
+			record.Repository = &Repository{}
+		}
+		out = append(out, record)
 	}
-
-	if id, ok := report.RepositoryByPackage[pkg.ID]; ok {
-		record.Repository = report.Repositories[id]
-	} else {
-		record.Repository = &Repository{}
-	}
-
-	return record, nil
+	return out
 }

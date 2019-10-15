@@ -11,15 +11,15 @@ var _ driver.Matcher = (*Matcher)(nil)
 
 type Matcher struct{}
 
-func (*Matcher) Filter(pkg *claircore.Package) bool {
-	if pkg.Dist == nil {
+func (*Matcher) Filter(record *claircore.ScanRecord) bool {
+	if record.Distribution == nil {
 		return false
 	}
 
 	switch {
-	case pkg.Dist.DID == "ubuntu":
+	case record.Distribution.DID == "ubuntu":
 		return true
-	case pkg.Dist.Name == "Ubuntu":
+	case record.Distribution.Name == "Ubuntu":
 		return true
 	default:
 		return false
@@ -32,12 +32,12 @@ func (*Matcher) Query() []driver.MatchExp {
 	}
 }
 
-func (*Matcher) Vulnerable(pkg *claircore.Package, vuln *claircore.Vulnerability) bool {
+func (*Matcher) Vulnerable(record *claircore.ScanRecord, vuln *claircore.Vulnerability) bool {
 	if vuln.FixedInVersion == "" {
 		return true
 	}
 
-	v1, _ := version.NewVersion(pkg.Version)
+	v1, _ := version.NewVersion(record.Package.Version)
 	v2, _ := version.NewVersion(vuln.FixedInVersion)
 	if v1.LessThan(v2) {
 		return true
