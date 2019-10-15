@@ -104,8 +104,6 @@ func packagesByLayer(ctx context.Context, db *sqlx.DB, hash string, scnrs scanne
 
 		// nest source package
 		pkg.Source = &spkg
-		// nest distribution in pkg
-		pkg.Dist = &dist
 
 		res = append(res, &pkg)
 	}

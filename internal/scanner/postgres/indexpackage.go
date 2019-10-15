@@ -69,10 +69,6 @@ func indexPackages(ctx context.Context, db *sqlx.DB, pool *pgxpool.Pool, pkgs []
 	if err != nil {
 		return fmt.Errorf("failed to create statement: %v", err)
 	}
-	insertDistributionStmt, err := tx.Prepare(ctx, "insertDistStmt", insertDistribution)
-	if err != nil {
-		return fmt.Errorf("failed to create statement: %v", err)
-	}
 	insertScanArtifactWithStmt, err := tx.Prepare(ctx, "insertScanArtifactWith", insertScanArtifactWith)
 	if err != nil {
 		return fmt.Errorf("failed to create statement: %v", err)
@@ -95,19 +91,6 @@ func indexPackages(ctx context.Context, db *sqlx.DB, pool *pgxpool.Pool, pkgs []
 			batch.Queue(
 				insertPackageStmt.Name,
 				pkg.Source.Name, pkg.Source.Kind, pkg.Source.Version,
-			)
-		}
-
-		if pkg.Dist != nil {
-			batch.Queue(
-				insertDistributionStmt.Name,
-				pkg.Dist.Name, pkg.Dist.Version, pkg.Dist.VersionCodeName, pkg.Dist.VersionID, pkg.Dist.Arch,
-			)
-		} else {
-			pkg.Dist = &claircore.Distribution{}
-			batch.Queue(
-				insertDistributionStmt.Name,
-				pkg.Dist.Name, pkg.Dist.Version, pkg.Dist.VersionCodeName, pkg.Dist.VersionID, pkg.Dist.Arch,
 			)
 		}
 
@@ -143,11 +126,6 @@ func indexPackages(ctx context.Context, db *sqlx.DB, pool *pgxpool.Pool, pkgs []
 			pkg.Name,
 			pkg.Kind,
 			pkg.Version,
-			pkg.Dist.Name,
-			pkg.Dist.Version,
-			pkg.Dist.VersionCodeName,
-			pkg.Dist.VersionID,
-			pkg.Dist.Arch,
 			scnr.Name(),
 			scnr.Version(),
 			scnr.Kind(),

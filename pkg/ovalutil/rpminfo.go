@@ -100,8 +100,6 @@ func (r *RPMInfo) Extract(ctx context.Context) ([]*claircore.Vulnerability, erro
 			if err != nil {
 				return nil, err
 			}
-			// Add in our dist, which won't change inside a definition.
-			v.Package.Dist = dist
 			vs = append(vs, v)
 		}
 	}
