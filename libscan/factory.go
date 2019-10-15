@@ -53,3 +53,15 @@ func packageScannerFactory() []scanner.PackageScanner {
 		dpkg.NewPackageScanner(),
 	}
 }
+
+type DistributionScannerFactory func() []scanner.DistributionScanner
+
+func distributionScannerFactory() []scanner.DistributionScanner {
+	return []scanner.DistributionScanner{}
+}
+
+type RepositoryScannerFactory func() []scanner.RepositoryScanner
+
+func repositoryScannerFactory() []scanner.RepositoryScanner {
+	return []scanner.RepositoryScanner{}
+}
