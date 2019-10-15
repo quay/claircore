@@ -28,4 +28,6 @@ type Distribution struct {
 	// A string identifying the OS architecture
 	// example: "x86_64"
 	Arch string `json:"arch"`
+	// Optional common platform enumeration identifier
+	CPE string
 }

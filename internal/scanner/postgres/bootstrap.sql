@@ -7,6 +7,7 @@ CREATE TABLE dist (
     version_code_name text,
     version_id text,
     arch text,
+    cpe text,
     unique(name, version, version_code_name, version_id, arch)
 );
 CREATE INDEX dist_unique_idx ON dist (name, version, version_code_name, version_id, arch);

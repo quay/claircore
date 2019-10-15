@@ -15,7 +15,4 @@ type Package struct {
 	// if type is a binary package a source package maybe present which built this binary package.
 	// must be a pointer to support recursive type:
 	Source *Package `json:"source"`
-	// the distribution information for this package. this will be used to appropriately link CVE data to this
-	// package
-	Dist *Distribution `json:"dist"`
 }
