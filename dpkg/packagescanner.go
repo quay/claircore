@@ -4,10 +4,7 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/acobaugh/osrelease"
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/debian"
-	"github.com/quay/claircore/ubuntu"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/tadasv/go-dpkg"
@@ -21,25 +18,15 @@ const (
 	version       = "v0.0.1"
 )
 
-// the dpkg scanner is responsible for both identifying distribution information
-// and inventorying each package found in the /var/lib/dpkg/status file.
+// the dpkg scanner is responsible inventorying each package found in the /var/lib/dpkg/status file.
 // this scanner should cross reference the way particular vulnerability databases
-// classify their CVE's. for example ubuntu classifies their CVE data with a single
-// release version such as "precise"; therefore if this scanner determines the
-// layer is a ubuntu distro it should also make the best effort to fill the relevant claircore.Dist
-// field with this value.
+// classify their CVE's.
 
 // PackageScanner implements the libscan/internal/scanner.PackageScanner interface
-// this scanner searches the /var/lib/dpkg/status file for package information
-// along with parsing os-release for distribution information.
+// this scanner searches the /var/lib/dpkg/status file for package information.
 type PackageScanner struct {
-	// dist is the discovered distribution information in this layer.
-	// if discovered each package subsequently discovered will contain this dist info
-	dist *claircore.Distribution
 	// the layer hash we are currently scanning
 	hash string
-	// the os-release file located in the layer
-	osRelease []byte
 	// the status file located in the layer.
 	status []byte
 	// a logger with context
@@ -70,7 +57,6 @@ func (ps *PackageScanner) Scan(layer *claircore.Layer) ([]*claircore.Package, er
 	ps.logger.Debug().Msgf("starting scan of layer %v", layer.Hash)
 
 	// scanner maybe shared between layers. reset fields
-	ps.dist = nil
 	ps.hash = layer.Hash
 
 	// extract os-release and dpkg status file
@@ -81,11 +67,7 @@ func (ps *PackageScanner) Scan(layer *claircore.Layer) ([]*claircore.Package, er
 	}
 
 	// add file []byte to PackageScanner
-	ps.osRelease = files[osReleasePath]
 	ps.status = files[statusPath]
-
-	// if os-release file found parse it
-	err = ps.parseDistribution()
 
 	pkgs, err := ps.parsePackages()
 	if err != nil {
@@ -95,39 +77,6 @@ func (ps *PackageScanner) Scan(layer *claircore.Layer) ([]*claircore.Package, er
 
 	log.Printf("dpkg-scanner: done scanning layer %v", layer.Hash)
 	return pkgs, nil
-}
-
-// distribution parses the ps.osRelease file and sets the dist field
-// with the appropriate values
-func (ps *PackageScanner) parseDistribution() error {
-	if len(ps.osRelease) == 0 {
-		log.Printf("dpkg-scanner: failed to find os-release file in layer %v. distribution information will not be available", ps.hash)
-		return nil
-	}
-
-	osr, err := osrelease.ReadString(string(ps.osRelease))
-	if err != nil {
-		return err
-	}
-
-	d := &claircore.Distribution{
-		Name:            osr["NAME"],
-		DID:             osr["ID"],
-		Version:         osr["VERSION"],
-		VersionCodeName: osr["VERSION_CODENAME"],
-		VersionID:       osr["VERSION_ID"],
-	}
-
-	// if os-release file did not provide attempt a further parse
-	if d.VersionCodeName == "" {
-		d.VersionCodeName = debian.ResolveVersionCodeName(osr)
-	}
-	if d.VersionCodeName == "" {
-		d.VersionCodeName = ubuntu.ResolveVersionCodeName(osr)
-	}
-
-	ps.dist = d
-	return nil
 }
 
 func (ps *PackageScanner) parsePackages() ([]*claircore.Package, error) {
@@ -149,8 +98,6 @@ func (ps *PackageScanner) parsePackages() ([]*claircore.Package, error) {
 			Name:    dpkgPkg.Package,
 			Version: dpkgPkg.Version,
 			Kind:    "binary",
-			// add dist parsed in ps.parseDistribution
-			Dist: ps.dist,
 		}
 
 		if dpkgPkg.Source != "" {
