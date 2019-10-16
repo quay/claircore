@@ -1,15 +1,19 @@
 package claircore
 
-// ScanRecord represents a Package and it's associated Distribution and
-// Repository information
+// ScanRecord is an entry in the ScanReport.
+//
+// A ScanRecord identifies a discovered package along with its
+// Distribution and Repository information if present.
 type ScanRecord struct {
 	Package      *Package
 	Distribution *Distribution
 	Repository   *Repository
 }
 
-// ScanReport provides the found packages, distributions, and repositories in a layer and
-// their assocations with a particular package.
+// ScanReport provides a package database for a container image.
+//
+// A ScanReport is used to inventory a discrete package information found
+// within in each layer of a container image.
 type ScanReport struct {
 	// the manifest hash this scan result is assocaited with
 	Hash string `json:"manifest_hash"`
@@ -22,11 +26,11 @@ type ScanReport struct {
 	// repositories found after applying all layers
 	Repositories map[int]*Repository `json:"repository"`
 	// PackagesByDistribution maps a package id to it's associated distribution id
-	DistributionByPackage map[int]int `json:"distributionByPackage"`
+	DistributionByPackage map[int]int `json:"distribution_by_package"`
 	// PackagesByRepositories maps a package id to it's associated repository id
-	RepositoryByPackage map[int]int `json:"packagesByRepositories"`
+	RepositoryByPackage map[int]int `json:"repository_by_package"`
 	// layer hash that introduced the given package id
-	PackageIntroduced map[int]string `json:"packageIntroduced"`
+	PackageIntroduced map[int]string `json:"package_introduced"`
 	// whether the scan was successful
 	Success bool `json:"success"`
 	// the first fatal error that occured during a scan process
@@ -35,7 +39,7 @@ type ScanReport struct {
 
 // ScanRecords returns a list of ScanRecords derived from the ScanReport
 //
-// If a value in the ScanRecord is not found in the ScanReport the empty value
+// If a field in the ScanRecord is not found in the ScanReport the empty value
 // is returned to provide nil safey.
 func (report *ScanReport) ScanRecords() []*ScanRecord {
 	out := []*ScanRecord{}

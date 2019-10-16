@@ -29,5 +29,5 @@ type Distribution struct {
 	// example: "x86_64"
 	Arch string `json:"arch"`
 	// Optional common platform enumeration identifier
-	CPE string
+	CPE string `json:"cpe"`
 }
