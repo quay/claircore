@@ -66,13 +66,7 @@ func (mc *Controller) query(ctx context.Context, interested []*claircore.ScanRec
 		Matchers: matchers,
 	}
 
-	// query the vulnstore for the packages this matcher is intersted in.
-	tmp := []*claircore.Package{}
-	for _, v := range interested {
-		tmp = append(tmp, v.Package)
-	}
-
-	matches, err := mc.store.Get(ctx, tmp, getOpts)
+	matches, err := mc.store.Get(ctx, interested, getOpts)
 	if err != nil {
 		return nil, err
 	}

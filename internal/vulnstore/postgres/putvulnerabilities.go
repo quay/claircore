@@ -101,32 +101,29 @@ func putVulnerabilities(ctx context.Context, pool *pgxpool.Pool, updater string,
 	// safe sized batch inserts to postgres
 	mBatcher := microbatch.NewInsert(tx, 2000, time.Minute)
 	for _, vuln := range vulns {
-		vv := vuln
-		if vv.Package == nil {
-			vv.Package = &claircore.Package{
-				Dist: &claircore.Distribution{},
-			}
+		if vuln.Package == nil {
+			vuln.Package = &claircore.Package{}
 		}
-		if vv.Package.Dist == nil {
-			vv.Package.Dist = &claircore.Distribution{}
+		if vuln.Dist == nil {
+			vuln.Dist = &claircore.Distribution{}
 		}
 		err := mBatcher.Queue(ctx,
 			insertVulnerability,
 			updater,
-			vv.Name,
-			vv.Description,
-			vv.Links,
-			vv.Severity,
-			vv.Package.Name,
-			vv.Package.Version,
-			vv.Package.Kind,
-			vv.Package.Dist.DID,
-			vv.Package.Dist.Name,
-			vv.Package.Dist.Version,
-			vv.Package.Dist.VersionCodeName,
-			vv.Package.Dist.VersionID,
-			vv.Package.Dist.Arch,
-			vv.FixedInVersion,
+			vuln.Name,
+			vuln.Description,
+			vuln.Links,
+			vuln.Severity,
+			vuln.Package.Name,
+			vuln.Package.Version,
+			vuln.Package.Kind,
+			vuln.Dist.DID,
+			vuln.Dist.Name,
+			vuln.Dist.Version,
+			vuln.Dist.VersionCodeName,
+			vuln.Dist.VersionID,
+			vuln.Dist.Arch,
+			vuln.FixedInVersion,
 			newTombstone,
 		)
 		if err != nil {

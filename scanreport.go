@@ -34,13 +34,18 @@ type ScanReport struct {
 }
 
 // ScanRecords returns a list of ScanRecords derived from the ScanReport
+//
 // If a value in the ScanRecord is not found in the ScanReport the empty value
-// is returned
+// is returned to provide nil safey.
 func (report *ScanReport) ScanRecords() []*ScanRecord {
 	out := []*ScanRecord{}
 	for _, pkg := range report.Packages {
 		record := &ScanRecord{}
 		record.Package = pkg
+
+		if record.Package.Source == nil {
+			record.Package.Source = &Package{}
+		}
 
 		if id, ok := report.DistributionByPackage[pkg.ID]; ok {
 			record.Distribution = report.Distributions[id]
