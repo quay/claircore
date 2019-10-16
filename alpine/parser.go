@@ -48,13 +48,13 @@ func (u *Updater) parse(ctx context.Context, sdb *SecurityDB) ([]*claircore.Vuln
 		partial := claircore.Vulnerability{
 			Package: &claircore.Package{
 				Name: pkg.Pkg.Name,
-				Dist: &claircore.Distribution{
-					VersionCodeName: string(u.repo),
-					VersionID:       string(u.release),
-					Version:         string(u.release),
-					DID:             string(u.release),
-					Name:            string(u.release),
-				},
+			},
+			Dist: &claircore.Distribution{
+				VersionCodeName: string(u.repo),
+				VersionID:       string(u.release),
+				Version:         string(u.release),
+				DID:             string(u.release),
+				Name:            string(u.release),
 			},
 		}
 		out = append(out, unpackSecFixes(partial, pkg.Pkg.Secfixes)...)

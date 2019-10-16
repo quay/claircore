@@ -15,7 +15,7 @@ const (
 	// artifacts for a layer are always persisted via a transaction thus finding a single
 	// artifact matching the name, version, and layer hash will signify a layer
 	// has been scanned by the scanner in question.
-	selectScanArtifact = `SELECT layer_hash FROM scanartifact WHERE layer_hash = $1 AND scanner_id = $2 LIMIT 1;`
+	selectPackageScanArtifact = `SELECT layer_hash FROM package_scanartifact WHERE layer_hash = $1 AND scanner_id = $2 LIMIT 1;`
 )
 
 func layerScanned(ctx context.Context, db *sqlx.DB, hash string, scnr scanner.VersionedScanner) (bool, error) {
@@ -31,7 +31,7 @@ func layerScanned(ctx context.Context, db *sqlx.DB, hash string, scnr scanner.Ve
 	}
 
 	var layerHash string
-	err = db.Get(&layerHash, selectScanArtifact, hash, scannerID)
+	err = db.Get(&layerHash, selectPackageScanArtifact, hash, scannerID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return false, nil

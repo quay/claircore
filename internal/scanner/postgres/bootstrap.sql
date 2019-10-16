@@ -7,7 +7,7 @@ CREATE TABLE scanner (
     version text NOT NULL,
     kind text NOT NULL
 );
-CREATE INDEX scanner_unique_idx ON scanner (name, kind, version);
+CREATE UNIQUE INDEX scanner_unique_idx ON scanner (name, kind, version);
 
 --- ScannerList
 --- a relation informing us if a manifest hash has 
@@ -41,7 +41,7 @@ CREATE TABLE dist (
     arch text,
     cpe text
 );
-CREATE INDEX dist_unique_idx ON dist (did, name, version, version_code_name, version_id, arch);
+CREATE UNIQUE INDEX dist_unique_idx ON dist (did, name, version, version_code_name, version_id, arch);
 
 --- DistributionScanArtifact
 --- A relation linking discovered distributions to a layer
@@ -51,7 +51,7 @@ CREATE TABLE dist_scanartifact (
     scanner_id int REFERENCES scanner(id),
     layer_hash text
 );
-CREATE INDEX dist_scanartifact_unique_idx ON dist_scanartifact (layer_hash, dist_id, scanner_id);
+CREATE UNIQUE INDEX dist_scanartifact_unique_idx ON dist_scanartifact (layer_hash, dist_id, scanner_id);
 
 --- Package
 --- a unique package discovered by a scanner
@@ -61,7 +61,7 @@ CREATE TABLE package (
     kind text NOT NULL,
     version text NOT NULL
 );
-CREATE INDEX package_unique_idx ON package (name, version, kind);
+CREATE UNIQUE INDEX package_unique_idx ON package (name, version, kind);
 
 --- PackageScanArtifact
 --- A relation linking discovered packages with the 
@@ -75,7 +75,7 @@ CREATE TABLE package_scanartifact (
     package_db text,
     repository_hint text
 );
-CREATE INDEX package_scanartifact_unique_idx ON package_scanartifact (layer_hash, package_id, source_id, scanner_id);
+CREATE UNIQUE INDEX package_scanartifact_unique_idx ON package_scanartifact (layer_hash, package_id, source_id, scanner_id);
 
 --- Repository
 --- a unique package repository discovered by a scanner
@@ -85,7 +85,7 @@ CREATE TABLE repository (
     key text,
     uri text
 );
-CREATE INDEX repo_unique_idx ON repository (name, key, uri);
+CREATE UNIQUE INDEX repo_unique_idx ON repository (name, key, uri);
 
 --- RepositoryScanArtifact
 --- A relation linking discovered distributions to a layer
@@ -95,4 +95,4 @@ CREATE TABLE repo_scanartifact (
     scanner_id int REFERENCES scanner(id),
     layer_hash text
 );
-CREATE INDEX repo_scanartifact_unique_idx ON repo_scanartifact (layer_hash, repo_id, scanner_id);
+CREATE UNIQUE INDEX repo_scanartifact_unique_idx ON repo_scanartifact (layer_hash, repo_id, scanner_id);

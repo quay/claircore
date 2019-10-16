@@ -9,11 +9,8 @@ import (
 
 func Test_Stacker(t *testing.T) {
 	var tt = []struct {
-		// the name of the test
-		name string
-		// 2d array of packages we will stack
-		pkgs [][]*claircore.Package
-		// array of expected packages
+		name         string
+		pkgs         [][]*claircore.Package
 		expectedPkgs []*claircore.Package
 	}{
 		{
@@ -23,36 +20,20 @@ func Test_Stacker(t *testing.T) {
 					&claircore.Package{
 						ID:   1,
 						Name: "test-package-1",
-						Dist: &claircore.Distribution{
-							ID:   1,
-							Name: "test-distribution-1",
-						},
 					},
 					&claircore.Package{
 						ID:   2,
 						Name: "test-package-2",
-						Dist: &claircore.Distribution{
-							ID:   2,
-							Name: "test-distribution-2",
-						},
 					},
 				},
 				[]*claircore.Package{
 					&claircore.Package{
 						ID:   1,
 						Name: "test-package-1",
-						Dist: &claircore.Distribution{
-							ID:   1,
-							Name: "test-distribution-1",
-						},
 					},
 					&claircore.Package{
 						ID:   3,
 						Name: "test-package-3",
-						Dist: &claircore.Distribution{
-							ID:   3,
-							Name: "test-distribution-3",
-						},
 					},
 				},
 			},
@@ -60,18 +41,10 @@ func Test_Stacker(t *testing.T) {
 				&claircore.Package{
 					ID:   1,
 					Name: "test-package-1",
-					Dist: &claircore.Distribution{
-						ID:   1,
-						Name: "test-distribution-1",
-					},
 				},
 				&claircore.Package{
 					ID:   3,
 					Name: "test-package-3",
-					Dist: &claircore.Distribution{
-						ID:   3,
-						Name: "test-distribution-3",
-					},
 				},
 			},
 		},
@@ -82,18 +55,10 @@ func Test_Stacker(t *testing.T) {
 					&claircore.Package{
 						ID:   1,
 						Name: "test-package-1",
-						Dist: &claircore.Distribution{
-							ID:   1,
-							Name: "test-distribution-1",
-						},
 					},
 					&claircore.Package{
 						ID:   2,
 						Name: "test-package-2",
-						Dist: &claircore.Distribution{
-							ID:   2,
-							Name: "test-distribution-2",
-						},
 					},
 				},
 				[]*claircore.Package{},
@@ -101,18 +66,10 @@ func Test_Stacker(t *testing.T) {
 					&claircore.Package{
 						ID:   1,
 						Name: "test-package-1",
-						Dist: &claircore.Distribution{
-							ID:   1,
-							Name: "test-distribution-1",
-						},
 					},
 					&claircore.Package{
 						ID:   3,
 						Name: "test-package-3",
-						Dist: &claircore.Distribution{
-							ID:   3,
-							Name: "test-distribution-3",
-						},
 					},
 				},
 			},
@@ -120,18 +77,10 @@ func Test_Stacker(t *testing.T) {
 				&claircore.Package{
 					ID:   1,
 					Name: "test-package-1",
-					Dist: &claircore.Distribution{
-						ID:   1,
-						Name: "test-distribution-1",
-					},
 				},
 				&claircore.Package{
 					ID:   3,
 					Name: "test-package-3",
-					Dist: &claircore.Distribution{
-						ID:   3,
-						Name: "test-distribution-3",
-					},
 				},
 			},
 		},
@@ -142,62 +91,34 @@ func Test_Stacker(t *testing.T) {
 					&claircore.Package{
 						ID:   1,
 						Name: "test-package-1",
-						Dist: &claircore.Distribution{
-							ID:   1,
-							Name: "test-distribution-1",
-						},
 					},
 					&claircore.Package{
 						ID:   2,
 						Name: "test-package-2",
-						Dist: &claircore.Distribution{
-							ID:   2,
-							Name: "test-distribution-2",
-						},
 					},
 				},
 				[]*claircore.Package{
 					&claircore.Package{
 						ID:   1,
 						Name: "test-package-1",
-						Dist: &claircore.Distribution{
-							ID:   1,
-							Name: "test-distribution-1",
-						},
 					},
 					&claircore.Package{
 						ID:   3,
 						Name: "test-package-3",
-						Dist: &claircore.Distribution{
-							ID:   3,
-							Name: "test-distribution-3",
-						},
 					},
 				},
 				[]*claircore.Package{
 					&claircore.Package{
 						ID:   1,
 						Name: "test-package-1",
-						Dist: &claircore.Distribution{
-							ID:   1,
-							Name: "test-distribution-1",
-						},
 					},
 					&claircore.Package{
 						ID:   3,
 						Name: "test-package-3",
-						Dist: &claircore.Distribution{
-							ID:   3,
-							Name: "test-distribution-3",
-						},
 					},
 					&claircore.Package{
 						ID:   4,
 						Name: "test-package-4",
-						Dist: &claircore.Distribution{
-							ID:   4,
-							Name: "test-distribution-4",
-						},
 					},
 				},
 				[]*claircore.Package{},
@@ -206,26 +127,14 @@ func Test_Stacker(t *testing.T) {
 				&claircore.Package{
 					ID:   1,
 					Name: "test-package-1",
-					Dist: &claircore.Distribution{
-						ID:   1,
-						Name: "test-distribution-1",
-					},
 				},
 				&claircore.Package{
 					ID:   3,
 					Name: "test-package-3",
-					Dist: &claircore.Distribution{
-						ID:   3,
-						Name: "test-distribution-3",
-					},
 				},
 				&claircore.Package{
 					ID:   4,
 					Name: "test-package-4",
-					Dist: &claircore.Distribution{
-						ID:   4,
-						Name: "test-distribution-4",
-					},
 				},
 			},
 		},
@@ -236,62 +145,34 @@ func Test_Stacker(t *testing.T) {
 					&claircore.Package{
 						ID:   1,
 						Name: "test-package-1",
-						Dist: &claircore.Distribution{
-							ID:   1,
-							Name: "test-distribution-1",
-						},
 					},
 					&claircore.Package{
 						ID:   2,
 						Name: "test-package-2",
-						Dist: &claircore.Distribution{
-							ID:   2,
-							Name: "test-distribution-2",
-						},
 					},
 				},
 				[]*claircore.Package{
 					&claircore.Package{
 						ID:   1,
 						Name: "test-package-1",
-						Dist: &claircore.Distribution{
-							ID:   1,
-							Name: "test-distribution-1",
-						},
 					},
 					&claircore.Package{
 						ID:   3,
 						Name: "test-package-3",
-						Dist: &claircore.Distribution{
-							ID:   3,
-							Name: "test-distribution-3",
-						},
 					},
 				},
 				[]*claircore.Package{
 					&claircore.Package{
 						ID:   1,
 						Name: "test-package-1",
-						Dist: &claircore.Distribution{
-							ID:   1,
-							Name: "test-distribution-1",
-						},
 					},
 					&claircore.Package{
 						ID:   3,
 						Name: "test-package-3",
-						Dist: &claircore.Distribution{
-							ID:   33,
-							Name: "test-distribution-upgraded",
-						},
 					},
 					&claircore.Package{
 						ID:   4,
 						Name: "test-package-4",
-						Dist: &claircore.Distribution{
-							ID:   4,
-							Name: "test-distribution-4",
-						},
 					},
 				},
 				[]*claircore.Package{},
@@ -300,26 +181,14 @@ func Test_Stacker(t *testing.T) {
 				&claircore.Package{
 					ID:   1,
 					Name: "test-package-1",
-					Dist: &claircore.Distribution{
-						ID:   1,
-						Name: "test-distribution-1",
-					},
 				},
 				&claircore.Package{
 					ID:   3,
 					Name: "test-package-3",
-					Dist: &claircore.Distribution{
-						ID:   33,
-						Name: "test-distribution-upgraded",
-					},
 				},
 				&claircore.Package{
 					ID:   4,
 					Name: "test-package-4",
-					Dist: &claircore.Distribution{
-						ID:   4,
-						Name: "test-distribution-4",
-					},
 				},
 			},
 		},

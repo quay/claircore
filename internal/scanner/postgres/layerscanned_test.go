@@ -126,7 +126,7 @@ func Test_LayerScanned_True(t *testing.T) {
 			err = pgtest.InsertPackages(db, pkgs)
 
 			// create scanartifacts
-			err = pgtest.InsertScanArtifacts(db, table.hash, pkgs, scnrs)
+			err = pgtest.InsertPackageScanArtifacts(db, table.hash, pkgs, scnrs)
 			if err != nil {
 				t.Fatalf("failed to insert unique scanners: %v", err)
 			}

@@ -108,7 +108,7 @@ func Benchmark_PackagesByLayer(b *testing.B) {
 			}
 
 			// create scanartifacts
-			err = pgtest.InsertScanArtifacts(db, bench.hash, pkgs, vscnrs)
+			err = pgtest.InsertPackageScanArtifacts(db, bench.hash, pkgs, vscnrs)
 			if err != nil {
 				b.Fatalf("failed to insert scan artifacts for test: %v", err)
 			}
