@@ -15,4 +15,8 @@ type Package struct {
 	// if type is a binary package a source package maybe present which built this binary package.
 	// must be a pointer to support recursive type:
 	Source *Package `json:"source"`
+	// the file system path or prefix where this package resides
+	PackageDB string `json:"packageDB"`
+	// a hint on which repository this package was downloaded from
+	RepositoryHint string `json:"repositoryHint"`
 }
