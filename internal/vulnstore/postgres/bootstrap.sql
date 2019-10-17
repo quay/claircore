@@ -15,12 +15,14 @@ CREATE TABLE vuln (
     dist_version text,
     dist_version_code_name text,
     dist_version_id text,
+    repo_name text,
+    repo_key text,
+    repo_uri text,
     arch text,
     fixed_in_version text,
     --- a tombstone field that will be updated to signify a vulnerability is not stale
     tombstone text
 );
-CREATE INDEX vuln_lookup_idx on vuln(package_name, dist_version_code_name, dist_name, dist_version_id, dist_version, arch);
 CREATE UNIQUE INDEX vuln_unique_idx on vuln(  
         updater, 
         name, 
@@ -35,6 +37,9 @@ CREATE UNIQUE INDEX vuln_unique_idx on vuln(
         dist_version, 
         dist_version_code_name, 
         dist_version_id, 
+        repo_name,
+        repo_key,
+        repo_uri,
         arch,
         fixed_in_version
     );

@@ -29,6 +29,9 @@ const (
 									dist_version,
 									dist_version_code_name,
 									dist_version_id,
+									repo_name,
+									repo_key,
+									repo_uri,
 									arch,
 									fixed_in_version,
 									tombstone
@@ -101,9 +104,9 @@ func Test_PutVulnerabilities_Tombstone_Bump(t *testing.T) {
 			for rows.Next() {
 				var tombstone string
 				v := &claircore.Vulnerability{
-					Package: &claircore.Package{
-						Dist: &claircore.Distribution{},
-					},
+					Package: &claircore.Package{},
+					Dist:    &claircore.Distribution{},
+					Repo:    &claircore.Repository{},
 				}
 
 				err := rows.Scan(&v.ID,
@@ -115,12 +118,15 @@ func Test_PutVulnerabilities_Tombstone_Bump(t *testing.T) {
 					&v.Package.Name,
 					&v.Package.Version,
 					&v.Package.Kind,
-					&v.Package.Dist.DID,
-					&v.Package.Dist.Name,
-					&v.Package.Dist.Version,
-					&v.Package.Dist.VersionCodeName,
-					&v.Package.Dist.VersionID,
-					&v.Package.Dist.Arch,
+					&v.Dist.DID,
+					&v.Dist.Name,
+					&v.Dist.Version,
+					&v.Dist.VersionCodeName,
+					&v.Dist.VersionID,
+					&v.Repo.Name,
+					&v.Repo.Key,
+					&v.Repo.URI,
+					&v.Dist.Arch,
 					&v.FixedInVersion,
 					&tombstone,
 				)
@@ -203,9 +209,9 @@ func Test_PutVulnerabilities_Tombstone_Stale(t *testing.T) {
 			for rows.Next() {
 				var tombstone string
 				v := &claircore.Vulnerability{
-					Package: &claircore.Package{
-						Dist: &claircore.Distribution{},
-					},
+					Package: &claircore.Package{},
+					Dist:    &claircore.Distribution{},
+					Repo:    &claircore.Repository{},
 				}
 
 				err := rows.Scan(&v.ID,
@@ -217,12 +223,15 @@ func Test_PutVulnerabilities_Tombstone_Stale(t *testing.T) {
 					&v.Package.Name,
 					&v.Package.Version,
 					&v.Package.Kind,
-					&v.Package.Dist.DID,
-					&v.Package.Dist.Name,
-					&v.Package.Dist.Version,
-					&v.Package.Dist.VersionCodeName,
-					&v.Package.Dist.VersionID,
-					&v.Package.Dist.Arch,
+					&v.Dist.DID,
+					&v.Dist.Name,
+					&v.Dist.Version,
+					&v.Dist.VersionCodeName,
+					&v.Dist.VersionID,
+					&v.Repo.Name,
+					&v.Repo.Key,
+					&v.Repo.URI,
+					&v.Dist.Arch,
 					&v.FixedInVersion,
 					&tombstone,
 				)
