@@ -18,6 +18,13 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 		Package: &claircore.Package{
 			Name: "botan",
 		},
+		Dist: &claircore.Distribution{
+			VersionCodeName: "community",
+			VersionID:       "v3.10",
+			Version:         "v3.10",
+			DID:             "v3.10",
+			Name:            "v3.10",
+		},
 	},
 	{
 		Name:           "CVE-2018-12435",
@@ -25,6 +32,13 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 		FixedInVersion: "2.7.0-r0",
 		Package: &claircore.Package{
 			Name: "botan",
+		},
+		Dist: &claircore.Distribution{
+			VersionCodeName: "community",
+			VersionID:       "v3.10",
+			Version:         "v3.10",
+			DID:             "v3.10",
+			Name:            "v3.10",
 		},
 	},
 	{
@@ -34,6 +48,13 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 		Package: &claircore.Package{
 			Name: "botan",
 		},
+		Dist: &claircore.Distribution{
+			VersionCodeName: "community",
+			VersionID:       "v3.10",
+			Version:         "v3.10",
+			DID:             "v3.10",
+			Name:            "v3.10",
+		},
 	},
 	{
 		Name:           "CVE-2018-9127",
@@ -41,6 +62,13 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 		FixedInVersion: "2.5.0-r0",
 		Package: &claircore.Package{
 			Name: "botan",
+		},
+		Dist: &claircore.Distribution{
+			VersionCodeName: "community",
+			VersionID:       "v3.10",
+			Version:         "v3.10",
+			DID:             "v3.10",
+			Name:            "v3.10",
 		},
 	},
 	{
@@ -50,6 +78,13 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 		Package: &claircore.Package{
 			Name: "cfengine",
 		},
+		Dist: &claircore.Distribution{
+			VersionCodeName: "community",
+			VersionID:       "v3.10",
+			Version:         "v3.10",
+			DID:             "v3.10",
+			Name:            "v3.10",
+		},
 	},
 	{
 		Name:           "CVE-2017-6949",
@@ -57,6 +92,13 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 		FixedInVersion: "4.12.0-r3",
 		Package: &claircore.Package{
 			Name: "chicken",
+		},
+		Dist: &claircore.Distribution{
+			VersionCodeName: "community",
+			VersionID:       "v3.10",
+			Version:         "v3.10",
+			DID:             "v3.10",
+			Name:            "v3.10",
 		},
 	},
 	{
@@ -66,6 +108,13 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 		Package: &claircore.Package{
 			Name: "chicken",
 		},
+		Dist: &claircore.Distribution{
+			VersionCodeName: "community",
+			VersionID:       "v3.10",
+			Version:         "v3.10",
+			DID:             "v3.10",
+			Name:            "v3.10",
+		},
 	},
 	{
 		Name:           "CVE-2016-6830",
@@ -74,6 +123,13 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 		Package: &claircore.Package{
 			Name: "chicken",
 		},
+		Dist: &claircore.Distribution{
+			VersionCodeName: "community",
+			VersionID:       "v3.10",
+			Version:         "v3.10",
+			DID:             "v3.10",
+			Name:            "v3.10",
+		},
 	},
 	{
 		Name:           "CVE-2016-6831",
@@ -81,6 +137,13 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 		FixedInVersion: "4.11.1-r0",
 		Package: &claircore.Package{
 			Name: "chicken",
+		},
+		Dist: &claircore.Distribution{
+			VersionCodeName: "community",
+			VersionID:       "v3.10",
+			Version:         "v3.10",
+			DID:             "v3.10",
+			Name:            "v3.10",
 		},
 	},
 }
