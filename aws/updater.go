@@ -81,6 +81,9 @@ func (u *Updater) Parse(contents io.ReadCloser) ([]*claircore.Vulnerability, err
 			Description: update.Description,
 			Links:       refsToLinks(update),
 			Severity:    update.Severity,
+			Dist: &claircore.Distribution{
+				VersionCodeName: string(ReleaseToRepo[u.release]),
+			},
 		}
 		vulns = append(vulns, u.unpack(partial, update.Packages)...)
 	}
@@ -99,9 +102,6 @@ func (u *Updater) unpack(partial *claircore.Vulnerability, packages []alas.Packa
 		v.Package = &claircore.Package{
 			Name: alasPKG.Name,
 			Kind: "binary",
-			Dist: &claircore.Distribution{
-				VersionCodeName: string(ReleaseToRepo[u.release]),
-			},
 		}
 		v.FixedInVersion = alasPKG.Version
 
