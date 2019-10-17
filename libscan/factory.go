@@ -55,7 +55,7 @@ type PackageScannerFactory func() []scanner.PackageScanner
 func packageScannerFactory() []scanner.PackageScanner {
 	return []scanner.PackageScanner{
 		// add other packge scanners as they grow
-		dpkg.NewPackageScanner(),
+		&dpkg.Scanner{},
 	}
 }
 
