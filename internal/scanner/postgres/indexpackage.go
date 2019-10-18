@@ -14,9 +14,8 @@ import (
 )
 
 const (
-	insertPackage      = `INSERT INTO package (name, kind, version) VALUES ($1, $2, $3) ON CONFLICT (name, kind, version) DO NOTHING;`
-	insertDistribution = `INSERT INTO dist (name, version, version_code_name, version_id, arch) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (name, version, version_code_name, version_id, arch) DO NOTHING;`
-	selectDistID       = `SELECT id FROM dist WHERE name = $1 AND version = $2 AND version_code_name = $3 AND version_id = $4 AND arch = $5;`
+	insertPackage = `INSERT INTO package (name, kind, version) VALUES ($1, $2, $3) ON CONFLICT (name, kind, version) DO NOTHING;`
+	selectDistID  = `SELECT id FROM dist WHERE name = $1 AND version = $2 AND version_code_name = $3 AND version_id = $4 AND arch = $5;`
 	// we'll use a WITH statement here to gather all the id's necessary to create the
 	// scan artifact entry. see: https://www.postgresql.org/docs/current/queries-with.html#QUERIES-WITH-MODIFYING
 	insertPackageScanArtifactWith = `WITH source_package AS (

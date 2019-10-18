@@ -220,25 +220,6 @@ func Test_IndexPackages_Success(t *testing.T) {
 func checkPackageScanArtifact(t *testing.T, db *sqlx.DB, expectedPkgs []*claircore.Package, layer *claircore.Layer) {
 	// NOTE: we gen one scanner for this test with ID 0, this is hard coded into this check
 	for _, pkg := range expectedPkgs {
-		// var distID sql.NullInt64
-		// err := db.Get(
-		// 	&distID,
-		// 	`SELECT id FROM dist
-		// 	WHERE name = $1
-		// 	AND version = $2
-		// 	AND version_code_name = $3
-		// 	AND version_id = $4
-		// 	AND arch = $5`,
-		// 	pkg.Dist.Name,
-		// 	pkg.Dist.Version,
-		// 	pkg.Dist.VersionCodeName,
-		// 	pkg.Dist.VersionID,
-		// 	pkg.Dist.Arch,
-		// )
-		// if err != nil {
-		// 	t.Fatalf("failed to query for distribution %v: %v", pkg.Dist, err)
-		// }
-
 		var pkgID sql.NullInt64
 		err := db.Get(
 			&pkgID,

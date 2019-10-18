@@ -33,15 +33,15 @@ CREATE INDEX scanreport_manifest_hash_idx ON scanreport (manifest_hash);
 --- a unique distribution discovered by a scanner
 CREATE TABLE dist (
     id SERIAL PRIMARY KEY,
-    did text, -- os-release id field
     name text,
+    did text, -- os-release id field
     version text,
     version_code_name text,
     version_id text,
     arch text,
     cpe text
 );
-CREATE UNIQUE INDEX dist_unique_idx ON dist (did, name, version, version_code_name, version_id, arch);
+CREATE UNIQUE INDEX dist_unique_idx ON dist (name, did, version, version_code_name, version_id, arch, cpe);
 
 --- DistributionScanArtifact
 --- A relation linking discovered distributions to a layer

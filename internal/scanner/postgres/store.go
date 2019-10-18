@@ -42,8 +42,9 @@ func (s *store) IndexPackages(ctx context.Context, pkgs []*claircore.Package, l 
 	return err
 }
 
-func (s *store) IndexDistributions(ctx context.Context, dists []*claircore.Distribution, layer *claircore.Layer, scnr scanner.VersionedScanner) error {
-	panic("not implemented")
+func (s *store) IndexDistributions(ctx context.Context, dists []*claircore.Distribution, l *claircore.Layer, scnr scanner.VersionedScanner) error {
+	err := indexDistributions(ctx, s.db, s.pool, dists, l, scnr)
+	return err
 }
 
 func (s *store) IndexRepositories(ctx context.Context, repos []*claircore.Repository, layer *claircore.Layer, scnr scanner.VersionedScanner) error {
