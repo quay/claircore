@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	insertDistribution = `INSERT INTO 
-		dist (name, did, version, version_code_name, version_id, arch, cpe) 
+	insertDistribution = `INSERT INTO dist 
+		(name, did, version, version_code_name, version_id, arch, cpe) 
 	VALUES 
 		($1, $2, $3, $4, $5, $6, $7) 
 	ON CONFLICT (name, did, version, version_code_name, version_id, arch, cpe) DO NOTHING;`

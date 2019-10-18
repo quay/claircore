@@ -79,19 +79,19 @@ CREATE UNIQUE INDEX package_scanartifact_unique_idx ON package_scanartifact (lay
 
 --- Repository
 --- a unique package repository discovered by a scanner
-CREATE TABLE repository (
+CREATE TABLE repo (
     id SERIAL PRIMARY KEY,
     name text NOT NULL,
     key text,
     uri text
 );
-CREATE UNIQUE INDEX repo_unique_idx ON repository (name, key, uri);
+CREATE UNIQUE INDEX repo_unique_idx ON repo (name, key, uri);
 
 --- RepositoryScanArtifact
 --- A relation linking discovered distributions to a layer
 CREATE TABLE repo_scanartifact (
     id SERIAL PRIMARY KEY,
-    repo_id int REFERENCES repository(id),
+    repo_id int REFERENCES repo(id),
     scanner_id int REFERENCES scanner(id),
     layer_hash text
 );
