@@ -202,12 +202,6 @@ func Benchmark_IndexPackages(b *testing.B) {
 				if err != nil {
 					b.Fatalf("failed to index packages: %v", err)
 				}
-
-				// clear database
-				_, err = db.Exec(`TRUNCATE dist, package, scanartifact, scannerlist;`)
-				if err != nil {
-					b.Fatalf("failed to truncate libcsan db tables. manual cleanup maybe necessary: %v", err)
-				}
 			}
 		})
 	}
