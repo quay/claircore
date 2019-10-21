@@ -63,7 +63,8 @@ func (s *store) DistributionsByLayer(ctx context.Context, hash string, scnrs sca
 }
 
 func (s *store) RepositoriesByLayer(ctx context.Context, hash string, scnrs scanner.VersionedScanners) ([]*claircore.Repository, error) {
-	panic("not implemented")
+	repos, err := repositoriesByLayer(ctx, s.db, hash, scnrs)
+	return repos, err
 }
 
 func (s *store) RegisterScanners(ctx context.Context, scnrs scanner.VersionedScanners) error {
