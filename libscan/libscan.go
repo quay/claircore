@@ -10,7 +10,6 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 )
 
 // Libscan is an interface exporting the public methods of our library.
@@ -39,8 +38,7 @@ type libscan struct {
 
 // New creates a new instance of Libscan
 func New(ctx context.Context, opts *Opts) (Libscan, error) {
-	logger := log.With().Str("component", "libscan").Logger()
-
+	logger := zerolog.Ctx(ctx).With().Str("component", "libscan").Logger()
 	err := opts.Parse()
 	if err != nil {
 		logger.Error().Msgf("failed to parse opts: %v", err)
@@ -80,6 +78,7 @@ func New(ctx context.Context, opts *Opts) (Libscan, error) {
 	}
 	l.logger.Info().Msg("registered configured scanners")
 
+	l.Opts.vscnrs = vscnrs
 	return l, nil
 }
 

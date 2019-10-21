@@ -26,17 +26,6 @@ func scannerFactory(lib *libscan, opts *Opts) (scanner.Scanner, error) {
 		return nil, fmt.Errorf("provided ScanLock opt is unsupported")
 	}
 
-	var pscnrs scanner.VersionedScanners
-	pscnrs.PStoVS(opts.PackageScannerFactory())
-
-	var dscnrs scanner.VersionedScanners
-	dscnrs.DStoVS(opts.DistributionScannerFactory())
-
-	var rscnrs scanner.VersionedScanners
-	rscnrs.RStoVS(opts.RepositoryScannerFactory())
-
-	vscnrs := scanner.MergeVS(pscnrs, dscnrs, rscnrs)
-
 	// add other fetcher implementations here as they grow
 	var ft scanner.Fetcher
 	ft = defaultfetcher.New(lib.client, nil, opts.LayerFetchOpt)
@@ -49,7 +38,8 @@ func scannerFactory(lib *libscan, opts *Opts) (scanner.Scanner, error) {
 		PackageScanners:      opts.PackageScannerFactory(),
 		DistributionScanners: opts.DistributionScannerFactory(),
 		RepositoryScanners:   opts.RepositoryScannerFactory(),
-		Vscnrs:               vscnrs,
+		// this private field is set during libscan construction
+		Vscnrs: lib.vscnrs,
 	}
 
 	// add other layer scanner implementations as they grow
