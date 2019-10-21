@@ -30,11 +30,16 @@ func scannerFactory(lib *libscan, opts *Opts) (scanner.Scanner, error) {
 	var ft scanner.Fetcher
 	ft = defaultfetcher.New(lib.client, nil, opts.LayerFetchOpt)
 
+	// convert libscan.Opts to scanner.Opts
 	sOpts := &scanner.Opts{
-		Store:           lib.store,
-		ScanLock:        sc,
-		Fetcher:         ft,
-		PackageScanners: lib.packageScanners(),
+		Store:                lib.store,
+		ScanLock:             sc,
+		Fetcher:              ft,
+		PackageScanners:      opts.PackageScannerFactory(),
+		DistributionScanners: opts.DistributionScannerFactory(),
+		RepositoryScanners:   opts.RepositoryScannerFactory(),
+		// this private field is set during libscan construction
+		Vscnrs: lib.vscnrs,
 	}
 
 	// add other layer scanner implementations as they grow
@@ -52,4 +57,18 @@ func packageScannerFactory() []scanner.PackageScanner {
 		// add other packge scanners as they grow
 		dpkg.NewPackageScanner(),
 	}
+}
+
+// DistributionScannerFactory is a factory method to return a set of DistributionScanners which are used during libscan runtime
+type DistributionScannerFactory func() []scanner.DistributionScanner
+
+func distributionScannerFactory() []scanner.DistributionScanner {
+	return []scanner.DistributionScanner{}
+}
+
+// RepositoryScannerFactory is a factory method to return a set of RepositoryScanners which are used during libscan runtime
+type RepositoryScannerFactory func() []scanner.RepositoryScanner
+
+func repositoryScannerFactory() []scanner.RepositoryScanner {
+	return []scanner.RepositoryScanner{}
 }

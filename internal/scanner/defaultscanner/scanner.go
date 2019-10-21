@@ -6,7 +6,6 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/scanner"
-	"github.com/quay/claircore/pkg/distlock"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -67,6 +66,7 @@ var startState ScannerState = CheckManifest
 // defaultScanner implements the scanner.Scanner interface.
 // not safe for reuse or sharing
 type defaultScanner struct {
+	// holds dependencies for a defaultScanner
 	*scanner.Opts
 	// lock protecting State variable
 	sm *sync.RWMutex
@@ -78,14 +78,8 @@ type defaultScanner struct {
 	report *claircore.ScanReport
 	// a synethic layer representing the container's final stacked filesystem contents.
 	imageLayer *claircore.Layer
-	// a distributed lock which should be locked before the Scan() method and Unlocked()
-	// after the scan completes. we leave this up to the caller so to not dig the locking
-	// and unlocking logic between state transitions.
-	distLock distlock.Locker
 	// a fatal error halting the scanning process
 	err error
-	// a convenience field holding all configured scanners as VersionedScanner interfaces
-	vscnrs scanner.VersionedScanners
 	// a logger with context. set on Scan() method call
 	logger zerolog.Logger
 }
@@ -98,11 +92,6 @@ func New(opts *scanner.Opts) *defaultScanner {
 		Packages:          map[int]*claircore.Package{},
 	}
 
-	// convert PackageScanners to VersionedScanners for convenience. most Store methods expect these
-	// to be generic.
-	var vscnrs scanner.VersionedScanners
-	vscnrs.PStoVS(opts.PackageScanners)
-
 	s := &defaultScanner{
 		Opts: opts,
 		sm:   &sync.RWMutex{},
@@ -110,8 +99,6 @@ func New(opts *scanner.Opts) *defaultScanner {
 		currentState: startState,
 		report:       scanRes,
 		manifest:     &claircore.Manifest{},
-		vscnrs:       vscnrs,
-		distLock:     opts.ScanLock,
 	}
 
 	return s
@@ -191,7 +178,7 @@ func (s *defaultScanner) getState() ScannerState {
 }
 
 func (s *defaultScanner) Lock(ctx context.Context, hash string) error {
-	err := s.distLock.Lock(ctx, hash)
+	err := s.ScanLock.Lock(ctx, hash)
 	if err != nil {
 		return err
 	}
@@ -199,7 +186,7 @@ func (s *defaultScanner) Lock(ctx context.Context, hash string) error {
 }
 
 func (s *defaultScanner) Unlock() error {
-	err := s.distLock.Unlock()
+	err := s.ScanLock.Unlock()
 	if err != nil {
 		return err
 	}
