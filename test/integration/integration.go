@@ -3,7 +3,7 @@ package integration
 
 import "testing"
 
-// Skip will skip the current test or benchmark if this package was built with
+// Skip will skip the current test or benchmark if this package was built without
 // the "integration" build tag.
 //
 // This should be used as an annotation at the top of the function, like
