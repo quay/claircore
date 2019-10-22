@@ -146,24 +146,20 @@ func (c *Client) Updates(ctx context.Context) (io.ReadCloser, error) {
 
 func (c *Client) getMirrors(ctx context.Context, release Release) error {
 	var (
-		resp *http.Response
-		err  error
+		req *http.Request
+		err error
 	)
 
 	switch release {
 	case Linux1:
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, amazonLinux1Mirrors, nil)
-		if err != nil {
-			return fmt.Errorf("failed to create request for mirror list %v : %v", amazonLinux1Mirrors, err)
-		}
-		resp, err = c.c.Do(req)
+		req, err = http.NewRequestWithContext(ctx, http.MethodGet, amazonLinux1Mirrors, nil)
 	case Linux2:
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, amazonLinux2Mirrors, nil)
-		if err != nil {
-			return fmt.Errorf("failed to create request for mirror list %v : %v", amazonLinux2Mirrors, err)
-		}
-		resp, err = c.c.Do(req)
+		req, err = http.NewRequestWithContext(ctx, http.MethodGet, amazonLinux2Mirrors, nil)
 	}
+	if err != nil {
+		return fmt.Errorf("failed to create request for mirror list %v : %v", amazonLinux1Mirrors, err)
+	}
+	resp, err := c.c.Do(req)
 	if err != nil {
 		c.logger.Error().Msgf("failed to make request for %v mirrors: %v", release, err)
 		return fmt.Errorf("failed to make request for %v mirrors: %v", release, err)
