@@ -20,7 +20,7 @@ services:
       start_period: 10s
 
   libscanhttp:
-    image: golang:1.13.0
+    image: quay.io/claircore/golang:1.13.3
     ports:
       - "8080:8080"
     environment:
@@ -37,7 +37,7 @@ services:
       [ "bash", "-c", "cd /src/claircore/cmd/libscanhttp; go run -mod vendor ." ]
 
   libvulnhttp:
-    image: golang:1.13.0
+    image: quay.io/claircore/golang:1.13.3
     ports:
       - "8081:8081"
     environment:
