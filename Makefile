@@ -106,7 +106,7 @@ podman-dev-up:
 		--env LOG_LEVEL="debug"\
 		--expose 8080\
 		--volume $$(git rev-parse --show-toplevel)/:/src/claircore/:z\
-		golang:1.13\
+		quay.io/claircore/golang:1.13.3\
 		bash -c 'cd /src/claircore/cmd/libscanhttp; exec go run -mod vendor .'
 	podman create\
 		--pod claircore-dev\
@@ -118,7 +118,7 @@ podman-dev-up:
 		--env LOG_LEVEL="debug"\
 		--expose 8081\
 		--volume $$(git rev-parse --show-toplevel)/:/src/claircore/:z\
-		golang:1.13\
+		quay.io/claircore/golang:1.13.3\
 		bash -c 'cd /src/claircore/cmd/libvulnhttp; exec go run -mod vendor .'
 	podman pod start claircore-dev
 
@@ -130,3 +130,7 @@ podman-dev-down:
 	podman pod stop -t 10 claircore-dev
 	true $(foreach c,claircore-database libscanhttp libvulnhttp,&& podman rm $c)
 	podman pod rm claircore-dev
+
+.PHONY: baseimage
+baseimage:
+	buildah bud -f etc/Dockerfile -t quay.io/claircore/golang:1.13.3 etc
