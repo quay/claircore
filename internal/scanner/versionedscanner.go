@@ -76,15 +76,17 @@ func (vs VersionedScanners) VStoRS() []RepositoryScanner {
 	return out
 }
 
-// MergeVS takes 0 or more VersionScanners and returns a merged array
-// merging is in order of submitted arrays. if no arrays are submitted
-// an empty array is returned.
-func MergeVS(scnrs ...VersionedScanners) VersionedScanners {
+// MergeVS merges lists of scanners into a single list of VersionedScanner types
+func MergeVS(pscnr []PackageScanner, dscnr []DistributionScanner, rscnr []RepositoryScanner) VersionedScanners {
 	out := make([]VersionedScanner, 0)
-	for _, array := range scnrs {
-		for _, scnr := range array {
-			out = append(out, scnr)
-		}
+	for _, ps := range pscnr {
+		out = append(out, VersionedScanner(ps))
+	}
+	for _, ds := range dscnr {
+		out = append(out, VersionedScanner(ds))
+	}
+	for _, rs := range rscnr {
+		out = append(out, VersionedScanner(rs))
 	}
 	return out
 }

@@ -5,7 +5,7 @@ go 1.12
 require (
 	github.com/Microsoft/go-winio v0.4.14 // indirect
 	github.com/Sirupsen/logrus v1.0.6 // indirect
-	github.com/acobaugh/osrelease v0.0.0-20181218015638-a93a0a55a249
+	github.com/acobaugh/osrelease v0.0.0-20181218015638-a93a0a55a249 // indirect
 	github.com/crgimenes/goconfig v1.2.1
 	github.com/docker/docker v1.13.1 // indirect
 	github.com/docker/go-units v0.4.0 // indirect

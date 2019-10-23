@@ -1,5 +1,5 @@
 // we will use the claircore_test package here to avoid import cycles when
-// importing the defaultfetcher.fetcher. using the fetcher is an attempt to not repeat
+// importing the fetcher.fetcher. using the fetcher is an attempt to not repeat
 // a lot of layer fetching code. if this pattern continues reconsider importing anything
 // into claircore package
 package claircore_test
@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/quay/claircore/internal/scanner"
-	"github.com/quay/claircore/internal/scanner/defaultfetcher"
+	"github.com/quay/claircore/internal/scanner/fetcher"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 
@@ -37,7 +37,7 @@ func Test_Layer_Files_Miss(t *testing.T) {
 	}{
 		{
 			name:    "ubuntu:18.04 fake path, leading slash, inmem fetch",
-			fetcher: defaultfetcher.New(nil, nil, scanner.InMem),
+			fetcher: fetcher.New(nil, nil, scanner.InMem),
 			layers:  1,
 			uris: []string{
 				"https://storage.googleapis.com/quay-sandbox-01/datastorage/registry/sha256/35/35c102085707f703de2d9eaad8752d6fe1b8f02b5d2149f1d8357c9cc7fb7d0a",
@@ -46,7 +46,7 @@ func Test_Layer_Files_Miss(t *testing.T) {
 		},
 		{
 			name:    "ubuntu:18.04 fake path, no leading slash, inmem fetch",
-			fetcher: defaultfetcher.New(nil, nil, scanner.InMem),
+			fetcher: fetcher.New(nil, nil, scanner.InMem),
 			layers:  1,
 			uris: []string{
 				"https://storage.googleapis.com/quay-sandbox-01/datastorage/registry/sha256/35/35c102085707f703de2d9eaad8752d6fe1b8f02b5d2149f1d8357c9cc7fb7d0a",
@@ -107,7 +107,7 @@ func Test_Layer_Files_Hit(t *testing.T) {
 	}{
 		{
 			name:    "ubuntu:18.04 os-release (linked file), leading slash, inmem fetch",
-			fetcher: defaultfetcher.New(nil, nil, scanner.InMem),
+			fetcher: fetcher.New(nil, nil, scanner.InMem),
 			layers:  1,
 			uris: []string{
 				"https://storage.googleapis.com/quay-sandbox-01/datastorage/registry/sha256/35/35c102085707f703de2d9eaad8752d6fe1b8f02b5d2149f1d8357c9cc7fb7d0a",
@@ -116,7 +116,7 @@ func Test_Layer_Files_Hit(t *testing.T) {
 		},
 		{
 			name:    "ubuntu:18.04 os-release (linked file), no leading slash, inmem fetch",
-			fetcher: defaultfetcher.New(nil, nil, scanner.InMem),
+			fetcher: fetcher.New(nil, nil, scanner.InMem),
 			layers:  1,
 			uris: []string{
 				"https://storage.googleapis.com/quay-sandbox-01/datastorage/registry/sha256/35/35c102085707f703de2d9eaad8752d6fe1b8f02b5d2149f1d8357c9cc7fb7d0a",

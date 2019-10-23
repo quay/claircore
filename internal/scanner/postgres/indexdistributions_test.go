@@ -88,7 +88,7 @@ func Test_IndexDistributions_Success(t *testing.T) {
 			defer teardown()
 
 			// gen a scnr and insert
-			vscnrs := test.GenUniqueScanners(1)
+			vscnrs := test.GenUniqueDistributionScanners(1)
 			err := pgtest.InsertUniqueScanners(db, vscnrs)
 
 			// gen packages

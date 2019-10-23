@@ -1,4 +1,4 @@
-package defaultfetcher
+package fetcher
 
 import (
 	"context"

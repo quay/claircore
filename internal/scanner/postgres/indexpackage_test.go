@@ -102,7 +102,7 @@ func Test_IndexPackages_Success_Parallel(t *testing.T) {
 			t.Run(table.name, func(t *testing.T) {
 				t.Parallel()
 				// gen a scnr and insert
-				vscnrs := test.GenUniqueScanners(1)
+				vscnrs := test.GenUniquePackageScanners(1)
 				err := pgtest.InsertUniqueScanners(db, vscnrs)
 
 				// gen packages
@@ -196,7 +196,7 @@ func Test_IndexPackages_Success(t *testing.T) {
 			defer teardown()
 
 			// gen a scnr and insert
-			vscnrs := test.GenUniqueScanners(1)
+			vscnrs := test.GenUniquePackageScanners(1)
 			err := pgtest.InsertUniqueScanners(db, vscnrs)
 
 			// gen packages

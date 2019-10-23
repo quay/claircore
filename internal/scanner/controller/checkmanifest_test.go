@@ -1,4 +1,4 @@
-package defaultscanner
+package controller
 
 import (
 	"context"
@@ -17,7 +17,7 @@ func Test_CheckManifest_Seen(t *testing.T) {
 		// the name of this test
 		name string
 		// the expected state returned
-		expectedState ScannerState
+		expectedState State
 		// a function to initialize any mocks
 		mock func(t *testing.T) *scanner.MockStore
 	}{
@@ -47,7 +47,7 @@ func Test_CheckManifest_Seen(t *testing.T) {
 			s := New(opts)
 
 			// call state func
-			state, err := checkManifest(s, context.Background())
+			state, err := checkManifest(context.Background(), s)
 
 			assert.NoError(t, err)
 			assert.Equal(t, table.expectedState, state)
@@ -62,13 +62,13 @@ func Test_CheckManifest_UnSeen(t *testing.T) {
 		// the name of this test
 		name string
 		// the expected state of the scanner
-		expectedState ScannerState
+		expectedState State
 		// a function to initialize any mocks
 		mock func(t *testing.T) *scanner.MockStore
 	}{
 		{
 			name:          "manifest seen",
-			expectedState: FetchAndStackLayers,
+			expectedState: FetchLayers,
 			mock: func(t *testing.T) *scanner.MockStore {
 				ctrl := gomock.NewController(t)
 				m := scanner.NewMockStore(ctrl)
@@ -92,7 +92,7 @@ func Test_CheckManifest_UnSeen(t *testing.T) {
 			s := New(opts)
 
 			// call state func
-			state, err := checkManifest(s, context.Background())
+			state, err := checkManifest(context.Background(), s)
 
 			assert.NoError(t, err)
 			assert.Equal(t, table.expectedState, state)

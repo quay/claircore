@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/crgimenes/goconfig"
+	"github.com/quay/claircore/dpkg"
 	"github.com/quay/claircore/internal/scanner"
 	"github.com/quay/claircore/libscan"
 	libhttp "github.com/quay/claircore/libscan/http"
@@ -100,6 +101,9 @@ func confToLibscanOpts(conf Config) *libscan.Opts {
 		DataStore:  libscan.Postgres,
 		ConnString: "postgres://host:port",
 		ScanLock:   libscan.PostgresSL,
+		Ecosystems: []*scanner.Ecosystem{
+			dpkg.NewEcosystem(context.Background()),
+		},
 	}
 
 	// parse DataStore
