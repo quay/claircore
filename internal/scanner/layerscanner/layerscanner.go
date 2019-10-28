@@ -55,13 +55,11 @@ func (ls *layerScanner) discardToken() {
 // Scan performs a concurrency controlled scan of each layer by each type of configured scanner, indexing
 // the results on successful completion.
 //
-// Scan will launch all necessary go routines and each routine will block on adding a token.
-// On completion a token is discarded unblocking other routines which are waiting.
+// Scan will launch all pending layer scans in a Go routine.
+// Scan will ensure only 'cLevel' routines are actively scanning layers.
 //
-// On ctx cancel or a go routine reporting an scan/index error all routines blocking on adding a token will error
-// and the will not subsequently try to discard a token.
-//
-// Scan waits for all go routines to finish successfully before unblocking or returns with the first error if encountered
+// If the provided ctx is canceled all routines are canceled and an error will be returned.
+// If one or more layer scans fail Scan will report the first received error and all pending and inflight scans will be canceled.
 func (ls *layerScanner) Scan(ctx context.Context, manifest string, layers []*claircore.Layer) error {
 	// compute concurrency level
 	x := float64(len(layers))
