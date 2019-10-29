@@ -7,6 +7,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/scanner"
+	"github.com/quay/claircore/internal/scanner/controller"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/rs/zerolog"
@@ -60,15 +61,7 @@ func New(ctx context.Context, opts *Opts) (Libscan, error) {
 	}
 
 	// register any new scanners.
-	var pscnrs scanner.VersionedScanners
-	pscnrs.PStoVS(opts.PackageScannerFactory())
-
-	var dscnrs scanner.VersionedScanners
-	dscnrs.DStoVS(opts.DistributionScannerFactory())
-
-	var rscnrs scanner.VersionedScanners
-	rscnrs.RStoVS(opts.RepositoryScannerFactory())
-
+	pscnrs, dscnrs, rscnrs, err := scanner.EcosystemsToScanners(ctx, opts.Ecosystems)
 	vscnrs := scanner.MergeVS(pscnrs, dscnrs, rscnrs)
 
 	err = l.store.RegisterScanners(ctx, vscnrs)
@@ -88,7 +81,7 @@ func (l *libscan) Scan(ctx context.Context, manifest *claircore.Manifest) (<-cha
 
 	rc := make(chan *claircore.ScanReport, 1)
 
-	s, err := l.ScannerFactory(l, l.Opts)
+	s, err := l.ControllerFactory(l, l.Opts)
 	if err != nil {
 		l.logger.Error().Msgf("scanner factory failed to construct a scanner: %v", err)
 		return nil, fmt.Errorf("scanner factory failed to construct a scanner: %v", err)
@@ -100,7 +93,7 @@ func (l *libscan) Scan(ctx context.Context, manifest *claircore.Manifest) (<-cha
 }
 
 // scan performs the business logic of starting a scan.
-func (l *libscan) scan(ctx context.Context, s scanner.Scanner, rc chan *claircore.ScanReport, m *claircore.Manifest) {
+func (l *libscan) scan(ctx context.Context, s *controller.Controller, rc chan *claircore.ScanReport, m *claircore.Manifest) {
 	// once scan is finished close the rc channel incase callers are ranging
 	defer close(rc)
 

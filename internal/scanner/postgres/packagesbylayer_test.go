@@ -77,7 +77,7 @@ func Test_PackagesByLayer_Success(t *testing.T) {
 			}
 
 			// create scnr mocks
-			vscnrs := test.GenUniqueScanners(table.scnrs)
+			vscnrs := test.GenUniquePackageScanners(table.scnrs)
 			err = pgtest.InsertUniqueScanners(db, vscnrs)
 			if err != nil {
 				t.Fatalf("failed to insert scnrs: %v", err)

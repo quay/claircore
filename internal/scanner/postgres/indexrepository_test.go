@@ -88,7 +88,7 @@ func Test_IndexRepositories_Success(t *testing.T) {
 			defer teardown()
 
 			// gen a scnr and insert
-			vscnrs := test.GenUniqueScanners(1)
+			vscnrs := test.GenUniqueRepositoryScanners(1)
 			err := pgtest.InsertUniqueScanners(db, vscnrs)
 
 			// gen packages

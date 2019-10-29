@@ -1,4 +1,4 @@
-package defaultscanner
+package controller
 
 import (
 	"context"
@@ -9,15 +9,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_LayerScan(t *testing.T) {
+func Test_ScanLayers(t *testing.T) {
 	var tt = []struct {
 		name          string
-		expectedState ScannerState
+		expectedState State
 		mock          func(t *testing.T) (scanner.LayerScanner, scanner.Store)
 	}{
 		{
 			name:          "successful scan",
-			expectedState: BuildImageResult,
+			expectedState: Coalesce,
 			mock: func(t *testing.T) (scanner.LayerScanner, scanner.Store) {
 				ctrl := gomock.NewController(t)
 				ls := scanner.NewMockLayerScanner(ctrl)
@@ -39,7 +39,7 @@ func Test_LayerScan(t *testing.T) {
 				Store:        s,
 			})
 
-			state, err := layerScan(scnr, context.Background())
+			state, err := scanLayers(context.Background(), scnr)
 			assert.NoError(t, err)
 			assert.Equal(t, table.expectedState, state)
 		})

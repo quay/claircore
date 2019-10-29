@@ -1,4 +1,4 @@
-package defaultscanner
+package controller
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 func Test_ScanFinished_Success(t *testing.T) {
 	var tt = []struct {
 		name          string
-		expectedState ScannerState
+		expectedState State
 		mock          func(t *testing.T) scanner.Store
 	}{
 		{
@@ -37,7 +37,7 @@ func Test_ScanFinished_Success(t *testing.T) {
 				Store: store,
 			})
 
-			state, err := scanFinished(scnr, context.Background())
+			state, err := scanFinished(context.Background(), scnr)
 
 			assert.NoError(t, err)
 			assert.Equal(t, table.expectedState, state)

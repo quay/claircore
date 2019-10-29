@@ -181,7 +181,7 @@ func Benchmark_IndexPackages(b *testing.B) {
 			defer teardown()
 
 			// gen a scnr and insert
-			vscnrs := test.GenUniqueScanners(1)
+			vscnrs := test.GenUniquePackageScanners(1)
 			err := pgtest.InsertUniqueScanners(db, vscnrs)
 
 			// gen packages
