@@ -70,12 +70,8 @@ func filer(l *Layer, paths []string) (map[string][]byte, error) {
 			} else {
 				// ... it does so now read all bytes into the pre-allocated buffer until io.EOF
 				b = make([]byte, hdr.Size)
-				var err1 error
-				for err1 == nil {
-					_, err1 = tr.Read(b)
-				}
-				if err1 != io.EOF {
-					return nil, err
+				if n, err := io.ReadFull(tr, b); int64(n) != hdr.Size || err != nil {
+					return nil, fmt.Errorf("claircore: unable to read file from archive: read %d bytes (wanted: %d) (error: %v)", n, hdr.Size, err)
 				}
 			}
 
