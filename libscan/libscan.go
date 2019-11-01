@@ -8,6 +8,8 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/scanner"
 	"github.com/quay/claircore/internal/scanner/controller"
+	"github.com/quay/claircore/pkg/tracing"
+	"go.opentelemetry.io/api/trace"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/rs/zerolog"
@@ -35,6 +37,8 @@ type libscan struct {
 	// a sharable http client
 	client *http.Client
 	logger zerolog.Logger
+	// an OpenTelemetry tracer
+	tracer trace.Tracer
 }
 
 // New creates a new instance of Libscan
@@ -46,9 +50,12 @@ func New(ctx context.Context, opts *Opts) (Libscan, error) {
 		return nil, fmt.Errorf("failed to parse opts: %v", err)
 	}
 
+	ctx, span := opts.Tracer.Start(ctx, "libscan.New")
+	defer span.End()
+
 	db, store, err := initStore(ctx, opts)
 	if err != nil {
-		return nil, err
+		return nil, tracing.HandleError(err, span)
 	}
 	logger.Info().Msg("created database connection")
 
@@ -58,6 +65,7 @@ func New(ctx context.Context, opts *Opts) (Libscan, error) {
 		store:  store,
 		client: &http.Client{},
 		logger: logger,
+		tracer:          opts.Tracer,
 	}
 
 	// register any new scanners.
@@ -67,7 +75,7 @@ func New(ctx context.Context, opts *Opts) (Libscan, error) {
 	err = l.store.RegisterScanners(ctx, vscnrs)
 	if err != nil {
 		l.logger.Error().Msgf("failed to register configured scanners: %v", err)
-		return nil, fmt.Errorf("failed to register configured scanners: %v", err)
+		return nil, tracing.HandleError(fmt.Errorf("failed to register configured scanners: %v", err), span)
 	}
 	l.logger.Info().Msg("registered configured scanners")
 
@@ -77,6 +85,9 @@ func New(ctx context.Context, opts *Opts) (Libscan, error) {
 
 // Scan performs an ansyc scan of the manifest and produces a ScanReport. a channel is returned a caller may block on
 func (l *libscan) Scan(ctx context.Context, manifest *claircore.Manifest) (<-chan *claircore.ScanReport, error) {
+	ctx, span := l.tracer.Start(ctx, "libscan.Scan")
+	defer span.End()
+
 	l.logger.Info().Msgf("received scan request for manifest hash: %v", manifest.Hash)
 
 	rc := make(chan *claircore.ScanReport, 1)
@@ -84,7 +95,7 @@ func (l *libscan) Scan(ctx context.Context, manifest *claircore.Manifest) (<-cha
 	s, err := l.ControllerFactory(l, l.Opts)
 	if err != nil {
 		l.logger.Error().Msgf("scanner factory failed to construct a scanner: %v", err)
-		return nil, fmt.Errorf("scanner factory failed to construct a scanner: %v", err)
+		return nil, tracing.HandleError(fmt.Errorf("scanner factory failed to construct a scanner: %v", err), span)
 	}
 
 	go l.scan(ctx, s, rc, manifest)
@@ -94,6 +105,9 @@ func (l *libscan) Scan(ctx context.Context, manifest *claircore.Manifest) (<-cha
 
 // scan performs the business logic of starting a scan.
 func (l *libscan) scan(ctx context.Context, s *controller.Controller, rc chan *claircore.ScanReport, m *claircore.Manifest) {
+	ctx, span := l.tracer.Start(ctx, "libscan.scan")
+	defer span.End()
+
 	// once scan is finished close the rc channel incase callers are ranging
 	defer close(rc)
 
@@ -104,6 +118,7 @@ func (l *libscan) scan(ctx context.Context, s *controller.Controller, rc chan *c
 	if err != nil {
 		// something went wrong with getting a lock
 		// this is not an error saying another process has the lock
+		tracing.HandleError(err, span)
 		l.logger.Error().Msgf("unexpected error acquiring lock: %v", err)
 		sr := &claircore.ScanReport{
 			Success: false,
@@ -133,6 +148,9 @@ func (l *libscan) scan(ctx context.Context, s *controller.Controller, rc chan *c
 // ScanReport retrieves a ScanReport struct from persistence if it exists. if the ScanReport does not exist
 // the bool value will be false.
 func (l *libscan) ScanReport(ctx context.Context, hash string) (*claircore.ScanReport, bool, error) {
+	ctx, span := l.tracer.Start(ctx, "libscan.ScanReport")
+	defer span.End()
+
 	res, ok, err := l.store.ScanReport(ctx, hash)
-	return res, ok, err
+	return res, ok, tracing.HandleError(err, span)
 }

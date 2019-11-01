@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/pkg/tracing"
+	"go.opentelemetry.io/api/trace"
 )
 
 // DataStore tells libvuln which backing persistence store to instantiate
@@ -43,6 +45,8 @@ type Opts struct {
 	UpdateInterval time.Duration
 	// number of updaters ran in parallel while libscan initializes. use this to tune io/cpu on library start when using many updaters
 	UpdaterInitConcurrency int
+	// the tracer to use with this component
+	Tracer trace.Tracer
 }
 
 func (o *Opts) Parse() error {
@@ -61,6 +65,9 @@ func (o *Opts) Parse() error {
 	}
 	if o.UpdaterInitConcurrency == 0 {
 		o.UpdaterInitConcurrency = DefaultUpdaterInitConcurrency
+	}
+	if o.Tracer == nil {
+		o.Tracer = tracing.GetTracer("claircore/libvuln")
 	}
 	return nil
 }

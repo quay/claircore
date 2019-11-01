@@ -11,6 +11,7 @@ import (
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/libvuln/driver"
 	libhttp "github.com/quay/claircore/libvuln/http"
+	"github.com/quay/claircore/pkg/tracing"
 	"github.com/quay/claircore/ubuntu"
 
 	"github.com/crgimenes/goconfig"
@@ -21,17 +22,17 @@ import (
 // Config this struct is using the goconfig library for simple flag and env var
 // parsing. See: https://github.com/crgimenes/goconfig
 type Config struct {
-	HTTPListenAddr string `cfgDefault:"0.0.0.0:8081" cfg:"HTTP_LISTEN_ADDR"`
-	DataStore      string `cfgDefault:"postgres" cfg:"DATASTORE" cfgHelper:"DataStore that libvuln will connect to. currently implemented: 'postgres'`
-	ConnString     string `cfgDefault:"host=localhost port=5435 user=libvuln dbname=libvuln password=libvuln sslmode=disable" cfg:"CONNECTION_STRING" cfgHelper:"Connection string for the provided DataStore"`
-	UpdateLock     string `cfgDefault:"postgres" cfg:"UPDATE_LOCK" cfgHelper:"ScanLock that libvuln should use. currently implemented: 'postgres'"`
-	LogLevel       string `cfgDefault:"debug" cfg:"LOG_LEVEL" cfgHelper:"Log levels: debug, info, warning, error, fatal, panic" `
-	MaxConnPool    int    `cfgDefault:"100" cfg:"MAX_CONN_POOL" cfgHelper:"the maximum size of the connection pool used for database connections"`
-	Run            string `cfg:"RUN" cfgDefault:"." cfgHelper:"Regexp of updaters to run."`
+	HTTPListenAddr      string `cfgDefault:"0.0.0.0:8081" cfg:"HTTP_LISTEN_ADDR"`
+	DataStore           string `cfgDefault:"postgres" cfg:"DATASTORE" cfgHelper:"DataStore that libvuln will connect to. currently implemented: 'postgres'`
+	ConnString          string `cfgDefault:"host=localhost port=5435 user=libvuln dbname=libvuln password=libvuln sslmode=disable" cfg:"CONNECTION_STRING" cfgHelper:"Connection string for the provided DataStore"`
+	UpdateLock          string `cfgDefault:"postgres" cfg:"UPDATE_LOCK" cfgHelper:"ScanLock that libvuln should use. currently implemented: 'postgres'"`
+	LogLevel            string `cfgDefault:"debug" cfg:"LOG_LEVEL" cfgHelper:"Log levels: debug, info, warning, error, fatal, panic" `
+	MaxConnPool         int    `cfgDefault:"100" cfg:"MAX_CONN_POOL" cfgHelper:"the maximum size of the connection pool used for database connections"`
+	Run                 string `cfg:"RUN" cfgDefault:"." cfgHelper:"Regexp of updaters to run."`
+	JaegerAgentHostPort string `cfgDefault:"localhost:6831" cfg:"JAEGER_AGENT_HOST_PORT" cfgHelper:"The location for the Jaeger Agent, when available. Leaving empty disables tracing." `
 }
 
 func main() {
-	ctx := context.Background()
 	// parse our config
 	conf := Config{}
 	err := goconfig.Parse(&conf)
@@ -43,9 +44,12 @@ func main() {
 	zerolog.SetGlobalLevel(logLevel(conf))
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 
+	tracing.Bootstrap(conf.JaegerAgentHostPort)
+
 	opts := confToLibvulnOpts(conf)
 
 	// create libvuln
+	ctx := context.Background()
 	lib, err := libvuln.New(ctx, opts)
 	if err != nil {
 		log.Fatal().Msgf("failed to create libvuln %v", err)
@@ -117,6 +121,7 @@ func confToLibvulnOpts(conf Config) *libvuln.Opts {
 	opts := &libvuln.Opts{
 		Matchers: matchers,
 		Updaters: ups,
+		Tracer:   tracing.GetTracer("claircore/libvuln"),
 	}
 
 	// parse DataStore

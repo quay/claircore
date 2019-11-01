@@ -7,18 +7,27 @@ import (
 	"strings"
 
 	"github.com/quay/claircore/libscan"
+	"github.com/quay/claircore/pkg/tracing"
+	"go.opentelemetry.io/api/key"
+	"google.golang.org/grpc/codes"
 
 	"github.com/rs/zerolog/log"
 )
 
 func ScanReport(lib libscan.Libscan) h.HandlerFunc {
+	tracer := tracing.GetTracer("claircore/http/ScanReport")
+
 	return func(w h.ResponseWriter, r *h.Request) {
-		ctx := r.Context()
+		ctx, span := tracer.Start(r.Context(), "ScanReport")
+		defer span.End()
+
 		log := log.Logger
 		if r.Method != h.MethodGet {
 			const msg = "endpoint only allows GET"
 			log.Info().Msg(msg)
 			h.Error(w, msg, h.StatusMethodNotAllowed)
+			span.SetAttribute(key.String("error", msg))
+			span.SetStatus(codes.FailedPrecondition)
 			return
 		}
 
@@ -28,6 +37,8 @@ func ScanReport(lib libscan.Libscan) h.HandlerFunc {
 			const msg = "could not find manifest hash in path"
 			log.Info().Msg(msg)
 			h.Error(w, msg, h.StatusBadRequest)
+			span.SetAttribute(key.String("error", msg))
+			span.SetStatus(codes.InvalidArgument)
 			return
 		}
 
@@ -37,6 +48,7 @@ func ScanReport(lib libscan.Libscan) h.HandlerFunc {
 			const msg = "error receiving scan report"
 			log.Warn().Err(err).Msg(msg)
 			h.Error(w, msg, h.StatusInternalServerError)
+			tracing.HandleError(err, span)
 			return
 		}
 
@@ -44,6 +56,8 @@ func ScanReport(lib libscan.Libscan) h.HandlerFunc {
 			msg := fmt.Sprintf("scan report for %v does not exist", hash)
 			log.Info().Msg(msg)
 			h.Error(w, msg, h.StatusNotFound)
+			span.SetAttribute(key.String("error", msg))
+			span.SetStatus(codes.NotFound)
 			return
 		}
 
@@ -53,6 +67,7 @@ func ScanReport(lib libscan.Libscan) h.HandlerFunc {
 			const msg = "could not return scan report"
 			log.Warn().Err(err).Msg(msg)
 			h.Error(w, msg, h.StatusInternalServerError)
+			tracing.HandleError(err, span)
 			return
 		}
 	}

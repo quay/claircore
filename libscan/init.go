@@ -34,6 +34,8 @@ func initStore(ctx context.Context, opts *Opts) (*sqlx.DB, scanner.Store, error)
 			return nil, nil, fmt.Errorf("failed to open db: %v", err)
 		}
 
+		// we could use the `WithTracer` here to reuse the same tracer,
+		// but we probably want a new service name for the storage layer
 		store = postgres.NewStore(db, pool)
 		return db, store, nil
 	default:

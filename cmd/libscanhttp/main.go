@@ -14,6 +14,7 @@ import (
 	"github.com/quay/claircore/libscan"
 	libhttp "github.com/quay/claircore/libscan/http"
 	"github.com/quay/claircore/rpm"
+	"github.com/quay/claircore/pkg/tracing"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -29,10 +30,10 @@ type Config struct {
 	LayerScanConcurrency int    `cfgDefault:"10" cfg:"LAYER_SCAN_CONCURRENCY" cfgHelper:"The number of layers libscan will scan concurrently per manifest scan"`
 	LayerFetchOption     string `cfgDefault:"inmem" cfg:"LAYER_FETCH_OPTION" cfgHelper:"How libscan will download images. currently supported: 'inmem', 'ondisk'`
 	LogLevel             string `cfgDefault:"debug" cfg:"LOG_LEVEL" cfgHelper:"Log levels: debug, info, warning, error, fatal, panic" `
+	JaegerAgentHostPort  string `cfgDefault:"localhost:6831" cfg:"JAEGER_AGENT_HOST_PORT" cfgHelper:"The location for the Jaeger Agent, when available. Leaving empty disables tracing." `
 }
 
 func main() {
-	ctx := context.Background()
 	// parse our config
 	conf := Config{}
 	err := goconfig.Parse(&conf)
@@ -44,9 +45,12 @@ func main() {
 	zerolog.SetGlobalLevel(logLevel(conf))
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 
+	tracing.Bootstrap(conf.JaegerAgentHostPort)
+
 	opts := confToLibscanOpts(conf)
 
 	// create libscan
+	ctx := context.Background()
 	lib, err := libscan.New(ctx, opts)
 	if err != nil {
 		log.Fatal().Msgf("failed to create libscan %v", err)
@@ -108,6 +112,7 @@ func confToLibscanOpts(conf Config) *libscan.Opts {
 			alpine.NewEcosystem(context.Background()),
 			rpm.NewEcosystem(context.Background()),
 		},
+		Tracer:     tracing.GetTracer("claircore/libscan"),
 	}
 
 	// parse DataStore

@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"github.com/quay/claircore/internal/scanner"
+	"github.com/quay/claircore/pkg/tracing"
+	"go.opentelemetry.io/api/trace"
 )
 
 // DataStore tells libscan which backing persistence store to instantiate
@@ -48,6 +50,8 @@ type Opts struct {
 	Ecosystems []*scanner.Ecosystem
 	// a convenience method for holding a list of versioned scanners
 	vscnrs scanner.VersionedScanners
+	// the tracer to use with this component
+	Tracer trace.Tracer
 }
 
 func (o *Opts) Parse() error {
@@ -77,6 +81,10 @@ func (o *Opts) Parse() error {
 	}
 	// for now force this to Tee to support layer stacking
 	o.LayerFetchOpt = DefaultLayerFetchOpt
+
+	if o.Tracer == nil {
+		o.Tracer = tracing.GetTracer("claircore/libscan")
+	}
 
 	return nil
 }

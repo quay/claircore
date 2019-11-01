@@ -18,13 +18,16 @@ import (
 
 // initUpdaters provides initial burst control to not launch too many updaters at once.
 // returns any errors on eC and returns a CaneclFunc on dC to stop all updaters
-func initUpdaters(opts *Opts, db *sqlx.DB, store vulnstore.Updater, dC chan context.CancelFunc, eC chan error) {
+func initUpdaters(ctx context.Context, opts *Opts, db *sqlx.DB, store vulnstore.Updater, dC chan context.CancelFunc, eC chan error) {
 	// just to be defensive
 	err := opts.Parse()
 	if err != nil {
 		eC <- err
 		return
 	}
+
+	ctx, span := opts.Tracer.Start(ctx, "libvuln.New")
+	defer span.End()
 
 	controllers := map[string]*updater.Controller{}
 
@@ -40,6 +43,7 @@ func initUpdaters(opts *Opts, db *sqlx.DB, store vulnstore.Updater, dC chan cont
 			Interval:      opts.UpdateInterval,
 			Lock:          pglock.NewLock(db, time.Duration(0)),
 			UpdateOnStart: false,
+			Tracer:        opts.Tracer,
 		})
 	}
 
@@ -52,7 +56,7 @@ func initUpdaters(opts *Opts, db *sqlx.DB, store vulnstore.Updater, dC chan cont
 		cc <- struct{}{}
 		vv := v
 		go func() {
-			updateTO, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+			updateTO, cancel := context.WithTimeout(ctx, 10*time.Minute)
 			err := vv.Update(updateTO)
 			if err != nil {
 				eC <- fmt.Errorf("updater %s failed to update: %v", vv.Name, err)

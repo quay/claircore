@@ -8,8 +8,10 @@ import (
 	"github.com/quay/claircore/internal/vulnscanner"
 	"github.com/quay/claircore/internal/vulnstore"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/pkg/tracing"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"go.opentelemetry.io/api/trace"
 )
 
 // Libvuln is an interface exporting the public methods of our library.
@@ -24,21 +26,25 @@ type libvuln struct {
 	matchers     []driver.Matcher
 	killUpdaters context.CancelFunc
 	logger       zerolog.Logger
+	tracer       trace.Tracer
 }
 
 // New creates a new instance of the Libvuln library
 func New(ctx context.Context, opts *Opts) (Libvuln, error) {
+	ctx, span := opts.Tracer.Start(ctx, "libvuln.New")
+	defer span.End()
+
 	logger := log.With().Str("component", "libvuln").Logger()
 
 	err := opts.Parse()
 	if err != nil {
-		return nil, err
+		return nil, tracing.HandleError(err, span)
 	}
 
 	logger.Info().Msgf("initializing store %v and pool size: %v ", opts.DataStore, opts.MaxConnPool)
 	db, vulnstore, err := initStore(ctx, opts)
 	if err != nil {
-		return nil, err
+		return nil, tracing.HandleError(err, span)
 	}
 
 	eC := make(chan error, 1024)
@@ -47,7 +53,7 @@ func New(ctx context.Context, opts *Opts) (Libvuln, error) {
 	// block on updater initialization.
 	logger.Info().Msg("beginning updater initialization")
 
-	go initUpdaters(opts, db, vulnstore, dC, eC)
+	go initUpdaters(ctx, opts, db, vulnstore, dC, eC)
 	killUpdaters := <-dC
 
 	logger.Info().Msg("updaters initialized")
@@ -69,6 +75,10 @@ func New(ctx context.Context, opts *Opts) (Libvuln, error) {
 }
 
 func (l *libvuln) Scan(ctx context.Context, sr *claircore.ScanReport) (*claircore.VulnerabilityReport, error) {
+	ctx, span := l.tracer.Start(ctx, "libvuln.Scan")
+	defer span.End()
+
 	vs := vulnscanner.New(l.store, l.matchers)
-	return vs.Scan(ctx, sr)
+	r, err := vs.Scan(ctx, sr)
+	return r, tracing.HandleError(err, span)
 }

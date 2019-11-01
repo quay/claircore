@@ -9,8 +9,12 @@ import (
 	"github.com/quay/claircore/internal/vulnstore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/distlock"
+	"github.com/quay/claircore/pkg/tracing"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"go.opentelemetry.io/api/key"
+	"go.opentelemetry.io/api/trace"
+	"google.golang.org/grpc/codes"
 )
 
 // Controller is a control structure for fetching, parsing, and updating a vulnstore.
@@ -34,6 +38,8 @@ type Opts struct {
 	Lock distlock.Locker
 	// immediately update on construction
 	UpdateOnStart bool
+	// the tracer to use for this component
+	Tracer trace.Tracer
 }
 
 // New is a constructor for an Controller
@@ -47,6 +53,9 @@ func New(opts *Opts) *Controller {
 
 // Start begins a long running update controller. cancel ctx to stop.
 func (u *Controller) Start(ctx context.Context) error {
+	ctx, span := u.Tracer.Start(ctx, "updater.Start")
+	defer span.End()
+
 	u.logger.Info().Msg("now running")
 	go u.start(ctx)
 	return nil
@@ -54,6 +63,9 @@ func (u *Controller) Start(ctx context.Context) error {
 
 // start implements the event loop of an updater controller
 func (u *Controller) start(ctx context.Context) {
+	ctx, span := u.Tracer.Start(ctx, "updater.start")
+	defer span.End()
+
 	t := time.NewTicker(u.Interval)
 	defer t.Stop()
 
@@ -66,6 +78,7 @@ func (u *Controller) start(ctx context.Context) {
 		case <-t.C:
 			u.Update(ctx)
 		case <-ctx.Done():
+			span.SetStatus(codes.Canceled)
 			log.Printf("updater %v is exiting due to context cancelation: %v", u.Name, ctx.Err())
 			return
 		}
@@ -74,12 +87,17 @@ func (u *Controller) start(ctx context.Context) {
 
 // Update triggers an update procedure. exported to make testing easier.
 func (u *Controller) Update(ctx context.Context) error {
+	ctx, span := u.Tracer.Start(ctx, "updater.Update")
+	defer span.End()
+
+	span.SetAttribute(key.String("name", u.Name))
+
 	u.logger.Info().Msgf("looking for updates")
 	// attempt to get distributed lock. if we cannot another updater is currently updating the vulnstore
 	locked, err := u.tryLock(ctx)
 	if err != nil {
 		u.logger.Error().Msgf("unexpected error while trying lock: %v", err)
-		return err
+		return tracing.HandleError(err, span)
 	}
 	if !locked {
 		u.logger.Debug().Msgf("another process is updating. waiting till next update interval")
@@ -91,7 +109,7 @@ func (u *Controller) Update(ctx context.Context) error {
 	vulnDB, shouldUpdate, updateHash, err := u.fetchAndCheck(ctx)
 	if err != nil {
 		u.logger.Error().Msgf("%v. lock released", err)
-		return err
+		return tracing.HandleError(err, span)
 	}
 	if !shouldUpdate {
 		u.logger.Info().Msgf("no updates were necessary. lock released")
@@ -103,7 +121,7 @@ func (u *Controller) Update(ctx context.Context) error {
 	err = u.parseAndStore(ctx, vulnDB, updateHash)
 	if err != nil {
 		u.logger.Error().Msgf("%v", err)
-		return err
+		return tracing.HandleError(err, span)
 	}
 
 	u.logger.Info().Msg("successfully updated the vulnstore")
@@ -123,17 +141,20 @@ func (u *Controller) tryLock(ctx context.Context) (bool, error) {
 
 // fetchAndCheck calls the Fetch method on the embedded Updater interface and checks whether we should update
 func (u *Controller) fetchAndCheck(ctx context.Context) (io.ReadCloser, bool, string, error) {
+	ctx, span := u.Tracer.Start(ctx, "updater.fetchAndCheck")
+	defer span.End()
+
 	// retrieve vulnerability database
 	vulnDB, updateHash, err := u.Fetch()
 	if err != nil {
-		return nil, false, "", fmt.Errorf("failed to fetch database: %v", err)
+		return nil, false, "", tracing.HandleError(fmt.Errorf("failed to fetch database: %v", err), span)
 	}
 
 	// see if we need to update the vulnstore
 	prevUpdateHash, err := u.Store.GetHash(ctx, u.Name)
 	if err != nil {
 		vulnDB.Close()
-		return nil, false, "", fmt.Errorf("failed to get previous update hash: %v", err)
+		return nil, false, "", tracing.HandleError(fmt.Errorf("failed to get previous update hash: %v", err), span)
 	}
 	if prevUpdateHash == updateHash {
 		vulnDB.Close()
@@ -145,16 +166,19 @@ func (u *Controller) fetchAndCheck(ctx context.Context) (io.ReadCloser, bool, st
 
 // parseAndStore calls the parse method on the embedded Updater interface and stores the result
 func (u *Controller) parseAndStore(ctx context.Context, vulnDB io.ReadCloser, updateHash string) error {
+	ctx, span := u.Tracer.Start(ctx, "updater.parseAndStore")
+	defer span.End()
+
 	// parse the vulnDB into claircore.Vulnerability structs
 	vulns, err := u.Parse(vulnDB)
 	if err != nil {
-		return fmt.Errorf("failed to parse the fetched vulnerability database: %v", err)
+		return tracing.HandleError(fmt.Errorf("failed to parse the fetched vulnerability database: %v", err), span)
 	}
 
 	// store the vulnerabilities and update latest hash
 	err = u.Store.PutVulnerabilities(ctx, u.Name, updateHash, vulns)
 	if err != nil {
-		return fmt.Errorf("failed to store vulernabilities: %v", err)
+		return tracing.HandleError(fmt.Errorf("failed to store vulernabilities: %v", err), span)
 	}
 
 	return nil

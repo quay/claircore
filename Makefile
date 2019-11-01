@@ -78,7 +78,14 @@ podman-dev-up:
 		--publish 5434\
 		--publish 8080\
 		--publish 8081\
+		--publish 16686\
 		--name claircore-dev
+	podman create\
+		--pod claircore-dev\
+		--name jaeger-all-in-one\
+		--expose 6831/udp\
+		--expose 16686\
+		jaegertracing/all-in-one:1.14
 	podman create\
 		--pod claircore-dev\
 		--name claircore-database\
@@ -128,7 +135,7 @@ podman-dev-up:
 .PHONY: podman-dev-down
 podman-dev-down:
 	podman pod stop -t 10 claircore-dev
-	true $(foreach c,claircore-database libscanhttp libvulnhttp,&& podman rm $c)
+	true $(foreach c,jaeger-all-in-one claircore-database libscanhttp libvulnhttp,&& podman rm $c)
 	podman pod rm claircore-dev
 
 .PHONY: baseimage
