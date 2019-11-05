@@ -9,6 +9,7 @@ import (
 
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/tmp"
+
 	"github.com/rs/zerolog"
 )
 

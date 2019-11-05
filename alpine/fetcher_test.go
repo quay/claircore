@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/test/log"
 )
 
 func TestFetcher(t *testing.T) {
@@ -24,13 +25,15 @@ func TestFetcher(t *testing.T) {
 
 	for _, test := range table {
 		ctx := context.Background()
+		logger := log.TestLogger(t)
+		ctx = logger.WithContext(ctx)
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			http.ServeFile(w, r, test.serveFile)
 		}))
 
 		u, err := NewUpdater(test.release, test.repo, WithURL(srv.URL))
 
-		rd, hint, err := u.Fetch()
+		rd, hint, err := u.FetchContext(ctx, "")
 		if err != nil {
 			t.Error(err)
 		}
