@@ -1253,11 +1253,11 @@ func TestScan(t *testing.T) {
 		Hash: hash,
 	}
 
-	tctx, done := context.WithTimeout(ctx, 30*time.Second)
+	tctx, done := context.WithTimeout(ctx, 2*time.Minute)
 	defer done()
 	rc, err := fetch.Layer(tctx, t, http.DefaultClient, "docker.io", "library/centos", hash)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	defer rc.Close()
 

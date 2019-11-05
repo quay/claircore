@@ -111,26 +111,47 @@ func Layer(ctx context.Context, t *testing.T, c *http.Client, from, repo, sha st
 	if err != nil {
 		return nil, err
 	}
+
 	switch res.StatusCode {
 	case http.StatusOK:
 	default:
 		return nil, errors.New(res.Status)
 	}
 	defer res.Body.Close()
-	cf, err := os.Create(cachefile)
-	defer cf.Close()
+
+	err = func() error {
+		var err error
+		defer func() {
+			if err != nil {
+				os.Remove(cachefile)
+			}
+		}()
+
+		var cf *os.File
+		cf, err = os.Create(cachefile)
+		if err != nil {
+			return err
+		}
+		defer cf.Close()
+
+		var gr *gzip.Reader
+		gr, err = gzip.NewReader(res.Body)
+		if err != nil {
+			return err
+		}
+		defer gr.Close()
+
+		if _, err = io.Copy(cf, gr); err != nil {
+			return err
+		}
+		if err = cf.Sync(); err != nil {
+			return err
+		}
+
+		return nil
+	}()
+
 	if err != nil {
-		return nil, err
-	}
-	gr, err := gzip.NewReader(res.Body)
-	if err != nil {
-		return nil, err
-	}
-	defer gr.Close()
-	if _, err := io.Copy(cf, gr); err != nil {
-		return nil, err
-	}
-	if err := cf.Sync(); err != nil {
 		return nil, err
 	}
 
