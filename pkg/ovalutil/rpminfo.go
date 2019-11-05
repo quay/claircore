@@ -100,8 +100,6 @@ func (r *RPMInfo) Extract(ctx context.Context) ([]*claircore.Vulnerability, erro
 			if err != nil {
 				return nil, err
 			}
-			// Add in our dist, which won't change inside a definition.
-			v.Package.Dist = dist
 			vs = append(vs, v)
 		}
 	}
@@ -239,7 +237,6 @@ func (r *RPMInfo) populate(ctx context.Context, v *claircore.Vulnerability, crit
 			case state.EVR != nil:
 				v.Package.Name = obj.Name
 				v.Package.Version = state.EVR.Body
-				v.Package.NameVersion = fmt.Sprintf("%s %s", v.Package.Name, v.Package.Version)
 				v.Package.Kind = "binary"
 			case state.Arch != nil:
 				// ???

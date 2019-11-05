@@ -15,8 +15,16 @@ type Store interface {
 	LayerScanned(ctx context.Context, hash string, scnr VersionedScanner) (bool, error)
 	// IndexPackages indexes a package into the persistence layer.
 	IndexPackages(ctx context.Context, pkgs []*claircore.Package, layer *claircore.Layer, scnr VersionedScanner) error
+	// IndexDistributions indexes distributions into the persistence layer
+	IndexDistributions(ctx context.Context, dists []*claircore.Distribution, layer *claircore.Layer, scnr VersionedScanner) error
+	// IndexRepositories indexes repositories into the persistence layer
+	IndexRepositories(ctx context.Context, repos []*claircore.Repository, layer *claircore.Layer, scnr VersionedScanner) error
 	// PackagesByLayer gets all the packages found in a layer limited by the provided scanners
 	PackagesByLayer(ctx context.Context, hash string, scnrs VersionedScanners) ([]*claircore.Package, error)
+	// DistributionsByLayer gets all the distributions found in a layer limited by the provided scanners
+	DistributionsByLayer(ctx context.Context, hash string, scnrs VersionedScanners) ([]*claircore.Distribution, error)
+	// RepositoriesByLayer gets all the repositories found in a layer limited by the provided scanners
+	RepositoriesByLayer(ctx context.Context, hash string, scnrs VersionedScanners) ([]*claircore.Repository, error)
 	// RegisterPackageScanners registers the provided scanners with the persistence layer
 	RegisterScanners(ctx context.Context, scnrs VersionedScanners) error
 	// ScanReport attempts to retrieve a persisted ScanReport.

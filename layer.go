@@ -1,5 +1,13 @@
 package claircore
 
+import (
+	"bytes"
+	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
+)
+
 // RemotePath provides http retrieval information about a layer.
 type RemotePath struct {
 	URI     string              `json:"uri"`
@@ -20,9 +28,26 @@ type Layer struct {
 	// uncompressed tar archive of the layer's content read into memory
 	Bytes []byte `json:"-"`
 	// path to local file containing uncompressed tar archive of the layer's content
-	LocalPath string `json:"local_path"`
+	LocalPath string `json:"-"`
 	// the URI and header information for retrieving a layer via http
 	RemotePath RemotePath `json:"remote_path"`
+}
+
+// Reader returns a ReadCloser of the layer.
+//
+// It should also implement io.Seeker, and should be a tar stream.
+func (l *Layer) Reader() (io.ReadCloser, error) {
+	if l.Bytes != nil {
+		return ioutil.NopCloser(bytes.NewReader(l.Bytes)), nil
+	}
+	if l.LocalPath == "" {
+		return nil, fmt.Errorf("claircore: malformed Layer struct")
+	}
+	f, err := os.Open(l.LocalPath)
+	if err != nil {
+		return nil, fmt.Errorf("claircore: unable to open tar: %w", err)
+	}
+	return f, nil
 }
 
 // Files retrieves specific files from the tar archive. concurrency safe

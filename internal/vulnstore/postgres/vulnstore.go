@@ -58,8 +58,8 @@ func (s *Store) PutVulnerabilities(ctx context.Context, updater string, hash str
 
 // vulnstore.Vulnerability interface methods //
 
-func (s *Store) Get(ctx context.Context, packages []*claircore.Package, opts vulnstore.GetOpts) (map[int][]*claircore.Vulnerability, error) {
-	vulns, err := get(ctx, s.pool, packages, opts)
+func (s *Store) Get(ctx context.Context, records []*claircore.ScanRecord, opts vulnstore.GetOpts) (map[int][]*claircore.Vulnerability, error) {
+	vulns, err := get(ctx, s.pool, records, opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get vulnerabilites: %v", err)
 	}

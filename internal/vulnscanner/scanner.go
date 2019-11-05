@@ -55,6 +55,7 @@ func (s *VulnScanner) Scan(ctx context.Context, sr *claircore.ScanReport) (*clai
 // match launches concurrent Controllers and returns discovered vulnerabilites
 // on the provided channel. channel is closed once all match controllers return
 func (s *VulnScanner) match(ctx context.Context, vC chan map[int][]*claircore.Vulnerability, eC chan error) {
+	records := s.sr.ScanRecords()
 	var g errgroup.Group
 	for _, m := range s.matchers {
 		// copy to avoid misreference in loop
@@ -62,7 +63,7 @@ func (s *VulnScanner) match(ctx context.Context, vC chan map[int][]*claircore.Vu
 		// func uses closure scope
 		g.Go(func() error {
 			mc := matcher.NewController(mm, s.store)
-			vulns, err := mc.Match(ctx, s.sr.Packages)
+			vulns, err := mc.Match(ctx, records)
 			if err != nil {
 				return err
 			}

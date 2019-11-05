@@ -115,11 +115,6 @@ func (u *Updater) Parse(contents io.ReadCloser) ([]*claircore.Vulnerability, err
 func (u *Updater) classifyVuln(pkgInfo pkgInfo, def oval.Definition) *claircore.Vulnerability {
 	ccPkg := &claircore.Package{
 		Name: pkgInfo.name,
-		Dist: &claircore.Distribution{
-			Name:            OSReleaseName,
-			DID:             OSReleaseID,
-			VersionCodeName: string(u.release),
-		},
 	}
 
 	vuln := &claircore.Vulnerability{
@@ -129,6 +124,11 @@ func (u *Updater) classifyVuln(pkgInfo pkgInfo, def oval.Definition) *claircore.
 		Severity:       "Unknown", // oval db doesnt provide
 		Package:        ccPkg,
 		FixedInVersion: pkgInfo.version,
+		Dist: &claircore.Distribution{
+			Name:            OSReleaseName,
+			DID:             OSReleaseID,
+			VersionCodeName: string(u.release),
+		},
 	}
 
 	return vuln

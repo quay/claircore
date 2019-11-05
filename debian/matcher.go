@@ -10,15 +10,15 @@ type Matcher struct{}
 
 var _ driver.Matcher = (*Matcher)(nil)
 
-func (*Matcher) Filter(pkg *claircore.Package) bool {
-	if pkg.Dist == nil {
+func (*Matcher) Filter(record *claircore.ScanRecord) bool {
+	if record.Distribution == nil {
 		return false
 	}
 
 	switch {
-	case pkg.Dist.DID == OSReleaseID:
+	case record.Distribution.DID == OSReleaseID:
 		return true
-	case pkg.Dist.Name == OSReleaseName:
+	case record.Distribution.Name == OSReleaseName:
 		return true
 	default:
 		return false
@@ -31,8 +31,8 @@ func (*Matcher) Query() []driver.MatchExp {
 	}
 }
 
-func (*Matcher) Vulnerable(pkg *claircore.Package, vuln *claircore.Vulnerability) bool {
-	v1, err := version.NewVersion(pkg.Version)
+func (*Matcher) Vulnerable(record *claircore.ScanRecord, vuln *claircore.Vulnerability) bool {
+	v1, err := version.NewVersion(record.Package.Version)
 	if err != nil {
 		return false
 	}

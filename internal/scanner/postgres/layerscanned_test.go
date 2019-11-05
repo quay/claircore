@@ -11,9 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// Test_LayerScanner_False tests that we correctly
-// identify if a layer has not been scanned by a particular versioned scanner
-func Test_LayerScanned_False(t *testing.T) {
+func Test_LayerScanned_Packages_False(t *testing.T) {
 	integration.Skip(t)
 	ctx := context.Background()
 	var tt = []struct {
@@ -51,18 +49,15 @@ func Test_LayerScanned_False(t *testing.T) {
 			db, store, teardown := TestStore(ctx, t)
 			defer teardown()
 
-			// create scanners
-			scnrs := test.GenUniqueScanners(table.scnrs)
+			scnrs := test.GenUniquePackageScanners(table.scnrs)
 			err := pgtest.InsertUniqueScanners(db, scnrs)
 			if err != nil {
 				t.Fatalf("failed to insert unique scanners: %v", err)
 			}
 
-			// create packages
 			pkgs := test.GenUniquePackages(table.pkgs)
 			err = pgtest.InsertPackages(db, pkgs)
 
-			// for each scanner confirm we see the layer as scanned
 			for _, scnr := range scnrs {
 				b, err := store.LayerScanned(ctx, table.hash, scnr)
 
@@ -74,9 +69,130 @@ func Test_LayerScanned_False(t *testing.T) {
 	}
 }
 
-// Test_LayerScanner_True tests that we correctly
-// identify if a layer has been scanned by a particular versioned scanner
-func Test_LayerScanned_True(t *testing.T) {
+func Test_LayerScanned_Distributions_False(t *testing.T) {
+	integration.Skip(t)
+	ctx := context.Background()
+	var tt = []struct {
+		// the name of the test
+		name string
+		// the layer's hash we are testing
+		hash string
+		// the number of scanners to create and linke with the layer_hash
+		scnrs int
+		// the number of distributions to be associated with the scanartifacts and layer hash
+		dists int
+	}{
+		{
+			name:  "single scanner, single distribution",
+			hash:  "test-layer-hash",
+			scnrs: 1,
+			dists: 1,
+		},
+		{
+			name:  "4 scanners, 4 distributions",
+			hash:  "test-layer-hash",
+			scnrs: 4,
+			dists: 4,
+		},
+		{
+			name:  "4 scanners, 8 distributions",
+			hash:  "test-layer-hash",
+			scnrs: 4,
+			dists: 8,
+		},
+	}
+
+	for _, table := range tt {
+		t.Run(table.name, func(t *testing.T) {
+			db, store, teardown := TestStore(ctx, t)
+			defer teardown()
+
+			scnrs := test.GenUniqueDistributionScanners(table.scnrs)
+			err := pgtest.InsertUniqueScanners(db, scnrs)
+			if err != nil {
+				t.Fatalf("failed to insert unique scanners: %v", err)
+			}
+
+			dists := test.GenUniqueDistributions(table.dists)
+			err = pgtest.InsertDistributions(db, dists)
+
+			for _, scnr := range scnrs {
+				b, err := store.LayerScanned(ctx, table.hash, scnr)
+
+				if err != nil {
+					t.Fatalf("received error checking if layer was scanned: %v", err)
+				}
+				if b {
+					t.Fatalf("expected LayerScanned to return false")
+				}
+			}
+
+		})
+	}
+}
+
+func Test_LayerScanned_Repository_False(t *testing.T) {
+	integration.Skip(t)
+	ctx := context.Background()
+	var tt = []struct {
+		// the name of the test
+		name string
+		// the layer's hash we are testing
+		hash string
+		// the number of scanners to create and linke with the layer_hash
+		scnrs int
+		// the number of repositories to be associated with the scanartifacts and layer hash
+		repos int
+	}{
+		{
+			name:  "single scanner, single repositories",
+			hash:  "test-layer-hash",
+			scnrs: 1,
+			repos: 1,
+		},
+		{
+			name:  "4 scanners, 4 repositories",
+			hash:  "test-layer-hash",
+			scnrs: 4,
+			repos: 4,
+		},
+		{
+			name:  "4 scanners, 8 repositories",
+			hash:  "test-layer-hash",
+			scnrs: 4,
+			repos: 8,
+		},
+	}
+
+	for _, table := range tt {
+		t.Run(table.name, func(t *testing.T) {
+			db, store, teardown := TestStore(ctx, t)
+			defer teardown()
+
+			scnrs := test.GenUniqueRepositoryScanners(table.scnrs)
+			err := pgtest.InsertUniqueScanners(db, scnrs)
+			if err != nil {
+				t.Fatalf("failed to insert unique scanners: %v", err)
+			}
+
+			repos := test.GenUniqueRepositories(table.repos)
+			err = pgtest.InsertRepositories(db, repos)
+
+			for _, scnr := range scnrs {
+				b, err := store.LayerScanned(ctx, table.hash, scnr)
+				if err != nil {
+					t.Fatalf("received error checking if layer was scanned: %v", err)
+				}
+				if b {
+					t.Fatalf("expected LayerScanned to return false")
+				}
+			}
+
+		})
+	}
+}
+
+func Test_LayerScanned_Packages_True(t *testing.T) {
 	integration.Skip(t)
 	ctx := context.Background()
 	var tt = []struct {
@@ -114,29 +230,160 @@ func Test_LayerScanned_True(t *testing.T) {
 			db, store, teardown := TestStore(ctx, t)
 			defer teardown()
 
-			// create scanners
-			scnrs := test.GenUniqueScanners(table.scnrs)
+			scnrs := test.GenUniquePackageScanners(table.scnrs)
 			err := pgtest.InsertUniqueScanners(db, scnrs)
 			if err != nil {
 				t.Fatalf("failed to insert unique scanners: %v", err)
 			}
 
-			// create packages
 			pkgs := test.GenUniquePackages(table.pkgs)
 			err = pgtest.InsertPackages(db, pkgs)
 
-			// create scanartifacts
-			err = pgtest.InsertScanArtifacts(db, table.hash, pkgs, scnrs)
+			err = pgtest.InsertPackageScanArtifacts(db, table.hash, pkgs, scnrs)
 			if err != nil {
 				t.Fatalf("failed to insert unique scanners: %v", err)
 			}
 
-			// for each scanner confirm we see the layer as scanned
 			for _, scnr := range scnrs {
 				b, err := store.LayerScanned(ctx, table.hash, scnr)
+				if err != nil {
+					t.Fatalf("received error checking if layer was scanned: %v", err)
+				}
+				if !b {
+					t.Fatalf("expected LayerScanned to return true")
+				}
+			}
 
-				assert.NoError(t, err)
-				assert.True(t, b)
+		})
+	}
+}
+
+func Test_LayerScanned_Distribution_True(t *testing.T) {
+	integration.Skip(t)
+	ctx := context.Background()
+	var tt = []struct {
+		// the name of the test
+		name string
+		// the layer's hash we are testing
+		hash string
+		// the number of scanners to create and linke with the layer_hash
+		scnrs int
+		// the number of distributions to be associated with the scanartifacts and layer hash
+		dists int
+	}{
+		{
+			name:  "single scanner, single package",
+			hash:  "test-layer-hash",
+			scnrs: 1,
+			dists: 1,
+		},
+		{
+			name:  "4 scanners, 4 distributions",
+			hash:  "test-layer-hash",
+			scnrs: 4,
+			dists: 4,
+		},
+		{
+			name:  "4 scanners, 8 distributions",
+			hash:  "test-layer-hash",
+			scnrs: 4,
+			dists: 8,
+		},
+	}
+
+	for _, table := range tt {
+		t.Run(table.name, func(t *testing.T) {
+			db, store, teardown := TestStore(ctx, t)
+			defer teardown()
+
+			scnrs := test.GenUniqueDistributionScanners(table.scnrs)
+			err := pgtest.InsertUniqueScanners(db, scnrs)
+			if err != nil {
+				t.Fatalf("failed to insert unique scanners: %v", err)
+			}
+
+			dists := test.GenUniqueDistributions(table.dists)
+			err = pgtest.InsertDistributions(db, dists)
+
+			err = pgtest.InsertDistScanArtifacts(db, table.hash, dists, scnrs)
+			if err != nil {
+				t.Fatalf("failed to insert unique scanners: %v", err)
+			}
+
+			for _, scnr := range scnrs {
+				b, err := store.LayerScanned(ctx, table.hash, scnr)
+				if err != nil {
+					t.Fatalf("received error checking if layer was scanned: %v", err)
+				}
+				if !b {
+					t.Fatalf("expected LayerScanned to return true")
+				}
+			}
+
+		})
+	}
+}
+
+func Test_LayerScanned_Repository_True(t *testing.T) {
+	integration.Skip(t)
+	ctx := context.Background()
+	var tt = []struct {
+		// the name of the test
+		name string
+		// the layer's hash we are testing
+		hash string
+		// the number of scanners to create and linke with the layer_hash
+		scnrs int
+		// the number of repositories to be associated with the scanartifacts and layer hash
+		dists int
+	}{
+		{
+			name:  "single scanner, single repository",
+			hash:  "test-layer-hash",
+			scnrs: 1,
+			dists: 1,
+		},
+		{
+			name:  "4 scanners, 4 repository",
+			hash:  "test-layer-hash",
+			scnrs: 4,
+			dists: 4,
+		},
+		{
+			name:  "4 scanners, 8 repository",
+			hash:  "test-layer-hash",
+			scnrs: 4,
+			dists: 8,
+		},
+	}
+
+	for _, table := range tt {
+		t.Run(table.name, func(t *testing.T) {
+			db, store, teardown := TestStore(ctx, t)
+			defer teardown()
+
+			scnrs := test.GenUniqueRepositoryScanners(table.scnrs)
+			err := pgtest.InsertUniqueScanners(db, scnrs)
+			if err != nil {
+				t.Fatalf("failed to insert unique scanners: %v", err)
+			}
+
+			repos := test.GenUniqueRepositories(table.dists)
+			err = pgtest.InsertRepositories(db, repos)
+
+			err = pgtest.InsertRepoScanArtifact(db, table.hash, repos, scnrs)
+			if err != nil {
+				t.Fatalf("failed to insert unique scanners: %v", err)
+			}
+
+			for _, scnr := range scnrs {
+				b, err := store.LayerScanned(ctx, table.hash, scnr)
+				if err != nil {
+					t.Fatalf("received error checking if layer was scanned: %v", err)
+				}
+				if !b {
+					t.Fatalf("expected LayerScanned to return true")
+				}
 			}
 
 		})

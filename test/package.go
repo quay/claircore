@@ -22,23 +22,17 @@ func GenDuplicatePackages(n int) ([]*claircore.Package, error) {
 	for i := 0; i < n; i++ {
 		ii := i % nn
 		pkgs = append(pkgs, &claircore.Package{
-			ID:      ii,
-			Name:    fmt.Sprintf("package-%d", ii),
-			Version: fmt.Sprintf("version-%d", ii),
-			Kind:    "binary",
+			ID:             ii,
+			Name:           fmt.Sprintf("package-%d", ii),
+			Version:        fmt.Sprintf("version-%d", ii),
+			Kind:           "binary",
+			PackageDB:      fmt.Sprintf("package-db-%d", i),
+			RepositoryHint: fmt.Sprintf("repository-hint-%d", i),
 			Source: &claircore.Package{
 				ID:      n + i,
 				Name:    fmt.Sprintf("source-package-%d", ii),
 				Version: fmt.Sprintf("source-version-%d", ii),
 				Kind:    "source",
-			},
-			Dist: &claircore.Distribution{
-				ID:              i,
-				Name:            fmt.Sprintf("dist-%d", ii),
-				Version:         fmt.Sprintf("version-%d", ii),
-				VersionCodeName: fmt.Sprintf("version%d", ii),
-				VersionID:       fmt.Sprintf("%d", ii),
-				Arch:            "x86_64",
 			},
 		})
 	}
@@ -53,23 +47,17 @@ func GenUniquePackages(n int) []*claircore.Package {
 	pkgs := []*claircore.Package{}
 	for i := 0; i < n; i++ {
 		pkgs = append(pkgs, &claircore.Package{
-			ID:      i,
-			Name:    fmt.Sprintf("package-%d", i),
-			Version: fmt.Sprintf("version-%d", i),
-			Kind:    "binary",
+			ID:             i,
+			Name:           fmt.Sprintf("package-%d", i),
+			Version:        fmt.Sprintf("version-%d", i),
+			Kind:           "binary",
+			PackageDB:      fmt.Sprintf("package-db-%d", i),
+			RepositoryHint: fmt.Sprintf("repository-hint-%d", i),
 			Source: &claircore.Package{
 				ID:      n + i,
 				Name:    fmt.Sprintf("source-package-%d", i),
 				Version: fmt.Sprintf("source-version-%d", i),
 				Kind:    "source",
-			},
-			Dist: &claircore.Distribution{
-				ID:              i,
-				Name:            fmt.Sprintf("dist-%d", i),
-				Version:         fmt.Sprintf("version-%d", i),
-				VersionCodeName: fmt.Sprintf("version%d", i),
-				VersionID:       fmt.Sprintf("%d", i),
-				Arch:            "x86_64",
 			},
 		})
 	}

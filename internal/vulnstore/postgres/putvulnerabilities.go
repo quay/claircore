@@ -20,7 +20,56 @@ const (
 						  ON CONFLICT (updater) 
 						  DO UPDATE SET hash = EXCLUDED.hash, tombstone = EXCLUDED.tombstone`
 	deleteTombstonedVulns = `DELETE FROM vuln WHERE tombstone = $1`
-	insertVulnerability   = `INSERT INTO vuln (
+	// insertVulnerability   = `INSERT INTO vuln (
+	// 			  updater,
+	// 			  name,
+	// 			  description,
+	// 			  links,
+	// 			  severity,
+	// 			  package_name,
+	// 			  package_version,
+	// 			  package_kind,
+	// 			  dist_id,
+	// 			  dist_name,
+	// 			  dist_version,
+	// 			  dist_version_code_name,
+	// 			  dist_version_id,
+	// 			  arch,
+	// 			  fixed_in_version,
+	// 			  tombstone)
+	// 		VALUES ($1,
+	// 				$2,
+	// 				$3,
+	// 				$4,
+	// 				$5,
+	// 				$6,
+	// 				$7,
+	// 				$8,
+	// 				$9,
+	// 				$10,
+	// 				$11,
+	// 				$12,
+	// 				$13,
+	// 				$14,
+	// 				$15,
+	// 				$16)
+	// ON conflict (updater,
+	// 			 name,
+	// 			 md5(description),
+	// 			 links,
+	// 			 severity,
+	// 			 package_name,
+	// 			 package_version,
+	// 			 package_kind,
+	// 			 dist_id,
+	// 			 dist_name,
+	// 			 dist_version,
+	// 			 dist_version_code_name,
+	// 			 dist_version_id,
+	// 			 arch,
+	// 			 fixed_in_version)
+	// DO UPDATE SET tombstone = EXCLUDED.tombstone;`
+	insertVulnerability = `INSERT INTO vuln (
 				  updater,
 				  name,
 				  description,
@@ -34,6 +83,9 @@ const (
 				  dist_version,
 				  dist_version_code_name,
 				  dist_version_id,
+				  repo_name,
+                  repo_key,
+                  repo_uri,
 				  arch,
 				  fixed_in_version,
 				  tombstone)
@@ -52,7 +104,10 @@ const (
 					$13,
 					$14,
 					$15,
-					$16)
+					$16,
+					$17,
+					$18,
+					$19)
 	ON conflict (updater,
 				 name,
 				 md5(description),
@@ -66,6 +121,9 @@ const (
 				 dist_version,
 				 dist_version_code_name,
 				 dist_version_id,
+				 repo_name,
+				 repo_key,
+				 repo_uri,
 				 arch,
 				 fixed_in_version)
 	DO UPDATE SET tombstone = EXCLUDED.tombstone;`
@@ -101,32 +159,35 @@ func putVulnerabilities(ctx context.Context, pool *pgxpool.Pool, updater string,
 	// safe sized batch inserts to postgres
 	mBatcher := microbatch.NewInsert(tx, 2000, time.Minute)
 	for _, vuln := range vulns {
-		vv := vuln
-		if vv.Package == nil {
-			vv.Package = &claircore.Package{
-				Dist: &claircore.Distribution{},
-			}
+		if vuln.Package == nil {
+			vuln.Package = &claircore.Package{}
 		}
-		if vv.Package.Dist == nil {
-			vv.Package.Dist = &claircore.Distribution{}
+		if vuln.Dist == nil {
+			vuln.Dist = &claircore.Distribution{}
+		}
+		if vuln.Repo == nil {
+			vuln.Repo = &claircore.Repository{}
 		}
 		err := mBatcher.Queue(ctx,
 			insertVulnerability,
 			updater,
-			vv.Name,
-			vv.Description,
-			vv.Links,
-			vv.Severity,
-			vv.Package.Name,
-			vv.Package.Version,
-			vv.Package.Kind,
-			vv.Package.Dist.DID,
-			vv.Package.Dist.Name,
-			vv.Package.Dist.Version,
-			vv.Package.Dist.VersionCodeName,
-			vv.Package.Dist.VersionID,
-			vv.Package.Dist.Arch,
-			vv.FixedInVersion,
+			vuln.Name,
+			vuln.Description,
+			vuln.Links,
+			vuln.Severity,
+			vuln.Package.Name,
+			vuln.Package.Version,
+			vuln.Package.Kind,
+			vuln.Dist.DID,
+			vuln.Dist.Name,
+			vuln.Dist.Version,
+			vuln.Dist.VersionCodeName,
+			vuln.Dist.VersionID,
+			vuln.Repo.Name,
+			vuln.Repo.Key,
+			vuln.Repo.URI,
+			vuln.Dist.Arch,
+			vuln.FixedInVersion,
 			newTombstone,
 		)
 		if err != nil {

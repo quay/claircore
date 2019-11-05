@@ -101,14 +101,14 @@ func Benchmark_PackagesByLayer(b *testing.B) {
 			}
 
 			// create scnr mocks
-			vscnrs := test.GenUniqueScanners(bench.scnrs)
+			vscnrs := test.GenUniquePackageScanners(bench.scnrs)
 			err = pgtest.InsertUniqueScanners(db, vscnrs)
 			if err != nil {
 				b.Fatalf("failed to insert scnrs: %v", err)
 			}
 
 			// create scanartifacts
-			err = pgtest.InsertScanArtifacts(db, bench.hash, pkgs, vscnrs)
+			err = pgtest.InsertPackageScanArtifacts(db, bench.hash, pkgs, vscnrs)
 			if err != nil {
 				b.Fatalf("failed to insert scan artifacts for test: %v", err)
 			}

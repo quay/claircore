@@ -102,7 +102,7 @@ func Test_IndexPackages_Success_Parallel(t *testing.T) {
 			t.Run(table.name, func(t *testing.T) {
 				t.Parallel()
 				// gen a scnr and insert
-				vscnrs := test.GenUniqueScanners(1)
+				vscnrs := test.GenUniquePackageScanners(1)
 				err := pgtest.InsertUniqueScanners(db, vscnrs)
 
 				// gen packages
@@ -115,7 +115,7 @@ func Test_IndexPackages_Success_Parallel(t *testing.T) {
 				}
 
 				assert.NoError(t, err)
-				checkScanArtifact(t, db, pkgs, table.layer)
+				checkPackageScanArtifact(t, db, pkgs, table.layer)
 			})
 		}
 	})
@@ -196,7 +196,7 @@ func Test_IndexPackages_Success(t *testing.T) {
 			defer teardown()
 
 			// gen a scnr and insert
-			vscnrs := test.GenUniqueScanners(1)
+			vscnrs := test.GenUniquePackageScanners(1)
 			err := pgtest.InsertUniqueScanners(db, vscnrs)
 
 			// gen packages
@@ -209,7 +209,7 @@ func Test_IndexPackages_Success(t *testing.T) {
 			}
 
 			assert.NoError(t, err)
-			checkScanArtifact(t, db, pkgs, table.layer)
+			checkPackageScanArtifact(t, db, pkgs, table.layer)
 		})
 	}
 
@@ -217,30 +217,11 @@ func Test_IndexPackages_Success(t *testing.T) {
 
 // checkScanArtifact confirms a scanartifact is created linking the layer, package/source/distribution entities from the layer, and scnr which discovered these.
 // indirectly we test that dists and packages are indexed correctly by querying with their unique fields.
-func checkScanArtifact(t *testing.T, db *sqlx.DB, expectedPkgs []*claircore.Package, layer *claircore.Layer) {
+func checkPackageScanArtifact(t *testing.T, db *sqlx.DB, expectedPkgs []*claircore.Package, layer *claircore.Layer) {
 	// NOTE: we gen one scanner for this test with ID 0, this is hard coded into this check
 	for _, pkg := range expectedPkgs {
-		var distID sql.NullInt64
-		err := db.Get(
-			&distID,
-			`SELECT id FROM dist 
-			WHERE name = $1 
-			AND version = $2 
-			AND version_code_name = $3 
-			AND version_id = $4 
-			AND arch = $5`,
-			pkg.Dist.Name,
-			pkg.Dist.Version,
-			pkg.Dist.VersionCodeName,
-			pkg.Dist.VersionID,
-			pkg.Dist.Arch,
-		)
-		if err != nil {
-			t.Fatalf("failed to query for distribution %v: %v", pkg.Dist, err)
-		}
-
 		var pkgID sql.NullInt64
-		err = db.Get(
+		err := db.Get(
 			&pkgID,
 			`SELECT id FROM package 
 			WHERE name = $1 
@@ -254,11 +235,11 @@ func checkScanArtifact(t *testing.T, db *sqlx.DB, expectedPkgs []*claircore.Pack
 			t.Fatalf("received error selecting package id %s version %s", pkg.Name, pkg.Version)
 		}
 
-		var layer_hash, sakind string
-		var package_id, dist_id, scanner_id sql.NullInt64
+		var layer_hash, package_db, repository_hint string
+		var package_id, source_id, scanner_id sql.NullInt64
 		row := db.QueryRowx(
-			`SELECT layer_hash, kind, package_id, dist_id, scanner_id 
-			FROM scanartifact 
+			`SELECT layer_hash, package_id, source_id, scanner_id, package_db, repository_hint
+			FROM package_scanartifact 
 			WHERE layer_hash = $1 
 			AND package_id = $2 
 			AND scanner_id = $3`,
@@ -267,7 +248,7 @@ func checkScanArtifact(t *testing.T, db *sqlx.DB, expectedPkgs []*claircore.Pack
 			0,
 		)
 
-		err = row.Scan(&layer_hash, &sakind, &package_id, &dist_id, &scanner_id)
+		err = row.Scan(&layer_hash, &package_id, &source_id, &scanner_id, &package_db, &repository_hint)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				t.Fatalf("failed to find scanartifact for pkg %v", pkg)
@@ -276,9 +257,9 @@ func checkScanArtifact(t *testing.T, db *sqlx.DB, expectedPkgs []*claircore.Pack
 		}
 
 		assert.Equal(t, layer.Hash, layer_hash)
-		assert.Equal(t, "package", sakind)
+		// assert.Equal(t, "package", sakind)
 		assert.Equal(t, pkgID.Int64, package_id.Int64)
-		assert.Equal(t, distID.Int64, dist_id.Int64)
+		// assert.Equal(t, distID.Int64, dist_id.Int64)
 		assert.Equal(t, int64(0), scanner_id.Int64)
 	}
 }

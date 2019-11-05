@@ -5,7 +5,7 @@ go 1.12
 require (
 	github.com/Microsoft/go-winio v0.4.14 // indirect
 	github.com/Sirupsen/logrus v1.0.6 // indirect
-	github.com/acobaugh/osrelease v0.0.0-20181218015638-a93a0a55a249
+	github.com/acobaugh/osrelease v0.0.0-20181218015638-a93a0a55a249 // indirect
 	github.com/crgimenes/goconfig v1.2.1
 	github.com/docker/docker v1.13.1 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
@@ -27,6 +27,7 @@ require (
 	github.com/stretchr/testify v1.4.0
 	github.com/tadasv/go-dpkg v0.0.0-20160704224136-c2cf9188b763
 	golang.org/x/sync v0.0.0-20190423024810-112230192c58
+	golang.org/x/tools v0.0.0-20191015211201-9c6d90b5a7d0 // indirect
 	gopkg.in/airbrake/gobrake.v2 v2.0.9 // indirect
 	gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20191010095647-fc94e3f71652

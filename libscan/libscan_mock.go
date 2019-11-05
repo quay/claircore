@@ -50,9 +50,9 @@ func (mr *MockLibscanMockRecorder) Scan(arg0, arg1 interface{}) *gomock.Call {
 }
 
 // ScanReport mocks base method
-func (m *MockLibscan) ScanReport(arg0 string) (*claircore.ScanReport, bool, error) {
+func (m *MockLibscan) ScanReport(arg0 context.Context, arg1 string) (*claircore.ScanReport, bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ScanReport", arg0)
+	ret := m.ctrl.Call(m, "ScanReport", arg0, arg1)
 	ret0, _ := ret[0].(*claircore.ScanReport)
 	ret1, _ := ret[1].(bool)
 	ret2, _ := ret[2].(error)
@@ -60,7 +60,7 @@ func (m *MockLibscan) ScanReport(arg0 string) (*claircore.ScanReport, bool, erro
 }
 
 // ScanReport indicates an expected call of ScanReport
-func (mr *MockLibscanMockRecorder) ScanReport(arg0 interface{}) *gomock.Call {
+func (mr *MockLibscanMockRecorder) ScanReport(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScanReport", reflect.TypeOf((*MockLibscan)(nil).ScanReport), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScanReport", reflect.TypeOf((*MockLibscan)(nil).ScanReport), arg0, arg1)
 }

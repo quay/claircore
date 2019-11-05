@@ -49,7 +49,7 @@ func Test_ManifestScanned_Failure(t *testing.T) {
 			db, store, teardown := TestStore(ctx, t)
 			defer teardown()
 
-			vscnrs := test.GenUniqueScanners(table.scanners)
+			vscnrs := test.GenUniquePackageScanners(table.scanners)
 			err := pgtest.InsertUniqueScanners(db, vscnrs)
 			assert.NoError(t, err)
 
@@ -98,7 +98,7 @@ func Test_ManifestScanned_Success(t *testing.T) {
 			db, store, teardown := TestStore(ctx, t)
 			defer teardown()
 
-			vscnrs := test.GenUniqueScanners(table.scanners)
+			vscnrs := test.GenUniquePackageScanners(table.scanners)
 			err := pgtest.InsertUniqueScanners(db, vscnrs)
 			assert.NoError(t, err)
 			err = pgtest.InsertScannerList(db, table.hash, table.scanners)

@@ -13,7 +13,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-func get(ctx context.Context, pool *pgxpool.Pool, packages []*claircore.Package, opts vulnstore.GetOpts) (map[int][]*claircore.Vulnerability, error) {
+func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.ScanRecord, opts vulnstore.GetOpts) (map[int][]*claircore.Vulnerability, error) {
 	// build our query we will make into a prepared statement. see build func definition for details and context
 	query, dedupedMatchers, err := getBuilder(opts.Matchers)
 
@@ -34,27 +34,27 @@ func get(ctx context.Context, pool *pgxpool.Pool, packages []*claircore.Package,
 
 	// create our bind arguments. the order of dedupedMatchers
 	// dictates the order of our bindvar values.
-	for _, pkg := range packages {
+	for _, record := range records {
 		args := []interface{}{}
 		for _, m := range dedupedMatchers {
 			switch m {
 			case driver.PackageDistributionDID:
-				args = append(args, pkg.Dist.DID)
+				args = append(args, record.Distribution.DID)
 			case driver.PackageDistributionName:
-				args = append(args, pkg.Dist.Name)
+				args = append(args, record.Distribution.Name)
 			case driver.PackageDistributionVersion:
-				args = append(args, pkg.Dist.Version)
+				args = append(args, record.Distribution.Version)
 			case driver.PackageDistributionVersionCodeName:
-				args = append(args, pkg.Dist.VersionCodeName)
+				args = append(args, record.Distribution.VersionCodeName)
 			case driver.PackageDistributionVersionID:
-				args = append(args, pkg.Dist.VersionID)
+				args = append(args, record.Distribution.VersionID)
 			case driver.PackageDistributionArch:
-				args = append(args, pkg.Dist.Arch)
+				args = append(args, record.Distribution.Arch)
 			}
 		}
 		// fills the OR bind vars for (package_name = binary_package OR package_name = source_package)
-		args = append(args, pkg.Source.Name)
-		args = append(args, pkg.Name)
+		args = append(args, record.Package.Source.Name)
+		args = append(args, record.Package.Name)
 
 		// queue the select query
 		batch.Queue(getStmt.Name, args...)
@@ -69,7 +69,7 @@ func get(ctx context.Context, pool *pgxpool.Pool, packages []*claircore.Package,
 
 	// gather all the returned vulns for each queued select statement
 	results := make(map[int][]*claircore.Vulnerability)
-	for _, pkg := range packages {
+	for _, record := range records {
 		rows, err := res.Query()
 		if err != nil {
 			res.Close()
@@ -80,9 +80,8 @@ func get(ctx context.Context, pool *pgxpool.Pool, packages []*claircore.Package,
 		for rows.Next() {
 			// fully allocate vuln struct
 			v := &claircore.Vulnerability{
-				Package: &claircore.Package{
-					Dist: &claircore.Distribution{},
-				},
+				Package: &claircore.Package{},
+				Dist:    &claircore.Distribution{},
 			}
 
 			err := rows.Scan(
@@ -94,12 +93,12 @@ func get(ctx context.Context, pool *pgxpool.Pool, packages []*claircore.Package,
 				&v.Package.Name,
 				&v.Package.Version,
 				&v.Package.Kind,
-				&v.Package.Dist.DID,
-				&v.Package.Dist.Name,
-				&v.Package.Dist.Version,
-				&v.Package.Dist.VersionCodeName,
-				&v.Package.Dist.VersionID,
-				&v.Package.Dist.Arch,
+				&v.Dist.DID,
+				&v.Dist.Name,
+				&v.Dist.Version,
+				&v.Dist.VersionCodeName,
+				&v.Dist.VersionID,
+				&v.Dist.Arch,
 				&v.FixedInVersion,
 			)
 			if err != nil {
@@ -108,11 +107,11 @@ func get(ctx context.Context, pool *pgxpool.Pool, packages []*claircore.Package,
 			}
 
 			// add vulernability to result. handle if array does not exist
-			if _, ok := results[pkg.ID]; !ok {
+			if _, ok := results[record.Package.ID]; !ok {
 				vvulns := []*claircore.Vulnerability{v}
-				results[pkg.ID] = vvulns
+				results[record.Package.ID] = vvulns
 			} else {
-				results[pkg.ID] = append(results[pkg.ID], v)
+				results[record.Package.ID] = append(results[record.Package.ID], v)
 			}
 		}
 	}

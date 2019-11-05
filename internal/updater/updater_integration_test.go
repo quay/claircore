@@ -32,11 +32,10 @@ func Test_Updater_Integration(t *testing.T) {
 	}
 	controller := New(opts)
 
-	ctx, cancel := context.WithCancel(ctx)
-	tm := time.AfterFunc(2*time.Minute, cancel)
-	defer tm.Stop()
+	tctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+	defer cancel()
 
-	if err := controller.Update(ctx); err != nil {
+	if err := controller.Update(tctx); err != nil {
 		t.Error(err)
 	}
 

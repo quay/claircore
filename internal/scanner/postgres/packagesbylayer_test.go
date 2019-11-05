@@ -2,13 +2,13 @@ package postgres
 
 import (
 	"context"
+	"sort"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 	pgtest "github.com/quay/claircore/test/postgres"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func Test_PackagesByLayer_Success(t *testing.T) {
@@ -77,22 +77,29 @@ func Test_PackagesByLayer_Success(t *testing.T) {
 			}
 
 			// create scnr mocks
-			vscnrs := test.GenUniqueScanners(table.scnrs)
+			vscnrs := test.GenUniquePackageScanners(table.scnrs)
 			err = pgtest.InsertUniqueScanners(db, vscnrs)
 			if err != nil {
 				t.Fatalf("failed to insert scnrs: %v", err)
 			}
 
 			// create scanartifacts
-			err = pgtest.InsertScanArtifacts(db, table.hash, pkgs, vscnrs)
+			err = pgtest.InsertPackageScanArtifacts(db, table.hash, pkgs, vscnrs)
 			if err != nil {
 				t.Fatalf("failed to insert scan artifacts for test: %v", err)
 			}
 
 			returnedPkgs, err := store.PackagesByLayer(ctx, table.hash, vscnrs)
 
-			assert.NoError(t, err)
-			assert.ElementsMatch(t, pkgs, returnedPkgs)
+			sort.SliceStable(pkgs,
+				func(i, j int) bool { return pkgs[i].ID < pkgs[j].ID })
+			sort.SliceStable(returnedPkgs,
+				func(i, j int) bool { return returnedPkgs[i].ID < returnedPkgs[j].ID })
+
+			if !cmp.Equal(pkgs, returnedPkgs) {
+				diff := cmp.Diff(pkgs, returnedPkgs)
+				t.Fatalf("security databases were not equal: \n%v", diff)
+			}
 		})
 	}
 }

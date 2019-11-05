@@ -42,9 +42,29 @@ func (s *store) IndexPackages(ctx context.Context, pkgs []*claircore.Package, l 
 	return err
 }
 
+func (s *store) IndexDistributions(ctx context.Context, dists []*claircore.Distribution, l *claircore.Layer, scnr scanner.VersionedScanner) error {
+	err := indexDistributions(ctx, s.db, s.pool, dists, l, scnr)
+	return err
+}
+
+func (s *store) IndexRepositories(ctx context.Context, repos []*claircore.Repository, l *claircore.Layer, scnr scanner.VersionedScanner) error {
+	err := indexRepositories(ctx, s.db, s.pool, repos, l, scnr)
+	return err
+}
+
 func (s *store) PackagesByLayer(ctx context.Context, hash string, scnrs scanner.VersionedScanners) ([]*claircore.Package, error) {
 	pkgs, err := packagesByLayer(ctx, s.db, hash, scnrs)
 	return pkgs, err
+}
+
+func (s *store) DistributionsByLayer(ctx context.Context, hash string, scnrs scanner.VersionedScanners) ([]*claircore.Distribution, error) {
+	dists, err := distributionsByLayer(ctx, s.db, hash, scnrs)
+	return dists, err
+}
+
+func (s *store) RepositoriesByLayer(ctx context.Context, hash string, scnrs scanner.VersionedScanners) ([]*claircore.Repository, error) {
+	repos, err := repositoriesByLayer(ctx, s.db, hash, scnrs)
+	return repos, err
 }
 
 func (s *store) RegisterScanners(ctx context.Context, scnrs scanner.VersionedScanners) error {
