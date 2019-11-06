@@ -16,7 +16,7 @@ import (
 
 const (
 	scannerName    = "os-release"
-	scannerVersion = "0"
+	scannerVersion = "v0.0.1"
 	scannerKind    = "distribution"
 )
 
