@@ -17,7 +17,7 @@ import (
 
 const (
 	pkgName    = `apk`
-	pkgVersion = `0.0.1`
+	pkgVersion = `v0.0.1`
 	pkgKind    = `package`
 )
 
