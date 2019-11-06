@@ -8,10 +8,12 @@ import (
 	"time"
 
 	"github.com/crgimenes/goconfig"
+	"github.com/quay/claircore/alpine"
 	"github.com/quay/claircore/dpkg"
 	"github.com/quay/claircore/internal/scanner"
 	"github.com/quay/claircore/libscan"
 	libhttp "github.com/quay/claircore/libscan/http"
+	"github.com/quay/claircore/rpm"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -103,6 +105,8 @@ func confToLibscanOpts(conf Config) *libscan.Opts {
 		ScanLock:   libscan.PostgresSL,
 		Ecosystems: []*scanner.Ecosystem{
 			dpkg.NewEcosystem(context.Background()),
+			alpine.NewEcosystem(context.Background()),
+			rpm.NewEcosystem(context.Background()),
 		},
 	}
 

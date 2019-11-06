@@ -42,7 +42,7 @@ func layerScanned(ctx context.Context, db *sqlx.DB, hash string, scnr scanner.Ve
 	case "repository":
 		query = selectRepositoryScanArtifact
 	default:
-		return false, fmt.Errorf("received unkown scanner type: %v", scnr.Kind())
+		return false, fmt.Errorf("received unkown scanner type: %v %v %v", scnr.Name(), scnr.Version(), scnr.Kind())
 	}
 
 	err = db.Get(&layerHash, query, hash, scannerID)
