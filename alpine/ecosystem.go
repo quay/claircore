@@ -3,7 +3,6 @@ package alpine
 import (
 	"context"
 
-	"github.com/quay/claircore/dpkg"
 	"github.com/quay/claircore/internal/scanner"
 	"github.com/quay/claircore/osrelease"
 )
@@ -21,7 +20,7 @@ func NewEcosystem(ctx context.Context) *scanner.Ecosystem {
 			return []scanner.RepositoryScanner{}, nil
 		},
 		Coalescer: func(ctx context.Context, store scanner.Store) (scanner.Coalescer, error) {
-			return dpkg.NewCoalescer(store), nil
+			return NewCoalescer(store), nil
 		},
 	}
 }
