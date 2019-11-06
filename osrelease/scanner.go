@@ -17,7 +17,7 @@ import (
 const (
 	scannerName    = "os-release"
 	scannerVersion = "0"
-	scannerKind    = "repo"
+	scannerKind    = "distribution"
 )
 
 const fpath = `etc/os-release`
