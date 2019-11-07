@@ -39,9 +39,10 @@ CREATE TABLE dist (
     version_code_name text,
     version_id text,
     arch text,
-    cpe text
+    cpe text,
+    pretty_name text
 );
-CREATE UNIQUE INDEX dist_unique_idx ON dist (name, did, version, version_code_name, version_id, arch, cpe);
+CREATE UNIQUE INDEX dist_unique_idx ON dist (name, did, version, version_code_name, version_id, arch, cpe, pretty_name);
 
 --- DistributionScanArtifact
 --- A relation linking discovered distributions to a layer
