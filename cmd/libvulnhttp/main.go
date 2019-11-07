@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/quay/claircore/alpine"
 	"github.com/quay/claircore/debian"
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/libvuln/driver"
@@ -99,6 +100,7 @@ func confToLibvulnOpts(conf Config) *libvuln.Opts {
 	matchers := []driver.Matcher{
 		&debian.Matcher{},
 		&ubuntu.Matcher{},
+		&alpine.Matcher{},
 	}
 
 	ups, err := updaters()
