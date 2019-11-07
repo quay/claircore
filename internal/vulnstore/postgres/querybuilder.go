@@ -61,6 +61,18 @@ func getBuilder(matchers []driver.MatchExp) (string, []driver.MatchExp, error) {
 				seen[m] = struct{}{}
 				deduped = append(deduped, m)
 			}
+		case driver.PackageDistributionCPE:
+			if _, ok := seen[m]; !ok {
+				exps = append(exps, goqu.Ex{"dist_cpe": ""})
+				seen[m] = struct{}{}
+				deduped = append(deduped, m)
+			}
+		case driver.PackageDistributionPrettyName:
+			if _, ok := seen[m]; !ok {
+				exps = append(exps, goqu.Ex{"dist_pretty_name": ""})
+				seen[m] = struct{}{}
+				deduped = append(deduped, m)
+			}
 		default:
 			return "", nil, fmt.Errorf("was provided unknown matcher: %v", m)
 		}
@@ -92,7 +104,12 @@ func getBuilder(matchers []driver.MatchExp) (string, []driver.MatchExp, error) {
 		"dist_version",
 		"dist_version_code_name",
 		"dist_version_id",
-		"arch",
+		"dist_arch",
+		"dist_cpe",
+		"dist_pretty_name",
+		"repo_name",
+		"repo_key",
+		"repo_uri",
 		"fixed_in_version",
 	).From("vuln").Where(exps...).Prepared(true)
 
