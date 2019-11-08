@@ -25,6 +25,7 @@ CREATE TABLE vuln (
     --- a tombstone field that will be updated to signify a vulnerability is not stale
     tombstone text
 );
+CREATE INDEX vuln_lookup_idx on vuln(package_name, dist_version_code_name, dist_pretty_name, dist_name, dist_version_id, dist_version, dist_arch, dist_cpe);
 CREATE UNIQUE INDEX vuln_unique_idx on vuln(  
         updater, 
         name, 
