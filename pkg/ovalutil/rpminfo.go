@@ -81,6 +81,7 @@ func (r *RPMInfo) Extract(ctx context.Context) ([]*claircore.Vulnerability, erro
 				Description: strings.TrimSpace(def.Description),
 				Severity:    def.Advisory.Severity,
 				Links:       links,
+				Dist:        dist,
 				Package:     &claircore.Package{},
 			}
 		}
