@@ -125,7 +125,7 @@ func (ls *layerScanner) scanPackages(ctx context.Context, layer *claircore.Layer
 
 	v, err := s.Scan(layer)
 	if err != nil {
-		return err
+		return fmt.Errorf("scanner: %v error: %v", s.Name(), err)
 	}
 	return ls.Store.IndexPackages(ctx, v, layer, s)
 }
@@ -146,7 +146,7 @@ func (ls *layerScanner) scanDists(ctx context.Context, layer *claircore.Layer, s
 
 	v, err := s.Scan(layer)
 	if err != nil {
-		return err
+		return fmt.Errorf("scanner: %v error: %v", s.Name(), err)
 	}
 	return ls.Store.IndexDistributions(ctx, v, layer, s)
 }
@@ -167,7 +167,7 @@ func (ls *layerScanner) scanRepos(ctx context.Context, layer *claircore.Layer, s
 
 	v, err := s.Scan(layer)
 	if err != nil {
-		return err
+		return fmt.Errorf("scanner: %v error: %v", s.Name(), err)
 	}
 	return ls.Store.IndexRepositories(ctx, v, layer, s)
 }
