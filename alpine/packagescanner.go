@@ -16,10 +16,9 @@ import (
 )
 
 const (
-	pkgName      = `apk`
-	pkgVersion   = `v0.0.1`
-	pkgKind      = `package`
-	maxTokenSize = 128 * 1024
+	pkgName    = `apk`
+	pkgVersion = `v0.0.1`
+	pkgKind    = `package`
 )
 
 var (
@@ -86,9 +85,12 @@ func (*Scanner) ScanContext(ctx context.Context, layer *claircore.Layer) ([]*cla
 	// can't because the database "keys" are case sensitive, unlike MIME
 	// headers. So, roll our own entry and header splitting.
 	s := bufio.NewScanner(bytes.NewReader(b))
-	buf := make([]byte, 0, maxTokenSize)
+	buf := bufPool.Get().([]byte)
+	defer bufPool.Put(buf)
+
 	s.Buffer(buf, 0)
 	s.Split(split)
+
 	for s.Scan() {
 		p := claircore.Package{
 			Kind:      "binary",
