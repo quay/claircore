@@ -14,10 +14,10 @@ import (
 
 const (
 	insertDistribution = `INSERT INTO dist 
-		(name, did, version, version_code_name, version_id, arch, cpe) 
+		(name, did, version, version_code_name, version_id, arch, cpe, pretty_name) 
 	VALUES 
-		($1, $2, $3, $4, $5, $6, $7) 
-	ON CONFLICT (name, did, version, version_code_name, version_id, arch, cpe) DO NOTHING;`
+		($1, $2, $3, $4, $5, $6, $7, $8) 
+	ON CONFLICT (name, did, version, version_code_name, version_id, arch, cpe, pretty_name) DO NOTHING;`
 
 	insertDistributionScanArtifactWith = `WITH distributions AS (
 	SELECT id AS dist_id FROM dist WHERE
@@ -27,16 +27,17 @@ const (
 		 version_code_name = $4 AND
 		 version_id = $5 AND
 		 arch = $6 AND 
-		 cpe = $7
+		 cpe = $7 AND
+		 pretty_name = $8
          ),
 
 	scanner AS (
 	SELECT id AS scanner_id FROM scanner WHERE
-	name = $8 AND version = $9 AND kind = $10
+	name = $9 AND version = $10 AND kind = $11
 		)
 	      
 INSERT INTO dist_scanartifact (layer_hash, dist_id, scanner_id) VALUES 
-		  ($11, 
+		  ($12, 
           (SELECT dist_id FROM distributions),
           (SELECT scanner_id FROM scanner))
           ON CONFLICT DO NOTHING;`
@@ -74,6 +75,7 @@ func indexDistributions(ctx context.Context, db *sqlx.DB, pool *pgxpool.Pool, di
 			dist.VersionID,
 			dist.Arch,
 			dist.CPE,
+			dist.PrettyName,
 		)
 		if err != nil {
 			return fmt.Errorf("batch insert failed for dist %v: %v", dist, err)
@@ -97,6 +99,7 @@ func indexDistributions(ctx context.Context, db *sqlx.DB, pool *pgxpool.Pool, di
 			dist.VersionID,
 			dist.Arch,
 			dist.CPE,
+			dist.PrettyName,
 			scnr.Name(),
 			scnr.Version(),
 			scnr.Kind(),

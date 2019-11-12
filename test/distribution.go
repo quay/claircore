@@ -20,6 +20,7 @@ func GenUniqueDistributions(n int) []*claircore.Distribution {
 			VersionID:       fmt.Sprintf("version-id-%d", i),
 			Arch:            fmt.Sprintf("arch-%d", i),
 			CPE:             fmt.Sprintf("cpe-%d", i),
+			PrettyName:      fmt.Sprintf("pretty-name-%d", i),
 		})
 	}
 	return dists

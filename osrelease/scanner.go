@@ -138,6 +138,7 @@ func parse(ctx context.Context, r io.Reader) (*claircore.Distribution, error) {
 		case "VERSION_CODENAME":
 			d.VersionCodeName = value
 		case "PRETTY_NAME":
+			d.PrettyName = value
 		}
 	}
 	if err := s.Err(); err != nil {

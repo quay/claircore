@@ -122,7 +122,8 @@ func checkDistScanArtifact(t *testing.T, db *sqlx.DB, expectedDists []*claircore
 			AND version_code_name = $4
 			AND version_id = $5
 			AND arch = $6
-			AND cpe = $7`,
+			AND cpe = $7
+			AND pretty_name = $8`,
 			dist.Name,
 			dist.DID,
 			dist.Version,
@@ -130,6 +131,7 @@ func checkDistScanArtifact(t *testing.T, db *sqlx.DB, expectedDists []*claircore
 			dist.VersionID,
 			dist.Arch,
 			dist.CPE,
+			dist.PrettyName,
 		)
 		if err != nil {
 			t.Fatalf("failed to query for distribution %v: %v", dist, err)

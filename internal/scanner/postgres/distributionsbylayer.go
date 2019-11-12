@@ -19,7 +19,8 @@ const (
 	dist.version_code_name,
 	dist.version_id,
 	dist.arch,
-	dist.cpe
+	dist.cpe,
+	dist.pretty_name
 FROM
 	dist_scanartifact
 	LEFT JOIN dist ON dist_scanartifact.dist_id = dist.id
@@ -72,6 +73,7 @@ func distributionsByLayer(ctx context.Context, db *sqlx.DB, hash string, scnrs s
 			&dist.VersionID,
 			&dist.Arch,
 			&dist.CPE,
+			&dist.PrettyName,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("store:distributionsByLayer failed to scan distribution: %v", err)

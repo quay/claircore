@@ -50,6 +50,10 @@ func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.ScanRecor
 				args = append(args, record.Distribution.VersionID)
 			case driver.PackageDistributionArch:
 				args = append(args, record.Distribution.Arch)
+			case driver.PackageDistributionCPE:
+				args = append(args, record.Distribution.CPE)
+			case driver.PackageDistributionPrettyName:
+				args = append(args, record.Distribution.PrettyName)
 			}
 		}
 		// fills the OR bind vars for (package_name = binary_package OR package_name = source_package)
@@ -82,6 +86,7 @@ func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.ScanRecor
 			v := &claircore.Vulnerability{
 				Package: &claircore.Package{},
 				Dist:    &claircore.Distribution{},
+				Repo:    &claircore.Repository{},
 			}
 
 			err := rows.Scan(
@@ -99,11 +104,16 @@ func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.ScanRecor
 				&v.Dist.VersionCodeName,
 				&v.Dist.VersionID,
 				&v.Dist.Arch,
+				&v.Dist.CPE,
+				&v.Repo.Name,
+				&v.Repo.Key,
+				&v.Repo.URI,
+				&v.Dist.PrettyName,
 				&v.FixedInVersion,
 			)
 			if err != nil {
 				res.Close()
-				return nil, fmt.Errorf("failed to scan vulnerability")
+				return nil, fmt.Errorf("failed to scan vulnerability: %v", err)
 			}
 
 			// add vulernability to result. handle if array does not exist

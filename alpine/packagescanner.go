@@ -85,7 +85,12 @@ func (*Scanner) ScanContext(ctx context.Context, layer *claircore.Layer) ([]*cla
 	// can't because the database "keys" are case sensitive, unlike MIME
 	// headers. So, roll our own entry and header splitting.
 	s := bufio.NewScanner(bytes.NewReader(b))
+	buf := bufPool.Get().([]byte)
+	defer bufPool.Put(buf)
+
+	s.Buffer(buf, 0)
 	s.Split(split)
+
 	for s.Scan() {
 		p := claircore.Package{
 			Kind:      "binary",
