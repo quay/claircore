@@ -105,7 +105,7 @@ func (u *Updater) unpack(partial *claircore.Vulnerability, packages []alas.Packa
 			Name: alasPKG.Name,
 			Kind: "binary",
 		}
-		v.FixedInVersion = alasPKG.Version
+		v.FixedInVersion = fmt.Sprintf("%s-%s", alasPKG.Version, alasPKG.Release)
 
 		out = append(out, &v)
 	}
