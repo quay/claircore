@@ -252,6 +252,10 @@ func parsePackage(ctx context.Context, src map[string]*claircore.Package, buf *b
 		// Look at the "queryFmt" string for the line numbers.
 		line, err = buf.ReadString('\n')
 		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "(none)") {
+			continue
+		}
+
 		switch i {
 		case 0:
 			p.Name = line
@@ -269,7 +273,7 @@ func parsePackage(ctx context.Context, src map[string]*claircore.Package, buf *b
 			if i == -1 { // ???
 				break
 			}
-			p.RepositoryHint += "\x00key:" + line[i+len(delim):]
+			p.RepositoryHint += "\x1Ekey:" + line[i+len(delim):]
 		case 4:
 			line = strings.TrimSuffix(line, ".src.rpm")
 			sp := strings.Split(line, "-")
