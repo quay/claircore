@@ -85,7 +85,7 @@ podman-dev-up:
 		--name jaeger-all-in-one\
 		--expose 6831/udp\
 		--expose 16686\
-		jaegertracing/all-in-one:1.14
+		jaegertracing/all-in-one:1.15
 	podman create\
 		--pod claircore-dev\
 		--name claircore-database\
