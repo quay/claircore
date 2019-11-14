@@ -15,6 +15,7 @@ require (
 	github.com/jackc/pgx/v4 v4.0.0
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/knqyf263/go-deb-version v0.0.0-20190517075300-09fca494f03d
+	github.com/knqyf263/go-rpm-version v0.0.0-20170716094938-74609b86c936
 	github.com/moby/moby v1.13.1
 	github.com/onsi/ginkgo v1.10.1 // indirect
 	github.com/onsi/gomega v1.7.0 // indirect
