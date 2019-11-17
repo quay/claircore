@@ -6,12 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/quay/claircore/alpine"
-	"github.com/quay/claircore/debian"
 	"github.com/quay/claircore/libvuln"
-	"github.com/quay/claircore/libvuln/driver"
 	libhttp "github.com/quay/claircore/libvuln/http"
-	"github.com/quay/claircore/ubuntu"
 
 	"github.com/crgimenes/goconfig"
 	"github.com/rs/zerolog"
@@ -22,12 +18,10 @@ import (
 // parsing. See: https://github.com/crgimenes/goconfig
 type Config struct {
 	HTTPListenAddr string `cfgDefault:"0.0.0.0:8081" cfg:"HTTP_LISTEN_ADDR"`
-	DataStore      string `cfgDefault:"postgres" cfg:"DATASTORE" cfgHelper:"DataStore that libvuln will connect to. currently implemented: 'postgres'`
-	ConnString     string `cfgDefault:"host=localhost port=5435 user=libvuln dbname=libvuln password=libvuln sslmode=disable" cfg:"CONNECTION_STRING" cfgHelper:"Connection string for the provided DataStore"`
-	UpdateLock     string `cfgDefault:"postgres" cfg:"UPDATE_LOCK" cfgHelper:"ScanLock that libvuln should use. currently implemented: 'postgres'"`
-	LogLevel       string `cfgDefault:"debug" cfg:"LOG_LEVEL" cfgHelper:"Log levels: debug, info, warning, error, fatal, panic" `
 	MaxConnPool    int    `cfgDefault:"100" cfg:"MAX_CONN_POOL" cfgHelper:"the maximum size of the connection pool used for database connections"`
+	ConnString     string `cfgDefault:"host=localhost port=5435 user=libvuln dbname=libvuln password=libvuln sslmode=disable" cfg:"CONNECTION_STRING" cfgHelper:"Connection string for the provided DataStore"`
 	Run            string `cfg:"RUN" cfgDefault:"." cfgHelper:"Regexp of updaters to run."`
+	LogLevel       string `cfgDefault:"debug" cfg:"LOG_LEVEL" cfgHelper:"Log levels: debug, info, warning, error, fatal, panic" `
 }
 
 func main() {
@@ -97,46 +91,10 @@ func httpServer(conf Config, lib libvuln.Libvuln) *http.Server {
 }
 
 func confToLibvulnOpts(conf Config) *libvuln.Opts {
-	matchers := []driver.Matcher{
-		&debian.Matcher{},
-		&ubuntu.Matcher{},
-		&alpine.Matcher{},
-	}
-
-	ups, err := updaters()
-	if err != nil {
-		log.Fatal().Msgf("%v", err)
-	}
-
-	// filter out updaters not matching provided regex
-	ups, err = regexFilter(conf.Run, ups)
-	if err != nil {
-		log.Fatal().Msgf("%v", err)
-	}
-
 	opts := &libvuln.Opts{
-		Matchers: matchers,
-		Updaters: ups,
-	}
-
-	// parse DataStore
-	switch conf.DataStore {
-	case string(libvuln.Postgres):
-		opts.DataStore = libvuln.DataStore(conf.DataStore)
-		opts.ConnString = conf.ConnString
-	default:
-		log.Fatal().Msgf("the DataStore %s is not implemented", conf.DataStore)
-	}
-
-	// set max connection pool option
-	opts.MaxConnPool = int32(conf.MaxConnPool)
-
-	// parse UpdateLock
-	switch conf.UpdateLock {
-	case string(libvuln.PostgresSL):
-		opts.UpdateLock = libvuln.UpdateLock(conf.UpdateLock)
-	default:
-		log.Fatal().Msgf("the ScanLock %s is not implemented", conf.UpdateLock)
+		ConnString:  conf.ConnString,
+		MaxConnPool: int32(conf.MaxConnPool),
+		Run:         conf.Run,
 	}
 
 	return opts

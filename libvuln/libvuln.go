@@ -35,7 +35,7 @@ func New(ctx context.Context, opts *Opts) (Libvuln, error) {
 		return nil, err
 	}
 
-	logger.Info().Msgf("initializing store %v and pool size: %v ", opts.DataStore, opts.MaxConnPool)
+	logger.Info().Msgf("initializing store with pool size: %v ", opts.MaxConnPool)
 	db, vulnstore, err := initStore(ctx, opts)
 	if err != nil {
 		return nil, err
