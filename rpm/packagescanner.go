@@ -273,7 +273,7 @@ func parsePackage(ctx context.Context, src map[string]*claircore.Package, buf *b
 			if i == -1 { // ???
 				break
 			}
-			p.RepositoryHint += "\x1Ekey:" + line[i+len(delim):]
+			p.RepositoryHint += "|key:" + line[i+len(delim):]
 		case 4:
 			line = strings.TrimSuffix(line, ".src.rpm")
 			sp := strings.Split(line, "-")
