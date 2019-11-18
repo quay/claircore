@@ -16,11 +16,11 @@ var (
 )
 
 // Bootstrap creates the required tracer for the HTTP server
-func Bootstrap(agentHostPort string) {
-	if len(agentHostPort) == 0 {
-		disabled()
-	} else {
+func Bootstrap(enabled bool, agentHostPort string) {
+	if enabled {
 		withJaegerExporter(agentHostPort)
+	} else {
+		disabled()
 	}
 }
 

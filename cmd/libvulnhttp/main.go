@@ -29,6 +29,7 @@ type Config struct {
 	LogLevel            string `cfgDefault:"debug" cfg:"LOG_LEVEL" cfgHelper:"Log levels: debug, info, warning, error, fatal, panic" `
 	MaxConnPool         int    `cfgDefault:"100" cfg:"MAX_CONN_POOL" cfgHelper:"the maximum size of the connection pool used for database connections"`
 	Run                 string `cfg:"RUN" cfgDefault:"." cfgHelper:"Regexp of updaters to run."`
+	TracingEnabled      bool   `cfgDefault:"false" cfg:"TRACING_ENABLED" cfgHelper:"Whether to enable distributed tracing." `
 	JaegerAgentHostPort string `cfgDefault:"localhost:6831" cfg:"JAEGER_AGENT_HOST_PORT" cfgHelper:"The location for the Jaeger Agent, when available. Leaving empty disables tracing." `
 }
 
@@ -44,7 +45,7 @@ func main() {
 	zerolog.SetGlobalLevel(logLevel(conf))
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 
-	tracing.Bootstrap(conf.JaegerAgentHostPort)
+	tracing.Bootstrap(conf.TracingEnabled, conf.JaegerAgentHostPort)
 
 	opts := confToLibvulnOpts(conf)
 

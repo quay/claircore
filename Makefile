@@ -111,6 +111,7 @@ podman-dev-up:
 		--env SCAN_LOCK_RETRY=1\
 		--env LAYER_SCAN_CONCURRENCY=10\
 		--env LOG_LEVEL="debug"\
+		--env TRACING_ENABLED="true"\
 		--expose 8080\
 		--volume $$(git rev-parse --show-toplevel)/:/src/claircore/:z\
 		quay.io/claircore/golang:1.13.3\
@@ -123,6 +124,7 @@ podman-dev-up:
 		--env CONNECTION_STRING="host=localhost port=5434 user=claircore dbname=claircore sslmode=disable"\
 		--env UPDATELOCK="postgres"\
 		--env LOG_LEVEL="debug"\
+		--env TRACING_ENABLED="true"\
 		--expose 8081\
 		--volume $$(git rev-parse --show-toplevel)/:/src/claircore/:z\
 		quay.io/claircore/golang:1.13.3\
