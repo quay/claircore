@@ -16,7 +16,7 @@ type Libindex interface {
 	// Scan performs an async scan of a manifest and produces a claircore.IndexReport.
 	// Errors encountered before scan begins are returned in the error variable.
 	// Errors encountered during scan are populated in the Err field of the claircore.IndexReport
-	Scan(ctx context.Context, manifest *claircore.Manifest) (ResultChannel <-chan *claircore.IndexReport, err error)
+	Index(ctx context.Context, manifest *claircore.Manifest) (ResultChannel <-chan *claircore.IndexReport, err error)
 	// IndexReport tries to retrieve a claircore.IndexReport given the image hash.
 	// bool informs caller if found.
 	IndexReport(hash string) (*claircore.IndexReport, bool, error)

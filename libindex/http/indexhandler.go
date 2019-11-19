@@ -38,7 +38,7 @@ func Scan(lib libindex.Libindex) h.HandlerFunc {
 		}
 
 		// call scan
-		_, err = lib.Scan(context.Background(), &m)
+		_, err = lib.Index(context.Background(), &m)
 		if err != nil {
 			resp := &je.Response{
 				Code:    "scan-error",
