@@ -7,7 +7,7 @@ This is a high level document expressing how we match packages in a particular p
 ### PackageScanner
 
 PackageScanner(s) are the method for indexing discovered packages in a layer.  
-It starts with the `claircore.internal.scanner.PackageScanner` interface.  
+It starts with the `claircore.internal.indexer.PackageScanner` interface.  
 ```
 type PackageScanner interface {
 	VersionedScanner
@@ -120,7 +120,7 @@ A successful scan looks like this:
 
 ## The scanning process
 
-Scanning is implemented in the `claircore.internal.scanner.defaultscanner` package and is implemented as an FSM to support easy changes in operation.  
+Scanning is implemented in the `claircore.internal.indexer.defaultscanner` package and is implemented as an FSM to support easy changes in operation.  
 The default scanner works as follows:  
 
 1. Determines if the manifest should be scanned. It will be scanned if we've never seen the manifest's hash or if we detect a new scanner is preset which has not scanned said manifest

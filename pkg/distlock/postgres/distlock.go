@@ -92,7 +92,7 @@ func (l *lock) Unlock() error {
 	}
 
 	// commiting the transaction will free the pg_advisory lock allowing other
-	// scanner.instances to proceed
+	// instances utilizing a lock to proceed
 	err := l.tx.Commit()
 	if err != nil {
 		return fmt.Errorf("failed to commit transaction and free lock: %v", err)

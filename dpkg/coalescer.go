@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/scanner"
+	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/osrelease"
 )
 
@@ -23,14 +23,14 @@ type layerArtifacts struct {
 // for dpkg, os-release, and apt scanners
 type Coalescer struct {
 	// a store to access scanartifacts
-	store scanner.Store
-	ps    scanner.PackageScanner
-	ds    scanner.DistributionScanner
+	store indexer.Store
+	ps    indexer.PackageScanner
+	ds    indexer.DistributionScanner
 	sr    *claircore.ScanReport
 }
 
 // NewCoalescer is a constructor for a Coalescer
-func NewCoalescer(store scanner.Store) *Coalescer {
+func NewCoalescer(store indexer.Store) *Coalescer {
 	return &Coalescer{
 		store: store,
 		ps:    &Scanner{},
@@ -59,12 +59,12 @@ func (c *Coalescer) Coalesce(ctx context.Context, layers []*claircore.Layer) (*c
 			hash: layer.Hash,
 		}
 
-		a.pkgs, err = c.store.PackagesByLayer(ctx, layer.Hash, scanner.VersionedScanners{c.ps})
+		a.pkgs, err = c.store.PackagesByLayer(ctx, layer.Hash, indexer.VersionedScanners{c.ps})
 		if err != nil {
 			return nil, err
 		}
 
-		a.dist, err = c.store.DistributionsByLayer(ctx, layer.Hash, scanner.VersionedScanners{c.ds})
+		a.dist, err = c.store.DistributionsByLayer(ctx, layer.Hash, indexer.VersionedScanners{c.ds})
 		if err != nil {
 			return nil, err
 		}

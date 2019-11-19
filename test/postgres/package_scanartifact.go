@@ -5,13 +5,13 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/scanner"
+	"github.com/quay/claircore/internal/indexer"
 )
 
 // InsertPackageScanArtifacts will create ScanArtifacts linking the layer hash, packages, and scnr artifacts.
 // if multiple scnrs are provided they will be liked in i % n fashion where i is the current index
 // of the Packages array and n is the len of the scnrs array.
-func InsertPackageScanArtifacts(db *sqlx.DB, layerHash string, pkgs []*claircore.Package, scnrs scanner.VersionedScanners) error {
+func InsertPackageScanArtifacts(db *sqlx.DB, layerHash string, pkgs []*claircore.Package, scnrs indexer.VersionedScanners) error {
 	n := len(scnrs)
 	for i, pkg := range pkgs {
 		nn := i % n

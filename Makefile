@@ -87,7 +87,7 @@ podman-dev-up:
 		--env POSTGRES_INITDB_ARGS="--no-sync"\
 		--env PGPORT=5434\
 		--expose 5434\
-		--volume $$(git rev-parse --show-toplevel)/internal/scanner/postgres/bootstrap.sql:/docker-entrypoint-initdb.d/libindex-bootstrap.sql:z\
+		--volume $$(git rev-parse --show-toplevel)/internal/indexer/postgres/bootstrap.sql:/docker-entrypoint-initdb.d/libindex-bootstrap.sql:z\
 		--volume $$(git rev-parse --show-toplevel)/internal/vulnstore/postgres/bootstrap.sql:/docker-entrypoint-initdb.d/libvuln-bootstrap.sql:z\
 		--health-cmd "pg_isready -U claircore -d claircore"\
 		postgres:11

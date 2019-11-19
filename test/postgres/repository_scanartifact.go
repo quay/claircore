@@ -5,10 +5,10 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/scanner"
+	"github.com/quay/claircore/internal/indexer"
 )
 
-func InsertRepoScanArtifact(db *sqlx.DB, layerHash string, repos []*claircore.Repository, scnrs scanner.VersionedScanners) error {
+func InsertRepoScanArtifact(db *sqlx.DB, layerHash string, repos []*claircore.Repository, scnrs indexer.VersionedScanners) error {
 	n := len(scnrs)
 	for i, repo := range repos {
 		nn := i % n

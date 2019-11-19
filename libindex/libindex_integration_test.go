@@ -11,8 +11,8 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/scanner"
-	"github.com/quay/claircore/internal/scanner/postgres"
+	"github.com/quay/claircore/internal/indexer"
+	"github.com/quay/claircore/internal/indexer/postgres"
 	"github.com/quay/claircore/test"
 	"github.com/stretchr/testify/assert"
 )
@@ -135,14 +135,14 @@ func Test_Libindex_Scan(t *testing.T) {
 	t.Run("integration", func(t *testing.T) {
 		for _, table := range tt {
 			t.Run(table.name, func(t *testing.T) {
-				mscnrs := []*scanner.MockPackageScanner{}
-				scnrs := []scanner.PackageScanner{}
+				mscnrs := []*indexer.MockPackageScanner{}
+				scnrs := []indexer.PackageScanner{}
 				ctrl := gomock.NewController(t)
 
 				// create the desired number of package scanners. we will
 				// configure the Scan() method on the mock when generated layers below
 				for i := 0; i < table.scnrs; i++ {
-					mscnr := scanner.NewMockPackageScanner(ctrl)
+					mscnr := indexer.NewMockPackageScanner(ctrl)
 					mscnr.EXPECT().Name().AnyTimes().Return(fmt.Sprintf("test-scanner-%d", i))
 					mscnr.EXPECT().Version().AnyTimes().Return("v0.0.1")
 					mscnr.EXPECT().Kind().AnyTimes().Return("package")
@@ -162,7 +162,7 @@ func Test_Libindex_Scan(t *testing.T) {
 				}
 				// convert to scanner.PackageScanner array
 				for _, mscnr := range mscnrs {
-					scnrs = append(scnrs, scanner.PackageScanner(mscnr))
+					scnrs = append(scnrs, indexer.PackageScanner(mscnr))
 				}
 
 				// generate layers
@@ -184,7 +184,7 @@ func Test_Libindex_Scan(t *testing.T) {
 					ScanLock:             PostgresSL,
 					ScanLockRetry:        2 * time.Second,
 					LayerScanConcurrency: 1,
-					LayerFetchOpt:        scanner.InMem,
+					LayerFetchOpt:        indexer.InMem,
 				}
 
 				// just grab teardown function to clear the db after test
@@ -205,7 +205,7 @@ func Test_Libindex_Scan(t *testing.T) {
 					t.Fatalf("failed to scan manifest: %v", err)
 				}
 
-				var sr *scanner.ScanReport
+				var sr *indexer.ScanReport
 				select {
 				case <-ctx.Done():
 					t.Fatalf("context timed out: %v", ctx.Err())
@@ -356,14 +356,14 @@ func Test_Libindex_Scan_Parallel(t *testing.T) {
 				t.Run(table.name, func(t *testing.T) {
 					t.Parallel()
 
-					mscnrs := []*scanner.MockPackageScanner{}
-					scnrs := []scanner.PackageScanner{}
+					mscnrs := []*indexer.MockPackageScanner{}
+					scnrs := []indexer.PackageScanner{}
 					ctrl := gomock.NewController(t)
 
 					// create the desired number of package scanners. we will
 					// configure the Scan() method on the mock when generated layers below
 					for i := 0; i < table.scnrs; i++ {
-						mscnr := scanner.NewMockPackageScanner(ctrl)
+						mscnr := indexer.NewMockPackageScanner(ctrl)
 						mscnr.EXPECT().Name().AnyTimes().Return(fmt.Sprintf("test-scanner-%d", i))
 						mscnr.EXPECT().Version().AnyTimes().Return("v0.0.1")
 						mscnr.EXPECT().Kind().AnyTimes().Return("package")
@@ -383,7 +383,7 @@ func Test_Libindex_Scan_Parallel(t *testing.T) {
 					}
 					// convert to scanner.PackageScanner array
 					for _, mscnr := range mscnrs {
-						scnrs = append(scnrs, scanner.PackageScanner(mscnr))
+						scnrs = append(scnrs, indexer.PackageScanner(mscnr))
 					}
 
 					// generate layers
@@ -405,7 +405,7 @@ func Test_Libindex_Scan_Parallel(t *testing.T) {
 						ScanLock:             PostgresSL,
 						ScanLockRetry:        2 * time.Second,
 						LayerScanConcurrency: 1,
-						LayerFetchOpt:        scanner.InMem,
+						LayerFetchOpt:        indexer.InMem,
 					}
 
 					lib, err := New(opts)
@@ -422,7 +422,7 @@ func Test_Libindex_Scan_Parallel(t *testing.T) {
 						t.Fatalf("failed to scan manifest: %v", err)
 					}
 
-					var sr *scanner.ScanReport
+					var sr *indexer.ScanReport
 					select {
 					case <-ctx.Done():
 						t.Fatalf("context timed out: %v", ctx.Err())

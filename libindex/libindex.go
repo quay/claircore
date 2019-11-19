@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/scanner"
-	"github.com/quay/claircore/internal/scanner/controller"
+	"github.com/quay/claircore/internal/indexer"
+	"github.com/quay/claircore/internal/indexer/controller"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/rs/zerolog"
@@ -31,7 +31,7 @@ type libindex struct {
 	// convenience field for creating scan-time resources that require a database
 	db *sqlx.DB
 	// a Store which will be shared between scanner instances
-	store scanner.Store
+	store indexer.Store
 	// a sharable http client
 	client *http.Client
 	logger zerolog.Logger
@@ -61,8 +61,8 @@ func New(ctx context.Context, opts *Opts) (Libindex, error) {
 	}
 
 	// register any new scanners.
-	pscnrs, dscnrs, rscnrs, err := scanner.EcosystemsToScanners(ctx, opts.Ecosystems)
-	vscnrs := scanner.MergeVS(pscnrs, dscnrs, rscnrs)
+	pscnrs, dscnrs, rscnrs, err := indexer.EcosystemsToScanners(ctx, opts.Ecosystems)
+	vscnrs := indexer.MergeVS(pscnrs, dscnrs, rscnrs)
 
 	err = l.store.RegisterScanners(ctx, vscnrs)
 	if err != nil {

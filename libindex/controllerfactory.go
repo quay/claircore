@@ -1,10 +1,10 @@
 package libindex
 
 import (
-	"github.com/quay/claircore/internal/scanner"
-	"github.com/quay/claircore/internal/scanner/controller"
-	"github.com/quay/claircore/internal/scanner/fetcher"
-	"github.com/quay/claircore/internal/scanner/layerscanner"
+	"github.com/quay/claircore/internal/indexer"
+	"github.com/quay/claircore/internal/indexer/controller"
+	"github.com/quay/claircore/internal/indexer/fetcher"
+	"github.com/quay/claircore/internal/indexer/layerscanner"
 	dlpg "github.com/quay/claircore/pkg/distlock/postgres"
 )
 
@@ -16,8 +16,8 @@ func controllerFactory(lib *libindex, opts *Opts) (*controller.Controller, error
 	sc := dlpg.NewLock(lib.db, opts.ScanLockRetry)
 	ft := fetcher.New(lib.client, nil, opts.LayerFetchOpt)
 
-	// convert libindex.Opts to scanner.Opts
-	sOpts := &scanner.Opts{
+	// convert libindex.Opts to indexer.Opts
+	sOpts := &indexer.Opts{
 		Store:      lib.store,
 		ScanLock:   sc,
 		Fetcher:    ft,

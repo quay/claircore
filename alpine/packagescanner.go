@@ -9,7 +9,7 @@ import (
 	"runtime/trace"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/scanner"
+	"github.com/quay/claircore/internal/indexer"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -22,8 +22,8 @@ const (
 )
 
 var (
-	_ scanner.VersionedScanner = (*Scanner)(nil)
-	_ scanner.PackageScanner   = (*Scanner)(nil)
+	_ indexer.VersionedScanner = (*Scanner)(nil)
+	_ indexer.PackageScanner   = (*Scanner)(nil)
 )
 
 // Scanner scans for packages in an apk database.
@@ -31,13 +31,13 @@ var (
 // The zero value is ready to use.
 type Scanner struct{}
 
-// Name implements scanner.VersionedScanner.
+// Name implements indexer.VersionedScanner.
 func (*Scanner) Name() string { return pkgName }
 
-// Version implements scanner.VersionedScanner.
+// Version implements indexer.VersionedScanner.
 func (*Scanner) Version() string { return pkgVersion }
 
-// Kind implements scanner.VersionedScanner.
+// Kind implements indexer.VersionedScanner.
 func (*Scanner) Kind() string { return pkgKind }
 
 // Scan proxies the call to ScanContext.

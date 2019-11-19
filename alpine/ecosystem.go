@@ -3,23 +3,23 @@ package alpine
 import (
 	"context"
 
-	"github.com/quay/claircore/internal/scanner"
+	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/osrelease"
 )
 
 // NewEcosystem provides the set of scanners and coalescers for the dpkg ecosystem
-func NewEcosystem(ctx context.Context) *scanner.Ecosystem {
-	return &scanner.Ecosystem{
-		PackageScanners: func(ctx context.Context) ([]scanner.PackageScanner, error) {
-			return []scanner.PackageScanner{&Scanner{}}, nil
+func NewEcosystem(ctx context.Context) *indexer.Ecosystem {
+	return &indexer.Ecosystem{
+		PackageScanners: func(ctx context.Context) ([]indexer.PackageScanner, error) {
+			return []indexer.PackageScanner{&Scanner{}}, nil
 		},
-		DistributionScanners: func(ctx context.Context) ([]scanner.DistributionScanner, error) {
-			return []scanner.DistributionScanner{&osrelease.Scanner{}}, nil
+		DistributionScanners: func(ctx context.Context) ([]indexer.DistributionScanner, error) {
+			return []indexer.DistributionScanner{&osrelease.Scanner{}}, nil
 		},
-		RepositoryScanners: func(ctx context.Context) ([]scanner.RepositoryScanner, error) {
-			return []scanner.RepositoryScanner{}, nil
+		RepositoryScanners: func(ctx context.Context) ([]indexer.RepositoryScanner, error) {
+			return []indexer.RepositoryScanner{}, nil
 		},
-		Coalescer: func(ctx context.Context, store scanner.Store) (scanner.Coalescer, error) {
+		Coalescer: func(ctx context.Context, store indexer.Store) (indexer.Coalescer, error) {
 			return NewCoalescer(store), nil
 		},
 	}

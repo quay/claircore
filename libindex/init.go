@@ -4,15 +4,15 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/quay/claircore/internal/scanner"
-	"github.com/quay/claircore/internal/scanner/postgres"
+	"github.com/quay/claircore/internal/indexer"
+	"github.com/quay/claircore/internal/indexer/postgres"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jmoiron/sqlx"
 )
 
-// initialize a scanner.Store given libindex.Opts
-func initStore(ctx context.Context, opts *Opts) (*sqlx.DB, scanner.Store, error) {
+// initialize a indexer.Store given libindex.Opts
+func initStore(ctx context.Context, opts *Opts) (*sqlx.DB, indexer.Store, error) {
 	// we are going to use pgx for more control over connection pool and
 	// and a cleaner api around bulk inserts
 	cfg, err := pgxpool.ParseConfig(opts.ConnString)
