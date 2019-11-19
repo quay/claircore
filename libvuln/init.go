@@ -75,29 +75,24 @@ func initUpdaters(opts *Opts, db *sqlx.DB, store vulnstore.Updater, dC chan cont
 
 // initStore initializes a vulsntore and returns the underlying db object also
 func initStore(ctx context.Context, opts *Opts) (*sqlx.DB, vulnstore.Store, error) {
-	switch opts.DataStore {
-	case Postgres:
-		// we are going to use pgx for more control over connection pool and
-		// and a cleaner api around bulk inserts
-		cfg, err := pgxpool.ParseConfig(opts.ConnString)
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to parse ConnString: %v", err)
-		}
-		// set conn pool size via libvuln.Opts
-		cfg.MaxConns = opts.MaxConnPool
-		pool, err := pgxpool.ConnectConfig(ctx, cfg)
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to create ConnPool: %v", err)
-		}
-
-		db, err := sqlx.Open("pgx", opts.ConnString)
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to Open db: %v", err)
-		}
-
-		store := postgres.NewVulnStore(db, pool)
-		return db, store, nil
-	default:
-		return nil, nil, fmt.Errorf("provided unknown DataStore")
+	// we are going to use pgx for more control over connection pool and
+	// and a cleaner api around bulk inserts
+	cfg, err := pgxpool.ParseConfig(opts.ConnString)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to parse ConnString: %v", err)
 	}
+	// set conn pool size via libvuln.Opts
+	cfg.MaxConns = opts.MaxConnPool
+	pool, err := pgxpool.ConnectConfig(ctx, cfg)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create ConnPool: %v", err)
+	}
+
+	db, err := sqlx.Open("pgx", opts.ConnString)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to Open db: %v", err)
+	}
+
+	store := postgres.NewVulnStore(db, pool)
+	return db, store, nil
 }

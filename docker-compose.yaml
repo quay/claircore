@@ -25,9 +25,7 @@ services:
       - "8080:8080"
     environment:
       HTTP_LISTEN_ADDR: "0.0.0.0:8080"
-      DATASTORE: "postgres"
       CONNECTION_STRING: "host=claircore-db port=5432 user=claircore dbname=claircore sslmode=disable"
-      SCANLOCK: "postgres"
       SCAN_LOCK_RETRY: 1
       LAYER_SCAN_CONCURRENCY: 10
       LOG_LEVEL: "debug"
@@ -42,9 +40,7 @@ services:
       - "8081:8081"
     environment:
       HTTP_LISTEN_ADDR: "0.0.0.0:8081"
-      DATASTORE: "postgres"
       CONNECTION_STRING: "host=claircore-db port=5432 user=claircore dbname=claircore sslmode=disable"
-      UPDATELOCK: "postgres"
       LOG_LEVEL: "debug"
     volumes:
       - "./:/src/claircore/"

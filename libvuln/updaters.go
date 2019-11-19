@@ -1,4 +1,4 @@
-package main
+package libvuln
 
 import (
 	"fmt"

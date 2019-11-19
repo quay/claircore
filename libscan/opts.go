@@ -1,24 +1,14 @@
 package libscan
 
 import (
+	"context"
 	"fmt"
 	"time"
 
+	"github.com/quay/claircore/alpine"
+	"github.com/quay/claircore/dpkg"
 	"github.com/quay/claircore/internal/scanner"
-)
-
-// DataStore tells libscan which backing persistence store to instantiate
-type DataStore string
-
-const (
-	Postgres DataStore = "postgres"
-)
-
-// ScanLock tells libscan which distributed locking implementation to use
-type ScanLock string
-
-const (
-	PostgresSL ScanLock = "postgres"
+	"github.com/quay/claircore/rpm"
 )
 
 const (
@@ -29,12 +19,8 @@ const (
 
 // Opts are depedencies and options for constructing an instance of libscan
 type Opts struct {
-	// the datastore this instance of libscan will use
-	DataStore DataStore
 	// the connection string for the datastore specified above
 	ConnString string
-	// the type of ScanLock implementation to use. currently postgres is supported
-	ScanLock ScanLock
 	// how often we should try to acquire a lock for scanning a given manifest if lock is taken
 	ScanLockRetry time.Duration
 	// the number of layers to be scanned in parellel.
@@ -52,21 +38,12 @@ type Opts struct {
 
 func (o *Opts) Parse() error {
 	// required
-	if o.DataStore == "" {
-		return fmt.Errorf("DataSource not provided")
-	}
 	if o.ConnString == "" {
 		return fmt.Errorf("ConnString not provided")
 	}
-	if o.ScanLock == "" {
-		return fmt.Errorf("ScanLock not provided")
-	}
-	if len(o.Ecosystems) == 0 {
-		return fmt.Errorf("No ecosystems provided. cannot scan manifests")
-	}
 
 	// optional
-	if o.ScanLockRetry == 0 {
+	if (o.ScanLockRetry == 0) || (o.ScanLockRetry < time.Second) {
 		o.ScanLockRetry = DefaultScanLockRetry
 	}
 	if o.LayerScanConcurrency == 0 {
@@ -75,7 +52,13 @@ func (o *Opts) Parse() error {
 	if o.ControllerFactory == nil {
 		o.ControllerFactory = controllerFactory
 	}
-	// for now force this to Tee to support layer stacking
+	if len(o.Ecosystems) == 0 {
+		o.Ecosystems = []*scanner.Ecosystem{
+			dpkg.NewEcosystem(context.Background()),
+			alpine.NewEcosystem(context.Background()),
+			rpm.NewEcosystem(context.Background()),
+		}
+	}
 	o.LayerFetchOpt = DefaultLayerFetchOpt
 
 	return nil

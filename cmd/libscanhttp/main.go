@@ -5,15 +5,10 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/crgimenes/goconfig"
-	"github.com/quay/claircore/alpine"
-	"github.com/quay/claircore/dpkg"
-	"github.com/quay/claircore/internal/scanner"
 	"github.com/quay/claircore/libscan"
 	libhttp "github.com/quay/claircore/libscan/http"
-	"github.com/quay/claircore/rpm"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -22,12 +17,9 @@ import (
 // parsing. See: https://github.com/crgimenes/goconfig
 type Config struct {
 	HTTPListenAddr       string `cfgDefault:"0.0.0.0:8080" cfg:"HTTP_LISTEN_ADDR"`
-	DataStore            string `cfgDefault:"postgres" cfg:"DATASTORE" cfgHelper:"DataStore that libscan will connect to. currently implemented: 'postgres'`
 	ConnString           string `cfgDefault:"host=localhost port=5434 user=libscan dbname=libscan password=libscan sslmode=disable" cfg:"CONNECTION_STRING" cfgHelper:"Connection string for the provided DataStore"`
-	ScanLock             string `cfgDefault:"postgres" cfg"SCAN_LOCK" cfgHelper:"ScanLock that libscan should use. currently implemented: 'postgres'"`
 	ScanLockRetry        int    `cfgDefault:"1" cfg:"SCAN_LOCK_RETRY" cfgHelper:"Time in seconds libscan should retry a manifest scan if it detects another process is doing the same"`
 	LayerScanConcurrency int    `cfgDefault:"10" cfg:"LAYER_SCAN_CONCURRENCY" cfgHelper:"The number of layers libscan will scan concurrently per manifest scan"`
-	LayerFetchOption     string `cfgDefault:"inmem" cfg:"LAYER_FETCH_OPTION" cfgHelper:"How libscan will download images. currently supported: 'inmem', 'ondisk'`
 	LogLevel             string `cfgDefault:"debug" cfg:"LOG_LEVEL" cfgHelper:"Log levels: debug, info, warning, error, fatal, panic" `
 }
 
@@ -100,45 +92,7 @@ func httpServer(conf Config, lib libscan.Libscan) *http.Server {
 
 func confToLibscanOpts(conf Config) *libscan.Opts {
 	opts := &libscan.Opts{
-		DataStore:  libscan.Postgres,
-		ConnString: "postgres://host:port",
-		ScanLock:   libscan.PostgresSL,
-		Ecosystems: []*scanner.Ecosystem{
-			dpkg.NewEcosystem(context.Background()),
-			alpine.NewEcosystem(context.Background()),
-			rpm.NewEcosystem(context.Background()),
-		},
-	}
-
-	// parse DataStore
-	switch conf.DataStore {
-	case string(libscan.Postgres):
-		opts.DataStore = libscan.DataStore(conf.DataStore)
-		opts.ConnString = conf.ConnString
-	default:
-		log.Fatal().Msgf("the DataStore %s is not implemented", conf.DataStore)
-	}
-
-	// parse ScanLock
-	switch conf.ScanLock {
-	case string(libscan.PostgresSL):
-		opts.ScanLock = libscan.ScanLock(conf.ScanLock)
-	default:
-		log.Fatal().Msgf("the ScanLock %s is not implemented", conf.ScanLock)
-	}
-
-	// parse ScanLockRetry
-	slrDur := time.Duration(conf.ScanLockRetry) * time.Second
-	opts.ScanLockRetry = slrDur
-
-	// parse layerfetchoption
-	switch conf.LayerFetchOption {
-	case string(scanner.InMem):
-		opts.LayerFetchOpt = scanner.LayerFetchOpt(conf.LayerFetchOption)
-	case string(scanner.OnDisk):
-		opts.LayerFetchOpt = scanner.LayerFetchOpt(conf.LayerFetchOption)
-	default:
-		log.Fatal().Msgf("the LayerFetchOption %s is not implemented", conf.LayerFetchOption)
+		ConnString: conf.ConnString,
 	}
 
 	return opts
