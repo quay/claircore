@@ -14,7 +14,7 @@ import (
 
 // Scan returns an http.HandlerFunc which will
 // kick off a Scan of the POST'd manifest
-func Scan(lib libindex.Libindex) h.HandlerFunc {
+func Index(lib libindex.Libindex) h.HandlerFunc {
 	return func(w h.ResponseWriter, r *h.Request) {
 		if r.Method != h.MethodPost {
 			resp := &je.Response{
