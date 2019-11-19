@@ -26,7 +26,7 @@ type Coalescer struct {
 	store indexer.Store
 	ps    indexer.PackageScanner
 	ds    indexer.DistributionScanner
-	sr    *claircore.ScanReport
+	sr    *claircore.IndexReport
 }
 
 // NewCoalescer is a constructor for a Coalescer
@@ -35,7 +35,7 @@ func NewCoalescer(store indexer.Store) *Coalescer {
 		store: store,
 		ps:    &Scanner{},
 		ds:    &osrelease.Scanner{},
-		sr: &claircore.ScanReport{
+		sr: &claircore.IndexReport{
 			// we will only fill these fields
 			PackageIntroduced:     map[int]string{},
 			Packages:              map[int]*claircore.Package{},
@@ -47,10 +47,10 @@ func NewCoalescer(store indexer.Store) *Coalescer {
 	}
 }
 
-// Coalesce coalesces artifacts found in layers and creates a final ScanReport with
+// Coalesce coalesces artifacts found in layers and creates a final IndexReport with
 // the final package details found in the image. This method blocks and when its finished
-// the c.sr field will hold the final ScanReport
-func (c *Coalescer) Coalesce(ctx context.Context, layers []*claircore.Layer) (*claircore.ScanReport, error) {
+// the c.sr field will hold the final IndexReport
+func (c *Coalescer) Coalesce(ctx context.Context, layers []*claircore.Layer) (*claircore.IndexReport, error) {
 	var err error
 	// populate layer artifacts
 	artifacts := []layerArtifacts{}

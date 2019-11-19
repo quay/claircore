@@ -16,7 +16,7 @@ const (
 	scannerIDByNameVersionKind = `SELECT id FROM scanner WHERE name = $1 AND version = $2 AND kind = $3;`
 )
 
-func setScanFinished(ctx context.Context, db *sqlx.DB, sr *claircore.ScanReport, scnrs indexer.VersionedScanners) error {
+func setScanFinished(ctx context.Context, db *sqlx.DB, sr *claircore.IndexReport, scnrs indexer.VersionedScanners) error {
 	// TODO Use passed-in Context.
 	// extract scanner ids from manifest outside of transaction
 	scannerIDs := []int{}
@@ -52,10 +52,10 @@ func setScanFinished(ctx context.Context, db *sqlx.DB, sr *claircore.ScanReport,
 		}
 	}
 
-	// push ScanReport to the store
-	// we cast scanner.ScanReport to jsonbScanReport in order to obtain the value/scan
+	// push IndexReport to the store
+	// we cast claircore.IndexReport to jsonbIndexReport in order to obtain the value/scan
 	// implementations
-	_, err = tx.Exec(upsertScanReport, sr.Hash, jsonbScanReport(*sr))
+	_, err = tx.Exec(upsertIndexReport, sr.Hash, jsonbIndexReport(*sr))
 	if err != nil {
 		tx.Rollback()
 		return fmt.Errorf("failed to upsert scan result: %v", err)

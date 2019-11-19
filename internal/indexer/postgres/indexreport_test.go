@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_ScanReport_Success(t *testing.T) {
+func Test_IndexReport_Success(t *testing.T) {
 	integration.Skip(t)
 	ctx := context.Background()
 	var tt = []struct {
@@ -20,15 +20,15 @@ func Test_ScanReport_Success(t *testing.T) {
 		// the hash to lookup
 		hash string
 		// the expected scan result
-		expectedSR *claircore.ScanReport
+		expectedSR *claircore.IndexReport
 		// initialize the database. this test requires us to
-		// create the ScanReport
-		init func(t *testing.T, db *sqlx.DB, sr *claircore.ScanReport, hash string)
+		// create the IndexReport
+		init func(t *testing.T, db *sqlx.DB, sr *claircore.IndexReport, hash string)
 	}{
 		{
 			name: "full scan result",
 			hash: "test-manifest-hash",
-			expectedSR: &claircore.ScanReport{
+			expectedSR: &claircore.IndexReport{
 				Hash:  "test-manifest-hash",
 				State: "test-state",
 				PackageIntroduced: map[int]string{
@@ -37,8 +37,8 @@ func Test_ScanReport_Success(t *testing.T) {
 				Success: true,
 				Err:     "",
 			},
-			init: func(t *testing.T, db *sqlx.DB, sr *claircore.ScanReport, hash string) {
-				insertScanReport(t, db, sr, hash)
+			init: func(t *testing.T, db *sqlx.DB, sr *claircore.IndexReport, hash string) {
+				insertIndexReport(t, db, sr, hash)
 			},
 		},
 	}
@@ -50,7 +50,7 @@ func Test_ScanReport_Success(t *testing.T) {
 
 			table.init(t, db, table.expectedSR, table.hash)
 
-			sr, ok, err := store.ScanReport(ctx, table.hash)
+			sr, ok, err := store.IndexReport(ctx, table.hash)
 			assert.NoError(t, err)
 			assert.True(t, ok)
 			assert.Equal(t, table.expectedSR, sr)
@@ -58,8 +58,8 @@ func Test_ScanReport_Success(t *testing.T) {
 	}
 }
 
-func insertScanReport(t *testing.T, db *sqlx.DB, sr *claircore.ScanReport, hash string) {
-	_, err := db.Exec(`INSERT INTO scanreport (manifest_hash, scan_result) VALUES ($1, $2)`, hash, jsonbScanReport(*sr))
+func insertIndexReport(t *testing.T, db *sqlx.DB, sr *claircore.IndexReport, hash string) {
+	_, err := db.Exec(`INSERT INTO indexreport (manifest_hash, scan_result) VALUES ($1, $2)`, hash, jsonbIndexReport(*sr))
 	if err != nil {
 		t.Fatalf("failed to insert test scan result: %v", err)
 	}

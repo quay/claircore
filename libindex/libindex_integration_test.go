@@ -205,7 +205,7 @@ func Test_Libindex_Scan(t *testing.T) {
 					t.Fatalf("failed to scan manifest: %v", err)
 				}
 
-				var sr *indexer.ScanReport
+				var sr *indexer.IndexReport
 				select {
 				case <-ctx.Done():
 					t.Fatalf("context timed out: %v", ctx.Err())
@@ -223,7 +223,7 @@ func Test_Libindex_Scan(t *testing.T) {
 
 				// confirm scan report retrieved from libindex matches the one
 				// the Scan() method returned
-				sr1, ok, err := lib.ScanReport(table.hash)
+				sr1, ok, err := lib.IndexReport(table.hash)
 				assert.NoError(t, err)
 				assert.True(t, ok)
 				assert.Equal(t, sr, sr1)
@@ -422,7 +422,7 @@ func Test_Libindex_Scan_Parallel(t *testing.T) {
 						t.Fatalf("failed to scan manifest: %v", err)
 					}
 
-					var sr *indexer.ScanReport
+					var sr *indexer.IndexReport
 					select {
 					case <-ctx.Done():
 						t.Fatalf("context timed out: %v", ctx.Err())
@@ -440,7 +440,7 @@ func Test_Libindex_Scan_Parallel(t *testing.T) {
 
 					// confirm scan report retrieved from libindex matches the one
 					// the Scan() method returned
-					sr1, ok, err := lib.ScanReport(table.hash)
+					sr1, ok, err := lib.IndexReport(table.hash)
 					assert.NoError(t, err)
 					assert.True(t, ok)
 					assert.Equal(t, sr, sr1)

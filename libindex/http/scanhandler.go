@@ -54,7 +54,7 @@ func Scan(lib libindex.Libindex) h.HandlerFunc {
 		// on the first retrieval.
 		time.Sleep(1 * time.Second)
 
-		h.Redirect(w, r, fmt.Sprintf("/scanreport/%s", m.Hash), h.StatusMovedPermanently)
+		h.Redirect(w, r, fmt.Sprintf("/index_report/%s", m.Hash), h.StatusMovedPermanently)
 
 		return
 	}

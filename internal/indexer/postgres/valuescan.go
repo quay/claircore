@@ -11,19 +11,19 @@ import (
 // this file implements any Valuer Scanner methods necessary to
 // insert custom types into the postgres database.
 
-// jsonbScanReport is a type definition for claircore.IndexReport.
-// we are able to cast a claircore.IndexReport to jsonbScanReport
+// jsonbIndexReport is a type definition for claircore.IndexReport.
+// we are able to cast a claircore.IndexReport to jsonbIndexReport
 // and obtain the Value/Scan method set
-type jsonbScanReport claircore.ScanReport
+type jsonbIndexReport claircore.IndexReport
 
-func (sr jsonbScanReport) Value() (driver.Value, error) {
+func (sr jsonbIndexReport) Value() (driver.Value, error) {
 	return json.Marshal(sr)
 }
 
-func (sr *jsonbScanReport) Scan(value interface{}) error {
+func (sr *jsonbIndexReport) Scan(value interface{}) error {
 	b, ok := value.([]byte)
 	if !ok {
-		return fmt.Errorf("failed to type assert ScanReport to []bytes")
+		return fmt.Errorf("failed to type assert IndexReport to []bytes")
 	}
 
 	return json.Unmarshal(b, &sr)

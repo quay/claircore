@@ -11,7 +11,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func ScanReport(lib libindex.Libindex) h.HandlerFunc {
+func IndexReport(lib libindex.Libindex) h.HandlerFunc {
 	return func(w h.ResponseWriter, r *h.Request) {
 		ctx := r.Context()
 		log := log.Logger
@@ -23,7 +23,7 @@ func ScanReport(lib libindex.Libindex) h.HandlerFunc {
 		}
 
 		// extract manifest from path
-		hash := strings.TrimPrefix(r.URL.Path, "/scanreport/")
+		hash := strings.TrimPrefix(r.URL.Path, "/index_report/")
 		if hash == "" {
 			const msg = "could not find manifest hash in path"
 			log.Info().Msg(msg)
@@ -32,7 +32,7 @@ func ScanReport(lib libindex.Libindex) h.HandlerFunc {
 		}
 
 		// issue retrieval
-		sr, ok, err := lib.ScanReport(ctx, hash)
+		sr, ok, err := lib.IndexReport(ctx, hash)
 		if err != nil {
 			const msg = "error receiving scan report"
 			log.Warn().Err(err).Msg(msg)

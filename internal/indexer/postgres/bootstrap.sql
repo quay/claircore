@@ -19,15 +19,15 @@ CREATE TABLE scannerlist (
 );
 CREATE INDEX scannerlist_manifest_hash_idx ON scannerlist (manifest_hash);
 
---- ScanReport
+--- IndexReport
 --- the jsonb serialized result of a scan for a particular
 --- manifest
-CREATE TABLE scanreport (
+CREATE TABLE indexreport (
     manifest_hash text PRIMARY KEY,
     state text,
     scan_result jsonb
 );
-CREATE INDEX scanreport_manifest_hash_idx ON scanreport (manifest_hash);
+CREATE INDEX indexreport_manifest_hash_idx ON indexreport (manifest_hash);
 
 -- Distribution
 --- a unique distribution discovered by a scanner

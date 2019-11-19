@@ -35,7 +35,7 @@ func (m *MockMatcher) EXPECT() *MockMatcherMockRecorder {
 }
 
 // Filter mocks base method
-func (m *MockMatcher) Filter(arg0 *claircore.ScanRecord) bool {
+func (m *MockMatcher) Filter(arg0 *claircore.IndexRecord) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Filter", arg0)
 	ret0, _ := ret[0].(bool)
@@ -63,7 +63,7 @@ func (mr *MockMatcherMockRecorder) Query() *gomock.Call {
 }
 
 // Vulnerable mocks base method
-func (m *MockMatcher) Vulnerable(arg0 *claircore.ScanRecord, arg1 *claircore.Vulnerability) bool {
+func (m *MockMatcher) Vulnerable(arg0 *claircore.IndexRecord, arg1 *claircore.Vulnerability) bool {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Vulnerable", arg0, arg1)
 	ret0, _ := ret[0].(bool)

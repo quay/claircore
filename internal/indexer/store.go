@@ -27,17 +27,17 @@ type Store interface {
 	RepositoriesByLayer(ctx context.Context, hash string, scnrs VersionedScanners) ([]*claircore.Repository, error)
 	// RegisterPackageScanners registers the provided scanners with the persistence layer
 	RegisterScanners(ctx context.Context, scnrs VersionedScanners) error
-	// ScanReport attempts to retrieve a persisted ScanReport.
-	ScanReport(ctx context.Context, hash string) (*claircore.ScanReport, bool, error)
-	// SetScanReport persists the current state of the ScanReport. ScanReports may
+	// IndexReport attempts to retrieve a persisted IndexReport.
+	IndexReport(ctx context.Context, hash string) (*claircore.IndexReport, bool, error)
+	// SetIndexReport persists the current state of the IndexReport. IndexReports may
 	// be in intermediate states to provide feedback for clients. this method should be
 	// used to communicate scanning state updates. to signal the scan has completely successfully
 	// see SetScanFinished
-	SetScanReport(context.Context, *claircore.ScanReport) error
+	SetIndexReport(context.Context, *claircore.IndexReport) error
 	// SetScanFinished marks a scan successfully completed. an association between
-	// the provided manifest hash within the ScanReport and the list of VersionedScanners
+	// the provided manifest hash within the IndexReport and the list of VersionedScanners
 	// should be made in such a way that ManifestScanned() correctly identifies if the manifest
 	// was previously scanned by the given scnrs. the ScanResult should be pushed to the persistence
 	// store.
-	SetScanFinished(ctx context.Context, sr *claircore.ScanReport, scnrs VersionedScanners) error
+	SetIndexFinished(ctx context.Context, sr *claircore.IndexReport, scnrs VersionedScanners) error
 }

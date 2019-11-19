@@ -22,8 +22,8 @@ func Test_ScanFinished_Success(t *testing.T) {
 				ctrl := gomock.NewController(t)
 				m := indexer.NewMockStore(ctrl)
 
-				m.EXPECT().SetScanFinished(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
-				m.EXPECT().SetScanReport(gomock.Any(), gomock.Any()).Return(nil)
+				m.EXPECT().SetIndexFinished(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+				m.EXPECT().SetIndexReport(gomock.Any(), gomock.Any()).Return(nil)
 
 				return m
 			},

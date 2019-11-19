@@ -32,14 +32,14 @@ func Test_Scanner_ScanError(t *testing.T) {
 
 				fetcher.EXPECT().Purge()
 
-				// let call to SetScanReport in checkManifest pass
-				store.EXPECT().SetScanReport(gomock.Any()).Return(nil)
+				// let call to SetIndexReport in checkManifest pass
+				store.EXPECT().SetIndexReport(gomock.Any()).Return(nil)
 				// lets fail call to s.Store.ManifestScanned in check manifest - checkManifest will now return an error and
 				// if all is well scanner should hijack SFM flow into entering scanError state
 				store.EXPECT().ManifestScanned(gomock.Any(), gomock.Any()).Return(false, fmt.Errorf("expected failure for test"))
 
-				// let the call to SetScanReport in scanError state success. scanErr should return nil. nil from here
-				store.EXPECT().SetScanReport(gomock.Any()).Return(nil)
+				// let the call to SetIndexReport in scanError state success. scanErr should return nil. nil from here
+				store.EXPECT().SetIndexReport(gomock.Any()).Return(nil)
 
 				return store, fetcher
 			},
@@ -67,7 +67,7 @@ func Test_Scanner_ScanError(t *testing.T) {
 // when it reaches ScanFinished terminal state.
 //
 // we use the global variable startState to force the state machine into running the scanFinished
-// state. we then confirm the ScanReport success bool is set, the appropriate store methods are called,
+// state. we then confirm the IndexReport success bool is set, the appropriate store methods are called,
 // and the scanner is in the correct state
 func Test_Scanner_ScanFinished(t *testing.T) {
 	var tt = []struct {
@@ -89,7 +89,7 @@ func Test_Scanner_ScanFinished(t *testing.T) {
 				fetcher.EXPECT().Purge()
 
 				store.EXPECT().SetScanFinished(gomock.Any(), gomock.Any()).Return(nil)
-				store.EXPECT().SetScanReport(gomock.Any()).Return(nil)
+				store.EXPECT().SetIndexReport(gomock.Any()).Return(nil)
 
 				return store, fetcher
 			},
@@ -109,8 +109,8 @@ func Test_Scanner_ScanFinished(t *testing.T) {
 				// we transition to ScanError
 				store.EXPECT().SetScanFinished(gomock.Any(), gomock.Any()).Return(fmt.Errorf("expected test failure"))
 
-				// lets allow SetScanReport to pass in ScanError state
-				store.EXPECT().SetScanReport(gomock.Any()).Return(nil)
+				// lets allow SetIndexReport to pass in ScanError state
+				store.EXPECT().SetIndexReport(gomock.Any()).Return(nil)
 
 				return store, fetcher
 			},

@@ -25,7 +25,7 @@ type layerScanner struct {
 }
 
 // New is a constructor for a defaultLayerScanner
-func New(cLevel int, opts *indexer.Opts) scanner.LayerScanner {
+func New(cLevel int, opts *indexer.Opts) indexer.LayerScanner {
 	return &layerScanner{
 		Opts:   opts,
 		cLevel: cLevel,

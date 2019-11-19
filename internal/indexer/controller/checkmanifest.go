@@ -23,7 +23,7 @@ func checkManifest(ctx context.Context, s *Controller) (State, error) {
 	// we have seen this manifest before and it's been been processed with the desired scanners
 	// retrieve the existing one and transition to Terminal.
 	s.logger.Info().Str("state", s.getState().String()).Msg("manifest already scanned... retreiving")
-	sr, ok, err := s.Store.ScanReport(ctx, s.manifest.Hash)
+	sr, ok, err := s.Store.IndexReport(ctx, s.manifest.Hash)
 	if err != nil {
 		s.logger.Error().Str("state", s.getState().String()).Msgf("failed to retreieve manifest: %v", err)
 		return Terminal, fmt.Errorf("failed to retrieve manifest: %v", err)

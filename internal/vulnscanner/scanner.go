@@ -10,14 +10,14 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// VulnScanner utilizes a claircore.ScanReport to create a claircore.VulnerabilityReport
+// VulnScanner utilizes a claircore.IndexReport to create a claircore.VulnerabilityReport
 // takes a fan-in approach where multiple Controllers write to a single channel
 // and VulnScanner dedupes and maps.
 type VulnScanner struct {
 	store    vulnstore.Vulnerability
 	matchers []driver.Matcher
 	vr       *claircore.VulnerabilityReport
-	sr       *claircore.ScanReport
+	sr       *claircore.IndexReport
 }
 
 func New(store vulnstore.Vulnerability, matchers []driver.Matcher) *VulnScanner {
@@ -31,7 +31,7 @@ func New(store vulnstore.Vulnerability, matchers []driver.Matcher) *VulnScanner 
 	}
 }
 
-func (s *VulnScanner) Scan(ctx context.Context, sr *claircore.ScanReport) (*claircore.VulnerabilityReport, error) {
+func (s *VulnScanner) Scan(ctx context.Context, sr *claircore.IndexReport) (*claircore.VulnerabilityReport, error) {
 	vC := make(chan map[int][]*claircore.Vulnerability, 1024)
 	eC := make(chan error)
 	dC := make(chan struct{})
@@ -55,7 +55,7 @@ func (s *VulnScanner) Scan(ctx context.Context, sr *claircore.ScanReport) (*clai
 // match launches concurrent Controllers and returns discovered vulnerabilites
 // on the provided channel. channel is closed once all match controllers return
 func (s *VulnScanner) match(ctx context.Context, vC chan map[int][]*claircore.Vulnerability, eC chan error) {
-	records := s.sr.ScanRecords()
+	records := s.sr.IndexRecords()
 	var g errgroup.Group
 	for _, m := range s.matchers {
 		// copy to avoid misreference in loop

@@ -21,7 +21,7 @@ const (
 	// Terminal is the state which halts the fsm and returns the current s.result to the caller
 	Terminal State = iota
 	// CheckManifest determines if the manifest should be scanned.
-	// if no Terminal is returned and we return the existing ScanReport.
+	// if no Terminal is returned and we return the existing IndexReport.
 	// Transitions: FetchLayers, Terminal
 	CheckManifest
 	// FetchLayers retrieves all the layers in a manifest and stacks them the same obtain the file image contents.
@@ -38,7 +38,7 @@ const (
 	// returns a ScanResult with the error field
 	// Transitions: Terminal
 	ScanError
-	// ScanFinished state is the terminal state and should return a ScanReport
+	// ScanFinished state is the terminal state and should return a IndexReport
 	// to the caller of Scan()
 	// Transitions: Terminal
 	ScanFinished
@@ -72,7 +72,7 @@ type Controller struct {
 	// the manifest this controller is working on. populated on Scan() call
 	manifest *claircore.Manifest
 	// the result of this scan. each stateFunc manipulates this field.
-	report *claircore.ScanReport
+	report *claircore.IndexReport
 	// a fatal error halting the scanning process
 	err error
 	// a logger with context. set on Scan() method call
@@ -82,7 +82,7 @@ type Controller struct {
 // New constructs a controller given an Opts struct
 func New(opts *indexer.Opts) *Controller {
 	// fully init any maps and arrays
-	scanRes := &claircore.ScanReport{
+	scanRes := &claircore.IndexReport{
 		PackageIntroduced:     map[int]string{},
 		Packages:              map[int]*claircore.Package{},
 		Distributions:         map[int]*claircore.Distribution{},
@@ -106,7 +106,7 @@ func New(opts *indexer.Opts) *Controller {
 // Scan kicks off a scan of a particular manifest.
 // Initial state set in constructor.
 // Call Lock() before using and Unlock() when finished scanning.
-func (s *Controller) Scan(ctx context.Context, manifest *claircore.Manifest) *claircore.ScanReport {
+func (s *Controller) Scan(ctx context.Context, manifest *claircore.Manifest) *claircore.IndexReport {
 	// defer the removal of any tmp files if fetcher is configured for OnDisk or Tee download
 	// no-op otherwise. see Fetcher for more info
 	defer s.Fetcher.Purge()
@@ -138,7 +138,7 @@ func (s *Controller) run(ctx context.Context) {
 	}
 
 	s.setState(state)
-	err = s.Store.SetScanReport(ctx, s.report)
+	err = s.Store.SetIndexReport(ctx, s.report)
 	if err != nil {
 		s.handleError(ctx, err)
 		return
@@ -147,7 +147,7 @@ func (s *Controller) run(ctx context.Context) {
 	s.run(ctx)
 }
 
-// handleError updates the ScanReport to communicate an error and attempts
+// handleError updates the IndexReport to communicate an error and attempts
 // to persist this information.
 func (s *Controller) handleError(ctx context.Context, err error) {
 	s.logger.Error().Str("state", s.getState().String()).Msg("handling scan error")
@@ -155,7 +155,7 @@ func (s *Controller) handleError(ctx context.Context, err error) {
 	s.report.Err = err.Error()
 	s.report.State = ScanError.String()
 	s.logger.Err(err).Msgf("countered error during scan: %v", err)
-	err = s.Store.SetScanReport(ctx, s.report)
+	err = s.Store.SetIndexReport(ctx, s.report)
 	if err != nil {
 		// just log, we are about to bail anyway
 		s.logger.Error().Msgf("failed to push scan report when handling error: %v", err)

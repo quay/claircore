@@ -72,17 +72,17 @@ func (s *store) RegisterScanners(ctx context.Context, scnrs indexer.VersionedSca
 	return err
 }
 
-func (s *store) ScanReport(ctx context.Context, hash string) (*claircore.ScanReport, bool, error) {
-	sr, b, err := scanReport(ctx, s.db, hash)
+func (s *store) IndexReport(ctx context.Context, hash string) (*claircore.IndexReport, bool, error) {
+	sr, b, err := indexReport(ctx, s.db, hash)
 	return sr, b, err
 }
 
-func (s *store) SetScanReport(ctx context.Context, sr *claircore.ScanReport) error {
-	err := setScanReport(ctx, s.db, sr)
+func (s *store) SetIndexReport(ctx context.Context, sr *claircore.IndexReport) error {
+	err := setIndexReport(ctx, s.db, sr)
 	return err
 }
 
-func (s *store) SetScanFinished(ctx context.Context, sr *claircore.ScanReport, scnrs indexer.VersionedScanners) error {
+func (s *store) SetIndexFinished(ctx context.Context, sr *claircore.IndexReport, scnrs indexer.VersionedScanners) error {
 	err := setScanFinished(ctx, s.db, sr, scnrs)
 	return err
 }

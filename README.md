@@ -13,13 +13,13 @@ These modules export the methods for scanning and image for packages and matchin
 The libindex module exports a single interface  
 ```
 type Libindex interface {
-	// Scan performs an async scan of a manifest and produces a claircore.ScanReport.
+	// Scan performs an async scan of a manifest and produces a claircore.IndexReport.
 	// Errors encountered before scan begins are returned in the error variable.
-	// Errors encountered during scan are populated in the Err field of the claircore.ScanReport
-	Scan(ctx context.Context, manifest *claircore.Manifest) (ResultChannel <-chan *claircore.ScanReport, err error)
-	// ScanReport tries to retrieve a claircore.ScanReport given the image hash.
+	// Errors encountered during scan are populated in the Err field of the claircore.IndexReport
+	Scan(ctx context.Context, manifest *claircore.Manifest) (ResultChannel <-chan *claircore.IndexReport, err error)
+	// IndexReport tries to retrieve a claircore.IndexReport given the image hash.
 	// bool informs caller if found.
-	ScanReport(hash string) (*claircore.ScanReport, bool, error)
+	IndexReport(hash string) (*claircore.IndexReport, bool, error)
 }
 ```
 Creating an instance  
@@ -55,7 +55,7 @@ if sr.State == "ScannError" {
 The libvuln module exports a single interface  
 ```
 type Libvuln interface {
-	Scan(ctx context.Context, sr *claircore.ScanReport) (*claircore.VulnerabilityReport, error)
+	Scan(ctx context.Context, sr *claircore.IndexReport) (*claircore.VulnerabilityReport, error)
 
 ```
 creating an instance  
@@ -68,9 +68,9 @@ opts := &libvuln.Opts{
 }
 lib := libvuln.New(opts)
 ```
-call libvuln with a populated ScanReport  
+call libvuln with a populated IndexReport  
 ```
-sr := &claircore.ScanReport{
+sr := &claircore.IndexReport{
     ...
 }
 vr, err := libvuln.Scan(sr)

@@ -34,11 +34,27 @@ func (m *MockLibindex) EXPECT() *MockLibindexMockRecorder {
 	return m.recorder
 }
 
+// IndexReport mocks base method
+func (m *MockLibindex) IndexReport(arg0 context.Context, arg1 string) (*claircore.IndexReport, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IndexReport", arg0, arg1)
+	ret0, _ := ret[0].(*claircore.IndexReport)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// IndexReport indicates an expected call of IndexReport
+func (mr *MockLibindexMockRecorder) IndexReport(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexReport", reflect.TypeOf((*MockLibindex)(nil).IndexReport), arg0, arg1)
+}
+
 // Scan mocks base method
-func (m *MockLibindex) Scan(arg0 context.Context, arg1 *claircore.Manifest) (<-chan *claircore.ScanReport, error) {
+func (m *MockLibindex) Scan(arg0 context.Context, arg1 *claircore.Manifest) (<-chan *claircore.IndexReport, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Scan", arg0, arg1)
-	ret0, _ := ret[0].(<-chan *claircore.ScanReport)
+	ret0, _ := ret[0].(<-chan *claircore.IndexReport)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -47,20 +63,4 @@ func (m *MockLibindex) Scan(arg0 context.Context, arg1 *claircore.Manifest) (<-c
 func (mr *MockLibindexMockRecorder) Scan(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Scan", reflect.TypeOf((*MockLibindex)(nil).Scan), arg0, arg1)
-}
-
-// ScanReport mocks base method
-func (m *MockLibindex) ScanReport(arg0 context.Context, arg1 string) (*claircore.ScanReport, bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ScanReport", arg0, arg1)
-	ret0, _ := ret[0].(*claircore.ScanReport)
-	ret1, _ := ret[1].(bool)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// ScanReport indicates an expected call of ScanReport
-func (mr *MockLibindexMockRecorder) ScanReport(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScanReport", reflect.TypeOf((*MockLibindex)(nil).ScanReport), arg0, arg1)
 }

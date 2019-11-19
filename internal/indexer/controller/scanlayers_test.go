@@ -25,7 +25,7 @@ func Test_ScanLayers(t *testing.T) {
 
 				// called twice, once for individual layer scans and again for the image layer
 				ls.EXPECT().Scan(gomock.Any(), gomock.Any(), gomock.Any()).MaxTimes(2).MinTimes(2).Return(nil)
-				s.EXPECT().SetScanReport(gomock.Any(), gomock.Any()).Return(nil)
+				s.EXPECT().SetIndexReport(gomock.Any(), gomock.Any()).Return(nil)
 				return ls, s
 			},
 		},

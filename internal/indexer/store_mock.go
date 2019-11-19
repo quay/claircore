@@ -77,6 +77,22 @@ func (mr *MockStoreMockRecorder) IndexPackages(arg0, arg1, arg2, arg3 interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexPackages", reflect.TypeOf((*MockStore)(nil).IndexPackages), arg0, arg1, arg2, arg3)
 }
 
+// IndexReport mocks base method
+func (m *MockStore) IndexReport(arg0 context.Context, arg1 string) (*claircore.IndexReport, bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IndexReport", arg0, arg1)
+	ret0, _ := ret[0].(*claircore.IndexReport)
+	ret1, _ := ret[1].(bool)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// IndexReport indicates an expected call of IndexReport
+func (mr *MockStoreMockRecorder) IndexReport(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexReport", reflect.TypeOf((*MockStore)(nil).IndexReport), arg0, arg1)
+}
+
 // IndexRepositories mocks base method
 func (m *MockStore) IndexRepositories(arg0 context.Context, arg1 []*claircore.Repository, arg2 *claircore.Layer, arg3 VersionedScanner) error {
 	m.ctrl.T.Helper()
@@ -165,46 +181,30 @@ func (mr *MockStoreMockRecorder) RepositoriesByLayer(arg0, arg1, arg2 interface{
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RepositoriesByLayer", reflect.TypeOf((*MockStore)(nil).RepositoriesByLayer), arg0, arg1, arg2)
 }
 
-// ScanReport mocks base method
-func (m *MockStore) ScanReport(arg0 context.Context, arg1 string) (*claircore.ScanReport, bool, error) {
+// SetIndexFinished mocks base method
+func (m *MockStore) SetIndexFinished(arg0 context.Context, arg1 *claircore.IndexReport, arg2 VersionedScanners) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ScanReport", arg0, arg1)
-	ret0, _ := ret[0].(*claircore.ScanReport)
-	ret1, _ := ret[1].(bool)
-	ret2, _ := ret[2].(error)
-	return ret0, ret1, ret2
-}
-
-// ScanReport indicates an expected call of ScanReport
-func (mr *MockStoreMockRecorder) ScanReport(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ScanReport", reflect.TypeOf((*MockStore)(nil).ScanReport), arg0, arg1)
-}
-
-// SetScanFinished mocks base method
-func (m *MockStore) SetScanFinished(arg0 context.Context, arg1 *claircore.ScanReport, arg2 VersionedScanners) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetScanFinished", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "SetIndexFinished", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// SetScanFinished indicates an expected call of SetScanFinished
-func (mr *MockStoreMockRecorder) SetScanFinished(arg0, arg1, arg2 interface{}) *gomock.Call {
+// SetIndexFinished indicates an expected call of SetIndexFinished
+func (mr *MockStoreMockRecorder) SetIndexFinished(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetScanFinished", reflect.TypeOf((*MockStore)(nil).SetScanFinished), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetIndexFinished", reflect.TypeOf((*MockStore)(nil).SetIndexFinished), arg0, arg1, arg2)
 }
 
-// SetScanReport mocks base method
-func (m *MockStore) SetScanReport(arg0 context.Context, arg1 *claircore.ScanReport) error {
+// SetIndexReport mocks base method
+func (m *MockStore) SetIndexReport(arg0 context.Context, arg1 *claircore.IndexReport) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetScanReport", arg0, arg1)
+	ret := m.ctrl.Call(m, "SetIndexReport", arg0, arg1)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// SetScanReport indicates an expected call of SetScanReport
-func (mr *MockStoreMockRecorder) SetScanReport(arg0, arg1 interface{}) *gomock.Call {
+// SetIndexReport indicates an expected call of SetIndexReport
+func (mr *MockStoreMockRecorder) SetIndexReport(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetScanReport", reflect.TypeOf((*MockStore)(nil).SetScanReport), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetIndexReport", reflect.TypeOf((*MockStore)(nil).SetIndexReport), arg0, arg1)
 }

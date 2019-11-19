@@ -35,7 +35,7 @@ func (m *MockLibvuln) EXPECT() *MockLibvulnMockRecorder {
 }
 
 // Scan mocks base method
-func (m *MockLibvuln) Scan(arg0 context.Context, arg1 *claircore.ScanReport) (*claircore.VulnerabilityReport, error) {
+func (m *MockLibvuln) Scan(arg0 context.Context, arg1 *claircore.IndexReport) (*claircore.VulnerabilityReport, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Scan", arg0, arg1)
 	ret0, _ := ret[0].(*claircore.VulnerabilityReport)

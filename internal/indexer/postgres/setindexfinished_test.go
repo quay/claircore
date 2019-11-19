@@ -97,14 +97,14 @@ func Test_SetScanFinished_Success(t *testing.T) {
 			scnrs.PStoVS(temp)
 			t.Log(scnrs)
 
-			err := store.SetScanFinished(ctx, &claircore.ScanReport{
+			err := store.SetIndexFinished(ctx, &claircore.IndexReport{
 				Hash: table.hash,
 			}, scnrs)
 
 			assert.NoError(t, err)
 			checkUpdatedScannerList(t, db, table.hash, table.updatedScnrs)
 
-			sr := getScanReport(t, db, table.hash)
+			sr := getIndexReport(t, db, table.hash)
 			assert.Equal(t, table.hash, sr.Hash)
 		})
 	}

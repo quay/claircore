@@ -15,13 +15,13 @@ import (
 
 // libindex is an interface exporting the public methods of our library.
 type Libindex interface {
-	// Scan performs an async scan of a manifest and produces a claircore.ScanReport.
+	// Scan performs an async scan of a manifest and produces a claircore.IndexReport.
 	// Errors encountered before scan begins are returned in the error variable.
-	// Errors encountered during scan are populated in the Err field of the claircore.ScanReport
-	Scan(ctx context.Context, manifest *claircore.Manifest) (ResultChannel <-chan *claircore.ScanReport, err error)
-	// ScanReport tries to retrieve a claircore.ScanReport given the image hash.
+	// Errors encountered during scan are populated in the Err field of the claircore.IndexReport
+	Scan(ctx context.Context, manifest *claircore.Manifest) (ResultChannel <-chan *claircore.IndexReport, err error)
+	// IndexReport tries to retrieve a claircore.IndexReport given the image hash.
 	// bool informs caller if found.
-	ScanReport(ctx context.Context, hash string) (*claircore.ScanReport, bool, error)
+	IndexReport(ctx context.Context, hash string) (*claircore.IndexReport, bool, error)
 }
 
 // libindex implements libindex.libindex interface
@@ -75,11 +75,11 @@ func New(ctx context.Context, opts *Opts) (Libindex, error) {
 	return l, nil
 }
 
-// Scan performs an ansyc scan of the manifest and produces a ScanReport. a channel is returned a caller may block on
-func (l *libindex) Scan(ctx context.Context, manifest *claircore.Manifest) (<-chan *claircore.ScanReport, error) {
+// Scan performs an ansyc scan of the manifest and produces a IndexReport. a channel is returned a caller may block on
+func (l *libindex) Scan(ctx context.Context, manifest *claircore.Manifest) (<-chan *claircore.IndexReport, error) {
 	l.logger.Info().Msgf("received scan request for manifest hash: %v", manifest.Hash)
 
-	rc := make(chan *claircore.ScanReport, 1)
+	rc := make(chan *claircore.IndexReport, 1)
 
 	s, err := l.ControllerFactory(l, l.Opts)
 	if err != nil {
@@ -93,7 +93,7 @@ func (l *libindex) Scan(ctx context.Context, manifest *claircore.Manifest) (<-ch
 }
 
 // scan performs the business logic of starting a scan.
-func (l *libindex) scan(ctx context.Context, s *controller.Controller, rc chan *claircore.ScanReport, m *claircore.Manifest) {
+func (l *libindex) scan(ctx context.Context, s *controller.Controller, rc chan *claircore.IndexReport, m *claircore.Manifest) {
 	// once scan is finished close the rc channel incase callers are ranging
 	defer close(rc)
 
@@ -105,12 +105,12 @@ func (l *libindex) scan(ctx context.Context, s *controller.Controller, rc chan *
 		// something went wrong with getting a lock
 		// this is not an error saying another process has the lock
 		l.logger.Error().Msgf("unexpected error acquiring lock: %v", err)
-		sr := &claircore.ScanReport{
+		sr := &claircore.IndexReport{
 			Success: false,
 			Err:     fmt.Sprintf("unexpected error acquiring lock: %v", err),
 		}
 		// best effort to push to persistence since we are about to bail anyway
-		_ = l.store.SetScanReport(ctx, sr)
+		_ = l.store.SetIndexReport(ctx, sr)
 
 		select {
 		case rc <- sr:
@@ -130,9 +130,9 @@ func (l *libindex) scan(ctx context.Context, s *controller.Controller, rc chan *
 	}
 }
 
-// ScanReport retrieves a ScanReport struct from persistence if it exists. if the ScanReport does not exist
+// IndexReport retrieves a IndexReport struct from persistence if it exists. if the IndexReport does not exist
 // the bool value will be false.
-func (l *libindex) ScanReport(ctx context.Context, hash string) (*claircore.ScanReport, bool, error) {
-	res, ok, err := l.store.ScanReport(ctx, hash)
+func (l *libindex) IndexReport(ctx context.Context, hash string) (*claircore.IndexReport, bool, error) {
+	res, ok, err := l.store.IndexReport(ctx, hash)
 	return res, ok, err
 }

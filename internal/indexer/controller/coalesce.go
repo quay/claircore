@@ -10,7 +10,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// coalesce calls each ecosystem's coalescer and merges the returned ScanReports
+// coalesce calls each ecosystem's coalescer and merges the returned IndexReports
 func coalesce(ctx context.Context, s *Controller) (State, error) {
 	coalescers := []indexer.Coalescer{}
 	for _, ecosystem := range s.Ecosystems {
@@ -22,7 +22,7 @@ func coalesce(ctx context.Context, s *Controller) (State, error) {
 	}
 
 	mu := sync.Mutex{}
-	reports := []*claircore.ScanReport{}
+	reports := []*claircore.IndexReport{}
 	g, gctx := errgroup.WithContext(ctx)
 	for _, c := range coalescers {
 		cc := c
@@ -47,11 +47,11 @@ func coalesce(ctx context.Context, s *Controller) (State, error) {
 	return ScanFinished, nil
 }
 
-// MergeSR merges ScanReports.
+// MergeSR merges IndexReports.
 //
-// source is the ScanReport that the indexer is working on.
-// merge is an array ScanReports returned from coalescers
-func MergeSR(source *claircore.ScanReport, merge []*claircore.ScanReport) *claircore.ScanReport {
+// source is the IndexReport that the indexer is working on.
+// merge is an array IndexReports returned from coalescers
+func MergeSR(source *claircore.IndexReport, merge []*claircore.IndexReport) *claircore.IndexReport {
 	for _, sr := range merge {
 		for k, v := range sr.Packages {
 			source.Packages[k] = v

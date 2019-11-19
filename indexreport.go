@@ -1,20 +1,20 @@
 package claircore
 
-// ScanRecord is an entry in the ScanReport.
+// IndexRecord is an entry in the IndexReport.
 //
-// A ScanRecord identifies a discovered package along with its
+// A IndexRecord identifies a discovered package along with its
 // Distribution and Repository information if present.
-type ScanRecord struct {
+type IndexRecord struct {
 	Package      *Package
 	Distribution *Distribution
 	Repository   *Repository
 }
 
-// ScanReport provides a package database for a container image.
+// IndexReport provides a package database for a container image.
 //
-// A ScanReport is used to inventory a discrete package information found
+// A IndexReport is used to inventory a discrete package information found
 // within in each layer of a container image.
-type ScanReport struct {
+type IndexReport struct {
 	// the manifest hash this scan result is assocaited with
 	Hash string `json:"manifest_hash"`
 	// the current state of the scan.
@@ -37,14 +37,14 @@ type ScanReport struct {
 	Err string `json:"err"`
 }
 
-// ScanRecords returns a list of ScanRecords derived from the ScanReport
+// IndexRecords returns a list of IndexRecords derived from the IndexReport
 //
-// If a field in the ScanRecord is not found in the ScanReport the empty value
+// If a field in the IndexRecord is not found in the IndexReport the empty value
 // is returned to provide nil safey.
-func (report *ScanReport) ScanRecords() []*ScanRecord {
-	out := []*ScanRecord{}
+func (report *IndexReport) IndexRecords() []*IndexRecord {
+	out := []*IndexRecord{}
 	for _, pkg := range report.Packages {
-		record := &ScanRecord{}
+		record := &IndexRecord{}
 		record.Package = pkg
 
 		if record.Package.Source == nil {

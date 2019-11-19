@@ -11,7 +11,7 @@ var _ driver.Matcher = (*Matcher)(nil)
 
 type Matcher struct{}
 
-func (*Matcher) Filter(record *claircore.ScanRecord) bool {
+func (*Matcher) Filter(record *claircore.IndexRecord) bool {
 	if record.Distribution == nil {
 		return false
 	}
@@ -32,7 +32,7 @@ func (*Matcher) Query() []driver.MatchExp {
 	}
 }
 
-func (*Matcher) Vulnerable(record *claircore.ScanRecord, vuln *claircore.Vulnerability) bool {
+func (*Matcher) Vulnerable(record *claircore.IndexRecord, vuln *claircore.Vulnerability) bool {
 	if vuln.FixedInVersion == "" {
 		return true
 	}
