@@ -6,7 +6,7 @@ import (
 	"github.com/quay/claircore"
 )
 
-// LayerFetchOpt tells libscan where to store fetched layers
+// LayerFetchOpt tells libindex where to store fetched layers
 type LayerFetchOpt string
 
 const (

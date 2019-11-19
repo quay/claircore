@@ -111,9 +111,9 @@ The implementor knows the details of how CVE data is indexed, what fields the CV
 A successful scan looks like this:  
 
 1. updaters have ran either in the background on an interval or have had their Parse methods called and offline-loaded CVE data into the vulnstore
-2. a manifest is provided to libscan. libscan fetches all the layers, stacks the image like a container runtime would, and runs each `claircore.internal.scanner.PackageScanner` on each layer.
-3. libscan indexes all the packages found by each scanner and creates the necessary relations. a ScanReport is persisted to libscan's database summarizing what was found.
-4. a client request is made to libvuln. libvuln retrieves the ScanReport from libscan. libscan maybe running alongside libvuln in process or may be distributed the library is designed for modularity.
+2. a manifest is provided to libindex. libindex fetches all the layers, stacks the image like a container runtime would, and runs each `claircore.internal.scanner.PackageScanner` on each layer.
+3. libindex indexes all the packages found by each scanner and creates the necessary relations. a ScanReport is persisted to libindex's database summarizing what was found.
+4. a client request is made to libvuln. libvuln retrieves the ScanReport from libindex. libindex maybe running alongside libvuln in process or may be distributed the library is designed for modularity.
 5. libvuln concurrently creates all the configured Matchers and feeds them the packages summarized in the claircore.ScanReport.
 6. libvuln collects all the matched vulnerabilities returned from each Matcher and creates a request scoped claircore.VulnerabilityReport. this is returned to the client
 7. sometime later the vulnstore is updated. the next time a client asks for a response from libvuln a new claircore.VulnerabilityReport is generated. no caching or peristence takes place.
@@ -135,7 +135,7 @@ The default scanner works as follows:
 Matching vulnerabilities is facilitated by methods in the `claircore.internal.vulnstore`, `claircore.internal.matcher`, and `claircore.internal.vulnscanner` packages. They process looks like this:  
 
 1. libvuln is instantiated and configured with a set of `claircore.internal.matcher` implementations. 
-2. lubvuln gets a request to find vulnerabilities for a manifest. first it reaches out to libscan to retrieve the ScanReport
+2. lubvuln gets a request to find vulnerabilities for a manifest. first it reaches out to libindex to retrieve the ScanReport
 3. with the ScanReport retrieved a `claircore.internal.vulnscanner.VulnScanner` is created.
 4. the VulnScanner launches all configured Matcher(s) by way of a MatchController. The MatchController drives the Matcher(s) calling the appropriate functions and handling results and errors
 5. the VulnScanner dedupes and merges all vulnerabilities discovered by MatchControllers and returns a VulernabilityReport

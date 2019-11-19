@@ -6,7 +6,7 @@ import (
 	"github.com/quay/claircore"
 )
 
-// Store is an interface for dealing with objects libscan needs to persist.
+// Store is an interface for dealing with objects libindex needs to persist.
 // Stores may be implemented per storage backend.
 type Store interface {
 	// ManifestScanned returns whether the given manifest was scanned by the provided scanners

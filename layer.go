@@ -17,7 +17,7 @@ type RemotePath struct {
 // Layer is an containers image filesystem layer. Layers are stacked
 // ontop of each other to comprise the final filesystem of the container image.
 type Layer struct {
-	// content addressable hash unequally identifying this layer. libscan will treat layers with this same
+	// content addressable hash unequally identifying this layer. libindex will treat layers with this same
 	// hash as identical.
 	Hash string `json:"hash"`
 	// format of the archived layer. currently we support tar with Gzip, Bzip2, and Xz compression. compression

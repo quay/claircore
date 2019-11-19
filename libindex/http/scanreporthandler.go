@@ -6,12 +6,12 @@ import (
 	h "net/http"
 	"strings"
 
-	"github.com/quay/claircore/libscan"
+	"github.com/quay/claircore/libindex"
 
 	"github.com/rs/zerolog/log"
 )
 
-func ScanReport(lib libscan.Libscan) h.HandlerFunc {
+func ScanReport(lib libindex.Libindex) h.HandlerFunc {
 	return func(w h.ResponseWriter, r *h.Request) {
 		ctx := r.Context()
 		log := log.Logger

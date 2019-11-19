@@ -1,4 +1,4 @@
-package libscan
+package libindex
 
 import (
 	"context"
@@ -13,8 +13,8 @@ import (
 	"github.com/rs/zerolog"
 )
 
-// Libscan is an interface exporting the public methods of our library.
-type Libscan interface {
+// libindex is an interface exporting the public methods of our library.
+type Libindex interface {
 	// Scan performs an async scan of a manifest and produces a claircore.ScanReport.
 	// Errors encountered before scan begins are returned in the error variable.
 	// Errors encountered during scan are populated in the Err field of the claircore.ScanReport
@@ -24,9 +24,9 @@ type Libscan interface {
 	ScanReport(ctx context.Context, hash string) (*claircore.ScanReport, bool, error)
 }
 
-// libscan implements libscan.Libscan interface
-type libscan struct {
-	// holds dependencies for creating a libscan instance
+// libindex implements libindex.libindex interface
+type libindex struct {
+	// holds dependencies for creating a libindex instance
 	*Opts
 	// convenience field for creating scan-time resources that require a database
 	db *sqlx.DB
@@ -37,9 +37,9 @@ type libscan struct {
 	logger zerolog.Logger
 }
 
-// New creates a new instance of Libscan
-func New(ctx context.Context, opts *Opts) (Libscan, error) {
-	logger := zerolog.Ctx(ctx).With().Str("component", "libscan").Logger()
+// New creates a new instance of libindex
+func New(ctx context.Context, opts *Opts) (Libindex, error) {
+	logger := zerolog.Ctx(ctx).With().Str("component", "libindex").Logger()
 	err := opts.Parse()
 	if err != nil {
 		logger.Error().Msgf("failed to parse opts: %v", err)
@@ -52,7 +52,7 @@ func New(ctx context.Context, opts *Opts) (Libscan, error) {
 	}
 	logger.Info().Msg("created database connection")
 
-	l := &libscan{
+	l := &libindex{
 		Opts:   opts,
 		db:     db,
 		store:  store,
@@ -76,7 +76,7 @@ func New(ctx context.Context, opts *Opts) (Libscan, error) {
 }
 
 // Scan performs an ansyc scan of the manifest and produces a ScanReport. a channel is returned a caller may block on
-func (l *libscan) Scan(ctx context.Context, manifest *claircore.Manifest) (<-chan *claircore.ScanReport, error) {
+func (l *libindex) Scan(ctx context.Context, manifest *claircore.Manifest) (<-chan *claircore.ScanReport, error) {
 	l.logger.Info().Msgf("received scan request for manifest hash: %v", manifest.Hash)
 
 	rc := make(chan *claircore.ScanReport, 1)
@@ -93,7 +93,7 @@ func (l *libscan) Scan(ctx context.Context, manifest *claircore.Manifest) (<-cha
 }
 
 // scan performs the business logic of starting a scan.
-func (l *libscan) scan(ctx context.Context, s *controller.Controller, rc chan *claircore.ScanReport, m *claircore.Manifest) {
+func (l *libindex) scan(ctx context.Context, s *controller.Controller, rc chan *claircore.ScanReport, m *claircore.Manifest) {
 	// once scan is finished close the rc channel incase callers are ranging
 	defer close(rc)
 
@@ -132,7 +132,7 @@ func (l *libscan) scan(ctx context.Context, s *controller.Controller, rc chan *c
 
 // ScanReport retrieves a ScanReport struct from persistence if it exists. if the ScanReport does not exist
 // the bool value will be false.
-func (l *libscan) ScanReport(ctx context.Context, hash string) (*claircore.ScanReport, bool, error) {
+func (l *libindex) ScanReport(ctx context.Context, hash string) (*claircore.ScanReport, bool, error) {
 	res, ok, err := l.store.ScanReport(ctx, hash)
 	return res, ok, err
 }

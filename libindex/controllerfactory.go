@@ -1,4 +1,4 @@
-package libscan
+package libindex
 
 import (
 	"github.com/quay/claircore/internal/scanner"
@@ -8,15 +8,15 @@ import (
 	dlpg "github.com/quay/claircore/pkg/distlock/postgres"
 )
 
-// ControllerFactory is a factory method to return a Controller during libscan runtime.
-type ControllerFactory func(lib *libscan, opts *Opts) (*controller.Controller, error)
+// ControllerFactory is a factory method to return a Controller during libindex runtime.
+type ControllerFactory func(lib *libindex, opts *Opts) (*controller.Controller, error)
 
 // controllerFactory is the default ControllerFactory
-func controllerFactory(lib *libscan, opts *Opts) (*controller.Controller, error) {
+func controllerFactory(lib *libindex, opts *Opts) (*controller.Controller, error) {
 	sc := dlpg.NewLock(lib.db, opts.ScanLockRetry)
 	ft := fetcher.New(lib.client, nil, opts.LayerFetchOpt)
 
-	// convert libscan.Opts to scanner.Opts
+	// convert libindex.Opts to scanner.Opts
 	sOpts := &scanner.Opts{
 		Store:      lib.store,
 		ScanLock:   sc,

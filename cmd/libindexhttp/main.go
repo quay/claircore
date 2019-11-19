@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/crgimenes/goconfig"
-	"github.com/quay/claircore/libscan"
-	libhttp "github.com/quay/claircore/libscan/http"
+	"github.com/quay/claircore/libindex"
+	libhttp "github.com/quay/claircore/libindex/http"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -17,9 +17,9 @@ import (
 // parsing. See: https://github.com/crgimenes/goconfig
 type Config struct {
 	HTTPListenAddr       string `cfgDefault:"0.0.0.0:8080" cfg:"HTTP_LISTEN_ADDR"`
-	ConnString           string `cfgDefault:"host=localhost port=5434 user=libscan dbname=libscan password=libscan sslmode=disable" cfg:"CONNECTION_STRING" cfgHelper:"Connection string for the provided DataStore"`
-	ScanLockRetry        int    `cfgDefault:"1" cfg:"SCAN_LOCK_RETRY" cfgHelper:"Time in seconds libscan should retry a manifest scan if it detects another process is doing the same"`
-	LayerScanConcurrency int    `cfgDefault:"10" cfg:"LAYER_SCAN_CONCURRENCY" cfgHelper:"The number of layers libscan will scan concurrently per manifest scan"`
+	ConnString           string `cfgDefault:"host=localhost port=5434 user=libindex dbname=libindex password=libindex sslmode=disable" cfg:"CONNECTION_STRING" cfgHelper:"Connection string for the provided DataStore"`
+	ScanLockRetry        int    `cfgDefault:"1" cfg:"SCAN_LOCK_RETRY" cfgHelper:"Time in seconds libindex should retry a manifest scan if it detects another process is doing the same"`
+	LayerScanConcurrency int    `cfgDefault:"10" cfg:"LAYER_SCAN_CONCURRENCY" cfgHelper:"The number of layers libindex will scan concurrently per manifest scan"`
 	LogLevel             string `cfgDefault:"debug" cfg:"LOG_LEVEL" cfgHelper:"Log levels: debug, info, warning, error, fatal, panic" `
 }
 
@@ -36,12 +36,12 @@ func main() {
 	zerolog.SetGlobalLevel(logLevel(conf))
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 
-	opts := confToLibscanOpts(conf)
+	opts := confTolibindexOpts(conf)
 
-	// create libscan
-	lib, err := libscan.New(ctx, opts)
+	// create libindex
+	lib, err := libindex.New(ctx, opts)
 	if err != nil {
-		log.Fatal().Msgf("failed to create libscan %v", err)
+		log.Fatal().Msgf("failed to create libindex %v", err)
 	}
 
 	httpServ := httpServer(conf, lib)
@@ -73,7 +73,7 @@ func logLevel(conf Config) zerolog.Level {
 	}
 }
 
-func httpServer(conf Config, lib libscan.Libscan) *http.Server {
+func httpServer(conf Config, lib libindex.libindex) *http.Server {
 	// create our http mux and add routes
 	mux := http.NewServeMux()
 
@@ -90,8 +90,8 @@ func httpServer(conf Config, lib libscan.Libscan) *http.Server {
 	return s
 }
 
-func confToLibscanOpts(conf Config) *libscan.Opts {
-	opts := &libscan.Opts{
+func confTolibindexOpts(conf Config) *libindex.Opts {
+	opts := &libindex.Opts{
 		ConnString: conf.ConnString,
 	}
 

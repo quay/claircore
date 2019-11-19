@@ -1,4 +1,4 @@
-package libscan
+package libindex
 
 import (
 	"context"
@@ -17,7 +17,7 @@ const (
 	DefaultLayerFetchOpt        = scanner.OnDisk
 )
 
-// Opts are depedencies and options for constructing an instance of libscan
+// Opts are depedencies and options for constructing an instance of libindex
 type Opts struct {
 	// the connection string for the datastore specified above
 	ConnString string
@@ -27,7 +27,7 @@ type Opts struct {
 	LayerScanConcurrency int
 	// how we store layers we fetch remotely. see LayerFetchOpt type def above for more details
 	LayerFetchOpt scanner.LayerFetchOpt
-	// provides an alternative method for creating a scanner during libscan runtime
+	// provides an alternative method for creating a scanner during libindex runtime
 	// if nil the default factory will be used. useful for testing purposes
 	ControllerFactory ControllerFactory
 	// a list of ecosystems to use which define which package databases and coalescing methods we use

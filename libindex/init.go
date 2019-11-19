@@ -1,4 +1,4 @@
-package libscan
+package libindex
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// initialize a scanner.Store given libscan.Opts
+// initialize a scanner.Store given libindex.Opts
 func initStore(ctx context.Context, opts *Opts) (*sqlx.DB, scanner.Store, error) {
 	// we are going to use pgx for more control over connection pool and
 	// and a cleaner api around bulk inserts

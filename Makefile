@@ -44,7 +44,7 @@ local-dev-up:
 	$(docker-compose) up -d claircore-db
 	$(docker) exec -it claircore_claircore-db_1 bash -c 'while ! pg_isready; do echo "waiting for postgres"; sleep 2; done'
 	go mod vendor
-	$(docker-compose) up -d libscanhttp
+	$(docker-compose) up -d libindexhttp
 	$(docker-compose) up -d libvulnhttp
 
 .PHONY: local-dev-down
@@ -64,9 +64,9 @@ claircore-db-up:
 claircore-db-restart:
 	$(docker-compose) up -d --force-recreate claircore-db
 
-.PHONY: libscanhttp-restart
-libscanhttp-restart:
-	$(docker-compose) up -d --force-recreate libscanhttp
+.PHONY: libindexhttp-restart
+libindexhttp-restart:
+	$(docker-compose) up -d --force-recreate libindexhttp
 
 .PHONY: libvulnhttp-restart
 libvulnhttp-restart:
@@ -87,7 +87,7 @@ podman-dev-up:
 		--env POSTGRES_INITDB_ARGS="--no-sync"\
 		--env PGPORT=5434\
 		--expose 5434\
-		--volume $$(git rev-parse --show-toplevel)/internal/scanner/postgres/bootstrap.sql:/docker-entrypoint-initdb.d/libscan-bootstrap.sql:z\
+		--volume $$(git rev-parse --show-toplevel)/internal/scanner/postgres/bootstrap.sql:/docker-entrypoint-initdb.d/libindex-bootstrap.sql:z\
 		--volume $$(git rev-parse --show-toplevel)/internal/vulnstore/postgres/bootstrap.sql:/docker-entrypoint-initdb.d/libvuln-bootstrap.sql:z\
 		--health-cmd "pg_isready -U claircore -d claircore"\
 		postgres:11
@@ -96,7 +96,7 @@ podman-dev-up:
 	go mod vendor
 	podman create\
 		--pod claircore-dev\
-		--name libscanhttp\
+		--name libindexhttp\
 		--env HTTP_LISTEN_ADDR="0.0.0.0:8080"\
 		--env CONNECTION_STRING="host=localhost port=5434 user=claircore dbname=claircore sslmode=disable"\
 		--env SCAN_LOCK_RETRY=1\
@@ -105,7 +105,7 @@ podman-dev-up:
 		--expose 8080\
 		--volume $$(git rev-parse --show-toplevel)/:/src/claircore/:z\
 		quay.io/claircore/golang:1.13.3\
-		bash -c 'cd /src/claircore/cmd/libscanhttp; exec go run -mod vendor .'
+		bash -c 'cd /src/claircore/cmd/libindexhttp; exec go run -mod vendor .'
 	podman create\
 		--pod claircore-dev\
 		--name libvulnhttp\
@@ -124,7 +124,7 @@ podman-dev-up:
 .PHONY: podman-dev-down
 podman-dev-down:
 	podman pod stop -t 10 claircore-dev
-	true $(foreach c,claircore-database libscanhttp libvulnhttp,&& podman rm $c)
+	true $(foreach c,claircore-database libindexhttp libvulnhttp,&& podman rm $c)
 	podman pod rm claircore-dev
 
 .PHONY: baseimage
