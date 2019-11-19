@@ -84,7 +84,7 @@ func httpServer(conf Config, lib libindex.Libindex) *http.Server {
 	}
 
 	// create handlers
-	mux.Handle("/scan", libhttp.Index(lib))
+	mux.Handle("/index", libhttp.Index(lib))
 	mux.Handle("/index_report/", libhttp.IndexReport(lib))
 
 	return s
