@@ -98,9 +98,7 @@ podman-dev-up:
 		--pod claircore-dev\
 		--name libscanhttp\
 		--env HTTP_LISTEN_ADDR="0.0.0.0:8080"\
-		--env DATASTORE="postgres"\
 		--env CONNECTION_STRING="host=localhost port=5434 user=claircore dbname=claircore sslmode=disable"\
-		--env SCANLOCK="postgres"\
 		--env SCAN_LOCK_RETRY=1\
 		--env LAYER_SCAN_CONCURRENCY=10\
 		--env LOG_LEVEL="debug"\
@@ -112,9 +110,7 @@ podman-dev-up:
 		--pod claircore-dev\
 		--name libvulnhttp\
 		--env HTTP_LISTEN_ADDR="0.0.0.0:8081"\
-		--env DATASTORE="postgres"\
 		--env CONNECTION_STRING="host=localhost port=5434 user=claircore dbname=claircore sslmode=disable"\
-		--env UPDATELOCK="postgres"\
 		--env LOG_LEVEL="debug"\
 		--expose 8081\
 		--volume $$(git rev-parse --show-toplevel)/:/src/claircore/:z\
