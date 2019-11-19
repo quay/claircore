@@ -37,7 +37,7 @@ func initUpdaters(opts *Opts, db *sqlx.DB, store vulnstore.Updater, dC chan cont
 			Updater:       u,
 			Store:         store,
 			Name:          u.Name(),
-			Interval:      time.Duration(opts.UpdateInterval) * time.Minute,
+			Interval:      opts.UpdateInterval,
 			Lock:          pglock.NewLock(db, time.Duration(0)),
 			UpdateOnStart: false,
 		})

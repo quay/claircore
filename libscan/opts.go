@@ -3,6 +3,7 @@ package libscan
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/quay/claircore/alpine"
 	"github.com/quay/claircore/dpkg"
@@ -11,7 +12,7 @@ import (
 )
 
 const (
-	DefaultScanLockRetry        = 5
+	DefaultScanLockRetry        = 5 * time.Second
 	DefaultLayerScanConcurrency = 10
 	DefaultLayerFetchOpt        = scanner.OnDisk
 )
@@ -21,7 +22,7 @@ type Opts struct {
 	// the connection string for the datastore specified above
 	ConnString string
 	// how often we should try to acquire a lock for scanning a given manifest if lock is taken
-	ScanLockRetry int
+	ScanLockRetry time.Duration
 	// the number of layers to be scanned in parellel.
 	LayerScanConcurrency int
 	// how we store layers we fetch remotely. see LayerFetchOpt type def above for more details
@@ -42,7 +43,7 @@ func (o *Opts) Parse() error {
 	}
 
 	// optional
-	if (o.ScanLockRetry == 0) || (o.ScanLockRetry < 1) {
+	if (o.ScanLockRetry == 0) || (o.ScanLockRetry < time.Second) {
 		o.ScanLockRetry = DefaultScanLockRetry
 	}
 	if o.LayerScanConcurrency == 0 {

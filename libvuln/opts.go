@@ -2,6 +2,7 @@ package libvuln
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/quay/claircore/alpine"
 	"github.com/quay/claircore/debian"
@@ -10,7 +11,7 @@ import (
 )
 
 const (
-	DefaultUpdateInterval         = 30
+	DefaultUpdateInterval         = 30 * time.Minute
 	DefaultUpdaterInitConcurrency = 10
 	DefaultMaxConnPool            = 100
 )
@@ -21,7 +22,7 @@ type Opts struct {
 	// the connectiong string to the above data store implementation
 	ConnString string
 	// the interval in minutes which updaters will update the vulnstore
-	UpdateInterval int
+	UpdateInterval time.Duration
 	// number of updaters ran in parallel while libvuln initializes. use this to tune io/cpu on library start when using many updaters
 	UpdaterInitConcurrency int
 	// returns the matchers to be used during libvuln runtime
@@ -39,7 +40,7 @@ func (o *Opts) Parse() error {
 	}
 
 	// optional
-	if o.UpdateInterval == 0 || o.UpdateInterval < 1 {
+	if o.UpdateInterval == 0 || o.UpdateInterval < time.Minute {
 		o.UpdateInterval = DefaultUpdateInterval
 	}
 	if o.UpdaterInitConcurrency == 0 {

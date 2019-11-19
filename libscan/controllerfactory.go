@@ -1,8 +1,6 @@
 package libscan
 
 import (
-	"time"
-
 	"github.com/quay/claircore/internal/scanner"
 	"github.com/quay/claircore/internal/scanner/controller"
 	"github.com/quay/claircore/internal/scanner/fetcher"
@@ -15,7 +13,7 @@ type ControllerFactory func(lib *libscan, opts *Opts) (*controller.Controller, e
 
 // controllerFactory is the default ControllerFactory
 func controllerFactory(lib *libscan, opts *Opts) (*controller.Controller, error) {
-	sc := dlpg.NewLock(lib.db, time.Duration(opts.ScanLockRetry)*time.Second)
+	sc := dlpg.NewLock(lib.db, opts.ScanLockRetry)
 	ft := fetcher.New(lib.client, nil, opts.LayerFetchOpt)
 
 	// convert libscan.Opts to scanner.Opts
