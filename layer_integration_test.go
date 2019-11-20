@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/quay/claircore/internal/scanner"
-	"github.com/quay/claircore/internal/scanner/fetcher"
+	"github.com/quay/claircore/internal/indexer"
+	"github.com/quay/claircore/internal/indexer/fetcher"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 
@@ -26,7 +26,7 @@ func Test_Layer_Files_Miss(t *testing.T) {
 		// we assume the Fetcher implementation unit and integration
 		// tests are passing. if an issue appears to be from the fetcher
 		// confirm the implementation's tests are passing
-		fetcher scanner.Fetcher
+		fetcher indexer.Fetcher
 		// the number of layers to generate for the test
 		layers int
 		// the uris to populate the layer.RemotePath.URI fields. len of this array must equal layers
@@ -37,7 +37,7 @@ func Test_Layer_Files_Miss(t *testing.T) {
 	}{
 		{
 			name:    "ubuntu:18.04 fake path, leading slash, inmem fetch",
-			fetcher: fetcher.New(nil, nil, scanner.InMem),
+			fetcher: fetcher.New(nil, nil, indexer.InMem),
 			layers:  1,
 			uris: []string{
 				"https://storage.googleapis.com/quay-sandbox-01/datastorage/registry/sha256/35/35c102085707f703de2d9eaad8752d6fe1b8f02b5d2149f1d8357c9cc7fb7d0a",
@@ -46,7 +46,7 @@ func Test_Layer_Files_Miss(t *testing.T) {
 		},
 		{
 			name:    "ubuntu:18.04 fake path, no leading slash, inmem fetch",
-			fetcher: fetcher.New(nil, nil, scanner.InMem),
+			fetcher: fetcher.New(nil, nil, indexer.InMem),
 			layers:  1,
 			uris: []string{
 				"https://storage.googleapis.com/quay-sandbox-01/datastorage/registry/sha256/35/35c102085707f703de2d9eaad8752d6fe1b8f02b5d2149f1d8357c9cc7fb7d0a",
@@ -96,7 +96,7 @@ func Test_Layer_Files_Hit(t *testing.T) {
 		// we assume the Fetcher implementation unit and integration
 		// tests are passing. if an issue appears to be from the fetcher
 		// confirm the implementation's tests are passing
-		fetcher scanner.Fetcher
+		fetcher indexer.Fetcher
 		// the number of layers to generate for the test
 		layers int
 		// the uris to populate the layer.RemotePath.URI fields. len of this array must equal layers
@@ -107,7 +107,7 @@ func Test_Layer_Files_Hit(t *testing.T) {
 	}{
 		{
 			name:    "ubuntu:18.04 os-release (linked file), leading slash, inmem fetch",
-			fetcher: fetcher.New(nil, nil, scanner.InMem),
+			fetcher: fetcher.New(nil, nil, indexer.InMem),
 			layers:  1,
 			uris: []string{
 				"https://storage.googleapis.com/quay-sandbox-01/datastorage/registry/sha256/35/35c102085707f703de2d9eaad8752d6fe1b8f02b5d2149f1d8357c9cc7fb7d0a",
@@ -116,7 +116,7 @@ func Test_Layer_Files_Hit(t *testing.T) {
 		},
 		{
 			name:    "ubuntu:18.04 os-release (linked file), no leading slash, inmem fetch",
-			fetcher: fetcher.New(nil, nil, scanner.InMem),
+			fetcher: fetcher.New(nil, nil, indexer.InMem),
 			layers:  1,
 			uris: []string{
 				"https://storage.googleapis.com/quay-sandbox-01/datastorage/registry/sha256/35/35c102085707f703de2d9eaad8752d6fe1b8f02b5d2149f1d8357c9cc7fb7d0a",

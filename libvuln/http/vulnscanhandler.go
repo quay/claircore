@@ -24,8 +24,8 @@ func VulnScan(lib libvuln.Libvuln) h.HandlerFunc {
 			return
 		}
 
-		// deserialize ScanReport
-		var sr claircore.ScanReport
+		// deserialize IndexReport
+		var sr claircore.IndexReport
 		err := json.NewDecoder(r.Body).Decode(&sr)
 		if err != nil {
 			resp := &je.Response{

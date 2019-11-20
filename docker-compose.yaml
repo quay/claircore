@@ -10,7 +10,7 @@ services:
       - "5434:5432"
     volumes:
       # bootstrap initial schema
-      - "./internal/scanner/postgres/bootstrap.sql:/docker-entrypoint-initdb.d/libscan-bootstrap.sql"
+      - "./internal/indexer/postgres/bootstrap.sql:/docker-entrypoint-initdb.d/libindex-bootstrap.sql"
       - "./internal/vulnstore/postgres/bootstrap.sql:/docker-entrypoint-initdb.d/libvuln-bootstrap.sql"
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U claircore -d claircore" ]
@@ -19,7 +19,7 @@ services:
       retries: 3
       start_period: 10s
 
-  libscanhttp:
+  libindexhttp:
     image: quay.io/claircore/golang:1.13.3
     ports:
       - "8080:8080"
@@ -32,7 +32,7 @@ services:
     volumes:
       - "./:/src/claircore/"
     command:
-      [ "bash", "-c", "cd /src/claircore/cmd/libscanhttp; go run -mod vendor ." ]
+      [ "bash", "-c", "cd /src/claircore/cmd/libindexhttp; go run -mod vendor ." ]
 
   libvulnhttp:
     image: quay.io/claircore/golang:1.13.3

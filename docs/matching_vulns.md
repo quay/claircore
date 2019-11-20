@@ -7,7 +7,7 @@ This is a high level document expressing how we match packages in a particular p
 ### PackageScanner
 
 PackageScanner(s) are the method for indexing discovered packages in a layer.  
-It starts with the `claircore.internal.scanner.PackageScanner` interface.  
+It starts with the `claircore.internal.indexer.PackageScanner` interface.  
 ```
 type PackageScanner interface {
 	VersionedScanner
@@ -111,16 +111,16 @@ The implementor knows the details of how CVE data is indexed, what fields the CV
 A successful scan looks like this:  
 
 1. updaters have ran either in the background on an interval or have had their Parse methods called and offline-loaded CVE data into the vulnstore
-2. a manifest is provided to libscan. libscan fetches all the layers, stacks the image like a container runtime would, and runs each `claircore.internal.scanner.PackageScanner` on each layer.
-3. libscan indexes all the packages found by each scanner and creates the necessary relations. a ScanReport is persisted to libscan's database summarizing what was found.
-4. a client request is made to libvuln. libvuln retrieves the ScanReport from libscan. libscan maybe running alongside libvuln in process or may be distributed the library is designed for modularity.
-5. libvuln concurrently creates all the configured Matchers and feeds them the packages summarized in the claircore.ScanReport.
+2. a manifest is provided to libindex. libindex fetches all the layers, stacks the image like a container runtime would, and runs each `claircore.internal.scanner.PackageScanner` on each layer.
+3. libindex indexes all the packages found by each scanner and creates the necessary relations. a IndexReport is persisted to libindex's database summarizing what was found.
+4. a client request is made to libvuln. libvuln retrieves the IndexReport from libindex. libindex maybe running alongside libvuln in process or may be distributed the library is designed for modularity.
+5. libvuln concurrently creates all the configured Matchers and feeds them the packages summarized in the claircore.IndexReport.
 6. libvuln collects all the matched vulnerabilities returned from each Matcher and creates a request scoped claircore.VulnerabilityReport. this is returned to the client
 7. sometime later the vulnstore is updated. the next time a client asks for a response from libvuln a new claircore.VulnerabilityReport is generated. no caching or peristence takes place.
 
 ## The scanning process
 
-Scanning is implemented in the `claircore.internal.scanner.defaultscanner` package and is implemented as an FSM to support easy changes in operation.  
+Scanning is implemented in the `claircore.internal.indexer.defaultscanner` package and is implemented as an FSM to support easy changes in operation.  
 The default scanner works as follows:  
 
 1. Determines if the manifest should be scanned. It will be scanned if we've never seen the manifest's hash or if we detect a new scanner is preset which has not scanned said manifest
@@ -128,14 +128,14 @@ The default scanner works as follows:
 3. Each layer is scanned for packages by the configured PackageScanner(s). Discovered pages are indexed into the database with a simple relation tying together Package, Distribution, and Scanner which found them
 4. The scanner asks for all the packages found in the stacked layer first. These are the packages we focus on and are the ones actually remaining on the runtime file system.
 5. Next we ask for all the packages found in layers 0...N serially. If we come across a package which exists in the stacked image we record the **first** encounter of this package. This is the layer that introduced said package.
-7. Finally we call a special method on the store which performs a transaction breaking idempotency of a scan. After this method runs the next time the scanner sees the manifest hash it will not be scanned unless the last condition in step 1 is present. If the transaction were to fail the work that was done scanning layers is not lost however the scan should be replayed to ensure a ScanReport is persisted.
+7. Finally we call a special method on the store which performs a transaction breaking idempotency of a scan. After this method runs the next time the scanner sees the manifest hash it will not be scanned unless the last condition in step 1 is present. If the transaction were to fail the work that was done scanning layers is not lost however the scan should be replayed to ensure a IndexReport is persisted.
 
 ## The vulnerability matching process
 
 Matching vulnerabilities is facilitated by methods in the `claircore.internal.vulnstore`, `claircore.internal.matcher`, and `claircore.internal.vulnscanner` packages. They process looks like this:  
 
 1. libvuln is instantiated and configured with a set of `claircore.internal.matcher` implementations. 
-2. lubvuln gets a request to find vulnerabilities for a manifest. first it reaches out to libscan to retrieve the ScanReport
-3. with the ScanReport retrieved a `claircore.internal.vulnscanner.VulnScanner` is created.
+2. lubvuln gets a request to find vulnerabilities for a manifest. first it reaches out to libindex to retrieve the IndexReport
+3. with the IndexReport retrieved a `claircore.internal.vulnscanner.VulnScanner` is created.
 4. the VulnScanner launches all configured Matcher(s) by way of a MatchController. The MatchController drives the Matcher(s) calling the appropriate functions and handling results and errors
 5. the VulnScanner dedupes and merges all vulnerabilities discovered by MatchControllers and returns a VulernabilityReport

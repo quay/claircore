@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/scanner"
+	"github.com/quay/claircore/internal/indexer"
 )
 
 const (
@@ -22,8 +22,8 @@ const (
 
 const fpath = `etc/os-release`
 
-var _ scanner.DistributionScanner = (*Scanner)(nil)
-var _ scanner.VersionedScanner = (*Scanner)(nil)
+var _ indexer.DistributionScanner = (*Scanner)(nil)
+var _ indexer.VersionedScanner = (*Scanner)(nil)
 
 // Scanner implements a scanner.DistributionScanner that examines os-release
 // files, as documented at

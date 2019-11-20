@@ -1,4 +1,4 @@
-// Package dpkg implements a package scanner for dpkg packages.
+// Package dpkg implements a package indexer for dpkg packages.
 package dpkg
 
 import (
@@ -14,7 +14,7 @@ import (
 	"strings"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/scanner"
+	"github.com/quay/claircore/internal/indexer"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -28,8 +28,8 @@ const (
 )
 
 var (
-	_ scanner.VersionedScanner = (*Scanner)(nil)
-	_ scanner.PackageScanner   = (*Scanner)(nil)
+	_ indexer.VersionedScanner = (*Scanner)(nil)
+	_ indexer.PackageScanner   = (*Scanner)(nil)
 )
 
 // Scanner implements the scanner.PackageScanner interface.

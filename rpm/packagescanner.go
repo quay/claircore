@@ -16,7 +16,7 @@ import (
 	"strings"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/scanner"
+	"github.com/quay/claircore/internal/indexer"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -46,8 +46,8 @@ var dbnames = map[string]struct{}{
 }
 
 var (
-	_ scanner.VersionedScanner = (*Scanner)(nil)
-	_ scanner.PackageScanner   = (*Scanner)(nil)
+	_ indexer.VersionedScanner = (*Scanner)(nil)
+	_ indexer.PackageScanner   = (*Scanner)(nil)
 )
 
 // Scanner implements the scanner.PackageScanner interface.

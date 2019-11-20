@@ -14,7 +14,7 @@ import (
 
 // Libvuln is an interface exporting the public methods of our library.
 type Libvuln interface {
-	Scan(ctx context.Context, sr *claircore.ScanReport) (*claircore.VulnerabilityReport, error)
+	Scan(ctx context.Context, sr *claircore.IndexReport) (*claircore.VulnerabilityReport, error)
 }
 
 // libvuln implements the libvuln.Lubvuln interface
@@ -68,7 +68,7 @@ func New(ctx context.Context, opts *Opts) (Libvuln, error) {
 	return l, nil
 }
 
-func (l *libvuln) Scan(ctx context.Context, sr *claircore.ScanReport) (*claircore.VulnerabilityReport, error) {
+func (l *libvuln) Scan(ctx context.Context, sr *claircore.IndexReport) (*claircore.VulnerabilityReport, error) {
 	vs := vulnscanner.New(l.store, l.matchers)
 	return vs.Scan(ctx, sr)
 }

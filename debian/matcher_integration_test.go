@@ -47,16 +47,16 @@ func Test_Matcher_Integration(t *testing.T) {
 	defer cancel()
 	up.Update(ctx)
 
-	path := filepath.Join("testdata", "scanreport-buster-jackson-databind.json")
+	path := filepath.Join("testdata", "indexreport-buster-jackson-databind.json")
 	f, err := os.Open(path)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
 
-	var sr claircore.ScanReport
+	var sr claircore.IndexReport
 	err = json.NewDecoder(f).Decode(&sr)
 	if err != nil {
-		t.Fatalf("failed to decode ScanReport: %v", err)
+		t.Fatalf("failed to decode IndexReport: %v", err)
 	}
 
 	vs := vulnscanner.New(store, []driver.Matcher{m})

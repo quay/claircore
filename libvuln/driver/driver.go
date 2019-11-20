@@ -42,14 +42,14 @@ const (
 
 // Matcher is an interface which a Controller uses to query the vulnstore for vulnerabilities.
 type Matcher interface {
-	// Filter informs the Controller if the implemented Matcher is interested in the provided ScanRecord.
-	Filter(record *claircore.ScanRecord) bool
+	// Filter informs the Controller if the implemented Matcher is interested in the provided IndexRecord.
+	Filter(record *claircore.IndexRecord) bool
 	// Query informs the Controller how it should match packages with vulnerabilities.
 	// All conditions are logical AND'd together.
 	Query() []MatchExp
 	// Vulnerable informs the Controller if the given package is affected by the given vulnerability.
 	// for example checking the "FixedInVersion" field.
-	Vulnerable(record *claircore.ScanRecord, vuln *claircore.Vulnerability) bool
+	Vulnerable(record *claircore.IndexRecord, vuln *claircore.Vulnerability) bool
 }
 
 // Updater is an aggregate interface combining the method set of a Fetcher and a Parser

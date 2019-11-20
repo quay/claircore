@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/scanner"
+	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/osrelease"
 )
 
@@ -23,19 +23,19 @@ type layerArtifacts struct {
 // for dpkg, os-release, and apt scanners
 type Coalescer struct {
 	// a store to access scanartifacts
-	store scanner.Store
-	ps    scanner.PackageScanner
-	ds    scanner.DistributionScanner
-	sr    *claircore.ScanReport
+	store indexer.Store
+	ps    indexer.PackageScanner
+	ds    indexer.DistributionScanner
+	sr    *claircore.IndexReport
 }
 
 // NewCoalescer is a constructor for a Coalescer
-func NewCoalescer(store scanner.Store) *Coalescer {
+func NewCoalescer(store indexer.Store) *Coalescer {
 	return &Coalescer{
 		store: store,
 		ps:    &Scanner{},
 		ds:    &osrelease.Scanner{},
-		sr: &claircore.ScanReport{
+		sr: &claircore.IndexReport{
 			// we will only fill these fields
 			PackageIntroduced:     map[int]string{},
 			Packages:              map[int]*claircore.Package{},
@@ -47,10 +47,10 @@ func NewCoalescer(store scanner.Store) *Coalescer {
 	}
 }
 
-// Coalesce coalesces artifacts found in layers and creates a final ScanReport with
+// Coalesce coalesces artifacts found in layers and creates a final IndexReport with
 // the final package details found in the image. This method blocks and when its finished
-// the c.sr field will hold the final ScanReport
-func (c *Coalescer) Coalesce(ctx context.Context, layers []*claircore.Layer) (*claircore.ScanReport, error) {
+// the c.sr field will hold the final IndexReport
+func (c *Coalescer) Coalesce(ctx context.Context, layers []*claircore.Layer) (*claircore.IndexReport, error) {
 	var err error
 	// populate layer artifacts
 	artifacts := []layerArtifacts{}
@@ -59,12 +59,12 @@ func (c *Coalescer) Coalesce(ctx context.Context, layers []*claircore.Layer) (*c
 			hash: layer.Hash,
 		}
 
-		a.pkgs, err = c.store.PackagesByLayer(ctx, layer.Hash, scanner.VersionedScanners{c.ps})
+		a.pkgs, err = c.store.PackagesByLayer(ctx, layer.Hash, indexer.VersionedScanners{c.ps})
 		if err != nil {
 			return nil, err
 		}
 
-		a.dist, err = c.store.DistributionsByLayer(ctx, layer.Hash, scanner.VersionedScanners{c.ds})
+		a.dist, err = c.store.DistributionsByLayer(ctx, layer.Hash, indexer.VersionedScanners{c.ds})
 		if err != nil {
 			return nil, err
 		}
