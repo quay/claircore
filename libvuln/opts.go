@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/quay/claircore/alpine"
+	"github.com/quay/claircore/aws"
 	"github.com/quay/claircore/debian"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/ubuntu"
@@ -54,6 +55,7 @@ func (o *Opts) Parse() error {
 			&debian.Matcher{},
 			&ubuntu.Matcher{},
 			&alpine.Matcher{},
+			&aws.Matcher{},
 		}
 	}
 	if len(o.Updaters) == 0 {
