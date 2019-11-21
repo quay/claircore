@@ -86,7 +86,7 @@ func (f *fetcher) fetch(ctx context.Context, layer *claircore.Layer) error {
 
 	// if no RemotePath was provided return error
 	if layer.RemotePath.URI == "" {
-		return fmt.Errorf("could not determine remove URI for layer %v. layer provided %v", layer.Hash, layer.RemotePath.URI)
+		return fmt.Errorf("empty remote uri for layer %v", layer.Hash)
 	}
 
 	// parse uri
