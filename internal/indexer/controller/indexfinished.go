@@ -5,8 +5,8 @@ import (
 	"fmt"
 )
 
-// scanFinished is the terminal stateFunc. once it transitions the
-// scanner to the ScanFinished state the scanner will no longer transition
+// indexFinished is the terminal stateFunc. once it transitions the
+// indexer to the IndexFinished state the indexer will no longer transition
 // and return a IndexReport to the caller
 func indexFinished(ctx context.Context, s *Controller) (State, error) {
 	s.report.Success = true
