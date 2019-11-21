@@ -37,7 +37,7 @@ func Test_ScanFinished_Success(t *testing.T) {
 				Store: store,
 			})
 
-			state, err := scanFinished(context.Background(), scnr)
+			state, err := indexFinished(context.Background(), scnr)
 
 			assert.NoError(t, err)
 			assert.Equal(t, table.expectedState, state)
