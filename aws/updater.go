@@ -72,6 +72,10 @@ func (u *Updater) Parse(contents io.ReadCloser) ([]*claircore.Vulnerability, err
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal updates xml: %v", err)
 	}
+	dist, err := releaseToDist(u.release)
+	if err != nil {
+		return nil, fmt.Errorf("failed to classify vulns with distribution: %w", err)
+	}
 
 	vulns := []*claircore.Vulnerability{}
 	for _, update := range updates.Updates {
@@ -81,9 +85,7 @@ func (u *Updater) Parse(contents io.ReadCloser) ([]*claircore.Vulnerability, err
 			Description: update.Description,
 			Links:       refsToLinks(update),
 			Severity:    update.Severity,
-			Dist: &claircore.Distribution{
-				VersionCodeName: string(ReleaseToRepo[u.release]),
-			},
+			Dist:        dist,
 		}
 		vulns = append(vulns, u.unpack(partial, update.Packages)...)
 	}
@@ -103,7 +105,7 @@ func (u *Updater) unpack(partial *claircore.Vulnerability, packages []alas.Packa
 			Name: alasPKG.Name,
 			Kind: "binary",
 		}
-		v.FixedInVersion = alasPKG.Version
+		v.FixedInVersion = fmt.Sprintf("%s-%s", alasPKG.Version, alasPKG.Release)
 
 		out = append(out, &v)
 	}
