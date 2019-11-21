@@ -13,12 +13,7 @@ These modules export the methods for scanning and image for packages and matchin
 The libindex module exports a single interface  
 ```
 type Libindex interface {
-	// Scan performs an async scan of a manifest and produces a claircore.IndexReport.
-	// Errors encountered before scan begins are returned in the error variable.
-	// Errors encountered during scan are populated in the Err field of the claircore.IndexReport
 	Index(ctx context.Context, manifest *claircore.Manifest) (ResultChannel <-chan *claircore.IndexReport, err error)
-	// IndexReport tries to retrieve a claircore.IndexReport given the image hash.
-	// bool informs caller if found.
 	IndexReport(hash string) (*claircore.IndexReport, bool, error)
 }
 ```
@@ -120,5 +115,5 @@ You may use the make target 'docker-shell' to drop into a linux shell where `mak
 [Vulnerability Tombstoning](./docs/tombstoning.md)  
 [Content-Addressability](./docs/content_addressability.md)  
 [Libindex Data Model](./docs/scanner_data_model.md)  
-[Scanner States](./docs/scanner_states.md)  
+[Indexer States](./docs/indexer_states.md)  
 [Local Development](./docs/local-dev.md)  

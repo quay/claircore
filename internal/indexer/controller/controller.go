@@ -34,14 +34,14 @@ const (
 	// Coalesce runs each provided ecosystem's coalescer and mergs their scan results
 	// Transitions: ScanFinished
 	Coalesce
-	// ScanError state indicates a impassable error has occured.
+	// IndexError state indicates a impassable error has occured.
 	// returns a ScanResult with the error field
 	// Transitions: Terminal
-	ScanError
-	// ScanFinished state is the terminal state and should return a IndexReport
+	IndexError
+	// IndexFinished state is the terminal state and should return a IndexReport
 	// to the caller of Scan()
 	// Transitions: Terminal
-	ScanFinished
+	IndexFinished
 )
 
 // provides a mapping of States to their implemented stateFunc methods
@@ -50,7 +50,7 @@ var stateToStateFunc = map[State]stateFunc{
 	FetchLayers:   fetchLayers,
 	ScanLayers:    scanLayers,
 	Coalesce:      coalesce,
-	ScanFinished:  scanFinished,
+	IndexFinished: indexFinished,
 }
 
 // StartState is a global variable which is normally set to the starting state
@@ -153,7 +153,7 @@ func (s *Controller) handleError(ctx context.Context, err error) {
 	s.logger.Error().Str("state", s.getState().String()).Msg("handling scan error")
 	s.report.Success = false
 	s.report.Err = err.Error()
-	s.report.State = ScanError.String()
+	s.report.State = IndexError.String()
 	s.logger.Err(err).Msgf("countered error during scan: %v", err)
 	err = s.Store.SetIndexReport(ctx, s.report)
 	if err != nil {

@@ -12,8 +12,8 @@ func (ss State) String() string {
 		"FetchLayers",
 		"ScanLayers",
 		"Coalesce",
-		"ScanError",
-		"ScanFinished",
+		"IndexError",
+		"IndexFinished",
 	}
 	return names[ss]
 }
@@ -30,10 +30,10 @@ func (ss *State) FromString(state string) {
 		*ss = ScanLayers
 	case "Coalesce":
 		*ss = Coalesce
-	case "ScanError":
-		*ss = ScanError
-	case "ScanFinished":
-		*ss = ScanFinished
+	case "IndexError":
+		*ss = IndexError
+	case "IndexFinished":
+		*ss = IndexFinished
 	}
 }
 
