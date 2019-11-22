@@ -43,6 +43,7 @@ func (r *RPMInfo) dist(v string) *claircore.Distribution {
 		}
 		d.Name = match[1]
 		d.Version = fmt.Sprintf("%s %s", d.Name, d.VersionID)
+		d.PrettyName = d.Version // RHEL hack. See also: ../../osrelease/scanner.go:/BUGZILLA
 		r.dists[v] = d
 	}
 	return d
@@ -71,6 +72,9 @@ func (r *RPMInfo) Extract(ctx context.Context) ([]*claircore.Vulnerability, erro
 		}
 		if dist == nil {
 			panic("that's weird")
+		}
+		if cpes := def.Advisory.AffectedCPEList; len(cpes) != 0 {
+			dist.CPE = cpes[0]
 		}
 		// It's likely that we'll have multiple vulnerabilites spawned from once
 		// CVE/definition, so this constructs new records on demand.
@@ -237,8 +241,14 @@ func (r *RPMInfo) populate(ctx context.Context, v *claircore.Vulnerability, crit
 				continue
 			case state.EVR != nil:
 				v.Package.Name = obj.Name
-				v.Package.Version = state.EVR.Body
 				v.Package.Kind = "binary"
+				switch state.EVR.Operation {
+				case oval.OpLessThan:
+					v.FixedInVersion = state.EVR.Body
+				case oval.OpLessThanOrEqual, oval.OpEquals:
+					v.Package.Version = state.EVR.Body
+				case oval.OpGreaterThan, oval.OpGreaterThanOrEqual: // ???
+				}
 			case state.Arch != nil:
 				// ???
 			}
