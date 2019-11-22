@@ -16,6 +16,9 @@ import (
 func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.IndexRecord, opts vulnstore.GetOpts) (map[int][]*claircore.Vulnerability, error) {
 	// build our query we will make into a prepared statement. see build func definition for details and context
 	query, dedupedMatchers, err := getBuilder(opts.Matchers)
+	if err != nil {
+		return nil, err
+	}
 
 	// create a prepared statement
 	tx, err := pool.Begin(ctx)
