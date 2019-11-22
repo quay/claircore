@@ -187,11 +187,7 @@ func (u *Updater) classifyVuln(name string, fixVersion string) *claircore.Vulner
 	vuln := u.curVuln
 	vuln.FixedInVersion = fixVersion
 	vuln.Package = pkg
-	vuln.Dist = &claircore.Distribution{
-		DID:             "ubuntu",
-		Name:            "Ubuntu",
-		VersionCodeName: string(u.release),
-	}
+	vuln.Dist = releaseToDist(u.release)
 	return &vuln
 }
 
