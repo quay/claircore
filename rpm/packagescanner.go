@@ -29,6 +29,7 @@ const (
 	version = "v0.0.1"
 )
 
+// DbNames is a set of files that make up an rpm database.
 var dbnames = map[string]struct{}{
 	"Basenames":    {},
 	"Conflictname": {},
@@ -108,6 +109,8 @@ func (ps *Scanner) ScanContext(ctx context.Context, layer *claircore.Layer) ([]*
 		return nil, errors.New("rpm: cannot seek on returned layer Reader")
 	}
 
+	// Map of directory to confidence score. Confidence of len(dbnames) means
+	// it's almost certainly an rpm database.
 	possible := make(map[string]int)
 	tr := tar.NewReader(rd)
 	// Find possible rpm dbs
@@ -129,7 +132,7 @@ func (ps *Scanner) ScanContext(ctx context.Context, layer *claircore.Layer) ([]*
 	found := make([]string, 0)
 	for k, score := range possible {
 		if score == len(dbnames) {
-			found = append(found, k)
+			found = append(found, filepath.Join("/", k))
 		}
 	}
 	log.Debug().Int("count", len(found)).Msg("found possible databases")
@@ -175,7 +178,7 @@ func (ps *Scanner) ScanContext(ctx context.Context, layer *claircore.Layer) ([]*
 	tarcmd := exec.CommandContext(ctx, "tar", "-xC", root, "--exclude", "dev")
 	tarcmd.Stdin = rd
 	tarcmd.Stderr = &errbuf
-	log.Debug().Str("dir", root).Strs("cmd", tarcmd.Args).Msg("extracting layer")
+	log.Debug().Str("dir", root).Strs("cmd", tarcmd.Args).Msg("tar invocation")
 	if err := tarcmd.Run(); err != nil {
 		log.Error().
 			Str("dir", root).
@@ -189,6 +192,7 @@ func (ps *Scanner) ScanContext(ctx context.Context, layer *claircore.Layer) ([]*
 	var pkgs []*claircore.Package
 	// Using --root and --dbpath, run rpm query on every suspected database
 	for _, db := range found {
+		log.Debug().Str("db", db).Msg("examining database")
 		eg, ctx := errgroup.WithContext(ctx)
 
 		cmd := exec.CommandContext(ctx, "rpm",
@@ -198,7 +202,9 @@ func (ps *Scanner) ScanContext(ctx context.Context, layer *claircore.Layer) ([]*
 		if err != nil {
 			return nil, err
 		}
-		log.Debug().Str("db", db).Strs("cmd", cmd.Args).Msg("examining database")
+		errbuf := bytes.Buffer{}
+		cmd.Stderr = &errbuf
+		log.Debug().Str("db", db).Strs("cmd", cmd.Args).Msg("rpm invocation")
 		eg.Go(cmd.Run)
 		eg.Go(func() error {
 			defer r.Close()
@@ -219,6 +225,13 @@ func (ps *Scanner) ScanContext(ctx context.Context, layer *claircore.Layer) ([]*
 		})
 
 		if err := eg.Wait(); err != nil {
+			if errbuf.Len() != 0 {
+				log.Warn().
+					Str("db", db).
+					Strs("cmd", cmd.Args).
+					Str("err", errbuf.String()).
+					Msg("error output")
+			}
 			return nil, fmt.Errorf("rpm: error reading rpm output: %w", err)
 		}
 	}
@@ -265,7 +278,13 @@ func parsePackage(ctx context.Context, src map[string]*claircore.Package, buf *b
 		if strings.HasPrefix(line, "(none)") {
 			continue
 		}
-
+		if line == "" {
+			log.Info().
+				Str("package", p.Name).
+				Int("lineno", i).
+				Msg("unexpected empty line")
+			continue
+		}
 		switch i {
 		case 0:
 			p.Name = line
