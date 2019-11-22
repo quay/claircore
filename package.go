@@ -4,17 +4,17 @@ type Package struct {
 	// unique ID of this package. this will be created as discovered by the library
 	// and used for persistence and hash map indexes
 	ID int `json:"id"`
-	// the name of the distribution
+	// the name of the package
 	Name string `json:"name"`
-	// the version of the distribution
+	// the version of the package
 	Version string `json:"version"`
 	// type of package. currently expectations are binary or source
-	Kind string `json:"kind"`
+	Kind string `json:"kind,omitempty"`
 	// if type is a binary package a source package maybe present which built this binary package.
 	// must be a pointer to support recursive type:
-	Source *Package `json:"source"`
+	Source *Package `json:"source,omitempty"`
 	// the file system path or prefix where this package resides
-	PackageDB string `json:"package_db"`
+	PackageDB string `json:"package_db,omitempty"`
 	// a hint on which repository this package was downloaded from
-	RepositoryHint string `json:"repository_hint"`
+	RepositoryHint string `json:"repository_hint,omitempty"`
 }
