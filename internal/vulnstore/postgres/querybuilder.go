@@ -38,58 +38,39 @@ func getBuilder(matchers []driver.MatchExp) (string, []driver.MatchExp, error) {
 	exps = append(exps, pkgExt)
 
 	for _, m := range matchers {
+		if _, ok := seen[m]; ok {
+			continue
+		}
+		var ex goqu.Ex
 		switch m {
+		case driver.PackageName: // ???
+			//ex = goqu.Ex{"package_name": ""}
+			continue
+		case driver.PackageSourceName: // ???
+			//ex = goqu.Ex{"package_name": ""}
+			continue
 		case driver.PackageDistributionDID:
-			if _, ok := seen[m]; !ok {
-				exps = append(exps, goqu.Ex{"dist_did": ""})
-				seen[m] = struct{}{}
-				deduped = append(deduped, m)
-			}
+			ex = goqu.Ex{"dist_did": ""}
 		case driver.PackageDistributionName:
-			if _, ok := seen[m]; !ok {
-				exps = append(exps, goqu.Ex{"dist_name": ""})
-				seen[m] = struct{}{}
-				deduped = append(deduped, m)
-			}
+			ex = goqu.Ex{"dist_name": ""}
 		case driver.PackageDistributionVersion:
-			if _, ok := seen[m]; !ok {
-				exps = append(exps, goqu.Ex{"dist_version": ""})
-				seen[m] = struct{}{}
-				deduped = append(deduped, m)
-			}
+			ex = goqu.Ex{"dist_version": ""}
 		case driver.PackageDistributionVersionCodeName:
-			if _, ok := seen[m]; !ok {
-				exps = append(exps, goqu.Ex{"dist_version_code_name": ""})
-				seen[m] = struct{}{}
-				deduped = append(deduped, m)
-			}
+			ex = goqu.Ex{"dist_version_code_name": ""}
 		case driver.PackageDistributionVersionID:
-			if _, ok := seen[m]; !ok {
-				exps = append(exps, goqu.Ex{"dist_version_id": ""})
-				seen[m] = struct{}{}
-				deduped = append(deduped, m)
-			}
+			ex = goqu.Ex{"dist_version_id": ""}
 		case driver.PackageDistributionArch:
-			if _, ok := seen[m]; !ok {
-				exps = append(exps, goqu.Ex{"dist_arch": ""})
-				seen[m] = struct{}{}
-				deduped = append(deduped, m)
-			}
+			ex = goqu.Ex{"dist_arch": ""}
 		case driver.PackageDistributionCPE:
-			if _, ok := seen[m]; !ok {
-				exps = append(exps, goqu.Ex{"dist_cpe": ""})
-				seen[m] = struct{}{}
-				deduped = append(deduped, m)
-			}
+			ex = goqu.Ex{"dist_cpe": ""}
 		case driver.PackageDistributionPrettyName:
-			if _, ok := seen[m]; !ok {
-				exps = append(exps, goqu.Ex{"dist_pretty_name": ""})
-				seen[m] = struct{}{}
-				deduped = append(deduped, m)
-			}
+			ex = goqu.Ex{"dist_pretty_name": ""}
 		default:
 			return "", nil, fmt.Errorf("was provided unknown matcher: %v", m)
 		}
+		exps = append(exps, ex)
+		seen[m] = struct{}{}
+		deduped = append(deduped, m)
 	}
 
 	query := psql.Select(
