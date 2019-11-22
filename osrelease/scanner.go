@@ -10,6 +10,9 @@ import (
 	"runtime/trace"
 	"strings"
 
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
 )
@@ -44,9 +47,19 @@ func (*Scanner) Kind() string { return scannerKind }
 //
 // It's an expected outcome to return (nil, nil) when the os-release file is not
 // present in the layer.
-func (*Scanner) Scan(l *claircore.Layer) ([]*claircore.Distribution, error) {
+func (s *Scanner) Scan(l *claircore.Layer) ([]*claircore.Distribution, error) {
 	ctx := context.TODO()
+	ctx = log.Logger.WithContext(ctx)
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
+	log := zerolog.Ctx(ctx).With().
+		Str("component", "dist_scanner").
+		Str("name", s.Name()).
+		Str("version", s.Version()).
+		Str("kind", s.Kind()).
+		Str("layer", l.Hash).
+		Logger()
+	log.Debug().Msg("start")
+	defer log.Debug().Msg("done")
 
 	f, err := l.Files([]string{fpath})
 	if err != nil {
@@ -54,10 +67,11 @@ func (*Scanner) Scan(l *claircore.Layer) ([]*claircore.Distribution, error) {
 	}
 	b := f[fpath]
 	if len(b) == 0 {
+		log.Debug().Msg("didn't find an os-release file")
 		return nil, nil
 	}
 	rd := bytes.NewReader(b)
-	d, err := parse(ctx, rd)
+	d, err := parse(ctx, &log, rd)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +80,7 @@ func (*Scanner) Scan(l *claircore.Layer) ([]*claircore.Distribution, error) {
 
 // Parse returns the distribution information from the file contents provided on
 // r.
-func parse(ctx context.Context, r io.Reader) (*claircore.Distribution, error) {
+func parse(ctx context.Context, log *zerolog.Logger, r io.Reader) (*claircore.Distribution, error) {
 	defer trace.StartRegion(ctx, "parse").End()
 	d := claircore.Distribution{
 		Name: "Linux",
@@ -123,21 +137,28 @@ func parse(ctx context.Context, r io.Reader) (*claircore.Distribution, error) {
 
 		switch key {
 		case "ID":
+			log.Debug().Msg("found ID")
 			d.DID = value
 		case "VERSION_ID":
+			log.Debug().Msg("found VERSION_ID")
 			d.VersionID = value
 		case "BUILD_ID":
 		case "VARIANT_ID":
 		case "CPE_NAME":
+			log.Debug().Msg("found CPE_NAME")
 			d.CPE = value
 		case "NAME":
+			log.Debug().Msg("found NAME")
 			d.Name = value
 		case "VERSION":
+			log.Debug().Msg("found VERSION")
 			d.Version = value
 		case "ID_LIKE":
 		case "VERSION_CODENAME":
+			log.Debug().Msg("found VERISON_CODENAME")
 			d.VersionCodeName = value
 		case "PRETTY_NAME":
+			log.Debug().Msg("found PRETTY_NAME")
 			d.PrettyName = value
 		}
 	}
@@ -147,5 +168,6 @@ func parse(ctx context.Context, r io.Reader) (*claircore.Distribution, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
+	log.Debug().Str("name", d.Name).Msg("found dist")
 	return &d, nil
 }

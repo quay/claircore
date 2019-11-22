@@ -15,6 +15,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test/integration"
+	"github.com/quay/claircore/test/log"
 )
 
 type parsecase struct {
@@ -25,6 +26,7 @@ type parsecase struct {
 func (c parsecase) Test(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
+	log := log.TestLogger(t)
 	ctx, task := trace.NewTask(ctx, "parse test")
 	defer task.End()
 	trace.Log(ctx, "parse test:file", c.File)
@@ -34,7 +36,7 @@ func (c parsecase) Test(t *testing.T) {
 		t.Errorf("unable to open file: %v", err)
 	}
 
-	got, err := parse(ctx, f)
+	got, err := parse(ctx, &log, f)
 	if err != nil {
 		t.Errorf("parse error: %v", err)
 	}
