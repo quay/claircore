@@ -24,9 +24,9 @@ import (
 )
 
 const (
-	name    = "rpm"
-	kind    = "package"
-	version = "v0.0.1"
+	pkgName    = "rpm"
+	pkgKind    = "package"
+	pkgVersion = "v0.0.1"
 )
 
 // DbNames is a set of files that make up an rpm database.
@@ -60,13 +60,13 @@ var (
 type Scanner struct{}
 
 // Name implements scanner.VersionedScanner.
-func (*Scanner) Name() string { return name }
+func (*Scanner) Name() string { return pkgName }
 
 // Version implements scanner.VersionedScanner.
-func (*Scanner) Version() string { return version }
+func (*Scanner) Version() string { return pkgVersion }
 
 // Kind implements scanner.VersionedScanner.
-func (*Scanner) Kind() string { return kind }
+func (*Scanner) Kind() string { return pkgKind }
 
 // Scan proxies the call to ScanContext.
 func (ps *Scanner) Scan(layer *claircore.Layer) ([]*claircore.Package, error) {
