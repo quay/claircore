@@ -8,6 +8,7 @@ import (
 	"github.com/quay/claircore/aws"
 	"github.com/quay/claircore/debian"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/rhel"
 	"github.com/quay/claircore/ubuntu"
 )
 
@@ -58,6 +59,7 @@ func (o *Opts) Parse() error {
 			&ubuntu.Matcher{},
 			&alpine.Matcher{},
 			&aws.Matcher{},
+			&rhel.Matcher{},
 		}
 	}
 	if len(o.Updaters) == 0 {
