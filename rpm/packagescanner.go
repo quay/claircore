@@ -278,7 +278,7 @@ func parsePackage(ctx context.Context, src map[string]*claircore.Package, buf *b
 		if strings.HasPrefix(line, "(none)") {
 			continue
 		}
-		if line == "" {
+		if line == "" && err == nil {
 			log.Info().
 				Str("package", p.Name).
 				Int("lineno", i).
