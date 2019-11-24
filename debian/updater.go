@@ -124,11 +124,7 @@ func (u *Updater) classifyVuln(pkgInfo pkgInfo, def oval.Definition) *claircore.
 		Severity:       "Unknown", // oval db doesnt provide
 		Package:        ccPkg,
 		FixedInVersion: pkgInfo.version,
-		Dist: &claircore.Distribution{
-			Name:            OSReleaseName,
-			DID:             OSReleaseID,
-			VersionCodeName: string(u.release),
-		},
+		Dist:           releaseToDist(u.release),
 	}
 
 	return vuln
