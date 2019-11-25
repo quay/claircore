@@ -169,9 +169,19 @@ func (ps *Scanner) ScanContext(ctx context.Context, layer *claircore.Layer) ([]*
 	// permissions later. Otherwise, some layers will have directories without
 	// the write bit created and the permissions set before their contents are
 	// created.
-	tarcmd := exec.CommandContext(ctx, "tar", "-xC", root)
+	errbuf := bytes.Buffer{}
+	// Unprivledged containers can't call mknod(2), so exclude /dev and
+	// hopefully there aren't any others strewn about.
+	tarcmd := exec.CommandContext(ctx, "tar", "-xC", root, "--exclude", "dev")
 	tarcmd.Stdin = rd
+	tarcmd.Stderr = &errbuf
+	log.Debug().Str("dir", root).Strs("cmd", tarcmd.Args).Msg("extracting layer")
 	if err := tarcmd.Run(); err != nil {
+		log.Error().
+			Str("dir", root).
+			Strs("cmd", tarcmd.Args).
+			Str("err", errbuf.String()).
+			Msg("error extracting layer")
 		return nil, fmt.Errorf("rpm: failed to untar: %w", err)
 	}
 	log.Debug().Str("dir", root).Msg("extracted layer")
@@ -179,7 +189,6 @@ func (ps *Scanner) ScanContext(ctx context.Context, layer *claircore.Layer) ([]*
 	var pkgs []*claircore.Package
 	// Using --root and --dbpath, run rpm query on every suspected database
 	for _, db := range found {
-		log.Debug().Str("db", db).Msg("examining database")
 		eg, ctx := errgroup.WithContext(ctx)
 
 		cmd := exec.CommandContext(ctx, "rpm",
@@ -189,6 +198,7 @@ func (ps *Scanner) ScanContext(ctx context.Context, layer *claircore.Layer) ([]*
 		if err != nil {
 			return nil, err
 		}
+		log.Debug().Str("db", db).Strs("cmd", cmd.Args).Msg("examining database")
 		eg.Go(cmd.Run)
 		eg.Go(func() error {
 			defer r.Close()
