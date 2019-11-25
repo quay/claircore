@@ -96,11 +96,10 @@ func (f *fetcher) fetch(ctx context.Context, layer *claircore.Layer) error {
 	}
 
 	contents, err := f.fetchAndDecompress(ctx, url, layer.RemotePath.Headers)
-	defer contents.Close()
-
 	if err != nil {
-		return fmt.Errorf("failed to fetch and decompress contents of layer %s", layer.Hash)
+		return fmt.Errorf("failed to fetch/decompress layer %q: %w", layer.Hash, err)
 	}
+	defer contents.Close()
 
 	switch f.fetchOpt {
 	case indexer.InMem:
@@ -137,7 +136,9 @@ func (f *fetcher) fetchAndDecompress(ctx context.Context, url *url.URL, headers 
 	}
 	req = req.WithContext(ctx)
 	resp, err := f.wc.Do(req)
-	// defer resp.Body.Close()
+	if err != nil {
+		return nil, fmt.Errorf("request failed: %w", err)
+	}
 
 	rc, err := f.archiver.DecompressStream(resp.Body)
 	if err != nil {
