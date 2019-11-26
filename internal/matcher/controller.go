@@ -3,6 +3,8 @@ package matcher
 import (
 	"context"
 
+	"github.com/rs/zerolog"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/vulnstore"
 	"github.com/quay/claircore/libvuln/driver"
@@ -26,8 +28,16 @@ func NewController(m driver.Matcher, store vulnstore.Vulnerability) *Controller 
 }
 
 func (mc *Controller) Match(ctx context.Context, records []*claircore.IndexRecord) (map[int][]*claircore.Vulnerability, error) {
+	log := zerolog.Ctx(ctx).With().
+		Str("component", "match-controller").
+		Str("matcher", mc.m.Name()).
+		Logger()
 	// find the packages the matcher is interested in.
 	interested := mc.findInterested(records)
+	log.Debug().
+		Int("interested", len(interested)).
+		Int("records", len(records)).
+		Msg("interest")
 
 	// early return; do not call db at all
 	if len(interested) == 0 {
@@ -39,9 +49,15 @@ func (mc *Controller) Match(ctx context.Context, records []*claircore.IndexRecor
 	if err != nil {
 		return nil, err
 	}
+	log.Debug().
+		Int("vulnerabilities", len(vulns)).
+		Msg("query")
 
 	// filter the vulns
 	filteredVulns := mc.filter(interested, vulns)
+	log.Debug().
+		Int("filtered", len(filteredVulns)).
+		Msg("filtered")
 	return filteredVulns, nil
 }
 
@@ -64,6 +80,7 @@ func (mc *Controller) query(ctx context.Context, interested []*claircore.IndexRe
 	matchers := mc.m.Query()
 	getOpts := vulnstore.GetOpts{
 		Matchers: matchers,
+		Debug:    true,
 	}
 
 	matches, err := mc.store.Get(ctx, interested, getOpts)

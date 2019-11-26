@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/rs/zerolog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/vulnstore"
@@ -14,11 +15,15 @@ import (
 )
 
 func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.IndexRecord, opts vulnstore.GetOpts) (map[int][]*claircore.Vulnerability, error) {
+	log := zerolog.Ctx(ctx).With().
+		Str("component", "vulnstore.get").
+		Logger()
 	// build our query we will make into a prepared statement. see build func definition for details and context
 	query, dedupedMatchers, err := getBuilder(opts.Matchers)
 	if err != nil {
 		return nil, err
 	}
+	log.Debug().Str("query", query).Msg("built query")
 
 	// create a prepared statement
 	tx, err := pool.Begin(ctx)

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	h "net/http"
 
-	"github.com/rs/zerolog/log"
+	"github.com/rs/zerolog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln"
@@ -14,7 +14,8 @@ import (
 
 func VulnScan(lib libvuln.Libvuln) h.HandlerFunc {
 	return func(w h.ResponseWriter, r *h.Request) {
-		log := log.Logger
+		ctx := r.Context()
+		log := zerolog.Ctx(ctx)
 		if r.Method != h.MethodPost {
 			resp := &je.Response{
 				Code:    "method-not-allowed",
@@ -38,26 +39,23 @@ func VulnScan(lib libvuln.Libvuln) h.HandlerFunc {
 		}
 
 		// call scan
-		vr, err := lib.Scan(r.Context(), &sr)
+		vr, err := lib.Scan(ctx, &sr)
 		if err != nil {
 			resp := &je.Response{
 				Code:    "scan-error",
 				Message: fmt.Sprintf("failed to start scan: %v", err),
 			}
+			log.Warn().Err(err).Msg("failed to start scan")
 			je.Error(w, resp, h.StatusInternalServerError)
 			return
 		}
 
 		err = json.NewEncoder(w).Encode(vr)
 		if err != nil {
-			resp := &je.Response{
-				Code:    "scan-error",
-				Message: fmt.Sprintf("failed to start scan: %v", err),
-			}
-			je.Error(w, resp, h.StatusInternalServerError)
-			return
+			// Can't change header or write a different response, because we
+			// already started.
+			log.Warn().Err(err).Msg("failed to encode response")
 		}
-
 		return
 	}
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -36,6 +37,7 @@ func main() {
 	// setup pretty logging
 	zerolog.SetGlobalLevel(logLevel(conf))
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	ctx = log.Logger.WithContext(ctx)
 
 	opts := confToLibvulnOpts(conf)
 
@@ -45,7 +47,7 @@ func main() {
 		log.Fatal().Msgf("failed to create libvuln %v", err)
 	}
 
-	httpServ := httpServer(conf, lib)
+	httpServ := httpServer(ctx, conf, lib)
 	log.Printf("starting http server on %v", conf.HTTPListenAddr)
 	err = httpServ.ListenAndServe()
 	if err != nil {
@@ -74,14 +76,15 @@ func logLevel(conf Config) zerolog.Level {
 	}
 }
 
-func httpServer(conf Config, lib libvuln.Libvuln) *http.Server {
+func httpServer(ctx context.Context, conf Config, lib libvuln.Libvuln) *http.Server {
 	// create our http mux and add routes
 	mux := http.NewServeMux()
 
 	// create server and launch in go routine
 	s := &http.Server{
-		Addr:    conf.HTTPListenAddr,
-		Handler: mux,
+		Addr:        conf.HTTPListenAddr,
+		Handler:     mux,
+		BaseContext: func(_ net.Listener) context.Context { return ctx },
 	}
 
 	// create handlers
