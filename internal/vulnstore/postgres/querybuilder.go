@@ -23,6 +23,19 @@ func getBuilder(matchers []driver.MatchExp) (string, []driver.MatchExp, error) {
 	// do not allow duplicates but retain ordering.
 	seen := make(map[driver.MatchExp]struct{})
 	deduped := []driver.MatchExp{}
+
+	// currently we always search for vulnerabilities matching either a package's Source
+	// name or the Binary name.
+	pkgExt := goqu.Or(
+		goqu.Ex{
+			"package_name": "",
+		},
+		goqu.Ex{
+			"package_name": "",
+		},
+	)
+	exps = append(exps, pkgExt)
+
 	for _, m := range matchers {
 		switch m {
 		case driver.PackageDistributionDID:
@@ -77,18 +90,6 @@ func getBuilder(matchers []driver.MatchExp) (string, []driver.MatchExp, error) {
 			return "", nil, fmt.Errorf("was provided unknown matcher: %v", m)
 		}
 	}
-
-	// currently we always search for vulnerabilities matching either a package's Source
-	// name or the Binary name.
-	pkgExt := goqu.Or(
-		goqu.Ex{
-			"package_name": "",
-		},
-		goqu.Ex{
-			"package_name": "",
-		},
-	)
-	exps = append(exps, pkgExt)
 
 	query := psql.Select(
 		"id",
