@@ -94,6 +94,7 @@ func confToLibvulnOpts(conf Config) *libvuln.Opts {
 	opts := &libvuln.Opts{
 		ConnString:  conf.ConnString,
 		MaxConnPool: int32(conf.MaxConnPool),
+		Migrations:  true,
 		Run:         conf.Run,
 	}
 

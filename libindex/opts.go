@@ -27,6 +27,8 @@ type Opts struct {
 	LayerScanConcurrency int
 	// how we store layers we fetch remotely. see LayerFetchOpt type def above for more details
 	LayerFetchOpt indexer.LayerFetchOpt
+	// set to true to have libindex check and potentially run migrations
+	Migrations bool
 	// provides an alternative method for creating a scanner during libindex runtime
 	// if nil the default factory will be used. useful for testing purposes
 	ControllerFactory ControllerFactory

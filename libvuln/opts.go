@@ -26,6 +26,8 @@ type Opts struct {
 	UpdateInterval time.Duration
 	// number of updaters ran in parallel while libvuln initializes. use this to tune io/cpu on library start when using many updaters
 	UpdaterInitConcurrency int
+	// set to true to have libindex check and potentially run migrations
+	Migrations bool
 	// returns the matchers to be used during libvuln runtime
 	Matchers []driver.Matcher
 	// returns the updaters to run on an interval

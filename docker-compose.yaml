@@ -8,10 +8,6 @@ services:
       POSTGRES_DB: "claircore"
     ports:
       - "5434:5432"
-    volumes:
-      # bootstrap initial schema
-      - "./internal/indexer/postgres/bootstrap.sql:/docker-entrypoint-initdb.d/libindex-bootstrap.sql"
-      - "./internal/vulnstore/postgres/bootstrap.sql:/docker-entrypoint-initdb.d/libvuln-bootstrap.sql"
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U claircore -d claircore" ]
       interval: 10s
