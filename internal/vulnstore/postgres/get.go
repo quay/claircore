@@ -2,7 +2,10 @@ package postgres
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
+	"hash/fnv"
+	"io"
 	"time"
 
 	"github.com/jackc/pgx/v4"
@@ -18,21 +21,27 @@ func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.IndexReco
 	log := zerolog.Ctx(ctx).With().
 		Str("component", "vulnstore.get").
 		Logger()
-	// build our query we will make into a prepared statement. see build func definition for details and context
+	// Build our query we will make into a prepared statement. See build func
+	// definition for details and context.
 	query, dedupedMatchers, err := getBuilder(opts.Matchers)
 	if err != nil {
 		return nil, err
 	}
-	log.Debug().Str("query", query).Msg("built query")
+	h := fnv.New64a()
+	if _, err := io.WriteString(h, query); err != nil {
+		return nil, err
+	}
+	name := hex.EncodeToString(h.Sum(nil))
+	log.Debug().Str("name", name).Msg("built query")
 
-	// create a prepared statement
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer tx.Rollback(ctx)
 
-	getStmt, err := tx.Prepare(ctx, "getStmt", query)
+	// Create a prepared statement.
+	getStmt, err := tx.Prepare(ctx, name, query)
 	if err != nil {
 		return nil, err
 	}
