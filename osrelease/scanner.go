@@ -10,6 +10,8 @@ import (
 	"runtime/trace"
 	"strings"
 
+	"github.com/knqyf263/go-cpe/common"
+	"github.com/knqyf263/go-cpe/naming"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
@@ -19,7 +21,7 @@ import (
 
 const (
 	scannerName    = "os-release"
-	scannerVersion = "v0.0.1"
+	scannerVersion = "v0.0.2"
 	scannerKind    = "distribution"
 )
 
@@ -146,7 +148,22 @@ func parse(ctx context.Context, log *zerolog.Logger, r io.Reader) (*claircore.Di
 		case "VARIANT_ID":
 		case "CPE_NAME":
 			log.Debug().Msg("found CPE_NAME")
-			d.CPE = value
+			var err error
+			var wfn common.WellFormedName
+			switch {
+			case common.ValidateURI(value) == nil:
+				wfn, err = naming.UnbindURI(value)
+			case common.ValidateFS(value) == nil:
+				wfn, err = naming.UnbindFS(value)
+			}
+			if err != nil {
+				log.Warn().
+					Err(err).
+					Str("value", value).
+					Msg("failed to unbind the cpe")
+				break
+			}
+			d.CPE = naming.BindToURI(wfn)
 		case "NAME":
 			log.Debug().Msg("found NAME")
 			d.Name = value

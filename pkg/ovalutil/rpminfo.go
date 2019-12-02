@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/knqyf263/go-cpe/common"
+	"github.com/knqyf263/go-cpe/naming"
 	"github.com/quay/goval-parser/oval"
 	"github.com/rs/zerolog"
 
@@ -73,8 +75,24 @@ func (r *RPMInfo) Extract(ctx context.Context) ([]*claircore.Vulnerability, erro
 		if dist == nil {
 			panic("that's weird")
 		}
+		// TODO(hank) There should be a one-to-many mapping of vulnerability to
+		// CPE.
 		if cpes := def.Advisory.AffectedCPEList; len(cpes) != 0 {
-			dist.CPE = cpes[0]
+			for _, v := range cpes {
+				var err error
+				var wfn common.WellFormedName
+				switch {
+				case common.ValidateURI(v) == nil:
+					wfn, err = naming.UnbindURI(v)
+				case common.ValidateFS(v) == nil:
+					wfn, err = naming.UnbindFS(v)
+				}
+				switch {
+				case err != nil:
+				case wfn.GetString("part") == "o":
+					dist.CPE = naming.BindToURI(wfn)
+				}
+			}
 		}
 		// It's likely that we'll have multiple vulnerabilites spawned from once
 		// CVE/definition, so this constructs new records on demand.

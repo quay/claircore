@@ -122,7 +122,7 @@ func TestParse(t *testing.T) {
 				Name:       "Red Hat Enterprise Linux",
 				Version:    "8.0 (Ootpa)",
 				VersionID:  "8.0",
-				CPE:        "cpe:/o:redhat:enterprise_linux:8.0:GA",
+				CPE:        "cpe:/o:redhat:enterprise_linux:8.0:ga",
 				PrettyName: "Red Hat Enterprise Linux 8",
 			},
 		},
