@@ -1,13 +1,11 @@
 package integration
 
 import (
-	"bytes"
 	"context"
 	crand "crypto/rand"
 	"encoding/binary"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"testing"
 
@@ -41,7 +39,7 @@ const (
 )
 
 // NewDB creates a new database and populates it with the contents of initfile.
-func NewDB(ctx context.Context, t testing.TB, dsn, initfile string) (*DB, error) {
+func NewDB(ctx context.Context, t testing.TB, dsn string) (*DB, error) {
 	cfg, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
 		return nil, err
@@ -65,24 +63,8 @@ func NewDB(ctx context.Context, t testing.TB, dsn, initfile string) (*DB, error)
 		return nil, err
 	}
 
-	b, err := ioutil.ReadFile(initfile)
-	if err != nil {
-		return nil, err
-	}
-
 	cfg.ConnConfig.Database = database
 	cfg.ConnConfig.User = role
-	conn, err = pgx.ConnectConfig(ctx, cfg.ConnConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	if _, err := conn.Exec(ctx, bytes.NewBuffer(b).String()); err != nil {
-		return nil, err
-	}
-	if err := conn.Close(ctx); err != nil {
-		return nil, err
-	}
 	t.Logf("config: %+#v", cfg.ConnConfig)
 	cfg.ConnConfig.Logger = nil
 
