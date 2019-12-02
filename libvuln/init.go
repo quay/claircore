@@ -11,11 +11,11 @@ import (
 	"github.com/quay/claircore/internal/vulnstore/postgres"
 	"github.com/quay/claircore/libvuln/migrations"
 	pglock "github.com/quay/claircore/pkg/distlock/postgres"
-	"github.com/remind101/migrate"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/jmoiron/sqlx"
+	"github.com/remind101/migrate"
 )
 
 // initUpdaters provides initial burst control to not launch too many updaters at once.

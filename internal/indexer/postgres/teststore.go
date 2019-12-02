@@ -9,11 +9,11 @@ import (
 
 	"github.com/quay/claircore/libindex/migrations"
 	"github.com/quay/claircore/test/integration"
-	"github.com/remind101/migrate"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	_ "github.com/jackc/pgx/v4/stdlib" // Needed for sqlx.Open
 	"github.com/jmoiron/sqlx"
+	"github.com/remind101/migrate"
 )
 
 func TestStore(ctx context.Context, t testing.TB) (*sqlx.DB, *store, func()) {

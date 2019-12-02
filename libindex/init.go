@@ -6,11 +6,11 @@ import (
 
 	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/internal/indexer/postgres"
-	"github.com/remind101/migrate"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jmoiron/sqlx"
 	"github.com/quay/claircore/libindex/migrations"
+	"github.com/remind101/migrate"
 )
 
 // initialize a indexer.Store given libindex.Opts
