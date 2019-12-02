@@ -93,6 +93,7 @@ func httpServer(conf Config, lib libindex.Libindex) *http.Server {
 func confTolibindexOpts(conf Config) *libindex.Opts {
 	opts := &libindex.Opts{
 		ConnString: conf.ConnString,
+		Migrations: true,
 	}
 
 	return opts

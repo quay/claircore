@@ -36,6 +36,10 @@ func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.IndexReco
 	// dictates the order of our bindvar values.
 	for _, record := range records {
 		args := []interface{}{}
+		// fills the OR bind vars for (package_name = binary_package OR package_name = source_package)
+		args = append(args, record.Package.Source.Name)
+		args = append(args, record.Package.Name)
+
 		for _, m := range dedupedMatchers {
 			switch m {
 			case driver.PackageDistributionDID:
@@ -56,10 +60,6 @@ func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.IndexReco
 				args = append(args, record.Distribution.PrettyName)
 			}
 		}
-		// fills the OR bind vars for (package_name = binary_package OR package_name = source_package)
-		args = append(args, record.Package.Source.Name)
-		args = append(args, record.Package.Name)
-
 		// queue the select query
 		batch.Queue(getStmt.Name, args...)
 	}

@@ -9,11 +9,13 @@ import (
 	"github.com/quay/claircore/internal/updater"
 	"github.com/quay/claircore/internal/vulnstore"
 	"github.com/quay/claircore/internal/vulnstore/postgres"
+	"github.com/quay/claircore/libvuln/migrations"
 	pglock "github.com/quay/claircore/pkg/distlock/postgres"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/jmoiron/sqlx"
+	"github.com/remind101/migrate"
 )
 
 // initUpdaters provides initial burst control to not launch too many updaters at once.
@@ -91,6 +93,16 @@ func initStore(ctx context.Context, opts *Opts) (*sqlx.DB, vulnstore.Store, erro
 	db, err := sqlx.Open("pgx", opts.ConnString)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to Open db: %v", err)
+	}
+
+	// do migrations if requested
+	if opts.Migrations {
+		migrator := migrate.NewPostgresMigrator(db.DB)
+		migrator.Table = migrations.MigrationTable
+		err := migrator.Exec(migrate.Up, migrations.Migrations...)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to perform migrations: %w", err)
+		}
 	}
 
 	store := postgres.NewVulnStore(db, pool)

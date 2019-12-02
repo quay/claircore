@@ -5,9 +5,9 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
-	"path/filepath"
 	"testing"
 
+	"github.com/quay/claircore/libvuln/migrations"
 	"github.com/quay/claircore/test/integration"
 
 	"github.com/jackc/pgx/v4"
@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	_ "github.com/jackc/pgx/v4/stdlib" // needed for sqlx.Open
 	"github.com/jmoiron/sqlx"
+	"github.com/remind101/migrate"
 )
 
 func TestStore(ctx context.Context, t testing.TB) (*sqlx.DB, *Store, func()) {
@@ -25,7 +26,7 @@ func TestStore(ctx context.Context, t testing.TB) (*sqlx.DB, *Store, func()) {
 	}
 	o = bytes.TrimSpace(o)
 
-	db, err := integration.NewDB(ctx, t, integration.DefaultDSN, filepath.Join(string(o), "bootstrap.sql"))
+	db, err := integration.NewDB(ctx, t, integration.DefaultDSN)
 	if err != nil {
 		t.Fatalf("unable to create test database: %w", err)
 	}
@@ -42,6 +43,14 @@ func TestStore(ctx context.Context, t testing.TB) (*sqlx.DB, *Store, func()) {
 		cfg.ConnConfig.Host, cfg.ConnConfig.Port, cfg.ConnConfig.Database, cfg.ConnConfig.User))
 	if err != nil {
 		t.Fatalf("failed to sqlx Open: %v", err)
+	}
+
+	// run migrations
+	migrator := migrate.NewPostgresMigrator(sx.DB)
+	migrator.Table = migrations.MigrationTable
+	err = migrator.Exec(migrate.Up, migrations.Migrations...)
+	if err != nil {
+		t.Fatalf("failed to perform migrations: %w", err)
 	}
 
 	s := NewVulnStore(sx, pool)
