@@ -101,7 +101,7 @@ func TestParse(t *testing.T) {
 				Version:    "30.20191008.1 (Workstation Edition)",
 				VersionID:  "30",
 				CPE:        "cpe:/o:fedoraproject:fedora:30",
-				PrettyName: "Fedora 30.20191008.1 (Workstation Edition)",
+				PrettyName: "Fedora",
 			},
 		},
 		{
@@ -112,7 +112,7 @@ func TestParse(t *testing.T) {
 				Version:    "30 (Container Image)",
 				VersionID:  "30",
 				CPE:        "cpe:/o:fedoraproject:fedora:30",
-				PrettyName: "Fedora 30 (Container Image)",
+				PrettyName: "Fedora",
 			},
 		},
 		{
@@ -123,7 +123,7 @@ func TestParse(t *testing.T) {
 				Version:    "8.0 (Ootpa)",
 				VersionID:  "8.0",
 				CPE:        "cpe:/o:redhat:enterprise_linux:8.0:GA",
-				PrettyName: "Red Hat Enterprise Linux 8.0 (Ootpa)",
+				PrettyName: "Red Hat Enterprise Linux 8",
 			},
 		},
 	}

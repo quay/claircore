@@ -160,6 +160,11 @@ func parse(ctx context.Context, log *zerolog.Logger, r io.Reader) (*claircore.Di
 		case "PRETTY_NAME":
 			log.Debug().Msg("found PRETTY_NAME")
 			d.PrettyName = value
+		case "REDHAT_BUGZILLA_PRODUCT":
+			log.Debug().Msg("using RHEL hack")
+			// This is a dirty hack because the Red Hat OVAL database and the
+			// CPE contained in the os-release file don't agree.
+			d.PrettyName = value
 		}
 	}
 	if err := s.Err(); err != nil {
