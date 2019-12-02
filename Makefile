@@ -122,7 +122,7 @@ podman-dev-up:
 .PHONY: podman-dev-down
 podman-dev-down:
 	podman pod stop -t 10 claircore-dev
-	true $(foreach c,claircore-database libindexhttp libvulnhttp,&& podman rm $c)
+	true $(foreach c,claircore-database libindexhttp libvulnhttp,&& podman rm -v $c)
 	podman pod rm claircore-dev
 
 .PHONY: baseimage
