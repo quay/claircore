@@ -9,12 +9,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/internal/indexer/fetcher"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func Test_Layer_Files_Miss(t *testing.T) {

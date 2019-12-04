@@ -11,10 +11,10 @@ import (
 	"runtime/trace"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test/integration"
-
-	"github.com/google/go-cmp/cmp"
 )
 
 type parsecase struct {

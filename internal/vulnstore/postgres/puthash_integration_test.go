@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/quay/claircore/test/integration"
-
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/quay/claircore/test/integration"
 )
 
 func Test_PutHash_Upsert(t *testing.T) {

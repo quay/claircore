@@ -2,6 +2,7 @@ package aws
 
 import (
 	version "github.com/knqyf263/go-rpm-version"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 )

@@ -7,10 +7,11 @@ import (
 	"strings"
 
 	"github.com/crgimenes/goconfig"
-	"github.com/quay/claircore/libindex"
-	libhttp "github.com/quay/claircore/libindex/http"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+
+	"github.com/quay/claircore/libindex"
+	libhttp "github.com/quay/claircore/libindex/http"
 )
 
 // Config this struct is using the goconfig library for simple flag and env var

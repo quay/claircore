@@ -6,9 +6,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/quay/claircore/test/log"
-
 	"github.com/quay/goval-parser/oval"
+
+	"github.com/quay/claircore/test/log"
 )
 
 func TestParse(t *testing.T) {

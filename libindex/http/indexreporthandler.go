@@ -6,9 +6,9 @@ import (
 	h "net/http"
 	"strings"
 
-	"github.com/quay/claircore/libindex"
-
 	"github.com/rs/zerolog/log"
+
+	"github.com/quay/claircore/libindex"
 )
 
 func IndexReport(lib libindex.Libindex) h.HandlerFunc {

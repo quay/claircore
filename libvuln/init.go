@@ -6,16 +6,16 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jackc/pgx/v4/pgxpool"
+	_ "github.com/jackc/pgx/v4/stdlib"
+	"github.com/jmoiron/sqlx"
+	"github.com/remind101/migrate"
+
 	"github.com/quay/claircore/internal/updater"
 	"github.com/quay/claircore/internal/vulnstore"
 	"github.com/quay/claircore/internal/vulnstore/postgres"
 	"github.com/quay/claircore/libvuln/migrations"
 	pglock "github.com/quay/claircore/pkg/distlock/postgres"
-
-	"github.com/jackc/pgx/v4/pgxpool"
-	_ "github.com/jackc/pgx/v4/stdlib"
-	"github.com/jmoiron/sqlx"
-	"github.com/remind101/migrate"
 )
 
 // initUpdaters provides initial burst control to not launch too many updaters at once.

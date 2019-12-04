@@ -9,11 +9,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/quay/claircore/libvuln/driver"
-	"github.com/quay/claircore/pkg/ovalutil"
-
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+
+	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/pkg/ovalutil"
 )
 
 const (

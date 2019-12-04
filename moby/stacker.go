@@ -7,8 +7,9 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/quay/claircore"
 	mobyarchive "github.com/moby/moby/pkg/archive"
+
+	"github.com/quay/claircore"
 )
 
 // Stacker should take a list of *claircore.Layer structs and stacks their contents

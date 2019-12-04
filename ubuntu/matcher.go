@@ -1,10 +1,10 @@
 package ubuntu
 
 import (
+	version "github.com/knqyf263/go-deb-version"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
-
-	version "github.com/knqyf263/go-deb-version"
 )
 
 const (

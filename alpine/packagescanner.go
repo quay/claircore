@@ -8,11 +8,11 @@ import (
 	"io"
 	"runtime/trace"
 
-	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/indexer"
-
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+
+	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/indexer"
 )
 
 const (

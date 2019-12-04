@@ -5,11 +5,11 @@ import (
 	"fmt"
 	h "net/http"
 
+	"github.com/rs/zerolog/log"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln"
-
 	je "github.com/quay/claircore/pkg/jsonerr"
-	"github.com/rs/zerolog/log"
 )
 
 func VulnScan(lib libvuln.Libvuln) h.HandlerFunc {

@@ -8,8 +8,9 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/quay/claircore"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/quay/claircore"
 )
 
 // Test_Scanner_ScanError confirms the state machines does the correct

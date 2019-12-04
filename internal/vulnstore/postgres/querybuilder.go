@@ -5,6 +5,7 @@ import (
 
 	"github.com/doug-martin/goqu/v8"
 	_ "github.com/doug-martin/goqu/v8/dialect/postgres"
+
 	"github.com/quay/claircore/libvuln/driver"
 )
 

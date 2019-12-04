@@ -4,9 +4,10 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
-	"github.com/stretchr/testify/assert"
 )
 
 func Test_Fetcher_LocalPath(t *testing.T) {

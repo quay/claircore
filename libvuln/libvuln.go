@@ -4,12 +4,13 @@ import (
 	"context"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/vulnscanner"
 	"github.com/quay/claircore/internal/vulnstore"
 	"github.com/quay/claircore/libvuln/driver"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 )
 
 // Libvuln is an interface exporting the public methods of our library.

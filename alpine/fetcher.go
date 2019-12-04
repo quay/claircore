@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/rs/zerolog"
+
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/tmp"
-
-	"github.com/rs/zerolog"
 )
 
 func (u *Updater) Fetch() (io.ReadCloser, string, error) {

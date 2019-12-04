@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/vulnstore"
-
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jmoiron/sqlx"
+
+	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/vulnstore"
 )
 
 // store implements all interfaces in the vulnstore package

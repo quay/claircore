@@ -5,10 +5,10 @@ import (
 	"testing"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test/integration"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func Test_SetIndexReport_StateUpdate(t *testing.T) {

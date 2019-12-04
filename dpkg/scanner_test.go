@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test/fetch"
 	"github.com/quay/claircore/test/log"
-
-	"github.com/google/go-cmp/cmp"
 )
 
 func TestScanner(t *testing.T) {

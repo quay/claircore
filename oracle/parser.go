@@ -7,12 +7,12 @@ import (
 	"io"
 	"time"
 
+	"github.com/quay/goval-parser/oval"
+	"github.com/rs/zerolog"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/ovalutil"
-
-	"github.com/quay/goval-parser/oval"
-	"github.com/rs/zerolog"
 )
 
 var _ driver.Parser = (*Updater)(nil)

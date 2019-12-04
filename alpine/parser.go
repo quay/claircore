@@ -6,9 +6,10 @@ import (
 	"io"
 	"time"
 
+	"github.com/rs/zerolog"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
-	"github.com/rs/zerolog"
 )
 
 const (

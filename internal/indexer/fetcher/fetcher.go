@@ -12,12 +12,13 @@ import (
 	"os"
 	"sync"
 
-	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/indexer"
-	"github.com/quay/claircore/moby"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/errgroup"
+
+	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/indexer"
+	"github.com/quay/claircore/moby"
 )
 
 // fetcher is a private struct which implements our in memory indexer.Fetcher

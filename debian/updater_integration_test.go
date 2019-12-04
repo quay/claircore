@@ -5,9 +5,10 @@ package debian
 import (
 	"testing"
 
-	"github.com/quay/claircore/test/integration"
 	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/quay/claircore/test/integration"
 )
 
 func Test_Updater(t *testing.T) {

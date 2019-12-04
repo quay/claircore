@@ -7,15 +7,15 @@ import (
 	"os/exec"
 	"testing"
 
-	"github.com/quay/claircore/libvuln/migrations"
-	"github.com/quay/claircore/test/integration"
-
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/log/testingadapter"
 	"github.com/jackc/pgx/v4/pgxpool"
 	_ "github.com/jackc/pgx/v4/stdlib" // needed for sqlx.Open
 	"github.com/jmoiron/sqlx"
 	"github.com/remind101/migrate"
+
+	"github.com/quay/claircore/libvuln/migrations"
+	"github.com/quay/claircore/test/integration"
 )
 
 func TestStore(ctx context.Context, t testing.TB) (*sqlx.DB, *Store, func()) {

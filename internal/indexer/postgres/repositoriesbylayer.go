@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
 )

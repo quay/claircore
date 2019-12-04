@@ -13,9 +13,10 @@ import (
 	"time"
 
 	"github.com/quay/alas"
-	"github.com/quay/claircore/pkg/tmp"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+
+	"github.com/quay/claircore/pkg/tmp"
 )
 
 const (

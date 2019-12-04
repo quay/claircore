@@ -5,8 +5,9 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/quay/claircore/internal/indexer"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/quay/claircore/internal/indexer"
 )
 
 func Test_ScanLayers(t *testing.T) {

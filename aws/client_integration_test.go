@@ -5,8 +5,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/quay/claircore/test/integration"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/quay/claircore/test/integration"
 )
 
 func Test_Client_Linux1_Integration_GetMirrors(t *testing.T) {

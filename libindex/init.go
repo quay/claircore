@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/quay/claircore/internal/indexer"
-	"github.com/quay/claircore/internal/indexer/postgres"
-
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jmoiron/sqlx"
-	"github.com/quay/claircore/libindex/migrations"
 	"github.com/remind101/migrate"
+
+	"github.com/quay/claircore/internal/indexer"
+	"github.com/quay/claircore/internal/indexer/postgres"
+	"github.com/quay/claircore/libindex/migrations"
 )
 
 // initialize a indexer.Store given libindex.Opts

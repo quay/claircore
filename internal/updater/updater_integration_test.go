@@ -5,12 +5,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/quay/claircore/internal/vulnstore/postgres"
 	distlock "github.com/quay/claircore/pkg/distlock/postgres"
 	"github.com/quay/claircore/test/integration"
 	"github.com/quay/claircore/ubuntu"
-
-	"github.com/stretchr/testify/assert"
 )
 
 // Test_Updater_Integration starts with an empty database and runs until a

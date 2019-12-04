@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/quay/claircore/libvuln/driver"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+
+	"github.com/quay/claircore/libvuln/driver"
 )
 
 const (

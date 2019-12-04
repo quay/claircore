@@ -9,10 +9,10 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/rs/zerolog"
+
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/tmp"
-
-	"github.com/rs/zerolog"
 )
 
 // Compressor is used by Fetcher to decompress data it fetches.

@@ -6,11 +6,12 @@ import (
 	"testing"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 	pgtest "github.com/quay/claircore/test/postgres"
-	"github.com/stretchr/testify/assert"
 )
 
 func Test_IndexRepositories_Success(t *testing.T) {

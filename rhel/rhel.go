@@ -9,11 +9,11 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/quay/goval-parser/oval"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/ovalutil"
-
-	"github.com/quay/goval-parser/oval"
 )
 
 // We currently grab the oval databases db distro-wise.

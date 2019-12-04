@@ -5,11 +5,11 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/quay/claircore/internal/indexer"
-	"github.com/quay/claircore/test/integration"
-
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/quay/claircore/internal/indexer"
+	"github.com/quay/claircore/test/integration"
 )
 
 func Test_RegisterScanners_Success(t *testing.T) {

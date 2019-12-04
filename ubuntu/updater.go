@@ -6,13 +6,13 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/quay/claircore"
-	"github.com/quay/claircore/libvuln/driver"
-	"github.com/quay/claircore/pkg/ovalutil"
-
 	"github.com/quay/goval-parser/oval"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+
+	"github.com/quay/claircore"
+	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/pkg/ovalutil"
 )
 
 const (

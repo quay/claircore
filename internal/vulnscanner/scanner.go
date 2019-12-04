@@ -3,11 +3,12 @@ package vulnscanner
 import (
 	"context"
 
+	"golang.org/x/sync/errgroup"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/matcher"
 	"github.com/quay/claircore/internal/vulnstore"
 	"github.com/quay/claircore/libvuln/driver"
-	"golang.org/x/sync/errgroup"
 )
 
 // VulnScanner utilizes a claircore.IndexReport to create a claircore.VulnerabilityReport

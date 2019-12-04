@@ -15,12 +15,12 @@ import (
 	"runtime/trace"
 	"strings"
 
-	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/indexer"
-
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/errgroup"
+
+	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/indexer"
 )
 
 const (

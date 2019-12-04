@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/quay/claircore/internal/indexer"
-
 	"github.com/jmoiron/sqlx"
+
+	"github.com/quay/claircore/internal/indexer"
 )
 
 const (

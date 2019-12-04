@@ -4,10 +4,11 @@ import (
 	"context"
 	"sync"
 
-	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/indexer"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+
+	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/indexer"
 )
 
 // stateFunc implement the logic of our controller and map directly to States.

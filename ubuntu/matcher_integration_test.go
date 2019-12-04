@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/updater"
 	"github.com/quay/claircore/internal/vulnscanner"
@@ -15,8 +17,6 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 	distlock "github.com/quay/claircore/pkg/distlock/postgres"
 	"github.com/quay/claircore/test/integration"
-
-	"github.com/stretchr/testify/assert"
 )
 
 // Test_Matcher_Integration confirms packages are matched

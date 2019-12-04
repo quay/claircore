@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/quay/claircore"
-	"github.com/quay/claircore/pkg/microbatch"
-
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+
+	"github.com/quay/claircore"
+	"github.com/quay/claircore/pkg/microbatch"
 )
 
 const (

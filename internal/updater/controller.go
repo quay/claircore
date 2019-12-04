@@ -6,11 +6,12 @@ import (
 	"io"
 	"time"
 
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+
 	"github.com/quay/claircore/internal/vulnstore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/distlock"
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 )
 
 // Controller is a control structure for fetching, parsing, and updating a vulnstore.

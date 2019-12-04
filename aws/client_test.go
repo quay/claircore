@@ -8,8 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/quay/claircore/test/integration"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/quay/claircore/test/integration"
 )
 
 func Test_Client_Linux1_GetMirrors(t *testing.T) {

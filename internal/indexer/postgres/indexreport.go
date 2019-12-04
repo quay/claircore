@@ -5,9 +5,9 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/quay/claircore"
-
 	"github.com/jmoiron/sqlx"
+
+	"github.com/quay/claircore"
 )
 
 const (

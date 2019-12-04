@@ -6,12 +6,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/quay/claircore/libvuln"
-	libhttp "github.com/quay/claircore/libvuln/http"
-
 	"github.com/crgimenes/goconfig"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+
+	"github.com/quay/claircore/libvuln"
+	libhttp "github.com/quay/claircore/libvuln/http"
 )
 
 // Config this struct is using the goconfig library for simple flag and env var

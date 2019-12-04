@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/quay/alas"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 )

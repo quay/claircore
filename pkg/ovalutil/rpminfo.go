@@ -6,10 +6,10 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/quay/claircore"
-
 	"github.com/quay/goval-parser/oval"
 	"github.com/rs/zerolog"
+
+	"github.com/quay/claircore"
 )
 
 // RPMInfo holds information for extracting Vulnerabilities from an OVAL

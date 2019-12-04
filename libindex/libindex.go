@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/jmoiron/sqlx"
+	"github.com/rs/zerolog"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/internal/indexer/controller"
-
-	"github.com/jmoiron/sqlx"
-	"github.com/rs/zerolog"
 )
 
 // libindex is an interface exporting the public methods of our library.

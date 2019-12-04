@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"sync"
 
+	"golang.org/x/sync/errgroup"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
-	"golang.org/x/sync/errgroup"
 )
 
 // coalesce calls each ecosystem's coalescer and merges the returned IndexReports
