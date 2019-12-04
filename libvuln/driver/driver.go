@@ -42,6 +42,8 @@ const (
 
 // Matcher is an interface which a Controller uses to query the vulnstore for vulnerabilities.
 type Matcher interface {
+	// a unique name for the matcher
+	Name() string
 	// Filter informs the Controller if the implemented Matcher is interested in the provided IndexRecord.
 	Filter(record *claircore.IndexRecord) bool
 	// Query informs the Controller how it should match packages with vulnerabilities.

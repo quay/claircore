@@ -10,6 +10,10 @@ type Matcher struct{}
 
 var _ driver.Matcher = (*Matcher)(nil)
 
+func (*Matcher) Name() string {
+	return "alpine-matcher"
+}
+
 func (*Matcher) Filter(record *claircore.IndexRecord) bool {
 	if record.Distribution == nil {
 		return false

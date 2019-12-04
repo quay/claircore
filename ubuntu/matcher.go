@@ -16,6 +16,10 @@ var _ driver.Matcher = (*Matcher)(nil)
 
 type Matcher struct{}
 
+func (*Matcher) Name() string {
+	return "ubuntu-matcher"
+}
+
 func (*Matcher) Filter(record *claircore.IndexRecord) bool {
 	if record.Distribution == nil {
 		return false
