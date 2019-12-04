@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/quay/claircore/internal/indexer"
+	"github.com/quay/claircore/internal/indexer/linux"
 	"github.com/quay/claircore/osrelease"
 )
 
@@ -20,7 +21,7 @@ func NewEcosystem(ctx context.Context) *indexer.Ecosystem {
 			return []indexer.RepositoryScanner{}, nil
 		},
 		Coalescer: func(ctx context.Context, store indexer.Store) (indexer.Coalescer, error) {
-			return NewCoalescer(store), nil
+			return linux.NewCoalescer(store, &Scanner{}), nil
 		},
 	}
 }

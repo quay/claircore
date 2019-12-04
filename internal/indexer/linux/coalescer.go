@@ -1,4 +1,4 @@
-package rpm
+package linux
 
 import (
 	"context"
@@ -30,10 +30,10 @@ type Coalescer struct {
 }
 
 // NewCoalescer is a constructor for a Coalescer
-func NewCoalescer(store indexer.Store) *Coalescer {
+func NewCoalescer(store indexer.Store, ps indexer.PackageScanner) *Coalescer {
 	return &Coalescer{
 		store: store,
-		ps:    &Scanner{},
+		ps:    ps,
 		ds:    &osrelease.Scanner{},
 		sr: &claircore.IndexReport{
 			// we will only fill these fields
@@ -123,7 +123,6 @@ func (c *Coalescer) prune(ctx context.Context, artifacts []layerArtifacts) {
 		return
 	}
 
-	// seenDB := map[string]struct{}{}
 	keep := map[string]map[int]struct{}{}
 
 	// walk layer artifacts backwards searching for newest package databases
