@@ -48,6 +48,20 @@ func (mr *MockMatcherMockRecorder) Filter(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Filter", reflect.TypeOf((*MockMatcher)(nil).Filter), arg0)
 }
 
+// Name mocks base method
+func (m *MockMatcher) Name() string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Name")
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// Name indicates an expected call of Name
+func (mr *MockMatcherMockRecorder) Name() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Name", reflect.TypeOf((*MockMatcher)(nil).Name))
+}
+
 // Query mocks base method
 func (m *MockMatcher) Query() []driver.MatchExp {
 	m.ctrl.T.Helper()
