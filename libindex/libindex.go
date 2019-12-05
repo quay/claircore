@@ -2,8 +2,12 @@ package libindex
 
 import (
 	"context"
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
+	"io"
 	"net/http"
+	"sort"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/rs/zerolog"
@@ -12,6 +16,8 @@ import (
 	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/internal/indexer/controller"
 )
+
+const versionMagic = "libindex number: 1\n"
 
 // Libindex implements the method set for scanning and indexing a Manifest.
 type Libindex struct {
@@ -24,6 +30,7 @@ type Libindex struct {
 	// a sharable http client
 	client *http.Client
 	logger zerolog.Logger
+	state  string
 }
 
 // New creates a new instance of libindex
@@ -52,6 +59,26 @@ func New(ctx context.Context, opts *Opts) (*Libindex, error) {
 	// register any new scanners.
 	pscnrs, dscnrs, rscnrs, err := indexer.EcosystemsToScanners(ctx, opts.Ecosystems)
 	vscnrs := indexer.MergeVS(pscnrs, dscnrs, rscnrs)
+
+	h := md5.New()
+	var ns []string
+	m := make(map[string][]byte)
+	for _, s := range vscnrs {
+		n := s.Name()
+		m[n] = []byte(n + s.Version() + s.Kind() + "\n")
+		ns = append(ns, n)
+	}
+	if _, err := io.WriteString(h, versionMagic); err != nil {
+		return nil, err
+	}
+	sort.Strings(ns)
+	for _, n := range ns {
+		if _, err := h.Write(m[n]); err != nil {
+			return nil, err
+		}
+	}
+	l.state = hex.EncodeToString(h.Sum(nil))
+
 	err = l.store.RegisterScanners(ctx, vscnrs)
 	if err != nil {
 		l.logger.Error().Msgf("failed to register configured scanners: %v", err)
@@ -75,6 +102,15 @@ func (l *Libindex) Index(ctx context.Context, manifest *claircore.Manifest) (*cl
 	}
 	rc := l.index(ctx, c, manifest)
 	return rc, nil
+}
+
+// State returns an opaque identifier identifying how the struct is currently
+// configured.
+//
+// If the identifier has changed, clients should arrange for layers to be
+// re-indexed.
+func (l *Libindex) State() string {
+	return l.state
 }
 
 func (l *Libindex) index(ctx context.Context, s *controller.Controller, m *claircore.Manifest) *claircore.IndexReport {
