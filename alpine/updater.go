@@ -28,7 +28,6 @@ type Updater struct {
 }
 
 var _ driver.Updater = (*Updater)(nil)
-var _ driver.FetcherNG = (*Updater)(nil)
 
 // Option configures the provided Updater
 type Option func(*Updater) error

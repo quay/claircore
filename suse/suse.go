@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/quay/goval-parser/oval"
 	"github.com/rs/zerolog"
@@ -52,15 +51,14 @@ func init() {
 
 // Updater implements driver.Updater for SUSE.
 type Updater struct {
-	release string
-	ovalutil.Fetcher
-	logger *zerolog.Logger
+	release          string
+	ovalutil.Fetcher // promoted Fetch method
+	logger           *zerolog.Logger
 }
 
 var (
-	_ driver.Updater   = (*Updater)(nil)
-	_ driver.Fetcher   = (*Updater)(nil)
-	_ driver.FetcherNG = (*Updater)(nil)
+	_ driver.Updater = (*Updater)(nil)
+	_ driver.Fetcher = (*Updater)(nil)
 )
 
 // NewUpdater configures an updater to fetch the specified Release.
@@ -138,25 +136,8 @@ func (u *Updater) Name() string {
 	return fmt.Sprintf(`suse-updater-%s`, u.release)
 }
 
-// Fetch satisfies driver.Fetcher.
-func (u *Updater) Fetch() (io.ReadCloser, string, error) {
-	ctx := u.logger.WithContext(context.Background())
-	ctx, done := context.WithTimeout(ctx, 8*time.Minute)
-	defer done()
-	r, f, err := u.Fetcher.FetchContext(ctx, driver.Fingerprint(""))
-	return r, string(f), err
-}
-
-// Parse satisifies the driver.Updater interface.
-func (u *Updater) Parse(r io.ReadCloser) ([]*claircore.Vulnerability, error) {
-	ctx := u.logger.WithContext(context.Background())
-	ctx, done := context.WithTimeout(ctx, 5*time.Minute)
-	defer done()
-	return u.ParseContext(ctx, r)
-}
-
 // ParseContext is like Parse, but with context.
-func (u *Updater) ParseContext(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
+func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
 	log := zerolog.Ctx(ctx)
 	log.Info().Msg("starting parse")
 	defer r.Close()

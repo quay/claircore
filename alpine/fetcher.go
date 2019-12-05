@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"time"
 
 	"github.com/rs/zerolog"
 
@@ -13,15 +12,7 @@ import (
 	"github.com/quay/claircore/pkg/tmp"
 )
 
-func (u *Updater) Fetch() (io.ReadCloser, string, error) {
-	ctx := u.logger.WithContext(context.Background())
-	ctx, done := context.WithTimeout(ctx, time.Minute)
-	defer done()
-	r, hint, err := u.FetchContext(ctx, "")
-	return r, string(hint), err
-}
-
-func (u *Updater) FetchContext(ctx context.Context, hint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
+func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
 	log := zerolog.Ctx(ctx).With().Str("component", u.Name()).Logger()
 
 	log.Info().Str("database", u.url).Msg("starting fetch")

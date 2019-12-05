@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"time"
 
 	"github.com/rs/zerolog"
 
@@ -18,14 +17,7 @@ const (
 
 var _ driver.Parser = (*Updater)(nil)
 
-func (u *Updater) Parse(r io.ReadCloser) ([]*claircore.Vulnerability, error) {
-	ctx := u.logger.WithContext(context.Background())
-	ctx, done := context.WithTimeout(ctx, 5*time.Minute)
-	defer done()
-	return u.ParseContext(ctx, r)
-}
-
-func (u *Updater) ParseContext(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
+func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
 	log := zerolog.Ctx(ctx).With().Str("component", u.Name()).Logger()
 	log.Info().Msg("starting parse")
 	defer r.Close()

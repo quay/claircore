@@ -123,9 +123,9 @@ func (u *Controller) tryLock(ctx context.Context) (bool, error) {
 }
 
 // fetchAndCheck calls the Fetch method on the embedded Updater interface and checks whether we should update
-func (u *Controller) fetchAndCheck(ctx context.Context) (io.ReadCloser, bool, string, error) {
+func (u *Controller) fetchAndCheck(ctx context.Context) (io.ReadCloser, bool, driver.Fingerprint, error) {
 	// retrieve vulnerability database
-	vulnDB, updateHash, err := u.Fetch()
+	vulnDB, updateHash, err := u.Fetch(ctx, "")
 	if err != nil {
 		return nil, false, "", fmt.Errorf("failed to fetch database: %v", err)
 	}
@@ -136,7 +136,7 @@ func (u *Controller) fetchAndCheck(ctx context.Context) (io.ReadCloser, bool, st
 		vulnDB.Close()
 		return nil, false, "", fmt.Errorf("failed to get previous update hash: %v", err)
 	}
-	if prevUpdateHash == updateHash {
+	if driver.Fingerprint(prevUpdateHash) == updateHash {
 		vulnDB.Close()
 		return nil, false, "", nil
 	}
@@ -145,15 +145,15 @@ func (u *Controller) fetchAndCheck(ctx context.Context) (io.ReadCloser, bool, st
 }
 
 // parseAndStore calls the parse method on the embedded Updater interface and stores the result
-func (u *Controller) parseAndStore(ctx context.Context, vulnDB io.ReadCloser, updateHash string) error {
+func (u *Controller) parseAndStore(ctx context.Context, vulnDB io.ReadCloser, updateHash driver.Fingerprint) error {
 	// parse the vulnDB into claircore.Vulnerability structs
-	vulns, err := u.Parse(vulnDB)
+	vulns, err := u.Parse(ctx, vulnDB)
 	if err != nil {
 		return fmt.Errorf("failed to parse the fetched vulnerability database: %v", err)
 	}
 
 	// store the vulnerabilities and update latest hash
-	err = u.Store.PutVulnerabilities(ctx, u.Name, updateHash, vulns)
+	err = u.Store.PutVulnerabilities(ctx, u.Name, string(updateHash), vulns)
 	if err != nil {
 		return fmt.Errorf("failed to store vulernabilities: %v", err)
 	}

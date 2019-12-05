@@ -68,25 +68,25 @@ type Parser interface {
 	// Parse should take an io.ReadCloser, read the contents, parse the contents
 	// into a list of claircore.Vulnerability structs and then return
 	// the list. Parse should assume contents are uncompressed and ready for parsing.
-	Parse(contents io.ReadCloser) ([]*claircore.Vulnerability, error)
+	Parse(ctx context.Context, contents io.ReadCloser) ([]*claircore.Vulnerability, error)
 }
 
-// Fetcher is an interface which is embedded into the Updater struct.
-// When called the implementaiton should return an io.ReadCloser with
-// contents of the target vulnerability data
-type Fetcher interface {
-	// Fetch should retrieve the target vulnerability data and return an io.ReadCloser
-	// with the contents. Fetch should also return a string which can used to determine
-	// if these contents should be applied to the vulnerability database. for example
-	// a sha265 sum of a OVAL xml file.
-	Fetch() (io.ReadCloser, string, error)
-}
+// // Fetcher is an interface which is embedded into the Updater struct.
+// // When called the implementaiton should return an io.ReadCloser with
+// // contents of the target vulnerability data
+// type Fetcher interface {
+// 	// Fetch should retrieve the target vulnerability data and return an io.ReadCloser
+// 	// with the contents. Fetch should also return a string which can used to determine
+// 	// if these contents should be applied to the vulnerability database. for example
+// 	// a sha265 sum of a OVAL xml file.
+// 	Fetch() (io.ReadCloser, string, error)
+// }
 
 // FetcherNG is an experimental fetcher interface.
 //
 // This may go away or be renamed without warning.
-type FetcherNG interface {
-	FetchContext(context.Context, Fingerprint) (io.ReadCloser, Fingerprint, error)
+type Fetcher interface {
+	Fetch(context.Context, Fingerprint) (io.ReadCloser, Fingerprint, error)
 }
 
 // Unchanged is returned by Fetchers when the database has not changed.

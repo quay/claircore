@@ -52,15 +52,15 @@ type Fetcher struct {
 	Client      *http.Client
 }
 
-// FetchContext fetches the resource as specified by Fetcher.URL and
+// Fetch fetches the resource as specified by Fetcher.URL and
 // Fetcher.Compression, using the client provided as Fetcher.Client.
 //
-// FetchContext makes GET requests, and will make conditional requests using the
+// Fetch makes GET requests, and will make conditional requests using the
 // passed-in hint as an HTTP date. The returned hint will be an HTTP date if the
 // server sends a Last-Modified header.
 //
 // Tmp.File is used to return a ReadCloser that outlives the passed-in context.
-func (f *Fetcher) FetchContext(ctx context.Context, hint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
+func (f *Fetcher) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
 	log := zerolog.Ctx(ctx).With().Str("routine", "ovalutil_fetcher").Logger()
 	log.Info().Str("database", f.URL.String()).Msg("starting fetch")
 	req := http.Request{

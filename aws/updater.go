@@ -33,13 +33,13 @@ func (u *Updater) Name() string {
 	return fmt.Sprintf("aws-%v-updater", u.release)
 }
 
-func (u *Updater) Fetch() (io.ReadCloser, string, error) {
+func (u *Updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
 	client, err := NewClient(u.release)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to create client: %v", err)
 	}
 
-	tctx, cancel := context.WithTimeout(context.Background(), defaultOpTimeout)
+	tctx, cancel := context.WithTimeout(ctx, defaultOpTimeout)
 	defer cancel()
 	repoMD, err := client.RepoMD(tctx)
 	if err != nil {
@@ -51,7 +51,7 @@ func (u *Updater) Fetch() (io.ReadCloser, string, error) {
 		return nil, "", fmt.Errorf("updates repo metadata could not be retrieved: %v", err)
 	}
 
-	tctx, cancel = context.WithTimeout(context.Background(), defaultOpTimeout)
+	tctx, cancel = context.WithTimeout(ctx, defaultOpTimeout)
 	defer cancel()
 	rc, err := client.Updates(tctx)
 	if err != nil {
@@ -64,10 +64,10 @@ func (u *Updater) Fetch() (io.ReadCloser, string, error) {
 	}
 	rc = ioutil.NopCloser(gzip)
 
-	return rc, updatesRepoMD.Checksum.Sum, nil
+	return rc, driver.Fingerprint(updatesRepoMD.Checksum.Sum), nil
 }
 
-func (u *Updater) Parse(contents io.ReadCloser) ([]*claircore.Vulnerability, error) {
+func (u *Updater) Parse(ctx context.Context, contents io.ReadCloser) ([]*claircore.Vulnerability, error) {
 	var updates alas.Updates
 	err := xml.NewDecoder(contents).Decode(&updates)
 	if err != nil {

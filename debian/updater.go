@@ -1,6 +1,7 @@
 package debian
 
 import (
+	"context"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -62,19 +63,19 @@ func (u *Updater) Name() string {
 	return fmt.Sprintf("debian-%s-updater", string(u.release))
 }
 
-func (u *Updater) Fetch() (io.ReadCloser, string, error) {
+func (u *Updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
 	u.logger.Info().Msg("fetching latest oval database")
 	var rc io.ReadCloser
 	var hash string
 	var err error
 
-	rc, hash, err = u.fetch()
+	rc, hash, err = u.fetch(ctx)
 
 	u.logger.Info().Msg("fetched latest oval database successfully")
-	return rc, hash, err
+	return rc, driver.Fingerprint(hash), err
 }
 
-func (u *Updater) Parse(contents io.ReadCloser) ([]*claircore.Vulnerability, error) {
+func (u *Updater) Parse(ctx context.Context, contents io.ReadCloser) ([]*claircore.Vulnerability, error) {
 	u.logger.Info().Msg("parsing oval database")
 	defer contents.Close()
 
@@ -89,6 +90,10 @@ func (u *Updater) Parse(contents io.ReadCloser) ([]*claircore.Vulnerability, err
 
 	result := []*claircore.Vulnerability{}
 	for _, def := range ovalRoot.Definitions.Definitions {
+		if ctx.Err() != nil {
+			return nil, ctx.Err()
+		}
+
 		// not a vulnerability
 		if def.Class != "vulnerability" {
 			continue

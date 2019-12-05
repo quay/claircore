@@ -3,17 +3,24 @@ package ubuntu
 import (
 	"bytes"
 	"compress/bzip2"
+	"context"
 	"crypto/sha256"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http"
 )
 
 // fetchBzip retrieves a bzip compressed OVAL database of CVE definitions, takes a
 // sha256 hash of the bzip'd archive, and returns a io.ReadCloser of the uncompressed contents
-func (u *Updater) fetchBzip() (io.ReadCloser, string, error) {
+func (u *Updater) fetchBzip(ctx context.Context) (io.ReadCloser, string, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", u.url, nil)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to create request")
+	}
+
 	// fetch OVAL xml database
-	resp, err := u.c.Get(u.url)
+	resp, err := u.c.Do(req)
 	if err != nil {
 		u.logger.Error().Msgf("failed to retrieve OVAL database: %v", err)
 		return nil, "", fmt.Errorf("failed to retrieve OVAL database: %v", err)
@@ -44,9 +51,14 @@ func (u *Updater) fetchBzip() (io.ReadCloser, string, error) {
 
 // fetch retrieves the xml OVAL database of CVE definitions, takes a sha256 of the xml file, and returns
 // an io.ReadCloser with contents.
-func (u *Updater) fetch() (io.ReadCloser, string, error) {
+func (u *Updater) fetch(ctx context.Context) (io.ReadCloser, string, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", u.url, nil)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to create request")
+	}
+
 	// fetch OVAL xml database
-	resp, err := u.c.Get(u.url)
+	resp, err := u.c.Do(req)
 	if err != nil {
 		u.logger.Error().Msgf("failed to retrieve OVAL database: %v", err)
 		return nil, "", fmt.Errorf("failed to retrieve OVAL database: %v", err)

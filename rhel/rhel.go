@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/quay/goval-parser/oval"
 
@@ -20,12 +19,11 @@ import (
 const dbURL = `https://www.redhat.com/security/data/oval/com.redhat.rhsa-RHEL%d.xml`
 
 var _ driver.Updater = (*Updater)(nil)
-var _ driver.FetcherNG = (*Updater)(nil)
 
 // Updater fetches and parses RHEL-flavored OVAL databases.
 type Updater struct {
-	ovalutil.Fetcher
-	name string
+	ovalutil.Fetcher // fetch method promoted via embed
+	name             string
 }
 
 type Release int
@@ -96,24 +94,8 @@ func (u *Updater) Name() string {
 	return u.name
 }
 
-// Fetch satisifies the driver.Updater interface.
-func (u *Updater) Fetch() (io.ReadCloser, string, error) {
-	ctx, done := context.WithTimeout(context.Background(), time.Minute)
-	defer done()
-	rc, hint, err := u.FetchContext(ctx, "")
-	if err != nil {
-		return nil, "", err
-	}
-	return rc, string(hint), nil
-}
-
-// Parse satisifies the driver.Updater interface.
-func (u *Updater) Parse(r io.ReadCloser) ([]*claircore.Vulnerability, error) {
-	return u.ParseContext(context.Background(), r)
-}
-
 // ParseContext is like Parse, but with context.
-func (u *Updater) ParseContext(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
+func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
 	defer r.Close()
 	root := oval.Root{}
 	if err := xml.NewDecoder(r).Decode(&root); err != nil {
