@@ -1,6 +1,10 @@
 package indexer
 
-import "github.com/quay/claircore"
+import (
+	"context"
+
+	"github.com/quay/claircore"
+)
 
 // PackageScanner provides an interface for unique identification or a PackageScanner
 // and a Scan method for extracting installed packages from an individual container layer
@@ -8,7 +12,7 @@ type PackageScanner interface {
 	VersionedScanner
 	// Scan performs a package scan on the given layer and returns all
 	// the found packages
-	Scan(*claircore.Layer) ([]*claircore.Package, error)
+	Scan(context.Context, *claircore.Layer) ([]*claircore.Package, error)
 }
 
 type mockPackageScanner struct {
@@ -17,7 +21,7 @@ type mockPackageScanner struct {
 	kind    string
 }
 
-func (p *mockPackageScanner) Scan(*claircore.Layer) ([]*claircore.Package, error) {
+func (p *mockPackageScanner) Scan(context.Context, *claircore.Layer) ([]*claircore.Package, error) {
 	return nil, nil
 }
 
