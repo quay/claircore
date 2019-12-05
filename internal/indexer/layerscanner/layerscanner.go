@@ -123,7 +123,7 @@ func (ls *layerScanner) scanPackages(ctx context.Context, layer *claircore.Layer
 		return nil
 	}
 
-	v, err := s.Scan(layer)
+	v, err := s.Scan(ctx, layer)
 	if err != nil {
 		return fmt.Errorf("scanner: %v error: %v", s.Name(), err)
 	}
@@ -144,7 +144,7 @@ func (ls *layerScanner) scanDists(ctx context.Context, layer *claircore.Layer, s
 		return nil
 	}
 
-	v, err := s.Scan(layer)
+	v, err := s.Scan(ctx, layer)
 	if err != nil {
 		return fmt.Errorf("scanner: %v error: %v", s.Name(), err)
 	}
@@ -165,7 +165,7 @@ func (ls *layerScanner) scanRepos(ctx context.Context, layer *claircore.Layer, s
 		return nil
 	}
 
-	v, err := s.Scan(layer)
+	v, err := s.Scan(ctx, layer)
 	if err != nil {
 		return fmt.Errorf("scanner: %v error: %v", s.Name(), err)
 	}

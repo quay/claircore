@@ -13,7 +13,6 @@ import (
 	"github.com/knqyf263/go-cpe/common"
 	"github.com/knqyf263/go-cpe/naming"
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
@@ -49,9 +48,7 @@ func (*Scanner) Kind() string { return scannerKind }
 //
 // It's an expected outcome to return (nil, nil) when the os-release file is not
 // present in the layer.
-func (s *Scanner) Scan(l *claircore.Layer) ([]*claircore.Distribution, error) {
-	ctx := context.TODO()
-	ctx = log.Logger.WithContext(ctx)
+func (*Scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Distribution, error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	log := zerolog.Ctx(ctx).With().
 		Str("component", "dist_scanner").
