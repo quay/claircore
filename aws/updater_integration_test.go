@@ -1,6 +1,7 @@
 package aws
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -29,12 +30,12 @@ func Test_Updater(t *testing.T) {
 			updater, err := NewUpdater(table.release)
 			assert.NoError(t, err)
 
-			contents, updateHash, err := updater.Fetch()
+			contents, updateHash, err := updater.Fetch(context.Background(), "")
 			assert.NoError(t, err)
 			assert.NotEmpty(t, contents)
 			assert.NotEmpty(t, updateHash)
 
-			vulns, err := updater.Parse(contents)
+			vulns, err := updater.Parse(context.Background(), contents)
 			assert.NoError(t, err)
 			assert.NotEmpty(t, vulns)
 		})

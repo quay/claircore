@@ -1,5 +1,3 @@
-// +build test
-
 package indexer
 
 import (
@@ -28,19 +26,19 @@ func Test_Scanner_ScanError(t *testing.T) {
 			name: "checkManifest error induced error state",
 			mock: func(t *testing.T) (Store, Fetcher) {
 				ctrl := gomock.NewController(t)
-				store := Newscanner.MockStore(ctrl)
+				store := NewMockStore(ctrl)
 				fetcher := NewMockFetcher(ctrl)
 
 				fetcher.EXPECT().Purge()
 
 				// let call to SetIndexReport in checkManifest pass
-				store.EXPECT().SetIndexReport(gomock.Any()).Return(nil)
+				store.EXPECT().SetIndexReport(gomock.Any(), gomock.Any()).Return(nil)
 				// lets fail call to s.Store.ManifestScanned in check manifest - checkManifest will now return an error and
 				// if all is well scanner should hijack SFM flow into entering scanError state
-				store.EXPECT().ManifestScanned(gomock.Any(), gomock.Any()).Return(false, fmt.Errorf("expected failure for test"))
+				store.EXPECT().ManifestScanned(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, fmt.Errorf("expected failure for test"))
 
 				// let the call to SetIndexReport in scanError state success. scanErr should return nil. nil from here
-				store.EXPECT().SetIndexReport(gomock.Any()).Return(nil)
+				store.EXPECT().SetIndexReport(gomock.Any(), gomock.Any()).Return(nil)
 
 				return store, fetcher
 			},

@@ -185,7 +185,7 @@ func (lc layercase) Test(t *testing.T) {
 	l := &claircore.Layer{
 		LocalPath: lc.name(),
 	}
-	ds, err := s.Scan(l)
+	ds, err := s.Scan(context.Background(), l)
 	if err != nil {
 		t.Error(err)
 	}

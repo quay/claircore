@@ -34,6 +34,21 @@ func (m *MockLibindex) EXPECT() *MockLibindexMockRecorder {
 	return m.recorder
 }
 
+// Index mocks base method
+func (m *MockLibindex) Index(arg0 context.Context, arg1 *claircore.Manifest) (<-chan *claircore.IndexReport, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Index", arg0, arg1)
+	ret0, _ := ret[0].(<-chan *claircore.IndexReport)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Index indicates an expected call of Index
+func (mr *MockLibindexMockRecorder) Index(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Index", reflect.TypeOf((*MockLibindex)(nil).Index), arg0, arg1)
+}
+
 // IndexReport mocks base method
 func (m *MockLibindex) IndexReport(arg0 context.Context, arg1 string) (*claircore.IndexReport, bool, error) {
 	m.ctrl.T.Helper()
@@ -48,19 +63,4 @@ func (m *MockLibindex) IndexReport(arg0 context.Context, arg1 string) (*claircor
 func (mr *MockLibindexMockRecorder) IndexReport(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexReport", reflect.TypeOf((*MockLibindex)(nil).IndexReport), arg0, arg1)
-}
-
-// Scan mocks base method
-func (m *MockLibindex) Scan(arg0 context.Context, arg1 *claircore.Manifest) (<-chan *claircore.IndexReport, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Scan", arg0, arg1)
-	ret0, _ := ret[0].(<-chan *claircore.IndexReport)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Scan indicates an expected call of Scan
-func (mr *MockLibindexMockRecorder) Scan(arg0, arg1 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Scan", reflect.TypeOf((*MockLibindex)(nil).Scan), arg0, arg1)
 }

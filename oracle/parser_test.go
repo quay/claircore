@@ -24,7 +24,7 @@ func TestParse(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	vs, err := u.ParseContext(ctx, f)
+	vs, err := u.Parse(ctx, f)
 	if err != nil {
 		t.Fatal(err)
 	}

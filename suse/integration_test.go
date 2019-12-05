@@ -22,7 +22,7 @@ func TestLiveDatabase(t *testing.T) {
 
 	tctx, done := context.WithTimeout(ctx, time.Minute)
 	defer done()
-	rc, _, err := u.FetchContext(tctx, driver.Fingerprint(""))
+	rc, _, err := u.Fetch(tctx, driver.Fingerprint(""))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -30,7 +30,7 @@ func TestLiveDatabase(t *testing.T) {
 
 	tctx, done = context.WithTimeout(ctx, 8*time.Minute)
 	defer done()
-	vs, err := u.ParseContext(tctx, rc)
+	vs, err := u.Parse(tctx, rc)
 	if err != nil {
 		t.Fatal(err)
 	}

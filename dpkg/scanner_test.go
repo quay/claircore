@@ -731,7 +731,7 @@ func TestScanner(t *testing.T) {
 	}
 
 	s := &Scanner{}
-	got, err := s.ScanContext(ctx, l)
+	got, err := s.Scan(ctx, l)
 	if err != nil {
 		t.Fatal(err)
 	}

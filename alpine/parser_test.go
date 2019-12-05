@@ -1,6 +1,7 @@
 package alpine
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"sort"
@@ -187,7 +188,7 @@ func TestParser(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to create updater: %v", err)
 			}
-			vulns, err := u.Parse(f)
+			vulns, err := u.Parse(context.Background(), f)
 			if err != nil {
 				t.Fatalf("failed to parse xml: %v", err)
 			}

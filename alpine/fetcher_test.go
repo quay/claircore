@@ -33,7 +33,7 @@ func TestFetcher(t *testing.T) {
 
 		u, err := NewUpdater(test.release, test.repo, WithURL(srv.URL))
 
-		rd, hint, err := u.FetchContext(ctx, "")
+		rd, hint, err := u.Fetch(ctx, "")
 		if err != nil {
 			t.Error(err)
 		}
@@ -41,7 +41,7 @@ func TestFetcher(t *testing.T) {
 			rd.Close()
 		}
 
-		_, _, err = u.FetchContext(ctx, driver.Fingerprint(hint))
+		_, _, err = u.Fetch(ctx, driver.Fingerprint(hint))
 		if got, want := err, driver.Unchanged; got != want {
 			t.Errorf("got: %v, want: %v", got, want)
 		}

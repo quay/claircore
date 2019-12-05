@@ -24,7 +24,7 @@ func TestFetch(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		rd, hint, err := u.FetchContext(ctx, driver.Fingerprint(""))
+		rd, hint, err := u.Fetch(ctx, driver.Fingerprint(""))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -38,7 +38,7 @@ func TestFetch(t *testing.T) {
 			t.Fatalf("expected more data than %d bytes", n)
 		}
 
-		rd, got, err := u.FetchContext(ctx, hint)
+		rd, got, err := u.Fetch(ctx, hint)
 		t.Logf("got fingerprint: %+v", got)
 		t.Logf("returned expected error: %v", err)
 		if err != driver.Unchanged {
@@ -53,7 +53,7 @@ func TestFetch(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		rd, hint, err := u.Fetch()
+		rd, hint, err := u.Fetch(context.Background(), "")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -67,7 +67,7 @@ func TestFetch(t *testing.T) {
 			t.Fatalf("expected more data than %d bytes", n)
 		}
 
-		rd, got, err := u.Fetch()
+		rd, got, err := u.Fetch(context.Background(), "")
 		t.Logf("got fingerprint: %+v", got)
 		if err != nil {
 			t.Fatal(err)
