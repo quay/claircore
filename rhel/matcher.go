@@ -29,8 +29,8 @@ func (*Matcher) Query() []driver.MatchExp {
 	// associate multiple CPEs with a given vulnerability.
 	return []driver.MatchExp{
 		//driver.PackageDistributionCPE,
-		driver.PackageDistributionName,
-		driver.PackageDistributionPrettyName,
+		driver.DistributionName,
+		driver.DistributionPrettyName,
 	}
 }
 

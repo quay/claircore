@@ -23,21 +23,21 @@ const (
 	// should match claircore.Package.Name => claircore.Vulnerability.Package.Name
 	PackageName
 	// should match claircore.Package.Distribution.DID => claircore.Vulnerability.Package.Distribution.DID
-	PackageDistributionDID
+	DistributionDID
 	// should match claircore.Package.Distribution.Name => claircore.Vulnerability.Package.Distribution.Name
-	PackageDistributionName
+	DistributionName
 	// should match claircore.Package.Distribution.Version => claircore.Vulnerability.Package.Distribution.Version
-	PackageDistributionVersion
+	DistributionVersion
 	// should match claircore.Package.Distribution.VersionCodeName => claircore.Vulnerability.Package.Distribution.VersionCodeName
-	PackageDistributionVersionCodeName
+	DistributionVersionCodeName
 	// should match claircore.Package.Distribution.VersionID => claircore.Vulnerability.Package.Distribution.VersionID
-	PackageDistributionVersionID
+	DistributionVersionID
 	// should match claircore.Package.Distribution.Arch => claircore.Vulnerability.Package.Distribution.Arch
-	PackageDistributionArch
+	DistributionArch
 	// should match claircore.Package.Distribution.CPE => claircore.Vulnerability.Package.Distribution.CPE
-	PackageDistributionCPE
+	DistributionCPE
 	// should match claircore.Package.Distribution.PrettyName => claircore.Vulnerability.Package.Distribution.PrettyName
-	PackageDistributionPrettyName
+	DistributionPrettyName
 )
 
 // Matcher is an interface which a Controller uses to query the vulnstore for vulnerabilities.
