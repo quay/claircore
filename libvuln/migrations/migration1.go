@@ -29,7 +29,7 @@ const (
 		--- a tombstone field that will be updated to signify a vulnerability is not stale
 		tombstone text
 	);
-	CREATE INDEX IF NOT EXISTS vuln_lookup_idx on vuln(package_name, dist_version_id, dist_pretty_name, dist_version_code_name,  dist_name,  dist_version, dist_arch, dist_cpe);
+	CREATE INDEX IF NOT EXISTS vuln_lookup_idx on vuln(package_name, dist_id, dist_name, dist_version_id, dist_version, dist_version_code_name, dist_pretty_name, dist_cpe, dist_arch);
 	CREATE UNIQUE INDEX IF NOT EXISTS vuln_unique_idx on vuln(  
 			updater, 
 			name, 

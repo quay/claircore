@@ -37,6 +37,8 @@ func (*Matcher) Filter(record *claircore.IndexRecord) bool {
 
 func (*Matcher) Query() []driver.MatchExp {
 	return []driver.MatchExp{
+		driver.DistributionDID,
+		driver.DistributionName,
 		driver.DistributionVersion,
 	}
 }

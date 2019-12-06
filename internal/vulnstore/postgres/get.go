@@ -2,10 +2,7 @@ package postgres
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
-	"hash/fnv"
-	"io"
 	"time"
 
 	"github.com/jackc/pgx/v4"
@@ -14,25 +11,24 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/vulnstore"
-	"github.com/quay/claircore/libvuln/driver"
 )
 
 func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.IndexRecord, opts vulnstore.GetOpts) (map[int][]*claircore.Vulnerability, error) {
 	log := zerolog.Ctx(ctx).With().
 		Str("component", "vulnstore.get").
 		Logger()
-	// Build our query we will make into a prepared statement. See build func
-	// definition for details and context.
-	query, dedupedMatchers, err := getBuilder(opts.Matchers)
-	if err != nil {
-		return nil, err
-	}
-	h := fnv.New64a()
-	if _, err := io.WriteString(h, query); err != nil {
-		return nil, err
-	}
-	name := hex.EncodeToString(h.Sum(nil))
-	log.Debug().Str("name", name).Msg("built query")
+	// // Build our query we will make into a prepared statement. See build func
+	// // definition for details and context.
+	// query, dedupedMatchers, err := getBuilder(opts.Matchers)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// h := fnv.New64a()
+	// if _, err := io.WriteString(h, query); err != nil {
+	// 	return nil, err
+	// }
+	// name := hex.EncodeToString(h.Sum(nil))
+	// log.Debug().Str("name", name).Msg("built query")
 
 	tx, err := pool.Begin(ctx)
 	if err != nil {
@@ -40,11 +36,11 @@ func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.IndexReco
 	}
 	defer tx.Rollback(ctx)
 
-	// Create a prepared statement.
-	getStmt, err := tx.Prepare(ctx, name, query)
-	if err != nil {
-		return nil, err
-	}
+	// // Create a prepared statement.
+	// getStmt, err := tx.Prepare(ctx, name, query)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	// start a batch
 	batch := &pgx.Batch{}
@@ -52,33 +48,14 @@ func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.IndexReco
 	// create our bind arguments. the order of dedupedMatchers
 	// dictates the order of our bindvar values.
 	for _, record := range records {
-		args := []interface{}{}
-		// fills the OR bind vars for (package_name = binary_package OR package_name = source_package)
-		args = append(args, record.Package.Source.Name)
-		args = append(args, record.Package.Name)
-
-		for _, m := range dedupedMatchers {
-			switch m {
-			case driver.DistributionDID:
-				args = append(args, record.Distribution.DID)
-			case driver.DistributionName:
-				args = append(args, record.Distribution.Name)
-			case driver.DistributionVersion:
-				args = append(args, record.Distribution.Version)
-			case driver.DistributionVersionCodeName:
-				args = append(args, record.Distribution.VersionCodeName)
-			case driver.DistributionVersionID:
-				args = append(args, record.Distribution.VersionID)
-			case driver.DistributionArch:
-				args = append(args, record.Distribution.Arch)
-			case driver.DistributionCPE:
-				args = append(args, record.Distribution.CPE)
-			case driver.DistributionPrettyName:
-				args = append(args, record.Distribution.PrettyName)
-			}
+		query, err := getQueryBuilder(record, opts.Matchers)
+		if err != nil {
+			// if we cannot build a query for an individual record continue to the next
+			log.Debug().Msgf("could not build query for record: %+v", record)
+			continue
 		}
 		// queue the select query
-		batch.Queue(getStmt.Name, args...)
+		batch.Queue(query)
 	}
 	// send the batch
 	tctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)

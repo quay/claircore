@@ -1,6 +1,8 @@
 package rhel
 
 import (
+	"log"
+
 	version "github.com/knqyf263/go-rpm-version"
 
 	"github.com/quay/claircore"
@@ -19,6 +21,9 @@ func (*Matcher) Name() string {
 
 // Filter implements driver.Matcher.
 func (*Matcher) Filter(record *claircore.IndexRecord) bool {
+	if record.Distribution == nil {
+		log.Printf("Dist is nil")
+	}
 	return record.Distribution.DID == "rhel"
 }
 
