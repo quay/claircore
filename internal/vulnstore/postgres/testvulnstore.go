@@ -18,7 +18,7 @@ import (
 	"github.com/quay/claircore/test/integration"
 )
 
-func TestStore(ctx context.Context, t testing.TB) (*sqlx.DB, *Store, func()) {
+func TestStore(ctx context.Context, t testing.TB) (*sqlx.DB, *Store, string, func()) {
 	cmd := exec.Command("go", "list", "-f", "{{.Dir}}", "github.com/quay/claircore/internal/vulnstore/postgres")
 	o, err := cmd.Output()
 	if err != nil {
@@ -39,8 +39,9 @@ func TestStore(ctx context.Context, t testing.TB) (*sqlx.DB, *Store, func()) {
 	}
 
 	// setup sqlx
-	sx, err := sqlx.Open("pgx", fmt.Sprintf("host=%s port=%d database=%s user=%s",
-		cfg.ConnConfig.Host, cfg.ConnConfig.Port, cfg.ConnConfig.Database, cfg.ConnConfig.User))
+	dsn := fmt.Sprintf("host=%s port=%d database=%s user=%s",
+		cfg.ConnConfig.Host, cfg.ConnConfig.Port, cfg.ConnConfig.Database, cfg.ConnConfig.User)
+	sx, err := sqlx.Open("pgx", dsn)
 	if err != nil {
 		t.Fatalf("failed to sqlx Open: %v", err)
 	}
@@ -55,7 +56,7 @@ func TestStore(ctx context.Context, t testing.TB) (*sqlx.DB, *Store, func()) {
 
 	s := NewVulnStore(sx, pool)
 
-	return sx, s, func() {
+	return sx, s, dsn, func() {
 		db.Close(ctx, t)
 	}
 }

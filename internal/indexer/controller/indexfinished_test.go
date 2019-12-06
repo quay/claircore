@@ -10,14 +10,14 @@ import (
 	"github.com/quay/claircore/internal/indexer"
 )
 
-func Test_ScanFinished_Success(t *testing.T) {
+func Test_IndexFinished_Success(t *testing.T) {
 	var tt = []struct {
 		name          string
 		expectedState State
 		mock          func(t *testing.T) indexer.Store
 	}{
 		{
-			name:          "successful scan finished",
+			name:          "successful index finished",
 			expectedState: Terminal,
 			mock: func(t *testing.T) indexer.Store {
 				ctrl := gomock.NewController(t)

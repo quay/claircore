@@ -177,7 +177,7 @@ func Benchmark_IndexPackages(b *testing.B) {
 
 	for _, bench := range benchmarks {
 		b.Run(bench.name, func(b *testing.B) {
-			db, store, teardown := TestStore(ctx, b)
+			db, store, _, teardown := TestStore(ctx, b)
 			defer teardown()
 
 			// gen a scnr and insert

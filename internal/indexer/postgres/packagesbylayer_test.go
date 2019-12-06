@@ -65,7 +65,7 @@ func Test_PackagesByLayer_Success(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			db, store, teardown := TestStore(ctx, t)
+			db, store, _, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			// generate a specific number of packages

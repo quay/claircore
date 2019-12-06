@@ -36,7 +36,7 @@ func Test_SetIndexReport_StateUpdate(t *testing.T) {
 	}
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			db, store, teardown := TestStore(ctx, t)
+			db, store, _, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			err := store.SetIndexReport(ctx, table.initState)
@@ -102,7 +102,7 @@ func Test_SetIndexReport_Success(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			_, store, teardown := TestStore(ctx, t)
+			_, store, _, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			err := store.SetIndexReport(ctx, table.sr)
