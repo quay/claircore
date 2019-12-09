@@ -83,32 +83,38 @@ func (c *Coalescer) associate(ctx context.Context, artifacts []layerArtifacts) {
 		return
 	}
 
-	var currDist claircore.Distribution
+	var currDist *claircore.Distribution
 
 	// search for initial distribution. we will assume that if we find a
 	// distribution in layer n all packages in layers 0-n are associated with
 	// that distribution
 	for _, a := range artifacts {
 		if len(a.dist) != 0 {
-			currDist = *a.dist[0]
-			c.sr.Distributions[currDist.ID] = &currDist
+			currDist = a.dist[0]
+			c.sr.Distributions[currDist.ID] = currDist
 			break
+		}
+	}
+
+	// associate package data
+	for _, a := range artifacts {
+		for _, pkg := range a.pkgs {
+			c.sr.PackageIntroduced[pkg.ID] = a.hash
+			c.sr.Packages[pkg.ID] = pkg
 		}
 	}
 
 	// associate all packages and handle finding subsequent distributions
 	// a subsequent distribution may occur with dist upgrade or downgrade
 	for _, a := range artifacts {
-		if len(a.dist) != 0 {
-			currDist = *a.dist[0]
-			c.sr.Distributions[currDist.ID] = &currDist
-		}
 		for _, pkg := range a.pkgs {
-			if _, ok := c.sr.PackageIntroduced[pkg.ID]; !ok {
-				c.sr.PackageIntroduced[pkg.ID] = a.hash
+			if len(a.dist) != 0 {
+				currDist = a.dist[0]
+				c.sr.Distributions[currDist.ID] = currDist
 			}
-			c.sr.Packages[pkg.ID] = pkg
-			c.sr.DistributionByPackage[pkg.ID] = currDist.ID
+			if currDist != nil {
+				c.sr.DistributionByPackage[pkg.ID] = currDist.ID
+			}
 		}
 	}
 
