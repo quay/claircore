@@ -2,11 +2,13 @@
 package osrelease
 
 import (
+	"archive/tar"
 	"bufio"
 	"bytes"
 	"context"
 	"fmt"
 	"io"
+	"path/filepath"
 	"runtime/trace"
 	"strings"
 
@@ -63,21 +65,37 @@ func (s *Scanner) Scan(l *claircore.Layer) ([]*claircore.Distribution, error) {
 	log.Debug().Msg("start")
 	defer log.Debug().Msg("done")
 
-	f, err := l.Files([]string{fpath})
+	r, err := l.Reader()
+	defer r.Close()
 	if err != nil {
 		return nil, fmt.Errorf("osrelease: unable to open layer: %w", err)
 	}
-	b := f[fpath]
-	if len(b) == 0 {
-		log.Debug().Msg("didn't find an os-release file")
-		return nil, nil
+
+	// iterate through the tar and attempt to parse each os-release file encountered.
+	// on a successful parse return the distribution.
+	tr := tar.NewReader(r)
+	for hdr, err := tr.Next(); (err == nil) && (ctx.Err() == nil); hdr, err = tr.Next() {
+		switch hdr.Typeflag {
+		case tar.TypeReg:
+			base := filepath.Base(hdr.Name)
+			if base != "os-release" {
+				continue
+			}
+			d, err := parse(ctx, &log, tr)
+			if err == nil {
+				return []*claircore.Distribution{d}, nil
+			}
+		}
 	}
-	rd := bytes.NewReader(b)
-	d, err := parse(ctx, &log, rd)
-	if err != nil {
-		return nil, err
+	if err != io.EOF {
+		return nil, fmt.Errorf("encountered a tar error: %v", err)
 	}
-	return []*claircore.Distribution{d}, nil
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+
+	log.Debug().Msg("didn't find an os-release file")
+	return nil, nil
 }
 
 // Parse returns the distribution information from the file contents provided on
