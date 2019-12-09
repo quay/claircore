@@ -1,12 +1,16 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"os"
-	"os/exec"
+	"net/http"
+	"net/url"
+	"path"
 	"strings"
+
+	"github.com/google/go-containerregistry/pkg/authn"
+	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 
 	"github.com/quay/claircore"
 )
@@ -15,37 +19,79 @@ import (
 //
 // The command (skopeo or docker) needs to be configured with any needed
 // permissions.
-func Inspect(ctx context.Context, image string, useDocker bool) (*claircore.Manifest, error) {
-	cmdbuf := bytes.Buffer{}
-	cmd := exec.CommandContext(ctx, "skopeo", "inspect", image)
-	if useDocker {
-		image = strings.TrimPrefix(`docker://`, image)
-		cmd = exec.CommandContext(ctx, "docker", "manifest", "inspect", image)
+func Inspect(ctx context.Context, r string) (*claircore.Manifest, error) {
+	ref, err := name.ParseReference(r)
+	if err != nil {
+		return nil, err
 	}
-	cmd.Stdout = &cmdbuf
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
+	repo := ref.Context()
+	auth, err := authn.DefaultKeychain.Resolve(repo)
+	if err != nil {
+		return nil, err
+	}
+	rt, err := transport.New(repo.Registry, auth, http.DefaultTransport, []string{repo.Scope("pull")})
+	if err != nil {
 		return nil, err
 	}
 
-	var j skopeoJSON
-	if err := json.NewDecoder(&cmdbuf).Decode(&j); err != nil {
+	desc, err := remote.Get(ref, remote.WithTransport(rt))
+	if err != nil {
 		return nil, err
 	}
-	m := claircore.Manifest{
-		Hash:   strings.TrimPrefix(j.Digest, "sha256:"),
-		Layers: make([]*claircore.Layer, len(j.Layers)),
+	img, err := desc.Image()
+	if err != nil {
+		return nil, err
 	}
-	for i, l := range j.Layers {
-		m.Layers[i] = &claircore.Layer{
-			Hash: strings.TrimPrefix(l, "sha256:"),
+
+	h, err := img.Digest()
+	if err != nil {
+		return nil, err
+	}
+	out := claircore.Manifest{
+		Hash: h.Hex,
+	}
+
+	ls, err := img.Layers()
+	if err != nil {
+		return nil, err
+	}
+
+	rURL := url.URL{
+		Scheme: repo.Scheme(),
+		Host:   repo.RegistryStr(),
+	}
+	c := http.Client{
+		Transport: rt,
+	}
+
+	for _, l := range ls {
+		d, err := l.Digest()
+		if err != nil {
+			return nil, err
 		}
+		u, err := rURL.Parse(path.Join("/", "v2", strings.TrimPrefix(repo.RepositoryStr(), repo.RegistryStr()), "blobs", d.String()))
+		if err != nil {
+			return nil, err
+		}
+		req, err := http.NewRequestWithContext(ctx, http.MethodHead, u.String(), nil)
+		if err != nil {
+			return nil, err
+		}
+		res, err := c.Do(req)
+		if err != nil {
+			return nil, err
+		}
+		res.Body.Close()
+
+		res.Request.Header.Del("User-Agent")
+		out.Layers = append(out.Layers, &claircore.Layer{
+			Hash: d.Hex,
+			RemotePath: claircore.RemotePath{
+				URI:     res.Request.URL.String(),
+				Headers: res.Request.Header,
+			},
+		})
 	}
 
-	return &m, nil
-}
-
-type skopeoJSON struct {
-	Digest string
-	Layers []string
+	return &out, nil
 }

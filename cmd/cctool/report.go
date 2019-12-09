@@ -54,7 +54,8 @@ type reportConfig struct {
 	timeout           time.Duration
 	libindex, libvuln *url.URL
 	dump              bool
-	dumpTmpl          *template.Template
+	indexTmpl         *template.Template
+	manifestTmpl      *template.Template
 }
 
 // Report is the subcommand for generating container reports.
@@ -66,7 +67,8 @@ func Report(cmd context.Context, cfg *commonConfig, args []string) error {
 	fs.BoolVar(&cmdcfg.dump, "dump", false, "dump indexreports to file described by dump-fmt")
 	libindexRoot := fs.String("libindex", "http://localhost:8080/", "address for a libindex api server")
 	libvulnRoot := fs.String("libvuln", "http://localhost:8081/", "address for a libvuln api server")
-	dumpTmplString := fs.String("dump-fmt", "{{.}}.json", "filenames to use when the dump flag is provided")
+	indexTmplString := fs.String("index-fmt", "{{.}}.index.json", "filenames to use when the dump flag is provided")
+	manifestTmplString := fs.String("manifest-fmt", "{{.}}.manifest.json", "filenames to use when the dump flag is provided")
 	fs.Parse(args)
 
 	images := fs.Args()
@@ -95,7 +97,11 @@ func Report(cmd context.Context, cfg *commonConfig, args []string) error {
 	if err != nil {
 		return err
 	}
-	cmdcfg.dumpTmpl, err = template.New("dumpfile").Parse(*dumpTmplString)
+	cmdcfg.indexTmpl, err = template.New("dumpfile").Parse(*indexTmplString)
+	if err != nil {
+		return err
+	}
+	cmdcfg.manifestTmpl, err = template.New("dumpfile").Parse(*manifestTmplString)
 	if err != nil {
 		return err
 	}
@@ -142,22 +148,35 @@ func Report(cmd context.Context, cfg *commonConfig, args []string) error {
 }
 
 func runManifest(ctx context.Context, img string, cfg *commonConfig, cmdcfg *reportConfig) (*claircore.VulnerabilityReport, error) {
-	m, err := Inspect(ctx, img, cfg.UseDocker)
+	m, err := Inspect(ctx, img)
 	if err != nil {
 		return nil, err
 	}
 	buf := bytes.Buffer{}
 
-	for _, l := range m.Layers {
-		if err := cfg.URLTemplate.Execute(&buf, l); err != nil {
-			return nil, err
-		}
-		l.RemotePath.URI = buf.String()
-		buf.Reset()
-	}
-
 	if err := json.NewEncoder(&buf).Encode(m); err != nil {
 		return nil, err
+	}
+	if cmdcfg.dump {
+		n := path.Base(img)
+		// shadow this for our dumping
+		buf := bytes.Buffer{}
+		func() {
+			if err := cmdcfg.manifestTmpl.Execute(&buf, n); err != nil {
+				log.Print(err)
+				return
+			}
+			f, err := os.Create(buf.String())
+			if err != nil {
+				log.Print(err)
+				return
+			}
+			defer f.Close()
+			if err := json.NewEncoder(f).Encode(m); err != nil {
+				log.Print(err)
+			}
+			log.Printf("wrote %q", buf.String())
+		}()
 	}
 
 	req, err := http.NewRequestWithContext(ctx, "POST", cmdcfg.libindex.String(), &buf)
@@ -223,7 +242,7 @@ func runManifest(ctx context.Context, img string, cfg *commonConfig, cmdcfg *rep
 		// shadow this for our dumping
 		buf := bytes.Buffer{}
 		func() {
-			if err := cmdcfg.dumpTmpl.Execute(&buf, n); err != nil {
+			if err := cmdcfg.indexTmpl.Execute(&buf, n); err != nil {
 				log.Print(err)
 				return
 			}
