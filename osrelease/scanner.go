@@ -63,10 +63,10 @@ func (s *Scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Di
 	defer log.Debug().Msg("done")
 
 	r, err := l.Reader()
-	defer r.Close()
 	if err != nil {
 		return nil, fmt.Errorf("osrelease: unable to open layer: %w", err)
 	}
+	defer r.Close()
 
 	// iterate through the tar and attempt to parse each os-release file encountered.
 	// on a successful parse return the distribution.
