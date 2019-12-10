@@ -13,7 +13,11 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 )
 
-// libvuln implements the libvuln.Lubvuln interface
+// Libvuln exports methods for scanning an IndexReport and created
+// a VulnerabilityReport.
+//
+// Libvuln also runs background updaters which keep the vulnerability
+// database consistent.
 type Libvuln struct {
 	store        vulnstore.Store
 	db           *sqlx.DB

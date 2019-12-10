@@ -30,7 +30,7 @@ ir, err := lib.Index(m)
 if err != nil {
     log.Printf("%v", err)
 }
-if ir.State == "ScannError" {
+if ir.State == "ScanError" {
     log.Printf("scan failed: %s", sr.Err)
 }
 ```
