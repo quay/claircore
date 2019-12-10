@@ -71,7 +71,8 @@ func (*Scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Dist
 	// iterate through the tar and attempt to parse each os-release file encountered.
 	// on a successful parse return the distribution.
 	tr := tar.NewReader(r)
-	for hdr, err := tr.Next(); (err == nil) && (ctx.Err() == nil); hdr, err = tr.Next() {
+	hdr, err := tr.Next()
+	for ; err == nil && ctx.Err() == nil; hdr, err = tr.Next() {
 		switch hdr.Typeflag {
 		case tar.TypeReg:
 			base := filepath.Base(hdr.Name)
@@ -84,7 +85,10 @@ func (*Scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Dist
 			}
 		}
 	}
-	if err != io.EOF {
+	switch err {
+	case nil:
+	case io.EOF: // OK
+	default:
 		return nil, fmt.Errorf("encountered a tar error: %v", err)
 	}
 	if ctx.Err() != nil {
