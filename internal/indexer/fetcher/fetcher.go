@@ -191,10 +191,11 @@ func (f *fetcher) onDisk(ctx context.Context, contents io.ReadCloser, layer *cla
 		return nil, fmt.Errorf("defaultFetcher: unable to create temp file for archive contents")
 	}
 	defer fd.Close()
-	bufferedFD := bufio.NewWriter(fd)
+	buf := bufio.NewWriter(fd)
+	defer buf.Flush()
 
 	// write tar to temp file
-	_, err = io.Copy(bufferedFD, contents)
+	_, err = io.Copy(buf, contents)
 	if err != nil {
 		return nil, fmt.Errorf("defaultFetcher: failed to copy decompressed archive to fd %v: %v", fd.Name(), err)
 	}
