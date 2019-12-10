@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -36,8 +37,12 @@ func main() {
 	// setup pretty logging
 	zerolog.SetGlobalLevel(logLevel(conf))
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	ctx = log.Logger.WithContext(ctx)
 
-	opts := confTolibindexOpts(conf)
+	opts := &libindex.Opts{
+		ConnString: conf.ConnString,
+		Migrations: true,
+	}
 
 	// create libindex
 	lib, err := libindex.New(ctx, opts)
@@ -45,9 +50,17 @@ func main() {
 		log.Fatal().Msgf("failed to create libindex %v", err)
 	}
 
-	httpServ := httpServer(conf, lib)
+	mux := http.NewServeMux()
+	mux.Handle("/index", libhttp.Index(lib))
+	mux.Handle("/index_report/", libhttp.IndexReport(lib))
+	srv := &http.Server{
+		Addr:        conf.HTTPListenAddr,
+		Handler:     mux,
+		BaseContext: func(_ net.Listener) context.Context { return ctx },
+	}
+
 	log.Printf("starting http server on %v", conf.HTTPListenAddr)
-	err = httpServ.ListenAndServe()
+	err = srv.ListenAndServe()
 	if err != nil {
 		log.Fatal().Msgf("failed to start http server: %v", err)
 	}
@@ -72,30 +85,4 @@ func logLevel(conf Config) zerolog.Level {
 	default:
 		return zerolog.InfoLevel
 	}
-}
-
-func httpServer(conf Config, lib *libindex.Libindex) *http.Server {
-	// create our http mux and add routes
-	mux := http.NewServeMux()
-
-	// create server and launch in go routine
-	s := &http.Server{
-		Addr:    conf.HTTPListenAddr,
-		Handler: mux,
-	}
-
-	// create handlers
-	mux.Handle("/index", libhttp.Index(lib))
-	mux.Handle("/index_report/", libhttp.IndexReport(lib))
-
-	return s
-}
-
-func confTolibindexOpts(conf Config) *libindex.Opts {
-	opts := &libindex.Opts{
-		ConnString: conf.ConnString,
-		Migrations: true,
-	}
-
-	return opts
 }

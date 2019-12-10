@@ -1,7 +1,6 @@
 package http
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	h "net/http"
@@ -38,7 +37,7 @@ func Index(lib *libindex.Libindex) h.HandlerFunc {
 		}
 
 		// call scan
-		_, err = lib.Index(context.Background(), &m)
+		_, err = lib.Index(r.Context(), &m)
 		if err != nil {
 			resp := &je.Response{
 				Code:    "scan-error",
