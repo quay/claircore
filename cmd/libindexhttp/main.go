@@ -74,7 +74,7 @@ func logLevel(conf Config) zerolog.Level {
 	}
 }
 
-func httpServer(conf Config, lib libindex.Libindex) *http.Server {
+func httpServer(conf Config, lib *libindex.Libindex) *http.Server {
 	// create our http mux and add routes
 	mux := http.NewServeMux()
 
