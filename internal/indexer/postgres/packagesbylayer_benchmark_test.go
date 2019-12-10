@@ -88,7 +88,7 @@ func Benchmark_PackagesByLayer(b *testing.B) {
 
 	for _, bench := range benchmarks {
 		b.Run(bench.name, func(b *testing.B) {
-			db, store, teardown := TestStore(ctx, b)
+			db, store, _, teardown := TestStore(ctx, b)
 			defer teardown()
 
 			// generate a specific number of packages

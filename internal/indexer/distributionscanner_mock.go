@@ -5,6 +5,7 @@
 package indexer
 
 import (
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	claircore "github.com/quay/claircore"
 	reflect "reflect"
@@ -62,18 +63,18 @@ func (mr *MockDistributionScannerMockRecorder) Name() *gomock.Call {
 }
 
 // Scan mocks base method
-func (m *MockDistributionScanner) Scan(arg0 *claircore.Layer) ([]*claircore.Distribution, error) {
+func (m *MockDistributionScanner) Scan(arg0 context.Context, arg1 *claircore.Layer) ([]*claircore.Distribution, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Scan", arg0)
+	ret := m.ctrl.Call(m, "Scan", arg0, arg1)
 	ret0, _ := ret[0].([]*claircore.Distribution)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Scan indicates an expected call of Scan
-func (mr *MockDistributionScannerMockRecorder) Scan(arg0 interface{}) *gomock.Call {
+func (mr *MockDistributionScannerMockRecorder) Scan(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Scan", reflect.TypeOf((*MockDistributionScanner)(nil).Scan), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Scan", reflect.TypeOf((*MockDistributionScanner)(nil).Scan), arg0, arg1)
 }
 
 // Version mocks base method

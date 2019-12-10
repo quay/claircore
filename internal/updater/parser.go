@@ -1,6 +1,7 @@
 package updater
 
 import (
+	"context"
 	"io"
 
 	"github.com/quay/claircore"
@@ -12,5 +13,5 @@ type Parser interface {
 	// Parse should take an io.ReadCloser, read the contents, parse the contents
 	// into a list of claircore.Vulnerability structs and then return
 	// the list. Parse should assume contents are uncompressed and ready for parsing.
-	Parse(contents io.ReadCloser) ([]*claircore.Vulnerability, error)
+	Parse(ctx context.Context, contents io.ReadCloser) ([]*claircore.Vulnerability, error)
 }

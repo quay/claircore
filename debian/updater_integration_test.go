@@ -1,8 +1,7 @@
-//+build integration
-
 package debian
 
 import (
+	"context"
 	"testing"
 
 	"github.com/rs/zerolog/log"
@@ -40,11 +39,12 @@ func Test_Updater(t *testing.T) {
 			updater := NewUpdater(table.release)
 			log.Printf("%v", updater.url)
 
-			contents, updateHash, err := updater.Fetch()
+			contents, updateHash, err := updater.Fetch(context.Background(), "")
 			assert.NoError(t, err)
 			assert.NotEmpty(t, updateHash)
 
-			vulns, err := updater.Parse(contents)
+			vulns, err := updater.Parse(context.Background(), contents)
+
 			assert.NoError(t, err)
 			assert.Greater(t, len(vulns), 1)
 

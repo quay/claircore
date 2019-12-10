@@ -9,7 +9,6 @@ import (
 	"runtime/trace"
 
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
@@ -40,20 +39,13 @@ func (*Scanner) Version() string { return pkgVersion }
 // Kind implements indexer.VersionedScanner.
 func (*Scanner) Kind() string { return pkgKind }
 
-// Scan proxies the call to ScanContext.
-func (ps *Scanner) Scan(layer *claircore.Layer) ([]*claircore.Package, error) {
-	ctx := context.TODO()
-	ctx = log.Logger.WithContext(ctx)
-	return ps.ScanContext(ctx, layer)
-}
-
 const installedFile = "lib/apk/db/installed"
 
-// ScanContext examines a layer for an apk installation database, and extracts
+// Scan examines a layer for an apk installation database, and extracts
 // the packages listed there.
 //
 // A return of (nil, nil) is expected if there's no apk database.
-func (*Scanner) ScanContext(ctx context.Context, layer *claircore.Layer) ([]*claircore.Package, error) {
+func (*Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.Package, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}

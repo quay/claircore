@@ -45,7 +45,7 @@ func Test_IndexReport_Success(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			db, store, teardown := TestStore(ctx, t)
+			db, store, _, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			table.init(t, db, table.expectedSR, table.hash)

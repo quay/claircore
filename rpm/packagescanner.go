@@ -16,7 +16,6 @@ import (
 	"strings"
 
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/quay/claircore"
@@ -68,20 +67,13 @@ func (*Scanner) Version() string { return pkgVersion }
 // Kind implements scanner.VersionedScanner.
 func (*Scanner) Kind() string { return pkgKind }
 
-// Scan proxies the call to ScanContext.
-func (ps *Scanner) Scan(layer *claircore.Layer) ([]*claircore.Package, error) {
-	ctx := context.TODO()
-	ctx = log.Logger.WithContext(ctx)
-	return ps.ScanContext(ctx, layer)
-}
-
-// ScanContext attempts to find rpm databases within the layer and enumerate the
+// Scan attempts to find rpm databases within the layer and enumerate the
 // packages there.
 //
 // A return of (nil, nil) is expected if there's no rpm database.
 //
 // The external commands "tar" and "rpm" are used and expected to be in PATH.
-func (ps *Scanner) ScanContext(ctx context.Context, layer *claircore.Layer) ([]*claircore.Package, error) {
+func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.Package, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}

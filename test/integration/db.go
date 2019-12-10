@@ -28,8 +28,9 @@ func init() {
 
 // DefaultDSN is a dsn for database server usually set up by the project's
 // Makefile.
-const DefaultDSN = `host=localhost port=5434 user=claircore dbname=claircore sslmode=disable`
-
+const (
+	DefaultDSN = `host=localhost port=5434 user=claircore dbname=claircore sslmode=disable`
+)
 const (
 	createRole      = `CREATE ROLE %s LOGIN;`
 	createDatabase  = `CREATE DATABASE %[2]s WITH OWNER %[1]s ENCODING 'UTF8';`

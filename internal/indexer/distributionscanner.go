@@ -1,8 +1,12 @@
 package indexer
 
-import "github.com/quay/claircore"
+import (
+	"context"
+
+	"github.com/quay/claircore"
+)
 
 type DistributionScanner interface {
 	VersionedScanner
-	Scan(*claircore.Layer) ([]*claircore.Distribution, error)
+	Scan(context.Context, *claircore.Layer) ([]*claircore.Distribution, error)
 }

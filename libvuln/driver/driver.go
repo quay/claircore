@@ -62,31 +62,28 @@ type Updater interface {
 	Parser
 }
 
-// Parser is an interface when called with an io.ReadCloser should parse
-// the provided contents and return a list of *claircore.Vulnerabilities
+// Parser is an interface which is embedded into the Updater interface.
+//
+// Parse should be called with an io.ReadCloser struct where the contents of a security
+// advisory databse can be read and parsed into an array of *claircore.Vulnerability
 type Parser interface {
 	// Parse should take an io.ReadCloser, read the contents, parse the contents
 	// into a list of claircore.Vulnerability structs and then return
 	// the list. Parse should assume contents are uncompressed and ready for parsing.
-	Parse(contents io.ReadCloser) ([]*claircore.Vulnerability, error)
+	Parse(ctx context.Context, contents io.ReadCloser) ([]*claircore.Vulnerability, error)
 }
 
-// Fetcher is an interface which is embedded into the Updater struct.
-// When called the implementaiton should return an io.ReadCloser with
-// contents of the target vulnerability data
-type Fetcher interface {
-	// Fetch should retrieve the target vulnerability data and return an io.ReadCloser
-	// with the contents. Fetch should also return a string which can used to determine
-	// if these contents should be applied to the vulnerability database. for example
-	// a sha265 sum of a OVAL xml file.
-	Fetch() (io.ReadCloser, string, error)
-}
-
-// FetcherNG is an experimental fetcher interface.
+// Fetcher is an interface which is embedded into the Updater interface.
 //
-// This may go away or be renamed without warning.
-type FetcherNG interface {
-	FetchContext(context.Context, Fingerprint) (io.ReadCloser, Fingerprint, error)
+// When called the interface should determine if new security advisory data is available.
+// Fingerprint may be passed into in order for the Fetcher to determine if the contents has changed
+//
+// If there is new content Fetcher should return a io.ReadCloser where the new content can be read.
+// Optionally a fingerprint can be returned which uniqeually identifies the new content.
+//
+// If the conent has not change an  Unchanged error should be returned.
+type Fetcher interface {
+	Fetch(context.Context, Fingerprint) (io.ReadCloser, Fingerprint, error)
 }
 
 // Unchanged is returned by Fetchers when the database has not changed.

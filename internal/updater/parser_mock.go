@@ -5,6 +5,7 @@
 package updater
 
 import (
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	claircore "github.com/quay/claircore"
 	io "io"
@@ -35,16 +36,16 @@ func (m *MockParser) EXPECT() *MockParserMockRecorder {
 }
 
 // Parse mocks base method
-func (m *MockParser) Parse(arg0 io.ReadCloser) ([]*claircore.Vulnerability, error) {
+func (m *MockParser) Parse(arg0 context.Context, arg1 io.ReadCloser) ([]*claircore.Vulnerability, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Parse", arg0)
+	ret := m.ctrl.Call(m, "Parse", arg0, arg1)
 	ret0, _ := ret[0].([]*claircore.Vulnerability)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Parse indicates an expected call of Parse
-func (mr *MockParserMockRecorder) Parse(arg0 interface{}) *gomock.Call {
+func (mr *MockParserMockRecorder) Parse(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Parse", reflect.TypeOf((*MockParser)(nil).Parse), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Parse", reflect.TypeOf((*MockParser)(nil).Parse), arg0, arg1)
 }

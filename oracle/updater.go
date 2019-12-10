@@ -1,13 +1,10 @@
 package oracle
 
 import (
-	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"strconv"
-	"time"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -23,8 +20,8 @@ const (
 
 // Updater implements driver.Updater for Oracle Linux.
 type Updater struct {
-	year int
-	ovalutil.Fetcher
+	year             int
+	ovalutil.Fetcher // Fetch method promoted via embed
 
 	logger *zerolog.Logger // hack until the context-ified interfaces are used
 }
@@ -105,7 +102,6 @@ func WithLogger(l *zerolog.Logger) Option {
 }
 
 var _ driver.Updater = (*Updater)(nil)
-var _ driver.FetcherNG = (*Updater)(nil)
 
 // Name satifies the driver.Updater interface.
 func (u *Updater) Name() string {
@@ -114,13 +110,4 @@ func (u *Updater) Name() string {
 		which = strconv.Itoa(u.year)
 	}
 	return fmt.Sprintf("oracle-%s-updater", which)
-}
-
-// Fetch satifies the driver.Updater interface.
-func (u *Updater) Fetch() (io.ReadCloser, string, error) {
-	ctx := u.logger.WithContext(context.Background())
-	ctx, done := context.WithTimeout(ctx, time.Minute)
-	defer done()
-	r, hint, err := u.FetchContext(ctx, "")
-	return r, string(hint), err
 }

@@ -14,7 +14,6 @@ import (
 	"strings"
 
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 	"github.com/tadasv/go-dpkg"
 
 	"github.com/quay/claircore"
@@ -49,20 +48,13 @@ func (ps *Scanner) Version() string { return version }
 // Kind implements scanner.VersionedScanner.
 func (ps *Scanner) Kind() string { return kind }
 
-// Scan proxies the call to ScanContext.
-func (ps *Scanner) Scan(layer *claircore.Layer) ([]*claircore.Package, error) {
-	ctx := context.TODO()
-	ctx = log.Logger.WithContext(ctx)
-	return ps.ScanContext(ctx, layer)
-}
-
-// ScanContext attempts to find a dpkg database within the layer and read all of the
+// Scan attempts to find a dpkg database within the layer and read all of the
 // installed packages it can find in the "status" file.
 //
 // It's expected to return (nil, nil) if there's no dpkg database in the layer.
 //
 // It does not respect any dpkg configuration files.
-func (ps *Scanner) ScanContext(ctx context.Context, layer *claircore.Layer) ([]*claircore.Package, error) {
+func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.Package, error) {
 	// Preamble
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	trace.Log(ctx, "layer:sha256", layer.Hash)

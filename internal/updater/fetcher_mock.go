@@ -5,6 +5,7 @@
 package updater
 
 import (
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	io "io"
 	reflect "reflect"
@@ -34,9 +35,9 @@ func (m *MockFetcher) EXPECT() *MockFetcherMockRecorder {
 }
 
 // Fetch mocks base method
-func (m *MockFetcher) Fetch() (io.ReadCloser, string, error) {
+func (m *MockFetcher) Fetch(arg0 context.Context) (io.ReadCloser, string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Fetch")
+	ret := m.ctrl.Call(m, "Fetch", arg0)
 	ret0, _ := ret[0].(io.ReadCloser)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(error)
@@ -44,7 +45,7 @@ func (m *MockFetcher) Fetch() (io.ReadCloser, string, error) {
 }
 
 // Fetch indicates an expected call of Fetch
-func (mr *MockFetcherMockRecorder) Fetch() *gomock.Call {
+func (mr *MockFetcherMockRecorder) Fetch(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Fetch", reflect.TypeOf((*MockFetcher)(nil).Fetch))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Fetch", reflect.TypeOf((*MockFetcher)(nil).Fetch), arg0)
 }

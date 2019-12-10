@@ -1,6 +1,7 @@
 package ubuntu
 
 import (
+	"context"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -67,23 +68,23 @@ func NewUpdater(release Release) *Updater {
 	}
 }
 
-func (u *Updater) Fetch() (io.ReadCloser, string, error) {
+func (u *Updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
 	u.logger.Info().Msg("fetching latest oval database")
 	var rc io.ReadCloser
 	var hash string
 	var err error
 
 	if shouldBzipFetch[u.release] {
-		rc, hash, err = u.fetchBzip()
+		rc, hash, err = u.fetchBzip(ctx)
 	} else {
-		rc, hash, err = u.fetch()
+		rc, hash, err = u.fetch(ctx)
 	}
 
 	u.logger.Info().Msg("fetched latest oval database successfully")
-	return rc, hash, err
+	return rc, driver.Fingerprint(hash), err
 }
 
-func (u *Updater) Parse(contents io.ReadCloser) ([]*claircore.Vulnerability, error) {
+func (u *Updater) Parse(ctx context.Context, contents io.ReadCloser) ([]*claircore.Vulnerability, error) {
 	u.logger.Info().Msg("parsing oval database")
 	defer contents.Close()
 

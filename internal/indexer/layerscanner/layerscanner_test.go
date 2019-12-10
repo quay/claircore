@@ -28,20 +28,20 @@ func Test_Scan_NoErrors(t *testing.T) {
 		t.Fatalf("failed to create unique layers: %v", err)
 	}
 
-	mock_ps.EXPECT().Scan(layers[0]).Return([]*claircore.Package{}, nil)
-	mock_ps.EXPECT().Scan(layers[1]).Return([]*claircore.Package{}, nil)
+	mock_ps.EXPECT().Scan(gomock.Any(), layers[0]).Return([]*claircore.Package{}, nil)
+	mock_ps.EXPECT().Scan(gomock.Any(), layers[1]).Return([]*claircore.Package{}, nil)
 	mock_ps.EXPECT().Kind().AnyTimes()
 	mock_ps.EXPECT().Name().AnyTimes()
 	mock_ps.EXPECT().Version().AnyTimes()
 
-	mock_ds.EXPECT().Scan(layers[0]).Return([]*claircore.Distribution{}, nil)
-	mock_ds.EXPECT().Scan(layers[1]).Return([]*claircore.Distribution{}, nil)
+	mock_ds.EXPECT().Scan(gomock.Any(), layers[0]).Return([]*claircore.Distribution{}, nil)
+	mock_ds.EXPECT().Scan(gomock.Any(), layers[1]).Return([]*claircore.Distribution{}, nil)
 	mock_ds.EXPECT().Kind().AnyTimes()
 	mock_ds.EXPECT().Name().AnyTimes()
 	mock_ds.EXPECT().Version().AnyTimes()
 
-	mock_rs.EXPECT().Scan(layers[0]).Return([]*claircore.Repository{}, nil)
-	mock_rs.EXPECT().Scan(layers[1]).Return([]*claircore.Repository{}, nil)
+	mock_rs.EXPECT().Scan(gomock.Any(), layers[0]).Return([]*claircore.Repository{}, nil)
+	mock_rs.EXPECT().Scan(gomock.Any(), layers[1]).Return([]*claircore.Repository{}, nil)
 	mock_rs.EXPECT().Kind().AnyTimes()
 	mock_rs.EXPECT().Name().AnyTimes()
 	mock_rs.EXPECT().Version().AnyTimes()

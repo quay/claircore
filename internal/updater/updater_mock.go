@@ -5,6 +5,7 @@
 package updater
 
 import (
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	claircore "github.com/quay/claircore"
 	io "io"
@@ -35,9 +36,9 @@ func (m *MockUpdater) EXPECT() *MockUpdaterMockRecorder {
 }
 
 // Fetch mocks base method
-func (m *MockUpdater) Fetch() (io.ReadCloser, string, error) {
+func (m *MockUpdater) Fetch(arg0 context.Context) (io.ReadCloser, string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Fetch")
+	ret := m.ctrl.Call(m, "Fetch", arg0)
 	ret0, _ := ret[0].(io.ReadCloser)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(error)
@@ -45,9 +46,9 @@ func (m *MockUpdater) Fetch() (io.ReadCloser, string, error) {
 }
 
 // Fetch indicates an expected call of Fetch
-func (mr *MockUpdaterMockRecorder) Fetch() *gomock.Call {
+func (mr *MockUpdaterMockRecorder) Fetch(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Fetch", reflect.TypeOf((*MockUpdater)(nil).Fetch))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Fetch", reflect.TypeOf((*MockUpdater)(nil).Fetch), arg0)
 }
 
 // Name mocks base method
@@ -65,16 +66,16 @@ func (mr *MockUpdaterMockRecorder) Name() *gomock.Call {
 }
 
 // Parse mocks base method
-func (m *MockUpdater) Parse(arg0 io.ReadCloser) ([]*claircore.Vulnerability, error) {
+func (m *MockUpdater) Parse(arg0 context.Context, arg1 io.ReadCloser) ([]*claircore.Vulnerability, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Parse", arg0)
+	ret := m.ctrl.Call(m, "Parse", arg0, arg1)
 	ret0, _ := ret[0].([]*claircore.Vulnerability)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Parse indicates an expected call of Parse
-func (mr *MockUpdaterMockRecorder) Parse(arg0 interface{}) *gomock.Call {
+func (mr *MockUpdaterMockRecorder) Parse(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Parse", reflect.TypeOf((*MockUpdater)(nil).Parse), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Parse", reflect.TypeOf((*MockUpdater)(nil).Parse), arg0, arg1)
 }
