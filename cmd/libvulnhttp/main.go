@@ -76,7 +76,7 @@ func logLevel(conf Config) zerolog.Level {
 	}
 }
 
-func httpServer(ctx context.Context, conf Config, lib libvuln.Libvuln) *http.Server {
+func httpServer(ctx context.Context, conf Config, lib *libvuln.Libvuln) *http.Server {
 	// create our http mux and add routes
 	mux := http.NewServeMux()
 

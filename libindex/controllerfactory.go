@@ -9,10 +9,10 @@ import (
 )
 
 // ControllerFactory is a factory method to return a Controller during libindex runtime.
-type ControllerFactory func(lib *libindex, opts *Opts) (*controller.Controller, error)
+type ControllerFactory func(lib *Libindex, opts *Opts) (*controller.Controller, error)
 
 // controllerFactory is the default ControllerFactory
-func controllerFactory(lib *libindex, opts *Opts) (*controller.Controller, error) {
+func controllerFactory(lib *Libindex, opts *Opts) (*controller.Controller, error) {
 	sc := dlpg.NewLock(lib.db, opts.ScanLockRetry)
 	ft := fetcher.New(lib.client, nil, opts.LayerFetchOpt)
 

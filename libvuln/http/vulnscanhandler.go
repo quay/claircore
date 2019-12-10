@@ -12,7 +12,7 @@ import (
 	je "github.com/quay/claircore/pkg/jsonerr"
 )
 
-func VulnScan(lib libvuln.Libvuln) h.HandlerFunc {
+func VulnScan(lib *libvuln.Libvuln) h.HandlerFunc {
 	return func(w h.ResponseWriter, r *h.Request) {
 		ctx := r.Context()
 		log := zerolog.Ctx(ctx)

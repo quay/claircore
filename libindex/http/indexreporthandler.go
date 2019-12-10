@@ -11,7 +11,7 @@ import (
 	"github.com/quay/claircore/libindex"
 )
 
-func IndexReport(lib libindex.Libindex) h.HandlerFunc {
+func IndexReport(lib *libindex.Libindex) h.HandlerFunc {
 	return func(w h.ResponseWriter, r *h.Request) {
 		ctx := r.Context()
 		log := log.Logger

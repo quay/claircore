@@ -10,13 +10,6 @@ These modules export the methods for scanning and image for packages and matchin
 
 ## libindex usage
 
-The libindex module exports a single interface  
-```
-type Libindex interface {
-	Index(ctx context.Context, manifest *claircore.Manifest) (ResultChannel <-chan *claircore.IndexReport, err error)
-	IndexReport(hash string) (*claircore.IndexReport, bool, error)
-}
-```
 Creating an instance  
 ```
 opts := &libindex.Opts{
@@ -33,25 +26,16 @@ m := &claircore.Manifest{
     ...
 }
 
-srC, err := lib.Scan(m)
+ir, err := lib.Index(m)
 if err != nil {
     log.Printf("%v", err)
 }
-
-// block on channel
-sr := <-srC
-if sr.State == "ScannError" {
+if ir.State == "ScanError" {
     log.Printf("scan failed: %s", sr.Err)
 }
 ```
 
 ## libvuln usage
-
-The libvuln module exports a single interface  
-```
-type Libvuln interface {
-	Scan(ctx context.Context, sr *claircore.IndexReport) (*claircore.VulnerabilityReport, error)
-
 ```
 creating an instance  
 ```
