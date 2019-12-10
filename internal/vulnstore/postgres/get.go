@@ -59,21 +59,21 @@ func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.IndexReco
 
 		for _, m := range dedupedMatchers {
 			switch m {
-			case driver.PackageDistributionDID:
+			case driver.DistributionDID:
 				args = append(args, record.Distribution.DID)
-			case driver.PackageDistributionName:
+			case driver.DistributionName:
 				args = append(args, record.Distribution.Name)
-			case driver.PackageDistributionVersion:
+			case driver.DistributionVersion:
 				args = append(args, record.Distribution.Version)
-			case driver.PackageDistributionVersionCodeName:
+			case driver.DistributionVersionCodeName:
 				args = append(args, record.Distribution.VersionCodeName)
-			case driver.PackageDistributionVersionID:
+			case driver.DistributionVersionID:
 				args = append(args, record.Distribution.VersionID)
-			case driver.PackageDistributionArch:
+			case driver.DistributionArch:
 				args = append(args, record.Distribution.Arch)
-			case driver.PackageDistributionCPE:
+			case driver.DistributionCPE:
 				args = append(args, record.Distribution.CPE)
-			case driver.PackageDistributionPrettyName:
+			case driver.DistributionPrettyName:
 				args = append(args, record.Distribution.PrettyName)
 			}
 		}

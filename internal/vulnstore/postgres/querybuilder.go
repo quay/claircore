@@ -49,21 +49,21 @@ func getBuilder(matchers []driver.MatchExp) (string, []driver.MatchExp, error) {
 		case driver.PackageSourceName: // ???
 			//ex = goqu.Ex{"package_name": ""}
 			continue
-		case driver.PackageDistributionDID:
+		case driver.DistributionDID:
 			ex = goqu.Ex{"dist_did": ""}
-		case driver.PackageDistributionName:
+		case driver.DistributionName:
 			ex = goqu.Ex{"dist_name": ""}
-		case driver.PackageDistributionVersion:
+		case driver.DistributionVersion:
 			ex = goqu.Ex{"dist_version": ""}
-		case driver.PackageDistributionVersionCodeName:
+		case driver.DistributionVersionCodeName:
 			ex = goqu.Ex{"dist_version_code_name": ""}
-		case driver.PackageDistributionVersionID:
+		case driver.DistributionVersionID:
 			ex = goqu.Ex{"dist_version_id": ""}
-		case driver.PackageDistributionArch:
+		case driver.DistributionArch:
 			ex = goqu.Ex{"dist_arch": ""}
-		case driver.PackageDistributionCPE:
+		case driver.DistributionCPE:
 			ex = goqu.Ex{"dist_cpe": ""}
-		case driver.PackageDistributionPrettyName:
+		case driver.DistributionPrettyName:
 			ex = goqu.Ex{"dist_pretty_name": ""}
 		default:
 			return "", nil, fmt.Errorf("was provided unknown matcher: %v", m)
