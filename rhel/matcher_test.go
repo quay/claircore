@@ -28,7 +28,7 @@ func TestMatcherIntegration(t *testing.T) {
 	logger := log.TestLogger(t)
 	ctx = logger.WithContext(ctx)
 
-	db, store, teardown := vulnstore.TestStore(ctx, t)
+	db, store, _, teardown := vulnstore.TestStore(ctx, t)
 	defer teardown()
 
 	m := &Matcher{}

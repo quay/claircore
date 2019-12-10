@@ -2,7 +2,6 @@ package libindex
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -195,33 +194,21 @@ func Test_Libindex_Scan(t *testing.T) {
 				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 				defer cancel()
 
-				c, err := lib.Index(ctx, m)
+				ir, err := lib.Index(ctx, m)
 				if err != nil {
 					t.Fatalf("failed to scan manifest: %v", err)
 				}
 
-				var sr *claircore.IndexReport
-				select {
-				case <-ctx.Done():
-					t.Fatalf("context timed out: %v", ctx.Err())
-				case sr = <-c:
-					out, err := json.MarshalIndent(sr, "", "    ")
-					if err != nil {
-						t.Fatalf("failed to marshal scan report: %v", err)
-					}
-					fmt.Println(string(out))
-				}
-
 				// confirm sr ha the manifest hash we expect
-				assert.Equal(t, table.hash, sr.Hash)
-				assert.True(t, sr.Success)
+				assert.Equal(t, table.hash, ir.Hash)
+				assert.True(t, ir.Success)
 
 				// confirm scan report retrieved from libindex matches the one
 				// the Scan() method returned
 				sr1, ok, err := lib.IndexReport(ctx, table.hash)
 				assert.NoError(t, err)
 				assert.True(t, ok)
-				assert.Equal(t, sr, sr1)
+				assert.Equal(t, ir, sr1)
 
 			})
 		}
@@ -411,33 +398,21 @@ func Test_Libindex_Scan_Parallel(t *testing.T) {
 					ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 					defer cancel()
 
-					c, err := lib.Index(ctx, m)
+					ir, err := lib.Index(ctx, m)
 					if err != nil {
 						t.Fatalf("failed to scan manifest: %v", err)
 					}
 
-					var sr *claircore.IndexReport
-					select {
-					case <-ctx.Done():
-						t.Fatalf("context timed out: %v", ctx.Err())
-					case sr = <-c:
-						out, err := json.MarshalIndent(sr, "", "    ")
-						if err != nil {
-							t.Fatalf("failed to marshal scan report: %v", err)
-						}
-						fmt.Println(string(out))
-					}
-
 					// confirm sr ha the manifest hash we expect
-					assert.Equal(t, table.hash, sr.Hash)
-					assert.True(t, sr.Success)
+					assert.Equal(t, table.hash, ir.Hash)
+					assert.True(t, ir.Success)
 
 					// confirm scan report retrieved from libindex matches the one
 					// the Scan() method returned
 					sr1, ok, err := lib.IndexReport(ctx, table.hash)
 					assert.NoError(t, err)
 					assert.True(t, ok)
-					assert.Equal(t, sr, sr1)
+					assert.Equal(t, ir, sr1)
 
 				})
 

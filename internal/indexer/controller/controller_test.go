@@ -51,20 +51,20 @@ func Test_Controller_IndexerError(t *testing.T) {
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
 			store, fetcher := table.mock(t)
-			s := New(&indexer.Opts{
+			c := New(&indexer.Opts{
 				Store:   store,
 				Fetcher: fetcher,
 			})
 
-			s.Scan(context.Background(), &claircore.Manifest{})
-			if !cmp.Equal(false, s.report.Success) {
-				t.Fatal(cmp.Diff(false, s.report.Success))
+			c.Index(context.Background(), &claircore.Manifest{})
+			if !cmp.Equal(false, c.report.Success) {
+				t.Fatal(cmp.Diff(false, c.report.Success))
 			}
-			if s.report.Err == "" {
+			if c.report.Err == "" {
 				t.Fatalf("expected Err string on index report")
 			}
-			if !cmp.Equal(IndexError.String(), s.report.State) {
-				t.Fatal(cmp.Diff(IndexError.String(), s.report.State))
+			if !cmp.Equal(IndexError.String(), c.report.State) {
+				t.Fatal(cmp.Diff(IndexError.String(), c.report.State))
 			}
 		})
 	}
@@ -108,20 +108,20 @@ func Test_Controller_IndexFinished(t *testing.T) {
 			store, fetcher := table.mock(t)
 			// set global startState for purpose of this test
 			startState = IndexFinished
-			s := New(&indexer.Opts{
+			c := New(&indexer.Opts{
 				Store:   store,
 				Fetcher: fetcher,
 			})
 
-			s.Scan(context.Background(), &claircore.Manifest{})
+			c.Index(context.Background(), &claircore.Manifest{})
 
 			// assert.Equal(t, table.expectedResultSuccess, s.report.Success)
 			// assert.Equal(t, table.expectedState, s.currentState)
-			if !cmp.Equal(table.expectedResultSuccess, s.report.Success) {
-				log.Fatal(cmp.Diff(table.expectedResultSuccess, s.report.Success))
+			if !cmp.Equal(table.expectedResultSuccess, c.report.Success) {
+				log.Fatal(cmp.Diff(table.expectedResultSuccess, c.report.Success))
 			}
-			if !cmp.Equal(table.expectedState, s.currentState) {
-				log.Fatal(cmp.Diff(table.expectedResultSuccess, s.report.Success))
+			if !cmp.Equal(table.expectedState, c.currentState) {
+				log.Fatal(cmp.Diff(table.expectedResultSuccess, c.report.Success))
 			}
 		})
 	}

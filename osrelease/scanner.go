@@ -50,7 +50,7 @@ func (*Scanner) Kind() string { return scannerKind }
 //
 // It's an expected outcome to return (nil, nil) when the os-release file is not
 // present in the layer.
-func (*Scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Distribution, error) {
+func (s *Scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Distribution, error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	log := zerolog.Ctx(ctx).With().
 		Str("component", "dist_scanner").

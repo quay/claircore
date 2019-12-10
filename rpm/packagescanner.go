@@ -205,7 +205,7 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 			s.Split(querySplit)
 
 			for s.Scan() {
-				p, err := parsePackage(ctx, srcs, bytes.NewBuffer(s.Bytes()))
+				p, err := parsePackage(ctx, log, srcs, bytes.NewBuffer(s.Bytes()))
 				if err != nil {
 					return err
 				}
@@ -257,7 +257,7 @@ func querySplit(data []byte, atEOF bool) (advance int, token []byte, err error) 
 	return len(tok) + len(delim), tok, nil
 }
 
-func parsePackage(ctx context.Context, src map[string]*claircore.Package, buf *bytes.Buffer) (*claircore.Package, error) {
+func parsePackage(ctx context.Context, log zerolog.Logger, src map[string]*claircore.Package, buf *bytes.Buffer) (*claircore.Package, error) {
 	defer trace.StartRegion(ctx, "parsePackage").End()
 	p := claircore.Package{}
 	var err error
