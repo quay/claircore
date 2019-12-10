@@ -24,20 +24,20 @@ type updater struct {
 
 func (u *updater) Name() string { return fmt.Sprintf("test-updater-%s", filepath.Base(u.file)) }
 
-func (u *updater) Fetch() (io.ReadCloser, string, error) {
+func (u *updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
 	var hint string
 	f, err := os.Open(u.file)
 	if f != nil {
 		fi, err := f.Stat()
 		if err != nil {
 			f.Close()
-			return nil, hint, err
+			return nil, driver.Fingerprint(hint), err
 		}
 		hint = fi.ModTime().Format(time.RFC3339)
 	}
-	return f, hint, err
+	return f, driver.Fingerprint(hint), err
 }
-func (u *updater) Parse(r io.ReadCloser) ([]*claircore.Vulnerability, error) {
+func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
 	defer r.Close()
 	root := oval.Root{}
 	if err := xml.NewDecoder(r).Decode(&root); err != nil {
