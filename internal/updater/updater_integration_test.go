@@ -5,11 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/quay/claircore/internal/vulnstore/postgres"
 	distlock "github.com/quay/claircore/pkg/distlock/postgres"
 	"github.com/quay/claircore/test/integration"
+	"github.com/quay/claircore/test/log"
 	"github.com/quay/claircore/ubuntu"
 )
 
@@ -17,7 +16,9 @@ import (
 // large timeout. We then confirm the store has populated vulns
 func Test_Updater_Integration(t *testing.T) {
 	integration.Skip(t)
-	ctx := context.Background()
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
+	ctx, _ = log.TestLogger(ctx, t)
 	ubuntuPrecise := ubuntu.NewUpdater(ubuntu.Precise)
 
 	db, store, _, teardown := postgres.TestStore(ctx, t)
@@ -40,7 +41,8 @@ func Test_Updater_Integration(t *testing.T) {
 	}
 
 	var count int
-	err := db.Get(&count, "SELECT COUNT(*) FROM vuln;")
-	assert.NoError(t, err)
+	if err := db.Get(&count, "SELECT COUNT(*) FROM vuln;"); err != nil {
+		t.Error(err)
+	}
 	t.Logf("found: %d entries", count)
 }

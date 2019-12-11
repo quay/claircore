@@ -6,17 +6,18 @@ import (
 	"testing"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/stretchr/testify/assert"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
+	"github.com/quay/claircore/test/log"
 	pgtest "github.com/quay/claircore/test/postgres"
 )
 
 func Test_IndexDistributions_Success(t *testing.T) {
 	integration.Skip(t)
-	ctx := context.Background()
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	tt := []struct {
 		// the name of this benchmark
 		name string
@@ -85,6 +86,9 @@ func Test_IndexDistributions_Success(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
+			ctx, done := context.WithCancel(ctx)
+			defer done()
+			ctx, _ = log.TestLogger(ctx, t)
 			db, store, _, teardown := TestStore(ctx, t)
 			defer teardown()
 
@@ -101,7 +105,6 @@ func Test_IndexDistributions_Success(t *testing.T) {
 				t.Fatalf("failed to index distributions: %v", err)
 			}
 
-			assert.NoError(t, err)
 			checkDistScanArtifact(t, db, dists, table.layer)
 		})
 	}
@@ -159,8 +162,14 @@ func checkDistScanArtifact(t *testing.T, db *sqlx.DB, expectedDists []*claircore
 			t.Fatalf("received error selecting scanartifact for dist %v: %v", dist, err)
 		}
 
-		assert.Equal(t, layer.Hash, layer_hash)
-		assert.Equal(t, distID.Int64, dist_id.Int64)
-		assert.Equal(t, int64(0), scanner_id.Int64)
+		if got, want := layer_hash, layer.Hash; got != want {
+			t.Errorf("got: %q, want: %q", got, want)
+		}
+		if got, want := dist_id, distID; got.Valid && got.Int64 == want.Int64 {
+			t.Errorf("got: %v, want: %v", got, want)
+		}
+		if got, want := dist_id, int64(0); got.Valid && got.Int64 == want {
+			t.Errorf("got: %v, want: %v", got, want)
+		}
 	}
 }

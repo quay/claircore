@@ -14,6 +14,8 @@ import (
 // confirm checkManfest statefunc acts appropriately
 // when manifest has been seen
 func Test_CheckManifest_Seen(t *testing.T) {
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	var tt = []struct {
 		// the name of this test
 		name string
@@ -38,6 +40,8 @@ func Test_CheckManifest_Seen(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
+			ctx, done := context.WithCancel(ctx)
+			defer done()
 			// get mock
 			m := table.mock(t)
 
@@ -48,7 +52,7 @@ func Test_CheckManifest_Seen(t *testing.T) {
 			s := New(opts)
 
 			// call state func
-			state, err := checkManifest(context.Background(), s)
+			state, err := checkManifest(ctx, s)
 
 			assert.NoError(t, err)
 			assert.Equal(t, table.expectedState, state)
@@ -59,6 +63,8 @@ func Test_CheckManifest_Seen(t *testing.T) {
 // confirm checkManfest statefunc acts appropriately
 // when manifest has been not been seen
 func Test_CheckManifest_UnSeen(t *testing.T) {
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	var tt = []struct {
 		// the name of this test
 		name string
@@ -83,6 +89,8 @@ func Test_CheckManifest_UnSeen(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
+			ctx, done := context.WithCancel(ctx)
+			defer done()
 			// get mock
 			m := table.mock(t)
 
@@ -93,7 +101,7 @@ func Test_CheckManifest_UnSeen(t *testing.T) {
 			s := New(opts)
 
 			// call state func
-			state, err := checkManifest(context.Background(), s)
+			state, err := checkManifest(ctx, s)
 
 			assert.NoError(t, err)
 			assert.Equal(t, table.expectedState, state)

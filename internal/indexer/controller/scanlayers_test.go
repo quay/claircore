@@ -11,6 +11,8 @@ import (
 )
 
 func Test_ScanLayers(t *testing.T) {
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	var tt = []struct {
 		name          string
 		expectedState State
@@ -34,13 +36,15 @@ func Test_ScanLayers(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
+			ctx, done := context.WithCancel(ctx)
+			defer done()
 			ls, s := table.mock(t)
 			scnr := New(&indexer.Opts{
 				LayerScanner: ls,
 				Store:        s,
 			})
 
-			state, err := scanLayers(context.Background(), scnr)
+			state, err := scanLayers(ctx, scnr)
 			assert.NoError(t, err)
 			assert.Equal(t, table.expectedState, state)
 		})

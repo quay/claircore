@@ -14,6 +14,8 @@ import (
 )
 
 func Test_Client_Linux1_GetMirrors(t *testing.T) {
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	tests := []struct {
 		release  Release
 		expected []string
@@ -61,7 +63,7 @@ func Test_Client_Linux1_GetMirrors(t *testing.T) {
 			urls = append(urls, u)
 		}
 
-		tctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		tctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 		defer cancel()
 		err := client.getMirrors(tctx, test.release)
 		assert.NoError(t, err)
@@ -71,6 +73,8 @@ func Test_Client_Linux1_GetMirrors(t *testing.T) {
 }
 
 func Test_Client_Linux2_GetMirrors(t *testing.T) {
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	tests := []struct {
 		release  Release
 		expected []string
@@ -108,7 +112,7 @@ func Test_Client_Linux2_GetMirrors(t *testing.T) {
 			urls = append(urls, u)
 		}
 
-		tctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		tctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 		defer cancel()
 		err := client.getMirrors(tctx, test.release)
 		assert.NoError(t, err)
@@ -119,6 +123,8 @@ func Test_Client_Linux2_GetMirrors(t *testing.T) {
 
 func Test_Client_RepoMD(t *testing.T) {
 	integration.Skip(t)
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 
 	tests := []Release{Linux1, Linux2}
 
@@ -126,7 +132,7 @@ func Test_Client_RepoMD(t *testing.T) {
 		client, err := NewClient(test)
 		assert.NoError(t, err)
 
-		tctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		tctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 		defer cancel()
 		_, err = client.RepoMD(tctx)
 		assert.NoError(t, err)
@@ -136,6 +142,8 @@ func Test_Client_RepoMD(t *testing.T) {
 
 func Test_Client_Updates(t *testing.T) {
 	integration.Skip(t)
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 
 	tests := []Release{Linux1, Linux2}
 
@@ -143,7 +151,7 @@ func Test_Client_Updates(t *testing.T) {
 		client, err := NewClient(test)
 		assert.NoError(t, err)
 
-		tctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		tctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 		defer cancel()
 		rc, err := client.Updates(tctx)
 		assert.NoError(t, err)

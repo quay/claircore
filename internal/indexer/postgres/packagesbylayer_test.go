@@ -9,12 +9,14 @@ import (
 
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
+	"github.com/quay/claircore/test/log"
 	pgtest "github.com/quay/claircore/test/postgres"
 )
 
 func Test_PackagesByLayer_Success(t *testing.T) {
 	integration.Skip(t)
-	ctx := context.Background()
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	var tt = []struct {
 		// name of the test
 		name string
@@ -65,6 +67,9 @@ func Test_PackagesByLayer_Success(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
+			ctx, done := context.WithCancel(ctx)
+			defer done()
+			ctx, _ = log.TestLogger(ctx, t)
 			db, store, _, teardown := TestStore(ctx, t)
 			defer teardown()
 

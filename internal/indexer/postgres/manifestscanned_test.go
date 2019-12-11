@@ -4,16 +4,16 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
+	"github.com/quay/claircore/test/log"
 	pgtest "github.com/quay/claircore/test/postgres"
 )
 
 func Test_ManifestScanned_Failure(t *testing.T) {
 	integration.Skip(t)
-	ctx := context.Background()
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	var tt = []struct {
 		// the name of this test
 		name string
@@ -46,23 +46,33 @@ func Test_ManifestScanned_Failure(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
+			ctx, done := context.WithCancel(ctx)
+			defer done()
+			ctx, _ = log.TestLogger(ctx, t)
 			db, store, _, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			vscnrs := test.GenUniquePackageScanners(table.scanners)
 			err := pgtest.InsertUniqueScanners(db, vscnrs)
-			assert.NoError(t, err)
+			if err != nil {
+				t.Fatal(err)
+			}
 
 			ok, err := store.ManifestScanned(ctx, table.hash, vscnrs)
-			assert.NoError(t, err)
-			assert.False(t, ok)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !ok {
+				t.Fatal("expected false from ManifestScanned")
+			}
 		})
 	}
 }
 
 func Test_ManifestScanned_Success(t *testing.T) {
 	integration.Skip(t)
-	ctx := context.Background()
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	var tt = []struct {
 		// the name of this test
 		name string
@@ -95,18 +105,27 @@ func Test_ManifestScanned_Success(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
+			ctx, done := context.WithCancel(ctx)
+			defer done()
+			ctx, _ = log.TestLogger(ctx, t)
 			db, store, _, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			vscnrs := test.GenUniquePackageScanners(table.scanners)
-			err := pgtest.InsertUniqueScanners(db, vscnrs)
-			assert.NoError(t, err)
-			err = pgtest.InsertScannerList(db, table.hash, table.scanners)
-			assert.NoError(t, err)
+			if err := pgtest.InsertUniqueScanners(db, vscnrs); err != nil {
+				t.Fatal(err)
+			}
+			if err := pgtest.InsertScannerList(db, table.hash, table.scanners); err != nil {
+				t.Fatal(err)
+			}
 
 			ok, err := store.ManifestScanned(ctx, table.hash, vscnrs)
-			assert.NoError(t, err)
-			assert.True(t, ok)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !ok {
+				t.Fatal("expected true from ManifestScanned")
+			}
 		})
 	}
 }

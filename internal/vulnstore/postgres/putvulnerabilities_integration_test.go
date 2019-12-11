@@ -12,6 +12,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
+	"github.com/quay/claircore/test/log"
 )
 
 const (
@@ -46,7 +47,8 @@ const (
 // indirectly we confirm the datbase is de-duping identical entries on write
 func Test_PutVulnerabilities_Tombstone_Bump(t *testing.T) {
 	integration.Skip(t)
-	ctx := context.Background()
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	var tt = []struct {
 		// the name of the test
 		name string
@@ -83,6 +85,9 @@ func Test_PutVulnerabilities_Tombstone_Bump(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
+			ctx, done := context.WithCancel(ctx)
+			defer done()
+			ctx, _ = log.TestLogger(ctx, t)
 			db, store, _, teardown := TestStore(ctx, t)
 			defer teardown()
 
@@ -149,7 +154,8 @@ func Test_PutVulnerabilities_Tombstone_Bump(t *testing.T) {
 // is not seen in a subsequent update it is removed from the store
 func Test_PutVulnerabilities_Tombstone_Stale(t *testing.T) {
 	integration.Skip(t)
-	ctx := context.Background()
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	var tt = []struct {
 		// the name of the test
 		name string
@@ -186,6 +192,9 @@ func Test_PutVulnerabilities_Tombstone_Stale(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
+			ctx, done := context.WithCancel(ctx)
+			defer done()
+			ctx, _ = log.TestLogger(ctx, t)
 			db, store, _, teardown := TestStore(ctx, t)
 			defer teardown()
 

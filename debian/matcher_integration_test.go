@@ -8,8 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/updater"
 	"github.com/quay/claircore/internal/vulnscanner"
@@ -17,6 +15,7 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 	distlock "github.com/quay/claircore/pkg/distlock/postgres"
 	"github.com/quay/claircore/test/integration"
+	"github.com/quay/claircore/test/log"
 )
 
 // Test_Matcher_Integration confirms packages are matched
@@ -25,7 +24,9 @@ import (
 // CVE data
 func Test_Matcher_Integration(t *testing.T) {
 	integration.Skip(t)
-	ctx := context.Background()
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
+	ctx, _ = log.TestLogger(ctx, t)
 	db, store, _, teardown := vulnstore.TestStore(ctx, t)
 	defer teardown()
 
@@ -43,7 +44,7 @@ func Test_Matcher_Integration(t *testing.T) {
 		Lock:     distlock.NewLock(db, 2*time.Second),
 	})
 	// force update
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
 	up.Update(ctx)
 
@@ -60,8 +61,10 @@ func Test_Matcher_Integration(t *testing.T) {
 	}
 
 	vs := vulnscanner.New(store, []driver.Matcher{m})
-	vr, err := vs.Scan(context.Background(), &sr)
-	assert.NoError(t, err)
+	vr, err := vs.Scan(ctx, &sr)
+	if err != nil {
+		t.Error(err)
+	}
 
 	_, err = json.Marshal(&vr)
 	if err != nil {

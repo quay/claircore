@@ -14,6 +14,7 @@ import (
 	"github.com/quay/claircore/internal/indexer/postgres"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
+	"github.com/quay/claircore/test/log"
 )
 
 // Test_Libindex_Scan tests that our library performs a successful scan.
@@ -21,6 +22,8 @@ import (
 // test functions.
 func Test_Libindex_Scan(t *testing.T) {
 	integration.Skip(t)
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	var tt = []struct {
 		// the name of the test
 		name string
@@ -131,6 +134,9 @@ func Test_Libindex_Scan(t *testing.T) {
 	t.Run("integration", func(t *testing.T) {
 		for _, table := range tt {
 			t.Run(table.name, func(t *testing.T) {
+				ctx, done := context.WithCancel(ctx)
+				defer done()
+				ctx, _ = log.TestLogger(ctx, t)
 				mscnrs := []*indexer.MockPackageScanner{}
 				scnrs := []indexer.PackageScanner{}
 				ctrl := gomock.NewController(t)
@@ -174,7 +180,6 @@ func Test_Libindex_Scan(t *testing.T) {
 				}
 
 				// just grab teardown function to clear the db after test
-				ctx := context.Background()
 				_, _, dsn, teardown := postgres.TestStore(ctx, t)
 				defer teardown()
 
@@ -191,7 +196,7 @@ func Test_Libindex_Scan(t *testing.T) {
 				}
 
 				//setup scan and run
-				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 				defer cancel()
 
 				ir, err := lib.Index(ctx, m)
@@ -221,6 +226,8 @@ func Test_Libindex_Scan(t *testing.T) {
 // test functions.
 func Test_Libindex_Scan_Parallel(t *testing.T) {
 	integration.Skip(t)
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	var tt = []struct {
 		// the name of the test
 		name string
@@ -330,7 +337,8 @@ func Test_Libindex_Scan_Parallel(t *testing.T) {
 	}
 	t.Run("integration", func(t *testing.T) {
 		for _, tab := range tt {
-			ctx := context.Background()
+			ctx, done := context.WithCancel(ctx)
+			defer done()
 			// just grab teardown function to clear the db after test
 			_, _, dsn, teardown := postgres.TestStore(ctx, t)
 			defer teardown()
@@ -339,6 +347,7 @@ func Test_Libindex_Scan_Parallel(t *testing.T) {
 				table := tab
 				t.Run(table.name, func(t *testing.T) {
 					t.Parallel()
+					ctx, _ = log.TestLogger(ctx, t)
 
 					mscnrs := []*indexer.MockPackageScanner{}
 					scnrs := []indexer.PackageScanner{}
@@ -395,7 +404,7 @@ func Test_Libindex_Scan_Parallel(t *testing.T) {
 					}
 
 					//setup scan and run
-					ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+					ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 					defer cancel()
 
 					ir, err := lib.Index(ctx, m)

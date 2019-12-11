@@ -43,7 +43,7 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 	if err := xml.NewDecoder(r).Decode(&root); err != nil {
 		return nil, fmt.Errorf("test: unable to decode OVAL document: %w", err)
 	}
-	return ovalutil.NewRPMInfo(&root).Extract(context.Background())
+	return ovalutil.NewRPMInfo(&root).Extract(ctx)
 }
 
 func Updater(file string) (driver.Updater, error) {

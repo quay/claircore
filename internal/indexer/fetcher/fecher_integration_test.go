@@ -6,8 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
@@ -15,6 +13,8 @@ import (
 
 func Test_Fetcher_Integration(t *testing.T) {
 	integration.Skip(t)
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	var tt = []struct {
 		// name of test
 		name string
@@ -47,21 +47,25 @@ func Test_Fetcher_Integration(t *testing.T) {
 			t.Fatalf("failed to gen layers: %v", err)
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+		ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 		defer cancel()
 
-		err = fetcher.Fetch(ctx, layers)
-		assert.NoError(t, err)
-
+		if err := fetcher.Fetch(ctx, layers); err != nil {
+			t.Error(err)
+		}
 		if table.layerFetchOpt == indexer.InMem {
 			for _, layer := range layers {
-				assert.NotNil(t, layer.Bytes)
+				if layer.Bytes == nil {
+					t.Error("expected Bytes to be non-nil")
+				}
 			}
 		}
 
 		if table.layerFetchOpt == indexer.OnDisk {
 			for _, layer := range layers {
-				assert.NotEmpty(t, layer.LocalPath)
+				if layer.LocalPath == "" {
+					t.Error("expected LocalPath member to be non-empty")
+				}
 
 				// assert file exists
 				_, err := os.Stat(layer.LocalPath)

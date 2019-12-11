@@ -19,6 +19,8 @@ import (
 
 func Test_Layer_Files_Miss(t *testing.T) {
 	integration.Skip(t)
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	var tt = []struct {
 		// name of the test
 		name string
@@ -57,11 +59,13 @@ func Test_Layer_Files_Miss(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
+			ctx, done := context.WithCancel(ctx)
+			defer done()
 			// gen layers
 			layers, err := test.GenUniqueLayersRemote(table.layers, table.uris)
 
 			// fetch the layer
-			ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+			ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 			defer cancel()
 			err = table.fetcher.Fetch(ctx, layers)
 			assert.NoError(t, err, "fetcher returned an error")
@@ -89,6 +93,8 @@ func Test_Layer_Files_Miss(t *testing.T) {
 
 func Test_Layer_Files_Hit(t *testing.T) {
 	integration.Skip(t)
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	var tt = []struct {
 		// name of the test
 		name string
@@ -127,11 +133,13 @@ func Test_Layer_Files_Hit(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
+			ctx, done := context.WithCancel(ctx)
+			defer done()
 			// gen layers
 			layers, err := test.GenUniqueLayersRemote(table.layers, table.uris)
 
 			// fetch the layer
-			ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+			ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 			defer cancel()
 			err = table.fetcher.Fetch(ctx, layers)
 			assert.NoError(t, err, "fetcher returned an error")

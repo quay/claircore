@@ -6,11 +6,11 @@ import (
 	"testing"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/stretchr/testify/assert"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
+	"github.com/quay/claircore/test/log"
 	pgtest "github.com/quay/claircore/test/postgres"
 )
 
@@ -25,7 +25,8 @@ type scnrInfo struct {
 
 func Test_IndexPackages_Success_Parallel(t *testing.T) {
 	integration.Skip(t)
-	ctx := context.Background()
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	tt := []struct {
 		// the name of this benchmark
 		name string
@@ -102,6 +103,9 @@ func Test_IndexPackages_Success_Parallel(t *testing.T) {
 			table := tab
 			t.Run(table.name, func(t *testing.T) {
 				t.Parallel()
+				ctx, done := context.WithCancel(ctx)
+				defer done()
+				ctx, _ = log.TestLogger(ctx, t)
 				// gen a scnr and insert
 				vscnrs := test.GenUniquePackageScanners(1)
 				err := pgtest.InsertUniqueScanners(db, vscnrs)
@@ -115,7 +119,6 @@ func Test_IndexPackages_Success_Parallel(t *testing.T) {
 					t.Fatalf("failed to index packages: %v", err)
 				}
 
-				assert.NoError(t, err)
 				checkPackageScanArtifact(t, db, pkgs, table.layer)
 			})
 		}
@@ -124,7 +127,8 @@ func Test_IndexPackages_Success_Parallel(t *testing.T) {
 
 func Test_IndexPackages_Success(t *testing.T) {
 	integration.Skip(t)
-	ctx := context.Background()
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	tt := []struct {
 		// the name of this benchmark
 		name string
@@ -193,6 +197,9 @@ func Test_IndexPackages_Success(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
+			ctx, done := context.WithCancel(ctx)
+			defer done()
+			ctx, _ = log.TestLogger(ctx, t)
 			db, store, _, teardown := TestStore(ctx, t)
 			defer teardown()
 
@@ -209,7 +216,6 @@ func Test_IndexPackages_Success(t *testing.T) {
 				t.Fatalf("failed to index packages: %v", err)
 			}
 
-			assert.NoError(t, err)
 			checkPackageScanArtifact(t, db, pkgs, table.layer)
 		})
 	}
@@ -257,10 +263,14 @@ func checkPackageScanArtifact(t *testing.T, db *sqlx.DB, expectedPkgs []*clairco
 			t.Fatalf("received error selecting scanartifact for pkg %v: %v", pkg, err)
 		}
 
-		assert.Equal(t, layer.Hash, layer_hash)
-		// assert.Equal(t, "package", sakind)
-		assert.Equal(t, pkgID.Int64, package_id.Int64)
-		// assert.Equal(t, distID.Int64, dist_id.Int64)
-		assert.Equal(t, int64(0), scanner_id.Int64)
+		if got, want := layer_hash, layer.Hash; got != want {
+			t.Errorf("got: %q, want: %q", got, want)
+		}
+		if got, want := package_id, pkgID; got.Valid && got.Int64 == want.Int64 {
+			t.Errorf("got: %v, want: %v", got, want)
+		}
+		if got, want := scanner_id, int64(0); got.Valid && got.Int64 == want {
+			t.Errorf("got: %v, want: %v", got, want)
+		}
 	}
 }

@@ -4,16 +4,18 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/jmoiron/sqlx"
-	"github.com/stretchr/testify/assert"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test/integration"
+	"github.com/quay/claircore/test/log"
 )
 
 func Test_IndexReport_Success(t *testing.T) {
 	integration.Skip(t)
-	ctx := context.Background()
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	var tt = []struct {
 		// the name of the test
 		name string
@@ -45,15 +47,24 @@ func Test_IndexReport_Success(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
+			ctx, done := context.WithCancel(ctx)
+			defer done()
+			ctx, _ = log.TestLogger(ctx, t)
 			db, store, _, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			table.init(t, db, table.expectedSR, table.hash)
 
 			sr, ok, err := store.IndexReport(ctx, table.hash)
-			assert.NoError(t, err)
-			assert.True(t, ok)
-			assert.Equal(t, table.expectedSR, sr)
+			if err != nil {
+				t.Error(err)
+			}
+			if !ok {
+				t.Error("not OK")
+			}
+			if got, want := sr, table.expectedSR; !cmp.Equal(got, want) {
+				t.Fatal(cmp.Diff(got, want))
+			}
 		})
 	}
 }

@@ -7,12 +7,14 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
+	"github.com/quay/claircore/test/log"
 	pgtest "github.com/quay/claircore/test/postgres"
 )
 
 func Benchmark_IndexPackages(b *testing.B) {
 	integration.Skip(b)
-	ctx := context.Background()
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	benchmarks := []struct {
 		// the name of this benchmark
 		name string
@@ -177,6 +179,9 @@ func Benchmark_IndexPackages(b *testing.B) {
 
 	for _, bench := range benchmarks {
 		b.Run(bench.name, func(b *testing.B) {
+			ctx, done := context.WithCancel(ctx)
+			defer done()
+			ctx, _ = log.TestLogger(ctx, b)
 			db, store, _, teardown := TestStore(ctx, b)
 			defer teardown()
 

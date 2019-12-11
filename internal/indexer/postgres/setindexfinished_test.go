@@ -10,11 +10,13 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/test/integration"
+	"github.com/quay/claircore/test/log"
 )
 
 func Test_SetScanFinished_Success(t *testing.T) {
 	integration.Skip(t)
-	ctx := context.Background()
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	// function to initialize database. we must add all scanners to they are available in the database. we must then
 	// create scannlist records for any of the previousScnrs to prove we deleted them and linked the updatedScnrs
 	var init = func(t *testing.T, db *sqlx.DB, hash string, previousScnrs []scnrInfo, updatedScnrs []scnrInfo) {
@@ -82,6 +84,9 @@ func Test_SetScanFinished_Success(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
+			ctx, done := context.WithCancel(ctx)
+			defer done()
+			ctx, _ = log.TestLogger(ctx, t)
 			db, store, _, teardown := TestStore(ctx, t)
 			defer teardown()
 
@@ -100,8 +105,10 @@ func Test_SetScanFinished_Success(t *testing.T) {
 			err := store.SetIndexFinished(ctx, &claircore.IndexReport{
 				Hash: table.hash,
 			}, scnrs)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-			assert.NoError(t, err)
 			checkUpdatedScannerList(t, db, table.hash, table.updatedScnrs)
 
 			sr := getIndexReport(t, db, table.hash)

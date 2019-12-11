@@ -6,16 +6,16 @@ import (
 	"testing"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/stretchr/testify/assert"
 
 	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/test/integration"
+	"github.com/quay/claircore/test/log"
 )
 
 func Test_RegisterScanners_Success(t *testing.T) {
 	integration.Skip(t)
-	ctx := context.Background()
-
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	var tt = []struct {
 		// name of the test
 		name string
@@ -143,6 +143,9 @@ func Test_RegisterScanners_Success(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
+			ctx, done := context.WithCancel(ctx)
+			defer done()
+			ctx, _ = log.TestLogger(ctx, t)
 			db, store, _, teardown := TestStore(ctx, t)
 			defer teardown()
 
@@ -155,8 +158,9 @@ func Test_RegisterScanners_Success(t *testing.T) {
 				vscnrs = append(vscnrs, indexer.VersionedScanner(m))
 			}
 
-			err := store.RegisterScanners(ctx, vscnrs)
-			assert.NoError(t, err)
+			if err := store.RegisterScanners(ctx, vscnrs); err != nil {
+				t.Fatal(err)
+			}
 			checkScanners(t, db, table.scnrs)
 		})
 	}
@@ -187,8 +191,14 @@ func checkScanners(t *testing.T, db *sqlx.DB, scnrs []scnrInfo) {
 		if !id.Valid {
 			t.Fatalf("id for scnr %v not valid", scnr)
 		}
-		assert.Equal(t, scnr.name, name)
-		assert.Equal(t, scnr.version, version)
-		assert.Equal(t, scnr.kind, kind)
+		if got, want := name, scnr.name; got != want {
+			t.Fatalf("got: %q, want: %q", got, want)
+		}
+		if got, want := version, scnr.version; got != want {
+			t.Fatalf("got: %q, want: %q", got, want)
+		}
+		if got, want := kind, scnr.kind; got != want {
+			t.Fatalf("got: %q, want: %q", got, want)
+		}
 	}
 }

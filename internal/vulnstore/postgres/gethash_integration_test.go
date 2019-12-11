@@ -5,14 +5,16 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
 
 	"github.com/quay/claircore/test/integration"
+	"github.com/quay/claircore/test/log"
 )
 
 func Test_GetHash_KeyNotExists(t *testing.T) {
 	integration.Skip(t)
-	ctx := context.Background()
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
+	ctx, _ = log.TestLogger(ctx, t)
 	var tt = []struct {
 		name       string
 		iterations int
@@ -36,15 +38,21 @@ func Test_GetHash_KeyNotExists(t *testing.T) {
 
 			// attempt get k,v
 			v, err := store.GetHash(ctx, key)
-			assert.NoError(t, err)
-			assert.Equal(t, "", v)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got, want := v, ""; got != want {
+				t.Fatalf("got: %q, want: %q", got, want)
+			}
 		}
 	}
 }
 
 func Test_GetHash_KeyExists(t *testing.T) {
 	integration.Skip(t)
-	ctx := context.Background()
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
+	ctx, _ = log.TestLogger(ctx, t)
 	var tt = []struct {
 		// the name of the test
 		name string
@@ -76,8 +84,12 @@ func Test_GetHash_KeyExists(t *testing.T) {
 
 			// attempt get k,v
 			v, err := store.GetHash(ctx, key)
-			assert.NoError(t, err)
-			assert.Equal(t, value, v)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got, want := v, value; got != want {
+				t.Fatalf("got: %q, want: %q", got, want)
+			}
 		}
 	}
 }

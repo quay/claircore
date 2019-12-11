@@ -4,13 +4,14 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
+	"github.com/quay/claircore/test/log"
 )
 
 func Test_Fetcher_LocalPath(t *testing.T) {
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	var tt = []struct {
 		name  string
 		layer []*claircore.Layer
@@ -30,15 +31,20 @@ func Test_Fetcher_LocalPath(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
+			ctx, done := context.WithCancel(ctx)
+			defer done()
+			ctx, _ = log.TestLogger(ctx, t)
 			fetcher := New(nil, nil, indexer.InMem)
-			err := fetcher.Fetch(context.Background(), table.layer)
-
-			assert.NoError(t, err)
+			if err := fetcher.Fetch(ctx, table.layer); err != nil {
+				t.Fatal(err)
+			}
 		})
 	}
 }
 
 func Test_Fetcher_InvalidPath(t *testing.T) {
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	var tt = []struct {
 		name  string
 		layer []*claircore.Layer
@@ -69,10 +75,13 @@ func Test_Fetcher_InvalidPath(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
+			ctx, done := context.WithCancel(ctx)
+			defer done()
+			ctx, _ = log.TestLogger(ctx, t)
 			fetcher := New(nil, nil, indexer.InMem)
-			err := fetcher.Fetch(context.Background(), table.layer)
-
-			assert.Error(t, err)
+			if err := fetcher.Fetch(ctx, table.layer); err == nil {
+				t.Fatal("expected error, got nil")
+			}
 		})
 	}
 }

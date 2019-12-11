@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/stretchr/testify/assert"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
@@ -16,7 +15,8 @@ import (
 
 func Test_IndexRepositories_Success(t *testing.T) {
 	integration.Skip(t)
-	ctx := context.Background()
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	tt := []struct {
 		// the name of this benchmark
 		name string
@@ -85,6 +85,8 @@ func Test_IndexRepositories_Success(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
+			ctx, done := context.WithCancel(ctx)
+			defer done()
 			db, store, _, teardown := TestStore(ctx, t)
 			defer teardown()
 
@@ -101,11 +103,9 @@ func Test_IndexRepositories_Success(t *testing.T) {
 				t.Fatalf("failed to index repository: %v", err)
 			}
 
-			assert.NoError(t, err)
 			checkRepoScanArtifact(t, db, repos, table.layer)
 		})
 	}
-
 }
 
 // checkRepoScanArtifact confirms a scanartifact is created linking the layer, repo entities from the layer, and scnr which discovered these.
@@ -149,8 +149,14 @@ func checkRepoScanArtifact(t *testing.T, db *sqlx.DB, expectedRepos []*claircore
 			t.Fatalf("received error selecting scanartifact for dist %v: %v", repo, err)
 		}
 
-		assert.Equal(t, layer.Hash, layer_hash)
-		assert.Equal(t, repoID.Int64, repo_id.Int64)
-		assert.Equal(t, int64(0), scanner_id.Int64)
+		if got, want := layer_hash, layer.Hash; got != want {
+			t.Errorf("got: %q, want: %q", got, want)
+		}
+		if got, want := repo_id, repoID; got.Valid && got.Int64 == want.Int64 {
+			t.Errorf("got: %v, want: %v", got, want)
+		}
+		if got, want := scanner_id, int64(0); got.Valid && got.Int64 == want {
+			t.Errorf("got: %v, want: %v", got, want)
+		}
 	}
 }

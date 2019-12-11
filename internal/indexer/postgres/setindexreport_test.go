@@ -5,15 +5,16 @@ import (
 	"testing"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/stretchr/testify/assert"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test/integration"
+	"github.com/quay/claircore/test/log"
 )
 
 func Test_SetIndexReport_StateUpdate(t *testing.T) {
 	integration.Skip(t)
-	ctx := context.Background()
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	var tt = []struct {
 		// the name of the test
 		name string
@@ -36,20 +37,29 @@ func Test_SetIndexReport_StateUpdate(t *testing.T) {
 	}
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
+			ctx, done := context.WithCancel(ctx)
+			defer done()
+			ctx, _ = log.TestLogger(ctx, t)
 			db, store, _, teardown := TestStore(ctx, t)
 			defer teardown()
 
-			err := store.SetIndexReport(ctx, table.initState)
-			assert.NoError(t, err)
+			if err := store.SetIndexReport(ctx, table.initState); err != nil {
+				t.Fatal(err)
+			}
 
 			sr := getIndexReport(t, db, table.initState.Hash)
-			assert.Equal(t, table.initState.State, sr.State)
+			if got, want := sr.State, table.initState.State; got != want {
+				t.Fatalf("got: %q, want: %q", got, want)
+			}
 
-			err = store.SetIndexReport(ctx, table.transitionState)
-			assert.NoError(t, err)
+			if err := store.SetIndexReport(ctx, table.transitionState); err != nil {
+				t.Fatal(err)
+			}
 
 			sr = getIndexReport(t, db, table.initState.Hash)
-			assert.Equal(t, table.transitionState.State, sr.State)
+			if got, want := sr.State, table.transitionState.State; got != want {
+				t.Fatalf("got: %q, want: %q", got, want)
+			}
 		})
 	}
 }
@@ -67,7 +77,8 @@ func getIndexReport(t *testing.T, db *sqlx.DB, hash string) claircore.IndexRepor
 
 func Test_SetIndexReport_Success(t *testing.T) {
 	integration.Skip(t)
-	ctx := context.Background()
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	var tt = []struct {
 		// the name of the test
 		name string
@@ -102,11 +113,15 @@ func Test_SetIndexReport_Success(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
+			ctx, done := context.WithCancel(ctx)
+			defer done()
+			ctx, _ = log.TestLogger(ctx, t)
 			_, store, _, teardown := TestStore(ctx, t)
 			defer teardown()
 
-			err := store.SetIndexReport(ctx, table.sr)
-			assert.NoError(t, err)
+			if err := store.SetIndexReport(ctx, table.sr); err != nil {
+				t.Fatal(err)
+			}
 		})
 	}
 }

@@ -4,16 +4,16 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
+	"github.com/quay/claircore/test/log"
 	pgtest "github.com/quay/claircore/test/postgres"
 )
 
 func Test_LayerScanned_Packages_False(t *testing.T) {
 	integration.Skip(t)
-	ctx := context.Background()
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	var tt = []struct {
 		// the name of the test
 		name string
@@ -46,6 +46,9 @@ func Test_LayerScanned_Packages_False(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
+			ctx, done := context.WithCancel(ctx)
+			defer done()
+			ctx, _ = log.TestLogger(ctx, t)
 			db, store, _, teardown := TestStore(ctx, t)
 			defer teardown()
 
@@ -60,18 +63,21 @@ func Test_LayerScanned_Packages_False(t *testing.T) {
 
 			for _, scnr := range scnrs {
 				b, err := store.LayerScanned(ctx, table.hash, scnr)
-
-				assert.NoError(t, err)
-				assert.False(t, b)
+				if err != nil {
+					t.Error(err)
+				}
+				if b {
+					t.Fatal("expected false")
+				}
 			}
-
 		})
 	}
 }
 
 func Test_LayerScanned_Distributions_False(t *testing.T) {
 	integration.Skip(t)
-	ctx := context.Background()
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	var tt = []struct {
 		// the name of the test
 		name string
@@ -104,6 +110,9 @@ func Test_LayerScanned_Distributions_False(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
+			ctx, done := context.WithCancel(ctx)
+			defer done()
+			ctx, _ = log.TestLogger(ctx, t)
 			db, store, _, teardown := TestStore(ctx, t)
 			defer teardown()
 
@@ -126,14 +135,14 @@ func Test_LayerScanned_Distributions_False(t *testing.T) {
 					t.Fatalf("expected LayerScanned to return false")
 				}
 			}
-
 		})
 	}
 }
 
 func Test_LayerScanned_Repository_False(t *testing.T) {
 	integration.Skip(t)
-	ctx := context.Background()
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	var tt = []struct {
 		// the name of the test
 		name string
@@ -166,6 +175,9 @@ func Test_LayerScanned_Repository_False(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
+			ctx, done := context.WithCancel(ctx)
+			defer done()
+			ctx, _ = log.TestLogger(ctx, t)
 			db, store, _, teardown := TestStore(ctx, t)
 			defer teardown()
 
@@ -187,14 +199,14 @@ func Test_LayerScanned_Repository_False(t *testing.T) {
 					t.Fatalf("expected LayerScanned to return false")
 				}
 			}
-
 		})
 	}
 }
 
 func Test_LayerScanned_Packages_True(t *testing.T) {
 	integration.Skip(t)
-	ctx := context.Background()
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	var tt = []struct {
 		// the name of the test
 		name string
@@ -227,6 +239,9 @@ func Test_LayerScanned_Packages_True(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
+			ctx, done := context.WithCancel(ctx)
+			defer done()
+			ctx, _ = log.TestLogger(ctx, t)
 			db, store, _, teardown := TestStore(ctx, t)
 			defer teardown()
 
@@ -253,14 +268,14 @@ func Test_LayerScanned_Packages_True(t *testing.T) {
 					t.Fatalf("expected LayerScanned to return true")
 				}
 			}
-
 		})
 	}
 }
 
 func Test_LayerScanned_Distribution_True(t *testing.T) {
 	integration.Skip(t)
-	ctx := context.Background()
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	var tt = []struct {
 		// the name of the test
 		name string
@@ -293,6 +308,9 @@ func Test_LayerScanned_Distribution_True(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
+			ctx, done := context.WithCancel(ctx)
+			defer done()
+			ctx, _ = log.TestLogger(ctx, t)
 			db, store, _, teardown := TestStore(ctx, t)
 			defer teardown()
 
@@ -319,14 +337,14 @@ func Test_LayerScanned_Distribution_True(t *testing.T) {
 					t.Fatalf("expected LayerScanned to return true")
 				}
 			}
-
 		})
 	}
 }
 
 func Test_LayerScanned_Repository_True(t *testing.T) {
 	integration.Skip(t)
-	ctx := context.Background()
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	var tt = []struct {
 		// the name of the test
 		name string
@@ -359,6 +377,9 @@ func Test_LayerScanned_Repository_True(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
+			ctx, done := context.WithCancel(ctx)
+			defer done()
+			ctx, _ = log.TestLogger(ctx, t)
 			db, store, _, teardown := TestStore(ctx, t)
 			defer teardown()
 
@@ -385,7 +406,6 @@ func Test_LayerScanned_Repository_True(t *testing.T) {
 					t.Fatalf("expected LayerScanned to return true")
 				}
 			}
-
 		})
 	}
 }

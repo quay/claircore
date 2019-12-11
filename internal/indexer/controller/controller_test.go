@@ -3,7 +3,6 @@ package controller
 import (
 	"context"
 	"fmt"
-	"log"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
+	"github.com/quay/claircore/test/log"
 )
 
 // Test_Controller_IndexError confirms the state machines does the correct
@@ -20,6 +20,8 @@ import (
 // fail the call to s.Store.ManifestScanned forcing checkManifest to return an error
 // and evaluate our scanner's state afterwards.
 func Test_Controller_IndexerError(t *testing.T) {
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	var tt = []struct {
 		name string
 		mock func(t *testing.T) (indexer.Store, indexer.Fetcher)
@@ -50,13 +52,16 @@ func Test_Controller_IndexerError(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
+			ctx, done := context.WithCancel(ctx)
+			defer done()
+			ctx, _ = log.TestLogger(ctx, t)
 			store, fetcher := table.mock(t)
 			c := New(&indexer.Opts{
 				Store:   store,
 				Fetcher: fetcher,
 			})
 
-			c.Index(context.Background(), &claircore.Manifest{})
+			c.Index(ctx, &claircore.Manifest{})
 			if !cmp.Equal(false, c.report.Success) {
 				t.Fatal(cmp.Diff(false, c.report.Success))
 			}
@@ -77,6 +82,8 @@ func Test_Controller_IndexerError(t *testing.T) {
 // state. we then confirm the IndexReport success bool is set, the appropriate store methods are called,
 // and the scanner is in the correct state
 func Test_Controller_IndexFinished(t *testing.T) {
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	var tt = []struct {
 		name                  string
 		expectedState         State
@@ -105,6 +112,9 @@ func Test_Controller_IndexFinished(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
+			ctx, done := context.WithCancel(ctx)
+			defer done()
+			ctx, _ = log.TestLogger(ctx, t)
 			store, fetcher := table.mock(t)
 			// set global startState for purpose of this test
 			startState = IndexFinished
@@ -113,15 +123,12 @@ func Test_Controller_IndexFinished(t *testing.T) {
 				Fetcher: fetcher,
 			})
 
-			c.Index(context.Background(), &claircore.Manifest{})
-
-			// assert.Equal(t, table.expectedResultSuccess, s.report.Success)
-			// assert.Equal(t, table.expectedState, s.currentState)
+			c.Index(ctx, &claircore.Manifest{})
 			if !cmp.Equal(table.expectedResultSuccess, c.report.Success) {
-				log.Fatal(cmp.Diff(table.expectedResultSuccess, c.report.Success))
+				t.Fatal(cmp.Diff(table.expectedResultSuccess, c.report.Success))
 			}
 			if !cmp.Equal(table.expectedState, c.currentState) {
-				log.Fatal(cmp.Diff(table.expectedResultSuccess, c.report.Success))
+				t.Fatal(cmp.Diff(table.expectedResultSuccess, c.report.Success))
 			}
 		})
 	}

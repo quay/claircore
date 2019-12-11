@@ -15,6 +15,8 @@ import (
 // Test_Scan_NoError confirms each scanner is called for each layer presented
 // to the layerscanner and no blocking occurs.
 func Test_Scan_NoErrors(t *testing.T) {
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	ctrl := gomock.NewController(t)
 
 	mock_ps := indexer.NewMockPackageScanner(ctrl)
@@ -84,7 +86,7 @@ func Test_Scan_NoErrors(t *testing.T) {
 
 	layerscanner := New(1, sOpts)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
 	err = layerscanner.Scan(ctx, "test-manifest", layers)
 
