@@ -25,10 +25,10 @@ func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.IndexReco
 	// start a batch
 	batch := &pgx.Batch{}
 	for _, record := range records {
-		query, err := getQueryBuilder(record, opts.Matchers)
+		query, err := buildGetQuery(record, opts.Matchers)
 		if err != nil {
 			// if we cannot build a query for an individual record continue to the next
-			log.Debug().Msgf("could not build query for record: %+v", record)
+			log.Debug().Str("record", fmt.Sprintf("%+v", record)).Msg("could not build query for record")
 			continue
 		}
 		// queue the select query

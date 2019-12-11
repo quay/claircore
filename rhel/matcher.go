@@ -1,8 +1,6 @@
 package rhel
 
 import (
-	"log"
-
 	version "github.com/knqyf263/go-rpm-version"
 
 	"github.com/quay/claircore"
@@ -21,18 +19,15 @@ func (*Matcher) Name() string {
 
 // Filter implements driver.Matcher.
 func (*Matcher) Filter(record *claircore.IndexRecord) bool {
-	if record.Distribution == nil {
-		log.Printf("Dist is nil")
-	}
 	return record.Distribution.DID == "rhel"
 }
 
 // Query implements driver.Matcher.
-func (*Matcher) Query() []driver.MatchExp {
+func (*Matcher) Query() []driver.MatchConstraint {
 	// TODO(hank) This would ideally use CPE, but that requires implementing
 	// some database logic to compare CPEs and changing schema to be able to
 	// associate multiple CPEs with a given vulnerability.
-	return []driver.MatchExp{
+	return []driver.MatchConstraint{
 		//driver.PackageDistributionCPE,
 		driver.DistributionName,
 		driver.DistributionPrettyName,

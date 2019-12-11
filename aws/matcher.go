@@ -30,8 +30,8 @@ func (*Matcher) Filter(record *claircore.IndexRecord) bool {
 	return false
 }
 
-func (*Matcher) Query() []driver.MatchExp {
-	return []driver.MatchExp{
+func (*Matcher) Query() []driver.MatchConstraint {
+	return []driver.MatchConstraint{
 		driver.DistributionDID,
 		driver.DistributionVersionID,
 	}

@@ -16,14 +16,14 @@ func Test_GetQueryBuilder_Deterministic_Args(t *testing.T) {
 		// the expected query string returned
 		expectedQuery string
 		// the match expressions which contrain the query
-		matchExps []driver.MatchExp
+		matchExps []driver.MatchConstraint
 		// a method to returning the indexRecord for the getQueryBuilder method
 		indexRecord func() *claircore.IndexRecord
 	}{
 		{
 			name:          "No source package constrained by dist_id",
 			expectedQuery: `SELECT "id", "name", "description", "links", "severity", "package_name", "package_version", "package_kind", "dist_id", "dist_name", "dist_version", "dist_version_code_name", "dist_version_id", "dist_arch", "dist_cpe", "dist_pretty_name", "repo_name", "repo_key", "repo_uri", "fixed_in_version" FROM "vuln" WHERE (("package_name" = 'package-0') AND ("dist_id" = 'did-0'))`,
-			matchExps:     []driver.MatchExp{driver.DistributionDID},
+			matchExps:     []driver.MatchConstraint{driver.DistributionDID},
 			indexRecord: func() *claircore.IndexRecord {
 				pkgs := test.GenUniquePackages(1)
 				pkgs[0].Source = &claircore.Package{} // clear source field
@@ -37,7 +37,7 @@ func Test_GetQueryBuilder_Deterministic_Args(t *testing.T) {
 		{
 			name:          "Source package constrained by dist_id",
 			expectedQuery: `SELECT "id", "name", "description", "links", "severity", "package_name", "package_version", "package_kind", "dist_id", "dist_name", "dist_version", "dist_version_code_name", "dist_version_id", "dist_arch", "dist_cpe", "dist_pretty_name", "repo_name", "repo_key", "repo_uri", "fixed_in_version" FROM "vuln" WHERE ((("package_name" = 'package-0') OR ("package_name" = 'source-package-0')) AND ("dist_id" = 'did-0'))`,
-			matchExps:     []driver.MatchExp{driver.DistributionDID},
+			matchExps:     []driver.MatchConstraint{driver.DistributionDID},
 			indexRecord: func() *claircore.IndexRecord {
 				pkgs := test.GenUniquePackages(1)
 				dists := test.GenUniqueDistributions(1)
@@ -50,7 +50,7 @@ func Test_GetQueryBuilder_Deterministic_Args(t *testing.T) {
 		{
 			name:          "Source package constrained by dist_id",
 			expectedQuery: `SELECT "id", "name", "description", "links", "severity", "package_name", "package_version", "package_kind", "dist_id", "dist_name", "dist_version", "dist_version_code_name", "dist_version_id", "dist_arch", "dist_cpe", "dist_pretty_name", "repo_name", "repo_key", "repo_uri", "fixed_in_version" FROM "vuln" WHERE ((("package_name" = 'package-0') OR ("package_name" = 'source-package-0')) AND ("dist_id" = 'did-0') AND ("dist_version" = 'version-0'))`,
-			matchExps:     []driver.MatchExp{driver.DistributionDID, driver.DistributionVersion},
+			matchExps:     []driver.MatchConstraint{driver.DistributionDID, driver.DistributionVersion},
 			indexRecord: func() *claircore.IndexRecord {
 				pkgs := test.GenUniquePackages(1)
 				dists := test.GenUniqueDistributions(1)
@@ -63,7 +63,7 @@ func Test_GetQueryBuilder_Deterministic_Args(t *testing.T) {
 		{
 			name:          "Source package constrained by dist_id",
 			expectedQuery: `SELECT "id", "name", "description", "links", "severity", "package_name", "package_version", "package_kind", "dist_id", "dist_name", "dist_version", "dist_version_code_name", "dist_version_id", "dist_arch", "dist_cpe", "dist_pretty_name", "repo_name", "repo_key", "repo_uri", "fixed_in_version" FROM "vuln" WHERE ((("package_name" = 'package-0') OR ("package_name" = 'source-package-0')) AND ("dist_id" = 'did-0') AND ("dist_version" = 'version-0') AND ("dist_version_id" = 'version-id-0'))`,
-			matchExps:     []driver.MatchExp{driver.DistributionDID, driver.DistributionVersion, driver.DistributionVersionID},
+			matchExps:     []driver.MatchConstraint{driver.DistributionDID, driver.DistributionVersion, driver.DistributionVersionID},
 			indexRecord: func() *claircore.IndexRecord {
 				pkgs := test.GenUniquePackages(1)
 				dists := test.GenUniqueDistributions(1)
@@ -76,7 +76,7 @@ func Test_GetQueryBuilder_Deterministic_Args(t *testing.T) {
 		{
 			name:          "Source package constrained by dist_id",
 			expectedQuery: `SELECT "id", "name", "description", "links", "severity", "package_name", "package_version", "package_kind", "dist_id", "dist_name", "dist_version", "dist_version_code_name", "dist_version_id", "dist_arch", "dist_cpe", "dist_pretty_name", "repo_name", "repo_key", "repo_uri", "fixed_in_version" FROM "vuln" WHERE ((("package_name" = 'package-0') OR ("package_name" = 'source-package-0')) AND ("dist_id" = 'did-0') AND ("dist_version" = 'version-0') AND ("dist_version_id" = 'version-id-0') AND ("dist_version_code_name" = 'version-code-name-0'))`,
-			matchExps:     []driver.MatchExp{driver.DistributionDID, driver.DistributionVersion, driver.DistributionVersionID, driver.DistributionVersionCodeName},
+			matchExps:     []driver.MatchConstraint{driver.DistributionDID, driver.DistributionVersion, driver.DistributionVersionID, driver.DistributionVersionCodeName},
 			indexRecord: func() *claircore.IndexRecord {
 				pkgs := test.GenUniquePackages(1)
 				dists := test.GenUniqueDistributions(1)
@@ -90,7 +90,7 @@ func Test_GetQueryBuilder_Deterministic_Args(t *testing.T) {
 	for _, tt := range table {
 		t.Run(tt.name, func(t *testing.T) {
 			ir := tt.indexRecord()
-			query, err := getQueryBuilder(ir, tt.matchExps)
+			query, err := buildGetQuery(ir, tt.matchExps)
 			if err != nil {
 				t.Fatalf("failed to create query: %v", err)
 			}

@@ -8,16 +8,15 @@ import (
 	"github.com/quay/claircore"
 )
 
-// MatchExp types allow a caller of vulnstore methods to specify how to match
-// incoming packages with vulnerabilities. Implementors are tasked with
-// how the matching is performed
+// MatchConstraint explains to the caller how a search for a package's vulnerability should
+// be constrained.
 //
-// for example if sql implementation encounters a PackageDistributionDID matcher
+// for example if sql implementation encounters a DistributionDID constraint
 // it should create a query similar to "SELECT * FROM vulnerabilities WHERE package_name = ? AND distribution_did = ?"
-type MatchExp int
+type MatchConstraint int
 
 const (
-	_ MatchExp = iota
+	_ MatchConstraint = iota
 	// should match claircore.Package.Source.Name => claircore.Vulnerability.Package.Name
 	PackageSourceName
 	// should match claircore.Package.Name => claircore.Vulnerability.Package.Name
@@ -48,7 +47,7 @@ type Matcher interface {
 	Filter(record *claircore.IndexRecord) bool
 	// Query informs the Controller how it should match packages with vulnerabilities.
 	// All conditions are logical AND'd together.
-	Query() []MatchExp
+	Query() []MatchConstraint
 	// Vulnerable informs the Controller if the given package is affected by the given vulnerability.
 	// for example checking the "FixedInVersion" field.
 	Vulnerable(record *claircore.IndexRecord, vuln *claircore.Vulnerability) bool

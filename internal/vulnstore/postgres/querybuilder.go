@@ -11,7 +11,7 @@ import (
 )
 
 // getQueryBuilder validates a IndexRecord and creates a query string for vulnerability matching
-func getQueryBuilder(record *claircore.IndexRecord, matchers []driver.MatchExp) (string, error) {
+func buildGetQuery(record *claircore.IndexRecord, matchers []driver.MatchConstraint) (string, error) {
 	psql := goqu.Dialect("postgres")
 	exps := []goqu.Expression{}
 	// add Package.Name as first condition in query
@@ -30,7 +30,7 @@ func getQueryBuilder(record *claircore.IndexRecord, matchers []driver.MatchExp) 
 	}
 
 	// add matchers
-	seen := make(map[driver.MatchExp]struct{})
+	seen := make(map[driver.MatchConstraint]struct{})
 	for _, m := range matchers {
 		if _, ok := seen[m]; ok {
 			continue

@@ -67,7 +67,7 @@ type Matcher interface {
 	Filter(pkg *claircore.Package) bool
 	// Query informs the Controller how it should match packages with vulnerabilities.
 	// All conditions are logical AND'd together.
-	Query() []MatchExp
+	Query() []MatchConstraint
 	// Vulnerable informs the Controller if the given package is affected by the given vulnerability.
 	// for example checking the "FixedInVersion" field.
 	Vulnerable(pkg *claircore.Package, vuln *claircore.Vulnerability) bool
