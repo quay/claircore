@@ -11,16 +11,17 @@ import (
 )
 
 func TestFetch(t *testing.T) {
-	ctx := context.Background()
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
+	ctx, l := log.TestLogger(ctx, t)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "testdata/com.oracle.elsa-2018.xml")
 	}))
-	l := log.TestLogger(t)
 	u, err := NewUpdater(-1, WithLogger(&l), WithURL(srv.URL, ""))
 	if err != nil {
 		t.Fatal(err)
 	}
-	rd, hint, err := u.Fetch(context.Background(), "")
+	rd, hint, err := u.Fetch(ctx, "")
 	if err != nil {
 		t.Error(err)
 	}
@@ -29,7 +30,7 @@ func TestFetch(t *testing.T) {
 		rd.Close()
 	}
 
-	_, fp, err := u.Fetch(l.WithContext(ctx), driver.Fingerprint(hint))
+	_, fp, err := u.Fetch(ctx, driver.Fingerprint(hint))
 	t.Logf("got hint %q", fp)
 	if got, want := err, driver.Unchanged; got != want {
 		t.Errorf("got: %v, want: %v", got, want)

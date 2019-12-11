@@ -11,6 +11,10 @@ import (
 )
 
 func TestFetcher(t *testing.T) {
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
+	ctx, _ = log.TestLogger(ctx, t)
+
 	var table = []struct {
 		release   Release
 		repo      Repo
@@ -24,9 +28,6 @@ func TestFetcher(t *testing.T) {
 	}
 
 	for _, test := range table {
-		ctx := context.Background()
-		logger := log.TestLogger(t)
-		ctx = logger.WithContext(ctx)
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			http.ServeFile(w, r, test.serveFile)
 		}))

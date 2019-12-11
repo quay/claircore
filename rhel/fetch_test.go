@@ -9,17 +9,22 @@ import (
 	"testing"
 
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/test/log"
 )
 
 func TestFetch(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "testdata/Red_Hat_Enterprise_Linux_3.xml")
 	}))
 	defer srv.Close()
 
 	t.Run("FetchContext", func(t *testing.T) {
+		ctx, done := context.WithCancel(ctx)
+		defer done()
+		ctx, _ = log.TestLogger(ctx, t)
 		u, err := NewUpdater(3, WithClient(srv.Client()), WithURL(srv.URL, ""))
 		if err != nil {
 			t.Fatal(err)
@@ -49,11 +54,14 @@ func TestFetch(t *testing.T) {
 	})
 
 	t.Run("Fetch", func(t *testing.T) {
+		ctx, done := context.WithCancel(ctx)
+		defer done()
+		ctx, _ = log.TestLogger(ctx, t)
 		u, err := NewUpdater(3, WithClient(srv.Client()), WithURL(srv.URL, ""))
 		if err != nil {
 			t.Fatal(err)
 		}
-		rd, hint, err := u.Fetch(context.Background(), "")
+		rd, hint, err := u.Fetch(ctx, "")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -67,7 +75,7 @@ func TestFetch(t *testing.T) {
 			t.Fatalf("expected more data than %d bytes", n)
 		}
 
-		rd, got, err := u.Fetch(context.Background(), "")
+		rd, got, err := u.Fetch(ctx, "")
 		t.Logf("got fingerprint: %+v", got)
 		if err != nil {
 			t.Fatal(err)

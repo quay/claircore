@@ -25,8 +25,9 @@ type parsecase struct {
 
 func (c parsecase) Test(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
-	log := log.TestLogger(t)
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
+	ctx, log := log.TestLogger(ctx, t)
 	ctx, task := trace.NewTask(ctx, "parse test")
 	defer task.End()
 	trace.Log(ctx, "parse test:file", c.File)
@@ -181,11 +182,14 @@ func (lc layercase) Prep(t *testing.T) {
 
 func (lc layercase) Test(t *testing.T) {
 	t.Parallel()
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
+	ctx, _ = log.TestLogger(ctx, t)
 	s := Scanner{}
 	l := &claircore.Layer{
 		LocalPath: lc.name(),
 	}
-	ds, err := s.Scan(context.Background(), l)
+	ds, err := s.Scan(ctx, l)
 	if err != nil {
 		t.Error(err)
 	}

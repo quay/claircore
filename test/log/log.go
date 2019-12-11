@@ -2,22 +2,26 @@ package log
 
 import (
 	"bufio"
+	"context"
 	"io"
 	"testing"
 
 	"github.com/rs/zerolog"
 )
 
-// TestLogger cross-wires a zerolog.Logger to print to the provided testing.TB.
+// TestLogger cross-wires a zerolog.Logger to print to the provided testing.TB,
+// and returns the logger and associates it with the Context.
 //
 // It is very slow.
-func TestLogger(t testing.TB) zerolog.Logger {
+func TestLogger(ctx context.Context, t testing.TB) (context.Context, zerolog.Logger) {
 	r, w := io.Pipe()
+	log := zerolog.New(zerolog.ConsoleWriter{Out: w, NoColor: true})
 	go func() {
+		defer r.Close()
 		s := bufio.NewScanner(r)
-		for s.Scan() {
+		for s.Scan() && ctx.Err() == nil {
 			t.Log(s.Text())
 		}
 	}()
-	return zerolog.New(zerolog.ConsoleWriter{Out: w, NoColor: true})
+	return log.WithContext(ctx), log
 }

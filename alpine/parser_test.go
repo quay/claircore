@@ -10,6 +10,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/test/log"
 )
 
 var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
@@ -160,6 +161,9 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 }
 
 func TestParser(t *testing.T) {
+	t.Parallel()
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
 	var table = []struct {
 		release  Release
 		repo     Repo
@@ -176,7 +180,9 @@ func TestParser(t *testing.T) {
 
 	for _, test := range table {
 		t.Run(test.testFile, func(t *testing.T) {
-			t.Parallel()
+			ctx, done := context.WithCancel(ctx)
+			defer done()
+			ctx, _ = log.TestLogger(ctx, t)
 
 			path := fmt.Sprintf("testdata/%s", test.testFile)
 			f, err := os.Open(path)
@@ -188,7 +194,7 @@ func TestParser(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to create updater: %v", err)
 			}
-			vulns, err := u.Parse(context.Background(), f)
+			vulns, err := u.Parse(ctx, f)
 			if err != nil {
 				t.Fatalf("failed to parse xml: %v", err)
 			}

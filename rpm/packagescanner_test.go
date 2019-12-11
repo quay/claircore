@@ -1246,9 +1246,9 @@ func TestScan(t *testing.T) {
 			t.Skipf("skipping test: missing needed utility %q (%v)", exe, err)
 		}
 	}
-	ctx := context.Background()
-	logger := log.TestLogger(t)
-	ctx = logger.WithContext(ctx)
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
+	ctx, _ = log.TestLogger(ctx, t)
 	l := &claircore.Layer{
 		Hash: hash,
 	}

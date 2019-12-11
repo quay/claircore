@@ -703,9 +703,9 @@ func TestScanner(t *testing.T) {
 			RepositoryHint: "daafc6eba6eae603327bf8fc49645999",
 		},
 	}
-	ctx := context.Background()
-	logger := log.TestLogger(t)
-	ctx = logger.WithContext(ctx)
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
+	ctx, _ = log.TestLogger(ctx, t)
 	l := &claircore.Layer{
 		Hash: hash,
 	}
