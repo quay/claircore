@@ -12,7 +12,6 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/quay/claircore/libindex"
-	libhttp "github.com/quay/claircore/libindex/http"
 )
 
 // Config this struct is using the goconfig library for simple flag and env var
@@ -50,12 +49,10 @@ func main() {
 		log.Fatal().Msgf("failed to create libindex %v", err)
 	}
 
-	mux := http.NewServeMux()
-	mux.Handle("/index", libhttp.Index(lib))
-	mux.Handle("/index_report/", libhttp.IndexReport(lib))
+	h := libindex.NewHandler(lib)
 	srv := &http.Server{
 		Addr:        conf.HTTPListenAddr,
-		Handler:     mux,
+		Handler:     h,
 		BaseContext: func(_ net.Listener) context.Context { return ctx },
 	}
 
@@ -64,7 +61,6 @@ func main() {
 	if err != nil {
 		log.Fatal().Msgf("failed to start http server: %v", err)
 	}
-
 }
 
 func logLevel(conf Config) zerolog.Level {
