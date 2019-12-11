@@ -17,36 +17,13 @@ func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.IndexReco
 	log := zerolog.Ctx(ctx).With().
 		Str("component", "vulnstore.get").
 		Logger()
-	// // Build our query we will make into a prepared statement. See build func
-	// // definition for details and context.
-	// query, dedupedMatchers, err := getBuilder(opts.Matchers)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// h := fnv.New64a()
-	// if _, err := io.WriteString(h, query); err != nil {
-	// 	return nil, err
-	// }
-	// name := hex.EncodeToString(h.Sum(nil))
-	// log.Debug().Str("name", name).Msg("built query")
-
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer tx.Rollback(ctx)
-
-	// // Create a prepared statement.
-	// getStmt, err := tx.Prepare(ctx, name, query)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
 	// start a batch
 	batch := &pgx.Batch{}
-
-	// create our bind arguments. the order of dedupedMatchers
-	// dictates the order of our bindvar values.
 	for _, record := range records {
 		query, err := getQueryBuilder(record, opts.Matchers)
 		if err != nil {
