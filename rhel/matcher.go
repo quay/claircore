@@ -23,11 +23,11 @@ func (*Matcher) Filter(record *claircore.IndexRecord) bool {
 }
 
 // Query implements driver.Matcher.
-func (*Matcher) Query() []driver.MatchExp {
+func (*Matcher) Query() []driver.MatchConstraint {
 	// TODO(hank) This would ideally use CPE, but that requires implementing
 	// some database logic to compare CPEs and changing schema to be able to
 	// associate multiple CPEs with a given vulnerability.
-	return []driver.MatchExp{
+	return []driver.MatchConstraint{
 		//driver.PackageDistributionCPE,
 		driver.DistributionName,
 		driver.DistributionPrettyName,

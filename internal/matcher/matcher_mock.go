@@ -5,10 +5,11 @@
 package matcher
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	claircore "github.com/quay/claircore"
 	driver "github.com/quay/claircore/libvuln/driver"
-	reflect "reflect"
 )
 
 // MockMatcher is a mock of Matcher interface
@@ -63,10 +64,10 @@ func (mr *MockMatcherMockRecorder) Name() *gomock.Call {
 }
 
 // Query mocks base method
-func (m *MockMatcher) Query() []driver.MatchExp {
+func (m *MockMatcher) Query() []driver.MatchConstraint {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Query")
-	ret0, _ := ret[0].([]driver.MatchExp)
+	ret0, _ := ret[0].([]driver.MatchConstraint)
 	return ret0
 }
 
