@@ -8,7 +8,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/vulnscanner"
+	"github.com/quay/claircore/internal/matcher"
 	"github.com/quay/claircore/internal/vulnstore"
 	"github.com/quay/claircore/libvuln/driver"
 )
@@ -60,7 +60,6 @@ func New(ctx context.Context, opts *Opts) (*Libvuln, error) {
 }
 
 // Scan creates a VulnerabilityReport given a manifest's IndexReport.
-func (l *Libvuln) Scan(ctx context.Context, sr *claircore.IndexReport) (*claircore.VulnerabilityReport, error) {
-	vs := vulnscanner.New(l.store, l.matchers)
-	return vs.Scan(ctx, sr)
+func (l *Libvuln) Scan(ctx context.Context, ir *claircore.IndexReport) (*claircore.VulnerabilityReport, error) {
+	return matcher.Match(ctx, ir, l.matchers, l.store)
 }
