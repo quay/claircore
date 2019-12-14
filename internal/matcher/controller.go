@@ -43,7 +43,6 @@ func (mc *Controller) Match(ctx context.Context, records []*claircore.IndexRecor
 	if len(interested) == 0 {
 		return map[int][]*claircore.Vulnerability{}, nil
 	}
-
 	// query the vulnstore
 	vulns, err := mc.query(ctx, interested)
 	if err != nil {
@@ -63,13 +62,11 @@ func (mc *Controller) Match(ctx context.Context, records []*claircore.IndexRecor
 
 func (mc *Controller) findInterested(records []*claircore.IndexRecord) []*claircore.IndexRecord {
 	out := []*claircore.IndexRecord{}
-
 	for _, record := range records {
 		if mc.m.Filter(record) {
 			out = append(out, record)
 		}
 	}
-
 	return out
 }
 
@@ -82,12 +79,10 @@ func (mc *Controller) query(ctx context.Context, interested []*claircore.IndexRe
 		Matchers: matchers,
 		Debug:    true,
 	}
-
 	matches, err := mc.store.Get(ctx, interested, getOpts)
 	if err != nil {
 		return nil, err
 	}
-
 	return matches, nil
 }
 
@@ -95,11 +90,9 @@ func (mc *Controller) query(ctx context.Context, interested []*claircore.IndexRe
 // and the value is a Vulnerability. if not it is not added to the result.
 func (mc *Controller) filter(interested []*claircore.IndexRecord, vulns map[int][]*claircore.Vulnerability) map[int][]*claircore.Vulnerability {
 	filtered := map[int][]*claircore.Vulnerability{}
-
 	for _, record := range interested {
 		filtered[record.Package.ID] = filterVulns(mc.m, record, vulns[record.Package.ID])
 	}
-
 	return filtered
 }
 
