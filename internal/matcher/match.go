@@ -55,15 +55,13 @@ func Match(ctx context.Context, ir *claircore.IndexReport, matchers []driver.Mat
 			}
 			// loop links Detail structs to their associated vulnerability ID
 			for _, vuln := range vulns {
-				// add vulnerability to report
+				dd := details // copy the pointer above, we will add FixedInVersion and store in array
 				vr.Vulnerabilities[vuln.ID] = vuln
-				// vulnerability details provide the FixedInVersion for our Details struct
-				details.FixedInVersion = vuln.FixedInVersion
-				// now we associate a list of Details with a discovered vulnerability ID
+				dd.FixedInVersion = vuln.FixedInVersion
 				if _, ok := vr.Details[vuln.ID]; !ok {
-					vr.Details[vuln.ID] = []claircore.Details{*details}
+					vr.Details[vuln.ID] = []claircore.Details{*dd}
 				} else {
-					vr.Details[vuln.ID] = append(vr.Details[vuln.ID], *details)
+					vr.Details[vuln.ID] = append(vr.Details[vuln.ID], *dd)
 				}
 			}
 		}
