@@ -127,6 +127,10 @@ func checkRepoScanArtifact(t *testing.T, db *sqlx.DB, expectedRepos []*claircore
 		if err != nil {
 			t.Fatalf("failed to query for repository %v: %v", repo, err)
 		}
+		if !repoID.Valid {
+			t.Fatal("invalid repo id")
+		}
+		t.Logf("repo id: %d", repoID.Int64)
 
 		var layer_hash string
 		var repo_id, scanner_id sql.NullInt64
@@ -152,10 +156,10 @@ func checkRepoScanArtifact(t *testing.T, db *sqlx.DB, expectedRepos []*claircore
 		if got, want := layer_hash, layer.Hash; got != want {
 			t.Errorf("got: %q, want: %q", got, want)
 		}
-		if got, want := repo_id, repoID; got.Valid && got.Int64 == want.Int64 {
+		if got, want := repo_id, repoID; !got.Valid || got.Int64 != want.Int64 {
 			t.Errorf("got: %v, want: %v", got, want)
 		}
-		if got, want := scanner_id, int64(0); got.Valid && got.Int64 == want {
+		if got, want := scanner_id, int64(0); !got.Valid || got.Int64 != want {
 			t.Errorf("got: %v, want: %v", got, want)
 		}
 	}

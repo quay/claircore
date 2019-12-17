@@ -140,6 +140,10 @@ func checkDistScanArtifact(t *testing.T, db *sqlx.DB, expectedDists []*claircore
 		if err != nil {
 			t.Fatalf("failed to query for distribution %v: %v", dist, err)
 		}
+		if !distID.Valid {
+			t.Fatalf("distID not valid")
+		}
+		t.Logf("got distID %d", distID.Int64)
 
 		var layer_hash string
 		var dist_id, scanner_id sql.NullInt64
@@ -165,10 +169,10 @@ func checkDistScanArtifact(t *testing.T, db *sqlx.DB, expectedDists []*claircore
 		if got, want := layer_hash, layer.Hash; got != want {
 			t.Errorf("got: %q, want: %q", got, want)
 		}
-		if got, want := dist_id, distID; got.Valid && got.Int64 == want.Int64 {
+		if got, want := dist_id, distID; !got.Valid || got.Int64 != want.Int64 {
 			t.Errorf("got: %v, want: %v", got, want)
 		}
-		if got, want := dist_id, int64(0); got.Valid && got.Int64 == want {
+		if got, want := scanner_id, int64(0); !got.Valid || got.Int64 != want {
 			t.Errorf("got: %v, want: %v", got, want)
 		}
 	}

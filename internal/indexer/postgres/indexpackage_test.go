@@ -266,10 +266,10 @@ func checkPackageScanArtifact(t *testing.T, db *sqlx.DB, expectedPkgs []*clairco
 		if got, want := layer_hash, layer.Hash; got != want {
 			t.Errorf("got: %q, want: %q", got, want)
 		}
-		if got, want := package_id, pkgID; got.Valid && got.Int64 == want.Int64 {
+		if got, want := package_id, pkgID; !got.Valid || got.Int64 != want.Int64 {
 			t.Errorf("got: %v, want: %v", got, want)
 		}
-		if got, want := scanner_id, int64(0); got.Valid && got.Int64 == want {
+		if got, want := scanner_id, int64(0); !got.Valid || got.Int64 != want {
 			t.Errorf("got: %v, want: %v", got, want)
 		}
 	}

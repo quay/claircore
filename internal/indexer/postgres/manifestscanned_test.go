@@ -62,7 +62,7 @@ func Test_ManifestScanned_Failure(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !ok {
+			if ok {
 				t.Fatal("expected false from ManifestScanned")
 			}
 		})
