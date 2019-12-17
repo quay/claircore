@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"path"
-	"time"
 
 	"github.com/rs/zerolog"
 
@@ -63,7 +62,7 @@ func (h *HTTP) Index(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// call scan
-	_, err = h.l.Index(ctx, &m)
+	ir, err := h.l.Index(ctx, &m)
 	if err != nil {
 		resp := &jsonerr.Response{
 			Code:    "scan-error",
@@ -74,12 +73,18 @@ func (h *HTTP) Index(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// sleep here to give time for scanner to push first state
-	// we could have the returned channel send *all* changes of the
-	// scan report to the channel, range over, and send break out of the range
-	// on the first retrieval.
-	time.Sleep(1 * time.Second)
-	http.Redirect(w, r, path.Join(r.URL.Path, m.Hash), http.StatusCreated)
+	w.WriteHeader(http.StatusCreated)
+	err = json.NewEncoder(w).Encode(&ir)
+	if err != nil {
+		resp := &jsonerr.Response{
+			Code:    "serialization-error",
+			Message: fmt.Sprintf("failed to serialize indexre report: %v", err),
+		}
+		log.Info().Err(err).Msg("failed to serialize results")
+		jsonerr.Error(w, resp, http.StatusInternalServerError)
+		return
+	}
+	return
 }
 
 func (h *HTTP) IndexReport(w http.ResponseWriter, r *http.Request) {

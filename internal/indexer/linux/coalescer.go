@@ -37,6 +37,7 @@ func NewCoalescer(store indexer.Store, ps indexer.PackageScanner) *Coalescer {
 		ds:    &osrelease.Scanner{},
 		sr: &claircore.IndexReport{
 			// we will only fill these fields
+			Details:               map[int][]*claircore.Details{},
 			PackageIntroduced:     map[int]string{},
 			Packages:              map[int]*claircore.Package{},
 			Distributions:         map[int]*claircore.Distribution{},
@@ -166,6 +167,25 @@ func (c *Coalescer) prune(ctx context.Context, artifacts []layerArtifacts) {
 			delete(c.sr.DistributionByPackage, id)
 			delete(c.sr.RepositoryByPackage, id)
 			delete(c.sr.PackageIntroduced, id)
+		}
+	}
+	// create Details structs for all remaining packages
+	for db, pkgs := range keep {
+		for pkgID, _ := range pkgs {
+			if _, ok := c.sr.Details[pkgID]; !ok {
+				c.sr.Details[pkgID] = []*claircore.Details{
+					{
+						PackageDB:    db,
+						IntroducedIn: c.sr.PackageIntroduced[pkgID],
+					},
+				}
+			} else {
+				details := &claircore.Details{
+					PackageDB:    db,
+					IntroducedIn: c.sr.PackageIntroduced[pkgID],
+				}
+				c.sr.Details[pkgID] = append(c.sr.Details[pkgID], details)
+			}
 		}
 	}
 }

@@ -54,6 +54,14 @@ func coalesce(ctx context.Context, s *Controller) (State, error) {
 // merge is an array IndexReports returned from coalescers
 func MergeSR(source *claircore.IndexReport, merge []*claircore.IndexReport) *claircore.IndexReport {
 	for _, sr := range merge {
+		for k, v := range sr.Details {
+			if _, ok := source.Details[k]; !ok {
+				source.Details[k] = v
+			} else {
+				source.Details[k] = append(source.Details[k], v...)
+			}
+		}
+
 		for k, v := range sr.Packages {
 			source.Packages[k] = v
 		}
