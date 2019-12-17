@@ -84,6 +84,7 @@ type Controller struct {
 func New(opts *indexer.Opts) *Controller {
 	// fully init any maps and arrays
 	scanRes := &claircore.IndexReport{
+		Details:               map[int][]*claircore.Details{},
 		PackageIntroduced:     map[int]string{},
 		Packages:              map[int]*claircore.Package{},
 		Distributions:         map[int]*claircore.Distribution{},

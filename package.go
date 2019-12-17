@@ -14,7 +14,7 @@ type Package struct {
 	// must be a pointer to support recursive type:
 	Source *Package `json:"source,omitempty"`
 	// the file system path or prefix where this package resides
-	PackageDB string `json:"package_db,omitempty"`
+	PackageDB string `json:"-"`
 	// a hint on which repository this package was downloaded from
-	RepositoryHint string `json:"repository_hint,omitempty"`
+	RepositoryHint string `json:"-"`
 }

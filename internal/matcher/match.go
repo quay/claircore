@@ -13,10 +13,13 @@ import (
 func Match(ctx context.Context, ir *claircore.IndexReport, matchers []driver.Matcher, store vulnstore.Vulnerability) (*claircore.VulnerabilityReport, error) {
 	// the vulnerability report we are creating
 	vr := &claircore.VulnerabilityReport{
-		Hash:            ir.Hash,
-		Vulnerabilities: map[int]*claircore.Vulnerability{},
-		Details:         map[int][]claircore.Details{},
+		Hash:                   ir.Hash,
+		Details:                ir.Details,  // IndexReport provides all package details found in an image
+		Packages:               ir.Packages, // IndexReport provides all packages found within an image
+		Vulnerabilities:        map[int]*claircore.Vulnerability{},
+		PackageVulnerabilities: map[int][]int{},
 	}
+
 	// extract IndexRecords from the IndexReport
 	records := ir.IndexRecords()
 	// a channel where concurrent controllers will deliver vulnerabilities affecting a package.
@@ -45,23 +48,15 @@ func Match(ctx context.Context, ir *claircore.IndexReport, matchers []driver.Mat
 			errorC <- err
 		}
 	}()
-	// loop ranges until ctrlC is closed and fully drained
+	// loop ranges until ctrlC is closed and fully drained, ctrlC is guaranteed to close
 	for vulnsByPackage := range ctrlC {
-		// loop unpacks list of vulnerabilities affected a particular package
 		for pkgID, vulns := range vulnsByPackage {
-			details := &claircore.Details{
-				AffectedPackage: *ir.Packages[pkgID],         // lookup package by ID from IndexReport
-				IntroducedIn:    ir.PackageIntroduced[pkgID], // lookup layer package was introduced
-			}
-			// loop links Detail structs to their associated vulnerability ID
 			for _, vuln := range vulns {
-				dd := details // copy the pointer above, we will add FixedInVersion and store in array
 				vr.Vulnerabilities[vuln.ID] = vuln
-				dd.FixedInVersion = vuln.FixedInVersion
-				if _, ok := vr.Details[vuln.ID]; !ok {
-					vr.Details[vuln.ID] = []claircore.Details{*dd}
+				if _, ok := vr.PackageVulnerabilities[pkgID]; !ok {
+					vr.PackageVulnerabilities[pkgID] = []int{vuln.ID}
 				} else {
-					vr.Details[vuln.ID] = append(vr.Details[vuln.ID], *dd)
+					vr.PackageVulnerabilities[pkgID] = append(vr.PackageVulnerabilities[pkgID], vuln.ID)
 				}
 			}
 		}

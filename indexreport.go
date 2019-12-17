@@ -19,8 +19,10 @@ type IndexReport struct {
 	Hash string `json:"manifest_hash"`
 	// the current state of the scan.
 	State string `json:"state"`
-	// packages found after applying all layers
+	// a map, keyed by package ID, identifying all discovered packages in an image
 	Packages map[int]*Package `json:"packages"`
+	// a map, keyed by package id providing contexts where a package was discovered
+	Details map[int][]*Details `json:"details"`
 	// distributions found after applying all layers
 	Distributions map[int]*Distribution `json:"distributions"`
 	// repositories found after applying all layers
