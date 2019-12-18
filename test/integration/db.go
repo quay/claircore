@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
+	"os"
 	"testing"
 
 	"github.com/jackc/pgx/v4"
@@ -29,7 +30,8 @@ func init() {
 // DefaultDSN is a dsn for database server usually set up by the project's
 // Makefile.
 const (
-	DefaultDSN = `host=localhost port=5434 user=claircore dbname=claircore sslmode=disable`
+	DefaultDSN      = `host=localhost port=5434 user=claircore dbname=claircore sslmode=disable` // connection string for our local development. see docker-compose.yaml at root
+	EnvPGConnString = "POSTGRES_CONNECTION_STRING"
 )
 const (
 	createRole      = `CREATE ROLE %s LOGIN;`
@@ -41,6 +43,13 @@ const (
 
 // NewDB creates a new database and populates it with the contents of initfile.
 func NewDB(ctx context.Context, t testing.TB, dsn string) (*DB, error) {
+	// if we find an environment variable use this inplace of the passed in DSN.
+	// this will mostly be used in CI/CD settings to point to pipeline databases
+	dsnFromEnv := os.Getenv(EnvPGConnString)
+	if dsnFromEnv != "" {
+		dsn = dsnFromEnv
+	}
+
 	cfg, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
 		return nil, err
