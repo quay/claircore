@@ -7,8 +7,8 @@ services:
   - name: postgresql
     image: postgres:12.1
     environment:
-      - [ "POSTGRES_USER", "claircore" ]
-      - [ "POSTGRES_DB", "claircore" ]
+      POSTGRES_USER: claircore
+      POSTGRES_DB: claircore
 
 steps:
   - name: unit-and-integration
