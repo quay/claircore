@@ -12,7 +12,7 @@ services:
 
 steps:
   - name: unit-and-integration
-    image: golang:1.13.0
+    image: quay.io/claircore/golang:1.13.3
     environment:
       POSTGRES_CONNECTION_STRING: host=postgresql port=5432 user=claircore dbname=claircore sslmode=disable
     commands:
