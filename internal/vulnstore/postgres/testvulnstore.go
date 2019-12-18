@@ -26,7 +26,7 @@ func TestStore(ctx context.Context, t testing.TB) (*sqlx.DB, *Store, string, fun
 	}
 	o = bytes.TrimSpace(o)
 
-	db, err := integration.NewDB(ctx, t, integration.DefaultDSN)
+	db, err := integration.NewDB(ctx, t)
 	if err != nil {
 		t.Fatalf("unable to create test database: %w", err)
 	}

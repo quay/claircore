@@ -41,13 +41,22 @@ const (
 	dropRole        = `DROP ROLE %s;`
 )
 
-// NewDB creates a new database and populates it with the contents of initfile.
-func NewDB(ctx context.Context, t testing.TB, dsn string) (*DB, error) {
+// NewDB generates a unique database instance for use in concurrent integration tests.
+//
+// An environment variable maybe use to provide the root connection string used to
+// generate a test specific database.
+//
+// If no environment variable is specified the root connection string defaults to our local
+// development db connection string DefaultDSN.
+func NewDB(ctx context.Context, t testing.TB) (*DB, error) {
 	// if we find an environment variable use this inplace of the passed in DSN.
 	// this will mostly be used in CI/CD settings to point to pipeline databases
+	var dsn string
 	dsnFromEnv := os.Getenv(EnvPGConnString)
 	if dsnFromEnv != "" {
 		dsn = dsnFromEnv
+	} else {
+		dsn = DefaultDSN
 	}
 
 	cfg, err := pgxpool.ParseConfig(dsn)
