@@ -125,6 +125,11 @@ podman-dev-down:
 	true $(foreach c,claircore-database libindexhttp libvulnhttp,&& podman rm -v $c)
 	podman pod rm claircore-dev
 
+GO_VERSION ?= 1.13.5
+GO_CHECKSUM ?= 512103d7ad296467814a6e3f635631bd35574cab3369a97a323c9a585ccaa569
 .PHONY: baseimage
 baseimage:
-	buildah bud -f etc/Dockerfile -t quay.io/claircore/golang:1.13.3 etc
+	buildah bud -f etc/Dockerfile -t quay.io/claircore/golang:$(GO_VERSION) \
+		--build-arg GO_VERSION=$(GO_VERSION) \
+	   	--build-arg GO_CHECKSUM=$(GO_CHECKSUM) \
+		etc
