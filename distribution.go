@@ -1,8 +1,9 @@
 package claircore
 
 // Distribution is the accompanying system context of a package. this
-// information aides in CVE detection. scanners should identify this information before
-// starting their scan and tag each found package with as much as this discovered info as possible.
+// information aides in CVE detection.
+//
+// Distribution is modeled after the os-release file found in all linux distributions.
 type Distribution struct {
 	// unique ID of this distribution. this will be created as discovered by the library
 	// and used for persistence and hash map indexes.

@@ -14,8 +14,10 @@ func Match(ctx context.Context, ir *claircore.IndexReport, matchers []driver.Mat
 	// the vulnerability report we are creating
 	vr := &claircore.VulnerabilityReport{
 		Hash:                   ir.Hash,
-		Details:                ir.Details,  // IndexReport provides all package details found in an image
-		Packages:               ir.Packages, // IndexReport provides all packages found within an image
+		Packages:               ir.Packages,
+		Environments:           ir.Environments,
+		Distributions:          ir.Distributions,
+		Repositories:           ir.Repositories,
 		Vulnerabilities:        map[int]*claircore.Vulnerability{},
 		PackageVulnerabilities: map[int][]int{},
 	}
