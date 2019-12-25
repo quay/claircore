@@ -117,12 +117,16 @@ func (c *Coalescer) coalesce(ctx context.Context, artifacts []layerArtifacts) er
 			for _, pkg := range layerArtifacts.pkgs {
 				// if we encounter a package where we haven't recorded a package database,
 				// initialize the package database
+				var distID int = 0
+				if currDist != nil {
+					distID = currDist.ID
+				}
 				if _, ok := dbs[pkg.PackageDB]; !ok {
 					packages := map[int]*claircore.Package{pkg.ID: pkg}
 					environment := &claircore.Environment{
 						PackageDB:      pkg.PackageDB,
 						IntroducedIn:   layerArtifacts.hash,
-						DistributionID: currDist.ID,
+						DistributionID: distID,
 					}
 					environments := map[int]*claircore.Environment{pkg.ID: environment}
 					dbs[pkg.PackageDB] = &packageDatabase{packages, environments}
@@ -132,7 +136,7 @@ func (c *Coalescer) coalesce(ctx context.Context, artifacts []layerArtifacts) er
 					environment := &claircore.Environment{
 						PackageDB:      pkg.PackageDB,
 						IntroducedIn:   layerArtifacts.hash,
-						DistributionID: currDist.ID,
+						DistributionID: distID,
 					}
 					dbs[pkg.PackageDB].packages[pkg.ID] = pkg
 					dbs[pkg.PackageDB].environments[pkg.ID] = environment
