@@ -6,6 +6,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
+	"github.com/quay/claircore/test/log"
 )
 
 // Test_Coalescer tests the private method coalesce on the linux.Coalescer.
@@ -13,6 +14,9 @@ import (
 // database access would have occured. Thus we do not use a black box test
 // and instead test private methods.
 func Test_Coalescer(t *testing.T) {
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
+	ctx, _ = log.TestLogger(ctx, t)
 	coalescer := &Coalescer{
 		store: nil,
 		ps:    nil,
@@ -69,7 +73,7 @@ func Test_Coalescer(t *testing.T) {
 			repos: nil,
 		},
 	}
-	err := coalescer.coalesce(context.Background(), layerArtifacts)
+	err := coalescer.coalesce(ctx, layerArtifacts)
 	if err != nil {
 		t.Fatalf("received error from coalesce method: %v", err)
 	}

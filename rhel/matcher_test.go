@@ -71,7 +71,7 @@ func TestMatcherIntegration(t *testing.T) {
 	if err := json.NewDecoder(f).Decode(&ir); err != nil {
 		t.Fatalf("failed to decode IndexReport: %v", err)
 	}
-	vr, err := matcher.Match(context.Background(), &ir, []driver.Matcher{m}, store)
+	vr, err := matcher.Match(ctx, &ir, []driver.Matcher{m}, store)
 	if err != nil {
 		t.Fatal(err)
 	}

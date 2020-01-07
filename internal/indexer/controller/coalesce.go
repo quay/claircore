@@ -55,11 +55,7 @@ func coalesce(ctx context.Context, s *Controller) (State, error) {
 func MergeSR(source *claircore.IndexReport, merge []*claircore.IndexReport) *claircore.IndexReport {
 	for _, ir := range merge {
 		for k, v := range ir.Environments {
-			if _, ok := source.Environments[k]; !ok {
-				source.Environments[k] = v
-			} else {
-				source.Environments[k] = append(source.Environments[k], v...)
-			}
+			source.Environments[k] = append(source.Environments[k], v...)
 		}
 		for k, v := range ir.Packages {
 			source.Packages[k] = v

@@ -172,11 +172,8 @@ func (c *Coalescer) coalesce(ctx context.Context, artifacts []layerArtifacts) er
 			// have we already inventoried packages from this database ?
 			if _, ok := packagesToKeep[pkg.PackageDB]; !ok {
 				// ... we haven't so add to our temporary accumlator
-				if _, ok := tmpPackagesToKeep[pkg.PackageDB]; !ok {
-					tmpPackagesToKeep[pkg.PackageDB] = []int{pkg.ID}
-				} else {
-					tmpPackagesToKeep[pkg.PackageDB] = append(tmpPackagesToKeep[pkg.PackageDB], pkg.ID)
-				}
+				tk := tmpPackagesToKeep[pkg.PackageDB]
+				tmpPackagesToKeep[pkg.PackageDB] = append(tk, pkg.ID)
 			}
 		}
 		for k, v := range tmpPackagesToKeep {
