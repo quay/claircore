@@ -15,13 +15,13 @@ import (
 // when all requests fail the default RespCheck
 func TestFastestURLAllFailure(t *testing.T) {
 	ts1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(10 * time.Second)
+		time.Sleep(10 * time.Millisecond)
 		w.Header().Set("X-Test-Server", "1")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}))
 	ts2 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(20 * time.Second)
+		time.Sleep(20 * time.Millisecond)
 		w.Header().Set("X-Test-Server", "2")
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -40,13 +40,13 @@ func TestFastestURLAllFailure(t *testing.T) {
 // the slower server
 func TestFastestURLFailure(t *testing.T) {
 	ts1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(10 * time.Second)
+		time.Sleep(10 * time.Millisecond)
 		w.Header().Set("X-Test-Server", "1")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}))
 	ts2 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(20 * time.Second)
+		time.Sleep(20 * time.Millisecond)
 		w.Header().Set("X-Test-Server", "2")
 		return
 	}))
@@ -67,12 +67,12 @@ func TestFastestURLFailure(t *testing.T) {
 // when all servers respond successfully
 func TestFastestURLSuccess(t *testing.T) {
 	ts1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(10 * time.Second)
+		time.Sleep(10 * time.Millisecond)
 		w.Header().Set("X-Test-Server", "1")
 		return
 	}))
 	ts2 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		time.Sleep(20 * time.Second)
+		time.Sleep(20 * time.Millisecond)
 		w.Header().Set("X-Test-Server", "2")
 		return
 	}))
