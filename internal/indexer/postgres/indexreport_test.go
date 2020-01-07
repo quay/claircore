@@ -31,11 +31,8 @@ func Test_IndexReport_Success(t *testing.T) {
 			name: "full scan result",
 			hash: "test-manifest-hash",
 			expectedSR: &claircore.IndexReport{
-				Hash:  "test-manifest-hash",
-				State: "test-state",
-				PackageIntroduced: map[int]string{
-					160: "test-layer-hash",
-				},
+				Hash:    "test-manifest-hash",
+				State:   "test-state",
 				Success: true,
 				Err:     "",
 			},

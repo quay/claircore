@@ -16,7 +16,6 @@ import (
 	distlock "github.com/quay/claircore/pkg/distlock/postgres"
 	"github.com/quay/claircore/test/integration"
 	"github.com/quay/claircore/test/log"
-	"github.com/stretchr/testify/assert"
 )
 
 // Test_Matcher_Integration confirms packages are matched
@@ -57,7 +56,9 @@ func Test_Matcher_Integration(t *testing.T) {
 		t.Fatalf("failed to decode IndexReport: %v", err)
 	}
 	vr, err := matcher.Match(context.Background(), &ir, []driver.Matcher{m}, store)
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatalf("expected nil error but got %v", err)
+	}
 	_, err = json.Marshal(&vr)
 	if err != nil {
 		t.Fatalf("failed to marshal VR: %v", err)
