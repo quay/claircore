@@ -5,15 +5,15 @@
 package claircore_test
 
 import (
+	"bytes"
 	"context"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/internal/indexer/fetcher"
 	"github.com/quay/claircore/test"
+	"github.com/quay/claircore/test/fetch"
 	"github.com/quay/claircore/test/integration"
 )
 
@@ -39,7 +39,7 @@ func Test_Layer_Files_Miss(t *testing.T) {
 	}{
 		{
 			name:    "ubuntu:18.04 fake path, leading slash, inmem fetch",
-			fetcher: fetcher.New(nil, nil, indexer.InMem),
+			fetcher: fetcher.New(nil, indexer.InMem),
 			layers:  1,
 			uris: []string{
 				"https://storage.googleapis.com/quay-sandbox-01/datastorage/registry/sha256/35/35c102085707f703de2d9eaad8752d6fe1b8f02b5d2149f1d8357c9cc7fb7d0a",
@@ -48,7 +48,7 @@ func Test_Layer_Files_Miss(t *testing.T) {
 		},
 		{
 			name:    "ubuntu:18.04 fake path, no leading slash, inmem fetch",
-			fetcher: fetcher.New(nil, nil, indexer.InMem),
+			fetcher: fetcher.New(nil, indexer.InMem),
 			layers:  1,
 			uris: []string{
 				"https://storage.googleapis.com/quay-sandbox-01/datastorage/registry/sha256/35/35c102085707f703de2d9eaad8752d6fe1b8f02b5d2149f1d8357c9cc7fb7d0a",
@@ -62,30 +62,33 @@ func Test_Layer_Files_Miss(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
 			// gen layers
-			layers, err := test.GenUniqueLayersRemote(table.layers, table.uris)
+			layers := test.ServeLayers(ctx, t, table.layers)
 
 			// fetch the layer
 			ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 			defer cancel()
-			err = table.fetcher.Fetch(ctx, layers)
-			assert.NoError(t, err, "fetcher returned an error")
+			err := table.fetcher.Fetch(ctx, layers)
+			if err != nil {
+				t.Fatal(err)
+			}
 
 			// attempt to get files
-			files, err := layers[0].Files(table.paths)
-			assert.NoError(t, err, "Files method returned an error")
+			files, err := layers[0].Files(table.paths...)
+			if err != nil {
+				t.Error(err)
+			}
 
-			// confirm byte array is not empty
+			var b *bytes.Buffer
+			var ok bool
 			for _, path := range table.paths {
-				var b []byte
-				var ok bool
 				if b, ok = files[path]; !ok {
 					t.Fatalf("test path %v was not found in resulting file map", path)
 				}
-				if len(b) > 0 {
-					t.Fatalf("returned buffer for path %v has len %v", path, len(b))
+				if l := b.Len(); l > 0 {
+					t.Fatalf("returned buffer for path %v has len %v", path, l)
 				}
 
-				t.Logf("File:\n%v\n", string(b))
+				t.Logf("contents: %+q", b.String())
 			}
 		})
 	}
@@ -113,7 +116,7 @@ func Test_Layer_Files_Hit(t *testing.T) {
 	}{
 		{
 			name:    "ubuntu:18.04 os-release (linked file), leading slash, inmem fetch",
-			fetcher: fetcher.New(nil, nil, indexer.InMem),
+			fetcher: fetcher.New(nil, indexer.InMem),
 			layers:  1,
 			uris: []string{
 				"https://storage.googleapis.com/quay-sandbox-01/datastorage/registry/sha256/35/35c102085707f703de2d9eaad8752d6fe1b8f02b5d2149f1d8357c9cc7fb7d0a",
@@ -122,7 +125,7 @@ func Test_Layer_Files_Hit(t *testing.T) {
 		},
 		{
 			name:    "ubuntu:18.04 os-release (linked file), no leading slash, inmem fetch",
-			fetcher: fetcher.New(nil, nil, indexer.InMem),
+			fetcher: fetcher.New(nil, indexer.InMem),
 			layers:  1,
 			uris: []string{
 				"https://storage.googleapis.com/quay-sandbox-01/datastorage/registry/sha256/35/35c102085707f703de2d9eaad8752d6fe1b8f02b5d2149f1d8357c9cc7fb7d0a",
@@ -135,31 +138,33 @@ func Test_Layer_Files_Hit(t *testing.T) {
 		t.Run(table.name, func(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
-			// gen layers
-			layers, err := test.GenUniqueLayersRemote(table.layers, table.uris)
+			layers := test.ServeLayers(ctx, t, table.layers)
+			fetch.Layer(ctx, t, nil, "docker.io", "library/ubuntu", "")
 
 			// fetch the layer
 			ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 			defer cancel()
-			err = table.fetcher.Fetch(ctx, layers)
-			assert.NoError(t, err, "fetcher returned an error")
+			if err := table.fetcher.Fetch(ctx, layers); err != nil {
+				t.Fatal(err)
+			}
 
 			// attempt to get files
-			files, err := layers[0].Files(table.paths)
-			assert.NoError(t, err, "Files method returned an error")
+			files, err := layers[0].Files(table.paths...)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-			// confirm byte array is not empty
+			var b *bytes.Buffer
+			var ok bool
 			for _, path := range table.paths {
-				var b []byte
-				var ok bool
 				if b, ok = files[path]; !ok {
 					t.Fatalf("test path %v was not found in resulting file map", path)
 				}
-				if len(b) <= 0 {
-					t.Fatalf("returned buffer for path %v has len %v", path, len(b))
+				if l := b.Len(); l <= 0 {
+					t.Fatalf("returned buffer for path %v has len %v", path, l)
 				}
 
-				t.Logf("File:\n%v\n", string(b))
+				t.Logf("contents: %+q", b.String())
 			}
 		})
 	}
