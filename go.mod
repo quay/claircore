@@ -13,6 +13,7 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/jackc/pgx/v4 v4.0.0
 	github.com/jmoiron/sqlx v1.2.0
+	github.com/klauspost/compress v1.9.4
 	github.com/knqyf263/go-cpe v0.0.0-20180327054844-659663f6eca2
 	github.com/knqyf263/go-deb-version v0.0.0-20190517075300-09fca494f03d
 	github.com/knqyf263/go-rpm-version v0.0.0-20170716094938-74609b86c936

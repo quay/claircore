@@ -147,6 +147,8 @@ github.com/json-iterator/go v0.0.0-20180612202835-f2b4162afba3/go.mod h1:+SdeFBv
 github.com/json-iterator/go v1.1.8/go.mod h1:KdQUCv79m/52Kvf8AW2vK1V8akMuk1QjK/uOdHXbAo4=
 github.com/kisielk/errcheck v1.2.0/go.mod h1:/BMXB+zMLi60iA8Vv6Ksmxu/1UDYcXs4uQLJ+jE2L00=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
+github.com/klauspost/compress v1.9.4 h1:xhvAeUPQ2drNUhKtrGdTGNvV9nNafHMUkRyLkzxJoB4=
+github.com/klauspost/compress v1.9.4/go.mod h1:RyIbtBH6LamlWaDj8nUwkbUhJ87Yi3uG0guNDohfE1A=
 github.com/knqyf263/go-cpe v0.0.0-20180327054844-659663f6eca2 h1:9CYbtr3i56D/rD6u6jJ/Aocsic9G+MupyVu7gb+QHF4=
 github.com/knqyf263/go-cpe v0.0.0-20180327054844-659663f6eca2/go.mod h1:XM58Cg7dN+g0J9UPVmKjiXWlGi55lx+9IMs0IMoFWQo=
 github.com/knqyf263/go-deb-version v0.0.0-20190517075300-09fca494f03d h1:X4cedH4Kn3JPupAwwWuo4AzYp16P0OyLO9d7OnMZc/c=
