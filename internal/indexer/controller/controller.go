@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
@@ -113,7 +112,10 @@ func (s *Controller) Index(ctx context.Context, manifest *claircore.Manifest) *c
 	s.manifest = manifest
 	s.report.Hash = manifest.Hash
 	// setup our logger. all stateFuncs may use this to log with a log context
-	s.logger = log.With().Str("component", "scan-controller").Str("manifest", s.manifest.Hash).Logger()
+	s.logger = zerolog.Ctx(ctx).With().
+		Str("component", "scan-controller").
+		Str("manifest", s.manifest.Hash).
+		Logger()
 	s.logger.Info().Str("state", s.getState().String()).Msg("starting scan")
 	s.run(ctx)
 	return s.report

@@ -3,23 +3,39 @@ package controller
 import (
 	"context"
 	"fmt"
+
+	"github.com/rs/zerolog"
 )
 
 func fetchLayers(ctx context.Context, s *Controller) (State, error) {
-	s.logger.Info().Str("state", s.getState().String()).Msg("starting layer fetch")
+	log := zerolog.Ctx(ctx).With().
+		Str("state", s.getState().String()).
+		Str("manifest", s.manifest.Hash).
+		Logger()
+	log.Info().Msg("layers fetch start")
+	defer log.Info().Msg("layers fetch done")
 	toFetch, err := reduce(ctx, s.Store, s.Vscnrs, s.manifest.Layers)
 	if err != nil {
-		return Terminal, fmt.Errorf("failed to determine layers to fetch: %v", err)
+		return Terminal, fmt.Errorf("failed to determine layers to fetch: %w", err)
 	}
 	if len(toFetch) == 0 {
 		return Terminal, fmt.Errorf("reached FetchLayer states but could not determine layers to scan")
 	}
-	s.logger.Debug().Str("state", s.getState().String()).Msgf("fetching %d layers", len(toFetch))
-	err = s.Fetcher.Fetch(ctx, toFetch)
-	if err != nil {
-		s.logger.Error().Str("state", s.getState().String()).Msgf("faild to fetch layers: %v", err)
-		return Terminal, fmt.Errorf("failed to fetch layers %v", err)
+	log.Debug().
+		Int("count", len(toFetch)).
+		Msg("fetching layers")
+	if err := s.Fetcher.Fetch(ctx, toFetch); err != nil {
+		log.Warn().
+			Err(err).
+			Msg("layers fetch failure")
+		return Terminal, fmt.Errorf("failed to fetch layers: %w", err)
 	}
-	s.logger.Info().Str("state", s.getState().String()).Msgf("layers successfully fetched")
+	if err := s.Fetcher.Validate(ctx, toFetch); err != nil {
+		log.Warn().
+			Err(err).
+			Msg("layers validate failure")
+		return Terminal, fmt.Errorf("failed to fetch layers: %w", err)
+	}
+	log.Info().Msg("layers fetch success")
 	return ScanLayers, nil
 }
