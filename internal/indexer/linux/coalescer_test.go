@@ -1,54 +1,94 @@
-package linux_test
+package linux
 
 import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
-
-	"github.com/quay/claircore/internal/indexer"
-	"github.com/quay/claircore/internal/indexer/linux"
+	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
+	"github.com/quay/claircore/test/log"
 )
 
-func TestCoalescer(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	mockStore := indexer.NewMockStore(ctrl)
-	ps := indexer.NewMockPackageScanner(ctrl)
-	ps.EXPECT().Kind().AnyTimes()
-	ps.EXPECT().Name().AnyTimes()
-	ps.EXPECT().Version().AnyTimes()
-
-	layers, err := test.GenUniqueLayersRemote(1, []string{"http://example.com"})
+// Test_Coalescer tests the private method coalesce on the linux.Coalescer.
+// it's simpler to test the core business logic of a linux.Coalescer after
+// database access would have occured. Thus we do not use a black box test
+// and instead test private methods.
+func Test_Coalescer(t *testing.T) {
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
+	ctx, _ = log.TestLogger(ctx, t)
+	coalescer := &Coalescer{
+		store: nil,
+		ps:    nil,
+		ds:    nil,
+		ir: &claircore.IndexReport{
+			Environments:  map[int][]*claircore.Environment{},
+			Packages:      map[int]*claircore.Package{},
+			Distributions: map[int]*claircore.Distribution{},
+			Repositories:  map[int]*claircore.Repository{},
+		},
+	}
+	// we will test
+	// 1) packages before a distribution was discovered are tagged with
+	//    the first distribution found
+	// 2) all packages found after a subsequent distribution is located
+	//    are tagged wih this distribution
+	pkgs := test.GenUniquePackages(6)
+	dists := test.GenUniqueDistributions(3) // we will discard dist 0 due to zero value ambiguity
+	layerArtifacts := []layerArtifacts{
+		{
+			hash:  "A",
+			pkgs:  pkgs[0:1],
+			dist:  nil,
+			repos: nil,
+		},
+		{
+			hash:  "B",
+			pkgs:  pkgs[1:2],
+			dist:  nil,
+			repos: nil,
+		},
+		{
+			hash:  "C",
+			pkgs:  pkgs[2:3],
+			dist:  dists[1:2],
+			repos: nil,
+		},
+		{
+			hash:  "D",
+			pkgs:  pkgs[3:4],
+			dist:  nil,
+			repos: nil,
+		},
+		{
+			hash:  "E",
+			pkgs:  pkgs[4:5],
+			dist:  dists[2:],
+			repos: nil,
+		},
+		{
+			hash:  "F",
+			pkgs:  pkgs[5:],
+			dist:  nil,
+			repos: nil,
+		},
+	}
+	err := coalescer.coalesce(ctx, layerArtifacts)
 	if err != nil {
-		t.Fatalf("failed to gen unique layers: %v", err)
+		t.Fatalf("received error from coalesce method: %v", err)
 	}
-	packages := test.GenUniquePackages(1)
-	dists := test.GenUniqueDistributions(1)
-	mockStore.EXPECT().PackagesByLayer(gomock.Any(), gomock.Any(), gomock.Any()).Return(packages, nil)
-	mockStore.EXPECT().DistributionsByLayer(gomock.Any(), gomock.Any(), gomock.Any()).Return(dists, nil)
-
-	coalescer := linux.NewCoalescer(mockStore, ps)
-	ir, err := coalescer.Coalesce(context.TODO(), layers)
-	if err != nil {
-		t.Fatalf("coalescing failed: %v", err)
+	// we expect packages 1-4 to be tagged with dist id 1
+	// and packages 5-6 to be tagged with dist id 2
+	for i := 0; i < 4; i++ {
+		environment := coalescer.ir.Environments[i][0]
+		if environment.DistributionID != 1 {
+			t.Fatalf("expected distribution id %d but got %d", 1, environment.DistributionID)
+		}
 	}
-
-	if _, ok := ir.Packages[0]; !ok {
-		t.Fatalf("package not recorded")
-	}
-	if _, ok := ir.Distributions[0]; !ok {
-		t.Fatalf("distribution not recorded")
-	}
-	if _, ok := ir.DistributionByPackage[0]; !ok {
-		t.Fatalf("package was not associated with distribution")
-	}
-	distID, _ := ir.DistributionByPackage[0]
-	if distID != 0 {
-		t.Fatalf("expected associated distribution")
-	}
-	layerHash, _ := ir.PackageIntroduced[0]
-	if layerHash != "test-layer-0" {
-		t.Fatalf("expected package introduced in hash")
+	for i := 4; i < 6; i++ {
+		environment := coalescer.ir.Environments[i][0]
+		if environment.DistributionID != 2 {
+			t.Fatalf("expected distribution id %d but got %d", 2, environment.DistributionID)
+		}
 	}
 }

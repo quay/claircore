@@ -88,11 +88,8 @@ func Test_SetIndexReport_Success(t *testing.T) {
 		{
 			name: "single package. no nested source",
 			sr: &claircore.IndexReport{
-				Hash:  "test-manifest-hash",
-				State: "test-state",
-				PackageIntroduced: map[int]string{
-					160: "test-layer-hash",
-				},
+				Hash:    "test-manifest-hash",
+				State:   "test-state",
 				Success: true,
 				Err:     "",
 			},
@@ -100,11 +97,8 @@ func Test_SetIndexReport_Success(t *testing.T) {
 		{
 			name: "single package nested source",
 			sr: &claircore.IndexReport{
-				Hash:  "test-manifest-hash",
-				State: "test-state",
-				PackageIntroduced: map[int]string{
-					160: "test-layer-hash",
-				},
+				Hash:    "test-manifest-hash",
+				State:   "test-state",
 				Success: true,
 				Err:     "",
 			},

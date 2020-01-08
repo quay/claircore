@@ -26,7 +26,7 @@ type Coalescer struct {
 	store indexer.Store
 	ps    indexer.PackageScanner
 	ds    indexer.DistributionScanner
-	sr    *claircore.IndexReport
+	ir    *claircore.IndexReport
 }
 
 // NewCoalescer is a constructor for a Coalescer
@@ -35,21 +35,19 @@ func NewCoalescer(store indexer.Store, ps indexer.PackageScanner) *Coalescer {
 		store: store,
 		ps:    ps,
 		ds:    &osrelease.Scanner{},
-		sr: &claircore.IndexReport{
+		ir: &claircore.IndexReport{
 			// we will only fill these fields
-			PackageIntroduced:     map[int]string{},
-			Packages:              map[int]*claircore.Package{},
-			Distributions:         map[int]*claircore.Distribution{},
-			Repositories:          map[int]*claircore.Repository{},
-			DistributionByPackage: map[int]int{},
-			RepositoryByPackage:   map[int]int{},
+			Environments:  map[int][]*claircore.Environment{},
+			Packages:      map[int]*claircore.Package{},
+			Distributions: map[int]*claircore.Distribution{},
+			Repositories:  map[int]*claircore.Repository{},
 		},
 	}
 }
 
 // Coalesce coalesces artifacts found in layers and creates a final IndexReport with
 // the final package details found in the image. This method blocks and when its finished
-// the c.sr field will hold the final IndexReport
+// the c.ir field will hold the final IndexReport
 func (c *Coalescer) Coalesce(ctx context.Context, layers []*claircore.Layer) (*claircore.IndexReport, error) {
 	var err error
 	// populate layer artifacts
@@ -71,101 +69,139 @@ func (c *Coalescer) Coalesce(ctx context.Context, layers []*claircore.Layer) (*c
 
 		artifacts = append(artifacts, a)
 	}
-	c.associate(ctx, artifacts)
-	c.prune(ctx, artifacts)
-	return c.sr, nil
+	err = c.coalesce(ctx, artifacts)
+	return c.ir, err
 }
 
-// Associate searches layer artifacts and records the layer a package was introduced in
-// along with the distribution a package is associated with.
-func (c *Coalescer) associate(ctx context.Context, artifacts []layerArtifacts) {
+// coalesce performs the business logic of coalescing context free scanned artifacts
+// into a penultimate IndexReport. this method is heavily commented to express
+// the reasoning and assumptions.
+func (c *Coalescer) coalesce(ctx context.Context, artifacts []layerArtifacts) error {
 	if ctx.Err() != nil {
-		return
+		return ctx.Err()
 	}
-
+	// In our coalescing logic if a Distribution is found in layer (n) all packages found
+	// in layers 0-(n) will be associated with this layer. This is a heuristic.
+	// Let's do a search for the first Distribution we find and use a variable
+	// to keep reference of the current Distribution in scope
+	// As further Distributions are found we will inventory them and update our currDist pointer,
+	// thus tagging all subsequetly found packages with this Distribution.
+	// This is a requirement for handling dist upgrades where a layer may have it's operating system updated
 	var currDist *claircore.Distribution
-
-	// search for initial distribution. we will assume that if we find a
-	// distribution in layer n all packages in layers 0-n are associated with
-	// that distribution
 	for _, a := range artifacts {
 		if len(a.dist) != 0 {
 			currDist = a.dist[0]
-			c.sr.Distributions[currDist.ID] = currDist
+			c.ir.Distributions[currDist.ID] = currDist
 			break
 		}
 	}
-
-	// associate package data
-	for _, a := range artifacts {
-		for _, pkg := range a.pkgs {
-			c.sr.PackageIntroduced[pkg.ID] = a.hash
-			c.sr.Packages[pkg.ID] = pkg
-		}
+	// Next lets begin associating packages with their Environment. We must
+	// consider each package in a package database as a unique entity for
+	// the edge case where a unique package is located in more then one package database.
+	// we'll use a struct as a helper and a map to lookup these structs
+	type packageDatabase struct {
+		packages     map[int]*claircore.Package
+		environments map[int]*claircore.Environment
 	}
-
-	// associate all packages and handle finding subsequent distributions
-	// a subsequent distribution may occur with dist upgrade or downgrade
-	for _, a := range artifacts {
-		for _, pkg := range a.pkgs {
-			if len(a.dist) != 0 {
-				currDist = a.dist[0]
-				c.sr.Distributions[currDist.ID] = currDist
-			}
-			if currDist != nil {
-				c.sr.DistributionByPackage[pkg.ID] = currDist.ID
-			}
+	var dbs = map[string]*packageDatabase{}
+	// lets walk each layer forward looking for packages, new distributions, and
+	// creating the environments we discover packages in.
+	for _, layerArtifacts := range artifacts {
+		// check if we need to update our currDist
+		if len(layerArtifacts.dist) != 0 {
+			currDist = layerArtifacts.dist[0]
+			c.ir.Distributions[currDist.ID] = currDist
 		}
-	}
-
-}
-
-// prune removes packages which do not exist in the "newest" verion of a package database.
-//
-// this assumes we are working with linux distribution package managers and an addition or
-// removal of a package presents the entire database in a layer due to CoW semantics.
-func (c *Coalescer) prune(ctx context.Context, artifacts []layerArtifacts) {
-	if ctx.Err() != nil {
-		return
-	}
-
-	keep := map[string]map[int]struct{}{}
-
-	// walk layer artifacts backwards searching for newest package databases
-	for i := len(artifacts) - 1; i >= 0; i-- {
-		a := artifacts[i]
-		if len(a.pkgs) == 0 {
-			continue
-		}
-
-		// split package array into a per-package-db representation
-		packageDBs := map[string][]*claircore.Package{}
-		for _, pkg := range a.pkgs {
-			packageDBs[pkg.PackageDB] = append(packageDBs[pkg.PackageDB], pkg)
-		}
-
-		// for each package db discovered check if we've seen it. if we haven't
-		// seen it record all packages in this package db
-		for db, packages := range packageDBs {
-			if _, ok := keep[db]; !ok {
-				keep[db] = map[int]struct{}{}
-				for _, pkg := range packages {
-					keep[db][pkg.ID] = struct{}{}
+		// associate packages with their environments
+		if len(layerArtifacts.pkgs) != 0 {
+			for _, pkg := range layerArtifacts.pkgs {
+				// if we encounter a package where we haven't recorded a package database,
+				// initialize the package database
+				var distID int = 0
+				if currDist != nil {
+					distID = currDist.ID
+				}
+				if _, ok := dbs[pkg.PackageDB]; !ok {
+					packages := map[int]*claircore.Package{pkg.ID: pkg}
+					environment := &claircore.Environment{
+						PackageDB:      pkg.PackageDB,
+						IntroducedIn:   layerArtifacts.hash,
+						DistributionID: distID,
+					}
+					environments := map[int]*claircore.Environment{pkg.ID: environment}
+					dbs[pkg.PackageDB] = &packageDatabase{packages, environments}
+					continue
+				}
+				if _, ok := dbs[pkg.PackageDB].packages[pkg.ID]; !ok {
+					environment := &claircore.Environment{
+						PackageDB:      pkg.PackageDB,
+						IntroducedIn:   layerArtifacts.hash,
+						DistributionID: distID,
+					}
+					dbs[pkg.PackageDB].packages[pkg.ID] = pkg
+					dbs[pkg.PackageDB].environments[pkg.ID] = environment
 				}
 			}
 		}
-
-		// break out of search loop
-		break
 	}
-
-	// prune any packages not in the keep map
-	for id, pkg := range c.sr.Packages {
-		if _, ok := keep[pkg.PackageDB][id]; !ok {
-			delete(c.sr.Packages, id)
-			delete(c.sr.DistributionByPackage, id)
-			delete(c.sr.RepositoryByPackage, id)
-			delete(c.sr.PackageIntroduced, id)
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	// we now have all the packages associated with their introduced in layers and environments.
+	// we must now prune any packages removed between layers. this coalescer works on the assumption
+	// that any changes to a package's database (dpkg, rpm, alpine, etc...) causes the entire database
+	// file to be written to the layer in which the change occurs. this assumption therefore
+	// allows for the following algorithm
+	// 1) walk layers backwards searching for newest modification of package dabatase.
+	// 2) if we encounter a package existing in a particular database it means all packages within this package database are present.
+	//    record all packages found into a temporary map.
+	//    when we are finished searching the current layer add a key/value to the penultimate map indicating
+	//    we no longer care about this set of package databases.
+	// 3) continue for all layers, always checking to see if we've already encountered a package database.
+	//    as we only want to inventory packages from the newest package database
+	// 4) once all layers are scanned begin removing package ids not present in our penultimate packagesToKeep map
+	var packagesToKeep = map[string][]int{}
+	for i := len(artifacts) - 1; i >= 0; i-- {
+		layerArtifacts := artifacts[i]
+		if len(layerArtifacts.pkgs) == 0 {
+			continue
+		}
+		// used as a temporary accumulator of package ids in this layer
+		var tmpPackagesToKeep = map[string][]int{}
+		for _, pkg := range layerArtifacts.pkgs {
+			// have we already inventoried packages from this database ?
+			if _, ok := packagesToKeep[pkg.PackageDB]; !ok {
+				// ... we haven't so add to our temporary accumlator
+				tk := tmpPackagesToKeep[pkg.PackageDB]
+				tmpPackagesToKeep[pkg.PackageDB] = append(tk, pkg.ID)
+			}
+		}
+		for k, v := range tmpPackagesToKeep {
+			// finished inventorying the layer, add our inventoried packges to our
+			// penultimate map ensuring next iteration will ignore packages from these databases
+			packagesToKeep[k] = v
 		}
 	}
+	// now let's prune any packages not found in the newest version of the package databases
+	// we just inventoried
+	for name, db := range dbs {
+		for _, pkg := range db.packages {
+			if _, ok := packagesToKeep[name]; !ok {
+				delete(db.packages, pkg.ID)
+				delete(db.environments, pkg.ID)
+			}
+		}
+	}
+	// finally lets pack our results into an IndexReport
+	for _, db := range dbs {
+		for _, pkg := range db.packages {
+			c.ir.Packages[pkg.ID] = pkg
+			if _, ok := c.ir.Environments[pkg.ID]; !ok {
+				c.ir.Environments[pkg.ID] = []*claircore.Environment{db.environments[pkg.ID]}
+				continue
+			}
+			c.ir.Environments[pkg.ID] = append(c.ir.Environments[pkg.ID], db.environments[pkg.ID])
+		}
+	}
+	return nil
 }

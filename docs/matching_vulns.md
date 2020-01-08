@@ -132,10 +132,10 @@ The default scanner works as follows:
 
 ## The vulnerability matching process
 
-Matching vulnerabilities is facilitated by methods in the `claircore.internal.vulnstore`, `claircore.internal.matcher`, and `claircore.internal.vulnscanner` packages. They process looks like this:  
+Matching vulnerabilities is facilitated by methods in the `claircore.internal.vulnstore` and `claircore.internal.matcher` packages. They process looks like this:  
 
 1. libvuln is instantiated and configured with a set of `claircore.internal.matcher` implementations. 
 2. lubvuln gets a request to find vulnerabilities for a manifest. first it reaches out to libindex to retrieve the IndexReport
-3. with the IndexReport retrieved a `claircore.internal.vulnscanner.VulnScanner` is created.
+3. with the IndexReport retrieved a call to `claircore.internal.matcher.Match` is made.
 4. the VulnScanner launches all configured Matcher(s) by way of a MatchController. The MatchController drives the Matcher(s) calling the appropriate functions and handling results and errors
 5. the VulnScanner dedupes and merges all vulnerabilities discovered by MatchControllers and returns a VulernabilityReport
