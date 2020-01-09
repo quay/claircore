@@ -5,11 +5,10 @@
 package matcher
 
 import (
-	reflect "reflect"
-
 	gomock "github.com/golang/mock/gomock"
 	claircore "github.com/quay/claircore"
 	driver "github.com/quay/claircore/libvuln/driver"
+	reflect "reflect"
 )
 
 // MockMatcher is a mock of Matcher interface

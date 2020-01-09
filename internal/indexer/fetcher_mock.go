@@ -34,6 +34,20 @@ func (m *MockFetcher) EXPECT() *MockFetcherMockRecorder {
 	return m.recorder
 }
 
+// Close mocks base method
+func (m *MockFetcher) Close() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Close")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Close indicates an expected call of Close
+func (mr *MockFetcherMockRecorder) Close() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockFetcher)(nil).Close))
+}
+
 // Fetch mocks base method
 func (m *MockFetcher) Fetch(arg0 context.Context, arg1 []*claircore.Layer) error {
 	m.ctrl.T.Helper()
@@ -46,18 +60,6 @@ func (m *MockFetcher) Fetch(arg0 context.Context, arg1 []*claircore.Layer) error
 func (mr *MockFetcherMockRecorder) Fetch(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Fetch", reflect.TypeOf((*MockFetcher)(nil).Fetch), arg0, arg1)
-}
-
-// Purge mocks base method
-func (m *MockFetcher) Purge() {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Purge")
-}
-
-// Purge indicates an expected call of Purge
-func (mr *MockFetcherMockRecorder) Purge() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Purge", reflect.TypeOf((*MockFetcher)(nil).Purge))
 }
 
 // Validate mocks base method
