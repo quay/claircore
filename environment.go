@@ -12,7 +12,7 @@ type Environment struct {
 	// the layer in which the associated package was introduced
 	IntroducedIn string `json:"introduced_in"`
 	// the ID of the distribution the package was discovered on
-	DistributionID int `json:"distribution_id"`
+	DistributionID int `json:"distribution_id,string"`
 	// the ID of the repository where this package was downloaded from (currently not used)
-	RepositoryID int `json:"repository_id"`
+	RepositoryID int `json:"repository_id,string"`
 }
