@@ -1,7 +1,6 @@
 package alpine
 
 import (
-	"bytes"
 	"context"
 	"net/http"
 	"testing"
@@ -146,16 +145,11 @@ func TestScan(t *testing.T) {
 	}
 	defer rc.Close()
 
-	if n, ok := rc.(interface {
+	n := rc.(interface {
 		Name() string
-	}); ok {
-		l.LocalPath = n.Name()
-	} else {
-		buf := bytes.Buffer{}
-		if _, err := buf.ReadFrom(rc); err != nil {
-			t.Error(err)
-		}
-		l.Bytes = buf.Bytes()
+	})
+	if err := l.SetLocal(n.Name()); err != nil {
+		t.Error(err)
 	}
 
 	s := &Scanner{}
