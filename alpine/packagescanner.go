@@ -62,7 +62,11 @@ func (*Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.
 	defer log.Debug().Msg("done")
 
 	fs, err := layer.Files(installedFile)
-	if err != nil {
+	switch err {
+	case nil:
+	case claircore.ErrNotFound:
+		return nil, nil
+	default:
 		return nil, err
 	}
 	b, ok := fs[installedFile]

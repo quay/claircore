@@ -12,6 +12,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/quay/claircore/test/integration"
@@ -31,8 +32,12 @@ var registry = map[string]struct {
 	},
 }
 
-func Layer(ctx context.Context, t *testing.T, c *http.Client, from, repo, sha string) (io.ReadCloser, error) {
-	cachefile := filepath.Join("testdata", sha+".layer")
+func Layer(ctx context.Context, t *testing.T, c *http.Client, from, repo, blob string) (*os.File, error) {
+	// This is a hack from the initial version, which hard-coded sha256.
+	if strings.IndexByte(blob, ':') == -1 {
+		blob = "sha256:" + blob
+	}
+	cachefile := filepath.Join("testdata", blob+".layer")
 	switch _, err := os.Stat(cachefile); {
 	case err == nil:
 		return os.Open(cachefile)
@@ -93,7 +98,6 @@ func Layer(ctx context.Context, t *testing.T, c *http.Client, from, repo, sha st
 	header.Set("Authorization", "Bearer "+tok.Token)
 
 	// grab
-	blob := "sha256:" + sha
 	u, err = url.Parse(urls.Registry)
 	if err != nil {
 		return nil, err

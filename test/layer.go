@@ -13,10 +13,12 @@ import (
 	"net/url"
 	"path"
 	"strconv"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/test/fetch"
 )
 
 type layerserver struct {
@@ -96,4 +98,42 @@ func ServeLayers(ctx context.Context, t *testing.T, n int) []*claircore.Layer {
 	}
 
 	return ls
+}
+
+type LayerSpec struct {
+	Domain, Repo string
+	ID           claircore.Digest
+}
+
+// RealizeLayers uses fetch.Layer to populate a directory and returns a slice of Layers describing them.
+func RealizeLayers(ctx context.Context, t *testing.T, spec ...LayerSpec) []claircore.Layer {
+	ret := make([]claircore.Layer, len(spec))
+	fetchCh := make(chan int)
+	var wg sync.WaitGroup
+	for i := 0; i < 3; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for n := range fetchCh {
+				id := &spec[n].ID
+				f, err := fetch.Layer(ctx, t, nil, spec[n].Domain, spec[n].Repo, id.String())
+				if err != nil {
+					t.Error(err)
+					continue
+				}
+				ret[n].URI = "file:///dev/null"
+				ret[n].Hash = hex.EncodeToString(id.Checksum())
+				ret[n].SetLocal(f.Name())
+				if err := f.Close(); err != nil {
+					t.Error(err)
+				}
+			}
+		}()
+	}
+	for n := 0; n < len(spec); n++ {
+		fetchCh <- n
+	}
+	close(fetchCh)
+	wg.Wait()
+	return ret
 }

@@ -139,15 +139,12 @@ func TestScan(t *testing.T) {
 
 	tctx, done := context.WithTimeout(ctx, 30*time.Second)
 	defer done()
-	rc, err := fetch.Layer(tctx, t, http.DefaultClient, "docker.io", "library/alpine", hash)
+	n, err := fetch.Layer(tctx, t, http.DefaultClient, "docker.io", "library/alpine", hash)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer rc.Close()
+	defer n.Close()
 
-	n := rc.(interface {
-		Name() string
-	})
 	if err := l.SetLocal(n.Name()); err != nil {
 		t.Error(err)
 	}
