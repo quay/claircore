@@ -2,6 +2,7 @@ package matcher
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/vulnstore"
@@ -19,7 +20,7 @@ func Match(ctx context.Context, ir *claircore.IndexReport, matchers []driver.Mat
 		Distributions:          ir.Distributions,
 		Repositories:           ir.Repositories,
 		Vulnerabilities:        map[int]*claircore.Vulnerability{},
-		PackageVulnerabilities: map[int][]int{},
+		PackageVulnerabilities: map[int][]string{},
 	}
 
 	// extract IndexRecords from the IndexReport
@@ -55,7 +56,7 @@ func Match(ctx context.Context, ir *claircore.IndexReport, matchers []driver.Mat
 		for pkgID, vulns := range vulnsByPackage {
 			for _, vuln := range vulns {
 				vr.Vulnerabilities[vuln.ID] = vuln
-				vr.PackageVulnerabilities[pkgID] = append(vr.PackageVulnerabilities[pkgID], vuln.ID)
+				vr.PackageVulnerabilities[pkgID] = append(vr.PackageVulnerabilities[pkgID], strconv.Itoa(vuln.ID))
 			}
 		}
 	}
