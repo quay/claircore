@@ -50,6 +50,9 @@ func Layer(ctx context.Context, t *testing.T, c *http.Client, from, repo, sha st
 	header := http.Header{
 		"User-Agent": {ua},
 	}
+	if c == nil {
+		c = http.DefaultClient
+	}
 
 	// Request a token
 	u, err := url.Parse(urls.Auth)
