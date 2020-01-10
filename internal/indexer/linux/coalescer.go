@@ -37,10 +37,10 @@ func NewCoalescer(store indexer.Store, ps indexer.PackageScanner) *Coalescer {
 		ds:    &osrelease.Scanner{},
 		ir: &claircore.IndexReport{
 			// we will only fill these fields
-			Environments:  map[int][]*claircore.Environment{},
-			Packages:      map[int]*claircore.Package{},
-			Distributions: map[int]*claircore.Distribution{},
-			Repositories:  map[int]*claircore.Repository{},
+			Environments:  map[string][]*claircore.Environment{},
+			Packages:      map[string]*claircore.Package{},
+			Distributions: map[string]*claircore.Distribution{},
+			Repositories:  map[string]*claircore.Repository{},
 		},
 	}
 }
@@ -100,8 +100,8 @@ func (c *Coalescer) coalesce(ctx context.Context, artifacts []layerArtifacts) er
 	// the edge case where a unique package is located in more then one package database.
 	// we'll use a struct as a helper and a map to lookup these structs
 	type packageDatabase struct {
-		packages     map[int]*claircore.Package
-		environments map[int]*claircore.Environment
+		packages     map[string]*claircore.Package
+		environments map[string]*claircore.Environment
 	}
 	var dbs = map[string]*packageDatabase{}
 	// lets walk each layer forward looking for packages, new distributions, and
@@ -117,18 +117,18 @@ func (c *Coalescer) coalesce(ctx context.Context, artifacts []layerArtifacts) er
 			for _, pkg := range layerArtifacts.pkgs {
 				// if we encounter a package where we haven't recorded a package database,
 				// initialize the package database
-				var distID int = 0
+				var distID string
 				if currDist != nil {
 					distID = currDist.ID
 				}
 				if _, ok := dbs[pkg.PackageDB]; !ok {
-					packages := map[int]*claircore.Package{pkg.ID: pkg}
+					packages := map[string]*claircore.Package{pkg.ID: pkg}
 					environment := &claircore.Environment{
 						PackageDB:      pkg.PackageDB,
 						IntroducedIn:   layerArtifacts.hash,
 						DistributionID: distID,
 					}
-					environments := map[int]*claircore.Environment{pkg.ID: environment}
+					environments := map[string]*claircore.Environment{pkg.ID: environment}
 					dbs[pkg.PackageDB] = &packageDatabase{packages, environments}
 					continue
 				}
@@ -160,14 +160,14 @@ func (c *Coalescer) coalesce(ctx context.Context, artifacts []layerArtifacts) er
 	// 3) continue for all layers, always checking to see if we've already encountered a package database.
 	//    as we only want to inventory packages from the newest package database
 	// 4) once all layers are scanned begin removing package ids not present in our penultimate packagesToKeep map
-	var packagesToKeep = map[string][]int{}
+	var packagesToKeep = map[string][]string{}
 	for i := len(artifacts) - 1; i >= 0; i-- {
 		layerArtifacts := artifacts[i]
 		if len(layerArtifacts.pkgs) == 0 {
 			continue
 		}
 		// used as a temporary accumulator of package ids in this layer
-		var tmpPackagesToKeep = map[string][]int{}
+		var tmpPackagesToKeep = map[string][]string{}
 		for _, pkg := range layerArtifacts.pkgs {
 			// have we already inventoried packages from this database ?
 			if _, ok := packagesToKeep[pkg.PackageDB]; !ok {

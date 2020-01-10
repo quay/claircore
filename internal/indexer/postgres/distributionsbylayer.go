@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
 
 	"github.com/jmoiron/sqlx"
 
@@ -65,8 +66,9 @@ func distributionsByLayer(ctx context.Context, db *sqlx.DB, hash string, scnrs i
 	for rows.Next() {
 		var dist claircore.Distribution
 
+		var id int64
 		err := rows.Scan(
-			&dist.ID,
+			&id,
 			&dist.Name,
 			&dist.DID,
 			&dist.Version,
@@ -76,6 +78,7 @@ func distributionsByLayer(ctx context.Context, db *sqlx.DB, hash string, scnrs i
 			&dist.CPE,
 			&dist.PrettyName,
 		)
+		dist.ID = strconv.FormatInt(id, 10)
 		if err != nil {
 			return nil, fmt.Errorf("store:distributionsByLayer failed to scan distribution: %v", err)
 		}

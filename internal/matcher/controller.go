@@ -27,7 +27,7 @@ func NewController(m driver.Matcher, store vulnstore.Vulnerability) *Controller 
 	}
 }
 
-func (mc *Controller) Match(ctx context.Context, records []*claircore.IndexRecord) (map[int][]*claircore.Vulnerability, error) {
+func (mc *Controller) Match(ctx context.Context, records []*claircore.IndexRecord) (map[string][]*claircore.Vulnerability, error) {
 	log := zerolog.Ctx(ctx).With().
 		Str("component", "match-controller").
 		Str("matcher", mc.m.Name()).
@@ -41,7 +41,7 @@ func (mc *Controller) Match(ctx context.Context, records []*claircore.IndexRecor
 
 	// early return; do not call db at all
 	if len(interested) == 0 {
-		return map[int][]*claircore.Vulnerability{}, nil
+		return map[string][]*claircore.Vulnerability{}, nil
 	}
 	// query the vulnstore
 	vulns, err := mc.query(ctx, interested)
@@ -72,7 +72,7 @@ func (mc *Controller) findInterested(records []*claircore.IndexRecord) []*clairc
 
 // Query asks the Matcher how we should query the vulnstore then performs the query and returns all
 // matched vulnerabilities.
-func (mc *Controller) query(ctx context.Context, interested []*claircore.IndexRecord) (map[int][]*claircore.Vulnerability, error) {
+func (mc *Controller) query(ctx context.Context, interested []*claircore.IndexRecord) (map[string][]*claircore.Vulnerability, error) {
 	// ask the matcher how we should query the vulnstore
 	matchers := mc.m.Query()
 	getOpts := vulnstore.GetOpts{
@@ -88,8 +88,8 @@ func (mc *Controller) query(ctx context.Context, interested []*claircore.IndexRe
 
 // Filter method asks the matcher if the given package is affected by the returned vulnerability. if so; its added to a result map where the key is the package ID
 // and the value is a Vulnerability. if not it is not added to the result.
-func (mc *Controller) filter(interested []*claircore.IndexRecord, vulns map[int][]*claircore.Vulnerability) map[int][]*claircore.Vulnerability {
-	filtered := map[int][]*claircore.Vulnerability{}
+func (mc *Controller) filter(interested []*claircore.IndexRecord, vulns map[string][]*claircore.Vulnerability) map[string][]*claircore.Vulnerability {
+	filtered := map[string][]*claircore.Vulnerability{}
 	for _, record := range interested {
 		filtered[record.Package.ID] = filterVulns(mc.m, record, vulns[record.Package.ID])
 	}

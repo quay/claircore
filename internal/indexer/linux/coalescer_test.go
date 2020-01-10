@@ -2,6 +2,7 @@ package linux
 
 import (
 	"context"
+	"strconv"
 	"testing"
 
 	"github.com/quay/claircore"
@@ -22,10 +23,10 @@ func Test_Coalescer(t *testing.T) {
 		ps:    nil,
 		ds:    nil,
 		ir: &claircore.IndexReport{
-			Environments:  map[int][]*claircore.Environment{},
-			Packages:      map[int]*claircore.Package{},
-			Distributions: map[int]*claircore.Distribution{},
-			Repositories:  map[int]*claircore.Repository{},
+			Environments:  map[string][]*claircore.Environment{},
+			Packages:      map[string]*claircore.Package{},
+			Distributions: map[string]*claircore.Distribution{},
+			Repositories:  map[string]*claircore.Repository{},
 		},
 	}
 	// we will test
@@ -80,15 +81,15 @@ func Test_Coalescer(t *testing.T) {
 	// we expect packages 1-4 to be tagged with dist id 1
 	// and packages 5-6 to be tagged with dist id 2
 	for i := 0; i < 4; i++ {
-		environment := coalescer.ir.Environments[i][0]
-		if environment.DistributionID != 1 {
-			t.Fatalf("expected distribution id %d but got %d", 1, environment.DistributionID)
+		environment := coalescer.ir.Environments[strconv.Itoa(i)][0]
+		if environment.DistributionID != "1" {
+			t.Fatalf("expected distribution id %d but got %s", 1, environment.DistributionID)
 		}
 	}
 	for i := 4; i < 6; i++ {
-		environment := coalescer.ir.Environments[i][0]
-		if environment.DistributionID != 2 {
-			t.Fatalf("expected distribution id %d but got %d", 2, environment.DistributionID)
+		environment := coalescer.ir.Environments[strconv.Itoa(i)][0]
+		if environment.DistributionID != "2" {
+			t.Fatalf("expected distribution id %d but got %s", 2, environment.DistributionID)
 		}
 	}
 }

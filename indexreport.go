@@ -22,13 +22,13 @@ type IndexReport struct {
 	// the current state of the index operation
 	State string `json:"state"`
 	// all discovered packages in this manifest key'd by package id
-	Packages map[int]*Package `json:"packages"`
+	Packages map[string]*Package `json:"packages"`
 	// all discovered distributions in this manifest key'd by distribution id
-	Distributions map[int]*Distribution `json:"distributions"`
+	Distributions map[string]*Distribution `json:"distributions"`
 	// all discovered repositories in this manifest key'd by repository id
-	Repositories map[int]*Repository `json:"repository"`
+	Repositories map[string]*Repository `json:"repository"`
 	// a list of environment details a package was discovered in key'd by package id
-	Environments map[int][]*Environment `json:"environments"`
+	Environments map[string][]*Environment `json:"environments"`
 	// whether the index operation finished successfully
 	Success bool `json:"success"`
 	// an error string in the case the index did not succeed

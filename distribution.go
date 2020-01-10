@@ -7,7 +7,7 @@ package claircore
 type Distribution struct {
 	// unique ID of this distribution. this will be created as discovered by the library
 	// and used for persistence and hash map indexes.
-	ID int `json:"id"`
+	ID string `json:"id"`
 	// A lower-case string (no spaces or other characters outside of 0–9, a–z, ".", "_" and "-") identifying the operating system, excluding any version information
 	// and suitable for processing by scripts or usage in generated filenames. Example: "DID=fedora" or "DID=debian".
 	DID string `json:"did"`

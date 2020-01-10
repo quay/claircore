@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
 
 	"github.com/jmoiron/sqlx"
 
@@ -60,12 +61,14 @@ func repositoriesByLayer(ctx context.Context, db *sqlx.DB, hash string, scnrs in
 	for rows.Next() {
 		var repo claircore.Repository
 
+		var id int64
 		err := rows.Scan(
-			&repo.ID,
+			&id,
 			&repo.Name,
 			&repo.Key,
 			&repo.URI,
 		)
+		repo.ID = strconv.FormatInt(id, 10)
 		if err != nil {
 			return nil, fmt.Errorf("store:repositoriesByLayer failed to scan repositories: %v", err)
 		}
