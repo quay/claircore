@@ -15,6 +15,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strconv"
 	"strings"
 	"sync"
 	"text/tabwriter"
@@ -36,17 +37,19 @@ func init() {
 {{.Name}}	error	{{.Err}}
 {{end}}
 {{- define "found" -}}
-{{with $r := .}}{{range $id, $v := .Report.Details}}{{range $d := $v -}}
-{{$r.Name}}	found	{{$d.AffectedPackage.Name}}	{{$d.AffectedPackage.Version}}
-	{{- with index $r.Report.Vulnerabilities $id}}	{{.Name}}{{end}}
-	{{- with $d.FixedInVersion}}	(fixed: {{.}}){{end}}
+{{with $r := .}}{{range $id, $v := .Report.PackageVulnerabilities}}{{range $d := $v -}}
+{{$r.Name}}	found	{{with index $r.Report.Packages $id}}{{.Name}}	{{.Version}}{{end}}
+	{{- with index $r.Report.Vulnerabilities $d}}	{{.Name}}
+	{{- with .FixedInVersion}}	(fixed: {{.}}){{end}}{{end}}
 {{end}}{{end}}{{end}}{{end}}
 {{- /* The following is the actual bit of the template that runs per item. */ -}}
 {{- range .}}{{if .Err}}{{template "err" .}}
-{{- else if ne (len .Report.Details) 0}}{{template "found" .}}
+{{- else if ne (len .Report.PackageVulnerabilities) 0}}{{template "found" .}}
 {{- else}}{{template "ok" .}}
 {{- end}}{{end}}`
-	outTmpl = template.Must(template.New("").Parse(tmpl))
+	outTmpl = template.Must(template.New("output").Funcs(map[string]interface{}{
+		"atoi": strconv.Atoi,
+	}).Parse(tmpl))
 }
 
 type reportConfig struct {
@@ -113,6 +116,7 @@ func Report(cmd context.Context, cfg *commonConfig, args []string) error {
 	}
 
 	var errd bool
+	var eo sync.Once
 	var wg sync.WaitGroup
 	ch := make(chan *Result)
 	for _, img := range images {
@@ -123,7 +127,7 @@ func Report(cmd context.Context, cfg *commonConfig, args []string) error {
 			defer wg.Done()
 			r, err := runManifest(cmd, img, cfg, &cmdcfg)
 			if err != nil {
-				errd = true
+				eo.Do(func() { errd = true })
 			}
 			ch <- &Result{
 				Name:   name,
@@ -186,16 +190,21 @@ func runManifest(ctx context.Context, img string, cfg *commonConfig, cmdcfg *rep
 	req.Header.Set("content-type", "application/json")
 	req.Header.Set("accept", "application/json")
 
+	var pollURL *url.URL
 	res, err := http.DefaultClient.Do(req)
 	switch {
 	case err != nil:
 		return nil, err
-	case res.StatusCode == 200:
+	case res.StatusCode == http.StatusCreated:
+		pollURL, err = res.Location()
+		if err != nil {
+			return nil, err
+		}
+	case res.StatusCode == http.StatusOK: // Older versions issued redirects.
+		pollURL = res.Request.URL
 	default:
 		return nil, fmt.Errorf("unexpected status: %q", res.Status)
 	}
-
-	pollURL := res.Request.URL
 
 	var r claircore.IndexReport
 	err = json.NewDecoder(res.Body).Decode(&r)
@@ -224,7 +233,7 @@ func runManifest(ctx context.Context, img string, cfg *commonConfig, cmdcfg *rep
 		switch {
 		case err != nil:
 			return nil, err
-		case res.StatusCode == 200:
+		case res.StatusCode == http.StatusOK:
 		default:
 			return nil, fmt.Errorf("unexpected status: %q", res.Status)
 		}
@@ -281,7 +290,7 @@ func runManifest(ctx context.Context, img string, cfg *commonConfig, cmdcfg *rep
 	switch {
 	case err != nil:
 		return nil, err
-	case res.StatusCode == 200:
+	case res.StatusCode == http.StatusOK:
 	default:
 		return nil, fmt.Errorf("unexpected status: %q", res.Status)
 	}
