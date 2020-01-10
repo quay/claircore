@@ -73,6 +73,7 @@ func (h *HTTP) Index(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("location", path.Join(r.URL.Path, m.Hash))
 	w.WriteHeader(http.StatusCreated)
 	err = json.NewEncoder(w).Encode(&ir)
 	if err != nil {
