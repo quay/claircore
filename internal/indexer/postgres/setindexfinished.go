@@ -19,10 +19,10 @@ const (
 func setScanFinished(ctx context.Context, db *sqlx.DB, sr *claircore.IndexReport, scnrs indexer.VersionedScanners) error {
 	// TODO Use passed-in Context.
 	// extract scanner ids from manifest outside of transaction
-	scannerIDs := []int{}
+	scannerIDs := []int64{}
 
 	for _, scnr := range scnrs {
-		var scannerID int
+		var scannerID int64
 		err := db.Get(&scannerID, scannerIDByNameVersionKind, scnr.Name(), scnr.Version(), scnr.Kind())
 		if err != nil {
 			return fmt.Errorf("store:storeManifest failed to select package scanner id: %v", err)

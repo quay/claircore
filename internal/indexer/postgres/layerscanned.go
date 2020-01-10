@@ -22,7 +22,7 @@ const (
 
 func layerScanned(ctx context.Context, db *sqlx.DB, hash string, scnr indexer.VersionedScanner) (bool, error) {
 	// TODO Use passed-in Context.
-	var scannerID int
+	var scannerID int64
 	err := db.Get(&scannerID, selectScannerID, scnr.Name(), scnr.Version())
 	if err != nil {
 		if err == sql.ErrNoRows {

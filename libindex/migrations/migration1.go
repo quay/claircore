@@ -7,7 +7,7 @@ const (
 	--- a unique versioned scanner which is responsible
 	--- for finding packages and distributions in a layer
 	CREATE TABLE IF NOT EXISTS scanner (
-		id SERIAL PRIMARY KEY,
+		id BIGSERIAL PRIMARY KEY,
 		name text NOT NULL,
 		version text NOT NULL,
 		kind text NOT NULL
@@ -18,9 +18,9 @@ const (
 	--- a relation informing us if a manifest hash has 
 	--- been scanned by a particular scanner
 	CREATE TABLE IF NOT EXISTS scannerlist (
-		id SERIAL PRIMARY KEY,
+		id BIGSERIAL PRIMARY KEY,
 		manifest_hash text,
-		scanner_id int REFERENCES scanner(id)
+		scanner_id bigint REFERENCES scanner(id)
 	);
 	CREATE INDEX IF NOT EXISTS scannerlist_manifest_hash_idx ON scannerlist (manifest_hash);
 
@@ -37,7 +37,7 @@ const (
 	-- Distribution
 	--- a unique distribution discovered by a scanner
 	CREATE TABLE IF NOT EXISTS dist (
-		id SERIAL PRIMARY KEY,
+		id BIGSERIAL PRIMARY KEY,
 		name text,
 		did text, -- os-release id field
 		version text,
@@ -52,9 +52,9 @@ const (
 	--- DistributionScanArtifact
 	--- A relation linking discovered distributions to a layer
 	CREATE TABLE IF NOT EXISTS dist_scanartifact (
-		id SERIAL PRIMARY KEY,
-		dist_id int REFERENCES dist(id),
-		scanner_id int REFERENCES scanner(id),
+		id BIGSERIAL PRIMARY KEY,
+		dist_id bigint REFERENCES dist(id),
+		scanner_id bigint REFERENCES scanner(id),
 		layer_hash text
 	);
 	CREATE UNIQUE INDEX IF NOT EXISTS dist_scanartifact_unique_idx ON dist_scanartifact (layer_hash, dist_id, scanner_id);
@@ -62,7 +62,7 @@ const (
 	--- Package
 	--- a unique package discovered by a scanner
 	CREATE TABLE IF NOT EXISTS package (
-		id SERIAL PRIMARY KEY,
+		id BIGSERIAL PRIMARY KEY,
 		name text NOT NULL,
 		kind text NOT NULL,
 		version text NOT NULL
@@ -73,11 +73,11 @@ const (
 	--- A relation linking discovered packages with the 
 	--- layer hash it was found
 	CREATE TABLE IF NOT EXISTS package_scanartifact (
-		id SERIAL PRIMARY KEY,
+		id BIGSERIAL PRIMARY KEY,
 		layer_hash text,
-		package_id int REFERENCES package(id),
-		source_id int REFERENCES package(id),
-		scanner_id int REFERENCES scanner(id),
+		package_id bigint REFERENCES package(id),
+		source_id bigint REFERENCES package(id),
+		scanner_id bigint REFERENCES scanner(id),
 		package_db text,
 		repository_hint text
 	);
@@ -86,7 +86,7 @@ const (
 	--- Repository
 	--- a unique package repository discovered by a scanner
 	CREATE TABLE IF NOT EXISTS repo (
-		id SERIAL PRIMARY KEY,
+		id BIGSERIAL PRIMARY KEY,
 		name text NOT NULL,
 		key text,
 		uri text
@@ -96,9 +96,9 @@ const (
 	--- RepositoryScanArtifact
 	--- A relation linking discovered distributions to a layer
 	CREATE TABLE IF NOT EXISTS repo_scanartifact (
-		id SERIAL PRIMARY KEY,
-		repo_id int REFERENCES repo(id),
-		scanner_id int REFERENCES scanner(id),
+		id BIGSERIAL PRIMARY KEY,
+		repo_id bigint REFERENCES repo(id),
+		scanner_id bigint REFERENCES scanner(id),
 		layer_hash text
 	);
 	CREATE UNIQUE INDEX IF NOT EXISTS repo_scanartifact_unique_idx ON repo_scanartifact (layer_hash, repo_id, scanner_id);
