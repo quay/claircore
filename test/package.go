@@ -2,6 +2,7 @@ package test
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/quay/claircore"
 )
@@ -22,14 +23,14 @@ func GenDuplicatePackages(n int) ([]*claircore.Package, error) {
 	for i := 0; i < n; i++ {
 		ii := i % nn
 		pkgs = append(pkgs, &claircore.Package{
-			ID:             ii,
+			ID:             strconv.Itoa(ii),
 			Name:           fmt.Sprintf("package-%d", ii),
 			Version:        fmt.Sprintf("version-%d", ii),
 			Kind:           "binary",
 			PackageDB:      fmt.Sprintf("package-db-%d", i),
 			RepositoryHint: fmt.Sprintf("repository-hint-%d", i),
 			Source: &claircore.Package{
-				ID:      n + i,
+				ID:      strconv.Itoa(n + i),
 				Name:    fmt.Sprintf("source-package-%d", ii),
 				Version: fmt.Sprintf("source-version-%d", ii),
 				Kind:    "source",
@@ -47,14 +48,14 @@ func GenUniquePackages(n int) []*claircore.Package {
 	pkgs := []*claircore.Package{}
 	for i := 0; i < n; i++ {
 		pkgs = append(pkgs, &claircore.Package{
-			ID:             i,
+			ID:             strconv.Itoa(i),
 			Name:           fmt.Sprintf("package-%d", i),
 			Version:        fmt.Sprintf("version-%d", i),
 			Kind:           "binary",
 			PackageDB:      fmt.Sprintf("package-db-%d", i),
 			RepositoryHint: fmt.Sprintf("repository-hint-%d", i),
 			Source: &claircore.Package{
-				ID:      n + i,
+				ID:      strconv.Itoa(n + i),
 				Name:    fmt.Sprintf("source-package-%d", i),
 				Version: fmt.Sprintf("source-version-%d", i),
 				Kind:    "source",

@@ -2,7 +2,6 @@ package matcher
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/vulnstore"
@@ -19,15 +18,15 @@ func Match(ctx context.Context, ir *claircore.IndexReport, matchers []driver.Mat
 		Environments:           ir.Environments,
 		Distributions:          ir.Distributions,
 		Repositories:           ir.Repositories,
-		Vulnerabilities:        map[int]*claircore.Vulnerability{},
-		PackageVulnerabilities: map[int][]string{},
+		Vulnerabilities:        map[string]*claircore.Vulnerability{},
+		PackageVulnerabilities: map[string][]string{},
 	}
 
 	// extract IndexRecords from the IndexReport
 	records := ir.IndexRecords()
 	// a channel where concurrent controllers will deliver vulnerabilities affecting a package.
 	// maps a package id to a list of vulnerabilities.
-	ctrlC := make(chan map[int][]*claircore.Vulnerability, 1024)
+	ctrlC := make(chan map[string][]*claircore.Vulnerability, 1024)
 	// a channel where controller errors will be reported
 	errorC := make(chan error, 1024)
 	// fan out all controllers, write their output to ctrlC, close ctrlC once all writers finish
@@ -56,7 +55,7 @@ func Match(ctx context.Context, ir *claircore.IndexReport, matchers []driver.Mat
 		for pkgID, vulns := range vulnsByPackage {
 			for _, vuln := range vulns {
 				vr.Vulnerabilities[vuln.ID] = vuln
-				vr.PackageVulnerabilities[pkgID] = append(vr.PackageVulnerabilities[pkgID], strconv.Itoa(vuln.ID))
+				vr.PackageVulnerabilities[pkgID] = append(vr.PackageVulnerabilities[pkgID], vuln.ID)
 			}
 		}
 	}

@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v4"
@@ -13,7 +14,7 @@ import (
 	"github.com/quay/claircore/internal/vulnstore"
 )
 
-func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.IndexRecord, opts vulnstore.GetOpts) (map[int][]*claircore.Vulnerability, error) {
+func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.IndexRecord, opts vulnstore.GetOpts) (map[string][]*claircore.Vulnerability, error) {
 	log := zerolog.Ctx(ctx).With().
 		Str("component", "vulnstore.get").
 		Logger()
@@ -43,7 +44,7 @@ func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.IndexReco
 	// into its own function to be able to just defer it.
 
 	// gather all the returned vulns for each queued select statement
-	results := make(map[int][]*claircore.Vulnerability)
+	results := make(map[string][]*claircore.Vulnerability)
 	for _, record := range records {
 		rows, err := res.Query()
 		if err != nil {
@@ -60,8 +61,9 @@ func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.IndexReco
 				Repo:    &claircore.Repository{},
 			}
 
+			var id int64
 			err := rows.Scan(
-				&v.ID,
+				&id,
 				&v.Name,
 				&v.Description,
 				&v.Links,
@@ -82,6 +84,7 @@ func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.IndexReco
 				&v.Dist.PrettyName,
 				&v.FixedInVersion,
 			)
+			v.ID = strconv.FormatInt(id, 10)
 			if err != nil {
 				res.Close()
 				return nil, fmt.Errorf("failed to scan vulnerability: %v", err)

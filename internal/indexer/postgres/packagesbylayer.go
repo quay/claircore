@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
 
 	"github.com/jmoiron/sqlx"
 
@@ -72,8 +73,9 @@ func packagesByLayer(ctx context.Context, db *sqlx.DB, hash string, scnrs indexe
 		var pkg claircore.Package
 		var spkg claircore.Package
 
+		var id int64
 		err := rows.Scan(
-			&pkg.ID,
+			&id,
 			&pkg.Name,
 			&pkg.Kind,
 			&pkg.Version,
@@ -86,6 +88,7 @@ func packagesByLayer(ctx context.Context, db *sqlx.DB, hash string, scnrs indexe
 			&pkg.PackageDB,
 			&pkg.RepositoryHint,
 		)
+		pkg.ID = strconv.FormatInt(id, 10)
 		if err != nil {
 			return nil, fmt.Errorf("store:packagesByLayer failed to scan packages: %v", err)
 		}

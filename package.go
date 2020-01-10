@@ -3,7 +3,7 @@ package claircore
 type Package struct {
 	// unique ID of this package. this will be created as discovered by the library
 	// and used for persistence and hash map indexes
-	ID int `json:"id"`
+	ID string `json:"id"`
 	// the name of the package
 	Name string `json:"name"`
 	// the version of the package

@@ -2,6 +2,7 @@ package test
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/quay/claircore"
 )
@@ -12,7 +13,7 @@ func GenUniqueDistributions(n int) []*claircore.Distribution {
 	dists := []*claircore.Distribution{}
 	for i := 0; i < n; i++ {
 		dists = append(dists, &claircore.Distribution{
-			ID:              i,
+			ID:              strconv.Itoa(i),
 			Name:            fmt.Sprintf("distribution-%d", i),
 			Version:         fmt.Sprintf("version-%d", i),
 			VersionCodeName: fmt.Sprintf("version-code-name-%d", i),

@@ -2,6 +2,7 @@ package test
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/quay/claircore"
 )
@@ -12,7 +13,7 @@ func GenUniqueRepositories(n int) []*claircore.Repository {
 	repos := []*claircore.Repository{}
 	for i := 0; i < n; i++ {
 		repos = append(repos, &claircore.Repository{
-			ID:   i,
+			ID:   strconv.Itoa(i),
 			Name: fmt.Sprintf("distribution-%d", i),
 			Key:  fmt.Sprintf("key-%d", i),
 			URI:  fmt.Sprintf("uri-%d", i),
