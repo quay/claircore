@@ -118,15 +118,15 @@ func Test_SetScanFinished_Success(t *testing.T) {
 }
 
 func checkUpdatedScannerList(t *testing.T, db *sqlx.DB, hash string, updatedScnrs []scnrInfo) {
-	var foundIDs []int
+	var foundIDs []int64
 	err := db.Select(&foundIDs, `SELECT scanner_id FROM scannerlist WHERE manifest_hash = $1`, hash)
 	if err != nil {
 		t.Fatalf("failed to select test scanner ids for manifest %v: %v", hash, err)
 	}
 
-	var expectedIDs []int
+	var expectedIDs []int64
 	for _, scnr := range updatedScnrs {
-		expectedIDs = append(expectedIDs, int(scnr.id))
+		expectedIDs = append(expectedIDs, scnr.id)
 	}
 
 	assert.ElementsMatch(t, expectedIDs, foundIDs)

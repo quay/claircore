@@ -33,9 +33,9 @@ WHERE
 func distributionsByLayer(ctx context.Context, db *sqlx.DB, hash string, scnrs indexer.VersionedScanners) ([]*claircore.Distribution, error) {
 	// TODO Use passed-in Context.
 	// get scanner ids
-	scannerIDs := []int{}
+	scannerIDs := []int64{}
 	for _, scnr := range scnrs {
-		var scannerID int
+		var scannerID int64
 		err := db.Get(&scannerID, scannerIDByNameVersionKind, scnr.Name(), scnr.Version(), scnr.Kind())
 		if err != nil {
 			return nil, fmt.Errorf("store:distributionseByLayer failed to retrieve scanner ids for scnr %v: %v", scnr, err)

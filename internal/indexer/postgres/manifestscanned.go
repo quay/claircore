@@ -19,9 +19,9 @@ const (
 func manifestScanned(ctx context.Context, db *sqlx.DB, hash string, scnrs indexer.VersionedScanners) (bool, error) {
 	// TODO Use passed-in Context.
 	// get the ids of the scanners we are testing for.
-	var expectedIDs []int
+	var expectedIDs []int64
 	for _, scnr := range scnrs {
-		var id int
+		var id int64
 		row := db.QueryRowx(selectScannerIDs, scnr.Name(), scnr.Version(), scnr.Kind())
 		err := row.Scan(&id)
 		if err != nil {
@@ -31,8 +31,8 @@ func manifestScanned(ctx context.Context, db *sqlx.DB, hash string, scnrs indexe
 	}
 
 	// get a map of the found ids which have scanned this package
-	var temp = []int{}
-	var foundIDs = map[int]struct{}{}
+	var temp = []int64{}
+	var foundIDs = map[int64]struct{}{}
 	err := db.Select(&temp, selectScannerIDsByScannerList, hash)
 	if err != nil {
 		return false, fmt.Errorf("store:manifestScanned failed to select scanner IDs for manifest: %v", err)

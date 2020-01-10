@@ -176,8 +176,7 @@ func checkScanners(t *testing.T, db *sqlx.DB, scnrs []scnrInfo) {
 			t.Fatalf("failed to select rows for scnr %v: %v", scnr, err)
 		}
 
-		var i int
-		for rows.Next() {
+		for i := 0; rows.Next(); i++ {
 			if i > 0 {
 				t.Fatalf("query for scnr %v returned more then one row", scnr)
 			}

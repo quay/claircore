@@ -38,9 +38,9 @@ WHERE
 func packagesByLayer(ctx context.Context, db *sqlx.DB, hash string, scnrs indexer.VersionedScanners) ([]*claircore.Package, error) {
 	// TODO Use passed-in Context.
 	// get scanner ids
-	scannerIDs := []int{}
+	scannerIDs := []int64{}
 	for _, scnr := range scnrs {
-		var scannerID int
+		var scannerID int64
 		err := db.Get(&scannerID, scannerIDByNameVersionKind, scnr.Name(), scnr.Version(), scnr.Kind())
 		if err != nil {
 			return nil, fmt.Errorf("store:packageByLayer failed to retrieve scanner ids for scnr %v: %v", scnr, err)

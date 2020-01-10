@@ -6,7 +6,7 @@ const (
 CREATE TABLE vuln (
     updater text,
     --- claircore.Vulnerability fields
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     name text,
     description text,
     links text,
