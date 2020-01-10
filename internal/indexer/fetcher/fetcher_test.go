@@ -51,9 +51,6 @@ func (tc testcase) Run(ctx context.Context) func(*testing.T) {
 		for _, l := range layers {
 			t.Logf("%+v", l)
 		}
-		if err := fetcher.Validate(ctx, layers); err != nil {
-			t.Error(err)
-		}
 		if err := fetcher.Close(); err != nil {
 			t.Error(err)
 		}

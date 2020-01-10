@@ -23,6 +23,5 @@ const (
 // reading.
 type Fetcher interface {
 	Fetch(ctx context.Context, layers []*claircore.Layer) error
-	Validate(context.Context, []*claircore.Layer) error
 	Close() error
 }

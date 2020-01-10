@@ -67,20 +67,6 @@ func (f *fetcher) Fetch(ctx context.Context, layers []*claircore.Layer) error {
 	return nil
 }
 
-func (f *fetcher) Validate(ctx context.Context, layers []*claircore.Layer) error {
-	g, ctx := errgroup.WithContext(ctx)
-	for _, l := range layers {
-		l := l
-		g.Go(func() error {
-			return f.check(ctx, l)
-		})
-	}
-	if err := g.Wait(); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (f *fetcher) filename(l *claircore.Layer) string {
 	// TODO(hank) Make this configurable directly, instead of only via TMPDIR.
 	return filepath.Join(os.TempDir(), l.Hash)
@@ -111,6 +97,12 @@ func (f *fetcher) fetch(ctx context.Context, layer *claircore.Layer) error {
 	}
 	if layer.Hash == "" {
 		return fmt.Errorf("digest is empty")
+	}
+	// When the hash turns into real digest type, this needs to be variable.
+	vh := sha256.New()
+	want, err := hex.DecodeString(layer.Hash)
+	if err != nil {
+		return err
 	}
 
 	// Open our target file before hitting the network.
@@ -155,12 +147,14 @@ func (f *fetcher) fetch(ctx context.Context, layer *claircore.Layer) error {
 	default:
 		return fmt.Errorf("fetcher: unexpected status code: %d %s", resp.StatusCode, resp.Status)
 	}
+	tr := io.TeeReader(resp.Body, vh)
 
-	br := bufio.NewReader(resp.Body)
+	br := bufio.NewReader(tr)
 	// Look at the content-type and optionally fix it up.
 	ct := resp.Header.Get("content-type")
 	switch {
 	case ct == "" ||
+		ct == "text/plain" ||
 		ct == "application/octet-stream":
 		log.Debug().
 			Str("content-type", ct).
@@ -217,37 +211,14 @@ func (f *fetcher) fetch(ctx context.Context, layer *claircore.Layer) error {
 	if err != nil {
 		return err
 	}
-
-	log.Debug().Msg("layer fetch ok")
-	return nil
-}
-
-func (f *fetcher) check(ctx context.Context, l *claircore.Layer) error {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "fetcher.check").
-		Str("layer", l.Hash).
-		Logger()
-	log.Debug().Msg("layer check start")
-	want, err := hex.DecodeString(l.Hash)
-	if err != nil {
-		return err
-	}
-	r, err := l.Reader()
-	if err != nil {
-		return err
-	}
-	defer r.Close()
-	h := sha256.New()
-	if _, err := io.Copy(h, r); err != nil {
-		return err
-	}
-	if got := h.Sum(nil); !bytes.Equal(got, want) {
+	if got := vh.Sum(nil); !bytes.Equal(got, want) {
 		err := fmt.Errorf("fetcher: validation failed: got %q, expected %q",
 			hex.EncodeToString(got),
 			hex.EncodeToString(want))
 		return err
 	}
-	log.Debug().Msg("layer check ok")
+
+	log.Debug().Msg("layer fetch ok")
 	return nil
 }
 

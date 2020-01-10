@@ -30,12 +30,6 @@ func fetchLayers(ctx context.Context, s *Controller) (State, error) {
 			Msg("layers fetch failure")
 		return Terminal, fmt.Errorf("failed to fetch layers: %w", err)
 	}
-	if err := s.Fetcher.Validate(ctx, toFetch); err != nil {
-		log.Warn().
-			Err(err).
-			Msg("layers validate failure")
-		return Terminal, fmt.Errorf("failed to fetch layers: %w", err)
-	}
 	log.Info().Msg("layers fetch success")
 	return ScanLayers, nil
 }
