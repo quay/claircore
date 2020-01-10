@@ -8,6 +8,7 @@ import (
 	"io"
 	"math/rand"
 	"os"
+	"sync"
 	"testing"
 
 	"github.com/jackc/pgx/v4"
@@ -15,7 +16,16 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-var rng *rand.Rand
+var (
+	rngMu sync.Mutex
+	rng   *rand.Rand
+)
+
+func mkIDs() (uint64, uint64) {
+	rngMu.Lock()
+	defer rngMu.Unlock()
+	return rng.Uint64(), rng.Uint64()
+}
 
 func init() {
 	// Seed our rng.
@@ -65,8 +75,9 @@ func NewDB(ctx context.Context, t testing.TB) (*DB, error) {
 	}
 	cfg.ConnConfig.Logger = testingadapter.NewLogger(t)
 
-	database := fmt.Sprintf("db%x", rng.Uint64())
-	role := fmt.Sprintf("role%x", rng.Uint64())
+	dbid, roleid := mkIDs()
+	database := fmt.Sprintf("db%x", dbid)
+	role := fmt.Sprintf("role%x", roleid)
 
 	conn, err := pgx.ConnectConfig(ctx, cfg.ConnConfig)
 	if err != nil {
