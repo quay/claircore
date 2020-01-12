@@ -14,9 +14,8 @@ These modules export the methods for scanning and image for packages and matchin
 Creating an instance  
 ```
 opts := &libindex.Opts{
-    DataStore: libindex.Postgres,
     ConnString: "postgres://host:port",
-    ScanLock: libindex.PostgresSL,
+    Migrations: true,
     // see definition for more configuration options
 }
 lib := libindex.New(opts)
@@ -31,29 +30,28 @@ ir, err := lib.Index(m)
 if err != nil {
     log.Printf("%v", err)
 }
-if ir.State == "ScanError" {
+if ir.State == "IndexError" {
     log.Printf("scan failed: %s", sr.Err)
 }
 ```
 
 ## libvuln usage
-```
+
 creating an instance  
 ```
 opts := &libvuln.Opts{
-    DataStore: libvuln.Postgres,
     ConnString: "postgres://host:port",
-    ScanLock: libindex.PostgresSL,
+    Migrations: true,
     // see definition for more configuration option
 }
 lib := libvuln.New(opts)
 ```
 call libvuln with a populated IndexReport  
 ```
-sr := &claircore.IndexReport{
+ir := &claircore.IndexReport{
     ...
 }
-vr, err := libvuln.Scan(sr)
+vr, err := libvuln.Scan(ir)
 if err != nil {
     log.Printf("%v", err)
 }
@@ -64,33 +62,27 @@ Controlling how many updaters initialize in parallel is provided via the libvuln
 
 # Local development and testing
 
-The included makefile has targets for spawning a libindex and a libvuln database instance.  
+The following targets start and stop a local development environment
 ```
-make libindex-db-restart
-make libvuln-db-restart
+make local-dev-up
+make local-dev-down
 ```
 
-After both targets are ran you may run integration tests  
+If you modify libvuln or libindex code the following make targets will restart the services with your changes
+```
+make libindexhttp-restart
+libvulnhttp-restart
+```
+
+With the local development environment up the following make target runs all tests including integration
 ```
 make integration
 ```
 
-unit tests do not require a database  
+The following make target runs unit tests which do not require a database or local development environment
 ```
 make unit
 ```
-
-## Dev servers
-
-ClairCore provides two http servers for local development and quick testing/hacking.  
-You may build these from `./cmd/libindexhttp` and `./cmd/libvulnhttp`  
-
-## Running libindex on darwin/MacOS
-
-Layer stacking will fail on Darwin/MacOS with a file permissions issue and subsequently fail the scanner.   
-In order to get around this the layer stacking integration test has a build tag "unix".  
-The makefile target `integration-unix` runs tests that will only pass on a unix env.   
-You may use the make target 'docker-shell' to drop into a linux shell where `make integration-unix` may be ran.  
 
 # Deeper dives
 
