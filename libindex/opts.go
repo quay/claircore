@@ -27,6 +27,11 @@ type Opts struct {
 	LayerScanConcurrency int
 	// how we store layers we fetch remotely. see LayerFetchOpt type def above for more details
 	LayerFetchOpt indexer.LayerFetchOpt
+	// NoLayerValidation controls whether layers are checked to actually be
+	// content-addressed. With this option toggled off, callers can trigger
+	// layers to be indexed repeatedly by changing the identifier in the
+	// manifest.
+	NoLayerValidation bool
 	// set to true to have libindex check and potentially run migrations
 	Migrations bool
 	// provides an alternative method for creating a scanner during libindex runtime
@@ -39,6 +44,7 @@ type Opts struct {
 }
 
 func (o *Opts) Parse() error {
+	ctx := context.TODO()
 	// required
 	if o.ConnString == "" {
 		return fmt.Errorf("ConnString not provided")
@@ -54,11 +60,11 @@ func (o *Opts) Parse() error {
 	if o.ControllerFactory == nil {
 		o.ControllerFactory = controllerFactory
 	}
-	if len(o.Ecosystems) == 0 {
+	if o.Ecosystems == nil {
 		o.Ecosystems = []*indexer.Ecosystem{
-			dpkg.NewEcosystem(context.Background()),
-			alpine.NewEcosystem(context.Background()),
-			rpm.NewEcosystem(context.Background()),
+			dpkg.NewEcosystem(ctx),
+			alpine.NewEcosystem(ctx),
+			rpm.NewEcosystem(ctx),
 		}
 	}
 	o.LayerFetchOpt = DefaultLayerFetchOpt

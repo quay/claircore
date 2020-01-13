@@ -17,6 +17,8 @@ func Test_IndexRepositories_Success(t *testing.T) {
 	integration.Skip(t)
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
+	layer := test.ServeLayers(ctx, t, 1)
+
 	tt := []struct {
 		// the name of this benchmark
 		name string
@@ -28,58 +30,42 @@ func Test_IndexRepositories_Success(t *testing.T) {
 		{
 			name:  "10 packages",
 			repos: 10,
-			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
-			},
+			layer: layer[0],
 		},
 		{
 			name:  "50 packages",
 			repos: 50,
-			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
-			},
+			layer: layer[0],
 		},
 		{
 			name:  "100 packages",
 			repos: 100,
-			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
-			},
+			layer: layer[0],
 		},
 		{
 			name:  "250 packages",
 			repos: 250,
-			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
-			},
+			layer: layer[0],
 		},
 		{
 			name:  "500 packages",
 			repos: 500,
-			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
-			},
+			layer: layer[0],
 		},
 		{
 			name:  "1000 packages",
 			repos: 1000,
-			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
-			},
+			layer: layer[0],
 		},
 		{
 			name:  "2000 packages",
 			repos: 2000,
-			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
-			},
+			layer: layer[0],
 		},
 		{
 			name:  "3000 packages",
 			repos: 3000,
-			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
-			},
+			layer: layer[0],
 		},
 	}
 
@@ -95,7 +81,9 @@ func Test_IndexRepositories_Success(t *testing.T) {
 			err := pgtest.InsertUniqueScanners(db, vscnrs)
 
 			// gen packages
-			repos := test.GenUniqueRepositories(table.repos)
+			repos := test.GenUniqueRepositories(table.repos, func(r *claircore.Repository) {
+				r.URI = layer[0].URI
+			})
 
 			// run the indexing
 			err = store.IndexRepositories(ctx, repos, table.layer, vscnrs[0])
@@ -114,6 +102,7 @@ func checkRepoScanArtifact(t *testing.T, db *sqlx.DB, expectedRepos []*claircore
 	// NOTE: we gen one scanner for this test with ID 0, this is hard coded into this check
 	for _, repo := range expectedRepos {
 		var repoID sql.NullInt64
+		t.Logf("SELECT .. name = %q, key = %q, uri = %q", repo.Name, repo.Key, repo.URI)
 		err := db.Get(
 			&repoID,
 			`SELECT id FROM repo

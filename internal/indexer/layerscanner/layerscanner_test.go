@@ -25,10 +25,7 @@ func Test_Scan_NoErrors(t *testing.T) {
 
 	mock_store := indexer.NewMockStore(ctrl)
 
-	layers, err := test.GenUniqueLayersRemote(2, []string{"http://test.com", "http://test.com"})
-	if err != nil {
-		t.Fatalf("failed to create unique layers: %v", err)
-	}
+	layers := test.ServeLayers(ctx, t, 2)
 
 	mock_ps.EXPECT().Scan(gomock.Any(), layers[0]).Return([]*claircore.Package{}, nil)
 	mock_ps.EXPECT().Scan(gomock.Any(), layers[1]).Return([]*claircore.Package{}, nil)
@@ -88,9 +85,7 @@ func Test_Scan_NoErrors(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
-	err = layerscanner.Scan(ctx, "test-manifest", layers)
-
-	if err != nil {
+	if err := layerscanner.Scan(ctx, "test-manifest", layers); err != nil {
 		t.Fatalf("failed to scan test layers: %v", err)
 	}
 }

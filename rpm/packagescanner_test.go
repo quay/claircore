@@ -1,7 +1,6 @@
 package rpm
 
 import (
-	"bytes"
 	"context"
 	"net/http"
 	"os/exec"
@@ -1255,23 +1254,12 @@ func TestScan(t *testing.T) {
 
 	tctx, done := context.WithTimeout(ctx, 2*time.Minute)
 	defer done()
-	rc, err := fetch.Layer(tctx, t, http.DefaultClient, "docker.io", "library/centos", hash)
+	n, err := fetch.Layer(tctx, t, http.DefaultClient, "docker.io", "library/centos", hash)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer rc.Close()
-
-	if n, ok := rc.(interface {
-		Name() string
-	}); ok {
-		l.LocalPath = n.Name()
-	} else {
-		buf := bytes.Buffer{}
-		if _, err := buf.ReadFrom(rc); err != nil {
-			t.Error(err)
-		}
-		l.Bytes = buf.Bytes()
-	}
+	defer n.Close()
+	l.SetLocal(n.Name())
 
 	s := &Scanner{}
 	got, err := s.Scan(ctx, l)

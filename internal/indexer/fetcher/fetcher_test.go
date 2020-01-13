@@ -2,47 +2,76 @@ package fetcher
 
 import (
 	"context"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strconv"
 	"testing"
+	"time"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
+	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/log"
 )
 
-func Test_Fetcher_LocalPath(t *testing.T) {
-	ctx, done := context.WithCancel(context.Background())
-	defer done()
-	var tt = []struct {
-		name  string
-		layer []*claircore.Layer
-	}{
-		{
-			name: "prexisting local path",
-			layer: []*claircore.Layer{
-				&claircore.Layer{
-					LocalPath: "/tmp/path/to/tar/tar.gz",
-					RemotePath: claircore.RemotePath{
-						URI: "http://example-path.com/some/path?query=one",
-					},
-				},
-			},
-		},
+// Custom TestMain to hook the TMPDIR environment variable.
+func TestMain(m *testing.M) {
+	p, err := filepath.Abs("testdata")
+	if err != nil {
+		panic(err)
 	}
+	os.Setenv("TMPDIR", p)
+	// call flag.Parse() here if TestMain uses flags
+	os.Exit(m.Run())
+}
 
-	for _, table := range tt {
-		t.Run(table.name, func(t *testing.T) {
-			ctx, done := context.WithCancel(ctx)
-			defer done()
-			ctx, _ = log.TestLogger(ctx, t)
-			fetcher := New(nil, nil, indexer.InMem)
-			if err := fetcher.Fetch(ctx, table.layer); err != nil {
-				t.Fatal(err)
-			}
-		})
+var testClient = http.Client{
+	Timeout: 5 * time.Second,
+}
+
+type testcase struct {
+	N int
+}
+
+func (tc testcase) Run(ctx context.Context) func(*testing.T) {
+	ctx, done := context.WithCancel(ctx)
+	return func(t *testing.T) {
+		defer done()
+		ctx, _ = log.TestLogger(ctx, t)
+		layers := test.ServeLayers(ctx, t, tc.N)
+		for _, l := range layers {
+			t.Logf("%+v", l)
+		}
+
+		fetcher := New(&testClient, indexer.LayerFetchOpt(""))
+		if err := fetcher.Fetch(ctx, layers); err != nil {
+			t.Error(err)
+		}
+		for _, l := range layers {
+			t.Logf("%+v", l)
+		}
+		if err := fetcher.Close(); err != nil {
+			t.Error(err)
+		}
 	}
 }
 
-func Test_Fetcher_InvalidPath(t *testing.T) {
+func TestSimple(t *testing.T) {
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
+	var tt = []testcase{
+		{N: 1},
+		{N: 4},
+		{N: 32},
+	}
+
+	for _, tc := range tt {
+		t.Run(strconv.Itoa(tc.N), tc.Run(ctx))
+	}
+}
+
+func TestInvalid(t *testing.T) {
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
 	var tt = []struct {
@@ -53,10 +82,7 @@ func Test_Fetcher_InvalidPath(t *testing.T) {
 			name: "no remote path or local path provided",
 			layer: []*claircore.Layer{
 				&claircore.Layer{
-					RemotePath: claircore.RemotePath{
-						URI: "",
-					},
-					LocalPath: "",
+					URI: "",
 				},
 			},
 		},
@@ -64,10 +90,7 @@ func Test_Fetcher_InvalidPath(t *testing.T) {
 			name: "path with no scheme",
 			layer: []*claircore.Layer{
 				&claircore.Layer{
-					RemotePath: claircore.RemotePath{
-						URI: "www.example.com/path/to/tar?query=one",
-					},
-					LocalPath: "",
+					URI: "www.example.com/path/to/tar?query=one",
 				},
 			},
 		},
@@ -78,7 +101,7 @@ func Test_Fetcher_InvalidPath(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
 			ctx, _ = log.TestLogger(ctx, t)
-			fetcher := New(nil, nil, indexer.InMem)
+			fetcher := New(&testClient, indexer.InMem)
 			if err := fetcher.Fetch(ctx, table.layer); err == nil {
 				t.Fatal("expected error, got nil")
 			}

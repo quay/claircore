@@ -61,12 +61,16 @@ func (*Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.
 	log.Debug().Msg("start")
 	defer log.Debug().Msg("done")
 
-	fs, err := layer.Files([]string{installedFile})
-	if err != nil {
+	fs, err := layer.Files(installedFile)
+	switch err {
+	case nil:
+	case claircore.ErrNotFound:
+		return nil, nil
+	default:
 		return nil, err
 	}
 	b, ok := fs[installedFile]
-	if !ok || len(b) == 0 {
+	if !ok {
 		return nil, nil
 	}
 	log.Debug().Msg("found database")
@@ -76,7 +80,7 @@ func (*Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.
 	// It'd be great if we could just use the textproto package here, but we
 	// can't because the database "keys" are case sensitive, unlike MIME
 	// headers. So, roll our own entry and header splitting.
-	s := bufio.NewScanner(bytes.NewReader(b))
+	s := bufio.NewScanner(b)
 	buf := bufPool.Get().([]byte)
 	defer bufPool.Put(buf)
 

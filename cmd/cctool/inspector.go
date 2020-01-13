@@ -85,11 +85,9 @@ func Inspect(ctx context.Context, r string) (*claircore.Manifest, error) {
 
 		res.Request.Header.Del("User-Agent")
 		out.Layers = append(out.Layers, &claircore.Layer{
-			Hash: d.Hex,
-			RemotePath: claircore.RemotePath{
-				URI:     res.Request.URL.String(),
-				Headers: res.Request.Header,
-			},
+			Hash:    d.Hex,
+			URI:     res.Request.URL.String(),
+			Headers: res.Request.Header,
 		})
 	}
 

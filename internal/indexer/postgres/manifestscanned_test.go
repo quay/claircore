@@ -14,6 +14,8 @@ func Test_ManifestScanned_Failure(t *testing.T) {
 	integration.Skip(t)
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
+	const hash = `deadbeef`
+
 	var tt = []struct {
 		// the name of this test
 		name string
@@ -23,23 +25,23 @@ func Test_ManifestScanned_Failure(t *testing.T) {
 		scanners int
 	}{
 		{
-			name:     "single scanner",
-			hash:     "test-manifest-hash",
+			name:     "one scanner",
+			hash:     hash,
 			scanners: 1,
 		},
 		{
-			name:     "two scanner",
-			hash:     "test-manifest-hash",
+			name:     "two scanners",
+			hash:     hash,
 			scanners: 2,
 		},
 		{
-			name:     "two scanner",
-			hash:     "test-manifest-hash",
+			name:     "five scanners",
+			hash:     hash,
 			scanners: 5,
 		},
 		{
-			name:     "two scanner",
-			hash:     "test-manifest-hash",
+			name:     "ten scanners",
+			hash:     hash,
 			scanners: 10,
 		},
 	}
@@ -73,6 +75,8 @@ func Test_ManifestScanned_Success(t *testing.T) {
 	integration.Skip(t)
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
+	const hash = `deafbeef`
+
 	var tt = []struct {
 		// the name of this test
 		name string
@@ -82,23 +86,23 @@ func Test_ManifestScanned_Success(t *testing.T) {
 		scanners int
 	}{
 		{
-			name:     "single scanner",
-			hash:     "test-manifest-hash",
+			name:     "one scanner",
+			hash:     hash,
 			scanners: 1,
 		},
 		{
-			name:     "two scanner",
-			hash:     "test-manifest-hash",
+			name:     "two scanners",
+			hash:     hash,
 			scanners: 2,
 		},
 		{
-			name:     "two scanner",
-			hash:     "test-manifest-hash",
+			name:     "five scanners",
+			hash:     hash,
 			scanners: 5,
 		},
 		{
-			name:     "two scanner",
-			hash:     "test-manifest-hash",
+			name:     "ten scanners",
+			hash:     hash,
 			scanners: 10,
 		},
 	}

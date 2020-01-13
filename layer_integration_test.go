@@ -5,17 +5,32 @@
 package claircore_test
 
 import (
+	"bytes"
 	"context"
+	"encoding/hex"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-
-	"github.com/quay/claircore/internal/indexer"
-	"github.com/quay/claircore/internal/indexer/fetcher"
+	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 )
+
+var goldenLayers []test.LayerSpec
+
+func init() {
+	ck, err := hex.DecodeString("35c102085707f703de2d9eaad8752d6fe1b8f02b5d2149f1d8357c9cc7fb7d0a")
+	if err != nil {
+		panic(err)
+	}
+	goldenLayers = []test.LayerSpec{
+		{
+			Domain: "docker.io",
+			Repo:   "library/ubuntu",
+			ID:     claircore.NewDigest("sha256", ck),
+		},
+	}
+}
 
 func Test_Layer_Files_Miss(t *testing.T) {
 	integration.Skip(t)
@@ -24,36 +39,21 @@ func Test_Layer_Files_Miss(t *testing.T) {
 	var tt = []struct {
 		// name of the test
 		name string
-		// use a fetcher to retrieve the layer contents.
-		// we assume the Fetcher implementation unit and integration
-		// tests are passing. if an issue appears to be from the fetcher
-		// confirm the implementation's tests are passing
-		fetcher indexer.Fetcher
 		// the number of layers to generate for the test
-		layers int
-		// the uris to populate the layer.RemotePath.URI fields. len of this array must equal layers
-		uris []string
+		layers []test.LayerSpec
 		// a list of paths we know exist in the retrieved layer(s). we wil test to make sure their associated
 		// buffer is full
 		paths []string
 	}{
 		{
-			name:    "ubuntu:18.04 fake path, leading slash, inmem fetch",
-			fetcher: fetcher.New(nil, nil, indexer.InMem),
-			layers:  1,
-			uris: []string{
-				"https://storage.googleapis.com/quay-sandbox-01/datastorage/registry/sha256/35/35c102085707f703de2d9eaad8752d6fe1b8f02b5d2149f1d8357c9cc7fb7d0a",
-			},
-			paths: []string{"/path/to/nowhere"},
+			name:   "ubuntu:18.04 fake path, leading slash",
+			layers: goldenLayers,
+			paths:  []string{"/path/to/nowhere"},
 		},
 		{
-			name:    "ubuntu:18.04 fake path, no leading slash, inmem fetch",
-			fetcher: fetcher.New(nil, nil, indexer.InMem),
-			layers:  1,
-			uris: []string{
-				"https://storage.googleapis.com/quay-sandbox-01/datastorage/registry/sha256/35/35c102085707f703de2d9eaad8752d6fe1b8f02b5d2149f1d8357c9cc7fb7d0a",
-			},
-			paths: []string{"path/to/nowhere"},
+			name:   "ubuntu:18.04 fake path, no leading slash",
+			layers: goldenLayers,
+			paths:  []string{"path/to/nowhere"},
 		},
 	}
 
@@ -61,31 +61,15 @@ func Test_Layer_Files_Miss(t *testing.T) {
 		t.Run(table.name, func(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
-			// gen layers
-			layers, err := test.GenUniqueLayersRemote(table.layers, table.uris)
-
 			// fetch the layer
 			ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 			defer cancel()
-			err = table.fetcher.Fetch(ctx, layers)
-			assert.NoError(t, err, "fetcher returned an error")
+			layers := test.RealizeLayers(ctx, t, table.layers...)
 
 			// attempt to get files
-			files, err := layers[0].Files(table.paths)
-			assert.NoError(t, err, "Files method returned an error")
-
-			// confirm byte array is not empty
-			for _, path := range table.paths {
-				var b []byte
-				var ok bool
-				if b, ok = files[path]; !ok {
-					t.Fatalf("test path %v was not found in resulting file map", path)
-				}
-				if len(b) > 0 {
-					t.Fatalf("returned buffer for path %v has len %v", path, len(b))
-				}
-
-				t.Logf("File:\n%v\n", string(b))
+			_, err := layers[0].Files(table.paths...)
+			if err == nil {
+				t.Error("expected error")
 			}
 		})
 	}
@@ -98,36 +82,21 @@ func Test_Layer_Files_Hit(t *testing.T) {
 	var tt = []struct {
 		// name of the test
 		name string
-		// use a fetcher to retrieve the layer contents.
-		// we assume the Fetcher implementation unit and integration
-		// tests are passing. if an issue appears to be from the fetcher
-		// confirm the implementation's tests are passing
-		fetcher indexer.Fetcher
 		// the number of layers to generate for the test
-		layers int
-		// the uris to populate the layer.RemotePath.URI fields. len of this array must equal layers
-		uris []string
+		layers []test.LayerSpec
 		// a list of paths we know exist in the retrieved layer(s). we wil test to make sure their associated
 		// buffer is full
 		paths []string
 	}{
 		{
-			name:    "ubuntu:18.04 os-release (linked file), leading slash, inmem fetch",
-			fetcher: fetcher.New(nil, nil, indexer.InMem),
-			layers:  1,
-			uris: []string{
-				"https://storage.googleapis.com/quay-sandbox-01/datastorage/registry/sha256/35/35c102085707f703de2d9eaad8752d6fe1b8f02b5d2149f1d8357c9cc7fb7d0a",
-			},
-			paths: []string{"/etc/os-release"},
+			name:   "ubuntu:18.04 os-release (linked file), leading slash, inmem fetch",
+			layers: goldenLayers,
+			paths:  []string{"/etc/os-release"},
 		},
 		{
-			name:    "ubuntu:18.04 os-release (linked file), no leading slash, inmem fetch",
-			fetcher: fetcher.New(nil, nil, indexer.InMem),
-			layers:  1,
-			uris: []string{
-				"https://storage.googleapis.com/quay-sandbox-01/datastorage/registry/sha256/35/35c102085707f703de2d9eaad8752d6fe1b8f02b5d2149f1d8357c9cc7fb7d0a",
-			},
-			paths: []string{"etc/os-release"},
+			name:   "ubuntu:18.04 os-release (linked file), no leading slash, inmem fetch",
+			layers: goldenLayers,
+			paths:  []string{"etc/os-release"},
 		},
 	}
 
@@ -135,31 +104,28 @@ func Test_Layer_Files_Hit(t *testing.T) {
 		t.Run(table.name, func(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
-			// gen layers
-			layers, err := test.GenUniqueLayersRemote(table.layers, table.uris)
-
 			// fetch the layer
 			ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 			defer cancel()
-			err = table.fetcher.Fetch(ctx, layers)
-			assert.NoError(t, err, "fetcher returned an error")
+			layers := test.RealizeLayers(ctx, t, table.layers...)
 
 			// attempt to get files
-			files, err := layers[0].Files(table.paths)
-			assert.NoError(t, err, "Files method returned an error")
+			files, err := layers[0].Files(table.paths...)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-			// confirm byte array is not empty
+			var b *bytes.Buffer
+			var ok bool
 			for _, path := range table.paths {
-				var b []byte
-				var ok bool
 				if b, ok = files[path]; !ok {
 					t.Fatalf("test path %v was not found in resulting file map", path)
 				}
-				if len(b) <= 0 {
-					t.Fatalf("returned buffer for path %v has len %v", path, len(b))
+				if l := b.Len(); l <= 0 {
+					t.Fatalf("returned buffer for path %v has len %v", path, l)
 				}
 
-				t.Logf("File:\n%v\n", string(b))
+				t.Logf("contents: %+q", b.String())
 			}
 		})
 	}

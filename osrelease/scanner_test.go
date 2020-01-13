@@ -186,8 +186,9 @@ func (lc layercase) Test(t *testing.T) {
 	defer done()
 	ctx, _ = log.TestLogger(ctx, t)
 	s := Scanner{}
-	l := &claircore.Layer{
-		LocalPath: lc.name(),
+	l := &claircore.Layer{}
+	if err := l.SetLocal(lc.name()); err != nil {
+		t.Fatal(err)
 	}
 	ds, err := s.Scan(ctx, l)
 	if err != nil {

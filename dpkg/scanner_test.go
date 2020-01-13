@@ -1,7 +1,6 @@
 package dpkg
 
 import (
-	"bytes"
 	"context"
 	"net/http"
 	"testing"
@@ -712,22 +711,14 @@ func TestScanner(t *testing.T) {
 
 	tctx, done := context.WithTimeout(ctx, 30*time.Second)
 	defer done()
-	rc, err := fetch.Layer(tctx, t, http.DefaultClient, "docker.io", "library/ubuntu", hash)
+	n, err := fetch.Layer(tctx, t, http.DefaultClient, "docker.io", "library/ubuntu", hash)
 	if err != nil {
 		t.Error(err)
 	}
-	defer rc.Close()
+	defer n.Close()
 
-	if n, ok := rc.(interface {
-		Name() string
-	}); ok {
-		l.LocalPath = n.Name()
-	} else {
-		buf := bytes.Buffer{}
-		if _, err := buf.ReadFrom(rc); err != nil {
-			t.Error(err)
-		}
-		l.Bytes = buf.Bytes()
+	if err := l.SetLocal(n.Name()); err != nil {
+		t.Error(err)
 	}
 
 	s := &Scanner{}

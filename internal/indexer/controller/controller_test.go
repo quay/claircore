@@ -33,7 +33,7 @@ func Test_Controller_IndexerError(t *testing.T) {
 				store := indexer.NewMockStore(ctrl)
 				fetcher := indexer.NewMockFetcher(ctrl)
 
-				fetcher.EXPECT().Purge()
+				fetcher.EXPECT().Close()
 
 				// let call to SetIndexReport in checkManifest pass
 				store.EXPECT().SetIndexReport(gomock.Any(), gomock.Any()).Return(nil)
@@ -100,7 +100,7 @@ func Test_Controller_IndexFinished(t *testing.T) {
 
 				fetcher := indexer.NewMockFetcher(ctrl)
 
-				fetcher.EXPECT().Purge()
+				fetcher.EXPECT().Close()
 
 				store.EXPECT().SetIndexFinished(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 				store.EXPECT().SetIndexReport(gomock.Any(), gomock.Any()).Return(nil)
