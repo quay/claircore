@@ -59,6 +59,7 @@ if err != nil {
 
 Libvuln will first initialize all updaters before returning from its constructor.  
 Controlling how many updaters initialize in parallel is provided via the libvuln.Opts struct  
+For a more detailed process flow see: [Vulnerability Matching](./docs/vulnerability_matching.md)  
 
 # Local development and testing
 
@@ -84,13 +85,13 @@ The following make target runs unit tests which do not require a database or loc
 make unit
 ```
 
+For more on local development see [Local Development](./docs/local-dev.md)  
+
 # Deeper dives
 
-[Highlevel Architecture](./docs/highlevel_arch.md)  
-[Matching Architecture](./docs/matching_arch.md)  
-[Vulnerability Matching](./docs/matching_vulns.md)  
-[Vulnerability Tombstoning](./docs/tombstoning.md)  
+[Vulnerability Matching](./docs/vulnerability_matching.md)  
+[Highlevel Architecture](./docs/highlevel_architecture.md)  
+[Indexer Architecture](./docs/indexer_architecture.md)  
+[Matching Architecture](./docs/matcher_architecture.md)  
 [Content-Addressability](./docs/content_addressability.md)  
-[Libindex Data Model](./docs/scanner_data_model.md)  
-[Indexer States](./docs/indexer_states.md)  
 [Local Development](./docs/local-dev.md)  
