@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"net/url"
 	"sync"
-	"time"
 
 	"github.com/rs/zerolog"
 )
@@ -55,13 +54,12 @@ func New(client *http.Client, req *http.Request, check RespCheck, urls []*url.UR
 // Do will return the first *http.Response which passes
 // f.RespCheck.
 //
-// If no successful *http.Response is obtained a nil is returned
+// If no successful *http.Response is obtained a nil is returned.
+// Any ctx timeout or cancelation must be provided by the caller.
 func (f *FastestURL) Do(ctx context.Context) *http.Response {
 	log := zerolog.Ctx(ctx).With().Str("routine", "fasesturl_do").Logger()
 	cond := sync.NewCond(&sync.Mutex{})
 	var response *http.Response
-	tctx, cancel := context.WithTimeout(ctx, 30*time.Second)
-	defer cancel()
 	// immediately lock so workers do not write to response
 	// before Do method blocks on cond.Wait()
 	cond.L.Lock()
@@ -69,7 +67,7 @@ func (f *FastestURL) Do(ctx context.Context) *http.Response {
 		u := url
 		go func() {
 			defer cond.Signal()
-			req := f.Request.Clone(tctx)
+			req := f.Request.Clone(ctx)
 			req.URL = u
 			req.Host = u.Host
 			resp, err := f.Client.Do(req)
