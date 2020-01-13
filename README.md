@@ -72,7 +72,7 @@ make local-dev-down
 If you modify libvuln or libindex code the following make targets will restart the services with your changes
 ```
 make libindexhttp-restart
-libvulnhttp-restart
+make libvulnhttp-restart
 ```
 
 With the local development environment up the following make target runs all tests including integration

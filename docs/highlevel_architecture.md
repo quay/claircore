@@ -7,5 +7,5 @@ The intermediate structure `IndexReport` is used to express all discovered artif
 The follow diagram depcits the high level architecture.  
 ![alt text](./highlevel_architecture.png "architecture diagram")  
 
-`libindex` is primarly implemented by the  [Indexer](./docs/indexer.md)  
-`libvuln` is primarly implemented by the  [Matcher](./docs/matcher_architecture.md)  
+`libindex` is primarly implemented by the  [Indexer](./indexer_architecture.md)  
+`libvuln` is primarly implemented by the  [Matcher](./matcher_architecture.md)  
