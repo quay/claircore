@@ -62,7 +62,7 @@ func (f *FastestURL) Do(ctx context.Context) *http.Response {
 	var response *http.Response
 	tctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
-	// immediately lock so workers do not write to f.Response
+	// immediately lock so workers do not write to response
 	// before Do method blocks on cond.Wait()
 	cond.L.Lock()
 	for _, url := range f.URLs {
@@ -74,23 +74,27 @@ func (f *FastestURL) Do(ctx context.Context) *http.Response {
 			req.Host = u.Host
 			resp, err := f.Client.Do(req)
 			if err != nil {
-				log.Error().Err(err).Msgf("failed to make request for url: %v", url)
+				log.Error().Err(err).Str("url", url.String()).Msg("failed to make request for url")
 				return
 			}
-			if f.RespCheck(resp) {
-				cond.L.Lock()
-				if response == nil {
-					response = resp
-				} else {
-					// another routine has set f.Response, close this body and discard
-					resp.Body.Close()
-				}
-				cond.L.Unlock()
+			// early return if resp doesnt pass check
+			if !f.RespCheck(resp) {
+				resp.Body.Close()
+				return
 			}
+			// respCheck passed, lock access to response var
+			cond.L.Lock()
+			if response == nil {
+				response = resp
+			} else {
+				// another routine has set response, close this body and discard
+				resp.Body.Close()
+			}
+			cond.L.Unlock()
 		}()
 	}
 	// wait on go routines to signal. when a signal occurs
-	// check if a worker set f.Response and if so return it.
+	// check if a worker set response and if so return it.
 	// break loop when all workers have signal
 	for lim, i := len(f.URLs), 0; i < lim; i++ {
 		cond.Wait()
@@ -99,7 +103,7 @@ func (f *FastestURL) Do(ctx context.Context) *http.Response {
 			return response
 		}
 	}
-	// exhausted all workers without f.Response populated.
+	// exhausted all workers without response populated.
 	// cond.L.Lock() will be locked from latest cond.Wait() signal
 	// unlock it and return nil
 	cond.L.Unlock()
