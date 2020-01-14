@@ -7,6 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jmoiron/sqlx"
+	"github.com/rs/zerolog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
@@ -50,7 +51,10 @@ INSERT INTO package_scanartifact (layer_hash, package_db, repository_hint, packa
 // scan artifacts are used to determine if a particular layer has been scanned by a
 // particular scnr. see layerScanned method for more details.
 func indexPackages(ctx context.Context, db *sqlx.DB, pool *pgxpool.Pool, pkgs []*claircore.Package, layer *claircore.Layer, scnr indexer.VersionedScanner) error {
-	// obtain a transaction scopped batch
+	log := zerolog.Ctx(ctx).With().
+		Str("component", "indexPackages").
+		Logger()
+	// obtain a transaction scoped batch
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("store:indexPackage failed to create transaction: %v", err)
@@ -69,8 +73,12 @@ func indexPackages(ctx context.Context, db *sqlx.DB, pool *pgxpool.Pool, pkgs []
 		return fmt.Errorf("failed to create statement: %v", err)
 	}
 
+	skipCt := 0
 	mBatcher := microbatch.NewInsert(tx, 500, time.Minute)
 	for _, pkg := range pkgs {
+		if pkg.Name == "" {
+			skipCt++
+		}
 		if pkg.Source != nil {
 			err := mBatcher.Queue(
 				ctx,
@@ -111,10 +119,19 @@ func indexPackages(ctx context.Context, db *sqlx.DB, pool *pgxpool.Pool, pkgs []
 	if err != nil {
 		return fmt.Errorf("final batch insert failed for pkg: %v", err)
 	}
+	log.Debug().
+		Int("skipped", skipCt).
+		Int("inserted", len(pkgs)-skipCt).
+		Msg("packages inserted")
 
+	skipCt = 0
 	// make package scan artifacts
 	mBatcher = microbatch.NewInsert(tx, 500, time.Minute)
 	for _, pkg := range pkgs {
+		if pkg.Name == "" {
+			skipCt++
+			continue
+		}
 		err := mBatcher.Queue(
 			ctx,
 			insertPackageScanArtifactWithStmt.SQL,
@@ -139,6 +156,10 @@ func indexPackages(ctx context.Context, db *sqlx.DB, pool *pgxpool.Pool, pkgs []
 	if err != nil {
 		return fmt.Errorf("final batch insert failed for package_scanartifact: %v", err)
 	}
+	log.Debug().
+		Int("skipped", skipCt).
+		Int("inserted", len(pkgs)-skipCt).
+		Msg("scanartifacts inserted")
 
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("store:indexPackages failed to commit tx: %v", err)
