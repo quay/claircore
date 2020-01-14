@@ -133,3 +133,10 @@ baseimage:
 		--build-arg GO_VERSION=$(GO_VERSION) \
 	   	--build-arg GO_CHECKSUM=$(GO_CHECKSUM) \
 		etc
+
+.PHONY: mdbook
+mdbook:
+	# This is some faffing about to make it look like the CI environment.
+	trap 'rm src checkout' EXIT ;\
+	ln -s docs src && ln -s $$(git rev-parse --show-toplevel) checkout &&\
+	mdbook serve
