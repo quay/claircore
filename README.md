@@ -7,7 +7,7 @@ ClairCore is designed to be embedded into a service wrapper.
 # Usage
 
 Two packages exist `libindex` and `libvuln`.  
-These modules export the methods for scanning and image for packages and matching the results of the scan to vulnerabilities respectively.   
+These packages export the methods for indexing an image's contents and matching the results of the index to vulnerabilities respectively.   
 
 ## libindex usage
 
@@ -59,7 +59,10 @@ if err != nil {
 
 Libvuln will first initialize all updaters before returning from its constructor.  
 Controlling how many updaters initialize in parallel is provided via the libvuln.Opts struct  
-For a more detailed process flow see: [Vulnerability Matching](./docs/vulnerability_matching.md)  
+
+To further understand how these packages work together see:  
+[Highlevel Architecture](./docs/highlevel_architecture.md)  
+[Vulnerability Matching](./docs/vulnerability_matching.md)  
 
 # Local development and testing
 
