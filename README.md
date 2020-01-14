@@ -4,6 +4,8 @@
 ClairCore provides a set of go modules which handle scanning container layers for installed packages and reporting any discovered vulnerabilities.  
 ClairCore is designed to be embedded into a service wrapper.  
 
+For a full overview see: [ClairCore Book](https://quay.github.io/claircore)  
+
 # Usage
 
 Two packages exist `libindex` and `libvuln`.  
@@ -87,14 +89,3 @@ The following make target runs unit tests which do not require a database or loc
 ```
 make unit
 ```
-
-For more on local development see [Local Development](./docs/local-dev.md)  
-
-# Deeper dives
-
-[Vulnerability Matching](./docs/vulnerability_matching.md)  
-[Highlevel Architecture](./docs/highlevel_architecture.md)  
-[Indexer Architecture](./docs/indexer_architecture.md)  
-[Matcher Architecture](./docs/matcher_architecture.md)  
-[Content-Addressability](./docs/content_addressability.md)  
-[Local Development](./docs/local-dev.md)  

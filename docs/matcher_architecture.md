@@ -1,6 +1,6 @@
 # Matcher Architecture
-`claircore.internal.matcher`  
-`claircore.libvuln.driver`  
+`claircore/internal/matcher`  
+`claircore/libvuln/driver`  
 
 The `Matcher` architecture is based on a data flow application.  
 The `Matcher` functionality is implemented via a Controller in the `matcher` package and interface definitions within the `libvuln.driver` package.  

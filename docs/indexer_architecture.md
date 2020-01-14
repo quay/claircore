@@ -1,5 +1,5 @@
 # Indexer
-`claircore.internal.indexer`  
+`claircore/internal/indexer`  
 
 The `Indexer` package is responsible for retreiving `Manifest` layers, parsing the contents of each layer, and computing an `IndexReport`.  
 The `Indexer` is implemented as an FSM to correctly report it's current state to the client.  
