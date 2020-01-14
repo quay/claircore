@@ -8,5 +8,3 @@ ClairCore will use content addressable hashes to understand what work it needs t
 If ClairCore comes across a image or layer hash which has been scanned by all configured scanners it will retrieve the existing results and not perform work.  
 If ClairCore is started with a new set of package scanners and encounters a previously seen image or layer hash it will rescan the image or layer.  
 ClairCore will only perform a scan with the missing scanner on the incoming image or layers.  
-
-
