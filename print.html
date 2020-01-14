@@ -273,7 +273,7 @@ ClairCore will query the security advisory database with these constraints retur
 <li>Sometime later the security advisory database is updated and a new request to <code>libvuln</code> will present updated vulnerability data.</li>
 </ol>
 <h1><a class="header" href="#indexer" id="indexer">Indexer</a></h1>
-<p><code>claircore.internal.indexer</code></p>
+<p><code>claircore/internal/indexer</code></p>
 <p>The <code>Indexer</code> package is responsible for retreiving <code>Manifest</code> layers, parsing the contents of each layer, and computing an <code>IndexReport</code>.<br />
 The <code>Indexer</code> is implemented as an FSM to correctly report it's current state to the client.</p>
 <h2><a class="header" href="#states" id="states">States</a></h2>
@@ -285,8 +285,8 @@ Scan artifacts are unique artifacts found within a layer which point to a dedupl
 <p>The following diagram outlines the current <code>Indexer</code> data model.<br />
 <img src="./indexer_data_model.png" alt="indexer data model diagram" title="indexer data model diagram" /></p>
 <h1><a class="header" href="#matcher-architecture" id="matcher-architecture">Matcher Architecture</a></h1>
-<p><code>claircore.internal.matcher</code><br />
-<code>claircore.libvuln.driver</code></p>
+<p><code>claircore/internal/matcher</code><br />
+<code>claircore/libvuln/driver</code></p>
 <p>The <code>Matcher</code> architecture is based on a data flow application.<br />
 The <code>Matcher</code> functionality is implemented via a Controller in the <code>matcher</code> package and interface definitions within the <code>libvuln.driver</code> package.<br />
 When <code>libvuln</code> is provided a <code>IndexReport</code> the <code>Matcher</code> package will transform the <code>IndexReport</code> into a stream of <code>IndexRecord</code> structs.<br />
