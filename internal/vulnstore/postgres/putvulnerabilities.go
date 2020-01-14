@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/rs/zerolog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/microbatch"
@@ -91,6 +92,9 @@ const (
 // and each existing vulnerability has their tombstone updated. finally we delete all records with the
 // told tombstone as they can be considered stale.
 func putVulnerabilities(ctx context.Context, pool *pgxpool.Pool, updater string, hash string, vulns []*claircore.Vulnerability) error {
+	log := zerolog.Ctx(ctx).With().
+		Str("component", "putVulnerabilities").
+		Logger()
 	// get old tombstone
 	var oldTombstone string
 	row := pool.QueryRow(ctx, selectTombstone, updater)
@@ -113,14 +117,17 @@ func putVulnerabilities(ctx context.Context, pool *pgxpool.Pool, updater string,
 	}
 	defer tx.Rollback(ctx)
 
+	skipCt := 0
 	// safe sized batch inserts to postgres
 	mBatcher := microbatch.NewInsert(tx, 2000, time.Minute)
 	for _, vuln := range vulns {
-		if vuln.Package == nil {
-			vuln.Package = &claircore.Package{}
+		if vuln.Package == nil || vuln.Package.Name == "" {
+			skipCt++
+			continue
 		}
-		if vuln.Dist == nil {
-			vuln.Dist = &claircore.Distribution{}
+		if vuln.Dist == nil || vuln.Dist.Name == "" {
+			skipCt++
+			continue
 		}
 		if vuln.Repo == nil {
 			vuln.Repo = &claircore.Repository{}
@@ -176,5 +183,9 @@ func putVulnerabilities(ctx context.Context, pool *pgxpool.Pool, updater string,
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("failed to commit transaction: %v", err)
 	}
+	log.Debug().
+		Int("skipped", skipCt).
+		Int("inserted", len(vulns)-skipCt).
+		Msg("vulnerabilities inserted")
 	return nil
 }
