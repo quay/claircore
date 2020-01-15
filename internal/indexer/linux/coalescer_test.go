@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/log"
 )
@@ -19,9 +20,6 @@ func Test_Coalescer(t *testing.T) {
 	defer done()
 	ctx, _ = log.TestLogger(ctx, t)
 	coalescer := &Coalescer{
-		store: nil,
-		ps:    nil,
-		ds:    nil,
 		ir: &claircore.IndexReport{
 			Environments:  map[string][]*claircore.Environment{},
 			Packages:      map[string]*claircore.Package{},
@@ -36,58 +34,58 @@ func Test_Coalescer(t *testing.T) {
 	//    are tagged wih this distribution
 	pkgs := test.GenUniquePackages(6)
 	dists := test.GenUniqueDistributions(3) // we will discard dist 0 due to zero value ambiguity
-	layerArtifacts := []layerArtifacts{
+	layerArtifacts := []*indexer.LayerArtifacts{
 		{
-			hash:  "A",
-			pkgs:  pkgs[0:1],
-			dist:  nil,
-			repos: nil,
+			Hash:  "A",
+			Pkgs:  pkgs[0:1],
+			Dist:  nil,
+			Repos: nil,
 		},
 		{
-			hash:  "B",
-			pkgs:  pkgs[1:2],
-			dist:  nil,
-			repos: nil,
+			Hash:  "B",
+			Pkgs:  pkgs[1:2],
+			Dist:  nil,
+			Repos: nil,
 		},
 		{
-			hash:  "C",
-			pkgs:  pkgs[2:3],
-			dist:  dists[1:2],
-			repos: nil,
+			Hash:  "C",
+			Pkgs:  pkgs[2:3],
+			Dist:  dists[1:2],
+			Repos: nil,
 		},
 		{
-			hash:  "D",
-			pkgs:  pkgs[3:4],
-			dist:  nil,
-			repos: nil,
+			Hash:  "D",
+			Pkgs:  pkgs[3:4],
+			Dist:  nil,
+			Repos: nil,
 		},
 		{
-			hash:  "E",
-			pkgs:  pkgs[4:5],
-			dist:  dists[2:],
-			repos: nil,
+			Hash:  "E",
+			Pkgs:  pkgs[4:5],
+			Dist:  dists[2:],
+			Repos: nil,
 		},
 		{
-			hash:  "F",
-			pkgs:  pkgs[5:],
-			dist:  nil,
-			repos: nil,
+			Hash:  "F",
+			Pkgs:  pkgs[5:],
+			Dist:  nil,
+			Repos: nil,
 		},
 	}
-	err := coalescer.coalesce(ctx, layerArtifacts)
+	ir, err := coalescer.Coalesce(ctx, layerArtifacts)
 	if err != nil {
 		t.Fatalf("received error from coalesce method: %v", err)
 	}
 	// we expect packages 1-4 to be tagged with dist id 1
 	// and packages 5-6 to be tagged with dist id 2
 	for i := 0; i < 4; i++ {
-		environment := coalescer.ir.Environments[strconv.Itoa(i)][0]
+		environment := ir.Environments[strconv.Itoa(i)][0]
 		if environment.DistributionID != "1" {
 			t.Fatalf("expected distribution id %d but got %s", 1, environment.DistributionID)
 		}
 	}
 	for i := 4; i < 6; i++ {
-		environment := coalescer.ir.Environments[strconv.Itoa(i)][0]
+		environment := ir.Environments[strconv.Itoa(i)][0]
 		if environment.DistributionID != "2" {
 			t.Fatalf("expected distribution id %d but got %s", 2, environment.DistributionID)
 		}
