@@ -42,7 +42,7 @@ func New(ctx context.Context, opts *Opts) (*Libvuln, error) {
 	dC := make(chan context.CancelFunc, 1)
 	// block on updater initialization.
 	logger.Info().Msg("beginning updater initialization")
-	go initUpdaters(opts, db, vulnstore, dC, eC)
+	go initUpdaters(ctx, opts, db, vulnstore, dC, eC)
 	killUpdaters := <-dC
 	logger.Info().Msg("updaters initialized")
 	for err := range eC {

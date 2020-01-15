@@ -20,7 +20,7 @@ import (
 
 // initUpdaters provides initial burst control to not launch too many updaters at once.
 // returns any errors on eC and returns a CaneclFunc on dC to stop all updaters
-func initUpdaters(opts *Opts, db *sqlx.DB, store vulnstore.Updater, dC chan context.CancelFunc, eC chan error) {
+func initUpdaters(ctx context.Context, opts *Opts, db *sqlx.DB, store vulnstore.Updater, dC chan context.CancelFunc, eC chan error) {
 	// just to be defensive
 	err := opts.Parse()
 	if err != nil {
@@ -54,7 +54,7 @@ func initUpdaters(opts *Opts, db *sqlx.DB, store vulnstore.Updater, dC chan cont
 		cc <- struct{}{}
 		vv := v
 		go func() {
-			updateTO, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+			updateTO, cancel := context.WithTimeout(ctx, 10*time.Minute)
 			err := vv.Update(updateTO)
 			if err != nil {
 				eC <- fmt.Errorf("updater %s failed to update: %v", vv.Name, err)
@@ -68,7 +68,7 @@ func initUpdaters(opts *Opts, db *sqlx.DB, store vulnstore.Updater, dC chan cont
 	close(eC)
 
 	// start all updaters and return context
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(ctx)
 	for _, v := range controllers {
 		v.Start(ctx)
 	}
