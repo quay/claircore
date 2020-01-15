@@ -37,6 +37,9 @@ WHERE
 
 func packagesByLayer(ctx context.Context, db *sqlx.DB, hash string, scnrs indexer.VersionedScanners) ([]*claircore.Package, error) {
 	// TODO Use passed-in Context.
+	if len(scnrs) == 0 {
+		return []*claircore.Package{}, nil
+	}
 	// get scanner ids
 	scannerIDs := []int64{}
 	for _, scnr := range scnrs {

@@ -38,34 +38,6 @@ func NewCoalescer() *Coalescer {
 	}
 }
 
-// // Coalesce coalesces artifacts found in layers and creates a final IndexReport with
-// // the final package details found in the image. This method blocks and when its finished
-// // the c.ir field will hold the final IndexReport
-// func (c *Coalescer) Coalesce(ctx context.Context, layers []*claircore.Layer) (*claircore.IndexReport, error) {
-// 	var err error
-// 	// populate layer artifacts
-// 	artifacts := []layerArtifacts{}
-// 	for _, layer := range layers {
-// 		a := layerArtifacts{
-// 			hash: layer.Hash,
-// 		}
-
-// 		a.pkgs, err = c.store.PackagesByLayer(ctx, layer.Hash, indexer.VersionedScanners{c.ps})
-// 		if err != nil {
-// 			return nil, err
-// 		}
-
-// 		a.dist, err = c.store.DistributionsByLayer(ctx, layer.Hash, indexer.VersionedScanners{c.ds})
-// 		if err != nil {
-// 			return nil, err
-// 		}
-
-// 		artifacts = append(artifacts, a)
-// 	}
-// 	err = c.coalesce(ctx, artifacts)
-// 	return c.ir, err
-// }
-
 // Coalesce coalesces artifacts found in layers and creates a final IndexReport with
 // the final package details found in the image. This method blocks and when its finished
 // the c.ir field will hold the final IndexReport
