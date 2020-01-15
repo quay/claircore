@@ -5,7 +5,6 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
-	"github.com/quay/claircore/osrelease"
 )
 
 // layerArifact aggregates the any artifacts found within a layer
@@ -23,18 +22,12 @@ type layerArtifacts struct {
 // for dpkg, os-release, and apt scanners
 type Coalescer struct {
 	// a store to access scanartifacts
-	store indexer.Store
-	ps    indexer.PackageScanner
-	ds    indexer.DistributionScanner
-	ir    *claircore.IndexReport
+	ir *claircore.IndexReport
 }
 
 // NewCoalescer is a constructor for a Coalescer
-func NewCoalescer(store indexer.Store, ps indexer.PackageScanner) *Coalescer {
+func NewCoalescer() *Coalescer {
 	return &Coalescer{
-		store: store,
-		ps:    ps,
-		ds:    &osrelease.Scanner{},
 		ir: &claircore.IndexReport{
 			// we will only fill these fields
 			Environments:  map[string][]*claircore.Environment{},
@@ -45,40 +38,40 @@ func NewCoalescer(store indexer.Store, ps indexer.PackageScanner) *Coalescer {
 	}
 }
 
+// // Coalesce coalesces artifacts found in layers and creates a final IndexReport with
+// // the final package details found in the image. This method blocks and when its finished
+// // the c.ir field will hold the final IndexReport
+// func (c *Coalescer) Coalesce(ctx context.Context, layers []*claircore.Layer) (*claircore.IndexReport, error) {
+// 	var err error
+// 	// populate layer artifacts
+// 	artifacts := []layerArtifacts{}
+// 	for _, layer := range layers {
+// 		a := layerArtifacts{
+// 			hash: layer.Hash,
+// 		}
+
+// 		a.pkgs, err = c.store.PackagesByLayer(ctx, layer.Hash, indexer.VersionedScanners{c.ps})
+// 		if err != nil {
+// 			return nil, err
+// 		}
+
+// 		a.dist, err = c.store.DistributionsByLayer(ctx, layer.Hash, indexer.VersionedScanners{c.ds})
+// 		if err != nil {
+// 			return nil, err
+// 		}
+
+// 		artifacts = append(artifacts, a)
+// 	}
+// 	err = c.coalesce(ctx, artifacts)
+// 	return c.ir, err
+// }
+
 // Coalesce coalesces artifacts found in layers and creates a final IndexReport with
 // the final package details found in the image. This method blocks and when its finished
 // the c.ir field will hold the final IndexReport
-func (c *Coalescer) Coalesce(ctx context.Context, layers []*claircore.Layer) (*claircore.IndexReport, error) {
-	var err error
-	// populate layer artifacts
-	artifacts := []layerArtifacts{}
-	for _, layer := range layers {
-		a := layerArtifacts{
-			hash: layer.Hash,
-		}
-
-		a.pkgs, err = c.store.PackagesByLayer(ctx, layer.Hash, indexer.VersionedScanners{c.ps})
-		if err != nil {
-			return nil, err
-		}
-
-		a.dist, err = c.store.DistributionsByLayer(ctx, layer.Hash, indexer.VersionedScanners{c.ds})
-		if err != nil {
-			return nil, err
-		}
-
-		artifacts = append(artifacts, a)
-	}
-	err = c.coalesce(ctx, artifacts)
-	return c.ir, err
-}
-
-// coalesce performs the business logic of coalescing context free scanned artifacts
-// into a penultimate IndexReport. this method is heavily commented to express
-// the reasoning and assumptions.
-func (c *Coalescer) coalesce(ctx context.Context, artifacts []layerArtifacts) error {
+func (c *Coalescer) Coalesce(ctx context.Context, artifacts []*indexer.LayerArtifacts) (*claircore.IndexReport, error) {
 	if ctx.Err() != nil {
-		return ctx.Err()
+		return nil, ctx.Err()
 	}
 	// In our coalescing logic if a Distribution is found in layer (n) all packages found
 	// in layers 0-(n) will be associated with this layer. This is a heuristic.
@@ -89,8 +82,8 @@ func (c *Coalescer) coalesce(ctx context.Context, artifacts []layerArtifacts) er
 	// This is a requirement for handling dist upgrades where a layer may have it's operating system updated
 	var currDist *claircore.Distribution
 	for _, a := range artifacts {
-		if len(a.dist) != 0 {
-			currDist = a.dist[0]
+		if len(a.Dist) != 0 {
+			currDist = a.Dist[0]
 			c.ir.Distributions[currDist.ID] = currDist
 			break
 		}
@@ -108,13 +101,13 @@ func (c *Coalescer) coalesce(ctx context.Context, artifacts []layerArtifacts) er
 	// creating the environments we discover packages in.
 	for _, layerArtifacts := range artifacts {
 		// check if we need to update our currDist
-		if len(layerArtifacts.dist) != 0 {
-			currDist = layerArtifacts.dist[0]
+		if len(layerArtifacts.Dist) != 0 {
+			currDist = layerArtifacts.Dist[0]
 			c.ir.Distributions[currDist.ID] = currDist
 		}
 		// associate packages with their environments
-		if len(layerArtifacts.pkgs) != 0 {
-			for _, pkg := range layerArtifacts.pkgs {
+		if len(layerArtifacts.Pkgs) != 0 {
+			for _, pkg := range layerArtifacts.Pkgs {
 				// if we encounter a package where we haven't recorded a package database,
 				// initialize the package database
 				var distID string
@@ -125,7 +118,7 @@ func (c *Coalescer) coalesce(ctx context.Context, artifacts []layerArtifacts) er
 					packages := map[string]*claircore.Package{pkg.ID: pkg}
 					environment := &claircore.Environment{
 						PackageDB:      pkg.PackageDB,
-						IntroducedIn:   layerArtifacts.hash,
+						IntroducedIn:   layerArtifacts.Hash,
 						DistributionID: distID,
 					}
 					environments := map[string]*claircore.Environment{pkg.ID: environment}
@@ -135,7 +128,7 @@ func (c *Coalescer) coalesce(ctx context.Context, artifacts []layerArtifacts) er
 				if _, ok := dbs[pkg.PackageDB].packages[pkg.ID]; !ok {
 					environment := &claircore.Environment{
 						PackageDB:      pkg.PackageDB,
-						IntroducedIn:   layerArtifacts.hash,
+						IntroducedIn:   layerArtifacts.Hash,
 						DistributionID: distID,
 					}
 					dbs[pkg.PackageDB].packages[pkg.ID] = pkg
@@ -145,7 +138,7 @@ func (c *Coalescer) coalesce(ctx context.Context, artifacts []layerArtifacts) er
 		}
 	}
 	if ctx.Err() != nil {
-		return ctx.Err()
+		return nil, ctx.Err()
 	}
 	// we now have all the packages associated with their introduced in layers and environments.
 	// we must now prune any packages removed between layers. this coalescer works on the assumption
@@ -163,12 +156,12 @@ func (c *Coalescer) coalesce(ctx context.Context, artifacts []layerArtifacts) er
 	var packagesToKeep = map[string][]string{}
 	for i := len(artifacts) - 1; i >= 0; i-- {
 		layerArtifacts := artifacts[i]
-		if len(layerArtifacts.pkgs) == 0 {
+		if len(layerArtifacts.Pkgs) == 0 {
 			continue
 		}
 		// used as a temporary accumulator of package ids in this layer
 		var tmpPackagesToKeep = map[string][]string{}
-		for _, pkg := range layerArtifacts.pkgs {
+		for _, pkg := range layerArtifacts.Pkgs {
 			// have we already inventoried packages from this database ?
 			if _, ok := packagesToKeep[pkg.PackageDB]; !ok {
 				// ... we haven't so add to our temporary accumlator
@@ -203,5 +196,5 @@ func (c *Coalescer) coalesce(ctx context.Context, artifacts []layerArtifacts) er
 			c.ir.Environments[pkg.ID] = append(c.ir.Environments[pkg.ID], db.environments[pkg.ID])
 		}
 	}
-	return nil
+	return c.ir, nil
 }

@@ -13,7 +13,7 @@ type Ecosystem struct {
 	PackageScanners      func(ctx context.Context) ([]PackageScanner, error)
 	DistributionScanners func(ctx context.Context) ([]DistributionScanner, error)
 	RepositoryScanners   func(ctx context.Context) ([]RepositoryScanner, error)
-	Coalescer            func(ctx context.Context, store Store) (Coalescer, error)
+	Coalescer            func(ctx context.Context) (Coalescer, error)
 }
 
 // EcosystemsToScanners extracts and dedupes multiple ecosystems and returns their discrete scanners
