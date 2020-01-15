@@ -36,7 +36,7 @@ func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.IndexReco
 		batch.Queue(query)
 	}
 	// send the batch
-	tctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	tctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	res := tx.SendBatch(tctx, batch)
 	// Can't just defer the close, because the batch must be fully handled
