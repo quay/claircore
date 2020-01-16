@@ -1,0 +1,13 @@
+[book]
+title = "Claircore Documentation"
+authors = ["Claircore Authors"]
+description = "Additional documentation for Claircore."
+src = "docs"
+language = "en"
+
+[build]
+build-dir = "book"
+create-missing = true
+
+[output.html]
+git-repository-url= "https://github.com/quay/claircore"
