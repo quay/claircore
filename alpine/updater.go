@@ -4,9 +4,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
-
 	"github.com/quay/claircore/libvuln/driver"
 )
 
@@ -24,7 +21,6 @@ type Updater struct {
 	release Release
 	repo    Repo
 	url     string
-	logger  *zerolog.Logger // hack until the context-ified interfaces are used
 }
 
 var _ driver.Updater = (*Updater)(nil)
@@ -53,10 +49,6 @@ func NewUpdater(release Release, repo Repo, opts ...Option) (*Updater, error) {
 		if err := o(u); err != nil {
 			return nil, err
 		}
-	}
-
-	if u.logger == nil {
-		u.logger = &log.Logger
 	}
 
 	return u, nil

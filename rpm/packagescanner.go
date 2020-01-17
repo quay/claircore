@@ -80,12 +80,11 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	trace.Log(ctx, "layer:sha256", layer.Hash)
 	log := zerolog.Ctx(ctx).With().
-		Str("component", "package_scanner").
-		Str("name", ps.Name()).
+		Str("component", "rpm/Scanner.Scan").
 		Str("version", ps.Version()).
-		Str("kind", ps.Kind()).
 		Str("layer", layer.Hash).
 		Logger()
+	ctx = log.WithContext(ctx)
 	log.Debug().Msg("start")
 	defer log.Debug().Msg("done")
 

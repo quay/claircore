@@ -87,7 +87,7 @@ func Test_PutVulnerabilities_Tombstone_Bump(t *testing.T) {
 		t.Run(table.name, func(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
-			ctx, _ = log.TestLogger(ctx, t)
+			ctx = log.TestLogger(ctx, t)
 			db, store, _, teardown := TestStore(ctx, t)
 			defer teardown()
 
@@ -194,7 +194,7 @@ func Test_PutVulnerabilities_Tombstone_Stale(t *testing.T) {
 		t.Run(table.name, func(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
-			ctx, _ = log.TestLogger(ctx, t)
+			ctx = log.TestLogger(ctx, t)
 			db, store, _, teardown := TestStore(ctx, t)
 			defer teardown()
 

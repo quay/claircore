@@ -29,9 +29,10 @@ func NewController(m driver.Matcher, store vulnstore.Vulnerability) *Controller 
 
 func (mc *Controller) Match(ctx context.Context, records []*claircore.IndexRecord) (map[string][]*claircore.Vulnerability, error) {
 	log := zerolog.Ctx(ctx).With().
-		Str("component", "match-controller").
+		Str("component", "internal/matcher/Controller.Match").
 		Str("matcher", mc.m.Name()).
 		Logger()
+	ctx = log.WithContext(ctx)
 	// find the packages the matcher is interested in.
 	interested := mc.findInterested(records)
 	log.Debug().

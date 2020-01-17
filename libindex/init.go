@@ -35,6 +35,7 @@ func initStore(ctx context.Context, opts *Opts) (*sqlx.DB, indexer.Store, error)
 
 	// do migrations if requested
 	if opts.Migrations {
+
 		migrator := migrate.NewPostgresMigrator(db.DB)
 		migrator.Table = migrations.MigrationTable
 		err := migrator.Exec(migrate.Up, migrations.Migrations...)

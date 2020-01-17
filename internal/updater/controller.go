@@ -17,8 +17,6 @@ import (
 // Controller is a control structure for fetching, parsing, and updating a vulnstore.
 type Controller struct {
 	*Opts
-	// a logger with context
-	logger zerolog.Logger
 }
 
 // Opts are options used to create an Updater
@@ -39,16 +37,20 @@ type Opts struct {
 
 // New is a constructor for an Controller
 func New(opts *Opts) *Controller {
-	logger := log.With().Str("component", "update-controller").Str("name", opts.Name).Str("interval", opts.Interval.String()).Logger()
 	return &Controller{
-		Opts:   opts,
-		logger: logger,
+		Opts: opts,
 	}
 }
 
 // Start begins a long running update controller. cancel ctx to stop.
 func (u *Controller) Start(ctx context.Context) error {
-	u.logger.Info().Msg("now running")
+	log := zerolog.Ctx(ctx).With().
+		Str("component", "internal/updater/Controller").
+		Str("name", u.Name).
+		Dur("interval", u.Interval).
+		Logger()
+	ctx = log.WithContext(ctx)
+	log.Info().Msg("controller running")
 	go u.start(ctx)
 	return nil
 }
@@ -75,15 +77,21 @@ func (u *Controller) start(ctx context.Context) {
 
 // Update triggers an update procedure. exported to make testing easier.
 func (u *Controller) Update(ctx context.Context) error {
-	u.logger.Info().Msgf("looking for updates")
+	log := zerolog.Ctx(ctx).With().
+		Str("component", "internal/updater/Controller.Update").
+		Logger()
+	ctx = log.WithContext(ctx)
+	log.Info().Msg("looking for updates")
 	// attempt to get distributed lock. if we cannot another updater is currently updating the vulnstore
 	locked, err := u.tryLock(ctx)
 	if err != nil {
-		u.logger.Error().Msgf("unexpected error while trying lock: %v", err)
+		log.Error().
+			Err(err).
+			Msg("unexpected error while trying lock")
 		return err
 	}
 	if !locked {
-		u.logger.Debug().Msgf("another process is updating. waiting till next update interval")
+		log.Debug().Msg("another process is updating. waiting till next update interval")
 		return nil
 	}
 	defer u.Lock.Unlock()
@@ -91,11 +99,10 @@ func (u *Controller) Update(ctx context.Context) error {
 	// fetch and check if we need to update.
 	vulnDB, shouldUpdate, updateHash, err := u.fetchAndCheck(ctx)
 	if err != nil {
-		u.logger.Error().Msgf("%v. lock released", err)
 		return err
 	}
 	if !shouldUpdate {
-		u.logger.Info().Msgf("no updates were necessary. lock released")
+		log.Debug().Msg("no updates necessary")
 		return nil
 	}
 	defer vulnDB.Close()
@@ -103,11 +110,10 @@ func (u *Controller) Update(ctx context.Context) error {
 	// parse the vulnDB and put the parsed contents into the vulnstore
 	err = u.parseAndStore(ctx, vulnDB, updateHash)
 	if err != nil {
-		u.logger.Error().Msgf("%v", err)
 		return err
 	}
 
-	u.logger.Info().Msg("successfully updated the vulnstore")
+	log.Info().Msg("successfully updated the vulnstore")
 	return nil
 }
 

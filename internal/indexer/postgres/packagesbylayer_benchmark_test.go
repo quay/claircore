@@ -92,7 +92,7 @@ func Benchmark_PackagesByLayer(b *testing.B) {
 		b.Run(bench.name, func(b *testing.B) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
-			ctx, _ = log.TestLogger(ctx, b)
+			ctx = log.TestLogger(ctx, b)
 			db, store, _, teardown := TestStore(ctx, b)
 			defer teardown()
 

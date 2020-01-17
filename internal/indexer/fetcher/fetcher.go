@@ -76,7 +76,7 @@ func (f *fetcher) filename(l *claircore.Layer) string {
 // fetching an individual layer's contents.
 func (f *fetcher) fetch(ctx context.Context, layer *claircore.Layer) error {
 	log := zerolog.Ctx(ctx).With().
-		Str("component", "fetcher.fetch").
+		Str("component", "internal/indexer/fetcher/fetcher.fetch").
 		Str("layer", layer.Hash).
 		Logger()
 	log.Debug().Msg("layer fetch start")

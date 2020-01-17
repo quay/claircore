@@ -75,8 +75,6 @@ type Controller struct {
 	report *claircore.IndexReport
 	// a fatal error halting the scanning process
 	err error
-	// a logger with context. set on Scan() method call
-	logger zerolog.Logger
 }
 
 // New constructs a controller given an Opts struct
@@ -105,6 +103,12 @@ func New(opts *indexer.Opts) *Controller {
 // Initial state set in constructor.
 // Call Lock() before using and Unlock() when finished scanning.
 func (s *Controller) Index(ctx context.Context, manifest *claircore.Manifest) *claircore.IndexReport {
+	log := zerolog.Ctx(ctx).With().
+		Str("component", "internal/indexer/controller/Controller.Index").
+		Str("manifest", s.manifest.Hash).
+		Str("state", s.getState().String()).
+		Logger()
+	ctx = log.WithContext(ctx)
 	// defer the removal of any tmp files if fetcher is configured for OnDisk or Tee download
 	// no-op otherwise. see Fetcher for more info
 	defer s.Fetcher.Close()
@@ -112,11 +116,7 @@ func (s *Controller) Index(ctx context.Context, manifest *claircore.Manifest) *c
 	s.manifest = manifest
 	s.report.Hash = manifest.Hash
 	// setup our logger. all stateFuncs may use this to log with a log context
-	s.logger = zerolog.Ctx(ctx).With().
-		Str("component", "scan-controller").
-		Str("manifest", s.manifest.Hash).
-		Logger()
-	s.logger.Info().Str("state", s.getState().String()).Msg("starting scan")
+	log.Info().Msg("starting scan")
 	s.run(ctx)
 	return s.report
 }
@@ -144,15 +144,20 @@ func (s *Controller) run(ctx context.Context) {
 // handleError updates the IndexReport to communicate an error and attempts
 // to persist this information.
 func (s *Controller) handleError(ctx context.Context, err error) {
-	s.logger.Error().Str("state", s.getState().String()).Msg("handling scan error")
+	log := zerolog.Ctx(ctx)
+	log.Info().Msg("handling scan error")
 	s.report.Success = false
 	s.report.Err = err.Error()
 	s.report.State = IndexError.String()
-	s.logger.Err(err).Msgf("countered error during scan: %v", err)
+	log.Warn().
+		Err(err).
+		Msg("error during scan")
 	err = s.Store.SetIndexReport(ctx, s.report)
 	if err != nil {
 		// just log, we are about to bail anyway
-		s.logger.Error().Msgf("failed to push scan report when handling error: %v", err)
+		log.Error().
+			Err(err).
+			Msg("failed to persist scan report")
 	}
 }
 

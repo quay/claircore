@@ -5,7 +5,6 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/matcher"
@@ -23,17 +22,21 @@ type Libvuln struct {
 	db           *sqlx.DB
 	matchers     []driver.Matcher
 	killUpdaters context.CancelFunc
-	logger       zerolog.Logger
 }
 
 // New creates a new instance of the Libvuln library
 func New(ctx context.Context, opts *Opts) (*Libvuln, error) {
-	logger := log.With().Str("component", "libvuln").Logger()
+	log := zerolog.Ctx(ctx).With().
+		Str("component", "libvuln/New").
+		Logger()
+	ctx = log.WithContext(ctx)
 	err := opts.Parse()
 	if err != nil {
 		return nil, err
 	}
-	logger.Info().Msgf("initializing store with pool size: %v ", opts.MaxConnPool)
+	log.Info().
+		Int32("count", opts.MaxConnPool).
+		Msg("initializing store")
 	db, vulnstore, err := initStore(ctx, opts)
 	if err != nil {
 		return nil, err
@@ -41,21 +44,22 @@ func New(ctx context.Context, opts *Opts) (*Libvuln, error) {
 	eC := make(chan error, 1024)
 	dC := make(chan context.CancelFunc, 1)
 	// block on updater initialization.
-	logger.Info().Msg("beginning updater initialization")
+	log.Info().Msg("updater initialization start")
 	go initUpdaters(ctx, opts, db, vulnstore, dC, eC)
 	killUpdaters := <-dC
-	logger.Info().Msg("updaters initialized")
+	log.Info().Msg("updater initialization done")
 	for err := range eC {
-		logger.Error().Msgf("error from updater: %v", err)
+		log.Warn().
+			Err(err).
+			Msg("updater error")
 	}
 	l := &Libvuln{
 		store:        vulnstore,
 		db:           db,
 		matchers:     opts.Matchers,
 		killUpdaters: killUpdaters,
-		logger:       logger,
 	}
-	logger.Info().Msg("libvuln initialized")
+	log.Info().Msg("libvuln initialized")
 	return l, nil
 }
 

@@ -10,8 +10,8 @@ import (
 func fetchLayers(ctx context.Context, s *Controller) (State, error) {
 	log := zerolog.Ctx(ctx).With().
 		Str("state", s.getState().String()).
-		Str("manifest", s.manifest.Hash).
 		Logger()
+	ctx = log.WithContext(ctx)
 	log.Info().Msg("layers fetch start")
 	defer log.Info().Msg("layers fetch done")
 	toFetch, err := reduce(ctx, s.Store, s.Vscnrs, s.manifest.Layers)

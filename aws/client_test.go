@@ -129,7 +129,7 @@ func Test_Client_RepoMD(t *testing.T) {
 	tests := []Release{Linux1, Linux2}
 
 	for _, test := range tests {
-		client, err := NewClient(test)
+		client, err := NewClient(ctx, test)
 		assert.NoError(t, err)
 
 		tctx, cancel := context.WithTimeout(ctx, 15*time.Second)
@@ -148,7 +148,7 @@ func Test_Client_Updates(t *testing.T) {
 	tests := []Release{Linux1, Linux2}
 
 	for _, test := range tests {
-		client, err := NewClient(test)
+		client, err := NewClient(ctx, test)
 		assert.NoError(t, err)
 
 		tctx, cancel := context.WithTimeout(ctx, 15*time.Second)

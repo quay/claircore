@@ -14,7 +14,7 @@ func Test_GetHash_KeyNotExists(t *testing.T) {
 	integration.Skip(t)
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
-	ctx, _ = log.TestLogger(ctx, t)
+	ctx = log.TestLogger(ctx, t)
 	var tt = []struct {
 		name       string
 		iterations int
@@ -52,7 +52,7 @@ func Test_GetHash_KeyExists(t *testing.T) {
 	integration.Skip(t)
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
-	ctx, _ = log.TestLogger(ctx, t)
+	ctx = log.TestLogger(ctx, t)
 	var tt = []struct {
 		// the name of the test
 		name string

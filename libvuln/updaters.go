@@ -5,8 +5,6 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/rs/zerolog/log"
-
 	"github.com/quay/claircore/alpine"
 	"github.com/quay/claircore/aws"
 	"github.com/quay/claircore/debian"
@@ -100,7 +98,7 @@ func updaters() ([]driver.Updater, error) {
 	}
 
 	for year, lim := 2007, time.Now().Year(); year != lim; year++ {
-		u, err := oracle.NewUpdater(year, oracle.WithLogger(&log.Logger))
+		u, err := oracle.NewUpdater(year)
 		if err != nil {
 			return nil, fmt.Errorf("unable to create oracle updater: %v", err)
 		}
@@ -108,7 +106,7 @@ func updaters() ([]driver.Updater, error) {
 	}
 
 	for _, rel := range suseReleases {
-		u, err := suse.NewUpdater(rel, suse.WithLogger(&log.Logger))
+		u, err := suse.NewUpdater(rel)
 		if err != nil {
 			return nil, fmt.Errorf("unable to create suse updater: %v", err)
 		}

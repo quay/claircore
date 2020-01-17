@@ -10,7 +10,6 @@ import (
 
 	"github.com/quay/goval-parser/oval"
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
@@ -53,7 +52,6 @@ func init() {
 type Updater struct {
 	release          string
 	ovalutil.Fetcher // promoted Fetch method
-	logger           *zerolog.Logger
 }
 
 var (
@@ -71,11 +69,6 @@ func NewUpdater(r Release, opts ...Option) (*Updater, error) {
 			return nil, err
 		}
 	}
-	if u.logger == nil {
-		u.logger = &log.Logger
-	}
-	l := u.logger.With().Str("component", u.Name()).Logger()
-	u.logger = &l
 	if u.Fetcher.Client == nil {
 		u.Fetcher.Client = http.DefaultClient
 	}
@@ -120,17 +113,6 @@ func WithClient(c *http.Client) Option {
 	}
 }
 
-// WithLogger sets the default logger.
-//
-// Functions that take a context.Context will use the logger embedded in there
-// instead of the Logger passed in via this Option.
-func WithLogger(l *zerolog.Logger) Option {
-	return func(u *Updater) error {
-		u.logger = l
-		return nil
-	}
-}
-
 // Name satisfies driver.Updater.
 func (u *Updater) Name() string {
 	return fmt.Sprintf(`suse-updater-%s`, u.release)
@@ -138,7 +120,10 @@ func (u *Updater) Name() string {
 
 // ParseContext is like Parse, but with context.
 func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
-	log := zerolog.Ctx(ctx)
+	log := zerolog.Ctx(ctx).With().
+		Str("component", "suse/Updater.Parse").
+		Logger()
+	ctx = log.WithContext(ctx)
 	log.Info().Msg("starting parse")
 	defer r.Close()
 	root := oval.Root{}

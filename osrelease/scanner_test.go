@@ -27,7 +27,7 @@ func (c parsecase) Test(t *testing.T) {
 	t.Parallel()
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
-	ctx, log := log.TestLogger(ctx, t)
+	ctx = log.TestLogger(ctx, t)
 	ctx, task := trace.NewTask(ctx, "parse test")
 	defer task.End()
 	trace.Log(ctx, "parse test:file", c.File)
@@ -37,7 +37,7 @@ func (c parsecase) Test(t *testing.T) {
 		t.Errorf("unable to open file: %v", err)
 	}
 
-	got, err := parse(ctx, &log, f)
+	got, err := parse(ctx, f)
 	if err != nil {
 		t.Errorf("parse error: %v", err)
 	}
@@ -184,7 +184,7 @@ func (lc layercase) Test(t *testing.T) {
 	t.Parallel()
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
-	ctx, _ = log.TestLogger(ctx, t)
+	ctx = log.TestLogger(ctx, t)
 	s := Scanner{}
 	l := &claircore.Layer{}
 	if err := l.SetLocal(lc.name()); err != nil {

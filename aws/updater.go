@@ -34,7 +34,7 @@ func (u *Updater) Name() string {
 }
 
 func (u *Updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
-	client, err := NewClient(u.release)
+	client, err := NewClient(ctx, u.release)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to create client: %v", err)
 	}

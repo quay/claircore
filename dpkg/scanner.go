@@ -59,12 +59,11 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	trace.Log(ctx, "layer:sha256", layer.Hash)
 	log := zerolog.Ctx(ctx).With().
-		Str("component", "package_scanner").
-		Str("name", ps.Name()).
+		Str("component", "dpkg/Scanner.Scan").
 		Str("version", ps.Version()).
-		Str("kind", ps.Kind()).
 		Str("layer", layer.Hash).
 		Logger()
+	ctx = log.WithContext(ctx)
 	log.Debug().Msg("start")
 	defer log.Debug().Msg("done")
 
@@ -73,14 +72,12 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	// It's cleaner to just demand that it's a seeker.
 	rd, err := layer.Reader()
 	if err != nil {
-		log.Warn().Err(err).Msg("opening layer failed")
 		return nil, fmt.Errorf("opening layer failed: %w", err)
 	}
 	defer rd.Close()
 	r, ok := rd.(io.ReadSeeker)
 	if !ok {
 		err := errors.New("unable to coerce to io.Seeker")
-		log.Warn().Err(err).Msg("opening layer failed")
 		return nil, fmt.Errorf("opening layer failed: %w", err)
 	}
 
@@ -96,7 +93,6 @@ Find:
 		case io.EOF:
 			break Find
 		default:
-			log.Warn().Err(err).Msg("reading next header failed")
 			return nil, fmt.Errorf("reading next header failed: %w", err)
 		}
 		switch filepath.Base(h.Name) {
@@ -114,11 +110,13 @@ Find:
 		if x != 2 { // If we didn't find both files, skip this directory.
 			continue
 		}
-		log.Debug().Str("database", p).Msg("examining package database")
+		log := log.With().
+			Str("database", p).
+			Logger()
+		log.Debug().Msg("examining package database")
 
 		// Reset the tar reader.
 		if n, err := r.Seek(0, io.SeekStart); n != 0 || err != nil {
-			log.Warn().Err(err).Msg("unable to seek reader")
 			return nil, fmt.Errorf("unable to seek reader: %w", err)
 		}
 		tr = tar.NewReader(r)
@@ -136,10 +134,11 @@ Find:
 		// Check what happened in the above loop.
 		switch {
 		case err != nil:
-			log.Warn().Err(err).Msg("reading status file from layer failed")
 			return nil, fmt.Errorf("reading status file from layer failed: %w", err)
 		case db == nil:
-			log.Error().Str("filename", fn).Msg("unable to get reader for file")
+			log.Error().
+				Str("filename", fn).
+				Msg("unable to get reader for file")
 			panic("file existed, but now doesn't")
 		}
 
@@ -171,7 +170,6 @@ Find:
 
 		// Reset the tar reader, again.
 		if n, err := r.Seek(0, io.SeekStart); n != 0 || err != nil {
-			log.Warn().Err(err).Msg("resetting tar reader failed")
 			return nil, fmt.Errorf("resetting tar reader failed: %w", err)
 		}
 		tr = tar.NewReader(r)
@@ -188,12 +186,17 @@ Find:
 			}
 			hash := md5.New()
 			if _, err := io.Copy(hash, tr); err != nil {
-				log.Warn().Err(err).Str("package", n).Msg("unable to read package metadata")
+				log.Warn().
+					Err(err).
+					Str("package", n).
+					Msg("unable to read package metadata")
 				continue
 			}
 			found[n].RepositoryHint = hex.EncodeToString(hash.Sum(nil))
 		}
-		log.Debug().Str("database", p).Int("count", len(found)).Msg("found packages")
+		log.Debug().
+			Int("count", len(found)).
+			Msg("found packages")
 	}
 
 	return pkgs, nil

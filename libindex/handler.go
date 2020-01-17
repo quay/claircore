@@ -39,6 +39,7 @@ func (h *HTTP) Index(w http.ResponseWriter, r *http.Request) {
 	log := zerolog.Ctx(ctx).With().
 		Str("method", "index").
 		Logger()
+	ctx = log.WithContext(ctx)
 	if r.Method != http.MethodPost {
 		resp := &jsonerr.Response{
 			Code:    "method-not-allowed",
@@ -68,22 +69,17 @@ func (h *HTTP) Index(w http.ResponseWriter, r *http.Request) {
 			Code:    "scan-error",
 			Message: fmt.Sprintf("failed to start scan: %v", err),
 		}
-		log.Info().Err(err).Msg("failed to start scan")
+		log.Error().
+			Err(err).
+			Msg("failed to start scan")
 		jsonerr.Error(w, resp, http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("location", path.Join(r.URL.Path, m.Hash))
 	w.WriteHeader(http.StatusCreated)
-	err = json.NewEncoder(w).Encode(&ir)
-	if err != nil {
-		resp := &jsonerr.Response{
-			Code:    "serialization-error",
-			Message: fmt.Sprintf("failed to serialize indexre report: %v", err),
-		}
-		log.Info().Err(err).Msg("failed to serialize results")
-		jsonerr.Error(w, resp, http.StatusInternalServerError)
-		return
+	if err := json.NewEncoder(w).Encode(&ir); err != nil {
+		log.Error().Err(err).Msg("failed to serialize results")
 	}
 	return
 }
@@ -93,6 +89,7 @@ func (h *HTTP) IndexReport(w http.ResponseWriter, r *http.Request) {
 	log := zerolog.Ctx(ctx).With().
 		Str("method", "index_report").
 		Logger()
+	// Added to Context later.
 	if r.Method != http.MethodGet {
 		resp := &jsonerr.Response{
 			Code:    "method-not-allowed",
@@ -114,6 +111,7 @@ func (h *HTTP) IndexReport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log = log.With().Str("hash", hash).Logger()
+	ctx = log.WithContext(ctx)
 
 	// issue retrieval
 	sr, ok, err := h.l.IndexReport(ctx, hash)
@@ -142,7 +140,7 @@ func (h *HTTP) IndexReport(w http.ResponseWriter, r *http.Request) {
 	// serialize and return scanresult
 	if err = json.NewEncoder(w).Encode(sr); err != nil {
 		const msg = "could not return index report"
-		log.Warn().Err(err).Msg(msg)
+		log.Error().Err(err).Msg(msg)
 		// Too late to change our header, now.
 	}
 }

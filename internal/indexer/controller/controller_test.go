@@ -54,7 +54,7 @@ func Test_Controller_IndexerError(t *testing.T) {
 		t.Run(table.name, func(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
-			ctx, _ = log.TestLogger(ctx, t)
+			ctx = log.TestLogger(ctx, t)
 			store, fetcher := table.mock(t)
 			c := New(&indexer.Opts{
 				Store:   store,
@@ -114,7 +114,7 @@ func Test_Controller_IndexFinished(t *testing.T) {
 		t.Run(table.name, func(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
-			ctx, _ = log.TestLogger(ctx, t)
+			ctx = log.TestLogger(ctx, t)
 			store, fetcher := table.mock(t)
 			// set global startState for purpose of this test
 			startState = IndexFinished

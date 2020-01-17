@@ -13,7 +13,10 @@ import (
 )
 
 func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
-	log := zerolog.Ctx(ctx).With().Str("component", u.Name()).Logger()
+	log := zerolog.Ctx(ctx).With().
+		Str("component", "alpine/Updater.Fetch").
+		Logger()
+	ctx = log.WithContext(ctx)
 
 	log.Info().Str("database", u.url).Msg("starting fetch")
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.url, nil)
@@ -22,7 +25,9 @@ func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 	}
 
 	if hint != "" {
-		log.Debug().Msgf("using hint %q", hint)
+		log.Debug().
+			Str("hint", string(hint)).
+			Msg("using hint")
 		req.Header.Set("If-Modified-Since", string(hint))
 	}
 
@@ -47,7 +52,9 @@ func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 	if err != nil {
 		return nil, hint, fmt.Errorf("alpine: unable to open tempfile: %w", err)
 	}
-	log.Debug().Msgf("created tempfile %q", tf.Name())
+	log.Debug().
+		Str("name", tf.Name()).
+		Msg("created tempfile")
 
 	var r io.Reader = res.Body
 	if _, err := io.Copy(tf, r); err != nil {
@@ -63,7 +70,9 @@ func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 	} else {
 		hint = driver.Fingerprint(res.Header.Get("Date"))
 	}
-	log.Debug().Msgf("using new hint %q", hint)
+	log.Debug().
+		Str("hint", string(hint)).
+		Msg("using new hint")
 
 	return tf, hint, nil
 }

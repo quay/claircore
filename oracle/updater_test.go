@@ -13,11 +13,11 @@ import (
 func TestFetch(t *testing.T) {
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
-	ctx, l := log.TestLogger(ctx, t)
+	ctx = log.TestLogger(ctx, t)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "testdata/com.oracle.elsa-2018.xml")
 	}))
-	u, err := NewUpdater(-1, WithLogger(&l), WithURL(srv.URL, ""))
+	u, err := NewUpdater(-1, WithURL(srv.URL, ""))
 	if err != nil {
 		t.Fatal(err)
 	}

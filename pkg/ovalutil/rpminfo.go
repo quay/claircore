@@ -54,7 +54,10 @@ func (r *RPMInfo) dist(v string) *claircore.Distribution {
 // Extract pulls out all Vulnerabilites by walking all the definition's criteria
 // and pulling out rpm_info objects that have rpm_info evr tests.
 func (r *RPMInfo) Extract(ctx context.Context) ([]*claircore.Vulnerability, error) {
-	log := zerolog.Ctx(ctx).With().Str("routine", "rpminfo_extract").Logger()
+	log := zerolog.Ctx(ctx).With().
+		Str("component", "pkg/ovalutil/RPMInfo.Extract").
+		Logger()
+	ctx = log.WithContext(ctx)
 	defs := r.root.Definitions.Definitions
 	vs := make([]*claircore.Vulnerability, 0, len(defs))
 
@@ -127,7 +130,10 @@ func (r *RPMInfo) Extract(ctx context.Context) ([]*claircore.Vulnerability, erro
 		}
 	}
 
-	log.Info().Msgf("found %d vulnerabilities in %d definitions", len(vs), len(defs))
+	log.Info().
+		Int("vulnerabilities", len(vs)).
+		Int("definitions", len(defs)).
+		Msg("database processed")
 	return vs, nil
 }
 

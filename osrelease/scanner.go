@@ -53,12 +53,11 @@ func (*Scanner) Kind() string { return scannerKind }
 func (s *Scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Distribution, error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	log := zerolog.Ctx(ctx).With().
-		Str("component", "dist_scanner").
-		Str("name", s.Name()).
+		Str("component", "osrelease/Scanner.Scan").
 		Str("version", s.Version()).
-		Str("kind", s.Kind()).
 		Str("layer", l.Hash).
 		Logger()
+	ctx = log.WithContext(ctx)
 	log.Debug().Msg("start")
 	defer log.Debug().Msg("done")
 
@@ -79,7 +78,7 @@ func (s *Scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Di
 			if base != "os-release" {
 				continue
 			}
-			d, err := parse(ctx, &log, tr)
+			d, err := parse(ctx, tr)
 			if err == nil {
 				return []*claircore.Distribution{d}, nil
 			}
@@ -101,7 +100,10 @@ func (s *Scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Di
 
 // Parse returns the distribution information from the file contents provided on
 // r.
-func parse(ctx context.Context, log *zerolog.Logger, r io.Reader) (*claircore.Distribution, error) {
+func parse(ctx context.Context, r io.Reader) (*claircore.Distribution, error) {
+	log := zerolog.Ctx(ctx).With().
+		Str("component", "osrelease/parse").
+		Logger()
 	defer trace.StartRegion(ctx, "parse").End()
 	d := claircore.Distribution{
 		Name: "Linux",

@@ -52,12 +52,11 @@ func (*Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	trace.Log(ctx, "layer:sha256", layer.Hash)
 	log := zerolog.Ctx(ctx).With().
-		Str("component", "package_scanner").
-		Str("name", pkgName).
+		Str("component", "alpine/Scanner.Scan").
 		Str("version", pkgVersion).
-		Str("kind", pkgKind).
 		Str("layer", layer.Hash).
 		Logger()
+	ctx = log.WithContext(ctx)
 	log.Debug().Msg("start")
 	defer log.Debug().Msg("done")
 

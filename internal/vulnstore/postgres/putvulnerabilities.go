@@ -93,8 +93,9 @@ const (
 // told tombstone as they can be considered stale.
 func putVulnerabilities(ctx context.Context, pool *pgxpool.Pool, updater string, hash string, vulns []*claircore.Vulnerability) error {
 	log := zerolog.Ctx(ctx).With().
-		Str("component", "putVulnerabilities").
+		Str("component", "internal/vulnstore/postgres/putVulnerabilities").
 		Logger()
+	ctx = log.WithContext(ctx)
 	// get old tombstone
 	var oldTombstone string
 	row := pool.QueryRow(ctx, selectTombstone, updater)
