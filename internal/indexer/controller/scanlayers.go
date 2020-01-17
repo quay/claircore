@@ -3,11 +3,13 @@ package controller
 import (
 	"context"
 	"fmt"
+
+	"github.com/rs/zerolog"
 )
 
 // scanLayers will run all scanner types against all layers if deemed necssary to scan
 func scanLayers(ctx context.Context, c *Controller) (State, error) {
-	log := c.logger.With().Str("state", c.getState().String()).Logger()
+	log := zerolog.Ctx(ctx)
 	log.Info().Msg("layers scan start")
 	defer log.Info().Msg("layers scan done")
 	err := c.LayerScanner.Scan(ctx, c.manifest.Hash, c.manifest.Layers)

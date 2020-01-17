@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/rs/zerolog"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/quay/claircore"
@@ -20,8 +19,6 @@ type layerScanner struct {
 	cLevel int
 	// a channel to implement concurrency control
 	cc chan struct{}
-	// a logger that can be called with context
-	logger zerolog.Logger
 }
 
 // New is a constructor for a defaultLayerScanner

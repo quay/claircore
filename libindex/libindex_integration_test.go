@@ -118,7 +118,7 @@ func (tc testcase) Run(ctx context.Context, check checkFunc) func(*testing.T) {
 		t.Parallel()
 		ctx, done := context.WithCancel(ctx)
 		defer done()
-		ctx, _ = log.TestLogger(ctx, t)
+		ctx = log.TestLogger(ctx, t)
 		_, _, dsn, teardown := postgres.TestStore(ctx, t)
 		defer teardown()
 		tc.RunInner(ctx, t, dsn, check)

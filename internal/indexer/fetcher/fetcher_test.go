@@ -38,7 +38,7 @@ func (tc testcase) Run(ctx context.Context) func(*testing.T) {
 	ctx, done := context.WithCancel(ctx)
 	return func(t *testing.T) {
 		defer done()
-		ctx, _ = log.TestLogger(ctx, t)
+		ctx = log.TestLogger(ctx, t)
 		layers := test.ServeLayers(ctx, t, tc.N)
 		for _, l := range layers {
 			t.Logf("%+v", l)
@@ -100,7 +100,7 @@ func TestInvalid(t *testing.T) {
 		t.Run(table.name, func(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
-			ctx, _ = log.TestLogger(ctx, t)
+			ctx = log.TestLogger(ctx, t)
 			fetcher := New(&testClient, indexer.InMem)
 			if err := fetcher.Fetch(ctx, table.layer); err == nil {
 				t.Fatal("expected error, got nil")

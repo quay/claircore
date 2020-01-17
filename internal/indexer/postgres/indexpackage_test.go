@@ -105,7 +105,7 @@ func Test_IndexPackages_Success_Parallel(t *testing.T) {
 				t.Parallel()
 				ctx, done := context.WithCancel(ctx)
 				defer done()
-				ctx, _ = log.TestLogger(ctx, t)
+				ctx = log.TestLogger(ctx, t)
 				// gen a scnr and insert
 				vscnrs := test.GenUniquePackageScanners(1)
 				err := pgtest.InsertUniqueScanners(db, vscnrs)
@@ -199,7 +199,7 @@ func Test_IndexPackages_Success(t *testing.T) {
 		t.Run(table.name, func(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
-			ctx, _ = log.TestLogger(ctx, t)
+			ctx = log.TestLogger(ctx, t)
 			db, store, _, teardown := TestStore(ctx, t)
 			defer teardown()
 

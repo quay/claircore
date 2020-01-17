@@ -52,7 +52,7 @@ INSERT INTO package_scanartifact (layer_hash, package_db, repository_hint, packa
 // particular scnr. see layerScanned method for more details.
 func indexPackages(ctx context.Context, db *sqlx.DB, pool *pgxpool.Pool, pkgs []*claircore.Package, layer *claircore.Layer, scnr indexer.VersionedScanner) error {
 	log := zerolog.Ctx(ctx).With().
-		Str("component", "indexPackages").
+		Str("component", "internal/indexer/postgres/indexPackages").
 		Logger()
 	// obtain a transaction scoped batch
 	tx, err := pool.Begin(ctx)

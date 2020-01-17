@@ -18,7 +18,10 @@ const (
 var _ driver.Parser = (*Updater)(nil)
 
 func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
-	log := zerolog.Ctx(ctx).With().Str("component", u.Name()).Logger()
+	log := zerolog.Ctx(ctx).With().
+		Str("component", "apline/Updater.Parse").
+		Logger()
+	ctx = log.WithContext(ctx)
 	log.Info().Msg("starting parse")
 	defer r.Close()
 

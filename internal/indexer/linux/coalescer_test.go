@@ -17,7 +17,7 @@ import (
 func Test_Coalescer(t *testing.T) {
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
-	ctx, _ = log.TestLogger(ctx, t)
+	ctx = log.TestLogger(ctx, t)
 	coalescer := &Coalescer{
 		store: nil,
 		ps:    nil,

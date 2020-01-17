@@ -61,7 +61,10 @@ type Fetcher struct {
 //
 // Tmp.File is used to return a ReadCloser that outlives the passed-in context.
 func (f *Fetcher) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
-	log := zerolog.Ctx(ctx).With().Str("routine", "ovalutil_fetcher").Logger()
+	log := zerolog.Ctx(ctx).With().
+		Str("component", "pkg/ovalutil/Fetcher.Fetch").
+		Logger()
+	ctx = log.WithContext(ctx)
 	log.Info().Str("database", f.URL.String()).Msg("starting fetch")
 	req := http.Request{
 		Method: http.MethodGet,
@@ -75,7 +78,9 @@ func (f *Fetcher) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 		Host:       f.URL.Host,
 	}
 	if hint != "" {
-		log.Debug().Msgf("using hint %q", hint)
+		log.Debug().
+			Str("hint", string(hint)).
+			Msg("using hint")
 		req.Header.Set("If-Modified-Since", string(hint))
 	}
 
@@ -105,13 +110,17 @@ func (f *Fetcher) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 	default:
 		panic(fmt.Sprintf("ovalutil: programmer error: unknown compression scheme: %v", f.Compression))
 	}
-	log.Debug().Msgf("using compression scheme %q", f.Compression)
+	log.Debug().
+		Str("compression", f.Compression.String()).
+		Msg("found compression scheme")
 
 	tf, err := tmp.NewFile("", "fetcher.")
 	if err != nil {
 		return nil, hint, err
 	}
-	log.Debug().Msgf("using tempfile %q", tf.Name())
+	log.Debug().
+		Str("path", tf.Name()).
+		Msg("using tempfile")
 	success := false
 	defer func() {
 		if !success {
@@ -133,7 +142,9 @@ func (f *Fetcher) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 	if t := res.Header.Get("Last-Modified"); t != "" {
 		hint = driver.Fingerprint(t)
 	}
-	log.Debug().Msgf("using new hint %q", hint)
+	log.Debug().
+		Str("hint", string(hint)).
+		Msg("using new hint")
 	success = true
 	return tf, hint, nil
 }

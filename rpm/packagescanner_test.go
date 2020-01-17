@@ -1247,7 +1247,7 @@ func TestScan(t *testing.T) {
 	}
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
-	ctx, _ = log.TestLogger(ctx, t)
+	ctx = log.TestLogger(ctx, t)
 	l := &claircore.Layer{
 		Hash: hash,
 	}

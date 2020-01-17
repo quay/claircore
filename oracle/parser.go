@@ -18,7 +18,10 @@ var _ driver.Parser = (*Updater)(nil)
 
 // ParseContext is like Parse, but with context.
 func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
-	log := zerolog.Ctx(ctx)
+	log := zerolog.Ctx(ctx).With().
+		Str("component", "oracle/Updater.Parse").
+		Logger()
+	ctx = log.WithContext(ctx)
 	log.Info().Msg("starting parse")
 	defer r.Close()
 	root := oval.Root{}

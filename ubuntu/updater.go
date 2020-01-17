@@ -9,7 +9,6 @@ import (
 
 	"github.com/quay/goval-parser/oval"
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
@@ -41,7 +40,6 @@ type Updater struct {
 	// the release name as described by os-releae "VERSION_CODENAME"
 	release Release
 	c       *http.Client
-	logger  zerolog.Logger
 	// the current vulnerability being parsed. see the Parse() method for more details
 	curVuln claircore.Vulnerability
 }
@@ -59,17 +57,20 @@ func NewUpdater(release Release) *Updater {
 		url = fmt.Sprintf(OVALTemplate, release)
 	}
 
-	updaterComp := fmt.Sprintf("ubuntu-%s-updater", release)
 	return &Updater{
 		url:     url,
 		release: release,
 		c:       &http.Client{},
-		logger:  log.With().Str("component", updaterComp).Str("database", url).Logger(),
 	}
 }
 
 func (u *Updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
-	u.logger.Info().Msg("fetching latest oval database")
+	log := zerolog.Ctx(ctx).With().
+		Str("component", "ubuntu/Updater.Fetch").
+		Str("database", u.url).
+		Logger()
+	ctx = log.WithContext(ctx)
+	log.Info().Msg("fetching latest oval database")
 	var rc io.ReadCloser
 	var hash string
 	var err error
@@ -80,22 +81,28 @@ func (u *Updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io
 		rc, hash, err = u.fetch(ctx)
 	}
 
-	u.logger.Info().Msg("fetched latest oval database successfully")
+	log.Info().Msg("fetched latest oval database successfully")
 	return rc, driver.Fingerprint(hash), err
 }
 
 func (u *Updater) Parse(ctx context.Context, contents io.ReadCloser) ([]*claircore.Vulnerability, error) {
-	u.logger.Info().Msg("parsing oval database")
+	log := zerolog.Ctx(ctx).With().
+		Str("component", "ubuntu/Updater.Parse").
+		Str("database", u.url).
+		Logger()
+	ctx = log.WithContext(ctx)
+	log.Info().Msg("parsing oval database")
 	defer contents.Close()
 
-	u.logger.Debug().Msg("decoding xml database")
+	log.Debug().Msg("decoding xml database")
 	ovalRoot := oval.Root{}
 	err := xml.NewDecoder(contents).Decode(&ovalRoot)
 	if err != nil {
-		u.logger.Error().Msgf("failed to decode OVAL xml contents: %v", err)
 		return nil, fmt.Errorf("failed to decode OVAL xml contents: %v", err)
 	}
-	u.logger.Debug().Msgf("finished decoding xml database. found %d definitions (may not all be vulnerabilities)", len(ovalRoot.Definitions.Definitions))
+	log.Debug().
+		Int("count", len(ovalRoot.Definitions.Definitions)).
+		Msg("finished decoding xml database")
 
 	result := []*claircore.Vulnerability{}
 	for _, def := range ovalRoot.Definitions.Definitions {
@@ -126,7 +133,9 @@ func (u *Updater) Parse(ctx context.Context, contents io.ReadCloser) ([]*clairco
 		vulns := u.unpack(def.Criteria, []*claircore.Vulnerability{})
 		result = append(result, vulns...)
 	}
-	u.logger.Info().Msgf("parsed oval database. found %d vulnerabilites", len(result))
+	log.Info().
+		Int("count", len(result)).
+		Msg("parsed oval database")
 	return result, nil
 }
 
