@@ -84,6 +84,7 @@ func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.IndexReco
 				&v.Repo.URI,
 				&v.Dist.PrettyName,
 				&v.FixedInVersion,
+				&v.Updater,
 			)
 			v.ID = strconv.FormatInt(id, 10)
 			if err != nil {
