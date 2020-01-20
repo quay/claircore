@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Content-Addressability - Claircore Documentation</title>
+        <title>Contributors - Claircore Documentation</title>
         
 
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
@@ -81,7 +81,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div id="sidebar-scrollbox" class="sidebar-scrollbox">
-                <ol class="chapter"><li class="expanded "><a href="highlevel_architecture.html"><strong aria-hidden="true">1.</strong> Highlevel Architecture</a></li><li class="expanded "><a href="vulnerability_matching.html"><strong aria-hidden="true">2.</strong> Vulnerability Matching</a></li><li class="expanded "><a href="indexer_architecture.html"><strong aria-hidden="true">3.</strong> Indexer Architecture</a></li><li class="expanded "><a href="matcher_architecture.html"><strong aria-hidden="true">4.</strong> Matching Architecture</a></li><li class="expanded "><a href="content_addressability.html" class="active"><strong aria-hidden="true">5.</strong> Content-Addressability</a></li><li class="expanded "><a href="contributor.html"><strong aria-hidden="true">6.</strong> Contributors</a></li><li><ol class="section"><li class="expanded "><a href="contributor/logging.html"><strong aria-hidden="true">6.1.</strong> Logging</a></li><li class="expanded "><a href="local-dev.html"><strong aria-hidden="true">6.2.</strong> Local Development</a></li></ol></li></ol>
+                <ol class="chapter"><li class="expanded "><a href="highlevel_architecture.html"><strong aria-hidden="true">1.</strong> Highlevel Architecture</a></li><li class="expanded "><a href="vulnerability_matching.html"><strong aria-hidden="true">2.</strong> Vulnerability Matching</a></li><li class="expanded "><a href="indexer_architecture.html"><strong aria-hidden="true">3.</strong> Indexer Architecture</a></li><li class="expanded "><a href="matcher_architecture.html"><strong aria-hidden="true">4.</strong> Matching Architecture</a></li><li class="expanded "><a href="content_addressability.html"><strong aria-hidden="true">5.</strong> Content-Addressability</a></li><li class="expanded "><a href="contributor.html" class="active"><strong aria-hidden="true">6.</strong> Contributors</a></li><li><ol class="section"><li class="expanded "><a href="contributor/logging.html"><strong aria-hidden="true">6.1.</strong> Logging</a></li><li class="expanded "><a href="local-dev.html"><strong aria-hidden="true">6.2.</strong> Local Development</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -152,28 +152,20 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#content-addressability" id="content-addressability">Content-Addressability</a></h1>
-<p>ClairCore treats both image hashes and layer hashes as content addressable.<br />
-Manifests MUST provide a content addressable hash uniquely identifying the image as a whole.<br />
-Layers MUST provide a content addressable hash unique identifying the layer's contents.</p>
-<h1><a class="header" href="#reducing-work" id="reducing-work">Reducing work</a></h1>
-<p>ClairCore will use content addressable hashes to understand what work it needs to perform.<br />
-If ClairCore comes across a image or layer hash which has been scanned by all configured scanners it will retrieve the existing results and not perform work.<br />
-If ClairCore is started with a new set of package scanners and encounters a previously seen image or layer hash it will rescan the image or layer.<br />
-ClairCore will only perform a scan with the missing scanner on the incoming image or layers.</p>
+                        <h1><a class="header" href="#contributors" id="contributors">Contributors</a></h1>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
                         
-                            <a rel="prev" href="matcher_architecture.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="content_addressability.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
                         
 
                         
-                            <a rel="next" href="contributor.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next" href="contributor/logging.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
                         
@@ -185,13 +177,13 @@ ClairCore will only perform a scan with the missing scanner on the incoming imag
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
                 
-                    <a href="matcher_architecture.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a href="content_addressability.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
                 
 
                 
-                    <a href="contributor.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a href="contributor/logging.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
                 
