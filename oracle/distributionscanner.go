@@ -1,4 +1,4 @@
-package debian
+package oracle
 
 import (
 	"bytes"
@@ -11,44 +11,53 @@ import (
 	"github.com/rs/zerolog"
 )
 
+// Oracle Linux does provide sub major releases such as 7.7 and 6.10
+// however their elsa OVAL xml sec db always references the major release
+// for example: <platform>Oracle Linux 5</platform>
+// for this reason the oracle distribution scanner will detect and normalize
+// sub releases to major releases to match vulnerabilities correctly
+
 const (
-	scannerName    = "debian"
+	scannerName    = "oracle"
 	scannerVersion = "v0.0.1"
 	scannerKind    = "distribution"
 )
 
-type debianRegex struct {
+const osReleasePath = `etc/os-release`
+
+// Oracle Linux 5 will not have os-release and only has etc/issue
+const issuePath = `etc/issue`
+
+type oracleRegex struct {
 	release Release
 	regexp  *regexp.Regexp
 }
 
-var debianRegexes = []debianRegex{
+var oracleRegexes = []oracleRegex{
 	{
-		release: Buster,
-		regexp:  regexp.MustCompile(`(?is)debian gnu/linux 10`),
+		release: Five,
+		// regex for /etc/issue
+		regexp: regexp.MustCompile(`(?is)Oracle Linux Server release ?5(\.\d*)?`),
 	},
 	{
-		release: Jessie,
-		regexp:  regexp.MustCompile(`(?is)debian gnu/linux 8`),
+		release: Six,
+		regexp:  regexp.MustCompile(`(?is)Oracle Linux Server 6(\.\d*)?`),
 	},
 	{
-		release: Stretch,
-		regexp:  regexp.MustCompile(`(?is)debian gnu/linux 9`),
+		release: Seven,
+		regexp:  regexp.MustCompile(`(?is)Oracle Linux Server 7(\.\d*)?`),
 	},
 	{
-		release: Wheezy,
-		regexp:  regexp.MustCompile(`(?is)debian gnu/linux 7`),
+		release: Eight,
+		regexp:  regexp.MustCompile(`(?is)Oracle Linux Server 8(\.\d*)?`),
 	},
 }
-
-const osReleasePath = `etc/os-release`
-const issuePath = `etc/issue`
 
 var _ indexer.DistributionScanner = (*DistributionScanner)(nil)
 var _ indexer.VersionedScanner = (*DistributionScanner)(nil)
 
 // DistributionScanner attempts to discover if a layer
-// displays characteristics of a Debian distribution
+// displays characteristics of a Oracle distribution
 type DistributionScanner struct{}
 
 // Name implements scanner.VersionedScanner.
@@ -61,14 +70,14 @@ func (*DistributionScanner) Version() string { return scannerVersion }
 func (*DistributionScanner) Kind() string { return scannerKind }
 
 // Scan will inspect the layer for an os-release or lsb-release file
-// and perform a regex match for keywords indicating the associated Debian release
+// and perform a regex match for keywords indicating the associated Oracle release
 //
 // If neither file is found a (nil,nil) is returned.
 // If the files are found but all regexp fail to match an empty distribution is returned.
 func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Distribution, error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	log := zerolog.Ctx(ctx).With().
-		Str("component", "debian_dist_scanner").
+		Str("component", "oracle_dist_scanner").
 		Str("name", ds.Name()).
 		Str("version", ds.Version()).
 		Str("kind", ds.Kind()).
@@ -78,7 +87,7 @@ func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]
 	defer log.Debug().Msg("done")
 	files, err := l.Files(osReleasePath, issuePath)
 	if err != nil {
-		log.Debug().Msg("didn't find an os-release or issue file")
+		log.Debug().Msg("didn't find an os-release or issues file")
 		return nil, nil
 	}
 	for _, buff := range files {
@@ -90,12 +99,12 @@ func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]
 	return []*claircore.Distribution{&claircore.Distribution{}}, nil
 }
 
-// parse attempts to match all Debian release regexp and returns the associated
+// parse attempts to match all Oracle release regexp and returns the associated
 // distribution if it exists.
 //
 // separated to it's own method to aide testing.
 func (ds *DistributionScanner) parse(buff *bytes.Buffer) *claircore.Distribution {
-	for _, ur := range debianRegexes {
+	for _, ur := range oracleRegexes {
 		if ur.regexp.Match(buff.Bytes()) {
 			return releaseToDist(ur.release)
 		}
