@@ -21,6 +21,7 @@ var linux1Dist = &claircore.Distribution{
 	Version:    "2018.03",
 	VersionID:  "2018.03",
 	PrettyName: "Amazon Linux AMI 2018.03",
+	CPE:        "cpe:/o:amazon:linux:2018.03:ga",
 }
 
 var linux2Dist = &claircore.Distribution{
@@ -29,6 +30,7 @@ var linux2Dist = &claircore.Distribution{
 	Version:    "2",
 	VersionID:  "2",
 	PrettyName: "Amazon Linux 2",
+	CPE:        "cpe:2.3:o:amazon:amazon_linux:2",
 }
 
 func releaseToDist(release Release) (*claircore.Distribution, error) {
