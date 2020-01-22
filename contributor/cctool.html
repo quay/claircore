@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Matching Architecture - Claircore Documentation</title>
+        <title>cctool - Claircore Documentation</title>
         
 
         <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
@@ -11,21 +11,21 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#ffffff" />
 
-        <link rel="shortcut icon" href="favicon.png">
-        <link rel="stylesheet" href="css/variables.css">
-        <link rel="stylesheet" href="css/general.css">
-        <link rel="stylesheet" href="css/chrome.css">
-        <link rel="stylesheet" href="css/print.css" media="print">
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
 
         <!-- Fonts -->
-        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
         <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
         <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
 
         <!-- Highlight.js Stylesheets -->
-        <link rel="stylesheet" href="highlight.css">
-        <link rel="stylesheet" href="tomorrow-night.css">
-        <link rel="stylesheet" href="ayu-highlight.css">
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
 
         <!-- Custom theme stylesheets -->
         
@@ -35,7 +35,7 @@
     <body>
         <!-- Provide site root to javascript -->
         <script type="text/javascript">
-            var path_to_root = "";
+            var path_to_root = "../";
             var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "light" : "light";
         </script>
 
@@ -81,7 +81,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div id="sidebar-scrollbox" class="sidebar-scrollbox">
-                <ol class="chapter"><li class="expanded "><a href="highlevel_architecture.html"><strong aria-hidden="true">1.</strong> Highlevel Architecture</a></li><li class="expanded "><a href="vulnerability_matching.html"><strong aria-hidden="true">2.</strong> Vulnerability Matching</a></li><li class="expanded "><a href="indexer_architecture.html"><strong aria-hidden="true">3.</strong> Indexer Architecture</a></li><li class="expanded "><a href="matcher_architecture.html" class="active"><strong aria-hidden="true">4.</strong> Matching Architecture</a></li><li class="expanded "><a href="content_addressability.html"><strong aria-hidden="true">5.</strong> Content-Addressability</a></li><li class="expanded "><a href="contributor.html"><strong aria-hidden="true">6.</strong> Contributors</a></li><li><ol class="section"><li class="expanded "><a href="contributor/logging.html"><strong aria-hidden="true">6.1.</strong> Logging</a></li><li class="expanded "><a href="local-dev.html"><strong aria-hidden="true">6.2.</strong> Local Development</a></li><li class="expanded "><a href="contributor/cctool.html"><strong aria-hidden="true">6.3.</strong> cctool</a></li></ol></li></ol>
+                <ol class="chapter"><li class="expanded "><a href="../highlevel_architecture.html"><strong aria-hidden="true">1.</strong> Highlevel Architecture</a></li><li class="expanded "><a href="../vulnerability_matching.html"><strong aria-hidden="true">2.</strong> Vulnerability Matching</a></li><li class="expanded "><a href="../indexer_architecture.html"><strong aria-hidden="true">3.</strong> Indexer Architecture</a></li><li class="expanded "><a href="../matcher_architecture.html"><strong aria-hidden="true">4.</strong> Matching Architecture</a></li><li class="expanded "><a href="../content_addressability.html"><strong aria-hidden="true">5.</strong> Content-Addressability</a></li><li class="expanded "><a href="../contributor.html"><strong aria-hidden="true">6.</strong> Contributors</a></li><li><ol class="section"><li class="expanded "><a href="../contributor/logging.html"><strong aria-hidden="true">6.1.</strong> Logging</a></li><li class="expanded "><a href="../local-dev.html"><strong aria-hidden="true">6.2.</strong> Local Development</a></li><li class="expanded "><a href="../contributor/cctool.html" class="active"><strong aria-hidden="true">6.3.</strong> cctool</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -116,7 +116,7 @@
                         <h1 class="menu-title">Claircore Documentation</h1>
 
                         <div class="right-buttons">
-                            <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <a href="../print.html" title="Print this book" aria-label="Print this book">
                                 <i id="print-button" class="fa fa-print"></i>
                             </a>
                             
@@ -152,29 +152,36 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1><a class="header" href="#matcher-architecture" id="matcher-architecture">Matcher Architecture</a></h1>
-<p><code>claircore/internal/matcher</code><br />
-<code>claircore/libvuln/driver</code></p>
-<p>The <code>Matcher</code> architecture is based on a data flow application.<br />
-The <code>Matcher</code> functionality is implemented via a Controller in the <code>matcher</code> package and interface definitions within the <code>libvuln.driver</code> package.<br />
-When <code>libvuln</code> is provided a <code>IndexReport</code> the <code>Matcher</code> package will transform the <code>IndexReport</code> into a stream of <code>IndexRecord</code> structs.<br />
-The <code>Matcher</code> package then instantiates each implemented <code>driver.Matcher</code> interface and utilizes these implementations to determine if particular <code>IndexRecord</code> structs are vulnerable.</p>
-<p><img src="./matcher_architecture.png" alt="Matcher Architecture" title="matching architecture diagram" /></p>
+                        <h1><a class="header" href="#cctool" id="cctool">Cctool</a></h1>
+<p><code>Cctool</code> is a small utility to make poking at claircore components easier.</p>
+<h2><a class="header" href="#build" id="build">Build</a></h2>
+<p>Build via the standard incantation:</p>
+<pre><code>go build ./cmd/cctool
+</code></pre>
+<h2><a class="header" href="#usage" id="usage">Usage</a></h2>
+<p><code>Cctool</code> is driven by subcommands. Use the &quot;h&quot; flag before a subcommand to see
+common flags and a list of subcommands. Use the &quot;h&quot; flag after a subcommand to
+see flags specific to that subcommand.</p>
+<h3><a class="header" href="#report" id="report">Report</a></h3>
+<p>The <code>report</code> subcommand reads in docker-like image references on the command
+line or stdin and outputs a column-oriented summary, suitable for passing to a
+tool like <code>awk</code>.</p>
+<p><code>Report</code> expects to talk to the development HTTP servers.</p>
+<h3><a class="header" href="#manifest" id="manifest">Manifest</a></h3>
+<p>The <code>manifest</code> subcommand reads in docker-like image references on the command
+line or stdin and outputs newline-separated json manifests, suitable for passing
+to libindex.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
                         
-                            <a rel="prev" href="indexer_architecture.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../local-dev.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
                         
 
-                        
-                            <a rel="next" href="content_addressability.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                                <i class="fa fa-angle-right"></i>
-                            </a>
                         
 
                         <div style="clear: both"></div>
@@ -184,15 +191,11 @@ The <code>Matcher</code> package then instantiates each implemented <code>driver
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
                 
-                    <a href="indexer_architecture.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a href="../local-dev.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
                 
 
-                
-                    <a href="content_addressability.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
-                        <i class="fa fa-angle-right"></i>
-                    </a>
                 
             </nav>
 
@@ -213,14 +216,14 @@ The <code>Matcher</code> package then instantiates each implemented <code>driver
         
 
         
-        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../searcher.js" type="text/javascript" charset="utf-8"></script>
         
 
-        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
-        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
-        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../book.js" type="text/javascript" charset="utf-8"></script>
 
         <!-- Custom JS scripts -->
         

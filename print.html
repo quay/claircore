@@ -83,7 +83,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div id="sidebar-scrollbox" class="sidebar-scrollbox">
-                <ol class="chapter"><li class="expanded "><a href="highlevel_architecture.html"><strong aria-hidden="true">1.</strong> Highlevel Architecture</a></li><li class="expanded "><a href="vulnerability_matching.html"><strong aria-hidden="true">2.</strong> Vulnerability Matching</a></li><li class="expanded "><a href="indexer_architecture.html"><strong aria-hidden="true">3.</strong> Indexer Architecture</a></li><li class="expanded "><a href="matcher_architecture.html"><strong aria-hidden="true">4.</strong> Matching Architecture</a></li><li class="expanded "><a href="content_addressability.html"><strong aria-hidden="true">5.</strong> Content-Addressability</a></li><li class="expanded "><a href="contributor.html"><strong aria-hidden="true">6.</strong> Contributors</a></li><li><ol class="section"><li class="expanded "><a href="contributor/logging.html"><strong aria-hidden="true">6.1.</strong> Logging</a></li><li class="expanded "><a href="local-dev.html"><strong aria-hidden="true">6.2.</strong> Local Development</a></li></ol></li></ol>
+                <ol class="chapter"><li class="expanded "><a href="highlevel_architecture.html"><strong aria-hidden="true">1.</strong> Highlevel Architecture</a></li><li class="expanded "><a href="vulnerability_matching.html"><strong aria-hidden="true">2.</strong> Vulnerability Matching</a></li><li class="expanded "><a href="indexer_architecture.html"><strong aria-hidden="true">3.</strong> Indexer Architecture</a></li><li class="expanded "><a href="matcher_architecture.html"><strong aria-hidden="true">4.</strong> Matching Architecture</a></li><li class="expanded "><a href="content_addressability.html"><strong aria-hidden="true">5.</strong> Content-Addressability</a></li><li class="expanded "><a href="contributor.html"><strong aria-hidden="true">6.</strong> Contributors</a></li><li><ol class="section"><li class="expanded "><a href="contributor/logging.html"><strong aria-hidden="true">6.1.</strong> Logging</a></li><li class="expanded "><a href="local-dev.html"><strong aria-hidden="true">6.2.</strong> Local Development</a></li><li class="expanded "><a href="contributor/cctool.html"><strong aria-hidden="true">6.3.</strong> cctool</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -306,6 +306,8 @@ If ClairCore comes across a image or layer hash which has been scanned by all co
 If ClairCore is started with a new set of package scanners and encounters a previously seen image or layer hash it will rescan the image or layer.<br />
 ClairCore will only perform a scan with the missing scanner on the incoming image or layers.</p>
 <h1><a class="header" href="#contributors" id="contributors">Contributors</a></h1>
+<p>This is some documentation helpful for the actual nuts-n-bolts of adding code to
+and testing code in the project.</p>
 <h1><a class="header" href="#logging" id="logging">Logging</a></h1>
 <p>All the logging in claircore is done with <a href="https://pkg.go.dev/github.com/rs/zerolog@v1.15.0">zerolog</a> via <code>context.Context</code>
 values. Loggers are extracted from the Contexts via the <code>zerolog.Ctx</code> function,
@@ -419,6 +421,25 @@ bench -  runs the benchmarks
 integration-v - runs the integration test suite with verbose
 unit-v - runs the unit test suite with verbose
 </code></pre>
+<h1><a class="header" href="#cctool" id="cctool">Cctool</a></h1>
+<p><code>Cctool</code> is a small utility to make poking at claircore components easier.</p>
+<h2><a class="header" href="#build" id="build">Build</a></h2>
+<p>Build via the standard incantation:</p>
+<pre><code>go build ./cmd/cctool
+</code></pre>
+<h2><a class="header" href="#usage-1" id="usage-1">Usage</a></h2>
+<p><code>Cctool</code> is driven by subcommands. Use the &quot;h&quot; flag before a subcommand to see
+common flags and a list of subcommands. Use the &quot;h&quot; flag after a subcommand to
+see flags specific to that subcommand.</p>
+<h3><a class="header" href="#report" id="report">Report</a></h3>
+<p>The <code>report</code> subcommand reads in docker-like image references on the command
+line or stdin and outputs a column-oriented summary, suitable for passing to a
+tool like <code>awk</code>.</p>
+<p><code>Report</code> expects to talk to the development HTTP servers.</p>
+<h3><a class="header" href="#manifest" id="manifest">Manifest</a></h3>
+<p>The <code>manifest</code> subcommand reads in docker-like image references on the command
+line or stdin and outputs newline-separated json manifests, suitable for passing
+to libindex.</p>
 
                     </main>
 
