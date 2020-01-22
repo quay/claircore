@@ -2,7 +2,7 @@ package rhel
 
 import "github.com/quay/claircore"
 
-// RHEL has sub major releases however their security database files are bundled together
+// RHEL has minor releases however their security database files are bundled together
 // by major version. for example `com.redhat.rhsa-RHEL7.xml`
 // we choose to normalize detected distributions into major releases and parse vulnerabilities by major release versions.
 

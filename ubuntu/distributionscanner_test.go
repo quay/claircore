@@ -246,7 +246,7 @@ DISTRIB_RELEASE=16.04
 DISTRIB_CODENAME=
 DISTRIB_DESCRIPTION="Ubuntu 16.04.6 LTS"`)
 
-func TestUbuntuDistributionScanner(t *testing.T) {
+func TestDistributionScanner(t *testing.T) {
 	table := []struct {
 		name       string
 		release    Release
@@ -311,7 +311,7 @@ func TestUbuntuDistributionScanner(t *testing.T) {
 	}
 }
 
-func TestUbuntuDistributionScannerBad(t *testing.T) {
+func TestDistributionScannerBad(t *testing.T) {
 	table := []struct {
 		name       string
 		release    Release

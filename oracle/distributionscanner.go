@@ -11,11 +11,11 @@ import (
 	"github.com/rs/zerolog"
 )
 
-// Oracle Linux does provide sub major releases such as 7.7 and 6.10
+// Oracle Linux has minor releases such as 7.7 and 6.10
 // however their elsa OVAL xml sec db always references the major release
 // for example: <platform>Oracle Linux 5</platform>
 // for this reason the oracle distribution scanner will detect and normalize
-// sub releases to major releases to match vulnerabilities correctly
+// minor releases to major releases to match vulnerabilities correctly
 
 const (
 	scannerName    = "oracle"
