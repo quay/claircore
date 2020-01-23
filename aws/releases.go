@@ -1,8 +1,6 @@
 package aws
 
 import (
-	"fmt"
-
 	"github.com/quay/claircore"
 )
 
@@ -33,13 +31,14 @@ var linux2Dist = &claircore.Distribution{
 	CPE:        "cpe:2.3:o:amazon:amazon_linux:2",
 }
 
-func releaseToDist(release Release) (*claircore.Distribution, error) {
+func releaseToDist(release Release) *claircore.Distribution {
 	switch release {
 	case Linux1:
-		return linux1Dist, nil
+		return linux1Dist
 	case Linux2:
-		return linux2Dist, nil
+		return linux2Dist
 	default:
-		return nil, fmt.Errorf("unknown release")
+		// return empty dist
+		return &claircore.Distribution{}
 	}
 }

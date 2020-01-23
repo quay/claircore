@@ -92,10 +92,7 @@ func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]
 func (ds *DistributionScanner) parse(buff *bytes.Buffer) *claircore.Distribution {
 	for _, ur := range awsRegexes {
 		if ur.regexp.Match(buff.Bytes()) {
-			dist, err := releaseToDist(ur.release)
-			if err != nil {
-				panic("aws distrubution scanner: awsRegex configured with unknown release")
-			}
+			dist := releaseToDist(ur.release)
 			return dist
 		}
 	}

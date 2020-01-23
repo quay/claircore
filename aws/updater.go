@@ -73,10 +73,7 @@ func (u *Updater) Parse(ctx context.Context, contents io.ReadCloser) ([]*clairco
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal updates xml: %v", err)
 	}
-	dist, err := releaseToDist(u.release)
-	if err != nil {
-		return nil, fmt.Errorf("failed to classify vulns with distribution: %w", err)
-	}
+	dist := releaseToDist(u.release)
 
 	vulns := []*claircore.Vulnerability{}
 	for _, update := range updates.Updates {

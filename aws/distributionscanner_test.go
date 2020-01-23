@@ -48,7 +48,7 @@ func TestDistributionScanner(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			scanner := DistributionScanner{}
 			dist := scanner.parse(bytes.NewBuffer(tt.osRelease))
-			cmpDist, _ := releaseToDist(tt.release)
+			cmpDist := releaseToDist(tt.release)
 			if !cmp.Equal(dist, cmpDist) {
 				t.Fatalf("%v", cmp.Diff(dist, cmpDist))
 			}
