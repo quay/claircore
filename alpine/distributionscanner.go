@@ -93,17 +93,15 @@ func (*DistributionScanner) Kind() string { return scannerKind }
 func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Distribution, error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	log := zerolog.Ctx(ctx).With().
-		Str("component", "alpine_dist_scanner").
-		Str("name", ds.Name()).
+		Str("component", "alpine/DistributionScanner.Scan").
 		Str("version", ds.Version()).
-		Str("kind", ds.Kind()).
 		Str("layer", l.Hash).
 		Logger()
 	log.Debug().Msg("start")
 	defer log.Debug().Msg("done")
 	files, err := l.Files(osReleasePath, issuePath)
 	if err != nil {
-		log.Debug().Msg("didn't find an os-release or lsb release file")
+		log.Debug().Msg("didn't find an os-release or issue file")
 		return nil, nil
 	}
 	for _, buff := range files {

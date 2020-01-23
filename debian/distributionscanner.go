@@ -68,10 +68,8 @@ func (*DistributionScanner) Kind() string { return scannerKind }
 func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Distribution, error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	log := zerolog.Ctx(ctx).With().
-		Str("component", "debian_dist_scanner").
-		Str("name", ds.Name()).
+		Str("component", "debian/DistributionScanner.Scan").
 		Str("version", ds.Version()).
-		Str("kind", ds.Kind()).
 		Str("layer", l.Hash).
 		Logger()
 	log.Debug().Msg("start")
