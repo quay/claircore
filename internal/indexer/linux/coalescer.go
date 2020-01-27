@@ -21,7 +21,7 @@ type layerArtifacts struct {
 // It is expected to run a coalescer per "ecosystem". For example it would make sense to coalesce results
 // for dpkg, os-release, and apt scanners
 type Coalescer struct {
-	// a store to access scanartifacts
+	// the IndexReport this Coalescer is working on
 	ir *claircore.IndexReport
 }
 
