@@ -16,27 +16,6 @@ import (
 	"github.com/quay/claircore/pkg/ovalutil"
 )
 
-// Release indicates the SUSE release OVAL database to pull from.
-type Release string
-
-// These are some known Releases.
-const (
-	EnterpriseServer15  Release = `suse.linux.enterprise.server.15`
-	EnterpriseDesktop15 Release = `suse.linux.enterprise.desktop.15`
-	Enterprise15        Release = `suse.linux.enterprise.15`
-	EnterpriseServer12  Release = `suse.linux.enterprise.server.12`
-	EnterpriseDesktop12 Release = `suse.linux.enterprise.desktop.12`
-	Enterprise12        Release = `suse.linux.enterprise.12`
-	EnterpriseServer11  Release = `suse.linux.enterprise.server.11`
-	EnterpriseDesktop11 Release = `suse.linux.enterprise.desktop.11`
-	OpenStackCloud9     Release = `suse.openstack.cloud.9`
-	OpenStackCloud8     Release = `suse.openstack.cloud.8`
-	OpenStackCloud7     Release = `suse.openstack.cloud.7`
-	Leap151             Release = `opensuse.leap.15.1`
-	Leap150             Release = `opensuse.leap.15.0`
-	Leap423             Release = `opensuse.leap.42.3`
-)
-
 var upstreamBase *url.URL
 
 func init() {
