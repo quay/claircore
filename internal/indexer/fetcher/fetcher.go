@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"crypto/sha256"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -69,7 +68,7 @@ func (f *fetcher) Fetch(ctx context.Context, layers []*claircore.Layer) error {
 
 func (f *fetcher) filename(l *claircore.Layer) string {
 	// TODO(hank) Make this configurable directly, instead of only via TMPDIR.
-	return filepath.Join(os.TempDir(), l.Hash)
+	return filepath.Join(os.TempDir(), l.Hash.String())
 }
 
 // fetch is designed to be ran as a go routine. performs the logic for for
@@ -77,7 +76,7 @@ func (f *fetcher) filename(l *claircore.Layer) string {
 func (f *fetcher) fetch(ctx context.Context, layer *claircore.Layer) error {
 	log := zerolog.Ctx(ctx).With().
 		Str("component", "internal/indexer/fetcher/fetcher.fetch").
-		Str("layer", layer.Hash).
+		Str("layer", layer.Hash.String()).
 		Logger()
 	log.Debug().Msg("layer fetch start")
 	// It is valid and don't perform a fetch.
@@ -95,15 +94,11 @@ func (f *fetcher) fetch(ctx context.Context, layer *claircore.Layer) error {
 	if err != nil {
 		return fmt.Errorf("failied to parse remote path uri: %v", err)
 	}
-	if layer.Hash == "" {
+	if layer.Hash.Checksum() == nil {
 		return fmt.Errorf("digest is empty")
 	}
-	// When the hash turns into real digest type, this needs to be variable.
-	vh := sha256.New()
-	want, err := hex.DecodeString(layer.Hash)
-	if err != nil {
-		return err
-	}
+	vh := layer.Hash.Hash()
+	want := layer.Hash.Checksum()
 
 	// Open our target file before hitting the network.
 	name := f.filename(layer)
