@@ -14,7 +14,10 @@ import (
 )
 
 func TestScanner(t *testing.T) {
-	const hash = "35c102085707f703de2d9eaad8752d6fe1b8f02b5d2149f1d8357c9cc7fb7d0a"
+	hash, err := claircore.ParseDigest("sha256:35c102085707f703de2d9eaad8752d6fe1b8f02b5d2149f1d8357c9cc7fb7d0a")
+	if err != nil {
+		t.Fatal(err)
+	}
 	want := []*claircore.Package{
 		&claircore.Package{
 			Name:           "fdisk",
