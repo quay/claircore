@@ -7,7 +7,6 @@ package claircore_test
 import (
 	"bytes"
 	"context"
-	"encoding/hex"
 	"testing"
 	"time"
 
@@ -19,7 +18,7 @@ import (
 var goldenLayers []test.LayerSpec
 
 func init() {
-	ck, err := hex.DecodeString("35c102085707f703de2d9eaad8752d6fe1b8f02b5d2149f1d8357c9cc7fb7d0a")
+	id, err := claircore.ParseDigest("sha256:35c102085707f703de2d9eaad8752d6fe1b8f02b5d2149f1d8357c9cc7fb7d0a")
 	if err != nil {
 		panic(err)
 	}
@@ -27,7 +26,7 @@ func init() {
 		{
 			Domain: "docker.io",
 			Repo:   "library/ubuntu",
-			ID:     claircore.NewDigest("sha256", ck),
+			ID:     id,
 		},
 	}
 }
