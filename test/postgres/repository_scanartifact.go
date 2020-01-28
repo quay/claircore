@@ -9,7 +9,7 @@ import (
 	"github.com/quay/claircore/internal/indexer"
 )
 
-func InsertRepoScanArtifact(db *sqlx.DB, layerHash string, repos []*claircore.Repository, scnrs indexer.VersionedScanners) error {
+func InsertRepoScanArtifact(db *sqlx.DB, layerHash claircore.Digest, repos []*claircore.Repository, scnrs indexer.VersionedScanners) error {
 	n := len(scnrs)
 	for i, repo := range repos {
 		nn := i % n
