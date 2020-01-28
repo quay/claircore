@@ -35,7 +35,7 @@ func (m *MockLayerScanner) EXPECT() *MockLayerScannerMockRecorder {
 }
 
 // Scan mocks base method
-func (m *MockLayerScanner) Scan(arg0 context.Context, arg1 string, arg2 []*claircore.Layer) error {
+func (m *MockLayerScanner) Scan(arg0 context.Context, arg1 claircore.Digest, arg2 []*claircore.Layer) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Scan", arg0, arg1, arg2)
 	ret0, _ := ret[0].(error)
