@@ -55,7 +55,7 @@ func (s *Scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Di
 	log := zerolog.Ctx(ctx).With().
 		Str("component", "osrelease/Scanner.Scan").
 		Str("version", s.Version()).
-		Str("layer", l.Hash).
+		Str("layer", l.Hash.String()).
 		Logger()
 	ctx = log.WithContext(ctx)
 	log.Debug().Msg("start")
