@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 	"github.com/quay/claircore/test/log"
@@ -18,7 +19,7 @@ func Test_LayerScanned_Packages_False(t *testing.T) {
 		// the name of the test
 		name string
 		// the layer's hash we are testing
-		hash string
+		hash claircore.Digest
 		// the number of scanners to create and linke with the layer_hash
 		scnrs int
 		// the number of packages to be associated with the scanartifacts and layer hash
@@ -26,19 +27,19 @@ func Test_LayerScanned_Packages_False(t *testing.T) {
 	}{
 		{
 			name:  "single scanner, single package",
-			hash:  "test-layer-hash",
+			hash:  randomHash(t),
 			scnrs: 1,
 			pkgs:  1,
 		},
 		{
 			name:  "4 scanners, 4 packages",
-			hash:  "test-layer-hash",
+			hash:  randomHash(t),
 			scnrs: 4,
 			pkgs:  4,
 		},
 		{
 			name:  "4 scanners, 8 packages",
-			hash:  "test-layer-hash",
+			hash:  randomHash(t),
 			scnrs: 4,
 			pkgs:  8,
 		},
@@ -82,7 +83,7 @@ func Test_LayerScanned_Distributions_False(t *testing.T) {
 		// the name of the test
 		name string
 		// the layer's hash we are testing
-		hash string
+		hash claircore.Digest
 		// the number of scanners to create and linke with the layer_hash
 		scnrs int
 		// the number of distributions to be associated with the scanartifacts and layer hash
@@ -90,19 +91,19 @@ func Test_LayerScanned_Distributions_False(t *testing.T) {
 	}{
 		{
 			name:  "single scanner, single distribution",
-			hash:  "test-layer-hash",
+			hash:  randomHash(t),
 			scnrs: 1,
 			dists: 1,
 		},
 		{
 			name:  "4 scanners, 4 distributions",
-			hash:  "test-layer-hash",
+			hash:  randomHash(t),
 			scnrs: 4,
 			dists: 4,
 		},
 		{
 			name:  "4 scanners, 8 distributions",
-			hash:  "test-layer-hash",
+			hash:  randomHash(t),
 			scnrs: 4,
 			dists: 8,
 		},
@@ -147,7 +148,7 @@ func Test_LayerScanned_Repository_False(t *testing.T) {
 		// the name of the test
 		name string
 		// the layer's hash we are testing
-		hash string
+		hash claircore.Digest
 		// the number of scanners to create and linke with the layer_hash
 		scnrs int
 		// the number of repositories to be associated with the scanartifacts and layer hash
@@ -155,19 +156,19 @@ func Test_LayerScanned_Repository_False(t *testing.T) {
 	}{
 		{
 			name:  "single scanner, single repositories",
-			hash:  "test-layer-hash",
+			hash:  randomHash(t),
 			scnrs: 1,
 			repos: 1,
 		},
 		{
 			name:  "4 scanners, 4 repositories",
-			hash:  "test-layer-hash",
+			hash:  randomHash(t),
 			scnrs: 4,
 			repos: 4,
 		},
 		{
 			name:  "4 scanners, 8 repositories",
-			hash:  "test-layer-hash",
+			hash:  randomHash(t),
 			scnrs: 4,
 			repos: 8,
 		},
@@ -211,7 +212,7 @@ func Test_LayerScanned_Packages_True(t *testing.T) {
 		// the name of the test
 		name string
 		// the layer's hash we are testing
-		hash string
+		hash claircore.Digest
 		// the number of scanners to create and linke with the layer_hash
 		scnrs int
 		// the number of packages to be associated with the scanartifacts and layer hash
@@ -219,19 +220,19 @@ func Test_LayerScanned_Packages_True(t *testing.T) {
 	}{
 		{
 			name:  "single scanner, single package",
-			hash:  "test-layer-hash",
+			hash:  randomHash(t),
 			scnrs: 1,
 			pkgs:  1,
 		},
 		{
 			name:  "4 scanners, 4 packages",
-			hash:  "test-layer-hash",
+			hash:  randomHash(t),
 			scnrs: 4,
 			pkgs:  4,
 		},
 		{
 			name:  "4 scanners, 8 packages",
-			hash:  "test-layer-hash",
+			hash:  randomHash(t),
 			scnrs: 4,
 			pkgs:  8,
 		},
@@ -280,7 +281,7 @@ func Test_LayerScanned_Distribution_True(t *testing.T) {
 		// the name of the test
 		name string
 		// the layer's hash we are testing
-		hash string
+		hash claircore.Digest
 		// the number of scanners to create and linke with the layer_hash
 		scnrs int
 		// the number of distributions to be associated with the scanartifacts and layer hash
@@ -288,19 +289,19 @@ func Test_LayerScanned_Distribution_True(t *testing.T) {
 	}{
 		{
 			name:  "single scanner, single package",
-			hash:  "test-layer-hash",
+			hash:  randomHash(t),
 			scnrs: 1,
 			dists: 1,
 		},
 		{
 			name:  "4 scanners, 4 distributions",
-			hash:  "test-layer-hash",
+			hash:  randomHash(t),
 			scnrs: 4,
 			dists: 4,
 		},
 		{
 			name:  "4 scanners, 8 distributions",
-			hash:  "test-layer-hash",
+			hash:  randomHash(t),
 			scnrs: 4,
 			dists: 8,
 		},
@@ -349,7 +350,7 @@ func Test_LayerScanned_Repository_True(t *testing.T) {
 		// the name of the test
 		name string
 		// the layer's hash we are testing
-		hash string
+		hash claircore.Digest
 		// the number of scanners to create and linke with the layer_hash
 		scnrs int
 		// the number of repositories to be associated with the scanartifacts and layer hash
@@ -357,19 +358,19 @@ func Test_LayerScanned_Repository_True(t *testing.T) {
 	}{
 		{
 			name:  "single scanner, single repository",
-			hash:  "test-layer-hash",
+			hash:  randomHash(t),
 			scnrs: 1,
 			dists: 1,
 		},
 		{
 			name:  "4 scanners, 4 repository",
-			hash:  "test-layer-hash",
+			hash:  randomHash(t),
 			scnrs: 4,
 			dists: 4,
 		},
 		{
 			name:  "4 scanners, 8 repository",
-			hash:  "test-layer-hash",
+			hash:  randomHash(t),
 			scnrs: 4,
 			dists: 8,
 		},

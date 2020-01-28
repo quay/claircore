@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/jmoiron/sqlx"
 
 	"github.com/quay/claircore"
@@ -121,7 +122,7 @@ func checkRepoScanArtifact(t *testing.T, db *sqlx.DB, expectedRepos []*claircore
 		}
 		t.Logf("repo id: %d", repoID.Int64)
 
-		var layer_hash string
+		var layer_hash claircore.Digest
 		var repo_id, scanner_id sql.NullInt64
 		row := db.QueryRowx(
 			`SELECT layer_hash, repo_id, scanner_id 
@@ -142,8 +143,8 @@ func checkRepoScanArtifact(t *testing.T, db *sqlx.DB, expectedRepos []*claircore
 			t.Fatalf("received error selecting scanartifact for dist %v: %v", repo, err)
 		}
 
-		if got, want := layer_hash, layer.Hash; got != want {
-			t.Errorf("got: %q, want: %q", got, want)
+		if got, want := layer_hash, layer.Hash; !cmp.Equal(got, want, cmp.AllowUnexported(claircore.Digest{})) {
+			t.Error(cmp.Diff(got, want))
 		}
 		if got, want := repo_id, repoID; !got.Valid || got.Int64 != want.Int64 {
 			t.Errorf("got: %v, want: %v", got, want)

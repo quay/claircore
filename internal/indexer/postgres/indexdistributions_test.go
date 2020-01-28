@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/jmoiron/sqlx"
 
 	"github.com/quay/claircore"
@@ -30,56 +31,56 @@ func Test_IndexDistributions_Success(t *testing.T) {
 			name:  "10 packages",
 			dists: 10,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(t),
 			},
 		},
 		{
 			name:  "50 packages",
 			dists: 50,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(t),
 			},
 		},
 		{
 			name:  "100 packages",
 			dists: 100,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(t),
 			},
 		},
 		{
 			name:  "250 packages",
 			dists: 250,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(t),
 			},
 		},
 		{
 			name:  "500 packages",
 			dists: 500,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(t),
 			},
 		},
 		{
 			name:  "1000 packages",
 			dists: 1000,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(t),
 			},
 		},
 		{
 			name:  "2000 packages",
 			dists: 2000,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(t),
 			},
 		},
 		{
 			name:  "3000 packages",
 			dists: 3000,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(t),
 			},
 		},
 	}
@@ -145,7 +146,7 @@ func checkDistScanArtifact(t *testing.T, db *sqlx.DB, expectedDists []*claircore
 		}
 		t.Logf("got distID %d", distID.Int64)
 
-		var layer_hash string
+		var layerHash claircore.Digest
 		var dist_id, scanner_id sql.NullInt64
 		row := db.QueryRowx(
 			`SELECT layer_hash, dist_id, scanner_id 
@@ -158,7 +159,7 @@ func checkDistScanArtifact(t *testing.T, db *sqlx.DB, expectedDists []*claircore
 			0,
 		)
 
-		err = row.Scan(&layer_hash, &dist_id, &scanner_id)
+		err = row.Scan(&layerHash, &dist_id, &scanner_id)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				t.Fatalf("failed to find scanartifact for dist %v", dist)
@@ -166,8 +167,8 @@ func checkDistScanArtifact(t *testing.T, db *sqlx.DB, expectedDists []*claircore
 			t.Fatalf("received error selecting scanartifact for dist %v: %v", dist, err)
 		}
 
-		if got, want := layer_hash, layer.Hash; got != want {
-			t.Errorf("got: %q, want: %q", got, want)
+		if got, want := layerHash, layer.Hash; !cmp.Equal(got, want, cmp.AllowUnexported(claircore.Digest{})) {
+			t.Error(cmp.Diff(got, want))
 		}
 		if got, want := dist_id, distID; !got.Valid || got.Int64 != want.Int64 {
 			t.Errorf("got: %v, want: %v", got, want)

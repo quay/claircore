@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 	"github.com/quay/claircore/test/log"
@@ -21,7 +22,7 @@ func Test_PackagesByLayer_Success(t *testing.T) {
 		// name of the test
 		name string
 		// the layer hash we want to test
-		hash string
+		hash claircore.Digest
 		// number packages to create
 		pkgs int
 		// number scnrs to create
@@ -29,37 +30,37 @@ func Test_PackagesByLayer_Success(t *testing.T) {
 	}{
 		{
 			name:  "10 package, 5 scanners",
-			hash:  "test-layer-hash",
+			hash:  randomHash(t),
 			pkgs:  10,
 			scnrs: 5,
 		},
 		{
 			name:  "50 packages, 25 scanners",
-			hash:  "test-layer-hash",
+			hash:  randomHash(t),
 			pkgs:  50,
 			scnrs: 25,
 		},
 		{
 			name:  "100 packages, 50 scanners",
-			hash:  "test-layer-hash",
+			hash:  randomHash(t),
 			pkgs:  100,
 			scnrs: 50,
 		},
 		{
 			name:  "500 packages, 250 scanners",
-			hash:  "test-layer-hash",
+			hash:  randomHash(t),
 			pkgs:  500,
 			scnrs: 250,
 		},
 		{
 			name:  "1000 packages, 500 scanners",
-			hash:  "test-layer-hash",
+			hash:  randomHash(t),
 			pkgs:  1000,
 			scnrs: 500,
 		},
 		{
 			name:  "2000 packages, 1000 scanners",
-			hash:  "test-layer-hash",
+			hash:  randomHash(t),
 			pkgs:  2000,
 			scnrs: 1000,
 		},
