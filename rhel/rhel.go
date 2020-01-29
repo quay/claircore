@@ -78,13 +78,3 @@ func WithClient(c *http.Client) Option {
 func (u *Updater) Name() string {
 	return u.name
 }
-
-// // ParseContext is like Parse, but with context.
-// func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
-// 	defer r.Close()
-// 	root := oval.Root{}
-// 	if err := xml.NewDecoder(r).Decode(&root); err != nil {
-// 		return nil, fmt.Errorf("rhel: unable to decode OVAL document: %w", err)
-// 	}
-// 	return ovalutil.NewRPMInfo(&root).Extract(ctx)
-// }
