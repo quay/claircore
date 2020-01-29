@@ -62,7 +62,8 @@ claircore-db-up:
 
 .PHONY: claircore-db-restart
 claircore-db-restart:
-	$(docker-compose) up -d --force-recreate claircore-db
+	$(docker) kill claircore_claircore-db_1 && $(docker) rm claircore_claircore-db_1
+	make claircore-db-up
 
 .PHONY: libindexhttp-restart
 libindexhttp-restart:
