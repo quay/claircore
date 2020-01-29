@@ -3,9 +3,10 @@ package dpkg
 import (
 	"context"
 
+	"github.com/quay/claircore/debian"
 	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/internal/indexer/linux"
-	"github.com/quay/claircore/osrelease"
+	"github.com/quay/claircore/ubuntu"
 )
 
 // NewEcosystem provides the set of scanners and coalescers for the dpkg ecosystem
@@ -15,7 +16,10 @@ func NewEcosystem(ctx context.Context) *indexer.Ecosystem {
 			return []indexer.PackageScanner{&Scanner{}}, nil
 		},
 		DistributionScanners: func(ctx context.Context) ([]indexer.DistributionScanner, error) {
-			return []indexer.DistributionScanner{&osrelease.Scanner{}}, nil
+			return []indexer.DistributionScanner{
+				&debian.DistributionScanner{},
+				&ubuntu.DistributionScanner{},
+			}, nil
 		},
 		RepositoryScanners: func(ctx context.Context) ([]indexer.RepositoryScanner, error) {
 			return []indexer.RepositoryScanner{}, nil
