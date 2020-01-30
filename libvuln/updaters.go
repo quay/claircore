@@ -49,20 +49,12 @@ var alpineMatrix = map[alpine.Repo][]alpine.Release{
 }
 
 var suseReleases = []suse.Release{
-	suse.Enterprise15,
-	suse.Enterprise12,
 	suse.EnterpriseServer15,
 	suse.EnterpriseServer12,
 	suse.EnterpriseServer11,
-	suse.EnterpriseDesktop15,
-	suse.EnterpriseDesktop12,
-	suse.EnterpriseDesktop11,
 	suse.Leap423,
 	suse.Leap150,
 	suse.Leap151,
-	suse.OpenStackCloud9,
-	suse.OpenStackCloud8,
-	suse.OpenStackCloud7,
 }
 
 func updaters() ([]driver.Updater, error) {
