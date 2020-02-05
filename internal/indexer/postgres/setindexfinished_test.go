@@ -19,7 +19,7 @@ func Test_SetScanFinished_Success(t *testing.T) {
 	defer done()
 	// function to initialize database. we must add all scanners to they are available in the database. we must then
 	// create scannlist records for any of the previousScnrs to prove we deleted them and linked the updatedScnrs
-	var init = func(t *testing.T, db *sqlx.DB, hash string, previousScnrs []scnrInfo, updatedScnrs []scnrInfo) {
+	var init = func(t *testing.T, db *sqlx.DB, hash claircore.Digest, previousScnrs []scnrInfo, updatedScnrs []scnrInfo) {
 		var temp = []scnrInfo{}
 		temp = append(temp, previousScnrs...)
 		temp = append(temp, updatedScnrs...)
@@ -46,17 +46,17 @@ func Test_SetScanFinished_Success(t *testing.T) {
 		// the name of this test
 		name string
 		// the manifest hash we are setting scanners for
-		hash string
+		hash claircore.Digest
 		// scnrs to insert for initialization information
 		previousScnrs []scnrInfo
 		// scnrs to call store.SetScannerList
 		updatedScnrs []scnrInfo
 		// initialize our database
-		init func(t *testing.T, db *sqlx.DB, hash string, previousScnrs []scnrInfo, updatedScnrs []scnrInfo)
+		init func(t *testing.T, db *sqlx.DB, hash claircore.Digest, previousScnrs []scnrInfo, updatedScnrs []scnrInfo)
 	}{
 		{
 			name:          "no previous scanners",
-			hash:          "test-manifest-hash",
+			hash:          randomHash(t),
 			previousScnrs: []scnrInfo{},
 			updatedScnrs: []scnrInfo{
 				scnrInfo{
@@ -117,7 +117,7 @@ func Test_SetScanFinished_Success(t *testing.T) {
 	}
 }
 
-func checkUpdatedScannerList(t *testing.T, db *sqlx.DB, hash string, updatedScnrs []scnrInfo) {
+func checkUpdatedScannerList(t *testing.T, db *sqlx.DB, hash claircore.Digest, updatedScnrs []scnrInfo) {
 	var foundIDs []int64
 	err := db.Select(&foundIDs, `SELECT scanner_id FROM scannerlist WHERE manifest_hash = $1`, hash)
 	if err != nil {

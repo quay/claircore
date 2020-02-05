@@ -35,7 +35,7 @@ WHERE
   package_scanartifact.layer_hash = '%s' AND package_scanartifact.scanner_id IN (?);`
 )
 
-func packagesByLayer(ctx context.Context, db *sqlx.DB, hash string, scnrs indexer.VersionedScanners) ([]*claircore.Package, error) {
+func packagesByLayer(ctx context.Context, db *sqlx.DB, hash claircore.Digest, scnrs indexer.VersionedScanners) ([]*claircore.Package, error) {
 	// TODO Use passed-in Context.
 	// get scanner ids
 	scannerIDs := []int64{}

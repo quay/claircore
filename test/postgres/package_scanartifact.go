@@ -12,7 +12,7 @@ import (
 // InsertPackageScanArtifacts will create ScanArtifacts linking the layer hash, packages, and scnr artifacts.
 // if multiple scnrs are provided they will be liked in i % n fashion where i is the current index
 // of the Packages array and n is the len of the scnrs array.
-func InsertPackageScanArtifacts(db *sqlx.DB, layerHash string, pkgs []*claircore.Package, scnrs indexer.VersionedScanners) error {
+func InsertPackageScanArtifacts(db *sqlx.DB, layerHash claircore.Digest, pkgs []*claircore.Package, scnrs indexer.VersionedScanners) error {
 	n := len(scnrs)
 	for i, pkg := range pkgs {
 		nn := i % n

@@ -18,7 +18,7 @@ type IndexRecord struct {
 // without repetition.
 type IndexReport struct {
 	// the manifest hash this IndexReport is describing
-	Hash string `json:"manifest_hash"`
+	Hash Digest `json:"manifest_hash"`
 	// the current state of the index operation
 	State string `json:"state"`
 	// all discovered packages in this manifest key'd by package id

@@ -15,7 +15,7 @@ import (
 type Layer struct {
 	// Hash is a content addressable hash uniqely identifying this layer.
 	// Libindex will treat layers with this same hash as identical.
-	Hash    string              `json:"hash"`
+	Hash    Digest              `json:"hash"`
 	URI     string              `json:"uri"`
 	Headers map[string][]string `json:"headers"`
 

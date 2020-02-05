@@ -76,7 +76,7 @@ func (h *HTTP) Index(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("location", path.Join(r.URL.Path, m.Hash))
+	w.Header().Set("location", path.Join(r.URL.Path, m.Hash.String()))
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(&ir); err != nil {
 		log.Error().Err(err).Msg("failed to serialize results")
@@ -100,8 +100,8 @@ func (h *HTTP) IndexReport(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// extract manifest from path
-	hash := path.Base(r.URL.Path)
-	if hash == "" {
+	hashStr := path.Base(r.URL.Path)
+	if hashStr == "" {
 		resp := &jsonerr.Response{
 			Code:    "bad-request",
 			Message: "could not find manifest hash in path",
@@ -110,7 +110,17 @@ func (h *HTTP) IndexReport(w http.ResponseWriter, r *http.Request) {
 		jsonerr.Error(w, resp, http.StatusBadRequest)
 		return
 	}
-	log = log.With().Str("hash", hash).Logger()
+	hash, err := claircore.ParseDigest(hashStr)
+	if err != nil {
+		resp := &jsonerr.Response{
+			Code:    "bad-request",
+			Message: "could not find manifest hash in path",
+		}
+		log.Debug().Str("path", r.URL.Path).Msg(resp.Message)
+		jsonerr.Error(w, resp, http.StatusBadRequest)
+		return
+	}
+	log = log.With().Str("manifest", hash.String()).Logger()
 	ctx = log.WithContext(ctx)
 
 	// issue retrieval

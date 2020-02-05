@@ -27,12 +27,12 @@ func NewStore(db *sqlx.DB, pool *pgxpool.Pool) *store {
 	}
 }
 
-func (s *store) ManifestScanned(ctx context.Context, hash string, scnrs indexer.VersionedScanners) (bool, error) {
+func (s *store) ManifestScanned(ctx context.Context, hash claircore.Digest, scnrs indexer.VersionedScanners) (bool, error) {
 	b, err := manifestScanned(ctx, s.db, hash, scnrs)
 	return b, err
 }
 
-func (s *store) LayerScanned(ctx context.Context, hash string, scnr indexer.VersionedScanner) (bool, error) {
+func (s *store) LayerScanned(ctx context.Context, hash claircore.Digest, scnr indexer.VersionedScanner) (bool, error) {
 	b, err := layerScanned(ctx, s.db, hash, scnr)
 	return b, err
 }
@@ -52,17 +52,17 @@ func (s *store) IndexRepositories(ctx context.Context, repos []*claircore.Reposi
 	return err
 }
 
-func (s *store) PackagesByLayer(ctx context.Context, hash string, scnrs indexer.VersionedScanners) ([]*claircore.Package, error) {
+func (s *store) PackagesByLayer(ctx context.Context, hash claircore.Digest, scnrs indexer.VersionedScanners) ([]*claircore.Package, error) {
 	pkgs, err := packagesByLayer(ctx, s.db, hash, scnrs)
 	return pkgs, err
 }
 
-func (s *store) DistributionsByLayer(ctx context.Context, hash string, scnrs indexer.VersionedScanners) ([]*claircore.Distribution, error) {
+func (s *store) DistributionsByLayer(ctx context.Context, hash claircore.Digest, scnrs indexer.VersionedScanners) ([]*claircore.Distribution, error) {
 	dists, err := distributionsByLayer(ctx, s.db, hash, scnrs)
 	return dists, err
 }
 
-func (s *store) RepositoriesByLayer(ctx context.Context, hash string, scnrs indexer.VersionedScanners) ([]*claircore.Repository, error) {
+func (s *store) RepositoriesByLayer(ctx context.Context, hash claircore.Digest, scnrs indexer.VersionedScanners) ([]*claircore.Repository, error) {
 	repos, err := repositoriesByLayer(ctx, s.db, hash, scnrs)
 	return repos, err
 }
@@ -72,7 +72,7 @@ func (s *store) RegisterScanners(ctx context.Context, scnrs indexer.VersionedSca
 	return err
 }
 
-func (s *store) IndexReport(ctx context.Context, hash string) (*claircore.IndexReport, bool, error) {
+func (s *store) IndexReport(ctx context.Context, hash claircore.Digest) (*claircore.IndexReport, bool, error) {
 	sr, b, err := indexReport(ctx, s.db, hash)
 	return sr, b, err
 }

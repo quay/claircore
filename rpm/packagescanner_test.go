@@ -15,7 +15,10 @@ import (
 )
 
 func TestScan(t *testing.T) {
-	const hash = `729ec3a6ada3a6d26faca9b4779a037231f1762f759ef34c08bdd61bf52cd704`
+	hash, err := claircore.ParseDigest("sha256:729ec3a6ada3a6d26faca9b4779a037231f1762f759ef34c08bdd61bf52cd704")
+	if err != nil {
+		t.Fatal(err)
+	}
 	want := []*claircore.Package{
 		&claircore.Package{
 			Name:           "tzdata",

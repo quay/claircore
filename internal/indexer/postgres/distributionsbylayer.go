@@ -30,7 +30,7 @@ WHERE
 	dist_scanartifact.layer_hash = '%s' AND dist_scanartifact.scanner_id IN (?);`
 )
 
-func distributionsByLayer(ctx context.Context, db *sqlx.DB, hash string, scnrs indexer.VersionedScanners) ([]*claircore.Distribution, error) {
+func distributionsByLayer(ctx context.Context, db *sqlx.DB, hash claircore.Digest, scnrs indexer.VersionedScanners) ([]*claircore.Distribution, error) {
 	// TODO Use passed-in Context.
 	// get scanner ids
 	scannerIDs := []int64{}

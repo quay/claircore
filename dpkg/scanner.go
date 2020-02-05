@@ -57,11 +57,11 @@ func (ps *Scanner) Kind() string { return kind }
 func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.Package, error) {
 	// Preamble
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
-	trace.Log(ctx, "layer:sha256", layer.Hash)
+	trace.Log(ctx, "layer", layer.Hash.String())
 	log := zerolog.Ctx(ctx).With().
 		Str("component", "dpkg/Scanner.Scan").
 		Str("version", ps.Version()).
-		Str("layer", layer.Hash).
+		Str("layer", layer.Hash.String()).
 		Logger()
 	ctx = log.WithContext(ctx)
 	log.Debug().Msg("start")

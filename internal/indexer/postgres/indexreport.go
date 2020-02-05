@@ -14,7 +14,7 @@ const (
 	selectIndexReport = `SELECT scan_result FROM indexreport WHERE manifest_hash = $1`
 )
 
-func indexReport(ctx context.Context, db *sqlx.DB, hash string) (*claircore.IndexReport, bool, error) {
+func indexReport(ctx context.Context, db *sqlx.DB, hash claircore.Digest) (*claircore.IndexReport, bool, error) {
 	// TODO Use passed-in Context.
 	// we scan into a jsonbIndexReport which has value/scan method set
 	// then type convert back to scanner.domain object

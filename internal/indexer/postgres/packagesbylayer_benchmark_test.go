@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 	"github.com/quay/claircore/test/log"
@@ -16,73 +17,73 @@ func Benchmark_PackagesByLayer(b *testing.B) {
 	defer done()
 	benchmarks := []struct {
 		name  string
-		hash  string
+		hash  claircore.Digest
 		pkgs  int
 		scnrs int
 	}{
 		{
 			name:  "10 package, 5 scanners",
-			hash:  "test-layer-hash",
+			hash:  randomHash(b),
 			pkgs:  10,
 			scnrs: 5,
 		},
 		{
 			name:  "50 packages, 25 scanners",
-			hash:  "test-layer-hash",
+			hash:  randomHash(b),
 			pkgs:  50,
 			scnrs: 25,
 		},
 		{
 			name:  "100 packages, 50 scanners",
-			hash:  "test-layer-hash",
+			hash:  randomHash(b),
 			pkgs:  100,
 			scnrs: 50,
 		},
 		{
 			name:  "500 packages, 250 scanners",
-			hash:  "test-layer-hash",
+			hash:  randomHash(b),
 			pkgs:  500,
 			scnrs: 250,
 		},
 		{
 			name:  "1000 packages, 500 scanners",
-			hash:  "test-layer-hash",
+			hash:  randomHash(b),
 			pkgs:  1000,
 			scnrs: 500,
 		},
 		{
 			name:  "2000 packages, 1000 scanners",
-			hash:  "test-layer-hash",
+			hash:  randomHash(b),
 			pkgs:  2000,
 			scnrs: 1000,
 		},
 		{
 			name:  "3000 packages, 2000 scanners",
-			hash:  "test-layer-hash",
+			hash:  randomHash(b),
 			pkgs:  3000,
 			scnrs: 1000,
 		},
 		{
 			name:  "3000 packages, 500 scanners",
-			hash:  "test-layer-hash",
+			hash:  randomHash(b),
 			pkgs:  3000,
 			scnrs: 500,
 		},
 		{
 			name:  "3000 packages, 250 scanners",
-			hash:  "test-layer-hash",
+			hash:  randomHash(b),
 			pkgs:  3000,
 			scnrs: 250,
 		},
 		{
 			name:  "3000 packages, 50 scanners",
-			hash:  "test-layer-hash",
+			hash:  randomHash(b),
 			pkgs:  2000,
 			scnrs: 50,
 		},
 		{
 			name:  "3000 packages, 10 scanners",
-			hash:  "test-layer-hash",
+			hash:  randomHash(b),
 			pkgs:  2000,
 			scnrs: 10,
 		},

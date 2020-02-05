@@ -6,6 +6,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
+	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
 )
 
@@ -16,7 +17,7 @@ const (
 
 // manifestScanned determines if a manifest has been scanned by ALL the provided
 // scnrs.
-func manifestScanned(ctx context.Context, db *sqlx.DB, hash string, scnrs indexer.VersionedScanners) (bool, error) {
+func manifestScanned(ctx context.Context, db *sqlx.DB, hash claircore.Digest, scnrs indexer.VersionedScanners) (bool, error) {
 	// TODO Use passed-in Context.
 	// get the ids of the scanners we are testing for.
 	var expectedIDs []int64
