@@ -6,9 +6,10 @@ import (
 	"regexp"
 	"runtime/trace"
 
+	"github.com/rs/zerolog"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
-	"github.com/rs/zerolog"
 )
 
 // Suse Enterprise Server has service pack releases however their security database files are bundled together
@@ -85,7 +86,7 @@ func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]
 	log := zerolog.Ctx(ctx).With().
 		Str("component", "suse/DistributionScanner.Scan").
 		Str("version", ds.Version()).
-		Str("layer", l.Hash).
+		Str("layer", l.Hash.String()).
 		Logger()
 	log.Debug().Msg("start")
 	defer log.Debug().Msg("done")

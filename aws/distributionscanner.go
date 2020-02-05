@@ -6,9 +6,10 @@ import (
 	"regexp"
 	"runtime/trace"
 
+	"github.com/rs/zerolog"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
-	"github.com/rs/zerolog"
 )
 
 // AWS Linux keeps a consistent os-release file between
@@ -67,7 +68,7 @@ func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]
 		Str("name", ds.Name()).
 		Str("version", ds.Version()).
 		Str("kind", ds.Kind()).
-		Str("layer", l.Hash).
+		Str("layer", l.Hash.String()).
 		Logger()
 	log.Debug().Msg("start")
 	defer log.Debug().Msg("done")

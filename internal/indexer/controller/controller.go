@@ -105,7 +105,7 @@ func New(opts *indexer.Opts) *Controller {
 func (s *Controller) Index(ctx context.Context, manifest *claircore.Manifest) *claircore.IndexReport {
 	log := zerolog.Ctx(ctx).With().
 		Str("component", "internal/indexer/controller/Controller.Index").
-		Str("manifest", s.manifest.Hash).
+		Str("manifest", s.manifest.Hash.String()).
 		Str("state", s.getState().String()).
 		Logger()
 	ctx = log.WithContext(ctx)

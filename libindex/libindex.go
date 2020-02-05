@@ -95,7 +95,7 @@ func New(ctx context.Context, opts *Opts) (*Libindex, error) {
 func (l *Libindex) Index(ctx context.Context, manifest *claircore.Manifest) (*claircore.IndexReport, error) {
 	log := zerolog.Ctx(ctx).With().
 		Str("component", "libindex/Libindex.Index").
-		Str("maifest", manifest.Hash).
+		Str("manifest", manifest.Hash.String()).
 		Logger()
 	ctx = log.WithContext(ctx)
 	log.Info().Msg("index request start")
@@ -125,7 +125,7 @@ func (l *Libindex) index(ctx context.Context, s *controller.Controller, m *clair
 	// attempt to get lock
 	log.Debug().Msg("locking")
 	// will block until available or ctx times out
-	err := s.Lock(ctx, m.Hash)
+	err := s.Lock(ctx, m.Hash.String())
 	if err != nil {
 		// something went wrong with getting a lock
 		// this is not an error saying another process has the lock
@@ -148,7 +148,7 @@ func (l *Libindex) index(ctx context.Context, s *controller.Controller, m *clair
 }
 
 // IndexReport retrieves an IndexReport for a particular manifest hash, if it exists.
-func (l *Libindex) IndexReport(ctx context.Context, hash string) (*claircore.IndexReport, bool, error) {
+func (l *Libindex) IndexReport(ctx context.Context, hash claircore.Digest) (*claircore.IndexReport, bool, error) {
 	res, ok, err := l.store.IndexReport(ctx, hash)
 	return res, ok, err
 }

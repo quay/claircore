@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 	"github.com/quay/claircore/test/log"
@@ -21,7 +22,7 @@ func Test_RepositoriesByLayer_Success(t *testing.T) {
 		// name of the test
 		name string
 		// the layer hash we want to test
-		hash string
+		hash claircore.Digest
 		// number repos to create
 		repos int
 		// number scnrs to create
@@ -29,37 +30,37 @@ func Test_RepositoriesByLayer_Success(t *testing.T) {
 	}{
 		{
 			name:  "10 repos, 5 scanners",
-			hash:  "test-layer-hash",
+			hash:  randomHash(t),
 			repos: 10,
 			scnrs: 5,
 		},
 		{
 			name:  "50 repos, 25 scanners",
-			hash:  "test-layer-hash",
+			hash:  randomHash(t),
 			repos: 50,
 			scnrs: 25,
 		},
 		{
 			name:  "100 repos, 50 scanners",
-			hash:  "test-layer-hash",
+			hash:  randomHash(t),
 			repos: 100,
 			scnrs: 50,
 		},
 		{
 			name:  "500 repos, 250 scanners",
-			hash:  "test-layer-hash",
+			hash:  randomHash(t),
 			repos: 500,
 			scnrs: 250,
 		},
 		{
 			name:  "1000 repos, 500 scanners",
-			hash:  "test-layer-hash",
+			hash:  randomHash(t),
 			repos: 1000,
 			scnrs: 500,
 		},
 		{
 			name:  "2000 repos, 1000 scanners",
-			hash:  "test-layer-hash",
+			hash:  randomHash(t),
 			repos: 2000,
 			scnrs: 1000,
 		},

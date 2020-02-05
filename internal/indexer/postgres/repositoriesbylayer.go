@@ -25,7 +25,7 @@ WHERE
 	repo_scanartifact.layer_hash = '%s' AND repo_scanartifact.scanner_id IN (?);`
 )
 
-func repositoriesByLayer(ctx context.Context, db *sqlx.DB, hash string, scnrs indexer.VersionedScanners) ([]*claircore.Repository, error) {
+func repositoriesByLayer(ctx context.Context, db *sqlx.DB, hash claircore.Digest, scnrs indexer.VersionedScanners) ([]*claircore.Repository, error) {
 	// TODO Use passed-in Context.
 	// get scanner ids
 	scannerIDs := []int64{}

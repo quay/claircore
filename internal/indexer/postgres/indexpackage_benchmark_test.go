@@ -29,14 +29,14 @@ func Benchmark_IndexPackages(b *testing.B) {
 			name: "10 packages",
 			pkgs: 10,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(b),
 			},
 		},
 		{
 			name: "10 packages with duplicates",
 			pkgs: 10,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(b),
 			},
 			duplicates: true,
 		},
@@ -44,14 +44,14 @@ func Benchmark_IndexPackages(b *testing.B) {
 			name: "50 packages",
 			pkgs: 50,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(b),
 			},
 		},
 		{
 			name: "50 packages with duplicates",
 			pkgs: 50,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(b),
 			},
 			duplicates: true,
 		},
@@ -59,14 +59,14 @@ func Benchmark_IndexPackages(b *testing.B) {
 			name: "100 packages",
 			pkgs: 100,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(b),
 			},
 		},
 		{
 			name: "100 packages with duplicates",
 			pkgs: 100,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(b),
 			},
 			duplicates: true,
 		},
@@ -74,14 +74,14 @@ func Benchmark_IndexPackages(b *testing.B) {
 			name: "250 packages",
 			pkgs: 250,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(b),
 			},
 		},
 		{
 			name: "250 packages",
 			pkgs: 250,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(b),
 			},
 			duplicates: true,
 		},
@@ -89,14 +89,14 @@ func Benchmark_IndexPackages(b *testing.B) {
 			name: "500 packages",
 			pkgs: 500,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(b),
 			},
 		},
 		{
 			name: "500 packages with duplicates",
 			pkgs: 500,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(b),
 			},
 			duplicates: true,
 		},
@@ -104,14 +104,14 @@ func Benchmark_IndexPackages(b *testing.B) {
 			name: "1000 packages",
 			pkgs: 1000,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(b),
 			},
 		},
 		{
 			name: "1000 packages with duplicates",
 			pkgs: 1000,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(b),
 			},
 			duplicates: true,
 		},
@@ -119,14 +119,14 @@ func Benchmark_IndexPackages(b *testing.B) {
 			name: "2000 packages",
 			pkgs: 2000,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(b),
 			},
 		},
 		{
 			name: "2000 packages with duplicates",
 			pkgs: 2000,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(b),
 			},
 			duplicates: true,
 		},
@@ -134,14 +134,14 @@ func Benchmark_IndexPackages(b *testing.B) {
 			name: "3000 packages",
 			pkgs: 3000,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(b),
 			},
 		},
 		{
 			name: "3000 packages with duplicates",
 			pkgs: 3000,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(b),
 			},
 			duplicates: true,
 		},
@@ -149,14 +149,14 @@ func Benchmark_IndexPackages(b *testing.B) {
 			name: "4000 packages",
 			pkgs: 4000,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(b),
 			},
 		},
 		{
 			name: "4000 packages with duplicates",
 			pkgs: 4000,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(b),
 			},
 			duplicates: true,
 		},
@@ -164,14 +164,14 @@ func Benchmark_IndexPackages(b *testing.B) {
 			name: "5000 packages",
 			pkgs: 5000,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(b),
 			},
 		},
 		{
 			name: "5000 packages with duplicates",
 			pkgs: 5000,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(b),
 			},
 			duplicates: true,
 		},

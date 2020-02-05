@@ -18,9 +18,10 @@ func reduce(ctx context.Context, store indexer.Store, scnrs indexer.VersionedSca
 				return nil, err
 			}
 			if !ok {
-				if _, ok := seen[l.Hash]; !ok {
+				h := l.Hash.String()
+				if _, ok := seen[h]; !ok {
 					do = append(do, l)
-					seen[l.Hash] = struct{}{}
+					seen[h] = struct{}{}
 				}
 			}
 		}

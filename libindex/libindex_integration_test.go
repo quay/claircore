@@ -46,7 +46,11 @@ func (tc testcase) Name() string {
 func (tc testcase) Digest() claircore.Digest {
 	h := sha256.New()
 	io.WriteString(h, tc.Name())
-	return claircore.NewDigest("sha256", h.Sum(nil))
+	d, err := claircore.NewDigest("sha256", h.Sum(nil))
+	if err != nil {
+		panic(err)
+	}
+	return d
 }
 
 // RunInner "exposes" just the test logic.
@@ -84,7 +88,7 @@ func (tc testcase) RunInner(ctx context.Context, t *testing.T, dsn string, next 
 
 	// create manifest
 	m := &claircore.Manifest{
-		Hash:   tc.Digest().String(),
+		Hash:   tc.Digest(),
 		Layers: test.ServeLayers(ctx, t, tc.Layers),
 	}
 
@@ -130,10 +134,10 @@ type checkFunc func(context.Context, *testing.T, testcase, *Libindex, *claircore
 
 // CheckEqual is a checkFunc that does what it says on the tin.
 func checkEqual(ctx context.Context, t *testing.T, tc testcase, lib *Libindex, ir *claircore.IndexReport) {
-	hash := tc.Digest().String()
+	hash := tc.Digest()
 	// confirm sr ha the manifest hash we expect
-	if got, want := ir.Hash, hash; got != want {
-		t.Errorf("got: %q, want %q", got, want)
+	if got, want := ir.Hash, hash; !cmp.Equal(got, want, cmp.AllowUnexported(claircore.Digest{})) {
+		t.Error(cmp.Diff(got, want))
 	}
 	if !ir.Success {
 		t.Error("expected Success in IndexReport")
@@ -149,7 +153,7 @@ func checkEqual(ctx context.Context, t *testing.T, tc testcase, lib *Libindex, i
 	if !ok {
 		t.Error("expected ok return from IndexReport")
 	}
-	if got := ir; !cmp.Equal(got, want) {
+	if got := ir; !cmp.Equal(got, want, cmp.AllowUnexported(claircore.Digest{})) {
 		t.Error(cmp.Diff(got, want))
 	}
 }

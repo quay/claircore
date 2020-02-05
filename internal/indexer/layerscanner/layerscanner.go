@@ -57,7 +57,7 @@ func (ls *layerScanner) discardToken() {
 //
 // If the provided ctx is canceled all routines are canceled and an error will be returned.
 // If one or more layer scans fail Scan will report the first received error and all pending and inflight scans will be canceled.
-func (ls *layerScanner) Scan(ctx context.Context, manifest string, layers []*claircore.Layer) error {
+func (ls *layerScanner) Scan(ctx context.Context, manifest claircore.Digest, layers []*claircore.Layer) error {
 	// compute concurrency level
 	x := float64(len(layers))
 	y := float64(ls.cLevel)
