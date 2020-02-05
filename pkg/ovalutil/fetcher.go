@@ -85,10 +85,12 @@ func (f *Fetcher) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 	}
 
 	res, err := f.Client.Do(req.WithContext(ctx))
+	if res != nil {
+		defer res.Body.Close()
+	}
 	if err != nil {
 		return nil, hint, err
 	}
-	defer res.Body.Close()
 	switch res.StatusCode {
 	case http.StatusNotModified:
 		return nil, hint, driver.Unchanged
@@ -105,6 +107,9 @@ func (f *Fetcher) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 		r = res.Body
 	case CompressionGzip:
 		r, err = gzip.NewReader(res.Body)
+		if err != nil {
+			return nil, hint, err
+		}
 	case CompressionBzip2:
 		r = bzip2.NewReader(res.Body)
 	default:
