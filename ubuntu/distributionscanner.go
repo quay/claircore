@@ -6,9 +6,10 @@ import (
 	"regexp"
 	"runtime/trace"
 
+	"github.com/rs/zerolog"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
-	"github.com/rs/zerolog"
 )
 
 const (
@@ -82,7 +83,7 @@ func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]
 	log := zerolog.Ctx(ctx).With().
 		Str("component", "ubuntu/DistributionScanner.Scan").
 		Str("version", ds.Version()).
-		Str("layer", l.Hash).
+		Str("layer", l.Hash.String()).
 		Logger()
 	log.Debug().Msg("start")
 	defer log.Debug().Msg("done")

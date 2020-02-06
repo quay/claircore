@@ -47,8 +47,12 @@ func Inspect(ctx context.Context, r string) (*claircore.Manifest, error) {
 	if err != nil {
 		return nil, err
 	}
+	ccd, err := claircore.ParseDigest(h.String())
+	if err != nil {
+		return nil, err
+	}
 	out := claircore.Manifest{
-		Hash: h.Hex,
+		Hash: ccd,
 	}
 
 	ls, err := img.Layers()
@@ -69,6 +73,10 @@ func Inspect(ctx context.Context, r string) (*claircore.Manifest, error) {
 		if err != nil {
 			return nil, err
 		}
+		ccd, err := claircore.ParseDigest(d.String())
+		if err != nil {
+			return nil, err
+		}
 		u, err := rURL.Parse(path.Join("/", "v2", strings.TrimPrefix(repo.RepositoryStr(), repo.RegistryStr()), "blobs", d.String()))
 		if err != nil {
 			return nil, err
@@ -85,7 +93,7 @@ func Inspect(ctx context.Context, r string) (*claircore.Manifest, error) {
 
 		res.Request.Header.Del("User-Agent")
 		out.Layers = append(out.Layers, &claircore.Layer{
-			Hash:    d.Hex,
+			Hash:    ccd,
 			URI:     res.Request.URL.String(),
 			Headers: res.Request.Header,
 		})

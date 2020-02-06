@@ -1,7 +1,9 @@
 package linux
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
 	"strconv"
 	"testing"
 
@@ -38,43 +40,44 @@ func Test_Coalescer(t *testing.T) {
 	dists := test.GenUniqueDistributions(3) // we will discard dist 0 due to zero value ambiguity
 	layerArtifacts := []layerArtifacts{
 		{
-			hash:  "A",
 			pkgs:  pkgs[0:1],
 			dist:  nil,
 			repos: nil,
 		},
 		{
-			hash:  "B",
 			pkgs:  pkgs[1:2],
 			dist:  nil,
 			repos: nil,
 		},
 		{
-			hash:  "C",
 			pkgs:  pkgs[2:3],
 			dist:  dists[1:2],
 			repos: nil,
 		},
 		{
-			hash:  "D",
 			pkgs:  pkgs[3:4],
 			dist:  nil,
 			repos: nil,
 		},
 		{
-			hash:  "E",
 			pkgs:  pkgs[4:5],
 			dist:  dists[2:],
 			repos: nil,
 		},
 		{
-			hash:  "F",
 			pkgs:  pkgs[5:],
 			dist:  nil,
 			repos: nil,
 		},
 	}
-	err := coalescer.coalesce(ctx, layerArtifacts)
+	var err error
+	for i := range layerArtifacts {
+		layerArtifacts[i].hash, err = claircore.NewDigest("sha256", bytes.Repeat([]byte{uint8(i)}, sha256.Size))
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	err = coalescer.coalesce(ctx, layerArtifacts)
 	if err != nil {
 		t.Fatalf("received error from coalesce method: %v", err)
 	}

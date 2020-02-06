@@ -1,10 +1,14 @@
 package postgres
 
-import "github.com/jmoiron/sqlx"
+import (
+	"github.com/jmoiron/sqlx"
+
+	"github.com/quay/claircore"
+)
 
 // InsertScannerList is to be used with `claircore.test.GenUniqueScanners()`. Inserts
 // a ScannerList record for scanner IDs 0...n associated with provided manifest hash
-func InsertScannerList(db *sqlx.DB, hash string, n int) error {
+func InsertScannerList(db *sqlx.DB, hash claircore.Digest, n int) error {
 	for i := 0; i < n; i++ {
 		_, err := db.Exec(
 			`INSERT INTO scannerlist

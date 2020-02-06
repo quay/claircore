@@ -20,23 +20,23 @@ func Test_IndexReport_Success(t *testing.T) {
 		// the name of the test
 		name string
 		// the hash to lookup
-		hash string
+		hash claircore.Digest
 		// the expected scan result
 		expectedSR *claircore.IndexReport
 		// initialize the database. this test requires us to
 		// create the IndexReport
-		init func(t *testing.T, db *sqlx.DB, sr *claircore.IndexReport, hash string)
+		init func(t *testing.T, db *sqlx.DB, sr *claircore.IndexReport, hash claircore.Digest)
 	}{
 		{
 			name: "full scan result",
-			hash: "test-manifest-hash",
+			hash: randomHash(t),
 			expectedSR: &claircore.IndexReport{
-				Hash:    "test-manifest-hash",
+				Hash:    randomHash(t),
 				State:   "test-state",
 				Success: true,
 				Err:     "",
 			},
-			init: func(t *testing.T, db *sqlx.DB, sr *claircore.IndexReport, hash string) {
+			init: func(t *testing.T, db *sqlx.DB, sr *claircore.IndexReport, hash claircore.Digest) {
 				insertIndexReport(t, db, sr, hash)
 			},
 		},
@@ -59,14 +59,14 @@ func Test_IndexReport_Success(t *testing.T) {
 			if !ok {
 				t.Error("not OK")
 			}
-			if got, want := sr, table.expectedSR; !cmp.Equal(got, want) {
+			if got, want := sr, table.expectedSR; !cmp.Equal(got, want, cmp.AllowUnexported(claircore.Digest{})) {
 				t.Fatal(cmp.Diff(got, want))
 			}
 		})
 	}
 }
 
-func insertIndexReport(t *testing.T, db *sqlx.DB, sr *claircore.IndexReport, hash string) {
+func insertIndexReport(t *testing.T, db *sqlx.DB, sr *claircore.IndexReport, hash claircore.Digest) {
 	_, err := db.Exec(`INSERT INTO indexreport (manifest_hash, scan_result) VALUES ($1, $2)`, hash, jsonbIndexReport(*sr))
 	if err != nil {
 		t.Fatalf("failed to insert test scan result: %v", err)

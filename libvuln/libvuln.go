@@ -65,5 +65,12 @@ func New(ctx context.Context, opts *Opts) (*Libvuln, error) {
 
 // Scan creates a VulnerabilityReport given a manifest's IndexReport.
 func (l *Libvuln) Scan(ctx context.Context, ir *claircore.IndexReport) (*claircore.VulnerabilityReport, error) {
+	log := zerolog.Ctx(ctx).With().
+		Str("component", "libvuln/Libvuln.Scan").
+		Str("manifest", ir.Hash.String()).
+		Logger()
+	ctx = log.WithContext(ctx)
+	log.Info().Msg("match request start")
+	defer log.Info().Msg("match request done")
 	return matcher.Match(ctx, ir, l.matchers, l.store)
 }

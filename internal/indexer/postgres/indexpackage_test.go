@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/jmoiron/sqlx"
 
 	"github.com/quay/claircore"
@@ -39,56 +40,56 @@ func Test_IndexPackages_Success_Parallel(t *testing.T) {
 			name: "10 packages",
 			pkgs: 10,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(t),
 			},
 		},
 		{
 			name: "50 packages",
 			pkgs: 50,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(t),
 			},
 		},
 		{
 			name: "100 packages",
 			pkgs: 100,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(t),
 			},
 		},
 		{
 			name: "250 packages",
 			pkgs: 250,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(t),
 			},
 		},
 		{
 			name: "500 packages",
 			pkgs: 500,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(t),
 			},
 		},
 		{
 			name: "1000 packages",
 			pkgs: 1000,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(t),
 			},
 		},
 		{
 			name: "2000 packages",
 			pkgs: 2000,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(t),
 			},
 		},
 		{
 			name: "3000 packages",
 			pkgs: 3000,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(t),
 			},
 		},
 	}
@@ -141,56 +142,56 @@ func Test_IndexPackages_Success(t *testing.T) {
 			name: "10 packages",
 			pkgs: 10,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(t),
 			},
 		},
 		{
 			name: "50 packages",
 			pkgs: 50,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(t),
 			},
 		},
 		{
 			name: "100 packages",
 			pkgs: 100,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(t),
 			},
 		},
 		{
 			name: "250 packages",
 			pkgs: 250,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(t),
 			},
 		},
 		{
 			name: "500 packages",
 			pkgs: 500,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(t),
 			},
 		},
 		{
 			name: "1000 packages",
 			pkgs: 1000,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(t),
 			},
 		},
 		{
 			name: "2000 packages",
 			pkgs: 2000,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(t),
 			},
 		},
 		{
 			name: "3000 packages",
 			pkgs: 3000,
 			layer: &claircore.Layer{
-				Hash: "test-layer-hash",
+				Hash: randomHash(t),
 			},
 		},
 	}
@@ -242,7 +243,8 @@ func checkPackageScanArtifact(t *testing.T, db *sqlx.DB, expectedPkgs []*clairco
 			t.Fatalf("received error selecting package id %s version %s", pkg.Name, pkg.Version)
 		}
 
-		var layer_hash, package_db, repository_hint string
+		var layerHash claircore.Digest
+		var package_db, repository_hint string
 		var package_id, source_id, scanner_id sql.NullInt64
 		row := db.QueryRowx(
 			`SELECT layer_hash, package_id, source_id, scanner_id, package_db, repository_hint
@@ -255,7 +257,7 @@ func checkPackageScanArtifact(t *testing.T, db *sqlx.DB, expectedPkgs []*clairco
 			0,
 		)
 
-		err = row.Scan(&layer_hash, &package_id, &source_id, &scanner_id, &package_db, &repository_hint)
+		err = row.Scan(&layerHash, &package_id, &source_id, &scanner_id, &package_db, &repository_hint)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				t.Fatalf("failed to find scanartifact for pkg %v", pkg)
@@ -263,8 +265,8 @@ func checkPackageScanArtifact(t *testing.T, db *sqlx.DB, expectedPkgs []*clairco
 			t.Fatalf("received error selecting scanartifact for pkg %v: %v", pkg, err)
 		}
 
-		if got, want := layer_hash, layer.Hash; got != want {
-			t.Errorf("got: %q, want: %q", got, want)
+		if got, want := layerHash, layer.Hash; !cmp.Equal(got, want, cmp.AllowUnexported(claircore.Digest{})) {
+			t.Error(cmp.Diff(got, want))
 		}
 		if got, want := package_id, pkgID; !got.Valid || got.Int64 != want.Int64 {
 			t.Errorf("got: %v, want: %v", got, want)
