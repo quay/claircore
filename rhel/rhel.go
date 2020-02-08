@@ -1,16 +1,10 @@
 package rhel // import "github.com/quay/claircore/rhel"
 
 import (
-	"context"
-	"encoding/xml"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 
-	"github.com/quay/goval-parser/oval"
-
-	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/ovalutil"
 )
@@ -24,12 +18,14 @@ var _ driver.Updater = (*Updater)(nil)
 type Updater struct {
 	ovalutil.Fetcher // fetch method promoted via embed
 	name             string
+	release          Release
 }
 
 // NewUpdater returns an Updater.
 func NewUpdater(v Release, opt ...Option) (*Updater, error) {
 	u := &Updater{
-		name: fmt.Sprintf("rhel-%d-updater", v),
+		name:    fmt.Sprintf("rhel-%d-updater", v),
+		release: v,
 	}
 	var err error
 	u.Fetcher.URL, err = url.Parse(fmt.Sprintf(dbURL, v))
@@ -81,14 +77,4 @@ func WithClient(c *http.Client) Option {
 // Name satisifies the driver.Updater interface.
 func (u *Updater) Name() string {
 	return u.name
-}
-
-// ParseContext is like Parse, but with context.
-func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
-	defer r.Close()
-	root := oval.Root{}
-	if err := xml.NewDecoder(r).Decode(&root); err != nil {
-		return nil, fmt.Errorf("rhel: unable to decode OVAL document: %w", err)
-	}
-	return ovalutil.NewRPMInfo(&root).Extract(ctx)
 }

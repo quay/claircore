@@ -1,17 +1,10 @@
 package suse
 
 import (
-	"context"
-	"encoding/xml"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 
-	"github.com/quay/goval-parser/oval"
-	"github.com/rs/zerolog"
-
-	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/ovalutil"
 )
@@ -29,7 +22,7 @@ func init() {
 
 // Updater implements driver.Updater for SUSE.
 type Updater struct {
-	release          string
+	release          Release
 	ovalutil.Fetcher // promoted Fetch method
 }
 
@@ -41,7 +34,7 @@ var (
 // NewUpdater configures an updater to fetch the specified Release.
 func NewUpdater(r Release, opts ...Option) (*Updater, error) {
 	u := &Updater{
-		release: string(r),
+		release: r,
 	}
 	for _, o := range opts {
 		if err := o(u); err != nil {
@@ -53,7 +46,7 @@ func NewUpdater(r Release, opts ...Option) (*Updater, error) {
 	}
 	if u.Fetcher.URL == nil {
 		var err error
-		u.Fetcher.URL, err = upstreamBase.Parse(u.release + ".xml")
+		u.Fetcher.URL, err = upstreamBase.Parse(string(u.release) + ".xml")
 		if err != nil {
 			return nil, err
 		}
@@ -95,19 +88,4 @@ func WithClient(c *http.Client) Option {
 // Name satisfies driver.Updater.
 func (u *Updater) Name() string {
 	return fmt.Sprintf(`suse-updater-%s`, u.release)
-}
-
-// ParseContext is like Parse, but with context.
-func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "suse/Updater.Parse").
-		Logger()
-	ctx = log.WithContext(ctx)
-	log.Info().Msg("starting parse")
-	defer r.Close()
-	root := oval.Root{}
-	if err := xml.NewDecoder(r).Decode(&root); err != nil {
-		return nil, fmt.Errorf("suse: unable to decode OVAL document: %w", err)
-	}
-	return ovalutil.NewRPMInfo(&root).Extract(ctx)
 }
