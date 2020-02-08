@@ -4,44 +4,46 @@ import (
 	"context"
 	"testing"
 
+	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 	"github.com/quay/claircore/test/log"
 	pgtest "github.com/quay/claircore/test/postgres"
 )
 
+type scannerTestcase struct {
+	// the name of this test
+	name string
+	// the manifest hash
+	hash claircore.Digest
+	// the number of scanners linked to a manifest
+	scanners int
+}
+
 func Test_ManifestScanned_Failure(t *testing.T) {
 	integration.Skip(t)
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
-	const hash = `deadbeef`
 
-	var tt = []struct {
-		// the name of this test
-		name string
-		// the manifest hash
-		hash string
-		// the number of scanners linked to a manifest
-		scanners int
-	}{
+	var tt = []scannerTestcase{
 		{
 			name:     "one scanner",
-			hash:     hash,
+			hash:     randomHash(t),
 			scanners: 1,
 		},
 		{
 			name:     "two scanners",
-			hash:     hash,
+			hash:     randomHash(t),
 			scanners: 2,
 		},
 		{
 			name:     "five scanners",
-			hash:     hash,
+			hash:     randomHash(t),
 			scanners: 5,
 		},
 		{
 			name:     "ten scanners",
-			hash:     hash,
+			hash:     randomHash(t),
 			scanners: 10,
 		},
 	}
@@ -50,7 +52,7 @@ func Test_ManifestScanned_Failure(t *testing.T) {
 		t.Run(table.name, func(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
-			ctx, _ = log.TestLogger(ctx, t)
+			ctx = log.TestLogger(ctx, t)
 			db, store, _, teardown := TestStore(ctx, t)
 			defer teardown()
 
@@ -75,34 +77,26 @@ func Test_ManifestScanned_Success(t *testing.T) {
 	integration.Skip(t)
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
-	const hash = `deafbeef`
 
-	var tt = []struct {
-		// the name of this test
-		name string
-		// the manifest hash
-		hash string
-		// the number of scanners linked to a manifest
-		scanners int
-	}{
+	var tt = []scannerTestcase{
 		{
 			name:     "one scanner",
-			hash:     hash,
+			hash:     randomHash(t),
 			scanners: 1,
 		},
 		{
 			name:     "two scanners",
-			hash:     hash,
+			hash:     randomHash(t),
 			scanners: 2,
 		},
 		{
 			name:     "five scanners",
-			hash:     hash,
+			hash:     randomHash(t),
 			scanners: 5,
 		},
 		{
 			name:     "ten scanners",
-			hash:     hash,
+			hash:     randomHash(t),
 			scanners: 10,
 		},
 	}
@@ -111,7 +105,7 @@ func Test_ManifestScanned_Success(t *testing.T) {
 		t.Run(table.name, func(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
-			ctx, _ = log.TestLogger(ctx, t)
+			ctx = log.TestLogger(ctx, t)
 			db, store, _, teardown := TestStore(ctx, t)
 			defer teardown()
 

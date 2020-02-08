@@ -34,7 +34,7 @@ func (u *Updater) Name() string {
 }
 
 func (u *Updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
-	client, err := NewClient(u.release)
+	client, err := NewClient(ctx, u.release)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to create client: %v", err)
 	}
@@ -73,10 +73,7 @@ func (u *Updater) Parse(ctx context.Context, contents io.ReadCloser) ([]*clairco
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal updates xml: %v", err)
 	}
-	dist, err := releaseToDist(u.release)
-	if err != nil {
-		return nil, fmt.Errorf("failed to classify vulns with distribution: %w", err)
-	}
+	dist := releaseToDist(u.release)
 
 	vulns := []*claircore.Vulnerability{}
 	for _, update := range updates.Updates {

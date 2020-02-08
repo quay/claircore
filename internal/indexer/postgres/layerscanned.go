@@ -7,6 +7,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
+	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
 )
 
@@ -20,7 +21,7 @@ const (
 	selectRepositoryScanArtifact   = `SELECT layer_hash FROM repo_scanartifact WHERE layer_hash = $1 AND scanner_id = $2 LIMIT 1;`
 )
 
-func layerScanned(ctx context.Context, db *sqlx.DB, hash string, scnr indexer.VersionedScanner) (bool, error) {
+func layerScanned(ctx context.Context, db *sqlx.DB, hash claircore.Digest, scnr indexer.VersionedScanner) (bool, error) {
 	// TODO Use passed-in Context.
 	var scannerID int64
 	err := db.Get(&scannerID, selectScannerID, scnr.Name(), scnr.Version())
@@ -32,7 +33,7 @@ func layerScanned(ctx context.Context, db *sqlx.DB, hash string, scnr indexer.Ve
 		return false, err
 	}
 
-	var layerHash string
+	var layerHash claircore.Digest
 	var query string
 	switch scnr.Kind() {
 	case "package":

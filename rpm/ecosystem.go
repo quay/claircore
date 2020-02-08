@@ -3,19 +3,27 @@ package rpm
 import (
 	"context"
 
+	"github.com/quay/claircore/aws"
 	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/internal/indexer/linux"
-	"github.com/quay/claircore/osrelease"
+	"github.com/quay/claircore/oracle"
+	"github.com/quay/claircore/rhel"
+	"github.com/quay/claircore/suse"
 )
 
-// NewEcosystem provides the set of scanners and coalescers for the dpkg ecosystem
+// NewEcosystem provides the set of scanners and coalescers for the rpm ecosystem
 func NewEcosystem(ctx context.Context) *indexer.Ecosystem {
 	return &indexer.Ecosystem{
 		PackageScanners: func(ctx context.Context) ([]indexer.PackageScanner, error) {
 			return []indexer.PackageScanner{&Scanner{}}, nil
 		},
 		DistributionScanners: func(ctx context.Context) ([]indexer.DistributionScanner, error) {
-			return []indexer.DistributionScanner{&osrelease.Scanner{}}, nil
+			return []indexer.DistributionScanner{
+				&aws.DistributionScanner{},
+				&oracle.DistributionScanner{},
+				&rhel.DistributionScanner{},
+				&suse.DistributionScanner{},
+			}, nil
 		},
 		RepositoryScanners: func(ctx context.Context) ([]indexer.RepositoryScanner, error) {
 			return []indexer.RepositoryScanner{}, nil

@@ -81,6 +81,7 @@ func buildGetQuery(record *claircore.IndexRecord, matchers []driver.MatchConstra
 		"repo_key",
 		"repo_uri",
 		"fixed_in_version",
+		"updater",
 	).From("vuln").Where(exps...)
 
 	sql, _, err := query.ToSQL()

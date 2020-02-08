@@ -2,6 +2,7 @@ package claircore
 
 import (
 	"archive/tar"
+	"crypto/sha256"
 	"os"
 	"path/filepath"
 	"strings"
@@ -86,8 +87,12 @@ func (tc tarTestCase) Generate(t *testing.T) {
 func (tc tarTestCase) Layer(t *testing.T) *Layer {
 	tc.Generate(t)
 	l := Layer{
-		Hash: "deadbeef",
-		URI:  "file:///dev/null",
+		URI: "file:///dev/null",
+	}
+	var err error
+	l.Hash, err = NewDigest("sha256", make([]byte, sha256.Size))
+	if err != nil {
+		t.Fatal(err)
 	}
 	if err := l.SetLocal(tc.filename()); err != nil {
 		t.Fatal(err)

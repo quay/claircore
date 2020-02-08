@@ -9,14 +9,11 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
-	"text/template"
 )
 
 var cleanup sync.WaitGroup
 
 type commonConfig struct {
-	UseDocker   bool
-	URLTemplate *template.Template
 }
 
 type subcmd func(context.Context, *commonConfig, []string) error
@@ -35,7 +32,6 @@ func main() {
 		<-ch
 		done()
 	}()
-	var err error
 
 	var cfg commonConfig
 	fs := flag.NewFlagSet("main", flag.ExitOnError)
@@ -46,17 +42,12 @@ func main() {
 		fmt.Fprintf(out, "\nSubcommands\n\n")
 		fmt.Fprintln(out, "report")
 		fmt.Fprintln(out, "\tgenerate reports for containers provided as arguments or on stdin")
+		fmt.Fprintln(out, "manifest")
+		fmt.Fprintln(out, "\tgenerate manifests for containers provided as arguments or on stdin")
 		fmt.Fprintln(out)
 	}
 
-	fs.BoolVar(&cfg.UseDocker, "d", false, "use 'docker' tools instead of 'skopeo'")
-	tmplString := fs.String("f", `http://localhost/{{.Hash}}`, "template string for generating layer URLs")
-
 	if err := fs.Parse(os.Args[1:]); err != nil {
-		log.Fatal(err)
-	}
-	cfg.URLTemplate, err = template.New("url").Parse(*tmplString)
-	if err != nil {
 		log.Fatal(err)
 	}
 
@@ -64,6 +55,8 @@ func main() {
 	switch n := fs.Arg(0); n {
 	case "report":
 		cmd = Report
+	case "manifest":
+		cmd = Manifest
 	case "":
 		fs.Usage()
 		os.Exit(99)

@@ -21,7 +21,6 @@ func (u *Updater) fetch(ctx context.Context) (io.ReadCloser, string, error) {
 	// fetch OVAL xml database
 	resp, err := u.c.Do(req)
 	if err != nil {
-		u.logger.Error().Msgf("failed to retrieve OVAL database: %v", err)
 		return nil, "", fmt.Errorf("failed to retrieve OVAL database: %v", err)
 	}
 
@@ -33,7 +32,6 @@ func (u *Updater) fetch(ctx context.Context) (io.ReadCloser, string, error) {
 	// copy into byte array
 	b, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		u.logger.Error().Msgf("failed to read http body: %v", err)
 		return nil, "", fmt.Errorf("failed to read http body: %v", err)
 	}
 

@@ -16,8 +16,9 @@ import (
 
 func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.IndexRecord, opts vulnstore.GetOpts) (map[string][]*claircore.Vulnerability, error) {
 	log := zerolog.Ctx(ctx).With().
-		Str("component", "vulnstore.get").
+		Str("component", "internal/vulnstore/postgres/get").
 		Logger()
+	ctx = log.WithContext(ctx)
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		return nil, err
@@ -83,6 +84,7 @@ func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.IndexReco
 				&v.Repo.URI,
 				&v.Dist.PrettyName,
 				&v.FixedInVersion,
+				&v.Updater,
 			)
 			v.ID = strconv.FormatInt(id, 10)
 			if err != nil {

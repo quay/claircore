@@ -1,3 +1,4 @@
+---
 name: Deploy Snapshot
 
 on:
@@ -5,32 +6,25 @@ on:
     types: [published]
 
 jobs:
-  build:
+  deploy-documentation:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-      with:
-        path: checkout
+      - name: Checkout
+        uses: actions/checkout@v2
 
-    - name: Setup mdBook
-      uses: peaceiris/actions-mdbook@v1
-      with:
-        mdbook-version: '0.3.5'
+      - name: Setup mdBook
+        uses: peaceiris/actions-mdbook@v1
+        with:
+          mdbook-version: '0.3.5'
 
-    - name: Setup Directories
-      run: |
-        cp -Rv checkout/docs src
-        mkdir book
- 
-    - name: mdBook Build
-      run: mdbook build --dest-dir ./book/$(basename ${GITHUB_REF})
+      - name: mdBook Build
+        run: mdbook build --dest-dir ./book/$(basename ${GITHUB_REF})
 
-    - name: Deploy
-      uses: peaceiris/actions-gh-pages@v2
-      env:
-        ACTIONS_DEPLOY_KEY: ${{ secrets.ACTIONS_DEPLOY_KEY }}
-        PUBLISH_BRANCH: gh-pages
-        PUBLISH_DIR: ./book
-      with:
-        keepFiles: true
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v2
+        env:
+          ACTIONS_DEPLOY_KEY: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+          PUBLISH_BRANCH: gh-pages
+          PUBLISH_DIR: ./book
+        with:
+          keepFiles: true

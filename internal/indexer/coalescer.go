@@ -8,7 +8,7 @@ import (
 
 // layerArifact aggregates the any artifacts found within a layer
 type LayerArtifacts struct {
-	Hash  string
+	Hash  claircore.Digest
 	Pkgs  []*claircore.Package
 	Dist  []*claircore.Distribution // each layer can only have a single distribution
 	Repos []*claircore.Repository

@@ -6,9 +6,6 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
-
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/ovalutil"
 )
@@ -22,8 +19,6 @@ const (
 type Updater struct {
 	year             int
 	ovalutil.Fetcher // Fetch method promoted via embed
-
-	logger *zerolog.Logger // hack until the context-ified interfaces are used
 }
 
 // Option configures the provided Updater.
@@ -51,11 +46,6 @@ func NewUpdater(year int, opts ...Option) (*Updater, error) {
 			return nil, err
 		}
 	}
-	if u.logger == nil {
-		u.logger = &log.Logger
-	}
-	l := u.logger.With().Str("component", u.Name()).Logger()
-	u.logger = &l
 	if u.Fetcher.Client == nil {
 		u.Fetcher.Client = http.DefaultClient
 	}
@@ -86,17 +76,6 @@ func WithURL(uri, compression string) Option {
 		}
 		up.Fetcher.Compression = c
 		up.Fetcher.URL = u
-		return nil
-	}
-}
-
-// WithLogger sets the default logger.
-//
-// Functions that take a context.Context will use the logger embedded in there
-// instead of the Logger passed in via this Option.
-func WithLogger(l *zerolog.Logger) Option {
-	return func(u *Updater) error {
-		u.logger = l
 		return nil
 	}
 }

@@ -15,7 +15,6 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"strconv"
 	"strings"
 	"sync"
 	"text/tabwriter"
@@ -25,11 +24,9 @@ import (
 	"github.com/quay/claircore"
 )
 
-var outTmpl *template.Template
-
-func init() {
+const (
 	// Note the tabs in this template. That's for the tabwriter.
-	const tmpl = `
+	tabwriterTmpl = `
 {{- define "ok" -}}
 {{.Name}}	ok
 {{end}}
@@ -47,10 +44,46 @@ func init() {
 {{- else if ne (len .Report.PackageVulnerabilities) 0}}{{template "found" .}}
 {{- else}}{{template "ok" .}}
 {{- end}}{{end}}`
-	outTmpl = template.Must(template.New("output").Funcs(map[string]interface{}{
-		"atoi": strconv.Atoi,
-	}).Parse(tmpl))
-}
+
+	junitTmpl = `<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+{{- define "found" -}}
+{{- with $r := . }}
+	<testsuite name="{{ $r.Name }}"
+	           time=""
+	           tests="{{ len .Report.PackageVulnerabilities }}"
+	           failures="{{ len .Report.PackageVulnerabilities }}">
+		{{- range $id, $v := .Report.PackageVulnerabilities }}
+		{{- range $d := $v }}
+		<testcase classname=
+			{{- with index $r.Report.Packages $id -}}
+				"{{ .Name }} ({{ .Version }})"
+			{{- end }}
+		          name=
+			{{- with index $r.Report.Vulnerabilities $d -}}
+				"{{ .Name }} {{- with .FixedInVersion }} (fixed: {{ . }}){{ end }}"
+			{{- end -}}
+			>
+			{{- with index $r.Report.Vulnerabilities $d }}
+			<failure message="Failed" type="{{ .Severity }}"><![CDATA[
+				{{ .Description }}
+				{{- with .Links }} {{ . }}{{ end }}
+				{{- with .Repo }} (from: {{ .Name }}){{ end }}
+			]]></failure>
+			{{- end }}
+		</testcase>
+		{{- end }}
+		{{- end }}
+	</testsuite>
+{{- end -}}
+{{- end -}}
+
+{{- range . }}
+{{- template "found" .}}
+{{- end }}
+</testsuites>
+	`
+)
 
 type reportConfig struct {
 	jqFilter          string
@@ -68,6 +101,7 @@ func Report(cmd context.Context, cfg *commonConfig, args []string) error {
 	fs.StringVar(&cmdcfg.jqFilter, "jq", "", "run a jq filter on the manifest index before sending for matching")
 	fs.DurationVar(&cmdcfg.timeout, "timeout", 5*time.Minute, "timeout for successful http responses")
 	fs.BoolVar(&cmdcfg.dump, "dump", false, "dump indexreports to file described by dump-fmt")
+	useJunitReport := fs.Bool("junit", false, "produce jUnit compatible report (instead of tabwriter)")
 	libindexRoot := fs.String("libindex", "http://localhost:8080/", "address for a libindex api server")
 	libvulnRoot := fs.String("libvuln", "http://localhost:8081/", "address for a libvuln api server")
 	indexTmplString := fs.String("index-fmt", "{{.}}.index.json", "filenames to use when the dump flag is provided")
@@ -109,6 +143,16 @@ func Report(cmd context.Context, cfg *commonConfig, args []string) error {
 		return err
 	}
 
+	tmpl := tabwriterTmpl
+	if *useJunitReport {
+		tmpl = junitTmpl
+	}
+
+	outTmpl, err := template.New("output").Parse(tmpl)
+	if err != nil {
+		return err
+	}
+
 	type Result struct {
 		Name   string
 		Err    error
@@ -140,11 +184,19 @@ func Report(cmd context.Context, cfg *commonConfig, args []string) error {
 		wg.Wait()
 		close(ch)
 	}()
-	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
-	defer tw.Flush()
-	if err := outTmpl.Execute(tw, ch); err != nil {
+
+	writer := (io.Writer)(os.Stdout)
+
+	if !*useJunitReport {
+		tw := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', 0)
+		defer tw.Flush()
+		writer = tw
+	}
+
+	if err := outTmpl.Execute(writer, ch); err != nil {
 		return err
 	}
+
 	if errd {
 		return errors.New("some requests failed")
 	}

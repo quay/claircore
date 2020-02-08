@@ -14,7 +14,7 @@ func TestLiveDatabase(t *testing.T) {
 	integration.Skip(t)
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
-	ctx, _ = log.TestLogger(ctx, t)
+	ctx = log.TestLogger(ctx, t)
 
 	u, err := NewUpdater(EnterpriseServer15)
 	if err != nil {

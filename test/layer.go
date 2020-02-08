@@ -6,7 +6,6 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
-	"encoding/hex"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -92,8 +91,11 @@ func ServeLayers(ctx context.Context, t *testing.T, n int) []*claircore.Layer {
 
 		lsrv.blobs[i] = bytes.NewReader(buf.Bytes())
 		ls[i] = &claircore.Layer{
-			Hash: hex.EncodeToString(h.Sum(nil)),
-			URI:  u.String(),
+			URI: u.String(),
+		}
+		ls[i].Hash, err = claircore.NewDigest("sha256", h.Sum(nil))
+		if err != nil {
+			t.Fatal(err)
 		}
 	}
 
@@ -115,14 +117,14 @@ func RealizeLayers(ctx context.Context, t *testing.T, spec ...LayerSpec) []clair
 		go func() {
 			defer wg.Done()
 			for n := range fetchCh {
-				id := &spec[n].ID
-				f, err := fetch.Layer(ctx, t, nil, spec[n].Domain, spec[n].Repo, id.String())
+				id := spec[n].ID
+				f, err := fetch.Layer(ctx, t, nil, spec[n].Domain, spec[n].Repo, id)
 				if err != nil {
 					t.Error(err)
 					continue
 				}
 				ret[n].URI = "file:///dev/null"
-				ret[n].Hash = hex.EncodeToString(id.Checksum())
+				ret[n].Hash = id
 				ret[n].SetLocal(f.Name())
 				if err := f.Close(); err != nil {
 					t.Error(err)

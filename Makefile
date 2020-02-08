@@ -62,7 +62,8 @@ claircore-db-up:
 
 .PHONY: claircore-db-restart
 claircore-db-restart:
-	$(docker-compose) up -d --force-recreate claircore-db
+	$(docker) kill claircore_claircore-db_1 && $(docker) rm claircore_claircore-db_1
+	make claircore-db-up
 
 .PHONY: libindexhttp-restart
 libindexhttp-restart:
@@ -134,9 +135,5 @@ baseimage:
 	   	--build-arg GO_CHECKSUM=$(GO_CHECKSUM) \
 		etc
 
-.PHONY: mdbook
-mdbook:
-	# This is some faffing about to make it look like the CI environment.
-	trap 'rm src checkout' EXIT ;\
-	ln -s docs src && ln -s $$(git rev-parse --show-toplevel) checkout &&\
-	mdbook serve
+book: $(wildcard docs/*) book.toml
+	mdbook build

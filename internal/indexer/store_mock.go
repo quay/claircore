@@ -35,7 +35,7 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 }
 
 // DistributionsByLayer mocks base method
-func (m *MockStore) DistributionsByLayer(arg0 context.Context, arg1 string, arg2 VersionedScanners) ([]*claircore.Distribution, error) {
+func (m *MockStore) DistributionsByLayer(arg0 context.Context, arg1 claircore.Digest, arg2 VersionedScanners) ([]*claircore.Distribution, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DistributionsByLayer", arg0, arg1, arg2)
 	ret0, _ := ret[0].([]*claircore.Distribution)
@@ -78,7 +78,7 @@ func (mr *MockStoreMockRecorder) IndexPackages(arg0, arg1, arg2, arg3 interface{
 }
 
 // IndexReport mocks base method
-func (m *MockStore) IndexReport(arg0 context.Context, arg1 string) (*claircore.IndexReport, bool, error) {
+func (m *MockStore) IndexReport(arg0 context.Context, arg1 claircore.Digest) (*claircore.IndexReport, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IndexReport", arg0, arg1)
 	ret0, _ := ret[0].(*claircore.IndexReport)
@@ -108,7 +108,7 @@ func (mr *MockStoreMockRecorder) IndexRepositories(arg0, arg1, arg2, arg3 interf
 }
 
 // LayerScanned mocks base method
-func (m *MockStore) LayerScanned(arg0 context.Context, arg1 string, arg2 VersionedScanner) (bool, error) {
+func (m *MockStore) LayerScanned(arg0 context.Context, arg1 claircore.Digest, arg2 VersionedScanner) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "LayerScanned", arg0, arg1, arg2)
 	ret0, _ := ret[0].(bool)
@@ -123,7 +123,7 @@ func (mr *MockStoreMockRecorder) LayerScanned(arg0, arg1, arg2 interface{}) *gom
 }
 
 // ManifestScanned mocks base method
-func (m *MockStore) ManifestScanned(arg0 context.Context, arg1 string, arg2 VersionedScanners) (bool, error) {
+func (m *MockStore) ManifestScanned(arg0 context.Context, arg1 claircore.Digest, arg2 VersionedScanners) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ManifestScanned", arg0, arg1, arg2)
 	ret0, _ := ret[0].(bool)
@@ -138,7 +138,7 @@ func (mr *MockStoreMockRecorder) ManifestScanned(arg0, arg1, arg2 interface{}) *
 }
 
 // PackagesByLayer mocks base method
-func (m *MockStore) PackagesByLayer(arg0 context.Context, arg1 string, arg2 VersionedScanners) ([]*claircore.Package, error) {
+func (m *MockStore) PackagesByLayer(arg0 context.Context, arg1 claircore.Digest, arg2 VersionedScanners) ([]*claircore.Package, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PackagesByLayer", arg0, arg1, arg2)
 	ret0, _ := ret[0].([]*claircore.Package)
@@ -167,7 +167,7 @@ func (mr *MockStoreMockRecorder) RegisterScanners(arg0, arg1 interface{}) *gomoc
 }
 
 // RepositoriesByLayer mocks base method
-func (m *MockStore) RepositoriesByLayer(arg0 context.Context, arg1 string, arg2 VersionedScanners) ([]*claircore.Repository, error) {
+func (m *MockStore) RepositoriesByLayer(arg0 context.Context, arg1 claircore.Digest, arg2 VersionedScanners) ([]*claircore.Repository, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RepositoriesByLayer", arg0, arg1, arg2)
 	ret0, _ := ret[0].([]*claircore.Repository)

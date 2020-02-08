@@ -18,7 +18,7 @@ import (
 func Test_Coalescer(t *testing.T) {
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
-	ctx, _ = log.TestLogger(ctx, t)
+	ctx = log.TestLogger(ctx, t)
 	coalescer := &Coalescer{
 		ir: &claircore.IndexReport{
 			Environments:  map[string][]*claircore.Environment{},
@@ -36,37 +36,37 @@ func Test_Coalescer(t *testing.T) {
 	dists := test.GenUniqueDistributions(3) // we will discard dist 0 due to zero value ambiguity
 	layerArtifacts := []*indexer.LayerArtifacts{
 		{
-			Hash:  "A",
+			Hash:  claircore.Digest{Repr: "A"},
 			Pkgs:  pkgs[0:1],
 			Dist:  nil,
 			Repos: nil,
 		},
 		{
-			Hash:  "B",
+			Hash:  claircore.Digest{Repr: "B"},
 			Pkgs:  pkgs[1:2],
 			Dist:  nil,
 			Repos: nil,
 		},
 		{
-			Hash:  "C",
+			Hash:  claircore.Digest{Repr: "C"},
 			Pkgs:  pkgs[2:3],
 			Dist:  dists[1:2],
 			Repos: nil,
 		},
 		{
-			Hash:  "D",
+			Hash:  claircore.Digest{Repr: "D"},
 			Pkgs:  pkgs[3:4],
 			Dist:  nil,
 			Repos: nil,
 		},
 		{
-			Hash:  "E",
+			Hash:  claircore.Digest{Repr: "E"},
 			Pkgs:  pkgs[4:5],
 			Dist:  dists[2:],
 			Repos: nil,
 		},
 		{
-			Hash:  "F",
+			Hash:  claircore.Digest{Repr: "F"},
 			Pkgs:  pkgs[5:],
 			Dist:  nil,
 			Repos: nil,

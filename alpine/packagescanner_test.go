@@ -14,7 +14,10 @@ import (
 )
 
 func TestScan(t *testing.T) {
-	const hash = `89d9c30c1d48bac627e5c6cb0d1ed1eec28e7dbdfbcc04712e4c79c0f83faf17`
+	hash, err := claircore.ParseDigest("sha256:89d9c30c1d48bac627e5c6cb0d1ed1eec28e7dbdfbcc04712e4c79c0f83faf17")
+	if err != nil {
+		t.Fatal(err)
+	}
 	want := []*claircore.Package{
 		&claircore.Package{
 			Name:           "musl",
@@ -132,7 +135,7 @@ func TestScan(t *testing.T) {
 
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
-	ctx, _ = log.TestLogger(ctx, t)
+	ctx = log.TestLogger(ctx, t)
 	l := &claircore.Layer{
 		Hash: hash,
 	}

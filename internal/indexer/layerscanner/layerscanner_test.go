@@ -2,6 +2,7 @@ package layerscanner
 
 import (
 	"context"
+	"crypto/sha256"
 	"testing"
 	"time"
 
@@ -85,7 +86,11 @@ func Test_Scan_NoErrors(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()
-	if err := layerscanner.Scan(ctx, "test-manifest", layers); err != nil {
+	d, err := claircore.NewDigest("sha256", make([]byte, sha256.Size))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := layerscanner.Scan(ctx, d, layers); err != nil {
 		t.Fatalf("failed to scan test layers: %v", err)
 	}
 }

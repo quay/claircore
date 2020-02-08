@@ -5,8 +5,6 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/rs/zerolog/log"
-
 	"github.com/quay/claircore/alpine"
 	"github.com/quay/claircore/aws"
 	"github.com/quay/claircore/debian"
@@ -51,20 +49,12 @@ var alpineMatrix = map[alpine.Repo][]alpine.Release{
 }
 
 var suseReleases = []suse.Release{
-	suse.Enterprise15,
-	suse.Enterprise12,
 	suse.EnterpriseServer15,
 	suse.EnterpriseServer12,
 	suse.EnterpriseServer11,
-	suse.EnterpriseDesktop15,
-	suse.EnterpriseDesktop12,
-	suse.EnterpriseDesktop11,
 	suse.Leap423,
 	suse.Leap150,
 	suse.Leap151,
-	suse.OpenStackCloud9,
-	suse.OpenStackCloud8,
-	suse.OpenStackCloud7,
 }
 
 func updaters() ([]driver.Updater, error) {
@@ -100,7 +90,7 @@ func updaters() ([]driver.Updater, error) {
 	}
 
 	for year, lim := 2007, time.Now().Year(); year != lim; year++ {
-		u, err := oracle.NewUpdater(year, oracle.WithLogger(&log.Logger))
+		u, err := oracle.NewUpdater(year)
 		if err != nil {
 			return nil, fmt.Errorf("unable to create oracle updater: %v", err)
 		}
@@ -108,7 +98,7 @@ func updaters() ([]driver.Updater, error) {
 	}
 
 	for _, rel := range suseReleases {
-		u, err := suse.NewUpdater(rel, suse.WithLogger(&log.Logger))
+		u, err := suse.NewUpdater(rel)
 		if err != nil {
 			return nil, fmt.Errorf("unable to create suse updater: %v", err)
 		}

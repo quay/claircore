@@ -15,6 +15,8 @@ func Test_SetIndexReport_StateUpdate(t *testing.T) {
 	integration.Skip(t)
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
+
+	hash := randomHash(t)
 	var tt = []struct {
 		// the name of the test
 		name string
@@ -26,11 +28,11 @@ func Test_SetIndexReport_StateUpdate(t *testing.T) {
 		{
 			name: "single package. no nested source",
 			initState: &claircore.IndexReport{
-				Hash:  "test-manifest-hash",
+				Hash:  hash,
 				State: "initial-state",
 			},
 			transitionState: &claircore.IndexReport{
-				Hash:  "test-manifest-hash",
+				Hash:  hash,
 				State: "transitioned-state",
 			},
 		},
@@ -39,7 +41,7 @@ func Test_SetIndexReport_StateUpdate(t *testing.T) {
 		t.Run(table.name, func(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
-			ctx, _ = log.TestLogger(ctx, t)
+			ctx = log.TestLogger(ctx, t)
 			db, store, _, teardown := TestStore(ctx, t)
 			defer teardown()
 
@@ -64,7 +66,7 @@ func Test_SetIndexReport_StateUpdate(t *testing.T) {
 	}
 }
 
-func getIndexReport(t *testing.T, db *sqlx.DB, hash string) claircore.IndexReport {
+func getIndexReport(t *testing.T, db *sqlx.DB, hash claircore.Digest) claircore.IndexReport {
 	// jsonbIndexReport is a type definition based on scanner.IndexReport but with jsonb Value/Scan methods
 	var sr jsonbIndexReport
 	row := db.QueryRow(`SELECT scan_result FROM indexreport WHERE manifest_hash = $1`, hash)
@@ -88,7 +90,7 @@ func Test_SetIndexReport_Success(t *testing.T) {
 		{
 			name: "single package. no nested source",
 			sr: &claircore.IndexReport{
-				Hash:    "test-manifest-hash",
+				Hash:    randomHash(t),
 				State:   "test-state",
 				Success: true,
 				Err:     "",
@@ -97,7 +99,7 @@ func Test_SetIndexReport_Success(t *testing.T) {
 		{
 			name: "single package nested source",
 			sr: &claircore.IndexReport{
-				Hash:    "test-manifest-hash",
+				Hash:    randomHash(t),
 				State:   "test-state",
 				Success: true,
 				Err:     "",
@@ -109,7 +111,7 @@ func Test_SetIndexReport_Success(t *testing.T) {
 		t.Run(table.name, func(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
-			ctx, _ = log.TestLogger(ctx, t)
+			ctx = log.TestLogger(ctx, t)
 			_, store, _, teardown := TestStore(ctx, t)
 			defer teardown()
 

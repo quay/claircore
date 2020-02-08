@@ -32,7 +32,7 @@ func Test_Updater(t *testing.T) {
 		t.Run(table.name, func(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
-			ctx, _ = log.TestLogger(ctx, t)
+			ctx = log.TestLogger(ctx, t)
 
 			updater, err := NewUpdater(table.release)
 			assert.NoError(t, err)

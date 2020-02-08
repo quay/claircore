@@ -15,7 +15,7 @@ func Test_PutHash_Upsert(t *testing.T) {
 	integration.Skip(t)
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
-	ctx, _ = log.TestLogger(ctx, t)
+	ctx = log.TestLogger(ctx, t)
 	var tt = []struct {
 		name       string
 		iterations int
@@ -81,7 +81,7 @@ func Test_PutHash_Insert(t *testing.T) {
 	integration.Skip(t)
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
-	ctx, _ = log.TestLogger(ctx, t)
+	ctx = log.TestLogger(ctx, t)
 	var tt = []struct {
 		name       string
 		iterations int
