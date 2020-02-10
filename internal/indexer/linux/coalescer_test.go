@@ -36,37 +36,37 @@ func Test_Coalescer(t *testing.T) {
 	dists := test.GenUniqueDistributions(3) // we will discard dist 0 due to zero value ambiguity
 	layerArtifacts := []*indexer.LayerArtifacts{
 		{
-			Hash:  claircore.Digest{Repr: "A"},
+			Hash:  test.RandomSHA256Digest(t),
 			Pkgs:  pkgs[0:1],
 			Dist:  nil,
 			Repos: nil,
 		},
 		{
-			Hash:  claircore.Digest{Repr: "B"},
+			Hash:  test.RandomSHA256Digest(t),
 			Pkgs:  pkgs[1:2],
 			Dist:  nil,
 			Repos: nil,
 		},
 		{
-			Hash:  claircore.Digest{Repr: "C"},
+			Hash:  test.RandomSHA256Digest(t),
 			Pkgs:  pkgs[2:3],
 			Dist:  dists[1:2],
 			Repos: nil,
 		},
 		{
-			Hash:  claircore.Digest{Repr: "D"},
+			Hash:  test.RandomSHA256Digest(t),
 			Pkgs:  pkgs[3:4],
 			Dist:  nil,
 			Repos: nil,
 		},
 		{
-			Hash:  claircore.Digest{Repr: "E"},
+			Hash:  test.RandomSHA256Digest(t),
 			Pkgs:  pkgs[4:5],
 			Dist:  dists[2:],
 			Repos: nil,
 		},
 		{
-			Hash:  claircore.Digest{Repr: "F"},
+			Hash:  test.RandomSHA256Digest(t),
 			Pkgs:  pkgs[5:],
 			Dist:  nil,
 			Repos: nil,
