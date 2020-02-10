@@ -15,21 +15,20 @@ const (
 	SHA512 = "sha512"
 )
 
-// Digest is a type Representing the hash of some data.
+// Digest is a type representing the hash of some data.
 //
 // It's used throughout claircore packages as an attempt to remain independent
 // of a specific hashing algorithm.
 type Digest struct {
 	algo     string
 	checksum []byte
-	// public to aide testing. should not modify
-	Repr string
+	repr     string
 }
 
 // Checksum returns the checksum byte slice.
 func (d Digest) Checksum() []byte { return d.checksum }
 
-// Algorithm returns a string Representation of the algorithm used for this
+// Algorithm returns a string representation of the algorithm used for this
 // digest.
 func (d Digest) Algorithm() string { return d.algo }
 
@@ -46,13 +45,13 @@ func (d Digest) Hash() hash.Hash {
 }
 
 func (d Digest) String() string {
-	return d.Repr
+	return d.repr
 }
 
 // MarshalText implements encoding.TextMarshaler.
 func (d Digest) MarshalText() ([]byte, error) {
-	b := make([]byte, len(d.Repr))
-	copy(b, d.Repr)
+	b := make([]byte, len(d.repr))
+	copy(b, d.repr)
 	return b, nil
 }
 
@@ -113,7 +112,7 @@ func (d *Digest) setChecksum(b []byte) error {
 	hex.Encode(sb[hl:], b)
 
 	d.checksum = b
-	d.Repr = string(sb)
+	d.repr = string(sb)
 
 	return nil
 }
@@ -129,7 +128,7 @@ func (d *Digest) Scan(i interface{}) error {
 
 // Value implements driver.Valuer.
 func (d Digest) Value() (driver.Value, error) {
-	return d.Repr, nil
+	return d.repr, nil
 }
 
 // NewDigest constructs a Digest.
