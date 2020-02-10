@@ -9,6 +9,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
+	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 	"github.com/quay/claircore/test/log"
 )
@@ -56,7 +57,7 @@ func Test_SetScanFinished_Success(t *testing.T) {
 	}{
 		{
 			name:          "no previous scanners",
-			hash:          randomHash(t),
+			hash:          test.RandomSHA256Digest(t),
 			previousScnrs: []scnrInfo{},
 			updatedScnrs: []scnrInfo{
 				scnrInfo{

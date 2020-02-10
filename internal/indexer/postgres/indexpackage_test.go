@@ -40,56 +40,56 @@ func Test_IndexPackages_Success_Parallel(t *testing.T) {
 			name: "10 packages",
 			pkgs: 10,
 			layer: &claircore.Layer{
-				Hash: randomHash(t),
+				Hash: test.RandomSHA256Digest(t),
 			},
 		},
 		{
 			name: "50 packages",
 			pkgs: 50,
 			layer: &claircore.Layer{
-				Hash: randomHash(t),
+				Hash: test.RandomSHA256Digest(t),
 			},
 		},
 		{
 			name: "100 packages",
 			pkgs: 100,
 			layer: &claircore.Layer{
-				Hash: randomHash(t),
+				Hash: test.RandomSHA256Digest(t),
 			},
 		},
 		{
 			name: "250 packages",
 			pkgs: 250,
 			layer: &claircore.Layer{
-				Hash: randomHash(t),
+				Hash: test.RandomSHA256Digest(t),
 			},
 		},
 		{
 			name: "500 packages",
 			pkgs: 500,
 			layer: &claircore.Layer{
-				Hash: randomHash(t),
+				Hash: test.RandomSHA256Digest(t),
 			},
 		},
 		{
 			name: "1000 packages",
 			pkgs: 1000,
 			layer: &claircore.Layer{
-				Hash: randomHash(t),
+				Hash: test.RandomSHA256Digest(t),
 			},
 		},
 		{
 			name: "2000 packages",
 			pkgs: 2000,
 			layer: &claircore.Layer{
-				Hash: randomHash(t),
+				Hash: test.RandomSHA256Digest(t),
 			},
 		},
 		{
 			name: "3000 packages",
 			pkgs: 3000,
 			layer: &claircore.Layer{
-				Hash: randomHash(t),
+				Hash: test.RandomSHA256Digest(t),
 			},
 		},
 	}
@@ -142,56 +142,56 @@ func Test_IndexPackages_Success(t *testing.T) {
 			name: "10 packages",
 			pkgs: 10,
 			layer: &claircore.Layer{
-				Hash: randomHash(t),
+				Hash: test.RandomSHA256Digest(t),
 			},
 		},
 		{
 			name: "50 packages",
 			pkgs: 50,
 			layer: &claircore.Layer{
-				Hash: randomHash(t),
+				Hash: test.RandomSHA256Digest(t),
 			},
 		},
 		{
 			name: "100 packages",
 			pkgs: 100,
 			layer: &claircore.Layer{
-				Hash: randomHash(t),
+				Hash: test.RandomSHA256Digest(t),
 			},
 		},
 		{
 			name: "250 packages",
 			pkgs: 250,
 			layer: &claircore.Layer{
-				Hash: randomHash(t),
+				Hash: test.RandomSHA256Digest(t),
 			},
 		},
 		{
 			name: "500 packages",
 			pkgs: 500,
 			layer: &claircore.Layer{
-				Hash: randomHash(t),
+				Hash: test.RandomSHA256Digest(t),
 			},
 		},
 		{
 			name: "1000 packages",
 			pkgs: 1000,
 			layer: &claircore.Layer{
-				Hash: randomHash(t),
+				Hash: test.RandomSHA256Digest(t),
 			},
 		},
 		{
 			name: "2000 packages",
 			pkgs: 2000,
 			layer: &claircore.Layer{
-				Hash: randomHash(t),
+				Hash: test.RandomSHA256Digest(t),
 			},
 		},
 		{
 			name: "3000 packages",
 			pkgs: 3000,
 			layer: &claircore.Layer{
-				Hash: randomHash(t),
+				Hash: test.RandomSHA256Digest(t),
 			},
 		},
 	}

@@ -30,37 +30,37 @@ func Test_DistributionsByLayer_Success(t *testing.T) {
 	}{
 		{
 			name:  "10 dists, 5 scanners",
-			hash:  randomHash(t),
+			hash:  test.RandomSHA256Digest(t),
 			dists: 10,
 			scnrs: 5,
 		},
 		{
 			name:  "50 distss, 25 scanners",
-			hash:  randomHash(t),
+			hash:  test.RandomSHA256Digest(t),
 			dists: 50,
 			scnrs: 25,
 		},
 		{
 			name:  "100 distss, 50 scanners",
-			hash:  randomHash(t),
+			hash:  test.RandomSHA256Digest(t),
 			dists: 100,
 			scnrs: 50,
 		},
 		{
 			name:  "500 distss, 250 scanners",
-			hash:  randomHash(t),
+			hash:  test.RandomSHA256Digest(t),
 			dists: 500,
 			scnrs: 250,
 		},
 		{
 			name:  "1000 distss, 500 scanners",
-			hash:  randomHash(t),
+			hash:  test.RandomSHA256Digest(t),
 			dists: 1000,
 			scnrs: 500,
 		},
 		{
 			name:  "2000 distss, 1000 scanners",
-			hash:  randomHash(t),
+			hash:  test.RandomSHA256Digest(t),
 			dists: 2000,
 			scnrs: 1000,
 		},

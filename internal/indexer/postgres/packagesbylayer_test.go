@@ -30,37 +30,37 @@ func Test_PackagesByLayer_Success(t *testing.T) {
 	}{
 		{
 			name:  "10 package, 5 scanners",
-			hash:  randomHash(t),
+			hash:  test.RandomSHA256Digest(t),
 			pkgs:  10,
 			scnrs: 5,
 		},
 		{
 			name:  "50 packages, 25 scanners",
-			hash:  randomHash(t),
+			hash:  test.RandomSHA256Digest(t),
 			pkgs:  50,
 			scnrs: 25,
 		},
 		{
 			name:  "100 packages, 50 scanners",
-			hash:  randomHash(t),
+			hash:  test.RandomSHA256Digest(t),
 			pkgs:  100,
 			scnrs: 50,
 		},
 		{
 			name:  "500 packages, 250 scanners",
-			hash:  randomHash(t),
+			hash:  test.RandomSHA256Digest(t),
 			pkgs:  500,
 			scnrs: 250,
 		},
 		{
 			name:  "1000 packages, 500 scanners",
-			hash:  randomHash(t),
+			hash:  test.RandomSHA256Digest(t),
 			pkgs:  1000,
 			scnrs: 500,
 		},
 		{
 			name:  "2000 packages, 1000 scanners",
-			hash:  randomHash(t),
+			hash:  test.RandomSHA256Digest(t),
 			pkgs:  2000,
 			scnrs: 1000,
 		},
