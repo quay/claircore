@@ -27,19 +27,19 @@ func Test_LayerScanned_Packages_False(t *testing.T) {
 	}{
 		{
 			name:  "single scanner, single package",
-			hash:  randomHash(t),
+			hash:  test.RandomSHA256Digest(t),
 			scnrs: 1,
 			pkgs:  1,
 		},
 		{
 			name:  "4 scanners, 4 packages",
-			hash:  randomHash(t),
+			hash:  test.RandomSHA256Digest(t),
 			scnrs: 4,
 			pkgs:  4,
 		},
 		{
 			name:  "4 scanners, 8 packages",
-			hash:  randomHash(t),
+			hash:  test.RandomSHA256Digest(t),
 			scnrs: 4,
 			pkgs:  8,
 		},
@@ -91,19 +91,19 @@ func Test_LayerScanned_Distributions_False(t *testing.T) {
 	}{
 		{
 			name:  "single scanner, single distribution",
-			hash:  randomHash(t),
+			hash:  test.RandomSHA256Digest(t),
 			scnrs: 1,
 			dists: 1,
 		},
 		{
 			name:  "4 scanners, 4 distributions",
-			hash:  randomHash(t),
+			hash:  test.RandomSHA256Digest(t),
 			scnrs: 4,
 			dists: 4,
 		},
 		{
 			name:  "4 scanners, 8 distributions",
-			hash:  randomHash(t),
+			hash:  test.RandomSHA256Digest(t),
 			scnrs: 4,
 			dists: 8,
 		},
@@ -156,19 +156,19 @@ func Test_LayerScanned_Repository_False(t *testing.T) {
 	}{
 		{
 			name:  "single scanner, single repositories",
-			hash:  randomHash(t),
+			hash:  test.RandomSHA256Digest(t),
 			scnrs: 1,
 			repos: 1,
 		},
 		{
 			name:  "4 scanners, 4 repositories",
-			hash:  randomHash(t),
+			hash:  test.RandomSHA256Digest(t),
 			scnrs: 4,
 			repos: 4,
 		},
 		{
 			name:  "4 scanners, 8 repositories",
-			hash:  randomHash(t),
+			hash:  test.RandomSHA256Digest(t),
 			scnrs: 4,
 			repos: 8,
 		},
@@ -220,19 +220,19 @@ func Test_LayerScanned_Packages_True(t *testing.T) {
 	}{
 		{
 			name:  "single scanner, single package",
-			hash:  randomHash(t),
+			hash:  test.RandomSHA256Digest(t),
 			scnrs: 1,
 			pkgs:  1,
 		},
 		{
 			name:  "4 scanners, 4 packages",
-			hash:  randomHash(t),
+			hash:  test.RandomSHA256Digest(t),
 			scnrs: 4,
 			pkgs:  4,
 		},
 		{
 			name:  "4 scanners, 8 packages",
-			hash:  randomHash(t),
+			hash:  test.RandomSHA256Digest(t),
 			scnrs: 4,
 			pkgs:  8,
 		},
@@ -289,19 +289,19 @@ func Test_LayerScanned_Distribution_True(t *testing.T) {
 	}{
 		{
 			name:  "single scanner, single package",
-			hash:  randomHash(t),
+			hash:  test.RandomSHA256Digest(t),
 			scnrs: 1,
 			dists: 1,
 		},
 		{
 			name:  "4 scanners, 4 distributions",
-			hash:  randomHash(t),
+			hash:  test.RandomSHA256Digest(t),
 			scnrs: 4,
 			dists: 4,
 		},
 		{
 			name:  "4 scanners, 8 distributions",
-			hash:  randomHash(t),
+			hash:  test.RandomSHA256Digest(t),
 			scnrs: 4,
 			dists: 8,
 		},
@@ -358,19 +358,19 @@ func Test_LayerScanned_Repository_True(t *testing.T) {
 	}{
 		{
 			name:  "single scanner, single repository",
-			hash:  randomHash(t),
+			hash:  test.RandomSHA256Digest(t),
 			scnrs: 1,
 			dists: 1,
 		},
 		{
 			name:  "4 scanners, 4 repository",
-			hash:  randomHash(t),
+			hash:  test.RandomSHA256Digest(t),
 			scnrs: 4,
 			dists: 4,
 		},
 		{
 			name:  "4 scanners, 8 repository",
-			hash:  randomHash(t),
+			hash:  test.RandomSHA256Digest(t),
 			scnrs: 4,
 			dists: 8,
 		},

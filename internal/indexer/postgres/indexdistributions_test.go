@@ -31,56 +31,56 @@ func Test_IndexDistributions_Success(t *testing.T) {
 			name:  "10 packages",
 			dists: 10,
 			layer: &claircore.Layer{
-				Hash: randomHash(t),
+				Hash: test.RandomSHA256Digest(t),
 			},
 		},
 		{
 			name:  "50 packages",
 			dists: 50,
 			layer: &claircore.Layer{
-				Hash: randomHash(t),
+				Hash: test.RandomSHA256Digest(t),
 			},
 		},
 		{
 			name:  "100 packages",
 			dists: 100,
 			layer: &claircore.Layer{
-				Hash: randomHash(t),
+				Hash: test.RandomSHA256Digest(t),
 			},
 		},
 		{
 			name:  "250 packages",
 			dists: 250,
 			layer: &claircore.Layer{
-				Hash: randomHash(t),
+				Hash: test.RandomSHA256Digest(t),
 			},
 		},
 		{
 			name:  "500 packages",
 			dists: 500,
 			layer: &claircore.Layer{
-				Hash: randomHash(t),
+				Hash: test.RandomSHA256Digest(t),
 			},
 		},
 		{
 			name:  "1000 packages",
 			dists: 1000,
 			layer: &claircore.Layer{
-				Hash: randomHash(t),
+				Hash: test.RandomSHA256Digest(t),
 			},
 		},
 		{
 			name:  "2000 packages",
 			dists: 2000,
 			layer: &claircore.Layer{
-				Hash: randomHash(t),
+				Hash: test.RandomSHA256Digest(t),
 			},
 		},
 		{
 			name:  "3000 packages",
 			dists: 3000,
 			layer: &claircore.Layer{
-				Hash: randomHash(t),
+				Hash: test.RandomSHA256Digest(t),
 			},
 		},
 	}

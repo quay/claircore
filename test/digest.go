@@ -1,4 +1,4 @@
-package postgres
+package test
 
 import (
 	"crypto/rand"
@@ -10,7 +10,7 @@ import (
 )
 
 // RandomHash returns a random Digest.
-func randomHash(t testing.TB) claircore.Digest {
+func RandomSHA256Digest(t testing.TB) claircore.Digest {
 	b := make([]byte, sha256.Size)
 	if _, err := io.ReadFull(rand.Reader, b); err != nil {
 		t.Fatal(err)

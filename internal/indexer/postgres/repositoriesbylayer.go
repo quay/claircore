@@ -27,6 +27,9 @@ WHERE
 
 func repositoriesByLayer(ctx context.Context, db *sqlx.DB, hash claircore.Digest, scnrs indexer.VersionedScanners) ([]*claircore.Repository, error) {
 	// TODO Use passed-in Context.
+	if len(scnrs) == 0 {
+		return []*claircore.Repository{}, nil
+	}
 	// get scanner ids
 	scannerIDs := []int64{}
 	for _, scnr := range scnrs {

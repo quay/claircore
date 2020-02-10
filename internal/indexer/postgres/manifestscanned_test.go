@@ -28,22 +28,22 @@ func Test_ManifestScanned_Failure(t *testing.T) {
 	var tt = []scannerTestcase{
 		{
 			name:     "one scanner",
-			hash:     randomHash(t),
+			hash:     test.RandomSHA256Digest(t),
 			scanners: 1,
 		},
 		{
 			name:     "two scanners",
-			hash:     randomHash(t),
+			hash:     test.RandomSHA256Digest(t),
 			scanners: 2,
 		},
 		{
 			name:     "five scanners",
-			hash:     randomHash(t),
+			hash:     test.RandomSHA256Digest(t),
 			scanners: 5,
 		},
 		{
 			name:     "ten scanners",
-			hash:     randomHash(t),
+			hash:     test.RandomSHA256Digest(t),
 			scanners: 10,
 		},
 	}
@@ -81,22 +81,22 @@ func Test_ManifestScanned_Success(t *testing.T) {
 	var tt = []scannerTestcase{
 		{
 			name:     "one scanner",
-			hash:     randomHash(t),
+			hash:     test.RandomSHA256Digest(t),
 			scanners: 1,
 		},
 		{
 			name:     "two scanners",
-			hash:     randomHash(t),
+			hash:     test.RandomSHA256Digest(t),
 			scanners: 2,
 		},
 		{
 			name:     "five scanners",
-			hash:     randomHash(t),
+			hash:     test.RandomSHA256Digest(t),
 			scanners: 5,
 		},
 		{
 			name:     "ten scanners",
-			hash:     randomHash(t),
+			hash:     test.RandomSHA256Digest(t),
 			scanners: 10,
 		},
 	}

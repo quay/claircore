@@ -19,14 +19,16 @@ type VersionedScanner interface {
 // not concurrency safe
 type VersionedScanners []VersionedScanner
 
-// PStoVS takes an array of PackageScanners and appends VersionedScanners with
-// VersionScanner types.
 func (vs *VersionedScanners) PStoVS(scnrs []PackageScanner) {
-	temp := make([]VersionedScanner, 0)
-	for _, scnr := range scnrs {
-		temp = append(temp, scnr)
+	n := len(scnrs)
+	if cap(*vs) < n {
+		*vs = make([]VersionedScanner, n)
+	} else {
+		*vs = (*vs)[:n]
 	}
-	*vs = temp
+	for i := 0; i < n; i++ {
+		(*vs)[i] = scnrs[i]
+	}
 }
 
 // VStoPS returns an array of PackageScanners
@@ -41,11 +43,15 @@ func (vs VersionedScanners) VStoPS() []PackageScanner {
 // DStoVS takes an array of DistributionScanners and appends VersionedScanners with
 // VersionScanner types.
 func (vs *VersionedScanners) DStoVS(scnrs []DistributionScanner) {
-	temp := make([]VersionedScanner, 0)
-	for _, scnr := range scnrs {
-		temp = append(temp, scnr)
+	n := len(scnrs)
+	if cap(*vs) < n {
+		*vs = make([]VersionedScanner, n)
+	} else {
+		*vs = (*vs)[:n]
 	}
-	*vs = temp
+	for i := 0; i < n; i++ {
+		(*vs)[i] = scnrs[i]
+	}
 }
 
 // VStoDS returns an array of DistributionScanners
@@ -60,11 +66,15 @@ func (vs VersionedScanners) VStoDS() []DistributionScanner {
 // RStoVS takes an array of RepositoryScanners and appends VersionedScanners with
 // VersionScanner types.
 func (vs *VersionedScanners) RStoVS(scnrs []RepositoryScanner) {
-	temp := make([]VersionedScanner, 0)
-	for _, scnr := range scnrs {
-		temp = append(temp, scnr)
+	n := len(scnrs)
+	if cap(*vs) < n {
+		*vs = make([]VersionedScanner, n)
+	} else {
+		*vs = (*vs)[:n]
 	}
-	*vs = temp
+	for i := 0; i < n; i++ {
+		(*vs)[i] = scnrs[i]
+	}
 }
 
 // VStoRS returns an array of RepositoryScanners

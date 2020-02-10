@@ -32,6 +32,9 @@ WHERE
 
 func distributionsByLayer(ctx context.Context, db *sqlx.DB, hash claircore.Digest, scnrs indexer.VersionedScanners) ([]*claircore.Distribution, error) {
 	// TODO Use passed-in Context.
+	if len(scnrs) == 0 {
+		return []*claircore.Distribution{}, nil
+	}
 	// get scanner ids
 	scannerIDs := []int64{}
 	for _, scnr := range scnrs {

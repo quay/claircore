@@ -10,6 +10,11 @@ import (
 	"hash"
 )
 
+const (
+	SHA256 = "sha256"
+	SHA512 = "sha512"
+)
+
 // Digest is a type representing the hash of some data.
 //
 // It's used throughout claircore packages as an attempt to remain independent

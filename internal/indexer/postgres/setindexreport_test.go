@@ -7,6 +7,7 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 	"github.com/quay/claircore/test/log"
 )
@@ -16,7 +17,7 @@ func Test_SetIndexReport_StateUpdate(t *testing.T) {
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
 
-	hash := randomHash(t)
+	hash := test.RandomSHA256Digest(t)
 	var tt = []struct {
 		// the name of the test
 		name string
@@ -90,7 +91,7 @@ func Test_SetIndexReport_Success(t *testing.T) {
 		{
 			name: "single package. no nested source",
 			sr: &claircore.IndexReport{
-				Hash:    randomHash(t),
+				Hash:    test.RandomSHA256Digest(t),
 				State:   "test-state",
 				Success: true,
 				Err:     "",
@@ -99,7 +100,7 @@ func Test_SetIndexReport_Success(t *testing.T) {
 		{
 			name: "single package nested source",
 			sr: &claircore.IndexReport{
-				Hash:    randomHash(t),
+				Hash:    test.RandomSHA256Digest(t),
 				State:   "test-state",
 				Success: true,
 				Err:     "",

@@ -8,6 +8,7 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 	"github.com/quay/claircore/test/log"
 )
@@ -29,9 +30,9 @@ func Test_IndexReport_Success(t *testing.T) {
 	}{
 		{
 			name: "full scan result",
-			hash: randomHash(t),
+			hash: test.RandomSHA256Digest(t),
 			expectedSR: &claircore.IndexReport{
-				Hash:    randomHash(t),
+				Hash:    test.RandomSHA256Digest(t),
 				State:   "test-state",
 				Success: true,
 				Err:     "",
