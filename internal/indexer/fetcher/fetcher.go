@@ -15,8 +15,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/klauspost/compress/gzip"
 	"github.com/klauspost/compress/zstd"
+	gzip "github.com/klauspost/pgzip"
 	"github.com/rs/zerolog"
 	"golang.org/x/sync/errgroup"
 
