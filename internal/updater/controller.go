@@ -3,7 +3,6 @@ package updater
 import (
 	"context"
 	"fmt"
-	"io"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -79,6 +78,7 @@ func (u *Controller) start(ctx context.Context) {
 func (u *Controller) Update(ctx context.Context) error {
 	log := zerolog.Ctx(ctx).With().
 		Str("component", "internal/updater/Controller.Update").
+		Str("updater", u.Updater.Name()).
 		Logger()
 	ctx = log.WithContext(ctx)
 	log.Info().Msg("looking for updates")
@@ -96,24 +96,45 @@ func (u *Controller) Update(ctx context.Context) error {
 	}
 	defer u.Lock.Unlock()
 
-	// fetch and check if we need to update.
-	vulnDB, shouldUpdate, updateHash, err := u.fetchAndCheck(ctx)
+	// retreive previous fingerprint. GetUpdateOperations will
+	// return update operations in descending order
+	var prevFP driver.Fingerprint
+	allOUs, err := u.Store.GetUpdateOperations(ctx, u.Updater.Name())
 	if err != nil {
 		return err
 	}
-	if !shouldUpdate {
-		log.Debug().Msg("no updates necessary")
-		return nil
+	OUs := allOUs[u.Updater.Name()]
+	if len(OUs) > 0 {
+		prevFP = OUs[0].Fingerprint
 	}
-	defer vulnDB.Close()
 
-	// parse the vulnDB and put the parsed contents into the vulnstore
-	err = u.parseAndStore(ctx, vulnDB, updateHash)
+	// Fetch the vulnerability database. if the fetcher
+	// determines no update is necessary a driver.Unchanged
+	// error will be returned
+	vulnDB, newFP, err := u.Fetch(ctx, prevFP)
 	if err != nil {
 		return err
 	}
+	// just to be defensive. if no error is returned this should not happen
+	if vulnDB != nil {
+		defer vulnDB.Close()
+	}
 
-	log.Info().Msg("successfully updated the vulnstore")
+	// parse the vulndb
+	vulns, err := u.Parse(ctx, vulnDB)
+	if err != nil {
+		return fmt.Errorf("failed to parse the fetched vulnerability database: %v", err)
+	}
+
+	// update the vulnstore
+	ref, err := u.Store.UpdateVulnerabilities(ctx, u.Updater.Name(), newFP, vulns)
+	if err != nil {
+		return fmt.Errorf("failed to update vulnerabilities: %v", err)
+	}
+
+	log.Info().
+		Str("ref", ref.String()).
+		Msg("successfully updated the vulnstore")
 	return nil
 }
 
@@ -126,43 +147,4 @@ func (u *Controller) tryLock(ctx context.Context) (bool, error) {
 	}
 	// did not acquire, another process is updating the database. bail
 	return ok, err
-}
-
-// fetchAndCheck calls the Fetch method on the embedded Updater interface and checks whether we should update
-func (u *Controller) fetchAndCheck(ctx context.Context) (io.ReadCloser, bool, driver.Fingerprint, error) {
-	// retrieve vulnerability database
-	vulnDB, updateHash, err := u.Fetch(ctx, "")
-	if err != nil {
-		return nil, false, "", fmt.Errorf("failed to fetch database: %v", err)
-	}
-
-	// see if we need to update the vulnstore
-	prevUpdateHash, err := u.Store.GetHash(ctx, u.Name)
-	if err != nil {
-		vulnDB.Close()
-		return nil, false, "", fmt.Errorf("failed to get previous update hash: %v", err)
-	}
-	if driver.Fingerprint(prevUpdateHash) == updateHash {
-		vulnDB.Close()
-		return nil, false, "", nil
-	}
-
-	return vulnDB, true, updateHash, nil
-}
-
-// parseAndStore calls the parse method on the embedded Updater interface and stores the result
-func (u *Controller) parseAndStore(ctx context.Context, vulnDB io.ReadCloser, updateHash driver.Fingerprint) error {
-	// parse the vulnDB into claircore.Vulnerability structs
-	vulns, err := u.Parse(ctx, vulnDB)
-	if err != nil {
-		return fmt.Errorf("failed to parse the fetched vulnerability database: %v", err)
-	}
-
-	// store the vulnerabilities and update latest hash
-	err = u.Store.PutVulnerabilities(ctx, u.Name, string(updateHash), vulns)
-	if err != nil {
-		return fmt.Errorf("failed to store vulernabilities: %v", err)
-	}
-
-	return nil
 }

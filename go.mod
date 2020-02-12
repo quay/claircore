@@ -6,6 +6,7 @@ require (
 	github.com/crgimenes/goconfig v1.2.1
 	github.com/docker/docker v1.13.1 // indirect
 	github.com/doug-martin/goqu/v8 v8.6.0
+	github.com/gofrs/uuid v3.2.0+incompatible
 	github.com/golang/mock v1.3.1
 	github.com/google/go-cmp v0.4.0
 	github.com/google/go-containerregistry v0.0.0-20191206185556-eb7c14b719c6

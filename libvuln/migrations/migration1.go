@@ -1,79 +1,91 @@
 package migrations
 
 const (
-	migration1 = `
-CREATE TYPE VersionRange AS RANGE (
-	SUBTYPE = integer[10]
+	migration1 = `` +
+		// Create the type used as a column later.
+		`CREATE TYPE VersionRange AS RANGE ( SUBTYPE = integer[10]);` +
+		// Needed for uuid generation in-database.
+		`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";` +
+		// Update_operation is a table keeping a log of updater runs.
+		//
+		// Ref is used when a specific update_operation needs to be exposed to a
+		// client.
+		`CREATE TABLE IF NOT EXISTS update_operation (
+id			BIGSERIAL PRIMARY KEY,
+ref         uuid UNIQUE DEFAULT uuid_generate_v4(),
+updater		TEXT NOT NULL,
+fingerprint TEXT,
+date		TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
---- a unique vulnerability indexed by an updater
-CREATE TABLE vuln (
-    updater text,
-    --- claircore.Vulnerability fields
-    id BIGSERIAL PRIMARY KEY,
-    name text,
-    description text,
-    links text,
-    severity text,
-    normalized_severity text,
-    package_name text,
-    package_version text,
-    package_kind text,
-    dist_id text,
-    dist_name text,
-    dist_version text,
-    dist_version_code_name text,
-    dist_version_id text,
-    dist_arch text,
-    dist_cpe text,
-    dist_pretty_name text,
-    repo_name text,
-    repo_key text,
-    repo_uri text,
-    fixed_in_version text,
-	-- Provide a default range that contains nothing, because a NULL seems to
-	-- contain everything.
+CREATE INDEX IF NOT EXISTS uo_updater_idx ON update_operation (updater);` +
+		// Vuln is a write-once table of vulnerabilities.
+		//
+		// Updaters should attempt to insert vulnerabilities and on success or
+		// collision, insert a row into ou_vuln.
+		`CREATE TABLE IF NOT EXISTS vuln (
+	id                     BIGSERIAL PRIMARY KEY,
+	hash_kind              TEXT NOT NULL,
+	hash                   BYTEA NOT NULL,
+	updater                TEXT,
+	name                   TEXT,
+	description            TEXT,
+	links                  TEXT,
+	severity               TEXT,
+	package_name           TEXT,
+	package_version        TEXT,
+	package_kind           TEXT,
+	dist_id                TEXT,
+	dist_name              TEXT,
+	dist_version           TEXT,
+	dist_version_code_name TEXT,
+	dist_version_id        TEXT,
+	dist_arch              TEXT,
+	dist_cpe               TEXT,
+	dist_pretty_name       TEXT,
+	repo_name              TEXT,
+	repo_key               TEXT,
+	repo_uri               TEXT,
+	fixed_in_version       TEXT,
 	vulnerable_range VersionRange NOT NULL DEFAULT VersionRange('{}', '{}', '()'),
-	-- Note the kind of the versions in the range.
-	-- It's the application's responsibility to make sure they agree.
-	version_kind text,
-    --- a tombstone field that will be updated to signify a vulnerability is not stale
-    tombstone text
+	version_kind text
+	UNIQUE (hash_kind, hash)
+);` +
+		// These are some guesses at useful indexes. These should be measured.
+		`CREATE INDEX IF NOT EXISTS vuln_package_idx on vuln (
+	package_name,
+	package_kind,
+	package_version
 );
-CREATE INDEX vuln_lookup_idx on vuln(package_name, dist_version_code_name, dist_pretty_name, dist_name, dist_version_id, dist_version, dist_arch, dist_cpe);
-CREATE UNIQUE INDEX vuln_unique_idx on vuln(  
-        updater, 
-        name, 
-        md5(description), 
-        links,
-        severity,
-        normalized_severity,
-        package_name, 
-        package_version, 
-        package_kind, 
-        dist_id, 
-        dist_name, 
-        dist_version, 
-        dist_version_code_name, 
-        dist_version_id, 
-        dist_arch,
-        dist_cpe,
-        dist_pretty_name,
-        repo_name,
-        repo_key,
-        repo_uri,
-        fixed_in_version
-    );
-
---- UpdateHash
---- a key/value hstore holding the latest update hash for a particular updater
-CREATE TABLE updatecursor (
-    --- the unique name of the updater. acts a primary key. a single cursor is kept for a particular class
-    --- of updater
-    updater text PRIMARY KEY,
-    --- the last seen hash of the vulnerability database the updater is reponsible for
-    hash text,
-    --- the last tombstone each vulnerability was created or updated with
-    tombstone text
+CREATE INDEX IF NOT EXISTS vuln_dist_idx on vuln (
+	dist_id,
+	dist_name,
+	dist_version,
+	dist_version_code_name,
+	dist_version_id,
+	dist_arch,
+	dist_cpe,
+	dist_pretty_name
 );
-`
+CREATE INDEX IF NOT EXISTS vuln_repo_idx on vuln (
+	repo_name,
+	repo_key,
+	repo_uri
+);` +
+		// Uo_vuln is the association table that does the many-many association
+		// between update operations and vulnerabilities.
+		//
+		// The FKs enable us to GC the vulnerabilities by first removing old
+		// update_operation rows and having that cascade to this table, then
+		// remove vulnerabilities that are not referenced from this table.
+		`CREATE TABLE IF NOT EXISTS uo_vuln (
+	uo   bigint REFERENCES update_operation (id) ON DELETE CASCADE,
+	vuln bigint REFERENCES vuln             (id) ON DELETE CASCADE,
+	UNIQUE (uo, vuln)
+);` +
+		// Latest_vuln is a helper view to get the current snapshot of the vuln database.
+		`CREATE OR REPLACE VIEW latest_vuln AS
+SELECT v.*
+FROM (SELECT DISTINCT ON (updater) id FROM update_operation ORDER BY updater, id DESC) uo
+	JOIN uo_vuln ON uo_vuln.uo = uo.id
+	JOIN vuln v ON uo_vuln.vuln = v.id;`
 )
