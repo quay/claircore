@@ -2,6 +2,9 @@ package migrations
 
 const (
 	migration1 = `
+CREATE TYPE VersionRange AS RANGE (
+	SUBTYPE = integer[10]
+);
 --- a unique vulnerability indexed by an updater
 CREATE TABLE vuln (
     updater text,
@@ -27,6 +30,12 @@ CREATE TABLE vuln (
     repo_key text,
     repo_uri text,
     fixed_in_version text,
+	-- Provide a default range that contains nothing, because a NULL seems to
+	-- contain everything.
+	vulnerable_range VersionRange NOT NULL DEFAULT VersionRange('{}', '{}', '()'),
+	-- Note the kind of the versions in the range.
+	-- It's the application's responsibility to make sure they agree.
+	version_kind text,
     --- a tombstone field that will be updated to signify a vulnerability is not stale
     tombstone text
 );

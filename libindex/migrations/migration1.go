@@ -65,7 +65,9 @@ const (
 		id BIGSERIAL PRIMARY KEY,
 		name text NOT NULL,
 		kind text NOT NULL,
-		version text NOT NULL
+		version text NOT NULL,
+		norm_kind text,
+		norm_version integer[10]
 	);
 	CREATE UNIQUE INDEX IF NOT EXISTS package_unique_idx ON package (name, version, kind);
 
