@@ -1,12 +1,12 @@
 package postgres
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"os/exec"
 	"testing"
 
+	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/log/testingadapter"
 	"github.com/jackc/pgx/v4/pgxpool"
 	_ "github.com/jackc/pgx/v4/stdlib" // Needed for sqlx.Open
 	"github.com/jmoiron/sqlx"
@@ -16,22 +16,16 @@ import (
 	"github.com/quay/claircore/test/integration"
 )
 
-func TestStore(ctx context.Context, t testing.TB) (*sqlx.DB, *store, string, func()) {
-	cmd := exec.Command("go", "list", "-f", "{{.Dir}}", "github.com/quay/claircore/internal/indexer/postgres")
-	o, err := cmd.Output()
-	if err != nil {
-		t.Fatal(err)
-	}
-	o = bytes.TrimSpace(o)
-
+func TestStore(ctx context.Context, t testing.TB) (*sqlx.DB, *store, func()) {
 	db, err := integration.NewDB(ctx, t)
 	if err != nil {
 		t.Fatalf("unable to create test database: %v", err)
 	}
 	cfg := db.Config()
+	cfg.ConnConfig.LogLevel = pgx.LogLevelError
+	cfg.ConnConfig.Logger = testingadapter.NewLogger(t)
 	// we are going to use pgx for more control over connection pool and
 	// and a cleaner api around bulk inserts
-	//cfg.MaxConns = 30
 	pool, err := pgxpool.ConnectConfig(ctx, cfg)
 	if err != nil {
 		t.Fatalf("failed to create connpool: %v", err)
@@ -42,6 +36,7 @@ func TestStore(ctx context.Context, t testing.TB) (*sqlx.DB, *store, string, fun
 	if err != nil {
 		t.Fatalf("failed to sqlx Open: %v", err)
 	}
+	t.Log(dsn)
 
 	// run migrations
 	migrator := migrate.NewPostgresMigrator(sx.DB)
@@ -52,8 +47,9 @@ func TestStore(ctx context.Context, t testing.TB) (*sqlx.DB, *store, string, fun
 	}
 
 	s := NewStore(sx, pool)
-
-	return sx, s, dsn, func() {
+	return sx, s, func() {
+		sx.Close()
+		pool.Close()
 		db.Close(ctx, t)
 	}
 }

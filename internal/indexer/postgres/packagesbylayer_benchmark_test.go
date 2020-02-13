@@ -94,7 +94,7 @@ func Benchmark_PackagesByLayer(b *testing.B) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
 			ctx = log.TestLogger(ctx, b)
-			db, store, _, teardown := TestStore(ctx, b)
+			db, store, teardown := TestStore(ctx, b)
 			defer teardown()
 
 			// generate a specific number of packages

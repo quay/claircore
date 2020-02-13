@@ -71,7 +71,7 @@ func Test_PackagesByLayer_Success(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
 			ctx = log.TestLogger(ctx, t)
-			db, store, _, teardown := TestStore(ctx, t)
+			db, store, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			// generate a specific number of packages

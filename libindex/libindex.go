@@ -88,6 +88,12 @@ func New(ctx context.Context, opts *Opts) (*Libindex, error) {
 	return l, nil
 }
 
+func (l *Libindex) Close(ctx context.Context) error {
+	l.db.Close()
+	l.store.Close(ctx)
+	return nil
+}
+
 // Index performs a scan and index of each layer within the provided Manifest.
 //
 // If the index operation cannot start an error will be returned.

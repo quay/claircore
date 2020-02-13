@@ -88,7 +88,7 @@ func Test_PutVulnerabilities_Tombstone_Bump(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
 			ctx = log.TestLogger(ctx, t)
-			db, store, _, teardown := TestStore(ctx, t)
+			db, store, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			// generate total unique vulns
@@ -195,7 +195,7 @@ func Test_PutVulnerabilities_Tombstone_Stale(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
 			ctx = log.TestLogger(ctx, t)
-			db, store, _, teardown := TestStore(ctx, t)
+			db, store, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			// generate total unique vulns

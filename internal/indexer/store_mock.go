@@ -34,6 +34,20 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
+// Close mocks base method
+func (m *MockStore) Close(arg0 context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Close", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Close indicates an expected call of Close
+func (mr *MockStoreMockRecorder) Close(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockStore)(nil).Close), arg0)
+}
+
 // DistributionsByLayer mocks base method
 func (m *MockStore) DistributionsByLayer(arg0 context.Context, arg1 claircore.Digest, arg2 VersionedScanners) ([]*claircore.Distribution, error) {
 	m.ctrl.T.Helper()

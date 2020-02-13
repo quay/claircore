@@ -53,7 +53,7 @@ func Test_ManifestScanned_Failure(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
 			ctx = log.TestLogger(ctx, t)
-			db, store, _, teardown := TestStore(ctx, t)
+			db, store, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			vscnrs := test.GenUniquePackageScanners(table.scanners)
@@ -106,7 +106,7 @@ func Test_ManifestScanned_Success(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
 			ctx = log.TestLogger(ctx, t)
-			db, store, _, teardown := TestStore(ctx, t)
+			db, store, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			vscnrs := test.GenUniquePackageScanners(table.scanners)

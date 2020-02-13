@@ -27,6 +27,11 @@ func NewStore(db *sqlx.DB, pool *pgxpool.Pool) *store {
 	}
 }
 
+func (s *store) Close(_ context.Context) error {
+	s.pool.Close()
+	return s.db.Close()
+}
+
 func (s *store) ManifestScanned(ctx context.Context, hash claircore.Digest, scnrs indexer.VersionedScanners) (bool, error) {
 	b, err := manifestScanned(ctx, s.db, hash, scnrs)
 	return b, err

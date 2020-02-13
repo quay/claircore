@@ -3,6 +3,7 @@ package libindex
 import (
 	"context"
 	"crypto/sha256"
+	"database/sql"
 	"fmt"
 	"io"
 	"strings"
@@ -11,10 +12,12 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/go-cmp/cmp"
+	_ "github.com/jackc/pgx/v4/stdlib" // Needed for sql.Open
+	"github.com/remind101/migrate"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
-	"github.com/quay/claircore/internal/indexer/postgres"
+	"github.com/quay/claircore/libindex/migrations"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 	"github.com/quay/claircore/test/log"
@@ -103,6 +106,7 @@ func (tc testcase) RunInner(ctx context.Context, t *testing.T, dsn string, next 
 	if err != nil {
 		t.Fatalf("failed to create libindex instance: %v", err)
 	}
+	defer lib.Close(ctx)
 
 	//setup scan and run
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
@@ -123,8 +127,28 @@ func (tc testcase) Run(ctx context.Context, check checkFunc) func(*testing.T) {
 		ctx, done := context.WithCancel(ctx)
 		defer done()
 		ctx = log.TestLogger(ctx, t)
-		_, _, dsn, teardown := postgres.TestStore(ctx, t)
-		defer teardown()
+		db, err := integration.NewDB(ctx, t)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer db.Close(ctx, t)
+		cfg := db.Config()
+		dsn := fmt.Sprintf("host=%s port=%d database=%s user=%s",
+			cfg.ConnConfig.Host, cfg.ConnConfig.Port, cfg.ConnConfig.Database, cfg.ConnConfig.User)
+		mdb, err := sql.Open("pgx", dsn)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("dsn: %s", dsn)
+		migrator := migrate.NewPostgresMigrator(mdb)
+		migrator.Table = migrations.MigrationTable
+		if err := migrator.Exec(migrate.Up, migrations.Migrations...); err != nil {
+			t.Fatalf("failed to perform migrations: %v", err)
+		}
+		if err := mdb.Close(); err != nil {
+			t.Fatal(err)
+		}
+
 		tc.RunInner(ctx, t, dsn, check)
 	}
 }

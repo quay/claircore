@@ -50,7 +50,7 @@ func Test_LayerScanned_Packages_False(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
 			ctx = log.TestLogger(ctx, t)
-			db, store, _, teardown := TestStore(ctx, t)
+			db, store, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			scnrs := test.GenUniquePackageScanners(table.scnrs)
@@ -114,7 +114,7 @@ func Test_LayerScanned_Distributions_False(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
 			ctx = log.TestLogger(ctx, t)
-			db, store, _, teardown := TestStore(ctx, t)
+			db, store, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			scnrs := test.GenUniqueDistributionScanners(table.scnrs)
@@ -179,7 +179,7 @@ func Test_LayerScanned_Repository_False(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
 			ctx = log.TestLogger(ctx, t)
-			db, store, _, teardown := TestStore(ctx, t)
+			db, store, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			scnrs := test.GenUniqueRepositoryScanners(table.scnrs)
@@ -243,7 +243,7 @@ func Test_LayerScanned_Packages_True(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
 			ctx = log.TestLogger(ctx, t)
-			db, store, _, teardown := TestStore(ctx, t)
+			db, store, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			scnrs := test.GenUniquePackageScanners(table.scnrs)
@@ -312,7 +312,7 @@ func Test_LayerScanned_Distribution_True(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
 			ctx = log.TestLogger(ctx, t)
-			db, store, _, teardown := TestStore(ctx, t)
+			db, store, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			scnrs := test.GenUniqueDistributionScanners(table.scnrs)
@@ -381,7 +381,7 @@ func Test_LayerScanned_Repository_True(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
 			ctx = log.TestLogger(ctx, t)
-			db, store, _, teardown := TestStore(ctx, t)
+			db, store, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			scnrs := test.GenUniqueRepositoryScanners(table.scnrs)

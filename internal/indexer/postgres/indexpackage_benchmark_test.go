@@ -182,7 +182,7 @@ func Benchmark_IndexPackages(b *testing.B) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
 			ctx = log.TestLogger(ctx, b)
-			db, store, _, teardown := TestStore(ctx, b)
+			db, store, teardown := TestStore(ctx, b)
 			defer teardown()
 
 			// gen a scnr and insert

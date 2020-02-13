@@ -27,8 +27,9 @@ func Test_Matcher_Integration(t *testing.T) {
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
 	ctx = log.TestLogger(ctx, t)
-	db, store, _, teardown := vulnstore.TestStore(ctx, t)
+	db, store, teardown := vulnstore.TestStore(ctx, t)
 	defer teardown()
+
 	m := &Matcher{}
 	// seed the test vulnstore with CVE data
 	deb := NewUpdater(Buster)

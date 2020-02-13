@@ -1,10 +1,8 @@
 package postgres
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"os/exec"
 	"testing"
 
 	"github.com/jackc/pgx/v4"
@@ -18,14 +16,7 @@ import (
 	"github.com/quay/claircore/test/integration"
 )
 
-func TestStore(ctx context.Context, t testing.TB) (*sqlx.DB, *Store, string, func()) {
-	cmd := exec.Command("go", "list", "-f", "{{.Dir}}", "github.com/quay/claircore/internal/vulnstore/postgres")
-	o, err := cmd.Output()
-	if err != nil {
-		t.Fatal(err)
-	}
-	o = bytes.TrimSpace(o)
-
+func TestStore(ctx context.Context, t testing.TB) (*sqlx.DB, *Store, func()) {
 	db, err := integration.NewDB(ctx, t)
 	if err != nil {
 		t.Fatalf("unable to create test database: %v", err)
@@ -45,6 +36,7 @@ func TestStore(ctx context.Context, t testing.TB) (*sqlx.DB, *Store, string, fun
 	if err != nil {
 		t.Fatalf("failed to sqlx Open: %v", err)
 	}
+	t.Log(dsn)
 
 	// run migrations
 	migrator := migrate.NewPostgresMigrator(sx.DB)
@@ -56,7 +48,9 @@ func TestStore(ctx context.Context, t testing.TB) (*sqlx.DB, *Store, string, fun
 
 	s := NewVulnStore(sx, pool)
 
-	return sx, s, dsn, func() {
+	return sx, s, func() {
+		sx.Close()
+		pool.Close()
 		db.Close(ctx, t)
 	}
 }

@@ -88,7 +88,7 @@ func Test_SetScanFinished_Success(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
 			ctx = log.TestLogger(ctx, t)
-			db, store, _, teardown := TestStore(ctx, t)
+			db, store, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			table.init(t, db, table.hash, table.previousScnrs, table.updatedScnrs)

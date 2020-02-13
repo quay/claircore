@@ -48,6 +48,7 @@ func main() {
 	if err != nil {
 		log.Fatal().Msgf("failed to create libindex %v", err)
 	}
+	defer lib.Close(ctx)
 
 	h := libindex.NewHandler(lib)
 	srv := &http.Server{

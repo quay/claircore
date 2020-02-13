@@ -27,7 +27,7 @@ func TestMatcherIntegration(t *testing.T) {
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
 	ctx = log.TestLogger(ctx, t)
-	db, store, _, teardown := vulnstore.TestStore(ctx, t)
+	db, store, teardown := vulnstore.TestStore(ctx, t)
 	defer teardown()
 	m := &Matcher{}
 	fs, err := filepath.Glob("testdata/*.xml")

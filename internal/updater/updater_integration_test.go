@@ -21,7 +21,7 @@ func Test_Updater_Integration(t *testing.T) {
 	ctx = log.TestLogger(ctx, t)
 	ubuntuPrecise := ubuntu.NewUpdater(ubuntu.Precise)
 
-	db, store, _, teardown := postgres.TestStore(ctx, t)
+	db, store, teardown := postgres.TestStore(ctx, t)
 	defer teardown()
 
 	opts := &Opts{

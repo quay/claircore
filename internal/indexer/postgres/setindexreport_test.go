@@ -43,7 +43,7 @@ func Test_SetIndexReport_StateUpdate(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
 			ctx = log.TestLogger(ctx, t)
-			db, store, _, teardown := TestStore(ctx, t)
+			db, store, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			if err := store.SetIndexReport(ctx, table.initState); err != nil {
@@ -113,7 +113,7 @@ func Test_SetIndexReport_Success(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
 			ctx = log.TestLogger(ctx, t)
-			_, store, _, teardown := TestStore(ctx, t)
+			_, store, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			if err := store.SetIndexReport(ctx, table.sr); err != nil {

@@ -94,7 +94,7 @@ func Test_IndexPackages_Success_Parallel(t *testing.T) {
 		},
 	}
 
-	db, store, _, teardown := TestStore(ctx, t)
+	db, store, teardown := TestStore(ctx, t)
 	defer teardown()
 
 	// we will create a subtest which blocks the teardown() until
@@ -201,7 +201,7 @@ func Test_IndexPackages_Success(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
 			ctx = log.TestLogger(ctx, t)
-			db, store, _, teardown := TestStore(ctx, t)
+			db, store, teardown := TestStore(ctx, t)
 			defer teardown()
 
 			// gen a scnr and insert
@@ -240,7 +240,8 @@ func checkPackageScanArtifact(t *testing.T, db *sqlx.DB, expectedPkgs []*clairco
 			pkg.Version,
 		)
 		if err != nil {
-			t.Fatalf("received error selecting package id %s version %s", pkg.Name, pkg.Version)
+			t.Errorf("received error selecting package id %s version %s", pkg.Name, pkg.Version)
+			t.Fatal(err)
 		}
 
 		var layerHash claircore.Digest

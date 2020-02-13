@@ -31,7 +31,7 @@ func Test_PutHash_Upsert(t *testing.T) {
 	}
 
 	for _, table := range tt {
-		db, store, _, teardown := TestStore(ctx, t)
+		db, store, teardown := TestStore(ctx, t)
 		defer teardown()
 
 		for i := 0; i < table.iterations; i++ {
@@ -97,7 +97,7 @@ func Test_PutHash_Insert(t *testing.T) {
 	}
 
 	for _, table := range tt {
-		db, store, _, teardown := TestStore(ctx, t)
+		db, store, teardown := TestStore(ctx, t)
 		defer teardown()
 
 		for i := 0; i < table.iterations; i++ {

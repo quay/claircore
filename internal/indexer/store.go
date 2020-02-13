@@ -40,4 +40,6 @@ type Store interface {
 	// was previously scanned by the given scnrs. the ScanResult should be pushed to the persistence
 	// store.
 	SetIndexFinished(ctx context.Context, sr *claircore.IndexReport, scnrs VersionedScanners) error
+	// Close frees any resources associated with the Store.
+	Close(context.Context) error
 }
