@@ -17,4 +17,8 @@ type Package struct {
 	PackageDB string `json:"-"`
 	// a hint on which repository this package was downloaded from
 	RepositoryHint string `json:"-"`
+	// NormalizedVersion is a representation of a version string that's
+	// correctly ordered when compared with other representations from the same
+	// producer.
+	NormalizedVersion Version `json:"normalized_version,omitempty"`
 }
