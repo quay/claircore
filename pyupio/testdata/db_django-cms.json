@@ -1,0 +1,59 @@
+{
+  "django-cms": [
+    {
+      "advisory": "django-cms 2.1.3 fixes a serious security issue in PlaceholderAdmin",
+      "cve": null,
+      "id": "pyup.io-25741",
+      "specs": [
+        "<2.1.3"
+      ],
+      "v": "<2.1.3"
+    },
+    {
+      "advisory": "django-cms before 2.1.4 fixes a XSS issue in Text Plugins.",
+      "cve": null,
+      "id": "pyup.io-25742",
+      "specs": [
+        "<2.1.4"
+      ],
+      "v": "<2.1.4"
+    },
+    {
+      "advisory": "django-cms 3.0.14 fixes an issue where privileged users could be tricked into performing actions without their knowledge via a CSRF vulnerability",
+      "cve": null,
+      "id": "pyup.io-25743",
+      "specs": [
+        "<3.0.14"
+      ],
+      "v": "<3.0.14"
+    },
+    {
+      "advisory": "Cross-site request forgery (CSRF) vulnerability in django CMS before 3.0.14, 3.1.x before 3.1.1 allows remote attackers to manipulate privileged users into performing unknown actions via unspecified vectors.",
+      "cve": "CVE-2015-5081",
+      "id": "pyup.io-35628",
+      "specs": [
+        "<3.0.14",
+        ">3.1,<3.1.1"
+      ],
+      "v": "<3.0.14,>3.1,<3.1.1"
+    },
+    {
+      "advisory": "django-cms  3.2.4 addresses security vulnerabilities in the `render_model` template tag that could lead to escalation of privileges or other security issues. It also addresses a security vulnerability in the cms' usage of the messages framework. Furthermore it fixes security vulnerabilities in custom FormFields that could lead to escalation of privileges or other security issue",
+      "cve": null,
+      "id": "pyup.io-25746",
+      "specs": [
+        "<3.2.4"
+      ],
+      "v": "<3.2.4"
+    },
+    {
+      "advisory": "django-cms 3.4.3 fixes a security vulnerability in the page redirect field which allowed users to insert JavaScript code and a vulnerability where the next parameter for the toolbar login was not sanitised and could point to another domain.",
+      "cve": null,
+      "id": "pyup.io-34226",
+      "specs": [
+        "<3.4.3"
+      ],
+      "v": "<3.4.3"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "bottle": [
+    {
+      "advisory": "redirect() in bottle.py in bottle 0.12.10 doesn't filter a \"\\r\\n\" sequence, which leads to a CRLF attack, as demonstrated by a redirect(\"233\\r\\nSet-Cookie: name=salt\") call.",
+      "cve": "CVE-2016-9964",
+      "id": "pyup.io-25642",
+      "specs": [
+        "<0.12.10"
+      ],
+      "v": "<0.12.10"
+    },
+    {
+      "advisory": "Bottle 0.10.x before 0.10.12, 0.11.x before 0.11.7, and 0.12.x before 0.12.6 does not properly limit content types, which allows remote attackers to bypass intended access restrictions via an accepted Content-Type followed by a ; (semi-colon) and a Content-Type that would not be accepted, as demonstrated in YouCompleteMe to execute arbitrary code.",
+      "cve": "CVE-2014-3137",
+      "id": "pyup.io-35548",
+      "specs": [
+        ">=0.10,<0.10.12",
+        ">=0.11,<0.11.7",
+        ">=0.12,<0.12.6"
+      ],
+      "v": ">=0.10,<0.10.12,>=0.11,<0.11.7,>=0.12,<0.12.6"
+    }
+  ]
+}
