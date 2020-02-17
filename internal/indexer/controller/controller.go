@@ -103,6 +103,9 @@ func New(opts *indexer.Opts) *Controller {
 // Initial state set in constructor.
 // Call Lock() before using and Unlock() when finished scanning.
 func (s *Controller) Index(ctx context.Context, manifest *claircore.Manifest) *claircore.IndexReport {
+	// set manifest info on controller
+	s.manifest = manifest
+	s.report.Hash = manifest.Hash
 	log := zerolog.Ctx(ctx).With().
 		Str("component", "internal/indexer/controller/Controller.Index").
 		Str("manifest", s.manifest.Hash.String()).
@@ -112,9 +115,6 @@ func (s *Controller) Index(ctx context.Context, manifest *claircore.Manifest) *c
 	// defer the removal of any tmp files if fetcher is configured for OnDisk or Tee download
 	// no-op otherwise. see Fetcher for more info
 	defer s.Fetcher.Close()
-	// set manifest info on controller
-	s.manifest = manifest
-	s.report.Hash = manifest.Hash
 	// setup our logger. all stateFuncs may use this to log with a log context
 	log.Info().Msg("starting scan")
 	s.run(ctx)
