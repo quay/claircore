@@ -10,6 +10,7 @@ import (
 	"github.com/quay/claircore/debian"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/oracle"
+	"github.com/quay/claircore/pyupio"
 	"github.com/quay/claircore/rhel"
 	"github.com/quay/claircore/suse"
 	"github.com/quay/claircore/ubuntu"
@@ -52,7 +53,6 @@ var suseReleases = []suse.Release{
 	suse.EnterpriseServer15,
 	suse.EnterpriseServer12,
 	suse.EnterpriseServer11,
-	suse.Leap423,
 	suse.Leap150,
 	suse.Leap151,
 }
@@ -104,6 +104,12 @@ func updaters() ([]driver.Updater, error) {
 		}
 		updaters = append(updaters, u)
 	}
+
+	py, err := pyupio.NewUpdater()
+	if err != nil {
+		return nil, fmt.Errorf("unable to create pyupio updater: %v", err)
+	}
+	updaters = append(updaters, py)
 
 	return updaters, nil
 }
