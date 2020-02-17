@@ -44,8 +44,15 @@ func (mc *Controller) Match(ctx context.Context, records []*claircore.IndexRecor
 	if len(interested) == 0 {
 		return map[string][]*claircore.Vulnerability{}, nil
 	}
+
+	dbSide, authoritative := mc.dbFilter()
+	log.Debug().
+		Bool("opt-in", dbSide).
+		Bool("authoritative", authoritative).
+		Msg("version filter compatible?")
+
 	// query the vulnstore
-	vulns, err := mc.query(ctx, interested)
+	vulns, err := mc.query(ctx, interested, dbSide)
 	if err != nil {
 		return nil, err
 	}
@@ -53,12 +60,25 @@ func (mc *Controller) Match(ctx context.Context, records []*claircore.IndexRecor
 		Int("vulnerabilities", len(vulns)).
 		Msg("query")
 
+	if authoritative {
+		return vulns, nil
+	}
 	// filter the vulns
 	filteredVulns := mc.filter(interested, vulns)
 	log.Debug().
 		Int("filtered", len(filteredVulns)).
 		Msg("filtered")
 	return filteredVulns, nil
+}
+
+// DbFilter reports whether the db-side version filtering can be used, and
+// whether it's authoritative.
+func (mc *Controller) dbFilter() (bool, bool) {
+	f, ok := mc.m.(driver.VersionFilter)
+	if !ok {
+		return false, false
+	}
+	return true, f.VersionAuthoritative()
 }
 
 func (mc *Controller) findInterested(records []*claircore.IndexRecord) []*claircore.IndexRecord {
@@ -73,12 +93,13 @@ func (mc *Controller) findInterested(records []*claircore.IndexRecord) []*clairc
 
 // Query asks the Matcher how we should query the vulnstore then performs the query and returns all
 // matched vulnerabilities.
-func (mc *Controller) query(ctx context.Context, interested []*claircore.IndexRecord) (map[string][]*claircore.Vulnerability, error) {
+func (mc *Controller) query(ctx context.Context, interested []*claircore.IndexRecord, dbSide bool) (map[string][]*claircore.Vulnerability, error) {
 	// ask the matcher how we should query the vulnstore
 	matchers := mc.m.Query()
 	getOpts := vulnstore.GetOpts{
-		Matchers: matchers,
-		Debug:    true,
+		Matchers:         matchers,
+		Debug:            true,
+		VersionFiltering: dbSide,
 	}
 	matches, err := mc.store.Get(ctx, interested, getOpts)
 	if err != nil {

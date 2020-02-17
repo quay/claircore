@@ -3,10 +3,11 @@ package matcher
 import (
 	"context"
 
+	"golang.org/x/sync/errgroup"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/vulnstore"
 	"github.com/quay/claircore/libvuln/driver"
-	"golang.org/x/sync/errgroup"
 )
 
 // Match receives an IndexReport and creates a VulnerabilityReport containing matched vulnerabilities
