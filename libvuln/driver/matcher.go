@@ -46,3 +46,15 @@ type Matcher interface {
 	// for example checking the "FixedInVersion" field.
 	Vulnerable(record *claircore.IndexRecord, vuln *claircore.Vulnerability) bool
 }
+
+// VersionFilter is an additional interface that a Matcher can implment to
+// opt-in to using normalized version information in database queries.
+type VersionFilter interface {
+	VersionFilter()
+	// VersionAuthoritative reports whether the Matcher trusts the database-side
+	// filtering to be authoritative.
+	//
+	// A Matcher may return false if it's using a versioning scheme that can't
+	// be completely normalized into a claircore.Version.
+	VersionAuthoritative() bool
+}
