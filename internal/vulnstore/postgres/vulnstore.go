@@ -56,8 +56,7 @@ func (s *Store) PutVulnerabilities(ctx context.Context, updater string, hash str
 	return nil
 }
 
-// vulnstore.Vulnerability interface methods //
-
+// Get implements vulnstore.Vulnerability.
 func (s *Store) Get(ctx context.Context, records []*claircore.IndexRecord, opts vulnstore.GetOpts) (map[string][]*claircore.Vulnerability, error) {
 	vulns, err := get(ctx, s.pool, records, opts)
 	if err != nil {

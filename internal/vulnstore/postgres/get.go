@@ -27,10 +27,13 @@ func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.IndexReco
 	// start a batch
 	batch := &pgx.Batch{}
 	for _, record := range records {
-		query, err := buildGetQuery(record, opts.Matchers)
+		query, err := buildGetQuery(record, &opts)
 		if err != nil {
 			// if we cannot build a query for an individual record continue to the next
-			log.Debug().Str("record", fmt.Sprintf("%+v", record)).Msg("could not build query for record")
+			log.Debug().
+				Err(err).
+				Str("record", fmt.Sprintf("%+v", record)).
+				Msg("could not build query for record")
 			continue
 		}
 		// queue the select query
@@ -92,13 +95,8 @@ func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.IndexReco
 				return nil, fmt.Errorf("failed to scan vulnerability: %v", err)
 			}
 
-			// add vulernability to result. handle if array does not exist
-			if _, ok := results[record.Package.ID]; !ok {
-				vvulns := []*claircore.Vulnerability{v}
-				results[record.Package.ID] = vvulns
-			} else {
-				results[record.Package.ID] = append(results[record.Package.ID], v)
-			}
+			rid := record.Package.ID
+			results[rid] = append(results[rid], v)
 		}
 	}
 	if err := res.Close(); err != nil {

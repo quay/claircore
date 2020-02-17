@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/jmoiron/sqlx"
 	"github.com/rs/zerolog"
 
 	"github.com/quay/claircore"
@@ -15,8 +14,10 @@ import (
 )
 
 const (
-	insertPackage = `INSERT INTO package (name, kind, version) VALUES ($1, $2, $3) ON CONFLICT (name, kind, version) DO NOTHING;`
-	selectDistID  = `SELECT id FROM dist WHERE name = $1 AND version = $2 AND version_code_name = $3 AND version_id = $4 AND arch = $5;`
+	insertPackage = `INSERT INTO package (name, kind, version, norm_kind, norm_version)
+	VALUES ($1, $2, $3, $4, $5::int[])
+	ON CONFLICT (name, kind, version) DO NOTHING;`
+	selectDistID = `SELECT id FROM dist WHERE name = $1 AND version = $2 AND version_code_name = $3 AND version_id = $4 AND arch = $5;`
 	// we'll use a WITH statement here to gather all the id's necessary to create the
 	// scan artifact entry. see: https://www.postgresql.org/docs/current/queries-with.html#QUERIES-WITH-MODIFYING
 	insertPackageScanArtifactWith = `WITH source_package AS (
@@ -44,13 +45,15 @@ INSERT INTO package_scanartifact (layer_hash, package_db, repository_hint, packa
           ON CONFLICT DO NOTHING;`
 )
 
+var zeroPackage = claircore.Package{}
+
 // indexPackages indexes all provides packages along with creating a scan artifact. if a source package is nested
 // inside a binary package we index the source package first and then create a relation between the binary package
 // and source package.
 //
 // scan artifacts are used to determine if a particular layer has been scanned by a
 // particular scnr. see layerScanned method for more details.
-func indexPackages(ctx context.Context, db *sqlx.DB, pool *pgxpool.Pool, pkgs []*claircore.Package, layer *claircore.Layer, scnr indexer.VersionedScanner) error {
+func indexPackages(ctx context.Context, pool *pgxpool.Pool, pkgs []*claircore.Package, layer *claircore.Layer, scnr indexer.VersionedScanner) error {
 	log := zerolog.Ctx(ctx).With().
 		Str("component", "internal/indexer/postgres/indexPackages").
 		Logger()
@@ -79,40 +82,15 @@ func indexPackages(ctx context.Context, db *sqlx.DB, pool *pgxpool.Pool, pkgs []
 		if pkg.Name == "" {
 			skipCt++
 		}
-		if pkg.Source != nil {
-			err := mBatcher.Queue(
-				ctx,
-				insertPackageStmt.SQL,
-				pkg.Source.Name,
-				pkg.Source.Kind,
-				pkg.Source.Version,
-			)
-			if err != nil {
-				return fmt.Errorf("batch insert failed for pkg %v: %v", pkg, err)
-			}
-		} else {
-			pkg.Source = &claircore.Package{}
-			err := mBatcher.Queue(
-				ctx,
-				insertPackageStmt.SQL,
-				pkg.Source.Name,
-				pkg.Source.Kind,
-				pkg.Source.Version,
-			)
-			if err != nil {
-				return fmt.Errorf("batch insert failed for pkg %v: %v", pkg, err)
-			}
+		if pkg.Source == nil {
+			pkg.Source = &zeroPackage
 		}
 
-		err := mBatcher.Queue(
-			ctx,
-			insertPackageStmt.SQL,
-			pkg.Name,
-			pkg.Kind,
-			pkg.Version,
-		)
-		if err != nil {
-			return fmt.Errorf("batch insert failed for pkg %v: %v", pkg, err)
+		if err := queueInsert(ctx, mBatcher, insertPackageStmt.Name, pkg.Source); err != nil {
+			return err
+		}
+		if err := queueInsert(ctx, mBatcher, insertPackageStmt.Name, pkg); err != nil {
+			return err
 		}
 	}
 	err = mBatcher.Done(ctx)
@@ -163,6 +141,22 @@ func indexPackages(ctx context.Context, db *sqlx.DB, pool *pgxpool.Pool, pkgs []
 
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("store:indexPackages failed to commit tx: %v", err)
+	}
+	return nil
+}
+
+func queueInsert(ctx context.Context, b *microbatch.Insert, stmt string, pkg *claircore.Package) error {
+	var vKind *string
+	var vNorm []int32
+	if pkg.NormalizedVersion.Kind != "" {
+		vKind = &pkg.NormalizedVersion.Kind
+		vNorm = pkg.NormalizedVersion.V[:]
+	}
+	err := b.Queue(ctx, stmt,
+		pkg.Name, pkg.Kind, pkg.Version, vKind, vNorm,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to queue insert for package %q: %w", pkg.Name, err)
 	}
 	return nil
 }

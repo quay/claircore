@@ -43,7 +43,7 @@ func (s *store) LayerScanned(ctx context.Context, hash claircore.Digest, scnr in
 }
 
 func (s *store) IndexPackages(ctx context.Context, pkgs []*claircore.Package, l *claircore.Layer, scnr indexer.VersionedScanner) error {
-	err := indexPackages(ctx, s.db, s.pool, pkgs, l, scnr)
+	err := indexPackages(ctx, s.pool, pkgs, l, scnr)
 	return err
 }
 

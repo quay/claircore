@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/jackc/pgtype"
 	"github.com/jmoiron/sqlx"
 
 	"github.com/quay/claircore"
@@ -19,6 +20,8 @@ const (
   package.name, 
   package.kind, 
   package.version, 
+  package.norm_kind,
+  package.norm_version,
 
   source_package.id,
   source_package.name,
@@ -36,7 +39,6 @@ WHERE
 )
 
 func packagesByLayer(ctx context.Context, db *sqlx.DB, hash claircore.Digest, scnrs indexer.VersionedScanners) ([]*claircore.Package, error) {
-	// TODO Use passed-in Context.
 	if len(scnrs) == 0 {
 		return []*claircore.Package{}, nil
 	}
@@ -77,11 +79,15 @@ func packagesByLayer(ctx context.Context, db *sqlx.DB, hash claircore.Digest, sc
 		var spkg claircore.Package
 
 		var id int64
+		var nKind *string
+		var nVer pgtype.Int4Array
 		err := rows.Scan(
 			&id,
 			&pkg.Name,
 			&pkg.Kind,
 			&pkg.Version,
+			&nKind,
+			&nVer,
 
 			&spkg.ID,
 			&spkg.Name,
@@ -95,7 +101,12 @@ func packagesByLayer(ctx context.Context, db *sqlx.DB, hash claircore.Digest, sc
 		if err != nil {
 			return nil, fmt.Errorf("store:packagesByLayer failed to scan packages: %v", err)
 		}
-
+		if nKind != nil {
+			pkg.NormalizedVersion.Kind = *nKind
+			for i, n := range nVer.Elements {
+				pkg.NormalizedVersion.V[i] = n.Int
+			}
+		}
 		// nest source package
 		pkg.Source = &spkg
 

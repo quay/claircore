@@ -3,6 +3,8 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -43,6 +45,8 @@ const (
                   repo_key,
                   repo_uri,
 				  fixed_in_version,
+				  vulnerable_range,
+				  version_kind,
 				  tombstone)
 			VALUES ($1,
 					$2,
@@ -65,7 +69,9 @@ const (
 					$19,
 					$20,
 					$21,
-					$22)
+					VersionRange($22, $23),
+					$24,
+					$25)
 	ON conflict (updater,
 				 name,
 				 md5(description),
@@ -88,6 +94,11 @@ const (
 				 repo_uri,
 				 fixed_in_version)
 	DO UPDATE SET tombstone = EXCLUDED.tombstone;`
+)
+
+var (
+	zeroDist claircore.Distribution
+	zeroRepo claircore.Repository
 )
 
 // putVulnerabilities will begin indexing the list of vulns into the database. a unique constraint
@@ -129,13 +140,13 @@ func putVulnerabilities(ctx context.Context, pool *pgxpool.Pool, updater string,
 			skipCt++
 			continue
 		}
-		if vuln.Dist == nil || vuln.Dist.Name == "" {
-			skipCt++
-			continue
+		if vuln.Dist == nil {
+			vuln.Dist = &zeroDist
 		}
 		if vuln.Repo == nil {
-			vuln.Repo = &claircore.Repository{}
+			vuln.Repo = &zeroRepo
 		}
+		vKind, vrLower, vrUpper := rangefmt(vuln.Range)
 		err := mBatcher.Queue(ctx,
 			insertVulnerability,
 			updater,
@@ -159,6 +170,8 @@ func putVulnerabilities(ctx context.Context, pool *pgxpool.Pool, updater string,
 			vuln.Repo.Key,
 			vuln.Repo.URI,
 			vuln.FixedInVersion,
+			vrLower, vrUpper,
+			vKind,
 			newTombstone,
 		)
 		if err != nil {
@@ -193,4 +206,39 @@ func putVulnerabilities(ctx context.Context, pool *pgxpool.Pool, updater string,
 		Int("inserted", len(vulns)-skipCt).
 		Msg("vulnerabilities inserted")
 	return nil
+}
+
+func rangefmt(r *claircore.Range) (kind *string, lower, upper string) {
+	lower, upper = "{}", "{}"
+	if r == nil || r.Lower.Kind != r.Upper.Kind {
+		return kind, lower, upper
+	}
+
+	kind = &r.Lower.Kind // Just tested the both kinds are the same.
+	v := &r.Lower
+	var buf strings.Builder
+	b := make([]byte, 0, 16) // 16 byte wide scratch buffer
+
+	buf.WriteByte('{')
+	for i := 0; i < 10; i++ {
+		if i != 0 {
+			buf.WriteByte(',')
+		}
+		buf.Write(strconv.AppendInt(b, int64(v.V[i]), 10))
+	}
+	buf.WriteByte('}')
+	lower = buf.String()
+	buf.Reset()
+	v = &r.Upper
+	buf.WriteByte('{')
+	for i := 0; i < 10; i++ {
+		if i != 0 {
+			buf.WriteByte(',')
+		}
+		buf.Write(strconv.AppendInt(b, int64(v.V[i]), 10))
+	}
+	buf.WriteByte('}')
+	upper = buf.String()
+
+	return kind, lower, upper
 }

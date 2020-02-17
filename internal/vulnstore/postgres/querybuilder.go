@@ -2,16 +2,21 @@ package postgres
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/doug-martin/goqu/v8"
 	_ "github.com/doug-martin/goqu/v8/dialect/postgres"
+	"github.com/rs/zerolog/log"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/vulnstore"
 	"github.com/quay/claircore/libvuln/driver"
 )
 
 // getQueryBuilder validates a IndexRecord and creates a query string for vulnerability matching
-func buildGetQuery(record *claircore.IndexRecord, matchers []driver.MatchConstraint) (string, error) {
+func buildGetQuery(record *claircore.IndexRecord, opts *vulnstore.GetOpts) (string, error) {
+	matchers := opts.Matchers
 	psql := goqu.Dialect("postgres")
 	exps := []goqu.Expression{}
 	// add Package.Name as first condition in query
@@ -59,6 +64,23 @@ func buildGetQuery(record *claircore.IndexRecord, matchers []driver.MatchConstra
 		exps = append(exps, ex)
 		seen[m] = struct{}{}
 	}
+	if opts.VersionFiltering {
+		v := &record.Package.NormalizedVersion
+		var lit strings.Builder
+		b := make([]byte, 0, 16)
+		lit.WriteString("'{")
+		for i := 0; i < 10; i++ {
+			if i != 0 {
+				lit.WriteByte(',')
+			}
+			lit.Write(strconv.AppendInt(b, int64(v.V[i]), 10))
+		}
+		lit.WriteString("}'::int[]")
+		exps = append(exps, goqu.And(
+			goqu.C("version_kind").Eq(v.Kind),
+			goqu.L("vulnerable_range @> "+lit.String()),
+		))
+	}
 
 	query := psql.Select(
 		"id",
@@ -85,5 +107,10 @@ func buildGetQuery(record *claircore.IndexRecord, matchers []driver.MatchConstra
 	).From("vuln").Where(exps...)
 
 	sql, _, err := query.ToSQL()
-	return sql, err
+	if err != nil {
+		log.Debug().
+			Err(err).
+			Msg("error generating sql")
+	}
+	return sql, nil
 }

@@ -10,6 +10,7 @@ require (
 	github.com/google/go-cmp v0.4.0
 	github.com/google/go-containerregistry v0.0.0-20191206185556-eb7c14b719c6
 	github.com/google/uuid v1.1.1
+	github.com/jackc/pgtype v1.0.0
 	github.com/jackc/pgx/v4 v4.0.0
 	github.com/jmoiron/sqlx v1.2.0
 	github.com/klauspost/compress v1.9.4
