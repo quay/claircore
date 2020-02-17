@@ -8,6 +8,7 @@ import (
 	"github.com/quay/claircore/alpine"
 	"github.com/quay/claircore/dpkg"
 	"github.com/quay/claircore/internal/indexer"
+	"github.com/quay/claircore/python"
 	"github.com/quay/claircore/rpm"
 )
 
@@ -65,6 +66,7 @@ func (o *Opts) Parse() error {
 			dpkg.NewEcosystem(ctx),
 			alpine.NewEcosystem(ctx),
 			rpm.NewEcosystem(ctx),
+			python.NewEcosystem(ctx),
 		}
 	}
 	o.LayerFetchOpt = DefaultLayerFetchOpt
