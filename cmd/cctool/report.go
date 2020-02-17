@@ -92,6 +92,7 @@ type reportConfig struct {
 	dump              bool
 	indexTmpl         *template.Template
 	manifestTmpl      *template.Template
+	reportTmpl        *template.Template
 }
 
 // Report is the subcommand for generating container reports.
@@ -106,6 +107,7 @@ func Report(cmd context.Context, cfg *commonConfig, args []string) error {
 	libvulnRoot := fs.String("libvuln", "http://localhost:8081/", "address for a libvuln api server")
 	indexTmplString := fs.String("index-fmt", "{{.}}.index.json", "filenames to use when the dump flag is provided")
 	manifestTmplString := fs.String("manifest-fmt", "{{.}}.manifest.json", "filenames to use when the dump flag is provided")
+	reportTmplString := fs.String("report-fmt", "{{.}}.report.json", "filenames to use when the dump flag is provided")
 	fs.Parse(args)
 
 	images := fs.Args()
@@ -134,11 +136,15 @@ func Report(cmd context.Context, cfg *commonConfig, args []string) error {
 	if err != nil {
 		return err
 	}
-	cmdcfg.indexTmpl, err = template.New("dumpfile").Parse(*indexTmplString)
+	cmdcfg.indexTmpl, err = template.New("dumpfile:index").Parse(*indexTmplString)
 	if err != nil {
 		return err
 	}
-	cmdcfg.manifestTmpl, err = template.New("dumpfile").Parse(*manifestTmplString)
+	cmdcfg.manifestTmpl, err = template.New("dumpfile:manifest").Parse(*manifestTmplString)
+	if err != nil {
+		return err
+	}
+	cmdcfg.reportTmpl, err = template.New("dumpfile:report").Parse(*reportTmplString)
 	if err != nil {
 		return err
 	}
@@ -172,6 +178,25 @@ func Report(cmd context.Context, cfg *commonConfig, args []string) error {
 			r, err := runManifest(cmd, img, cfg, &cmdcfg)
 			if err != nil {
 				eo.Do(func() { errd = true })
+			}
+			if cmdcfg.dump && err == nil {
+				buf := bytes.Buffer{}
+				func() {
+					if err := cmdcfg.reportTmpl.Execute(&buf, name); err != nil {
+						log.Print(err)
+						return
+					}
+					f, err := os.Create(buf.String())
+					if err != nil {
+						log.Print(err)
+						return
+					}
+					defer f.Close()
+					if err := json.NewEncoder(f).Encode(&r); err != nil {
+						log.Print(err)
+					}
+					log.Printf("wrote %q", buf.String())
+				}()
 			}
 			ch <- &Result{
 				Name:   name,
