@@ -86,6 +86,7 @@ podman-dev-up:
 		--env POSTGRES_USER=claircore\
 		--env POSTGRES_DB=claircore\
 		--env POSTGRES_INITDB_ARGS="--no-sync"\
+		--env POSTGRES_HOST_AUTH_METHOD=trust\
 		--env PGPORT=5434\
 		--expose 5434\
 		--health-cmd "pg_isready -U claircore -d claircore"\
@@ -103,7 +104,7 @@ podman-dev-up:
 		--env LOG_LEVEL="debug"\
 		--expose 8080\
 		--volume $$(git rev-parse --show-toplevel)/:/src/claircore/:z\
-		quay.io/claircore/golang:1.13.3\
+		quay.io/claircore/golang:$(GO_VERSION)\
 		bash -c 'cd /src/claircore/cmd/libindexhttp; exec go run -mod vendor .'
 	podman create\
 		--pod claircore-dev\
@@ -113,7 +114,7 @@ podman-dev-up:
 		--env LOG_LEVEL="debug"\
 		--expose 8081\
 		--volume $$(git rev-parse --show-toplevel)/:/src/claircore/:z\
-		quay.io/claircore/golang:1.13.3\
+		quay.io/claircore/golang:$(GO_VERSION)\
 		bash -c 'cd /src/claircore/cmd/libvulnhttp; exec go run -mod vendor .'
 	podman pod start claircore-dev
 
