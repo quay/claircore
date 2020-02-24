@@ -95,7 +95,19 @@ func NewDB(ctx context.Context, t testing.TB) (*DB, error) {
 
 	cfg.ConnConfig.Database = database
 	cfg.ConnConfig.User = role
-	t.Logf("config: %+#v", cfg.ConnConfig)
+	t.Logf("config: %+v", struct {
+		Host     string
+		Port     uint16
+		Database string
+		User     string
+		Password string
+	}{
+		Host:     cfg.ConnConfig.Host,
+		Port:     cfg.ConnConfig.Port,
+		Database: cfg.ConnConfig.Database,
+		User:     cfg.ConnConfig.User,
+		Password: cfg.ConnConfig.Password,
+	})
 	cfg.ConnConfig.Logger = nil
 
 	return &DB{
