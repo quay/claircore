@@ -1,5 +1,8 @@
-// +build !integration
+// +build integration
 
 package integration
 
-const skip = true
+func init() {
+	// if this file is built flip skip bool to run integration tests
+	skip = false
+}
