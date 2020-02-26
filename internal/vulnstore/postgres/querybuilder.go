@@ -14,19 +14,22 @@ import (
 func buildGetQuery(record *claircore.IndexRecord, matchers []driver.MatchConstraint) (string, error) {
 	psql := goqu.Dialect("postgres")
 	exps := []goqu.Expression{}
-	// add Package.Name as first condition in query
+	// add active = true as first condition in query
+	exps = append(exps, goqu.Ex{"active": true})
+
+	// add package name as second condition in query
 	if record.Package.Name == "" {
 		return "", fmt.Errorf("IndexRecord must provide a Package.Name")
 	}
 	exps = append(exps, goqu.Ex{"package_name": record.Package.Name})
 
-	// if package has source conver first exp to an OR statement
+	// if package has source convert first exp to an OR statement
 	if record.Package.Source.Name != "" {
 		or := goqu.Or(
 			goqu.Ex{"package_name": record.Package.Name},
 			goqu.Ex{"package_name": record.Package.Source.Name},
 		)
-		exps[0] = or
+		exps[1] = or
 	}
 
 	// add matchers
