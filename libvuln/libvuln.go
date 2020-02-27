@@ -65,12 +65,32 @@ func New(ctx context.Context, opts *Opts) (*Libvuln, error) {
 
 // Scan creates a VulnerabilityReport given a manifest's IndexReport.
 func (l *Libvuln) Scan(ctx context.Context, ir *claircore.IndexReport) (*claircore.VulnerabilityReport, error) {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "libvuln/Libvuln.Scan").
-		Str("manifest", ir.Hash.String()).
-		Logger()
-	ctx = log.WithContext(ctx)
-	log.Info().Msg("match request start")
-	defer log.Info().Msg("match request done")
 	return matcher.Match(ctx, ir, l.matchers, l.store)
+}
+
+// UpdateOperations returns UpdateOperations in date descending order keyed by the
+// Updater name
+func (l *Libvuln) UpdateOperations(ctx context.Context, updaters []string) (map[string][]*driver.UpdateOperation, error) {
+	UOs, err := l.store.GetUpdateOperations(ctx, updaters)
+	if err != nil {
+		return nil, err
+	}
+	return UOs, nil
+}
+
+// DeleteUpdateOperations removes one or more update operations and their
+// associated vulnerabilities from the vulnerability database.
+func (l *Libvuln) DeleteUpdateOperations(ctx context.Context, UOIDs []string) error {
+	err := l.store.DeleteUpdateOperations(ctx, UOIDs)
+	return err
+}
+
+// UpdateOperationDiff returns an UpdateDiff resulting from UO_B being applied to
+// UO_A
+func (l *Libvuln) UpdateOperationDiff(ctx context.Context, UOID_A, UOID_B string) (*driver.UpdateDiff, error) {
+	diff, err := l.store.GetUpdateOperationDiff(ctx, UOID_A, UOID_B)
+	if err != nil {
+		return nil, err
+	}
+	return diff, nil
 }
