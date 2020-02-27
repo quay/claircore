@@ -28,7 +28,7 @@ func TestStore(ctx context.Context, t testing.TB) (*sqlx.DB, *Store, string, fun
 
 	db, err := integration.NewDB(ctx, t)
 	if err != nil {
-		t.Fatalf("unable to create test database: %w", err)
+		t.Fatalf("unable to create test database: %v", err)
 	}
 	cfg := db.Config()
 	cfg.ConnConfig.LogLevel = pgx.LogLevelError
@@ -51,7 +51,7 @@ func TestStore(ctx context.Context, t testing.TB) (*sqlx.DB, *Store, string, fun
 	migrator.Table = migrations.MigrationTable
 	err = migrator.Exec(migrate.Up, migrations.Migrations...)
 	if err != nil {
-		t.Fatalf("failed to perform migrations: %w", err)
+		t.Fatalf("failed to perform migrations: %v", err)
 	}
 
 	s := NewVulnStore(sx, pool)
