@@ -164,9 +164,11 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	// the write bit created and the permissions set before their contents are
 	// created.
 	errbuf := bytes.Buffer{}
-	// Unprivledged containers can't call mknod(2), so exclude /dev and
+	// Unprivileged containers can't call mknod(2), so exclude /dev and
 	// hopefully there aren't any others strewn about.
-	tarcmd := exec.CommandContext(ctx, "tar", "-xC", root, "--exclude", "dev")
+	tarcmd := exec.CommandContext(ctx, "tar", "-xC", root,
+		"--exclude", "dev",
+		"--exclude", ".wh*")
 	tarcmd.Stdin = rd
 	tarcmd.Stderr = &errbuf
 	log.Debug().Str("dir", root).Strs("cmd", tarcmd.Args).Msg("tar invocation")
