@@ -64,7 +64,8 @@ const (
 					$18,
 					$19,
 					$20,
-					$21)
+					$21,
+					$22)
 	ON conflict (updater,
 				 name,
 				 md5(description),

@@ -127,6 +127,7 @@ func (u *Updater) Parse(ctx context.Context, contents io.ReadCloser) ([]*clairco
 		u.curVuln.Description = def.Description
 		u.curVuln.Links = ovalutil.Links(def)
 		u.curVuln.Severity = def.Advisory.Severity
+		u.curVuln.NormalizedSeverity = NormalizeSeverity(def.Advisory.Severity)
 
 		// now that we have our curVuln setup, unpack each nested package
 		// into it's own claircore.Vulnerability struct

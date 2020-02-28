@@ -42,6 +42,7 @@ func (u *Updater) parse(ctx context.Context, sdb *SecurityDB) ([]*claircore.Vuln
 			return nil, ctx.Err()
 		}
 		partial := claircore.Vulnerability{
+			NormalizedSeverity: claircore.Unknown,
 			Package: &claircore.Package{
 				Name: pkg.Pkg.Name,
 			},

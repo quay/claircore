@@ -61,12 +61,13 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 			return nil, fmt.Errorf("could not determine dist")
 		}
 		return &claircore.Vulnerability{
-			Updater:     u.Name(),
-			Name:        def.Title,
-			Description: def.Description,
-			Links:       ovalutil.Links(def),
-			Severity:    def.Advisory.Severity,
-			Dist:        dist,
+			Updater:            u.Name(),
+			Name:               def.Title,
+			Description:        def.Description,
+			Links:              ovalutil.Links(def),
+			Severity:           def.Advisory.Severity,
+			NormalizedSeverity: NormalizeSeverity(def.Advisory.Severity),
+			Dist:               dist,
 		}, nil
 	}
 	vulns, err := ovalutil.RPMDefsToVulns(ctx, root, protoVuln)

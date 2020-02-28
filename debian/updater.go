@@ -132,13 +132,13 @@ func (u *Updater) classifyVuln(pkgInfo pkgInfo, def oval.Definition) *claircore.
 	}
 
 	vuln := &claircore.Vulnerability{
-		Name:           def.Title,
-		Description:    def.Description,
-		Links:          ovalutil.Links(def),
-		Severity:       "Unknown", // oval db doesnt provide
-		Package:        ccPkg,
-		FixedInVersion: pkgInfo.version,
-		Dist:           releaseToDist(u.release),
+		Name:               def.Title,
+		Description:        def.Description,
+		Links:              ovalutil.Links(def),
+		NormalizedSeverity: claircore.Unknown, // debian does not provide severity information
+		Package:            ccPkg,
+		FixedInVersion:     pkgInfo.version,
+		Dist:               releaseToDist(u.release),
 	}
 
 	return vuln

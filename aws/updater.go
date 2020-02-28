@@ -78,12 +78,13 @@ func (u *Updater) Parse(ctx context.Context, contents io.ReadCloser) ([]*clairco
 	vulns := []*claircore.Vulnerability{}
 	for _, update := range updates.Updates {
 		partial := &claircore.Vulnerability{
-			Updater:     u.Name(),
-			Name:        update.ID,
-			Description: update.Description,
-			Links:       refsToLinks(update),
-			Severity:    update.Severity,
-			Dist:        dist,
+			Updater:            u.Name(),
+			Name:               update.ID,
+			Description:        update.Description,
+			Links:              refsToLinks(update),
+			Severity:           update.Severity,
+			NormalizedSeverity: NormalizeSeverity(update.Severity),
+			Dist:               dist,
 		}
 		vulns = append(vulns, u.unpack(partial, update.Packages)...)
 	}
