@@ -19,7 +19,8 @@ func (*Matcher) Name() string {
 
 // Filter implements driver.Matcher.
 func (*Matcher) Filter(record *claircore.IndexRecord) bool {
-	return record.Distribution.DID == "rhel"
+	return record.Distribution != nil &&
+		record.Distribution.DID == "rhel"
 }
 
 // Query implements driver.Matcher.
