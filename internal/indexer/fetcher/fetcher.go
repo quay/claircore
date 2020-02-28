@@ -147,9 +147,13 @@ func (f *fetcher) fetch(ctx context.Context, layer *claircore.Layer) error {
 	br := bufio.NewReader(tr)
 	// Look at the content-type and optionally fix it up.
 	ct := resp.Header.Get("content-type")
+	log.Debug().
+		Str("content-type", ct).
+		Msg("reported content-type")
 	switch {
 	case ct == "" ||
 		ct == "text/plain" ||
+		ct == "binary/octet-stream" ||
 		ct == "application/octet-stream":
 		log.Debug().
 			Str("content-type", ct).
