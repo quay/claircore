@@ -99,7 +99,7 @@ func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]
 			return []*claircore.Distribution{dist}, nil
 		}
 	}
-	return []*claircore.Distribution{&claircore.Distribution{}}, nil
+	return nil, nil
 }
 
 // parse attempts to match all Oracle release regexp and returns the associated
