@@ -158,7 +158,7 @@ func TestScan(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Logf("found %d packages", len(got))
-	if !cmp.Equal(got, want) {
-		t.Fatal(cmp.Diff(got, want))
+	if !cmp.Equal(want, got) {
+		t.Fatal(cmp.Diff(want, got))
 	}
 }

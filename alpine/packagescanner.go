@@ -1,11 +1,8 @@
 package alpine
 
 import (
-	"bufio"
 	"bytes"
 	"context"
-	"errors"
-	"io"
 	"runtime/trace"
 
 	"github.com/rs/zerolog"
@@ -76,22 +73,21 @@ func (*Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.
 
 	pkgs := []*claircore.Package{}
 	srcs := make(map[string]*claircore.Package)
+
 	// It'd be great if we could just use the textproto package here, but we
 	// can't because the database "keys" are case sensitive, unlike MIME
 	// headers. So, roll our own entry and header splitting.
-	s := bufio.NewScanner(b)
-	buf := bufPool.Get().([]byte)
-	defer bufPool.Put(buf)
-
-	s.Buffer(buf, 0)
-	s.Split(split)
-
-	for s.Scan() {
+	var delim = []byte("\n\n")
+	entries := bytes.Split(b.Bytes(), delim)
+	for _, entry := range entries {
+		if len(entry) == 0 {
+			continue
+		}
 		p := claircore.Package{
 			Kind:      "binary",
 			PackageDB: installedFile,
 		}
-		r := bytes.NewBuffer(s.Bytes())
+		r := bytes.NewBuffer(entry)
 		for line, err := r.ReadBytes('\n'); err == nil; line, err = r.ReadBytes('\n') {
 			l := string(bytes.TrimSpace(line[2:]))
 			switch line[0] {
@@ -118,29 +114,7 @@ func (*Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.
 		}
 		pkgs = append(pkgs, &p)
 	}
-	if err := s.Err(); err != nil {
-		return nil, err
-	}
 	log.Debug().Int("count", len(pkgs)).Msg("found packages")
 
 	return pkgs, nil
-}
-
-var delim = []byte("\n\n")
-
-func split(data []byte, atEOF bool) (int, []byte, error) {
-	i := bytes.Index(data, delim)
-	switch {
-	case len(data) == 0 && atEOF:
-		return 0, nil, io.EOF
-	case len(data) != 0 && atEOF:
-		return len(data), data, io.EOF
-	case i == -1 && atEOF:
-		return 0, nil, errors.New("invalid format")
-	case i == -1 && !atEOF:
-		return 0, nil, nil
-	default:
-	}
-	tok := data[:i]
-	return len(tok) + len(delim), tok, nil
 }
