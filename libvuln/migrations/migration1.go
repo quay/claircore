@@ -11,6 +11,7 @@ CREATE TABLE vuln (
     description text,
     links text,
     severity text,
+    normalized_severity text,
     package_name text,
     package_version text,
     package_kind text,
@@ -36,6 +37,7 @@ CREATE UNIQUE INDEX vuln_unique_idx on vuln(
         md5(description), 
         links,
         severity,
+        normalized_severity,
         package_name, 
         package_version, 
         package_kind, 
@@ -64,5 +66,5 @@ CREATE TABLE updatecursor (
     --- the last tombstone each vulnerability was created or updated with
     tombstone text
 );
-	`
+`
 )
