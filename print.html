@@ -83,7 +83,7 @@
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
             <div id="sidebar-scrollbox" class="sidebar-scrollbox">
-                <ol class="chapter"><li class="expanded "><a href="highlevel_architecture.html"><strong aria-hidden="true">1.</strong> Highlevel Architecture</a></li><li class="expanded "><a href="vulnerability_matching.html"><strong aria-hidden="true">2.</strong> Vulnerability Matching</a></li><li class="expanded "><a href="indexer_architecture.html"><strong aria-hidden="true">3.</strong> Indexer Architecture</a></li><li class="expanded "><a href="matcher_architecture.html"><strong aria-hidden="true">4.</strong> Matching Architecture</a></li><li class="expanded "><a href="content_addressability.html"><strong aria-hidden="true">5.</strong> Content-Addressability</a></li><li class="expanded "><a href="contributor.html"><strong aria-hidden="true">6.</strong> Contributors</a></li><li><ol class="section"><li class="expanded "><a href="contributor/logging.html"><strong aria-hidden="true">6.1.</strong> Logging</a></li><li class="expanded "><a href="local-dev.html"><strong aria-hidden="true">6.2.</strong> Local Development</a></li><li class="expanded "><a href="contributor/cctool.html"><strong aria-hidden="true">6.3.</strong> cctool</a></li></ol></li></ol>
+                <ol class="chapter"><li class="expanded "><a href="highlevel_architecture.html"><strong aria-hidden="true">1.</strong> Highlevel Architecture</a></li><li class="expanded "><a href="vulnerability_matching.html"><strong aria-hidden="true">2.</strong> Vulnerability Matching</a></li><li class="expanded "><a href="indexer_architecture.html"><strong aria-hidden="true">3.</strong> Indexer Architecture</a></li><li class="expanded "><a href="matcher_architecture.html"><strong aria-hidden="true">4.</strong> Matching Architecture</a></li><li class="expanded "><a href="content_addressability.html"><strong aria-hidden="true">5.</strong> Content-Addressability</a></li><li class="expanded "><a href="severity_mapping.html"><strong aria-hidden="true">6.</strong> Severity Mapping</a></li><li class="expanded "><a href="contributor.html"><strong aria-hidden="true">7.</strong> Contributors</a></li><li><ol class="section"><li class="expanded "><a href="contributor/logging.html"><strong aria-hidden="true">7.1.</strong> Logging</a></li><li class="expanded "><a href="local-dev.html"><strong aria-hidden="true">7.2.</strong> Local Development</a></li><li class="expanded "><a href="contributor/cctool.html"><strong aria-hidden="true">7.3.</strong> cctool</a></li></ol></li></ol>
             </div>
             <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
         </nav>
@@ -305,6 +305,78 @@ Layers MUST provide a content addressable hash unique identifying the layer's co
 If ClairCore comes across a image or layer hash which has been scanned by all configured scanners it will retrieve the existing results and not perform work.<br />
 If ClairCore is started with a new set of package scanners and encounters a previously seen image or layer hash it will rescan the image or layer.<br />
 ClairCore will only perform a scan with the missing scanner on the incoming image or layers.</p>
+<h1><a class="header" href="#severity-mapping" id="severity-mapping">Severity Mapping</a></h1>
+<p>ClairCore will normalize a security databases's severity string to a set of defined values.<br />
+Clients may use the <code>NormalizedSeverity</code> field on a <code>claircore.Vulnerability</code> to react to vulnerability severities without needing to know each security database's severity strings.<br />
+All strings used in the mapping tables are identical to the strings found within the relevant security database.</p>
+<h2><a class="header" href="#claircore-severity-strings" id="claircore-severity-strings">ClairCore Severity Strings</a></h2>
+<p>The following are severity strings ClairCore will normalize others to.<br />
+Clients can guarantee one of these strings will be associated with a claircore.Vulnerability.</p>
+<pre><code>Unknown
+Negligible
+Low
+Medium
+High
+Critical
+Defcon1
+</code></pre>
+<h2><a class="header" href="#alpine-mapping" id="alpine-mapping">Alpine Mapping</a></h2>
+<p>Alpine SecDB database does not provide severity information.<br />
+All vulnerability severities will be Unknown.</p>
+<table><thead><tr><th>Alpine Severity</th><th>Clair Severity</th></tr></thead><tbody>
+<tr><td>*</td><td>Unknown</td></tr>
+</tbody></table>
+<h2><a class="header" href="#aws-mapping" id="aws-mapping">AWS Mapping</a></h2>
+<p>AWS UpdateInfo database provides severity information.</p>
+<table><thead><tr><th>AWS Severity</th><th>Clair Severity</th></tr></thead><tbody>
+<tr><td>low</td><td>Low</td></tr>
+<tr><td>medium</td><td>Medium</td></tr>
+<tr><td>important</td><td>High</td></tr>
+<tr><td>critical</td><td>Critical</td></tr>
+</tbody></table>
+<h2><a class="header" href="#debian-mapping" id="debian-mapping">Debian Mapping</a></h2>
+<p>Debian Oval database does not provide severity information.<br />
+All vulnerability severities will be Unknown.</p>
+<table><thead><tr><th>Debian Severity</th><th>Clair Severity</th></tr></thead><tbody>
+<tr><td>*</td><td>Unknown</td></tr>
+</tbody></table>
+<h2><a class="header" href="#oracle-mapping" id="oracle-mapping">Oracle Mapping</a></h2>
+<p>Oracle Oval database provides severity information.</p>
+<table><thead><tr><th>Oracle Severity</th><th>Clair Severity</th></tr></thead><tbody>
+<tr><td>N/A</td><td>Unknown</td></tr>
+<tr><td>LOW</td><td>Low</td></tr>
+<tr><td>MODERATE</td><td>Medium</td></tr>
+<tr><td>IMPORTANT</td><td>High</td></tr>
+<tr><td>CRITICAL</td><td>Critical</td></tr>
+</tbody></table>
+<h2><a class="header" href="#rhel-mapping" id="rhel-mapping">RHEL Mapping</a></h2>
+<p>RHEL Oval database provides severity information.</p>
+<table><thead><tr><th>RHEL Severity</th><th>Clair Severity</th></tr></thead><tbody>
+<tr><td>None</td><td>Unknown</td></tr>
+<tr><td>Low</td><td>Low</td></tr>
+<tr><td>Moderate</td><td>Medium</td></tr>
+<tr><td>Important</td><td>High</td></tr>
+<tr><td>Critical</td><td>Critical</td></tr>
+</tbody></table>
+<h2><a class="header" href="#suse-mapping" id="suse-mapping">SUSE Mapping</a></h2>
+<p>SUSE Oval database provides severity information.</p>
+<table><thead><tr><th>SUSE Severity</th><th>Clair Severity</th></tr></thead><tbody>
+<tr><td>None</td><td>Unknown</td></tr>
+<tr><td>Low</td><td>Low</td></tr>
+<tr><td>Moderate</td><td>Medium</td></tr>
+<tr><td>Important</td><td>High</td></tr>
+<tr><td>Critical</td><td>Critical</td></tr>
+</tbody></table>
+<h2><a class="header" href="#ubuntu-mapping" id="ubuntu-mapping">Ubuntu Mapping</a></h2>
+<p>Ubuntu Oval database provides severity information.</p>
+<table><thead><tr><th>Ubuntu Severity</th><th>Clair Severity</th></tr></thead><tbody>
+<tr><td>Untriaged</td><td>Unknown</td></tr>
+<tr><td>Negligible</td><td>Negligible</td></tr>
+<tr><td>Low</td><td>Low</td></tr>
+<tr><td>Medium</td><td>Medium</td></tr>
+<tr><td>High</td><td>High</td></tr>
+<tr><td>Critical</td><td>Critical</td></tr>
+</tbody></table>
 <h1><a class="header" href="#contributors" id="contributors">Contributors</a></h1>
 <p>This is some documentation helpful for the actual nuts-n-bolts of adding code to
 and testing code in the project.</p>
