@@ -122,7 +122,7 @@ func (ls *layerScanner) scanPackages(ctx context.Context, layer *claircore.Layer
 
 	v, err := s.Scan(ctx, layer)
 	if err != nil {
-		return fmt.Errorf("scanner: %v error: %v", s.Name(), err)
+		return fmt.Errorf("%v(%v): %w", s.Name(), layer.Hash, err)
 	}
 	if v == nil {
 		return nil
