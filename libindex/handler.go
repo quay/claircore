@@ -30,8 +30,15 @@ func NewHandler(l *Libindex) *HTTP {
 }
 
 func (h *HTTP) State(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log := zerolog.Ctx(ctx).With().
+		Str("method", "index").
+		Logger()
+	ctx = log.WithContext(ctx)
+
 	w.Header().Set("content-type", "text/plain")
-	fmt.Fprintln(w, h.l.State())
+	s, _ := h.l.State(ctx)
+	fmt.Fprintln(w, s)
 }
 
 func (h *HTTP) Index(w http.ResponseWriter, r *http.Request) {

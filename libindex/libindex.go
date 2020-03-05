@@ -119,8 +119,8 @@ func (l *Libindex) Index(ctx context.Context, manifest *claircore.Manifest) (*cl
 //
 // If the identifier has changed, clients should arrange for layers to be
 // re-indexed.
-func (l *Libindex) State() string {
-	return l.state
+func (l *Libindex) State(ctx context.Context) (string, error) {
+	return l.state, nil
 }
 
 func (l *Libindex) index(ctx context.Context, s *controller.Controller, m *claircore.Manifest) *claircore.IndexReport {
