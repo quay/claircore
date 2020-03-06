@@ -83,7 +83,7 @@ const (
 		package_db text,
 		repository_hint text
 	);
-	CREATE UNIQUE INDEX IF NOT EXISTS package_scanartifact_unique_idx ON package_scanartifact (layer_hash, package_id, source_id, scanner_id);
+	CREATE UNIQUE INDEX IF NOT EXISTS package_scanartifact_unique_idx ON package_scanartifact (layer_hash, package_id, source_id, scanner_id, package_db);
 
 	--- Repository
 	--- a unique package repository discovered by a scanner
