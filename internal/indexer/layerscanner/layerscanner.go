@@ -73,8 +73,17 @@ func (ls *layerScanner) Scan(ctx context.Context, manifest claircore.Digest, lay
 		fmt.Errorf("failed to extract scanners from ecosystems: %v", err)
 	}
 
-	g, gctx := errgroup.WithContext(ctx)
+	layersToScan := make([]*claircore.Layer, 0, len(layers))
+	dedupe := map[string]struct{}{}
 	for _, layer := range layers {
+		if _, ok := dedupe[layer.Hash.String()]; !ok {
+			layersToScan = append(layersToScan, layer)
+			dedupe[layer.Hash.String()] = struct{}{}
+		}
+	}
+
+	g, gctx := errgroup.WithContext(ctx)
+	for _, layer := range layersToScan {
 		ll := layer
 
 		for _, s := range ps {
