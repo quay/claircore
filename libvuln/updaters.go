@@ -10,6 +10,7 @@ import (
 	"github.com/quay/claircore/debian"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/oracle"
+	"github.com/quay/claircore/photon"
 	"github.com/quay/claircore/pyupio"
 	"github.com/quay/claircore/rhel"
 	"github.com/quay/claircore/suse"
@@ -55,6 +56,12 @@ var suseReleases = []suse.Release{
 	suse.EnterpriseServer11,
 	suse.Leap150,
 	suse.Leap151,
+}
+
+var photonReleases = []photon.Release{
+	photon.Photon1,
+	photon.Photon2,
+	photon.Photon3,
 }
 
 func updaters() ([]driver.Updater, error) {
@@ -110,6 +117,14 @@ func updaters() ([]driver.Updater, error) {
 		return nil, fmt.Errorf("unable to create pyupio updater: %v", err)
 	}
 	updaters = append(updaters, py)
+
+	for _, rel := range photonReleases {
+		u, err := photon.NewUpdater(rel)
+		if err != nil {
+			return nil, fmt.Errorf("unable to create photon updater: %v", err)
+		}
+		updaters = append(updaters, u)
+	}
 
 	return updaters, nil
 }
