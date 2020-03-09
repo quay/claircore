@@ -1,0 +1,44 @@
+#  SPDX-License-Identifier: LGPL-2.1+
+#
+#  This file is part of systemd.
+#
+#  systemd is free software; you can redistribute it and/or modify it
+#  under the terms of the GNU Lesser General Public License as published by
+#  the Free Software Foundation; either version 2.1 of the License, or
+#  (at your option) any later version.
+
+prefix=/usr
+rootprefix=/usr
+sysconfdir=/etc
+systemdutildir=${rootprefix}/lib/systemd
+systemdsystemunitdir=${rootprefix}/lib/systemd/system
+systemdsystempresetdir=${rootprefix}/lib/systemd/system-preset
+systemduserunitdir=${prefix}/lib/systemd/user
+systemduserpresetdir=${prefix}/lib/systemd/user-preset
+systemdsystemconfdir=${sysconfdir}/systemd/system
+systemduserconfdir=${sysconfdir}/systemd/user
+systemdsystemunitpath=${systemdsystemconfdir}:/etc/systemd/system:/run/systemd/system:/usr/local/lib/systemd/system:${systemdsystemunitdir}:/usr/lib/systemd/system:/lib/systemd/system
+systemduserunitpath=${systemduserconfdir}:/etc/systemd/user:/run/systemd/user:/usr/local/lib/systemd/user:/usr/local/share/systemd/user:${systemduserunitdir}:/usr/lib/systemd/user:/usr/share/systemd/user
+systemdsystemgeneratordir=${rootprefix}/lib/systemd/system-generators
+systemdusergeneratordir=${prefix}/lib/systemd/user-generators
+systemdsystemgeneratorpath=/run/systemd/system-generators:/etc/systemd/system-generators:/usr/local/lib/systemd/system-generators:${systemdsystemgeneratordir}
+systemdusergeneratorpath=/run/systemd/user-generators:/etc/systemd/user-generators:/usr/local/lib/systemd/user-generators:${systemdusergeneratordir}
+systemdsleepdir=${rootprefix}/lib/systemd/system-sleep
+systemdshutdowndir=${rootprefix}/lib/systemd/system-shutdown
+tmpfilesdir=${prefix}/lib/tmpfiles.d
+sysusersdir=${prefix}/lib/sysusers.d
+sysctldir=${prefix}/lib/sysctl.d
+binfmtdir=${prefix}/lib/binfmt.d
+modulesloaddir=${prefix}/lib/modules-load.d
+catalogdir=${prefix}/lib/systemd/catalog
+systemuidmax=999
+systemgidmax=999
+dynamicuidmin=61184
+dynamicuidmax=65519
+containeruidbasemin=524288
+containeruidbasemax=1878982656
+
+Name: systemd
+Description: systemd System and Service Manager
+URL: https://www.freedesktop.org/wiki/Software/systemd
+Version: 243
