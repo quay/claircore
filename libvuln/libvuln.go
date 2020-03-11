@@ -77,7 +77,7 @@ func (l *Libvuln) UpdateOperations(ctx context.Context, updaters []string) (map[
 
 // DeleteUpdateOperations removes one or more update operations and their
 // associated vulnerabilities from the vulnerability database.
-func (l *Libvuln) DeleteUpdateOperations(ctx context.Context, ref []uuid.UUID) error {
+func (l *Libvuln) DeleteUpdateOperations(ctx context.Context, ref ...uuid.UUID) error {
 	return l.store.DeleteUpdateOperations(ctx, ref...)
 }
 

@@ -44,6 +44,7 @@ const (
 	EnvPGConnString = "POSTGRES_CONNECTION_STRING"
 )
 const (
+	loadUUID        = `CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`
 	createRole      = `CREATE ROLE %s LOGIN;`
 	createDatabase  = `CREATE DATABASE %[2]s WITH OWNER %[1]s ENCODING 'UTF8';`
 	killConnections = `SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = $1`
@@ -94,6 +95,17 @@ func NewDB(ctx context.Context, t testing.TB) (*DB, error) {
 	}
 
 	cfg.ConnConfig.Database = database
+	conn, err = pgx.ConnectConfig(ctx, cfg.ConnConfig)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := conn.Exec(ctx, loadUUID); err != nil {
+		return nil, err
+	}
+	if err := conn.Close(ctx); err != nil {
+		return nil, err
+	}
+
 	cfg.ConnConfig.User = role
 	t.Logf("config: %+v", struct {
 		Host     string
