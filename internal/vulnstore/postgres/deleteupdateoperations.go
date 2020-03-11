@@ -9,12 +9,9 @@ import (
 	"github.com/rs/zerolog"
 )
 
-const (
-	deleteUpdateOperation = `DELETE FROM update_operation WHERE ref IN $1::uuid[];`
-)
-
 // DeleteUpdaterOperations removes an UpdateOperation from the vulnstore.
 func deleteUpdateOperations(ctx context.Context, pool *pgxpool.Pool, ref ...uuid.UUID) error {
+	const query = `DELETE FROM update_operation WHERE ref = ANY($1::uuid[]);`
 	log := zerolog.Ctx(ctx).With().
 		Str("component", "internal/vulnstore/postgres/deleteUpdateOperations").
 		Logger()
@@ -23,7 +20,13 @@ func deleteUpdateOperations(ctx context.Context, pool *pgxpool.Pool, ref ...uuid
 		return nil
 	}
 
-	tag, err := pool.Exec(ctx, deleteUpdateOperation, ref)
+	// Pgx seems unwilling to do the []uuid.UUID → uuid[] conversion, so we're
+	// forced to make some garbage here.
+	refStr := make([]string, len(ref))
+	for i := range ref {
+		refStr[i] = ref[i].String()
+	}
+	tag, err := pool.Exec(ctx, query, refStr)
 	if err != nil {
 		return fmt.Errorf("failed to delete: %w", err)
 	}

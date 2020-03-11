@@ -1,9 +1,11 @@
 package postgres
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/vulnstore"
@@ -14,7 +16,13 @@ import (
 
 func Test_GetQueryBuilder_Deterministic_Args(t *testing.T) {
 	const (
-		preamble   = `SELECT "id", "name", "description", "links", "severity", "package_name", "package_version", "package_kind", "dist_id", "dist_name", "dist_version", "dist_version_code_name", "dist_version_id", "dist_arch", "dist_cpe", "dist_pretty_name", "repo_name", "repo_key", "repo_uri", "fixed_in_version", "updater" FROM "vuln" WHERE `
+		preamble = `SELECT
+		"id", "name", "description", "links", "severity", "package_name", "package_version",
+		"package_kind", "dist_id", "dist_name", "dist_version", "dist_version_code_name",
+		"dist_version_id", "dist_arch", "dist_cpe", "dist_pretty_name", "repo_name", "repo_key",
+		"repo_uri", "fixed_in_version", "updater"
+		FROM "vuln"
+		WHERE `
 		both       = `((("package_name" = 'package-0') OR ("package_name" = 'source-package-0')) AND `
 		noSource   = `(("package_name" = 'package-0') AND `
 		onlySource = `((("package_name" = 'package-0') OR ("package_name" = 'source-package-0')) AND `
@@ -62,7 +70,8 @@ func Test_GetQueryBuilder_Deterministic_Args(t *testing.T) {
 		{
 			name: "id,version",
 			expectedQuery: preamble + both +
-				`("dist_id" = 'did-0') AND ("dist_version" = 'version-0'))`,
+				`("dist_id" = 'did-0') AND
+				("dist_version" = 'version-0'))`,
 			matchExps: []driver.MatchConstraint{
 				driver.DistributionDID,
 				driver.DistributionVersion,
@@ -79,7 +88,9 @@ func Test_GetQueryBuilder_Deterministic_Args(t *testing.T) {
 		{
 			name: "id,version,version_id",
 			expectedQuery: preamble + both +
-				`("dist_id" = 'did-0') AND ("dist_version" = 'version-0') AND ("dist_version_id" = 'version-id-0'))`,
+				`("dist_id" = 'did-0') AND
+				("dist_version" = 'version-0') AND
+				("dist_version_id" = 'version-id-0'))`,
 			matchExps: []driver.MatchConstraint{
 				driver.DistributionDID,
 				driver.DistributionVersion,
@@ -97,7 +108,10 @@ func Test_GetQueryBuilder_Deterministic_Args(t *testing.T) {
 		{
 			name: "id,version,version_id,version_code_name",
 			expectedQuery: preamble + both +
-				`("dist_id" = 'did-0') AND ("dist_version" = 'version-0') AND ("dist_version_id" = 'version-id-0') AND ("dist_version_code_name" = 'version-code-name-0'))`,
+				`("dist_id" = 'did-0') AND
+				("dist_version" = 'version-0') AND
+				("dist_version_id" = 'version-id-0') AND
+				("dist_version_code_name" = 'version-code-name-0'))`,
 			matchExps: []driver.MatchConstraint{
 				driver.DistributionDID,
 				driver.DistributionVersion,
@@ -116,7 +130,8 @@ func Test_GetQueryBuilder_Deterministic_Args(t *testing.T) {
 		{
 			name: "DatabaseFilter",
 			expectedQuery: preamble + both +
-				`(("version_kind" = '') AND vulnerable_range @> '{0,0,0,0,0,0,0,0,0,0}'::int[]))`,
+				`(("version_kind" = '') AND
+				vulnerable_range @> '{0,0,0,0,0,0,0,0,0,0}'::int[]))`,
 			matchExps: []driver.MatchConstraint{},
 			dbFilter:  true,
 			indexRecord: func() *claircore.IndexRecord {
@@ -131,7 +146,8 @@ func Test_GetQueryBuilder_Deterministic_Args(t *testing.T) {
 		{
 			name: "DatabaseFilterPython",
 			expectedQuery: preamble + both +
-				`(("version_kind" = 'pep440') AND vulnerable_range @> '{0,1,20,3,0,0,0,0,0,0}'::int[]))`,
+				`(("version_kind" = 'pep440') AND
+				vulnerable_range @> '{0,1,20,3,0,0,0,0,0,0}'::int[]))`,
 			matchExps: []driver.MatchConstraint{},
 			dbFilter:  true,
 			indexRecord: func() *claircore.IndexRecord {
@@ -149,6 +165,13 @@ func Test_GetQueryBuilder_Deterministic_Args(t *testing.T) {
 			},
 		},
 	}
+
+	// This is safe to do because SQL doesn't care about what whitespace is
+	// where.
+	//
+	// Also, it produces more intelligible diffs when things break.
+	normalizeWhitespace := cmpopts.AcyclicTransformer("normalizeWhitespace", strings.Fields)
+
 	for _, tt := range table {
 		t.Run(tt.name, func(t *testing.T) {
 			ir := tt.indexRecord()
@@ -160,8 +183,9 @@ func Test_GetQueryBuilder_Deterministic_Args(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to create query: %v", err)
 			}
-			if !cmp.Equal(query, tt.expectedQuery) {
-				t.Fatalf("%v", cmp.Diff(tt.expectedQuery, query))
+			t.Logf("got:\n%s", query)
+			if !cmp.Equal(query, tt.expectedQuery, normalizeWhitespace) {
+				t.Fatalf("%v", cmp.Diff(tt.expectedQuery, query, normalizeWhitespace))
 			}
 		})
 	}

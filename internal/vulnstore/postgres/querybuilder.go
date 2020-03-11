@@ -19,13 +19,14 @@ func buildGetQuery(record *claircore.IndexRecord, opts *vulnstore.GetOpts) (stri
 	matchers := opts.Matchers
 	psql := goqu.Dialect("postgres")
 	exps := []goqu.Expression{}
-	// add package name as first condition in query
+
+	// Add package name as first condition in query.
 	if record.Package.Name == "" {
 		return "", fmt.Errorf("IndexRecord must provide a Package.Name")
 	}
 	exps = append(exps, goqu.Ex{"package_name": record.Package.Name})
 
-	// if package has source convert first exp to an OR statement
+	// If the package has a source, convert the first expression to an OR.
 	if record.Package.Source.Name != "" {
 		or := goqu.Or(
 			goqu.Ex{"package_name": record.Package.Name},

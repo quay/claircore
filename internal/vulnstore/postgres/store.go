@@ -49,7 +49,7 @@ func (s *Store) DeleteUpdateOperations(ctx context.Context, id ...uuid.UUID) err
 
 // GetUpdateOperationDiff implements driver.Updater.
 func (s *Store) GetUpdateOperationDiff(ctx context.Context, a, b uuid.UUID) (*driver.UpdateDiff, error) {
-	return getUpdateOperationDiff(ctx, s.pool, a, b)
+	return getUpdateDiff(ctx, s.pool, a, b)
 }
 
 // vulnstore.Vulnerability interface methods //
