@@ -32,28 +32,34 @@ var (
 	_ vulnstore.Vulnerability = (*Store)(nil)
 )
 
-// UpdateVulnerabilities implements driver.Updater.
+// UpdateVulnerabilities implements vulnstore.Updater.
 func (s *Store) UpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability) (uuid.UUID, error) {
 	return updateVulnerabilites(ctx, s.pool, updater, fingerprint, vulns)
 }
 
-// GetUpdateOperations implements driver.Updater.
+// GetUpdateOperations implements vulnstore.Updater.
 func (s *Store) GetUpdateOperations(ctx context.Context, updater ...string) (map[string][]driver.UpdateOperation, error) {
 	return getUpdateOperations(ctx, s.pool, updater...)
 }
 
-// DeleteUpdateOperations implements driver.Updater.
+// DeleteUpdateOperations implements vulnstore.Updater.
 func (s *Store) DeleteUpdateOperations(ctx context.Context, id ...uuid.UUID) error {
 	return deleteUpdateOperations(ctx, s.pool, id...)
 }
 
-// GetUpdateOperationDiff implements driver.Updater.
+// GetUpdateOperationDiff implements vulnstore.Updater.
 func (s *Store) GetUpdateOperationDiff(ctx context.Context, a, b uuid.UUID) (*driver.UpdateDiff, error) {
 	return getUpdateDiff(ctx, s.pool, a, b)
 }
+func (s *Store) GetUpdateDiff(ctx context.Context, a, b uuid.UUID) (*driver.UpdateDiff, error) {
+	return getUpdateDiff(ctx, s.pool, a, b)
+}
 
-// vulnstore.Vulnerability interface methods //
+func (s *Store) GetLatestUpdateRefs(ctx context.Context) (map[string]uuid.UUID, error) {
+	return getLatestRefs(ctx, s.pool)
+}
 
+// Get implements vulnstore.Vulnerability.
 func (s *Store) Get(ctx context.Context, records []*claircore.IndexRecord, opts vulnstore.GetOpts) (map[string][]*claircore.Vulnerability, error) {
 	vulns, err := get(ctx, s.pool, records, opts)
 	if err != nil {

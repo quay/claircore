@@ -13,6 +13,21 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 )
 
+// GetLatestUpdateRef implements driver.Updater.
+func (s *Store) GetLatestUpdateRef(ctx context.Context) (uuid.UUID, error) {
+	const query = `SELECT ref FROM update_operation ORDER BY id USING > LIMIT 1;`
+	log := zerolog.Ctx(ctx).With().
+		Str("component", "internal/vulnstore/postgres/getLatestRef").
+		Logger()
+	ctx = log.WithContext(ctx)
+
+	var ref uuid.UUID
+	if err := s.pool.QueryRow(ctx, query).Scan(&ref); err != nil {
+		return uuid.Nil, err
+	}
+	return ref, nil
+}
+
 func getLatestRefs(ctx context.Context, pool *pgxpool.Pool) (map[string]uuid.UUID, error) {
 	const query = `SELECT updater, ref FROM update_operation GROUP BY updater ORDER BY updater, id USING > LIMIT 1;`
 	log := zerolog.Ctx(ctx).With().
