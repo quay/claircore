@@ -2,6 +2,7 @@ package updater
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -96,28 +97,32 @@ func (u *Controller) Update(ctx context.Context) error {
 	}
 	defer u.Lock.Unlock()
 
-	// retreive previous fingerprint. GetUpdateOperations will
+	// retrieve previous fingerprint. GetUpdateOperations will
 	// return update operations in descending order
 	var prevFP driver.Fingerprint
-	allOUs, err := u.Store.GetUpdateOperations(ctx, u.Updater.Name())
+	allUOs, err := u.Store.GetUpdateOperations(ctx, u.Updater.Name())
 	if err != nil {
 		return err
 	}
-	OUs := allOUs[u.Updater.Name()]
-	if len(OUs) > 0 {
-		prevFP = OUs[0].Fingerprint
+	UOs := allUOs[u.Updater.Name()]
+	if len(UOs) > 0 {
+		prevFP = UOs[0].Fingerprint
 	}
 
 	// Fetch the vulnerability database. if the fetcher
 	// determines no update is necessary a driver.Unchanged
 	// error will be returned
 	vulnDB, newFP, err := u.Fetch(ctx, prevFP)
-	if err != nil {
-		return err
-	}
-	// just to be defensive. if no error is returned this should not happen
 	if vulnDB != nil {
 		defer vulnDB.Close()
+	}
+	switch {
+	case err == nil:
+	case errors.Is(err, driver.Unchanged):
+		log.Info().Msg("vulnerability database unchanged")
+		return nil
+	default:
+		return err
 	}
 
 	// parse the vulndb
