@@ -71,7 +71,7 @@ func (l *Libvuln) Scan(ctx context.Context, ir *claircore.IndexReport) (*clairco
 
 // UpdateOperations returns UpdateOperations in date descending order keyed by the
 // Updater name
-func (l *Libvuln) UpdateOperations(ctx context.Context, updaters []string) (map[string][]driver.UpdateOperation, error) {
+func (l *Libvuln) UpdateOperations(ctx context.Context, updaters ...string) (map[string][]driver.UpdateOperation, error) {
 	return l.store.GetUpdateOperations(ctx, updaters...)
 }
 
@@ -81,8 +81,24 @@ func (l *Libvuln) DeleteUpdateOperations(ctx context.Context, ref ...uuid.UUID) 
 	return l.store.DeleteUpdateOperations(ctx, ref...)
 }
 
-// UpdateOperationDiff returns an UpdateDiff resulting from UO_B being applied to
-// UO_A
-func (l *Libvuln) UpdateOperationDiff(ctx context.Context, prev, cur uuid.UUID) (*driver.UpdateDiff, error) {
+// UpdateDiff returns an UpdateDiff describing the changes between prev
+// and cur.
+func (l *Libvuln) UpdateDiff(ctx context.Context, prev, cur uuid.UUID) (*driver.UpdateDiff, error) {
 	return l.store.GetUpdateDiff(ctx, prev, cur)
+}
+
+// LatestUpdateOperations returns references for the latest update for every
+// known updater.
+//
+// These references are okay to expose externally.
+func (l *Libvuln) LatestUpdateOperations(ctx context.Context) (map[string]uuid.UUID, error) {
+	return l.store.GetLatestUpdateRefs(ctx)
+}
+
+// LatestUpdateOperation returns a reference to the latest known update.
+//
+// This can be used by clients to determine if a call to Scan is likely to
+// return new results.
+func (l *Libvuln) LatestUpdateOperation(ctx context.Context) (uuid.UUID, error) {
+	return l.store.GetLatestUpdateRef(ctx)
 }
