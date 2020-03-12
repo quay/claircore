@@ -7,6 +7,7 @@ import (
 	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/internal/indexer/linux"
 	"github.com/quay/claircore/oracle"
+	"github.com/quay/claircore/photon"
 	"github.com/quay/claircore/rhel"
 	"github.com/quay/claircore/suse"
 )
@@ -23,6 +24,7 @@ func NewEcosystem(ctx context.Context) *indexer.Ecosystem {
 				&oracle.DistributionScanner{},
 				&rhel.DistributionScanner{},
 				&suse.DistributionScanner{},
+				&photon.DistributionScanner{},
 			}, nil
 		},
 		RepositoryScanners: func(ctx context.Context) ([]indexer.RepositoryScanner, error) {
