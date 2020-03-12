@@ -30,17 +30,14 @@ type FastestURL struct {
 // New is a constructor for a FastestURL
 func New(client *http.Client, req *http.Request, check RespCheck, urls []*url.URL) *FastestURL {
 	if client == nil {
-		client = &http.Client{}
+		client = http.DefaultClient
 	}
 	if req == nil {
 		req = &http.Request{}
 	}
 	if check == nil {
 		check = func(resp *http.Response) bool {
-			if resp.StatusCode == 200 {
-				return true
-			}
-			return false
+			return resp.StatusCode == http.StatusOK
 		}
 	}
 	return &FastestURL{
@@ -55,55 +52,43 @@ func New(client *http.Client, req *http.Request, check RespCheck, urls []*url.UR
 // f.RespCheck.
 //
 // If no successful *http.Response is obtained a nil is returned.
-// Any ctx timeout or cancelation must be provided by the caller.
+// Any timeout or cancellation must be provided by the caller.
 func (f *FastestURL) Do(ctx context.Context) *http.Response {
 	log := zerolog.Ctx(ctx).With().Str("routine", "fasesturl_do").Logger()
-	cond := sync.NewCond(&sync.Mutex{})
-	var response *http.Response
-	// immediately lock so workers do not write to response
-	// before Do method blocks on cond.Wait()
-	cond.L.Lock()
+	var wg sync.WaitGroup
+	result := make(chan *http.Response)
+	wg.Add(len(f.URLs))
+	go func() {
+		wg.Wait()
+		close(result)
+	}()
 	for _, url := range f.URLs {
 		u := url
 		go func() {
-			defer cond.Signal()
+			defer wg.Done()
 			req := f.Request.Clone(ctx)
 			req.URL = u
 			req.Host = u.Host
 			resp, err := f.Client.Do(req)
+			// Can't defer the body.Close(), because we can only close it if we're not
+			// going to return it.
 			if err != nil {
-				log.Error().Err(err).Str("url", url.String()).Msg("failed to make request for url")
+				log.Error().Err(err).Str("url", u.String()).Msg("failed to make request for url")
+				if resp != nil {
+					resp.Body.Close()
+				}
 				return
 			}
-			// early return if resp doesnt pass check
 			if !f.RespCheck(resp) {
 				resp.Body.Close()
 				return
 			}
-			// respCheck passed, lock access to response var
-			cond.L.Lock()
-			if response == nil {
-				response = resp
-			} else {
-				// another routine has set response, close this body and discard
+			select {
+			case result <- resp:
+			default:
 				resp.Body.Close()
 			}
-			cond.L.Unlock()
 		}()
 	}
-	// wait on go routines to signal. when a signal occurs
-	// check if a worker set response and if so return it.
-	// break loop when all workers have signal
-	for lim, i := len(f.URLs), 0; i < lim; i++ {
-		cond.Wait()
-		if response != nil {
-			cond.L.Unlock()
-			return response
-		}
-	}
-	// exhausted all workers without response populated.
-	// cond.L.Lock() will be locked from latest cond.Wait() signal
-	// unlock it and return nil
-	cond.L.Unlock()
-	return nil
+	return <-result
 }
