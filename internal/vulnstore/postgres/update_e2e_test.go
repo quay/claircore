@@ -184,7 +184,7 @@ func (e *e2e) Diff(ctx context.Context) func(t *testing.T) {
 			cur := e.updateOps[i].Ref
 			t.Logf("comparing %v and %v", prev, cur)
 
-			diff, err := e.s.GetUpdateOperationDiff(ctx, prev, cur)
+			diff, err := e.s.GetUpdateDiff(ctx, prev, cur)
 			if err != nil {
 				t.Fatalf("received error getting UpdateDiff: %v", err)
 			}

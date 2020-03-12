@@ -84,5 +84,5 @@ func (l *Libvuln) DeleteUpdateOperations(ctx context.Context, ref ...uuid.UUID) 
 // UpdateOperationDiff returns an UpdateDiff resulting from UO_B being applied to
 // UO_A
 func (l *Libvuln) UpdateOperationDiff(ctx context.Context, prev, cur uuid.UUID) (*driver.UpdateDiff, error) {
-	return l.store.GetUpdateOperationDiff(ctx, prev, cur)
+	return l.store.GetUpdateDiff(ctx, prev, cur)
 }
