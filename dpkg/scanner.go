@@ -133,6 +133,8 @@ Find:
 		}
 		// Check what happened in the above loop.
 		switch {
+		case errors.Is(err, io.EOF):
+			return nil, nil
 		case err != nil:
 			return nil, fmt.Errorf("reading status file from layer failed: %w", err)
 		case db == nil:
