@@ -1,9 +1,6 @@
 package python
 
 import (
-	"log"
-	"strings"
-
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/pep440"
@@ -24,8 +21,6 @@ func (*Matcher) Name() string { return "python" }
 // Filter implements driver.Matcher.
 func (*Matcher) Filter(record *claircore.IndexRecord) bool {
 	return record.Package.NormalizedVersion.Kind == "pep440"
-	log.Printf("%+#v", record.Package)
-	return strings.HasPrefix(record.Package.PackageDB, "python:")
 }
 
 // Query implements driver.Matcher.
