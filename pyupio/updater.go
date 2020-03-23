@@ -269,7 +269,7 @@ func (db db) Vulnerabilites(ctx context.Context, repo *claircore.Repository) ([]
 				v := &claircore.Vulnerability{
 					Name:        e.ID,
 					Description: e.Advisory,
-					Package:     &claircore.Package{Name: k},
+					Package:     &claircore.Package{Name: strings.ToLower(k)},
 					Repo:        repo,
 					Range:       &claircore.Range{},
 				}

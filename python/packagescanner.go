@@ -109,7 +109,7 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 			return nil, err
 		}
 		ret = append(ret, &claircore.Package{
-			Name:              hdr.Get("Name"),
+			Name:              strings.ToLower(hdr.Get("Name")),
 			Version:           v.String(),
 			PackageDB:         "python:" + filepath.Join(n, "..", ".."),
 			Kind:              "source",
