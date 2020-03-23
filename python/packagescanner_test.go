@@ -340,7 +340,7 @@ var scanTable = []test.ScannerTestcase{
 		Hash:   "sha256:109a55eba749c02eb6a4533eba12d8aa02a68417ff96886d049798ed5653a156",
 		Want: []*claircore.Package{
 			&claircore.Package{
-				Name:           "Pillow",
+				Name:           "pillow",
 				Version:        "6.2.1",
 				Kind:           "source",
 				PackageDB:      "python:usr/local/lib/python3.7/site-packages",
