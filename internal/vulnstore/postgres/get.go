@@ -72,6 +72,7 @@ func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.IndexReco
 				&v.Description,
 				&v.Links,
 				&v.Severity,
+				&v.NormalizedSeverity,
 				&v.Package.Name,
 				&v.Package.Version,
 				&v.Package.Kind,
