@@ -14,31 +14,31 @@ import (
 )
 
 const (
-	insertPackage = `INSERT INTO package (name, kind, version, norm_kind, norm_version)
-	VALUES ($1, $2, $3, $4, $5::int[])
-	ON CONFLICT (name, kind, version) DO NOTHING;`
+	insertPackage = `INSERT INTO package (name, kind, version, norm_kind, norm_version, module)
+	VALUES ($1, $2, $3, $4, $5::int[], $6)
+	ON CONFLICT (name, kind, version, module) DO NOTHING;`
 	selectDistID = `SELECT id FROM dist WHERE name = $1 AND version = $2 AND version_code_name = $3 AND version_id = $4 AND arch = $5;`
 	// we'll use a WITH statement here to gather all the id's necessary to create the
 	// scan artifact entry. see: https://www.postgresql.org/docs/current/queries-with.html#QUERIES-WITH-MODIFYING
 	insertPackageScanArtifactWith = `WITH source_package AS (
 	SELECT id AS source_id FROM package WHERE
-         name = $1 AND kind = $2 AND version = $3
+         name = $1 AND kind = $2 AND version = $3 AND module = $4
          ),
 
 	binary_package AS (
-        SELECT id AS package_id FROM package WHERE 
-	name = $4 AND kind = $5 AND version = $6
+        SELECT id AS package_id FROM package WHERE
+	name = $5 AND kind = $6 AND version = $7 AND module = $8
          ),
-        
+
 	scanner AS (
 	SELECT id AS scanner_id FROM scanner WHERE
-	name = $7 AND version = $8 AND kind = $9
+	name = $9 AND version = $10 AND kind = $11
 		)
-	      
-INSERT INTO package_scanartifact (layer_hash, package_db, repository_hint, package_id, source_id, scanner_id) VALUES 
-		  ($10, 
-           $11,
-           $12,
+
+INSERT INTO package_scanartifact (layer_hash, package_db, repository_hint, package_id, source_id, scanner_id) VALUES
+		  ($12,
+           $13,
+           $14,
           (SELECT package_id FROM binary_package),
           (SELECT source_id FROM source_package),
           (SELECT scanner_id FROM scanner))
@@ -116,9 +116,11 @@ func indexPackages(ctx context.Context, pool *pgxpool.Pool, pkgs []*claircore.Pa
 			pkg.Source.Name,
 			pkg.Source.Kind,
 			pkg.Source.Version,
+			pkg.Source.Module,
 			pkg.Name,
 			pkg.Kind,
 			pkg.Version,
+			pkg.Module,
 			scnr.Name(),
 			scnr.Version(),
 			scnr.Kind(),
@@ -153,7 +155,7 @@ func queueInsert(ctx context.Context, b *microbatch.Insert, stmt string, pkg *cl
 		vNorm = pkg.NormalizedVersion.V[:]
 	}
 	err := b.Queue(ctx, stmt,
-		pkg.Name, pkg.Kind, pkg.Version, vKind, vNorm,
+		pkg.Name, pkg.Kind, pkg.Version, vKind, vNorm, pkg.Module,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to queue insert for package %q: %w", pkg.Name, err)

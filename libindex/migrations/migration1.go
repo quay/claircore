@@ -67,9 +67,10 @@ const (
 		kind text NOT NULL,
 		version text NOT NULL,
 		norm_kind text,
-		norm_version integer[10]
+		norm_version integer[10],
+		module text NOT NULL
 	);
-	CREATE UNIQUE INDEX IF NOT EXISTS package_unique_idx ON package (name, version, kind);
+	CREATE UNIQUE INDEX IF NOT EXISTS package_unique_idx ON package (name, version, kind, module);
 
 	--- PackageScanArtifact
 	--- A relation linking discovered packages with the 

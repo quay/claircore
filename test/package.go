@@ -22,20 +22,7 @@ func GenDuplicatePackages(n int) ([]*claircore.Package, error) {
 	nn := n / 2
 	for i := 0; i < n; i++ {
 		ii := i % nn
-		pkgs = append(pkgs, &claircore.Package{
-			ID:             strconv.Itoa(ii),
-			Name:           fmt.Sprintf("package-%d", ii),
-			Version:        fmt.Sprintf("version-%d", ii),
-			Kind:           "binary",
-			PackageDB:      fmt.Sprintf("package-db-%d", i),
-			RepositoryHint: fmt.Sprintf("repository-hint-%d", i),
-			Source: &claircore.Package{
-				ID:      strconv.Itoa(n + i),
-				Name:    fmt.Sprintf("source-package-%d", ii),
-				Version: fmt.Sprintf("source-version-%d", ii),
-				Kind:    "source",
-			},
-		})
+		pkgs = append(pkgs, createPackage(i, ii, n))
 	}
 
 	return pkgs, nil
@@ -47,21 +34,27 @@ func GenDuplicatePackages(n int) ([]*claircore.Package, error) {
 func GenUniquePackages(n int) []*claircore.Package {
 	pkgs := []*claircore.Package{}
 	for i := 0; i < n; i++ {
-		pkgs = append(pkgs, &claircore.Package{
-			ID:             strconv.Itoa(i),
-			Name:           fmt.Sprintf("package-%d", i),
-			Version:        fmt.Sprintf("version-%d", i),
-			Kind:           "binary",
-			PackageDB:      fmt.Sprintf("package-db-%d", i),
-			RepositoryHint: fmt.Sprintf("repository-hint-%d", i),
-			Source: &claircore.Package{
-				ID:      strconv.Itoa(n + i),
-				Name:    fmt.Sprintf("source-package-%d", i),
-				Version: fmt.Sprintf("source-version-%d", i),
-				Kind:    "source",
-			},
-		})
+		pkgs = append(pkgs, createPackage(i, i, n))
 	}
 
 	return pkgs
+}
+
+func createPackage(i int, ii int, n int) *claircore.Package {
+	return &claircore.Package{
+		ID:             strconv.Itoa(ii),
+		Name:           fmt.Sprintf("package-%d", ii),
+		Version:        fmt.Sprintf("version-%d", ii),
+		Kind:           "binary",
+		PackageDB:      fmt.Sprintf("package-db-%d", i),
+		RepositoryHint: fmt.Sprintf("repository-hint-%d", i),
+		Module:         fmt.Sprintf("module:%d", ii),
+		Source: &claircore.Package{
+			ID:      strconv.Itoa(n + i),
+			Name:    fmt.Sprintf("source-package-%d", ii),
+			Version: fmt.Sprintf("source-version-%d", ii),
+			Kind:    "source",
+			Module:  fmt.Sprintf("source-module:%d", ii),
+		},
+	}
 }
