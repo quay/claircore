@@ -28,6 +28,10 @@ func (l *Layer) SetLocal(f string) error {
 	return nil
 }
 
+func (l *Layer) Local() string {
+	return l.localPath
+}
+
 func (l *Layer) Fetched() bool {
 	_, err := os.Stat(l.localPath)
 	return err == nil
