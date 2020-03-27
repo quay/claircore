@@ -89,6 +89,7 @@ func buildGetQuery(record *claircore.IndexRecord, opts *vulnstore.GetOpts) (stri
 		"description",
 		"links",
 		"severity",
+		"normalized_severity",
 		"package_name",
 		"package_version",
 		"package_kind",
