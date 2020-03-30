@@ -144,3 +144,15 @@ func ParseDigest(digest string) (Digest, error) {
 	d := Digest{}
 	return d, d.UnmarshalText([]byte(digest))
 }
+
+// MustParseDigest works like ParseDigest but panics if the provided
+// string is not well-formed.
+func MustParseDigest(digest string) Digest {
+	d := Digest{}
+	err := d.UnmarshalText([]byte(digest))
+	if err != nil {
+		s := fmt.Sprintf("digest %s could not be parsed: %v", digest, err)
+		panic(s)
+	}
+	return d
+}
