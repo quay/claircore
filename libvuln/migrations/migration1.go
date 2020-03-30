@@ -5,14 +5,23 @@ const (
 	-- Needed for uuid generation in-database.
 	-- The inline function makes for a nicer error message.
 	DO $$
+	DECLARE
+		hint text;
+		detail text;
+		code text;
 	BEGIN
 		EXECUTE 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp"';
-	EXCEPTION
-		WHEN SQLSTATE '42501' THEN
-			RAISE EXCEPTION 'Please load the "uuid-ossp" extension.'
-			USING HINT = 'Role has insufficient permissions to CREATE EXTENSION';
-		WHEN OTHERS THEN
-			RAISE EXCEPTION 'Please load the "uuid-ossp" extension.';
+	EXCEPTION WHEN OTHERS THEN
+		-- https://www.postgresql.org/docs/current/plpgsql-control-structures.html#PLPGSQL-EXCEPTION-DIAGNOSTICS
+		GET STACKED DIAGNOSTICS
+			code = RETURNED_SQLSTATE,
+			detail = PG_EXCEPTION_DETAIL,
+			hint = PG_EXCEPTION_HINT;
+		RAISE EXCEPTION USING
+			MESSAGE = 'Please load the "uuid-ossp" extension.',
+			ERRCODE = code,
+			DETAIL = detail,
+			HINT = hint;
 	END;
 	$$ LANGUAGE plpgsql;
 	-- Update_operation is a table keeping a log of updater runs.
