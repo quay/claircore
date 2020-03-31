@@ -61,9 +61,10 @@ CREATE TABLE package (
     name text NOT NULL,
     kind text NOT NULL,
     version text NOT NULL,
-    module text NOT NULL
+    module text NOT NULL,
+    arch text NOT NULL
 );
-CREATE UNIQUE INDEX package_unique_idx ON package (name, version, kind, module);
+CREATE UNIQUE INDEX package_unique_idx ON package (name, version, kind, module, arch);
 
 --- PackageScanArtifact
 --- A relation linking discovered packages with the 

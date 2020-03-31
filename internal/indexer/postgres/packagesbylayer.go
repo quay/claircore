@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	selectPackage                = `SELECT id, name, kind, source, version, module FROM package WHERE id = $1`
+	selectPackage                = `SELECT id, name, kind, source, version, module, arch FROM package WHERE id = $1`
 	selectPackagesByArtifactJoin = `SELECT 
   package.id, 
   package.name, 
@@ -23,12 +23,14 @@ const (
   package.norm_kind,
   package.norm_version,
   package.module,
+  package.arch,
 
   source_package.id,
   source_package.name,
   source_package.kind,
   source_package.version,
   source_package.module,
+  source_package.arch,
 
   package_scanartifact.package_db,
   package_scanartifact.repository_hint
@@ -91,12 +93,14 @@ func packagesByLayer(ctx context.Context, db *sqlx.DB, hash claircore.Digest, sc
 			&nKind,
 			&nVer,
 			&pkg.Module,
+			&pkg.Arch,
 
 			&spkg.ID,
 			&spkg.Name,
 			&spkg.Kind,
 			&spkg.Version,
 			&spkg.Module,
+			&spkg.Arch,
 
 			&pkg.PackageDB,
 			&pkg.RepositoryHint,

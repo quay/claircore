@@ -97,6 +97,8 @@ func (*Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.
 				p.Version = l
 			case 'c':
 				p.RepositoryHint = l
+			case 'A':
+				p.Arch = l
 			case 'o':
 				if src, ok := srcs[l]; ok {
 					p.Source = src

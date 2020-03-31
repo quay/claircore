@@ -241,6 +241,7 @@ const queryFmt = `%{name}\n` +
 	`%{sigpgp:pgpsig}\n` +
 	`%{sourcerpm}\n` +
 	`%{RPMTAG_MODULARITYLABEL}\n` +
+	`%{ARCH}\n` +
 	`.\n`
 const delim = "\n.\n"
 
@@ -320,6 +321,8 @@ func parsePackage(ctx context.Context, log zerolog.Logger, src map[string]*clair
 			if p.Source != nil {
 				p.Source.Module = moduleStream
 			}
+		case 6:
+			p.Arch = line
 		}
 		switch err {
 		case nil:
