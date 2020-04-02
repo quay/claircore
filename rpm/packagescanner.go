@@ -240,6 +240,7 @@ const queryFmt = `%{name}\n` +
 	`%{payloaddigestalgo}:%{payloaddigest}\n` +
 	`%{sigpgp:pgpsig}\n` +
 	`%{sourcerpm}\n` +
+	`%{RPMTAG_MODULARITYLABEL}\n` +
 	`.\n`
 const delim = "\n.\n"
 
@@ -309,6 +310,16 @@ func parsePackage(ctx context.Context, log zerolog.Logger, src map[string]*clair
 				Version: sp[len(sp)-2] + "-" + sp[len(sp)-1],
 			}
 			src[name] = p.Source
+		case 5:
+			moduleSplit := strings.Split(line, ":")
+			if len(moduleSplit) < 2 {
+				continue
+			}
+			moduleStream := fmt.Sprintf("%s:%s", moduleSplit[0], moduleSplit[1])
+			p.Module = moduleStream
+			if p.Source != nil {
+				p.Source.Module = moduleStream
+			}
 		}
 		switch err {
 		case nil:

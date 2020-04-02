@@ -21,4 +21,6 @@ type Package struct {
 	// correctly ordered when compared with other representations from the same
 	// producer.
 	NormalizedVersion Version `json:"normalized_version,omitempty"`
+	// Module and stream which this package is part of
+	Module string `json:"module,omitempty"`
 }
