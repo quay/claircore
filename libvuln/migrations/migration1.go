@@ -56,6 +56,7 @@ const (
 		package_name           TEXT,
 		package_version        TEXT,
 		package_module         TEXT,
+		package_arch           TEXT,
 		package_kind           TEXT,
 		dist_id                TEXT,
 		dist_name              TEXT,
@@ -69,6 +70,7 @@ const (
 		repo_key               TEXT,
 		repo_uri               TEXT,
 		fixed_in_version       TEXT,
+		arch_operation         bigint,
 		vulnerable_range       VersionRange NOT NULL DEFAULT VersionRange('{}', '{}', '()'),
 		version_kind           TEXT,
 		UNIQUE (hash_kind, hash)

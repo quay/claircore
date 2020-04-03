@@ -37,22 +37,22 @@ func updateVulnerabilites(ctx context.Context, pool *pgxpool.Pool, updater strin
 			INSERT INTO vuln (
 				hash_kind, hash,
 				name, updater, description, issued, links, severity, normalized_severity,
-				package_name, package_version, package_module, package_kind,
+				package_name, package_version, package_module, package_arch, package_kind,
 				dist_id, dist_name, dist_version, dist_version_code_name, dist_version_id, dist_arch, dist_cpe, dist_pretty_name,
 				repo_name, repo_key, repo_uri,
-				fixed_in_version, version_kind, vulnerable_range
+				fixed_in_version, arch_operation, version_kind, vulnerable_range
 			) VALUES (
 			  $1, $2,
 			  $3, $4, $5, $6, $7, $8, $9,
-			  $10, $11, $12, $13,
-			  $14, $15, $16, $17, $18, $19, $20, $21,
-			  $22, $23, $24,
-			  $25, $26, VersionRange($27, $28)
+			  $10, $11, $12, $13, $14,
+			  $15, $16, $17, $18, $19, $20, $21, $22,
+			  $23, $24, $25,
+			  $26, $27, $28, VersionRange($29, $30)
 			)
 			ON CONFLICT (hash_kind, hash) DO NOTHING
 			RETURNING id)
 		INSERT INTO uo_vuln (uo, vuln) VALUES (
-			$29,
+			$31,
 			COALESCE (
 				(SELECT id FROM attempt),
 				(SELECT id FROM vuln WHERE hash_kind = $1 AND hash = $2)))
@@ -101,10 +101,10 @@ func updateVulnerabilites(ctx context.Context, pool *pgxpool.Pool, updater strin
 		err := mBatcher.Queue(ctx, insert,
 			hashKind, hash,
 			vuln.Name, vuln.Updater, vuln.Description, vuln.Issued, vuln.Links, vuln.Severity, vuln.NormalizedSeverity,
-			pkg.Name, pkg.Version, pkg.Module, pkg.Kind,
+			pkg.Name, pkg.Version, pkg.Module, pkg.Arch, pkg.Kind,
 			dist.DID, dist.Name, dist.Version, dist.VersionCodeName, dist.VersionID, dist.Arch, dist.CPE, dist.PrettyName,
 			repo.Name, repo.Key, repo.URI,
-			vuln.FixedInVersion, vKind, vrLower, vrUpper,
+			vuln.FixedInVersion, vuln.ArchOperation, vKind, vrLower, vrUpper,
 			id,
 		)
 		if err != nil {
@@ -140,6 +140,7 @@ func md5Vuln(v *claircore.Vulnerability) (string, []byte) {
 		b.WriteString(v.Package.Name)
 		b.WriteString(v.Package.Version)
 		b.WriteString(v.Package.Module)
+		b.WriteString(v.Package.Arch)
 		b.WriteString(v.Package.Kind)
 	}
 	if v.Dist != nil {
@@ -157,6 +158,7 @@ func md5Vuln(v *claircore.Vulnerability) (string, []byte) {
 		b.WriteString(v.Repo.Key)
 		b.WriteString(v.Repo.URI)
 	}
+	b.WriteString(v.ArchOperation.String())
 	b.WriteString(v.FixedInVersion)
 	if k, l, u := rangefmt(v.Range); k != nil {
 		b.WriteString(*k)

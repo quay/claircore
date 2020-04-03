@@ -31,6 +31,7 @@ func getUpdateDiff(ctx context.Context, pool *pgxpool.Pool, prev, cur uuid.UUID)
 		package_name,
 		package_version,
 		package_module,
+		package_arch,
 		package_kind,
 		dist_id,
 		dist_name,
@@ -40,6 +41,7 @@ func getUpdateDiff(ctx context.Context, pool *pgxpool.Pool, prev, cur uuid.UUID)
 		dist_arch,
 		dist_cpe,
 		dist_pretty_name,
+		arch_operation,
 		repo_name,
 		repo_key,
 		repo_uri

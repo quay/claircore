@@ -4,9 +4,10 @@ import (
 	"context"
 	"regexp"
 
-	"github.com/quay/claircore"
 	"github.com/quay/goval-parser/oval"
 	"github.com/rs/zerolog"
+
+	"github.com/quay/claircore"
 )
 
 var moduleComentRegex *regexp.Regexp
@@ -99,12 +100,28 @@ func RPMDefsToVulns(ctx context.Context, root oval.Root, protoVuln ProtoVulnFunc
 					} else {
 						vuln.Package = pkg
 					}
+					vuln.FixedInVersion = state.EVR.Body
+					if state.Arch != nil {
+						vuln.ArchOperation = mapArchOp(state.Arch.Operation)
+						vuln.Package.Arch = state.Arch.Body
+					}
 					vulns = append(vulns, &vuln)
 				}
 			}
 		}
 	}
 	return vulns, nil
+}
+
+func mapArchOp(op oval.Operation) claircore.ArchOp {
+	switch op {
+	case oval.OpEquals:
+		return claircore.OpEquals
+	case oval.OpNotEquals:
+		return claircore.OpNotEquals
+	default:
+	}
+	return claircore.ArchOp(0)
 }
 
 // walkCriterion recursively extracts Criterions from a root Crteria node in a depth
