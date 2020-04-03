@@ -23,4 +23,6 @@ type Package struct {
 	NormalizedVersion Version `json:"normalized_version,omitempty"`
 	// Module and stream which this package is part of
 	Module string `json:"module,omitempty"`
+	// Package architecture
+	Arch string `json:"arch,omitempty"`
 }

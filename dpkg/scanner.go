@@ -152,6 +152,7 @@ Find:
 				Name:      pkg.Package,
 				Version:   pkg.Version,
 				Kind:      "binary",
+				Arch:      pkg.Architecture,
 				PackageDB: fn,
 			}
 			if pkg.Source != "" {
