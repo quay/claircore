@@ -151,14 +151,14 @@ Find:
 			p := &claircore.Package{
 				Name:      pkg.Package,
 				Version:   pkg.Version,
-				Kind:      "binary",
+				Kind:      claircore.BINARY,
 				Arch:      pkg.Architecture,
 				PackageDB: fn,
 			}
 			if pkg.Source != "" {
 				p.Source = &claircore.Package{
 					Name: pkg.Source,
-					Kind: "source",
+					Kind: claircore.SOURCE,
 					// Right now, this is an assumption that discovered source
 					// packages relate to their binary versions. We see this in
 					// Debian.

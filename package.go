@@ -30,3 +30,8 @@ type Package struct {
 	// CPE name for package
 	CPE cpe.WFN `json:"cpe,omitempty"`
 }
+
+const (
+	BINARY = "binary"
+	SOURCE = "source"
+)

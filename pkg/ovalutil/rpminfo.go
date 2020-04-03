@@ -257,7 +257,7 @@ func (r *RPMInfo) populate(ctx context.Context, v *claircore.Vulnerability, crit
 				continue
 			case state.EVR != nil:
 				v.Package.Name = obj.Name
-				v.Package.Kind = "binary"
+				v.Package.Kind = claircore.BINARY
 				switch state.EVR.Operation {
 				case oval.OpLessThan:
 					v.FixedInVersion = state.EVR.Body

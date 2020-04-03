@@ -84,7 +84,7 @@ func (*Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.
 			continue
 		}
 		p := claircore.Package{
-			Kind:      "binary",
+			Kind:      claircore.BINARY,
 			PackageDB: installedFile,
 		}
 		r := bytes.NewBuffer(entry)
@@ -105,7 +105,7 @@ func (*Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.
 				} else {
 					p.Source = &claircore.Package{
 						Name: l,
-						Kind: "source",
+						Kind: claircore.SOURCE,
 					}
 					if p.Version != "" {
 						p.Source.Version = p.Version

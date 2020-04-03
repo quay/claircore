@@ -262,7 +262,9 @@ func querySplit(data []byte, atEOF bool) (advance int, token []byte, err error) 
 
 func parsePackage(ctx context.Context, log zerolog.Logger, src map[string]*claircore.Package, buf *bytes.Buffer) (*claircore.Package, error) {
 	defer trace.StartRegion(ctx, "parsePackage").End()
-	p := claircore.Package{}
+	p := claircore.Package{
+		Kind: claircore.BINARY,
+	}
 	var err error
 	var line string
 
@@ -309,6 +311,7 @@ func parsePackage(ctx context.Context, log zerolog.Logger, src map[string]*clair
 			p.Source = &claircore.Package{
 				Name:    name,
 				Version: sp[len(sp)-2] + "-" + sp[len(sp)-1],
+				Kind:    claircore.SOURCE,
 			}
 			src[name] = p.Source
 		case 5:
