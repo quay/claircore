@@ -12,7 +12,7 @@ import (
 var upstreamBase *url.URL
 
 func init() {
-	const base = `https://packages.vmware.com/photon/security/oval/`
+	const base = `https://packages.vmware.com/photon/photon_oval_definitions/`
 	var err error
 	upstreamBase, err = url.Parse(base)
 	if err != nil {
