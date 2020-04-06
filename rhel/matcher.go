@@ -47,5 +47,5 @@ func (*Matcher) Vulnerable(record *claircore.IndexRecord, vuln *claircore.Vulner
 		vulnVer = version.NewVersion(vuln.FixedInVersion)
 		cmp = func(i int) bool { return i == version.LESS }
 	}
-	return cmp(pkgVer.Compare(vulnVer))
+	return cmp(pkgVer.Compare(vulnVer)) && vuln.ArchOperation.Cmp(record.Package.Arch, vuln.Package.Arch)
 }
