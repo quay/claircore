@@ -2,6 +2,7 @@ package ovalutil
 
 import (
 	"context"
+	"regexp"
 
 	"github.com/quay/claircore"
 	"github.com/quay/goval-parser/oval"
@@ -24,7 +25,6 @@ func RPMDefsToVulns(ctx context.Context, root oval.Root, protoVuln ProtoVulnFunc
 		Logger()
 	ctx = log.WithContext(ctx)
 	vulns := make([]*claircore.Vulnerability, 0, 10000)
-	pkgcache := map[string]*claircore.Package{}
 	cris := []*oval.Criterion{}
 	for _, def := range root.Definitions.Definitions {
 		// create our prototype vulnerability
@@ -37,6 +37,11 @@ func RPMDefsToVulns(ctx context.Context, root oval.Root, protoVuln ProtoVulnFunc
 		cris := cris[:0]
 		walkCriterion(ctx, &def.Criteria, &cris)
 		// unpack criterions into vulnerabilities
+		enabledModules := getEnabledModules(cris)
+		if len(enabledModules) == 0 {
+			// add default empty module
+			enabledModules = append(enabledModules, "")
+		}
 		for _, criterion := range cris {
 			// lookup test
 			_, index, err := root.Tests.Lookup(criterion.TestRef)
@@ -71,19 +76,17 @@ func RPMDefsToVulns(ctx context.Context, root oval.Root, protoVuln ProtoVulnFunc
 				if state.EVR == nil {
 					continue
 				}
-				// copy prototype
-				vuln := *protoVuln
-				if pkg, ok := pkgcache[object.Name]; !ok {
-					p := &claircore.Package{
-						Name: object.Name,
+
+				for _, module := range enabledModules {
+					vuln := *protoVuln
+					vuln.FixedInVersion = state.EVR.Body
+					vuln.Package = &claircore.Package{
+						Name:   object.Name,
+						Module: module,
 					}
-					pkgcache[object.Name] = p
-					vuln.Package = p
-				} else {
-					vuln.Package = pkg
+					vulns = append(vulns, &vuln)
+
 				}
-				vuln.FixedInVersion = state.EVR.Body
-				vulns = append(vulns, &vuln)
 			}
 		}
 	}
@@ -104,4 +107,17 @@ func walkCriterion(ctx context.Context, node *oval.Criteria, cris *[]*oval.Crite
 		c := criterion
 		*cris = append(*cris, &c)
 	}
+}
+
+func getEnabledModules(cris []*oval.Criterion) []string {
+	enabledModules := []string{}
+	for _, criterion := range cris {
+		var regexComment = regexp.MustCompile(`(Module )(.*)( is enabled)`)
+		matches := regexComment.FindStringSubmatch(criterion.Comment)
+		if matches != nil && len(matches) > 2 && matches[2] != "" {
+			moduleNameStream := matches[2]
+			enabledModules = append(enabledModules, moduleNameStream)
+		}
+	}
+	return enabledModules
 }

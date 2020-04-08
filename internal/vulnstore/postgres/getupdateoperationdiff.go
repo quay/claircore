@@ -29,6 +29,7 @@ func getUpdateDiff(ctx context.Context, pool *pgxpool.Pool, prev, cur uuid.UUID)
 		normalized_severity,
 		package_name,
 		package_version,
+		package_module,
 		package_kind,
 		dist_id,
 		dist_name,

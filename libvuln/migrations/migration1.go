@@ -54,6 +54,7 @@ const (
 		normalized_severity    TEXT,
 		package_name           TEXT,
 		package_version        TEXT,
+		package_module         TEXT,
 		package_kind           TEXT,
 		dist_id                TEXT,
 		dist_name              TEXT,
