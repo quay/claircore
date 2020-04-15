@@ -77,6 +77,7 @@ func (f *fetcher) fetch(ctx context.Context, layer *claircore.Layer) error {
 	log := zerolog.Ctx(ctx).With().
 		Str("component", "internal/indexer/fetcher/fetcher.fetch").
 		Str("layer", layer.Hash.String()).
+		Str("uri", layer.URI).
 		Logger()
 	log.Debug().Msg("layer fetch start")
 	// It is valid and don't perform a fetch.
