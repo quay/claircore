@@ -138,12 +138,6 @@ func TestDistributionScanner(t *testing.T) {
 		lsbRelease []byte
 	}{
 		{
-			name:       "artful",
-			release:    Artful,
-			osRelease:  artfulOSRelease,
-			lsbRelease: artfulLSBRelease,
-		},
-		{
 			name:       "bionic",
 			release:    Bionic,
 			osRelease:  bionicOSRelease,
@@ -160,12 +154,6 @@ func TestDistributionScanner(t *testing.T) {
 			release:    Disco,
 			osRelease:  discoOSRelease,
 			lsbRelease: discoLSBRelease,
-		},
-		{
-			name:       "precise",
-			release:    Precise,
-			osRelease:  preciseOSRelease,
-			lsbRelease: preciseLSBRelease,
 		},
 		{
 			name:       "trusty",

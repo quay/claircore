@@ -5,20 +5,16 @@ import (
 )
 
 func init() {
-	artfulRegex := regexp.MustCompile("[Aa]rtful")
 	bionicRegex := regexp.MustCompile("[Bb]ionic")
 	cosmicRegex := regexp.MustCompile("[Cc]osmic")
 	discoRegex := regexp.MustCompile("[Dd]isco")
-	preciseRegex := regexp.MustCompile("[Pp]recise")
 	trustyRegex := regexp.MustCompile("[Tt]rusty")
 	xenialRegex := regexp.MustCompile("[Xx]enial")
 
 	resolvers = []vcnRegexp{
-		vcnRegexp{Artful, artfulRegex},
 		vcnRegexp{Bionic, bionicRegex},
 		vcnRegexp{Cosmic, cosmicRegex},
 		vcnRegexp{Disco, discoRegex},
-		vcnRegexp{Precise, preciseRegex},
 		vcnRegexp{Trusty, trustyRegex},
 		vcnRegexp{Xenial, xenialRegex},
 	}

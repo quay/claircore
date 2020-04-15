@@ -18,11 +18,9 @@ import (
 )
 
 var ubuntuReleases = []ubuntu.Release{
-	ubuntu.Artful,
 	ubuntu.Bionic,
 	ubuntu.Cosmic,
 	ubuntu.Disco,
-	ubuntu.Precise,
 	ubuntu.Trusty,
 	ubuntu.Xenial,
 }

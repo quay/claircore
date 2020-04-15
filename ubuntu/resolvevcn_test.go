@@ -24,20 +24,12 @@ func Test_ResolveVersionCodeName_Found(t *testing.T) {
 			expect: "bionic",
 		},
 		{
-			str:    "17.10 (Artful Aardvark)",
-			expect: "artful",
-		},
-		{
 			str:    "16.04.6 LTS (Xenial Xerus)",
 			expect: "xenial",
 		},
 		{
 			str:    "14.04.6 LTS, Trusty Tahr",
 			expect: "trusty",
-		},
-		{
-			str:    "12.04.5 LTS, Precise Pangolin",
-			expect: "precise",
 		},
 	}
 

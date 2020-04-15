@@ -25,10 +25,6 @@ type ubuntuRegex struct {
 
 var ubuntuRegexes = []ubuntuRegex{
 	{
-		release: Artful,
-		regexp:  regexp.MustCompile(`(?is)\bubuntu\b.*\bartful\b`),
-	},
-	{
 		release: Bionic,
 		regexp:  regexp.MustCompile(`(?is)\bubuntu\b.*\bbionic\b`),
 	},
@@ -39,10 +35,6 @@ var ubuntuRegexes = []ubuntuRegex{
 	{
 		release: Disco,
 		regexp:  regexp.MustCompile(`(?is)\bubuntu\b.*\bdisco\b`),
-	},
-	{
-		release: Precise,
-		regexp:  regexp.MustCompile(`(?is)\bubuntu\b.*\bprecise\b`),
 	},
 	{
 		release: Trusty,

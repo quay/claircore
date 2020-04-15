@@ -21,13 +21,11 @@ const (
 )
 
 var shouldBzipFetch = map[Release]bool{
-	Artful:  false,
-	Bionic:  true,
-	Cosmic:  true,
-	Disco:   true,
-	Precise: false,
-	Trusty:  true,
-	Xenial:  true,
+	Bionic: true,
+	Cosmic: true,
+	Disco:  true,
+	Trusty: true,
+	Xenial: true,
 }
 
 var _ driver.Updater = (*Updater)(nil)
