@@ -76,7 +76,8 @@ const (
 	CREATE INDEX IF NOT EXISTS vuln_package_idx on vuln (
 		package_name,
 		package_kind,
-		package_version
+		package_version,
+		package_module
 	);
 	CREATE INDEX IF NOT EXISTS vuln_dist_idx on vuln (
 		dist_id,
