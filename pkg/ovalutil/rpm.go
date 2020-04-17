@@ -31,6 +31,7 @@ func RPMDefsToVulns(ctx context.Context, root oval.Root, protoVuln ProtoVulnFunc
 		Logger()
 	ctx = log.WithContext(ctx)
 	vulns := make([]*claircore.Vulnerability, 0, 10000)
+	pkgcache := map[string]*claircore.Package{}
 	cris := []*oval.Criterion{}
 	for _, def := range root.Definitions.Definitions {
 		// create our prototype vulnerability
@@ -86,12 +87,19 @@ func RPMDefsToVulns(ctx context.Context, root oval.Root, protoVuln ProtoVulnFunc
 				for _, module := range enabledModules {
 					vuln := *protoVuln
 					vuln.FixedInVersion = state.EVR.Body
-					vuln.Package = &claircore.Package{
-						Name:   object.Name,
-						Module: module,
+
+					pkgCacheKey := object.Name + module
+					if pkg, ok := pkgcache[pkgCacheKey]; !ok {
+						p := &claircore.Package{
+							Name:   object.Name,
+							Module: module,
+						}
+						pkgcache[pkgCacheKey] = p
+						vuln.Package = p
+					} else {
+						vuln.Package = pkg
 					}
 					vulns = append(vulns, &vuln)
-
 				}
 			}
 		}
