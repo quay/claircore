@@ -18,7 +18,7 @@ func Test_GetQueryBuilder_Deterministic_Args(t *testing.T) {
 	const (
 		preamble = `SELECT
 		"id", "name", "description", "links", "severity", "normalized_severity", "package_name", "package_version",
-		"package_kind", "dist_id", "dist_name", "dist_version", "dist_version_code_name",
+		"package_module", "package_kind", "dist_id", "dist_name", "dist_version", "dist_version_code_name",
 		"dist_version_id", "dist_arch", "dist_cpe", "dist_pretty_name", "repo_name", "repo_key",
 		"repo_uri", "fixed_in_version", "updater"
 		FROM "vuln"
@@ -157,6 +157,21 @@ func Test_GetQueryBuilder_Deterministic_Args(t *testing.T) {
 				}
 				pkgs := test.GenUniquePackages(1)
 				pkgs[0].NormalizedVersion = v.Version()
+				dists := test.GenUniqueDistributions(1)
+				return &claircore.IndexRecord{
+					Package:      pkgs[0],
+					Distribution: dists[0],
+				}
+			},
+		},
+		{
+			name: "module-filter",
+			expectedQuery: preamble + noSource +
+				`("package_module" = 'module:0'))`,
+			matchExps: []driver.MatchConstraint{driver.PackageModule},
+			indexRecord: func() *claircore.IndexRecord {
+				pkgs := test.GenUniquePackages(1)
+				pkgs[0].Source = &claircore.Package{} // clear source field
 				dists := test.GenUniqueDistributions(1)
 				return &claircore.IndexRecord{
 					Package:      pkgs[0],

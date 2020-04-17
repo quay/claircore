@@ -43,6 +43,8 @@ func buildGetQuery(record *claircore.IndexRecord, opts *vulnstore.GetOpts) (stri
 		}
 		var ex goqu.Ex
 		switch m {
+		case driver.PackageModule:
+			ex = goqu.Ex{"package_module": record.Package.Module}
 		case driver.DistributionDID:
 			ex = goqu.Ex{"dist_id": record.Distribution.DID}
 		case driver.DistributionName:
@@ -92,6 +94,7 @@ func buildGetQuery(record *claircore.IndexRecord, opts *vulnstore.GetOpts) (stri
 		"normalized_severity",
 		"package_name",
 		"package_version",
+		"package_module",
 		"package_kind",
 		"dist_id",
 		"dist_name",

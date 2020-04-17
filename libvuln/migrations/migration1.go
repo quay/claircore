@@ -54,6 +54,7 @@ const (
 		normalized_severity    TEXT,
 		package_name           TEXT,
 		package_version        TEXT,
+		package_module         TEXT,
 		package_kind           TEXT,
 		dist_id                TEXT,
 		dist_name              TEXT,
@@ -75,7 +76,8 @@ const (
 	CREATE INDEX IF NOT EXISTS vuln_package_idx on vuln (
 		package_name,
 		package_kind,
-		package_version
+		package_version,
+		package_module
 	);
 	CREATE INDEX IF NOT EXISTS vuln_dist_idx on vuln (
 		dist_id,

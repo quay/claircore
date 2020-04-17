@@ -15,6 +15,8 @@ const (
 	PackageSourceName
 	// should match claircore.Package.Name => claircore.Vulnerability.Package.Name
 	PackageName
+	// should match claircore.Package.Module => claircore.Vulnerability.Package.Module
+	PackageModule
 	// should match claircore.Package.Distribution.DID => claircore.Vulnerability.Package.Distribution.DID
 	DistributionDID
 	// should match claircore.Package.Distribution.Name => claircore.Vulnerability.Package.Distribution.Name

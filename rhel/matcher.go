@@ -32,6 +32,7 @@ func (*Matcher) Query() []driver.MatchConstraint {
 		//driver.PackageDistributionCPE,
 		driver.DistributionName,
 		driver.DistributionPrettyName,
+		driver.PackageModule,
 	}
 }
 
