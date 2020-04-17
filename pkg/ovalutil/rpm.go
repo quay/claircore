@@ -9,6 +9,12 @@ import (
 	"github.com/rs/zerolog"
 )
 
+var moduleComentRegex *regexp.Regexp
+
+func init() {
+	moduleComentRegex = regexp.MustCompile(`(Module )(.*)( is enabled)`)
+}
+
 // ProtoVulnFunc allows a caller to create a prototype vulnerability that will be used
 // copied and further defined for every applicable oval.Criterion discovered.
 //
@@ -112,8 +118,7 @@ func walkCriterion(ctx context.Context, node *oval.Criteria, cris *[]*oval.Crite
 func getEnabledModules(cris []*oval.Criterion) []string {
 	enabledModules := []string{}
 	for _, criterion := range cris {
-		var regexComment = regexp.MustCompile(`(Module )(.*)( is enabled)`)
-		matches := regexComment.FindStringSubmatch(criterion.Comment)
+		matches := moduleComentRegex.FindStringSubmatch(criterion.Comment)
 		if matches != nil && len(matches) > 2 && matches[2] != "" {
 			moduleNameStream := matches[2]
 			enabledModules = append(enabledModules, moduleNameStream)
