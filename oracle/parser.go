@@ -64,6 +64,7 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 			Updater:            u.Name(),
 			Name:               def.Title,
 			Description:        def.Description,
+			Issued:             def.Advisory.Issued.Date,
 			Links:              ovalutil.Links(def),
 			Severity:           def.Advisory.Severity,
 			NormalizedSeverity: NormalizeSeverity(def.Advisory.Severity),
