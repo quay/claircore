@@ -2,6 +2,7 @@ module github.com/quay/claircore
 
 go 1.12
 
+
 require (
 	github.com/crgimenes/goconfig v1.2.1
 	github.com/docker/docker v1.13.1 // indirect
