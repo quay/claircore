@@ -20,6 +20,11 @@ const (
 	OVALTemplate     = "https://people.canonical.com/~ubuntu-security/oval/com.ubuntu.%s.cve.oval.xml"
 )
 
+var publicDateLayouts = []string{
+	"2006-01-02",
+	"2006-01-02 15:04:05 MST",
+}
+
 var shouldBzipFetch = map[Release]bool{
 	Artful:  false,
 	Bionic:  true,
@@ -125,6 +130,7 @@ func (u *Updater) Parse(ctx context.Context, contents io.ReadCloser) ([]*clairco
 		// lets store the data that remains static for each "flattened" or in other words "unpacked"
 		// vulnerability in the current CVE in u.curVuln. we can then copy this struct
 		// as we unpack the CVE definition and add the copy with the pkg and dist into to the result array
+		u.curVuln.Issued = def.Advisory.PublicDate.Date
 		u.curVuln.Name = def.References[0].RefID
 		u.curVuln.Description = def.Description
 		u.curVuln.Links = ovalutil.Links(def)
