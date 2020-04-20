@@ -49,6 +49,7 @@ const (
 		updater                TEXT,
 		name                   TEXT,
 		description            TEXT,
+		issued                 timestamptz,
 		links                  TEXT,
 		severity               TEXT,
 		normalized_severity    TEXT,

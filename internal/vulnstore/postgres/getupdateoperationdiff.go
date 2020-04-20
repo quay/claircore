@@ -24,6 +24,7 @@ func getUpdateDiff(ctx context.Context, pool *pgxpool.Pool, prev, cur uuid.UUID)
 		name,
 		updater,
 		description,
+		issued,
 		links,
 		severity,
 		normalized_severity,
