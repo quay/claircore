@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"strings"
+	"time"
 
 	"github.com/quay/alas"
 
@@ -77,10 +78,15 @@ func (u *Updater) Parse(ctx context.Context, contents io.ReadCloser) ([]*clairco
 
 	vulns := []*claircore.Vulnerability{}
 	for _, update := range updates.Updates {
+		issued, err := time.Parse("2006-01-02 15:04", update.Issued.Date)
+		if err != nil {
+			return vulns, err
+		}
 		partial := &claircore.Vulnerability{
 			Updater:            u.Name(),
 			Name:               update.ID,
 			Description:        update.Description,
+			Issued:             issued,
 			Links:              refsToLinks(update),
 			Severity:           update.Severity,
 			NormalizedSeverity: NormalizeSeverity(update.Severity),
