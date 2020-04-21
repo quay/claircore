@@ -2,7 +2,6 @@ module github.com/quay/claircore
 
 go 1.12
 
-
 require (
 	github.com/crgimenes/goconfig v1.2.1
 	github.com/docker/docker v1.13.1 // indirect
@@ -20,7 +19,7 @@ require (
 	github.com/knqyf263/go-rpm-version v0.0.0-20170716094938-74609b86c936
 	github.com/opencontainers/runc v0.1.1 // indirect
 	github.com/quay/alas v1.0.1
-	github.com/quay/goval-parser v0.8.0
+	github.com/quay/goval-parser v0.8.1
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
 	github.com/rs/zerolog v1.15.0
 	github.com/shopspring/decimal v0.0.0-20190905144223-a36b5d85f337 // indirect

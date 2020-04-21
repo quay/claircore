@@ -27,11 +27,13 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 		return nil, fmt.Errorf("photon: unable to decode OVAL document: %w", err)
 	}
 	log.Debug().Msg("xml decoded")
+
 	protoVuln := func(def oval.Definition) (*claircore.Vulnerability, error) {
 		return &claircore.Vulnerability{
 			Updater:     u.Name(),
 			Name:        def.Title,
 			Description: def.Description,
+			Issued:      def.Advisory.Issued.Date,
 			Links:       ovalutil.Links(def),
 			Severity:    def.Advisory.Severity,
 			// each updater is configured to parse a photon release
