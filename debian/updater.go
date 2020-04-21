@@ -135,6 +135,7 @@ func (u *Updater) classifyVuln(pkgInfo pkgInfo, def oval.Definition) *claircore.
 		Name:               def.Title,
 		Description:        def.Description,
 		Links:              ovalutil.Links(def),
+		Issued:             def.Debian.Date.Date,
 		NormalizedSeverity: claircore.Unknown, // debian does not provide severity information
 		Package:            ccPkg,
 		FixedInVersion:     pkgInfo.version,
