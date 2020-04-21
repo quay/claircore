@@ -13,36 +13,39 @@ import (
 	"github.com/quay/claircore/pkg/microbatch"
 )
 
-const (
-	insertRepository = `
-    INSERT INTO repo 
-		(name, key, uri)
-	VALUES
-		($1, $2, $3)
-	ON CONFLICT (name, key, uri) DO NOTHING;
-	`
-
-	insertRepoScanArtifactWith = `
-    WITH repositories AS (
-		SELECT id AS repo_id FROM repo WHERE
-			name = $1 AND
-			key = $2 AND
-			uri = $3
-			),
-		
-		scanner AS (
-		SELECT id AS scanner_id FROM scanner WHERE
-		name = $4 AND version = $5 AND kind = $6
-		)
-	INSERT INTO repo_scanartifact (layer_hash, repo_id, scanner_id) VALUES 
-			  ($7, 
-			  (SELECT repo_id FROM repositories),
-			  (SELECT scanner_id FROM scanner))
-			  ON CONFLICT DO NOTHING;
-	`
-)
-
 func indexRepositories(ctx context.Context, db *sqlx.DB, pool *pgxpool.Pool, repos []*claircore.Repository, l *claircore.Layer, scnr indexer.VersionedScanner) error {
+	const (
+		insert = `
+		INSERT INTO repo
+			(name, key, uri)
+		VALUES ($1, $2, $3)
+		ON CONFLICT (name, key, uri) DO NOTHING;
+		`
+
+		insertWith = `
+		WITH repositories AS (
+			SELECT id AS repo_id
+			FROM repo
+			WHERE name = $1
+			  AND key = $2
+			  AND uri = $3
+		),
+
+			 scanner AS (
+				 SELECT id AS scanner_id
+				 FROM scanner
+				 WHERE name = $4
+				   AND version = $5
+				   AND kind = $6
+			 )
+		INSERT
+		INTO repo_scanartifact (layer_hash, repo_id, scanner_id)
+		VALUES ($7,
+				(SELECT repo_id FROM repositories),
+				(SELECT scanner_id FROM scanner))
+		ON CONFLICT DO NOTHING;
+		`
+	)
 	// obtain a transaction scopped batch
 	tx, err := pool.Begin(ctx)
 	if err != nil {
@@ -50,11 +53,11 @@ func indexRepositories(ctx context.Context, db *sqlx.DB, pool *pgxpool.Pool, rep
 	}
 	defer tx.Rollback(ctx)
 
-	insertRepoStmt, err := tx.Prepare(ctx, "insertRepoStmt", insertRepository)
+	insertRepoStmt, err := tx.Prepare(ctx, "insertRepoStmt", insert)
 	if err != nil {
 		return fmt.Errorf("failed to create insert repo statement: %v", err)
 	}
-	insertRepoScanArtifactWithStmt, err := tx.Prepare(ctx, "insertRepoScanArtifactWith", insertRepoScanArtifactWith)
+	insertRepoScanArtifactWithStmt, err := tx.Prepare(ctx, "insertRepoScanArtifactWith", insertWith)
 	if err != nil {
 		return fmt.Errorf("failed to create insert repo scanartifact statement: %v", err)
 	}

@@ -35,7 +35,7 @@ func (m *MockCoalescer) EXPECT() *MockCoalescerMockRecorder {
 }
 
 // Coalesce mocks base method
-func (m *MockCoalescer) Coalesce(arg0 context.Context, arg1 []*claircore.Layer) (*claircore.IndexReport, error) {
+func (m *MockCoalescer) Coalesce(arg0 context.Context, arg1 []*LayerArtifacts) (*claircore.IndexReport, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Coalesce", arg0, arg1)
 	ret0, _ := ret[0].(*claircore.IndexReport)

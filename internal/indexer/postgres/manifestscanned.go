@@ -10,20 +10,26 @@ import (
 	"github.com/quay/claircore/internal/indexer"
 )
 
-const (
-	selectScannerIDs              = `SELECT id FROM scanner WHERE name = $1 AND version = $2 AND kind = $3`
-	selectScannerIDsByScannerList = `SELECT scanner_id FROM scannerlist WHERE manifest_hash = $1`
-)
-
 // manifestScanned determines if a manifest has been scanned by ALL the provided
 // scnrs.
 func manifestScanned(ctx context.Context, db *sqlx.DB, hash claircore.Digest, scnrs indexer.VersionedScanners) (bool, error) {
+	const (
+		selectScanner = `
+		SELECT id
+		FROM scanner
+		WHERE name = $1
+		  AND version = $2
+		  AND kind = $3;
+		`
+		selectScanned = `SELECT scanner_id FROM scanned_manifest WHERE manifest_hash = $1;`
+	)
+
 	// TODO Use passed-in Context.
 	// get the ids of the scanners we are testing for.
 	var expectedIDs []int64
 	for _, scnr := range scnrs {
 		var id int64
-		row := db.QueryRowx(selectScannerIDs, scnr.Name(), scnr.Version(), scnr.Kind())
+		row := db.QueryRowx(selectScanner, scnr.Name(), scnr.Version(), scnr.Kind())
 		err := row.Scan(&id)
 		if err != nil {
 			return false, fmt.Errorf("store:manifestScanned failed to retrieve expected scanner id for scnr %v: %v", scnr, err)
@@ -34,7 +40,7 @@ func manifestScanned(ctx context.Context, db *sqlx.DB, hash claircore.Digest, sc
 	// get a map of the found ids which have scanned this package
 	var temp = []int64{}
 	var foundIDs = map[int64]struct{}{}
-	err := db.Select(&temp, selectScannerIDsByScannerList, hash)
+	err := db.Select(&temp, selectScanned, hash)
 	if err != nil {
 		return false, fmt.Errorf("store:manifestScanned failed to select scanner IDs for manifest: %v", err)
 	}

@@ -13,36 +13,42 @@ import (
 	"github.com/quay/claircore/internal/indexer"
 )
 
-const (
-	selectPackage                = `SELECT id, name, kind, source, version, module, arch FROM package WHERE id = $1`
-	selectPackagesByArtifactJoin = `SELECT 
-  package.id, 
-  package.name, 
-  package.kind, 
-  package.version, 
-  package.norm_kind,
-  package.norm_version,
-  package.module,
-  package.arch,
-
-  source_package.id,
-  source_package.name,
-  source_package.kind,
-  source_package.version,
-  source_package.module,
-  source_package.arch,
-
-  package_scanartifact.package_db,
-  package_scanartifact.repository_hint
-FROM 
-  package_scanartifact 
-  LEFT JOIN package ON package_scanartifact.package_id = package.id 
-  LEFT JOIN package source_package ON package_scanartifact.source_id = source_package.id
-WHERE 
-  package_scanartifact.layer_hash = '%s' AND package_scanartifact.scanner_id IN (?);`
-)
-
 func packagesByLayer(ctx context.Context, db *sqlx.DB, hash claircore.Digest, scnrs indexer.VersionedScanners) ([]*claircore.Package, error) {
+	const (
+		selectScanner = `
+		SELECT id
+		FROM scanner
+		WHERE name = $1
+		  AND version = $2
+		  AND kind = $3;
+		`
+		query = `
+		SELECT package.id,
+			   package.name,
+			   package.kind,
+			   package.version,
+			   package.norm_kind,
+			   package.norm_version,
+			   package.module,
+			   package.arch,
+
+			   source_package.id,
+			   source_package.name,
+			   source_package.kind,
+			   source_package.version,
+			   source_package.module,
+			   source_package.arch,
+
+			   package_scanartifact.package_db,
+			   package_scanartifact.repository_hint
+		FROM package_scanartifact
+				 LEFT JOIN package ON package_scanartifact.package_id = package.id
+				 LEFT JOIN package source_package ON package_scanartifact.source_id = source_package.id
+		WHERE package_scanartifact.layer_hash = '%s'
+		  AND package_scanartifact.scanner_id IN (?);
+		`
+	)
+
 	if len(scnrs) == 0 {
 		return []*claircore.Package{}, nil
 	}
@@ -50,7 +56,7 @@ func packagesByLayer(ctx context.Context, db *sqlx.DB, hash claircore.Digest, sc
 	scannerIDs := []int64{}
 	for _, scnr := range scnrs {
 		var scannerID int64
-		err := db.Get(&scannerID, scannerIDByNameVersionKind, scnr.Name(), scnr.Version(), scnr.Kind())
+		err := db.Get(&scannerID, selectScanner, scnr.Name(), scnr.Version(), scnr.Kind())
 		if err != nil {
 			return nil, fmt.Errorf("store:packageByLayer failed to retrieve scanner ids for scnr %v: %v", scnr, err)
 		}
@@ -62,7 +68,7 @@ func packagesByLayer(ctx context.Context, db *sqlx.DB, hash claircore.Digest, sc
 
 	// rebind see: https://jmoiron.github.io/sqlx/ "in queries" section
 	// we need to format this query since an IN query can only have one bindvar. TODO: confirm this
-	withHash := fmt.Sprintf(selectPackagesByArtifactJoin, hash)
+	withHash := fmt.Sprintf(query, hash)
 	inQuery, args, err := sqlx.In(withHash, scannerIDs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to bind scannerIDs to query: %v", err)

@@ -145,11 +145,10 @@ func (s *Controller) run(ctx context.Context) {
 // to persist this information.
 func (s *Controller) handleError(ctx context.Context, err error) {
 	log := zerolog.Ctx(ctx)
-	log.Info().Msg("handling scan error")
 	s.report.Success = false
 	s.report.Err = err.Error()
 	s.report.State = IndexError.String()
-	log.Warn().
+	log.Error().
 		Err(err).
 		Msg("error during scan")
 	err = s.Store.SetIndexReport(ctx, s.report)
@@ -157,7 +156,7 @@ func (s *Controller) handleError(ctx context.Context, err error) {
 		// just log, we are about to bail anyway
 		log.Error().
 			Err(err).
-			Msg("failed to persist scan report")
+			Msg("failed to persist index report")
 	}
 }
 

@@ -12,25 +12,32 @@ import (
 	"github.com/quay/claircore/internal/indexer"
 )
 
-const (
-	selectDistsByArtifactJoin = `SELECT
-	dist.id,
-	dist.name,
-	dist.did,
-	dist.version,
-	dist.version_code_name,
-	dist.version_id,
-	dist.arch,
-	dist.cpe,
-	dist.pretty_name
-FROM
-	dist_scanartifact
-	LEFT JOIN dist ON dist_scanartifact.dist_id = dist.id
-WHERE
-	dist_scanartifact.layer_hash = '%s' AND dist_scanartifact.scanner_id IN (?);`
-)
-
 func distributionsByLayer(ctx context.Context, db *sqlx.DB, hash claircore.Digest, scnrs indexer.VersionedScanners) ([]*claircore.Distribution, error) {
+	const (
+		selectScanner = `
+		SELECT id
+		FROM scanner
+		WHERE name = $1
+		  AND version = $2
+		  AND kind = $3;
+		`
+		query = `
+		SELECT dist.id,
+			   dist.name,
+			   dist.did,
+			   dist.version,
+			   dist.version_code_name,
+			   dist.version_id,
+			   dist.arch,
+			   dist.cpe,
+			   dist.pretty_name
+		FROM dist_scanartifact
+				 LEFT JOIN dist ON dist_scanartifact.dist_id = dist.id
+		WHERE dist_scanartifact.layer_hash = '%s'
+		  AND dist_scanartifact.scanner_id IN (?);
+		`
+	)
+
 	// TODO Use passed-in Context.
 	if len(scnrs) == 0 {
 		return []*claircore.Distribution{}, nil
@@ -39,7 +46,7 @@ func distributionsByLayer(ctx context.Context, db *sqlx.DB, hash claircore.Diges
 	scannerIDs := []int64{}
 	for _, scnr := range scnrs {
 		var scannerID int64
-		err := db.Get(&scannerID, scannerIDByNameVersionKind, scnr.Name(), scnr.Version(), scnr.Kind())
+		err := db.Get(&scannerID, selectScanner, scnr.Name(), scnr.Version(), scnr.Kind())
 		if err != nil {
 			return nil, fmt.Errorf("store:distributionseByLayer failed to retrieve scanner ids for scnr %v: %v", scnr, err)
 		}
@@ -50,7 +57,7 @@ func distributionsByLayer(ctx context.Context, db *sqlx.DB, hash claircore.Diges
 
 	// rebind see: https://jmoiron.github.io/sqlx/ "in queries" section
 	// we need to format this query since an IN query can only have one bindvar. TODO: confirm this
-	withHash := fmt.Sprintf(selectDistsByArtifactJoin, hash)
+	withHash := fmt.Sprintf(query, hash)
 	inQuery, args, err := sqlx.In(withHash, scannerIDs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to bind scannerIDs to query: %v", err)

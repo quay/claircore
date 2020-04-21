@@ -10,12 +10,21 @@ import (
 	"github.com/quay/claircore/internal/indexer"
 )
 
-const (
-	insertScanner = `INSERT INTO scanner (name, version, kind) VALUES ($1, $2, $3) ON CONFLICT (name, version, kind) DO NOTHING;`
-	selectScanner = `SELECT id FROM scanner WHERE name = $1 AND version = $2 AND kind = $3;`
-)
-
 func registerScanners(ctx context.Context, db *sqlx.DB, scnrs indexer.VersionedScanners) error {
+	const (
+		insertScanner = `
+		INSERT INTO scanner (name, version, kind)
+		VALUES ($1, $2, $3)
+		ON CONFLICT (name, version, kind) DO NOTHING;
+		`
+		selectScanner = `
+		SELECT id
+		FROM scanner
+		WHERE name = $1
+		  AND version = $2
+		  AND kind = $3;
+		`
+	)
 	// TODO Use passed-in Context.
 	// check if all scanners scanners exist
 	ids := make([]sql.NullInt64, len(scnrs))

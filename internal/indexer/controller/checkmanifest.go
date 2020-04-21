@@ -19,9 +19,14 @@ func checkManifest(ctx context.Context, s *Controller) (State, error) {
 		return Terminal, err
 	}
 
-	// if we haven't seen this manifest transition to FetchLayers
+	// if we haven't seen this manifest transition persist it
+	// and transition to FetchLayer state.
 	if !ok {
-		log.Info().Msg("manifest to be scanned")
+		log.Info().Msg("manifest to be scanned... persisting manifest.")
+		err := s.Store.PersistManifest(ctx, *s.manifest)
+		if err != nil {
+			return Terminal, fmt.Errorf("failed to persist manifest: %v", err)
+		}
 		return FetchLayers, nil
 	}
 

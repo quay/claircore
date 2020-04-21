@@ -13,38 +13,6 @@ import (
 	"github.com/quay/claircore/pkg/microbatch"
 )
 
-const (
-	insertPackage = `INSERT INTO package (name, kind, version, norm_kind, norm_version, module, arch)
-	VALUES ($1, $2, $3, $4, $5::int[], $6, $7)
-	ON CONFLICT (name, kind, version, module, arch) DO NOTHING;`
-	selectDistID = `SELECT id FROM dist WHERE name = $1 AND version = $2 AND version_code_name = $3 AND version_id = $4 AND arch = $5;`
-	// we'll use a WITH statement here to gather all the id's necessary to create the
-	// scan artifact entry. see: https://www.postgresql.org/docs/current/queries-with.html#QUERIES-WITH-MODIFYING
-	insertPackageScanArtifactWith = `WITH source_package AS (
-	SELECT id AS source_id FROM package WHERE
-         name = $1 AND kind = $2 AND version = $3 AND module = $4 AND arch = $5
-         ),
-
-	binary_package AS (
-        SELECT id AS package_id FROM package WHERE
-	name = $6 AND kind = $7 AND version = $8 AND module = $9 AND arch = $10
-         ),
-
-	scanner AS (
-	SELECT id AS scanner_id FROM scanner WHERE
-	name = $11 AND version = $12 AND kind = $13
-		)
-
-INSERT INTO package_scanartifact (layer_hash, package_db, repository_hint, package_id, source_id, scanner_id) VALUES
-		  ($14,
-           $15,
-           $16,
-          (SELECT package_id FROM binary_package),
-          (SELECT source_id FROM source_package),
-          (SELECT scanner_id FROM scanner))
-          ON CONFLICT DO NOTHING;`
-)
-
 var zeroPackage = claircore.Package{}
 
 // indexPackages indexes all provides packages along with creating a scan artifact. if a source package is nested
@@ -54,6 +22,54 @@ var zeroPackage = claircore.Package{}
 // scan artifacts are used to determine if a particular layer has been scanned by a
 // particular scnr. see layerScanned method for more details.
 func indexPackages(ctx context.Context, pool *pgxpool.Pool, pkgs []*claircore.Package, layer *claircore.Layer, scnr indexer.VersionedScanner) error {
+	const (
+		insert = ` 
+		INSERT INTO package (name, kind, version, norm_kind, norm_version, module, arch)
+		VALUES ($1, $2, $3, $4, $5::int[], $6, $7)
+		ON CONFLICT (name, kind, version, module, arch) DO NOTHING;
+		`
+
+		insertWith = `
+		WITH source_package AS (
+			SELECT id AS source_id
+			FROM package
+			WHERE name = $1
+			  AND kind = $2
+			  AND version = $3
+			  AND module = $4
+			  AND arch = $5
+		),
+
+			 binary_package AS (
+				 SELECT id AS package_id
+				 FROM package
+				 WHERE name = $6
+				   AND kind = $7
+				   AND version = $8
+				   AND module = $9
+				   AND arch = $10
+			 ),
+
+			 scanner AS (
+				 SELECT id AS scanner_id
+				 FROM scanner
+				 WHERE name = $11
+				   AND version = $12
+				   AND kind = $13
+			 )
+
+		INSERT
+		INTO package_scanartifact (layer_hash, package_db, repository_hint, package_id, source_id, scanner_id)
+		VALUES ($14,
+				$15,
+				$16,
+				(SELECT package_id FROM binary_package),
+				(SELECT source_id FROM source_package),
+				(SELECT scanner_id FROM scanner))
+		ON CONFLICT DO NOTHING;
+		`
+	)
+
 	log := zerolog.Ctx(ctx).With().
 		Str("component", "internal/indexer/postgres/indexPackages").
 		Logger()
@@ -64,11 +80,11 @@ func indexPackages(ctx context.Context, pool *pgxpool.Pool, pkgs []*claircore.Pa
 	}
 	defer tx.Rollback(ctx)
 
-	insertPackageStmt, err := tx.Prepare(ctx, "insertPackageStmt", insertPackage)
+	insertPackageStmt, err := tx.Prepare(ctx, "insertPackageStmt", insert)
 	if err != nil {
 		return fmt.Errorf("failed to create statement: %v", err)
 	}
-	insertPackageScanArtifactWithStmt, err := tx.Prepare(ctx, "insertPackageScanArtifactWith", insertPackageScanArtifactWith)
+	insertPackageScanArtifactWithStmt, err := tx.Prepare(ctx, "insertPackageScanArtifactWith", insertWith)
 	if err != nil {
 		return fmt.Errorf("failed to create statement: %v", err)
 	}

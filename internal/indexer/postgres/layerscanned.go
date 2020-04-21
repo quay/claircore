@@ -11,20 +11,21 @@ import (
 	"github.com/quay/claircore/internal/indexer"
 )
 
-const (
-	selectScannerID = `SELECT id FROM scanner WHERE name = $1 AND version = $2;`
-	// artifacts for a layer are always persisted via a transaction thus finding a single
-	// artifact matching the name, version, and layer hash will signify a layer
-	// has been scanned by the scanner in question.
-	selectPackageScanArtifact      = `SELECT layer_hash FROM package_scanartifact WHERE layer_hash = $1 AND scanner_id = $2 LIMIT 1;`
-	selectDistributionScanArtifact = `SELECT layer_hash FROM dist_scanartifact WHERE layer_hash = $1 AND scanner_id = $2 LIMIT 1;`
-	selectRepositoryScanArtifact   = `SELECT layer_hash FROM repo_scanartifact WHERE layer_hash = $1 AND scanner_id = $2 LIMIT 1;`
-)
-
 func layerScanned(ctx context.Context, db *sqlx.DB, hash claircore.Digest, scnr indexer.VersionedScanner) (bool, error) {
+	const (
+		selectScanner = `
+		SELECT id
+		FROM scanner
+		WHERE name = $1
+		  AND version = $2
+		  AND kind = $3;
+		`
+		selectScanned = `SELECT layer_hash FROM scanned_layer WHERE layer_hash = $1 AND scanner_id = $2`
+	)
+
 	// TODO Use passed-in Context.
 	var scannerID int64
-	err := db.Get(&scannerID, selectScannerID, scnr.Name(), scnr.Version())
+	err := db.Get(&scannerID, selectScanner, scnr.Name(), scnr.Version(), scnr.Kind())
 	if err != nil {
 		if err == sql.ErrNoRows {
 			// TODO: make error type to handle this case
@@ -34,19 +35,7 @@ func layerScanned(ctx context.Context, db *sqlx.DB, hash claircore.Digest, scnr 
 	}
 
 	var layerHash claircore.Digest
-	var query string
-	switch scnr.Kind() {
-	case "package":
-		query = selectPackageScanArtifact
-	case "distribution":
-		query = selectDistributionScanArtifact
-	case "repository":
-		query = selectRepositoryScanArtifact
-	default:
-		return false, fmt.Errorf("received unkown scanner type: %v %v %v", scnr.Name(), scnr.Version(), scnr.Kind())
-	}
-
-	err = db.Get(&layerHash, query, hash, scannerID)
+	err = db.Get(&layerHash, selectScanned, hash, scannerID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return false, nil
