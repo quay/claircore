@@ -30,7 +30,7 @@ func initUpdaters(ctx context.Context, opts *Opts, db *sqlx.DB, store vulnstore.
 
 	controllers := map[string]*updater.Controller{}
 
-	for _, u := range opts.Updaters {
+	for _, u := range opts.Updaters.Set {
 		if _, ok := controllers[u.Name()]; ok {
 			eC <- fmt.Errorf("duplicate updater found in UpdaterFactory. all names must be unique: %s", u.Name())
 			return

@@ -33,7 +33,7 @@ type Opts struct {
 	// returns the matchers to be used during libvuln runtime
 	Matchers []driver.Matcher
 	// returns the updaters to run on an interval
-	Updaters []driver.Updater
+	Updaters driver.UpdaterSet
 	// a regex string to filter running updaters by
 	Run string
 }
@@ -64,9 +64,9 @@ func (o *Opts) Parse() error {
 			&python.Matcher{},
 		}
 	}
-	if len(o.Updaters) == 0 {
+	if len(o.Updaters.Set) == 0 {
 		var err error
-		o.Updaters, err = updaters()
+		o.Updaters, err = updaterSets()
 		if err != nil {
 			return fmt.Errorf("failed to create default set of updaters: %w", err)
 		}
@@ -75,7 +75,7 @@ func (o *Opts) Parse() error {
 	// filter out updaters if regex was passed
 	if o.Run != "" {
 		var err error
-		o.Updaters, err = regexFilter(o.Run, o.Updaters)
+		o.Updaters.RegexFilter(o.Run)
 		if err != nil {
 			return fmt.Errorf("regex filtering of updaters failed: %w", err)
 		}

@@ -2,8 +2,6 @@ package libvuln
 
 import (
 	"fmt"
-	"regexp"
-	"time"
 
 	"github.com/quay/claircore/alpine"
 	"github.com/quay/claircore/aws"
@@ -17,128 +15,93 @@ import (
 	"github.com/quay/claircore/ubuntu"
 )
 
-var ubuntuReleases = []ubuntu.Release{
-	ubuntu.Artful,
-	ubuntu.Bionic,
-	ubuntu.Cosmic,
-	ubuntu.Disco,
-	ubuntu.Precise,
-	ubuntu.Trusty,
-	ubuntu.Xenial,
-}
+// UpdaterSets returns all UpdaterSets currently
+// supported by libvuln
+func updaterSets() (driver.UpdaterSet, error) {
+	us := driver.NewUpdaterSet()
+	var set driver.UpdaterSet
+	var err error
 
-var debianReleases = []debian.Release{
-	debian.Buster,
-	debian.Jessie,
-	debian.Stretch,
-	debian.Wheezy,
-}
-
-var rhelReleases = []rhel.Release{
-	rhel.RHEL6,
-	rhel.RHEL7,
-	rhel.RHEL8,
-}
-
-var amazonReleases = []aws.Release{
-	aws.Linux1,
-	aws.Linux2,
-}
-
-var alpineMatrix = map[alpine.Repo][]alpine.Release{
-	alpine.Main:      []alpine.Release{alpine.V3_10, alpine.V3_9, alpine.V3_8, alpine.V3_7, alpine.V3_6, alpine.V3_5, alpine.V3_4, alpine.V3_3},
-	alpine.Community: []alpine.Release{alpine.V3_10, alpine.V3_9, alpine.V3_8, alpine.V3_7, alpine.V3_6, alpine.V3_5, alpine.V3_4, alpine.V3_3},
-}
-
-var suseReleases = []suse.Release{
-	suse.EnterpriseServer15,
-	suse.EnterpriseServer12,
-	suse.EnterpriseServer11,
-	suse.Leap150,
-	suse.Leap151,
-}
-
-var photonReleases = []photon.Release{
-	photon.Photon1,
-	photon.Photon2,
-	photon.Photon3,
-}
-
-func updaters() ([]driver.Updater, error) {
-	updaters := []driver.Updater{}
-	for _, rel := range ubuntuReleases {
-		updaters = append(updaters, ubuntu.NewUpdater(rel))
-	}
-	for _, rel := range debianReleases {
-		updaters = append(updaters, debian.NewUpdater(rel))
-	}
-	for _, rel := range amazonReleases {
-		up, err := aws.NewUpdater(rel)
-		if err != nil {
-			return nil, fmt.Errorf("unable to create amazon updater %v: %v", rel, err)
-		}
-		updaters = append(updaters, up)
-	}
-	for _, rel := range rhelReleases {
-		up, err := rhel.NewUpdater(rel)
-		if err != nil {
-			return nil, fmt.Errorf("unable to create rhel updater %v: %v", rel, err)
-		}
-		updaters = append(updaters, up)
-	}
-	for repo, releases := range alpineMatrix {
-		for _, rel := range releases {
-			up, err := alpine.NewUpdater(rel, repo)
-			if err != nil {
-				return nil, fmt.Errorf("unable to create alpine updater %v %v: %v", repo, rel, err)
-			}
-			updaters = append(updaters, up)
-		}
-	}
-
-	for year, lim := 2007, time.Now().Year(); year != lim; year++ {
-		u, err := oracle.NewUpdater(year)
-		if err != nil {
-			return nil, fmt.Errorf("unable to create oracle updater: %v", err)
-		}
-		updaters = append(updaters, u)
-	}
-
-	for _, rel := range suseReleases {
-		u, err := suse.NewUpdater(rel)
-		if err != nil {
-			return nil, fmt.Errorf("unable to create suse updater: %v", err)
-		}
-		updaters = append(updaters, u)
-	}
-
-	py, err := pyupio.NewUpdater()
+	set, err = alpine.UpdaterSet()
 	if err != nil {
-		return nil, fmt.Errorf("unable to create pyupio updater: %v", err)
+		return us, fmt.Errorf("failed to created alpine updater set: %v", err)
 	}
-	updaters = append(updaters, py)
-
-	for _, rel := range photonReleases {
-		u, err := photon.NewUpdater(rel)
-		if err != nil {
-			return nil, fmt.Errorf("unable to create photon updater: %v", err)
-		}
-		updaters = append(updaters, u)
-	}
-
-	return updaters, nil
-}
-
-func regexFilter(regex string, updaters []driver.Updater) ([]driver.Updater, error) {
-	out := []driver.Updater{}
-	re, err := regexp.Compile(regex)
+	err = us.Merge(set)
 	if err != nil {
-		return nil, fmt.Errorf("regex failed to compile")
+		return us, err
 	}
-	for _, u := range updaters {
-		if re.MatchString(u.Name()) {
-			out = append(out, u)
-		}
+
+	set, err = aws.UpdaterSet()
+	if err != nil {
+		return us, fmt.Errorf("failed to created aws updater set: %v", err)
 	}
-	return out, nil
+	err = us.Merge(set)
+	if err != nil {
+		return us, err
+	}
+
+	set, err = debian.UpdaterSet()
+	if err != nil {
+		return us, fmt.Errorf("failed to created debian updater set: %v", err)
+	}
+	err = us.Merge(set)
+	if err != nil {
+		return us, err
+	}
+
+	set, err = oracle.UpdaterSet()
+	if err != nil {
+		return us, fmt.Errorf("failed to created oracle updater set: %v", err)
+	}
+	err = us.Merge(set)
+	if err != nil {
+		return us, err
+	}
+
+	set, err = photon.UpdaterSet()
+	if err != nil {
+		return us, fmt.Errorf("failed to created photon updater set: %v", err)
+	}
+	err = us.Merge(set)
+	if err != nil {
+		return us, err
+	}
+
+	set, err = pyupio.UpdaterSet()
+	if err != nil {
+		return us, fmt.Errorf("failed to created pyupio updater set: %v", err)
+	}
+	err = us.Merge(set)
+	if err != nil {
+		return us, err
+	}
+
+	set, err = rhel.UpdaterSet()
+	if err != nil {
+		return us, fmt.Errorf("failed to created rhel updater set: %v", err)
+	}
+	err = us.Merge(set)
+	if err != nil {
+		return us, err
+	}
+
+	set, err = suse.UpdaterSet()
+	if err != nil {
+		return us, fmt.Errorf("failed to created suse updater set: %v", err)
+	}
+	err = us.Merge(set)
+	if err != nil {
+		return us, err
+	}
+
+	set, err = ubuntu.UpdaterSet()
+	if err != nil {
+		return us, fmt.Errorf("failed to created ubuntu updater set: %v", err)
+	}
+	err = us.Merge(set)
+	if err != nil {
+		return us, err
+	}
+
+	return us, nil
 }
