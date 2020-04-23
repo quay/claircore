@@ -2,7 +2,14 @@ module github.com/quay/claircore
 
 go 1.12
 
+replace (
+	github.com/containerd/containerd => github.com/containerd/containerd v1.3.1-0.20200227195959-4d242818bf55
+	github.com/docker/docker => github.com/docker/docker v1.4.2-0.20200227233006-38f52c9fec82
+)
+
 require (
+	github.com/asottile/dockerfile v3.1.0+incompatible
+	github.com/buildkite/interpolate v0.0.0-20181028012610-973457fa2b4c
 	github.com/crgimenes/goconfig v1.2.1
 	github.com/docker/docker v1.13.1 // indirect
 	github.com/doug-martin/goqu/v8 v8.6.0
@@ -17,7 +24,7 @@ require (
 	github.com/knqyf263/go-cpe v0.0.0-20180327054844-659663f6eca2
 	github.com/knqyf263/go-deb-version v0.0.0-20190517075300-09fca494f03d
 	github.com/knqyf263/go-rpm-version v0.0.0-20170716094938-74609b86c936
-	github.com/opencontainers/runc v0.1.1 // indirect
+	github.com/moby/buildkit v0.7.1 // indirect
 	github.com/quay/alas v1.0.1
 	github.com/quay/goval-parser v0.7.0
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
