@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 )
 
 // Layer is a container image filesystem layer. Layers are stacked
@@ -57,6 +58,19 @@ func normalizeIn(in, p string) string {
 		p = p[1:]
 	}
 	return p
+}
+
+func fileRegExpMatch(paths []string, filename string) (bool, error) {
+	for _, path := range paths {
+		match, err := regexp.MatchString(path, filename)
+		if err != nil {
+			return false, err
+		}
+		if match {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // ErrNotFound is returned by Layer.Files if none of the requested files are
@@ -148,6 +162,61 @@ func (l *Layer) Files(paths ...string) (map[string]*bytes.Buffer, error) {
 		if v == notfound {
 			delete(f, n)
 		}
+	}
+
+	// If there's nothing in the "f" map, we didn't find anything.
+	if len(f) == 0 {
+		return nil, ErrNotFound
+	}
+	return f, nil
+}
+
+// FilesByRegexp retrieves specific files from the layer's tar archive
+// based on provided regexp.
+//
+// An error is returned only if none of the requested files are found.
+func (l *Layer) FilesByRegexp(paths ...string) (map[string]*bytes.Buffer, error) {
+	r, err := l.Reader()
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
+	rs := r.(io.ReadSeeker)
+
+	// Clean the input paths.
+	for i, p := range paths {
+		p := normalizeIn("/", p)
+		paths[i] = p
+	}
+
+	f := make(map[string]*bytes.Buffer)
+	tr := tar.NewReader(rs)
+	hdr, err := tr.Next()
+	for ; err == nil; hdr, err = tr.Next() {
+		name := filepath.Clean(hdr.Name)
+		// check if the current header has a path name we are
+		// searching for.
+		match, err := fileRegExpMatch(paths, name)
+		if err != nil {
+			return nil, err
+		}
+		if !match {
+			continue
+		}
+
+		switch hdr.Typeflag {
+		case tar.TypeReg:
+			b := make([]byte, hdr.Size)
+			if n, err := io.ReadFull(tr, b); int64(n) != hdr.Size || err != nil {
+				return nil, fmt.Errorf("claircore: unable to read file from archive: read %d bytes (wanted: %d): %w", n, hdr.Size, err)
+			}
+			f[name] = bytes.NewBuffer(b)
+		default:
+			// skip
+		}
+	}
+	if err != io.EOF {
+		return nil, err
 	}
 
 	// If there's nothing in the "f" map, we didn't find anything.
