@@ -7,6 +7,7 @@ package claircore_test
 import (
 	"bytes"
 	"context"
+	"regexp"
 	"testing"
 	"time"
 
@@ -122,6 +123,63 @@ func Test_Layer_Files_Hit(t *testing.T) {
 				}
 				if l := b.Len(); l <= 0 {
 					t.Fatalf("returned buffer for path %v has len %v", path, l)
+				}
+
+				t.Logf("contents: %+q", b.String())
+			}
+		})
+	}
+}
+
+func Test_Layer_Files_Regex(t *testing.T) {
+	// integration.Skip(t)
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
+	var tt = []struct {
+		// name of the test
+		name string
+		// the number of layers to generate for the test
+		layers []test.LayerSpec
+		// a list of paths we know exist in the retrieved layer(s). we wil test to make sure their associated
+		// buffer is full
+		paths []string
+	}{
+		{
+			name:   "ubuntu:18.04 os-release (linked file), regexp",
+			layers: goldenLayers,
+			paths:  []string{"etc/apt/trusted.gpg.d/ubuntu-keyring-201[0-9]+-archive.gpg"},
+		},
+	}
+
+	for _, table := range tt {
+		t.Run(table.name, func(t *testing.T) {
+			ctx, done := context.WithCancel(ctx)
+			defer done()
+			// fetch the layer
+			ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+			defer cancel()
+			layers := test.RealizeLayers(ctx, t, table.layers...)
+
+			// attempt to get files
+			files, err := layers[0].FilesByRegexp(table.paths...)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			var b *bytes.Buffer
+			for _, path := range table.paths {
+				for filename, b := range files {
+
+					match, err := regexp.MatchString(path, filename)
+					if err != nil {
+						t.Fail()
+					}
+					if !match {
+						t.Fatalf("test path %v was not found in resulting file map", path)
+					}
+					if l := b.Len(); l <= 0 {
+						t.Fatalf("returned buffer for path %v has len %v", path, l)
+					}
 				}
 
 				t.Logf("contents: %+q", b.String())
