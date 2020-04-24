@@ -1,4 +1,14 @@
 version: "3.7"
+
+# if you are using firewalld add this consistent bridge name
+# to your trusted zone
+# sudo firewall-cmd --zone=trusted --add-interface=claircore --permanent
+# sudo firewall-cmd --reload
+networks:
+  default:
+    driver_opts:
+      com.docker.network.bridge.name: claircore
+
 services:
 
   claircore-db:
