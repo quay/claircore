@@ -43,7 +43,7 @@ func (s *store) ManifestScanned(ctx context.Context, hash claircore.Digest, scnr
 }
 
 func (s *store) LayerScanned(ctx context.Context, hash claircore.Digest, scnr indexer.VersionedScanner) (bool, error) {
-	b, err := layerScanned(ctx, s.db, hash, scnr)
+	b, err := layerScanned(ctx, s.pool, hash, scnr)
 	return b, err
 }
 

@@ -13,16 +13,20 @@ import (
 
 // mockScnr is a kind-agnostic scanner we will
 // use for testing purposes.
-type mockScnr struct{}
+type mockScnr struct {
+	name    string
+	kind    string
+	version string
+}
 
 func (m mockScnr) Name() string {
-	return "test-scanner"
+	return m.name
 }
 func (m mockScnr) Kind() string {
-	return "test"
+	return m.kind
 }
 func (m mockScnr) Version() string {
-	return "v0.0.1"
+	return m.version
 }
 
 type e2e struct {
@@ -74,6 +78,8 @@ func (e *e2e) Run(t *testing.T) {
 		{"IndexAndRetrieveDistributions", e.IndexAndRetrieveDistributions},
 		{"IndexAndRetrieveRepos", e.IndexAndRetrieveRepos},
 		{"LayerScanned", e.LayerScanned},
+		{"LayerScannedNotExists", e.LayerScannedNotExists},
+		{"LayerScannedFalse", e.LayerScannedFalse},
 		{"IndexReport", e.IndexReport},
 	}
 	for i := range subtests {
@@ -104,7 +110,11 @@ func (e *e2e) RegisterScanner(t *testing.T) {
 	defer func() {
 		e.failed = t.Failed()
 	}()
-	scnr := mockScnr{}
+	scnr := mockScnr{
+		name:    "test-scanner",
+		kind:    "test",
+		version: "v0.0.1",
+	}
 	err := e.store.RegisterScanners(e.ctx, indexer.VersionedScanners{scnr})
 	if err != nil {
 		t.Fatalf("failed to register scnr: %v", err)
@@ -207,6 +217,45 @@ func (e *e2e) LayerScanned(t *testing.T) {
 	}
 	if !b {
 		t.Fatalf("expected layer to be scanned")
+	}
+}
+
+// LayerScannedNotExists confirms an error is returned when attempting
+// to obtain if a layer was scanned by a non-existent scanner.
+func (e *e2e) LayerScannedNotExists(t *testing.T) {
+	defer func() {
+		e.failed = t.Failed()
+	}()
+	scnr := mockScnr{
+		name:    "invalid",
+		kind:    "invalid",
+		version: "invalid",
+	}
+
+	_, err := e.store.LayerScanned(e.ctx, e.manifest.Layers[0].Hash, scnr)
+	if err == nil {
+		t.Fatalf("expected error scnr not found error condition")
+	}
+}
+
+// LayerScannedFalse confirms a false boolean is returned when attempting
+// to obtain if a non-exitent layer was scanned by a valid scanner
+func (e *e2e) LayerScannedFalse(t *testing.T) {
+	defer func() {
+		e.failed = t.Failed()
+	}()
+
+	// create a layer that has not been persisted to the store
+	layer := &claircore.Layer{
+		Hash: claircore.MustParseDigest(`sha256:5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03`),
+	}
+
+	b, err := e.store.LayerScanned(e.ctx, layer.Hash, e.scnr)
+	if err != nil {
+		t.Fatalf("failed to query if layer is scanned: %v", err)
+	}
+	if b {
+		t.Fatalf("expected layer not to be scanned")
 	}
 }
 
