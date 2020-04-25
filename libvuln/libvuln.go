@@ -31,20 +31,24 @@ func New(ctx context.Context, opts *Opts) (*Libvuln, error) {
 		Str("component", "libvuln/New").
 		Logger()
 	ctx = log.WithContext(ctx)
-	err := opts.Parse()
+
+	err := opts.parse(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	log.Info().
 		Int32("count", opts.MaxConnPool).
 		Msg("initializing store")
+
 	db, vulnstore, err := initStore(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
+
+	// block on updater initialization.
 	eC := make(chan error, 1024)
 	dC := make(chan context.CancelFunc, 1)
-	// block on updater initialization.
 	log.Info().Msg("updater initialization start")
 	go initUpdaters(ctx, opts, db, vulnstore, dC, eC)
 	killUpdaters := <-dC

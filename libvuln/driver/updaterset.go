@@ -63,10 +63,13 @@ func (s *UpdaterSet) Merge(set UpdaterSet) error {
 	return nil
 }
 
-// Updaters returns a map of updaters keyed by
-// their name.
-func (s *UpdaterSet) Updaters() map[string]Updater {
-	return s.Set
+// Updaters() returns the updaters within the set as slice.
+func (s *UpdaterSet) Updaters() []Updater {
+	u := make([]Updater, 0, len(s.Set))
+	for _, v := range s.Set {
+		u = append(u, v)
+	}
+	return u
 }
 
 // RegexFilter will remove any updaters from the set
