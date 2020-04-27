@@ -34,11 +34,7 @@ type Opts struct {
 	// A pointer to a slice of strings representing which
 	// updaters libvuln will create.
 	//
-	// If the pointer is nil all default UpdaterSets
-	// will be used
-	//
-	// If the pointe points to an empty array no UpdaterSets
-	// will run.
+	// If nil all default UpdaterSets will be used
 	//
 	// The following sets are supported:
 	// "alpine"
@@ -50,7 +46,7 @@ type Opts struct {
 	// "rhel"
 	// "suse"
 	// "ubuntu"
-	UpdaterSets *[]string
+	UpdaterSets []string
 	// A list of out-of-tree updaters to run.
 	//
 	// This list will be merged with any defined UpdaterSets.

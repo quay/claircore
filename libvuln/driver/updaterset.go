@@ -12,7 +12,7 @@ type ErrExists struct {
 }
 
 func (e ErrExists) Error() string {
-	return fmt.Sprintf("%v", e.Updater)
+	return fmt.Sprintf("reused names: %v", e.Updater)
 }
 
 // UpdaterSet holds a deduped

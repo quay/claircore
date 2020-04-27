@@ -27,7 +27,7 @@ var defaultSets = map[string]func() (driver.UpdaterSet, error){
 
 // UpdaterSets returns all UpdaterSets currently
 // supported by libvuln
-func updaterSets(ctx context.Context, sets *[]string) (driver.UpdaterSet, error) {
+func updaterSets(ctx context.Context, sets []string) (driver.UpdaterSet, error) {
 	log := zerolog.Ctx(ctx).With().
 		Str("component", "libvuln/updaterSets").
 		Logger()
@@ -55,11 +55,11 @@ func updaterSets(ctx context.Context, sets *[]string) (driver.UpdaterSet, error)
 		return us, nil
 
 	// merge only supplied sets
-	case len(*sets) > 0:
-		log.Info().Str("sets", fmt.Sprintf("%v", *sets)).
+	case len(sets) > 0:
+		log.Info().Str("sets", fmt.Sprintf("%v", sets)).
 			Msg("creating specified updater sets")
 
-		for _, name := range *sets {
+		for _, name := range sets {
 			if _, ok := defaultSets[name]; !ok {
 				log.Warn().Str("set", name).Msg("unknown update set provided")
 				continue
