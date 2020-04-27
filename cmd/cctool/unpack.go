@@ -31,7 +31,7 @@ func Unpack(cmd context.Context, cfg *commonConfig, args []string) error {
 		fmt.Fprintf(out, "Usage:\n")
 		fmt.Fprintf(out, "\tcctool unpack <image-ref>\n")
 		fmt.Fprintf(out, "Arguments:\n")
-		fmt.Fprintf(out, "\timage-ref: a reference to an image and it's repository\n\n")
+		fmt.Fprintf(out, "\timage-ref: a reference to an image and its repository\n\n")
 	}
 	fs.Parse(args)
 
@@ -72,7 +72,7 @@ func Unpack(cmd context.Context, cfg *commonConfig, args []string) error {
 
 	log.Printf("exacting layers into tmp dir: %v.", td)
 	for i, layer := range m.Layers {
-		dirName := filepath.Base(layer.Local())
+		dirName := layer.Hash.String()
 		dir := filepath.Join(td, strconv.Itoa(i)+"-"+dirName)
 		err := os.Mkdir(dir, 0755)
 		if err != nil {
