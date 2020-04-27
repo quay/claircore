@@ -18,13 +18,13 @@ func (e ErrExists) Error() string {
 // UpdaterSet holds a deduped
 // set of updaters
 type UpdaterSet struct {
-	Set map[string]Updater
+	set map[string]Updater
 }
 
 func NewUpdaterSet() UpdaterSet {
 	set := map[string]Updater{}
 	return UpdaterSet{
-		Set: set,
+		set: set,
 	}
 }
 
@@ -32,11 +32,11 @@ func NewUpdaterSet() UpdaterSet {
 //
 // An erorr will occur if an updater with
 func (s *UpdaterSet) Add(u Updater) error {
-	if _, ok := s.Set[u.Name()]; ok {
+	if _, ok := s.set[u.Name()]; ok {
 		return ErrExists{[]string{u.Name()}}
 	}
 
-	s.Set[u.Name()] = u
+	s.set[u.Name()] = u
 	return nil
 }
 
@@ -46,9 +46,9 @@ func (s *UpdaterSet) Add(u Updater) error {
 // If an updater exists in the target set an error
 // specifying which updaters could not be merged is returned.
 func (s *UpdaterSet) Merge(set UpdaterSet) error {
-	exists := make([]string, 0, len(set.Set))
-	for n, _ := range set.Set {
-		if _, ok := s.Set[n]; ok {
+	exists := make([]string, 0, len(set.set))
+	for n, _ := range set.set {
+		if _, ok := s.set[n]; ok {
 			exists = append(exists, n)
 		}
 	}
@@ -57,16 +57,16 @@ func (s *UpdaterSet) Merge(set UpdaterSet) error {
 		return ErrExists{exists}
 	}
 
-	for n, u := range set.Set {
-		s.Set[n] = u
+	for n, u := range set.set {
+		s.set[n] = u
 	}
 	return nil
 }
 
 // Updaters() returns the updaters within the set as slice.
 func (s *UpdaterSet) Updaters() []Updater {
-	u := make([]Updater, 0, len(s.Set))
-	for _, v := range s.Set {
+	u := make([]Updater, 0, len(s.set))
+	for _, v := range s.set {
 		u = append(u, v)
 	}
 	return u
@@ -80,11 +80,11 @@ func (s *UpdaterSet) RegexFilter(regex string) error {
 	if err != nil {
 		return fmt.Errorf("regex failed to compile: %v", err)
 	}
-	for name, u := range s.Set {
+	for name, u := range s.set {
 		if re.MatchString(u.Name()) {
 			set[name] = u
 		}
 	}
-	s.Set = set
+	s.set = set
 	return nil
 }
