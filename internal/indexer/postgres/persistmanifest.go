@@ -28,10 +28,10 @@ func persistManifest(ctx context.Context, pool *pgxpool.Pool, manifest claircore
 	)
 
 	tx, err := pool.Begin(ctx)
-	defer tx.Rollback(ctx)
 	if err != nil {
 		return fmt.Errorf("postgres:persistManifest: failed to create transaction: %v", err)
 	}
+	defer tx.Rollback(ctx)
 
 	_, err = tx.Exec(ctx, insertManifest, manifest.Hash)
 	if err != nil {

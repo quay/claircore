@@ -121,7 +121,6 @@ func (d *Digest) setChecksum(b []byte) error {
 func (d *Digest) Scan(i interface{}) error {
 	switch v := i.(type) {
 	case nil:
-		d = nil
 		return nil
 	case string:
 		d.UnmarshalText([]byte(v))
