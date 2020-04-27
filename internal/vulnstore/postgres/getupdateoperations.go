@@ -70,10 +70,10 @@ func getUpdateOperations(ctx context.Context, pool *pgxpool.Pool, updater ...str
 	ctx = log.WithContext(ctx)
 
 	tx, err := pool.Begin(ctx)
-	defer tx.Rollback(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to being transaction: %w", err)
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
+	defer tx.Rollback(ctx)
 	out := make(map[string][]driver.UpdateOperation)
 
 	// Get distinct updaters from database if nothing specified.
