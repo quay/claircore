@@ -1,6 +1,7 @@
 package libvuln
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -16,29 +17,66 @@ import (
 const (
 	DefaultUpdateInterval         = 30 * time.Minute
 	DefaultUpdaterInitConcurrency = 10
-	DefaultMaxConnPool            = 100
+	DefaultMaxConnPool            = 50
 )
 
 type Opts struct {
-	// the maximum size of the connection pool used by the database
+	// The maximum number of database connections in the
+	// connection pool.
 	MaxConnPool int32
-	// the connectiong string to the above data store implementation
+	// A connection string to the database Lbvuln will use.
 	ConnString string
-	// the interval in minutes which updaters will update the vulnstore
+	// An interval on which Libvuln will check for new security
+	// database updates.
 	UpdateInterval time.Duration
-	// number of updaters ran in parallel while libvuln initializes. use this to tune io/cpu on library start when using many updaters
-	UpdaterInitConcurrency int
-	// set to true to have libindex check and potentially run migrations
+	// Determines if Livuln will manage database migrations
 	Migrations bool
-	// returns the matchers to be used during libvuln runtime
-	Matchers []driver.Matcher
-	// returns the updaters to run on an interval
+	// A pointer to a slice of strings representing which
+	// updaters libvuln will create.
+	//
+	// If nil all default UpdaterSets will be used
+	//
+	// The following sets are supported:
+	// "alpine"
+	// "aws"
+	// "debian"
+	// "oracle"
+	// "photon"
+	// "pyupio"
+	// "rhel"
+	// "suse"
+	// "ubuntu"
+	UpdaterSets []string
+	// A list of out-of-tree updaters to run.
+	//
+	// This list will be merged with any defined UpdaterSets.
+	//
+	// If you desire no updaters to run do not add an updater
+	// into this slice.
 	Updaters []driver.Updater
-	// a regex string to filter running updaters by
-	Run string
+	// A list of out-of-tree matchers you'd like libvuln to
+	// use.
+	//
+	// This list will me merged with the default matchers.
+	Matchers []driver.Matcher
 }
 
-func (o *Opts) Parse() error {
+// defaultMacheter is a variable containing
+// all the matchers libvuln will use to match
+// index records to vulnerabilities.
+var defaultMatchers = []driver.Matcher{
+	&alpine.Matcher{},
+	&aws.Matcher{},
+	&debian.Matcher{},
+	&python.Matcher{},
+	&ubuntu.Matcher{},
+	&rhel.Matcher{},
+}
+
+// parse is an internal method for constructing
+// the necessary Updaters and Matchers for Libvuln
+// usage
+func (o *Opts) parse(ctx context.Context) error {
 	// required
 	if o.ConnString == "" {
 		return fmt.Errorf("no connection string provided")
@@ -48,38 +86,20 @@ func (o *Opts) Parse() error {
 	if o.UpdateInterval == 0 || o.UpdateInterval < time.Minute {
 		o.UpdateInterval = DefaultUpdateInterval
 	}
-	if o.UpdaterInitConcurrency == 0 {
-		o.UpdaterInitConcurrency = DefaultUpdaterInitConcurrency
-	}
 	if o.MaxConnPool == 0 {
 		o.MaxConnPool = DefaultMaxConnPool
 	}
-	if len(o.Matchers) == 0 {
-		o.Matchers = []driver.Matcher{
-			&debian.Matcher{},
-			&ubuntu.Matcher{},
-			&alpine.Matcher{},
-			&aws.Matcher{},
-			&rhel.Matcher{},
-			&python.Matcher{},
-		}
-	}
-	if len(o.Updaters) == 0 {
-		var err error
-		o.Updaters, err = updaters()
-		if err != nil {
-			return fmt.Errorf("failed to create default set of updaters: %w", err)
-		}
-	}
 
-	// filter out updaters if regex was passed
-	if o.Run != "" {
-		var err error
-		o.Updaters, err = regexFilter(o.Run, o.Updaters)
-		if err != nil {
-			return fmt.Errorf("regex filtering of updaters failed: %w", err)
-		}
+	// merge default matchers with any out-of-tree specified
+	o.Matchers = append(o.Matchers, defaultMatchers...)
+
+	// determine which updaters should be populated
+	set, err := updaterSets(ctx, o.UpdaterSets)
+	if err != nil {
+		return fmt.Errorf("failed to create updater sets: %v", err)
 	}
+	// merge determined updaters with any out-of-tree updaters
+	o.Updaters = append(o.Updaters, set.Updaters()...)
 
 	return nil
 }

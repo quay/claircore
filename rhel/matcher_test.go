@@ -41,7 +41,7 @@ func TestMatcherIntegration(t *testing.T) {
 			t.Error(err)
 			continue
 		}
-		us[i] = updater.New(&updater.Opts{
+		us[i] = updater.NewController(&updater.Opts{
 			Name:     fmt.Sprintf("test-%s", filepath.Base(f)),
 			Updater:  u,
 			Store:    store,

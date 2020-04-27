@@ -21,13 +21,6 @@ import (
 // initUpdaters provides initial burst control to not launch too many updaters at once.
 // returns any errors on eC and returns a CaneclFunc on dC to stop all updaters
 func initUpdaters(ctx context.Context, opts *Opts, db *sqlx.DB, store vulnstore.Updater, dC chan context.CancelFunc, eC chan error) {
-	// just to be defensive
-	err := opts.Parse()
-	if err != nil {
-		eC <- err
-		return
-	}
-
 	controllers := map[string]*updater.Controller{}
 
 	for _, u := range opts.Updaters {
@@ -35,7 +28,7 @@ func initUpdaters(ctx context.Context, opts *Opts, db *sqlx.DB, store vulnstore.
 			eC <- fmt.Errorf("duplicate updater found in UpdaterFactory. all names must be unique: %s", u.Name())
 			return
 		}
-		controllers[u.Name()] = updater.New(&updater.Opts{
+		controllers[u.Name()] = updater.NewController(&updater.Opts{
 			Updater:       u,
 			Store:         store,
 			Name:          u.Name(),
@@ -46,7 +39,7 @@ func initUpdaters(ctx context.Context, opts *Opts, db *sqlx.DB, store vulnstore.
 	}
 
 	// limit initial concurrent updates
-	cc := make(chan struct{}, opts.UpdaterInitConcurrency)
+	cc := make(chan struct{}, DefaultUpdaterInitConcurrency)
 
 	var wg sync.WaitGroup
 	wg.Add(len(controllers))
