@@ -76,14 +76,14 @@ const (
 	--- a unique distribution discovered by a scanner
 	CREATE TABLE IF NOT EXISTS dist (
 		id BIGSERIAL PRIMARY KEY,
-		name text,
-		did text, -- os-release id field
-		version text,
-		version_code_name text,
-		version_id text,
-		arch text,
-		cpe text,
-		pretty_name text
+		name text NOT NULL DEFAULT '',
+		did text NOT NULL DEFAULT '', -- os-release id field
+		version text NOT NULL DEFAULT '',
+		version_code_name text NOT NULL DEFAULT '',
+		version_id text NOT NULL DEFAULT '',
+		arch text NOT NULL DEFAULT '',
+		cpe text NOT NULL DEFAULT '',
+		pretty_name text NOT NULL DEFAULT ''
 	);
 	CREATE UNIQUE INDEX IF NOT EXISTS dist_unique_idx ON dist (name, did, version, version_code_name, version_id, arch, cpe, pretty_name);
 
@@ -112,12 +112,12 @@ const (
 	CREATE TABLE IF NOT EXISTS package (
 		id BIGSERIAL PRIMARY KEY,
 		name text NOT NULL,
-		kind text NOT NULL,
-		version text NOT NULL,
+		kind text NOT NULL DEFAULT '',
+		version text NOT NULL DEFAULT '',
 		norm_kind text,
 		norm_version integer[10],
-		module text NOT NULL,
-		arch text NOT NULL
+		module text NOT NULL DEFAULT '',
+		arch text NOT NULL DEFAULT ''
 	);
 	CREATE UNIQUE INDEX IF NOT EXISTS package_unique_idx ON package (name, version, kind, module, arch);
 
@@ -140,8 +140,8 @@ const (
 	CREATE TABLE IF NOT EXISTS repo (
 		id BIGSERIAL PRIMARY KEY,
 		name text NOT NULL,
-		key text,
-		uri text
+		key text DEFAULT '',
+		uri text DEFAULT ''
 	);
 	CREATE UNIQUE INDEX IF NOT EXISTS repo_unique_idx ON repo (name, key, uri);
 
