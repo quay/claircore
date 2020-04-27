@@ -36,7 +36,7 @@ type Opts struct {
 }
 
 // New is a constructor for an Controller
-func New(opts *Opts) *Controller {
+func NewController(opts *Opts) *Controller {
 	return &Controller{
 		Opts: opts,
 	}

@@ -33,7 +33,7 @@ func Test_Matcher_Integration(t *testing.T) {
 	m := &Matcher{}
 	// seed the test vulnstore with CVE data
 	deb := NewUpdater(Buster)
-	up := updater.New(&updater.Opts{
+	up := updater.NewController(&updater.Opts{
 		Name:    "test-debian-buster",
 		Updater: deb,
 		Store:   store,
