@@ -7,6 +7,44 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
+// eoan test data
+var eoanOSRelease []byte = []byte(`NAME="Ubuntu"
+VERSION="19.10 (Eoan Ermine)"
+ID=ubuntu
+ID_LIKE=debian
+PRETTY_NAME="Ubuntu 19.10"
+VERSION_ID="19.10"
+HOME_URL="https://www.ubuntu.com/"
+SUPPORT_URL="https://help.ubuntu.com/"
+BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
+PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+VERSION_CODENAME=eoan
+UBUNTU_CODENAME=eoan`)
+
+var eoanLSBRelease []byte = []byte(`DISTRIB_ID=Ubuntu
+DISTRIB_RELEASE=19.10
+DISTRIB_CODENAME=eoan
+DISTRIB_DESCRIPTION="Ubuntu 19.10"`)
+
+// focal test data
+var focalOSRelease []byte = []byte(`NAME="Ubuntu"
+VERSION="20.04 LTS (Focal Fossa)"
+ID=ubuntu
+ID_LIKE=debian
+PRETTY_NAME="Ubuntu 20.04 LTS"
+VERSION_ID="20.04"
+HOME_URL="https://www.ubuntu.com/"
+SUPPORT_URL="https://help.ubuntu.com/"
+BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
+PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+VERSION_CODENAME=focal
+UBUNTU_CODENAME=focal`)
+
+var focalLSBRelease []byte = []byte(`DISTRIB_ID=Ubuntu
+DISTRIB_RELEASE=20.04
+DISTRIB_CODENAME=focal
+DISTRIB_DESCRIPTION="Ubuntu 20.04 LTS"`)
+
 // artful test data
 var artfulOSRelease []byte = []byte(`NAME="Ubuntu"
 VERSION="17.10 (Artful Aardvark)"
@@ -178,6 +216,18 @@ func TestDistributionScanner(t *testing.T) {
 			release:    Xenial,
 			osRelease:  xenialOSRelease,
 			lsbRelease: xenialLSBRelease,
+		},
+		{
+			name:       "focal",
+			release:    Focal,
+			osRelease:  focalOSRelease,
+			lsbRelease: focalLSBRelease,
+		},
+		{
+			name:       "eoan",
+			release:    Eoan,
+			osRelease:  eoanOSRelease,
+			lsbRelease: eoanLSBRelease,
 		},
 	}
 	for _, tt := range table {
