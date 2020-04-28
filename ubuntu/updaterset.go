@@ -5,11 +5,9 @@ import (
 )
 
 var ubuntuReleases = []Release{
-	Artful,
 	Bionic,
 	Cosmic,
 	Disco,
-	Precise,
 	Trusty,
 	Xenial,
 }

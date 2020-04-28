@@ -7,11 +7,11 @@ import (
 type Release string
 
 const (
-	Artful  Release = "artful"
+	Artful  Release = "artful" // deprecated
 	Bionic  Release = "bionic"
 	Cosmic  Release = "cosmic"
 	Disco   Release = "disco"
-	Precise Release = "precise"
+	Precise Release = "precise" // deprecated
 	Trusty  Release = "trusty"
 	Xenial  Release = "xenial"
 )
