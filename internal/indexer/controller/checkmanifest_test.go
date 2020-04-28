@@ -82,6 +82,7 @@ func Test_CheckManifest_UnSeen(t *testing.T) {
 				m.EXPECT().SetIndexReport(gomock.Any(), gomock.Any()).Return(nil)
 				m.EXPECT().ManifestScanned(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, nil)
 				m.EXPECT().IndexReport(gomock.Any(), gomock.Any()).Return(&claircore.IndexReport{}, true, nil)
+				m.EXPECT().PersistManifest(gomock.Any(), gomock.Any()).Return(nil)
 				return m
 			},
 		},

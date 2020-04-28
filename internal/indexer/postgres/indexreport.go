@@ -26,7 +26,7 @@ func indexReport(ctx context.Context, db *sqlx.DB, hash claircore.Digest) (*clai
 		if err == sql.ErrNoRows {
 			return nil, false, nil
 		}
-		return nil, false, fmt.Errorf("store:indexReport failed to retrieve scanResult: %v", err)
+		return nil, false, fmt.Errorf("store:indexReport failed to retrieve index report: %v", err)
 	}
 
 	var sr claircore.IndexReport

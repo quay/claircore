@@ -5,54 +5,44 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/jmoiron/sqlx"
-
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
 )
 
-const (
-	selectScannerID = `SELECT id FROM scanner WHERE name = $1 AND version = $2;`
-	// artifacts for a layer are always persisted via a transaction thus finding a single
-	// artifact matching the name, version, and layer hash will signify a layer
-	// has been scanned by the scanner in question.
-	selectPackageScanArtifact      = `SELECT layer_hash FROM package_scanartifact WHERE layer_hash = $1 AND scanner_id = $2 LIMIT 1;`
-	selectDistributionScanArtifact = `SELECT layer_hash FROM dist_scanartifact WHERE layer_hash = $1 AND scanner_id = $2 LIMIT 1;`
-	selectRepositoryScanArtifact   = `SELECT layer_hash FROM repo_scanartifact WHERE layer_hash = $1 AND scanner_id = $2 LIMIT 1;`
-)
+func layerScanned(ctx context.Context, pool *pgxpool.Pool, hash claircore.Digest, scnr indexer.VersionedScanner) (bool, error) {
+	const (
+		// this query will return ErrNoRows  if the scanner is not present in the database
+		// (scanner_id: X, layer_hash: null) if the layer was not scanned by the provided scanner
+		// (scanner_id: X, layer_hash: XYZ)  if the layer has been scanned by the provided scnr
+		selectScanned = `
+		SELECT id      AS scanner_id,
+			   CASE
+				   WHEN (id IS NOT null) THEN
+					   (SELECT layer_hash FROM scanned_layer WHERE layer_hash = $1 AND scanner_id = scanner_id)
+				   END AS layer_hash
+		FROM scanner
+		WHERE name = $2
+		  AND version = $3
+		  AND kind = $4;
+		`
+	)
 
-func layerScanned(ctx context.Context, db *sqlx.DB, hash claircore.Digest, scnr indexer.VersionedScanner) (bool, error) {
-	// TODO Use passed-in Context.
 	var scannerID int64
-	err := db.Get(&scannerID, selectScannerID, scnr.Name(), scnr.Version())
+	var layerHash claircore.Digest
+
+	row := pool.QueryRow(ctx, selectScanned, hash, scnr.Name(), scnr.Version(), scnr.Kind())
+	err := row.Scan(&scannerID, &layerHash)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			// TODO: make error type to handle this case
-			return false, fmt.Errorf("scanner name and version not found in store")
+			return false, fmt.Errorf("scanner not found in store: %v", scnr)
 		}
 		return false, err
 	}
 
-	var layerHash claircore.Digest
-	var query string
-	switch scnr.Kind() {
-	case "package":
-		query = selectPackageScanArtifact
-	case "distribution":
-		query = selectDistributionScanArtifact
-	case "repository":
-		query = selectRepositoryScanArtifact
-	default:
-		return false, fmt.Errorf("received unkown scanner type: %v %v %v", scnr.Name(), scnr.Version(), scnr.Kind())
+	if layerHash.String() == "" {
+		return false, nil
 	}
-
-	err = db.Get(&layerHash, query, hash, scannerID)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return false, nil
-		}
-		return false, fmt.Errorf("failed to select scanartifact with layer hash: %v", err)
-	}
-
 	return true, nil
 }

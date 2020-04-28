@@ -12,20 +12,26 @@ import (
 	"github.com/quay/claircore/internal/indexer"
 )
 
-const (
-	selectReposByArtifactJoin = `SELECT
-	repo.id,
-	repo.name,
-	repo.key,
-	repo.uri
-FROM
-	repo_scanartifact
-	LEFT JOIN repo ON repo_scanartifact.repo_id = repo.id
-WHERE
-	repo_scanartifact.layer_hash = '%s' AND repo_scanartifact.scanner_id IN (?);`
-)
-
 func repositoriesByLayer(ctx context.Context, db *sqlx.DB, hash claircore.Digest, scnrs indexer.VersionedScanners) ([]*claircore.Repository, error) {
+	const (
+		selectScanner = `
+		SELECT id
+		FROM scanner
+		WHERE name = $1
+		  AND version = $2
+		  AND kind = $3;
+		`
+		query = `
+		SELECT repo.id,
+			   repo.name,
+			   repo.key,
+			   repo.uri
+		FROM repo_scanartifact
+				 LEFT JOIN repo ON repo_scanartifact.repo_id = repo.id
+		WHERE repo_scanartifact.layer_hash = '%s'
+		  AND repo_scanartifact.scanner_id IN (?);
+		`
+	)
 	// TODO Use passed-in Context.
 	if len(scnrs) == 0 {
 		return []*claircore.Repository{}, nil
@@ -34,7 +40,7 @@ func repositoriesByLayer(ctx context.Context, db *sqlx.DB, hash claircore.Digest
 	scannerIDs := []int64{}
 	for _, scnr := range scnrs {
 		var scannerID int64
-		err := db.Get(&scannerID, scannerIDByNameVersionKind, scnr.Name(), scnr.Version(), scnr.Kind())
+		err := db.Get(&scannerID, selectScanner, scnr.Name(), scnr.Version(), scnr.Kind())
 		if err != nil {
 			return nil, fmt.Errorf("store:repositoriesByLayer failed to retrieve scanner ids for scnr %v: %v", scnr, err)
 		}
@@ -45,7 +51,7 @@ func repositoriesByLayer(ctx context.Context, db *sqlx.DB, hash claircore.Digest
 
 	// rebind see: https://jmoiron.github.io/sqlx/ "in queries" section
 	// we need to format this query since an IN query can only have one bindvar. TODO: confirm this
-	withHash := fmt.Sprintf(selectReposByArtifactJoin, hash)
+	withHash := fmt.Sprintf(query, hash)
 	inQuery, args, err := sqlx.In(withHash, scannerIDs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to bind scannerIDs to query: %v", err)

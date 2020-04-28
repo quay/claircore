@@ -131,12 +131,18 @@ func (ls *layerScanner) scanPackages(ctx context.Context, layer *claircore.Layer
 
 	v, err := s.Scan(ctx, layer)
 	if err != nil {
-		return fmt.Errorf("%v(%v): %w", s.Name(), layer.Hash, err)
+		return fmt.Errorf("scanner: %v error: %v", s.Name(), err)
 	}
 	if v == nil {
 		return nil
 	}
-	return ls.Store.IndexPackages(ctx, v, layer, s)
+
+	err = ls.Store.IndexPackages(ctx, v, layer, s)
+	if err != nil {
+		return fmt.Errorf("scanner: %v error: %v", s.Name(), err)
+	}
+
+	return ls.Store.SetLayerScanned(ctx, layer.Hash, s)
 }
 
 func (ls *layerScanner) scanDists(ctx context.Context, layer *claircore.Layer, s indexer.DistributionScanner) error {
@@ -160,7 +166,13 @@ func (ls *layerScanner) scanDists(ctx context.Context, layer *claircore.Layer, s
 	if v == nil {
 		return nil
 	}
-	return ls.Store.IndexDistributions(ctx, v, layer, s)
+
+	err = ls.Store.IndexDistributions(ctx, v, layer, s)
+	if err != nil {
+		return fmt.Errorf("scanner: %v error: %v", s.Name(), err)
+	}
+
+	return ls.Store.SetLayerScanned(ctx, layer.Hash, s)
 }
 
 func (ls *layerScanner) scanRepos(ctx context.Context, layer *claircore.Layer, s indexer.RepositoryScanner) error {
@@ -184,5 +196,11 @@ func (ls *layerScanner) scanRepos(ctx context.Context, layer *claircore.Layer, s
 	if v == nil {
 		return nil
 	}
-	return ls.Store.IndexRepositories(ctx, v, layer, s)
+
+	err = ls.Store.IndexRepositories(ctx, v, layer, s)
+	if err != nil {
+		return fmt.Errorf("scanner: %v error: %v", s.Name(), err)
+	}
+
+	return ls.Store.SetLayerScanned(ctx, layer.Hash, s)
 }

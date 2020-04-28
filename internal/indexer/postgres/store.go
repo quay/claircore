@@ -32,14 +32,24 @@ func (s *store) Close(_ context.Context) error {
 	return s.db.Close()
 }
 
+func (s *store) PersistManifest(ctx context.Context, manifest claircore.Manifest) error {
+	err := persistManifest(ctx, s.pool, manifest)
+	return err
+}
+
 func (s *store) ManifestScanned(ctx context.Context, hash claircore.Digest, scnrs indexer.VersionedScanners) (bool, error) {
 	b, err := manifestScanned(ctx, s.db, hash, scnrs)
 	return b, err
 }
 
 func (s *store) LayerScanned(ctx context.Context, hash claircore.Digest, scnr indexer.VersionedScanner) (bool, error) {
-	b, err := layerScanned(ctx, s.db, hash, scnr)
+	b, err := layerScanned(ctx, s.pool, hash, scnr)
 	return b, err
+}
+
+func (s *store) SetLayerScanned(ctx context.Context, hash claircore.Digest, scnr indexer.VersionedScanner) error {
+	err := setLayerScanned(ctx, s.pool, hash, scnr)
+	return err
 }
 
 func (s *store) IndexPackages(ctx context.Context, pkgs []*claircore.Package, l *claircore.Layer, scnr indexer.VersionedScanner) error {
@@ -82,12 +92,12 @@ func (s *store) IndexReport(ctx context.Context, hash claircore.Digest) (*clairc
 	return sr, b, err
 }
 
-func (s *store) SetIndexReport(ctx context.Context, sr *claircore.IndexReport) error {
-	err := setIndexReport(ctx, s.db, sr)
+func (s *store) SetIndexReport(ctx context.Context, ir *claircore.IndexReport) error {
+	err := setIndexReport(ctx, s.db, ir)
 	return err
 }
 
-func (s *store) SetIndexFinished(ctx context.Context, sr *claircore.IndexReport, scnrs indexer.VersionedScanners) error {
-	err := setScanFinished(ctx, s.db, sr, scnrs)
+func (s *store) SetIndexFinished(ctx context.Context, ir *claircore.IndexReport, scnrs indexer.VersionedScanners) error {
+	err := setScanFinished(ctx, s.db, ir, scnrs)
 	return err
 }

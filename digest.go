@@ -119,11 +119,17 @@ func (d *Digest) setChecksum(b []byte) error {
 
 // Scan implements sql.Scanner.
 func (d *Digest) Scan(i interface{}) error {
-	s, ok := i.(string)
-	if !ok {
-		return &DigestError{msg: "invalid digest type"}
+	switch v := i.(type) {
+	case nil:
+		return nil
+	case string:
+		d.UnmarshalText([]byte(v))
+		return nil
+	default:
+		return &DigestError{msg: fmt.Sprintf("invalid digest type: %T", v)}
+
 	}
-	return d.UnmarshalText([]byte(s))
+	panic("the default case should return before this panic is reached.")
 }
 
 // Value implements driver.Valuer.
