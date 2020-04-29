@@ -14,6 +14,8 @@ const (
 	Precise Release = "precise" // deprecated
 	Trusty  Release = "trusty"
 	Xenial  Release = "xenial"
+	Eoan    Release = "eoan"
+	Focal   Release = "focal"
 )
 
 var AllReleases = map[Release]struct{}{
@@ -24,7 +26,10 @@ var AllReleases = map[Release]struct{}{
 	Precise: struct{}{},
 	Trusty:  struct{}{},
 	Xenial:  struct{}{},
+	Eoan:    struct{}{},
+	Focal:   struct{}{},
 }
+
 var ReleaseToVersionID = map[Release]string{
 	Artful:  "17.10",
 	Bionic:  "18.04",
@@ -33,6 +38,8 @@ var ReleaseToVersionID = map[Release]string{
 	Precise: "12.04",
 	Trusty:  "14.04",
 	Xenial:  "16.04",
+	Eoan:    "19.10",
+	Focal:   "20.04",
 }
 
 var artfulDist = &claircore.Distribution{
@@ -96,6 +103,24 @@ var xenialDist = &claircore.Distribution{
 	VersionCodeName: "xenial",
 }
 
+var eoanDist = &claircore.Distribution{
+	Name:            "Ubuntu",
+	Version:         "19.10 (Eoan Ermine)",
+	DID:             "ubuntu",
+	PrettyName:      "Ubuntu 19.10",
+	VersionID:       "19.10",
+	VersionCodeName: "eoan",
+}
+
+var focalDist = &claircore.Distribution{
+	Name:            "Ubuntu",
+	Version:         "20.04 LTS (Focal Fossa)",
+	DID:             "ubuntu",
+	PrettyName:      "Ubuntu 20.04 LTS",
+	VersionID:       "20.04",
+	VersionCodeName: "focal",
+}
+
 func releaseToDist(r Release) *claircore.Distribution {
 	switch r {
 	case Artful:
@@ -112,6 +137,10 @@ func releaseToDist(r Release) *claircore.Distribution {
 		return trustyDist
 	case Xenial:
 		return xenialDist
+	case Eoan:
+		return eoanDist
+	case Focal:
+		return focalDist
 	default:
 		// return empty dist
 		return &claircore.Distribution{}

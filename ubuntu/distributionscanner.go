@@ -52,6 +52,14 @@ var ubuntuRegexes = []ubuntuRegex{
 		release: Xenial,
 		regexp:  regexp.MustCompile(`(?is)\bubuntu\b.*\bxenial\b`),
 	},
+	{
+		release: Eoan,
+		regexp:  regexp.MustCompile(`(?is)\bubuntu\b.*\beoan\b`),
+	},
+	{
+		release: Focal,
+		regexp:  regexp.MustCompile(`(?is)\bubuntu\b.*\bfocal\b`),
+	},
 }
 
 const osReleasePath = `etc/os-release`

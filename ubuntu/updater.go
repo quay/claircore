@@ -28,6 +28,8 @@ var shouldBzipFetch = map[Release]bool{
 	Precise: false,
 	Trusty:  true,
 	Xenial:  true,
+	Focal:   true,
+	Eoan:    true,
 }
 
 var _ driver.Updater = (*Updater)(nil)
