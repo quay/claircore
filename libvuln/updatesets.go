@@ -10,6 +10,8 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/oracle"
 	"github.com/quay/claircore/photon"
+	"github.com/quay/claircore/pyupio"
+	"github.com/quay/claircore/rhel"
 	"github.com/quay/claircore/suse"
 	"github.com/quay/claircore/ubuntu"
 	"github.com/rs/zerolog"
@@ -21,6 +23,8 @@ var defaultSets = map[string]func() (driver.UpdaterSet, error){
 	"debian": debian.UpdaterSet,
 	"oracle": oracle.UpdaterSet,
 	"photon": photon.UpdaterSet,
+	"pyupio": pyupio.UpdaterSet,
+	"rhel":   rhel.UpdaterSet,
 	"suse":   suse.UpdaterSet,
 	"ubuntu": ubuntu.UpdaterSet,
 }
