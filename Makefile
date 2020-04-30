@@ -1,6 +1,11 @@
 docker ?= docker
 docker-compose ?= docker-compose
 
+# clears any go code in various caches
+.PHONY: clear-cache
+clear-cache:
+	go clean -cache -testcache -modcache
+
 # generates mocks of interfaces for testing
 .PHONY: genmocks
 genmocks:

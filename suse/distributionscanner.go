@@ -80,7 +80,7 @@ func (*DistributionScanner) Kind() string { return scannerKind }
 // and perform a regex match for keywords indicating the associated Suse release
 //
 // If neither file is found a (nil,nil) is returned.
-// If the files are found but all regexp fail to match an empty distribution is returned.
+// If the files are found but all regexp fail to match an empty slice is returned.
 func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Distribution, error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	log := zerolog.Ctx(ctx).With().
@@ -101,7 +101,7 @@ func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]
 			return []*claircore.Distribution{dist}, nil
 		}
 	}
-	return nil, nil
+	return []*claircore.Distribution{}, nil
 }
 
 // parse attempts to match all Suse release regexp and returns the associated
