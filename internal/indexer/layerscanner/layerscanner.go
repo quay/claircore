@@ -9,6 +9,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
+	"github.com/rs/zerolog"
 )
 
 // layerScanner implements the indexer.LayerScanner interface.
@@ -116,6 +117,13 @@ func (ls *layerScanner) Scan(ctx context.Context, manifest claircore.Digest, lay
 }
 
 func (ls *layerScanner) scanPackages(ctx context.Context, layer *claircore.Layer, s indexer.PackageScanner) error {
+	log := zerolog.Ctx(ctx).With().
+		Str("component", "internal/indexer/layerscannner/layerScanner.scanPackages").
+		Str("scanner", s.Name()).
+		Str("layer", layer.Hash.String()).
+		Logger()
+
+	log.Debug().Msg("starting package scan")
 	if err := ls.addToken(ctx); err != nil {
 		return err
 	}
@@ -126,6 +134,7 @@ func (ls *layerScanner) scanPackages(ctx context.Context, layer *claircore.Layer
 		return err
 	}
 	if ok {
+		log.Debug().Msg("layer already scanned")
 		return nil
 	}
 
@@ -133,19 +142,35 @@ func (ls *layerScanner) scanPackages(ctx context.Context, layer *claircore.Layer
 	if err != nil {
 		return fmt.Errorf("scanner: %v error: %v", s.Name(), err)
 	}
+	err = ls.Store.SetLayerScanned(ctx, layer.Hash, s)
+	if err != nil {
+		return fmt.Errorf("could not set layer scanned: %v", layer)
+	}
+
 	if v == nil {
+		log.Debug().Msg("scan returned a nil")
 		return nil
 	}
 
-	err = ls.Store.IndexPackages(ctx, v, layer, s)
-	if err != nil {
-		return fmt.Errorf("scanner: %v error: %v", s.Name(), err)
+	if len(v) > 0 {
+		log.Debug().Int("count", len(v)).Msg("scan returned packages")
+		err = ls.Store.IndexPackages(ctx, v, layer, s)
+		if err != nil {
+			return fmt.Errorf("scanner: %v error: %v", s.Name(), err)
+		}
 	}
 
-	return ls.Store.SetLayerScanned(ctx, layer.Hash, s)
+	return nil
 }
 
 func (ls *layerScanner) scanDists(ctx context.Context, layer *claircore.Layer, s indexer.DistributionScanner) error {
+	log := zerolog.Ctx(ctx).With().
+		Str("component", "internal/indexer/layerscannner/layerScanner.scanDists").
+		Str("scanner", s.Name()).
+		Str("layer", layer.Hash.String()).
+		Logger()
+
+	log.Debug().Msg("starting dist scan")
 	if err := ls.addToken(ctx); err != nil {
 		return err
 	}
@@ -156,6 +181,7 @@ func (ls *layerScanner) scanDists(ctx context.Context, layer *claircore.Layer, s
 		return err
 	}
 	if ok {
+		log.Debug().Msg("layer already scanned")
 		return nil
 	}
 
@@ -163,19 +189,35 @@ func (ls *layerScanner) scanDists(ctx context.Context, layer *claircore.Layer, s
 	if err != nil {
 		return fmt.Errorf("scanner: %v error: %v", s.Name(), err)
 	}
+	err = ls.Store.SetLayerScanned(ctx, layer.Hash, s)
+	if err != nil {
+		return fmt.Errorf("could not set layer scanned: %+v %+v", layer, s)
+	}
+
 	if v == nil {
+		log.Debug().Msg("scan returned a nil")
 		return nil
 	}
 
-	err = ls.Store.IndexDistributions(ctx, v, layer, s)
-	if err != nil {
-		return fmt.Errorf("scanner: %v error: %v", s.Name(), err)
+	if len(v) > 0 {
+		log.Debug().Int("count", len(v)).Msg("scan returned dists")
+		err = ls.Store.IndexDistributions(ctx, v, layer, s)
+		if err != nil {
+			return fmt.Errorf("scanner: %v error: %v", s.Name(), err)
+		}
 	}
 
-	return ls.Store.SetLayerScanned(ctx, layer.Hash, s)
+	return nil
 }
 
 func (ls *layerScanner) scanRepos(ctx context.Context, layer *claircore.Layer, s indexer.RepositoryScanner) error {
+	log := zerolog.Ctx(ctx).With().
+		Str("component", "internal/indexer/layerscannner/layerScanner.scanRepos").
+		Str("scanner", s.Name()).
+		Str("layer", layer.Hash.String()).
+		Logger()
+
+	log.Debug().Msg("starting repo scan")
 	if err := ls.addToken(ctx); err != nil {
 		return err
 	}
@@ -186,6 +228,7 @@ func (ls *layerScanner) scanRepos(ctx context.Context, layer *claircore.Layer, s
 		return err
 	}
 	if ok {
+		log.Debug().Msg("layer already scanned")
 		return nil
 	}
 
@@ -193,14 +236,23 @@ func (ls *layerScanner) scanRepos(ctx context.Context, layer *claircore.Layer, s
 	if err != nil {
 		return fmt.Errorf("scanner: %v error: %v", s.Name(), err)
 	}
+	err = ls.Store.SetLayerScanned(ctx, layer.Hash, s)
+	if err != nil {
+		return fmt.Errorf("could not set layer scanned: %v", layer)
+	}
+
 	if v == nil {
+		log.Debug().Msg("scan returned a nil")
 		return nil
 	}
 
-	err = ls.Store.IndexRepositories(ctx, v, layer, s)
-	if err != nil {
-		return fmt.Errorf("scanner: %v error: %v", s.Name(), err)
+	if len(v) > 0 {
+		log.Debug().Int("count", len(v)).Msg("scan returned repos")
+		err = ls.Store.IndexRepositories(ctx, v, layer, s)
+		if err != nil {
+			return fmt.Errorf("scanner: %v error: %v", s.Name(), err)
+		}
 	}
 
-	return ls.Store.SetLayerScanned(ctx, layer.Hash, s)
+	return nil
 }
