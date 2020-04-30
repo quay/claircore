@@ -5,6 +5,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
+	"github.com/quay/claircore/rhel"
 )
 
 // layerArifact aggregates the any artifacts found within a layer
@@ -44,6 +45,13 @@ func NewCoalescer() *Coalescer {
 func (c *Coalescer) Coalesce(ctx context.Context, artifacts []*indexer.LayerArtifacts) (*claircore.IndexReport, error) {
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
+	}
+	// Share repositories with layers where definition is missing
+	c.shareRepos(ctx, artifacts)
+	for _, a := range artifacts {
+		for _, repo := range a.Repos {
+			c.ir.Repositories[repo.ID] = repo
+		}
 	}
 	// In our coalescing logic if a Distribution is found in layer (n) all packages found
 	// in layers 0-(n) will be associated with this layer. This is a heuristic.
@@ -93,6 +101,11 @@ func (c *Coalescer) Coalesce(ctx context.Context, artifacts []*indexer.LayerArti
 						IntroducedIn:   layerArtifacts.Hash,
 						DistributionID: distID,
 					}
+					if len(layerArtifacts.Repos) != 0 {
+						for _, repo := range layerArtifacts.Repos {
+							environment.RepositoryIDs = append(environment.RepositoryIDs, repo.ID)
+						}
+					}
 					environments := map[string]*claircore.Environment{pkg.ID: environment}
 					dbs[pkg.PackageDB] = &packageDatabase{packages, environments}
 					continue
@@ -102,6 +115,11 @@ func (c *Coalescer) Coalesce(ctx context.Context, artifacts []*indexer.LayerArti
 						PackageDB:      pkg.PackageDB,
 						IntroducedIn:   layerArtifacts.Hash,
 						DistributionID: distID,
+					}
+					if len(layerArtifacts.Repos) != 0 {
+						for _, repo := range layerArtifacts.Repos {
+							environment.RepositoryIDs = append(environment.RepositoryIDs, repo.ID)
+						}
 					}
 					dbs[pkg.PackageDB].packages[pkg.ID] = pkg
 					dbs[pkg.PackageDB].environments[pkg.ID] = environment
@@ -136,13 +154,13 @@ func (c *Coalescer) Coalesce(ctx context.Context, artifacts []*indexer.LayerArti
 		for _, pkg := range layerArtifacts.Pkgs {
 			// have we already inventoried packages from this database ?
 			if _, ok := packagesToKeep[pkg.PackageDB]; !ok {
-				// ... we haven't so add to our temporary accumlator
+				// ... we haven't so add to our temporary accumulator
 				tk := tmpPackagesToKeep[pkg.PackageDB]
 				tmpPackagesToKeep[pkg.PackageDB] = append(tk, pkg.ID)
 			}
 		}
 		for k, v := range tmpPackagesToKeep {
-			// finished inventorying the layer, add our inventoried packges to our
+			// finished inventorying the layer, add our inventoried packages to our
 			// penultimate map ensuring next iteration will ignore packages from these databases
 			packagesToKeep[k] = v
 		}
@@ -169,4 +187,45 @@ func (c *Coalescer) Coalesce(ctx context.Context, artifacts []*indexer.LayerArti
 		}
 	}
 	return c.ir, nil
+}
+
+// shareRepos takes repository definition and share it with other layers
+// where repositories are missing
+func (c *Coalescer) shareRepos(ctx context.Context, artifacts []*indexer.LayerArtifacts) {
+	// User's layers build on top of Red Hat images doesn't have a repository definition.
+	// We need to share CPE repo definition to all layer where CPEs are missing
+	// This only applies to Red Hat images
+	var previousredHatCpeRepos []*claircore.Repository
+	for i := 0; i < len(artifacts); i++ {
+		redHatCpeRepos := getRedHatCPERepos(artifacts[i].Repos)
+		if len(redHatCpeRepos) != 0 {
+			previousredHatCpeRepos = redHatCpeRepos
+		} else {
+			artifacts[i].Repos = append(artifacts[i].Repos, previousredHatCpeRepos...)
+		}
+	}
+	// Tha same thing has to be done in reverse
+	// example:
+	//   Red Hat's base images doesn't have repository definition
+	//   We need to get them from layer[i+1]
+	for i := len(artifacts) - 1; i >= 0; i-- {
+		redHatCpeRepos := getRedHatCPERepos(artifacts[i].Repos)
+		if len(redHatCpeRepos) != 0 {
+			previousredHatCpeRepos = redHatCpeRepos
+		} else {
+			artifacts[i].Repos = append(artifacts[i].Repos, previousredHatCpeRepos...)
+		}
+	}
+
+}
+
+// getRedHatCPERepos finds Red Hat's CPE based repositories and return them
+func getRedHatCPERepos(repos []*claircore.Repository) []*claircore.Repository {
+	redHatCPERepos := []*claircore.Repository{}
+	for _, repo := range repos {
+		if repo.Key == rhel.RedHatCPERepositoryKey {
+			redHatCPERepos = append(redHatCPERepos, repo)
+		}
+	}
+	return redHatCPERepos
 }

@@ -62,9 +62,9 @@ func (c *coalescer) Coalesce(ctx context.Context, ls []*indexer.LayerArtifacts) 
 
 			ir.Environments[pkg.ID] = []*claircore.Environment{
 				&claircore.Environment{
-					PackageDB:    pkg.PackageDB,
-					IntroducedIn: l.Hash,
-					RepositoryID: repoid,
+					PackageDB:     pkg.PackageDB,
+					IntroducedIn:  l.Hash,
+					RepositoryIDs: []string{repoid},
 				},
 			}
 		}

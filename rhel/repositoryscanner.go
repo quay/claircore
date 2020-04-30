@@ -24,6 +24,9 @@ type RepositoryScanner struct {
 	CpeFetcher CpeFetcher
 }
 
+// RedHatCPERepositoryKey is a key of Red Hat's CPE based repository
+const RedHatCPERepositoryKey = "rhel-cpe-repo"
+
 // Name implements scanner.Name.
 func (*RepositoryScanner) Name() string { return "rhel-cpe-scanner" }
 
@@ -57,7 +60,7 @@ func (rs *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) (repo
 	for _, cpe := range cpes {
 		repository := &claircore.Repository{
 			Name: cpe,
-			Key:  "rhel-cpe-repo",
+			Key:  RedHatCPERepositoryKey,
 		}
 		repositories = append(repositories, repository)
 	}
