@@ -70,7 +70,6 @@ func (rs *RepoScanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*cla
 		return nil, errors.New("python: cannot seek on returned layer Reader")
 	}
 
-	var ret []*claircore.Repository
 	tr := tar.NewReader(rd)
 	var h *tar.Header
 	for h, err = tr.Next(); err == nil; h, err = tr.Next() {
@@ -90,14 +89,11 @@ func (rs *RepoScanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*cla
 			continue
 		}
 
-		// we found at least one python repository,
-		// return this event.
-		repo := Repository
-		ret = append(ret, &repo)
-		return ret, nil
+		// Just claim these came from pypi.
+		return []*claircore.Repository{&Repository}, nil
 	}
 	if err != io.EOF {
 		return nil, err
 	}
-	return ret, nil
+	return nil, nil
 }

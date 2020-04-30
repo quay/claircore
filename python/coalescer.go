@@ -22,22 +22,23 @@ func (c *coalescer) Coalesce(ctx context.Context, ls []*indexer.LayerArtifacts) 
 	}
 
 	for _, l := range ls {
-		// if we didnt' find at least one pip repo in this layer
-		// no point in searching for packages
+		// If we didn't find at least one pip repo in this layer
+		// no point in searching for packages.
 		if len(l.Repos) == 0 {
 			continue
 		}
-		// we found at least one pip repo lets grab it.
-		repo := l.Repos[0]
-
+		rs := make([]string, len(l.Repos))
+		for i, r := range l.Repos {
+			rs[i] = r.ID
+			ir.Repositories[r.ID] = r
+		}
 		for _, pkg := range l.Pkgs {
 			ir.Packages[pkg.ID] = pkg
-			ir.Repositories[repo.ID] = repo
 			ir.Environments[pkg.ID] = []*claircore.Environment{
 				&claircore.Environment{
-					PackageDB:    pkg.PackageDB,
-					IntroducedIn: l.Hash,
-					RepositoryID: repo.ID,
+					PackageDB:     pkg.PackageDB,
+					IntroducedIn:  l.Hash,
+					RepositoryIDs: rs,
 				},
 			}
 		}
