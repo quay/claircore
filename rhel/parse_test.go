@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/quay/goval-parser/oval"
 
@@ -155,15 +156,14 @@ var ovalDef = oval.Definition{XMLName: xml.Name{Space: "http://oval.mitre.org/XM
 		AffectedCPEList: []string{"cpe:/o:redhat:enterprise_linux:3"},
 		Refs:            []oval.Ref(nil),
 		Bugs:            []oval.Bug(nil),
-		Issued: struct {
-			Date string "xml:\"date,attr\""
-		}{
-			Date: "2010-05-06"},
-		Updated: struct {
-			Date string "xml:\"date,attr\""
-		}{
-			Date: "2010-05-06"}},
-	Debian: oval.Debian{XMLName: xml.Name{Space: "", Local: ""}, MoreInfo: "", Date: ""},
+		Issued: oval.Date{
+			Date: time.Date(2010, 5, 6, 0, 0, 0, 0, time.UTC),
+		},
+		Updated: oval.Date{
+			Date: time.Date(2010, 5, 6, 0, 0, 0, 0, time.UTC),
+		},
+	},
+	Debian: oval.Debian{XMLName: xml.Name{Space: "", Local: ""}, MoreInfo: "", Date: oval.Date{Date: time.Time{}}},
 	Criteria: oval.Criteria{XMLName: xml.Name{Space: "http://oval.mitre.org/XMLSchema/oval-definitions-5", Local: "criteria"},
 		Operator: "AND",
 		Criterias: []oval.Criteria{
