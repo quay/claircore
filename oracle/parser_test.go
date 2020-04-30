@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/quay/goval-parser/oval"
 
@@ -74,9 +75,9 @@ var ovalDef = oval.Definition{XMLName: xml.Name{Space: "http://oval.mitre.org/XM
 				CveID: "CVE-2016-5416",
 				Href:  "http://linux.oracle.com/cve/CVE-2016-5416.html"},
 		},
-		Issued: struct {
-			Date string "xml:\"date,attr\""
-		}{Date: "2016-11-09"},
+		Issued: oval.Date{
+			Date: time.Date(2016, 11, 9, 0, 0, 0, 0, time.UTC),
+		},
 	},
 	Criteria: oval.Criteria{XMLName: xml.Name{Space: "http://oval.mitre.org/XMLSchema/oval-definitions-5", Local: "criteria"},
 		Operator: "AND",
