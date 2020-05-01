@@ -1,0 +1,98 @@
+# Generation of Kubernetes YAML is still under development!
+#
+# Save the output of this file and use kubectl create -f to import
+# it into Kubernetes.
+#
+# Created with podman-1.8.2
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: claircore-dev
+  name: claircore-dev
+spec:
+  containers:
+    - command: ['go', 'run', '-mod=vendor', '.']
+      env:
+        - name: HTTP_LISTEN_ADDR
+          value: 0.0.0.0:8081
+        - name: CONNECTION_STRING
+          value: >-
+            host=localhost
+            port=5434
+            user=claircore
+            dbname=claircore
+            sslmode=disable
+        - name: LOG_LEVEL
+          value: debug
+      image: quay.io/claircore/golang:1.13.5
+      name: libvulnhttp
+      restartPolicy: OnFailure
+      ports:
+        - containerPort: 8081
+          hostPort: 8081
+          protocol: TCP
+      securityContext:
+        allowPrivilegeEscalation: true
+      volumeMounts:
+        - mountPath: /src/claircore
+          name: reporoot
+      workingDir: /src/claircore/cmd/libvulnhttp
+    - command: ['go', 'run', '-mod=vendor', '.']
+      env:
+        - name: LOG_LEVEL
+          value: debug
+        - name: HTTP_LISTEN_ADDR
+          value: 0.0.0.0:8080
+        - name: LAYER_SCAN_CONCURRENCY
+          value: "10"
+        - name: CONNECTION_STRING
+          value: >-
+            host=localhost
+            port=5434
+            user=claircore
+            dbname=claircore
+            sslmode=disable
+        - name: SCAN_LOCK_RETRY
+          value: "1"
+      image: quay.io/claircore/golang:1.13.5
+      name: libindexhttp
+      restartPolicy: OnFailure
+      ports:
+        - containerPort: 8080
+          hostPort: 8080
+          protocol: TCP
+      securityContext:
+        allowPrivilegeEscalation: true
+      volumeMounts:
+        - mountPath: /src/claircore
+          name: reporoot
+      workingDir: /src/claircore/cmd/libindexhttp
+    - command: ['postgres']
+      env:
+        - name: POSTGRES_INITDB_ARGS
+          value: --no-sync
+        - name: POSTGRES_HOST_AUTH_METHOD
+          value: trust
+        - name: PGPORT
+          value: "5434"
+        - name: POSTGRES_USER
+          value: claircore
+        - name: POSTGRES_DB
+          value: claircore
+      image: docker.io/library/postgres:11
+      name: claircore-database
+      restartPolicy: OnFailure
+      ports:
+        - containerPort: 5434
+          hostPort: 5434
+          protocol: TCP
+      securityContext:
+        allowPrivilegeEscalation: true
+      workingDir: /
+  volumes:
+    - hostPath:
+        path: _ROOT
+        type: Directory
+      name: reporoot
