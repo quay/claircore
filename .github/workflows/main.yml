@@ -30,6 +30,7 @@ jobs:
         env:
           POSTGRES_USER: "claircore"
           POSTGRES_DB: "claircore"
+          POSTGRES_INITDB_ARGS: "--no-sync"
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
