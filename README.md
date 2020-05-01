@@ -1,4 +1,4 @@
-[![Build Status](https://cloud.drone.io/api/badges/quay/claircore/status.svg)](https://cloud.drone.io/quay/claircore)  
+![](https://github.com/quay/claircore/workflows/CI/badge.svg)
 # ClairCore
 
 ClairCore provides a set of go modules which handle scanning container layers for installed packages and reporting any discovered vulnerabilities.  
