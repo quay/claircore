@@ -1,12 +1,12 @@
 # Severity Mapping
 
-ClairCore will normalize a security databases's severity string to a set of defined values.  
-Clients may use the `NormalizedSeverity` field on a `claircore.Vulnerability` to react to vulnerability severities without needing to know each security database's severity strings.  
-All strings used in the mapping tables are identical to the strings found within the relevant security database.  
+ClairCore will normalize a security databases's severity string to a set of defined values.
+Clients may use the `NormalizedSeverity` field on a `claircore.Vulnerability` to react to vulnerability severities without needing to know each security database's severity strings.
+All strings used in the mapping tables are identical to the strings found within the relevant security database.
 
 ## ClairCore Severity Strings
-The following are severity strings ClairCore will normalize others to.  
-Clients can guarantee one of these strings will be associated with a claircore.Vulnerability.  
+The following are severity strings ClairCore will normalize others to.
+Clients can guarantee one of these strings will be associated with a claircore.Vulnerability.
 ```
 Unknown
 Negligible
@@ -19,8 +19,8 @@ Defcon1
 
 ## Alpine Mapping
 
-Alpine SecDB database does not provide severity information.  
-All vulnerability severities will be Unknown.  
+Alpine SecDB database does not provide severity information.
+All vulnerability severities will be Unknown.
 
 | Alpine Severity | Clair Severity |
 | - | - |
@@ -28,7 +28,7 @@ All vulnerability severities will be Unknown.
 
 ## AWS Mapping
 
-AWS UpdateInfo database provides severity information.  
+AWS UpdateInfo database provides severity information.
 
 | AWS Severity | Clair Severity |
 | - | - |
@@ -39,8 +39,8 @@ AWS UpdateInfo database provides severity information.
 
 ## Debian Mapping
 
-Debian Oval database does not provide severity information.  
-All vulnerability severities will be Unknown.  
+Debian Oval database does not provide severity information.
+All vulnerability severities will be Unknown.
 
 | Debian Severity | Clair Severity |
 | - | - |
@@ -48,7 +48,7 @@ All vulnerability severities will be Unknown.
 
 ## Oracle Mapping
 
-Oracle Oval database provides severity information.  
+Oracle Oval database provides severity information.
 
 | Oracle Severity | Clair Severity |
 | - | - |
@@ -60,7 +60,7 @@ Oracle Oval database provides severity information.
 
 ## RHEL Mapping
 
-RHEL Oval database provides severity information.  
+RHEL Oval database provides severity information.
 
 | RHEL Severity | Clair Severity |
 | - | - |
@@ -72,7 +72,7 @@ RHEL Oval database provides severity information.
 
 ## SUSE Mapping
 
-SUSE Oval database provides severity information.  
+SUSE Oval database provides severity information.
 
 | SUSE Severity | Clair Severity |
 | - | - |
@@ -84,7 +84,7 @@ SUSE Oval database provides severity information.
 
 ## Ubuntu Mapping
 
-Ubuntu Oval database provides severity information.   
+Ubuntu Oval database provides severity information.
 
 | Ubuntu Severity | Clair Severity |
 | - | - |
@@ -95,3 +95,11 @@ Ubuntu Oval database provides severity information.
 | High | High |
 | Critical | Critical |
 
+## Pyupio Mapping
+
+The pyup.io database does not have a concept of "severity".
+All vulnerability severities will be Unknown.
+
+| Pyupio Severity | Clair Severity |
+| - | - |
+| * | Unknown |

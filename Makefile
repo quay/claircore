@@ -78,59 +78,17 @@ libindexhttp-restart:
 libvulnhttp-restart:
 	$(docker-compose) up -d --force-recreate libvulnhttp
 
-.PHONY: podman-dev-up
-podman-dev-up:
-	podman pod create\
-		--publish 5434\
-		--publish 8080\
-		--publish 8081\
-		--name claircore-dev
-	podman create\
-		--pod claircore-dev\
-		--name claircore-database\
-		--env POSTGRES_USER=claircore\
-		--env POSTGRES_DB=claircore\
-		--env POSTGRES_INITDB_ARGS="--no-sync"\
-		--env POSTGRES_HOST_AUTH_METHOD=trust\
-		--env PGPORT=5434\
-		--expose 5434\
-		--health-cmd "pg_isready -U claircore -d claircore"\
-		postgres:11
-	podman pod start claircore-dev
-	until podman healthcheck run claircore-database; do sleep 2; done
-	go mod vendor
-	podman create\
-		--pod claircore-dev\
-		--name libindexhttp\
-		--env HTTP_LISTEN_ADDR="0.0.0.0:8080"\
-		--env CONNECTION_STRING="host=localhost port=5434 user=claircore dbname=claircore sslmode=disable"\
-		--env SCAN_LOCK_RETRY=1\
-		--env LAYER_SCAN_CONCURRENCY=10\
-		--env LOG_LEVEL="debug"\
-		--expose 8080\
-		--volume $$(git rev-parse --show-toplevel)/:/src/claircore/:z\
-		quay.io/claircore/golang:$(GO_VERSION)\
-		bash -c 'cd /src/claircore/cmd/libindexhttp; exec go run -mod vendor .'
-	podman create\
-		--pod claircore-dev\
-		--name libvulnhttp\
-		--env HTTP_LISTEN_ADDR="0.0.0.0:8081"\
-		--env CONNECTION_STRING="host=localhost port=5434 user=claircore dbname=claircore sslmode=disable"\
-		--env LOG_LEVEL="debug"\
-		--expose 8081\
-		--volume $$(git rev-parse --show-toplevel)/:/src/claircore/:z\
-		quay.io/claircore/golang:$(GO_VERSION)\
-		bash -c 'cd /src/claircore/cmd/libvulnhttp; exec go run -mod vendor .'
-	podman pod start claircore-dev
+etc/podman.yaml: etc/podman.yaml.in
+	m4 -D_ROOT=$$(git rev-parse --show-toplevel) <$< >$@
 
-# TODO(hank) When the latest podman lands with 'generate systemd' support for
-# pods, use it here.
+.PHONY: podman-dev-up
+podman-dev-up: etc/podman.yaml
+	podman play kube $<
 
 .PHONY: podman-dev-down
-podman-dev-down:
-	podman pod stop -t 10 claircore-dev
-	true $(foreach c,claircore-database libindexhttp libvulnhttp,&& podman rm -v $c)
-	podman pod rm claircore-dev
+podman-dev-down: etc/podman.yaml
+	podman pod stop -t 10 $$(awk '/^  name:/{print $$NF}' <$<)
+	podman pod rm $$(awk '/^  name:/{print $$NF}' <$<)
 
 GO_VERSION ?= 1.13.5
 GO_CHECKSUM ?= 512103d7ad296467814a6e3f635631bd35574cab3369a97a323c9a585ccaa569
