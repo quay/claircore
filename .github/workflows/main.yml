@@ -17,3 +17,33 @@ jobs:
 
       - name: mdBook Build
         run: mdbook build
+
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    container: docker.io/library/golang:${{ matrix.go }}-buster
+    env:
+      POSTGRES_CONNECTION_STRING: "host=claircore-db port=5432 user=claircore dbname=claircore sslmode=disable"
+    services:
+      claircore-db:
+        image: postgres:11.5
+        env:
+          POSTGRES_USER: "claircore"
+          POSTGRES_DB: "claircore"
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    strategy:
+      matrix:
+        go: ['1.13', '1.14']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: OS Dependencies
+        run: apt-get update && apt-get install -y tar make gcc
+      - name: Go Dependencies
+        run: go mod vendor
+      - name: Tests
+        run: make integration
