@@ -153,11 +153,11 @@
                 <div id="content" class="content">
                     <main>
                         <h1><a class="header" href="#severity-mapping" id="severity-mapping">Severity Mapping</a></h1>
-<p>ClairCore will normalize a security databases's severity string to a set of defined values.<br />
-Clients may use the <code>NormalizedSeverity</code> field on a <code>claircore.Vulnerability</code> to react to vulnerability severities without needing to know each security database's severity strings.<br />
+<p>ClairCore will normalize a security databases's severity string to a set of defined values.
+Clients may use the <code>NormalizedSeverity</code> field on a <code>claircore.Vulnerability</code> to react to vulnerability severities without needing to know each security database's severity strings.
 All strings used in the mapping tables are identical to the strings found within the relevant security database.</p>
 <h2><a class="header" href="#claircore-severity-strings" id="claircore-severity-strings">ClairCore Severity Strings</a></h2>
-<p>The following are severity strings ClairCore will normalize others to.<br />
+<p>The following are severity strings ClairCore will normalize others to.
 Clients can guarantee one of these strings will be associated with a claircore.Vulnerability.</p>
 <pre><code>Unknown
 Negligible
@@ -168,7 +168,7 @@ Critical
 Defcon1
 </code></pre>
 <h2><a class="header" href="#alpine-mapping" id="alpine-mapping">Alpine Mapping</a></h2>
-<p>Alpine SecDB database does not provide severity information.<br />
+<p>Alpine SecDB database does not provide severity information.
 All vulnerability severities will be Unknown.</p>
 <table><thead><tr><th>Alpine Severity</th><th>Clair Severity</th></tr></thead><tbody>
 <tr><td>*</td><td>Unknown</td></tr>
@@ -182,7 +182,7 @@ All vulnerability severities will be Unknown.</p>
 <tr><td>critical</td><td>Critical</td></tr>
 </tbody></table>
 <h2><a class="header" href="#debian-mapping" id="debian-mapping">Debian Mapping</a></h2>
-<p>Debian Oval database does not provide severity information.<br />
+<p>Debian Oval database does not provide severity information.
 All vulnerability severities will be Unknown.</p>
 <table><thead><tr><th>Debian Severity</th><th>Clair Severity</th></tr></thead><tbody>
 <tr><td>*</td><td>Unknown</td></tr>
@@ -223,6 +223,12 @@ All vulnerability severities will be Unknown.</p>
 <tr><td>Medium</td><td>Medium</td></tr>
 <tr><td>High</td><td>High</td></tr>
 <tr><td>Critical</td><td>Critical</td></tr>
+</tbody></table>
+<h2><a class="header" href="#pyupio-mapping" id="pyupio-mapping">Pyupio Mapping</a></h2>
+<p>The pyup.io database does not have a concept of &quot;severity&quot;.
+All vulnerability severities will be Unknown.</p>
+<table><thead><tr><th>Pyupio Severity</th><th>Clair Severity</th></tr></thead><tbody>
+<tr><td>*</td><td>Unknown</td></tr>
 </tbody></table>
 
                     </main>
