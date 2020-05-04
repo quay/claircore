@@ -15,17 +15,17 @@ func init() {
 	moduleComentRegex = regexp.MustCompile(`(Module )(.*)( is enabled)`)
 }
 
-// ProtoVulnFunc allows a caller to create a prototype vulnerability that will be used
+// ProtoVulnsFunc allows a caller to create a prototype vulnerabilities that will be used
 // copied and further defined for every applicable oval.Criterion discovered.
 //
 // This allows the caller to use oval.Definition fields and closure syntax when
 // defining how a vulnerability should be parsed
-type ProtoVulnFunc func(def oval.Definition) (*claircore.Vulnerability, error)
+type ProtoVulnsFunc func(def oval.Definition) ([]*claircore.Vulnerability, error)
 
 // RPMDefsToVulns iterates over the definitions in an oval root and assumes RPMInfo objects and states.
 //
 // Each Criterion encountered with an EVR string will be tranlated into a claircore.Vulnerability
-func RPMDefsToVulns(ctx context.Context, root oval.Root, protoVuln ProtoVulnFunc) ([]*claircore.Vulnerability, error) {
+func RPMDefsToVulns(ctx context.Context, root oval.Root, protoVulns ProtoVulnsFunc) ([]*claircore.Vulnerability, error) {
 	log := zerolog.Ctx(ctx).With().
 		Str("component", "ovalutil/RPMDefsToVulns").
 		Logger()
@@ -35,7 +35,7 @@ func RPMDefsToVulns(ctx context.Context, root oval.Root, protoVuln ProtoVulnFunc
 	cris := []*oval.Criterion{}
 	for _, def := range root.Definitions.Definitions {
 		// create our prototype vulnerability
-		protoVuln, err := protoVuln(def)
+		protoVulns, err := protoVulns(def)
 		if err != nil {
 			log.Debug().Err(err).Str("def_id", def.ID).Msg("could not create prototype vuln")
 			continue
@@ -85,21 +85,24 @@ func RPMDefsToVulns(ctx context.Context, root oval.Root, protoVuln ProtoVulnFunc
 				}
 
 				for _, module := range enabledModules {
-					vuln := *protoVuln
-					vuln.FixedInVersion = state.EVR.Body
+					for _, protoVuln := range protoVulns {
 
-					pkgCacheKey := object.Name + module
-					if pkg, ok := pkgcache[pkgCacheKey]; !ok {
-						p := &claircore.Package{
-							Name:   object.Name,
-							Module: module,
+						vuln := *protoVuln
+						vuln.FixedInVersion = state.EVR.Body
+
+						pkgCacheKey := object.Name + module
+						if pkg, ok := pkgcache[pkgCacheKey]; !ok {
+							p := &claircore.Package{
+								Name:   object.Name,
+								Module: module,
+							}
+							pkgcache[pkgCacheKey] = p
+							vuln.Package = p
+						} else {
+							vuln.Package = pkg
 						}
-						pkgcache[pkgCacheKey] = p
-						vuln.Package = p
-					} else {
-						vuln.Package = pkg
+						vulns = append(vulns, &vuln)
 					}
-					vulns = append(vulns, &vuln)
 				}
 			}
 		}
