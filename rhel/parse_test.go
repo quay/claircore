@@ -20,7 +20,7 @@ func TestParse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	f, err := os.Open("testdata/Red_Hat_Enterprise_Linux_3.xml")
+	f, err := os.Open("testdata/com.redhat.rhsa-20201980.xml")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -30,10 +30,20 @@ func TestParse(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Logf("found %d vulnerabilities", len(vs))
-	// I think there's 3510 vulnerabilities in the rhel3 database, including the
-	// EOL notices.
-	if got, want := len(vs), 3510; got != want {
+	// 16 packages, 2 cpes = 32 vulnerabilities
+	if got, want := len(vs), 32; got != want {
 		t.Fatalf("got: %d vulnerabilities, want: %d vulnerabilities", got, want)
+	}
+	cpeCountTable := make(map[string]int)
+	for _, vuln := range vs {
+		if _, ok := cpeCountTable[vuln.Repo.Name]; !ok {
+			cpeCountTable[vuln.Repo.Name] = 0
+		}
+		cpeCountTable[vuln.Repo.Name]++
+	}
+
+	if cpeCountTable["cpe:/a:redhat:enterprise_linux:8"] != 16 || cpeCountTable["cpe:/a:redhat:enterprise_linux:8::appstream"] != 16 {
+		t.Fatalf("got: %v vulnerabilities with, want 16 of each", cpeCountTable)
 	}
 }
 

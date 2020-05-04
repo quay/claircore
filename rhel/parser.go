@@ -25,20 +25,26 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 	}
 	log.Debug().Msg("xml decoded")
 	protoVulns := func(def oval.Definition) ([]*claircore.Vulnerability, error) {
-		return []*claircore.Vulnerability{
-			&claircore.Vulnerability{
+		protoVulnerabilities := []*claircore.Vulnerability{}
+		for _, affectedCPE := range def.Advisory.AffectedCPEList {
+			vuln := &claircore.Vulnerability{
 				Updater:            u.Name(),
 				Name:               def.Title,
 				Description:        def.Description,
 				Links:              ovalutil.Links(def),
 				Severity:           def.Advisory.Severity,
 				NormalizedSeverity: NormalizeSeverity(def.Advisory.Severity),
+				Repo: &claircore.Repository{
+					Name: affectedCPE,
+				},
 				// each updater is configured to parse a rhel release
 				// specific xml database. we'll use the updater's release
 				// to map the parsed vulnerabilities
 				Dist: releaseToDist(u.release),
-			},
-		}, nil
+			}
+			protoVulnerabilities = append(protoVulnerabilities, vuln)
+		}
+		return protoVulnerabilities, nil
 	}
 	vulns, err := ovalutil.RPMDefsToVulns(ctx, root, protoVulns)
 	if err != nil {
