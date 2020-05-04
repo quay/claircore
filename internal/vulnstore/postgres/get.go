@@ -84,10 +84,10 @@ func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.IndexReco
 				&v.Dist.VersionID,
 				&v.Dist.Arch,
 				&v.Dist.CPE,
+				&v.Dist.PrettyName,
 				&v.Repo.Name,
 				&v.Repo.Key,
 				&v.Repo.URI,
-				&v.Dist.PrettyName,
 				&v.FixedInVersion,
 				&v.Updater,
 			)
