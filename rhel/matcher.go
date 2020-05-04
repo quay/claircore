@@ -19,19 +19,13 @@ func (*Matcher) Name() string {
 
 // Filter implements driver.Matcher.
 func (*Matcher) Filter(record *claircore.IndexRecord) bool {
-	return record.Distribution != nil &&
-		record.Distribution.DID == "rhel"
+	return record.Repository != nil && record.Repository.Key == RedHatCPERepositoryKey
 }
 
 // Query implements driver.Matcher.
 func (*Matcher) Query() []driver.MatchConstraint {
-	// TODO(hank) This would ideally use CPE, but that requires implementing
-	// some database logic to compare CPEs and changing schema to be able to
-	// associate multiple CPEs with a given vulnerability.
 	return []driver.MatchConstraint{
-		//driver.PackageDistributionCPE,
-		driver.DistributionName,
-		driver.DistributionPrettyName,
+		driver.RepositoryName,
 		driver.PackageModule,
 	}
 }
