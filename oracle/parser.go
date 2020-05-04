@@ -43,7 +43,7 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 		return nil, fmt.Errorf("oracle: unable to decode OVAL document: %w", err)
 	}
 	log.Debug().Msg("xml decoded")
-	protoVuln := func(def oval.Definition) (*claircore.Vulnerability, error) {
+	protoVulns := func(def oval.Definition) ([]*claircore.Vulnerability, error) {
 		// In all oracle databases tested a single
 		// and correct platform string can be found inside a definition
 		// search is for good measure
@@ -60,17 +60,18 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 		if dist == nil {
 			return nil, fmt.Errorf("could not determine dist")
 		}
-		return &claircore.Vulnerability{
-			Updater:            u.Name(),
-			Name:               def.Title,
-			Description:        def.Description,
-			Links:              ovalutil.Links(def),
-			Severity:           def.Advisory.Severity,
-			NormalizedSeverity: NormalizeSeverity(def.Advisory.Severity),
-			Dist:               dist,
-		}, nil
+		return []*claircore.Vulnerability{
+			&claircore.Vulnerability{
+				Updater:            u.Name(),
+				Name:               def.Title,
+				Description:        def.Description,
+				Links:              ovalutil.Links(def),
+				Severity:           def.Advisory.Severity,
+				NormalizedSeverity: NormalizeSeverity(def.Advisory.Severity),
+				Dist:               dist,
+			}}, nil
 	}
-	vulns, err := ovalutil.RPMDefsToVulns(ctx, root, protoVuln)
+	vulns, err := ovalutil.RPMDefsToVulns(ctx, root, protoVulns)
 	if err != nil {
 		return nil, err
 	}

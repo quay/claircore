@@ -27,21 +27,22 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 		return nil, fmt.Errorf("suse: unable to decode OVAL document: %w", err)
 	}
 	log.Debug().Msg("xml decoded")
-	protoVuln := func(def oval.Definition) (*claircore.Vulnerability, error) {
-		return &claircore.Vulnerability{
-			Updater:            u.Name(),
-			Name:               def.Title,
-			Description:        def.Description,
-			Links:              ovalutil.Links(def),
-			Severity:           def.Advisory.Severity,
-			NormalizedSeverity: NormalizeSeverity(def.Advisory.Severity),
-			// each updater is configured to parse a suse release
-			// specific xml database. we'll use the updater's release
-			// to map the parsed vulnerabilities
-			Dist: releaseToDist(u.release),
-		}, nil
+	protoVulns := func(def oval.Definition) ([]*claircore.Vulnerability, error) {
+		return []*claircore.Vulnerability{
+			&claircore.Vulnerability{
+				Updater:            u.Name(),
+				Name:               def.Title,
+				Description:        def.Description,
+				Links:              ovalutil.Links(def),
+				Severity:           def.Advisory.Severity,
+				NormalizedSeverity: NormalizeSeverity(def.Advisory.Severity),
+				// each updater is configured to parse a suse release
+				// specific xml database. we'll use the updater's release
+				// to map the parsed vulnerabilities
+				Dist: releaseToDist(u.release),
+			}}, nil
 	}
-	vulns, err := ovalutil.RPMDefsToVulns(ctx, root, protoVuln)
+	vulns, err := ovalutil.RPMDefsToVulns(ctx, root, protoVulns)
 	if err != nil {
 		return nil, err
 	}
