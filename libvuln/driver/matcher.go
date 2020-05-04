@@ -33,6 +33,8 @@ const (
 	DistributionCPE
 	// should match claircore.Package.Distribution.PrettyName => claircore.Vulnerability.Package.Distribution.PrettyName
 	DistributionPrettyName
+	// should match claircore.Package.Repository.Name => claircore.Vulnerability.Package.Repository.Name
+	RepositoryName
 )
 
 // Matcher is an interface which a Controller uses to query the vulnstore for vulnerabilities.

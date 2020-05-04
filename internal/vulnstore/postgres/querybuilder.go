@@ -61,6 +61,8 @@ func buildGetQuery(record *claircore.IndexRecord, opts *vulnstore.GetOpts) (stri
 			ex = goqu.Ex{"dist_cpe": record.Distribution.CPE}
 		case driver.DistributionArch:
 			ex = goqu.Ex{"dist_arch": record.Distribution.Arch}
+		case driver.RepositoryName:
+			ex = goqu.Ex{"repo_name": record.Repository.Name}
 		default:
 			return "", fmt.Errorf("was provided unknown matcher: %v", m)
 		}
