@@ -9,6 +9,7 @@ import (
 	"github.com/quay/claircore/dpkg"
 	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/python"
+	"github.com/quay/claircore/rhel"
 	"github.com/quay/claircore/rpm"
 )
 
@@ -65,6 +66,7 @@ func (o *Opts) Parse() error {
 		o.Ecosystems = []*indexer.Ecosystem{
 			dpkg.NewEcosystem(ctx),
 			alpine.NewEcosystem(ctx),
+			rhel.NewEcosystem(ctx),
 			rpm.NewEcosystem(ctx),
 			python.NewEcosystem(ctx),
 		}

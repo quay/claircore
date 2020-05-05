@@ -1,4 +1,4 @@
-package linux
+package rhel
 
 import (
 	"context"
@@ -7,19 +7,8 @@ import (
 	"github.com/quay/claircore/internal/indexer"
 )
 
-// layerArifact aggregates the any artifacts found within a layer
-type layerArtifacts struct {
-	hash  claircore.Digest
-	pkgs  []*claircore.Package
-	dist  []*claircore.Distribution // each layer can only have a single distribution
-	repos []*claircore.Repository
-}
-
 // Coalescer takes individual layer artifacts and coalesces them to form the final image's
 // package results
-//
-// It is expected to run a coalescer per "ecosystem". For example it would make sense to coalesce results
-// for dpkg, os-release, and apt scanners
 type Coalescer struct {
 	// the IndexReport this Coalescer is working on
 	ir *claircore.IndexReport
@@ -45,7 +34,8 @@ func (c *Coalescer) Coalesce(ctx context.Context, artifacts []*indexer.LayerArti
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
-
+	// Share repositories with layers where definition is missing
+	c.shareRepos(ctx, artifacts)
 	for _, a := range artifacts {
 		for _, repo := range a.Repos {
 			c.ir.Repositories[repo.ID] = repo
@@ -172,4 +162,45 @@ func (c *Coalescer) Coalesce(ctx context.Context, artifacts []*indexer.LayerArti
 		}
 	}
 	return c.ir, nil
+}
+
+// shareRepos takes repository definition and share it with other layers
+// where repositories are missing
+func (c *Coalescer) shareRepos(ctx context.Context, artifacts []*indexer.LayerArtifacts) {
+	// User's layers build on top of Red Hat images doesn't have a repository definition.
+	// We need to share CPE repo definition to all layer where CPEs are missing
+	// This only applies to Red Hat images
+	var previousredHatCpeRepos []*claircore.Repository
+	for i := 0; i < len(artifacts); i++ {
+		redHatCpeRepos := getRedHatCPERepos(artifacts[i].Repos)
+		if len(redHatCpeRepos) != 0 {
+			previousredHatCpeRepos = redHatCpeRepos
+		} else {
+			artifacts[i].Repos = append(artifacts[i].Repos, previousredHatCpeRepos...)
+		}
+	}
+	// Tha same thing has to be done in reverse
+	// example:
+	//   Red Hat's base images doesn't have repository definition
+	//   We need to get them from layer[i+1]
+	for i := len(artifacts) - 1; i >= 0; i-- {
+		redHatCpeRepos := getRedHatCPERepos(artifacts[i].Repos)
+		if len(redHatCpeRepos) != 0 {
+			previousredHatCpeRepos = redHatCpeRepos
+		} else {
+			artifacts[i].Repos = append(artifacts[i].Repos, previousredHatCpeRepos...)
+		}
+	}
+
+}
+
+// getRedHatCPERepos finds Red Hat's CPE based repositories and return them
+func getRedHatCPERepos(repos []*claircore.Repository) []*claircore.Repository {
+	redHatCPERepos := []*claircore.Repository{}
+	for _, repo := range repos {
+		if repo.Key == RedHatCPERepositoryKey {
+			redHatCPERepos = append(redHatCPERepos, repo)
+		}
+	}
+	return redHatCPERepos
 }

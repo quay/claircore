@@ -32,7 +32,7 @@ require (
 	github.com/shopspring/decimal v0.0.0-20190905144223-a36b5d85f337 // indirect
 	github.com/stretchr/testify v1.4.0
 	github.com/tadasv/go-dpkg v0.0.0-20160704224136-c2cf9188b763
-	golang.org/x/sync v0.0.0-20190423024810-112230192c58
+	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
 	golang.org/x/tools v0.0.0-20191205215504-7b8c8591a921
 	gopkg.in/yaml.v3 v3.0.0-20191010095647-fc94e3f71652
 )
