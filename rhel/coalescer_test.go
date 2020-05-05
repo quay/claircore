@@ -36,31 +36,31 @@ func Test_Coalescer(t *testing.T) {
 		},
 		{
 			Hash:  test.RandomSHA256Digest(t),
-			Pkgs:  pkgs[1:2],
+			Pkgs:  pkgs[0:2],
 			Dist:  nil,
 			Repos: nil,
 		},
 		{
 			Hash:  test.RandomSHA256Digest(t),
-			Pkgs:  pkgs[2:3],
+			Pkgs:  pkgs[0:3],
 			Dist:  dists[1:2],
 			Repos: nil,
 		},
 		{
 			Hash:  test.RandomSHA256Digest(t),
-			Pkgs:  pkgs[3:4],
+			Pkgs:  pkgs[0:4],
 			Dist:  nil,
 			Repos: nil,
 		},
 		{
 			Hash:  test.RandomSHA256Digest(t),
-			Pkgs:  pkgs[4:5],
+			Pkgs:  pkgs[0:5],
 			Dist:  dists[2:],
 			Repos: nil,
 		},
 		{
 			Hash:  test.RandomSHA256Digest(t),
-			Pkgs:  pkgs[5:],
+			Pkgs:  pkgs[0:],
 			Dist:  nil,
 			Repos: nil,
 		},
@@ -85,7 +85,7 @@ func Test_Coalescer(t *testing.T) {
 	}
 }
 
-func Test_Coalescer_rhel(t *testing.T) {
+func Test_Coalescer_cpe_repos(t *testing.T) {
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
 	ctx = log.TestLogger(ctx, t)
@@ -117,25 +117,25 @@ func Test_Coalescer_rhel(t *testing.T) {
 		},
 		{
 			Hash:  test.RandomSHA256Digest(t),
-			Pkgs:  pkgs[1:2],
+			Pkgs:  pkgs[0:2],
 			Dist:  nil,
 			Repos: []*claircore.Repository{repo1, repo2},
 		},
 		{
 			Hash:  test.RandomSHA256Digest(t),
-			Pkgs:  pkgs[2:3],
+			Pkgs:  pkgs[0:3],
 			Dist:  dists[1:2],
 			Repos: []*claircore.Repository{repo3},
 		},
 		{
 			Hash:  test.RandomSHA256Digest(t),
-			Pkgs:  pkgs[3:4],
+			Pkgs:  pkgs[0:4],
 			Dist:  nil,
 			Repos: nil,
 		},
 		{
 			Hash:  test.RandomSHA256Digest(t),
-			Pkgs:  pkgs[4:5],
+			Pkgs:  pkgs[0:5],
 			Dist:  dists[2:],
 			Repos: nil,
 		},
@@ -157,5 +157,194 @@ func Test_Coalescer_rhel(t *testing.T) {
 		if len(environment.RepositoryIDs) != 1 || environment.RepositoryIDs[0] != "3" {
 			t.Fatalf("expected repository ids [3] but got %s", environment.RepositoryIDs)
 		}
+	}
+}
+
+func Test_Coalescer_updated_package(t *testing.T) {
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
+	ctx = log.TestLogger(ctx, t)
+	coalescer := NewCoalescer()
+	repo1 := &claircore.Repository{
+		ID:   "1",
+		Name: "cpe:/o:redhat:enterprise_linux:8::baseos",
+		Key:  "rhel-cpe-repo",
+	}
+	repo2 := &claircore.Repository{
+		ID:   "2",
+		Name: "cpe:/o:redhat:enterprise_linux:8::appstream",
+		Key:  "rhel-cpe-repo",
+	}
+	pkg1 := &claircore.Package{
+		ID:        "1",
+		Name:      "foo",
+		Version:   "1.0-1",
+		PackageDB: "/var/lib/rpm",
+	}
+	pkg2 := &claircore.Package{
+		ID:        "2",
+		Name:      "foo",
+		Version:   "2.0-1",
+		PackageDB: "/var/lib/rpm",
+	}
+	layerArtifacts := []*indexer.LayerArtifacts{
+		{
+			Hash:  test.RandomSHA256Digest(t),
+			Pkgs:  []*claircore.Package{pkg1},
+			Dist:  nil,
+			Repos: []*claircore.Repository{repo1},
+		},
+		{
+			Hash:  test.RandomSHA256Digest(t),
+			Pkgs:  nil,
+			Dist:  nil,
+			Repos: nil,
+		},
+		{
+			Hash:  test.RandomSHA256Digest(t),
+			Pkgs:  []*claircore.Package{pkg2},
+			Dist:  nil,
+			Repos: []*claircore.Repository{repo2},
+		},
+	}
+	ir, err := coalescer.Coalesce(ctx, layerArtifacts)
+	if err != nil {
+		t.Fatalf("received error from coalesce method: %v", err)
+	}
+	if _, ok := ir.Packages[pkg1.ID]; ok {
+		t.Fatalf("Package %v was updated to %v, but previous version is still available", pkg1, pkg2)
+	}
+	if _, ok := ir.Environments[pkg1.ID]; ok {
+		t.Fatalf("Package %v was updated to %v, but previous version is still available in environment", pkg1, pkg2)
+	}
+	if _, ok := ir.Packages[pkg2.ID]; !ok {
+		t.Fatalf("Package %v was updated to %v, but new version is not available", pkg1, pkg2)
+	}
+	if _, ok := ir.Environments[pkg2.ID]; !ok {
+		t.Fatalf("Package %v was updated to %v, but new version is still not available in environment", pkg1, pkg2)
+	}
+}
+
+func Test_Coalescer_downgraded_package(t *testing.T) {
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
+	ctx = log.TestLogger(ctx, t)
+	coalescer := NewCoalescer()
+	repo1 := &claircore.Repository{
+		ID:   "1",
+		Name: "cpe:/o:redhat:enterprise_linux:8::baseos",
+		Key:  "rhel-cpe-repo",
+	}
+	repo2 := &claircore.Repository{
+		ID:   "2",
+		Name: "cpe:/o:redhat:enterprise_linux:8::appstream",
+		Key:  "rhel-cpe-repo",
+	}
+	pkg1 := &claircore.Package{
+		ID:        "1",
+		Name:      "foo",
+		Version:   "1.0-1",
+		PackageDB: "/var/lib/rpm",
+	}
+	pkg2 := &claircore.Package{
+		ID:        "2",
+		Name:      "foo",
+		Version:   "2.0-1",
+		PackageDB: "/var/lib/rpm",
+	}
+	layerArtifacts := []*indexer.LayerArtifacts{
+		{
+			Hash:  test.RandomSHA256Digest(t),
+			Pkgs:  []*claircore.Package{pkg2},
+			Dist:  nil,
+			Repos: []*claircore.Repository{repo1},
+		},
+		{
+			Hash:  test.RandomSHA256Digest(t),
+			Pkgs:  nil,
+			Dist:  nil,
+			Repos: nil,
+		},
+		{
+			Hash:  test.RandomSHA256Digest(t),
+			Pkgs:  []*claircore.Package{pkg1},
+			Dist:  nil,
+			Repos: []*claircore.Repository{repo2},
+		},
+	}
+	ir, err := coalescer.Coalesce(ctx, layerArtifacts)
+	if err != nil {
+		t.Fatalf("received error from coalesce method: %v", err)
+	}
+	if _, ok := ir.Packages[pkg2.ID]; ok {
+		t.Fatalf("Package %v was downgraded to %v, but previous version is still available", pkg2, pkg1)
+	}
+	if _, ok := ir.Environments[pkg2.ID]; ok {
+		t.Fatalf("Package %v was downgraded to %v, but previous version is still available in environment", pkg2, pkg1)
+	}
+	if _, ok := ir.Packages[pkg1.ID]; !ok {
+		t.Fatalf("Package %v was downgraded to %v, but new version is not available", pkg2, pkg1)
+	}
+	if _, ok := ir.Environments[pkg1.ID]; !ok {
+		t.Fatalf("Package %v was downgraded to %v, but new version is still not available in environment", pkg2, pkg1)
+	}
+}
+
+func Test_Coalescer_removed_package(t *testing.T) {
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
+	ctx = log.TestLogger(ctx, t)
+	coalescer := NewCoalescer()
+	repo1 := &claircore.Repository{
+		ID:   "1",
+		Name: "cpe:/o:redhat:enterprise_linux:8::baseos",
+		Key:  "rhel-cpe-repo",
+	}
+	repo2 := &claircore.Repository{
+		ID:   "2",
+		Name: "cpe:/o:redhat:enterprise_linux:8::appstream",
+		Key:  "rhel-cpe-repo",
+	}
+	pkg1 := &claircore.Package{
+		ID:        "1",
+		Name:      "foo",
+		Version:   "1.0-1",
+		PackageDB: "/var/lib/rpm",
+	}
+	pkg2 := &claircore.Package{
+		ID:        "2",
+		Name:      "bar",
+		Version:   "1.0-1",
+		PackageDB: "/var/lib/rpm",
+	}
+	layerArtifacts := []*indexer.LayerArtifacts{
+		{
+			Hash:  test.RandomSHA256Digest(t),
+			Pkgs:  []*claircore.Package{pkg1},
+			Dist:  nil,
+			Repos: []*claircore.Repository{repo1},
+		},
+		{
+			Hash:  test.RandomSHA256Digest(t),
+			Pkgs:  nil,
+			Dist:  nil,
+			Repos: nil,
+		},
+		{
+			Hash:  test.RandomSHA256Digest(t),
+			Pkgs:  []*claircore.Package{pkg2},
+			Dist:  nil,
+			Repos: []*claircore.Repository{repo2},
+		},
+	}
+	ir, err := coalescer.Coalesce(ctx, layerArtifacts)
+	if err != nil {
+		t.Fatalf("received error from coalesce method: %v", err)
+	}
+	if _, ok := ir.Packages[pkg1.ID]; ok {
+		t.Fatalf("Package %v was removed, but it is still available", pkg1)
+	}
+	if _, ok := ir.Environments[pkg1.ID]; ok {
+		t.Fatalf("Package %v was removed, but it is still available in environment", pkg1)
 	}
 }

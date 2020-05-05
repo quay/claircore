@@ -105,60 +105,43 @@ func (c *Coalescer) Coalesce(ctx context.Context, artifacts []*indexer.LayerArti
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
-	// we now have all the packages associated with their introduced in layers and environments.
-	// we must now prune any packages removed between layers. this coalescer works on the assumption
-	// that any changes to a package's database (dpkg, rpm, alpine, etc...) causes the entire database
-	// file to be written to the layer in which the change occurs. this assumption therefore
-	// allows for the following algorithm
-	// 1) walk layers backwards searching for newest modification of package dabatase.
-	// 2) if we encounter a package existing in a particular database it means all packages within this package database are present.
-	//    record all packages found into a temporary map.
-	//    when we are finished searching the current layer add a key/value to the penultimate map indicating
-	//    we no longer care about this set of package databases.
-	// 3) continue for all layers, always checking to see if we've already encountered a package database.
-	//    as we only want to inventory packages from the newest package database
-	// 4) once all layers are scanned begin removing package ids not present in our penultimate packagesToKeep map
-	var packagesToKeep = map[string][]string{}
-	for i := len(artifacts) - 1; i >= 0; i-- {
-		layerArtifacts := artifacts[i]
-		if len(layerArtifacts.Pkgs) == 0 {
+
+	// Now let's go through packages and finds out whether package is still
+	// available in package database in higher layers.
+	// When package is not available in higher leyers it means that package was
+	// either updated/downgraded/removed. In such a cases we need to remove it
+	// from list of packages
+	// If a package is available in all layers it means that it should be added
+	// to list of packages and and create an environment for it.
+	for i := 0; i < len(artifacts); i++ {
+		currentLayerArtifacts := artifacts[i]
+		if len(currentLayerArtifacts.Pkgs) == 0 {
 			continue
 		}
-		// used as a temporary accumulator of package ids in this layer
-		var tmpPackagesToKeep = map[string][]string{}
-		for _, pkg := range layerArtifacts.Pkgs {
-			// have we already inventoried packages from this database ?
-			if _, ok := packagesToKeep[pkg.PackageDB]; !ok {
-				// ... we haven't so add to our temporary accumulator
-				tk := tmpPackagesToKeep[pkg.PackageDB]
-				tmpPackagesToKeep[pkg.PackageDB] = append(tk, pkg.ID)
-			}
-		}
-		for k, v := range tmpPackagesToKeep {
-			// finished inventorying the layer, add our inventoried packages to our
-			// penultimate map ensuring next iteration will ignore packages from these databases
-			packagesToKeep[k] = v
-		}
-	}
-	// now let's prune any packages not found in the newest version of the package databases
-	// we just inventoried
-	for name, db := range dbs {
-		for _, pkg := range db.packages {
-			if _, ok := packagesToKeep[name]; !ok {
-				delete(db.packages, pkg.ID)
-				delete(db.environments, pkg.ID)
-			}
-		}
-	}
-	// finally lets pack our results into an IndexReport
-	for _, db := range dbs {
-		for _, pkg := range db.packages {
-			c.ir.Packages[pkg.ID] = pkg
-			if _, ok := c.ir.Environments[pkg.ID]; !ok {
-				c.ir.Environments[pkg.ID] = []*claircore.Environment{db.environments[pkg.ID]}
+		for _, currentPkg := range currentLayerArtifacts.Pkgs {
+			if _, ok := c.ir.Packages[currentPkg.ID]; ok {
+				// the package was already processed in previous layers
 				continue
 			}
-			c.ir.Environments[pkg.ID] = append(c.ir.Environments[pkg.ID], db.environments[pkg.ID])
+			// for each package let's find out if it is also available in other layers dbs
+			found := true
+			for j := i + 1; j < len(artifacts); j++ {
+				nextLayerArtifacts := artifacts[j]
+				if len(nextLayerArtifacts.Pkgs) == 0 {
+					continue
+				}
+				found = false
+				for _, nextPkg := range nextLayerArtifacts.Pkgs {
+					if currentPkg.ID == nextPkg.ID && currentPkg.PackageDB == nextPkg.PackageDB {
+						found = true
+						break
+					}
+				}
+			}
+			if found {
+				c.ir.Packages[currentPkg.ID] = currentPkg
+				c.ir.Environments[currentPkg.ID] = append(c.ir.Environments[currentPkg.ID], dbs[currentPkg.PackageDB].environments[currentPkg.ID])
+			}
 		}
 	}
 	return c.ir, nil
