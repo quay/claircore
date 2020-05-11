@@ -12,12 +12,11 @@ import (
 	"runtime/trace"
 	"strings"
 
-	"github.com/knqyf263/go-cpe/common"
-	"github.com/knqyf263/go-cpe/naming"
 	"github.com/rs/zerolog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
+	"github.com/quay/claircore/pkg/cpe"
 )
 
 const (
@@ -169,14 +168,7 @@ func parse(ctx context.Context, r io.Reader) (*claircore.Distribution, error) {
 		case "VARIANT_ID":
 		case "CPE_NAME":
 			log.Debug().Msg("found CPE_NAME")
-			var err error
-			var wfn common.WellFormedName
-			switch {
-			case common.ValidateURI(value) == nil:
-				wfn, err = naming.UnbindURI(value)
-			case common.ValidateFS(value) == nil:
-				wfn, err = naming.UnbindFS(value)
-			}
+			wfn, err := cpe.Unbind(value)
 			if err != nil {
 				log.Warn().
 					Err(err).
@@ -184,7 +176,7 @@ func parse(ctx context.Context, r io.Reader) (*claircore.Distribution, error) {
 					Msg("failed to unbind the cpe")
 				break
 			}
-			d.CPE = naming.BindToURI(wfn)
+			d.CPE = wfn
 		case "NAME":
 			log.Debug().Msg("found NAME")
 			d.Name = value

@@ -1,6 +1,9 @@
 package rhel
 
-import "github.com/quay/claircore"
+import (
+	"github.com/quay/claircore"
+	"github.com/quay/claircore/pkg/cpe"
+)
 
 // RHEL has minor releases however their security database files are bundled together
 // by major version. for example `com.redhat.rhsa-RHEL7.xml`
@@ -23,7 +26,7 @@ var rhel3Dist = &claircore.Distribution{
 	VersionID:  "3",
 	DID:        "rhel",
 	PrettyName: "Red Hat Enterprise Linux Server 3",
-	CPE:        "cpe:/o:redhat:enterprise_linux:3",
+	CPE:        cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:3"),
 }
 var rhel4Dist = &claircore.Distribution{
 	Name:       "Red Hat Enterprise Linux Server",
@@ -31,7 +34,7 @@ var rhel4Dist = &claircore.Distribution{
 	VersionID:  "4",
 	DID:        "rhel",
 	PrettyName: "Red Hat Enterprise Linux Server 4",
-	CPE:        "cpe:/o:redhat:enterprise_linux:4",
+	CPE:        cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:4"),
 }
 var rhel5Dist = &claircore.Distribution{
 	Name:       "Red Hat Enterprise Linux Server",
@@ -39,7 +42,7 @@ var rhel5Dist = &claircore.Distribution{
 	VersionID:  "5",
 	DID:        "rhel",
 	PrettyName: "Red Hat Enterprise Linux Server 5",
-	CPE:        "cpe:/o:redhat:enterprise_linux:5",
+	CPE:        cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:5"),
 }
 var rhel6Dist = &claircore.Distribution{
 	Name:       "Red Hat Enterprise Linux Server",
@@ -47,7 +50,7 @@ var rhel6Dist = &claircore.Distribution{
 	VersionID:  "6",
 	DID:        "rhel",
 	PrettyName: "Red Hat Enterprise Linux Server 6",
-	CPE:        "cpe:/o:redhat:enterprise_linux:6",
+	CPE:        cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:6"),
 }
 var rhel7Dist = &claircore.Distribution{
 	Name:       "Red Hat Enterprise Linux Server",
@@ -55,7 +58,7 @@ var rhel7Dist = &claircore.Distribution{
 	VersionID:  "7",
 	DID:        "rhel",
 	PrettyName: "Red Hat Enterprise Linux Server 7",
-	CPE:        "cpe:/o:redhat:enterprise_linux:7",
+	CPE:        cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:7"),
 }
 var rhel8Dist = &claircore.Distribution{
 	Name:       "Red Hat Enterprise Linux Server",
@@ -63,7 +66,7 @@ var rhel8Dist = &claircore.Distribution{
 	VersionID:  "8",
 	DID:        "rhel",
 	PrettyName: "Red Hat Enterprise Linux Server 8",
-	CPE:        "cpe:/o:redhat:enterprise_linux:8",
+	CPE:        cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8"),
 }
 
 func releaseToDist(r Release) *claircore.Distribution {

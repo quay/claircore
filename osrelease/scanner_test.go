@@ -14,6 +14,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/pkg/cpe"
 	"github.com/quay/claircore/test/integration"
 	"github.com/quay/claircore/test/log"
 )
@@ -90,7 +91,7 @@ func TestParse(t *testing.T) {
 				Name:       "openSUSE Leap",
 				Version:    "15.1 ",
 				VersionID:  "15.1",
-				CPE:        "cpe:/o:opensuse:leap:15.1",
+				CPE:        cpe.MustUnbind("cpe:/o:opensuse:leap:15.1"),
 				PrettyName: "openSUSE Leap 15.1",
 			},
 		},
@@ -101,7 +102,7 @@ func TestParse(t *testing.T) {
 				Name:       "Fedora",
 				Version:    "30.20191008.1 (Workstation Edition)",
 				VersionID:  "30",
-				CPE:        "cpe:/o:fedoraproject:fedora:30",
+				CPE:        cpe.MustUnbind("cpe:/o:fedoraproject:fedora:30"),
 				PrettyName: "Fedora",
 			},
 		},
@@ -112,7 +113,7 @@ func TestParse(t *testing.T) {
 				Name:       "Fedora",
 				Version:    "30 (Container Image)",
 				VersionID:  "30",
-				CPE:        "cpe:/o:fedoraproject:fedora:30",
+				CPE:        cpe.MustUnbind("cpe:/o:fedoraproject:fedora:30"),
 				PrettyName: "Fedora",
 			},
 		},
@@ -123,7 +124,7 @@ func TestParse(t *testing.T) {
 				Name:       "Red Hat Enterprise Linux",
 				Version:    "8.0 (Ootpa)",
 				VersionID:  "8.0",
-				CPE:        "cpe:/o:redhat:enterprise_linux:8.0:ga",
+				CPE:        cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8.0:ga"),
 				PrettyName: "Red Hat Enterprise Linux 8",
 			},
 		},
