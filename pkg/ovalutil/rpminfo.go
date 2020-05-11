@@ -6,12 +6,11 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/knqyf263/go-cpe/common"
-	"github.com/knqyf263/go-cpe/naming"
 	"github.com/quay/goval-parser/oval"
 	"github.com/rs/zerolog"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/pkg/cpe"
 )
 
 // RPMInfo holds information for extracting Vulnerabilities from an OVAL
@@ -82,18 +81,11 @@ func (r *RPMInfo) Extract(ctx context.Context) ([]*claircore.Vulnerability, erro
 		// CPE.
 		if cpes := def.Advisory.AffectedCPEList; len(cpes) != 0 {
 			for _, v := range cpes {
-				var err error
-				var wfn common.WellFormedName
-				switch {
-				case common.ValidateURI(v) == nil:
-					wfn, err = naming.UnbindURI(v)
-				case common.ValidateFS(v) == nil:
-					wfn, err = naming.UnbindFS(v)
-				}
+				wfn, err := cpe.Unbind(v)
 				switch {
 				case err != nil:
-				case wfn.GetString("part") == "o":
-					dist.CPE = naming.BindToURI(wfn)
+				case wfn.Attr[cpe.Part].V == "o":
+					dist.CPE = wfn
 				}
 			}
 		}

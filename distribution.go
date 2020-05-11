@@ -1,5 +1,7 @@
 package claircore
 
+import "github.com/quay/claircore/pkg/cpe"
+
 // Distribution is the accompanying system context of a package. this
 // information aides in CVE detection.
 //
@@ -30,7 +32,7 @@ type Distribution struct {
 	// example: "x86_64"
 	Arch string `json:"arch"`
 	// Optional common platform enumeration identifier
-	CPE string `json:"cpe"`
+	CPE cpe.WFN `json:"cpe"`
 	// A pretty operating system name in a format suitable for presentation to the user.
 	// May or may not contain a release code name or OS version of some kind, as suitable. If not set, defaults to "PRETTY_NAME="Linux"".
 	// example: "PRETTY_NAME="Fedora 17 (Beefy Miracle)"".
