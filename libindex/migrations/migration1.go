@@ -158,5 +158,6 @@ const (
         manifest_hash text REFERENCES manifest (hash)
     );
     CREATE INDEX IF NOT EXISTS manifest_index_hash_lookup_idx ON manifest_index (manifest_hash);
+	CREATE UNIQUE INDEX manifest_index_unique ON manifest_index (package_id, COALESCE(dist_id, 0), COALESCE(repo_id, 0), manifest_hash);
 	`
 )
