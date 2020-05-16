@@ -25,8 +25,57 @@ func NewHandler(l *Libindex) *HTTP {
 	m.Handle("/index", http.HandlerFunc(h.Index))
 	m.Handle("/index/", http.HandlerFunc(h.IndexReport))
 	m.Handle("/state", http.HandlerFunc(h.State))
+	m.Handle("/affected_manifests", http.HandlerFunc(h.AffectedManifests))
 	h.ServeMux = m
 	return h
+}
+
+func (h *HTTP) AffectedManifests(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	log := zerolog.Ctx(ctx).With().
+		Str("method", "index").
+		Logger()
+	ctx = log.WithContext(ctx)
+
+	if r.Method != http.MethodPost {
+		resp := &jsonerr.Response{
+			Code:    "method-not-allowed",
+			Message: "endpoint only allows GET",
+		}
+		jsonerr.Error(w, resp, http.StatusMethodNotAllowed)
+		return
+	}
+
+	var vulnerabilities struct {
+		V []claircore.Vulnerability `json:"vulnerabilities"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&vulnerabilities)
+	if err != nil {
+		resp := &jsonerr.Response{
+			Code:    "bad-request",
+			Message: err.Error(),
+		}
+		jsonerr.Error(w, resp, http.StatusBadGateway)
+		return
+	}
+
+	hashes, err := h.l.AffectedManifests(ctx, vulnerabilities.V)
+	if err != nil {
+		resp := &jsonerr.Response{
+			Code:    "internal-server-error",
+			Message: err.Error(),
+		}
+		jsonerr.Error(w, resp, http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(struct {
+		Manifests []claircore.Digest `json:"manifests"`
+	}{
+		Manifests: hashes,
+	})
+
+	return
 }
 
 func (h *HTTP) State(w http.ResponseWriter, r *http.Request) {
