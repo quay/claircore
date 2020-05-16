@@ -3,7 +3,7 @@ package migrations
 const (
 	// migration1 is the initial schema necessary for an indexer to operate
 	migration1 = `
-    --- Layer
+	--- Layer
     --- an identity table consisting of a content addressable layer hash
     CREATE TABLE IF NOT EXISTS layer (
         hash text PRIMARY KEY
@@ -87,16 +87,6 @@ const (
 	);
 	CREATE UNIQUE INDEX IF NOT EXISTS dist_unique_idx ON dist (name, did, version, version_code_name, version_id, arch, cpe, pretty_name);
 
-	--- DistributionScanArtifact
-	--- A relation linking discovered distributions to a layer
-	--- CREATE TABLE IF NOT EXISTS dist_scanartifact (
-	---	id BIGSERIAL PRIMARY KEY,
-	---	dist_id bigint REFERENCES dist(id),
-	---	scanner_id bigint REFERENCES scanner(id),
-	---	layer_hash text
-	--- );
-	--- CREATE UNIQUE INDEX IF NOT EXISTS dist_scanartifact_unique_idx ON dist_scanartifact (layer_hash, dist_id, scanner_id);
-
     --- DistributionScanArtifact
     --- A relation linking discovered distributions to a layer
     CREATE TABLE IF NOT EXISTS dist_scanartifact (
@@ -154,5 +144,19 @@ const (
         PRIMARY KEY(repo_id, scanner_id, layer_hash)
     );
     CREATE INDEX IF NOT EXISTS repo_scanartifact_lookup_idx ON repo_scanartifact(layer_hash);
+
+    --- ManifestIndex
+    --- A searchable index of a coalesced manifest's content.
+    --- a package id is required.
+    --- either a dist_id or a repo_id maybe null, but not both
+    CREATE TABLE IF NOT EXISTS manifest_index
+    (
+        id            bigserial PRIMARY KEY,
+        package_id    bigint NOT NULL REFERENCES package (id),
+        dist_id       bigint REFERENCES dist (id),
+        repo_id       bigint REFERENCES repo (id),
+        manifest_hash text REFERENCES manifest (hash)
+    );
+    CREATE INDEX IF NOT EXISTS manifest_index_hash_lookup_idx ON manifest_index (manifest_hash);
 	`
 )
