@@ -18,9 +18,6 @@ func fetchLayers(ctx context.Context, s *Controller) (State, error) {
 	if err != nil {
 		return Terminal, fmt.Errorf("failed to determine layers to fetch: %w", err)
 	}
-	if len(toFetch) == 0 {
-		return Terminal, fmt.Errorf("reached FetchLayer states but could not determine layers to scan")
-	}
 	log.Debug().
 		Int("count", len(toFetch)).
 		Msg("fetching layers")

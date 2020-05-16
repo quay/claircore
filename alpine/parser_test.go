@@ -22,14 +22,7 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 		Package: &claircore.Package{
 			Name: "botan",
 		},
-		Dist: &claircore.Distribution{
-			VersionCodeName: "community",
-			VersionID:       "v3.10",
-			Version:         "v3.10",
-			DID:             "alpine",
-			Name:            "Alpine Linux",
-			PrettyName:      "Alpine Linux v3.10",
-		},
+		Dist: releaseToDist(V3_10),
 	},
 	{
 		Name:               "CVE-2018-12435",
@@ -39,14 +32,7 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 		Package: &claircore.Package{
 			Name: "botan",
 		},
-		Dist: &claircore.Distribution{
-			VersionCodeName: "community",
-			VersionID:       "v3.10",
-			Version:         "v3.10",
-			DID:             "alpine",
-			Name:            "Alpine Linux",
-			PrettyName:      "Alpine Linux v3.10",
-		},
+		Dist: releaseToDist(V3_10),
 	},
 	{
 		Name:               "CVE-2018-9860",
@@ -56,14 +42,7 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 		Package: &claircore.Package{
 			Name: "botan",
 		},
-		Dist: &claircore.Distribution{
-			VersionCodeName: "community",
-			VersionID:       "v3.10",
-			Version:         "v3.10",
-			DID:             "alpine",
-			Name:            "Alpine Linux",
-			PrettyName:      "Alpine Linux v3.10",
-		},
+		Dist: releaseToDist(V3_10),
 	},
 	{
 		Name:               "CVE-2018-9127",
@@ -73,14 +52,7 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 		Package: &claircore.Package{
 			Name: "botan",
 		},
-		Dist: &claircore.Distribution{
-			VersionCodeName: "community",
-			VersionID:       "v3.10",
-			Version:         "v3.10",
-			DID:             "alpine",
-			Name:            "Alpine Linux",
-			PrettyName:      "Alpine Linux v3.10",
-		},
+		Dist: releaseToDist(V3_10),
 	},
 	{
 		Name:               "CVE-2019-9929",
@@ -90,14 +62,7 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 		Package: &claircore.Package{
 			Name: "cfengine",
 		},
-		Dist: &claircore.Distribution{
-			VersionCodeName: "community",
-			VersionID:       "v3.10",
-			Version:         "v3.10",
-			DID:             "alpine",
-			Name:            "Alpine Linux",
-			PrettyName:      "Alpine Linux v3.10",
-		},
+		Dist: releaseToDist(V3_10),
 	},
 	{
 		Name:               "CVE-2017-6949",
@@ -107,14 +72,7 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 		Package: &claircore.Package{
 			Name: "chicken",
 		},
-		Dist: &claircore.Distribution{
-			VersionCodeName: "community",
-			VersionID:       "v3.10",
-			Version:         "v3.10",
-			DID:             "alpine",
-			Name:            "Alpine Linux",
-			PrettyName:      "Alpine Linux v3.10",
-		},
+		Dist: releaseToDist(V3_10),
 	},
 	{
 		Name:               "CVE-2017-9334",
@@ -124,14 +82,7 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 		Package: &claircore.Package{
 			Name: "chicken",
 		},
-		Dist: &claircore.Distribution{
-			VersionCodeName: "community",
-			VersionID:       "v3.10",
-			Version:         "v3.10",
-			DID:             "alpine",
-			Name:            "Alpine Linux",
-			PrettyName:      "Alpine Linux v3.10",
-		},
+		Dist: releaseToDist(V3_10),
 	},
 	{
 		Name:               "CVE-2016-6830",
@@ -141,14 +92,7 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 		Package: &claircore.Package{
 			Name: "chicken",
 		},
-		Dist: &claircore.Distribution{
-			VersionCodeName: "community",
-			VersionID:       "v3.10",
-			Version:         "v3.10",
-			DID:             "alpine",
-			Name:            "Alpine Linux",
-			PrettyName:      "Alpine Linux v3.10",
-		},
+		Dist: releaseToDist(V3_10),
 	},
 	{
 		Name:               "CVE-2016-6831",
@@ -158,14 +102,7 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 		Package: &claircore.Package{
 			Name: "chicken",
 		},
-		Dist: &claircore.Distribution{
-			VersionCodeName: "community",
-			VersionID:       "v3.10",
-			Version:         "v3.10",
-			DID:             "alpine",
-			Name:            "Alpine Linux",
-			PrettyName:      "Alpine Linux v3.10",
-		},
+		Dist: releaseToDist(V3_10),
 	},
 }
 
