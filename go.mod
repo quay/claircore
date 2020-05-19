@@ -17,6 +17,7 @@ require (
 	github.com/knqyf263/go-cpe v0.0.0-20180327054844-659663f6eca2
 	github.com/knqyf263/go-deb-version v0.0.0-20190517075300-09fca494f03d
 	github.com/knqyf263/go-rpm-version v0.0.0-20170716094938-74609b86c936
+	github.com/lib/pq v1.2.0
 	github.com/opencontainers/runc v0.1.1 // indirect
 	github.com/quay/alas v1.0.1
 	github.com/quay/goval-parser v0.8.1
