@@ -58,6 +58,9 @@ func (f *FastestURL) Do(ctx context.Context) *http.Response {
 	var wg sync.WaitGroup
 	result := make(chan *http.Response)
 	wg.Add(len(f.URLs))
+	ctx, done := context.WithCancel(ctx)
+	defer done()
+
 	go func() {
 		wg.Wait()
 		close(result)
@@ -85,7 +88,8 @@ func (f *FastestURL) Do(ctx context.Context) *http.Response {
 			}
 			select {
 			case result <- resp:
-			default:
+				done()
+			case <-ctx.Done():
 				resp.Body.Close()
 			}
 		}()
