@@ -29,7 +29,6 @@ func (*Matcher) Query() []driver.MatchConstraint {
 	// some database logic to compare CPEs and changing schema to be able to
 	// associate multiple CPEs with a given vulnerability.
 	return []driver.MatchConstraint{
-		//driver.PackageDistributionCPE,
 		driver.DistributionName,
 		driver.DistributionPrettyName,
 		driver.PackageModule,

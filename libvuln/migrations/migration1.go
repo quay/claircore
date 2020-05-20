@@ -73,28 +73,15 @@ const (
 		version_kind           TEXT,
 		UNIQUE (hash_kind, hash)
 	);
-	-- These are some guesses at useful indexes. These should be measured.
-	CREATE INDEX IF NOT EXISTS vuln_package_idx on vuln (
-		package_name,
-		package_kind,
-		package_version,
-		package_module
-	);
-	CREATE INDEX IF NOT EXISTS vuln_dist_idx on vuln (
-		dist_id,
-		dist_name,
-		dist_version,
-		dist_version_code_name,
-		dist_version_id,
-		dist_arch,
-		dist_cpe,
-		dist_pretty_name
-	);
-	CREATE INDEX IF NOT EXISTS vuln_repo_idx on vuln (
-		repo_name,
-		repo_key,
-		repo_uri
-	);
+	-- this index is tuned for the application. if you change this measure pre and post
+	-- change query speeds when generating vulnerability reports.
+	CREATE INDEX vuln_lookup_idx on vuln (package_name, dist_id,
+                                          dist_name, dist_pretty_name,
+                                          dist_version, dist_version_id,
+                                          package_module, dist_version_code_name,
+                                          repo_name, dist_arch,
+                                          dist_cpe, repo_key,
+                                          repo_uri);
 	-- Uo_vuln is the association table that does the many-many association
 	-- between update operations and vulnerabilities.
 	--
