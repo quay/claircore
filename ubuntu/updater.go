@@ -20,11 +20,6 @@ const (
 	OVALTemplate     = "https://people.canonical.com/~ubuntu-security/oval/com.ubuntu.%s.cve.oval.xml"
 )
 
-var publicDateLayouts = []string{
-	"2006-01-02",
-	"2006-01-02 15:04:05 MST",
-}
-
 var shouldBzipFetch = map[Release]bool{
 	Artful:  false,
 	Bionic:  true,
