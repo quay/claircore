@@ -87,9 +87,12 @@ func TestFastestURLFailure(t *testing.T) {
 	}
 }
 
-// TestFastestURLSuccess confirms the fastest server wins
-// when all servers respond successfully
-func TestFastestURLSuccess(t *testing.T) {
+// NOTE(hank) There used to be a test here "confirming" that the first request
+// was the one actually returned when multiple success happen. It was removed
+// because of flakiness in CI and we decided that it wasn't actually important
+// that the absolute first response be returned despite scheduler and OS jitter.
+
+func TestSuccess(t *testing.T) {
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
 	a, b, check, cleanup := server(t, http.StatusOK, http.StatusOK)
@@ -98,10 +101,6 @@ func TestFastestURLSuccess(t *testing.T) {
 	furl := fastesturl.New(nil, nil, check, []*url.URL{a, b})
 	resp := furl.Do(ctx)
 	if resp == nil {
-		t.Fatalf("resp should not be nil")
-	}
-	respServer := resp.Header.Get("X-Test-Server")
-	if respServer != "1" {
-		t.Fatalf("test server 1 should be first")
+		t.Fatal("resp should be not nil")
 	}
 }
