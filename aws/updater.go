@@ -1,12 +1,10 @@
 package aws
 
 import (
-	"compress/gzip"
 	"context"
 	"encoding/xml"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"strings"
 	"time"
 
@@ -58,12 +56,6 @@ func (u *Updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to retrieve update info: %v", err)
 	}
-
-	gzip, err := gzip.NewReader(rc)
-	if err != nil {
-		return nil, "", fmt.Errorf("failed to create gzip reader: %v", err)
-	}
-	rc = ioutil.NopCloser(gzip)
 
 	return rc, driver.Fingerprint(updatesRepoMD.Checksum.Sum), nil
 }

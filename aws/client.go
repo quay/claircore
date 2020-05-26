@@ -1,6 +1,7 @@
 package aws
 
 import (
+	"compress/gzip"
 	"context"
 	"encoding/xml"
 	"fmt"
@@ -150,13 +151,28 @@ func (c *Client) Updates(ctx context.Context) (io.ReadCloser, error) {
 			tf.Close()
 			return nil, err
 		}
+		gz, err := gzip.NewReader(tf)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create gzip reader: %v", err)
+		}
 
 		log.Debug().Msg("success")
-		return tf, nil
+		return &gzippedFile{
+			Reader: gz,
+			Closer: tf,
+		}, nil
 	}
 
 	log.Error().Msg("exhausted all mirrors")
 	return nil, fmt.Errorf("all update_info mirrors failed to return a response")
+}
+
+// gzippedFile implements io.ReadCloser by proxying calls to different
+// underlying implementations. This is used to make sure the file that backs the
+// downloaded security database has Close called on it.
+type gzippedFile struct {
+	io.Reader
+	io.Closer
 }
 
 func (c *Client) getMirrors(ctx context.Context, release Release) error {
