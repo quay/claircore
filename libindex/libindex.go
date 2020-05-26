@@ -30,7 +30,7 @@ type Libindex struct {
 	db *sqlx.DB
 	// a Store which will be shared between scanner instances
 	store indexer.Store
-	// a sharable http client
+	// a shareable http client
 	client *http.Client
 	// an opaque and unique string representing the configured
 	// state of the indexer. see setState for more information.
@@ -43,7 +43,7 @@ func New(ctx context.Context, opts *Opts) (*Libindex, error) {
 		Str("component", "libindex/New").
 		Logger()
 	ctx = log.WithContext(ctx)
-	err := opts.Parse()
+	err := opts.Parse(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse opts: %v", err)
 	}
@@ -62,8 +62,12 @@ func New(ctx context.Context, opts *Opts) (*Libindex, error) {
 	}
 
 	// register any new scanners.
-	pscnrs, dscnrs, rscnrs, err := indexer.EcosystemsToScanners(ctx, opts.Ecosystems)
+	pscnrs, dscnrs, rscnrs, err := indexer.EcosystemsToScanners(ctx, opts.Ecosystems, opts.Airgap)
+	if err != nil {
+		return nil, err
+	}
 	vscnrs := indexer.MergeVS(pscnrs, dscnrs, rscnrs)
+
 	err = l.store.RegisterScanners(ctx, vscnrs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to register configured scanners: %v", err)
@@ -98,7 +102,7 @@ func (l *Libindex) Index(ctx context.Context, manifest *claircore.Manifest) (*cl
 	ctx = log.WithContext(ctx)
 	log.Info().Msg("index request start")
 	defer log.Info().Msg("index request done")
-	c, err := l.ControllerFactory(l, l.Opts)
+	c, err := l.ControllerFactory(ctx, l, l.Opts)
 	if err != nil {
 		return nil, fmt.Errorf("scanner factory failed to construct a scanner: %v", err)
 	}
@@ -119,7 +123,7 @@ func (l *Libindex) State(ctx context.Context) (string, error) {
 // configuration state.
 //
 // Indexers running different scanner versions will produce different state strings.
-// Thus this state value can be used as a que for clients to re-index their manifests
+// Thus this state value can be used as a cue for clients to re-index their manifests
 // and obtain a new IndexReport.
 func (l *Libindex) setState(ctx context.Context, vscnrs indexer.VersionedScanners) error {
 	h := md5.New()
@@ -128,6 +132,9 @@ func (l *Libindex) setState(ctx context.Context, vscnrs indexer.VersionedScanner
 	for _, s := range vscnrs {
 		n := s.Name()
 		m[n] = []byte(n + s.Version() + s.Kind() + "\n")
+		// TODO(hank) Should this take into account configuration? E.g. If a
+		// scanner implements the configurable interface, should we expect that
+		// we can serialize the scanner's concrete type?
 		ns = append(ns, n)
 	}
 	if _, err := io.WriteString(h, versionMagic); err != nil {

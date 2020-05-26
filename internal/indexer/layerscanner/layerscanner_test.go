@@ -82,7 +82,10 @@ func Test_Scan_NoErrors(t *testing.T) {
 		Ecosystems: []*indexer.Ecosystem{ecosystem},
 	}
 
-	layerscanner := New(1, sOpts)
+	layerscanner, err := New(ctx, 1, sOpts)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	ctx, cancel := context.WithTimeout(ctx, time.Minute)
 	defer cancel()

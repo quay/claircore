@@ -40,12 +40,23 @@ type Opts struct {
 	ControllerFactory ControllerFactory
 	// a list of ecosystems to use which define which package databases and coalescing methods we use
 	Ecosystems []*indexer.Ecosystem
+	// Airgap should be set to disallow any scanners that mark themselves as
+	// making network calls.
+	Airgap bool
+	// ScannerConfig holds functions that can be passed into configurable
+	// scanners. They're broken out by kind, and only used if a scanner
+	// implements the appropriate interface.
+	//
+	// Providing a function for a scanner that's not expecting it is not a fatal
+	// error.
+	ScannerConfig struct {
+		Package, Dist, Repo map[string]func(interface{}) error
+	}
 	// a convenience method for holding a list of versioned scanners
 	vscnrs indexer.VersionedScanners
 }
 
-func (o *Opts) Parse() error {
-	ctx := context.TODO()
+func (o *Opts) Parse(ctx context.Context) error {
 	// required
 	if o.ConnString == "" {
 		return fmt.Errorf("ConnString not provided")
