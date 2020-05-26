@@ -3,76 +3,141 @@ package layerscanner
 import (
 	"context"
 	"fmt"
-	"math"
 
+	"github.com/rs/zerolog"
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/sync/semaphore"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
-	"github.com/rs/zerolog"
 )
 
-// layerScanner implements the indexer.LayerScanner interface.
+// LayerScanner implements the indexer.LayerScanner interface.
 type layerScanner struct {
-	// common depedencies
-	*indexer.Opts
-	// concurrency level. maximum number of concurrent layer scans
-	cLevel int
-	// a channel to implement concurrency control
-	cc chan struct{}
+	store indexer.Store
+
+	// Maximum allowed in-flight scanners per Scan call
+	inflight int64
+
+	// Pre-constructed and configured scanners.
+	ps []indexer.PackageScanner
+	ds []indexer.DistributionScanner
+	rs []indexer.RepositoryScanner
 }
 
-// New is a constructor for a defaultLayerScanner
-func New(cLevel int, opts *indexer.Opts) indexer.LayerScanner {
-	return &layerScanner{
-		Opts:   opts,
-		cLevel: cLevel,
-	}
-}
-
-// addToken will block until a spot in the conccurency channel is available
-// or the ctx is canceled.
-func (ls *layerScanner) addToken(ctx context.Context) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case ls.cc <- struct{}{}:
-		return nil
-	}
-}
-
-// discardToken is only called after addToken. Removes a token
-// from the concurrency channel allowing another task to kick off.
-func (ls *layerScanner) discardToken() {
-	select {
-	case <-ls.cc:
-	default:
-	}
-}
-
-// Scan performs a concurrency controlled scan of each layer by each type of configured scanner, indexing
-// the results on successful completion.
+// New is the constructor for a LayerScanner.
 //
-// Scan will launch all pending layer scans in a Go routine.
-// Scan will ensure only 'cLevel' routines are actively scanning layers.
-//
-// If the provided ctx is canceled all routines are canceled and an error will be returned.
-// If one or more layer scans fail Scan will report the first received error and all pending and inflight scans will be canceled.
-func (ls *layerScanner) Scan(ctx context.Context, manifest claircore.Digest, layers []*claircore.Layer) error {
-	// compute concurrency level
-	x := float64(len(layers))
-	y := float64(ls.cLevel)
-	if y == 0 {
-		y++
-	}
-	ccMin := int(math.Min(x, y))
-
-	ls.cc = make(chan struct{}, ccMin)
-
-	ps, ds, rs, err := indexer.EcosystemsToScanners(ctx, ls.Opts.Ecosystems)
+// The provided Context is only used for the duration of the call.
+func New(ctx context.Context, concurrent int, opts *indexer.Opts) (indexer.LayerScanner, error) {
+	log := zerolog.Ctx(ctx).With().
+		Str("component", "internal/indexer/layerscannner/New").
+		Logger()
+	ps, ds, rs, err := indexer.EcosystemsToScanners(ctx, opts.Ecosystems, opts.Airgap)
 	if err != nil {
 		fmt.Errorf("failed to extract scanners from ecosystems: %v", err)
 	}
+
+	// Configure and filter the scanners
+	var i int
+	i = 0
+	for _, s := range ps {
+		if !filter(ctx, &log, opts, s) {
+			ps[i] = s
+			i++
+		}
+	}
+	ps = ps[:i]
+	i = 0
+	for _, s := range rs {
+		if !filter(ctx, &log, opts, s) {
+			rs[i] = s
+			i++
+		}
+	}
+	rs = rs[:i]
+	i = 0
+	for _, s := range ds {
+		if !filter(ctx, &log, opts, s) {
+			ds[i] = s
+			i++
+		}
+	}
+	ds = ds[:i]
+
+	return &layerScanner{
+		store:    opts.Store,
+		inflight: int64(concurrent),
+		ps:       ps,
+		ds:       ds,
+		rs:       rs,
+	}, nil
+}
+
+// Filter configures the provided scanner and reports if it should be filtered
+// out of the slice or not.
+func filter(ctx context.Context, log *zerolog.Logger, opts *indexer.Opts, s indexer.VersionedScanner) bool {
+	n := s.Name()
+	var cfgMap map[string]func(interface{}) error
+	switch k := s.Kind(); k {
+	case "package":
+		cfgMap = opts.ScannerConfig.Package
+	case "repository":
+		cfgMap = opts.ScannerConfig.Repo
+	case "distribution":
+		cfgMap = opts.ScannerConfig.Dist
+	default:
+		log.Warn().
+			Str("kind", k).
+			Str("scanner", n).
+			Msg("unknown scanner kind")
+		return true
+	}
+
+	if f, ok := cfgMap[n]; ok {
+		cs, csOK := s.(indexer.ConfigurableScanner)
+		rs, rsOK := s.(indexer.RPCScanner)
+		switch {
+		case !csOK && !rsOK:
+			log.Warn().
+				Str("scanner", n).
+				Msg("configuration present for an unconfigurable scanner, skipping")
+		case csOK && rsOK:
+			fallthrough
+		case !csOK && rsOK:
+			if err := rs.Configure(ctx, f, opts.Client); err != nil {
+				log.Error().
+					Str("scanner", n).
+					Err(err).
+					Msg("configuration failed")
+				return true
+			}
+		case csOK && !rsOK:
+			if err := cs.Configure(ctx, f); err != nil {
+				log.Error().
+					Str("scanner", n).
+					Err(err).
+					Msg("configuration failed")
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// Scan performs a concurrency controlled scan of each layer by each configured
+// scanner, indexing the results on successful completion.
+//
+// Scan will launch all layer scan goroutines immediately and then only allow
+// the configured limit to proceed.
+//
+// The provided Context controls cancellation for all scanners. The first error
+// reported halts all work and is returned from Scan.
+func (ls *layerScanner) Scan(ctx context.Context, manifest claircore.Digest, layers []*claircore.Layer) error {
+	log := zerolog.Ctx(ctx).With().
+		Str("component", "internal/indexer/layerscannner/layerScanner.Scan").
+		Str("manifest", manifest.String()).
+		Logger()
+	ctx = log.WithContext(ctx)
 
 	layersToScan := make([]*claircore.Layer, 0, len(layers))
 	dedupe := map[string]struct{}{}
@@ -83,53 +148,48 @@ func (ls *layerScanner) Scan(ctx context.Context, manifest claircore.Digest, lay
 		}
 	}
 
-	g, gctx := errgroup.WithContext(ctx)
-	for _, layer := range layersToScan {
-		ll := layer
-
-		for _, s := range ps {
-			ss := s
-			g.Go(func() error {
-				return ls.scanPackages(gctx, ll, ss)
-			})
+	sem := semaphore.NewWeighted(ls.inflight)
+	g, ctx := errgroup.WithContext(ctx)
+	// Launch is a closure to capture the loop variables and then call the
+	// scanLayer method.
+	launch := func(l *claircore.Layer, s indexer.VersionedScanner) func() error {
+		return func() error {
+			if err := sem.Acquire(ctx, 1); err != nil {
+				return err
+			}
+			defer sem.Release(1)
+			return ls.scanLayer(ctx, l, s)
 		}
-
-		for _, s := range ds {
-			ss := s
-			g.Go(func() error {
-				return ls.scanDists(gctx, ll, ss)
-			})
+	}
+	for _, l := range layersToScan {
+		for _, s := range ls.ps {
+			g.Go(launch(l, s))
 		}
-
-		for _, s := range rs {
-			ss := s
-			g.Go(func() error {
-				return ls.scanRepos(gctx, ll, ss)
-			})
+		for _, s := range ls.ds {
+			g.Go(launch(l, s))
+		}
+		for _, s := range ls.rs {
+			g.Go(launch(l, s))
 		}
 	}
 
-	if err := g.Wait(); err != nil {
-		return err
-	}
-
-	return nil
+	return g.Wait()
 }
 
-func (ls *layerScanner) scanPackages(ctx context.Context, layer *claircore.Layer, s indexer.PackageScanner) error {
+// ScanLayer (along with the result type) handles an individual (scanner, layer)
+// pair.
+func (ls *layerScanner) scanLayer(ctx context.Context, l *claircore.Layer, s indexer.VersionedScanner) error {
 	log := zerolog.Ctx(ctx).With().
-		Str("component", "internal/indexer/layerscannner/layerScanner.scanPackages").
+		Str("component", "internal/indexer/layerscannner/layerScanner.scan").
 		Str("scanner", s.Name()).
-		Str("layer", layer.Hash.String()).
+		Str("kind", s.Kind()).
+		Str("layer", l.Hash.String()).
 		Logger()
+	ctx = log.WithContext(ctx)
+	log.Debug().Msg("scan start")
+	defer log.Debug().Msg("scan done")
 
-	log.Debug().Msg("starting package scan")
-	if err := ls.addToken(ctx); err != nil {
-		return err
-	}
-	defer ls.discardToken()
-
-	ok, err := ls.Store.LayerScanned(ctx, layer.Hash, s)
+	ok, err := ls.store.LayerScanned(ctx, l.Hash, s)
 	if err != nil {
 		return err
 	}
@@ -138,121 +198,58 @@ func (ls *layerScanner) scanPackages(ctx context.Context, layer *claircore.Layer
 		return nil
 	}
 
-	v, err := s.Scan(ctx, layer)
-	if err != nil {
-		return fmt.Errorf("scanner: %v error: %v", s.Name(), err)
-	}
-	err = ls.Store.SetLayerScanned(ctx, layer.Hash, s)
-	if err != nil {
-		return fmt.Errorf("could not set layer scanned: %v", layer)
+	var result result
+	if err := result.Do(ctx, s, l); err != nil {
+		return err
 	}
 
-	if v == nil {
-		log.Debug().Msg("scan returned a nil")
-		return nil
+	if err = ls.store.SetLayerScanned(ctx, l.Hash, s); err != nil {
+		return fmt.Errorf("could not set layer scanned: %v", l)
 	}
 
-	if len(v) > 0 {
-		log.Debug().Int("count", len(v)).Msg("scan returned packages")
-		err = ls.Store.IndexPackages(ctx, v, layer, s)
-		if err != nil {
-			return fmt.Errorf("scanner: %v error: %v", s.Name(), err)
-		}
-	}
-
-	return nil
+	return result.Store(ctx, ls.store, s, l)
 }
 
-func (ls *layerScanner) scanDists(ctx context.Context, layer *claircore.Layer, s indexer.DistributionScanner) error {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "internal/indexer/layerscannner/layerScanner.scanDists").
-		Str("scanner", s.Name()).
-		Str("layer", layer.Hash.String()).
-		Logger()
-
-	log.Debug().Msg("starting dist scan")
-	if err := ls.addToken(ctx); err != nil {
-		return err
-	}
-	defer ls.discardToken()
-
-	ok, err := ls.Store.LayerScanned(ctx, layer.Hash, s)
-	if err != nil {
-		return err
-	}
-	if ok {
-		log.Debug().Msg("layer already scanned")
-		return nil
-	}
-
-	v, err := s.Scan(ctx, layer)
-	if err != nil {
-		return fmt.Errorf("scanner: %v error: %v", s.Name(), err)
-	}
-	err = ls.Store.SetLayerScanned(ctx, layer.Hash, s)
-	if err != nil {
-		return fmt.Errorf("could not set layer scanned: %+v %+v", layer, s)
-	}
-
-	if v == nil {
-		log.Debug().Msg("scan returned a nil")
-		return nil
-	}
-
-	if len(v) > 0 {
-		log.Debug().Int("count", len(v)).Msg("scan returned dists")
-		err = ls.Store.IndexDistributions(ctx, v, layer, s)
-		if err != nil {
-			return fmt.Errorf("scanner: %v error: %v", s.Name(), err)
-		}
-	}
-
-	return nil
+// Result is a type that handles the kind-specific bits of the scan process.
+type result struct {
+	pkgs  []*claircore.Package
+	dists []*claircore.Distribution
+	repos []*claircore.Repository
 }
 
-func (ls *layerScanner) scanRepos(ctx context.Context, layer *claircore.Layer, s indexer.RepositoryScanner) error {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "internal/indexer/layerscannner/layerScanner.scanRepos").
-		Str("scanner", s.Name()).
-		Str("layer", layer.Hash.String()).
-		Logger()
+// Do asserts the Scanner back to having a Scan method, and then calls it.
+//
+// The success value is captured and the error value is returned by Do.
+func (r *result) Do(ctx context.Context, s indexer.VersionedScanner, l *claircore.Layer) error {
+	var err error
+	switch s := s.(type) {
+	case indexer.PackageScanner:
+		r.pkgs, err = s.Scan(ctx, l)
+	case indexer.DistributionScanner:
+		r.dists, err = s.Scan(ctx, l)
+	case indexer.RepositoryScanner:
+		r.repos, err = s.Scan(ctx, l)
+	default:
+		panic(fmt.Sprintf("programmer error: unknown type %T used as scanner", s))
+	}
+	return err
+}
 
-	log.Debug().Msg("starting repo scan")
-	if err := ls.addToken(ctx); err != nil {
-		return err
+// Store calls the properly typed store method on whatever value was captured in
+// the result.
+func (r *result) Store(ctx context.Context, store indexer.Store, s indexer.VersionedScanner, l *claircore.Layer) error {
+	log := zerolog.Ctx(ctx).With().Logger()
+	switch {
+	case r.pkgs != nil:
+		log.Debug().Int("count", len(r.pkgs)).Msg("scan returned packages")
+		return store.IndexPackages(ctx, r.pkgs, l, s)
+	case r.dists != nil:
+		log.Debug().Int("count", len(r.dists)).Msg("scan returned dists")
+		return store.IndexDistributions(ctx, r.dists, l, s)
+	case r.repos != nil:
+		log.Debug().Int("count", len(r.repos)).Msg("scan returned repos")
+		return store.IndexRepositories(ctx, r.repos, l, s)
 	}
-	defer ls.discardToken()
-
-	ok, err := ls.Store.LayerScanned(ctx, layer.Hash, s)
-	if err != nil {
-		return err
-	}
-	if ok {
-		log.Debug().Msg("layer already scanned")
-		return nil
-	}
-
-	v, err := s.Scan(ctx, layer)
-	if err != nil {
-		return fmt.Errorf("scanner: %v error: %v", s.Name(), err)
-	}
-	err = ls.Store.SetLayerScanned(ctx, layer.Hash, s)
-	if err != nil {
-		return fmt.Errorf("could not set layer scanned: %v", layer)
-	}
-
-	if v == nil {
-		log.Debug().Msg("scan returned a nil")
-		return nil
-	}
-
-	if len(v) > 0 {
-		log.Debug().Int("count", len(v)).Msg("scan returned repos")
-		err = ls.Store.IndexRepositories(ctx, v, layer, s)
-		if err != nil {
-			return fmt.Errorf("scanner: %v error: %v", s.Name(), err)
-		}
-	}
-
+	log.Debug().Msg("scan returned a nil")
 	return nil
 }

@@ -1,6 +1,10 @@
 package indexer
 
-import "context"
+import (
+	"context"
+
+	"github.com/rs/zerolog"
+)
 
 // Ecosystems group together scanners and a Coalescer which are commonly used together.
 //
@@ -17,7 +21,11 @@ type Ecosystem struct {
 }
 
 // EcosystemsToScanners extracts and dedupes multiple ecosystems and returns their discrete scanners
-func EcosystemsToScanners(ctx context.Context, ecosystems []*Ecosystem) ([]PackageScanner, []DistributionScanner, []RepositoryScanner, error) {
+func EcosystemsToScanners(ctx context.Context, ecosystems []*Ecosystem, disallowRemote bool) ([]PackageScanner, []DistributionScanner, []RepositoryScanner, error) {
+	log := zerolog.Ctx(ctx).With().
+		Str("component", "internal/indexer/EcosystemsToScanners").
+		Logger()
+	ctx = log.WithContext(ctx)
 	ps := []PackageScanner{}
 	ds := []DistributionScanner{}
 	rs := []RepositoryScanner{}
@@ -29,10 +37,18 @@ func EcosystemsToScanners(ctx context.Context, ecosystems []*Ecosystem) ([]Packa
 			return nil, nil, nil, err
 		}
 		for _, s := range pscanners {
-			if _, ok := seen[s.Name()]; !ok {
-				ps = append(ps, s)
-				seen[s.Name()] = struct{}{}
+			n := s.Name()
+			if _, ok := seen[n]; ok {
+				continue
 			}
+			seen[n] = struct{}{}
+			if _, ok := s.(RPCScanner); ok && disallowRemote {
+				log.Info().
+					Str("scanner", n).
+					Msg("disallowed by configuration")
+				continue
+			}
+			ps = append(ps, s)
 		}
 
 		dscanners, err := ecosystem.DistributionScanners(ctx)
@@ -40,10 +56,18 @@ func EcosystemsToScanners(ctx context.Context, ecosystems []*Ecosystem) ([]Packa
 			return nil, nil, nil, err
 		}
 		for _, s := range dscanners {
-			if _, ok := seen[s.Name()]; !ok {
-				ds = append(ds, s)
-				seen[s.Name()] = struct{}{}
+			n := s.Name()
+			if _, ok := seen[n]; ok {
+				continue
 			}
+			seen[n] = struct{}{}
+			if _, ok := s.(RPCScanner); ok && disallowRemote {
+				log.Info().
+					Str("scanner", n).
+					Msg("disallowed by configuration")
+				continue
+			}
+			ds = append(ds, s)
 		}
 
 		rscanners, err := ecosystem.RepositoryScanners(ctx)
@@ -51,10 +75,18 @@ func EcosystemsToScanners(ctx context.Context, ecosystems []*Ecosystem) ([]Packa
 			return nil, nil, nil, err
 		}
 		for _, s := range rscanners {
-			if _, ok := seen[s.Name()]; !ok {
-				rs = append(rs, s)
-				seen[s.Name()] = struct{}{}
+			n := s.Name()
+			if _, ok := seen[n]; ok {
+				continue
 			}
+			seen[n] = struct{}{}
+			if _, ok := s.(RPCScanner); ok && disallowRemote {
+				log.Info().
+					Str("scanner", n).
+					Msg("disallowed by configuration")
+				continue
+			}
+			rs = append(rs, s)
 		}
 	}
 	return ps, ds, rs, nil
