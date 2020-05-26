@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"math/rand"
-	"os"
+	"net/http"
 	"time"
 
 	"github.com/jackc/pgx/v4"
@@ -83,12 +83,27 @@ type Opts struct {
 	// If set to true, there will not be a goroutine launched to periodically
 	// run updaters.
 	DisableBackgoundUpdates bool
+
+	// UpdaterConfigs is a map of functions for configuration of Updaters.
+	UpdaterConfigs map[string]driver.ConfigUnmarshaler
+
+	// Client is an http.Client for use by all updaters. If unset,
+	// http.DefaultClient will be used.
+	Client *http.Client
 }
 
-// defaultMacheter is a variable containing
+// defaultMatchers is a variable containing
 // all the matchers libvuln will use to match
 // index records to vulnerabilities.
-var defaultMatchers []driver.Matcher
+var defaultMatchers = []driver.Matcher{
+	&alpine.Matcher{},
+	&aws.Matcher{},
+	&debian.Matcher{},
+	&python.Matcher{},
+	&photon.Matcher{},
+	&suse.Matcher{},
+	&oracle.Matcher{},
+}
 
 // parse is an internal method for constructing
 // the necessary Updaters and Matchers for Libvuln
@@ -117,30 +132,19 @@ func (o *Opts) parse(ctx context.Context) error {
 		o.UpdateWorkers = DefaultUpdateWorkers
 	}
 
-	// initialize default matchers
-	defaultMatchers = []driver.Matcher{
-		&alpine.Matcher{},
-		&aws.Matcher{},
-		&debian.Matcher{},
-		&python.Matcher{},
-		&ubuntu.Matcher{},
-		&rhel.Matcher{},
-		&photon.Matcher{},
-	}
-
 	// merge default matchers with any out-of-tree specified
 	o.Matchers = append(o.Matchers, defaultMatchers...)
+
+	if o.Client == nil {
+		o.Client = http.DefaultClient
+	}
 
 	return nil
 }
 
 var defaultFactoryConstructors = map[string]func(context.Context) (driver.UpdaterSetFactory, error){
 	"rhel": func(ctx context.Context) (driver.UpdaterSetFactory, error) {
-		manifestURL := os.Getenv("REDHAT_OVAL_MANIFEST_URL")
-		if manifestURL == "" {
-			manifestURL = rhel.DefaultManifest
-		}
-		return rhel.NewFactory(ctx, manifestURL)
+		return rhel.NewFactory(ctx, rhel.DefaultManifest)
 	},
 	"ubuntu": func(_ context.Context) (driver.UpdaterSetFactory, error) {
 		return &ubuntu.Factory{Releases: ubuntu.Releases}, nil
@@ -246,5 +250,6 @@ func (o *Opts) migrations(_ context.Context) error {
 	if err := migrator.Exec(migrate.Up, migrations.Migrations...); err != nil {
 		return err
 	}
+
 	return nil
 }
