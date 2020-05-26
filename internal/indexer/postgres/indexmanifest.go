@@ -36,7 +36,7 @@ func indexManifest(ctx context.Context, pool *pgxpool.Pool, ir *claircore.IndexR
 		return nil
 	}
 
-	// obtain a transaction scopped batch
+	// obtain a transaction scoped batch
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("store:indexDistributions failed to create transaction: %v", err)
@@ -49,11 +49,9 @@ func indexManifest(ctx context.Context, pool *pgxpool.Pool, ir *claircore.IndexR
 	}
 
 	mBatcher := microbatch.NewInsert(tx, 500, time.Minute)
-	var ignored int
 	for _, record := range records {
 		// ignore nil packages
 		if record.Package == nil {
-			ignored++
 			continue
 		}
 
@@ -113,9 +111,7 @@ func indexManifest(ctx context.Context, pool *pgxpool.Pool, ir *claircore.IndexR
 func toValues(r claircore.IndexRecord) ([4]*uint64, error) {
 	res := [4]*uint64{}
 
-	if r.Package.Source == nil {
-		res[0] = nil
-	} else {
+	if r.Package.Source != nil {
 		id, err := strconv.ParseUint(r.Package.Source.ID, 10, 64)
 		if err != nil {
 			return res, fmt.Errorf("source package id %v: %v", r.Package.ID, err)
@@ -123,19 +119,16 @@ func toValues(r claircore.IndexRecord) ([4]*uint64, error) {
 		res[0] = &id
 	}
 
-	if r.Package == nil {
-		res[1] = nil
-	} else {
+	if r.Package != nil {
 		id, err := strconv.ParseUint(r.Package.ID, 10, 64)
 		if err != nil {
 			return res, fmt.Errorf("package id %v: %v", r.Package.ID, err)
 		}
 		res[1] = &id
+
 	}
 
-	if r.Distribution == nil {
-		res[2] = nil
-	} else {
+	if r.Distribution != nil {
 		id, err := strconv.ParseUint(r.Distribution.ID, 10, 64)
 		if err != nil {
 			return res, fmt.Errorf("distribution id %v: %v", r.Distribution.ID, err)
@@ -143,9 +136,7 @@ func toValues(r claircore.IndexRecord) ([4]*uint64, error) {
 		res[2] = &id
 	}
 
-	if r.Repository == nil {
-		res[3] = nil
-	} else {
+	if r.Repository != nil {
 		id, err := strconv.ParseUint(r.Repository.ID, 10, 64)
 		if err != nil {
 			// return res, fmt.Errorf("repository id %v: %v", r.Package.ID, err)

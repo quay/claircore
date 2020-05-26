@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -12,6 +13,12 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/omnimatcher"
+)
+
+var (
+	// ErrNotIndexed indicates the vulnerability being queried has a dist or repo not
+	// indexed into the database.
+	ErrNotIndexed = fmt.Errorf("vulnerability containers data not indexed by any scannners")
 )
 
 // affectedManifests finds the manifests digests which are affected by the provided vulnerability.
@@ -59,7 +66,13 @@ func affectedManifests(ctx context.Context, pool *pgxpool.Pool, v claircore.Vuln
 	// confirm the incoming vuln can be
 	// resolved into a prototype index record
 	pr, err := protoRecord(ctx, pool, v)
-	if err != nil {
+	switch {
+	case err == nil:
+		// break out
+	case errors.Is(err, ErrNotIndexed):
+		log.Warn().Str("vulnID", v.ID).Msg("vuln is comprised of repo or distro not indexed by any scanner yet")
+		return nil, nil
+	default:
 		return nil, err
 	}
 
@@ -69,7 +82,7 @@ func affectedManifests(ctx context.Context, pool *pgxpool.Pool, v claircore.Vuln
 	rows, err := pool.Query(ctx, selectPackages, v.Package.Name)
 	if err != nil {
 		rows.Close()
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return []claircore.Digest{}, nil
 		}
 		return nil, fmt.Errorf("failed to query packages associated with vulnerablility %+v: %v", v, err)
@@ -200,7 +213,7 @@ func protoRecord(ctx context.Context, pool *pgxpool.Pool, v claircore.Vulnerabil
 		var id pgtype.Int8
 		err := row.Scan(&id)
 		if err != nil {
-			if err != pgx.ErrNoRows {
+			if !errors.Is(err, pgx.ErrNoRows) {
 				return protoRecord, fmt.Errorf("failed to scan dist: %v", err)
 			}
 		}
@@ -231,7 +244,7 @@ func protoRecord(ctx context.Context, pool *pgxpool.Pool, v claircore.Vulnerabil
 		var id pgtype.Int8
 		err := row.Scan(&id)
 		if err != nil {
-			if err != pgx.ErrNoRows {
+			if !errors.Is(err, pgx.ErrNoRows) {
 				return protoRecord, fmt.Errorf("failed to scan repo: %v", err)
 			}
 		}
@@ -247,9 +260,9 @@ func protoRecord(ctx context.Context, pool *pgxpool.Pool, v claircore.Vulnerabil
 		}
 	}
 
-	// we need at least a repo or dist to continue.
+	// we need at least a repo or distribution to continue
 	if (protoRecord.Distribution == nil) && (protoRecord.Repository == nil) {
-		return protoRecord, fmt.Errorf("vuln did not contain a repo or distribution")
+		return protoRecord, ErrNotIndexed
 	}
 
 	return protoRecord, nil
