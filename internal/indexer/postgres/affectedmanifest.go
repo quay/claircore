@@ -80,8 +80,10 @@ func affectedManifests(ctx context.Context, pool *pgxpool.Pool, v claircore.Vuln
 	// by the vulnerability in question.
 	pkgsToFilter := []claircore.Package{}
 	rows, err := pool.Query(ctx, selectPackages, v.Package.Name)
+	if rows != nil {
+		defer rows.Close()
+	}
 	if err != nil {
-		rows.Close()
 		if errors.Is(err, pgx.ErrNoRows) {
 			return []claircore.Digest{}, nil
 		}
@@ -97,7 +99,6 @@ func affectedManifests(ctx context.Context, pool *pgxpool.Pool, v claircore.Vuln
 			&pkg.Kind,
 		)
 		if err != nil {
-			rows.Close()
 			return nil, fmt.Errorf("failed to scan package: %v", err)
 		}
 		idStr := strconv.FormatInt(id, 10)
@@ -126,7 +127,12 @@ func affectedManifests(ctx context.Context, pool *pgxpool.Pool, v claircore.Vuln
 	// query the manifest index for manifests containing
 	// the vulnerable indexrecords and create a set
 	// containing each unique manifest
-	set := map[string]claircore.Digest{}
+	//
+	// since this loop opens a db conn each interation the returned rows
+	// handle must be closed manually and not deferred else a buildup of db conns
+	// may occur until the method exits
+	set := map[string]struct{}{}
+	out := []claircore.Digest{}
 	for _, record := range filteredRecords {
 		v, err := toValues(record)
 		if err != nil {
@@ -153,14 +159,11 @@ func affectedManifests(ctx context.Context, pool *pgxpool.Pool, v claircore.Vuln
 				rows.Close()
 				return nil, fmt.Errorf("failed scanning manifest hash into digest: %v", err)
 			}
-			set[hash.String()] = hash
+			if _, ok := set[hash.String()]; !ok {
+				set[hash.String()] = struct{}{}
+				out = append(out, hash)
+			}
 		}
-	}
-
-	n := len(set)
-	out := make([]claircore.Digest, 0, n)
-	for _, v := range set {
-		out = append(out, v)
 	}
 	log.Debug().Int("count", len(out)).Msg("affected manifests")
 	return out, nil

@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/quay/claircore/internal/indexer"
-	"github.com/stretchr/testify/assert"
 )
 
 // Test_Coalesce confirms when no error is encountered
@@ -37,7 +36,9 @@ func Test_Coalesce(t *testing.T) {
 			if err != nil {
 				t.Fatalf("did not expect error: %v", err)
 			}
-			assert.Equal(t, table.expectedState, state)
+			if table.expectedState != state {
+				t.Fatalf("got: %s, wanted: %s", table.expectedState, state)
+			}
 		})
 	}
 }

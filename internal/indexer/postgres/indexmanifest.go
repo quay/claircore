@@ -39,7 +39,7 @@ func indexManifest(ctx context.Context, pool *pgxpool.Pool, ir *claircore.IndexR
 	// obtain a transaction scoped batch
 	tx, err := pool.Begin(ctx)
 	if err != nil {
-		return fmt.Errorf("store:indexDistributions failed to create transaction: %v", err)
+		return fmt.Errorf("postgres: indexManifest failed to create transaction: %v", err)
 	}
 	defer tx.Rollback(ctx)
 

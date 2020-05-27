@@ -7,7 +7,6 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/quay/claircore/internal/indexer"
-	"github.com/stretchr/testify/assert"
 )
 
 func Test_IndexManifest(t *testing.T) {
@@ -43,7 +42,9 @@ func Test_IndexManifest(t *testing.T) {
 			if err != nil {
 				t.Fatalf("did not expect error: %v", err)
 			}
-			assert.Equal(t, table.expectedState, state)
+			if table.expectedState != state {
+				t.Fatalf("got: %v, want: %v", state, table.expectedState)
+			}
 		})
 	}
 }
@@ -81,7 +82,9 @@ func Test_IndexManifest_Failure(t *testing.T) {
 			if err == nil {
 				t.Fatalf("expected error")
 			}
-			assert.Equal(t, table.expectedState, state)
+			if table.expectedState != state {
+				t.Fatalf("got: %v, want: %v", state, table.expectedState)
+			}
 		})
 	}
 }

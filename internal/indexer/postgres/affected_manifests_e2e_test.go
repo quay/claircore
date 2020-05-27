@@ -40,13 +40,13 @@ func TestAffectedE2E(t *testing.T) {
 		// file name of vuln report in ./testdata
 		vrFName string
 	}{
-		// these fixtures have a subtly. these fixtures
+		// these fixtures
 		// were generated against the same database
-		// to esure all ids are sequentially increasing.
+		// to ensure all ids are sequentially increasing
 		//
-		// if you are to add fixtures here you must generate
-		// this current set + your new fixtures against the database
-		// to ensure no record id overlap.
+		// if fixtures are added you must generate
+		// this current set *and* your new fixtures against the same database
+		// to ensure there are no ID overlaps
 		{
 			name:    "amazonlinux 1",
 			irFName: "amazonlinux:1.index.json",
@@ -114,18 +114,17 @@ func TestAffectedE2E(t *testing.T) {
 
 		var ir claircore.IndexReport
 		var vr claircore.VulnerabilityReport
-		{
-			err := json.NewDecoder(irFD).Decode(&ir)
-			if err != nil {
-				t.Fatalf("could not decode ir: %v", err)
-			}
+
+		err = json.NewDecoder(irFD).Decode(&ir)
+		if err != nil {
+			t.Fatalf("could not decode ir: %v", err)
 		}
-		{
-			err := json.NewDecoder(vrFD).Decode(&vr)
-			if err != nil {
-				t.Fatalf("could not decode vr: %v", err)
-			}
+
+		err = json.NewDecoder(vrFD).Decode(&vr)
+		if err != nil {
+			t.Fatalf("could not decode vr: %v", err)
 		}
+
 		// create and run e2e test
 		e2e := &affectedE2E{
 			store: store,
@@ -282,13 +281,13 @@ func (e *affectedE2E) AffectedManifests(t *testing.T) {
 		}
 
 		if len(hashes) != 1 {
-			t.Fatalf("expected a single hashes, received: %v", len(hashes))
+			t.Fatalf("got: len(hashes)==%d, want: len(hashes)==1", len(hashes))
 		}
 
 		got := hashes[0].String()
 		wanted := e.ir.Hash.String()
 		if got != wanted {
-			t.Fatalf("wanted manifest hash: %v got: %v", wanted, got)
+			t.Fatalf("got: %v, want: %v", got, wanted)
 		}
 	}
 }

@@ -40,7 +40,7 @@ func (h *HTTP) AffectedManifests(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		resp := &jsonerr.Response{
 			Code:    "method-not-allowed",
-			Message: "endpoint only allows GET",
+			Message: "endpoint only allows POST",
 		}
 		jsonerr.Error(w, resp, http.StatusMethodNotAllowed)
 		return
@@ -55,7 +55,7 @@ func (h *HTTP) AffectedManifests(w http.ResponseWriter, r *http.Request) {
 			Code:    "bad-request",
 			Message: err.Error(),
 		}
-		jsonerr.Error(w, resp, http.StatusBadGateway)
+		jsonerr.Error(w, resp, http.StatusBadRequest)
 		return
 	}
 
