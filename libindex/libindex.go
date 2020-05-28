@@ -29,7 +29,9 @@ type Libindex struct {
 	store indexer.Store
 	// a sharable http client
 	client *http.Client
-	state  string
+	// an opaque and unique string representing the configured
+	// state of the indexer. see setState for more information.
+	state string
 }
 
 // New creates a new instance of libindex
@@ -59,30 +61,17 @@ func New(ctx context.Context, opts *Opts) (*Libindex, error) {
 	// register any new scanners.
 	pscnrs, dscnrs, rscnrs, err := indexer.EcosystemsToScanners(ctx, opts.Ecosystems)
 	vscnrs := indexer.MergeVS(pscnrs, dscnrs, rscnrs)
-
-	h := md5.New()
-	var ns []string
-	m := make(map[string][]byte)
-	for _, s := range vscnrs {
-		n := s.Name()
-		m[n] = []byte(n + s.Version() + s.Kind() + "\n")
-		ns = append(ns, n)
-	}
-	if _, err := io.WriteString(h, versionMagic); err != nil {
-		return nil, err
-	}
-	sort.Strings(ns)
-	for _, n := range ns {
-		if _, err := h.Write(m[n]); err != nil {
-			return nil, err
-		}
-	}
-	l.state = hex.EncodeToString(h.Sum(nil))
-
 	err = l.store.RegisterScanners(ctx, vscnrs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to register configured scanners: %v", err)
 	}
+
+	// set the indexer's state
+	err = l.setState(ctx, vscnrs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to set the indexer state: %v", err)
+	}
+
 	log.Info().Msg("registered configured scanners")
 	l.Opts.vscnrs = vscnrs
 	return l, nil
@@ -121,6 +110,34 @@ func (l *Libindex) Index(ctx context.Context, manifest *claircore.Manifest) (*cl
 // re-indexed.
 func (l *Libindex) State(ctx context.Context) (string, error) {
 	return l.state, nil
+}
+
+// setState creates a unique and opaque identifier representing the indexer's
+// configuration state.
+//
+// Indexers running different scanner versions will produce different state strings.
+// Thus this state value can be used as a que for clients to re-index their manifests
+// and obtain a new IndexReport.
+func (l *Libindex) setState(ctx context.Context, vscnrs indexer.VersionedScanners) error {
+	h := md5.New()
+	var ns []string
+	m := make(map[string][]byte)
+	for _, s := range vscnrs {
+		n := s.Name()
+		m[n] = []byte(n + s.Version() + s.Kind() + "\n")
+		ns = append(ns, n)
+	}
+	if _, err := io.WriteString(h, versionMagic); err != nil {
+		return err
+	}
+	sort.Strings(ns)
+	for _, n := range ns {
+		if _, err := h.Write(m[n]); err != nil {
+			return err
+		}
+	}
+	l.state = hex.EncodeToString(h.Sum(nil))
+	return nil
 }
 
 func (l *Libindex) index(ctx context.Context, s *controller.Controller, m *claircore.Manifest) *claircore.IndexReport {
