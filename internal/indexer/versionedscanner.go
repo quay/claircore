@@ -1,11 +1,17 @@
 package indexer
 
+import (
+	"context"
+	"net/http"
+)
+
 const (
 	Package = "package"
 )
 
-// VersionedScanner can be imbeded into specific scanner types. This allows for methods and functions
-// which only need to compare names and versions of scanners not to require each scanner type as an argument
+// VersionedScanner can be embedded into specific scanner types. This allows for
+// methods and functions which only need to compare names and versions of
+// scanners not to require each scanner type as an argument.
 type VersionedScanner interface {
 	// unique name of the distribution scanner.
 	Name() string
@@ -13,6 +19,24 @@ type VersionedScanner interface {
 	Version() string
 	// the kind of scanner. currently only package is implemented
 	Kind() string
+}
+
+// ConfigDeserializer can be thought of as an Unmarshal function with the byte
+// slice provided.
+//
+// This will typically be something like (*json.Decoder).Decode.
+type ConfigDeserializer func(interface{}) error
+
+// RPCScanner is an interface scanners can implement to receive configuration
+// and denote that they expect to be able to talk to the network at run time.
+type RPCScanner interface {
+	Configure(context.Context, ConfigDeserializer, *http.Client) error
+}
+
+// ConfigurableScanner is an interface scanners can implement to receive
+// configuration.
+type ConfigurableScanner interface {
+	Configure(context.Context, ConfigDeserializer) error
 }
 
 // VersionedScanners implements a list with construction methods
