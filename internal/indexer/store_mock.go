@@ -34,6 +34,21 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
+// AffectedManifests mocks base method
+func (m *MockStore) AffectedManifests(arg0 context.Context, arg1 claircore.Vulnerability) ([]claircore.Digest, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AffectedManifests", arg0, arg1)
+	ret0, _ := ret[0].([]claircore.Digest)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AffectedManifests indicates an expected call of AffectedManifests
+func (mr *MockStoreMockRecorder) AffectedManifests(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AffectedManifests", reflect.TypeOf((*MockStore)(nil).AffectedManifests), arg0, arg1)
+}
+
 // Close mocks base method
 func (m *MockStore) Close(arg0 context.Context) error {
 	m.ctrl.T.Helper()
@@ -75,6 +90,20 @@ func (m *MockStore) IndexDistributions(arg0 context.Context, arg1 []*claircore.D
 func (mr *MockStoreMockRecorder) IndexDistributions(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexDistributions", reflect.TypeOf((*MockStore)(nil).IndexDistributions), arg0, arg1, arg2, arg3)
+}
+
+// IndexManifest mocks base method
+func (m *MockStore) IndexManifest(arg0 context.Context, arg1 *claircore.IndexReport) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IndexManifest", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IndexManifest indicates an expected call of IndexManifest
+func (mr *MockStoreMockRecorder) IndexManifest(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexManifest", reflect.TypeOf((*MockStore)(nil).IndexManifest), arg0, arg1)
 }
 
 // IndexPackages mocks base method

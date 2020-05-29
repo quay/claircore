@@ -67,6 +67,11 @@ func (s *store) IndexRepositories(ctx context.Context, repos []*claircore.Reposi
 	return err
 }
 
+func (s *store) IndexManifest(ctx context.Context, ir *claircore.IndexReport) error {
+	err := indexManifest(ctx, s.pool, ir)
+	return err
+}
+
 func (s *store) PackagesByLayer(ctx context.Context, hash claircore.Digest, scnrs indexer.VersionedScanners) ([]*claircore.Package, error) {
 	pkgs, err := packagesByLayer(ctx, s.db, hash, scnrs)
 	return pkgs, err
@@ -90,6 +95,11 @@ func (s *store) RegisterScanners(ctx context.Context, scnrs indexer.VersionedSca
 func (s *store) IndexReport(ctx context.Context, hash claircore.Digest) (*claircore.IndexReport, bool, error) {
 	sr, b, err := indexReport(ctx, s.db, hash)
 	return sr, b, err
+}
+
+func (s *store) AffectedManifests(ctx context.Context, v claircore.Vulnerability) ([]claircore.Digest, error) {
+	hashes, err := affectedManifests(ctx, s.pool, v)
+	return hashes, err
 }
 
 func (s *store) SetIndexReport(ctx context.Context, ir *claircore.IndexReport) error {

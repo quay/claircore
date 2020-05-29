@@ -6,11 +6,14 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"sort"
+	"sync"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/rs/zerolog"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
@@ -174,4 +177,59 @@ func (l *Libindex) index(ctx context.Context, s *controller.Controller, m *clair
 func (l *Libindex) IndexReport(ctx context.Context, hash claircore.Digest) (*claircore.IndexReport, bool, error) {
 	res, ok, err := l.store.IndexReport(ctx, hash)
 	return res, ok, err
+}
+
+// AffectedManifests retrieves a list of affected manifests when provided a list of vulnerabilities.
+func (l *Libindex) AffectedManifests(ctx context.Context, vulns []claircore.Vulnerability) ([]claircore.Digest, error) {
+	const (
+		maxGroupSize = 100
+	)
+	log := zerolog.Ctx(ctx).With().
+		Str("component", "libindex/Libindex.AffectedManifests").
+		Logger()
+
+	var manifests struct {
+		sync.Mutex
+		m []claircore.Digest
+	}
+
+	groupSize := int(math.Sqrt(float64(len(vulns))))
+	if groupSize > maxGroupSize {
+		groupSize = maxGroupSize
+	}
+
+	for i := 0; i < len(vulns); i += groupSize {
+		errGrp, eCTX := errgroup.WithContext(ctx)
+
+		start := i
+		end := i + groupSize
+		if end > len(vulns) {
+			end = len(vulns)
+		}
+
+		for n := start; n < end; n++ {
+			vv := vulns[n]
+			log.Debug().Str("id", vv.ID).Msg("evaluating vulnerability")
+			errGrp.Go(func() error {
+				if eCTX.Err() != nil {
+					return eCTX.Err()
+				}
+				hashes, err := l.store.AffectedManifests(eCTX, vv)
+				if err != nil {
+					return err
+				}
+				manifests.Lock()
+				manifests.m = append(manifests.m, hashes...)
+				manifests.Unlock()
+				return nil
+			})
+		}
+
+		err := errGrp.Wait()
+		if err != nil {
+			return nil, fmt.Errorf("received error retreiving affected manifests: %v", err)
+		}
+	}
+
+	return manifests.m, nil
 }

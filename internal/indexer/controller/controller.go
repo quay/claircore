@@ -10,49 +10,6 @@ import (
 	"github.com/quay/claircore/internal/indexer"
 )
 
-// stateFunc implement the logic of our controller and map directly to States.
-// returning an error will exit the controller in an error state.
-// returning Terminal ends the controller in a non error state.
-type stateFunc func(context.Context, *Controller) (State, error)
-
-// States and their explanations.
-// each state is implemented by a stateFunc implemented in their own files.
-const (
-	// Terminal is the state which halts the fsm and returns the current s.result to the caller
-	Terminal State = iota
-	// CheckManifest determines if the manifest should be scanned.
-	// if no Terminal is returned and we return the existing IndexReport.
-	// Transitions: FetchLayers, Terminal
-	CheckManifest
-	// FetchLayers retrieves all the layers in a manifest and stacks them the same obtain the file image contents.
-	// creates the "image" layer
-	// Transitions: LayerScan
-	FetchLayers
-	// ScanLayers scans each image including the image layer and indexes the contents
-	// Transitions: BuildLayerResult
-	ScanLayers
-	// Coalesce runs each provided ecosystem's coalescer and mergs their scan results
-	// Transitions: ScanFinished
-	Coalesce
-	// IndexError state indicates a impassable error has occured.
-	// returns a ScanResult with the error field
-	// Transitions: Terminal
-	IndexError
-	// IndexFinished state is the terminal state and should return a IndexReport
-	// to the caller of Scan()
-	// Transitions: Terminal
-	IndexFinished
-)
-
-// provides a mapping of States to their implemented stateFunc methods
-var stateToStateFunc = map[State]stateFunc{
-	CheckManifest: checkManifest,
-	FetchLayers:   fetchLayers,
-	ScanLayers:    scanLayers,
-	Coalesce:      coalesce,
-	IndexFinished: indexFinished,
-}
-
 // StartState is a global variable which is normally set to the starting state
 // of the controller. this global maybe overwriten to aide in testing. for example
 // confirming that the controller does the correct thing in terminal states.

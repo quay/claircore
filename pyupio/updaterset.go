@@ -4,11 +4,13 @@ import (
 	"fmt"
 
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/python"
 )
 
 func UpdaterSet() (driver.UpdaterSet, error) {
 	us := driver.NewUpdaterSet()
-	py, err := NewUpdater()
+	repo := python.Repository
+	py, err := NewUpdater(WithRepo(&repo))
 	if err != nil {
 		return us, fmt.Errorf("failed to create pyupio updater: %v", err)
 	}

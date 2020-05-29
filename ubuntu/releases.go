@@ -96,7 +96,7 @@ var trustyDist = &claircore.Distribution{
 
 var xenialDist = &claircore.Distribution{
 	Name:            "Ubuntu",
-	Version:         "14.04.6 LTS, Trusty Tahr",
+	Version:         "16.04.6 LTS (Xenial Xerus)",
 	DID:             "ubuntu",
 	PrettyName:      "Ubuntu 16.04.6 LTS",
 	VersionID:       "16.04",
