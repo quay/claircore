@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
@@ -26,12 +27,14 @@ func registerScanners(ctx context.Context, db *sqlx.DB, scnrs indexer.VersionedS
 		`
 	)
 	// TODO Use passed-in Context.
-	// check if all scanners scanners exist
+	// check if all scanners exist
 	ids := make([]sql.NullInt64, len(scnrs))
 	for i, scnr := range scnrs {
 		err := db.Get(&ids[i], selectScanner, scnr.Name(), scnr.Version(), scnr.Kind())
 		if err != nil {
-			fmt.Errorf("failed to get scanner id for scnr %v: %v", scnr, err)
+			if !errors.Is(err, sql.ErrNoRows) {
+				return fmt.Errorf("failed to get scanner id for scnr %v: %v", scnr.Name(), err)
+			}
 		}
 	}
 

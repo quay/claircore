@@ -81,7 +81,7 @@ func coalesce(ctx context.Context, s *Controller) (State, error) {
 		return Terminal, err
 	}
 	s.report = MergeSR(s.report, reports)
-	return IndexFinished, nil
+	return IndexManifest, nil
 }
 
 // MergeSR merges IndexReports.
