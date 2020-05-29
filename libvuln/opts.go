@@ -12,6 +12,7 @@ import (
 	"github.com/quay/claircore/python"
 	"github.com/quay/claircore/rhel"
 	"github.com/quay/claircore/ubuntu"
+	"github.com/quay/claircore/photon"
 )
 
 const (
@@ -71,6 +72,7 @@ var defaultMatchers = []driver.Matcher{
 	&python.Matcher{},
 	&ubuntu.Matcher{},
 	&rhel.Matcher{},
+	&photon.Matcher{},
 }
 
 // parse is an internal method for constructing
