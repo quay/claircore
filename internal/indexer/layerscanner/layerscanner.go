@@ -16,8 +16,8 @@ import (
 type layerScanner struct {
 	store indexer.Store
 
-	// Maximum allowed in-flight scanners per Scan call
-	inflight int64
+	// weighted semaphore set to incoming concurrency level
+	sem *semaphore.Weighted
 
 	// Pre-constructed and configured scanners.
 	ps []indexer.PackageScanner
@@ -64,12 +64,13 @@ func New(ctx context.Context, concurrent int, opts *indexer.Opts) (indexer.Layer
 	}
 	ds = ds[:i]
 
+	sem := semaphore.NewWeighted(int64(concurrent))
 	return &layerScanner{
-		store:    opts.Store,
-		inflight: int64(concurrent),
-		ps:       ps,
-		ds:       ds,
-		rs:       rs,
+		store: opts.Store,
+		ps:    ps,
+		ds:    ds,
+		rs:    rs,
+		sem:   sem,
 	}, nil
 }
 
@@ -148,28 +149,23 @@ func (ls *layerScanner) Scan(ctx context.Context, manifest claircore.Digest, lay
 		}
 	}
 
-	sem := semaphore.NewWeighted(ls.inflight)
 	g, ctx := errgroup.WithContext(ctx)
-	// Launch is a closure to capture the loop variables and then call the
-	// scanLayer method.
-	launch := func(l *claircore.Layer, s indexer.VersionedScanner) func() error {
-		return func() error {
-			if err := sem.Acquire(ctx, 1); err != nil {
-				return err
-			}
-			defer sem.Release(1)
-			return ls.scanLayer(ctx, l, s)
-		}
-	}
 	for _, l := range layersToScan {
+		ll := l
 		for _, s := range ls.ps {
-			g.Go(launch(l, s))
+			g.Go(func() error {
+				return ls.scanLayer(ctx, ll, s)
+			})
 		}
 		for _, s := range ls.ds {
-			g.Go(launch(l, s))
+			g.Go(func() error {
+				return ls.scanLayer(ctx, ll, s)
+			})
 		}
 		for _, s := range ls.rs {
-			g.Go(launch(l, s))
+			g.Go(func() error {
+				return ls.scanLayer(ctx, ll, s)
+			})
 		}
 	}
 
@@ -189,6 +185,12 @@ func (ls *layerScanner) scanLayer(ctx context.Context, l *claircore.Layer, s ind
 	log.Debug().Msg("scan start")
 	defer log.Debug().Msg("scan done")
 
+	// acquire sem
+	if err := ls.sem.Acquire(ctx, 1); err != nil {
+		return err
+	}
+	defer ls.sem.Release(1)
+
 	ok, err := ls.store.LayerScanned(ctx, l.Hash, s)
 	if err != nil {
 		return err
@@ -199,7 +201,7 @@ func (ls *layerScanner) scanLayer(ctx context.Context, l *claircore.Layer, s ind
 	}
 
 	var result result
-	if err := result.Do(ctx, s, l); err != nil {
+	if err := result.do(ctx, s, l); err != nil {
 		return err
 	}
 
@@ -207,7 +209,7 @@ func (ls *layerScanner) scanLayer(ctx context.Context, l *claircore.Layer, s ind
 		return fmt.Errorf("could not set layer scanned: %v", l)
 	}
 
-	return result.Store(ctx, ls.store, s, l)
+	return result.store(ctx, ls.store, s, l)
 }
 
 // Result is a type that handles the kind-specific bits of the scan process.
@@ -220,7 +222,7 @@ type result struct {
 // Do asserts the Scanner back to having a Scan method, and then calls it.
 //
 // The success value is captured and the error value is returned by Do.
-func (r *result) Do(ctx context.Context, s indexer.VersionedScanner, l *claircore.Layer) error {
+func (r *result) do(ctx context.Context, s indexer.VersionedScanner, l *claircore.Layer) error {
 	var err error
 	switch s := s.(type) {
 	case indexer.PackageScanner:
@@ -237,7 +239,7 @@ func (r *result) Do(ctx context.Context, s indexer.VersionedScanner, l *claircor
 
 // Store calls the properly typed store method on whatever value was captured in
 // the result.
-func (r *result) Store(ctx context.Context, store indexer.Store, s indexer.VersionedScanner, l *claircore.Layer) error {
+func (r *result) store(ctx context.Context, store indexer.Store, s indexer.VersionedScanner, l *claircore.Layer) error {
 	log := zerolog.Ctx(ctx).With().Logger()
 	switch {
 	case r.pkgs != nil:
