@@ -49,23 +49,23 @@ func TestAffectedE2E(t *testing.T) {
 		// to ensure there are no ID overlaps
 		{
 			name:    "amazonlinux 1",
-			irFName: "amazonlinux:1.index.json",
-			vrFName: "amazonlinux:1.report.json",
+			irFName: "amazonlinux-1.index.json",
+			vrFName: "amazonlinux-1.report.json",
 		},
 		{
 			name:    "debian 8",
-			irFName: "debian:8.index.json",
-			vrFName: "debian:8.report.json",
+			irFName: "debian-8.index.json",
+			vrFName: "debian-8.report.json",
 		},
 		{
 			name:    "debian 9",
-			irFName: "debian:9.index.json",
-			vrFName: "debian:9.report.json",
+			irFName: "debian-9.index.json",
+			vrFName: "debian-9.report.json",
 		},
 		{
 			name:    "debian 10",
-			irFName: "debian:10.index.json",
-			vrFName: "debian:10.report.json",
+			irFName: "debian-10.index.json",
+			vrFName: "debian-10.report.json",
 		},
 		{
 			name:    "ubi 8",
@@ -74,28 +74,28 @@ func TestAffectedE2E(t *testing.T) {
 		},
 		{
 			name:    "ubuntu 16.04",
-			irFName: "ubuntu:16.04.index.json",
-			vrFName: "ubuntu:16.04.report.json",
+			irFName: "ubuntu-16.04.index.json",
+			vrFName: "ubuntu-16.04.report.json",
 		},
 		{
 			name:    "ubuntu 18.04",
-			irFName: "ubuntu:18.04.index.json",
-			vrFName: "ubuntu:18.04.report.json",
+			irFName: "ubuntu-18.04.index.json",
+			vrFName: "ubuntu-18.04.report.json",
 		},
 		{
 			name:    "ubuntu 19.10",
-			irFName: "ubuntu:19.10.index.json",
-			vrFName: "ubuntu:19.10.report.json",
+			irFName: "ubuntu-19.10.index.json",
+			vrFName: "ubuntu-19.10.report.json",
 		},
 		{
 			name:    "ubuntu 20.04",
-			irFName: "ubuntu:20.04.index.json",
-			vrFName: "ubuntu:20.04.report.json",
+			irFName: "ubuntu-20.04.index.json",
+			vrFName: "ubuntu-20.04.report.json",
 		},
 		{
 			name:    "mitmproxy 4.0.1",
-			irFName: "mitmproxy:4.0.1.index.json",
-			vrFName: "mitmproxy:4.0.1.report.json",
+			irFName: "mitmproxy-4.0.1.index.json",
+			vrFName: "mitmproxy-4.0.1.report.json",
 		},
 	}
 
