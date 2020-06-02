@@ -204,11 +204,11 @@ func (e *e2e) Diff(ctx context.Context) func(t *testing.T) {
 			}
 
 			// make sure update operations match generated test values
-			if prev != diff.A.Ref {
-				t.Errorf("want: %v, got: %v", diff.A.Ref, prev)
+			if prev != diff.Prev.Ref {
+				t.Errorf("want: %v, got: %v", diff.Prev.Ref, prev)
 			}
-			if cur != diff.B.Ref {
-				t.Errorf("want: %v, got: %v", diff.B.Ref, cur)
+			if cur != diff.Cur.Ref {
+				t.Errorf("want: %v, got: %v", diff.Cur.Ref, cur)
 			}
 
 			// confirm removed and add vulnerabilities are the ones we expect

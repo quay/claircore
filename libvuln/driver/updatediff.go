@@ -13,16 +13,16 @@ import (
 
 // UpdateOperation is a unique update to the vulnstore by an Updater.
 type UpdateOperation struct {
-	Ref         uuid.UUID
-	Updater     string
-	Fingerprint Fingerprint
-	Date        time.Time
+	Ref         uuid.UUID   `json:"ref"`
+	Updater     string      `json:"updater"`
+	Fingerprint Fingerprint `json:"fingerprint"`
+	Date        time.Time   `json:"date"`
 }
 
 // UpdateDiff represents added or removed vulnerabilities between update operations
 type UpdateDiff struct {
-	A       UpdateOperation
-	B       UpdateOperation
-	Added   []claircore.Vulnerability
-	Removed []claircore.Vulnerability
+	Prev    UpdateOperation           `json:"prev"`
+	Cur     UpdateOperation           `json:"cur"`
+	Added   []claircore.Vulnerability `json:"added"`
+	Removed []claircore.Vulnerability `json:"removed"`
 }

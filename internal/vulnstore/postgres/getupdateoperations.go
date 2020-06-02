@@ -29,7 +29,7 @@ func (s *Store) GetLatestUpdateRef(ctx context.Context) (uuid.UUID, error) {
 }
 
 func getLatestRefs(ctx context.Context, pool *pgxpool.Pool) (map[string]uuid.UUID, error) {
-	const query = `SELECT updater, ref FROM update_operation GROUP BY updater ORDER BY updater, id USING > LIMIT 1;`
+	const query = `SELECT DISTINCT ON (updater) updater, ref FROM update_operation ORDER BY updater, id USING >;`
 	log := zerolog.Ctx(ctx).With().
 		Str("component", "internal/vulnstore/postgres/getLatestRefs").
 		Logger()
