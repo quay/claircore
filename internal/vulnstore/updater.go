@@ -26,7 +26,7 @@ type Updater interface {
 
 	// GetLatestUpdateRefs reports the latest update reference for every known
 	// updater.
-	GetLatestUpdateRefs(context.Context) (map[string]uuid.UUID, error)
+	GetLatestUpdateRefs(context.Context) (map[string][]driver.UpdateOperation, error)
 	// GetLatestUpdateRef reports the latest update reference of any known
 	// updater.
 	GetLatestUpdateRef(context.Context) (uuid.UUID, error)
