@@ -17,8 +17,8 @@ func TestAffectedManifestsAddAndSort(t *testing.T) {
 	// make vuln 1 higher severity, to test sorting
 	vulns[1].NormalizedSeverity = claircore.High
 
-	affected.Add(*vulns[0], manifest)
-	affected.Add(*vulns[1], manifest)
+	affected.Add(vulns[0], manifest)
+	affected.Add(vulns[1], manifest)
 
 	if len(affected.Vulnerabilities) != 2 {
 		t.Fatalf("got: %d, want: %d", len(affected.Vulnerabilities), 2)

@@ -10,7 +10,7 @@ import (
 type AffectedManifests struct {
 	mu sync.Mutex
 	// map of vulnerabilities keyed by the vulnerability's ID
-	Vulnerabilities map[string]Vulnerability `json:"vulnerabilities"`
+	Vulnerabilities map[string]*Vulnerability `json:"vulnerabilities"`
 	// map associating a list of vulnerability ids keyed by the
 	// manifest hash they affect.
 	VulnerableManifests map[string][]string `json:"vulnerable_manifests"`
@@ -19,7 +19,7 @@ type AffectedManifests struct {
 // NewAffectedManifests initializes a new AffectedManifests struct.
 func NewAffectedManifests() AffectedManifests {
 	return AffectedManifests{
-		Vulnerabilities:     make(map[string]Vulnerability),
+		Vulnerabilities:     make(map[string]*Vulnerability),
 		VulnerableManifests: make(map[string][]string),
 	}
 }
@@ -28,7 +28,7 @@ func NewAffectedManifests() AffectedManifests {
 // to the necessary maps.
 //
 // Add is safe to use by multiple goroutines.
-func (a *AffectedManifests) Add(v Vulnerability, digests ...Digest) {
+func (a *AffectedManifests) Add(v *Vulnerability, digests ...Digest) {
 	a.mu.Lock()
 	a.Vulnerabilities[v.ID] = v
 	for _, d := range digests {
@@ -43,16 +43,14 @@ func (a *AffectedManifests) Add(v Vulnerability, digests ...Digest) {
 //
 // Sort should not be ran concurrently.
 func (a *AffectedManifests) Sort() {
-	for hash, ids := range a.VulnerableManifests {
+	a.mu.Lock()
+	for _, ids := range a.VulnerableManifests {
 		sort.Slice(ids, func(i, j int) bool {
 			id1, id2 := ids[i], ids[j]
 			v1, v2 := a.Vulnerabilities[id1], a.Vulnerabilities[id2]
 			// reverse this since we want descending sort
-			if v1.NormalizedSeverity > v2.NormalizedSeverity {
-				return true
-			}
-			return false
+			return v1.NormalizedSeverity > v2.NormalizedSeverity
 		})
-		a.VulnerableManifests[hash] = ids
 	}
+	a.mu.Unlock()
 }

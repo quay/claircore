@@ -210,17 +210,17 @@ func (l *Libindex) AffectedManifests(ctx context.Context, vulns []claircore.Vuln
 		}
 
 		for n := start; n < end; n++ {
-			v := vulns[n]
-			log.Debug().Str("id", v.ID).Msg("evaluating vulnerability")
+			nn := n
 			do := func() error {
+				log.Debug().Str("id", vulns[nn].ID).Msg("evaluting vulnerability")
 				if eCTX.Err() != nil {
 					return eCTX.Err()
 				}
-				hashes, err := l.store.AffectedManifests(eCTX, v)
+				hashes, err := l.store.AffectedManifests(eCTX, vulns[nn])
 				if err != nil {
 					return err
 				}
-				affected.Add(v, hashes...)
+				affected.Add(&vulns[nn], hashes...)
 				return nil
 			}
 			errGrp.Go(do)
