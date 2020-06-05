@@ -55,7 +55,7 @@ func (s *Store) GetUpdateDiff(ctx context.Context, a, b uuid.UUID) (*driver.Upda
 	return getUpdateDiff(ctx, s.pool, a, b)
 }
 
-func (s *Store) GetLatestUpdateRefs(ctx context.Context) (map[string]uuid.UUID, error) {
+func (s *Store) GetLatestUpdateRefs(ctx context.Context) (map[string][]driver.UpdateOperation, error) {
 	return getLatestRefs(ctx, s.pool)
 }
 
