@@ -59,7 +59,7 @@ func (h *HTTP) AffectedManifests(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hashes, err := h.l.AffectedManifests(ctx, vulnerabilities.V)
+	affected, err := h.l.AffectedManifests(ctx, vulnerabilities.V)
 	if err != nil {
 		resp := &jsonerr.Response{
 			Code:    "internal-server-error",
@@ -69,12 +69,7 @@ func (h *HTTP) AffectedManifests(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	json.NewEncoder(w).Encode(struct {
-		Manifests []claircore.Digest `json:"manifests"`
-	}{
-		Manifests: hashes,
-	})
-
+	json.NewEncoder(w).Encode(affected)
 	return
 }
 

@@ -9,7 +9,6 @@ import (
 	"math"
 	"net/http"
 	"sort"
-	"sync"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/rs/zerolog"
@@ -187,7 +186,7 @@ func (l *Libindex) IndexReport(ctx context.Context, hash claircore.Digest) (*cla
 }
 
 // AffectedManifests retrieves a list of affected manifests when provided a list of vulnerabilities.
-func (l *Libindex) AffectedManifests(ctx context.Context, vulns []claircore.Vulnerability) ([]claircore.Digest, error) {
+func (l *Libindex) AffectedManifests(ctx context.Context, vulns []claircore.Vulnerability) (claircore.AffectedManifests, error) {
 	const (
 		maxGroupSize = 100
 	)
@@ -195,16 +194,12 @@ func (l *Libindex) AffectedManifests(ctx context.Context, vulns []claircore.Vuln
 		Str("component", "libindex/Libindex.AffectedManifests").
 		Logger()
 
-	var manifests struct {
-		sync.Mutex
-		m []claircore.Digest
-	}
-
 	groupSize := int(math.Sqrt(float64(len(vulns))))
 	if groupSize > maxGroupSize {
 		groupSize = maxGroupSize
 	}
 
+	affected := claircore.NewAffectedManifests()
 	for i := 0; i < len(vulns); i += groupSize {
 		errGrp, eCTX := errgroup.WithContext(ctx)
 
@@ -215,28 +210,27 @@ func (l *Libindex) AffectedManifests(ctx context.Context, vulns []claircore.Vuln
 		}
 
 		for n := start; n < end; n++ {
-			vv := vulns[n]
-			log.Debug().Str("id", vv.ID).Msg("evaluating vulnerability")
-			errGrp.Go(func() error {
+			nn := n
+			do := func() error {
+				log.Debug().Str("id", vulns[nn].ID).Msg("evaluting vulnerability")
 				if eCTX.Err() != nil {
 					return eCTX.Err()
 				}
-				hashes, err := l.store.AffectedManifests(eCTX, vv)
+				hashes, err := l.store.AffectedManifests(eCTX, vulns[nn])
 				if err != nil {
 					return err
 				}
-				manifests.Lock()
-				manifests.m = append(manifests.m, hashes...)
-				manifests.Unlock()
+				affected.Add(&vulns[nn], hashes...)
 				return nil
-			})
+			}
+			errGrp.Go(do)
 		}
 
 		err := errGrp.Wait()
 		if err != nil {
-			return nil, fmt.Errorf("received error retreiving affected manifests: %v", err)
+			return affected, fmt.Errorf("received error retreiving affected manifests: %v", err)
 		}
 	}
-
-	return manifests.m, nil
+	affected.Sort()
+	return affected, nil
 }
