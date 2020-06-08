@@ -41,7 +41,7 @@ func (a *AffectedManifests) Add(v *Vulnerability, digests ...Digest) {
 // Sort will sort each array in the VulnerableManifests map
 // by Vulnerability.NormalizedSeverity in Desc order.
 //
-// Sort should not be ran concurrently.
+// Sort is safe to use by multiple goroutines.
 func (a *AffectedManifests) Sort() {
 	a.mu.Lock()
 	for _, ids := range a.VulnerableManifests {
