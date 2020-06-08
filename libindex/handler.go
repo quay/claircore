@@ -22,10 +22,10 @@ type HTTP struct {
 func NewHandler(l *Libindex) *HTTP {
 	h := &HTTP{l: l}
 	m := http.NewServeMux()
-	m.Handle("/index", http.HandlerFunc(h.Index))
-	m.Handle("/index/", http.HandlerFunc(h.IndexReport))
-	m.Handle("/state", http.HandlerFunc(h.State))
-	m.Handle("/affected_manifests", http.HandlerFunc(h.AffectedManifests))
+	m.HandleFunc("/index_report", h.Index)
+	m.HandleFunc("/index_report/", h.IndexReport)
+	m.HandleFunc("/index_state", h.State)
+	m.HandleFunc("/affected_manifests", h.AffectedManifests)
 	h.ServeMux = m
 	return h
 }

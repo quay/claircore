@@ -28,8 +28,8 @@ func (s *Store) GetLatestUpdateRef(ctx context.Context) (uuid.UUID, error) {
 	return ref, nil
 }
 
-func getLatestRefs(ctx context.Context, pool *pgxpool.Pool) (map[string]uuid.UUID, error) {
-	const query = `SELECT DISTINCT ON (updater) updater, ref FROM update_operation ORDER BY updater, id USING >;`
+func getLatestRefs(ctx context.Context, pool *pgxpool.Pool) (map[string][]driver.UpdateOperation, error) {
+	const query = `SELECT DISTINCT ON (updater) updater, ref, fingerprint, date FROM update_operation ORDER BY updater, id USING >;`
 	log := zerolog.Ctx(ctx).With().
 		Str("component", "internal/vulnstore/postgres/getLatestRefs").
 		Logger()
@@ -41,17 +41,22 @@ func getLatestRefs(ctx context.Context, pool *pgxpool.Pool) (map[string]uuid.UUI
 	}
 	defer rows.Close()
 
-	ret := make(map[string]uuid.UUID)
-	var u string
-	var id uuid.UUID
+	ret := make(map[string][]driver.UpdateOperation)
 	for rows.Next() {
-		if err := rows.Scan(&u, &id); err != nil {
-			return nil, err
+		ops := []driver.UpdateOperation{}
+		ops = append(ops, driver.UpdateOperation{})
+		uo := &ops[len(ops)-1]
+		err := rows.Scan(
+			&uo.Updater,
+			&uo.Ref,
+			&uo.Fingerprint,
+			&uo.Date,
+		)
+		if err != nil {
+			rows.Close()
+			return nil, fmt.Errorf("failed to scan update operation for updater %q: %w", uo.Updater, err)
 		}
-		ret[u] = id
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
+		ret[uo.Updater] = ops
 	}
 	log.Debug().
 		Int("count", len(ret)).

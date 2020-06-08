@@ -124,7 +124,7 @@ func Report(cmd context.Context, cfg *commonConfig, args []string) error {
 	if err != nil {
 		return err
 	}
-	cmdcfg.libindex, err = libindex.Parse("index")
+	cmdcfg.libindex, err = libindex.Parse("index_report")
 	if err != nil {
 		return err
 	}
@@ -132,7 +132,7 @@ func Report(cmd context.Context, cfg *commonConfig, args []string) error {
 	if err != nil {
 		return err
 	}
-	cmdcfg.libvuln, err = libvuln.Parse("scan")
+	cmdcfg.libvuln, err = libvuln.Parse("vulnerability_report")
 	if err != nil {
 		return err
 	}

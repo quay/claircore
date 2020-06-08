@@ -95,7 +95,7 @@ func (l *Libvuln) UpdateDiff(ctx context.Context, prev, cur uuid.UUID) (*driver.
 // known updater.
 //
 // These references are okay to expose externally.
-func (l *Libvuln) LatestUpdateOperations(ctx context.Context) (map[string]uuid.UUID, error) {
+func (l *Libvuln) LatestUpdateOperations(ctx context.Context) (map[string][]driver.UpdateOperation, error) {
 	return l.store.GetLatestUpdateRefs(ctx)
 }
 
