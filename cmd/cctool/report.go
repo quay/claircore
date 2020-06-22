@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/pkg/inspector"
 )
 
 const (
@@ -229,7 +230,7 @@ func Report(cmd context.Context, cfg *commonConfig, args []string) error {
 }
 
 func runManifest(ctx context.Context, img string, cfg *commonConfig, cmdcfg *reportConfig) (*claircore.VulnerabilityReport, error) {
-	m, err := Inspect(ctx, img)
+	m, err := inspector.Inspect(ctx, img)
 	if err != nil {
 		return nil, err
 	}

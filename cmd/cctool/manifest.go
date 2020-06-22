@@ -12,6 +12,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/quay/claircore/pkg/inspector"
 )
 
 type manifestConfig struct {
@@ -49,7 +51,7 @@ func Manifest(cmd context.Context, cfg *commonConfig, args []string) error {
 		img := img
 		go func() {
 			defer wg.Done()
-			m, err := Inspect(ctx, img)
+			m, err := inspector.Inspect(ctx, img)
 			if err != nil {
 				eo.Do(func() { errd = true })
 				errs[i] = err

@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/quay/claircore/internal/indexer/fetcher"
+	"github.com/quay/claircore/pkg/inspector"
 )
 
 type unpackConfig struct {
@@ -46,7 +47,7 @@ func Unpack(cmd context.Context, cfg *commonConfig, args []string) error {
 	defer done()
 
 	// inspect image reference and get manifest
-	m, err := Inspect(ctx, image)
+	m, err := inspector.Inspect(ctx, image)
 	if err != nil {
 		return err
 	}

@@ -1,6 +1,10 @@
 docker ?= docker
 docker-compose ?= docker-compose
 
+.PHONY: acceptance-fixtures
+acceptances-fixtures:
+	cd cmd/acceptance; go run ./...;
+
 # clears any go code in various caches
 .PHONY: clear-cache
 clear-cache:

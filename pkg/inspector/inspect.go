@@ -1,4 +1,4 @@
-package main
+package inspector
 
 import (
 	"context"
@@ -11,7 +11,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
-
 	"github.com/quay/claircore"
 )
 
