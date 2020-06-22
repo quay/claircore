@@ -84,7 +84,7 @@ func Unpack(cmd context.Context, cfg *commonConfig, args []string) error {
 		if err != nil {
 			return err
 		}
-		tarcmd := exec.CommandContext(ctx, "tar", "-xC", dir)
+		tarcmd := exec.CommandContext(ctx, "tar", "-xC", dir, "--delay-directory-restore")
 		tarcmd.Stdin = rd
 		tarcmd.Stderr = &errbuf
 		if err := tarcmd.Run(); err != nil {
