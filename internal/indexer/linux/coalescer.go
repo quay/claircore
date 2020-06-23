@@ -120,7 +120,7 @@ func (c *Coalescer) Coalesce(ctx context.Context, artifacts []*indexer.LayerArti
 	// that any changes to a package's database (dpkg, rpm, alpine, etc...) causes the entire database
 	// file to be written to the layer in which the change occurs. this assumption therefore
 	// allows for the following algorithm
-	// 1) walk layers backwards searching for newest modification of package dabatase.
+	// 1) walk layers backwards searching for newest modification of package database.
 	// 2) if we encounter a package existing in a particular database it means all packages within this package database are present.
 	//    record all packages found into a temporary map.
 	//    when we are finished searching the current layer add a key/value to the penultimate map indicating

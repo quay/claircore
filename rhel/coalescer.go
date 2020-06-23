@@ -106,13 +106,13 @@ func (c *Coalescer) Coalesce(ctx context.Context, artifacts []*indexer.LayerArti
 		return nil, ctx.Err()
 	}
 
-	// Now let's go through packages and finds out whether package is still
+	// Now let's go through packages and finds out whether each package is still
 	// available in package database in higher layers.
-	// When package is not available in higher leyers it means that package was
+	// When package is not available in higher layers it means that package was
 	// either updated/downgraded/removed. In such a cases we need to remove it
 	// from list of packages
 	// If a package is available in all layers it means that it should be added
-	// to list of packages and and create an environment for it.
+	// to list of packages and associate an environment for it.
 	for i := 0; i < len(artifacts); i++ {
 		currentLayerArtifacts := artifacts[i]
 		if len(currentLayerArtifacts.Pkgs) == 0 {
