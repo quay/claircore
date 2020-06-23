@@ -17,8 +17,8 @@ func indexRepositories(ctx context.Context, db *sqlx.DB, pool *pgxpool.Pool, rep
 	const (
 		insert = `
 		INSERT INTO repo
-			(name, key, uri)
-		VALUES ($1, $2, $3)
+			(name, key, uri, cpe)
+		VALUES ($1, $2, $3, $4)
 		ON CONFLICT (name, key, uri) DO NOTHING;
 		`
 
@@ -73,6 +73,7 @@ func indexRepositories(ctx context.Context, db *sqlx.DB, pool *pgxpool.Pool, rep
 			repo.Name,
 			repo.Key,
 			repo.URI,
+			repo.CPE,
 		)
 		if err != nil {
 			return fmt.Errorf("batch insert failed for repo %v: %v", repo, err)
