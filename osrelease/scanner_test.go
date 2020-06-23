@@ -1,11 +1,7 @@
 package osrelease
 
 import (
-	"compress/gzip"
 	"context"
-	"errors"
-	"io"
-	"net/http"
 	"os"
 	"path/filepath"
 	"runtime/trace"
@@ -15,7 +11,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/cpe"
-	"github.com/quay/claircore/test/integration"
+	"github.com/quay/claircore/test/fetch"
 	"github.com/quay/claircore/test/log"
 )
 
@@ -135,50 +131,13 @@ func TestParse(t *testing.T) {
 }
 
 type layercase struct {
-	Name string
-	URL  string
-	Want []*claircore.Distribution
+	Name  string
+	Layer layerspec
+	Want  []*claircore.Distribution
 }
-
-func (lc *layercase) name() string {
-	return filepath.Join("testdata", lc.Name+".layer")
-}
-
-func (lc layercase) Prep(t *testing.T) {
-	t.Helper()
-	fn := lc.name()
-	_, err := os.Stat(fn)
-	switch {
-	case err == nil:
-		t.Logf("found layer cached: %q", fn)
-		return
-	case errors.Is(err, os.ErrNotExist):
-		integration.Skip(t)
-		t.Logf("fetching %q → %q", lc.URL, fn)
-	default:
-		t.Fatal(err)
-	}
-	f, err := os.Create(fn)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer f.Close()
-	res, err := http.Get(lc.URL)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if res.StatusCode != http.StatusOK {
-		t.Fatal(res.Status)
-	}
-	rd, err := gzip.NewReader(res.Body)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer rd.Close()
-	if _, err := io.Copy(f, rd); err != nil {
-		t.Fatal(err)
-	}
-	t.Logf("fetched %q", fn)
+type layerspec struct {
+	From, Repo string
+	Blob       claircore.Digest
 }
 
 func (lc layercase) Test(t *testing.T) {
@@ -188,7 +147,12 @@ func (lc layercase) Test(t *testing.T) {
 	ctx = log.TestLogger(ctx, t)
 	s := Scanner{}
 	l := &claircore.Layer{}
-	if err := l.SetLocal(lc.name()); err != nil {
+	f, err := fetch.Layer(ctx, t, nil, lc.Layer.From, lc.Layer.Repo, lc.Layer.Blob)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	if err := l.SetLocal(f.Name()); err != nil {
 		t.Fatal(err)
 	}
 	ds, err := s.Scan(ctx, l)
@@ -205,7 +169,11 @@ func TestLayer(t *testing.T) {
 	tt := []layercase{
 		{
 			Name: "ubuntu_18.04",
-			URL:  "https://storage.googleapis.com/quay-sandbox-01/datastorage/registry/sha256/35/35c102085707f703de2d9eaad8752d6fe1b8f02b5d2149f1d8357c9cc7fb7d0a",
+			Layer: layerspec{
+				From: "docker.io",
+				Repo: "library/ubuntu",
+				Blob: claircore.MustParseDigest(`sha256:35c102085707f703de2d9eaad8752d6fe1b8f02b5d2149f1d8357c9cc7fb7d0a`),
+			},
 			Want: []*claircore.Distribution{
 				&claircore.Distribution{
 					DID:             "ubuntu",
@@ -217,10 +185,6 @@ func TestLayer(t *testing.T) {
 				},
 			},
 		},
-	}
-
-	for _, tc := range tt {
-		tc.Prep(t)
 	}
 
 	for _, tc := range tt {
