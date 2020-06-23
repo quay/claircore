@@ -292,7 +292,7 @@ func (e *e2e) DeleteUpdateOperations(ctx context.Context) func(*testing.T) {
 }
 
 // checkInsertedVulns confirms vulnerabilitiles are inserted into the database correctly when
-// store.UpdateVulnerabilities is calld.
+// store.UpdateVulnerabilities is called.
 func checkInsertedVulns(ctx context.Context, t *testing.T, db *sqlx.DB, id uuid.UUID, vulns []*claircore.Vulnerability) {
 	const query = `SELECT
 	vuln.hash_kind,

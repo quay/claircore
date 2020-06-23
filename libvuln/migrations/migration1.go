@@ -70,7 +70,7 @@ const (
 		repo_key               TEXT,
 		repo_uri               TEXT,
 		fixed_in_version       TEXT,
-		arch_operation         bigint,
+		arch_operation         TEXT,
 		vulnerable_range       VersionRange NOT NULL DEFAULT VersionRange('{}', '{}', '()'),
 		version_kind           TEXT,
 		UNIQUE (hash_kind, hash)

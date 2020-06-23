@@ -119,6 +119,8 @@ func mapArchOp(op oval.Operation) claircore.ArchOp {
 		return claircore.OpEquals
 	case oval.OpNotEquals:
 		return claircore.OpNotEquals
+	case oval.OpPatternMatch:
+		return claircore.OpPatternMatch
 	default:
 	}
 	return claircore.ArchOp(0)
