@@ -40,11 +40,21 @@ func (report *IndexReport) IndexRecords() []*IndexRecord {
 	out := []*IndexRecord{}
 	for _, pkg := range report.Packages {
 		for _, env := range report.Environments[pkg.ID] {
-			record := &IndexRecord{}
-			record.Package = pkg
-			record.Distribution = report.Distributions[env.DistributionID]
-			record.Repository = report.Repositories[env.RepositoryID]
-			out = append(out, record)
+			if len(env.RepositoryIDs) == 0 {
+				record := &IndexRecord{}
+				record.Package = pkg
+				record.Distribution = report.Distributions[env.DistributionID]
+				out = append(out, record)
+				continue
+			}
+			// create package record for each repository
+			for _, repositoryID := range env.RepositoryIDs {
+				record := &IndexRecord{}
+				record.Package = pkg
+				record.Distribution = report.Distributions[env.DistributionID]
+				record.Repository = report.Repositories[repositoryID]
+				out = append(out, record)
+			}
 		}
 	}
 	return out

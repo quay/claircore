@@ -131,7 +131,8 @@ const (
 		id BIGSERIAL PRIMARY KEY,
 		name text NOT NULL,
 		key text DEFAULT '',
-		uri text DEFAULT ''
+		uri text DEFAULT '',
+		cpe text DEFAULT ''
 	);
 	CREATE UNIQUE INDEX IF NOT EXISTS repo_unique_idx ON repo (name, key, uri);
 

@@ -104,32 +104,34 @@ func configAndFilter(ctx context.Context, log *zerolog.Logger, opts *indexer.Opt
 		return true
 	}
 
-	if f, ok := cfgMap[n]; ok {
-		cs, csOK := s.(indexer.ConfigurableScanner)
-		rs, rsOK := s.(indexer.RPCScanner)
-		switch {
-		case !csOK && !rsOK:
-			log.Warn().
+	f := func(interface{}) error { return nil }
+	if cf, ok := cfgMap[n]; ok {
+		f = cf
+	}
+	cs, csOK := s.(indexer.ConfigurableScanner)
+	rs, rsOK := s.(indexer.RPCScanner)
+	switch {
+	case !csOK && !rsOK:
+		log.Warn().
+			Str("scanner", n).
+			Msg("configuration present for an unconfigurable scanner, skipping")
+	case csOK && rsOK:
+		fallthrough
+	case !csOK && rsOK:
+		if err := rs.Configure(ctx, f, opts.Client); err != nil {
+			log.Error().
 				Str("scanner", n).
-				Msg("configuration present for an unconfigurable scanner, skipping")
-		case csOK && rsOK:
-			fallthrough
-		case !csOK && rsOK:
-			if err := rs.Configure(ctx, f, opts.Client); err != nil {
-				log.Error().
-					Str("scanner", n).
-					Err(err).
-					Msg("configuration failed")
-				return true
-			}
-		case csOK && !rsOK:
-			if err := cs.Configure(ctx, f); err != nil {
-				log.Error().
-					Str("scanner", n).
-					Err(err).
-					Msg("configuration failed")
-				return true
-			}
+				Err(err).
+				Msg("configuration failed")
+			return true
+		}
+	case csOK && !rsOK:
+		if err := cs.Configure(ctx, f); err != nil {
+			log.Error().
+				Str("scanner", n).
+				Err(err).
+				Msg("configuration failed")
+			return true
 		}
 	}
 	return false

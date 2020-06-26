@@ -25,7 +25,8 @@ func repositoriesByLayer(ctx context.Context, db *sqlx.DB, hash claircore.Digest
 		SELECT repo.id,
 			   repo.name,
 			   repo.key,
-			   repo.uri
+			   repo.uri,
+			   repo.cpe
 		FROM repo_scanartifact
 				 LEFT JOIN repo ON repo_scanartifact.repo_id = repo.id
 		WHERE repo_scanartifact.layer_hash = '%s'
@@ -76,6 +77,7 @@ func repositoriesByLayer(ctx context.Context, db *sqlx.DB, hash claircore.Digest
 			&repo.Name,
 			&repo.Key,
 			&repo.URI,
+			&repo.CPE,
 		)
 		repo.ID = strconv.FormatInt(id, 10)
 		if err != nil {

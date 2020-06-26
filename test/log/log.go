@@ -19,8 +19,13 @@ func TestLogger(ctx context.Context, t testing.TB) context.Context {
 	go func() {
 		defer r.Close()
 		s := bufio.NewScanner(r)
-		for s.Scan() && ctx.Err() == nil {
-			t.Log(s.Text())
+		for s.Scan() {
+			select {
+			case <-ctx.Done():
+				// If done, drain the pipe.
+			default:
+				t.Log(s.Text())
+			}
 		}
 	}()
 	return log.WithContext(ctx)

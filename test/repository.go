@@ -14,7 +14,7 @@ func GenUniqueRepositories(n int, opts ...GenRepoOption) []*claircore.Repository
 	for i := 0; i < n; i++ {
 		r := claircore.Repository{
 			ID:   strconv.Itoa(i),
-			Name: fmt.Sprintf("distribution-%d", i),
+			Name: fmt.Sprintf("repository-%d", i),
 			Key:  fmt.Sprintf("key-%d", i),
 			URI:  fmt.Sprintf("uri-%d", i),
 		}

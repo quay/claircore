@@ -14,5 +14,5 @@ type Environment struct {
 	// the ID of the distribution the package was discovered on
 	DistributionID string `json:"distribution_id"`
 	// the ID of the repository where this package was downloaded from (currently not used)
-	RepositoryID string `json:"repository_id"`
+	RepositoryIDs []string `json:"repository_ids"`
 }

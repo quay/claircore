@@ -179,6 +179,23 @@ func Test_GetQueryBuilder_Deterministic_Args(t *testing.T) {
 				}
 			},
 		},
+		{
+			name: "repo_name",
+			expectedQuery: preamble + noSource +
+				`("repo_name" = 'repository-0'))`,
+			matchExps: []driver.MatchConstraint{driver.RepositoryName},
+			indexRecord: func() *claircore.IndexRecord {
+				pkgs := test.GenUniquePackages(1)
+				pkgs[0].Source = &claircore.Package{} // clear source field
+				dists := test.GenUniqueDistributions(1)
+				repos := test.GenUniqueRepositories(1)
+				return &claircore.IndexRecord{
+					Package:      pkgs[0],
+					Distribution: dists[0],
+					Repository:   repos[0],
+				}
+			},
+		},
 	}
 
 	// This is safe to do because SQL doesn't care about what whitespace is
