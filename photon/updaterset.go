@@ -1,6 +1,7 @@
 package photon
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/quay/claircore/libvuln/driver"
@@ -12,7 +13,7 @@ var photonReleases = []Release{
 	Photon3,
 }
 
-func UpdaterSet() (driver.UpdaterSet, error) {
+func UpdaterSet(_ context.Context) (driver.UpdaterSet, error) {
 	us := driver.NewUpdaterSet()
 	for _, release := range photonReleases {
 		u, err := NewUpdater(release)

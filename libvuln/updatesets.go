@@ -2,83 +2,74 @@ package libvuln
 
 import (
 	"context"
-	"fmt"
+	"time"
 
-	"github.com/quay/claircore/alpine"
-	"github.com/quay/claircore/aws"
-	"github.com/quay/claircore/debian"
-	"github.com/quay/claircore/libvuln/driver"
-	"github.com/quay/claircore/oracle"
-	"github.com/quay/claircore/photon"
-	"github.com/quay/claircore/pyupio"
-	"github.com/quay/claircore/rhel"
-	"github.com/quay/claircore/suse"
-	"github.com/quay/claircore/ubuntu"
 	"github.com/rs/zerolog"
+
+	"github.com/quay/claircore/internal/updater"
+	"github.com/quay/claircore/libvuln/driver"
 )
 
-var defaultSets = map[string]func() (driver.UpdaterSet, error){
-	"alpine": alpine.UpdaterSet,
-	"aws":    aws.UpdaterSet,
-	"debian": debian.UpdaterSet,
-	"oracle": oracle.UpdaterSet,
-	"photon": photon.UpdaterSet,
-	"pyupio": pyupio.UpdaterSet,
-	"rhel":   rhel.UpdaterSet,
-	"suse":   suse.UpdaterSet,
-	"ubuntu": ubuntu.UpdaterSet,
-}
-
-// UpdaterSets returns all UpdaterSets currently
-// supported by libvuln
-func updaterSets(ctx context.Context, sets []string) (driver.UpdaterSet, error) {
+// RunUpdaters runs all updaters from all configured updater factories.
+//
+// Any concurrency control is done at the UpdaterSet level. If Updaters want
+// additional concurrency control, they must arrange it.
+func (l *Libvuln) RunUpdaters(ctx context.Context, workers int, fs ...driver.UpdaterSetFactory) error {
 	log := zerolog.Ctx(ctx).With().
-		Str("component", "libvuln/updaterSets").
+		Str("component", "libvuln/Libvuln/RunUpdaters").
 		Logger()
+	ctx = log.WithContext(ctx)
+	log.Debug().
+		Int("sets", len(fs)).
+		Int("workers", workers).
+		Msg("running updaters")
 
-	us := driver.NewUpdaterSet()
-	var set driver.UpdaterSet
-	var err error
-	switch {
-	// merge all sets
-	case sets == nil:
-		log.Info().
-			Msg("creating all default updater sets")
-
-		for name, f := range defaultSets {
-			set, err = f()
+	ch := make(chan driver.Updater, workers)
+	exe := updater.Executor{
+		Pool:    l.pool,
+		Workers: workers,
+	}
+	go func() {
+		defer close(ch)
+		for _, f := range fs {
+			us, err := f.UpdaterSet(ctx)
 			if err != nil {
-				return us, fmt.Errorf("failed to create %s updater set: %v", name, err)
-			}
-
-			err = us.Merge(set)
-			if err != nil {
-				return us, fmt.Errorf("failed to merge set %s: %v", name, err)
-			}
-		}
-		return us, nil
-
-	// merge only supplied sets
-	case len(sets) > 0:
-		log.Info().Str("sets", fmt.Sprintf("%v", sets)).
-			Msg("creating specified updater sets")
-
-		for _, name := range sets {
-			if _, ok := defaultSets[name]; !ok {
-				log.Warn().Str("set", name).Msg("unknown update set provided")
+				log.Warn().Err(err).Msg("failed creating updaters")
 				continue
 			}
-
-			set, err = defaultSets[name]()
-			if err != nil {
-				return us, fmt.Errorf("failed to create %s updater set: %v", name, err)
+			for _, u := range us.Updaters() {
+				select {
+				case ch <- u:
+				case <-ctx.Done():
+					return
+				}
 			}
+		}
+	}()
+	if err := exe.Run(ctx, ch); err != nil {
+		log.Warn().Err(err).Msg("failed running updaters")
+	}
+	return nil
+}
 
-			err = us.Merge(set)
-			if err != nil {
-				return us, fmt.Errorf("failed to merge set %s: %v", name, err)
+func (l *Libvuln) loopUpdaters(ctx context.Context, p time.Duration, w int, fs ...driver.UpdaterSetFactory) {
+	log := zerolog.Ctx(ctx).With().
+		Str("component", "libvuln/Libvuln/loopUpdaters").
+		Logger()
+	ctx = log.WithContext(ctx)
+	t := time.NewTicker(p)
+	defer t.Stop()
+	done := ctx.Done()
+
+	for {
+		select {
+		case <-done:
+			return
+		case <-t.C:
+			if err := l.RunUpdaters(ctx, w, fs...); err != nil {
+				log.Error().Err(err).Msg("unable to run updaters")
+				return
 			}
 		}
 	}
-	return us, nil
 }

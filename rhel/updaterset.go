@@ -1,6 +1,7 @@
 package rhel
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/quay/claircore/libvuln/driver"
@@ -12,7 +13,7 @@ var rhelReleases = []Release{
 	RHEL8,
 }
 
-func UpdaterSet() (driver.UpdaterSet, error) {
+func UpdaterSet(_ context.Context) (driver.UpdaterSet, error) {
 	us := driver.NewUpdaterSet()
 	for _, release := range rhelReleases {
 		u, err := NewUpdater(release)

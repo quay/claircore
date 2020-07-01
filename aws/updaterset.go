@@ -1,6 +1,7 @@
 package aws
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/quay/claircore/libvuln/driver"
@@ -11,7 +12,7 @@ var amazonReleases = []Release{
 	Linux2,
 }
 
-func UpdaterSet() (driver.UpdaterSet, error) {
+func UpdaterSet(_ context.Context) (driver.UpdaterSet, error) {
 	us := driver.NewUpdaterSet()
 	for _, release := range amazonReleases {
 		u, err := NewUpdater(release)

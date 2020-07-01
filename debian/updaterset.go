@@ -1,6 +1,8 @@
 package debian
 
 import (
+	"context"
+
 	"github.com/quay/claircore/libvuln/driver"
 )
 
@@ -11,7 +13,7 @@ var debianReleases = []Release{
 	Wheezy,
 }
 
-func UpdaterSet() (driver.UpdaterSet, error) {
+func UpdaterSet(_ context.Context) (driver.UpdaterSet, error) {
 	us := driver.NewUpdaterSet()
 	for _, release := range debianReleases {
 		u := NewUpdater(release)

@@ -1,13 +1,14 @@
 package oracle
 
 import (
+	"context"
 	"fmt"
 	"time"
 
 	"github.com/quay/claircore/libvuln/driver"
 )
 
-func UpdaterSet() (driver.UpdaterSet, error) {
+func UpdaterSet(_ context.Context) (driver.UpdaterSet, error) {
 	us := driver.NewUpdaterSet()
 	for year, lim := 2007, time.Now().Year(); year != lim; year++ {
 		u, err := NewUpdater(year)

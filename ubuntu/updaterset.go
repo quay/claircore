@@ -1,6 +1,8 @@
 package ubuntu
 
 import (
+	"context"
+
 	"github.com/quay/claircore/libvuln/driver"
 )
 
@@ -18,7 +20,7 @@ var ubuntuReleases = []Release{
 
 // UpdaterSet returns a UpdaterSet comprised of
 // all supported ubuntu releases.
-func UpdaterSet() (driver.UpdaterSet, error) {
+func UpdaterSet(_ context.Context) (driver.UpdaterSet, error) {
 	us := driver.NewUpdaterSet()
 	for _, release := range ubuntuReleases {
 		u := NewUpdater(release)

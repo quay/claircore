@@ -1,6 +1,7 @@
 package suse
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/quay/claircore/libvuln/driver"
@@ -14,7 +15,7 @@ var suseReleases = []Release{
 	Leap151,
 }
 
-func UpdaterSet() (driver.UpdaterSet, error) {
+func UpdaterSet(_ context.Context) (driver.UpdaterSet, error) {
 	us := driver.NewUpdaterSet()
 	for _, release := range suseReleases {
 		u, err := NewUpdater(release)

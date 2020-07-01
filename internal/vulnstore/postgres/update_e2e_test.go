@@ -70,9 +70,9 @@ func (e *e2e) Run(ctx context.Context) func(*testing.T) {
 	binary.Write(h, binary.BigEndian, e.Updates)
 	e.updater = strconv.FormatUint(h.Sum64(), 36)
 	return func(t *testing.T) {
-		store, teardown := TestStore(ctx, t)
-		e.pool = store.pool
-		e.s = store
+		pool, teardown := TestDB(ctx, t)
+		e.pool = pool
+		e.s = NewVulnStore(pool)
 		defer teardown()
 		t.Run("Update", e.Update(ctx))
 		t.Run("GetUpdateOperations", e.GetUpdateOperations(ctx))

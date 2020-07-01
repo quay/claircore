@@ -13,7 +13,6 @@ import (
 	"github.com/quay/claircore/internal/updater"
 	vulnstore "github.com/quay/claircore/internal/vulnstore/postgres"
 	"github.com/quay/claircore/libvuln/driver"
-	distlock "github.com/quay/claircore/pkg/distlock/postgres"
 	"github.com/quay/claircore/test/integration"
 	"github.com/quay/claircore/test/log"
 )
@@ -27,24 +26,24 @@ func Test_Matcher_Integration(t *testing.T) {
 	ctx := context.Background()
 	ctx, done := log.TestLogger(ctx, t)
 	defer done()
-	store, teardown := vulnstore.TestStore(ctx, t)
+	pool, teardown := vulnstore.TestDB(ctx, t)
 	defer teardown()
+	store := vulnstore.NewVulnStore(pool)
 
 	m := &Matcher{}
 	// seed the test vulnstore with CVE data
-	deb := NewUpdater(Buster)
-	up := updater.NewController(&updater.Opts{
-		Name:    "test-debian-buster",
-		Updater: deb,
-		Store:   store,
-		// set high, we will call update manually
-		Interval: 20 * time.Minute,
-		Lock:     distlock.NewLock(nil, 2*time.Second),
-	})
+	ch := make(chan driver.Updater)
+	go func() {
+		ch <- NewUpdater(Buster)
+		close(ch)
+	}()
+	exec := updater.Executor{Pool: pool}
 	// force update
-	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+	tctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
-	up.Update(ctx)
+	if err := exec.Run(tctx, ch); err != nil {
+		t.Error(err)
+	}
 	path := filepath.Join("testdata", "indexreport-buster-jackson-databind.json")
 	f, err := os.Open(path)
 	if err != nil {

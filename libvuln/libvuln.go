@@ -4,12 +4,13 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/jmoiron/sqlx"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/rs/zerolog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/matcher"
 	"github.com/quay/claircore/internal/vulnstore"
+	"github.com/quay/claircore/internal/vulnstore/postgres"
 	"github.com/quay/claircore/libvuln/driver"
 )
 
@@ -19,10 +20,9 @@ import (
 // Libvuln also runs background updaters which keep the vulnerability
 // database consistent.
 type Libvuln struct {
-	store        vulnstore.Store
-	db           *sqlx.DB
-	matchers     []driver.Matcher
-	killUpdaters context.CancelFunc
+	store    vulnstore.Store
+	pool     *pgxpool.Pool
+	matchers []driver.Matcher
 }
 
 // New creates a new instance of the Libvuln library
@@ -36,33 +36,34 @@ func New(ctx context.Context, opts *Opts) (*Libvuln, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	log.Info().
-		Int32("count", opts.MaxConnPool).
-		Msg("initializing store")
-
-	db, vulnstore, err := initStore(ctx, opts)
+	setFuncs, err := opts.updaterSetFunc(ctx, log)
 	if err != nil {
 		return nil, err
 	}
 
-	// block on updater initialization.
-	eC := make(chan error, 1024)
-	dC := make(chan context.CancelFunc, 1)
-	log.Info().Msg("updater initialization start")
-	go initUpdaters(ctx, opts, db, vulnstore, dC, eC)
-	killUpdaters := <-dC
-	log.Info().Msg("updater initialization done")
-	for err := range eC {
-		log.Warn().
-			Err(err).
-			Msg("updater error")
+	log.Info().
+		Int32("count", opts.MaxConnPool).
+		Msg("initializing store")
+	if err := opts.migrations(ctx); err != nil {
+		return nil, err
 	}
+	pool, err := opts.pool(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	l := &Libvuln{
-		store:        vulnstore,
-		db:           db,
-		matchers:     opts.Matchers,
-		killUpdaters: killUpdaters,
+		store:    postgres.NewVulnStore(pool),
+		pool:     pool,
+		matchers: opts.Matchers,
+	}
+
+	// Run updaters synchronously, initially.
+	if err := l.RunUpdaters(ctx, opts.UpdateWorkers, setFuncs...); err != nil {
+		return nil, err
+	}
+	if !opts.DisableBackgoundUpdates {
+		go l.loopUpdaters(ctx, opts.UpdateInterval, opts.UpdateWorkers, setFuncs...)
 	}
 	log.Info().Msg("libvuln initialized")
 	return l, nil
