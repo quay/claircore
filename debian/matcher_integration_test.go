@@ -27,7 +27,7 @@ func Test_Matcher_Integration(t *testing.T) {
 	ctx := context.Background()
 	ctx, done := log.TestLogger(ctx, t)
 	defer done()
-	db, store, teardown := vulnstore.TestStore(ctx, t)
+	store, teardown := vulnstore.TestStore(ctx, t)
 	defer teardown()
 
 	m := &Matcher{}
@@ -39,7 +39,7 @@ func Test_Matcher_Integration(t *testing.T) {
 		Store:   store,
 		// set high, we will call update manually
 		Interval: 20 * time.Minute,
-		Lock:     distlock.NewLock(db, 2*time.Second),
+		Lock:     distlock.NewLock(nil, 2*time.Second),
 	})
 	// force update
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)

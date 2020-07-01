@@ -11,7 +11,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
-	"github.com/jmoiron/sqlx"
+	"github.com/jackc/pgx/v4/pgxpool"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/vulnstore"
@@ -57,8 +57,8 @@ type e2e struct {
 	// tests.
 	bail      func()
 	updater   string
-	db        *sqlx.DB
 	s         vulnstore.Store
+	pool      *pgxpool.Pool
 	updateOps []driver.UpdateOperation
 }
 
@@ -70,9 +70,9 @@ func (e *e2e) Run(ctx context.Context) func(*testing.T) {
 	binary.Write(h, binary.BigEndian, e.Updates)
 	e.updater = strconv.FormatUint(h.Sum64(), 36)
 	return func(t *testing.T) {
-		db, store, teardown := TestStore(ctx, t)
+		store, teardown := TestStore(ctx, t)
+		e.pool = store.pool
 		e.s = store
-		e.db = db
 		defer teardown()
 		t.Run("Update", e.Update(ctx))
 		t.Run("GetUpdateOperations", e.GetUpdateOperations(ctx))
@@ -127,7 +127,7 @@ func (e *e2e) Update(ctx context.Context) func(*testing.T) {
 				Updater:     e.updater,
 			})
 
-			checkInsertedVulns(ctx, t, e.db, ref, vs)
+			checkInsertedVulns(ctx, t, e.pool, ref, vs)
 		}
 		t.Log("ok")
 	}
@@ -270,7 +270,7 @@ func (e *e2e) DeleteUpdateOperations(ctx context.Context) func(*testing.T) {
 			}
 
 			// Check that the update_operation is removed from the table.
-			if err := e.db.QueryRowContext(ctx, opExists, op.Ref).Scan(&exists); err != nil {
+			if err := e.pool.QueryRow(ctx, opExists, op.Ref).Scan(&exists); err != nil {
 				t.Errorf("query failed: %v", err)
 			}
 			t.Logf("operation %v exists: %v", op.Ref, exists)
@@ -279,7 +279,7 @@ func (e *e2e) DeleteUpdateOperations(ctx context.Context) func(*testing.T) {
 			}
 
 			// This really shouldn't happen because of the foreign constraint.
-			if err := e.db.QueryRowContext(ctx, assocExists, op.Ref).Scan(&exists); err != nil {
+			if err := e.pool.QueryRow(ctx, assocExists, op.Ref).Scan(&exists); err != nil {
 				t.Errorf("query failed: %v", err)
 			}
 			t.Logf("operation %v exists: %v", op.Ref, exists)
@@ -293,7 +293,7 @@ func (e *e2e) DeleteUpdateOperations(ctx context.Context) func(*testing.T) {
 
 // checkInsertedVulns confirms vulnerabilitiles are inserted into the database correctly when
 // store.UpdateVulnerabilities is called.
-func checkInsertedVulns(ctx context.Context, t *testing.T, db *sqlx.DB, id uuid.UUID, vulns []*claircore.Vulnerability) {
+func checkInsertedVulns(ctx context.Context, t *testing.T, pool *pgxpool.Pool, id uuid.UUID, vulns []*claircore.Vulnerability) {
 	const query = `SELECT
 	vuln.hash_kind,
 	vuln.hash,
@@ -331,7 +331,7 @@ WHERE uo.ref = $1::uuid;`
 	for _, vuln := range vulns {
 		expectedVulns[vuln.Name] = vuln
 	}
-	rows, err := db.QueryContext(ctx, query, id)
+	rows, err := pool.Query(ctx, query, id)
 	if err != nil {
 		t.Fatalf("query failed: %v", err)
 	}
@@ -339,6 +339,7 @@ WHERE uo.ref = $1::uuid;`
 
 	queriedVulns := map[string]*claircore.Vulnerability{}
 	for rows.Next() {
+		var id int64
 		var hashKind string
 		var hash []byte
 		vuln := claircore.Vulnerability{
@@ -350,7 +351,7 @@ WHERE uo.ref = $1::uuid;`
 			&hashKind,
 			&hash,
 			&vuln.Updater,
-			&vuln.ID,
+			&id,
 			&vuln.Name,
 			&vuln.Description,
 			&vuln.Issued,
@@ -376,6 +377,7 @@ WHERE uo.ref = $1::uuid;`
 			&vuln.Repo.URI,
 			&vuln.FixedInVersion,
 		)
+		vuln.ID = strconv.FormatInt(id, 10)
 		if err != nil {
 			t.Fatalf("failed to scan vulnerability: %v", err)
 		}

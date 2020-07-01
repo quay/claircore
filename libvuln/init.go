@@ -98,6 +98,6 @@ func initStore(ctx context.Context, opts *Opts) (*sqlx.DB, vulnstore.Store, erro
 		}
 	}
 
-	store := postgres.NewVulnStore(db, pool)
+	store := postgres.NewVulnStore(pool)
 	return db, store, nil
 }
