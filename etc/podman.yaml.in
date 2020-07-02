@@ -13,7 +13,7 @@ metadata:
   name: claircore-dev
 spec:
   containers:
-    - command: ['go', 'run', '-mod=vendor', '.']
+    - command: ['go', 'run', '.']
       env:
         - name: HTTP_LISTEN_ADDR
           value: 0.0.0.0:8081
@@ -39,7 +39,7 @@ spec:
         - mountPath: /src/claircore:z
           name: reporoot
       workingDir: /src/claircore/cmd/libvulnhttp
-    - command: ['go', 'run', '-mod=vendor', '.']
+    - command: ['go', 'run', '.']
       env:
         - name: LOG_LEVEL
           value: debug
