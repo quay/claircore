@@ -1,4 +1,4 @@
-package rhel
+package containerapi
 
 import (
 	"context"
@@ -13,32 +13,32 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type containerImages struct {
-	Images []containerImage `json:"data"`
+type ContainerImages struct {
+	Images []ContainerImage `json:"data"`
 }
-type containerImage struct {
+type ContainerImage struct {
 	CPE        []string   `json:"cpe_ids"`
-	ParsedData parsedData `json:"parsed_data"`
+	ParsedData ParsedData `json:"parsed_data"`
 }
-type parsedData struct {
+type ParsedData struct {
 	Architecture string  `json:"architecture"`
-	Labels       []label `json:"labels"`
+	Labels       []Label `json:"labels"`
 }
-type label struct {
+type Label struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
 }
 
 // ContainerAPI gets container metadata from Red Hat's API.
-type containerAPI struct {
-	client *http.Client
-	root   *url.URL
+type ContainerAPI struct {
+	Client *http.Client
+	Root   *url.URL
 }
 
 // GetCPEs fetches CPE information for given build from Red Hat Container API.
-func (c *containerAPI) GetCPEs(ctx context.Context, nvr, arch string) ([]string, error) {
+func (c *ContainerAPI) GetCPEs(ctx context.Context, nvr, arch string) ([]string, error) {
 	log := zerolog.Ctx(ctx).With().Logger()
-	uri, err := c.root.Parse(path.Join("v1/images/nvr/", nvr))
+	uri, err := c.Root.Parse(path.Join("v1/images/nvr/", nvr))
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ func (c *containerAPI) GetCPEs(ctx context.Context, nvr, arch string) ([]string,
 	log.Debug().
 		Str("uri", uri.String()).
 		Msg("making container API request")
-	res, err := c.client.Do(req)
+	res, err := c.Client.Do(req)
 	if res != nil {
 		defer res.Body.Close()
 	}
@@ -67,7 +67,7 @@ func (c *containerAPI) GetCPEs(ctx context.Context, nvr, arch string) ([]string,
 		return nil, fmt.Errorf("rhel: unexpected response: %d %s", res.StatusCode, res.Status)
 	}
 
-	var ci containerImages
+	var ci ContainerImages
 	if err := json.NewDecoder(res.Body).Decode(&ci); err != nil {
 		return nil, err
 	}

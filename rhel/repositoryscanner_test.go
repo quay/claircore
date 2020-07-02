@@ -13,6 +13,8 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/cpe"
+	"github.com/quay/claircore/rhel/containerapi"
+	"github.com/quay/claircore/rhel/contentmanifest"
 	"github.com/quay/claircore/test/log"
 )
 
@@ -22,29 +24,45 @@ func TestRepositoryScanner(t *testing.T) {
 	ctx = log.TestLogger(ctx, t)
 
 	// Set up a response map and test server to mock the Container API.
-	resp := map[string]*containerImages{
-		"rh-pkg-1-1": &containerImages{Images: []containerImage{
+	apiData := map[string]*containerapi.ContainerImages{
+		"rh-pkg-1-1": &containerapi.ContainerImages{Images: []containerapi.ContainerImage{
 			{
 				CPE: []string{
 					"cpe:/o:redhat:enterprise_linux:8::computenode",
 					"cpe:/o:redhat:enterprise_linux:8::baseos",
 				},
-				ParsedData: parsedData{
+				ParsedData: containerapi.ParsedData{
 					Architecture: "x86_64",
-					Labels: []label{
+					Labels: []containerapi.Label{
 						{Name: "architecture", Value: "x86_64"},
 					},
 				},
 			},
 		}},
 	}
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		t.Log(r.URL.String())
-		nvr := path.Base(r.URL.Path)
-		if err := json.NewEncoder(w).Encode(resp[nvr]); err != nil {
+	mappingData := contentmanifest.MappingFile{Data: map[string]contentmanifest.Repo{
+		"content-set-1": contentmanifest.Repo{
+			CPEs: []string{"cpe:/o:redhat:enterprise_linux:6::server", "cpe:/o:redhat:enterprise_linux:7::server"},
+		},
+		"content-set-2": contentmanifest.Repo{
+			CPEs: []string{"cpe:/o:redhat:enterprise_linux:7::server", "cpe:/o:redhat:enterprise_linux:8::server"},
+		},
+	}}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/repository-2-cpe.json", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("last-modified", "Mon, 02 Jan 2006 15:04:05 MST")
+		if err := json.NewEncoder(w).Encode(mappingData); err != nil {
 			t.Fatal(err)
 		}
-	}))
+	})
+	mux.HandleFunc("/v1/images/nvr/", func(w http.ResponseWriter, r *http.Request) {
+		path := path.Base(r.URL.Path)
+		if err := json.NewEncoder(w).Encode(apiData[path]); err != nil {
+			t.Fatal(err)
+		}
+	})
+	srv := httptest.NewServer(mux)
 	defer srv.Close()
 
 	table := []struct {
@@ -69,6 +87,28 @@ func TestRepositoryScanner(t *testing.T) {
 			},
 			cfg:       &RepoScannerConfig{API: srv.URL},
 			layerPath: "testdata/layer-with-cpe.tar",
+		},
+		{
+			name: "From mapping file",
+			want: []*claircore.Repository{
+				&claircore.Repository{
+					Name: "cpe:/o:redhat:enterprise_linux:6::server",
+					Key:  "rhel-cpe-repo",
+					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:6::server"),
+				},
+				&claircore.Repository{
+					Name: "cpe:/o:redhat:enterprise_linux:7::server",
+					Key:  "rhel-cpe-repo",
+					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:7::server"),
+				},
+				&claircore.Repository{
+					Name: "cpe:/o:redhat:enterprise_linux:8::server",
+					Key:  "rhel-cpe-repo",
+					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8::server"),
+				},
+			},
+			cfg:       &RepoScannerConfig{API: srv.URL, Repo2CPEMappingURL: srv.URL + "/repository-2-cpe.json"},
+			layerPath: "testdata/layer-with-embedded-cs.tar",
 		},
 		{
 			name:      "No-cpe-info",
