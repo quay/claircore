@@ -30,38 +30,37 @@ func updateVulnerabilites(ctx context.Context, pool *pgxpool.Pool, updater strin
 	const (
 		// Create makes a new update operation and returns the reference and ID.
 		create = `INSERT INTO update_operation (updater, fingerprint) VALUES ($1, $2) RETURNING id, ref;`
-		// Insert attempts to create a new vulnerability, but it if it fails,
-		// selects the ID of the vulnerability with the conflicting hash.
-		insert = `WITH
-		attempt AS (
-			INSERT INTO vuln (
-				hash_kind, hash,
-				name, updater, description, issued, links, severity, normalized_severity,
-				package_name, package_version, package_module, package_arch, package_kind,
-				dist_id, dist_name, dist_version, dist_version_code_name, dist_version_id, dist_arch, dist_cpe, dist_pretty_name,
-				repo_name, repo_key, repo_uri,
-				fixed_in_version, arch_operation, version_kind, vulnerable_range
-			) VALUES (
-			  $1, $2,
-			  $3, $4, $5, $6, $7, $8, $9,
-			  $10, $11, $12, $13, $14,
-			  $15, $16, $17, $18, $19, $20, $21, $22,
-			  $23, $24, $25,
-			  $26, $27, $28, VersionRange($29, $30)
-			)
-			ON CONFLICT (hash_kind, hash) DO NOTHING
-			RETURNING id)
+		// Insert attempts to create a new vulnerability. It fails silently.
+		insert = `
+		INSERT INTO vuln (
+			hash_kind, hash,
+			name, updater, description, issued, links, severity, normalized_severity,
+			package_name, package_version, package_module, package_arch, package_kind,
+			dist_id, dist_name, dist_version, dist_version_code_name, dist_version_id, dist_arch, dist_cpe, dist_pretty_name,
+			repo_name, repo_key, repo_uri,
+			fixed_in_version, arch_operation, version_kind, vulnerable_range
+		) VALUES (
+		  $1, $2,
+		  $3, $4, $5, $6, $7, $8, $9,
+		  $10, $11, $12, $13, $14,
+		  $15, $16, $17, $18, $19, $20, $21, $22,
+		  $23, $24, $25,
+		  $26, $27, $28, VersionRange($29, $30)
+		)
+		ON CONFLICT (hash_kind, hash) DO NOTHING;`
+		// Assoc associates an update operation and a vulnerability. It fails
+		// silently.
+		assoc = `
 		INSERT INTO uo_vuln (uo, vuln) VALUES (
-			$31,
-			COALESCE (
-				(SELECT id FROM attempt),
-				(SELECT id FROM vuln WHERE hash_kind = $1 AND hash = $2)))
+			$3,
+			(SELECT id FROM vuln WHERE hash_kind = $1 AND hash = $2))
 		ON CONFLICT DO NOTHING;`
 	)
 	log := zerolog.Ctx(ctx).With().
 		Str("component", "internal/vulnstore/postgres/updateVulnerabilities").
 		Logger()
 	ctx = log.WithContext(ctx)
+
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("unable to start transaction: %w", err)
@@ -105,10 +104,13 @@ func updateVulnerabilites(ctx context.Context, pool *pgxpool.Pool, updater strin
 			dist.DID, dist.Name, dist.Version, dist.VersionCodeName, dist.VersionID, dist.Arch, dist.CPE, dist.PrettyName,
 			repo.Name, repo.Key, repo.URI,
 			vuln.FixedInVersion, vuln.ArchOperation, vKind, vrLower, vrUpper,
-			id,
 		)
 		if err != nil {
 			return uuid.Nil, fmt.Errorf("failed to queue vulnerability: %w", err)
+		}
+
+		if err := mBatcher.Queue(ctx, assoc, hashKind, hash, id); err != nil {
+			return uuid.Nil, fmt.Errorf("failed to queue association: %w", err)
 		}
 	}
 	if err := mBatcher.Done(ctx); err != nil {
