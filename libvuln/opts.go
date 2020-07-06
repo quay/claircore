@@ -136,6 +136,9 @@ var defaultFactoryConstructors = map[string]func(context.Context) (driver.Update
 	"rhel": func(ctx context.Context) (driver.UpdaterSetFactory, error) {
 		return rhel.NewFactory(ctx, rhel.DefaultManifest)
 	},
+	"ubuntu": func(_ context.Context) (driver.UpdaterSetFactory, error) {
+		return &ubuntu.Factory{Releases: ubuntu.Releases}, nil
+	},
 }
 
 var defaultSets = map[string]driver.UpdaterSetFactory{

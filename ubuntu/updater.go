@@ -39,7 +39,7 @@ var _ driver.Updater = (*Updater)(nil)
 type Updater struct {
 	// the url to fetch the OVAL db from
 	url string
-	// the release name as described by os-releae "VERSION_CODENAME"
+	// the release name as described by os-release "VERSION_CODENAME"
 	release Release
 	c       *http.Client
 	// the current vulnerability being parsed. see the Parse() method for more details
@@ -62,7 +62,7 @@ func NewUpdater(release Release) *Updater {
 	return &Updater{
 		url:     url,
 		release: release,
-		c:       &http.Client{},
+		c:       http.DefaultClient,
 	}
 }
 
