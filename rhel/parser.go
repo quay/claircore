@@ -29,6 +29,13 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 	protoVulns := func(def oval.Definition) ([]*claircore.Vulnerability, error) {
 		vs := []*claircore.Vulnerability{}
 		for _, affected := range def.Advisory.AffectedCPEList {
+			// Work around having empty entries. This seems to be some issue
+			// with the tool used to produce the database but only seems to
+			// appear sometimes, like RHSA-2018:3140 in the rhel-7-alt database.
+			if affected == "" {
+				continue
+			}
+
 			wfn, err := cpe.Unbind(affected)
 			if err != nil {
 				return nil, err
