@@ -61,6 +61,12 @@ func RPMDefsToVulns(ctx context.Context, root oval.Root, protoVulns ProtoVulnsFu
 				continue
 			}
 			test := root.Tests.RPMInfoTests[index]
+			if len(test.ObjectRefs) == 1 && len(test.StateRefs) == 0 {
+				// We always take an object reference to imply the existence of
+				// that object, so just skip tests with a single object reference
+				// and no associated state object.
+				continue
+			}
 			if len(test.ObjectRefs) != len(test.StateRefs) {
 				log.Debug().Str("test_ref", criterion.TestRef).Msg("object refs and state refs are not in pairs. moving to next criterion")
 				continue
