@@ -3,15 +3,10 @@ package postgres
 import (
 	"context"
 	"fmt"
-	"hash/fnv"
 	"sync"
 	"time"
 
 	"github.com/jmoiron/sqlx"
-)
-
-const (
-	manifestAdvisoryLock = `SELECT pg_try_advisory_xact_lock($1);`
 )
 
 // Lock implements the distlock.Locker interface. Locker utilizes
@@ -115,9 +110,7 @@ func (l *lock) TryLock(ctx context.Context, key string) (bool, error) {
 		return false, nil
 	}
 
-	kh := fnv.New64a()
-	_, _ = fmt.Fprint(kh, key) // Writing to a hash.Hash never errors.
-	keyInt64 := int64(kh.Sum64())
+	keyInt64 := crushkey(key)
 
 	// start transaction
 	tx, err := l.db.Beginx()
