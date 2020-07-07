@@ -132,7 +132,11 @@ func (o *Opts) parse(ctx context.Context) error {
 	return nil
 }
 
-var defaultFactoryConstructors = map[string]func(context.Context) (driver.UpdaterSetFactory, error){}
+var defaultFactoryConstructors = map[string]func(context.Context) (driver.UpdaterSetFactory, error){
+	"rhel": func(ctx context.Context) (driver.UpdaterSetFactory, error) {
+		return rhel.NewFactory(ctx, rhel.DefaultManifest)
+	},
+}
 
 var defaultSets = map[string]driver.UpdaterSetFactory{
 	"alpine": driver.UpdaterSetFactoryFunc(alpine.UpdaterSet),

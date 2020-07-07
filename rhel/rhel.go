@@ -74,6 +74,13 @@ func WithClient(c *http.Client) Option {
 	}
 }
 
+func WithName(n string) Option {
+	return func(u *Updater) error {
+		u.name = n
+		return nil
+	}
+}
+
 // Name satisifies the driver.Updater interface.
 func (u *Updater) Name() string {
 	return u.name

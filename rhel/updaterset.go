@@ -2,9 +2,13 @@ package rhel
 
 import (
 	"context"
-	"fmt"
+	"net/http"
+	"net/url"
+	"path"
+	"strings"
 
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/rhel/pulp"
 )
 
 var rhelReleases = []Release{
@@ -13,17 +17,101 @@ var rhelReleases = []Release{
 	RHEL8,
 }
 
-func UpdaterSet(_ context.Context) (driver.UpdaterSet, error) {
-	us := driver.NewUpdaterSet()
-	for _, release := range rhelReleases {
-		u, err := NewUpdater(release)
-		if err != nil {
-			return us, fmt.Errorf("failed to create updater: %v", err)
-		}
-		err = us.Add(u)
-		if err != nil {
-			return us, err
+// DefaultManifest is the url for the Red Hat OVAL pulp repository.
+const DefaultManifest = `https://www.redhat.com/security/data/oval/v2/PULP_MANIFEST`
+
+// NewFactory creates a Factory making updaters based on the contents of the
+// provided pulp manifest.
+func NewFactory(ctx context.Context, manifest string, opts ...FactoryOption) (*Factory, error) {
+	var err error
+	f := Factory{
+		client: http.DefaultClient,
+	}
+	f.url, err = url.Parse(manifest)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, o := range opts {
+		if err := o(&f); err != nil {
+			return nil, err
 		}
 	}
-	return us, nil
+	return &f, nil
+}
+
+// Factory contains the configuration for fetching and parsing a pulp manifest.
+type Factory struct {
+	url         *url.URL
+	client      *http.Client
+	updaterOpts []Option
+}
+
+// A FactoryOption is used with New to configure a Factory.
+type FactoryOption func(*Factory) error
+
+// FactoryWithClient sets the http.Client used for fetching the pulp manifest.
+func FactoryWithClient(h *http.Client) FactoryOption {
+	return func(f *Factory) error {
+		f.client = h
+		return nil
+	}
+}
+
+// FactoryWithUpdaterOptions provides Options down into created Updaters.
+func FactoryWithUpdaterOptions(opts ...Option) FactoryOption {
+	return func(f *Factory) error {
+		f.updaterOpts = opts
+		return nil
+	}
+}
+
+// UpdaterSet implements driver.UpdaterSetFactory.
+func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
+	s := driver.NewUpdaterSet()
+
+	// TODO(hank) cache state?
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, f.url.String(), nil)
+	if err != nil {
+		return s, err
+	}
+	res, err := f.client.Do(req)
+	if res != nil {
+		defer res.Body.Close()
+	}
+	if err != nil {
+		return s, err
+	}
+
+	m := pulp.Manifest{}
+	if err := m.Load(res.Body); err != nil {
+		return s, err
+	}
+
+	for _, e := range m {
+		name := strings.TrimSuffix(path.Base(e.Path), ".oval.xml.bz2")
+		uri, err := f.url.Parse(e.Path)
+		if err != nil {
+			return s, err
+		}
+		p := uri.Path
+		var r Release
+		switch {
+		case strings.Contains(p, "RHEL8"):
+			r = RHEL8
+		case strings.Contains(p, "RHEL7"):
+			r = RHEL7
+		case strings.Contains(p, "RHEL6"):
+			r = RHEL6
+		default: // skip
+			continue
+		}
+		up, err := NewUpdater(r, append(f.updaterOpts, WithName(name), WithURL(uri.String(), "bz2"))...)
+		if err != nil {
+			return s, err
+		}
+		_ = s.Add(up)
+	}
+
+	return s, nil
 }
