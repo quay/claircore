@@ -9,10 +9,12 @@ import (
 	"github.com/quay/claircore/aws"
 	"github.com/quay/claircore/debian"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/oracle"
+	"github.com/quay/claircore/photon"
 	"github.com/quay/claircore/python"
 	"github.com/quay/claircore/rhel"
+	"github.com/quay/claircore/suse"
 	"github.com/quay/claircore/ubuntu"
-	"github.com/quay/claircore/photon"
 )
 
 const (
@@ -73,6 +75,8 @@ var defaultMatchers = []driver.Matcher{
 	&ubuntu.Matcher{},
 	&rhel.Matcher{},
 	&photon.Matcher{},
+	&suse.Matcher{},
+	&oracle.Matcher{},
 }
 
 // parse is an internal method for constructing
