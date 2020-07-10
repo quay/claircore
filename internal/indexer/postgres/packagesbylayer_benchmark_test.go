@@ -91,9 +91,8 @@ func Benchmark_PackagesByLayer(b *testing.B) {
 
 	for _, bench := range benchmarks {
 		b.Run(bench.name, func(b *testing.B) {
-			ctx, done := context.WithCancel(ctx)
+			ctx, done := log.TestLogger(ctx, b)
 			defer done()
-			ctx = log.TestLogger(ctx, b)
 			db, store, teardown := TestStore(ctx, b)
 			defer teardown()
 

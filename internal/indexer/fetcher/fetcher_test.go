@@ -35,10 +35,9 @@ type testcase struct {
 }
 
 func (tc testcase) Run(ctx context.Context) func(*testing.T) {
-	ctx, done := context.WithCancel(ctx)
 	return func(t *testing.T) {
+		ctx, done := log.TestLogger(ctx, t)
 		defer done()
-		ctx = log.TestLogger(ctx, t)
 		layers := test.ServeLayers(ctx, t, tc.N)
 		for _, l := range layers {
 			t.Logf("%+v", l)
@@ -98,9 +97,8 @@ func TestInvalid(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			ctx, done := context.WithCancel(ctx)
+			ctx, done := log.TestLogger(ctx, t)
 			defer done()
-			ctx = log.TestLogger(ctx, t)
 			fetcher := New(&testClient, indexer.InMem)
 			if err := fetcher.Fetch(ctx, table.layer); err == nil {
 				t.Fatal("expected error, got nil")

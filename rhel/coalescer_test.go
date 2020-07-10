@@ -16,9 +16,9 @@ import (
 // database access would have occurred. Thus we do not use a black box test
 // and instead test private methods.
 func Test_Coalescer(t *testing.T) {
-	ctx, done := context.WithCancel(context.Background())
+	ctx := context.Background()
+	ctx, done := log.TestLogger(ctx, t)
 	defer done()
-	ctx = log.TestLogger(ctx, t)
 	coalescer := NewCoalescer()
 	// we will test
 	// 1) packages before a distribution was discovered are tagged with
@@ -86,9 +86,9 @@ func Test_Coalescer(t *testing.T) {
 }
 
 func Test_Coalescer_cpe_repos(t *testing.T) {
-	ctx, done := context.WithCancel(context.Background())
+	ctx := context.Background()
+	ctx, done := log.TestLogger(ctx, t)
 	defer done()
-	ctx = log.TestLogger(ctx, t)
 	coalescer := NewCoalescer()
 	repo1 := &claircore.Repository{
 		ID:   "1",
@@ -161,9 +161,9 @@ func Test_Coalescer_cpe_repos(t *testing.T) {
 }
 
 func Test_Coalescer_updated_package(t *testing.T) {
-	ctx, done := context.WithCancel(context.Background())
+	ctx := context.Background()
+	ctx, done := log.TestLogger(ctx, t)
 	defer done()
-	ctx = log.TestLogger(ctx, t)
 	coalescer := NewCoalescer()
 	repo1 := &claircore.Repository{
 		ID:   "1",
@@ -226,9 +226,9 @@ func Test_Coalescer_updated_package(t *testing.T) {
 }
 
 func Test_Coalescer_downgraded_package(t *testing.T) {
-	ctx, done := context.WithCancel(context.Background())
+	ctx := context.Background()
+	ctx, done := log.TestLogger(ctx, t)
 	defer done()
-	ctx = log.TestLogger(ctx, t)
 	coalescer := NewCoalescer()
 	repo1 := &claircore.Repository{
 		ID:   "1",
@@ -291,9 +291,9 @@ func Test_Coalescer_downgraded_package(t *testing.T) {
 }
 
 func Test_Coalescer_removed_package(t *testing.T) {
-	ctx, done := context.WithCancel(context.Background())
+	ctx := context.Background()
+	ctx, done := log.TestLogger(ctx, t)
 	defer done()
-	ctx = log.TestLogger(ctx, t)
 	coalescer := NewCoalescer()
 	repo1 := &claircore.Repository{
 		ID:   "1",

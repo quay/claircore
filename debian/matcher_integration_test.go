@@ -24,9 +24,9 @@ import (
 // CVE data
 func Test_Matcher_Integration(t *testing.T) {
 	integration.Skip(t)
-	ctx, done := context.WithCancel(context.Background())
+	ctx := context.Background()
+	ctx, done := log.TestLogger(ctx, t)
 	defer done()
-	ctx = log.TestLogger(ctx, t)
 	db, store, teardown := vulnstore.TestStore(ctx, t)
 	defer teardown()
 
@@ -56,7 +56,7 @@ func Test_Matcher_Integration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to decode IndexReport: %v", err)
 	}
-	vr, err := matcher.Match(context.Background(), &ir, []driver.Matcher{m}, store)
+	vr, err := matcher.Match(ctx, &ir, []driver.Matcher{m}, store)
 	if err != nil {
 		t.Fatalf("expected nil error but got %v", err)
 	}

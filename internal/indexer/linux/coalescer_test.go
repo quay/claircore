@@ -16,9 +16,9 @@ import (
 // database access would have occured. Thus we do not use a black box test
 // and instead test private methods.
 func Test_Coalescer(t *testing.T) {
-	ctx, done := context.WithCancel(context.Background())
+	ctx := context.Background()
+	ctx, done := log.TestLogger(ctx, t)
 	defer done()
-	ctx = log.TestLogger(ctx, t)
 	coalescer := &Coalescer{
 		ir: &claircore.IndexReport{
 			Environments:  map[string][]*claircore.Environment{},

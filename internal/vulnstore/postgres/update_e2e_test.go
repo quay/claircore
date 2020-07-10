@@ -24,9 +24,9 @@ import (
 // TestE2E performs an end to end test of update operations and diffing
 func TestE2E(t *testing.T) {
 	integration.Skip(t)
-	ctx, done := context.WithCancel(context.Background())
+	ctx := context.Background()
+	ctx, done := log.TestLogger(ctx, t)
 	defer done()
-	ctx = log.TestLogger(ctx, t)
 
 	cases := []e2e{
 		{

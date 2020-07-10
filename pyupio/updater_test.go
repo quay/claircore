@@ -154,9 +154,9 @@ func (tc dbTestcase) filename() string {
 }
 
 func (tc dbTestcase) Run(t *testing.T) {
-	ctx, done := context.WithCancel(context.Background())
+	ctx := context.Background()
+	ctx, done := log.TestLogger(ctx, t)
 	defer done()
-	ctx = log.TestLogger(ctx, t)
 
 	f, err := os.Open(tc.filename())
 	if err != nil {

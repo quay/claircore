@@ -126,9 +126,8 @@ func TestParser(t *testing.T) {
 
 	for _, test := range table {
 		t.Run(test.testFile, func(t *testing.T) {
-			ctx, done := context.WithCancel(ctx)
+			ctx, done := log.TestLogger(ctx, t)
 			defer done()
-			ctx = log.TestLogger(ctx, t)
 
 			path := fmt.Sprintf("testdata/%s", test.testFile)
 			f, err := os.Open(path)

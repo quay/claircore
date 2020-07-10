@@ -24,9 +24,9 @@ import (
 
 func TestMatcherIntegration(t *testing.T) {
 	integration.Skip(t)
-	ctx, done := context.WithCancel(context.Background())
+	ctx := context.Background()
+	ctx, done := log.TestLogger(ctx, t)
 	defer done()
-	ctx = log.TestLogger(ctx, t)
 	db, store, teardown := vulnstore.TestStore(ctx, t)
 	defer teardown()
 	m := &Matcher{}

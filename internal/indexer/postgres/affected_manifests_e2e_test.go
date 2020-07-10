@@ -9,6 +9,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/test/integration"
@@ -26,9 +27,9 @@ type affectedE2E struct {
 
 func TestAffectedE2E(t *testing.T) {
 	integration.Skip(t)
-	ctx, done := context.WithCancel(context.Background())
+	ctx := context.Background()
+	ctx, done := log.TestLogger(ctx, t)
 	defer done()
-	ctx = log.TestLogger(ctx, t)
 	db, store, teardown := TestStore(ctx, t)
 	defer teardown()
 

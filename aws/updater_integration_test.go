@@ -30,9 +30,8 @@ func Test_Updater(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			ctx, done := context.WithCancel(ctx)
+			ctx, done := log.TestLogger(ctx, t)
 			defer done()
-			ctx = log.TestLogger(ctx, t)
 
 			updater, err := NewUpdater(table.release)
 			assert.NoError(t, err)

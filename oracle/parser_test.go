@@ -14,9 +14,9 @@ import (
 
 func TestParse(t *testing.T) {
 	t.Parallel()
-	ctx, done := context.WithCancel(context.Background())
+	ctx := context.Background()
+	ctx, done := log.TestLogger(ctx, t)
 	defer done()
-	ctx = log.TestLogger(ctx, t)
 	u, err := NewUpdater(-1)
 	if err != nil {
 		t.Fatal(err)

@@ -124,9 +124,8 @@ func (tc testcase) RunInner(ctx context.Context, t *testing.T, dsn string, next 
 func (tc testcase) Run(ctx context.Context, check checkFunc) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Parallel()
-		ctx, done := context.WithCancel(ctx)
+		ctx, done := log.TestLogger(ctx, t)
 		defer done()
-		ctx = log.TestLogger(ctx, t)
 		db, err := integration.NewDB(ctx, t)
 		if err != nil {
 			t.Fatal(err)

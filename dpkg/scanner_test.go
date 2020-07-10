@@ -794,9 +794,9 @@ func TestScanner(t *testing.T) {
 			RepositoryHint: "daafc6eba6eae603327bf8fc49645999",
 		},
 	}
-	ctx, done := context.WithCancel(context.Background())
+	ctx := context.Background()
+	ctx, done := log.TestLogger(ctx, t)
 	defer done()
-	ctx = log.TestLogger(ctx, t)
 	l := &claircore.Layer{
 		Hash: hash,
 	}

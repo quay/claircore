@@ -17,9 +17,9 @@ import (
 )
 
 func TestRepositoryScanner(t *testing.T) {
-	ctx, done := context.WithCancel(context.Background())
+	ctx := context.Background()
+	ctx, done := log.TestLogger(ctx, t)
 	defer done()
-	ctx = log.TestLogger(ctx, t)
 
 	// Set up a response map and test server to mock the Container API.
 	resp := map[string]*containerImages{

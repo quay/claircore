@@ -22,9 +22,8 @@ func TestFetch(t *testing.T) {
 	defer srv.Close()
 
 	t.Run("FetchContext", func(t *testing.T) {
-		ctx, done := context.WithCancel(ctx)
+		ctx, done := log.TestLogger(ctx, t)
 		defer done()
-		ctx = log.TestLogger(ctx, t)
 		u, err := NewUpdater(3, WithClient(srv.Client()), WithURL(srv.URL, ""))
 		if err != nil {
 			t.Fatal(err)
@@ -54,9 +53,8 @@ func TestFetch(t *testing.T) {
 	})
 
 	t.Run("Fetch", func(t *testing.T) {
-		ctx, done := context.WithCancel(ctx)
+		ctx, done := log.TestLogger(ctx, t)
 		defer done()
-		ctx = log.TestLogger(ctx, t)
 		u, err := NewUpdater(3, WithClient(srv.Client()), WithURL(srv.URL, ""))
 		if err != nil {
 			t.Fatal(err)

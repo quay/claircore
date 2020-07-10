@@ -11,9 +11,9 @@ import (
 )
 
 func check_release(t *testing.T, photon_release Release) {
-	ctx, done := context.WithCancel(context.Background())
+	ctx := context.Background()
+	ctx, done := log.TestLogger(ctx, t)
 	defer done()
-	ctx = log.TestLogger(ctx, t)
 
 	u, err := NewUpdater(photon_release)
 	if err != nil {
