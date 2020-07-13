@@ -49,6 +49,9 @@ func (u *Updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io
 	if err != nil {
 		return nil, "", fmt.Errorf("updates repo metadata could not be retrieved: %v", err)
 	}
+	if updatesRepoMD.Checksum.Sum == string(fingerprint) {
+		return nil, fingerprint, driver.Unchanged
+	}
 
 	tctx, cancel = context.WithTimeout(ctx, defaultOpTimeout)
 	defer cancel()
