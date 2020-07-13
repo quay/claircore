@@ -13,7 +13,6 @@ import (
 	"net/url"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/rs/zerolog"
 
@@ -134,7 +133,7 @@ func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 		log.Debug().
 			Str("hint", string(hint)).
 			Msg("using hint")
-		req.Header.Set("If-Modified-Since", string(hint))
+		req.Header.Set("if-none-match", string(hint))
 	}
 
 	res, err := u.client.Do(req.WithContext(ctx))
@@ -169,7 +168,7 @@ func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 	success := false
 	defer func() {
 		if !success {
-			log.Debug().Msg("unsuccessful, cleaing up tempfile")
+			log.Debug().Msg("unsuccessful, cleaning up tempfile")
 			if err := tf.Close(); err != nil {
 				log.Warn().Err(err).Msg("failed to close tempfile")
 			}
@@ -184,15 +183,14 @@ func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 	}
 	log.Debug().Msg("decompressed and buffered database")
 
-	t := res.Header.Get("Last-Modified")
-	if t == "" {
-		t = time.Now().Format(http.TimeFormat)
+	if t := res.Header.Get("etag"); t != "" {
+		log.Debug().
+			Str("hint", t).
+			Msg("using new hint")
+		hint = driver.Fingerprint(t)
 	}
-	log.Debug().
-		Str("hint", t).
-		Msg("using new hint")
 	success = true
-	return tf, driver.Fingerprint(t), nil
+	return tf, hint, nil
 }
 
 // Parse implements driver.Updater.
