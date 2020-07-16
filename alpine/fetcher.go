@@ -28,7 +28,7 @@ func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 		log.Debug().
 			Str("hint", string(hint)).
 			Msg("using hint")
-		req.Header.Set("If-Modified-Since", string(hint))
+		req.Header.Set("if-none-match", string(hint))
 	}
 
 	res, err := u.client.Do(req)
@@ -58,18 +58,16 @@ func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 
 	var r io.Reader = res.Body
 	if _, err := io.Copy(tf, r); err != nil {
+		tf.Close()
 		return nil, hint, fmt.Errorf("alpine: unable to copy resp body to tempfile: %w", err)
 	}
 	if n, err := tf.Seek(0, io.SeekStart); err != nil || n != 0 {
+		tf.Close()
 		return nil, hint, fmt.Errorf("alpine: unable to seek database to start: at %d, %v", n, err)
 	}
 	log.Debug().Msg("decompressed and buffered database")
 
-	if h := res.Header.Get("Last-Modified"); h != "" {
-		hint = driver.Fingerprint(h)
-	} else {
-		hint = driver.Fingerprint(res.Header.Get("Date"))
-	}
+	hint = driver.Fingerprint(res.Header.Get("etag"))
 	log.Debug().
 		Str("hint", string(hint)).
 		Msg("using new hint")

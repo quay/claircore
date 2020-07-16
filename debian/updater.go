@@ -14,6 +14,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/ovalutil"
+	"github.com/quay/claircore/pkg/tmp"
 )
 
 func init() {
@@ -51,7 +52,7 @@ func NewUpdater(release Release) *Updater {
 	return &Updater{
 		url:     url,
 		release: release,
-		c:       &http.Client{},
+		c:       http.DefaultClient,
 	}
 }
 
@@ -66,15 +67,49 @@ func (u *Updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io
 		Str("database", u.url).
 		Logger()
 	ctx = log.WithContext(ctx)
-	log.Info().Msg("fetching latest oval database")
-	var rc io.ReadCloser
-	var hash string
-	var err error
 
-	rc, hash, err = u.fetch(ctx)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.url, nil)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to create request")
+	}
+	if fingerprint != "" {
+		req.Header.Set("if-none-match", string(fingerprint))
+	}
+
+	// fetch OVAL xml database
+	resp, err := u.c.Do(req)
+	if resp != nil {
+		defer resp.Body.Close()
+	}
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to retrieve OVAL database: %v", err)
+	}
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		log.Info().Msg("fetching latest oval database")
+	case http.StatusNotModified:
+		return nil, fingerprint, driver.Unchanged
+	default:
+		return nil, "", fmt.Errorf("unexpected response: %v", resp.Status)
+	}
+
+	fp := resp.Header.Get("etag")
+	f, err := tmp.NewFile("", "debian.")
+	if err != nil {
+		return nil, "", err
+	}
+	if _, err := io.Copy(f, resp.Body); err != nil {
+		f.Close()
+		return nil, "", fmt.Errorf("failed to read http body: %v", err)
+	}
+	if _, err := f.Seek(0, io.SeekStart); err != nil {
+		f.Close()
+		return nil, "", fmt.Errorf("failed to seek body: %v", err)
+	}
 
 	log.Info().Msg("fetched latest oval database successfully")
-	return rc, driver.Fingerprint(hash), err
+	return f, driver.Fingerprint(fp), err
 }
 
 func (u *Updater) Parse(ctx context.Context, contents io.ReadCloser) ([]*claircore.Vulnerability, error) {

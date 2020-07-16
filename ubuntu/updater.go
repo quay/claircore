@@ -1,6 +1,7 @@
 package ubuntu
 
 import (
+	"compress/bzip2"
 	"context"
 	"encoding/xml"
 	"fmt"
@@ -13,6 +14,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/ovalutil"
+	"github.com/quay/claircore/pkg/tmp"
 )
 
 const (
@@ -72,19 +74,53 @@ func (u *Updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io
 		Str("database", u.url).
 		Logger()
 	ctx = log.WithContext(ctx)
-	log.Info().Msg("fetching latest oval database")
-	var rc io.ReadCloser
-	var hash string
-	var err error
 
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.url, nil)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to create request")
+	}
+	if fingerprint != "" {
+		req.Header.Set("if-none-match", string(fingerprint))
+	}
+
+	// fetch OVAL xml database
+	resp, err := u.c.Do(req)
+	if resp != nil {
+		defer resp.Body.Close()
+	}
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to retrieve OVAL database: %v", err)
+	}
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		log.Info().Msg("fetching latest oval database")
+	case http.StatusNotModified:
+		return nil, fingerprint, driver.Unchanged
+	default:
+		return nil, "", fmt.Errorf("unexpected response: %v", resp.Status)
+	}
+
+	fp := resp.Header.Get("etag")
+	f, err := tmp.NewFile("", "ubuntu.")
+	if err != nil {
+		return nil, "", err
+	}
+	var r io.Reader = resp.Body
 	if shouldBzipFetch[u.release] {
-		rc, hash, err = u.fetchBzip(ctx)
-	} else {
-		rc, hash, err = u.fetch(ctx)
+		r = bzip2.NewReader(r)
+	}
+	if _, err := io.Copy(f, r); err != nil {
+		f.Close()
+		return nil, "", fmt.Errorf("failed to read http body: %v", err)
+	}
+	if _, err := f.Seek(0, io.SeekStart); err != nil {
+		f.Close()
+		return nil, "", fmt.Errorf("failed to seek body: %v", err)
 	}
 
 	log.Info().Msg("fetched latest oval database successfully")
-	return rc, driver.Fingerprint(hash), err
+	return f, driver.Fingerprint(fp), err
 }
 
 func (u *Updater) Parse(ctx context.Context, contents io.ReadCloser) ([]*claircore.Vulnerability, error) {
