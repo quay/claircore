@@ -2,6 +2,7 @@ package matcher
 
 import (
 	"context"
+	"time"
 
 	"github.com/rs/zerolog"
 
@@ -45,6 +46,15 @@ func (mc *Controller) Match(ctx context.Context, records []*claircore.IndexRecor
 		return map[string][]*claircore.Vulnerability{}, nil
 	}
 
+	remoteMatcher, matchedVulns, err := mc.queryRemoteMatcher(ctx, interested)
+	if remoteMatcher {
+		if err != nil {
+			log.Error().Err(err).Msg("remote matcher error, returning empty results")
+			return map[string][]*claircore.Vulnerability{}, nil
+		}
+		return matchedVulns, nil
+	}
+
 	dbSide, authoritative := mc.dbFilter()
 	log.Debug().
 		Bool("opt-in", dbSide).
@@ -69,6 +79,19 @@ func (mc *Controller) Match(ctx context.Context, records []*claircore.IndexRecor
 		Int("filtered", len(filteredVulns)).
 		Msg("filtered")
 	return filteredVulns, nil
+}
+
+// If RemoteMatcher exists, it will call the matcher service which runs on a remote
+// machine and fetches the vulnerabilities associated with the IndexRecords.
+func (mc *Controller) queryRemoteMatcher(ctx context.Context, interested []*claircore.IndexRecord) (bool, map[string][]*claircore.Vulnerability, error) {
+	f, ok := mc.m.(driver.RemoteMatcher)
+	if !ok {
+		return false, nil, nil
+	}
+	tctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
+	vulns, err := f.QueryRemoteMatcher(tctx, interested)
+	return true, vulns, err
 }
 
 // DbFilter reports whether the db-side version filtering can be used, and
