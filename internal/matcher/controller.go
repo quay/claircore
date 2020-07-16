@@ -47,7 +47,10 @@ func (mc *Controller) Match(ctx context.Context, records []*claircore.IndexRecor
 
 	remoteMatcher, matchedVulns, err := mc.queryRemoteMatcher(ctx, interested)
 	if remoteMatcher {
-		return matchedVulns, err
+		if err != nil {
+		  log.Error().Err(err).Msg("remote matcher error, returning empty results")
+		}
+		return map[string][]*claircore.Vulnerability, nil
 	}
 
 	dbSide, authoritative := mc.dbFilter()
