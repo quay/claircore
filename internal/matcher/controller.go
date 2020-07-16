@@ -88,8 +88,7 @@ func (mc *Controller) queryRemoteMatcher(ctx context.Context, interested []*clai
 	if !ok {
 		return false, nil, nil
 	}
-	// Uses same deadline as postgres batch get op.
-	tctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	tctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 	vulns, err := f.QueryRemoteMatcher(tctx, interested)
 	return true, vulns, err
