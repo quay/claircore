@@ -2,6 +2,7 @@ package matcher
 
 import (
 	"context"
+	"time"
 
 	"github.com/rs/zerolog"
 
@@ -48,9 +49,10 @@ func (mc *Controller) Match(ctx context.Context, records []*claircore.IndexRecor
 	remoteMatcher, matchedVulns, err := mc.queryRemoteMatcher(ctx, interested)
 	if remoteMatcher {
 		if err != nil {
-		  log.Error().Err(err).Msg("remote matcher error, returning empty results")
+			log.Error().Err(err).Msg("remote matcher error, returning empty results")
+			return map[string][]*claircore.Vulnerability{}, nil
 		}
-		return map[string][]*claircore.Vulnerability, nil
+		return matchedVulns, nil
 	}
 
 	dbSide, authoritative := mc.dbFilter()
@@ -86,7 +88,10 @@ func (mc *Controller) queryRemoteMatcher(ctx context.Context, interested []*clai
 	if !ok {
 		return false, nil, nil
 	}
-	vulns, err := f.QueryRemoteMatcher(ctx, interested)
+	// Uses same deadline as postgres batch get op.
+	tctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+	vulns, err := f.QueryRemoteMatcher(tctx, interested)
 	return true, vulns, err
 }
 
