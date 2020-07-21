@@ -113,7 +113,11 @@ func affectedManifests(ctx context.Context, pool *pgxpool.Pool, v claircore.Vuln
 	om := omnimatcher.New(nil)
 	for _, pkg := range pkgsToFilter {
 		pr.Package = &pkg
-		if om.Vulnerable(&pr, &v) {
+		match, err := om.Vulnerable(ctx, &pr, &v)
+		if err != nil {
+			return nil, err
+		}
+		if match {
 			p := pkg // make a copy, or else you'll get a stale reference later
 			filteredRecords = append(filteredRecords, claircore.IndexRecord{
 				Package:      &p,

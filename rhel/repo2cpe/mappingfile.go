@@ -1,4 +1,4 @@
-package contentmanifest
+package repo2cpe
 
 // MappingFile is a data struct for mapping file between repositories and CPEs
 type MappingFile struct {

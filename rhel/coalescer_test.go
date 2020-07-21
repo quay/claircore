@@ -92,18 +92,18 @@ func Test_Coalescer_cpe_repos(t *testing.T) {
 	coalescer := NewCoalescer()
 	repo1 := &claircore.Repository{
 		ID:   "1",
-		Name: "cpe:/o:redhat:enterprise_linux:8::baseos",
-		Key:  "rhel-cpe-repo",
+		Name: "rhel-8-for-x86_64-baseos-rpms",
+		Key:  RedHatRepositoryKey,
 	}
 	repo2 := &claircore.Repository{
 		ID:   "2",
-		Name: "cpe:/o:redhat:enterprise_linux:8::appstream",
-		Key:  "rhel-cpe-repo",
+		Name: "rhel-8-for-x86_64-appstream-rpms",
+		Key:  RedHatRepositoryKey,
 	}
 	repo3 := &claircore.Repository{
 		ID:   "3",
-		Name: "cpe:/o:redhat:enterprise_linux:8::appstream",
-		Key:  "rhel-cpe-repo",
+		Name: "rhel-8-for-x86_64-appstream-rpms",
+		Key:  RedHatRepositoryKey,
 	}
 
 	pkgs := test.GenUniquePackages(5)

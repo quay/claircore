@@ -1,6 +1,8 @@
 package omnimatcher
 
 import (
+	"context"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/alpine"
 	"github.com/quay/claircore/aws"
@@ -18,7 +20,7 @@ var defaultOmniMatcher = []driver.Matcher{
 	&aws.Matcher{},
 	&debian.Matcher{},
 	&python.Matcher{},
-	&rhel.Matcher{},
+	rhel.NewMatcher(nil),
 	&ubuntu.Matcher{},
 }
 
@@ -42,11 +44,15 @@ func New(m []driver.Matcher) OmniMatcher {
 }
 
 // Vulnerable will call each Matcher's Vulnerable method until one returns true.
-func (om OmniMatcher) Vulnerable(record *claircore.IndexRecord, vuln *claircore.Vulnerability) bool {
+func (om OmniMatcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
 	for _, m := range om {
-		if m.Vulnerable(record, vuln) {
-			return true
+		match, err := m.Vulnerable(ctx, record, vuln)
+		if err != nil {
+			return false, err
+		}
+		if match {
+			return true, nil
 		}
 	}
-	return false
+	return false, nil
 }

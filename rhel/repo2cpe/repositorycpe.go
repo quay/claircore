@@ -1,9 +1,7 @@
-package contentmanifest
+package repo2cpe
 
 import (
 	"context"
-
-	"github.com/rs/zerolog"
 )
 
 // RepoCPEUpdater provides interface for providing a mapping
@@ -20,11 +18,10 @@ type RepoCPEMapping struct {
 
 // RepositoryToCPE translates repositories into CPEs
 func (mapping *RepoCPEMapping) RepositoryToCPE(ctx context.Context, repositories []string) ([]string, error) {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "rhel/RepositoryScanner.Scan.ContentManifest").
-		Logger()
-	mapping.Update(ctx)
+	err := mapping.Update(ctx)
+	if err != nil {
+		return nil, err
+	}
 	cpes, err := mapping.Get(ctx, repositories)
-	log.Debug().Strs("repositories", repositories).Strs("cpes", cpes).Msg("Translating repositories into CPEs")
 	return cpes, err
 }

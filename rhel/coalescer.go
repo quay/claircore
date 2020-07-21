@@ -181,7 +181,7 @@ func (c *Coalescer) shareRepos(ctx context.Context, artifacts []*indexer.LayerAr
 func getRedHatCPERepos(repos []*claircore.Repository) []*claircore.Repository {
 	redHatCPERepos := []*claircore.Repository{}
 	for _, repo := range repos {
-		if repo.Key == RedHatCPERepositoryKey {
+		if repo.Key == RedHatRepositoryKey {
 			redHatCPERepos = append(redHatCPERepos, repo)
 		}
 	}

@@ -17,8 +17,8 @@ type ContainerImages struct {
 	Images []ContainerImage `json:"data"`
 }
 type ContainerImage struct {
-	CPE        []string   `json:"cpe_ids"`
-	ParsedData ParsedData `json:"parsed_data"`
+	ContentSets []string   `json:"content_sets"`
+	ParsedData  ParsedData `json:"parsed_data"`
 }
 type ParsedData struct {
 	Architecture string  `json:"architecture"`
@@ -36,7 +36,7 @@ type ContainerAPI struct {
 }
 
 // GetCPEs fetches CPE information for given build from Red Hat Container API.
-func (c *ContainerAPI) GetCPEs(ctx context.Context, nvr, arch string) ([]string, error) {
+func (c *ContainerAPI) GetContentSets(ctx context.Context, nvr, arch string) ([]string, error) {
 	log := zerolog.Ctx(ctx).With().Logger()
 	uri, err := c.Root.Parse(path.Join("v1/images/nvr/", nvr))
 	if err != nil {
@@ -75,7 +75,7 @@ func (c *ContainerAPI) GetCPEs(ctx context.Context, nvr, arch string) ([]string,
 		for _, label := range image.ParsedData.Labels {
 			if label.Name == "architecture" {
 				if label.Value == arch {
-					return image.CPE, nil
+					return image.ContentSets, nil
 				}
 			}
 		}

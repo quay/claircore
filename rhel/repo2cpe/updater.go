@@ -1,4 +1,4 @@
-package contentmanifest
+package repo2cpe
 
 import (
 	"context"
@@ -6,38 +6,30 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
-	"sync"
 	"time"
 
 	"github.com/rs/zerolog"
 )
 
 type LocalFileMetadata struct {
-	lastUpdateDate   time.Time
-	lastHeaderQuery  time.Time
-	mappingFileMutex sync.Mutex
-	updaterMutex     sync.Mutex
+	lastUpdateDate  time.Time
+	lastHeaderQuery time.Time
 }
 
 // LocalUpdaterJob periodically updates mapping file and store it in local storage
 type LocalUpdaterJob struct {
-	LocalPath string
-	URL       string
-	Client    *http.Client
+	URL             string
+	Mapping         MappingFile
+	Client          *http.Client
+	lastUpdateDate  time.Time
+	lastHeaderQuery time.Time
 }
 
-var fileMetadata = make(map[string]*LocalFileMetadata)
-
 // NewLocalUpdaterJob creates new LocalUpdaterJob
-func NewLocalUpdaterJob(localPath string, url string, client *http.Client) *LocalUpdaterJob {
+func NewLocalUpdaterJob(url string, client *http.Client) *LocalUpdaterJob {
 	updater := LocalUpdaterJob{
-		LocalPath: localPath,
-		URL:       url,
-		Client:    client,
-	}
-	if _, ok := fileMetadata[localPath]; !ok {
-		fileMetadata[localPath] = &LocalFileMetadata{}
+		URL:    url,
+		Client: client,
 	}
 	return &updater
 }
@@ -50,22 +42,9 @@ func (updater *LocalUpdaterJob) Get(ctx context.Context, repositories []string) 
 	if len(repositories) == 0 {
 		return []string{}, nil
 	}
-	fileMetadata[updater.LocalPath].mappingFileMutex.Lock()
-	defer fileMetadata[updater.LocalPath].mappingFileMutex.Unlock()
-	f, err := os.Open(updater.LocalPath)
-	if err != nil {
-		return []string{}, err
-	}
-	defer f.Close()
-
-	mappingContent := MappingFile{}
-	err = json.NewDecoder(f).Decode(&mappingContent)
-	if err != nil {
-		return []string{}, err
-	}
 	cpes := []string{}
 	for _, repo := range repositories {
-		if repoCPEs, ok := mappingContent.Data[repo]; ok {
+		if repoCPEs, ok := updater.Mapping.Data[repo]; ok {
 			for _, cpe := range repoCPEs.CPEs {
 				cpes = appendUnique(cpes, cpe)
 			}
@@ -81,40 +60,38 @@ func (updater *LocalUpdaterJob) Update(ctx context.Context) error {
 	log := zerolog.Ctx(ctx).With().
 		Str("component", "rhel/RepositoryScanner.Scan.LocalUpdaterJob").
 		Logger()
-	fileMetadata[updater.LocalPath].updaterMutex.Lock()
-	defer fileMetadata[updater.LocalPath].updaterMutex.Unlock()
 	if updater.shouldBeUpdated(ctx, &log) {
 		log.Info().Msg("The repo2cpe mapping has newer version. Updating...")
 		data, lastModified, err := updater.fetch(ctx, &log)
 		if err != nil {
 			return err
 		}
-		err = updater.store(data)
+		err = json.Unmarshal(data, &updater.Mapping)
 		if err != nil {
 			return err
 		}
-		log.Info().Str("path", updater.LocalPath).Msg("Repo-CPE mapping file has been successfully updated")
+		log.Info().Msg("Repo-CPE mapping file has been successfully updated")
 		if lastModified != "" {
 			lastModifiedDate, err := time.Parse(time.RFC1123, lastModified)
 			if err != nil {
-				log.Err(err).Str("lastUpdateDate", fileMetadata[updater.LocalPath].lastUpdateDate.String()).Msg("Failed to parse lastUpdateDate")
+				log.Err(err).Str("lastUpdateDate", updater.lastUpdateDate.String()).Msg("Failed to parse lastUpdateDate")
 				return err
 			}
 			// update local timestamp with latest date
-			fileMetadata[updater.LocalPath].lastUpdateDate = lastModifiedDate
+			updater.lastUpdateDate = lastModifiedDate
 		}
 	}
 	return nil
 }
 
 func (updater *LocalUpdaterJob) shouldBeUpdated(ctx context.Context, log *zerolog.Logger) bool {
-	if time.Now().Add(-8 * time.Hour).Before(fileMetadata[updater.LocalPath].lastUpdateDate) {
+	if time.Now().Add(-8 * time.Hour).Before(updater.lastUpdateDate) {
 		// mapping has been updated in past 8 hours
 		// no need to query file headers
 		return false
 	}
 	// if it is more than 10 hours let's check file last-modified every 15 minutes
-	if time.Now().Add(-15 * time.Minute).Before(fileMetadata[updater.LocalPath].lastHeaderQuery) {
+	if time.Now().Add(-30 * time.Minute).Before(updater.lastHeaderQuery) {
 		// last header query has been done less than 15 minutes ago
 		return false
 	}
@@ -144,8 +121,8 @@ func (updater *LocalUpdaterJob) shouldBeUpdated(ctx context.Context, log *zerolo
 	if err != nil {
 		return true
 	}
-	fileMetadata[updater.LocalPath].lastHeaderQuery = time.Now()
-	return lastModifiedTime.After(fileMetadata[updater.LocalPath].lastUpdateDate)
+	updater.lastHeaderQuery = time.Now()
+	return lastModifiedTime.After(updater.lastUpdateDate)
 }
 
 func (updater *LocalUpdaterJob) fetch(ctx context.Context, log *zerolog.Logger) ([]byte, string, error) {
@@ -174,21 +151,6 @@ func (updater *LocalUpdaterJob) fetch(ctx context.Context, log *zerolog.Logger) 
 		return []byte{}, "", err
 	}
 	return body, lastModified, nil
-}
-
-func (updater *LocalUpdaterJob) store(data []byte) error {
-	fileMetadata[updater.LocalPath].mappingFileMutex.Lock()
-	defer fileMetadata[updater.LocalPath].mappingFileMutex.Unlock()
-	f, err := os.OpenFile(updater.LocalPath, os.O_RDWR|os.O_CREATE, 0644)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	_, err = f.Write(data)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func appendUnique(items []string, item string) []string {

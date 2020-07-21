@@ -93,7 +93,7 @@ var defaultMatchers = []driver.Matcher{
 	&debian.Matcher{},
 	&python.Matcher{},
 	&ubuntu.Matcher{},
-	&rhel.Matcher{},
+	rhel.NewMatcher(nil),
 	&photon.Matcher{},
 	&suse.Matcher{},
 	&oracle.Matcher{},

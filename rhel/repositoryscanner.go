@@ -20,32 +20,28 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
-	"github.com/quay/claircore/pkg/cpe"
 	"github.com/quay/claircore/rhel/containerapi"
 	"github.com/quay/claircore/rhel/contentmanifest"
 )
 
-// RepositoryScanner implements Red Hat Cpes based repositories
+// RepositoryScanner implements Red Hat repositories
 type RepositoryScanner struct {
-	cpeAPIFetcher   *containerapi.ContainerAPI
-	timeout         time.Duration
-	contentmanifest *contentmanifest.RepoCPEMapping
+	apiFetcher *containerapi.ContainerAPI
+	timeout    time.Duration
 }
 
 // RepoScannerConfig is the struct that will be passed to
 // (*RepositoryScanner).Configure's ConfigDeserializer argument.
 type RepoScannerConfig struct {
-	Timeout             time.Duration `json:"timeout",yaml:"timeout"`
-	API                 string        `json:"api",yaml:"api"`
-	Repo2CPEMappingPath string        `json:repo2cpe_mapping_path,yaml:"repo2cpe_mapping_path"`
-	Repo2CPEMappingURL  string        `json:repo2cpe_mapping_url,yaml:"repo2cpe_mapping_url"`
+	Timeout time.Duration `json:"timeout",yaml:"timeout"`
+	API     string        `json:"api",yaml:"api"`
 }
 
-// RedHatCPERepositoryKey is a key of Red Hat's CPE based repository
-const RedHatCPERepositoryKey = "rhel-cpe-repo"
+// RedHatRepositoryKey is a key of Red Hat's CPE based repository
+const RedHatRepositoryKey = "rhel-content-sets-scanner"
 
 // Name implements scanner.Name.
-func (*RepositoryScanner) Name() string { return "rhel-cpe-scanner" }
+func (*RepositoryScanner) Name() string { return "rhel-content-sets-scanner" }
 
 // Version implements scanner.VersionedScanner.
 func (*RepositoryScanner) Version() string { return "1.0" }
@@ -55,12 +51,6 @@ func (*RepositoryScanner) Kind() string { return "repository" }
 
 // DefaultContainerAPI is a default Red Hat's container API URL
 const DefaultContainerAPI = "https://catalog.redhat.com/api/containers/"
-
-// DefaultRepo2CPEMapping is a default URL for mapping between repositories and CPEs
-const DefaultRepo2CPEMapping = "https://www.redhat.com/security/data/metrics/repository-to-cpe.json"
-
-// DefaultRepo2CPEMappingPath is a default local path where mapping file is stored
-const DefaultRepo2CPEMappingPath = "/tmp/repository-2-cpe.json"
 
 // Configure implements the RPCScanner interface.
 func (r *RepositoryScanner) Configure(ctx context.Context, f indexer.ConfigDeserializer, c *http.Client) error {
@@ -80,21 +70,8 @@ func (r *RepositoryScanner) Configure(ctx context.Context, f indexer.ConfigDeser
 	if err != nil {
 		return err
 	}
-	if cfg.Repo2CPEMappingPath == "" {
-		cfg.Repo2CPEMappingPath = DefaultRepo2CPEMappingPath
-	}
-	if cfg.Repo2CPEMappingURL == "" {
-		cfg.Repo2CPEMappingURL = DefaultRepo2CPEMapping
-	}
-	r.contentmanifest = &contentmanifest.RepoCPEMapping{
-		RepoCPEUpdater: contentmanifest.NewLocalUpdaterJob(
-			cfg.Repo2CPEMappingPath,
-			cfg.Repo2CPEMappingURL,
-			c,
-		),
-	}
 
-	r.cpeAPIFetcher = &containerapi.ContainerAPI{
+	r.apiFetcher = &containerapi.ContainerAPI{
 		Root:   root,
 		Client: c,
 	}
@@ -102,7 +79,7 @@ func (r *RepositoryScanner) Configure(ctx context.Context, f indexer.ConfigDeser
 	return nil
 }
 
-// Scan gets Red Hat repositories based on CPE information.
+// Scan gets Red Hat repositories information.
 func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) (repositories []*claircore.Repository, err error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	log := zerolog.Ctx(ctx).With().
@@ -114,27 +91,26 @@ func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) (repos
 	log.Debug().Msg("start")
 	defer log.Debug().Msg("done")
 
-	cpes, err := r.contentSets(ctx, &log, l)
+	contentSets, err := r.getEmbeddedContentSets(ctx, &log, l)
 	if err != nil {
 		return []*claircore.Repository{}, err
 	}
-	if cpes == nil && r.cpeAPIFetcher != nil {
+	if contentSets == nil && r.apiFetcher != nil {
 		// Embedded content-sets are available only for new images.
 		// For old images, use fallback option and query Red Hat Container API.
 		ctx, done := context.WithTimeout(ctx, r.timeout)
 		defer done()
-		cpes, err = r.containerAPI(ctx, &log, l)
+		contentSets, err = r.getContentSetsUsingContainerAPI(ctx, &log, l)
 		if err != nil {
 			return []*claircore.Repository{}, err
 		}
 	}
 
-	for _, n := range cpes {
+	for _, n := range contentSets {
 		r := &claircore.Repository{
 			Name: n,
-			Key:  RedHatCPERepositoryKey,
+			Key:  RedHatRepositoryKey,
 		}
-		r.CPE, err = cpe.Unbind(n)
 		if err != nil {
 			return nil, err
 		}
@@ -145,9 +121,9 @@ func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) (repos
 	return repositories, nil
 }
 
-// ContentSets returns a slice of CPEs bound into strings, as discovered by
+// getEmbeddedContentSets returns a slice of content-sets bound into strings, as discovered by
 // examining information contained within the container.
-func (r *RepositoryScanner) contentSets(ctx context.Context, log *zerolog.Logger, l *claircore.Layer) ([]string, error) {
+func (r *RepositoryScanner) getEmbeddedContentSets(ctx context.Context, log *zerolog.Logger, l *claircore.Layer) ([]string, error) {
 	// Get CPEs using embedded content-set files.
 	// The files is be stored in /root/buildinfo/content_manifests/ and will need to
 	// be translated using mapping file provided by Red Hat's PST team.
@@ -167,11 +143,10 @@ func (r *RepositoryScanner) contentSets(ctx context.Context, log *zerolog.Logger
 	if err != nil {
 		return nil, err
 	}
-	cpes, err := r.contentmanifest.RepositoryToCPE(ctx, contentManifestData.ContentSets)
-	return cpes, err
+	return contentManifestData.ContentSets, nil
 }
 
-func (r *RepositoryScanner) containerAPI(ctx context.Context, log *zerolog.Logger, l *claircore.Layer) ([]string, error) {
+func (r *RepositoryScanner) getContentSetsUsingContainerAPI(ctx context.Context, log *zerolog.Logger, l *claircore.Layer) ([]string, error) {
 	path, buf, err := findDockerfile(log, l)
 	switch {
 	case err == nil:
@@ -191,16 +166,16 @@ func (r *RepositoryScanner) containerAPI(ctx context.Context, log *zerolog.Logge
 		return nil, nil
 	}
 
-	cpes, err := r.cpeAPIFetcher.GetCPEs(ctx, nvr, arch)
+	contentSets, err := r.apiFetcher.GetContentSets(ctx, nvr, arch)
 	log.Debug().
 		Str("nvr", nvr).
 		Str("arch", arch).
-		Strs("CPEs", cpes).
-		Msg("Got CPEs from container API")
+		Strs("content-sets", contentSets).
+		Msg("Got content-sets from container API")
 	if err != nil {
 		return nil, err
 	}
-	return cpes, nil
+	return contentSets, nil
 }
 
 func findContentManifestFile(log *zerolog.Logger, l *claircore.Layer) (string, *bytes.Buffer, error) {
