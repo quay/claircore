@@ -49,6 +49,7 @@ func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.IndexReco
 
 	// gather all the returned vulns for each queued select statement
 	results := make(map[string][]*claircore.Vulnerability)
+	vulnSet := make(map[string]map[string]struct{})
 	for _, record := range records {
 		rows, err := res.Query()
 		if err != nil {
@@ -101,7 +102,13 @@ func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.IndexReco
 			}
 
 			rid := record.Package.ID
-			results[rid] = append(results[rid], v)
+			if _, ok := vulnSet[rid]; !ok {
+				vulnSet[rid] = make(map[string]struct{})
+			}
+			if _, ok := vulnSet[rid][v.ID]; !ok {
+				vulnSet[rid][v.ID] = struct{}{}
+				results[rid] = append(results[rid], v)
+			}
 		}
 	}
 	if err := res.Close(); err != nil {
