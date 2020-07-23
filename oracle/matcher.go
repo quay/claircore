@@ -1,6 +1,8 @@
 package oracle
 
 import (
+	"context"
+
 	version "github.com/knqyf263/go-rpm-version"
 
 	"github.com/quay/claircore"
@@ -48,7 +50,7 @@ func (*Matcher) Query() []driver.MatchConstraint {
 }
 
 // Vulnerable implements driver.Matcher
-func (*Matcher) Vulnerable(record *claircore.IndexRecord, vuln *claircore.Vulnerability) bool {
+func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
 	pkgVer, vulnVer := version.NewVersion(record.Package.Version), version.NewVersion(vuln.Package.Version)
 	// Assume the vulnerability record we have is for the last known vulnerable
 	// version, so greater versions aren't vulnerable.
@@ -59,5 +61,5 @@ func (*Matcher) Vulnerable(record *claircore.IndexRecord, vuln *claircore.Vulner
 		vulnVer = version.NewVersion(vuln.FixedInVersion)
 		cmp = func(i int) bool { return i == version.LESS }
 	}
-	return cmp(pkgVer.Compare(vulnVer)) && vuln.ArchOperation.Cmp(record.Package.Arch, vuln.Package.Arch)
+	return cmp(pkgVer.Compare(vulnVer)) && vuln.ArchOperation.Cmp(record.Package.Arch, vuln.Package.Arch), nil
 }

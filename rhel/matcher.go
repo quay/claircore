@@ -6,6 +6,7 @@ import (
 	"os"
 
 	version "github.com/knqyf263/go-rpm-version"
+	"github.com/rs/zerolog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
@@ -22,7 +23,12 @@ type Matcher struct {
 
 var _ driver.Matcher = (*Matcher)(nil)
 
-func NewMatcher(client *http.Client) *Matcher {
+// TODO: we need to plumb a context thru here
+func NewMatcher(ctx context.Context, client *http.Client) *Matcher {
+	log := zerolog.Ctx(ctx).With().
+		Str("component", "rhel/matcher/NewMatcher").
+		Logger()
+
 	mappingURL := os.Getenv("REPO_TO_CPE_URL")
 	if mappingURL == "" {
 		mappingURL = DefaultRepo2CPEMappingURL
@@ -30,12 +36,18 @@ func NewMatcher(client *http.Client) *Matcher {
 	if client == nil {
 		client = http.DefaultClient
 	}
+
+	// launch local updater
+	log.Info().Msg("launching local updater job")
+	localUpdater := repo2cpe.NewLocalUpdaterJob(mappingURL, client)
+
+	// blocks until the first update try as an attempt to have a
+	// mapping file present before constructor returns.
+	localUpdater.Start(ctx)
+
 	return &Matcher{
 		&repo2cpe.RepoCPEMapping{
-			RepoCPEUpdater: repo2cpe.NewLocalUpdaterJob(
-				mappingURL,
-				client,
-			),
+			RepoCPEUpdater: localUpdater,
 		},
 	}
 }

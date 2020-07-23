@@ -7,7 +7,6 @@ import (
 // RepoCPEUpdater provides interface for providing a mapping
 // between repositories and CPEs
 type RepoCPEUpdater interface {
-	Update(context.Context) error
 	Get(context.Context, []string) ([]string, error)
 }
 
@@ -18,10 +17,6 @@ type RepoCPEMapping struct {
 
 // RepositoryToCPE translates repositories into CPEs
 func (mapping *RepoCPEMapping) RepositoryToCPE(ctx context.Context, repositories []string) ([]string, error) {
-	err := mapping.Update(ctx)
-	if err != nil {
-		return nil, err
-	}
 	cpes, err := mapping.Get(ctx, repositories)
 	return cpes, err
 }

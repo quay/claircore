@@ -4,47 +4,59 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
+	"sync/atomic"
 	"time"
 
 	"github.com/rs/zerolog"
 )
 
-type LocalFileMetadata struct {
-	lastUpdateDate  time.Time
-	lastHeaderQuery time.Time
-}
+const (
+	updateInterval = 30 * time.Second
+)
 
-// LocalUpdaterJob periodically updates mapping file and store it in local storage
+// UpaterJob provides local repo -> cpe mapping
+// via a continually updated local mapping file
 type LocalUpdaterJob struct {
-	URL             string
-	Mapping         MappingFile
-	Client          *http.Client
-	lastUpdateDate  time.Time
-	lastHeaderQuery time.Time
+	URL    string
+	Client *http.Client
+	// an atomic value holding the latest
+	// parsed MappingFile
+	mapping      atomic.Value
+	lastModified string
 }
 
-// NewLocalUpdaterJob creates new LocalUpdaterJob
+// NewUpdaterJob returns a unstarted UpdaterJob.
 func NewLocalUpdaterJob(url string, client *http.Client) *LocalUpdaterJob {
-	updater := LocalUpdaterJob{
+	if client == nil {
+		client = http.DefaultClient
+	}
+	return &LocalUpdaterJob{
 		URL:    url,
 		Client: client,
 	}
-	return &updater
 }
 
-// Get translate repositories into CPEs using a mapping file
+// Get translates repositories into CPEs using a mapping file.
+//
+// Get is safe for concurrent usage.
 func (updater *LocalUpdaterJob) Get(ctx context.Context, repositories []string) ([]string, error) {
 	log := zerolog.Ctx(ctx).With().
-		Str("component", "rhel/RepositoryScanner.Scan.LocalUpdaterJob").
+		Str("component", "rhel/repo2cpe/updater/LocalUpdaterJob.Get").
 		Logger()
 	if len(repositories) == 0 {
 		return []string{}, nil
 	}
+
 	cpes := []string{}
+	var mapping *MappingFile = updater.mapping.Load().(*MappingFile)
+	if mapping == nil {
+		// mapping not set yet. not an error
+		return cpes, nil
+	}
+
 	for _, repo := range repositories {
-		if repoCPEs, ok := updater.Mapping.Data[repo]; ok {
+		if repoCPEs, ok := mapping.Data[repo]; ok {
 			for _, cpe := range repoCPEs.CPEs {
 				cpes = appendUnique(cpes, cpe)
 			}
@@ -55,102 +67,88 @@ func (updater *LocalUpdaterJob) Get(ctx context.Context, repositories []string) 
 	return cpes, nil
 }
 
-// Update fetches mapping file using HTTP and store it locally in regular intervals
-func (updater *LocalUpdaterJob) Update(ctx context.Context) error {
+// Start begins a local updater job keeping the atomic mapping variable
+// up to date.
+//
+// Start will block until the first atomic update of the mapping file completes.
+//
+// All subsequent updates are performed asynchronously in a goroutine.
+//
+// Canceling the ctx will cancel the updating.
+func (updater *LocalUpdaterJob) Start(ctx context.Context) error {
 	log := zerolog.Ctx(ctx).With().
-		Str("component", "rhel/RepositoryScanner.Scan.LocalUpdaterJob").
+		Str("component", "rhel/repo2cpe/updater/LocalUpdaterJob.Start").
 		Logger()
-	if updater.shouldBeUpdated(ctx, &log) {
-		log.Info().Msg("The repo2cpe mapping has newer version. Updating...")
-		data, lastModified, err := updater.fetch(ctx, &log)
-		if err != nil {
-			return err
-		}
-		err = json.Unmarshal(data, &updater.Mapping)
-		if err != nil {
-			return err
-		}
-		log.Info().Msg("Repo-CPE mapping file has been successfully updated")
-		if lastModified != "" {
-			lastModifiedDate, err := time.Parse(time.RFC1123, lastModified)
-			if err != nil {
-				log.Err(err).Str("lastUpdateDate", updater.lastUpdateDate.String()).Msg("Failed to parse lastUpdateDate")
-				return err
-			}
-			// update local timestamp with latest date
-			updater.lastUpdateDate = lastModifiedDate
-		}
+	err := updater.do(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("received error updating mapping file")
 	}
+
+	go func() {
+		t := time.NewTicker(updateInterval)
+		defer t.Stop()
+		for {
+			select {
+			case <-t.C:
+				log.Debug().Msg("updater tick")
+				err := updater.do(ctx)
+				if err != nil {
+					log.Error().Err(err).Msg("received error updating mapping file")
+				}
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
 	return nil
 }
 
-func (updater *LocalUpdaterJob) shouldBeUpdated(ctx context.Context, log *zerolog.Logger) bool {
-	if time.Now().Add(-8 * time.Hour).Before(updater.lastUpdateDate) {
-		// mapping has been updated in past 8 hours
-		// no need to query file headers
-		return false
-	}
-	// if it is more than 10 hours let's check file last-modified every 15 minutes
-	if time.Now().Add(-30 * time.Minute).Before(updater.lastHeaderQuery) {
-		// last header query has been done less than 15 minutes ago
-		return false
-	}
-	log.Debug().Msg("The repo2cpe hasn't been updated in past 8 hours.")
-	// mapping file was updated more then 8 hours ago..
-	// Let's check whether header has changed
-	log.Debug().Str("url", updater.URL).Msg("Fetching repo2cpe last-modified")
-	req, err := http.NewRequestWithContext(ctx, http.MethodHead, updater.URL, nil)
-	if err != nil {
-		return true
-	}
+// do is an internal method called to perform an atomic update
+// of the mapping file.
+//
+// this method will not be ran concurrently.
+func (updater *LocalUpdaterJob) do(ctx context.Context) error {
+	log := zerolog.Ctx(ctx).With().
+		Str("component", "rhel/repo2cpe/updater/LocalUpdaterJob.do").
+		Logger()
 
-	resp, err := updater.Client.Do(req)
-	if err != nil {
-		return true
-	}
-	if resp.StatusCode != http.StatusOK {
-		log.Warn().
-			Int("code", resp.StatusCode).
-			Str("url", updater.URL).
-			Str("method", "HEAD").
-			Msg("Got non 2xx code from repo2cpe mapping")
-		return true
-	}
-	lastModified := resp.Header.Get("last-modified")
-	lastModifiedTime, err := time.Parse(time.RFC1123, lastModified)
-	if err != nil {
-		return true
-	}
-	updater.lastHeaderQuery = time.Now()
-	return lastModifiedTime.After(updater.lastUpdateDate)
-}
-
-func (updater *LocalUpdaterJob) fetch(ctx context.Context, log *zerolog.Logger) ([]byte, string, error) {
-	log.Info().Str("url", updater.URL).Msg("Fetching repo2cpe mapping file")
+	log.Debug().Str("url", updater.URL).Msg("attempting fetch of repo2cpe mapping file")
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, updater.URL, nil)
 	if err != nil {
-		return []byte{}, "", err
+
+	}
+
+	if updater.lastModified != "" {
+		req.Header.Set("if-modified-since", updater.lastModified)
 	}
 
 	resp, err := updater.Client.Do(req)
 	if err != nil {
-		return []byte{}, "", err
 	}
-	defer resp.Body.Close()
+	if resp.Body != nil {
+		defer resp.Body.Close()
+	}
+
+	if resp.StatusCode == http.StatusNotModified {
+		log.Debug().Str("url", updater.URL).Str("since", updater.lastModified).Msg("response not modified. no update necessary")
+		return nil
+	}
+
 	if resp.StatusCode != http.StatusOK {
-		log.Warn().
-			Int("code", resp.StatusCode).
-			Str("url", updater.URL).
-			Str("method", "GET").
-			Msg("Got non 2xx code from repo2cpe mapping")
-		return []byte{}, "", fmt.Errorf("Got non 2xx code from repo2cpe mapping: [GET] %d - %s", resp.StatusCode, updater.URL)
+		return fmt.Errorf("received status code %d quering mapping url", resp.StatusCode)
 	}
-	lastModified := resp.Header.Get("last-modified")
-	body, err := ioutil.ReadAll(resp.Body)
+	updater.lastModified = resp.Header.Get("last-modified")
+
+	var mapping *MappingFile
+	err = json.NewDecoder(resp.Body).Decode(&mapping)
 	if err != nil {
-		return []byte{}, "", err
+		return fmt.Errorf("failed to decode mapping file: %v", err)
 	}
-	return body, lastModified, nil
+
+	// atomic store of mapping file
+	updater.mapping.Store(mapping)
+	log.Debug().Msg("atomic update of local mapping file complete")
+	return nil
 }
 
 func appendUnique(items []string, item string) []string {
