@@ -1,6 +1,8 @@
 package aws
 
 import (
+	"context"
+
 	version "github.com/knqyf263/go-rpm-version"
 
 	"github.com/quay/claircore"
@@ -37,21 +39,21 @@ func (*Matcher) Query() []driver.MatchConstraint {
 	}
 }
 
-func (*Matcher) Vulnerable(record *claircore.IndexRecord, vuln *claircore.Vulnerability) bool {
+func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
 	v1 := version.NewVersion(record.Package.Version)
 	v2 := version.NewVersion(vuln.FixedInVersion)
 
 	if vuln.FixedInVersion == "" {
-		return true
+		return true, nil
 	}
 
 	if v2.String() == "0" {
-		return true
+		return true, nil
 	}
 
 	if v1.LessThan(v2) {
-		return true
+		return true, nil
 	}
 
-	return false
+	return false, nil
 }

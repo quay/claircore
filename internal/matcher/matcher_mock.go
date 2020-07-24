@@ -5,10 +5,11 @@
 package matcher
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	claircore "github.com/quay/claircore"
 	driver "github.com/quay/claircore/libvuln/driver"
-	reflect "reflect"
 )
 
 // MockMatcher is a mock of Matcher interface
@@ -77,11 +78,11 @@ func (mr *MockMatcherMockRecorder) Query() *gomock.Call {
 }
 
 // Vulnerable mocks base method
-func (m *MockMatcher) Vulnerable(arg0 *claircore.IndexRecord, arg1 *claircore.Vulnerability) bool {
+func (m *MockMatcher) Vulnerable(arg0 *claircore.IndexRecord, arg1 *claircore.Vulnerability) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Vulnerable", arg0, arg1)
 	ret0, _ := ret[0].(bool)
-	return ret0
+	return ret0, nil
 }
 
 // Vulnerable indicates an expected call of Vulnerable

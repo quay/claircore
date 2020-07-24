@@ -1,6 +1,10 @@
 package driver
 
-import "github.com/quay/claircore"
+import (
+	"context"
+
+	"github.com/quay/claircore"
+)
 
 // MatchConstraint explains to the caller how a search for a package's vulnerability should
 // be constrained.
@@ -48,7 +52,7 @@ type Matcher interface {
 	Query() []MatchConstraint
 	// Vulnerable informs the Controller if the given package is affected by the given vulnerability.
 	// for example checking the "FixedInVersion" field.
-	Vulnerable(record *claircore.IndexRecord, vuln *claircore.Vulnerability) bool
+	Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error)
 }
 
 // VersionFilter is an additional interface that a Matcher can implment to

@@ -1,6 +1,8 @@
 package python
 
 import (
+	"context"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/pep440"
@@ -29,21 +31,21 @@ func (*Matcher) Query() []driver.MatchConstraint {
 }
 
 // Vulnerable implements driver.Matcher.
-func (*Matcher) Vulnerable(record *claircore.IndexRecord, vuln *claircore.Vulnerability) bool {
+func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
 	if vuln.Range != nil && record.Package.NormalizedVersion.Kind != "" {
-		return vuln.Range.Contains(&record.Package.NormalizedVersion)
+		return vuln.Range.Contains(&record.Package.NormalizedVersion), nil
 	}
 
 	pkg, err := pep440.Parse(record.Package.Version)
 	if err != nil {
-		return false
+		return false, err
 	}
 	fixed, err := pep440.Parse(vuln.FixedInVersion)
 	if err != nil {
-		return false
+		return false, err
 	}
 	// pkg < fixed
-	return pkg.Compare(&fixed) == -1
+	return pkg.Compare(&fixed) == -1, nil
 }
 
 // VersionFilter opts in to filtering versions in the database.

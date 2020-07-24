@@ -12,7 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/pkg/cpe"
+	"github.com/quay/claircore/rhel/containerapi"
 	"github.com/quay/claircore/test/log"
 )
 
@@ -22,29 +22,31 @@ func TestRepositoryScanner(t *testing.T) {
 	defer done()
 
 	// Set up a response map and test server to mock the Container API.
-	resp := map[string]*containerImages{
-		"rh-pkg-1-1": &containerImages{Images: []containerImage{
+	apiData := map[string]*containerapi.ContainerImages{
+		"rh-pkg-1-1": &containerapi.ContainerImages{Images: []containerapi.ContainerImage{
 			{
-				CPE: []string{
-					"cpe:/o:redhat:enterprise_linux:8::computenode",
-					"cpe:/o:redhat:enterprise_linux:8::baseos",
+				ContentSets: []string{
+					"rhel-8-for-x86_64-baseos-rpms",
+					"rhel-8-for-x86_64-appstream-rpms",
 				},
-				ParsedData: parsedData{
+				ParsedData: containerapi.ParsedData{
 					Architecture: "x86_64",
-					Labels: []label{
+					Labels: []containerapi.Label{
 						{Name: "architecture", Value: "x86_64"},
 					},
 				},
 			},
 		}},
 	}
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		t.Log(r.URL.String())
-		nvr := path.Base(r.URL.Path)
-		if err := json.NewEncoder(w).Encode(resp[nvr]); err != nil {
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/v1/images/nvr/", func(w http.ResponseWriter, r *http.Request) {
+		path := path.Base(r.URL.Path)
+		if err := json.NewEncoder(w).Encode(apiData[path]); err != nil {
 			t.Fatal(err)
 		}
-	}))
+	})
+	srv := httptest.NewServer(mux)
 	defer srv.Close()
 
 	table := []struct {
@@ -57,18 +59,31 @@ func TestRepositoryScanner(t *testing.T) {
 			name: "FromAPI",
 			want: []*claircore.Repository{
 				&claircore.Repository{
-					Name: "cpe:/o:redhat:enterprise_linux:8::computenode",
-					Key:  "rhel-cpe-repo",
-					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8::computenode"),
+					Name: "rhel-8-for-x86_64-baseos-rpms",
+					Key:  RedHatRepositoryKey,
 				},
 				&claircore.Repository{
-					Name: "cpe:/o:redhat:enterprise_linux:8::baseos",
-					Key:  "rhel-cpe-repo",
-					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8::baseos"),
+					Name: "rhel-8-for-x86_64-appstream-rpms",
+					Key:  RedHatRepositoryKey,
 				},
 			},
 			cfg:       &RepoScannerConfig{API: srv.URL},
 			layerPath: "testdata/layer-with-cpe.tar",
+		},
+		{
+			name: "From mapping file",
+			want: []*claircore.Repository{
+				&claircore.Repository{
+					Name: "content-set-1",
+					Key:  RedHatRepositoryKey,
+				},
+				&claircore.Repository{
+					Name: "content-set-2",
+					Key:  RedHatRepositoryKey,
+				},
+			},
+			cfg:       &RepoScannerConfig{API: srv.URL},
+			layerPath: "testdata/layer-with-embedded-cs.tar",
 		},
 		{
 			name:      "No-cpe-info",

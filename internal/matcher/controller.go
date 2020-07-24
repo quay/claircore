@@ -74,7 +74,10 @@ func (mc *Controller) Match(ctx context.Context, records []*claircore.IndexRecor
 		return vulns, nil
 	}
 	// filter the vulns
-	filteredVulns := mc.filter(interested, vulns)
+	filteredVulns, err := mc.filter(ctx, interested, vulns)
+	if err != nil {
+		return nil, err
+	}
 	log.Debug().
 		Int("filtered", len(filteredVulns)).
 		Msg("filtered")
@@ -133,21 +136,29 @@ func (mc *Controller) query(ctx context.Context, interested []*claircore.IndexRe
 
 // Filter method asks the matcher if the given package is affected by the returned vulnerability. if so; its added to a result map where the key is the package ID
 // and the value is a Vulnerability. if not it is not added to the result.
-func (mc *Controller) filter(interested []*claircore.IndexRecord, vulns map[string][]*claircore.Vulnerability) map[string][]*claircore.Vulnerability {
+func (mc *Controller) filter(ctx context.Context, interested []*claircore.IndexRecord, vulns map[string][]*claircore.Vulnerability) (map[string][]*claircore.Vulnerability, error) {
 	filtered := map[string][]*claircore.Vulnerability{}
 	for _, record := range interested {
-		filtered[record.Package.ID] = filterVulns(mc.m, record, vulns[record.Package.ID])
+		match, err := filterVulns(ctx, mc.m, record, vulns[record.Package.ID])
+		if err != nil {
+			return nil, err
+		}
+		filtered[record.Package.ID] = match
 	}
-	return filtered
+	return filtered, nil
 }
 
 // filter returns only the vulnerabilities affected by the provided package.
-func filterVulns(m driver.Matcher, record *claircore.IndexRecord, vulns []*claircore.Vulnerability) []*claircore.Vulnerability {
+func filterVulns(ctx context.Context, m driver.Matcher, record *claircore.IndexRecord, vulns []*claircore.Vulnerability) ([]*claircore.Vulnerability, error) {
 	filtered := []*claircore.Vulnerability{}
 	for _, vuln := range vulns {
-		if m.Vulnerable(record, vuln) {
+		match, err := m.Vulnerable(ctx, record, vuln)
+		if err != nil {
+			return nil, err
+		}
+		if match {
 			filtered = append(filtered, vuln)
 		}
 	}
-	return filtered
+	return filtered, nil
 }

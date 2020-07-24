@@ -1,6 +1,7 @@
 package python_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/quay/claircore"
@@ -17,7 +18,11 @@ type matcherTestcase struct {
 }
 
 func (tc matcherTestcase) Run(t *testing.T) {
-	if got, want := tc.Matcher.Vulnerable(&tc.R, &tc.V), tc.Want; got != want {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	got, _ := tc.Matcher.Vulnerable(ctx, &tc.R, &tc.V)
+	want := tc.Want
+	if got != want {
 		t.Errorf("got: %v, want: %v", got, want)
 		t.Logf("record:\n%#+v", &tc.R)
 		t.Logf("package:\n%#+v\n%#+v", tc.R.Package, tc.R.Package.NormalizedVersion)
