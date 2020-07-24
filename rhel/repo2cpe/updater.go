@@ -12,10 +12,10 @@ import (
 )
 
 const (
-	updateInterval = 30 * time.Second
+	updateInterval = 10 * time.Minute
 )
 
-// UpaterJob provides local repo -> cpe mapping
+// LocalUpdaterJob provides local repo -> cpe mapping
 // via a continually updated local mapping file
 type LocalUpdaterJob struct {
 	URL    string
@@ -26,7 +26,7 @@ type LocalUpdaterJob struct {
 	lastModified string
 }
 
-// NewUpdaterJob returns a unstarted UpdaterJob.
+// NewLocalUpdaterJob returns a unstarted UpdaterJob.
 func NewLocalUpdaterJob(url string, client *http.Client) *LocalUpdaterJob {
 	if client == nil {
 		client = http.DefaultClient
