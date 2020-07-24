@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"math/rand"
+	"os"
 	"time"
 
 	"github.com/jackc/pgx/v4"
@@ -135,7 +136,11 @@ func (o *Opts) parse(ctx context.Context) error {
 
 var defaultFactoryConstructors = map[string]func(context.Context) (driver.UpdaterSetFactory, error){
 	"rhel": func(ctx context.Context) (driver.UpdaterSetFactory, error) {
-		return rhel.NewFactory(ctx, rhel.DefaultManifest)
+		manifestURL := os.Getenv("REDHAT_OVAL_MANIFEST_URL")
+		if manifestURL == "" {
+			manifestURL = rhel.DefaultManifest
+		}
+		return rhel.NewFactory(ctx, manifestURL)
 	},
 	"ubuntu": func(_ context.Context) (driver.UpdaterSetFactory, error) {
 		return &ubuntu.Factory{Releases: ubuntu.Releases}, nil
