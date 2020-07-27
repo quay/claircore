@@ -13,6 +13,7 @@ services:
 
   claircore-db:
     image: postgres:11.5
+    container_name: claircore-db
     environment:
       POSTGRES_USER: "claircore"
       POSTGRES_DB: "claircore"
@@ -27,6 +28,7 @@ services:
 
   libindexhttp:
     image: quay.io/claircore/golang:1.13.3
+    container_name: libindexhttp
     ports:
       - "8080:8080"
     environment:
@@ -42,6 +44,7 @@ services:
 
   libvulnhttp:
     image: quay.io/claircore/golang:1.13.3
+    container_name: libvulnhttp
     ports:
       - "8081:8081"
     environment:

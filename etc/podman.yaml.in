@@ -82,7 +82,7 @@ spec:
         - name: POSTGRES_DB
           value: claircore
       image: docker.io/library/postgres:11
-      name: claircore-database
+      name: claircore-db
       restartPolicy: OnFailure
       ports:
         - containerPort: 5434
