@@ -20,7 +20,7 @@ var defaultOmniMatcher = []driver.Matcher{
 	&aws.Matcher{},
 	&debian.Matcher{},
 	&python.Matcher{},
-	rhel.NewMatcher(context.TODO(), nil),
+	&rhel.Matcher{},
 	&ubuntu.Matcher{},
 }
 
