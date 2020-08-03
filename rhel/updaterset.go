@@ -2,6 +2,7 @@ package rhel
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/url"
 	"path"
@@ -42,9 +43,35 @@ func NewFactory(ctx context.Context, manifest string, opts ...FactoryOption) (*F
 
 // Factory contains the configuration for fetching and parsing a pulp manifest.
 type Factory struct {
-	url         *url.URL
+	url         *url.URL `json:"url",yaml:"url`
 	client      *http.Client
 	updaterOpts []Option
+
+	manifestEtag string
+}
+
+type FactoryConfig struct {
+	URL string `json:"url",yaml:"url`
+}
+
+func (f *Factory) Configure(ctx context.Context, cfg driver.ConfigUnmarshaler, c *http.Client) error {
+	var fc FactoryConfig
+	if err := cfg(&fc); err != nil {
+		return err
+	}
+	if fc.URL != "" {
+		u, err := url.Parse(fc.URL)
+		if err != nil {
+			return err
+		}
+		f.url = u
+	}
+
+	if c != nil {
+		f.client = c
+	}
+
+	return nil
 }
 
 // A FactoryOption is used with New to configure a Factory.
@@ -70,17 +97,28 @@ func FactoryWithUpdaterOptions(opts ...Option) FactoryOption {
 func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
 	s := driver.NewUpdaterSet()
 
-	// TODO(hank) cache state?
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, f.url.String(), nil)
 	if err != nil {
 		return s, err
 	}
+	if f.manifestEtag != "" {
+		req.Header.Set("if-none-match", f.manifestEtag)
+	}
+
 	res, err := f.client.Do(req)
 	if res != nil {
 		defer res.Body.Close()
 	}
 	if err != nil {
 		return s, err
+	}
+
+	switch res.StatusCode {
+	case http.StatusOK:
+	case http.StatusNotModified:
+		return s, nil
+	default:
+		return s, fmt.Errorf("unexpected response: %v", res.Status)
 	}
 
 	m := pulp.Manifest{}
@@ -112,6 +150,7 @@ func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
 		}
 		_ = s.Add(up)
 	}
+	f.manifestEtag = res.Header.Get("etag")
 
 	return s, nil
 }
