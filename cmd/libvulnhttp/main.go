@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/crgimenes/goconfig"
@@ -88,6 +89,10 @@ func confToLibvulnOpts(conf Config) *libvuln.Opts {
 		MaxConnPool: int32(conf.MaxConnPool),
 		Migrations:  true,
 		UpdaterSets: nil,
+	}
+	re, err := regexp.Compile(conf.Run)
+	if err == nil {
+		opts.UpdaterFilter = re.MatchString
 	}
 
 	return opts

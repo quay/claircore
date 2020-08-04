@@ -82,10 +82,12 @@ type Opts struct {
 
 	// If set to true, there will not be a goroutine launched to periodically
 	// run updaters.
-	DisableBackgoundUpdates bool
+	DisableBackgroundUpdates bool
 
 	// UpdaterConfigs is a map of functions for configuration of Updaters.
 	UpdaterConfigs map[string]driver.ConfigUnmarshaler
+
+	UpdaterFilter func(name string) (keep bool)
 
 	// Client is an http.Client for use by all updaters. If unset,
 	// http.DefaultClient will be used.
@@ -138,6 +140,9 @@ func (o *Opts) parse(ctx context.Context) error {
 	if o.Client == nil {
 		o.Client = http.DefaultClient
 	}
+	if o.UpdaterConfigs == nil {
+		o.UpdaterConfigs = make(map[string]driver.ConfigUnmarshaler)
+	}
 
 	return nil
 }
@@ -174,11 +179,19 @@ func (o *Opts) updaterSetFunc(ctx context.Context, log zerolog.Logger) ([]driver
 		for _, f := range defaultSets {
 			fs = append(fs, f)
 		}
-		for _, c := range defaultFactoryConstructors {
+		for name, c := range defaultFactoryConstructors {
 			fac, err := c(ctx)
 			if err != nil {
 				log.Warn().Err(err).Msg("unable to construct updater, skipping")
 				continue
+			}
+			f, fOK := fac.(driver.Configurable)
+			cfg, cfgOK := o.UpdaterConfigs[name]
+			if fOK && cfgOK {
+				if err := f.Configure(ctx, cfg, o.Client); err != nil {
+					log.Warn().Err(err).Msg("failed configuring updater factory")
+					continue
+				}
 			}
 			fs = append(fs, fac)
 		}

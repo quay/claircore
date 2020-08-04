@@ -2,6 +2,7 @@ package libvuln
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -23,6 +24,7 @@ type Libvuln struct {
 	store    vulnstore.Store
 	pool     *pgxpool.Pool
 	matchers []driver.Matcher
+	*UpdateDriver
 }
 
 // New creates a new instance of the Libvuln library
@@ -57,13 +59,17 @@ func New(ctx context.Context, opts *Opts) (*Libvuln, error) {
 		pool:     pool,
 		matchers: opts.Matchers,
 	}
-
-	// Run updaters synchronously, initially.
-	if err := l.RunUpdaters(ctx, opts.UpdateWorkers, setFuncs...); err != nil {
+	l.UpdateDriver, err = NewUpdater(pool, opts.Client, opts.UpdaterConfigs, opts.UpdateWorkers, opts.UpdaterFilter)
+	if err != nil {
 		return nil, err
 	}
-	if !opts.DisableBackgoundUpdates {
-		go l.loopUpdaters(ctx, opts.UpdateInterval, opts.UpdateWorkers, setFuncs...)
+
+	// Run updaters synchronously, initially.
+	if err := l.RunUpdaters(ctx, setFuncs...); err != nil {
+		return nil, err
+	}
+	if !opts.DisableBackgroundUpdates {
+		go l.loopUpdaters(ctx, opts.UpdateInterval, setFuncs...)
 	}
 	log.Info().Msg("libvuln initialized")
 	return l, nil
@@ -106,4 +112,27 @@ func (l *Libvuln) LatestUpdateOperations(ctx context.Context) (map[string][]driv
 // return new results.
 func (l *Libvuln) LatestUpdateOperation(ctx context.Context) (uuid.UUID, error) {
 	return l.store.GetLatestUpdateRef(ctx)
+}
+
+// LoopUpdaters calls RunUpdaters in a loop.
+func (l *Libvuln) loopUpdaters(ctx context.Context, p time.Duration, fs ...driver.UpdaterSetFactory) {
+	log := zerolog.Ctx(ctx).With().
+		Str("component", "libvuln/Libvuln/loopUpdaters").
+		Logger()
+	ctx = log.WithContext(ctx)
+	t := time.NewTicker(p)
+	defer t.Stop()
+	done := ctx.Done()
+
+	for {
+		select {
+		case <-done:
+			return
+		case <-t.C:
+			if err := l.RunUpdaters(ctx, fs...); err != nil {
+				log.Error().Err(err).Msg("unable to run updaters")
+				return
+			}
+		}
+	}
 }
