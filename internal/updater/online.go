@@ -2,11 +2,8 @@ package updater
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"math/rand"
 	"runtime"
-	"strings"
 	"sync"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -18,11 +15,11 @@ import (
 	distlock "github.com/quay/claircore/pkg/distlock/postgres"
 )
 
-// Executor is a helper for managing locks and state for updaters.
+// Online is a controller that writes updates to a database.
 //
-// An Executor should be constructed via a literal and is safe for concurrent
+// An Online should be constructed via a literal and is safe for concurrent
 // use.
-type Executor struct {
+type Online struct {
 	Pool    *pgxpool.Pool
 	Workers int
 
@@ -31,11 +28,13 @@ type Executor struct {
 	Filter func(name string) (keep bool)
 }
 
+var _ Controller = (*Online)(nil)
+
 // Run runs all the Updaters fed down the channel.
 //
 // The method runs until the provided channel is closed or the context is
 // cancelled.
-func (e *Executor) Run(ctx context.Context, ch <-chan driver.Updater) error {
+func (e *Online) Run(ctx context.Context, ch <-chan driver.Updater) error {
 	runID := rand.Uint32()
 	log := zerolog.Ctx(ctx).With().
 		Str("component", "internal/updater/Executor").
@@ -107,82 +106,5 @@ func (e *Executor) Run(ctx context.Context, ch <-chan driver.Updater) error {
 	if errs.len() != 0 {
 		return errs.error()
 	}
-	return nil
-}
-
-// Errmap is a wrapper around a group of errors.
-type errmap struct {
-	sync.Mutex
-	m map[string]error
-}
-
-func (e errmap) add(name string, err error) {
-	e.Lock()
-	defer e.Unlock()
-	e.m[name] = err
-}
-
-func (e errmap) len() int {
-	e.Lock()
-	defer e.Unlock()
-	return len(e.m)
-}
-
-func (e errmap) error() error {
-	e.Lock()
-	defer e.Unlock()
-	var b strings.Builder
-	b.WriteString("updating errors:\n")
-	for n, err := range e.m {
-		fmt.Fprintf(&b, "\t%s: %v\n", n, err)
-	}
-	return errors.New(b.String())
-}
-
-// DriveUpdater drives the updater.
-//
-// The caller is expected to handle any locking or concurrency control needed.
-func driveUpdater(ctx context.Context, log zerolog.Logger, u driver.Updater, s vulnstore.Updater) error {
-	log.Debug().Msg("start")
-	defer log.Debug().Msg("done")
-	name := u.Name()
-
-	var prevFP driver.Fingerprint
-	// Get previous fingerprint, if present.
-	// A fingerprint being missing is not an error.
-	opmap, err := s.GetUpdateOperations(ctx, name)
-	if err != nil {
-		return err
-	}
-	if s := opmap[name]; len(s) > 0 {
-		prevFP = s[0].Fingerprint
-	}
-
-	vulnDB, newFP, err := u.Fetch(ctx, prevFP)
-	if vulnDB != nil {
-		defer vulnDB.Close()
-	}
-	switch {
-	case err == nil:
-	case errors.Is(err, driver.Unchanged):
-		log.Info().Msg("vulnerability database unchanged")
-		return nil
-	default:
-		return err
-	}
-
-	vulns, err := u.Parse(ctx, vulnDB)
-	if err != nil {
-		return fmt.Errorf("failed to parse the fetched vulnerability database: %v", err)
-	}
-
-	ref, err := s.UpdateVulnerabilities(ctx, name, newFP, vulns)
-	if err != nil {
-		return fmt.Errorf("failed to update vulnerabilities: %v", err)
-	}
-
-	log.Info().
-		Str("ref", ref.String()).
-		Msg("successful update")
 	return nil
 }

@@ -44,7 +44,7 @@ func TestMatcherIntegration(t *testing.T) {
 		}
 		close(ch)
 	}()
-	exec := updater.Executor{Pool: pool}
+	exec := updater.Online{Pool: pool}
 
 	// force update
 	if err := exec.Run(ctx, ch); err != nil {

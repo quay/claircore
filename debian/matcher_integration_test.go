@@ -37,7 +37,7 @@ func Test_Matcher_Integration(t *testing.T) {
 		ch <- NewUpdater(Buster)
 		close(ch)
 	}()
-	exec := updater.Executor{Pool: pool}
+	exec := updater.Online{Pool: pool}
 	// force update
 	tctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
