@@ -23,9 +23,8 @@ func Test_GetQueryBuilder_Deterministic_Args(t *testing.T) {
 		"repo_uri", "fixed_in_version", "updater"
 		FROM "vuln"
 		WHERE `
-		both       = `((("package_name" = 'package-0') OR ("package_name" = 'source-package-0')) AND `
-		noSource   = `(("package_name" = 'package-0') AND `
-		onlySource = `((("package_name" = 'package-0') OR ("package_name" = 'source-package-0')) AND `
+		both     = `(((("package_name" = 'package-0') AND ("package_kind" = 'binary')) OR (("package_name" = 'source-package-0') AND ("package_kind" = 'source'))) AND `
+		noSource = `((("package_name" = 'package-0') AND  ("package_kind" = 'binary')) AND `
 	)
 	var table = []struct {
 		// name of test

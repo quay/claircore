@@ -24,13 +24,21 @@ func buildGetQuery(record *claircore.IndexRecord, opts *vulnstore.GetOpts) (stri
 	if record.Package.Name == "" {
 		return "", fmt.Errorf("IndexRecord must provide a Package.Name")
 	}
-	exps = append(exps, goqu.Ex{"package_name": record.Package.Name})
+	packageQuery := goqu.And(
+		goqu.Ex{"package_name": record.Package.Name},
+		goqu.Ex{"package_kind": record.Package.Kind},
+	)
+	exps = append(exps, packageQuery)
 
 	// If the package has a source, convert the first expression to an OR.
 	if record.Package.Source.Name != "" {
-		or := goqu.Or(
-			goqu.Ex{"package_name": record.Package.Name},
+		sourcePackageQuery := goqu.And(
 			goqu.Ex{"package_name": record.Package.Source.Name},
+			goqu.Ex{"package_kind": record.Package.Source.Kind},
+		)
+		or := goqu.Or(
+			packageQuery,
+			sourcePackageQuery,
 		)
 		exps[0] = or
 	}
