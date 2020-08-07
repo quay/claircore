@@ -222,7 +222,7 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 		Int("count", len(db)).
 		Msg("found raw entries")
 
-	ret, err := db.Vulnerabilites(ctx, u.repo)
+	ret, err := db.Vulnerabilites(ctx, u.repo, u.Name())
 	if err != nil {
 		return nil, err
 	}
@@ -252,7 +252,7 @@ func init() {
 	}
 }
 
-func (db db) Vulnerabilites(ctx context.Context, repo *claircore.Repository) ([]*claircore.Vulnerability, error) {
+func (db db) Vulnerabilites(ctx context.Context, repo *claircore.Repository, updater string) ([]*claircore.Vulnerability, error) {
 	const opSet = `<>=!`
 	log := zerolog.Ctx(ctx).With().
 		Str("component", "pyupio/db.Vulnerabilities").
@@ -266,8 +266,9 @@ func (db db) Vulnerabilites(ctx context.Context, repo *claircore.Repository) ([]
 			for _, spec := range e.Specs {
 				v := &claircore.Vulnerability{
 					Name:        e.ID,
+					Updater:     updater,
 					Description: e.Advisory,
-					Package:     &claircore.Package{Name: strings.ToLower(k)},
+					Package:     &claircore.Package{Name: strings.ToLower(k), Kind: claircore.BINARY},
 					Repo:        repo,
 					Range:       &claircore.Range{},
 				}

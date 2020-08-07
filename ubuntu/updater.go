@@ -230,6 +230,7 @@ func (u *Updater) unpack(cri oval.Criteria, vulns []*claircore.Vulnerability) []
 func (u *Updater) classifyVuln(name string, fixVersion string) *claircore.Vulnerability {
 	pkg := &claircore.Package{
 		Name: name,
+		Kind: claircore.BINARY,
 	}
 
 	// make a copy of u.curVuln. it has the fields representing the curent
@@ -238,6 +239,7 @@ func (u *Updater) classifyVuln(name string, fixVersion string) *claircore.Vulner
 	vuln.FixedInVersion = fixVersion
 	vuln.Package = pkg
 	vuln.Dist = releaseToDist(u.release)
+	vuln.Updater = u.Name()
 	return &vuln
 }
 
