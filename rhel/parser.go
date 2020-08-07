@@ -48,7 +48,11 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 				Links:              ovalutil.Links(def),
 				Severity:           def.Advisory.Severity,
 				NormalizedSeverity: NormalizeSeverity(def.Advisory.Severity),
-				Repo:               &claircore.Repository{Name: affected, CPE: wfn},
+				Repo: &claircore.Repository{
+					Name: affected,
+					CPE:  wfn,
+					Key:  RedHatRepositoryKey,
+				},
 				// each updater is configured to parse a rhel release
 				// specific xml database. we'll use the updater's release
 				// to map the parsed vulnerabilities

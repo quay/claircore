@@ -124,7 +124,7 @@ func (o *Opts) parse(ctx context.Context) error {
 		&debian.Matcher{},
 		&python.Matcher{},
 		&ubuntu.Matcher{},
-		rhel.NewMatcher(ctx, nil),
+		&rhel.Matcher{},
 		&photon.Matcher{},
 	}
 

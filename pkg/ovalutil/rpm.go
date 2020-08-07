@@ -104,6 +104,7 @@ func RPMDefsToVulns(ctx context.Context, root oval.Root, protoVulns ProtoVulnsFu
 							p := &claircore.Package{
 								Name:   object.Name,
 								Module: module,
+								Kind:   claircore.BINARY,
 							}
 							pkgcache[pkgCacheKey] = p
 							vuln.Package = p
