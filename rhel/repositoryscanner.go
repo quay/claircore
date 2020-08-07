@@ -13,6 +13,7 @@ import (
 	"regexp"
 	"runtime/trace"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/docker-slim/docker-slim/pkg/docker/dockerfile/ast"
@@ -59,6 +60,11 @@ const DefaultContainerAPI = "https://catalog.redhat.com/api/containers/"
 // DefaultRepo2CPEMappingURL is default URL with a mapping file provided by Red Hat
 const DefaultRepo2CPEMappingURL = "https://www.redhat.com/security/data/metrics/repository-to-cpe.json"
 
+var localUpdater struct {
+	once sync.Once
+	u    repo2cpe.RepoCPEUpdater
+}
+
 // NewRepositoryScanner create new Repo scanner struct and initialize mapping updater
 func NewRepositoryScanner(ctx context.Context, c *http.Client, cs2cpeURL string) *RepositoryScanner {
 	scanner := &RepositoryScanner{}
@@ -66,26 +72,29 @@ func NewRepositoryScanner(ctx context.Context, c *http.Client, cs2cpeURL string)
 		Str("component", "rhel/RepositoryScanner/NewRepositoryScanner").
 		Str("version", scanner.Version()).
 		Logger()
-	// TODO (araszka): replace it with config value when it will
-	// be possible to store these values in config
-	if cs2cpeURL == "" {
-		cs2cpeURL = os.Getenv("REPO_TO_CPE_URL")
-		if cs2cpeURL == "" {
-			cs2cpeURL = DefaultRepo2CPEMappingURL
-		}
-	}
+
+	// initialize local updater for repository scanner if not done before.
+	localUpdater.once.Do(
+		func() {
+			log.Debug().Msg("initializing local updater job. this log should only be seen once.")
+			// TODO (araszka): replace it with config value when it will
+			// be possible to store these values in config
+			if cs2cpeURL == "" {
+				cs2cpeURL = os.Getenv("REPO_TO_CPE_URL")
+				if cs2cpeURL == "" {
+					cs2cpeURL = DefaultRepo2CPEMappingURL
+				}
+			}
+			u := repo2cpe.NewLocalUpdaterJob(cs2cpeURL, nil)
+			u.Start(context.TODO())
+			localUpdater.u = u
+		})
+
 	if c == nil {
 		c = http.DefaultClient
 	}
-	var localUpdater *repo2cpe.LocalUpdaterJob
-	// create and launch local updater
-	log.Info().Msg("launching local updater job")
-	localUpdater = repo2cpe.NewLocalUpdaterJob(cs2cpeURL, c)
-	// blocks until the first update try as an attempt to have a
-	// mapping file present before constructor returns.
-	localUpdater.Start(ctx)
 	scanner.mapping = &repo2cpe.RepoCPEMapping{
-		RepoCPEUpdater: localUpdater,
+		RepoCPEUpdater: localUpdater.u,
 	}
 	return scanner
 }

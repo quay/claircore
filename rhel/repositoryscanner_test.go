@@ -85,7 +85,7 @@ func TestRepositoryScanner(t *testing.T) {
 					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8::baseos"),
 				},
 			},
-			cfg:       &RepoScannerConfig{API: srv.URL},
+			cfg:       &RepoScannerConfig{API: srv.URL, Repo2CPEMappingURL: srv.URL + "/repository-2-cpe.json"},
 			layerPath: "testdata/layer-with-cpe.tar",
 		},
 		{
