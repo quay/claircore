@@ -164,10 +164,12 @@ func (u *Updater) Parse(ctx context.Context, contents io.ReadCloser) ([]*clairco
 func (u *Updater) classifyVuln(pkgInfo pkgInfo, def oval.Definition) *claircore.Vulnerability {
 	ccPkg := &claircore.Package{
 		Name: pkgInfo.name,
+		Kind: claircore.BINARY,
 	}
 
 	vuln := &claircore.Vulnerability{
 		Name:               def.Title,
+		Updater:            u.Name(),
 		Description:        def.Description,
 		Links:              ovalutil.Links(def),
 		Issued:             def.Debian.Date.Date,
