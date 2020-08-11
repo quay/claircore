@@ -62,7 +62,7 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 		}
 		return vs, nil
 	}
-	vulns, err := ovalutil.RPMDefsToVulns(ctx, root, protoVulns)
+	vulns, err := ovalutil.RPMDefsToVulns(ctx, &root, protoVulns)
 	if err != nil {
 		return nil, err
 	}
