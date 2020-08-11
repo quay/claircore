@@ -18,12 +18,13 @@ require (
 	github.com/knqyf263/go-rpm-version v0.0.0-20170716094938-74609b86c936
 	github.com/lib/pq v1.3.0
 	github.com/quay/alas v1.0.1
-	github.com/quay/goval-parser v0.8.1
+	github.com/quay/goval-parser v0.8.2
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
 	github.com/rs/zerolog v1.15.0
 	github.com/stretchr/testify v1.5.1
 	github.com/tadasv/go-dpkg v0.0.0-20160704224136-c2cf9188b763
-	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a
-	golang.org/x/tools v0.0.0-20191205215504-7b8c8591a921
+	golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208
+	golang.org/x/tools v0.0.0-20200811032001-fd80f4dbb3ea
+	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20191010095647-fc94e3f71652
 )

@@ -2,18 +2,14 @@ package debian
 
 import (
 	"context"
-	"encoding/xml"
 	"fmt"
 	"io"
 	"net/http"
 	"regexp"
 
-	"github.com/quay/goval-parser/oval"
 	"github.com/rs/zerolog"
 
-	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
-	"github.com/quay/claircore/pkg/ovalutil"
 	"github.com/quay/claircore/pkg/tmp"
 )
 
@@ -110,93 +106,4 @@ func (u *Updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io
 
 	log.Info().Msg("fetched latest oval database successfully")
 	return f, driver.Fingerprint(fp), err
-}
-
-func (u *Updater) Parse(ctx context.Context, contents io.ReadCloser) ([]*claircore.Vulnerability, error) {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "debian/Updater.Parse").
-		Str("release", string(u.release)).
-		Str("database", u.url).
-		Logger()
-	ctx = log.WithContext(ctx)
-	log.Info().Msg("parsing oval database")
-	defer contents.Close()
-
-	log.Debug().Msg("decoding xml database")
-	ovalRoot := oval.Root{}
-	err := xml.NewDecoder(contents).Decode(&ovalRoot)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode OVAL xml contents: %v", err)
-	}
-	log.Debug().
-		Int("count", len(ovalRoot.Definitions.Definitions)).
-		Msg("finished decoding xml database")
-
-	result := []*claircore.Vulnerability{}
-	for _, def := range ovalRoot.Definitions.Definitions {
-		if ctx.Err() != nil {
-			return nil, ctx.Err()
-		}
-
-		// not a vulnerability
-		if def.Class != "vulnerability" {
-			continue
-		}
-
-		// no CVE identifier
-		if def.Title == "" {
-			continue
-		}
-
-		// walk Criterias to get package info.
-		// typically a definition only contains a single package (unlike ubuntu), however we can be defensive and walk the entire recurisve structure if this changes in the future.
-		pkgInfos := walkCri(def.Criteria, []pkgInfo{})
-
-		for _, pkgInfo := range pkgInfos {
-			vuln := u.classifyVuln(pkgInfo, def)
-			result = append(result, vuln)
-		}
-	}
-
-	return result, nil
-}
-
-func (u *Updater) classifyVuln(pkgInfo pkgInfo, def oval.Definition) *claircore.Vulnerability {
-	ccPkg := &claircore.Package{
-		Name: pkgInfo.name,
-		Kind: claircore.BINARY,
-	}
-
-	vuln := &claircore.Vulnerability{
-		Name:               def.Title,
-		Updater:            u.Name(),
-		Description:        def.Description,
-		Links:              ovalutil.Links(def),
-		Issued:             def.Debian.Date.Date,
-		NormalizedSeverity: claircore.Unknown, // debian does not provide severity information
-		Package:            ccPkg,
-		FixedInVersion:     pkgInfo.version,
-		Dist:               releaseToDist(u.release),
-	}
-
-	return vuln
-}
-
-func walkCri(root oval.Criteria, pkgs []pkgInfo) []pkgInfo {
-	for _, crio := range root.Criterions {
-		if matches := pkgVersionRegex.FindStringSubmatch(crio.Comment); matches != nil {
-			pkgs = append(pkgs, pkgInfo{matches[1], matches[2]})
-		}
-	}
-
-	if len(root.Criterias) == 0 {
-		return pkgs
-	}
-
-	// recurse till no more Criterias
-	for _, cria := range root.Criterias {
-		pkgs = walkCri(cria, pkgs)
-	}
-
-	return pkgs
 }

@@ -26,7 +26,7 @@ type ProtoVulnsFunc func(def oval.Definition) ([]*claircore.Vulnerability, error
 // RPMDefsToVulns iterates over the definitions in an oval root and assumes RPMInfo objects and states.
 //
 // Each Criterion encountered with an EVR string will be translated into a claircore.Vulnerability
-func RPMDefsToVulns(ctx context.Context, root oval.Root, protoVulns ProtoVulnsFunc) ([]*claircore.Vulnerability, error) {
+func RPMDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulnsFunc) ([]*claircore.Vulnerability, error) {
 	log := zerolog.Ctx(ctx).With().
 		Str("component", "ovalutil/RPMDefsToVulns").
 		Logger()
@@ -72,7 +72,7 @@ func RPMDefsToVulns(ctx context.Context, root oval.Root, protoVulns ProtoVulnsFu
 				continue
 			}
 			// look at each object,state pair the test references
-			// and create a vuln if an evr tag if found
+			// and create a vuln if an evr tag is found
 			for i := 0; i < len(test.ObjectRefs); i++ {
 				objRef := test.ObjectRefs[i].ObjectRef
 				stateRef := test.StateRefs[i].StateRef
