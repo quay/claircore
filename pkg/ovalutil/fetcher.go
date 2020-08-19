@@ -57,8 +57,7 @@ type Fetcher struct {
 // Fetcher.Compression, using the client provided as Fetcher.Client.
 //
 // Fetch makes GET requests, and will make conditional requests using the
-// passed-in hint as an HTTP date. The returned hint will be an HTTP date if the
-// server sends a Last-Modified header.
+// passed-in hint.
 //
 // Tmp.File is used to return a ReadCloser that outlives the passed-in context.
 func (f *Fetcher) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
@@ -130,7 +129,7 @@ func (f *Fetcher) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 	success := false
 	defer func() {
 		if !success {
-			log.Debug().Msg("unsuccessful, cleaing up tempfile")
+			log.Debug().Msg("unsuccessful, cleaning up tempfile")
 			if err := tf.Close(); err != nil {
 				log.Warn().Err(err).Msg("failed to close tempfile")
 			}
@@ -166,7 +165,10 @@ func (f fingerprint) Set(h http.Header) {
 }
 
 func (f *fingerprint) From(h http.Header) {
-	f.Etag = h.Get("etag")
+	if tag := h.Get("etag"); tag != "" {
+		f.Etag = tag
+		return
+	}
 	f.Date = h.Get("last-modified")
 }
 
