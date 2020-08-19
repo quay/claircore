@@ -49,6 +49,10 @@ func main() {
 		fmt.Fprintln(out, "\tgenerate manifests for containers provided as arguments or on stdin")
 		fmt.Fprintln(out, "unpack")
 		fmt.Fprintln(out, "\textracts each container's layers content for inspection")
+		fmt.Fprintln(out, "run-updaters")
+		fmt.Fprintln(out, "\trun default updaters and produce an artifact for later importing")
+		fmt.Fprintln(out, "load-updates")
+		fmt.Fprintln(out, "\tload an artifact from `run-updaters` into a database")
 		fmt.Fprintln(out)
 	}
 
@@ -64,6 +68,10 @@ func main() {
 		cmd = Manifest
 	case "unpack":
 		cmd = Unpack
+	case "run-updaters":
+		cmd = RunUpdaters
+	case "load-updates":
+		cmd = LoadUpdates
 	case "":
 		fs.Usage()
 		os.Exit(99)
