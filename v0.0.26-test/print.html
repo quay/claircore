@@ -1,0 +1,581 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Claircore Documentation</title>
+        
+        <meta name="robots" content="noindex" />
+        
+
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="Additional documentation for Claircore.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        
+
+        
+    </head>
+    <body>
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "light" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div id="sidebar-scrollbox" class="sidebar-scrollbox">
+                <ol class="chapter"><li class="expanded "><a href="highlevel_architecture.html"><strong aria-hidden="true">1.</strong> Highlevel Architecture</a></li><li class="expanded "><a href="vulnerability_matching.html"><strong aria-hidden="true">2.</strong> Vulnerability Matching</a></li><li class="expanded "><a href="indexer_architecture.html"><strong aria-hidden="true">3.</strong> Indexer Architecture</a></li><li class="expanded "><a href="matcher_architecture.html"><strong aria-hidden="true">4.</strong> Matching Architecture</a></li><li class="expanded "><a href="content_addressability.html"><strong aria-hidden="true">5.</strong> Content-Addressability</a></li><li class="expanded "><a href="severity_mapping.html"><strong aria-hidden="true">6.</strong> Severity Mapping</a></li><li class="expanded "><a href="contributor.html"><strong aria-hidden="true">7.</strong> Contributors</a></li><li><ol class="section"><li class="expanded "><a href="contributor/logging.html"><strong aria-hidden="true">7.1.</strong> Logging</a></li><li class="expanded "><a href="local-dev.html"><strong aria-hidden="true">7.2.</strong> Local Development</a></li><li class="expanded "><a href="contributor/cctool.html"><strong aria-hidden="true">7.3.</strong> cctool</a></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                
+                <div id="menu-bar" class="menu-bar">
+                    <div id="menu-bar-sticky-container">
+                        <div class="left-buttons">
+                            <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                                <i class="fa fa-bars"></i>
+                            </button>
+                            <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                                <i class="fa fa-paint-brush"></i>
+                            </button>
+                            <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                                <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                            </ul>
+                            
+                            <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                                <i class="fa fa-search"></i>
+                            </button>
+                            
+                        </div>
+
+                        <h1 class="menu-title">Claircore Documentation</h1>
+
+                        <div class="right-buttons">
+                            <a href="print.html" title="Print this book" aria-label="Print this book">
+                                <i id="print-button" class="fa fa-print"></i>
+                            </a>
+                            
+                            <a href="https://github.com/quay/claircore" title="Git repository" aria-label="Git repository">
+                                <i id="git-repository-button" class="fa fa-github"></i>
+                            </a>
+                            
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" name="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1><a class="header" href="#high-level-architecture" id="high-level-architecture">High Level Architecture</a></h1>
+<p>ClairCore is designed to be embedded into another application or service wrapper.<br />
+Two separate packages implement ClairCore's functionality: <code>libindex</code> and <code>libvuln</code>.<br />
+The main goal of these libraries to to receive a <code>Manifest</code> and compute a <code>VulnerabilityReport</code>.<br />
+The intermediate structure <code>IndexReport</code> is used to express all discovered artifacts within an <code>Manifest</code>.</p>
+<p>The follow diagram depcits the high level architecture.<br />
+<img src="./highlevel_architecture.png" alt="alt text" title="architecture diagram" /></p>
+<p><code>libindex</code> is primarly implemented by the  <a href="./indexer_architecture.html">Indexer</a><br />
+<code>libvuln</code> is primarly implemented by the  <a href="./matcher_architecture.html">Matcher</a></p>
+<h1><a class="header" href="#vulnerability-matching" id="vulnerability-matching">Vulnerability Matching</a></h1>
+<p>This is a high level overview of the interfaces that must be implemented for end-to-end vulnerability matching.<br />
+A description of the end-to-end process is described as well.</p>
+<h2><a class="header" href="#scanners" id="scanners">Scanners</a></h2>
+<p>Several Scanner interface types exist for extracting contents from container layers.</p>
+<h3><a class="header" href="#packagescanner" id="packagescanner">PackageScanner</a></h3>
+<p><code>claircore/internal/indexer/PackageScanner</code></p>
+<pre><code>type PackageScanner interface {
+	VersionedScanner
+	// Scan performs a package scan on the given layer and returns all
+	// the found packages
+	Scan(*claircore.Layer) ([]*claircore.Package, error)
+}
+
+type VersionedScanner interface {
+	// unique name of the distribution scanner.
+	Name() string
+	// version of this scanner. this information will be persisted with the scan.
+	Version() string
+	// the kind of scanner. currently only package is implemented
+	Kind() string
+}
+</code></pre>
+<p>A PackageScanner implementation should parse a discovered package database within the provided layer and return an array of <code>claircore.Package</code> structures reflecting the parsed packages.</p>
+<h3><a class="header" href="#distributionscanner" id="distributionscanner">DistributionScanner</a></h3>
+<p><code>claircore/internal/indexer/DistributionScanner</code></p>
+<pre><code>type DistributionScanner interface {
+	VersionedScanner
+	Scan(context.Context, *claircore.Layer) ([]*claircore.Distribution, error)
+}
+</code></pre>
+<p>A DistributionScanner implementation should discover the Distribution information of layer.<br />
+Distribution is typically the base operating system the layer demonstrates features of.</p>
+<h3><a class="header" href="#repositoryscanner-currently-not-in-use" id="repositoryscanner-currently-not-in-use">RepositoryScanner (currently not in use)</a></h3>
+<p><code>claircore/internal/indexer/RepositoryScanner</code></p>
+<pre><code>type RepositoryScanner interface {
+	VersionedScanner
+	Scan(context.Context, *claircore.Layer) ([]*claircore.Repository, error)
+}
+</code></pre>
+<p>A RepositoryScanner implementation should discover any package repositories present in the layer.<br />
+This is currently not implemented however future plans are to match packages with their owning repository.</p>
+<h2><a class="header" href="#updater" id="updater">Updater</a></h2>
+<p><code>claircore/libvuln/driver/Updater</code></p>
+<pre><code>type Updater interface {
+	Name() string
+	Fetcher
+	Parser
+}
+</code></pre>
+<p>An Updater implementation is responsible for fetching a security advisory database and parsing the contents.<br />
+An Updater is an aggregate interface consisting of.<br />
+<code>claircore/libvuln/driver/Fetcher</code><br />
+<code>claircore/libvuln/driver/Parser</code></p>
+<pre><code>type Fingerprint string
+
+type Fetcher interface {
+	Fetch(context.Context, Fingerprint) (io.ReadCloser, Fingerprint, error)
+}
+</code></pre>
+<p>A <code>Fetcher</code> implementation is responsible for returning an io.ReadCloser where the contents of a security database can be read from.<br />
+A Fingerprint is provided so the implementation can determine if the security database needs to be fetched.<br />
+For example the Fingerprint maybe a sha-256 hash of the contents.<br />
+See source for mode details.</p>
+<pre><code>type Parser interface {
+	Parse(ctx context.Context, contents io.ReadCloser) ([]*claircore.Vulnerability, error)
+}
+</code></pre>
+<p>The reason we split fetching and parsing is to easily support offline modes of operation.<br />
+A parser can be provided any io.ReadCloser allowing for simple scripts to be implemented for on demand parsing and indexing of CVE data.<br />
+In order to run your updater on an interval and as part of the claircore runtime you must implement both methods.</p>
+<h2><a class="header" href="#matcher" id="matcher">Matcher</a></h2>
+<p><code>claircore/libvuln/driver/Matcher</code></p>
+<pre><code>type Matcher interface {
+	Name() string
+	Filter(record *claircore.IndexRecord) bool
+	Query() []MatchConstraint
+	Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error)
+    }
+</code></pre>
+<p>A <code>Matcher</code> implementation is responsible for telling ClairCore which packages to query via the <code>Filter</code> method, how to query the security advisory database via the <code>Query</code> method and whether the discovered <code>Vulnerability</code> from the security advisory database affects the provided package via the <code>Vulnerable</code> method.<br />
+See implementations for further details.</p>
+<p>A <code>Matcher</code> implementation should exist next to a <code>Updater</code> implementation to share this information between the two.<br />
+A <code>Matcher</code> informs ClairCore how to query the security advisory database by returning a list of <code>MatchConstraint</code>.<br />
+A <code>MatchContraint</code> constrains a query to the security advisory database by the provided values.<br />
+Multiple <code>MatchConstraint</code> will be 'AND'd together.</p>
+<pre><code>type MatchConstraint int
+
+const (
+	_ MatchConstraint = iota
+	DistributionDID
+	DistributionName
+	DistributionVersion
+	DistributionVersionCodeName
+	DistributionVersionID
+	DistributionArch
+	DistributionCPE
+	DistributionPrettyName
+)
+</code></pre>
+<p>As an example the Ubuntu <code>Updater</code> parses and indexes vulnerabilities and populates the <code>Vulnerability.Distribution.DID</code>, <code>Vulnerability.Distribution.Name</code>, and <code>Vulnerability.Distribution.Version</code> fields.<br />
+The Ubuntu <code>Matcher</code> is aware of this and constrains it's queries by returning <code>DistributionDID</code>,<code>DistributionName</code>, <code>DistributionVersion</code>, constraints when it's <code>Query</code> method is called.<br />
+ClairCore will query the security advisory database with these constraints returning only applicable vulnerabilities.</p>
+<h2><a class="header" href="#an-end-to-end-success" id="an-end-to-end-success">An end to end success</a></h2>
+<p>A successful scan looks like this:</p>
+<ol>
+<li><code>Updaters</code> have ran either in the background on an interval or have had their <code>Parse</code> methods called and an offline-load placed CVE data into the security advisory database.</li>
+<li>A <code>Manifest</code> is provided to <code>libindex</code>. <code>libindex</code> fetches all the layers, runs all scanner types on each layer, persists all artifacts found in each layer, and computes an IndexReport.</li>
+<li>A <code>IndexReport</code> is provided to <code>libvuln</code>.</li>
+<li><code>libvuln</code> creates a stream of <code>IndexRecord</code> structs from the IndexReport and concurrently streams these structs to each configured <code>Matcher</code>.</li>
+<li><code>libvuln</code> computes a <code>VulnerabilityReport</code> aggregating all vulnerabilities discovered by all configured <code>Matcher</code> implementations.</li>
+<li>Sometime later the security advisory database is updated and a new request to <code>libvuln</code> will present updated vulnerability data.</li>
+</ol>
+<h1><a class="header" href="#indexer" id="indexer">Indexer</a></h1>
+<p><code>claircore/internal/indexer</code></p>
+<p>The <code>Indexer</code> package is responsible for retreiving <code>Manifest</code> layers, parsing the contents of each layer, and computing an <code>IndexReport</code>.<br />
+The <code>Indexer</code> is implemented as an FSM to correctly report it's current state to the client.</p>
+<h2><a class="header" href="#states" id="states">States</a></h2>
+<p>The following diagram expresses the possible states of the Indexer<br />
+<img src="./indexer_state_diagram.png" alt="indexer controller state diagram" title="indexer controller state diagram" /></p>
+<h2><a class="header" href="#data-model" id="data-model">Data Model</a></h2>
+<p>The <code>Indexer</code> data model focuses on content addressable hashes as primary keys, the deduplication of package/distribution/repostitory information, and the recording of scan artifacts.<br />
+Scan artifacts are unique artifacts found within a layer which point to a deduplicated general package/distribution/repository record.</p>
+<p>The following diagram outlines the current <code>Indexer</code> data model.<br />
+<img src="./indexer_data_model.png" alt="indexer data model diagram" title="indexer data model diagram" /></p>
+<h1><a class="header" href="#matcher-architecture" id="matcher-architecture">Matcher Architecture</a></h1>
+<p><code>claircore/internal/matcher</code><br />
+<code>claircore/libvuln/driver</code></p>
+<p>The <code>Matcher</code> architecture is based on a data flow application.<br />
+The <code>Matcher</code> functionality is implemented via a Controller in the <code>matcher</code> package and interface definitions within the <code>libvuln.driver</code> package.<br />
+When <code>libvuln</code> is provided a <code>IndexReport</code> the <code>Matcher</code> package will transform the <code>IndexReport</code> into a stream of <code>IndexRecord</code> structs.<br />
+The <code>Matcher</code> package then instantiates each implemented <code>driver.Matcher</code> interface and utilizes these implementations to determine if particular <code>IndexRecord</code> structs are vulnerable.</p>
+<p><img src="./matcher_architecture.png" alt="Matcher Architecture" title="matching architecture diagram" /></p>
+<h1><a class="header" href="#content-addressability" id="content-addressability">Content-Addressability</a></h1>
+<p>ClairCore treats both image hashes and layer hashes as content addressable.<br />
+Manifests MUST provide a content addressable hash uniquely identifying the image as a whole.<br />
+Layers MUST provide a content addressable hash unique identifying the layer's contents.</p>
+<h1><a class="header" href="#reducing-work" id="reducing-work">Reducing work</a></h1>
+<p>ClairCore will use content addressable hashes to understand what work it needs to perform.<br />
+If ClairCore comes across a image or layer hash which has been scanned by all configured scanners it will retrieve the existing results and not perform work.<br />
+If ClairCore is started with a new set of package scanners and encounters a previously seen image or layer hash it will rescan the image or layer.<br />
+ClairCore will only perform a scan with the missing scanner on the incoming image or layers.</p>
+<h1><a class="header" href="#severity-mapping" id="severity-mapping">Severity Mapping</a></h1>
+<p>ClairCore will normalize a security databases's severity string to a set of defined values.
+Clients may use the <code>NormalizedSeverity</code> field on a <code>claircore.Vulnerability</code> to react to vulnerability severities without needing to know each security database's severity strings.
+All strings used in the mapping tables are identical to the strings found within the relevant security database.</p>
+<h2><a class="header" href="#claircore-severity-strings" id="claircore-severity-strings">ClairCore Severity Strings</a></h2>
+<p>The following are severity strings ClairCore will normalize others to.
+Clients can guarantee one of these strings will be associated with a claircore.Vulnerability.</p>
+<pre><code>Unknown
+Negligible
+Low
+Medium
+High
+Critical
+Defcon1
+</code></pre>
+<h2><a class="header" href="#alpine-mapping" id="alpine-mapping">Alpine Mapping</a></h2>
+<p>Alpine SecDB database does not provide severity information.
+All vulnerability severities will be Unknown.</p>
+<table><thead><tr><th>Alpine Severity</th><th>Clair Severity</th></tr></thead><tbody>
+<tr><td>*</td><td>Unknown</td></tr>
+</tbody></table>
+<h2><a class="header" href="#aws-mapping" id="aws-mapping">AWS Mapping</a></h2>
+<p>AWS UpdateInfo database provides severity information.</p>
+<table><thead><tr><th>AWS Severity</th><th>Clair Severity</th></tr></thead><tbody>
+<tr><td>low</td><td>Low</td></tr>
+<tr><td>medium</td><td>Medium</td></tr>
+<tr><td>important</td><td>High</td></tr>
+<tr><td>critical</td><td>Critical</td></tr>
+</tbody></table>
+<h2><a class="header" href="#debian-mapping" id="debian-mapping">Debian Mapping</a></h2>
+<p>Debian Oval database does not provide severity information.
+All vulnerability severities will be Unknown.</p>
+<table><thead><tr><th>Debian Severity</th><th>Clair Severity</th></tr></thead><tbody>
+<tr><td>*</td><td>Unknown</td></tr>
+</tbody></table>
+<h2><a class="header" href="#oracle-mapping" id="oracle-mapping">Oracle Mapping</a></h2>
+<p>Oracle Oval database provides severity information.</p>
+<table><thead><tr><th>Oracle Severity</th><th>Clair Severity</th></tr></thead><tbody>
+<tr><td>N/A</td><td>Unknown</td></tr>
+<tr><td>LOW</td><td>Low</td></tr>
+<tr><td>MODERATE</td><td>Medium</td></tr>
+<tr><td>IMPORTANT</td><td>High</td></tr>
+<tr><td>CRITICAL</td><td>Critical</td></tr>
+</tbody></table>
+<h2><a class="header" href="#rhel-mapping" id="rhel-mapping">RHEL Mapping</a></h2>
+<p>RHEL Oval database provides severity information.</p>
+<table><thead><tr><th>RHEL Severity</th><th>Clair Severity</th></tr></thead><tbody>
+<tr><td>None</td><td>Unknown</td></tr>
+<tr><td>Low</td><td>Low</td></tr>
+<tr><td>Moderate</td><td>Medium</td></tr>
+<tr><td>Important</td><td>High</td></tr>
+<tr><td>Critical</td><td>Critical</td></tr>
+</tbody></table>
+<h2><a class="header" href="#suse-mapping" id="suse-mapping">SUSE Mapping</a></h2>
+<p>SUSE Oval database provides severity information.</p>
+<table><thead><tr><th>SUSE Severity</th><th>Clair Severity</th></tr></thead><tbody>
+<tr><td>None</td><td>Unknown</td></tr>
+<tr><td>Low</td><td>Low</td></tr>
+<tr><td>Moderate</td><td>Medium</td></tr>
+<tr><td>Important</td><td>High</td></tr>
+<tr><td>Critical</td><td>Critical</td></tr>
+</tbody></table>
+<h2><a class="header" href="#ubuntu-mapping" id="ubuntu-mapping">Ubuntu Mapping</a></h2>
+<p>Ubuntu Oval database provides severity information.</p>
+<table><thead><tr><th>Ubuntu Severity</th><th>Clair Severity</th></tr></thead><tbody>
+<tr><td>Untriaged</td><td>Unknown</td></tr>
+<tr><td>Negligible</td><td>Negligible</td></tr>
+<tr><td>Low</td><td>Low</td></tr>
+<tr><td>Medium</td><td>Medium</td></tr>
+<tr><td>High</td><td>High</td></tr>
+<tr><td>Critical</td><td>Critical</td></tr>
+</tbody></table>
+<h2><a class="header" href="#pyupio-mapping" id="pyupio-mapping">Pyupio Mapping</a></h2>
+<p>The pyup.io database does not have a concept of &quot;severity&quot;.
+All vulnerability severities will be Unknown.</p>
+<table><thead><tr><th>Pyupio Severity</th><th>Clair Severity</th></tr></thead><tbody>
+<tr><td>*</td><td>Unknown</td></tr>
+</tbody></table>
+<h1><a class="header" href="#contributors" id="contributors">Contributors</a></h1>
+<p>This is some documentation helpful for the actual nuts-n-bolts of adding code to
+and testing code in the project.</p>
+<h1><a class="header" href="#logging" id="logging">Logging</a></h1>
+<p>All the logging in claircore is done with <a href="https://pkg.go.dev/github.com/rs/zerolog@v1.15.0">zerolog</a> via <code>context.Context</code>
+values. Loggers are extracted from the Contexts via the <code>zerolog.Ctx</code> function,
+then a child logger is created via the <code>With</code> method and associated with a new
+Context via the <code>(*zerolog.Logger).WithContext</code> method.</p>
+<p>This allows for claircore's logging to be used consistently throughout all the
+packages without having unintended prints to stderr.</p>
+<h2><a class="header" href="#how-to-log" id="how-to-log">How to Log</a></h2>
+<h3><a class="header" href="#getting-a-logger" id="getting-a-logger">Getting a logger</a></h3>
+<p>In a function, first obtain a logger:</p>
+<pre><code class="language-go">	log := zerolog.Ctx(ctx).With().
+</code></pre>
+<p>then add key-value pairs of any relevant context:</p>
+<pre><code class="language-go">		Str(&quot;component&quot;, &quot;Example.Logger&quot;).
+</code></pre>
+<p>then create the new logger:</p>
+<pre><code class="language-go">		Logger()
+</code></pre>
+<p>then add the logger back to the Context so that child functions will have the
+annotations on the logger they extract from the Context.</p>
+<pre><code class="language-go">	ctx = log.WithContext(ctx)
+</code></pre>
+<p>The log object shouldn't be stored in a struct and should stay function local.</p>
+<h3><a class="header" href="#logging-style" id="logging-style">Logging style</a></h3>
+<h4><a class="header" href="#constant-messages" id="constant-messages">Constant Messages</a></h4>
+<p>Zerolog emits lines when the <code>Msg</code> or <code>Msgf</code> methods are called. Project style
+is to <em>not</em> use <code>Msgf</code>. Any variable data should be set as key-value pairs on
+the Event object.</p>
+<p>For example, don't do this:</p>
+<pre><code class="language-go">	log.Info().Msgf(&quot;done at: %v&quot;, time.Now())
+</code></pre>
+<p>Do this instead:</p>
+<pre><code class="language-go">	log.Info().
+		Time(&quot;time&quot;, time.Now()).
+		Msgf(&quot;done&quot;)
+</code></pre>
+<h4><a class="header" href="#grammar" id="grammar">Grammar</a></h4>
+<p>When noting when noting the change during a chunk of work, make sure that the
+log messages scan as visually similar. Usually, this means formatting messages
+into &quot;${process} ${event}&quot;. For example:</p>
+<pre><code>frob start
+frob initialized
+frob ready
+frob success
+frob done
+</code></pre>
+<p>Is much easier to scan than:</p>
+<pre><code>starting to frob
+initialized frobber
+ready for frobbing
+did frob
+done with frobing
+</code></pre>
+<h4><a class="header" href="#dont-log-and-return" id="dont-log-and-return">Don't log <em>and</em> return</a></h4>
+<p>When handling an error, code should only log it if it does not propagate it. The
+code that ultimately handles the error is responsible for deciding what to do
+with it. Logging and returning ends up with the same message repeated multiple
+times in the logs.</p>
+<h4><a class="header" href="#levels" id="levels">Levels</a></h4>
+<p>Claircore attempts to have consistent leveled logging. The rules for figuring
+out what level to use is:</p>
+<ul>
+<li>
+<p>Panic</p>
+<p>There's some occurrence that means the process won't work correctly.</p>
+</li>
+<li>
+<p>Fatal</p>
+<p>Unused, because it prevents defers from running.</p>
+</li>
+<li>
+<p>Error</p>
+<p>Something unexpected occurred and the process can continue, but a
+human needs to be notified. An error will be returned for this request.</p>
+</li>
+<li>
+<p>Warn</p>
+<p>Something unexpected occurred and the process can continue. An error will be
+returned for this request.</p>
+</li>
+<li>
+<p>Info</p>
+<p>Some information that may be useful to an operator. Examples include
+a timer-based process starting and ending, a user request starting and
+ending, or a summary of work done.</p>
+</li>
+<li>
+<p>Debug</p>
+<p>Some information that may be useful to a developer. Examples include entering
+and exiting functions, stepping through a function, or specific file paths
+used while work is being done.</p>
+</li>
+</ul>
+<h1><a class="header" href="#local-development" id="local-development">Local Development</a></h1>
+<p>A local development environment is implemented via docker-compose.</p>
+<h1><a class="header" href="#usage" id="usage">Usage</a></h1>
+<p>Several make targets are defined for working with the local development environment.</p>
+<pre><code>local-dev-up - runs a db, libvulnhttp and libindexhttp
+local-dev-logs - tails all aggregated container logs
+local-dev-down - tears down the local development environment
+claircore-db-up - creates just the claircore database useful for running integration tests without test servers
+claircore-db-restart - destroys and recreates a fresh database. localhost:5434
+libindexhttp-restart - builds and runs libindexhttp with any new changes. localhost:8080
+libvulnhttp-restart - builds and runs libvulnhttp with any new changes. localhost8081
+</code></pre>
+<h1><a class="header" href="#tests" id="tests">Tests</a></h1>
+<p>Several make targets are defined for working with tests.</p>
+<pre><code>integration - run the integration test suite. requires the claircore-db to be up. run `make clair-db-up` before this target
+unit - run the unit test suite.
+bench -  runs the benchmarks
+integration-v - runs the integration test suite with verbose
+unit-v - runs the unit test suite with verbose
+</code></pre>
+<h1><a class="header" href="#cctool" id="cctool">Cctool</a></h1>
+<p><code>Cctool</code> is a small utility to make poking at claircore components easier.</p>
+<h2><a class="header" href="#build" id="build">Build</a></h2>
+<p>Build via the standard incantation:</p>
+<pre><code>go build ./cmd/cctool
+</code></pre>
+<h2><a class="header" href="#usage-1" id="usage-1">Usage</a></h2>
+<p><code>Cctool</code> is driven by subcommands. Use the &quot;h&quot; flag before a subcommand to see
+common flags and a list of subcommands. Use the &quot;h&quot; flag after a subcommand to
+see flags specific to that subcommand.</p>
+<h3><a class="header" href="#report" id="report">Report</a></h3>
+<p>The <code>report</code> subcommand reads in docker-like image references on the command
+line or stdin and outputs a column-oriented summary, suitable for passing to a
+tool like <code>awk</code>.</p>
+<p><code>Report</code> expects to talk to the development HTTP servers.</p>
+<h3><a class="header" href="#manifest" id="manifest">Manifest</a></h3>
+<p>The <code>manifest</code> subcommand reads in docker-like image references on the command
+line or stdin and outputs newline-separated json manifests, suitable for passing
+to libindex.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                        
+
+                        
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                
+
+                
+            </nav>
+
+        </div>
+
+        
+
+        
+
+        
+        
+        
+        <script type="text/javascript">
+            window.playpen_copyable = true;
+        </script>
+        
+
+        
+
+        
+        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
+        
+
+        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+        
+
+        
+        
+        <script type="text/javascript">
+        window.addEventListener('load', function() {
+            window.setTimeout(window.print, 100);
+        });
+        </script>
+        
+        
+
+    </body>
+</html>
