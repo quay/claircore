@@ -22,10 +22,10 @@ import (
 	"github.com/quay/claircore/oracle"
 	"github.com/quay/claircore/photon"
 	"github.com/quay/claircore/python"
-	"github.com/quay/claircore/pyupio"
 	"github.com/quay/claircore/rhel"
 	"github.com/quay/claircore/suse"
 	"github.com/quay/claircore/ubuntu"
+	"github.com/quay/claircore/updater"
 )
 
 const (
@@ -149,84 +149,46 @@ func (o *Opts) parse(ctx context.Context) error {
 	return nil
 }
 
-var defaultFactoryConstructors = map[string]func(context.Context) (driver.UpdaterSetFactory, error){
-	"rhel": func(ctx context.Context) (driver.UpdaterSetFactory, error) {
-		return rhel.NewFactory(ctx, rhel.DefaultManifest)
-	},
-	"ubuntu": func(_ context.Context) (driver.UpdaterSetFactory, error) {
-		return &ubuntu.Factory{Releases: ubuntu.Releases}, nil
-	},
-}
-
-var defaultSets = map[string]driver.UpdaterSetFactory{
-	"alpine": driver.UpdaterSetFactoryFunc(alpine.UpdaterSet),
-	"aws":    driver.UpdaterSetFactoryFunc(aws.UpdaterSet),
-	"debian": driver.UpdaterSetFactoryFunc(debian.UpdaterSet),
-	"oracle": driver.UpdaterSetFactoryFunc(oracle.UpdaterSet),
-	"photon": driver.UpdaterSetFactoryFunc(photon.UpdaterSet),
-	"pyupio": driver.UpdaterSetFactoryFunc(pyupio.UpdaterSet),
-	"suse":   driver.UpdaterSetFactoryFunc(suse.UpdaterSet),
-}
-
 // UpdaterSetFunc returns the configured UpdaterSetFactories.
 func (o *Opts) updaterSetFunc(ctx context.Context, log zerolog.Logger) ([]driver.UpdaterSetFactory, error) {
 	log = log.With().
 		Str("component", "libvuln/updaterSets").
 		Logger()
-	fs := make([]driver.UpdaterSetFactory, 0, len(defaultSets))
 
-	if o.UpdaterSets == nil {
-		// Just use the defaults.
-		log.Info().Msg("using default updaters")
-		for _, f := range defaultSets {
-			fs = append(fs, f)
-		}
-		for name, c := range defaultFactoryConstructors {
-			fac, err := c(ctx)
-			if err != nil {
-				log.Warn().Err(err).Msg("unable to construct updater, skipping")
-				continue
-			}
-			f, fOK := fac.(driver.Configurable)
-			cfg, cfgOK := o.UpdaterConfigs[name]
-			if fOK && cfgOK {
-				if err := f.Configure(ctx, cfg, o.Client); err != nil {
-					log.Warn().Err(err).Msg("failed configuring updater factory")
-					continue
+	defaults := updater.Registered()
+
+	if o.UpdaterSets != nil {
+		for name := range defaults {
+			rm := true
+			for _, wanted := range o.UpdaterSets {
+				if name == wanted {
+					rm = false
 				}
 			}
-			fs = append(fs, fac)
-		}
-	} else {
-		log.Info().Strs("sets", o.UpdaterSets).
-			Msg("creating specified updater sets")
-		for _, name := range o.UpdaterSets {
-			f, ok := defaultSets[name]
-			if !ok {
-				c, ok := defaultFactoryConstructors[name]
-				if !ok {
-					log.Warn().Str("set", name).Msg("unknown update set provided")
-					continue
-				}
-				var err error
-				f, err = c(ctx)
-				if err != nil {
-					log.Warn().Err(err).Msg("unable to construct updater, skipping")
-					continue
-				}
+			if rm {
+				delete(defaults, name)
 			}
-			fs = append(fs, f)
 		}
 	}
-
-	// merge determined updaters with any out-of-tree updaters
-	us := driver.NewUpdaterSet()
-	for _, u := range o.Updaters {
-		if err := us.Add(u); err != nil {
-			log.Warn().Err(err).Msg("duplicate updater, skipping")
-		}
+	if err := updater.Configure(ctx, defaults, o.UpdaterConfigs, o.Client); err != nil {
+		return nil, err
 	}
-	return append(fs, driver.StaticSet(us)), nil
+
+	fs := make([]driver.UpdaterSetFactory, 0, len(defaults))
+	for _, f := range defaults {
+		fs = append(fs, f)
+	}
+	if len(o.Updaters) != 0 {
+		// merge determined updaters with any out-of-tree updaters
+		us := driver.NewUpdaterSet()
+		for _, u := range o.Updaters {
+			if err := us.Add(u); err != nil {
+				log.Warn().Err(err).Msg("duplicate updater, skipping")
+			}
+		}
+		fs = append(fs, driver.StaticSet(us))
+	}
+	return fs, nil
 }
 
 // Pool creates and returns a configured pxgpool.Pool.
