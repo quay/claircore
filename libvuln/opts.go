@@ -101,10 +101,12 @@ var defaultMatchers = []driver.Matcher{
 	&alpine.Matcher{},
 	&aws.Matcher{},
 	&debian.Matcher{},
-	&python.Matcher{},
-	&photon.Matcher{},
-	&suse.Matcher{},
 	&oracle.Matcher{},
+	&photon.Matcher{},
+	&python.Matcher{},
+	&rhel.Matcher{},
+	&suse.Matcher{},
+	&ubuntu.Matcher{},
 }
 
 // parse is an internal method for constructing
