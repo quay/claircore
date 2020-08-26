@@ -1,7 +1,6 @@
 package main
 
 import (
-	"compress/gzip"
 	"context"
 	"flag"
 	"fmt"
@@ -12,19 +11,10 @@ import (
 	"github.com/rs/zerolog"
 	"gopkg.in/yaml.v3"
 
-	"github.com/quay/claircore/alpine"
-	"github.com/quay/claircore/aws"
-	"github.com/quay/claircore/debian"
-	"github.com/quay/claircore/internal/vulnstore/jsonblob"
-	"github.com/quay/claircore/internal/vulnstore/postgres"
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/libvuln/driver"
-	"github.com/quay/claircore/oracle"
-	"github.com/quay/claircore/photon"
-	"github.com/quay/claircore/pyupio"
-	"github.com/quay/claircore/rhel"
-	"github.com/quay/claircore/suse"
-	"github.com/quay/claircore/ubuntu"
+	"github.com/quay/claircore/updater"
+	_ "github.com/quay/claircore/updater/defaults"
 )
 
 func RunUpdaters(cmd context.Context, cfg *commonConfig, args []string) error {
@@ -73,20 +63,10 @@ func RunUpdaters(cmd context.Context, cfg *commonConfig, args []string) error {
 		return err
 	}
 
-	ufs := []driver.UpdaterSetFactory{
-		&ubuntu.Factory{Releases: ubuntu.Releases},
-		driver.UpdaterSetFactoryFunc(alpine.UpdaterSet),
-		driver.UpdaterSetFactoryFunc(aws.UpdaterSet),
-		driver.UpdaterSetFactoryFunc(debian.UpdaterSet),
-		driver.UpdaterSetFactoryFunc(oracle.UpdaterSet),
-		driver.UpdaterSetFactoryFunc(photon.UpdaterSet),
-		driver.UpdaterSetFactoryFunc(pyupio.UpdaterSet),
-		driver.UpdaterSetFactoryFunc(suse.UpdaterSet),
-	}
-	if f, err := rhel.NewFactory(ctx, rhel.DefaultManifest); err == nil {
+	d := updater.Registered()
+	ufs := make([]driver.UpdaterSetFactory, 0, len(d))
+	for _, f := range d {
 		ufs = append(ufs, f)
-	} else {
-		return err
 	}
 
 	if err := u.RunUpdaters(ctx, ufs...); err != nil {
@@ -153,35 +133,7 @@ func LoadUpdates(cmd context.Context, cfg *commonConfig, args []string) error {
 		return nil
 	}
 
-	gz, err := gzip.NewReader(in)
-	if err != nil {
-		return err
-	}
-	s := postgres.NewVulnStore(pool)
-	l, err := jsonblob.Load(ctx, gz)
-	ops, err := s.GetUpdateOperations(ctx)
-	if err != nil {
-		return err
-	}
-
-Update:
-	for l.Next() {
-		e := l.Entry()
-		for _, op := range ops[e.Updater] {
-			// This only helps if updaters don't keep something that
-			// changes in the fingerprint.
-			if op.Fingerprint == e.Fingerprint {
-				fmt.Printf("%s: skip\n", e.Updater)
-				continue Update
-			}
-		}
-		ref, err := s.UpdateVulnerabilities(ctx, e.Updater, e.Fingerprint, e.Vuln)
-		if err != nil {
-			return err
-		}
-		fmt.Printf("%s: %s (%d vulns)\n", e.Updater, ref, len(e.Vuln))
-	}
-	if err := l.Err(); err != nil {
+	if err := libvuln.OfflineImport(ctx, pool, in); err != nil {
 		return err
 	}
 	return nil
