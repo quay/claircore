@@ -13,6 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/quay/claircore/libvuln"
+	"github.com/quay/claircore/updater/defaults"
 )
 
 // Config this struct is using the goconfig library for simple flag and env var
@@ -34,15 +35,17 @@ func main() {
 	if err != nil {
 		log.Fatal().Msgf("failed to parse config: %v", err)
 	}
+	if err := defaults.Error(); err != nil {
+		log.Fatal().Err(err).Msg("default updaters errored on construction")
+	}
 
 	// setup pretty logging
 	zerolog.SetGlobalLevel(logLevel(conf))
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	ctx = log.Logger.WithContext(ctx)
 
-	opts := confToLibvulnOpts(conf)
-
 	// create libvuln
+	opts := confToLibvulnOpts(conf)
 	lib, err := libvuln.New(ctx, opts)
 	if err != nil {
 		log.Fatal().Msgf("failed to create libvuln %v", err)
