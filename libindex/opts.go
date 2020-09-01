@@ -25,7 +25,7 @@ type Opts struct {
 	ConnString string
 	// how often we should try to acquire a lock for scanning a given manifest if lock is taken
 	ScanLockRetry time.Duration
-	// the number of layers to be scanned in parellel.
+	// the number of layers to be scanned in parallel.
 	LayerScanConcurrency int
 	// how we store layers we fetch remotely. see LayerFetchOpt type def above for more details
 	LayerFetchOpt indexer.LayerFetchOpt
