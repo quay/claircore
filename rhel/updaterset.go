@@ -8,6 +8,8 @@ import (
 	"path"
 	"strings"
 
+	"github.com/rs/zerolog"
+
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/rhel/pulp"
 )
@@ -43,7 +45,7 @@ func NewFactory(ctx context.Context, manifest string, opts ...FactoryOption) (*F
 
 // Factory contains the configuration for fetching and parsing a pulp manifest.
 type Factory struct {
-	url         *url.URL `json:"url",yaml:"url`
+	url         *url.URL
 	client      *http.Client
 	updaterOpts []Option
 
@@ -51,23 +53,34 @@ type Factory struct {
 }
 
 type FactoryConfig struct {
-	URL string `json:"url",yaml:"url`
+	URL string `json:"url", yaml:"url"`
 }
 
 func (f *Factory) Configure(ctx context.Context, cfg driver.ConfigUnmarshaler, c *http.Client) error {
+	log := zerolog.Ctx(ctx).With().
+		Str("component", "rhel/Factory.Configure").
+		Logger()
 	var fc FactoryConfig
+
 	if err := cfg(&fc); err != nil {
 		return err
 	}
+	log.Debug().Msg("loaded incoming config")
+
 	if fc.URL != "" {
 		u, err := url.Parse(fc.URL)
 		if err != nil {
 			return err
 		}
+		log.Info().
+			Str("url", u.String()).
+			Msg("configured manifest URL")
 		f.url = u
 	}
 
 	if c != nil {
+		log.Info().
+			Msg("configured HTTP client")
 		f.client = c
 	}
 
