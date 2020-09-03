@@ -1,5 +1,5 @@
 # Manifest
-A Manifest defines a container image, the order of the image's layers, and how to retrieve the layers.
+A Manifest is analogous to an [OCI Image Manifest](https://github.com/opencontainers/image-spec/blob/master/manifest.md): it defines the order of layers and how to retrieve the them.
 
 ```go
 // Manifest represents a docker image. Layers array MUST be indexed

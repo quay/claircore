@@ -1,15 +1,15 @@
 # Ecosystem
-An Ecosystem groups togethers scanners and coalescers which are often used together.
-Ecosystems are usually defined in the package manager go package such as Dpkg. 
-See /dpkg/ecosystem.go for an example.
+An Ecosystem groups together scanners and coalescers which are often used together.
+Ecosystems are usually defined in a go package that corresponds to a package manager, such as `dpkg`. 
+See `dpkg/ecosystem.go` for an example.
 
-The Indexer will retrieve artifacts from the databse scanned by the provided scanners and provide these scan artifacts to the coalescer in the Ecosystem.
+The Indexer will retrieve artifacts from the provided scanners and provide these scan artifacts to the coalescer in the Ecosystem.
 
 ```go
 package indexer
 // Ecosystems group together scanners and a Coalescer which are commonly used together.
 //
-// A typical ecosystem is "DPKG" which will use the DPKG package indexer, the "OS-Release"
+// A typical ecosystem is "dpkg" which will use the dpkg package indexer, the "os-release"
 // distribution scanner and the "APT" repository scanner.
 //
 // A Controller will scan layers with all scanners present in its configured ecosystems.

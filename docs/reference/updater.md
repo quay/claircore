@@ -1,8 +1,8 @@
 # Updater
 An Updater is responsible for performing run-time fetching and parsing of a security database.
-The returned vulnerabilities will be writen to ClairCore's database and used in vulnerability matching.
+The returned vulnerabilities will be written to ClairCore's database and used in vulnerability matching.
 
-```
+```go
 // Updater is an aggregate interface combining the method set of a Fetcher and a Parser
 // and forces a Name() to be provided
 type Updater interface {

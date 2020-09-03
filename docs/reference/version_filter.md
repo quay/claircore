@@ -1,8 +1,8 @@
 # VersionFilter
-A VersionFilter is an additional interface a Matcher may implement.
-If implemented LibVuln will attempt to use the database and the normalized version field of a package
-to filter vulnerabilities at the database. 
-This is an optimization.
+VersionFilter is an additional interface a Matcher may implement.
+If implemented, LibVuln will attempt to use the database and the normalized version field of a package
+to filter vulnerabilities in the database. 
+This is an opt-in optimization for when a package manager's version scheme can be normalized into a claircore.Version. 
 
 ```go
 package driver

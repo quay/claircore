@@ -65,12 +65,12 @@ defer lib.Close() // remember to cleanup when done.
 The constructing code should provide a valid ctx tied to some lifetime.
 
 ### Indexing
-Indexing is the process of submitting a container to LibIndex, fetching the container's layers, indexing their contents, and coalescing a final Index Report.
+Indexing is the process of submitting a manifest to LibIndex, fetching the manifest's layers, indexing their contents, and coalescing a final Index Report.
 
-Coalescing is the act of computing a final set of contents (packages, distributions, repos) from a set of layers. Since layers maybe shared between many containers the final contents of an image must be computed.
+Coalescing is the act of computing a final set of contents (packages, distributions, repos) from a set of layers. Since layers maybe shared between many manifests, the final contents of a manifest must be computed.
 
 To perform an Index you must provide a claircore.Manifest data struture to the Index method.
-The Manifest data structure describes the image's layers and where they can be fetched from.
+The Manifest data structure describes an image manifest's layers and where they can be fetched from.
 
 ```go
 m := claircore.Manifest{
@@ -92,18 +92,18 @@ ctx := context.TODO()
 ir, err := lib.IndexReport(ctx, m.Digest)
 ```
 
-LibIndex performs its work incrementally and saves state as it goes along. If LibIndex encounters an intermittent error during the index, due to network partition for example, when the manifest is resubmitted only the layers not yet indexed will be fetched and processed. 
+LibIndex performs its work incrementally and saves state as it goes along. If LibIndex encounters an intermittent error during the index (for example, due to network failure while fetching a layer), when the manifest is resubmitted only the layers not yet indexed will be fetched and processed. 
 
 ### State
-LibIndex treats layers as content addressable. Once a layer identified by a particular hash is indexed its contents is definitively known. A request to re-index the same layer results in returning the already indexed contents.
+LibIndex treats layers as content addressable. Once a layer identified by a particular hash is indexed its contents are definitively known. A request to re-index a known layer results in returning the previous successful response.
 
-This comes in handy when dealing with base layers. The Ubuntu base layer is seen very often across container registries. Treating this layer as content addressable precludes the need to fetch and index the layer everytime LibIndex encounters it in a manifest.
+This comes in handy when dealing with base layers. The Ubuntu base layer is seen very often across container registries. Treating this layer as content addressable precludes the need to fetch and index the layer every time LibIndex encounters it in a manifest.
 
-There are times where re-indexing the same layer is necessary however. When LibIndex has updated a component used for identifyng a layer's contents. At the point where LibIndex realizes a new version of a component has not indexed a layer being submitted it will perform the indexing operation.
+There are times where re-indexing the same layer is necessary however. At the point where LibIndex realizes a new version of a component has not indexed a layer being submitted it will perform the indexing operation.
 
-A client must become aware that LibIndex has updated one of its components and subsequently resubmit Manifests. The State endpoint is implemented for this reason.
+A client must notice that LibIndex has updated one of its components and subsequently resubmit Manifests. The State endpoint is implemented for this reason.
 
-Clients may query the State endpoint to receive an opaque string acting as a cookie, identifying a unique state of LibIndex. When a client sees this cookie change it may re-submit manifests to LibIndex to obtain a new index report.
+Clients may query the State endpoint to receive an opaque string acting as a cookie, identifying a unique state of LibIndex. When a client sees this cookie change it should re-submit manifests to LibIndex to obtain a new index report.
 
 ```go
 ctx := context.TODO()
@@ -117,7 +117,7 @@ if state != prevState {
 
 ### AffectedManifests
 LibIndex is capable of providing a client with all manifests affected by a set of vulnerabilities.
-This functionality is typically used by the Notification subsystem but worth noting.
+This functionality is designed for use with a notification mechanism.
 
 ```go
 ctx := context.TODO()

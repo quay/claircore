@@ -1,5 +1,5 @@
 # UpdaterSetFactory
-An UpdaterSetFactory provides a factory for runtime construction and configuration for Updaters.
+An UpdaterSetFactory is a factory for runtime construction and configuration for Updaters.
 
 ```go
 package driver
@@ -23,4 +23,3 @@ func StaticSet(s UpdaterSet) UpdaterSetFactory {
 }
 
 ```
-
