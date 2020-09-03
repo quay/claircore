@@ -1,5 +1,5 @@
 # LibIndex Store
-The Store interface implements all necessary persistence methods for LibIndex to provide its functionality. 
+The Store interface implements all necessary persistence methods for LibIndex to provide its functionality.
 
 ```go
 package indexer

@@ -1,5 +1,5 @@
 # Matcher
-A Matcher interface performs the heavy lifting of matching container contents to affecting vulnerabilities. These implementations provide the smarts for understanding if a particular artifact in a layer is vulnerable to a particular advisory in the database.
+A Matcher performs the heavy lifting of matching manifest contents to relevant vulnerabilities. These implementations provide the smarts for understanding if a particular artifact in a layer is vulnerable to a particular advisory in the database.
 
 ```go
 package driver
@@ -18,6 +18,6 @@ type Matcher interface {
 	Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error)
 }
 ```
-A Filter method is used to inform LibVuln the provided artifact is interesting.
-A Query method tells LibVuln how to query the security advisory database.
-A Vulnerable method typically performs a version check between the artifact and the vulnerability in question.
+The `Filter` method is used to inform LibVuln the provided artifact is interesting.
+The `Query` method tells LibVuln how to query the security advisory database.
+The `Vulnerable` method reports whether the provided package is vulnerable to the provided vulnerability. Typically, this would perform a version check between the artifact and the vulnerability in question.

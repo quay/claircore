@@ -2,7 +2,7 @@
 LibVuln is the Go package responsible for keeping the database of vulnerabilities consistent, matching container image contents with vulnerabilities, and reporting diffs between updates of the same security database. 
 
 ## Usage 
-LibVuln is runtime constructed via the libvuln.New method. New requires an libvuln.Opts struct.
+LibVuln is runtime constructed via the libvuln.New method. New requires a libvuln.Opts struct.
 
 ### Opts
 ```go
@@ -84,10 +84,10 @@ if err != nil {
 
 The constructing code should provide a valid ctx tied to some lifetime.
 
-On construction New will block until the security databases are full initialized. Expect some delay before this method returns.
+On construction, New will block until the security databases are initialized. Expect some delay before this method returns.
 
 ### Scanning
-Scanning is the process of taking a claircore.IndexReport comprised of a container image's content and determining which vulnerabilities affect the image. A claircore.VulnerabilityReport will be returned with these details.
+Scanning is the process of taking a claircore.IndexReport comprised of a Manifest's content and determining which vulnerabilities affect the Manifest. A claircore.VulnerabilityReport will be returned with these details.
 
 ```go
 m := Manifest{
@@ -105,15 +105,15 @@ if err != nil {
 }
 ```
 
-In the above example LibIndex is used to generate a claircore.IndexReport. The index report is then scanned by LibVuln and a subsequent vulnerability report identifying any vulnerabilities affecting the image is returned.
+In the above example LibIndex is used to generate a claircore.IndexReport. The index report is then provided to LibVuln and a subsequent vulnerability report identifying any vulnerabilities affecting the manifest is returned.
 
 ### Updates API
-LibVuln by default manages a set of long running updaters responsible for continually fetching new advisory contents and loading into into its database. The Updates API allows the a client to view and manipulate aspects of the update operations updaters perform.
+By default, LibVuln manages a set of long running updaters responsible for periodically fetching and loading new advisory contents into its database. The Updates API allows the a client to view and manipulate aspects of the update operations that updaters perform.
 
-In this getting started guide we will only cover the two methods most interesting to new users. Any futher investigation of the Updates API is a effort left to the reader.
+In this getting started guide, we will only cover the two methods most interesting to new users.
 
 #### UpdateOperations
-Provides a list of recent update operations performed by implemented updaters. 
+This API provides a list of recent update operations performed by implemented updaters. 
 The UpdateOperation slice returned will be sorted by latest timestamp descending. 
 ```go
 ops, err := lib.UpdateOperations(ctx)
@@ -126,7 +126,7 @@ for updater, ops := range ops {
 ```
 
 #### UpdateDiff
-Mostly used by ClairV4's notification subsystem, this endpoint will provide the caller with any removed or added vulnerabilities between two update operations. Typically a diff takes places against two versions of the same data source. This is useful to inform downstream applications that new vulnerabilities have entered the system. 
+Mostly used by ClairV4's notification subsystem, this endpoint will provide the caller with any removed or added vulnerabilities between two update operations. Typically a diff takes places against two versions of the same data source. This is useful to inform downstream applications what new vulnerabilities have entered the system.
 
 ```go
 ops, err := lib.UpdateOperations(ctx)

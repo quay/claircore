@@ -8,9 +8,9 @@ Generally, distributions or languages must provide a security tracker.
 
 All officially supported distributions and languages provide a database of security vulnerabilities. 
 
-These databases are maintained by the distribution\language developers and reflect up-to-date CVE and advisory data for their packages.
+These databases are maintained by the distribution or language developers and reflect up-to-date CVE and advisory data for their packages.
 
-If your distribution\language does not provide a security tracker or piggy-backs off another distribution's start an issue in our Github issue tracker to discuss further.
+If your distribution or language does not provide a security tracker or piggy-backs off another distribution's start an issue in our Github issue tracker to discuss further.
 
 ## Implementing an Updater
 
@@ -18,7 +18,7 @@ The first step to adding your distribution or language to ClairCore is getting y
 
 The Updater interfaces are responsible for this task.
 
-An implementor of an Updater must consider several design points.
+An implementer must consider several design points:
 * Does the security database provide enough information to parse each entry into a claircore.Vulnerability?
     * Each entry must parse into a claircore.Vulnerability. 
     * Each Vulnerability **must** contain a package **and** a repository **or** distribution field. 
@@ -29,11 +29,11 @@ An implementor of an Updater must consider several design points.
 
 If you are having trouble figuring out these requirements do not hesitate to reach out to us for help. 
 
-After you have take the design points into consideration you are ready to implement your Matcher.
+After you have taken the design points into consideration, you are ready to implement your updater.
 
-Typically you will create a new package named after the distribution\language you are adding support for. 
+Typically you will create a new package named after the source you are adding support for. 
 
-Inside this package you can begin implementing the [Updater interface](../reference/updater.md) and provide us an [Updater Set Factory](../reference/updatersetfactory.md) for runtime construction.
+Inside this package you can begin implementing the [Updater](../reference/updater.md) and [Updater Set Factory](../reference/updatersetfactory.md) interfaces.
 
 Optionally you may implement the [Configurable](../reference/updater.md) interface if you need runtime configuration.
 
@@ -45,13 +45,13 @@ At this point you hopefully have your Updater working, writing vulnerability dat
 
 We can now move our attention to package scanning.
 
-A package scanner is responsible for taking a claircore.Layer, getting a tarball handle to its contents, and parsing the contents for a particular package database or set of files on the file systems. Once the target files are located the package scanner should parse these files into claircore.Packages and return a slice of these data structures. 
+A package scanner is responsible for taking a claircore.Layer and parsing the contents for a particular package database or set of files inside the provided tar archive. Once the target files are located the package scanner should parse these files into claircore.Packages and return a slice of these data structures. 
 
-Package scanning is context free, meaning no distribution classification has to happen yet. This is because containers are made up of layers and a layer which holds a package database may not hold distribution information such as an os-release file. A package scanner need only parse a target package database and return claircore.Packages.
+Package scanning is context free, meaning no distribution classification has to happen yet. This is because manifests are made up of layers, and a layer which holds a package database may not hold distribution information such as an os-release file. A package scanner need only parse a target package database and return claircore.Packages.
 
-You will implement the [Package Scanner](../reference/packagescanner.md) interface to achieve this.
+You need to implement the [Package Scanner](../reference/packagescanner.md) interface to achieve this.
 
-Optionally you may implement the [Configurable Scanner](../referrence/configurable_scanner.md) if the scanner needs to perform run-time configuration before use.
+Optionally, you may implement the [Configurable Scanner](../reference/configurable_scanner.md) if the scanner needs to perform runtime configuration before use.
 
 Keep in mind that its very common for distributions to utilize an existing package manager such as RPM. 
 
@@ -61,59 +61,55 @@ If this is the case there's a high likelihood that you can utilize the existing 
 
 Once the package scanner is implemented, tested, and working you can begin implementing a Distribution Scanner.
 
-Implementing a distribution scanner is a design choice. Distributions as well as repositories implement the way ClairCore matches packages => vulnerabilities. 
+Implementing a distribution scanner is a design choice. Distributions and repositories are the way ClairCore matches packages to vulnerabilities. 
 
-If your implemented Updater parses vulnerabilities with distribution information you will likely need to implement a distribution scanner. Likewise if your Updater parses vulnerabilities with repository information (typical with language vulnerabilities) you will likely need to implement a repository scanner.
+If your implemented Updater parses vulnerabilities with distribution information you will likely need to implement a distribution scanner. Likewise, if your Updater parses vulnerabilities with repository information (typical with language vulnerabilities) you will likely need to implement a repository scanner.
 
-A distribution scanner, similarily to a package scanner, is provided a claircore.Layer which a tarball handle can be retrieved. 
+A distribution scanner, like a package scanner, is provided a claircore.Layer. 
 
-The distribution scanner will parse the tarball exhaustively searching for any clue that this layer was derived from your distribution. If you identify that it is you should return a common distribution data model used by your Updater implementation. This ensures that ClairCore can match the ouput of your distribution scanner with your parsed vulnerabilities. 
+The distribution scanner will parse the provided tar archive exhaustively searching for any clue that this layer was derived from your distribution. If you identify that it is, you should return a common distribution used by your Updater implementation. This ensures that ClairCore can match the output of your distribution scanner with your parsed vulnerabilities. 
 
-You will implement the [Distribution Scanner](../reference/distribution_scanner.md) if your design mandates.
-
-Optionally you may implement the [Configurable Scanner](../referrence/configurable_scanner.md) if the scanner needs to perform run-time configuration before use.
+Optionally, you may implement the [Configurable Scanner](../reference/configurable_scanner.md) if the scanner needs to perform runtime configuration before use.
 
 ## Implementing a Repository Scanner
 
-As mentioned above implementing a repository scanner is a design choice, often times applicable for language pacakge managers (not always, RHEL uses a repo scanner).
+As mentioned above, implementing a repository scanner is a design choice, often times applicable for language package managers.
 
 If your Updater parses vulnerabilities with a repository field you will likely want to implement a repository scanner.
 
 A repository scanner is used just like a distribution scanner however you will search for any clues that a layer contains your repository and if so return a common data model identifying the repository.
 
-You will implement the [Repository Scanner](../reference/repository_scanner.md) if your design mandates.
-
-Optionally you may implement the [Configurable Scanner](../referrence/configurable_scanner.md) if the scanner needs to perform run-time configuration before use.
+Optionally, you may implement the [Configurable Scanner](../reference/configurable_scanner.md) if the scanner needs to perform runtime configuration before use.
 
 ## Implementing a Coalescer
 
-As you may have noticed the process of scanning a layer for packages, distribution, and repository information is distinct and saparate.
+As you may have noticed, the process of scanning a layer for packages, distribution, and repository information is distinct and separate.
 
-At some point ClairCore will need to take all the artifacts (a term we use for package/distribution/repository information) found in all the layers and compute a final "image" view. A coalescer performs this computation. 
+At some point, ClairCore will need to take all the context-free information returned from layer scanners and create a complete view of the manifest. A coalescer performs this computation. 
 
-Its unlikely you will need to implement your own coalescer. ClairCore provides a default "linux" coalescer which will work if your package database is a single, parsable, regular file on the file system. 
+It's unlikely you will need to implement your own coalescer. ClairCore provides a default "linux" coalescer which will work if your package database is rewritten when modified. For example, if a Dockerfile's `RUN` command causes a change to to dpkg's `/var/lib/dpkg/status` database, the resulting manifest will have a copy placed in the associated layer.
 
-However if your package database does not fit into this model implementing a Coalescer maybe necessary.
+However, if your package database does not fit into this model, implementing a coalescer may be necessary.
 
-To implement a Coalescer several details must be understood
-* Each layer only provides a "piece" of the final image's data.
-    * Because images are comprised of multiple sharable layers some layers may contain only package information, only distribution information, only respository information, no information at all, or any combination of these.
-* An image may have a "dist-upgrade" performed and the implications of this on the package management system is distribution\lanaguge dependent
-    * The coalescer must deal with distribution upgrades in a sane way. If your distrubtion\language does a dist-upgrade are all packages bumped? Are they simply left alone? The coalescer must understand what happens and compute the final image's content correctly.
-* Packages maybe removed and added between layers
-    * When the package database is a parsesable regular file on disk this case is simpler, the database file found in the most recent layer holds the ultimate set of packages in the image. However in the case where the package database is realized by several sets of file on disk it becomes a bit tricker. ClairCore does not support parsing white out files as "removals" currently. We will address this in upcoming releases. 
+To implement a coalescer, several details must be understood:
+* Each layer only provides a "piece" of the final manifest.
+    * Because manifests are comprised of multiple copy-on-write layers, some layers may contain package information, distribution information, repository information, any combination of those, or no information at all.
+* An OS may have a "dist-upgrade" performed and the implications of this on the package management system is distribution or language dependent.
+    * The coalescer must deal with distribution upgrades in a sane way. If your distribution or language does a dist-upgrade, are all packages bumped? Are they simply left alone? The coalescer must understand what happens and compute the final manifest's content correctly.
+* Packages may be removed and added between layers.
+    * When the package database is a regular file on disk, this case is simpler: the database file found in the most recent layer holds the ultimate set of packages for all previous layers. However, in the case where the package database is realized by adding and removing files on disk it becomes trickier. ClairCore has no special handling of whiteout files, currently. We will address this in upcoming releases.
 
-If your distribution or language cannot utilize a default coalescer you will need to implement the [Coalescer interface](../reference/coalescer.md)
+If your distribution or language cannot utilize a default coalescer, you will need to implement the [Coalescer interface](../reference/coalescer.md)
 
 ## Implementing or Adding To An Ecosystem
 
-An Ecosystem provides a set of coalescers, package scanners, distribution scanners, and repository scanners to LibIndex at time of indexing.
+An Ecosystem provides a set of coalescers, package scanners, distribution scanners, and repository scanners to LibIndex at the time of indexing.
 
-LibIndex will take the [Ecosystem](../reference/ecosystem.md) and scan each layer with all provided scanners. When LibIndex is ready to coalesce the results of each scanner into an [IndexReport](../reference/index_report.md) the provided coalescer is only given the out of the configured scanners.
+LibIndex will take the [Ecosystem](../reference/ecosystem.md) and scan each layer with all provided scanners. When LibIndex is ready to coalesce the results of each scanner into an [IndexReport](../reference/index_report.md) the provided coalescer is given the output of the configured scanners.
 
-This allows LibIndex to granularly segment off scanning and coalescing to a particular ecosystem. 
+This allows LibIndex to segment the input to the coalescing step to particular scanners that a coalescer understands. 
 
-For instance if we only wanted a (fictitious) Haskell coalescer to evaluate artifacts returned from a Haskell package and repository scanner we would create an ecosystem similar to:
+For instance, if we only wanted a (fictitious) Haskell coalescer to evaluate artifacts returned from a (fictitious) Haskell package and repository scanner we would create an ecosystem similar to:
 
 ```go
 // NewEcosystem provides the set of scanners and coalescers for the haskell ecosystem
@@ -125,8 +121,7 @@ func NewEcosystem(ctx context.Context) *indexer.Ecosystem {
             }, nil
 		},
 		DistributionScanners: func(ctx context.Context) ([]indexer.DistributionScanner, error) {
-			return []indexer.DistributionScanner{
-			}, nil
+			return []indexer.DistributionScanner{}, nil
 		},
 		RepositoryScanners: func(ctx context.Context) ([]indexer.RepositoryScanner, error) {
 			return []indexer.RepositoryScanner{}, nil
@@ -139,21 +134,21 @@ func NewEcosystem(ctx context.Context) *indexer.Ecosystem {
 ```
 This ensures that LibIndex will only provide Haskell artifacts to the Haskell coalescer and avoid calling the coalescer with rpm packages for example.
 
-If your distribution piggy backs on an already implemented package manager such as "rpm" or "dpkg" its likely you will simply add your scanners to the existing ecosystem in one of those packages.
+If your distribution uses an already implemented package manager such as "rpm" or "dpkg", it's likely you will simply add your scanners to the existing ecosystem in one of those packages.
 
 ## Alternative Implementations
 
 This how-to guide is a "perfect world" scenario.
 
-Working on ClairCore has made us realize that this domain is a bit messy. Security trackers are not developed with package managers in mind, security databases do not follow correct specs, distro maintainers spin their own tools, etc...
+Working on ClairCore has made us realize that this domain is a bit messy. Security trackers are not developed with package managers in mind, security databases do not follow correct specs, distribution maintainers spin their own tools, etc.
 
-We understand that supporting your distribution\language may take some bending of ClairCore's architecture and business logic. If this is the case start a conversation with us. We are open to design discussions.
+We understand that supporting your distribution or language may take some bending of ClairCore's architecture and business logic. If this is the case, start a conversation with us. We are open to design discussions.
 
 ## Getting Help
 
-At this point you have implemented all the necessary components to integrate your distribution or language with ClairCore.
+At this point, you have implemented all the necessary components to integrate your distribution or language with ClairCore.
 
-If you struggle with the design phase or are getting stuck at the implementation phases do not hesitate to reach out to use. Here are some links:
+If you struggle with the design phase or are getting stuck at the implementation phases do not hesitate to reach out to us. Here are some links:
 
 [Clair SIG](https://groups.google.com/g/clair-dev?pli=1)
 [Github Issues](https://github.com/quay/claircore)

@@ -1,11 +1,11 @@
 # Versioned Scanner
 A versioned scanner is typically embedded into other scanner types.
-Drives ClairCore's ability to register and understand when updaters have been changed.
-Methods and functions which want to work with a generic scanner type may take a VersionedScanner interface as their arguments.
+It drives ClairCore's ability to register and understand when updaters have been changed.
+Functions that want to work with a generic scanner type should use a VersionedScanner .
 
-Implementors of this interface *must* providea unique name.
-Making changes to an implemented scanner *must* return a new Version.
-Implementors *must* return the kind: "package", "distribution", "repository"
+Implementers of this interface *must* provide a unique name.
+Making changes to a scanner's implementation *must* return a new Version.
+Implementers *must* return the correct kind, one of "package", "distribution", "repository"
 
 ```go
 package indexer
@@ -22,4 +22,3 @@ type VersionedScanner interface {
 	Kind() string
 }
 ```
-
