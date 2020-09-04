@@ -32,7 +32,7 @@ func indexManifest(ctx context.Context, pool *pgxpool.Pool, ir *claircore.IndexR
 
 	records := ir.IndexRecords()
 	if len(records) == 0 {
-		log.Warn().Msg("manifest being indexed has 0 scan records")
+		log.Warn().Msg("manifest being indexed has 0 index records")
 		return nil
 	}
 
