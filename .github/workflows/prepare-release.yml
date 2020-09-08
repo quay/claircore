@@ -1,8 +1,5 @@
 ---
 name: Prepare Release
-# Prepare Release looks for a tag with a "prepare" prefix.
-# If encountered an automated changelog pull request will be opened against the repository.
-# If the tag does not contain alpha, beta, or rc test artifacts will be created for QE testing.
 
 on:
   workflow_dispatch:
