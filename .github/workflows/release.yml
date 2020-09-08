@@ -53,10 +53,6 @@ jobs:
           body: |
             ${{ env.CHANGELOG }}
           prerelease: ${{ contains(env.VERSION, 'alpha') || contains(env.VERSION, 'beta') || contains(env.VERSION, 'rc') }}
-      # perform production release of artifacts
-      - name: Artifacts
-        run: |
-          echo "pushing release artifacts"
 
   deploy-documentation:
     runs-on: ubuntu-latest

@@ -12,8 +12,7 @@ jobs:
         uses: gsactions/commit-message-checker@v1
         with:
           pattern: |
-            ^(.*):\s*(.*)$          
-          flags: 'gm'
+            ^(.*):\s*(.*)\n
           error: 'Commit must begin with <scope>: <subject>'
 
   tidy:
