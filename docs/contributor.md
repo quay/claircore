@@ -1,3 +1,7 @@
 # Contributors
-This is some documentation helpful for the actual nuts-n-bolts of adding code to
-and testing code in the project.
+
+Thee topics cover helpful tips for contributing to ClairCore
+
+- [Logging](./contributor/logging.md)
+- [Local Development](./contributor/local-dev.md)
+- [cctool](./contributor/cctool.md)
