@@ -63,11 +63,11 @@ local-dev-logs:
 .PHONY: claircore-db-up
 claircore-db-up:
 	$(docker-compose) up -d claircore-db
-	$(docker) exec -it claircore_claircore-db_1 bash -c 'while ! pg_isready; do echo "waiting for postgres"; sleep 2; done'
+	$(docker) exec -it claircore-db bash -c 'while ! pg_isready; do echo "waiting for postgres"; sleep 2; done'
 
 .PHONY: claircore-db-restart
 claircore-db-restart:
-	$(docker) kill claircore-db && $(docker) rm claircore_claircore-db_1
+	$(docker) kill claircore-db && $(docker) rm claircore-db
 	make claircore-db-up
 
 .PHONY: libindexhttp-restart

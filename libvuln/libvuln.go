@@ -66,7 +66,7 @@ func New(ctx context.Context, opts *Opts) (*Libvuln, error) {
 
 	// Run updaters synchronously, initially.
 	if err := l.RunUpdaters(ctx, setFuncs...); err != nil {
-		return nil, err
+		log.Error().Err(err).Msg("encountered error while updating")
 	}
 	if !opts.DisableBackgroundUpdates {
 		go l.loopUpdaters(ctx, opts.UpdateInterval, setFuncs...)

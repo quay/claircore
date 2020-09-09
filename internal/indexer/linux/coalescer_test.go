@@ -11,10 +11,6 @@ import (
 	"github.com/quay/claircore/test/log"
 )
 
-// Test_Coalescer tests the private method coalesce on the linux.Coalescer.
-// it's simpler to test the core business logic of a linux.Coalescer after
-// database access would have occured. Thus we do not use a black box test
-// and instead test private methods.
 func Test_Coalescer(t *testing.T) {
 	ctx := context.Background()
 	ctx, done := log.TestLogger(ctx, t)
