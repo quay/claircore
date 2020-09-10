@@ -18,7 +18,7 @@ require (
 	github.com/knqyf263/go-rpm-version v0.0.0-20170716094938-74609b86c936
 	github.com/lib/pq v1.3.0
 	github.com/quay/alas v1.0.1
-	github.com/quay/goval-parser v0.8.2
+	github.com/quay/goval-parser v0.8.3
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
 	github.com/rs/zerolog v1.15.0
 	github.com/stretchr/testify v1.5.1
