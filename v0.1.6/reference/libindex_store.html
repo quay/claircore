@@ -1,0 +1,300 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js light">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>LibIndex Store - Claircore Documentation</title>
+        
+
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="Additional documentation for Claircore.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        
+
+        
+    </head>
+    <body>
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "light" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('no-js')
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add('js');
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div id="sidebar-scrollbox" class="sidebar-scrollbox">
+                <ol class="chapter"><li class="expanded "><a href="../what_is.html"><strong aria-hidden="true">1.</strong> What Is ClairCore</a></li><li class="expanded "><a href="../getting_started.html"><strong aria-hidden="true">2.</strong> Getting Started</a></li><li><ol class="section"><li class="expanded "><a href="../getting_started/libindex_usage.html"><strong aria-hidden="true">2.1.</strong> LibIndex Usage</a></li><li class="expanded "><a href="../getting_started/libvuln_usage.html"><strong aria-hidden="true">2.2.</strong> LibVuln Usage</a></li></ol></li><li class="expanded "><a href="../concepts.html"><strong aria-hidden="true">3.</strong> Concepts</a></li><li><ol class="section"><li class="expanded "><a href="../concepts/vulnerability_matching.html"><strong aria-hidden="true">3.1.</strong> Vulnerability Matching</a></li><li class="expanded "><a href="../concepts/indexer_architecture.html"><strong aria-hidden="true">3.2.</strong> Indexer Architecture</a></li><li class="expanded "><a href="../concepts/matcher_architecture.html"><strong aria-hidden="true">3.3.</strong> Matching Architecture</a></li><li class="expanded "><a href="../concepts/severity_mapping.html"><strong aria-hidden="true">3.4.</strong> Severity Mapping</a></li></ol></li><li class="expanded "><a href="../howto.html"><strong aria-hidden="true">4.</strong> How Tos</a></li><li><ol class="section"><li class="expanded "><a href="../howto/add_dist.html"><strong aria-hidden="true">4.1.</strong> Adding Distribution Or Language Support</a></li></ol></li><li class="expanded "><a href="../reference.html"><strong aria-hidden="true">5.</strong> Reference</a></li><li><ol class="section"><li class="expanded "><a href="../reference/coalescer.html"><strong aria-hidden="true">5.1.</strong> Coalescer</a></li><li class="expanded "><a href="../reference/configurable_scanner.html"><strong aria-hidden="true">5.2.</strong> Configurable Scanner</a></li><li class="expanded "><a href="../reference/distribution_scanner.html"><strong aria-hidden="true">5.3.</strong> Distribution Scanner</a></li><li class="expanded "><a href="../reference/ecosystem.html"><strong aria-hidden="true">5.4.</strong> Ecosystem</a></li><li class="expanded "><a href="../reference/index_report.html"><strong aria-hidden="true">5.5.</strong> Index Report</a></li><li class="expanded "><a href="../reference/libindex_store.html" class="active"><strong aria-hidden="true">5.6.</strong> LibIndex Store</a></li><li class="expanded "><a href="../reference/libvuln_store.html"><strong aria-hidden="true">5.7.</strong> LibVuln Store</a></li><li class="expanded "><a href="../reference/manifest.html"><strong aria-hidden="true">5.8.</strong> Manifest</a></li><li class="expanded "><a href="../reference/matcher.html"><strong aria-hidden="true">5.9.</strong> Matcher</a></li><li class="expanded "><a href="../reference/package_scanner.html"><strong aria-hidden="true">5.10.</strong> Package Scanner</a></li><li class="expanded "><a href="../reference/remote_matcher.html"><strong aria-hidden="true">5.11.</strong> Remote Scanner</a></li><li class="expanded "><a href="../reference/repository_scanner.html"><strong aria-hidden="true">5.12.</strong> Repository Scanner</a></li><li class="expanded "><a href="../reference/rpcscanner.html"><strong aria-hidden="true">5.13.</strong> RPC Scanner</a></li><li class="expanded "><a href="../reference/updater.html"><strong aria-hidden="true">5.14.</strong> Updater</a></li><li class="expanded "><a href="../reference/updatersetfactory.html"><strong aria-hidden="true">5.15.</strong> Updater Set Factory</a></li><li class="expanded "><a href="../reference/version_filter.html"><strong aria-hidden="true">5.16.</strong> Version Filter</a></li><li class="expanded "><a href="../reference/versioned_scanner.html"><strong aria-hidden="true">5.17.</strong> Versioned Scanner</a></li><li class="expanded "><a href="../reference/vulnerability_report.html"><strong aria-hidden="true">5.18.</strong> Vulnerability Report</a></li></ol></li><li class="expanded "><a href="../contributor.html"><strong aria-hidden="true">6.</strong> Contributors</a></li><li><ol class="section"><li class="expanded "><a href="../contributor/logging.html"><strong aria-hidden="true">6.1.</strong> Logging</a></li><li class="expanded "><a href="../contributor/local-dev.html"><strong aria-hidden="true">6.2.</strong> Local Development</a></li><li class="expanded "><a href="../contributor/cctool.html"><strong aria-hidden="true">6.3.</strong> cctool</a></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle"></div>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                
+                <div id="menu-bar" class="menu-bar">
+                    <div id="menu-bar-sticky-container">
+                        <div class="left-buttons">
+                            <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                                <i class="fa fa-bars"></i>
+                            </button>
+                            <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                                <i class="fa fa-paint-brush"></i>
+                            </button>
+                            <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                                <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                            </ul>
+                            
+                            <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                                <i class="fa fa-search"></i>
+                            </button>
+                            
+                        </div>
+
+                        <h1 class="menu-title">Claircore Documentation</h1>
+
+                        <div class="right-buttons">
+                            <a href="../print.html" title="Print this book" aria-label="Print this book">
+                                <i id="print-button" class="fa fa-print"></i>
+                            </a>
+                            
+                            <a href="https://github.com/quay/claircore" title="Git repository" aria-label="Git repository">
+                                <i id="git-repository-button" class="fa fa-github"></i>
+                            </a>
+                            
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" name="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1><a class="header" href="#libindex-store" id="libindex-store">LibIndex Store</a></h1>
+<p>The Store interface implements all necessary persistence methods for LibIndex to provide its functionality.</p>
+<pre><code class="language-go">package indexer
+
+// Store is an interface for dealing with objects libindex needs to persist.
+// Stores may be implemented per storage backend.
+type Store interface {
+	Setter
+	Querier
+	Indexer
+	// Close frees any resources associated with the Store.
+	Close(context.Context) error
+}
+
+// Setter interface provides the method set for required marking events, or registering
+// components, associated with an Index operation.
+type Setter interface {
+	// PersistManifest must store the presence of a manifest and it's layers into the system.
+	//
+	// Typically this will write into identity tables so later methods have a foreign key
+	// to reference and data integrity is applied.
+	PersistManifest(ctx context.Context, manifest claircore.Manifest) error
+	// SetLayerScanned marks the provided layer hash successfully scanned by the provided versioned scanner.
+	//
+	// After this method is returned a call to Querier.LayerScanned with the same arguments must return true.
+	SetLayerScanned(ctx context.Context, hash claircore.Digest, scnr VersionedScanner) error
+	// RegisterPackageScanners registers the provided scanners with the persistence layer.
+	RegisterScanners(ctx context.Context, scnrs VersionedScanners) error
+	// SetIndexReport persists the current state of the IndexReport.
+	//
+	// IndexReports maybe in intermediate states to provide feedback for clients. this method should be
+	// used to communicate scanning state updates. to signal the scan has completely successfully
+	// see SetIndexFinished.
+	SetIndexReport(context.Context, *claircore.IndexReport) error
+	// SetIndexFinished marks a scan successfully completed.
+	//
+	// After this method returns a call to Querier.ManifestScanned with the manifest hash represted in the provided IndexReport
+	// must return true.
+	//
+	// Also a call to Querier.IndexReport with the manifest hash represted in the provided IndexReport must return the IndexReport
+	// in finished state.
+	SetIndexFinished(ctx context.Context, sr *claircore.IndexReport, scnrs VersionedScanners) error
+}
+
+// Querier interface provides the method set to ascertain indexed artifacts and query whether a layer
+// or manifest has been scanned.
+type Querier interface {
+	// ManifestScanned returns whether the given manifest was scanned by the provided scanners.
+	ManifestScanned(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) (bool, error)
+	// LayerScanned returns whether the given layer was scanned by the provided scanner.
+	LayerScanned(ctx context.Context, hash claircore.Digest, scnr VersionedScanner) (bool, error)
+	// PackagesByLayer gets all the packages found in a layer limited by the provided scanners.
+	PackagesByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]*claircore.Package, error)
+	// DistributionsByLayer gets all the distributions found in a layer limited by the provided scanners.
+	DistributionsByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]*claircore.Distribution, error)
+	// RepositoriesByLayer gets all the repositories found in a layer limited by the provided scanners.
+	RepositoriesByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]*claircore.Repository, error)
+	// IndexReport attempts to retrieve a persisted IndexReport.
+	IndexReport(ctx context.Context, hash claircore.Digest) (*claircore.IndexReport, bool, error)
+	// AffectedManifests returns a list of manifest digests which the target vulnerability
+	// affects.
+	AffectedManifests(ctx context.Context, v claircore.Vulnerability) ([]claircore.Digest, error)
+}
+
+// Indexer interface provide the method set required for indexing layer and manifest contents into
+// a persistent store.
+type Indexer interface {
+	// IndexPackages indexes a package into the persistence layer.
+	IndexPackages(ctx context.Context, pkgs []*claircore.Package, layer *claircore.Layer, scnr VersionedScanner) error
+	// IndexDistributions indexes distributions into the persistence layer.
+	IndexDistributions(ctx context.Context, dists []*claircore.Distribution, layer *claircore.Layer, scnr VersionedScanner) error
+	// IndexRepositories indexes repositories into the persistence layer.
+	IndexRepositories(ctx context.Context, repos []*claircore.Repository, layer *claircore.Layer, scnr VersionedScanner) error
+	// IndexManifest should index the coalesced manifest's content given an IndexReport.
+	IndexManifest(ctx context.Context, ir *claircore.IndexReport) error
+}
+</code></pre>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                        
+                            <a rel="prev" href="../reference/index_report.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                        
+
+                        
+                            <a rel="next" href="../reference/libvuln_store.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+                        
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                
+                    <a href="../reference/index_report.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                
+
+                
+                    <a href="../reference/libvuln_store.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+                
+            </nav>
+
+        </div>
+
+        
+
+        
+
+        
+        
+        
+        <script type="text/javascript">
+            window.playpen_copyable = true;
+        </script>
+        
+
+        
+
+        
+        <script src="../elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../searcher.js" type="text/javascript" charset="utf-8"></script>
+        
+
+        <script src="../clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+        
+
+        
+
+    </body>
+</html>
