@@ -55,6 +55,14 @@ func updateVulnerabilites(ctx context.Context, pool *pgxpool.Pool, updater strin
 			$3,
 			(SELECT id FROM vuln WHERE hash_kind = $1 AND hash = $2))
 		ON CONFLICT DO NOTHING;`
+		cleanUp = `WITH keep AS (
+			SELECT id FROM update_operation WHERE
+				updater = $1
+			ORDER BY id USING >
+			LIMIT 10
+		)
+		DELETE FROM update_operation WHERE
+			updater = $1 AND id NOT IN (SELECT id FROM keep);`
 	)
 	log := zerolog.Ctx(ctx).With().
 		Str("component", "internal/vulnstore/postgres/updateVulnerabilities").
@@ -117,6 +125,11 @@ func updateVulnerabilites(ctx context.Context, pool *pgxpool.Pool, updater strin
 		return uuid.Nil, fmt.Errorf("failed to finish batch vulnerability insert: %w", err)
 	}
 
+	tag, err := tx.Exec(ctx, cleanUp, updater)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("failed to delete previous update_operations: %w", err)
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		return uuid.Nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
@@ -124,6 +137,7 @@ func updateVulnerabilites(ctx context.Context, pool *pgxpool.Pool, updater strin
 		Str("ref", ref.String()).
 		Int("skipped", skipCt).
 		Int("inserted", len(vulns)-skipCt).
+		Int64("ops_removed", tag.RowsAffected()).
 		Msg("update_operation committed")
 	return ref, nil
 }
