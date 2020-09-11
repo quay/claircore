@@ -90,8 +90,8 @@ podman-dev-down: etc/podman.yaml
 	podman pod stop -t 10 $$(awk '/^  name:/{print $$NF}' <$<)
 	podman pod rm $$(awk '/^  name:/{print $$NF}' <$<)
 
-GO_VERSION ?= 1.13.5
-GO_CHECKSUM ?= 512103d7ad296467814a6e3f635631bd35574cab3369a97a323c9a585ccaa569
+GO_VERSION ?= 1.15.2
+GO_CHECKSUM ?= b49fda1ca29a1946d6bb2a5a6982cf07ccd2aba849289508ee0f9918f6bb4552
 .PHONY: baseimage
 baseimage:
 	buildah bud -f etc/Dockerfile -t quay.io/claircore/golang:$(GO_VERSION) \
