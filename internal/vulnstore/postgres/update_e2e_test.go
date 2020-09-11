@@ -39,6 +39,11 @@ func TestE2E(t *testing.T) {
 			Insert:  100,
 			Updates: 2,
 		},
+		{
+			Name:    "10+20",
+			Insert:  10,
+			Updates: 20,
+		},
 	}
 	for _, tc := range cases {
 		c := &tc
@@ -87,7 +92,10 @@ func (e *e2e) failed(t *testing.T) {
 	}
 }
 
-const opStep = 10
+const (
+	opStep  = 10
+	opLimit = 10 // 10 is hard-coded into the SQL that manages the update_operations table.
+)
 
 func (e *e2e) vulns() [][]*claircore.Vulnerability {
 	sz := e.Insert + (opStep * e.Updates)
@@ -145,13 +153,17 @@ func (e *e2e) GetUpdateOperations(ctx context.Context) func(*testing.T) {
 		if err != nil {
 			t.Fatalf("failed to get UpdateOperations: %v", err)
 		}
+		nOps := opLimit
+		if e.Updates < nOps {
+			nOps = e.Updates
+		}
 		// confirm number of update operations
-		if want, got := e.Updates, len(out[e.updater]); want != got {
-			t.Fatalf("wrong number of update operations: want: %d, got: %d", want, got)
+		if got, want := len(out[e.updater]), nOps; got != want {
+			t.Fatalf("wrong number of update operations: got: %d, want: %d", got, want)
 		}
 		// confirm retrieved update operations match
 		// test generated values
-		for i := 0; i < e.Updates; i++ {
+		for i := 0; i < nOps; i++ {
 			ri := e.Updates - i - 1
 			want, got := e.updateOps[ri], out[e.updater][i]
 			if !cmp.Equal(want, got, updateOpCmp) {
@@ -166,6 +178,14 @@ var vulnCmp = cmp.Options{
 	cmpopts.IgnoreFields(claircore.Vulnerability{}, "ID", "Package.ID", "Dist.ID", "Repo.ID"),
 }
 
+// OrZero returns a or zero if a is negative.
+func orZero(a int) int {
+	if a < 0 {
+		return 0
+	}
+	return a
+}
+
 // Diff fetches Operation diffs from the database and compares them against
 // independently calculated diffs.
 func (e *e2e) Diff(ctx context.Context) func(t *testing.T) {
@@ -175,14 +195,18 @@ func (e *e2e) Diff(ctx context.Context) func(t *testing.T) {
 	return func(t *testing.T) {
 		defer e.failed(t)
 
-		vs := e.vulns()
-		for i := range vs {
+		absOff := orZero(e.Updates - opLimit)
+		t.Logf("offset %d into generated updateOps", absOff)
+		for n := range e.vulns()[absOff:] {
+			// This does a bunch of checks so that the first operation is
+			// compared appropriately.
+			i := n + absOff
 			prev := uuid.Nil
-			if i != 0 {
+			if n != 0 {
 				prev = e.updateOps[i-1].Ref
 			}
 			cur := e.updateOps[i].Ref
-			t.Logf("comparing %v and %v", prev, cur)
+			t.Logf("comparing %v (index %d) and %v (index %d)", prev, (i-1)-absOff, cur, i-absOff)
 
 			diff, err := e.s.GetUpdateDiff(ctx, prev, cur)
 			if err != nil {
@@ -190,13 +214,13 @@ func (e *e2e) Diff(ctx context.Context) func(t *testing.T) {
 			}
 
 			expectSz := opStep
-			if i == 0 {
+			if n == 0 {
 				expectSz = e.Insert
 			}
 			if l := len(diff.Added); l != expectSz {
 				t.Fatalf("got: len == %d, want len == %d", l, expectSz)
 			}
-			if i == 0 {
+			if n == 0 {
 				expectSz = 0
 			}
 			if l := len(diff.Removed); l != expectSz {
@@ -213,13 +237,16 @@ func (e *e2e) Diff(ctx context.Context) func(t *testing.T) {
 
 			// confirm removed and add vulnerabilities are the ones we expect
 			pair := e.calcDiff(i)
+			if n == 0 {
+				pair[0] = []*claircore.Vulnerability{}
+			}
 			// I can't figure out how to make a cmp.Option that does this.
 			added := make([]*claircore.Vulnerability, len(pair[1]))
 			for i := range diff.Added {
 				added[i] = &diff.Added[i]
 			}
-			if want, got := pair[1], added; !cmp.Equal(want, got, vulnCmp) {
-				t.Error(cmp.Diff(want, got, vulnCmp))
+			if want, got := pair[1], added; !cmp.Equal(got, want, vulnCmp) {
+				t.Error(cmp.Diff(got, want, vulnCmp))
 			}
 
 			removed := make([]*claircore.Vulnerability, len(pair[0]))
