@@ -27,7 +27,7 @@ services:
       start_period: 10s
 
   libindexhttp:
-    image: quay.io/claircore/golang:1.13.3
+    image: quay.io/claircore/golang:1.15.2
     container_name: libindexhttp
     ports:
       - "8080:8080"
@@ -43,7 +43,7 @@ services:
       [ "bash", "-c", "cd /src/claircore/cmd/libindexhttp; go run -mod vendor ." ]
 
   libvulnhttp:
-    image: quay.io/claircore/golang:1.13.3
+    image: quay.io/claircore/golang:1.15.2
     container_name: libvulnhttp
     ports:
       - "8081:8081"
