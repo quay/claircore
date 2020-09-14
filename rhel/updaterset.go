@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"path"
 	"strings"
 
 	"github.com/rs/zerolog"
@@ -140,7 +139,7 @@ func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
 	}
 
 	for _, e := range m {
-		name := strings.TrimSuffix(path.Base(e.Path), ".oval.xml.bz2")
+		name := strings.TrimSuffix(strings.Replace(e.Path, "/", "-", -1), ".oval.xml.bz2")
 		uri, err := f.url.Parse(e.Path)
 		if err != nil {
 			return s, err
