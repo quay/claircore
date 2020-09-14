@@ -167,7 +167,6 @@ func (f fingerprint) Set(h http.Header) {
 func (f *fingerprint) From(h http.Header) {
 	if tag := h.Get("etag"); tag != "" {
 		f.Etag = tag
-		return
 	}
 	f.Date = h.Get("last-modified")
 }
