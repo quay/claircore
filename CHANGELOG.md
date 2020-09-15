@@ -2,8 +2,15 @@
 ## [Unreleased]
 
 
+<a name="v0.1.7"></a>
+## [v0.1.7] - 2020-09-14
+### RHEL
+- [f4d10b5](https://github.com/quay/claircore/commit/f4d10b53bcb1361f5de446c42ae0f4d271f070c3): Use last-modified to cache data
+
 <a name="v0.1.6"></a>
 ## [v0.1.6] - 2020-09-11
+### Chore
+- [8c8cb3b](https://github.com/quay/claircore/commit/8c8cb3b6d51aa0a2cc4bcce2a7cc4d87a478a4f5): v0.1.6 changelog bump
 ### Cicd
 - [ff6af2a](https://github.com/quay/claircore/commit/ff6af2ad163bb09b4d30fd5c37548c6bb6999db3): new release and change log process
 - [40c7a28](https://github.com/quay/claircore/commit/40c7a28229e14245e814ef66bdcfa814ad22b4b1): new release and change log process
@@ -426,7 +433,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.1.6...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.1.7...HEAD
+[v0.1.7]: https://github.com/quay/claircore/compare/v0.1.6...v0.1.7
 [v0.1.6]: https://github.com/quay/claircore/compare/v0.1.5...v0.1.6
 [v0.1.5]: https://github.com/quay/claircore/compare/v0.1.4...v0.1.5
 [v0.1.4]: https://github.com/quay/claircore/compare/v0.1.3...v0.1.4
