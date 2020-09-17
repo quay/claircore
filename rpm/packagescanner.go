@@ -30,19 +30,7 @@ const (
 
 // DbNames is a set of files that make up an rpm database.
 var dbnames = map[string]struct{}{
-	"Basenames":    {},
-	"Conflictname": {},
-	"Dirnames":     {},
-	"Group":        {},
-	"Installtid":   {},
-	"Name":         {},
-	"Obsoletename": {},
-	"Packages":     {},
-	"Providename":  {},
-	"Requirename":  {},
-	"Sha1header":   {},
-	"Sigmd5":       {},
-	"Triggername":  {},
+	"Packages": {},
 }
 
 var (
