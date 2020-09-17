@@ -16,7 +16,6 @@ import (
 	"strings"
 
 	"github.com/rs/zerolog"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
@@ -25,7 +24,7 @@ import (
 const (
 	pkgName    = "rpm"
 	pkgKind    = "package"
-	pkgVersion = "v0.0.1"
+	pkgVersion = "v0.0.2"
 )
 
 // DbNames is a set of files that make up an rpm database.
@@ -176,7 +175,6 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	// Using --root and --dbpath, run rpm query on every suspected database
 	for _, db := range found {
 		log.Debug().Str("db", db).Msg("examining database")
-		eg, ctx := errgroup.WithContext(ctx)
 
 		cmd := exec.CommandContext(ctx, "rpm",
 			`--root`, root, `--dbpath`, db,
@@ -188,8 +186,12 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 		errbuf := bytes.Buffer{}
 		cmd.Stderr = &errbuf
 		log.Debug().Str("db", db).Strs("cmd", cmd.Args).Msg("rpm invocation")
-		eg.Go(cmd.Run)
-		eg.Go(func() error {
+		if err := cmd.Start(); err != nil {
+			r.Close()
+			return nil, err
+		}
+		// Use a closure to defer the Close call.
+		if err := func() error {
 			defer r.Close()
 			srcs := make(map[string]*claircore.Package)
 			s := bufio.NewScanner(r)
@@ -205,9 +207,7 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 			}
 
 			return s.Err()
-		})
-
-		if err := eg.Wait(); err != nil {
+		}(); err != nil {
 			if errbuf.Len() != 0 {
 				log.Warn().
 					Str("db", db).
@@ -216,6 +216,9 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 					Msg("error output")
 			}
 			return nil, fmt.Errorf("rpm: error reading rpm output: %w", err)
+		}
+		if err := cmd.Wait(); err != nil {
+			return nil, err
 		}
 	}
 
