@@ -38,7 +38,7 @@ services:
       LAYER_SCAN_CONCURRENCY: 10
       LOG_LEVEL: "debug"
     volumes:
-      - "./:/src/claircore/"
+      - "./:/src/claircore/:z"
     command:
       [ "bash", "-c", "cd /src/claircore/cmd/libindexhttp; go run -mod vendor ." ]
 
@@ -52,6 +52,6 @@ services:
       CONNECTION_STRING: "host=claircore-db port=5432 user=claircore dbname=claircore sslmode=disable"
       LOG_LEVEL: "debug"
     volumes:
-      - "./:/src/claircore/"
+      - "./:/src/claircore/:z"
     command:
       [ "bash", "-c", "cd /src/claircore/cmd/libvulnhttp; go run -mod vendor ." ]
