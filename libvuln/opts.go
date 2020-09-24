@@ -22,10 +22,10 @@ import (
 	"github.com/quay/claircore/oracle"
 	"github.com/quay/claircore/photon"
 	"github.com/quay/claircore/python"
+	registry "github.com/quay/claircore/registry/updater"
 	"github.com/quay/claircore/rhel"
 	"github.com/quay/claircore/suse"
 	"github.com/quay/claircore/ubuntu"
-	"github.com/quay/claircore/updater"
 )
 
 const (
@@ -155,7 +155,7 @@ func (o *Opts) updaterSetFunc(ctx context.Context, log zerolog.Logger) ([]driver
 		Str("component", "libvuln/updaterSets").
 		Logger()
 
-	defaults := updater.Registered()
+	defaults := registry.Registered()
 
 	if o.UpdaterSets != nil {
 		for name := range defaults {
@@ -170,7 +170,7 @@ func (o *Opts) updaterSetFunc(ctx context.Context, log zerolog.Logger) ([]driver
 			}
 		}
 	}
-	if err := updater.Configure(ctx, defaults, o.UpdaterConfigs, o.Client); err != nil {
+	if err := registry.Configure(ctx, defaults, o.UpdaterConfigs, o.Client); err != nil {
 		return nil, err
 	}
 

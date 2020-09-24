@@ -15,10 +15,10 @@ import (
 	"github.com/quay/claircore/oracle"
 	"github.com/quay/claircore/photon"
 	"github.com/quay/claircore/pyupio"
+	"github.com/quay/claircore/registry/updater"
 	"github.com/quay/claircore/rhel"
 	"github.com/quay/claircore/suse"
 	"github.com/quay/claircore/ubuntu"
-	"github.com/quay/claircore/updater"
 )
 
 var (

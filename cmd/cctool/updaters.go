@@ -13,8 +13,8 @@ import (
 
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/libvuln/driver"
-	"github.com/quay/claircore/updater"
-	_ "github.com/quay/claircore/updater/defaults"
+	registry "github.com/quay/claircore/registry/updater"
+	_ "github.com/quay/claircore/registry/updater/defaults"
 )
 
 func RunUpdaters(cmd context.Context, cfg *commonConfig, args []string) error {
@@ -63,7 +63,7 @@ func RunUpdaters(cmd context.Context, cfg *commonConfig, args []string) error {
 		return err
 	}
 
-	d := updater.Registered()
+	d := registry.Registered()
 	ufs := make([]driver.UpdaterSetFactory, 0, len(d))
 	for _, f := range d {
 		ufs = append(ufs, f)

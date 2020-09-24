@@ -13,7 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/quay/claircore/libvuln"
-	"github.com/quay/claircore/updater/defaults"
+	"github.com/quay/claircore/registry/updater/defaults"
 )
 
 // Config this struct is using the goconfig library for simple flag and env var
