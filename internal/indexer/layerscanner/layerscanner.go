@@ -104,14 +104,14 @@ func configAndFilter(ctx context.Context, log *zerolog.Logger, opts *indexer.Opt
 		return true
 	}
 
-	f := func(interface{}) error { return nil }
-	if cf, ok := cfgMap[n]; ok {
-		f = cf
+	f, haveCfg := cfgMap[n]
+	if !haveCfg {
+		f = func(interface{}) error { return nil }
 	}
 	cs, csOK := s.(indexer.ConfigurableScanner)
 	rs, rsOK := s.(indexer.RPCScanner)
 	switch {
-	case !csOK && !rsOK:
+	case haveCfg && !csOK && !rsOK:
 		log.Warn().
 			Str("scanner", n).
 			Msg("configuration present for an unconfigurable scanner, skipping")
