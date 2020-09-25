@@ -12,7 +12,6 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jackc/pgx/v4/stdlib"
 	"github.com/remind101/migrate"
-	"github.com/rs/zerolog"
 
 	"github.com/quay/claircore/alpine"
 	"github.com/quay/claircore/aws"
@@ -25,7 +24,6 @@ import (
 	"github.com/quay/claircore/rhel"
 	"github.com/quay/claircore/suse"
 	"github.com/quay/claircore/ubuntu"
-	"github.com/quay/claircore/updater"
 )
 
 const (
@@ -147,48 +145,6 @@ func (o *Opts) parse(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-// UpdaterSetFunc returns the configured UpdaterSetFactories.
-func (o *Opts) updaterSetFunc(ctx context.Context, log zerolog.Logger) ([]driver.UpdaterSetFactory, error) {
-	log = log.With().
-		Str("component", "libvuln/updaterSets").
-		Logger()
-
-	defaults := updater.Registered()
-
-	if o.UpdaterSets != nil {
-		for name := range defaults {
-			rm := true
-			for _, wanted := range o.UpdaterSets {
-				if name == wanted {
-					rm = false
-				}
-			}
-			if rm {
-				delete(defaults, name)
-			}
-		}
-	}
-	if err := updater.Configure(ctx, defaults, o.UpdaterConfigs, o.Client); err != nil {
-		return nil, err
-	}
-
-	fs := make([]driver.UpdaterSetFactory, 0, len(defaults))
-	for _, f := range defaults {
-		fs = append(fs, f)
-	}
-	if len(o.Updaters) != 0 {
-		// merge determined updaters with any out-of-tree updaters
-		us := driver.NewUpdaterSet()
-		for _, u := range o.Updaters {
-			if err := us.Add(u); err != nil {
-				log.Warn().Err(err).Msg("duplicate updater, skipping")
-			}
-		}
-		fs = append(fs, driver.StaticSet(us))
-	}
-	return fs, nil
 }
 
 // Pool creates and returns a configured pxgpool.Pool.
