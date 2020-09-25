@@ -2,7 +2,6 @@ package libvuln
 
 import (
 	"context"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -13,6 +12,7 @@ import (
 	"github.com/quay/claircore/internal/vulnstore"
 	"github.com/quay/claircore/internal/vulnstore/postgres"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/libvuln/updates"
 )
 
 // Libvuln exports methods for scanning an IndexReport and created
@@ -24,7 +24,6 @@ type Libvuln struct {
 	store    vulnstore.Store
 	pool     *pgxpool.Pool
 	matchers []driver.Matcher
-	*UpdateDriver
 }
 
 // New creates a new instance of the Libvuln library
@@ -35,10 +34,6 @@ func New(ctx context.Context, opts *Opts) (*Libvuln, error) {
 	ctx = log.WithContext(ctx)
 
 	err := opts.parse(ctx)
-	if err != nil {
-		return nil, err
-	}
-	setFuncs, err := opts.updaterSetFunc(ctx, log)
 	if err != nil {
 		return nil, err
 	}
@@ -59,18 +54,29 @@ func New(ctx context.Context, opts *Opts) (*Libvuln, error) {
 		pool:     pool,
 		matchers: opts.Matchers,
 	}
-	l.UpdateDriver, err = NewUpdater(pool, opts.Client, opts.UpdaterConfigs, opts.UpdateWorkers, opts.UpdaterFilter)
-	if err != nil {
-		return nil, err
-	}
 
-	// Run updaters synchronously, initially.
-	if err := l.RunUpdaters(ctx, setFuncs...); err != nil {
+	// create update manager
+	updateMgr, err := updates.NewManager(ctx,
+		l.store,
+		pool,
+		opts.Client,
+		updates.WithBatchSize(opts.UpdateWorkers),
+		updates.WithInterval(opts.UpdateInterval),
+		updates.WithEnabled(opts.UpdaterSets),
+		updates.WithConfigs(opts.UpdaterConfigs),
+		updates.WithOutOfTree(opts.Updaters),
+	)
+
+	// perform initial update
+	if err := updateMgr.Run(ctx); err != nil {
 		log.Error().Err(err).Msg("encountered error while updating")
 	}
+
+	// launch background updater
 	if !opts.DisableBackgroundUpdates {
-		go l.loopUpdaters(ctx, opts.UpdateInterval, setFuncs...)
+		go updateMgr.Start(ctx)
 	}
+
 	log.Info().Msg("libvuln initialized")
 	return l, nil
 }
@@ -112,26 +118,4 @@ func (l *Libvuln) LatestUpdateOperations(ctx context.Context) (map[string][]driv
 // return new results.
 func (l *Libvuln) LatestUpdateOperation(ctx context.Context) (uuid.UUID, error) {
 	return l.store.GetLatestUpdateRef(ctx)
-}
-
-// LoopUpdaters calls RunUpdaters in a loop.
-func (l *Libvuln) loopUpdaters(ctx context.Context, p time.Duration, fs ...driver.UpdaterSetFactory) {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "libvuln/Libvuln/loopUpdaters").
-		Logger()
-	ctx = log.WithContext(ctx)
-	t := time.NewTicker(p)
-	defer t.Stop()
-	done := ctx.Done()
-
-	for {
-		select {
-		case <-done:
-			return
-		case <-t.C:
-			if err := l.RunUpdaters(ctx, fs...); err != nil {
-				log.Error().Err(err).Msg("unable to run updaters")
-			}
-		}
-	}
 }
