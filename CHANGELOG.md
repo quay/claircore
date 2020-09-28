@@ -2,8 +2,17 @@
 ## [Unreleased]
 
 
+<a name="v0.1.9"></a>
+## [v0.1.9] - 2020-09-25
+### Layerscanner
+- [4a1b872](https://github.com/quay/claircore/commit/4a1b872eeb07b6a66675bfa5bb603eb3d563f8b9): prevent misleading log line
+### Vulnstore
+- [6295f37](https://github.com/quay/claircore/commit/6295f370f5aaca200966187585424da8db4983cf): limit diffs
+
 <a name="v0.1.8"></a>
-## [v0.1.8] - 2020-09-17
+## [v0.1.8] - 2020-09-23
+### Chore
+- [ce4f428](https://github.com/quay/claircore/commit/ce4f428faa690ed137acf5fadf33b8bafb5c4d65): v0.1.8 changelog bump
 ### Cicd
 - [1566fc5](https://github.com/quay/claircore/commit/1566fc58d4d2659514240c382a1c6f7dc38da194): fix commit check regexp
 ### Makefile
@@ -445,7 +454,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.1.8...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.1.9...HEAD
+[v0.1.9]: https://github.com/quay/claircore/compare/v0.1.8...v0.1.9
 [v0.1.8]: https://github.com/quay/claircore/compare/v0.1.7...v0.1.8
 [v0.1.7]: https://github.com/quay/claircore/compare/v0.1.6...v0.1.7
 [v0.1.6]: https://github.com/quay/claircore/compare/v0.1.5...v0.1.6
