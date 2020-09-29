@@ -33,19 +33,19 @@ type errmap struct {
 	m map[string]error
 }
 
-func (e errmap) add(name string, err error) {
+func (e *errmap) add(name string, err error) {
 	e.Lock()
 	defer e.Unlock()
 	e.m[name] = err
 }
 
-func (e errmap) len() int {
+func (e *errmap) len() int {
 	e.Lock()
 	defer e.Unlock()
 	return len(e.m)
 }
 
-func (e errmap) error() error {
+func (e *errmap) error() error {
 	e.Lock()
 	defer e.Unlock()
 	var b strings.Builder
