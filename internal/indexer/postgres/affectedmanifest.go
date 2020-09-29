@@ -70,7 +70,8 @@ func affectedManifests(ctx context.Context, pool *pgxpool.Pool, v claircore.Vuln
 	case err == nil:
 		// break out
 	case errors.Is(err, ErrNotIndexed):
-		log.Warn().Str("vulnID", v.ID).Msg("vuln is comprised of repo or distro not indexed by any scanner yet")
+		// This is a common case: the system knows of a vulnerability but
+		// doesn't know of any manifests it could apply to.
 		return nil, nil
 	default:
 		return nil, err
@@ -87,7 +88,7 @@ func affectedManifests(ctx context.Context, pool *pgxpool.Pool, v claircore.Vuln
 		if errors.Is(err, pgx.ErrNoRows) {
 			return []claircore.Digest{}, nil
 		}
-		return nil, fmt.Errorf("failed to query packages associated with vulnerablility %+v: %v", v, err)
+		return nil, fmt.Errorf("failed to query packages associated with vulnerability %+v: %v", v, err)
 	}
 	for rows.Next() {
 		var pkg claircore.Package
@@ -132,7 +133,7 @@ func affectedManifests(ctx context.Context, pool *pgxpool.Pool, v claircore.Vuln
 	// the vulnerable indexrecords and create a set
 	// containing each unique manifest
 	//
-	// since this loop opens a db conn each interation the returned rows
+	// since this loop opens a db conn each iteration the returned rows
 	// handle must be closed manually and not deferred else a buildup of db conns
 	// may occur until the method exits
 	set := map[string]struct{}{}
