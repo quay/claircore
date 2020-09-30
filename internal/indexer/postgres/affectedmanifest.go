@@ -32,7 +32,7 @@ var (
 func affectedManifests(ctx context.Context, pool *pgxpool.Pool, v claircore.Vulnerability) ([]claircore.Digest, error) {
 	const (
 		selectPackages = `
-		SELECT id, name, version, kind
+		SELECT id, name, version, kind, norm_kind, norm_version, module, arch
 		FROM package
 		WHERE name = $1;
 		`
@@ -93,17 +93,29 @@ func affectedManifests(ctx context.Context, pool *pgxpool.Pool, v claircore.Vuln
 	for rows.Next() {
 		var pkg claircore.Package
 		var id int64
+		var nKind *string
+		var nVer pgtype.Int4Array
 		err := rows.Scan(
 			&id,
 			&pkg.Name,
 			&pkg.Version,
 			&pkg.Kind,
+			&nKind,
+			&nVer,
+			&pkg.Module,
+			&pkg.Arch,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan package: %v", err)
 		}
 		idStr := strconv.FormatInt(id, 10)
 		pkg.ID = idStr
+		if nKind != nil {
+			pkg.NormalizedVersion.Kind = *nKind
+			for i, n := range nVer.Elements {
+				pkg.NormalizedVersion.V[i] = n.Int
+			}
+		}
 		pkgsToFilter = append(pkgsToFilter, pkg)
 	}
 	log.Debug().Int("count", len(pkgsToFilter)).Msg("packages to filter")
