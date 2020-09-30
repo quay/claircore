@@ -44,7 +44,8 @@ func getUpdateDiff(ctx context.Context, pool *pgxpool.Pool, prev, cur uuid.UUID)
 		arch_operation,
 		repo_name,
 		repo_key,
-		repo_uri
+		repo_uri,
+		fixed_in_version
 	FROM vuln
 	WHERE
 		vuln.id IN (
