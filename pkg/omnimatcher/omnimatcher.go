@@ -46,6 +46,10 @@ func New(m []driver.Matcher) OmniMatcher {
 // Vulnerable will call each Matcher's Vulnerable method until one returns true.
 func (om OmniMatcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
 	for _, m := range om {
+		applicable := m.Filter(record)
+		if !applicable {
+			continue
+		}
 		match, err := m.Vulnerable(ctx, record, vuln)
 		if err != nil {
 			return false, err
