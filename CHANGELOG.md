@@ -2,8 +2,22 @@
 ## [Unreleased]
 
 
+<a name="v0.1.10"></a>
+## [v0.1.10] - 2020-09-30
+### Affected Manifests
+- [f8f0ff2](https://github.com/quay/claircore/commit/f8f0ff249f69fa812a58dc7c759ebcc04ae2a483): Use mather's Filter() in omnimatcher
+- [aebd3a8](https://github.com/quay/claircore/commit/aebd3a8f5d4479409b283ffb22f8aaad63172e61): Add missing properties into affected manifest query
+### Cicd
+- [d118d98](https://github.com/quay/claircore/commit/d118d987a5a8c3219d2dc1f87411197d99386c04): force no flags for regexp commit check
+### Postgres
+- [2df1697](https://github.com/quay/claircore/commit/2df1697d6126155e731055d164badeb783fc17b0): remove warning in common case
+### Updater
+- [c6b1bc9](https://github.com/quay/claircore/commit/c6b1bc9c5fd6deef5541979e3af1c5cf3c2e3961): use pointer receiver for errmap methods
+
 <a name="v0.1.9"></a>
-## [v0.1.9] - 2020-09-25
+## [v0.1.9] - 2020-09-28
+### Chore
+- [1ecb4be](https://github.com/quay/claircore/commit/1ecb4be8dbcc67c902d3373981d33c3122b1baab): v0.1.9 changelog bump
 ### Layerscanner
 - [4a1b872](https://github.com/quay/claircore/commit/4a1b872eeb07b6a66675bfa5bb603eb3d563f8b9): prevent misleading log line
 ### Vulnstore
@@ -454,7 +468,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.1.9...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.1.10...HEAD
+[v0.1.10]: https://github.com/quay/claircore/compare/v0.1.9...v0.1.10
 [v0.1.9]: https://github.com/quay/claircore/compare/v0.1.8...v0.1.9
 [v0.1.8]: https://github.com/quay/claircore/compare/v0.1.7...v0.1.8
 [v0.1.7]: https://github.com/quay/claircore/compare/v0.1.6...v0.1.7
