@@ -36,9 +36,12 @@ func DpkgDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulns
 		// unpack criterions into vulnerabilities
 		for _, criterion := range cris {
 			// lookup test
-			_, index, err := root.Tests.Lookup(criterion.TestRef)
+			testKind, index, err := root.Tests.Lookup(criterion.TestRef)
 			if err != nil {
 				log.Debug().Str("test_ref", criterion.TestRef).Msg("test ref lookup failure. moving to next criterion")
+				continue
+			}
+			if testKind != "dpkginfo_test" {
 				continue
 			}
 			test := root.Tests.DpkgInfoTests[index]
@@ -57,14 +60,20 @@ func DpkgDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulns
 			for i := 0; i < len(test.ObjectRefs); i++ {
 				objRef := test.ObjectRefs[i].ObjectRef
 				stateRef := test.StateRefs[i].StateRef
-				_, objIndex, err := root.Objects.Lookup(objRef)
+				objKind, objIndex, err := root.Objects.Lookup(objRef)
 				if err != nil {
 					log.Error().Err(err).Str("object_ref", objRef).Msg("failed object lookup. moving to next object,state pair")
 					continue
 				}
-				_, stateIndex, err := root.States.Lookup(stateRef)
+				if objKind != "dpkginfo_object" {
+					continue
+				}
+				stateKind, stateIndex, err := root.States.Lookup(stateRef)
 				if err != nil {
 					log.Debug().Str("state_ref", stateRef).Msg("failed state lookup. moving to next object,state pair")
+					continue
+				}
+				if stateKind != "dpkginfo_state" {
 					continue
 				}
 				object := root.Objects.DpkgInfoObjects[objIndex]

@@ -32,8 +32,8 @@ func TestParse(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Logf("found %d vulnerabilities", len(vs))
-	// 16 packages, 2 cpes = 32 vulnerabilities
-	if got, want := len(vs), 32; got != want {
+	// 15 packages, 2 cpes = 30 vulnerabilities
+	if got, want := len(vs), 30; got != want {
 		t.Fatalf("got: %d vulnerabilities, want: %d vulnerabilities", got, want)
 	}
 	count := make(map[string]int)
@@ -45,8 +45,8 @@ func TestParse(t *testing.T) {
 		base      = "cpe:/a:redhat:enterprise_linux:8"
 		appstream = "cpe:/a:redhat:enterprise_linux:8::appstream"
 	)
-	if count[base] != 16 || count[appstream] != 16 {
-		t.Fatalf("got: %v vulnerabilities with, want 16 of each", count)
+	if count[base] != 15 || count[appstream] != 15 {
+		t.Fatalf("got: %v vulnerabilities with, want 15 of each", count)
 	}
 }
 
