@@ -110,34 +110,33 @@ func (updater *LocalUpdaterJob) Start(ctx context.Context) error {
 func (updater *LocalUpdaterJob) do(ctx context.Context) error {
 	log := zerolog.Ctx(ctx).With().
 		Str("component", "rhel/repo2cpe/updater/LocalUpdaterJob.do").
+		Str("url", updater.URL).
 		Logger()
+	log.Debug().Msg("attempting fetch of repo2cpe mapping file")
 
-	log.Debug().Str("url", updater.URL).Msg("attempting fetch of repo2cpe mapping file")
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, updater.URL, nil)
 	if err != nil {
-
+		return err
 	}
-
 	if updater.lastModified != "" {
 		req.Header.Set("if-modified-since", updater.lastModified)
 	}
 
 	resp, err := updater.Client.Do(req)
 	if err != nil {
+		return err
 	}
-	if resp.Body != nil {
-		defer resp.Body.Close()
-	}
-
-	if resp.StatusCode == http.StatusNotModified {
-		log.Debug().Str("url", updater.URL).Str("since", updater.lastModified).Msg("response not modified. no update necessary")
+	defer resp.Body.Close()
+	switch resp.StatusCode {
+	case http.StatusOK:
+	case http.StatusNotModified:
+		log.Debug().
+			Str("since", updater.lastModified).
+			Msg("response not modified. no update necessary")
 		return nil
+	default:
+		return fmt.Errorf("received status code %q querying mapping url", resp.StatusCode)
 	}
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("received status code %d quering mapping url", resp.StatusCode)
-	}
-	updater.lastModified = resp.Header.Get("last-modified")
 
 	var mapping *MappingFile
 	err = json.NewDecoder(resp.Body).Decode(&mapping)
@@ -145,6 +144,7 @@ func (updater *LocalUpdaterJob) do(ctx context.Context) error {
 		return fmt.Errorf("failed to decode mapping file: %v", err)
 	}
 
+	updater.lastModified = resp.Header.Get("last-modified")
 	// atomic store of mapping file
 	updater.mapping.Store(mapping)
 	log.Debug().Msg("atomic update of local mapping file complete")
