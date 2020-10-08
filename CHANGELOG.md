@@ -2,11 +2,22 @@
 ## [Unreleased]
 
 
+<a name="v0.1.11"></a>
+## [v0.1.11] - 2020-10-08
+### Cicd
+- [9b7d461](https://github.com/quay/claircore/commit/9b7d46143fd75e630c800254a116a4894aabc81b): copy some changes from clair's CI workflows
+### Oval
+- [f33a45d](https://github.com/quay/claircore/commit/f33a45df91d63c10877d1e6fde922166ad25b8e9): check lookup type ([#244](https://github.com/quay/claircore/issues/244))
+ -  [#244](https://github.com/quay/claircore/issues/244)### Repo2cpe
+- [eec2473](https://github.com/quay/claircore/commit/eec247383c5fe5c05cc9947a4f603b26b03de32e): add errorchecking
+
 <a name="v0.1.10"></a>
-## [v0.1.10] - 2020-09-30
+## [v0.1.10] - 2020-10-01
 ### Affected Manifests
 - [f8f0ff2](https://github.com/quay/claircore/commit/f8f0ff249f69fa812a58dc7c759ebcc04ae2a483): Use mather's Filter() in omnimatcher
 - [aebd3a8](https://github.com/quay/claircore/commit/aebd3a8f5d4479409b283ffb22f8aaad63172e61): Add missing properties into affected manifest query
+### Chore
+- [9ba63f8](https://github.com/quay/claircore/commit/9ba63f8df6aab352e841ed819da53c371e4b0bcc): v0.1.10 changelog bump
 ### Cicd
 - [d118d98](https://github.com/quay/claircore/commit/d118d987a5a8c3219d2dc1f87411197d99386c04): force no flags for regexp commit check
 ### Postgres
@@ -468,7 +479,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.1.10...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.1.11...HEAD
+[v0.1.11]: https://github.com/quay/claircore/compare/v0.1.10...v0.1.11
 [v0.1.10]: https://github.com/quay/claircore/compare/v0.1.9...v0.1.10
 [v0.1.9]: https://github.com/quay/claircore/compare/v0.1.8...v0.1.9
 [v0.1.8]: https://github.com/quay/claircore/compare/v0.1.7...v0.1.8
