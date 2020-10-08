@@ -18,44 +18,31 @@ jobs:
         run: |
           tag=`basename ${{ github.ref }}`
           cat <<.
-          ::set-env name=VERSION::${tag}
+          ::set-env name=TAG::${tag}
           .
       - name: Checkout
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
       - name: ChangeLog
-        shell: bash
         run: |
           curl -o git-chglog -L https://github.com/git-chglog/git-chglog/releases/download/0.9.1/git-chglog_linux_amd64
           chmod u+x git-chglog
-          tag=`basename ${{ github.ref }}`
-          echo "creating change log for tag: $tag"
-          chglog="$(./git-chglog ${tag})"
-          chglog="${chglog//'%'/'%25'}"
-          chglog="${chglog//$'\n'/'%0A'}"
-          chglog="${chglog//$'\r'/'%0D'}"
-          cat <<.
-          ::set-env name=CHANGELOG::${chglog}
-          .
-      - name: ChangeLogSanityCheck
-        run: |
-          cat <<.
-          ${{ env.CHANGELOG }}
-          .
+          echo "creating change log for tag: $TAG"
+          ./git-chglog "${TAG}" > "${{github.workspace}}/changelog"
       - name: Create Release
         uses: actions/create-release@latest
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
-          release_name: ${{ env.VERSION}} Release
-          body: |
-            ${{ env.CHANGELOG }}
-          prerelease: ${{ contains(env.VERSION, 'alpha') || contains(env.VERSION, 'beta') || contains(env.VERSION, 'rc') }}
+          release_name: ${{env.TAG}} Release
+          body_path: ${{github.workspace}}/changelog
+          prerelease: ${{ contains(env.TAG, 'alpha') || contains(env.TAG, 'beta') || contains(env.TAG, 'rc') }}
 
   deploy-documentation:
     runs-on: ubuntu-latest
+    needs: [release]
     steps:
       - name: Checkout
         uses: actions/checkout@v2

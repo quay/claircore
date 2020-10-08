@@ -12,9 +12,13 @@ jobs:
         uses: gsactions/commit-message-checker@v1
         with:
           pattern: |
-            ^(.*):\s*(.*)\n?
+            ^(.*):\s*(.*)\n.*$
           error: 'Commit must begin with <scope>: <subject>'
-          flags: ''
+          flags: 'gm'
+          excludeTitle: true
+          excludeDescription: true
+          checkAllCommitMessages: true
+          accessToken: ${{ secrets.GITHUB_TOKEN }}
 
   tidy:
     name: Tidy
