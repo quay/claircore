@@ -2,8 +2,15 @@
 ## [Unreleased]
 
 
+<a name="v0.1.13"></a>
+## [v0.1.13] - 2020-10-19
+### Pyupio
+- [6569e25](https://github.com/quay/claircore/commit/6569e25ab26d551c4a2f4c8ddc2e3f57e6a4f9cf): handle database schema change
+
 <a name="v0.1.12"></a>
 ## [v0.1.12] - 2020-10-19
+### Chore
+- [fc45b99](https://github.com/quay/claircore/commit/fc45b99bae52292efe0cdd8416934eb237109d5e): v0.1.12 changelog bump
 ### Updaters
 - [1fd140d](https://github.com/quay/claircore/commit/1fd140de619ae3c026f2504d4ad0b017142910f4): do not kill loop on error
 
@@ -486,7 +493,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.1.12...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.1.13...HEAD
+[v0.1.13]: https://github.com/quay/claircore/compare/v0.1.12...v0.1.13
 [v0.1.12]: https://github.com/quay/claircore/compare/v0.1.11...v0.1.12
 [v0.1.11]: https://github.com/quay/claircore/compare/v0.1.10...v0.1.11
 [v0.1.10]: https://github.com/quay/claircore/compare/v0.1.9...v0.1.10
