@@ -2,8 +2,15 @@
 ## [Unreleased]
 
 
+<a name="v0.1.12"></a>
+## [v0.1.12] - 2020-10-19
+### Updaters
+- [1fd140d](https://github.com/quay/claircore/commit/1fd140de619ae3c026f2504d4ad0b017142910f4): do not kill loop on error
+
 <a name="v0.1.11"></a>
 ## [v0.1.11] - 2020-10-08
+### Chore
+- [a8dd1cd](https://github.com/quay/claircore/commit/a8dd1cdcbbcda141ba4b451360fc9ce99229ce8c): v0.1.11 changelog bump
 ### Cicd
 - [9b7d461](https://github.com/quay/claircore/commit/9b7d46143fd75e630c800254a116a4894aabc81b): copy some changes from clair's CI workflows
 ### Oval
@@ -479,7 +486,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.1.11...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.1.12...HEAD
+[v0.1.12]: https://github.com/quay/claircore/compare/v0.1.11...v0.1.12
 [v0.1.11]: https://github.com/quay/claircore/compare/v0.1.10...v0.1.11
 [v0.1.10]: https://github.com/quay/claircore/compare/v0.1.9...v0.1.10
 [v0.1.9]: https://github.com/quay/claircore/compare/v0.1.8...v0.1.9
