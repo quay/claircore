@@ -232,7 +232,7 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 	return ret, nil
 }
 
-type db map[string][]entry
+type db map[string]json.RawMessage
 
 type entry struct {
 	Advisory string   `json:"advisory"`
@@ -260,7 +260,14 @@ func (db db) Vulnerabilites(ctx context.Context, repo *claircore.Repository, upd
 
 	var mungeCt int
 	var ret []*claircore.Vulnerability
-	for k, es := range db {
+	for k, m := range db {
+		if k == "$meta" {
+			continue
+		}
+		var es []entry
+		if err := json.Unmarshal(m, &es); err != nil {
+			return nil, err
+		}
 		for _, e := range es {
 		Vuln:
 			for _, spec := range e.Specs {
