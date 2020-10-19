@@ -131,7 +131,6 @@ func (l *Libvuln) loopUpdaters(ctx context.Context, p time.Duration, fs ...drive
 		case <-t.C:
 			if err := l.RunUpdaters(ctx, fs...); err != nil {
 				log.Error().Err(err).Msg("unable to run updaters")
-				return
 			}
 		}
 	}
