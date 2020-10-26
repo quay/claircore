@@ -125,7 +125,15 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	// Need a big closure in this defer because of permissions being preserved.
 	defer func() {
 		err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-			// If a directory isn't o+w, fix it.
+			// If err != nil, then info will be nil.
+			if err != nil {
+				log.Warn().
+					Str("path", path).
+					Err(err).
+					Msg("error walking files")
+				return nil
+			}
+			// If a directory isn't u+w, fix it.
 			if m := info.Mode(); info.IsDir() && m&0200 == 0 {
 				return os.Chmod(path, m|0200)
 			}
