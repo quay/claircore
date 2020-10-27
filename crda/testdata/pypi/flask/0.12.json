@@ -1,0 +1,49 @@
+{
+    "recommended_versions": "1.1.2",
+    "registration_link": "https://app.snyk.io/login",
+    "component_analyses": {
+        "vulnerability": [
+            {
+                "vendor_cve_ids": "SNYK-PYTHON-FLASK-42185",
+                "cvss": "7.5",
+                "is_private": false,
+                "cwes": [
+                    "CWE-20"
+                ],
+                "cvss_v3": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+                "severity": "high",
+                "title": "Improper Input Validation",
+                "url": "https://snyk.io/vuln/SNYK-PYTHON-FLASK-42185",
+                "cve_ids": [
+                    "CVE-2018-1000656"
+                ],
+                "fixed_in": [
+                    "0.12.3"
+                ]
+            },
+            {
+                "vendor_cve_ids": "SNYK-PYTHON-FLASK-42185-xx",
+                "cvss": "7.5",
+                "is_private": false,
+                "cwes": [
+                    "CWE-20"
+                ],
+                "cvss_v3": "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+                "severity": "high",
+                "title": "Improper Input Validation",
+                "url": "https://snyk.io/vuln/SNYK-PYTHON-FLASK-42185",
+                "cve_ids": [
+                    "CVE-2018-1000656"
+                ],
+                "fixed_in": [
+                    "0.12.3",
+                    "0.12.4"
+                ]
+            }
+        ]
+    },
+    "message": "flask - 0.12 has 1 known security vulnerability having high severity. Recommendation: use version 1.1.2.",
+    "severity": "high",
+    "known_security_vulnerability_count": 1,
+    "security_advisory_count": 0
+}

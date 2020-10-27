@@ -1,0 +1,30 @@
+{
+    "recommended_versions": "5.3.1",
+    "registration_link": "https://app.snyk.io/login",
+    "component_analyses": {
+        "vulnerability": [
+            {
+                "vendor_cve_ids": "SNYK-PYTHON-PYYAML-559098",
+                "cvss": "9.8",
+                "is_private": false,
+                "cwes": [
+                    "CWE-20"
+                ],
+                "cvss_v3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+                "severity": "critical",
+                "title": "Arbitrary Code Execution",
+                "url": "https://snyk.io/vuln/SNYK-PYTHON-PYYAML-559098",
+                "cve_ids": [
+                    "CVE-2020-1747"
+                ],
+                "fixed_in": [
+                    "5.3.1"
+                ]
+            }
+        ]
+    },
+    "message": "pyyaml - 5.3 has 1 known security vulnerability having critical severity. Recommendation: use version 5.3.1.",
+    "severity": "critical",
+    "known_security_vulnerability_count": 1,
+    "security_advisory_count": 0
+}
