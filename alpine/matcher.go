@@ -3,8 +3,7 @@ package alpine
 import (
 	"context"
 
-	version "github.com/knqyf263/go-deb-version"
-
+	version "github.com/knqyf263/go-apk-version"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 )
@@ -52,10 +51,6 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 	}
 
 	if vuln.FixedInVersion == "" {
-		return true, nil
-	}
-
-	if v2.String() == "0" {
 		return true, nil
 	}
 
