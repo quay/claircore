@@ -15,7 +15,7 @@ type Details struct {
 
 // Package wraps the Details
 type Package struct {
-	Pkg Details `yaml:pkg`
+	Pkg Details `yaml:"pkg"`
 }
 
 // SecurityDB is the yaml security database structure
