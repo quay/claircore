@@ -7,8 +7,10 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 )
 
+// TODO The Updater could be changed to use the json formatted database, which
+// is smaller and more explicitly typed.
 const (
-	dbURL = "https://raw.githubusercontent.com/alpinelinux/alpine-secdb/master/%s/%s.yaml"
+	dbURL = "https://secdb.alpinelinux.org/%s/%s.yaml"
 )
 
 // DBUrl will return a fqdn'd url for a given release,repo pair
@@ -32,6 +34,14 @@ type Option func(*Updater) error
 func WithURL(url string) Option {
 	return func(u *Updater) error {
 		u.url = url
+		return nil
+	}
+}
+
+// WithClient allows changing the client used for fetching databases.
+func WithClient(c *http.Client) Option {
+	return func(u *Updater) error {
+		u.client = c
 		return nil
 	}
 }
