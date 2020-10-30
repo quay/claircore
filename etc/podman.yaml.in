@@ -69,7 +69,7 @@ spec:
         - mountPath: /src/claircore:z
           name: reporoot
       workingDir: /src/claircore/cmd/libindexhttp
-    - command: ['postgres']
+    - name: claircore-db
       env:
         - name: POSTGRES_INITDB_ARGS
           value: --no-sync
@@ -82,7 +82,6 @@ spec:
         - name: POSTGRES_DB
           value: claircore
       image: docker.io/library/postgres:11
-      name: claircore-db
       restartPolicy: OnFailure
       ports:
         - containerPort: 5434
