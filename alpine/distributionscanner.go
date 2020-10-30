@@ -24,8 +24,8 @@ const (
 )
 
 type alpineRegex struct {
-	release Release
-	regexp  *regexp.Regexp
+	dist   *claircore.Distribution
+	regexp *regexp.Regexp
 }
 
 // the following regexps will match the PrettyName in the os-release file
@@ -34,36 +34,44 @@ type alpineRegex struct {
 // ex: "Welcome to Alpine Linux 3.3"
 var alpineRegexes = []alpineRegex{
 	{
-		release: V3_3,
-		regexp:  regexp.MustCompile(`Alpine Linux (v)?3.3`),
+		dist:   alpine3_12Dist,
+		regexp: regexp.MustCompile(`Alpine Linux v?3\.12`),
 	},
 	{
-		release: V3_4,
-		regexp:  regexp.MustCompile(`Alpine Linux (v)?3.4`),
+		dist:   alpine3_11Dist,
+		regexp: regexp.MustCompile(`Alpine Linux v?3\.11`),
 	},
 	{
-		release: V3_5,
-		regexp:  regexp.MustCompile(`Alpine Linux (v)?3.5`),
+		dist:   alpine3_10Dist,
+		regexp: regexp.MustCompile(`Alpine Linux v?3\.10`),
 	},
 	{
-		release: V3_6,
-		regexp:  regexp.MustCompile(`Alpine Linux (v)?3.6`),
+		dist:   alpine3_9Dist,
+		regexp: regexp.MustCompile(`Alpine Linux v?3\.9`),
 	},
 	{
-		release: V3_7,
-		regexp:  regexp.MustCompile(`Alpine Linux (v)?3.7`),
+		dist:   alpine3_8Dist,
+		regexp: regexp.MustCompile(`Alpine Linux v?3\.8`),
 	},
 	{
-		release: V3_8,
-		regexp:  regexp.MustCompile(`Alpine Linux (v)?3.8`),
+		dist:   alpine3_7Dist,
+		regexp: regexp.MustCompile(`Alpine Linux v?3\.7`),
 	},
 	{
-		release: V3_9,
-		regexp:  regexp.MustCompile(`Alpine Linux (v)?3.9`),
+		dist:   alpine3_6Dist,
+		regexp: regexp.MustCompile(`Alpine Linux v?3\.6`),
 	},
 	{
-		release: V3_10,
-		regexp:  regexp.MustCompile(`Alpine Linux (v)?3.10`),
+		dist:   alpine3_5Dist,
+		regexp: regexp.MustCompile(`Alpine Linux v?3\.5`),
+	},
+	{
+		dist:   alpine3_4Dist,
+		regexp: regexp.MustCompile(`Alpine Linux v?3\.4`),
+	},
+	{
+		dist:   alpine3_3Dist,
+		regexp: regexp.MustCompile(`Alpine Linux v?3\.3`),
 	},
 }
 
@@ -105,8 +113,15 @@ func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]
 		log.Debug().Msg("didn't find an os-release or issue file")
 		return nil, nil
 	}
-	for _, buff := range files {
-		dist := ds.parse(buff)
+	// Always check the os-release file first.
+	if b, ok := files[osReleasePath]; ok {
+		dist := ds.parse(b)
+		if dist != nil {
+			return []*claircore.Distribution{dist}, nil
+		}
+	}
+	if b, ok := files[issuePath]; ok {
+		dist := ds.parse(b)
 		if dist != nil {
 			return []*claircore.Distribution{dist}, nil
 		}
@@ -121,7 +136,7 @@ func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]
 func (ds *DistributionScanner) parse(buff *bytes.Buffer) *claircore.Distribution {
 	for _, ur := range alpineRegexes {
 		if ur.regexp.Match(buff.Bytes()) {
-			return releaseToDist(ur.release)
+			return ur.dist
 		}
 	}
 	return nil

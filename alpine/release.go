@@ -1,6 +1,10 @@
 package alpine
 
-import "github.com/quay/claircore"
+import (
+	"fmt"
+
+	"github.com/quay/claircore"
+)
 
 // Alpine linux has patch releases but their security database
 // aggregates security information by major release. We choose
@@ -10,7 +14,10 @@ import "github.com/quay/claircore"
 // Release is a particular release of the Alpine linux distribution
 type Release string
 
+// These are known releases.
 const (
+	V3_12 Release = "v3.12"
+	V3_11 Release = "v3.11"
 	V3_10 Release = "v3.10"
 	V3_9  Release = "v3.9"
 	V3_8  Release = "v3.8"
@@ -21,81 +28,33 @@ const (
 	V3_3  Release = "v3.3"
 )
 
-// ReleaseToPrettyName maps a Release to the PrettyName found in alpine's os-release file.
-//
-// Official Alpine images consistantly have a Pretty_Name field in their os-release files.
-var ReleaseToPrettyName = map[Release]string{
-	V3_10: "Alpine Linux v3.10",
-	V3_9:  "Alpine Linux v3.9",
-	V3_8:  "Alpine Linux v3.8",
-	V3_7:  "Alpine Linux v3.7",
-	V3_6:  "Alpine Linux v3.6",
-	V3_5:  "Alpine Linux v3.5",
-	V3_4:  "Alpine Linux v3.4",
-	V3_3:  "Alpine Linux v3.3",
-}
-
 // Common os-release fields applicable for *claircore.Distribution usage.
 const (
 	Name = "Alpine Linux"
 	ID   = "alpine"
 )
 
-var alpine3_3Dist = &claircore.Distribution{
-	Name:       "Alpine Linux",
-	DID:        "alpine",
-	VersionID:  "3.3",
-	PrettyName: "Alpine Linux v3.3",
+func mkdist(maj, min int) *claircore.Distribution {
+	return &claircore.Distribution{
+		Name:       Name,
+		DID:        ID,
+		VersionID:  fmt.Sprintf("%d.%d", maj, min),
+		PrettyName: fmt.Sprintf("Alpine Linux v%d.%d", maj, min),
+	}
 }
 
-var alpine3_4Dist = &claircore.Distribution{
-	Name:       "Alpine Linux",
-	DID:        "alpine",
-	VersionID:  "3.4",
-	PrettyName: "Alpine Linux v3.4",
-}
-
-var alpine3_5Dist = &claircore.Distribution{
-	Name:       "Alpine Linux",
-	DID:        "alpine",
-	VersionID:  "3.5",
-	PrettyName: "Alpine Linux v3.5",
-}
-
-var alpine3_6Dist = &claircore.Distribution{
-	Name:       "Alpine Linux",
-	DID:        "alpine",
-	VersionID:  "3.6",
-	PrettyName: "Alpine Linux v3.6",
-}
-
-var alpine3_7Dist = &claircore.Distribution{
-	Name:       "Alpine Linux",
-	DID:        "alpine",
-	VersionID:  "3.7",
-	PrettyName: "Alpine Linux v3.7",
-}
-
-var alpine3_8Dist = &claircore.Distribution{
-	Name:       "Alpine Linux",
-	DID:        "alpine",
-	VersionID:  "3.8",
-	PrettyName: "Alpine Linux v3.8",
-}
-
-var alpine3_9Dist = &claircore.Distribution{
-	Name:       "Alpine Linux",
-	DID:        "alpine",
-	VersionID:  "3.9",
-	PrettyName: "Alpine Linux v3.9",
-}
-
-var alpine3_10Dist = &claircore.Distribution{
-	Name:       "Alpine Linux",
-	DID:        "alpine",
-	VersionID:  "3.10",
-	PrettyName: "Alpine Linux v3.10",
-}
+var (
+	alpine3_3Dist  = mkdist(3, 3)
+	alpine3_4Dist  = mkdist(3, 4)
+	alpine3_5Dist  = mkdist(3, 5)
+	alpine3_6Dist  = mkdist(3, 6)
+	alpine3_7Dist  = mkdist(3, 7)
+	alpine3_8Dist  = mkdist(3, 8)
+	alpine3_9Dist  = mkdist(3, 9)
+	alpine3_10Dist = mkdist(3, 10)
+	alpine3_11Dist = mkdist(3, 11)
+	alpine3_12Dist = mkdist(3, 12)
+)
 
 func releaseToDist(r Release) *claircore.Distribution {
 	switch r {
@@ -115,6 +74,10 @@ func releaseToDist(r Release) *claircore.Distribution {
 		return alpine3_9Dist
 	case V3_10:
 		return alpine3_10Dist
+	case V3_11:
+		return alpine3_11Dist
+	case V3_12:
+		return alpine3_12Dist
 	default:
 		// return empty dist
 		return &claircore.Distribution{}
