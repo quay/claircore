@@ -2,8 +2,26 @@
 ## [Unreleased]
 
 
+<a name="v0.1.15"></a>
+## [v0.1.15] - 2020-10-30
+### Alpine
+- [16f63d4](https://github.com/quay/claircore/commit/16f63d40f177ac71b71c164dab0ce79589df5c7c): use new versions, upstream databases
+- [e1f3e1f](https://github.com/quay/claircore/commit/e1f3e1f29405dfe89c4af5de98e7dc1c386c7efc): add new versions
+- [c4367d5](https://github.com/quay/claircore/commit/c4367d5e7b8ef9392920e321984299cbeb51bd1d): fix yaml tag
+### Etc
+- [94aa5f0](https://github.com/quay/claircore/commit/94aa5f0e8acc81d4b20e9064c7b0fae22043190c): update podman yaml
+### Matcher
+- [9b9c113](https://github.com/quay/claircore/commit/9b9c1135c8418759c3fd30686fcf6a5ee423bb42): add apk specific version parser for alpine
+ -  [#254](https://github.com/quay/claircore/issues/254)
+<a name="v0.1.14"></a>
+## [v0.1.14] - 2020-10-26
+### Rpm
+- [04cb53c](https://github.com/quay/claircore/commit/04cb53cd0090dc60cf240ac4dd46db297ee8b18f): fix error handling in WalkFunc
+
 <a name="v0.1.13"></a>
 ## [v0.1.13] - 2020-10-19
+### Chore
+- [b194f51](https://github.com/quay/claircore/commit/b194f51623795537a24ebd427346ed97db88c724): v0.1.13 changelog bump
 ### Pyupio
 - [6569e25](https://github.com/quay/claircore/commit/6569e25ab26d551c4a2f4c8ddc2e3f57e6a4f9cf): handle database schema change
 
@@ -493,7 +511,9 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.1.13...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.1.15...HEAD
+[v0.1.15]: https://github.com/quay/claircore/compare/v0.1.14...v0.1.15
+[v0.1.14]: https://github.com/quay/claircore/compare/v0.1.13...v0.1.14
 [v0.1.13]: https://github.com/quay/claircore/compare/v0.1.12...v0.1.13
 [v0.1.12]: https://github.com/quay/claircore/compare/v0.1.11...v0.1.12
 [v0.1.11]: https://github.com/quay/claircore/compare/v0.1.10...v0.1.11
