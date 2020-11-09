@@ -2,6 +2,8 @@ package ovalutil
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/quay/goval-parser/oval"
 	"github.com/rs/zerolog"
@@ -35,58 +37,71 @@ func DpkgDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulns
 		walkCriterion(ctx, &def.Criteria, &cris)
 		// unpack criterions into vulnerabilities
 		for _, criterion := range cris {
+			var noVersion bool
 			// lookup test
-			testKind, index, err := root.Tests.Lookup(criterion.TestRef)
+			test, err := TestLookup(root, criterion.TestRef, nil)
 			if err != nil {
-				log.Debug().Str("test_ref", criterion.TestRef).Msg("test ref lookup failure. moving to next criterion")
+				log.Debug().
+					Err(err).
+					Str("test_ref", criterion.TestRef).
+					Msg("test ref lookup failure. moving to next criterion")
 				continue
 			}
-			if testKind != "dpkginfo_test" {
-				continue
-			}
-			test := root.Tests.DpkgInfoTests[index]
-			if len(test.ObjectRefs) == 1 && len(test.StateRefs) == 0 {
+			objRefs := test.ObjectRef()
+			stateRefs := test.StateRef()
+			switch {
+			case len(cris) == 1:
+				// If this is the only criterion it probably means
+				// that this definition is just "package installed".
+				noVersion = true
+			case len(objRefs) == 1 && len(stateRefs) == 0:
 				// We always take an object reference to imply the existence of
 				// that object, so just skip tests with a single object reference
 				// and no associated state object.
 				continue
-			}
-			if len(test.ObjectRefs) != len(test.StateRefs) {
+			case len(objRefs) != len(stateRefs):
 				log.Debug().Str("test_ref", criterion.TestRef).Msg("object refs and state refs are not in pairs. moving to next criterion")
 				continue
 			}
 			// look at each object,state pair the test references
 			// and create a vuln if an evr tag is found
-			for i := 0; i < len(test.ObjectRefs); i++ {
-				objRef := test.ObjectRefs[i].ObjectRef
-				stateRef := test.StateRefs[i].StateRef
-				objKind, objIndex, err := root.Objects.Lookup(objRef)
-				if err != nil {
-					log.Error().Err(err).Str("object_ref", objRef).Msg("failed object lookup. moving to next object,state pair")
+			for i := 0; i < len(objRefs); i++ {
+				objRef := objRefs[i].ObjectRef
+				object, err := dpkgObjectLookup(root, objRef)
+				switch {
+				case errors.Is(err, nil):
+				case errors.Is(err, errObjectSkip):
+					// We only handle dpkginfo_objects.
 					continue
+				default:
+					if err != nil {
+						log.Debug().
+							Err(err).
+							Str("object_ref", objRef).
+							Msg("failed object lookup. moving to next object,state pair")
+						continue
+					}
 				}
-				if objKind != "dpkginfo_object" {
-					continue
-				}
-				stateKind, stateIndex, err := root.States.Lookup(stateRef)
-				if err != nil {
-					log.Debug().Str("state_ref", stateRef).Msg("failed state lookup. moving to next object,state pair")
-					continue
-				}
-				if stateKind != "dpkginfo_state" {
-					continue
-				}
-				object := root.Objects.DpkgInfoObjects[objIndex]
-				state := root.States.DpkgInfoStates[stateIndex]
-				// if EVR tag not present this is not a linux package
-				// see oval definitions for more details
-				if state.EVR == nil {
-					continue
+
+				var state *oval.DpkgInfoState
+				if !noVersion {
+					stateRef := stateRefs[i].StateRef
+					state, err = dpkgStateLookup(root, stateRef)
+					if err != nil {
+						log.Debug().
+							Err(err).
+							Str("state_ref", stateRef).
+							Msg("failed state lookup. moving to next object,state pair")
+						continue
+					}
+					// if EVR tag not present this is not a linux package
+					// see oval definitions for more details
+					if state.EVR == nil {
+						continue
+					}
 				}
 
 				for _, protoVuln := range protoVulns {
-					vuln := *protoVuln
-					vuln.FixedInVersion = state.EVR.Body
 					name := object.Name
 
 					// if the dpkginfo_object>name field has a var_ref it indicates
@@ -94,6 +109,7 @@ func DpkgDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulns
 					//
 					// if the name.Ref field is empty it indicates a single package is affected
 					// by the vuln and that package's name is in name.Body.
+					var ns []string
 					if len(name.Ref) > 0 {
 						_, i, err := root.Variables.Lookup(name.Ref)
 						if err != nil {
@@ -102,44 +118,57 @@ func DpkgDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulns
 						}
 						consts := root.Variables.ConstantVariables[i]
 						for _, v := range consts.Values {
-							if pkg, ok := pkgcache[v.Body]; !ok {
-								p := &claircore.Package{
-									Name: v.Body,
-									Kind: claircore.BINARY,
-								}
-								pkgcache[v.Body] = p
-								vuln.Package = p
-							} else {
-								vuln.Package = pkg
-							}
+							ns = append(ns, v.Body)
+						}
+					} else {
+						ns = append(ns, name.Body)
+					}
+					for _, n := range ns {
+						vuln := *protoVuln
+						if state != nil {
+							vuln.FixedInVersion = state.EVR.Body
 							if state.Arch != nil {
 								vuln.ArchOperation = mapArchOp(state.Arch.Operation)
 								vuln.Package.Arch = state.Arch.Body
 							}
 						}
-						vulns = append(vulns, &vuln)
-						// early continue
-						continue
-					}
-
-					if pkg, ok := pkgcache[name.Body]; !ok {
-						p := &claircore.Package{
-							Name: name.Body,
-							Kind: claircore.BINARY,
+						if pkg, ok := pkgcache[n]; !ok {
+							p := &claircore.Package{
+								Name: name.Body,
+								Kind: claircore.BINARY,
+							}
+							pkgcache[n] = p
+							vuln.Package = p
+						} else {
+							vuln.Package = pkg
 						}
-						pkgcache[name.Body] = p
-						vuln.Package = p
-					} else {
-						vuln.Package = pkg
+						vulns = append(vulns, &vuln)
 					}
-					if state.Arch != nil {
-						vuln.ArchOperation = mapArchOp(state.Arch.Operation)
-						vuln.Package.Arch = state.Arch.Body
-					}
-					vulns = append(vulns, &vuln)
 				}
 			}
 		}
 	}
 	return vulns, nil
+}
+
+func dpkgStateLookup(root *oval.Root, ref string) (*oval.DpkgInfoState, error) {
+	kind, i, err := root.States.Lookup(ref)
+	if err != nil {
+		return nil, err
+	}
+	if kind != "dpkginfo_state" {
+		return nil, fmt.Errorf("oval: got kind %q: %w", kind, errStateSkip)
+	}
+	return &root.States.DpkgInfoStates[i], nil
+}
+
+func dpkgObjectLookup(root *oval.Root, ref string) (*oval.DpkgInfoObject, error) {
+	kind, i, err := root.Objects.Lookup(ref)
+	if err != nil {
+		return nil, err
+	}
+	if kind != "dpkginfo_object" {
+		return nil, fmt.Errorf("oval: got kind %q: %w", kind, errObjectSkip)
+	}
+	return &root.Objects.DpkgInfoObjects[i], nil
 }

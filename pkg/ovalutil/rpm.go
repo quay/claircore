@@ -2,6 +2,8 @@ package ovalutil
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"regexp"
 
 	"github.com/quay/goval-parser/oval"
@@ -46,77 +48,93 @@ func RPMDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulnsF
 		// recursively collect criterions for this definition
 		cris := cris[:0]
 		walkCriterion(ctx, &def.Criteria, &cris)
-		// unpack criterions into vulnerabilities
 		enabledModules := getEnabledModules(cris)
 		if len(enabledModules) == 0 {
 			// add default empty module
 			enabledModules = append(enabledModules, "")
 		}
+		// unpack criterions into vulnerabilities
 		for _, criterion := range cris {
+			var noVersion bool
 			// lookup test
-			testKind, index, err := root.Tests.Lookup(criterion.TestRef)
-			if err != nil {
+			test, err := TestLookup(root, criterion.TestRef, func(kind string) bool {
+				switch kind {
+				case "uname_test":
+					return false
+				}
+				return true
+			})
+			switch {
+			case errors.Is(err, nil):
+			case errors.Is(err, errTestSkip):
+				continue
+			default:
 				log.Debug().Str("test_ref", criterion.TestRef).Msg("test ref lookup failure. moving to next criterion")
 				continue
 			}
-			if testKind != "rpminfo_test" {
-				continue
-			}
-			test := root.Tests.RPMInfoTests[index]
-			if len(test.ObjectRefs) == 1 && len(test.StateRefs) == 0 {
+			objRefs := test.ObjectRef()
+			stateRefs := test.StateRef()
+			switch {
+			case len(cris) == 1:
+				noVersion = true
+			case len(objRefs) == 1 && len(stateRefs) == 0:
 				// We always take an object reference to imply the existence of
 				// that object, so just skip tests with a single object reference
 				// and no associated state object.
 				continue
-			}
-			if len(test.ObjectRefs) != len(test.StateRefs) {
+			case len(objRefs) != len(stateRefs):
 				log.Debug().Str("test_ref", criterion.TestRef).Msg("object refs and state refs are not in pairs. moving to next criterion")
 				continue
 			}
 			// look at each object,state pair the test references
 			// and create a vuln if an evr tag is found
-			for i := 0; i < len(test.ObjectRefs); i++ {
-				objRef := test.ObjectRefs[i].ObjectRef
-				stateRef := test.StateRefs[i].StateRef
-				objKind, objIndex, err := root.Objects.Lookup(objRef)
-				if err != nil {
-					log.Debug().Str("object_ref", objRef).Msg("failed object lookup. moving to next object,state pair")
+			for i := 0; i < len(objRefs); i++ {
+				objRef := objRefs[i].ObjectRef
+				object, err := rpmObjectLookup(root, objRef)
+				switch {
+				case errors.Is(err, nil):
+				case errors.Is(err, errObjectSkip):
+					// We only handle rpminfo_objects.
+					continue
+				default:
+					log.Debug().
+						Err(err).
+						Str("object_ref", objRef).
+						Msg("failed object lookup. moving to next object,state pair")
 					continue
 				}
-				if objKind != "rpminfo_object" {
-					continue
-				}
-				stateKind, stateIndex, err := root.States.Lookup(stateRef)
-				if err != nil {
-					log.Debug().Str("state_ref", stateRef).Msg("failed state lookup. moving to next object,state pair")
-					continue
-				}
-				if stateKind != "rpminfo_state" {
-					continue
-				}
-				object := root.Objects.RPMInfoObjects[objIndex]
-				state := root.States.RPMInfoStates[stateIndex]
-				// if EVR tag not present this is not a linux package
-				// see oval definitions for more details
-				if state.EVR == nil {
-					continue
+				var state *oval.RPMInfoState
+				if !noVersion {
+					stateRef := stateRefs[i].StateRef
+					state, err = rpmStateLookup(root, stateRef)
+					if err != nil {
+						log.Debug().
+							Err(err).
+							Str("state_ref", stateRef).
+							Msg("failed state lookup. moving to next object,state pair")
+						continue
+					}
+					// if EVR tag not present this is not a linux package
+					// see oval definitions for more details
+					if state.EVR == nil {
+						continue
+					}
 				}
 
 				for _, module := range enabledModules {
 					for _, protoVuln := range protoVulns {
 						vuln := *protoVuln
-						vuln.FixedInVersion = state.EVR.Body
-
-						p := &claircore.Package{
+						vuln.Package = &claircore.Package{
 							Name:   object.Name,
 							Module: module,
 							Kind:   claircore.BINARY,
 						}
-						vuln.Package = p
-						vuln.FixedInVersion = state.EVR.Body
-						if state.Arch != nil {
-							vuln.ArchOperation = mapArchOp(state.Arch.Operation)
-							vuln.Package.Arch = state.Arch.Body
+						if state != nil {
+							vuln.FixedInVersion = state.EVR.Body
+							if state.Arch != nil {
+								vuln.ArchOperation = mapArchOp(state.Arch.Operation)
+								vuln.Package.Arch = state.Arch.Body
+							}
 						}
 						vulns = append(vulns, &vuln)
 					}
@@ -166,4 +184,26 @@ func getEnabledModules(cris []*oval.Criterion) []string {
 		}
 	}
 	return enabledModules
+}
+
+func rpmObjectLookup(root *oval.Root, ref string) (*oval.RPMInfoObject, error) {
+	kind, index, err := root.Objects.Lookup(ref)
+	if err != nil {
+		return nil, err
+	}
+	if kind != "rpminfo_object" {
+		return nil, fmt.Errorf("oval: got kind %q: %w", kind, errObjectSkip)
+	}
+	return &root.Objects.RPMInfoObjects[index], nil
+}
+
+func rpmStateLookup(root *oval.Root, ref string) (*oval.RPMInfoState, error) {
+	kind, index, err := root.States.Lookup(ref)
+	if err != nil {
+		return nil, err
+	}
+	if kind != "rpminfo_state" {
+		return nil, fmt.Errorf("bad kind: %s", kind)
+	}
+	return &root.States.RPMInfoStates[index], nil
 }
