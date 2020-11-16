@@ -23,7 +23,7 @@ func indexDistributions(ctx context.Context, db *sqlx.DB, pool *pgxpool.Pool, di
 		ON CONFLICT (name, did, version, version_code_name, version_id, arch, cpe, pretty_name) DO NOTHING;
 		`
 
-		insertWith = `
+		insertWith = `	
 		WITH distributions AS (
 			SELECT id AS dist_id
 			FROM dist
@@ -36,21 +36,25 @@ func indexDistributions(ctx context.Context, db *sqlx.DB, pool *pgxpool.Pool, di
 			  AND cpe = $7
 			  AND pretty_name = $8
 		),
-
 			 scanner AS (
 				 SELECT id AS scanner_id
 				 FROM scanner
 				 WHERE name = $9
 				   AND version = $10
 				   AND kind = $11
+			 ),
+			 layer AS (
+				 SELECT id AS layer_id
+				 FROM layer
+				 WHERE layer.hash = $12
 			 )
-
 		INSERT
 		INTO dist_scanartifact (layer_hash, dist_id, scanner_id)
-		VALUES ($12,
+		VALUES ((SELECT layer_id FROM layer),
 				(SELECT dist_id FROM distributions),
 				(SELECT scanner_id FROM scanner))
-		ON CONFLICT DO NOTHING;`
+		ON CONFLICT DO NOTHING;
+		`
 	)
 
 	// obtain a transaction scopped batch

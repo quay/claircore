@@ -20,13 +20,25 @@ func setScanFinished(ctx context.Context, db *sqlx.DB, sr *claircore.IndexReport
 		  AND kind = $3;
 		`
 		insertManifestScanned = `
-		INSERT INTO scanned_manifest (manifest_hash, scanner_id)
-		VALUES ($1, $2);
+		WITH manifests AS (
+			SELECT id AS manifest_id
+			FROM manifest
+			WHERE hash = $1
+		)
+		INSERT
+		INTO scanned_manifest (manifest_hash, scanner_id)
+		VALUES ((SELECT manifest_id FROM manifests),
+				$2);
 		`
 		upsertIndexReport = `
-		INSERT INTO indexreport (manifest_hash, scan_result)
-		VALUES ($1, $2)
-		ON CONFLICT (manifest_hash) DO UPDATE SET scan_result = excluded.scan_result
+		with manifests as (
+			select id as manifest_id from manifest
+			where hash = $1
+		)
+		insert into indexreport (manifest_hash, scan_result)
+			values ((select manifest_id from manifests),
+					$2)
+			on conflict (manifest_hash) do update set scan_result = excluded.scan_result
 		`
 	)
 	// TODO Use passed-in Context.
@@ -42,7 +54,6 @@ func setScanFinished(ctx context.Context, db *sqlx.DB, sr *claircore.IndexReport
 		scannerIDs = append(scannerIDs, scannerID)
 	}
 
-	// begin transcation
 	tx, err := db.Begin()
 	if err != nil {
 		return fmt.Errorf("store:setScannerList failed to create transaction for hash %v: %v", sr.Hash, err)

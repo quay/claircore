@@ -12,8 +12,15 @@ import (
 func setIndexReport(ctx context.Context, db *sqlx.DB, sr *claircore.IndexReport) error {
 	const (
 		upsertIndexReport = `
-		INSERT INTO indexreport (manifest_hash, scan_result)
-		VALUES ($1, $2)
+		WITH manifests AS (
+			SELECT id AS manifest_id
+			FROM manifest
+			WHERE hash = $1
+		)
+		INSERT
+		INTO indexreport (manifest_hash, scan_result)
+		VALUES ((select manifest_id from manifests),
+				$2)
 		ON CONFLICT (manifest_hash) DO UPDATE SET scan_result = excluded.scan_result
 		`
 	)

@@ -37,8 +37,9 @@ func affectedManifests(ctx context.Context, pool *pgxpool.Pool, v claircore.Vuln
 		WHERE name = $1;
 		`
 		selectAffected = `
-		SELECT manifest_hash
+		SELECT manifest.hash
 		FROM manifest_index
+				 JOIN manifest ON manifest_index.manifest_hash = manifest.id
 		WHERE package_id = $1
 		  AND (
 			CASE

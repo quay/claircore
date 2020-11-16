@@ -11,7 +11,12 @@ import (
 )
 
 const (
-	selectIndexReport = `SELECT scan_result FROM indexreport WHERE manifest_hash = $1`
+	selectIndexReport = `
+	SELECT scan_result
+	FROM indexreport
+			 JOIN manifest ON manifest.hash = $1
+	WHERE indexreport.manifest_hash = manifest.id;
+	`
 )
 
 func indexReport(ctx context.Context, db *sqlx.DB, hash claircore.Digest) (*claircore.IndexReport, bool, error) {

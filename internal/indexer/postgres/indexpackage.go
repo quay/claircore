@@ -39,7 +39,6 @@ func indexPackages(ctx context.Context, pool *pgxpool.Pool, pkgs []*claircore.Pa
 			  AND module = $4
 			  AND arch = $5
 		),
-
 			 binary_package AS (
 				 SELECT id AS package_id
 				 FROM package
@@ -49,18 +48,21 @@ func indexPackages(ctx context.Context, pool *pgxpool.Pool, pkgs []*claircore.Pa
 				   AND module = $9
 				   AND arch = $10
 			 ),
-
 			 scanner AS (
 				 SELECT id AS scanner_id
 				 FROM scanner
 				 WHERE name = $11
 				   AND version = $12
 				   AND kind = $13
+			 ),
+			 layer AS (
+				 SELECT id AS layer_id
+				 FROM layer
+				 WHERE layer.hash = $14
 			 )
-
 		INSERT
 		INTO package_scanartifact (layer_hash, package_db, repository_hint, package_id, source_id, scanner_id)
-		VALUES ($14,
+		VALUES ((SELECT layer_id FROM layer),
 				$15,
 				$16,
 				(SELECT package_id FROM binary_package),

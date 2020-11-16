@@ -33,7 +33,8 @@ func distributionsByLayer(ctx context.Context, db *sqlx.DB, hash claircore.Diges
 			   dist.pretty_name
 		FROM dist_scanartifact
 				 LEFT JOIN dist ON dist_scanartifact.dist_id = dist.id
-		WHERE dist_scanartifact.layer_hash = '%s'
+				 JOIN layer ON layer.hash = '%s'
+		WHERE dist_scanartifact.layer_hash = layer.id
 		  AND dist_scanartifact.scanner_id IN (?);
 		`
 	)
