@@ -13,18 +13,19 @@ import (
 func layerScanned(ctx context.Context, pool *pgxpool.Pool, hash claircore.Digest, scnr indexer.VersionedScanner) (bool, error) {
 	const (
 		selectScanner = `
-			SELECT id
-			FROM scanner
-			WHERE name = $1
-			  AND version = $2
-			  AND kind = $3;
-			`
+		SELECT id
+		FROM scanner
+		WHERE name = $1
+		  AND version = $2
+		  AND kind = $3;
+		`
 		selectScanned = `
-			SELECT layer_hash
-			FROM scanned_layer
-			WHERE layer_hash = $1
-			  AND scanner_id = $2
-			`
+		SELECT layer.hash
+		FROM layer
+                 JOIN scanned_layer ON scanned_layer.layer_hash = layer.id
+		WHERE layer.hash = $1
+		  AND scanned_layer.scanner_id = $2;
+		`
 	)
 
 	var scannerID int64
