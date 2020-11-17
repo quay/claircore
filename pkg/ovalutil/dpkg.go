@@ -134,7 +134,7 @@ func DpkgDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulns
 						}
 						if pkg, ok := pkgcache[n]; !ok {
 							p := &claircore.Package{
-								Name: name.Body,
+								Name: n,
 								Kind: claircore.BINARY,
 							}
 							pkgcache[n] = p
