@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/quay/claircore"
-	"github.com/quay/claircore/pkg/ovalutil"
 	"github.com/quay/goval-parser/oval"
 	"github.com/rs/zerolog"
+
+	"github.com/quay/claircore"
+	"github.com/quay/claircore/pkg/ovalutil"
 )
 
 func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
@@ -32,7 +33,7 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 			Description:        def.Description,
 			Issued:             def.Advisory.Issued.Date,
 			Links:              ovalutil.Links(def),
-			NormalizedSeverity: claircore.Unknown,
+			NormalizedSeverity: normalizeSeverity(def.Advisory.Severity),
 			Dist:               releaseToDist(u.release),
 		}
 		vs = append(vs, v)
@@ -43,4 +44,21 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 		return nil, err
 	}
 	return vulns, nil
+}
+
+func normalizeSeverity(severity string) claircore.Severity {
+	switch severity {
+	case "Negligible":
+		return claircore.Negligible
+	case "Low":
+		return claircore.Low
+	case "Medium":
+		return claircore.Medium
+	case "High":
+		return claircore.High
+	case "Critical":
+		return claircore.Critical
+	default:
+	}
+	return claircore.Unknown
 }
