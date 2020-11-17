@@ -30,11 +30,12 @@ func (m mockScnr) Version() string {
 }
 
 type e2e struct {
+	name       string
 	failed     bool
 	store      indexer.Store
 	ctx        context.Context
 	manifest   claircore.Manifest
-	scnr       indexer.VersionedScanner
+	scnrs      indexer.VersionedScanners
 	packageGen int
 	distGen    int
 	repoGen    int
@@ -43,27 +44,150 @@ type e2e struct {
 func TestE2E(t *testing.T) {
 	integration.Skip(t)
 	ctx := context.Background()
-	_, store, teardown := TestStore(ctx, t)
-	defer teardown()
 
-	layer := &claircore.Layer{
-		Hash: claircore.MustParseDigest(`sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef`),
-	}
-	manifest := claircore.Manifest{
-		Hash:   claircore.MustParseDigest(`sha256:fc92eec5cac70b0c324cec2933cd7db1c0eae7c9e2649e42d02e77eb6da0d15f`),
-		Layers: []*claircore.Layer{layer},
+	e2es := []e2e{
+		{
+			name: "3 scanners gen small",
+			scnrs: indexer.VersionedScanners{
+				mockScnr{
+					name:    "test-scanner",
+					kind:    "test",
+					version: "v0.0.1",
+				},
+				mockScnr{
+					name:    "test-scanner1",
+					kind:    "test",
+					version: "v0.0.11",
+				},
+				mockScnr{
+					name:    "test-scanner2",
+					kind:    "test",
+					version: "v0.0.8",
+				},
+			},
+			packageGen: 100,
+			distGen:    150,
+			repoGen:    50,
+		},
+		{
+			name: "6 scanners gen small",
+			scnrs: indexer.VersionedScanners{
+				mockScnr{
+					name:    "test-scanner",
+					kind:    "test",
+					version: "v0.0.1",
+				},
+				mockScnr{
+					name:    "test-scanner1",
+					kind:    "test",
+					version: "v0.0.11",
+				},
+				mockScnr{
+					name:    "test-scanner2",
+					kind:    "test",
+					version: "v0.0.8",
+				},
+				mockScnr{
+					name:    "test-scanner3",
+					kind:    "test",
+					version: "v0.0.8",
+				},
+				mockScnr{
+					name:    "test-scanner4",
+					kind:    "test",
+					version: "v0.0.8",
+				},
+				mockScnr{
+					name:    "test-scanner5",
+					kind:    "test",
+					version: "v0.0.8",
+				},
+			},
+			packageGen: 100,
+			distGen:    150,
+			repoGen:    50,
+		},
+		{
+			name: "3 scanners gen large",
+			scnrs: indexer.VersionedScanners{
+				mockScnr{
+					name:    "test-scanner",
+					kind:    "test",
+					version: "v0.0.1",
+				},
+				mockScnr{
+					name:    "test-scanner1",
+					kind:    "test",
+					version: "v0.0.11",
+				},
+				mockScnr{
+					name:    "test-scanner2",
+					kind:    "test",
+					version: "v0.0.8",
+				},
+			},
+			packageGen: 1000,
+			distGen:    1500,
+			repoGen:    500,
+		},
+		{
+			name: "6 scanners gen large",
+			scnrs: indexer.VersionedScanners{
+				mockScnr{
+					name:    "test-scanner",
+					kind:    "test",
+					version: "v0.0.1",
+				},
+				mockScnr{
+					name:    "test-scanner1",
+					kind:    "test",
+					version: "v0.0.11",
+				},
+				mockScnr{
+					name:    "test-scanner2",
+					kind:    "test",
+					version: "v0.0.8",
+				},
+				mockScnr{
+					name:    "test-scanner3",
+					kind:    "test",
+					version: "v0.0.8",
+				},
+				mockScnr{
+					name:    "test-scanner4",
+					kind:    "test",
+					version: "v0.0.8",
+				},
+				mockScnr{
+					name:    "test-scanner5",
+					kind:    "test",
+					version: "v0.0.8",
+				},
+			},
+			packageGen: 1000,
+			distGen:    1500,
+			repoGen:    500,
+		},
 	}
 
-	e2e := &e2e{
-		store:      store,
-		ctx:        ctx,
-		manifest:   manifest,
-		packageGen: 1,
-		distGen:    1,
-		repoGen:    1,
-	}
+	for _, e := range e2es {
+		_, store, teardown := TestStore(ctx, t)
+		defer teardown()
 
-	t.Run("e2e postgres indexer test", e2e.Run)
+		layer := &claircore.Layer{
+			Hash: claircore.MustParseDigest(`sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef`),
+		}
+		manifest := claircore.Manifest{
+			Hash:   claircore.MustParseDigest(`sha256:fc92eec5cac70b0c324cec2933cd7db1c0eae7c9e2649e42d02e77eb6da0d15f`),
+			Layers: []*claircore.Layer{layer},
+		}
+
+		e.store = store
+		e.ctx = ctx
+		e.manifest = manifest
+
+		t.Run(e.name, e.Run)
+	}
 }
 
 func (e *e2e) Run(t *testing.T) {
@@ -110,16 +234,10 @@ func (e *e2e) RegisterScanner(t *testing.T) {
 	defer func() {
 		e.failed = t.Failed()
 	}()
-	scnr := mockScnr{
-		name:    "test-scanner",
-		kind:    "test",
-		version: "v0.0.1",
-	}
-	err := e.store.RegisterScanners(e.ctx, indexer.VersionedScanners{scnr})
+	err := e.store.RegisterScanners(e.ctx, e.scnrs)
 	if err != nil {
 		t.Fatalf("failed to register scnr: %v", err)
 	}
-	e.scnr = scnr
 }
 
 // IndexAndRetreivePackages confirms inserting and
@@ -131,20 +249,20 @@ func (e *e2e) IndexAndRetrievePackages(t *testing.T) {
 	}()
 	A := test.GenUniquePackages(e.packageGen)
 
-	err := e.store.IndexPackages(e.ctx, A, e.manifest.Layers[0], e.scnr)
-	if err != nil {
-		t.Fatalf("failed to index package: %v", err)
+	for _, scnr := range e.scnrs {
+		err := e.store.IndexPackages(e.ctx, A, e.manifest.Layers[0], scnr)
+		if err != nil {
+			t.Fatalf("failed to index package: %v", err)
+		}
 	}
 
-	// TODO: write standalone test confirming this works with
-	// multiple scanners
-	B, err := e.store.PackagesByLayer(e.ctx, e.manifest.Layers[0].Hash, indexer.VersionedScanners{e.scnr})
+	B, err := e.store.PackagesByLayer(e.ctx, e.manifest.Layers[0].Hash, e.scnrs)
 	if err != nil {
 		t.Fatalf("failed to retrieve packages by layer: %v", err)
 	}
 
-	if len(A) != len(B) {
-		t.Fatalf("wanted len: %v got: %v", len(A), len(B))
+	if len(e.scnrs)*e.packageGen != len(B) {
+		t.Fatalf("wanted len: %v got: %v", len(e.scnrs)*e.packageGen, len(B))
 	}
 }
 
@@ -157,20 +275,20 @@ func (e *e2e) IndexAndRetrieveDistributions(t *testing.T) {
 	}()
 	A := test.GenUniqueDistributions(e.distGen)
 
-	err := e.store.IndexDistributions(e.ctx, A, e.manifest.Layers[0], e.scnr)
-	if err != nil {
-		t.Fatalf("failed to index distributions: %v", err)
+	for _, scnr := range e.scnrs {
+		err := e.store.IndexDistributions(e.ctx, A, e.manifest.Layers[0], scnr)
+		if err != nil {
+			t.Fatalf("failed to index distributions: %v", err)
+		}
 	}
 
-	// TODO: write standalone test confirming this works with
-	// multiple scanners
-	B, err := e.store.DistributionsByLayer(e.ctx, e.manifest.Layers[0].Hash, indexer.VersionedScanners{e.scnr})
+	B, err := e.store.DistributionsByLayer(e.ctx, e.manifest.Layers[0].Hash, e.scnrs)
 	if err != nil {
 		t.Fatalf("failed to retrieve distributions by layer: %v", err)
 	}
 
-	if len(A) != len(B) {
-		t.Fatalf("wanted len: %v got: %v", len(A), len(B))
+	if len(e.scnrs)*e.distGen != len(B) {
+		t.Fatalf("wanted len: %v got: %v", len(e.scnrs)*e.distGen, len(B))
 	}
 }
 
@@ -181,22 +299,22 @@ func (e *e2e) IndexAndRetrieveRepos(t *testing.T) {
 	defer func() {
 		e.failed = t.Failed()
 	}()
-	A := test.GenUniqueRepositories(e.distGen)
+	A := test.GenUniqueRepositories(e.repoGen)
 
-	err := e.store.IndexRepositories(e.ctx, A, e.manifest.Layers[0], e.scnr)
-	if err != nil {
-		t.Fatalf("failed to index repos: %v", err)
+	for _, scnr := range e.scnrs {
+		err := e.store.IndexRepositories(e.ctx, A, e.manifest.Layers[0], scnr)
+		if err != nil {
+			t.Fatalf("failed to index repos: %v", err)
+		}
 	}
 
-	// TODO: write standalone test confirming this works with
-	// multiple scanners
-	B, err := e.store.RepositoriesByLayer(e.ctx, e.manifest.Layers[0].Hash, indexer.VersionedScanners{e.scnr})
+	B, err := e.store.RepositoriesByLayer(e.ctx, e.manifest.Layers[0].Hash, e.scnrs)
 	if err != nil {
 		t.Fatalf("failed to retrieve repos by layer: %v", err)
 	}
 
-	if len(A) != len(B) {
-		t.Fatalf("wanted len: %v got: %v", len(A), len(B))
+	if len(e.scnrs)*e.repoGen != len(B) {
+		t.Fatalf("wanted len: %v got: %v", len(e.scnrs)*e.repoGen, len(B))
 	}
 }
 
@@ -206,17 +324,19 @@ func (e *e2e) LayerScanned(t *testing.T) {
 	defer func() {
 		e.failed = t.Failed()
 	}()
-	err := e.store.SetLayerScanned(e.ctx, e.manifest.Layers[0].Hash, e.scnr)
-	if err != nil {
-		t.Fatalf("failed to set layer scanned: %v", err)
-	}
+	for _, scnr := range e.scnrs {
+		err := e.store.SetLayerScanned(e.ctx, e.manifest.Layers[0].Hash, scnr)
+		if err != nil {
+			t.Fatalf("failed to set layer scanned: %v", err)
+		}
 
-	b, err := e.store.LayerScanned(e.ctx, e.manifest.Layers[0].Hash, e.scnr)
-	if err != nil {
-		t.Fatalf("failed to query if layer is scanned: %v", err)
-	}
-	if !b {
-		t.Fatalf("expected layer to be scanned")
+		b, err := e.store.LayerScanned(e.ctx, e.manifest.Layers[0].Hash, scnr)
+		if err != nil {
+			t.Fatalf("failed to query if layer is scanned: %v", err)
+		}
+		if !b {
+			t.Fatalf("expected layer to be scanned")
+		}
 	}
 }
 
@@ -250,7 +370,7 @@ func (e *e2e) LayerScannedFalse(t *testing.T) {
 		Hash: claircore.MustParseDigest(`sha256:5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03`),
 	}
 
-	b, err := e.store.LayerScanned(e.ctx, layer.Hash, e.scnr)
+	b, err := e.store.LayerScanned(e.ctx, layer.Hash, e.scnrs[0])
 	if err != nil {
 		t.Fatalf("failed to query if layer is scanned: %v", err)
 	}
@@ -290,12 +410,12 @@ func (e *e2e) IndexReport(t *testing.T) {
 	}
 
 	A.State = "IndexFinished"
-	err = e.store.SetIndexFinished(e.ctx, A, indexer.VersionedScanners{e.scnr})
+	err = e.store.SetIndexFinished(e.ctx, A, e.scnrs)
 	if err != nil {
 		t.Fatalf("failed to set index as finished: %v", err)
 	}
 
-	b, err := e.store.ManifestScanned(e.ctx, e.manifest.Hash, indexer.VersionedScanners{e.scnr})
+	b, err := e.store.ManifestScanned(e.ctx, e.manifest.Hash, e.scnrs)
 	if err != nil {
 		t.Fatalf("failed to query if manifest was scanned: %v", err)
 	}
