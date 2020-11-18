@@ -12,7 +12,7 @@ func InsertScannerList(db *sqlx.DB, hash claircore.Digest, n int) error {
 	for i := 0; i < n; i++ {
 		_, err := db.Exec(
 			`INSERT INTO scannerlist
-			 (manifest_hash, scanner_id)
+			 (manifest_id, scanner_id)
 			 VALUES ($1, $2)`,
 			hash,
 			i,

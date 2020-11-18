@@ -26,7 +26,7 @@ func setScanFinished(ctx context.Context, db *sqlx.DB, sr *claircore.IndexReport
 			WHERE hash = $1
 		)
 		INSERT
-		INTO scanned_manifest (manifest_hash, scanner_id)
+		INTO scanned_manifest (manifest_id, scanner_id)
 		VALUES ((SELECT manifest_id FROM manifests),
 				$2);
 		`
@@ -35,10 +35,10 @@ func setScanFinished(ctx context.Context, db *sqlx.DB, sr *claircore.IndexReport
 			select id as manifest_id from manifest
 			where hash = $1
 		)
-		insert into indexreport (manifest_hash, scan_result)
+		insert into indexreport (manifest_id, scan_result)
 			values ((select manifest_id from manifests),
 					$2)
-			on conflict (manifest_hash) do update set scan_result = excluded.scan_result
+			on conflict (manifest_id) do update set scan_result = excluded.scan_result
 		`
 	)
 	// TODO Use passed-in Context.

@@ -15,7 +15,7 @@ const (
 	SELECT scan_result
 	FROM indexreport
 			 JOIN manifest ON manifest.hash = $1
-	WHERE indexreport.manifest_hash = manifest.id;
+	WHERE indexreport.manifest_id = manifest.id;
 	`
 )
 

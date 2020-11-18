@@ -22,7 +22,7 @@ func indexManifest(ctx context.Context, pool *pgxpool.Pool, ir *claircore.IndexR
 			WHERE hash = $4
 		)
 		INSERT
-		INTO manifest_index(package_id, dist_id, repo_id, manifest_hash)
+		INTO manifest_index(package_id, dist_id, repo_id, manifest_id)
 		VALUES ($1, $2, $3, (SELECT manifest_id FROM manifests))
 		ON CONFLICT DO NOTHING;
 		`

@@ -26,10 +26,10 @@ func setLayerScanned(ctx context.Context, pool *pgxpool.Pool, hash claircore.Dig
 			WHERE hash = $1
 		)
 		INSERT
-		INTO scanned_layer (layer_hash, scanner_id)
+		INTO scanned_layer (layer_id, scanner_id)
 		VALUES ((SELECT layer_id FROM layers),
 				$2)
-		ON CONFLICT (layer_hash, scanner_id) DO NOTHING;
+		ON CONFLICT (layer_id, scanner_id) DO NOTHING;
 		`
 	)
 

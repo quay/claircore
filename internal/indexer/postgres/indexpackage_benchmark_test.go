@@ -199,6 +199,16 @@ func Benchmark_IndexPackages(b *testing.B) {
 				pkgs = test.GenUniquePackages(bench.pkgs)
 			}
 
+			// insert layer
+			insertLayer := `
+			INSERT INTO layer (hash)
+			VALUES ($1);
+			`
+			_, err = db.Exec(insertLayer, bench.layer.Hash)
+			if err != nil {
+				b.Fatalf("failed to insert test layer: %v", err)
+			}
+
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				// run the indexing

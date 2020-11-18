@@ -24,7 +24,7 @@ func manifestScanned(ctx context.Context, db *sqlx.DB, hash claircore.Digest, sc
 		selectScanned = `
 		SELECT scanner_id
 		FROM scanned_manifest
-				 JOIN manifest ON scanned_manifest.manifest_hash = manifest.id
+				 JOIN manifest ON scanned_manifest.manifest_id = manifest.id
 		WHERE manifest.hash = $1;
 		`
 	)

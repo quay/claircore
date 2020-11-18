@@ -22,7 +22,7 @@ func layerScanned(ctx context.Context, pool *pgxpool.Pool, hash claircore.Digest
 		selectScanned = `
 		SELECT layer.hash
 		FROM layer
-                 JOIN scanned_layer ON scanned_layer.layer_hash = layer.id
+                 JOIN scanned_layer ON scanned_layer.layer_id = layer.id
 		WHERE layer.hash = $1
 		  AND scanned_layer.scanner_id = $2;
 		`

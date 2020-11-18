@@ -18,10 +18,10 @@ func setIndexReport(ctx context.Context, db *sqlx.DB, sr *claircore.IndexReport)
 			WHERE hash = $1
 		)
 		INSERT
-		INTO indexreport (manifest_hash, scan_result)
+		INTO indexreport (manifest_id, scan_result)
 		VALUES ((select manifest_id from manifests),
 				$2)
-		ON CONFLICT (manifest_hash) DO UPDATE SET scan_result = excluded.scan_result
+		ON CONFLICT (manifest_id) DO UPDATE SET scan_result = excluded.scan_result
 		`
 	)
 	// TODO Use passed-in Context.

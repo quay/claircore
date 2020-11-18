@@ -32,7 +32,7 @@ func persistManifest(ctx context.Context, pool *pgxpool.Pool, manifest claircore
 				 WHERE hash = $2
 			 )
 		INSERT
-		INTO manifest_layer (manifest_hash, layer_hash, i)
+		INTO manifest_layer (manifest_id, layer_id, i)
 		VALUES ((SELECT manifest_id FROM manifests),
 				(SELECT layer_id FROM layers),
 				$3)

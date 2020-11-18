@@ -61,7 +61,7 @@ func indexPackages(ctx context.Context, pool *pgxpool.Pool, pkgs []*claircore.Pa
 				 WHERE layer.hash = $14
 			 )
 		INSERT
-		INTO package_scanartifact (layer_hash, package_db, repository_hint, package_id, source_id, scanner_id)
+		INTO package_scanartifact (layer_id, package_db, repository_hint, package_id, source_id, scanner_id)
 		VALUES ((SELECT layer_id FROM layer),
 				$15,
 				$16,

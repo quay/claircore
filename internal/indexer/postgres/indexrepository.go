@@ -43,7 +43,7 @@ func indexRepositories(ctx context.Context, db *sqlx.DB, pool *pgxpool.Pool, rep
 				 WHERE layer.hash = $7
 			 )
 		INSERT
-		INTO repo_scanartifact (layer_hash, repo_id, scanner_id)
+		INTO repo_scanartifact (layer_id, repo_id, scanner_id)
 		VALUES ((SELECT layer_id FROM layer),
 				(SELECT repo_id FROM repositories),
 				(SELECT scanner_id FROM scanner))

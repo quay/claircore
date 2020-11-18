@@ -49,7 +49,7 @@ func indexDistributions(ctx context.Context, db *sqlx.DB, pool *pgxpool.Pool, di
 				 WHERE layer.hash = $12
 			 )
 		INSERT
-		INTO dist_scanartifact (layer_hash, dist_id, scanner_id)
+		INTO dist_scanartifact (layer_id, dist_id, scanner_id)
 		VALUES ((SELECT layer_id FROM layer),
 				(SELECT dist_id FROM distributions),
 				(SELECT scanner_id FROM scanner))

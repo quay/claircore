@@ -6,23 +6,21 @@ const (
 	--- Layer
     --- an identity table consisting of a content addressable layer hash
     CREATE TABLE IF NOT EXISTS layer (
-	    id bigserial PRIMARY KEY,
-        hash text UNIQUE
+        hash text PRIMARY KEY
     );
 
     --- Manifest
     --- an identity table consisting of a content addressable manifest hash
     CREATE TABLE IF NOT EXISTS manifest (
-	    id bigserial PRIMARY KEY,
-        hash text UNIQUE
+        hash text PRIMARY KEY
     );
 
     --- ManifestLayer
     --- a many to many link table identifying the layers which comprise a manifest
     --- and the layer's ordering within a manifest
     CREATE TABLE IF NOT EXISTS manifest_layer (
-        manifest_hash bigint REFERENCES manifest(id),
-        layer_hash bigint REFERENCES layer(id),
+        manifest_hash text REFERENCES manifest(hash),
+        layer_hash text REFERENCES layer(hash),
         i bigint,
         PRIMARY KEY(manifest_hash, layer_hash, i)
     );
@@ -42,7 +40,7 @@ const (
     --- a relation to identify if a manifest was successfully scanned by a particular
     --- scanner
     CREATE TABLE IF NOT EXISTS scanned_manifest (
-        manifest_hash bigint REFERENCES manifest(id),
+        manifest_hash text REFERENCES manifest(hash),
         scanner_id bigint REFERENCES scanner(id),
         PRIMARY KEY(manifest_hash, scanner_id)
     );
@@ -50,7 +48,7 @@ const (
     --- ScannedLayer
     --- a relation to identify if a layer was successfully scanned by a particular scanner
     CREATE TABLE IF NOT EXISTS scanned_layer (
-        layer_hash bigint REFERENCES layer(id),
+        layer_hash text REFERENCES layer(hash),
         scanner_id bigint REFERENCES scanner(id),
         PRIMARY KEY(layer_hash, scanner_id)
     );
@@ -60,7 +58,7 @@ const (
 	--- been scanned by a particular scanner
 	CREATE TABLE IF NOT EXISTS scannerlist (
 		id BIGSERIAL PRIMARY KEY,
-		manifest_hash bigint,
+		manifest_hash text,
 		scanner_id bigint REFERENCES scanner(id)
 	);
 	CREATE INDEX IF NOT EXISTS scannerlist_manifest_hash_idx ON scannerlist (manifest_hash);
@@ -69,7 +67,7 @@ const (
 	--- the jsonb serialized result of a scan for a particular
 	--- manifest
 	CREATE TABLE IF NOT EXISTS indexreport (
-		manifest_hash bigint PRIMARY KEY REFERENCES manifest(id),
+		manifest_hash text PRIMARY KEY REFERENCES manifest(hash),
 		state text,
 		scan_result jsonb
 	);
@@ -94,7 +92,7 @@ const (
     CREATE TABLE IF NOT EXISTS dist_scanartifact (
           dist_id bigint REFERENCES dist(id),
           scanner_id bigint REFERENCES scanner(id),
-          layer_hash bigint REFERENCES layer(id),
+          layer_hash text REFERENCES layer(hash),
           PRIMARY KEY(dist_id, scanner_id, layer_hash)
     );
     CREATE INDEX IF NOT EXISTS dist_scanartifact_lookup_idx ON dist_scanartifact(layer_hash);
@@ -117,7 +115,7 @@ const (
     --- A relation linking discovered packages with the
     --- layer hash it was found
     CREATE TABLE IF NOT EXISTS package_scanartifact (
-           layer_hash bigint REFERENCES layer(id),
+           layer_hash text REFERENCES layer(hash),
            package_id bigint REFERENCES package(id),
            source_id bigint REFERENCES package(id),
            scanner_id bigint REFERENCES scanner(id),
@@ -143,7 +141,7 @@ const (
     CREATE TABLE IF NOT EXISTS repo_scanartifact (
         repo_id bigint REFERENCES repo(id),
         scanner_id bigint REFERENCES scanner(id),
-        layer_hash bigint REFERENCES layer(id),
+        layer_hash text REFERENCES layer(hash),
         PRIMARY KEY(repo_id, scanner_id, layer_hash)
     );
     CREATE INDEX IF NOT EXISTS repo_scanartifact_lookup_idx ON repo_scanartifact(layer_hash);
@@ -158,9 +156,9 @@ const (
         package_id    bigint NOT NULL REFERENCES package (id),
         dist_id       bigint REFERENCES dist (id),
         repo_id       bigint REFERENCES repo (id),
-        manifest_hash bigint NOT NULL REFERENCES manifest (id)
+        manifest_hash text REFERENCES manifest (hash)
     );
-    CREATE INDEX IF NOT EXISTS manifest_index_hash_lookup_idx ON manifest_index (manifest_hash, package_id, dist_id, repo_id);
+    CREATE INDEX IF NOT EXISTS manifest_index_hash_lookup_idx ON manifest_index (manifest_hash);
 	CREATE UNIQUE INDEX manifest_index_unique ON manifest_index (package_id, COALESCE(dist_id, 0), COALESCE(repo_id, 0), manifest_hash);
 	`
 )

@@ -45,7 +45,7 @@ func packagesByLayer(ctx context.Context, db *sqlx.DB, hash claircore.Digest, sc
 				 LEFT JOIN package ON package_scanartifact.package_id = package.id
 				 LEFT JOIN package source_package ON package_scanartifact.source_id = source_package.id
 				 JOIN layer ON layer.hash = '%s'
-		WHERE package_scanartifact.layer_hash = layer.id
+		WHERE package_scanartifact.layer_id = layer.id
 		  AND package_scanartifact.scanner_id IN (?);
 		`
 	)
