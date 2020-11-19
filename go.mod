@@ -12,7 +12,6 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/jackc/pgtype v1.4.0
 	github.com/jackc/pgx/v4 v4.7.1
-	github.com/jmoiron/sqlx v1.2.0
 	github.com/klauspost/compress v1.10.6
 	github.com/knqyf263/go-apk-version v0.0.0-20200609155635-041fdbb8563f
 	github.com/knqyf263/go-deb-version v0.0.0-20190517075300-09fca494f03d
