@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/rs/zerolog"
 	"golang.org/x/sync/errgroup"
 
@@ -25,8 +24,6 @@ const versionMagic = "libindex number: 1\n"
 type Libindex struct {
 	// holds dependencies for creating a libindex instance
 	*Opts
-	// convenience field for creating scan-time resources that require a database
-	db *sqlx.DB
 	// a Store which will be shared between scanner instances
 	store indexer.Store
 	// a shareable http client
@@ -47,7 +44,7 @@ func New(ctx context.Context, opts *Opts) (*Libindex, error) {
 		return nil, fmt.Errorf("failed to parse opts: %v", err)
 	}
 
-	db, store, err := initStore(ctx, opts)
+	store, err := initStore(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +52,6 @@ func New(ctx context.Context, opts *Opts) (*Libindex, error) {
 
 	l := &Libindex{
 		Opts:   opts,
-		db:     db,
 		store:  store,
 		client: &http.Client{},
 	}
@@ -84,7 +80,6 @@ func New(ctx context.Context, opts *Opts) (*Libindex, error) {
 }
 
 func (l *Libindex) Close(ctx context.Context) error {
-	l.db.Close()
 	l.store.Close(ctx)
 	return nil
 }
