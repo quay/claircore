@@ -51,8 +51,7 @@ func getUpdateDiff(ctx context.Context, pool *pgxpool.Pool, prev, cur uuid.UUID)
 		vuln.id IN (
 			SELECT vuln AS id FROM uo_vuln JOIN lhs ON (uo_vuln.uo = lhs.id)
 			EXCEPT ALL
-			SELECT vuln AS id FROM uo_vuln JOIN rhs ON (uo_vuln.uo = rhs.id))
-	LIMIT 500;`
+			SELECT vuln AS id FROM uo_vuln JOIN rhs ON (uo_vuln.uo = rhs.id));`
 
 	if cur == uuid.Nil {
 		return nil, errors.New("nil uuid is invalid as \"current\" endpoint")
