@@ -1,16 +1,17 @@
 package postgres
 
 import (
+	"context"
 	"fmt"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/jackc/pgx/v4/pgxpool"
 
 	"github.com/quay/claircore"
 )
 
-func InsertRepositories(db *sqlx.DB, repos []*claircore.Repository) error {
+func InsertRepositories(ctx context.Context, pool *pgxpool.Pool, repos []*claircore.Repository) error {
 	for _, repo := range repos {
-		_, err := db.Exec(`INSERT INTO repo
+		_, err := pool.Exec(ctx, `INSERT INTO repo
 			(id, name, key, uri)
 		VALUES
 			($1, $2, $3, $4);`,
