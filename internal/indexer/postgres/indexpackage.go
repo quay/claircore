@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/rs/zerolog"
 
 	"github.com/quay/claircore"
@@ -15,13 +14,15 @@ import (
 
 var zeroPackage = claircore.Package{}
 
-// indexPackages indexes all provides packages along with creating a scan artifact. if a source package is nested
-// inside a binary package we index the source package first and then create a relation between the binary package
-// and source package.
+// IndexPackages indexes all provided packages along with creating a scan artifact.
 //
-// scan artifacts are used to determine if a particular layer has been scanned by a
-// particular scnr. see layerScanned method for more details.
-func indexPackages(ctx context.Context, pool *pgxpool.Pool, pkgs []*claircore.Package, layer *claircore.Layer, scnr indexer.VersionedScanner) error {
+// If a source package is nested inside a binary package we index the source
+// package first and then create a relation between the binary package and
+// source package.
+//
+// Scan artifacts are used to determine if a particular layer has been scanned by a
+// particular scanner. See the LayerScanned method for more details.
+func (s *store) IndexPackages(ctx context.Context, pkgs []*claircore.Package, layer *claircore.Layer, scnr indexer.VersionedScanner) error {
 	const (
 		insert = ` 
 		INSERT INTO package (name, kind, version, norm_kind, norm_version, module, arch)
@@ -76,7 +77,7 @@ func indexPackages(ctx context.Context, pool *pgxpool.Pool, pkgs []*claircore.Pa
 		Str("component", "internal/indexer/postgres/indexPackages").
 		Logger()
 	// obtain a transaction scoped batch
-	tx, err := pool.Begin(ctx)
+	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("store:indexPackage failed to create transaction: %v", err)
 	}

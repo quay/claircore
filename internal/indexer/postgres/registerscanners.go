@@ -2,50 +2,51 @@ package postgres
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"fmt"
-
-	"github.com/jmoiron/sqlx"
 
 	"github.com/quay/claircore/internal/indexer"
 )
 
-func registerScanners(ctx context.Context, db *sqlx.DB, scnrs indexer.VersionedScanners) error {
+func (s *store) RegisterScanners(ctx context.Context, vs indexer.VersionedScanners) error {
 	const (
-		insertScanner = `
-		INSERT INTO scanner (name, version, kind)
-		VALUES ($1, $2, $3)
-		ON CONFLICT (name, version, kind) DO NOTHING;
-		`
-		selectScanner = `
-		SELECT id
-		FROM scanner
-		WHERE name = $1
-		  AND version = $2
-		  AND kind = $3;
-		`
+		insert = `
+INSERT
+INTO
+	scanner (name, version, kind)
+VALUES
+	($1, $2, $3)
+ON CONFLICT
+	(name, version, kind)
+DO
+	NOTHING;
+`
+		exists = `
+SELECT
+	EXISTS(
+		SELECT
+			1
+		FROM
+			scanner
+		WHERE
+			name = $1 AND version = $2 AND kind = $3
+	);
+`
 	)
-	// TODO Use passed-in Context.
-	// check if all scanners exist
-	ids := make([]sql.NullInt64, len(scnrs))
-	for i, scnr := range scnrs {
-		err := db.Get(&ids[i], selectScanner, scnr.Name(), scnr.Version(), scnr.Kind())
-		if err != nil {
-			if !errors.Is(err, sql.ErrNoRows) {
-				return fmt.Errorf("failed to get scanner id for scnr %v: %v", scnr.Name(), err)
-			}
-		}
-	}
 
-	// register scanners not found
-	for i, id := range ids {
-		if !id.Valid {
-			s := scnrs[i]
-			_, err := db.Exec(insertScanner, s.Name(), s.Version(), s.Kind())
-			if err != nil {
-				return fmt.Errorf("failed to insert scanner %v: %v", s, err)
-			}
+	var ok bool
+	var err error
+	for _, v := range vs {
+		err = s.pool.QueryRow(ctx, exists, v.Name(), v.Version(), v.Kind()).
+			Scan(&ok)
+		if err != nil {
+			return fmt.Errorf("failed getting id for scanner %q: %v", v.Name(), err)
+		}
+		if ok {
+			continue
+		}
+		_, err = s.pool.Exec(ctx, insert, v.Name(), v.Version(), v.Kind())
+		if err != nil {
+			return fmt.Errorf("failed to insert scanner %v: %v", v.Name(), err)
 		}
 	}
 

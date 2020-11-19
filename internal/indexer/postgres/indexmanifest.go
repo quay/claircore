@@ -6,14 +6,13 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/rs/zerolog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/microbatch"
 )
 
-func indexManifest(ctx context.Context, pool *pgxpool.Pool, ir *claircore.IndexReport) error {
+func (s *store) IndexManifest(ctx context.Context, ir *claircore.IndexReport) error {
 	const (
 		query = `
 		WITH manifests AS (
@@ -43,7 +42,7 @@ func indexManifest(ctx context.Context, pool *pgxpool.Pool, ir *claircore.IndexR
 	}
 
 	// obtain a transaction scoped batch
-	tx, err := pool.Begin(ctx)
+	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("postgres: indexManifest failed to create transaction: %v", err)
 	}

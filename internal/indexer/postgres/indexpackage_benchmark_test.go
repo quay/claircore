@@ -181,12 +181,13 @@ func Benchmark_IndexPackages(b *testing.B) {
 		b.Run(bench.name, func(b *testing.B) {
 			ctx, done := log.TestLogger(ctx, b)
 			defer done()
-			db, store, teardown := TestStore(ctx, b)
+			pool, teardown := TestDatabase(ctx, b)
 			defer teardown()
+			store := NewStore(pool)
 
 			// gen a scnr and insert
 			vscnrs := test.GenUniquePackageScanners(1)
-			err := pgtest.InsertUniqueScanners(db, vscnrs)
+			err := pgtest.InsertUniqueScanners(ctx, pool, vscnrs)
 
 			// gen packages
 			var pkgs []*claircore.Package
@@ -200,11 +201,8 @@ func Benchmark_IndexPackages(b *testing.B) {
 			}
 
 			// insert layer
-			insertLayer := `
-			INSERT INTO layer (hash)
-			VALUES ($1);
-			`
-			_, err = db.Exec(insertLayer, bench.layer.Hash)
+			insertLayer := `INSERT INTO layer (hash) VALUES ($1);`
+			_, err = pool.Exec(ctx, insertLayer, bench.layer.Hash)
 			if err != nil {
 				b.Fatalf("failed to insert test layer: %v", err)
 			}

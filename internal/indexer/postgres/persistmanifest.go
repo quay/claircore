@@ -4,11 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/quay/claircore"
 )
 
-func persistManifest(ctx context.Context, pool *pgxpool.Pool, manifest claircore.Manifest) error {
+func (s *store) PersistManifest(ctx context.Context, manifest claircore.Manifest) error {
 	const (
 		insertManifest = `
 		INSERT INTO manifest (hash)
@@ -40,7 +39,7 @@ func persistManifest(ctx context.Context, pool *pgxpool.Pool, manifest claircore
 		`
 	)
 
-	tx, err := pool.Begin(ctx)
+	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("postgres:persistManifest: failed to create transaction: %v", err)
 	}

@@ -2,17 +2,17 @@ package postgres
 
 import (
 	"context"
-	"database/sql"
+	"errors"
 	"fmt"
 	"strconv"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/jackc/pgx/v4"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
 )
 
-func distributionsByLayer(ctx context.Context, db *sqlx.DB, hash claircore.Digest, scnrs indexer.VersionedScanners) ([]*claircore.Distribution, error) {
+func (s *store) DistributionsByLayer(ctx context.Context, hash claircore.Digest, scnrs indexer.VersionedScanners) ([]*claircore.Distribution, error) {
 	const (
 		selectScanner = `
 		SELECT id
@@ -33,47 +33,37 @@ func distributionsByLayer(ctx context.Context, db *sqlx.DB, hash claircore.Diges
 			   dist.pretty_name
 		FROM dist_scanartifact
 				 LEFT JOIN dist ON dist_scanartifact.dist_id = dist.id
-				 JOIN layer ON layer.hash = '%s'
+				 JOIN layer ON layer.hash = $1
 		WHERE dist_scanartifact.layer_id = layer.id
-		  AND dist_scanartifact.scanner_id IN (?);
+		  AND dist_scanartifact.scanner_id = ANY($2);
 		`
 	)
 
-	// TODO Use passed-in Context.
 	if len(scnrs) == 0 {
 		return []*claircore.Distribution{}, nil
 	}
+
 	// get scanner ids
-	scannerIDs := []int64{}
-	for _, scnr := range scnrs {
-		var scannerID int64
-		err := db.Get(&scannerID, selectScanner, scnr.Name(), scnr.Version(), scnr.Kind())
+	scannerIDs := make([]int64, len(scnrs))
+	for i, scnr := range scnrs {
+		err := s.pool.QueryRow(ctx, selectScanner, scnr.Name(), scnr.Version(), scnr.Kind()).
+			Scan(&scannerIDs[i])
 		if err != nil {
-			return nil, fmt.Errorf("store:distributionseByLayer failed to retrieve scanner ids for scnr %v: %v", scnr, err)
+			return nil, fmt.Errorf("store:distributionseByLayer failed to retrieve scanner ids for scanner %v: %v", scnr, err)
 		}
-		scannerIDs = append(scannerIDs, scannerID)
 	}
 
-	res := []*claircore.Distribution{}
-
-	// rebind see: https://jmoiron.github.io/sqlx/ "in queries" section
-	// we need to format this query since an IN query can only have one bindvar. TODO: confirm this
-	withHash := fmt.Sprintf(query, hash)
-	inQuery, args, err := sqlx.In(withHash, scannerIDs)
-	if err != nil {
-		return nil, fmt.Errorf("failed to bind scannerIDs to query: %v", err)
-	}
-	inQuery = db.Rebind(inQuery)
-
-	rows, err := db.Queryx(inQuery, args...)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("store:distributionsByLayer no distribution found for hash %v and scnrs %v", hash, scnrs)
-		}
+	rows, err := s.pool.Query(ctx, query, hash, scannerIDs)
+	switch {
+	case errors.Is(err, nil):
+	case errors.Is(err, pgx.ErrNoRows):
+		return nil, fmt.Errorf("store:distributionsByLayer no distribution found for hash %v and scanners %v", hash, scnrs)
+	default:
 		return nil, fmt.Errorf("store:distributionsByLayer failed to retrieve package rows for hash %v and scanners %v: %v", hash, scnrs, err)
 	}
 	defer rows.Close()
 
+	res := []*claircore.Distribution{}
 	for rows.Next() {
 		var dist claircore.Distribution
 
@@ -95,6 +85,9 @@ func distributionsByLayer(ctx context.Context, db *sqlx.DB, hash claircore.Diges
 		}
 
 		res = append(res, &dist)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 
 	return res, nil

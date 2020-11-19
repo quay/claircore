@@ -2,52 +2,61 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
 )
 
-func layerScanned(ctx context.Context, pool *pgxpool.Pool, hash claircore.Digest, scnr indexer.VersionedScanner) (bool, error) {
+func (s *store) LayerScanned(ctx context.Context, hash claircore.Digest, scnr indexer.VersionedScanner) (bool, error) {
+	// TODO(hank) Could this be written as a single query that reports NULL if
+	// the scanner isn't present?
 	const (
 		selectScanner = `
-		SELECT id
-		FROM scanner
-		WHERE name = $1
-		  AND version = $2
-		  AND kind = $3;
-		`
+SELECT
+	id
+FROM
+	scanner
+WHERE
+	name = $1 AND version = $2 AND kind = $3;
+`
 		selectScanned = `
-		SELECT layer.hash
-		FROM layer
-                 JOIN scanned_layer ON scanned_layer.layer_id = layer.id
-		WHERE layer.hash = $1
-		  AND scanned_layer.scanner_id = $2;
-		`
+SELECT
+	EXISTS(
+		SELECT
+			1
+		FROM
+			layer
+			JOIN scanned_layer ON
+					scanned_layer.layer_id = layer.id
+		WHERE
+			layer.hash = $1
+			AND scanned_layer.scanner_id = $2
+	);
+`
 	)
 
 	var scannerID int64
-	row := pool.QueryRow(ctx, selectScanner, scnr.Name(), scnr.Version(), scnr.Kind())
-	err := row.Scan(&scannerID)
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			return false, fmt.Errorf("scanner name and version not found in store: %+v", scnr)
-		}
+	err := s.pool.QueryRow(ctx, selectScanner, scnr.Name(), scnr.Version(), scnr.Kind()).
+		Scan(&scannerID)
+	switch {
+	case errors.Is(err, nil):
+	case errors.Is(err, pgx.ErrNoRows):
+		return false, fmt.Errorf("scanner %q not found", scnr)
+	default:
 		return false, err
 	}
 
-	var layerHash string
-	row = pool.QueryRow(ctx, selectScanned, hash.String(), scannerID)
-	err = row.Scan(&layerHash)
+	var ok bool
+	err = s.pool.QueryRow(ctx, selectScanned, hash.String(), scannerID).
+		Scan(&ok)
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			return false, nil
-		}
 		return false, err
 	}
 
-	return true, nil
+	return ok, nil
 
 }

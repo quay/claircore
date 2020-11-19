@@ -4,30 +4,34 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jmoiron/sqlx"
-
 	"github.com/quay/claircore"
 )
 
-func setIndexReport(ctx context.Context, db *sqlx.DB, sr *claircore.IndexReport) error {
-	const (
-		upsertIndexReport = `
-		WITH manifests AS (
-			SELECT id AS manifest_id
-			FROM manifest
-			WHERE hash = $1
+func (s *store) SetIndexReport(ctx context.Context, ir *claircore.IndexReport) error {
+	const query = `
+WITH
+	manifests
+		AS (
+			SELECT
+				id AS manifest_id
+			FROM
+				manifest
+			WHERE
+				hash = $1
 		)
-		INSERT
-		INTO indexreport (manifest_id, scan_result)
-		VALUES ((select manifest_id from manifests),
-				$2)
-		ON CONFLICT (manifest_id) DO UPDATE SET scan_result = excluded.scan_result
-		`
-	)
-	// TODO Use passed-in Context.
+INSERT
+INTO
+	indexreport (manifest_id, scan_result)
+VALUES
+	((SELECT manifest_id FROM manifests), $2)
+ON CONFLICT
+	(manifest_id)
+DO
+	UPDATE SET scan_result = excluded.scan_result;
+`
 	// we cast scanner.IndexReport to jsonbIndexReport in order to obtain the value/scan
 	// implementations
-	_, err := db.Exec(upsertIndexReport, sr.Hash, jsonbIndexReport(*sr))
+	_, err := s.pool.Exec(ctx, query, ir.Hash, jsonbIndexReport(*ir))
 	if err != nil {
 		return fmt.Errorf("failed to upsert index report: %v", err)
 	}

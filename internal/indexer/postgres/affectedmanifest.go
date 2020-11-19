@@ -21,43 +21,53 @@ var (
 	ErrNotIndexed = fmt.Errorf("vulnerability containers data not indexed by any scannners")
 )
 
-// affectedManifests finds the manifests digests which are affected by the provided vulnerability.
+// AffectedManifests finds the manifests digests which are affected by the provided vulnerability.
 //
-// an exhaustive search for all indexed packages of the same name as the vulnerability is performed.
+// An exhaustive search for all indexed packages of the same name as the vulnerability is performed.
 //
-// the list of packages is filtered down to only the affected set.
+// The list of packages is filtered down to only the affected set.
 //
-// the manifest index is then queried to resolve a list of manifest hashes containing the affected
+// The manifest index is then queried to resolve a list of manifest hashes containing the affected
 // artifacts.
-func affectedManifests(ctx context.Context, pool *pgxpool.Pool, v claircore.Vulnerability) ([]claircore.Digest, error) {
+func (s *store) AffectedManifests(ctx context.Context, v claircore.Vulnerability) ([]claircore.Digest, error) {
 	const (
 		selectPackages = `
-		SELECT id, name, version, kind, norm_kind, norm_version, module, arch
-		FROM package
-		WHERE name = $1;
-		`
+SELECT
+	id,
+	name,
+	version,
+	kind,
+	norm_kind,
+	norm_version,
+	module,
+	arch
+FROM
+	package
+WHERE
+	name = $1;
+`
 		selectAffected = `
-		SELECT manifest.hash
-		FROM manifest_index
-				 JOIN manifest ON manifest_index.manifest_id = manifest.id
-		WHERE package_id = $1
-		  AND (
+SELECT
+	manifest.hash
+FROM
+	manifest_index
+	JOIN manifest ON
+			manifest_index.manifest_id = manifest.id
+WHERE
+	package_id = $1
+	AND (
 			CASE
-				WHEN $2::bigint IS NULL THEN
-					dist_id IS NULL
-				ELSE
-					dist_id = $2
-				END
-			)
-		  AND (
+			WHEN $2::INT8 IS NULL THEN dist_id IS NULL
+			ELSE dist_id = $2
+			END
+		)
+	AND (
 			CASE
-				WHEN $3::bigint IS NULL THEN
-					repo_id IS NULL
-				ELSE
-					repo_id = $3
-				END
-			);
-		`
+			WHEN $3::INT8 IS NULL THEN repo_id IS NULL
+			ELSE repo_id = $3
+			END
+		);
+`
 	)
 	log := zerolog.Ctx(ctx).
 		With().
@@ -66,7 +76,7 @@ func affectedManifests(ctx context.Context, pool *pgxpool.Pool, v claircore.Vuln
 
 	// confirm the incoming vuln can be
 	// resolved into a prototype index record
-	pr, err := protoRecord(ctx, pool, v)
+	pr, err := protoRecord(ctx, s.pool, v)
 	switch {
 	case err == nil:
 		// break out
@@ -81,16 +91,16 @@ func affectedManifests(ctx context.Context, pool *pgxpool.Pool, v claircore.Vuln
 	// collect all packages which may be affected
 	// by the vulnerability in question.
 	pkgsToFilter := []claircore.Package{}
-	rows, err := pool.Query(ctx, selectPackages, v.Package.Name)
-	if rows != nil {
-		defer rows.Close()
-	}
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return []claircore.Digest{}, nil
-		}
+	rows, err := s.pool.Query(ctx, selectPackages, v.Package.Name)
+	switch {
+	case errors.Is(err, nil):
+	case errors.Is(err, pgx.ErrNoRows):
+		return []claircore.Digest{}, nil
+	default:
 		return nil, fmt.Errorf("failed to query packages associated with vulnerability %+v: %v", v, err)
 	}
+	defer rows.Close()
+
 	for rows.Next() {
 		var pkg claircore.Package
 		var id int64
@@ -120,6 +130,9 @@ func affectedManifests(ctx context.Context, pool *pgxpool.Pool, v claircore.Vuln
 		pkgsToFilter = append(pkgsToFilter, pkg)
 	}
 	log.Debug().Int("count", len(pkgsToFilter)).Msg("packages to filter")
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error scanning packages: %v", err)
+	}
 
 	// for each package discovered create an index record
 	// and determine if any in-tree matcher finds the record vulnerable
@@ -142,13 +155,13 @@ func affectedManifests(ctx context.Context, pool *pgxpool.Pool, v claircore.Vuln
 	}
 	log.Debug().Int("count", len(filteredRecords)).Msg("vulnerable indexrecords")
 
-	// query the manifest index for manifests containing
+	// Query the manifest index for manifests containing
 	// the vulnerable indexrecords and create a set
-	// containing each unique manifest
+	// containing each unique manifest.
 	//
-	// since this loop opens a db conn each iteration the returned rows
+	// Since this loop opens a db conn each iteration the returned rows
 	// handle must be closed manually and not deferred else a buildup of db conns
-	// may occur until the method exits
+	// may occur until the method exits.
 	set := map[string]struct{}{}
 	out := []claircore.Digest{}
 	for _, record := range filteredRecords {
@@ -157,19 +170,22 @@ func affectedManifests(ctx context.Context, pool *pgxpool.Pool, v claircore.Vuln
 			return nil, fmt.Errorf("failed to resolve record %+v to sql values for query: %v", record, err)
 		}
 
-		rows, err := pool.Query(ctx,
+		rows, err := s.pool.Query(ctx,
 			selectAffected,
 			record.Package.ID,
 			v[2],
 			v[3],
 		)
-		if err != nil {
+		switch {
+		case errors.Is(err, nil):
+		case errors.Is(err, pgx.ErrNoRows):
+			err = fmt.Errorf("failed to query the manifest index: %v", err)
+			fallthrough
+		default:
 			rows.Close()
-			if err == pgx.ErrNoRows {
-				continue
-			}
-			return nil, fmt.Errorf("failed to query the manifest index: %v", err)
+			return nil, err
 		}
+
 		for rows.Next() {
 			var hash claircore.Digest
 			err := rows.Scan(&hash)
@@ -181,6 +197,11 @@ func affectedManifests(ctx context.Context, pool *pgxpool.Pool, v claircore.Vuln
 				set[hash.String()] = struct{}{}
 				out = append(out, hash)
 			}
+		}
+		err = rows.Err()
+		rows.Close()
+		if err != nil {
+			return nil, err
 		}
 	}
 	log.Debug().Int("count", len(out)).Msg("affected manifests")

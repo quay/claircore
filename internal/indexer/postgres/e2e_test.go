@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/test"
@@ -171,8 +172,9 @@ func TestE2E(t *testing.T) {
 	}
 
 	for _, e := range e2es {
-		_, store, teardown := TestStore(ctx, t)
+		pool, teardown := TestDatabase(ctx, t)
 		defer teardown()
+		store := NewStore(pool)
 
 		layer := &claircore.Layer{
 			Hash: claircore.MustParseDigest(`sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef`),

@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/lib/pq"
 
 	"github.com/quay/claircore"
@@ -19,7 +19,7 @@ import (
 type affectedE2E struct {
 	failed bool
 	store  indexer.Store
-	db     *sqlx.DB
+	pool   *pgxpool.Pool
 	ctx    context.Context
 	ir     claircore.IndexReport
 	vr     claircore.VulnerabilityReport
@@ -30,8 +30,9 @@ func TestAffectedE2E(t *testing.T) {
 	ctx := context.Background()
 	ctx, done := log.TestLogger(ctx, t)
 	defer done()
-	db, store, teardown := TestStore(ctx, t)
+	pool, teardown := TestDatabase(ctx, t)
 	defer teardown()
+	store := NewStore(pool)
 
 	table := []struct {
 		// name of the defined affectedE2E test
@@ -129,7 +130,7 @@ func TestAffectedE2E(t *testing.T) {
 		// create and run e2e test
 		e2e := &affectedE2E{
 			store: store,
-			db:    db,
+			pool:  pool,
 			ctx:   ctx,
 			ir:    ir,
 			vr:    vr,
@@ -163,7 +164,10 @@ func (e *affectedE2E) Run(t *testing.T) {
 // this is required so foreign key constraints do not
 // fail in later tests.
 func (e *affectedE2E) IndexArtifacts(t *testing.T) {
+	ctx := context.Background()
+	ctx, done := log.TestLogger(ctx, t)
 	defer func() {
+		done()
 		e.failed = t.Failed()
 	}()
 	const (
@@ -192,12 +196,12 @@ func (e *affectedE2E) IndexArtifacts(t *testing.T) {
 		ON CONFLICT DO NOTHING;
 		`
 	)
-	_, err := e.db.Exec(insertManifest, e.ir.Hash.String())
+	_, err := e.pool.Exec(ctx, insertManifest, e.ir.Hash.String())
 	if err != nil {
 		t.Fatalf("failed to insert manifest: %v", err)
 	}
 	for _, pkg := range e.ir.Packages {
-		_, err := e.db.Exec(insertPkg,
+		_, err := e.pool.Exec(ctx, insertPkg,
 			pkg.Name,
 			pkg.Kind,
 			pkg.Version,
@@ -212,7 +216,7 @@ func (e *affectedE2E) IndexArtifacts(t *testing.T) {
 		}
 		if pkg.Source != nil {
 			pkg := pkg.Source
-			_, err := e.db.Exec(insertPkg,
+			_, err := e.pool.Exec(ctx, insertPkg,
 				pkg.Name,
 				pkg.Kind,
 				pkg.Version,
@@ -228,7 +232,7 @@ func (e *affectedE2E) IndexArtifacts(t *testing.T) {
 		}
 	}
 	for _, dist := range e.ir.Distributions {
-		_, err := e.db.Exec(insertDist,
+		_, err := e.pool.Exec(ctx, insertDist,
 			dist.Name,
 			dist.DID,
 			dist.Version,
@@ -244,7 +248,7 @@ func (e *affectedE2E) IndexArtifacts(t *testing.T) {
 		}
 	}
 	for _, repo := range e.ir.Repositories {
-		_, err := e.db.Exec(insertRepo,
+		_, err := e.pool.Exec(ctx, insertRepo,
 			repo.Name,
 			repo.Key,
 			repo.URI,
@@ -259,7 +263,10 @@ func (e *affectedE2E) IndexArtifacts(t *testing.T) {
 // IndexManifest confirms the contents of a manifest
 // can be written to the manifest index table.
 func (e *affectedE2E) IndexManifest(t *testing.T) {
+	ctx := context.Background()
+	ctx, done := log.TestLogger(ctx, t)
 	defer func() {
+		done()
 		e.failed = t.Failed()
 	}()
 	err := e.store.IndexManifest(e.ctx, &e.ir)
@@ -272,7 +279,10 @@ func (e *affectedE2E) IndexManifest(t *testing.T) {
 // in the vulnereability report reports the associated
 // manifest is affected.
 func (e *affectedE2E) AffectedManifests(t *testing.T) {
+	ctx := context.Background()
+	ctx, done := log.TestLogger(ctx, t)
 	defer func() {
+		done()
 		e.failed = t.Failed()
 	}()
 	for _, vuln := range e.vr.Vulnerabilities {

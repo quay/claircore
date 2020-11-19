@@ -2,73 +2,48 @@ package postgres
 
 import (
 	"context"
-	"database/sql"
+	"errors"
 	"fmt"
 	"strconv"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/jackc/pgx/v4"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
 )
 
-func repositoriesByLayer(ctx context.Context, db *sqlx.DB, hash claircore.Digest, scnrs indexer.VersionedScanners) ([]*claircore.Repository, error) {
-	const (
-		selectScanner = `
-		SELECT id
-		FROM scanner
-		WHERE name = $1
-		  AND version = $2
-		  AND kind = $3;
-		`
-		query = `
-		SELECT repo.id,
-			   repo.name,
-			   repo.key,
-			   repo.uri,
-			   repo.cpe
-		FROM repo_scanartifact
-				 LEFT JOIN repo ON repo_scanartifact.repo_id = repo.id
-				 JOIN layer on layer.hash = '%s'
-		WHERE repo_scanartifact.layer_id = layer.id
-		  AND repo_scanartifact.scanner_id IN (?);
-		`
-	)
-	// TODO Use passed-in Context.
+func (s *store) RepositoriesByLayer(ctx context.Context, hash claircore.Digest, scnrs indexer.VersionedScanners) ([]*claircore.Repository, error) {
+	const query = `
+SELECT
+	repo.id, repo.name, repo.key, repo.uri, repo.cpe
+FROM
+	repo_scanartifact
+	LEFT JOIN repo ON repo_scanartifact.repo_id = repo.id
+	JOIN layer ON layer.hash = $1
+WHERE
+	repo_scanartifact.layer_id = layer.id
+	AND repo_scanartifact.scanner_id = ANY ($2);
+`
+
 	if len(scnrs) == 0 {
 		return []*claircore.Repository{}, nil
 	}
-	// get scanner ids
-	scannerIDs := []int64{}
-	for _, scnr := range scnrs {
-		var scannerID int64
-		err := db.Get(&scannerID, selectScanner, scnr.Name(), scnr.Version(), scnr.Kind())
-		if err != nil {
-			return nil, fmt.Errorf("store:repositoriesByLayer failed to retrieve scanner ids for scnr %v: %v", scnr, err)
-		}
-		scannerIDs = append(scannerIDs, scannerID)
+	scannerIDs, err := s.selectScanners(ctx, scnrs)
+	if err != nil {
+		return nil, fmt.Errorf("store:repositoriesByLayer %v", err)
 	}
 
-	res := []*claircore.Repository{}
-
-	// rebind see: https://jmoiron.github.io/sqlx/ "in queries" section
-	// we need to format this query since an IN query can only have one bindvar. TODO: confirm this
-	withHash := fmt.Sprintf(query, hash)
-	inQuery, args, err := sqlx.In(withHash, scannerIDs)
-	if err != nil {
-		return nil, fmt.Errorf("failed to bind scannerIDs to query: %v", err)
-	}
-	inQuery = db.Rebind(inQuery)
-
-	rows, err := db.Queryx(inQuery, args...)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, fmt.Errorf("store:repositoriesByLayer no repositories found for hash %v and scnrs %v", hash, scnrs)
-		}
+	rows, err := s.pool.Query(ctx, query, hash, scannerIDs)
+	switch {
+	case errors.Is(err, nil):
+	case errors.Is(err, pgx.ErrNoRows):
+		return nil, fmt.Errorf("store:repositoriesByLayer no repositories found for hash %v and scanners %v", hash, scnrs)
+	default:
 		return nil, fmt.Errorf("store:repositoriesByLayer failed to retrieve package rows for hash %v and scanners %v: %v", hash, scnrs, err)
 	}
 	defer rows.Close()
 
+	res := []*claircore.Repository{}
 	for rows.Next() {
 		var repo claircore.Repository
 
@@ -86,6 +61,9 @@ func repositoriesByLayer(ctx context.Context, db *sqlx.DB, hash claircore.Digest
 		}
 
 		res = append(res, &repo)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 
 	return res, nil

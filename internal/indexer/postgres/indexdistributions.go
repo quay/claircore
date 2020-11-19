@@ -5,15 +5,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/jmoiron/sqlx"
-
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/pkg/microbatch"
 )
 
-func indexDistributions(ctx context.Context, db *sqlx.DB, pool *pgxpool.Pool, dists []*claircore.Distribution, layer *claircore.Layer, scnr indexer.VersionedScanner) error {
+func (s *store) IndexDistributions(ctx context.Context, dists []*claircore.Distribution, layer *claircore.Layer, scnr indexer.VersionedScanner) error {
 	const (
 		insert = `
 		INSERT INTO dist 
@@ -23,7 +20,7 @@ func indexDistributions(ctx context.Context, db *sqlx.DB, pool *pgxpool.Pool, di
 		ON CONFLICT (name, did, version, version_code_name, version_id, arch, cpe, pretty_name) DO NOTHING;
 		`
 
-		insertWith = `	
+		insertWith = `
 		WITH distributions AS (
 			SELECT id AS dist_id
 			FROM dist
@@ -57,8 +54,8 @@ func indexDistributions(ctx context.Context, db *sqlx.DB, pool *pgxpool.Pool, di
 		`
 	)
 
-	// obtain a transaction scopped batch
-	tx, err := pool.Begin(ctx)
+	// obtain a transaction scoped batch
+	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("store:indexDistributions failed to create transaction: %v", err)
 	}

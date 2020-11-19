@@ -5,15 +5,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/jmoiron/sqlx"
-
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/pkg/microbatch"
 )
 
-func indexRepositories(ctx context.Context, db *sqlx.DB, pool *pgxpool.Pool, repos []*claircore.Repository, l *claircore.Layer, scnr indexer.VersionedScanner) error {
+func (s *store) IndexRepositories(ctx context.Context, repos []*claircore.Repository, l *claircore.Layer, scnr indexer.VersionedScanner) error {
 	const (
 		insert = `
 		INSERT INTO repo
@@ -50,8 +47,8 @@ func indexRepositories(ctx context.Context, db *sqlx.DB, pool *pgxpool.Pool, rep
 		ON CONFLICT DO NOTHING;
 		`
 	)
-	// obtain a transaction scopped batch
-	tx, err := pool.Begin(ctx)
+	// obtain a transaction scoped batch
+	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("store:indexRepositories failed to create transaction: %v", err)
 	}
