@@ -2,12 +2,28 @@
 ## [Unreleased]
 
 
+<a name="v0.1.16"></a>
+## [v0.1.16] - 2020-11-19
+### Documentation
+- [268b037](https://github.com/quay/claircore/commit/268b037b0c8dd3180844739b2bc229d88412674a): indexer state diagram update
+### Ovaldebug
+- [6986794](https://github.com/quay/claircore/commit/69867941a721f6e2b8535085bc72107ced956a8b): add tool for testing parsing of OVAL
+### Ovalutil
+- [aa1927a](https://github.com/quay/claircore/commit/aa1927a8b0edb99317740c53893abc1ecbe0720e): fix dpkg "name caching" bug
+- [f9dea3a](https://github.com/quay/claircore/commit/f9dea3aea8a72ea2107315e53b1e29488cc64f40): update vulnerability heuristic
+### Ubuntu
+- [6d61f87](https://github.com/quay/claircore/commit/6d61f871cf27dbed97e07f3c43f0d77ee7c7a837): attempt to add normalized severity
+### Updater
+- [378deef](https://github.com/quay/claircore/commit/378deef66294dfdbfacbb08ef1198ac6328b28dd): remove updater diff limit ([#265](https://github.com/quay/claircore/issues/265))
+ -  [#265](https://github.com/quay/claircore/issues/265)
 <a name="v0.1.15"></a>
-## [v0.1.15] - 2020-10-30
+## [v0.1.15] - 2020-11-02
 ### Alpine
 - [16f63d4](https://github.com/quay/claircore/commit/16f63d40f177ac71b71c164dab0ce79589df5c7c): use new versions, upstream databases
 - [e1f3e1f](https://github.com/quay/claircore/commit/e1f3e1f29405dfe89c4af5de98e7dc1c386c7efc): add new versions
 - [c4367d5](https://github.com/quay/claircore/commit/c4367d5e7b8ef9392920e321984299cbeb51bd1d): fix yaml tag
+### Chore
+- [266a577](https://github.com/quay/claircore/commit/266a577d94b2376d3d16f2818c8c2ce144ccd021): v0.1.15 changelog bump
 ### Etc
 - [94aa5f0](https://github.com/quay/claircore/commit/94aa5f0e8acc81d4b20e9064c7b0fae22043190c): update podman yaml
 ### Matcher
@@ -511,7 +527,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.1.15...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.1.16...HEAD
+[v0.1.16]: https://github.com/quay/claircore/compare/v0.1.15...v0.1.16
 [v0.1.15]: https://github.com/quay/claircore/compare/v0.1.14...v0.1.15
 [v0.1.14]: https://github.com/quay/claircore/compare/v0.1.13...v0.1.14
 [v0.1.13]: https://github.com/quay/claircore/compare/v0.1.12...v0.1.13
