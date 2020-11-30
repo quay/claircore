@@ -2,8 +2,15 @@
 ## [Unreleased]
 
 
+<a name="v0.1.17"></a>
+## [v0.1.17] - 2020-11-30
+### Cicd
+- [efbc55b](https://github.com/quay/claircore/commit/efbc55b8d5b27bdc32aeb6fdb60ebd3a569037a4): github actions set-env fix
+
 <a name="v0.1.16"></a>
-## [v0.1.16] - 2020-11-19
+## [v0.1.16] - 2020-11-25
+### Chore
+- [c07b9dc](https://github.com/quay/claircore/commit/c07b9dc160eaad0688238998f8c5981389f57c8f): v0.1.16 changelog bump
 ### Documentation
 - [268b037](https://github.com/quay/claircore/commit/268b037b0c8dd3180844739b2bc229d88412674a): indexer state diagram update
 ### Ovaldebug
@@ -527,7 +534,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.1.16...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.1.17...HEAD
+[v0.1.17]: https://github.com/quay/claircore/compare/v0.1.16...v0.1.17
 [v0.1.16]: https://github.com/quay/claircore/compare/v0.1.15...v0.1.16
 [v0.1.15]: https://github.com/quay/claircore/compare/v0.1.14...v0.1.15
 [v0.1.14]: https://github.com/quay/claircore/compare/v0.1.13...v0.1.14
