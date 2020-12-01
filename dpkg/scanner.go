@@ -23,7 +23,7 @@ import (
 const (
 	name    = "dpkg"
 	kind    = "package"
-	version = "v0.0.1"
+	version = "v0.0.2"
 )
 
 var (
@@ -176,7 +176,7 @@ Find:
 			return nil, fmt.Errorf("resetting tar reader failed: %w", err)
 		}
 		tr = tar.NewReader(r)
-		prefix := filepath.Join(p, "info")
+		prefix := filepath.Join(p, "info") + string(filepath.Separator)
 		const suffix = ".md5sums"
 		for h, err = tr.Next(); err == nil; h, err = tr.Next() {
 			if !strings.HasPrefix(h.Name, prefix) || !strings.HasSuffix(h.Name, suffix) {
@@ -187,6 +187,13 @@ Find:
 			if i := strings.IndexRune(n, ':'); i != -1 {
 				n = n[:i]
 			}
+			p, ok := found[n]
+			if !ok {
+				log.Debug().
+					Str("package", n).
+					Msg("extra metadata found, ignoring")
+				continue
+			}
 			hash := md5.New()
 			if _, err := io.Copy(hash, tr); err != nil {
 				log.Warn().
@@ -195,7 +202,7 @@ Find:
 					Msg("unable to read package metadata")
 				continue
 			}
-			found[n].RepositoryHint = hex.EncodeToString(hash.Sum(nil))
+			p.RepositoryHint = hex.EncodeToString(hash.Sum(nil))
 		}
 		log.Debug().
 			Int("count", len(found)).

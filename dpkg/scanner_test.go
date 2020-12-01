@@ -1,8 +1,12 @@
 package dpkg
 
 import (
+	"archive/tar"
 	"context"
+	"errors"
+	"io"
 	"net/http"
+	"os"
 	"testing"
 	"time"
 
@@ -820,5 +824,115 @@ func TestScanner(t *testing.T) {
 	}
 	if !cmp.Equal(got, want) {
 		t.Fatal(cmp.Diff(got, want))
+	}
+}
+
+func TestExtraMetadata(t *testing.T) {
+	const layerfile = `testdata/extrametadata.layer`
+	l := claircore.Layer{
+		Hash: claircore.MustParseDigest(`sha256:25fd87072f39aaebd1ee24dca825e61d9f5a0f87966c01551d31a4d8d79d37d8`),
+		URI:  "file:///dev/null",
+	}
+	ctx := context.Background()
+	ctx, done := log.TestLogger(ctx, t)
+	defer done()
+
+	// Set up the crafted layer
+	extraMetadataSetup(t, layerfile)
+	l.SetLocal(layerfile)
+	if t.Failed() {
+		return
+	}
+
+	s := new(Scanner)
+	ps, err := s.Scan(ctx, &l)
+	if err != nil {
+		t.Error(err)
+	}
+	if got, want := len(ps), 1; got != want {
+		t.Errorf("checking length, got: %d, want: %d", got, want)
+	}
+}
+
+// ExtraMetadataSetup is a helper to craft a layer that trips PROJQUAY-1308.
+func extraMetadataSetup(t *testing.T, layer string) {
+	t.Helper()
+
+	fi, err := os.Stat(layer)
+	if err != nil {
+		t.Log(err)
+	}
+	switch {
+	case err == nil:
+		// If everything looks okay, check if this test has been touched. If so,
+		// remove the layer and recurse, so that it's re-created.
+		tf, err := os.Stat(`scanner_test.go`)
+		if err != nil {
+			t.Log(err)
+		}
+		if !fi.ModTime().After(tf.ModTime()) {
+			t.Log("recreating layer")
+			if err := os.Remove(layer); err != nil {
+				t.Log(err)
+			}
+			extraMetadataSetup(t, layer)
+		}
+		return
+	case errors.Is(err, os.ErrNotExist): // OK
+		os.Mkdir(`testdata`, 0755)
+	default:
+		t.Error(err)
+		return
+	}
+
+	// If we're here, time to create the layer.
+	t.Log("creating layer")
+	f, err := os.Create(layer)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := f.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
+	w := tar.NewWriter(f)
+	defer func() {
+		if err := w.Flush(); err != nil {
+			t.Error(err)
+		}
+	}()
+	for _, n := range []string{
+		"db/",
+		"db/available",
+		"db/info.md5sums",
+		"db/info/",
+		"db/info/bogus.md5sums",
+		"db/info/extra.md5sums",
+	} {
+		if err := w.WriteHeader(&tar.Header{
+			Name: n,
+		}); err != nil {
+			t.Error(err)
+		}
+	}
+	const statusfile = `Package: bogus
+Status: install ok installed
+Priority: important
+Section: admin
+Installed-Size: 0
+Maintainer: Veryreal Developer <email@example.com>
+Architecture: all
+Version: 1
+
+`
+	if err := w.WriteHeader(&tar.Header{
+		Name: "db/status",
+		Size: int64(len(statusfile)),
+	}); err != nil {
+		t.Error(err)
+	}
+	if _, err := io.WriteString(w, statusfile); err != nil {
+		t.Error(err)
 	}
 }
