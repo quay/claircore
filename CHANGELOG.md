@@ -2,8 +2,17 @@
 ## [Unreleased]
 
 
+<a name="v0.1.18"></a>
+## [v0.1.18] - 2020-12-02
+### Cicd
+- [e80d4c7](https://github.com/quay/claircore/commit/e80d4c74e6461b7fd53fa02de0a6d945264a5a1e): bump create pull request action
+### Oval
+- [b6f61ac](https://github.com/quay/claircore/commit/b6f61acb71b85143b7c0ba19dffb39d2cfbbe890): rpm and dpkg parser updates
+
 <a name="v0.1.17"></a>
 ## [v0.1.17] - 2020-11-30
+### Chore
+- [6ffe592](https://github.com/quay/claircore/commit/6ffe592a864fe92e44b65d63d3576f4be2c5ab58): v0.1.17 changelog bump
 ### Cicd
 - [efbc55b](https://github.com/quay/claircore/commit/efbc55b8d5b27bdc32aeb6fdb60ebd3a569037a4): github actions set-env fix
 
@@ -534,7 +543,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.1.17...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.1.18...HEAD
+[v0.1.18]: https://github.com/quay/claircore/compare/v0.1.17...v0.1.18
 [v0.1.17]: https://github.com/quay/claircore/compare/v0.1.16...v0.1.17
 [v0.1.16]: https://github.com/quay/claircore/compare/v0.1.15...v0.1.16
 [v0.1.15]: https://github.com/quay/claircore/compare/v0.1.14...v0.1.15
