@@ -103,22 +103,24 @@ func RPMDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulnsF
 						Msg("failed object lookup. moving to next object,state pair")
 					continue
 				}
+				// NB This may not be populated for the rest of the loop. The
+				// noVersion bool controls whether that's OK or not.
 				var state *oval.RPMInfoState
-				if !noVersion {
+				if i < len(stateRefs) { // Index check needed because we may have gotten here with noVersion set.
 					stateRef := stateRefs[i].StateRef
 					state, err = rpmStateLookup(root, stateRef)
-					if err != nil {
+					if !noVersion && err != nil {
 						log.Debug().
 							Err(err).
 							Str("state_ref", stateRef).
 							Msg("failed state lookup. moving to next object,state pair")
 						continue
 					}
-					// if EVR tag not present this is not a linux package
-					// see oval definitions for more details
-					if state.EVR == nil {
-						continue
-					}
+				}
+				// if EVR tag not present this is not a linux package
+				// see oval definitions for more details
+				if state != nil && state.EVR == nil {
+					continue
 				}
 
 				for _, module := range enabledModules {
