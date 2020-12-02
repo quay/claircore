@@ -55,11 +55,10 @@ func RPMDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulnsF
 		}
 		// unpack criterions into vulnerabilities
 		for _, criterion := range cris {
-			var noVersion bool
-			// lookup test
+			// if test object is not rmpinfo_test the provided test is not
+			// associated with a package. this criterion will be skipped.
 			test, err := TestLookup(root, criterion.TestRef, func(kind string) bool {
-				switch kind {
-				case "uname_test":
+				if kind != "rpminfo_test" {
 					return false
 				}
 				return true
@@ -72,76 +71,73 @@ func RPMDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulnsF
 				log.Debug().Str("test_ref", criterion.TestRef).Msg("test ref lookup failure. moving to next criterion")
 				continue
 			}
+
 			objRefs := test.ObjectRef()
 			stateRefs := test.StateRef()
+
+			// from the rpminfo_test specification found here: https://oval.mitre.org/language/version5.7/ovaldefinition/documentation/linux-definitions-schema.html
+			// "The required object element references a rpminfo_object and the optional state element specifies the data to check.
+			//  The evaluation of the test is guided by the check attribute that is inherited from the TestType."
+			//
+			// thus we *should* only need to care about a single rpminfo_object and optionally a state object providing the package's fixed-in version.
+
+			objRef := objRefs[0].ObjectRef
+			object, err := rpmObjectLookup(root, objRef)
 			switch {
-			case len(cris) == 1:
-				noVersion = true
-			case len(objRefs) == 1 && len(stateRefs) == 0:
-				// We always take an object reference to imply the existence of
-				// that object, so just skip tests with a single object reference
-				// and no associated state object.
+			case errors.Is(err, nil):
+			case errors.Is(err, errObjectSkip):
+				// We only handle rpminfo_objects.
 				continue
-			case len(objRefs) != len(stateRefs):
-				log.Debug().Str("test_ref", criterion.TestRef).Msg("object refs and state refs are not in pairs. moving to next criterion")
+			default:
+				log.Debug().
+					Err(err).
+					Str("object_ref", objRef).
+					Msg("failed object lookup. moving to next criterion")
 				continue
 			}
-			// look at each object,state pair the test references
-			// and create a vuln if an evr tag is found
-			for i := 0; i < len(objRefs); i++ {
-				objRef := objRefs[i].ObjectRef
-				object, err := rpmObjectLookup(root, objRef)
-				switch {
-				case errors.Is(err, nil):
-				case errors.Is(err, errObjectSkip):
-					// We only handle rpminfo_objects.
-					continue
-				default:
+
+			// state refs are optional, so this is not a requirement.
+			// if a state object is discovered, we can use it to find
+			// the "fixed-in-version"
+			var state *oval.RPMInfoState
+			if len(stateRefs) > 0 {
+				stateRef := stateRefs[0].StateRef
+				state, err = rpmStateLookup(root, stateRef)
+				if err != nil {
 					log.Debug().
 						Err(err).
-						Str("object_ref", objRef).
-						Msg("failed object lookup. moving to next object,state pair")
+						Str("state_ref", stateRef).
+						Msg("failed state lookup. moving to next criterion")
 					continue
 				}
-				var state *oval.RPMInfoState
-				if !noVersion {
-					stateRef := stateRefs[i].StateRef
-					state, err = rpmStateLookup(root, stateRef)
-					if err != nil {
-						log.Debug().
-							Err(err).
-							Str("state_ref", stateRef).
-							Msg("failed state lookup. moving to next object,state pair")
-						continue
-					}
-					// if EVR tag not present this is not a linux package
-					// see oval definitions for more details
-					if state.EVR == nil {
-						continue
-					}
+				// if we find a state, but this state does not contain an EVR,
+				// we are not looking at a linux package.
+				if state.EVR == nil {
+					continue
 				}
+			}
 
-				for _, module := range enabledModules {
-					for _, protoVuln := range protoVulns {
-						vuln := *protoVuln
-						vuln.Package = &claircore.Package{
-							Name:   object.Name,
-							Module: module,
-							Kind:   claircore.BINARY,
-						}
-						if state != nil {
-							vuln.FixedInVersion = state.EVR.Body
-							if state.Arch != nil {
-								vuln.ArchOperation = mapArchOp(state.Arch.Operation)
-								vuln.Package.Arch = state.Arch.Body
-							}
-						}
-						vulns = append(vulns, &vuln)
+			for _, module := range enabledModules {
+				for _, protoVuln := range protoVulns {
+					vuln := *protoVuln
+					vuln.Package = &claircore.Package{
+						Name:   object.Name,
+						Module: module,
+						Kind:   claircore.BINARY,
 					}
+					if state != nil {
+						vuln.FixedInVersion = state.EVR.Body
+						if state.Arch != nil {
+							vuln.ArchOperation = mapArchOp(state.Arch.Operation)
+							vuln.Package.Arch = state.Arch.Body
+						}
+					}
+					vulns = append(vulns, &vuln)
 				}
 			}
 		}
 	}
+
 	return vulns, nil
 }
 

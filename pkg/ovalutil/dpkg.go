@@ -37,116 +37,111 @@ func DpkgDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulns
 		walkCriterion(ctx, &def.Criteria, &cris)
 		// unpack criterions into vulnerabilities
 		for _, criterion := range cris {
-			var noVersion bool
-			// lookup test
-			test, err := TestLookup(root, criterion.TestRef, nil)
-			if err != nil {
-				log.Debug().
-					Err(err).
-					Str("test_ref", criterion.TestRef).
-					Msg("test ref lookup failure. moving to next criterion")
+			test, err := TestLookup(root, criterion.TestRef, func(kind string) bool {
+				if kind != "dpkginfo_test" {
+					return false
+				}
+				return true
+			})
+			switch {
+			case errors.Is(err, nil):
+			case errors.Is(err, errTestSkip):
+				continue
+			default:
+				log.Debug().Str("test_ref", criterion.TestRef).Msg("test ref lookup failure. moving to next criterion")
 				continue
 			}
+
 			objRefs := test.ObjectRef()
 			stateRefs := test.StateRef()
+
+			// from the dpkginfo_test specification found here: https://oval.mitre.org/language/version5.7/ovaldefinition/documentation/linux-definitions-schema.html
+			// The required object element references a dpkginfo_object and the optional state element specifies the data to check.
+			// The evaluation of the test is guided by the check attribute that is inherited from the TestType.
+			//
+			// thus we *should* only need to care about a single dpkginfo_object and optionally a state object providing the package's fixed-in version.
+
+			objRef := objRefs[0].ObjectRef
+			object, err := dpkgObjectLookup(root, objRef)
 			switch {
-			case len(cris) == 1:
-				// If this is the only criterion it probably means
-				// that this definition is just "package installed".
-				noVersion = true
-			case len(objRefs) == 1 && len(stateRefs) == 0:
-				// We always take an object reference to imply the existence of
-				// that object, so just skip tests with a single object reference
-				// and no associated state object.
+			case errors.Is(err, nil):
+			case errors.Is(err, errObjectSkip):
+				// We only handle dpkginfo_objects.
 				continue
-			case len(objRefs) != len(stateRefs):
-				log.Debug().Str("test_ref", criterion.TestRef).Msg("object refs and state refs are not in pairs. moving to next criterion")
-				continue
-			}
-			// look at each object,state pair the test references
-			// and create a vuln if an evr tag is found
-			for i := 0; i < len(objRefs); i++ {
-				objRef := objRefs[i].ObjectRef
-				object, err := dpkgObjectLookup(root, objRef)
-				switch {
-				case errors.Is(err, nil):
-				case errors.Is(err, errObjectSkip):
-					// We only handle dpkginfo_objects.
+			default:
+				if err != nil {
+					log.Debug().
+						Err(err).
+						Str("object_ref", objRef).
+						Msg("failed object lookup. moving to next criterion")
 					continue
-				default:
-					if err != nil {
-						log.Debug().
-							Err(err).
-							Str("object_ref", objRef).
-							Msg("failed object lookup. moving to next object,state pair")
-						continue
-					}
 				}
+			}
 
-				var state *oval.DpkgInfoState
-				if !noVersion {
-					stateRef := stateRefs[i].StateRef
-					state, err = dpkgStateLookup(root, stateRef)
-					if err != nil {
-						log.Debug().
-							Err(err).
-							Str("state_ref", stateRef).
-							Msg("failed state lookup. moving to next object,state pair")
-						continue
-					}
-					// if EVR tag not present this is not a linux package
-					// see oval definitions for more details
-					if state.EVR == nil {
-						continue
-					}
+			var state *oval.DpkgInfoState
+			if len(stateRefs) > 0 {
+				stateRef := stateRefs[0].StateRef
+				state, err = dpkgStateLookup(root, stateRef)
+				if err != nil {
+					log.Debug().
+						Err(err).
+						Str("state_ref", stateRef).
+						Msg("failed state lookup. moving to next criterion")
+					continue
 				}
+				// if EVR tag not present this is not a linux package
+				// see oval definitions for more details
+				if state.EVR == nil {
+					continue
+				}
+			}
 
-				for _, protoVuln := range protoVulns {
-					name := object.Name
+			for _, protoVuln := range protoVulns {
+				name := object.Name
 
-					// if the dpkginfo_object>name field has a var_ref it indicates
-					// a variable lookup for all packages affected by this vuln is necessary.
-					//
-					// if the name.Ref field is empty it indicates a single package is affected
-					// by the vuln and that package's name is in name.Body.
-					var ns []string
-					if len(name.Ref) > 0 {
-						_, i, err := root.Variables.Lookup(name.Ref)
-						if err != nil {
-							log.Error().Err(err).Msg("could not lookup variable id")
-							continue
+				// if the dpkginfo_object>name field has a var_ref it indicates
+				// a variable lookup for all packages affected by this vuln is necessary.
+				//
+				// if the name.Ref field is empty it indicates a single package is affected
+				// by the vuln and that package's name is in name.Body.
+				var ns []string
+				if len(name.Ref) > 0 {
+					_, i, err := root.Variables.Lookup(name.Ref)
+					if err != nil {
+						log.Error().Err(err).Msg("could not lookup variable id")
+						continue
+					}
+					consts := root.Variables.ConstantVariables[i]
+					for _, v := range consts.Values {
+						ns = append(ns, v.Body)
+					}
+				} else {
+					ns = append(ns, name.Body)
+				}
+				for _, n := range ns {
+					vuln := *protoVuln
+					if state != nil {
+						vuln.FixedInVersion = state.EVR.Body
+						if state.Arch != nil {
+							vuln.ArchOperation = mapArchOp(state.Arch.Operation)
+							vuln.Package.Arch = state.Arch.Body
 						}
-						consts := root.Variables.ConstantVariables[i]
-						for _, v := range consts.Values {
-							ns = append(ns, v.Body)
+					}
+					if pkg, ok := pkgcache[n]; !ok {
+						p := &claircore.Package{
+							Name: n,
+							Kind: claircore.BINARY,
 						}
+						pkgcache[n] = p
+						vuln.Package = p
 					} else {
-						ns = append(ns, name.Body)
+						vuln.Package = pkg
 					}
-					for _, n := range ns {
-						vuln := *protoVuln
-						if state != nil {
-							vuln.FixedInVersion = state.EVR.Body
-							if state.Arch != nil {
-								vuln.ArchOperation = mapArchOp(state.Arch.Operation)
-								vuln.Package.Arch = state.Arch.Body
-							}
-						}
-						if pkg, ok := pkgcache[n]; !ok {
-							p := &claircore.Package{
-								Name: n,
-								Kind: claircore.BINARY,
-							}
-							pkgcache[n] = p
-							vuln.Package = p
-						} else {
-							vuln.Package = pkg
-						}
-						vulns = append(vulns, &vuln)
-					}
+					vulns = append(vulns, &vuln)
 				}
 			}
 		}
+
 	}
 	return vulns, nil
 }
