@@ -2,8 +2,21 @@
 ## [Unreleased]
 
 
+<a name="v0.1.19"></a>
+## [v0.1.19] - 2020-12-01
+### Docs
+- [e2eeae0](https://github.com/quay/claircore/commit/e2eeae0dd5d6b4031b79cbb74c933677c7dd405d): indexer data model
+### Dpkg
+- [8025828](https://github.com/quay/claircore/commit/8025828d8e318c2f3a785b9ff9ee4f5c1c848735): add checks to discovered paths
+### Indexer
+- [f493a89](https://github.com/quay/claircore/commit/f493a890e51ed0afa3d77e8615a546c43603ab83): utilize migration for data model refactor
+- [65aced8](https://github.com/quay/claircore/commit/65aced8a69f01806a5f4e2b1773ac131f7e7e828): e2e with multiple scanners
+- [f31ca4c](https://github.com/quay/claircore/commit/f31ca4cd1f75e0de3d8e13617ffe704cbcb24aa8): database refactor
+
 <a name="v0.1.18"></a>
 ## [v0.1.18] - 2020-12-02
+### Chore
+- [2dc2e58](https://github.com/quay/claircore/commit/2dc2e5853916b12089da5be219595335b6c2a350): v0.1.18 changelog bump
 ### Cicd
 - [e80d4c7](https://github.com/quay/claircore/commit/e80d4c74e6461b7fd53fa02de0a6d945264a5a1e): bump create pull request action
 ### Oval
@@ -543,7 +556,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.1.18...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.1.19...HEAD
+[v0.1.19]: https://github.com/quay/claircore/compare/v0.1.18...v0.1.19
 [v0.1.18]: https://github.com/quay/claircore/compare/v0.1.17...v0.1.18
 [v0.1.17]: https://github.com/quay/claircore/compare/v0.1.16...v0.1.17
 [v0.1.16]: https://github.com/quay/claircore/compare/v0.1.15...v0.1.16
