@@ -291,7 +291,7 @@ for manifest, vulns := range affected.VulnerableManifests {
 	// The maximum number of database connections in the
 	// connection pool.
 	MaxConnPool int32
-	// A connection string to the database Lbvuln will use.
+	// A connection string to the database Libvuln will use.
 	ConnString string
 	// An interval on which Libvuln will check for new security database
 	// updates.
@@ -299,7 +299,7 @@ for manifest, vulns := range affected.VulnerableManifests {
 	// This duration will have jitter added to it, to help with smearing load on
 	// installations.
 	UpdateInterval time.Duration
-	// Determines if Livuln will manage database migrations
+	// Determines if Libvuln will manage database migrations
 	Migrations bool
 	// A slice of strings representing which updaters libvuln will create.
 	//
@@ -372,14 +372,14 @@ if err != nil {
 }
 
 ctx := context.TODO()
-ir, err := lib.Scan(ctx, ir)
+vr, err := lib.Scan(ctx, ir)
 if err != nil {
     log.Fatal(err)
 }
 </code></pre>
 <p>In the above example LibIndex is used to generate a claircore.IndexReport. The index report is then provided to LibVuln and a subsequent vulnerability report identifying any vulnerabilities affecting the manifest is returned.</p>
 <h3><a class="header" href="#updates-api" id="updates-api">Updates API</a></h3>
-<p>By default, LibVuln manages a set of long running updaters responsible for periodically fetching and loading new advisory contents into its database. The Updates API allows the a client to view and manipulate aspects of the update operations that updaters perform.</p>
+<p>By default, LibVuln manages a set of long running updaters responsible for periodically fetching and loading new advisory contents into its database. The Updates API allows a client to view and manipulate aspects of the update operations that updaters perform.</p>
 <p>In this getting started guide, we will only cover the two methods most interesting to new users.</p>
 <h4><a class="header" href="#updateoperations" id="updateoperations">UpdateOperations</a></h4>
 <p>This API provides a list of recent update operations performed by implemented updaters. 
@@ -1230,7 +1230,7 @@ the Event object.</p>
 		Msgf(&quot;done&quot;)
 </code></pre>
 <h4><a class="header" href="#grammar" id="grammar">Grammar</a></h4>
-<p>When noting when noting the change during a chunk of work, make sure that the
+<p>When noting the change during a chunk of work, make sure that the
 log messages scan as visually similar. Usually, this means formatting messages
 into &quot;${process} ${event}&quot;. For example:</p>
 <pre><code>frob start
