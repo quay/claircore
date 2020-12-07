@@ -10,7 +10,7 @@ type Opts struct {
 	// The maximum number of database connections in the
 	// connection pool.
 	MaxConnPool int32
-	// A connection string to the database Lbvuln will use.
+	// A connection string to the database Libvuln will use.
 	ConnString string
 	// An interval on which Libvuln will check for new security database
 	// updates.
@@ -18,7 +18,7 @@ type Opts struct {
 	// This duration will have jitter added to it, to help with smearing load on
 	// installations.
 	UpdateInterval time.Duration
-	// Determines if Livuln will manage database migrations
+	// Determines if Libvuln will manage database migrations
 	Migrations bool
 	// A slice of strings representing which updaters libvuln will create.
 	//
@@ -99,7 +99,7 @@ if err != nil {
 }
 
 ctx := context.TODO()
-ir, err := lib.Scan(ctx, ir)
+vr, err := lib.Scan(ctx, ir)
 if err != nil {
     log.Fatal(err)
 }
@@ -108,7 +108,7 @@ if err != nil {
 In the above example LibIndex is used to generate a claircore.IndexReport. The index report is then provided to LibVuln and a subsequent vulnerability report identifying any vulnerabilities affecting the manifest is returned.
 
 ### Updates API
-By default, LibVuln manages a set of long running updaters responsible for periodically fetching and loading new advisory contents into its database. The Updates API allows the a client to view and manipulate aspects of the update operations that updaters perform.
+By default, LibVuln manages a set of long running updaters responsible for periodically fetching and loading new advisory contents into its database. The Updates API allows a client to view and manipulate aspects of the update operations that updaters perform.
 
 In this getting started guide, we will only cover the two methods most interesting to new users.
 

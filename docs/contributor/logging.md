@@ -48,7 +48,7 @@ Do this instead:
 ```
 
 #### Grammar
-When noting when noting the change during a chunk of work, make sure that the
+When noting the change during a chunk of work, make sure that the
 log messages scan as visually similar. Usually, this means formatting messages
 into "${process} ${event}". For example:
 
