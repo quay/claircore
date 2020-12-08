@@ -150,6 +150,14 @@ func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
 		case strings.Contains(p, "RHEL8"):
 			r = RHEL8
 		case strings.Contains(p, "RHEL7"):
+			// We need to disregard this OVAL stream because some advisories therein have
+			// been released with the CPEs identical to those used in classic RHEL stream.
+			// This in turn causes false CVEs to appear in scanned images. Red Hat Product
+			// Security is working on fixing this situation and the plan is to remove this
+			// exception in the future.
+			if name == "RHEL7-rhel-7-alt" {
+				continue
+			}
 			r = RHEL7
 		case strings.Contains(p, "RHEL6"):
 			r = RHEL6
