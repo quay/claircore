@@ -1,6 +1,7 @@
 package alpine
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"testing"
@@ -52,7 +53,7 @@ func TestSecDBParse(t *testing.T) {
 		expected SecurityDB
 	}{
 		{
-			testFile: "v3_10_community_truncated.yaml",
+			testFile: "v3_10_community_truncated.json",
 			expected: V3_10_community_truncated_secDB,
 		},
 	}
@@ -67,14 +68,13 @@ func TestSecDBParse(t *testing.T) {
 				t.Fatalf("failed to open test data: %v", path)
 			}
 
-			var sdb SecurityDB
-			err = sdb.Parse(f)
-			if err != nil {
+			var db SecurityDB
+			if err := json.NewDecoder(f).Decode(&db); err != nil {
 				t.Fatalf("failed to parse file contents into sec db: %v", err)
 			}
 
-			if !cmp.Equal(sdb, test.expected) {
-				diff := cmp.Diff(sdb, test.expected)
+			if !cmp.Equal(db, test.expected) {
+				diff := cmp.Diff(db, test.expected)
 				t.Fatalf("security databases were not equal: \n%v", diff)
 			}
 		})

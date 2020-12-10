@@ -137,7 +137,7 @@ func TestParser(t *testing.T) {
 		{
 			release:  V3_10,
 			repo:     Community,
-			testFile: "v3_10_community_truncated.yaml",
+			testFile: "v3_10_community_truncated.json",
 			expected: V3_10_community_truncated_vulns,
 		},
 	}
@@ -159,7 +159,7 @@ func TestParser(t *testing.T) {
 			}
 			vulns, err := u.Parse(ctx, f)
 			if err != nil {
-				t.Fatalf("failed to parse xml: %v", err)
+				t.Fatalf("failed to parse: %v", err)
 			}
 
 			sort.SliceStable(vulns,

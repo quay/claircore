@@ -2,6 +2,7 @@ package alpine
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 
@@ -25,13 +26,11 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 	log.Info().Msg("starting parse")
 	defer r.Close()
 
-	var sdb SecurityDB
-	err := sdb.Parse(r)
-	if err != nil {
+	var db SecurityDB
+	if err := json.NewDecoder(r).Decode(&db); err != nil {
 		return nil, err
 	}
-
-	return u.parse(ctx, &sdb)
+	return u.parse(ctx, &db)
 }
 
 // parse parses the alpine SecurityDB

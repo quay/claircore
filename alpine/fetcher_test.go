@@ -25,14 +25,14 @@ func TestFetcher(t *testing.T) {
 		{
 			release:   V3_10,
 			repo:      Community,
-			serveFile: "testdata/v3_10_community_truncated.yaml",
+			serveFile: "testdata/v3_10_community_truncated.json",
 		},
 	}
 
 	for _, test := range table {
 		fi, err := os.Stat(test.serveFile)
 		if err != nil {
-			t.Error(err)
+			t.Fatal(err)
 		}
 		tag := fmt.Sprintf(`"%d"`, fi.ModTime().UnixNano())
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -7,13 +7,11 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 )
 
-// TODO The Updater could be changed to use the json formatted database, which
-// is smaller and more explicitly typed.
 const (
-	dbURL = "https://secdb.alpinelinux.org/%s/%s.yaml"
+	dbURL = "https://secdb.alpinelinux.org/%s/%s.json"
 )
 
-// DBUrl will return a fqdn'd url for a given release,repo pair
+// DBUrl will return a URL for the given release and repo pair.
 func DBUrl(release Release, repo Repo) string {
 	return fmt.Sprintf(dbURL, release, repo)
 }
