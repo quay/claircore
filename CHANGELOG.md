@@ -2,8 +2,21 @@
 ## [Unreleased]
 
 
+<a name="v0.1.20"></a>
+## [v0.1.20] - 2020-12-10
+### Alpine
+- [98d3828](https://github.com/quay/claircore/commit/98d3828bb616ec5e3096575670e3f1a8f7430ee8): switch to JSON security DB
+### Cicd
+- [97fa28b](https://github.com/quay/claircore/commit/97fa28bcb92a7b0db1b15cfb6cc45bd678d3f268): use CI golang image from quay.io
+### Docs
+- [00d4fcc](https://github.com/quay/claircore/commit/00d4fcc075535b582bff5ce9d0b7ba62c1226373): fix couple typos in libvuln_usage.md
+### Rhel
+- [baff663](https://github.com/quay/claircore/commit/baff66333b025d863779cea58e1a5aedd22a4bb3): ignore rhel-7-alt OVAL stream
+
 <a name="v0.1.19"></a>
-## [v0.1.19] - 2020-12-01
+## [v0.1.19] - 2020-12-03
+### Chore
+- [cfa74e1](https://github.com/quay/claircore/commit/cfa74e1dc0d95c3bfcf12bafe77c502cc8db7c09): v0.1.19 changelog bump
 ### Docs
 - [e2eeae0](https://github.com/quay/claircore/commit/e2eeae0dd5d6b4031b79cbb74c933677c7dd405d): indexer data model
 ### Dpkg
@@ -556,7 +569,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.1.19...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.1.20...HEAD
+[v0.1.20]: https://github.com/quay/claircore/compare/v0.1.19...v0.1.20
 [v0.1.19]: https://github.com/quay/claircore/compare/v0.1.18...v0.1.19
 [v0.1.18]: https://github.com/quay/claircore/compare/v0.1.17...v0.1.18
 [v0.1.17]: https://github.com/quay/claircore/compare/v0.1.16...v0.1.17
