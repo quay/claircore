@@ -103,3 +103,14 @@ All vulnerability severities will be Unknown.
 | Pyupio Severity | Clair Severity |
 | - | - |
 | * | Unknown |
+
+## Photon Mapping
+
+Photon Oval database provides severity information.
+
+| Photon Severity | Clair Severity |
+| - | - |
+| Low | Low |
+| Moderate | Medium |
+| Important | High |
+| Critical | Critical |
