@@ -23,7 +23,7 @@ jobs:
   tidy:
     name: Tidy
     runs-on: ubuntu-latest
-    container: docker.io/library/golang:latest
+    container: quay.io/claircore/golang:1.15
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -48,7 +48,7 @@ jobs:
   tests:
     name: Tests
     runs-on: ubuntu-latest
-    container: docker.io/library/golang:${{ matrix.go }}-buster
+    container: quay.io/claircore/golang:${{ matrix.go }}
     env:
       POSTGRES_CONNECTION_STRING: "host=claircore-db port=5432 user=claircore dbname=claircore sslmode=disable"
     services:
@@ -69,8 +69,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: OS Dependencies
-        run: apt-get update && apt-get install -y tar make gcc
       - name: Go Dependencies
         run: go mod vendor
       - name: Tests

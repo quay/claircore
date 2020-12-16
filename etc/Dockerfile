@@ -3,6 +3,7 @@ FROM registry.access.redhat.com/ubi8/ubi:8.1 AS install
 RUN dnf install -q -y \
 	gcc \
 	make \
+	git \
 	&&\
 	dnf clean all
 ARG GO_VERSION
