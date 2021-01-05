@@ -42,7 +42,7 @@ func manifestScanned(ctx context.Context, db *sqlx.DB, hash claircore.Digest, sc
 		expectedIDs = append(expectedIDs, id)
 	}
 
-	// get a map of the found ids which have scanned this package
+	// get a map of the found ids which have scanned this manifest
 	var temp = []int64{}
 	var foundIDs = map[int64]struct{}{}
 	err := db.Select(&temp, selectScanned, hash)
