@@ -9,7 +9,7 @@ import (
 
 // indexFinished is the terminal stateFunc. once it transitions the
 // indexer to the IndexFinished state the indexer will no longer transition
-// and return a IndexReport to the caller
+// and return an IndexReport to the caller
 func indexFinished(ctx context.Context, s *Controller) (State, error) {
 	log := zerolog.Ctx(ctx).With().
 		Str("state", s.getState().String()).
@@ -20,7 +20,7 @@ func indexFinished(ctx context.Context, s *Controller) (State, error) {
 
 	err := s.Store.SetIndexFinished(ctx, s.report, s.Vscnrs)
 	if err != nil {
-		return Terminal, fmt.Errorf("failed finish scann. attempt a rescan of the manifest: %v", err)
+		return Terminal, fmt.Errorf("failed finish scan. attempt a rescan of the manifest: %v", err)
 	}
 
 	log.Info().Msg("manifest successfully scanned")

@@ -19,7 +19,7 @@ const (
 	DefaultLayerFetchOpt        = indexer.OnDisk
 )
 
-// Opts are depedencies and options for constructing an instance of libindex
+// Opts are dependencies and options for constructing an instance of libindex
 type Opts struct {
 	// the connection string for the datastore specified above
 	ConnString string

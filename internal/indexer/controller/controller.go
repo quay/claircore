@@ -11,7 +11,7 @@ import (
 )
 
 // StartState is a global variable which is normally set to the starting state
-// of the controller. this global maybe overwriten to aide in testing. for example
+// of the controller. this global maybe overwritten to aide in testing. for example
 // confirming that the controller does the correct thing in terminal states.
 // see controller_test.go
 var startState State = CheckManifest
