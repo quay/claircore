@@ -59,7 +59,7 @@ func (s *Store) GetLatestUpdateRefs(ctx context.Context) (map[string][]driver.Up
 func (s *Store) Get(ctx context.Context, records []*claircore.IndexRecord, opts vulnstore.GetOpts) (map[string][]*claircore.Vulnerability, error) {
 	vulns, err := get(ctx, s.pool, records, opts)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get vulnerabilites: %v", err)
+		return nil, fmt.Errorf("failed to get vulnerabilities: %v", err)
 	}
 	return vulns, nil
 }

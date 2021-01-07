@@ -24,14 +24,14 @@ const (
 	// ScanLayers scans each image including the image layer and indexes the contents
 	// Transitions: BuildLayerResult
 	ScanLayers
-	// Coalesce runs each provided ecosystem's coalescer and mergs their scan results
+	// Coalesce runs each provided ecosystem's coalescer and merges their scan results
 	// Transitions: IndexManifest
 	Coalesce
 	// IndexManifest evaluates a coalesced IndexReport and writes it's contents
 	// to the the persistence layer where it maybe searched.
 	// Transitions: IndexFinished
 	IndexManifest
-	// IndexError state indicates a impassable error has occured.
+	// IndexError state indicates a impassable error has occurred.
 	// returns a ScanResult with the error field
 	// Transitions: Terminal
 	IndexError

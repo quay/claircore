@@ -147,7 +147,7 @@ func (h *HTTP) UpdateOperations(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			resp := &je.Response{
 				Code:    "internal server error",
-				Message: fmt.Sprintf("could not get update operations: %v", err),
+				Message: fmt.Sprintf("could not delete update operations: %v", err),
 			}
 			je.Error(w, resp, http.StatusInternalServerError)
 			return
@@ -156,7 +156,7 @@ func (h *HTTP) UpdateOperations(w http.ResponseWriter, r *http.Request) {
 	default:
 		resp := &je.Response{
 			Code:    "method-not-allowed",
-			Message: "endpoint only allows POST",
+			Message: "endpoint only allows GET and DELETE",
 		}
 		je.Error(w, resp, http.StatusMethodNotAllowed)
 		return
