@@ -46,7 +46,7 @@ func New(ctx context.Context, concurrent int, opts *indexer.Opts) (indexer.Layer
 
 	ps, ds, rs, err := indexer.EcosystemsToScanners(ctx, opts.Ecosystems, opts.Airgap)
 	if err != nil {
-		fmt.Errorf("failed to extract scanners from ecosystems: %v", err)
+		return nil, fmt.Errorf("failed to extract scanners from ecosystems: %v", err)
 	}
 	// Configure and filter the scanners
 	var i int
