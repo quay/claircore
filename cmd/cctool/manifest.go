@@ -47,6 +47,7 @@ func Manifest(cmd context.Context, cfg *commonConfig, args []string) error {
 	wg.Add(len(images))
 	for i, img := range images {
 		img := img
+		i := i
 		go func() {
 			defer wg.Done()
 			m, err := Inspect(ctx, img)
