@@ -127,9 +127,7 @@ func (d *Digest) Scan(i interface{}) error {
 		return nil
 	default:
 		return &DigestError{msg: fmt.Sprintf("invalid digest type: %T", v)}
-
 	}
-	panic("the default case should return before this panic is reached.")
 }
 
 // Value implements driver.Valuer.

@@ -336,7 +336,4 @@ func parsePackage(ctx context.Context, log zerolog.Logger, src map[string]*clair
 			return nil, err
 		}
 	}
-
-	// Should have cleanly returned when io.EOF was hit.
-	panic("unreachable")
 }

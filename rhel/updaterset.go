@@ -52,7 +52,7 @@ type Factory struct {
 }
 
 type FactoryConfig struct {
-	URL string `json:"url", yaml:"url"`
+	URL string `json:"url" yaml:"url"`
 }
 
 func (f *Factory) Configure(ctx context.Context, cfg driver.ConfigUnmarshaler, c *http.Client) error {
