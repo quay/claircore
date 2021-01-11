@@ -186,7 +186,7 @@ func (l *Libindex) IndexReport(ctx context.Context, hash claircore.Digest) (*cla
 }
 
 // AffectedManifests retrieves a list of affected manifests when provided a list of vulnerabilities.
-func (l *Libindex) AffectedManifests(ctx context.Context, vulns []claircore.Vulnerability) (claircore.AffectedManifests, error) {
+func (l *Libindex) AffectedManifests(ctx context.Context, vulns []claircore.Vulnerability) (*claircore.AffectedManifests, error) {
 	const (
 		maxGroupSize = 100
 	)
@@ -228,9 +228,9 @@ func (l *Libindex) AffectedManifests(ctx context.Context, vulns []claircore.Vuln
 
 		err := errGrp.Wait()
 		if err != nil {
-			return affected, fmt.Errorf("received error retreiving affected manifests: %v", err)
+			return &affected, fmt.Errorf("received error retrieving affected manifests: %v", err)
 		}
 	}
 	affected.Sort()
-	return affected, nil
+	return &affected, nil
 }
