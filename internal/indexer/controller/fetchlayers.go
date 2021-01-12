@@ -4,29 +4,29 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 )
 
 func fetchLayers(ctx context.Context, s *Controller) (State, error) {
-	log := zerolog.Ctx(ctx).With().
-		Str("state", s.getState().String()).
-		Logger()
-	ctx = log.WithContext(ctx)
-	log.Info().Msg("layers fetch start")
-	defer log.Info().Msg("layers fetch done")
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("state", s.getState().String()))
+	zlog.Info(ctx).Msg("layers fetch start")
+	defer zlog.Info(ctx).Msg("layers fetch done")
 	toFetch, err := reduce(ctx, s.Store, s.Vscnrs, s.manifest.Layers)
 	if err != nil {
 		return Terminal, fmt.Errorf("failed to determine layers to fetch: %w", err)
 	}
-	log.Debug().
+	zlog.Debug(ctx).
 		Int("count", len(toFetch)).
 		Msg("fetching layers")
 	if err := s.Fetcher.Fetch(ctx, toFetch); err != nil {
-		log.Warn().
+		zlog.Warn(ctx).
 			Err(err).
 			Msg("layers fetch failure")
 		return Terminal, fmt.Errorf("failed to fetch layers: %w", err)
 	}
-	log.Info().Msg("layers fetch success")
+	zlog.Info(ctx).Msg("layers fetch success")
 	return ScanLayers, nil
 }

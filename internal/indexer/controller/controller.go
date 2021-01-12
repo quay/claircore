@@ -4,7 +4,9 @@ import (
 	"context"
 	"sync"
 
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
@@ -63,17 +65,15 @@ func (s *Controller) Index(ctx context.Context, manifest *claircore.Manifest) *c
 	// set manifest info on controller
 	s.manifest = manifest
 	s.report.Hash = manifest.Hash
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "internal/indexer/controller/Controller.Index").
-		Str("manifest", s.manifest.Hash.String()).
-		Str("state", s.getState().String()).
-		Logger()
-	ctx = log.WithContext(ctx)
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "internal/indexer/controller/Controller.Index"),
+		label.String("manifest", s.manifest.Hash.String()),
+		label.String("state", s.getState().String()))
 	// defer the removal of any tmp files if fetcher is configured for OnDisk or Tee download
 	// no-op otherwise. see Fetcher for more info
 	defer s.Fetcher.Close()
 	// setup our logger. all stateFuncs may use this to log with a log context
-	log.Info().Msg("starting scan")
+	zlog.Info(ctx).Msg("starting scan")
 	s.run(ctx)
 	return s.report
 }
@@ -101,17 +101,16 @@ func (s *Controller) run(ctx context.Context) {
 // handleError updates the IndexReport to communicate an error and attempts
 // to persist this information.
 func (s *Controller) handleError(ctx context.Context, err error) {
-	log := zerolog.Ctx(ctx)
 	s.report.Success = false
 	s.report.Err = err.Error()
 	s.report.State = IndexError.String()
-	log.Error().
+	zlog.Error(ctx).
 		Err(err).
 		Msg("error during scan")
 	err = s.Store.SetIndexReport(ctx, s.report)
 	if err != nil {
 		// just log, we are about to bail anyway
-		log.Error().
+		zlog.Error(ctx).
 			Err(err).
 			Msg("failed to persist index report")
 	}

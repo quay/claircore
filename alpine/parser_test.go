@@ -8,9 +8,9 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/test/log"
 )
 
 var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
@@ -144,8 +144,7 @@ func TestParser(t *testing.T) {
 
 	for _, test := range table {
 		t.Run(test.testFile, func(t *testing.T) {
-			ctx, done := log.TestLogger(ctx, t)
-			defer done()
+			ctx := zlog.Test(ctx, t)
 
 			path := fmt.Sprintf("testdata/%s", test.testFile)
 			f, err := os.Open(path)

@@ -7,7 +7,9 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/rhel/pulp"
@@ -56,29 +58,28 @@ type FactoryConfig struct {
 }
 
 func (f *Factory) Configure(ctx context.Context, cfg driver.ConfigUnmarshaler, c *http.Client) error {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "rhel/Factory.Configure").
-		Logger()
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "rhel/Factory.Configure"))
 	var fc FactoryConfig
 
 	if err := cfg(&fc); err != nil {
 		return err
 	}
-	log.Debug().Msg("loaded incoming config")
+	zlog.Debug(ctx).Msg("loaded incoming config")
 
 	if fc.URL != "" {
 		u, err := url.Parse(fc.URL)
 		if err != nil {
 			return err
 		}
-		log.Info().
+		zlog.Info(ctx).
 			Str("url", u.String()).
 			Msg("configured manifest URL")
 		f.url = u
 	}
 
 	if c != nil {
-		log.Info().
+		zlog.Info(ctx).
 			Msg("configured HTTP client")
 		f.client = c
 	}

@@ -7,7 +7,9 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
@@ -70,11 +72,9 @@ func (u *Updater) Name() string {
 }
 
 func (u *Updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "ubuntu/Updater.Fetch").
-		Str("database", u.url).
-		Logger()
-	ctx = log.WithContext(ctx)
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "ubuntu/Updater.Fetch"),
+		label.String("database", u.url))
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.url, nil)
 	if err != nil {
@@ -95,7 +95,7 @@ func (u *Updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io
 
 	switch resp.StatusCode {
 	case http.StatusOK:
-		log.Info().Msg("fetching latest oval database")
+		zlog.Info(ctx).Msg("fetching latest oval database")
 	case http.StatusNotModified:
 		return nil, fingerprint, driver.Unchanged
 	default:
@@ -120,6 +120,6 @@ func (u *Updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io
 		return nil, "", fmt.Errorf("failed to seek body: %v", err)
 	}
 
-	log.Info().Msg("fetched latest oval database successfully")
+	zlog.Info(ctx).Msg("fetched latest oval database successfully")
 	return f, driver.Fingerprint(fp), err
 }

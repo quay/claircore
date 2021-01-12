@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 
+	"github.com/quay/zlog"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/quay/claircore/test/integration"
-	"github.com/quay/claircore/test/log"
 )
 
 func Test_Updater(t *testing.T) {
@@ -38,8 +38,7 @@ func Test_Updater(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			ctx, done := log.TestLogger(ctx, t)
-			defer done()
+			ctx := zlog.Test(ctx, t)
 			updater := NewUpdater(table.release)
 			t.Log(updater.url)
 

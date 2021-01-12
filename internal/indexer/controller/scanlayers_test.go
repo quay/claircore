@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/quay/zlog"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/quay/claircore/internal/indexer"
@@ -38,6 +39,7 @@ func Test_ScanLayers(t *testing.T) {
 		t.Run(table.name, func(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
+			ctx = zlog.Test(ctx, t)
 			ls, s := table.mock(t)
 			scnr := New(&indexer.Opts{
 				LayerScanner: ls,

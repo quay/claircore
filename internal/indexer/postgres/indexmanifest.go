@@ -6,7 +6,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/microbatch"
@@ -26,9 +28,8 @@ func (s *store) IndexManifest(ctx context.Context, ir *claircore.IndexReport) er
 		ON CONFLICT DO NOTHING;
 		`
 	)
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "internal/indexer/postgres/indexManifest").
-		Logger()
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "internal/indexer/postgres/indexManifest"))
 
 	if ir.Hash.String() == "" {
 		return fmt.Errorf("received empty hash. cannot associate contents with a manifest hash")
@@ -37,7 +38,7 @@ func (s *store) IndexManifest(ctx context.Context, ir *claircore.IndexReport) er
 
 	records := ir.IndexRecords()
 	if len(records) == 0 {
-		log.Warn().Msg("manifest being indexed has 0 index records")
+		zlog.Warn(ctx).Msg("manifest being indexed has 0 index records")
 		return nil
 	}
 

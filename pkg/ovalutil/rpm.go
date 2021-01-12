@@ -7,7 +7,9 @@ import (
 	"regexp"
 
 	"github.com/quay/goval-parser/oval"
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 )
@@ -29,17 +31,15 @@ type ProtoVulnsFunc func(def oval.Definition) ([]*claircore.Vulnerability, error
 //
 // Each Criterion encountered with an EVR string will be translated into a claircore.Vulnerability
 func RPMDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulnsFunc) ([]*claircore.Vulnerability, error) {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "ovalutil/RPMDefsToVulns").
-		Logger()
-	ctx = log.WithContext(ctx)
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "ovalutil/RPMDefsToVulns"))
 	vulns := make([]*claircore.Vulnerability, 0, 10000)
 	cris := []*oval.Criterion{}
 	for _, def := range root.Definitions.Definitions {
 		// create our prototype vulnerability
 		protoVulns, err := protoVulns(def)
 		if err != nil {
-			log.Debug().
+			zlog.Debug(ctx).
 				Err(err).
 				Str("def_id", def.ID).
 				Msg("could not create prototype vulnerabilities")
@@ -68,7 +68,7 @@ func RPMDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulnsF
 			case errors.Is(err, errTestSkip):
 				continue
 			default:
-				log.Debug().Str("test_ref", criterion.TestRef).Msg("test ref lookup failure. moving to next criterion")
+				zlog.Debug(ctx).Str("test_ref", criterion.TestRef).Msg("test ref lookup failure. moving to next criterion")
 				continue
 			}
 
@@ -89,7 +89,7 @@ func RPMDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulnsF
 				// We only handle rpminfo_objects.
 				continue
 			default:
-				log.Debug().
+				zlog.Debug(ctx).
 					Err(err).
 					Str("object_ref", objRef).
 					Msg("failed object lookup. moving to next criterion")
@@ -104,7 +104,7 @@ func RPMDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulnsF
 				stateRef := stateRefs[0].StateRef
 				state, err = rpmStateLookup(root, stateRef)
 				if err != nil {
-					log.Debug().
+					zlog.Debug(ctx).
 						Err(err).
 						Str("state_ref", stateRef).
 						Msg("failed state lookup. moving to next criterion")

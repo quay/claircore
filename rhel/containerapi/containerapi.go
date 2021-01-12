@@ -10,7 +10,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
 )
 
 type ContainerImages struct {
@@ -37,7 +37,6 @@ type ContainerAPI struct {
 
 // GetCPEs fetches CPE information for given build from Red Hat Container API.
 func (c *ContainerAPI) GetCPEs(ctx context.Context, nvr, arch string) ([]string, error) {
-	log := zerolog.Ctx(ctx).With().Logger()
 	uri, err := c.Root.Parse(path.Join("v1/images/nvr/", nvr))
 	if err != nil {
 		return nil, err
@@ -47,7 +46,7 @@ func (c *ContainerAPI) GetCPEs(ctx context.Context, nvr, arch string) ([]string,
 		return nil, err
 	}
 
-	log.Debug().
+	zlog.Debug(ctx).
 		Str("uri", uri.String()).
 		Msg("making container API request")
 	res, err := c.Client.Do(req)
@@ -60,9 +59,9 @@ func (c *ContainerAPI) GetCPEs(ctx context.Context, nvr, arch string) ([]string,
 	if res.StatusCode != http.StatusOK {
 		var b strings.Builder
 		if _, err := io.Copy(&b, res.Body); err != nil {
-			log.Warn().Err(err).Msg("additional error while reading response")
+			zlog.Warn(ctx).Err(err).Msg("additional error while reading response")
 		} else {
-			log.Warn().Str("response", b.String()).Msg("received error response")
+			zlog.Warn(ctx).Str("response", b.String()).Msg("received error response")
 		}
 		return nil, fmt.Errorf("rhel: unexpected response: %d %s", res.StatusCode, res.Status)
 	}

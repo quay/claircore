@@ -8,7 +8,7 @@ import (
 	"os"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
 	"gopkg.in/yaml.v3"
 
 	"github.com/quay/claircore/libvuln"
@@ -35,8 +35,6 @@ func RunUpdaters(cmd context.Context, cfg *commonConfig, args []string) error {
 		fmt.Fprintf(out, "\toutfile: a filename to write results to. (default: stdout)\n\n")
 	}
 	fs.Parse(args)
-	log := zerolog.New(os.Stderr).Level(zerolog.WarnLevel)
-	ctx = log.WithContext(ctx)
 
 	var out io.Writer
 	switch len(fs.Args()) {
@@ -73,7 +71,7 @@ func RunUpdaters(cmd context.Context, cfg *commonConfig, args []string) error {
 		if strict {
 			return err
 		}
-		log.Warn().Err(err).Send()
+		zlog.Warn(ctx).Err(err).Send()
 	}
 	return nil
 }
@@ -94,8 +92,6 @@ func LoadUpdates(cmd context.Context, cfg *commonConfig, args []string) error {
 		fmt.Fprintf(out, "\tinfile: a filename to read results from. (default: stdin)\n\n")
 	}
 	fs.Parse(args)
-	log := zerolog.New(os.Stderr).Level(zerolog.WarnLevel)
-	ctx = log.WithContext(ctx)
 
 	dsn := os.Getenv("CONNECTION_STRING")
 	if cfgFile != "" {

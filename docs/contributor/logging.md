@@ -1,35 +1,19 @@
 # Logging
 All the logging in claircore is done with [zerolog][doc] via `context.Context`
-values. Loggers are extracted from the Contexts via the `zerolog.Ctx` function,
-then a child logger is created via the `With` method and associated with a new
-Context via the `(*zerolog.Logger).WithContext` method.
+values. The `zlog` package takes OpenTelemetry labels and attaches them to
+`zerolog` events.
 
 This allows for claircore's logging to be used consistently throughout all the
 packages without having unintended prints to stderr.
 
 ## How to Log
 
-### Getting a logger
-In a function, first obtain a logger:
-```go
-{{#include ../logger_test.go:logger}}
-```
-then add key-value pairs of any relevant context:
+### Adding Context
+In a function, use the `baggage` package to add key-value pairs of any
+relevant context:
 ```go
 {{#include ../logger_test.go:kvs}}
 ```
-then create the new logger:
-```go
-{{#include ../logger_test.go:newlogger}}
-```
-then add the logger back to the Context so that child functions will have the
-annotations on the logger they extract from the Context.
-
-```go
-{{#include ../logger_test.go:context}}
-```
-
-The log object shouldn't be stored in a struct and should stay function local.
 
 ### Logging style
 

@@ -7,7 +7,9 @@ import (
 	"sync"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore/internal/vulnstore"
 	"github.com/quay/claircore/internal/vulnstore/postgres"
@@ -36,13 +38,11 @@ var _ Controller = (*Online)(nil)
 // cancelled.
 func (e *Online) Run(ctx context.Context, ch <-chan driver.Updater) error {
 	runID := rand.Uint32()
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "internal/updater/Executor").
-		Uint32("run_id", runID).
-		Logger()
-	ctx = log.WithContext(ctx)
-	log.Debug().Msg("start")
-	defer log.Debug().Msg("done")
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "internal/updater/Executor"),
+		label.Uint32("run_id", runID))
+	zlog.Debug(ctx).Msg("start")
+	defer zlog.Debug(ctx).Msg("done")
 
 	var store vulnstore.Updater = postgres.NewVulnStore(e.Pool)
 	filter := func(_ string) bool { return true }
@@ -72,13 +72,11 @@ func (e *Online) Run(ctx context.Context, ch <-chan driver.Updater) error {
 				}
 
 				name := u.Name()
-				log := log.With().
-					Str("updater", name).
-					Logger()
-				ctx := log.WithContext(ctx)
+				ctx := baggage.ContextWithValues(ctx,
+					label.String("updater", name))
 
 				if !filter(name) {
-					log.Debug().Msg("filtered")
+					zlog.Debug(ctx).Msg("filtered")
 					continue
 				}
 
@@ -89,11 +87,11 @@ func (e *Online) Run(ctx context.Context, ch <-chan driver.Updater) error {
 					return
 				}
 				if !ok {
-					log.Debug().Msg("lock held, skipping")
+					zlog.Debug(ctx).Msg("lock held, skipping")
 					return
 				}
 
-				err = driveUpdater(ctx, log, u, store)
+				err = driveUpdater(ctx, u, store)
 				lock.Unlock()
 				if err != nil {
 					errs.add(name, err)

@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
@@ -73,9 +75,8 @@ func (s *store) IndexPackages(ctx context.Context, pkgs []*claircore.Package, la
 		`
 	)
 
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "internal/indexer/postgres/indexPackages").
-		Logger()
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "internal/indexer/postgres/indexPackages"))
 	// obtain a transaction scoped batch
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
@@ -116,7 +117,7 @@ func (s *store) IndexPackages(ctx context.Context, pkgs []*claircore.Package, la
 	if err != nil {
 		return fmt.Errorf("final batch insert failed for pkg: %v", err)
 	}
-	log.Debug().
+	zlog.Debug(ctx).
 		Int("skipped", skipCt).
 		Int("inserted", len(pkgs)-skipCt).
 		Msg("packages inserted")
@@ -157,7 +158,7 @@ func (s *store) IndexPackages(ctx context.Context, pkgs []*claircore.Package, la
 	if err != nil {
 		return fmt.Errorf("final batch insert failed for package_scanartifact: %v", err)
 	}
-	log.Debug().
+	zlog.Debug(ctx).
 		Int("skipped", skipCt).
 		Int("inserted", len(pkgs)-skipCt).
 		Msg("scanartifacts inserted")

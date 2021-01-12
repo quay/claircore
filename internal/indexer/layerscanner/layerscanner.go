@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
@@ -30,13 +32,12 @@ type layerScanner struct {
 //
 // The provided Context is only used for the duration of the call.
 func New(ctx context.Context, concurrent int, opts *indexer.Opts) (indexer.LayerScanner, error) {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "internal/indexer/layerscannner/New").
-		Logger()
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "internal/indexer/layerscannner/New"))
 
 	switch {
 	case concurrent < 1:
-		log.Warn().
+		zlog.Warn(ctx).
 			Int("value", concurrent).
 			Msg("rectifying nonsense 'concurrent' argument")
 		fallthrough
@@ -52,7 +53,7 @@ func New(ctx context.Context, concurrent int, opts *indexer.Opts) (indexer.Layer
 	var i int
 	i = 0
 	for _, s := range ps {
-		if !configAndFilter(ctx, &log, opts, s) {
+		if !configAndFilter(ctx, opts, s) {
 			ps[i] = s
 			i++
 		}
@@ -60,7 +61,7 @@ func New(ctx context.Context, concurrent int, opts *indexer.Opts) (indexer.Layer
 	ps = ps[:i]
 	i = 0
 	for _, s := range rs {
-		if !configAndFilter(ctx, &log, opts, s) {
+		if !configAndFilter(ctx, opts, s) {
 			rs[i] = s
 			i++
 		}
@@ -68,7 +69,7 @@ func New(ctx context.Context, concurrent int, opts *indexer.Opts) (indexer.Layer
 	rs = rs[:i]
 	i = 0
 	for _, s := range ds {
-		if !configAndFilter(ctx, &log, opts, s) {
+		if !configAndFilter(ctx, opts, s) {
 			ds[i] = s
 			i++
 		}
@@ -86,7 +87,7 @@ func New(ctx context.Context, concurrent int, opts *indexer.Opts) (indexer.Layer
 
 // ConfigAndFilter configures the provided scanner and reports if it should be
 // filtered out of the slice or not.
-func configAndFilter(ctx context.Context, log *zerolog.Logger, opts *indexer.Opts, s indexer.VersionedScanner) bool {
+func configAndFilter(ctx context.Context, opts *indexer.Opts, s indexer.VersionedScanner) bool {
 	n := s.Name()
 	var cfgMap map[string]func(interface{}) error
 	switch k := s.Kind(); k {
@@ -97,7 +98,7 @@ func configAndFilter(ctx context.Context, log *zerolog.Logger, opts *indexer.Opt
 	case "distribution":
 		cfgMap = opts.ScannerConfig.Dist
 	default:
-		log.Warn().
+		zlog.Warn(ctx).
 			Str("kind", k).
 			Str("scanner", n).
 			Msg("unknown scanner kind")
@@ -112,14 +113,14 @@ func configAndFilter(ctx context.Context, log *zerolog.Logger, opts *indexer.Opt
 	rs, rsOK := s.(indexer.RPCScanner)
 	switch {
 	case haveCfg && !csOK && !rsOK:
-		log.Warn().
+		zlog.Warn(ctx).
 			Str("scanner", n).
 			Msg("configuration present for an unconfigurable scanner, skipping")
 	case csOK && rsOK:
 		fallthrough
 	case !csOK && rsOK:
 		if err := rs.Configure(ctx, f, opts.Client); err != nil {
-			log.Error().
+			zlog.Error(ctx).
 				Str("scanner", n).
 				Err(err).
 				Msg("configuration failed")
@@ -127,7 +128,7 @@ func configAndFilter(ctx context.Context, log *zerolog.Logger, opts *indexer.Opt
 		}
 	case csOK && !rsOK:
 		if err := cs.Configure(ctx, f); err != nil {
-			log.Error().
+			zlog.Error(ctx).
 				Str("scanner", n).
 				Err(err).
 				Msg("configuration failed")
@@ -146,11 +147,9 @@ func configAndFilter(ctx context.Context, log *zerolog.Logger, opts *indexer.Opt
 // The provided Context controls cancellation for all scanners. The first error
 // reported halts all work and is returned from Scan.
 func (ls *layerScanner) Scan(ctx context.Context, manifest claircore.Digest, layers []*claircore.Layer) error {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "internal/indexer/layerscannner/layerScanner.Scan").
-		Str("manifest", manifest.String()).
-		Logger()
-	ctx = log.WithContext(ctx)
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "internal/indexer/layerscannner/layerScanner.Scan"),
+		label.String("manifest", manifest.String()))
 
 	layersToScan := make([]*claircore.Layer, 0, len(layers))
 	dedupe := map[string]struct{}{}
@@ -192,22 +191,20 @@ func (ls *layerScanner) Scan(ctx context.Context, manifest claircore.Digest, lay
 // ScanLayer (along with the result type) handles an individual (scanner, layer)
 // pair.
 func (ls *layerScanner) scanLayer(ctx context.Context, l *claircore.Layer, s indexer.VersionedScanner) error {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "internal/indexer/layerscannner/layerScanner.scan").
-		Str("scanner", s.Name()).
-		Str("kind", s.Kind()).
-		Str("layer", l.Hash.String()).
-		Logger()
-	ctx = log.WithContext(ctx)
-	log.Debug().Msg("scan start")
-	defer log.Debug().Msg("scan done")
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "internal/indexer/layerscannner/layerScanner.scan"),
+		label.String("scanner", s.Name()),
+		label.String("kind", s.Kind()),
+		label.String("layer", l.Hash.String()))
+	zlog.Debug(ctx).Msg("scan start")
+	defer zlog.Debug(ctx).Msg("scan done")
 
 	ok, err := ls.store.LayerScanned(ctx, l.Hash, s)
 	if err != nil {
 		return err
 	}
 	if ok {
-		log.Debug().Msg("layer already scanned")
+		zlog.Debug(ctx).Msg("layer already scanned")
 		return nil
 	}
 
@@ -251,18 +248,17 @@ func (r *result) Do(ctx context.Context, s indexer.VersionedScanner, l *claircor
 // Store calls the properly typed store method on whatever value was captured in
 // the result.
 func (r *result) Store(ctx context.Context, store indexer.Store, s indexer.VersionedScanner, l *claircore.Layer) error {
-	log := zerolog.Ctx(ctx).With().Logger()
 	switch {
 	case r.pkgs != nil:
-		log.Debug().Int("count", len(r.pkgs)).Msg("scan returned packages")
+		zlog.Debug(ctx).Int("count", len(r.pkgs)).Msg("scan returned packages")
 		return store.IndexPackages(ctx, r.pkgs, l, s)
 	case r.dists != nil:
-		log.Debug().Int("count", len(r.dists)).Msg("scan returned dists")
+		zlog.Debug(ctx).Int("count", len(r.dists)).Msg("scan returned dists")
 		return store.IndexDistributions(ctx, r.dists, l, s)
 	case r.repos != nil:
-		log.Debug().Int("count", len(r.repos)).Msg("scan returned repos")
+		zlog.Debug(ctx).Int("count", len(r.repos)).Msg("scan returned repos")
 		return store.IndexRepositories(ctx, r.repos, l, s)
 	}
-	log.Debug().Msg("scan returned a nil")
+	zlog.Debug(ctx).Msg("scan returned a nil")
 	return nil
 }

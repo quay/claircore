@@ -10,18 +10,16 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/cpe"
 	"github.com/quay/claircore/rhel/containerapi"
 	"github.com/quay/claircore/rhel/repo2cpe"
-	"github.com/quay/claircore/test/log"
 )
 
 func TestRepositoryScanner(t *testing.T) {
-	ctx := context.Background()
-	ctx, done := log.TestLogger(ctx, t)
-	defer done()
+	ctx := zlog.Test(context.Background(), t)
 
 	// Set up a response map and test server to mock the Container API.
 	apiData := map[string]*containerapi.ContainerImages{
@@ -119,6 +117,7 @@ func TestRepositoryScanner(t *testing.T) {
 	}
 	for _, tt := range table {
 		t.Run(tt.name, func(t *testing.T) {
+			ctx := zlog.Test(ctx, t)
 			scanner := NewRepositoryScanner(ctx, nil, tt.cfg.Repo2CPEMappingURL)
 			l := &claircore.Layer{}
 			l.SetLocal(tt.layerPath)

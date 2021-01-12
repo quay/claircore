@@ -4,15 +4,15 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 )
 
 func indexManifest(ctx context.Context, c *Controller) (State, error) {
-	log := zerolog.Ctx(ctx).With().
-		Str("state", c.getState().String()).
-		Logger()
-	ctx = log.WithContext(ctx)
-	log.Info().Msg("starting to index manifest...")
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("state", c.getState().String()))
+	zlog.Info(ctx).Msg("starting index manifest")
 
 	if c.report == nil {
 		return Terminal, fmt.Errorf("reached IndexManifest state with a nil report field. cannot continue")

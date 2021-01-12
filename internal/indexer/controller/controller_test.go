@@ -7,10 +7,10 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/google/go-cmp/cmp"
+	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
-	"github.com/quay/claircore/test/log"
 )
 
 // Test_Controller_IndexError confirms the state machines does the correct
@@ -52,8 +52,7 @@ func Test_Controller_IndexerError(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			ctx, done := log.TestLogger(ctx, t)
-			defer done()
+			ctx := zlog.Test(ctx, t)
 			store, fetcher := table.mock(t)
 			c := New(&indexer.Opts{
 				Store:   store,
@@ -111,8 +110,7 @@ func Test_Controller_IndexFinished(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			ctx, done := log.TestLogger(ctx, t)
-			defer done()
+			ctx := zlog.Test(ctx, t)
 			store, fetcher := table.mock(t)
 			// set global startState for purpose of this test
 			startState = IndexFinished

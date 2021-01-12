@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test/fetch"
-	"github.com/quay/claircore/test/log"
 )
 
 func TestScan(t *testing.T) {
@@ -1596,9 +1596,7 @@ func TestScan(t *testing.T) {
 			t.Skipf("skipping test: missing needed utility %q (%v)", exe, err)
 		}
 	}
-	ctx := context.Background()
-	ctx, done := log.TestLogger(ctx, t)
-	defer done()
+	ctx := zlog.Test(context.Background(), t)
 	l := &claircore.Layer{
 		Hash: hash,
 	}

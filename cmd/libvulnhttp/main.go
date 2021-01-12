@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/crgimenes/goconfig"
+	"github.com/quay/zlog"
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 
 	"github.com/quay/claircore/libvuln"
 	"github.com/quay/claircore/updater/defaults"
@@ -30,6 +30,10 @@ type Config struct {
 
 func main() {
 	ctx := context.Background()
+	log := zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout, NoColor: true}).
+		With().Timestamp().Caller().
+		Logger()
+
 	// parse our config
 	conf := Config{}
 	err := goconfig.Parse(&conf)
@@ -39,11 +43,9 @@ func main() {
 	if err := defaults.Error(); err != nil {
 		log.Fatal().Err(err).Msg("default updaters errored on construction")
 	}
-
-	// setup pretty logging
-	zerolog.SetGlobalLevel(logLevel(conf))
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
-	ctx = log.Logger.WithContext(ctx)
+	// configure logging
+	log = log.Level(logLevel(conf))
+	zlog.Set(&log)
 
 	// create libvuln
 	opts := confToLibvulnOpts(conf)
@@ -68,23 +70,10 @@ func main() {
 }
 
 func logLevel(conf Config) zerolog.Level {
-	level := strings.ToLower(conf.LogLevel)
-	switch level {
-	case "debug":
-		return zerolog.DebugLevel
-	case "info":
-		return zerolog.InfoLevel
-	case "warn":
-		return zerolog.WarnLevel
-	case "error":
-		return zerolog.ErrorLevel
-	case "fatal":
-		return zerolog.FatalLevel
-	case "panic":
-		return zerolog.PanicLevel
-	default:
-		return zerolog.InfoLevel
+	if l, err := zerolog.ParseLevel(strings.ToLower(conf.LogLevel)); err == nil {
+		return l
 	}
+	return zerolog.InfoLevel
 }
 
 func confToLibvulnOpts(conf Config) *libvuln.Opts {

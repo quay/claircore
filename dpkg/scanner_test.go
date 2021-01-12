@@ -11,10 +11,10 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test/fetch"
-	"github.com/quay/claircore/test/log"
 )
 
 func TestScanner(t *testing.T) {
@@ -798,9 +798,7 @@ func TestScanner(t *testing.T) {
 			RepositoryHint: "daafc6eba6eae603327bf8fc49645999",
 		},
 	}
-	ctx := context.Background()
-	ctx, done := log.TestLogger(ctx, t)
-	defer done()
+	ctx := zlog.Test(context.Background(), t)
 	l := &claircore.Layer{
 		Hash: hash,
 	}
@@ -833,9 +831,7 @@ func TestExtraMetadata(t *testing.T) {
 		Hash: claircore.MustParseDigest(`sha256:25fd87072f39aaebd1ee24dca825e61d9f5a0f87966c01551d31a4d8d79d37d8`),
 		URI:  "file:///dev/null",
 	}
-	ctx := context.Background()
-	ctx, done := log.TestLogger(ctx, t)
-	defer done()
+	ctx := zlog.Test(context.Background(), t)
 
 	// Set up the crafted layer
 	extraMetadataSetup(t, layerfile)

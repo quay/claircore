@@ -14,7 +14,9 @@ import (
 	"time"
 
 	"github.com/quay/alas"
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore/pkg/tmp"
 )
@@ -50,25 +52,24 @@ func NewClient(ctx context.Context, release Release) (*Client, error) {
 
 // RepoMD returns a alas.RepoMD containing sha256 information of a repositories contents
 func (c *Client) RepoMD(ctx context.Context) (alas.RepoMD, error) {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "aws/Client.RepoMD").
-		Logger()
-	ctx = log.WithContext(ctx)
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "aws/Client.RepoMD"))
 	for _, mirror := range c.mirrors {
 		m := *mirror
 		m.Path = path.Join(m.Path, repoDataPath)
-		log := log.With().Str("mirror", m.String()).Logger()
+		ctx := baggage.ContextWithValues(ctx,
+			label.String("mirror", m.String()))
 
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, m.String(), nil)
 		if err != nil {
-			log.Error().Err(err).Msg("failed to make request object")
+			zlog.Error(ctx).Err(err).Msg("failed to make request object")
 			continue
 		}
 
-		log.Debug().Msg("attempting repomd download")
+		zlog.Debug(ctx).Msg("attempting repomd download")
 		resp, err := c.c.Do(req)
 		if err != nil {
-			log.Error().Err(err).Msg("failed to retrieve repomd")
+			zlog.Error(ctx).Err(err).Msg("failed to retrieve repomd")
 			continue
 		}
 		defer resp.Body.Close()
@@ -77,7 +78,7 @@ func (c *Client) RepoMD(ctx context.Context) (alas.RepoMD, error) {
 		case http.StatusOK:
 			// break
 		default:
-			log.Error().
+			zlog.Error(ctx).
 				Int("code", resp.StatusCode).
 				Str("status", resp.Status).
 				Msg("unexpected HTTP response")
@@ -87,46 +88,45 @@ func (c *Client) RepoMD(ctx context.Context) (alas.RepoMD, error) {
 		repoMD := alas.RepoMD{}
 		err = xml.NewDecoder(resp.Body).Decode(&repoMD)
 		if err != nil {
-			log.Error().
+			zlog.Error(ctx).
 				Err(err).
 				Msg("failed xml unmarshal")
 			continue
 		}
 
-		log.Debug().Msg("success")
+		zlog.Debug(ctx).Msg("success")
 		return repoMD, nil
 	}
 
-	log.Error().Msg("exhausted all mirrors")
+	zlog.Error(ctx).Msg("exhausted all mirrors")
 	return alas.RepoMD{}, fmt.Errorf("all mirrors failed to retrieve repo metadata")
 }
 
 // Updates returns the *http.Response of the first mirror to establish a connection
 func (c *Client) Updates(ctx context.Context) (io.ReadCloser, error) {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "aws/Client.Updates").
-		Logger()
-	ctx = log.WithContext(ctx)
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "aws/Client.Updates"))
 	for _, mirror := range c.mirrors {
 		m := *mirror
 		m.Path = path.Join(m.Path, updatesPath)
-		log := log.With().Str("mirror", m.String()).Logger()
+		ctx := baggage.ContextWithValues(ctx,
+			label.String("mirror", m.String()))
 
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, m.String(), nil)
 		if err != nil {
-			log.Error().Err(err).Msg("failed to make request object")
+			zlog.Error(ctx).Err(err).Msg("failed to make request object")
 			continue
 		}
 
 		tf, err := tmp.NewFile("", "")
 		if err != nil {
-			log.Error().Err(err).Msg("failed to open temp file")
+			zlog.Error(ctx).Err(err).Msg("failed to open temp file")
 			continue
 		}
 
 		resp, err := c.c.Do(req)
 		if err != nil {
-			log.Error().Err(err).Msg("failed to retrieve updates")
+			zlog.Error(ctx).Err(err).Msg("failed to retrieve updates")
 			continue
 		}
 		defer resp.Body.Close()
@@ -135,7 +135,7 @@ func (c *Client) Updates(ctx context.Context) (io.ReadCloser, error) {
 		case http.StatusOK:
 			// break
 		default:
-			log.Error().
+			zlog.Error(ctx).
 				Int("code", resp.StatusCode).
 				Str("status", resp.Status).
 				Msg("unexpected HTTP response")
@@ -156,14 +156,14 @@ func (c *Client) Updates(ctx context.Context) (io.ReadCloser, error) {
 			return nil, fmt.Errorf("failed to create gzip reader: %v", err)
 		}
 
-		log.Debug().Msg("success")
+		zlog.Debug(ctx).Msg("success")
 		return &gzippedFile{
 			Reader: gz,
 			Closer: tf,
 		}, nil
 	}
 
-	log.Error().Msg("exhausted all mirrors")
+	zlog.Error(ctx).Msg("exhausted all mirrors")
 	return nil, fmt.Errorf("all update_info mirrors failed to return a response")
 }
 
@@ -180,11 +180,9 @@ func (c *Client) getMirrors(ctx context.Context, release Release) error {
 		req *http.Request
 		err error
 	)
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "aws/Client.getMirrors").
-		Str("release", string(release)).
-		Logger()
-	ctx = log.WithContext(ctx)
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "aws/Client.getMirrors"),
+		label.String("release", string(release)))
 
 	switch release {
 	case Linux1:
@@ -228,7 +226,7 @@ func (c *Client) getMirrors(ctx context.Context, release Release) error {
 		c.mirrors = append(c.mirrors, uu)
 	}
 
-	log.Debug().
+	zlog.Debug(ctx).
 		Str("mirrors", fmt.Sprint(c.mirrors)).
 		Msg("successfully got list of mirrors")
 	return nil

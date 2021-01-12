@@ -9,6 +9,9 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+
+	"github.com/quay/zlog"
+	"github.com/rs/zerolog"
 )
 
 var cleanup sync.WaitGroup
@@ -34,6 +37,10 @@ func main() {
 		done()
 	}()
 
+	l := zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout, NoColor: true}).
+		Level(zerolog.WarnLevel).With().
+		Timestamp().Caller().Logger()
+	zlog.Set(&l)
 	var cfg commonConfig = commonConfig{
 		cleanup: &cleanup,
 	}

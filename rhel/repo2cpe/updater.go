@@ -8,7 +8,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 )
 
 const (
@@ -41,9 +43,8 @@ func NewLocalUpdaterJob(url string, client *http.Client) *LocalUpdaterJob {
 //
 // Get is safe for concurrent usage.
 func (updater *LocalUpdaterJob) Get(ctx context.Context, repositories []string) ([]string, error) {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "rhel/repo2cpe/updater/LocalUpdaterJob.Get").
-		Logger()
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "rhel/repo2cpe/updater/LocalUpdaterJob.Get"))
 	if len(repositories) == 0 {
 		return []string{}, nil
 	}
@@ -61,7 +62,7 @@ func (updater *LocalUpdaterJob) Get(ctx context.Context, repositories []string) 
 				cpes = appendUnique(cpes, cpe)
 			}
 		} else {
-			log.Debug().Str("repository", repo).Msg("The repository is not present in a mapping file")
+			zlog.Debug(ctx).Str("repository", repo).Msg("The repository is not present in a mapping file")
 		}
 	}
 	return cpes, nil
@@ -76,12 +77,11 @@ func (updater *LocalUpdaterJob) Get(ctx context.Context, repositories []string) 
 //
 // Canceling the ctx will cancel the updating.
 func (updater *LocalUpdaterJob) Start(ctx context.Context) error {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "rhel/repo2cpe/updater/LocalUpdaterJob.Start").
-		Logger()
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "rhel/repo2cpe/updater/LocalUpdaterJob.Start"))
 	err := updater.do(ctx)
 	if err != nil {
-		log.Error().Err(err).Msg("received error updating mapping file")
+		zlog.Error(ctx).Err(err).Msg("received error updating mapping file")
 	}
 
 	go func() {
@@ -90,10 +90,10 @@ func (updater *LocalUpdaterJob) Start(ctx context.Context) error {
 		for {
 			select {
 			case <-t.C:
-				log.Debug().Msg("updater tick")
+				zlog.Debug(ctx).Msg("updater tick")
 				err := updater.do(ctx)
 				if err != nil {
-					log.Error().Err(err).Msg("received error updating mapping file")
+					zlog.Error(ctx).Err(err).Msg("received error updating mapping file")
 				}
 			case <-ctx.Done():
 				return
@@ -108,11 +108,10 @@ func (updater *LocalUpdaterJob) Start(ctx context.Context) error {
 //
 // this method will not be ran concurrently.
 func (updater *LocalUpdaterJob) do(ctx context.Context) error {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "rhel/repo2cpe/updater/LocalUpdaterJob.do").
-		Str("url", updater.URL).
-		Logger()
-	log.Debug().Msg("attempting fetch of repo2cpe mapping file")
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "rhel/repo2cpe/updater/LocalUpdaterJob.do"),
+		label.String("url", updater.URL))
+	zlog.Debug(ctx).Msg("attempting fetch of repo2cpe mapping file")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, updater.URL, nil)
 	if err != nil {
@@ -130,7 +129,7 @@ func (updater *LocalUpdaterJob) do(ctx context.Context) error {
 	switch resp.StatusCode {
 	case http.StatusOK:
 	case http.StatusNotModified:
-		log.Debug().
+		zlog.Debug(ctx).
 			Str("since", updater.lastModified).
 			Msg("response not modified. no update necessary")
 		return nil
@@ -147,7 +146,7 @@ func (updater *LocalUpdaterJob) do(ctx context.Context) error {
 	updater.lastModified = resp.Header.Get("last-modified")
 	// atomic store of mapping file
 	updater.mapping.Store(mapping)
-	log.Debug().Msg("atomic update of local mapping file complete")
+	zlog.Debug(ctx).Msg("atomic update of local mapping file complete")
 	return nil
 }
 

@@ -12,21 +12,19 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/vulnstore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
-	"github.com/quay/claircore/test/log"
 )
 
 // TestE2E performs an end to end test of update operations and diffing
 func TestE2E(t *testing.T) {
 	integration.Skip(t)
-	ctx := context.Background()
-	ctx, done := log.TestLogger(ctx, t)
-	defer done()
+	ctx := zlog.Test(context.Background(), t)
 
 	cases := []e2e{
 		{

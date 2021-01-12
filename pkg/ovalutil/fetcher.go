@@ -10,7 +10,9 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/tmp"
@@ -61,11 +63,9 @@ type Fetcher struct {
 //
 // Tmp.File is used to return a ReadCloser that outlives the passed-in context.
 func (f *Fetcher) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "pkg/ovalutil/Fetcher.Fetch").
-		Logger()
-	ctx = log.WithContext(ctx)
-	log.Info().Str("database", f.URL.String()).Msg("starting fetch")
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "pkg/ovalutil/Fetcher.Fetch"))
+	zlog.Info(ctx).Str("database", f.URL.String()).Msg("starting fetch")
 	req := http.Request{
 		Method: http.MethodGet,
 		Header: http.Header{
@@ -99,7 +99,7 @@ func (f *Fetcher) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 	default:
 		return nil, hint, fmt.Errorf("ovalutil: fetcher got unexpected HTTP response: %d (%s)", res.StatusCode, res.Status)
 	}
-	log.Debug().Msg("request ok")
+	zlog.Debug(ctx).Msg("request ok")
 
 	var r io.Reader
 	switch f.Compression {
@@ -115,7 +115,7 @@ func (f *Fetcher) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 	default:
 		panic(fmt.Sprintf("ovalutil: programmer error: unknown compression scheme: %v", f.Compression))
 	}
-	log.Debug().
+	zlog.Debug(ctx).
 		Str("compression", f.Compression.String()).
 		Msg("found compression scheme")
 
@@ -123,15 +123,15 @@ func (f *Fetcher) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 	if err != nil {
 		return nil, hint, err
 	}
-	log.Debug().
+	zlog.Debug(ctx).
 		Str("path", tf.Name()).
 		Msg("using tempfile")
 	success := false
 	defer func() {
 		if !success {
-			log.Debug().Msg("unsuccessful, cleaning up tempfile")
+			zlog.Debug(ctx).Msg("unsuccessful, cleaning up tempfile")
 			if err := tf.Close(); err != nil {
-				log.Warn().Err(err).Msg("failed to close tempfile")
+				zlog.Warn(ctx).Err(err).Msg("failed to close tempfile")
 			}
 		}
 	}()
@@ -142,7 +142,7 @@ func (f *Fetcher) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 	if o, err := tf.Seek(0, io.SeekStart); err != nil || o != 0 {
 		return nil, hint, err
 	}
-	log.Debug().Msg("decompressed and buffered database")
+	zlog.Debug(ctx).Msg("decompressed and buffered database")
 
 	fp.From(res.Header)
 	hint = fp.Fingerprint()

@@ -8,11 +8,11 @@ import (
 	"os"
 	"testing"
 
+	"github.com/quay/zlog"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
-	"github.com/quay/claircore/test/log"
 )
 
 type stubUpdater struct{}
@@ -30,9 +30,7 @@ func (*stubUpdater) Parse(_ context.Context, _ io.ReadCloser) ([]*claircore.Vuln
 }
 
 func TestOfflineRun(t *testing.T) {
-	ctx := context.Background()
-	ctx, done := log.TestLogger(ctx, t)
-	defer done()
+	ctx := zlog.Test(context.Background(), t)
 	stub := &stubUpdater{}
 	f, err := ioutil.TempFile("", "")
 	if f != nil {

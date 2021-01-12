@@ -13,6 +13,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/google/go-cmp/cmp"
 	_ "github.com/jackc/pgx/v4/stdlib" // Needed for sql.Open
+	"github.com/quay/zlog"
 	"github.com/remind101/migrate"
 
 	"github.com/quay/claircore"
@@ -20,7 +21,6 @@ import (
 	"github.com/quay/claircore/libindex/migrations"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
-	"github.com/quay/claircore/test/log"
 )
 
 // Testcase is a test case for calling libindex.
@@ -124,8 +124,7 @@ func (tc testcase) RunInner(ctx context.Context, t *testing.T, dsn string, next 
 func (tc testcase) Run(ctx context.Context, check checkFunc) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Parallel()
-		ctx, done := log.TestLogger(ctx, t)
-		defer done()
+		ctx := zlog.Test(ctx, t)
 		db, err := integration.NewDB(ctx, t)
 		if err != nil {
 			t.Fatal(err)

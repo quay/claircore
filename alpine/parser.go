@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
@@ -16,14 +18,14 @@ const (
 	nvdURLPrefix = "https://cve.mitre.org/cgi-bin/cvename.cgi?name=%s"
 )
 
-var _ driver.Parser = (*Updater)(nil)
+var (
+	_          driver.Parser = (*Updater)(nil)
+	parseLabel               = label.String("component", "apline/Updater.Parse")
+)
 
 func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "apline/Updater.Parse").
-		Logger()
-	ctx = log.WithContext(ctx)
-	log.Info().Msg("starting parse")
+	ctx = baggage.ContextWithValues(ctx, parseLabel)
+	zlog.Info(ctx).Msg("starting parse")
 	defer r.Close()
 
 	var db SecurityDB

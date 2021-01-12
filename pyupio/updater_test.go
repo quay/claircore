@@ -11,8 +11,9 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/quay/zlog"
+
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/test/log"
 )
 
 func TestDB(t *testing.T) {
@@ -169,9 +170,7 @@ func (tc dbTestcase) filename() string {
 }
 
 func (tc dbTestcase) Run(t *testing.T) {
-	ctx := context.Background()
-	ctx, done := log.TestLogger(ctx, t)
-	defer done()
+	ctx := zlog.Test(context.Background(), t)
 
 	f, err := os.Open(tc.filename())
 	if err != nil {

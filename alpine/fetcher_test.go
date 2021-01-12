@@ -8,14 +8,13 @@ import (
 	"os"
 	"testing"
 
+	"github.com/quay/zlog"
+
 	"github.com/quay/claircore/libvuln/driver"
-	"github.com/quay/claircore/test/log"
 )
 
 func TestFetcher(t *testing.T) {
-	ctx := context.Background()
-	ctx, done := log.TestLogger(ctx, t)
-	defer done()
+	ctx := zlog.Test(context.Background(), t)
 
 	var table = []struct {
 		release   Release

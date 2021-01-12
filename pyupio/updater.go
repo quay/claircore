@@ -14,7 +14,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
@@ -115,11 +117,9 @@ func (*Updater) Name() string { return "pyupio" }
 
 // Fetch implements driver.Updater.
 func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "pyupio/Updater.Fetch").
-		Logger()
-	ctx = log.WithContext(ctx)
-	log.Info().Str("database", u.url.String()).Msg("starting fetch")
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "pyupio/Updater.Fetch"))
+	zlog.Info(ctx).Str("database", u.url.String()).Msg("starting fetch")
 	req := http.Request{
 		Method:     http.MethodGet,
 		Header:     http.Header{"User-Agent": {"claircore/pyupio/Updater"}},
@@ -130,7 +130,7 @@ func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 		Host:       u.url.Host,
 	}
 	if hint != "" {
-		log.Debug().
+		zlog.Debug(ctx).
 			Str("hint", string(hint)).
 			Msg("using hint")
 		req.Header.Set("if-none-match", string(hint))
@@ -151,7 +151,7 @@ func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 	default:
 		return nil, hint, fmt.Errorf("pyupio: fetcher got unexpected HTTP response: %d (%s)", res.StatusCode, res.Status)
 	}
-	log.Debug().Msg("request ok")
+	zlog.Debug(ctx).Msg("request ok")
 
 	r, err := gzip.NewReader(res.Body)
 	if err != nil {
@@ -162,15 +162,15 @@ func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 	if err != nil {
 		return nil, hint, err
 	}
-	log.Debug().
+	zlog.Debug(ctx).
 		Str("path", tf.Name()).
 		Msg("using tempfile")
 	success := false
 	defer func() {
 		if !success {
-			log.Debug().Msg("unsuccessful, cleaning up tempfile")
+			zlog.Debug(ctx).Msg("unsuccessful, cleaning up tempfile")
 			if err := tf.Close(); err != nil {
-				log.Warn().Err(err).Msg("failed to close tempfile")
+				zlog.Warn(ctx).Err(err).Msg("failed to close tempfile")
 			}
 		}
 	}()
@@ -181,10 +181,10 @@ func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 	if o, err := tf.Seek(0, io.SeekStart); err != nil || o != 0 {
 		return nil, hint, err
 	}
-	log.Debug().Msg("decompressed and buffered database")
+	zlog.Debug(ctx).Msg("decompressed and buffered database")
 
 	if t := res.Header.Get("etag"); t != "" {
-		log.Debug().
+		zlog.Debug(ctx).
 			Str("hint", t).
 			Msg("using new hint")
 		hint = driver.Fingerprint(t)
@@ -195,13 +195,11 @@ func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 
 // Parse implements driver.Updater.
 func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "pyupio/Updater.Parse").
-		Logger()
-	ctx = log.WithContext(ctx)
-	log.Info().Msg("parse start")
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "pyupio/Updater.Parse"))
+	zlog.Info(ctx).Msg("parse start")
 	defer r.Close()
-	defer log.Info().Msg("parse done")
+	defer zlog.Info(ctx).Msg("parse done")
 
 	var db db
 	tr := tar.NewReader(r)
@@ -218,7 +216,7 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 	if err != io.EOF {
 		return nil, err
 	}
-	log.Debug().
+	zlog.Debug(ctx).
 		Int("count", len(db)).
 		Msg("found raw entries")
 
@@ -226,7 +224,7 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 	if err != nil {
 		return nil, err
 	}
-	log.Debug().
+	zlog.Debug(ctx).
 		Int("count", len(ret)).
 		Msg("found vulnerabilities")
 	return ret, nil
@@ -254,9 +252,8 @@ func init() {
 
 func (db db) Vulnerabilites(ctx context.Context, repo *claircore.Repository, updater string) ([]*claircore.Vulnerability, error) {
 	const opSet = `<>=!`
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "pyupio/db.Vulnerabilities").
-		Logger()
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "pyupio/db.Vulnerabilities"))
 
 	var mungeCt int
 	var ret []*claircore.Vulnerability
@@ -288,7 +285,7 @@ func (db db) Vulnerabilites(ctx context.Context, repo *claircore.Repository, upd
 					v.Range.Lower = vZero.Version()
 				}
 				if ls > 2 && ls%2 == 1 {
-					log.Warn().
+					zlog.Warn(ctx).
 						Str("spec", spec).
 						Msg("malformed database entry")
 					continue
@@ -297,7 +294,7 @@ func (db db) Vulnerabilites(ctx context.Context, repo *claircore.Repository, upd
 					i := strings.LastIndexAny(r, opSet) + 1
 					ver, err := pep440.Parse(r[i:])
 					if err != nil {
-						log.Info().
+						zlog.Info(ctx).
 							Err(err).
 							Str("version", r[i:]).
 							Msg("unable to parse version as pep440")
@@ -325,13 +322,13 @@ func (db db) Vulnerabilites(ctx context.Context, repo *claircore.Repository, upd
 						v.Range.Lower = ver.Version()
 						v.Range.Upper = ver.Version()
 					default:
-						log.Warn().
+						zlog.Warn(ctx).
 							Str("comparison", r[:i]).
 							Msg("unexpected comparison, please file an issue")
 					}
 				}
 				if v.Range.Lower.Compare(&v.Range.Upper) == 1 {
-					log.Debug().
+					zlog.Debug(ctx).
 						Str("id", e.ID).
 						Str("name", k).
 						Str("spec", spec).
@@ -343,7 +340,7 @@ func (db db) Vulnerabilites(ctx context.Context, repo *claircore.Repository, upd
 		}
 	}
 	if mungeCt > 0 {
-		log.Debug().
+		zlog.Debug(ctx).
 			Int("count", mungeCt).
 			Msg("munged bounds on some vulnerabilities 😬")
 	}

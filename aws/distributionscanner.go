@@ -6,7 +6,9 @@ import (
 	"regexp"
 	"runtime/trace"
 
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
@@ -63,18 +65,17 @@ func (*DistributionScanner) Kind() string { return scannerKind }
 // If the files are found but all regexp fail to match an empty slice is returned.
 func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Distribution, error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "aws_dist_scanner").
-		Str("name", ds.Name()).
-		Str("version", ds.Version()).
-		Str("kind", ds.Kind()).
-		Str("layer", l.Hash.String()).
-		Logger()
-	log.Debug().Msg("start")
-	defer log.Debug().Msg("done")
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "aws_dist_scanner"),
+		label.String("name", ds.Name()),
+		label.String("version", ds.Version()),
+		label.String("kind", ds.Kind()),
+		label.String("layer", l.Hash.String()))
+	zlog.Debug(ctx).Msg("start")
+	defer zlog.Debug(ctx).Msg("done")
 	files, err := l.Files(osReleasePath)
 	if err != nil {
-		log.Debug().Msg("didn't find an os-release")
+		zlog.Debug(ctx).Msg("didn't find an os-release")
 		return nil, nil
 	}
 	for _, buff := range files {

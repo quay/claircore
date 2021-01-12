@@ -5,16 +5,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/quay/zlog"
+
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/test/integration"
-	"github.com/quay/claircore/test/log"
 )
 
 func TestLiveDatabase(t *testing.T) {
 	integration.Skip(t)
-	ctx := context.Background()
-	ctx, done := log.TestLogger(ctx, t)
-	defer done()
+	ctx := zlog.Test(context.Background(), t)
 
 	u, err := NewUpdater(EnterpriseServer15)
 	if err != nil {

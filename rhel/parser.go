@@ -7,7 +7,9 @@ import (
 	"io"
 
 	"github.com/quay/goval-parser/oval"
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/cpe"
@@ -15,17 +17,15 @@ import (
 )
 
 func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "rhel/Updater.Parse").
-		Logger()
-	ctx = log.WithContext(ctx)
-	log.Info().Msg("starting parse")
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "rhel/Updater.Parse"))
+	zlog.Info(ctx).Msg("starting parse")
 	defer r.Close()
 	root := oval.Root{}
 	if err := xml.NewDecoder(r).Decode(&root); err != nil {
 		return nil, fmt.Errorf("rhel: unable to decode OVAL document: %w", err)
 	}
-	log.Debug().Msg("xml decoded")
+	zlog.Debug(ctx).Msg("xml decoded")
 	protoVulns := func(def oval.Definition) ([]*claircore.Vulnerability, error) {
 		vs := []*claircore.Vulnerability{}
 		for _, affected := range def.Advisory.AffectedCPEList {

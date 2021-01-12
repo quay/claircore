@@ -6,7 +6,9 @@ import (
 	"net/url"
 	"sync"
 
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 )
 
 // ReqCheckFunc checks if a *http.Response
@@ -54,12 +56,13 @@ func New(client *http.Client, req *http.Request, check RespCheck, urls []*url.UR
 // If no successful *http.Response is obtained a nil is returned.
 // Any timeout or cancellation must be provided by the caller.
 func (f *FastestURL) Do(ctx context.Context) *http.Response {
-	log := zerolog.Ctx(ctx).With().Str("routine", "fasesturl_do").Logger()
 	var wg sync.WaitGroup
 	result := make(chan *http.Response)
 	wg.Add(len(f.URLs))
 	ctx, done := context.WithCancel(ctx)
 	defer done()
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "pkg/fastesturl/FastestURL.Do"))
 
 	go func() {
 		wg.Wait()
@@ -76,7 +79,10 @@ func (f *FastestURL) Do(ctx context.Context) *http.Response {
 			// Can't defer the body.Close(), because we can only close it if we're not
 			// going to return it.
 			if err != nil {
-				log.Error().Err(err).Str("url", u.String()).Msg("failed to make request for url")
+				zlog.Error(ctx).
+					Err(err).
+					Str("url", u.String()).
+					Msg("failed to make request for url")
 				if resp != nil {
 					resp.Body.Close()
 				}

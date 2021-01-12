@@ -6,26 +6,27 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/tmp"
 )
 
-func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "alpine/Updater.Fetch").
-		Logger()
-	ctx = log.WithContext(ctx)
+var fetchLabel = label.String("component", "alpine/Updater.Fetch")
 
-	log.Info().Str("database", u.url).Msg("starting fetch")
+func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
+	ctx = baggage.ContextWithValues(ctx, fetchLabel)
+
+	zlog.Info(ctx).Str("database", u.url).Msg("starting fetch")
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.url, nil)
 	if err != nil {
 		return nil, hint, fmt.Errorf("alpine: unable to construct request: %w", err)
 	}
 
 	if hint != "" {
-		log.Debug().
+		zlog.Debug(ctx).
 			Str("hint", string(hint)).
 			Msg("using hint")
 		req.Header.Set("if-none-match", string(hint))
@@ -41,18 +42,18 @@ func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 	case http.StatusOK:
 		//break
 	case http.StatusNotModified:
-		log.Info().Msg("database unchanged since last fetch")
+		zlog.Info(ctx).Msg("database unchanged since last fetch")
 		return nil, hint, driver.Unchanged
 	default:
 		return nil, hint, fmt.Errorf("alpine: http response error: %s %d", res.Status, res.StatusCode)
 	}
-	log.Debug().Msg("successfully requested database")
+	zlog.Debug(ctx).Msg("successfully requested database")
 
 	tf, err := tmp.NewFile("", u.Name()+".")
 	if err != nil {
 		return nil, hint, fmt.Errorf("alpine: unable to open tempfile: %w", err)
 	}
-	log.Debug().
+	zlog.Debug(ctx).
 		Str("name", tf.Name()).
 		Msg("created tempfile")
 
@@ -65,10 +66,10 @@ func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 		tf.Close()
 		return nil, hint, fmt.Errorf("alpine: unable to seek database to start: at %d, %v", n, err)
 	}
-	log.Debug().Msg("decompressed and buffered database")
+	zlog.Debug(ctx).Msg("decompressed and buffered database")
 
 	hint = driver.Fingerprint(res.Header.Get("etag"))
-	log.Debug().
+	zlog.Debug(ctx).
 		Str("hint", string(hint)).
 		Msg("using new hint")
 

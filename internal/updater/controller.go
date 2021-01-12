@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/internal/vulnstore"
 	"github.com/quay/claircore/libvuln/driver"
@@ -59,9 +59,9 @@ func (e *errmap) error() error {
 // DriveUpdater drives the updater.
 //
 // The caller is expected to handle any locking or concurrency control needed.
-func driveUpdater(ctx context.Context, log zerolog.Logger, u driver.Updater, s vulnstore.Updater) error {
-	log.Debug().Msg("start")
-	defer log.Debug().Msg("done")
+func driveUpdater(ctx context.Context, u driver.Updater, s vulnstore.Updater) error {
+	zlog.Debug(ctx).Msg("start")
+	defer zlog.Debug(ctx).Msg("done")
 	name := u.Name()
 
 	var prevFP driver.Fingerprint
@@ -82,7 +82,7 @@ func driveUpdater(ctx context.Context, log zerolog.Logger, u driver.Updater, s v
 	switch {
 	case err == nil:
 	case errors.Is(err, driver.Unchanged):
-		log.Info().Msg("vulnerability database unchanged")
+		zlog.Info(ctx).Msg("vulnerability database unchanged")
 		return nil
 	default:
 		return err
@@ -98,7 +98,7 @@ func driveUpdater(ctx context.Context, log zerolog.Logger, u driver.Updater, s v
 		return fmt.Errorf("failed to update vulnerabilities: %v", err)
 	}
 
-	log.Info().
+	zlog.Info(ctx).
 		Str("ref", ref.String()).
 		Msg("successful update")
 	return nil

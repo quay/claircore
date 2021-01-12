@@ -4,10 +4,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/quay/zlog"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
-	"github.com/quay/claircore/test/log"
 	pgtest "github.com/quay/claircore/test/postgres"
 )
 
@@ -91,8 +92,7 @@ func Benchmark_PackagesByLayer(b *testing.B) {
 
 	for _, bench := range benchmarks {
 		b.Run(bench.name, func(b *testing.B) {
-			ctx, done := log.TestLogger(ctx, b)
-			defer done()
+			ctx := zlog.Test(ctx, b)
 			pool, teardown := TestDatabase(ctx, b)
 			defer teardown()
 			store := NewStore(pool)

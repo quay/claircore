@@ -6,11 +6,11 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/test/fetch"
-	"github.com/quay/claircore/test/log"
 )
 
 // ScannerTestcase can be used for testing layers found in the wild against a
@@ -40,8 +40,7 @@ func (tc ScannerTestcase) Digest() claircore.Digest {
 // Run returns a function suitable for using with (*testing.T).Run.
 func (tc ScannerTestcase) Run(ctx context.Context) func(*testing.T) {
 	return func(t *testing.T) {
-		ctx, done := log.TestLogger(ctx, t)
-		defer done()
+		ctx := zlog.Test(ctx, t)
 		d := tc.Digest()
 		n, err := fetch.Layer(ctx, t, http.DefaultClient, tc.Domain, tc.Name, d)
 		if err != nil {

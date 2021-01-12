@@ -8,7 +8,9 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore/internal/vulnstore/jsonblob"
 	"github.com/quay/claircore/libvuln/driver"
@@ -40,12 +42,10 @@ var _ Controller = (*Offline)(nil)
 // are always written, even if an error is ultimately returned from this
 // function.
 func (o *Offline) Run(ctx context.Context, ch <-chan driver.Updater) error {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "internal/updater/Offline").
-		Logger()
-	ctx = log.WithContext(ctx)
-	log.Debug().Msg("start")
-	defer log.Debug().Msg("done")
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "internal/updater/Offline"))
+	zlog.Debug(ctx).Msg("start")
+	defer zlog.Debug(ctx).Msg("done")
 
 	filter := func(_ string) bool { return true }
 	if f := o.Filter; f != nil {
@@ -75,17 +75,15 @@ func (o *Offline) Run(ctx context.Context, ch <-chan driver.Updater) error {
 				}
 
 				name := u.Name()
-				log := log.With().
-					Str("updater", name).
-					Logger()
-				ctx := log.WithContext(ctx)
+				ctx := baggage.ContextWithValues(ctx,
+					label.String("updater", name))
 
 				if !filter(name) {
-					log.Debug().Msg("filtered")
+					zlog.Debug(ctx).Msg("filtered")
 					continue
 				}
 
-				if err := driveUpdater(ctx, log, u, store); err != nil {
+				if err := driveUpdater(ctx, u, store); err != nil {
 					errs.add(name, err)
 				}
 			}

@@ -5,15 +5,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/quay/zlog"
+
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/test/integration"
-	"github.com/quay/claircore/test/log"
 )
 
 func check_release(t *testing.T, photon_release Release) {
-	ctx := context.Background()
-	ctx, done := log.TestLogger(ctx, t)
-	defer done()
+	ctx := zlog.Test(context.Background(), t)
 
 	u, err := NewUpdater(photon_release)
 	if err != nil {

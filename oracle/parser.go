@@ -7,7 +7,9 @@ import (
 	"io"
 
 	"github.com/quay/goval-parser/oval"
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
@@ -32,17 +34,15 @@ var platformToDist = map[string]*claircore.Distribution{
 var _ driver.Parser = (*Updater)(nil)
 
 func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "oracle/Updater.Parse").
-		Logger()
-	ctx = log.WithContext(ctx)
-	log.Info().Msg("starting parse")
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "oracle/Updater.Parse"))
+	zlog.Info(ctx).Msg("starting parse")
 	defer r.Close()
 	root := oval.Root{}
 	if err := xml.NewDecoder(r).Decode(&root); err != nil {
 		return nil, fmt.Errorf("oracle: unable to decode OVAL document: %w", err)
 	}
-	log.Debug().Msg("xml decoded")
+	zlog.Debug(ctx).Msg("xml decoded")
 	protoVulns := func(def oval.Definition) ([]*claircore.Vulnerability, error) {
 		// In all oracle databases tested a single
 		// and correct platform string can be found inside a definition

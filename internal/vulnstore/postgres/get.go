@@ -8,17 +8,17 @@ import (
 
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/vulnstore"
 )
 
 func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.IndexRecord, opts vulnstore.GetOpts) (map[string][]*claircore.Vulnerability, error) {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "internal/vulnstore/postgres/get").
-		Logger()
-	ctx = log.WithContext(ctx)
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "internal/vulnstore/postgres/get"))
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		return nil, err
@@ -30,7 +30,7 @@ func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.IndexReco
 		query, err := buildGetQuery(record, &opts)
 		if err != nil {
 			// if we cannot build a query for an individual record continue to the next
-			log.Debug().
+			zlog.Debug(ctx).
 				Err(err).
 				Str("record", fmt.Sprintf("%+v", record)).
 				Msg("could not build query for record")

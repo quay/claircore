@@ -8,15 +8,12 @@ import (
 	"time"
 
 	"github.com/quay/goval-parser/oval"
-
-	"github.com/quay/claircore/test/log"
+	"github.com/quay/zlog"
 )
 
 func TestParse(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
-	ctx, done := log.TestLogger(ctx, t)
-	defer done()
+	ctx := zlog.Test(context.Background(), t)
 	u, err := NewUpdater(-1)
 	if err != nil {
 		t.Fatal(err)

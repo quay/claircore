@@ -11,7 +11,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
@@ -64,10 +66,8 @@ func updateVulnerabilites(ctx context.Context, pool *pgxpool.Pool, updater strin
 		DELETE FROM update_operation WHERE
 			updater = $1 AND id NOT IN (SELECT id FROM keep);`
 	)
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "internal/vulnstore/postgres/updateVulnerabilities").
-		Logger()
-	ctx = log.WithContext(ctx)
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "internal/vulnstore/postgres/updateVulnerabilities"))
 
 	tx, err := pool.Begin(ctx)
 	if err != nil {
@@ -80,7 +80,7 @@ func updateVulnerabilites(ctx context.Context, pool *pgxpool.Pool, updater strin
 	if err := pool.QueryRow(ctx, create, updater, string(fingerprint)).Scan(&id, &ref); err != nil {
 		return uuid.Nil, fmt.Errorf("failed to create update_operation: %w", err)
 	}
-	log.Debug().
+	zlog.Debug(ctx).
 		Str("ref", ref.String()).
 		Msg("update_operation created")
 
@@ -133,7 +133,7 @@ func updateVulnerabilites(ctx context.Context, pool *pgxpool.Pool, updater strin
 	if err := tx.Commit(ctx); err != nil {
 		return uuid.Nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
-	log.Debug().
+	zlog.Debug(ctx).
 		Str("ref", ref.String()).
 		Int("skipped", skipCt).
 		Int("inserted", len(vulns)-skipCt).

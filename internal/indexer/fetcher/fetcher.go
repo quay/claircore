@@ -17,7 +17,9 @@ import (
 
 	"github.com/klauspost/compress/gzip"
 	"github.com/klauspost/compress/zstd"
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/quay/claircore"
@@ -74,15 +76,14 @@ func (f *fetcher) filename(l *claircore.Layer) string {
 // fetch is designed to be ran as a go routine. performs the logic for for
 // fetching an individual layer's contents.
 func (f *fetcher) fetch(ctx context.Context, layer *claircore.Layer) error {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "internal/indexer/fetcher/fetcher.fetch").
-		Str("layer", layer.Hash.String()).
-		Str("uri", layer.URI).
-		Logger()
-	log.Debug().Msg("layer fetch start")
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "internal/indexer/fetcher/fetcher.fetch"),
+		label.String("layer", layer.Hash.String()),
+		label.String("uri", layer.URI))
+	zlog.Debug(ctx).Msg("layer fetch start")
 	// It is valid and don't perform a fetch.
 	if layer.Fetched() {
-		log.Debug().Msg("layer fetch skipped: exists")
+		zlog.Debug(ctx).Msg("layer fetch skipped: exists")
 		return nil
 	}
 
@@ -93,7 +94,7 @@ func (f *fetcher) fetch(ctx context.Context, layer *claircore.Layer) error {
 	// parse uri
 	url, err := url.ParseRequestURI(layer.URI)
 	if err != nil {
-		return fmt.Errorf("failied to parse remote path uri: %v", err)
+		return fmt.Errorf("failed to parse remote path uri: %v", err)
 	}
 	if layer.Hash.Checksum() == nil {
 		return fmt.Errorf("digest is empty")
@@ -110,7 +111,7 @@ func (f *fetcher) fetch(ctx context.Context, layer *claircore.Layer) error {
 	switch {
 	case err == nil:
 	case errors.Is(err, os.ErrExist):
-		log.Debug().Msg("layer fetch skipped: exists")
+		zlog.Debug(ctx).Msg("layer fetch skipped: exists")
 		// Another goroutine is grabbing this layer, return nothing.
 		//
 		// This is racy, but the caller should have prevented this instance of a
@@ -148,7 +149,7 @@ func (f *fetcher) fetch(ctx context.Context, layer *claircore.Layer) error {
 	br := bufio.NewReader(tr)
 	// Look at the content-type and optionally fix it up.
 	ct := resp.Header.Get("content-type")
-	log.Debug().
+	zlog.Debug(ctx).
 		Str("content-type", ct).
 		Msg("reported content-type")
 	switch {
@@ -156,7 +157,7 @@ func (f *fetcher) fetch(ctx context.Context, layer *claircore.Layer) error {
 		ct == "text/plain" ||
 		ct == "binary/octet-stream" ||
 		ct == "application/octet-stream":
-		log.Debug().
+		zlog.Debug(ctx).
 			Str("content-type", ct).
 			Msg("guessing compression")
 		b, err := br.Peek(4)
@@ -171,7 +172,7 @@ func (f *fetcher) fetch(ctx context.Context, layer *claircore.Layer) error {
 		case cmpNone:
 			ct = "application/x-tar"
 		}
-		log.Debug().
+		zlog.Debug(ctx).
 			Str("format", ct).
 			Msg("guessed compression")
 	}
@@ -207,7 +208,7 @@ func (f *fetcher) fetch(ctx context.Context, layer *claircore.Layer) error {
 	buf := bufio.NewWriter(fd)
 	defer buf.Flush()
 	n, err := io.Copy(buf, r)
-	log.Debug().Int64("size", n).Msg("wrote file")
+	zlog.Debug(ctx).Int64("size", n).Msg("wrote file")
 	if err != nil {
 		return err
 	}
@@ -218,7 +219,7 @@ func (f *fetcher) fetch(ctx context.Context, layer *claircore.Layer) error {
 		return err
 	}
 
-	log.Debug().Msg("layer fetch ok")
+	zlog.Debug(ctx).Msg("layer fetch ok")
 	return nil
 }
 

@@ -7,7 +7,9 @@ import (
 	"net/http"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore/internal/updater"
 	"github.com/quay/claircore/internal/vulnstore/jsonblob"
@@ -43,10 +45,8 @@ func OfflineImport(ctx context.Context, pool *pgxpool.Pool, in io.Reader) error 
 	// BUG(hank) The OfflineImport function is a wart, needed to work around
 	// some package namespacing issues. It should get refactored if claircore
 	// gets merged into clair.
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "libvuln/OfflineImporter").
-		Logger()
-	ctx = log.WithContext(ctx)
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "libvuln/OfflineImporter"))
 
 	gz, err := gzip.NewReader(in)
 	if err != nil {
@@ -72,7 +72,7 @@ Update:
 			// This only helps if updaters don't keep something that
 			// changes in the fingerprint.
 			if op.Fingerprint == e.Fingerprint {
-				log.Info().
+				zlog.Info(ctx).
 					Str("updater", e.Updater).
 					Msg("fingerprint match, skipping")
 				continue Update
@@ -82,7 +82,7 @@ Update:
 		if err != nil {
 			return err
 		}
-		log.Info().
+		zlog.Info(ctx).
 			Str("updater", e.Updater).
 			Str("ref", ref.String()).
 			Int("count", len(e.Vuln)).
@@ -101,11 +101,9 @@ type UpdateDriver struct {
 }
 
 func (d *UpdateDriver) RunUpdaters(ctx context.Context, fs ...driver.UpdaterSetFactory) error {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "libvuln/updateDriver/RunUpdaters").
-		Logger()
-	ctx = log.WithContext(ctx)
-	log.Debug().
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "libvuln/updateDriver/RunUpdaters"))
+	zlog.Debug(ctx).
 		Int("sets", len(fs)).
 		Msg("running updaters")
 
@@ -115,7 +113,7 @@ func (d *UpdateDriver) RunUpdaters(ctx context.Context, fs ...driver.UpdaterSetF
 		for _, f := range fs {
 			us, err := f.UpdaterSet(ctx)
 			if err != nil {
-				log.Warn().Err(err).Msg("failed creating updaters")
+				zlog.Warn(ctx).Err(err).Msg("failed creating updaters")
 				continue
 			}
 			for _, u := range us.Updaters() {
@@ -123,7 +121,7 @@ func (d *UpdateDriver) RunUpdaters(ctx context.Context, fs ...driver.UpdaterSetF
 				cfg, cfgOK := d.config[u.Name()]
 				if fOK && cfgOK {
 					if err := f.Configure(ctx, cfg, d.client); err != nil {
-						log.Warn().Err(err).Msg("failed creating updaters")
+						zlog.Warn(ctx).Err(err).Msg("failed creating updaters")
 						continue
 					}
 				}

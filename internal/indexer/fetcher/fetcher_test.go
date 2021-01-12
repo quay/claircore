@@ -9,10 +9,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/quay/zlog"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/test"
-	"github.com/quay/claircore/test/log"
 )
 
 // Custom TestMain to hook the TMPDIR environment variable.
@@ -36,8 +37,7 @@ type testcase struct {
 
 func (tc testcase) Run(ctx context.Context) func(*testing.T) {
 	return func(t *testing.T) {
-		ctx, done := log.TestLogger(ctx, t)
-		defer done()
+		ctx := zlog.Test(ctx, t)
 		layers := test.ServeLayers(ctx, t, tc.N)
 		for _, l := range layers {
 			t.Logf("%+v", l)
@@ -97,8 +97,7 @@ func TestInvalid(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			ctx, done := log.TestLogger(ctx, t)
-			defer done()
+			ctx := zlog.Test(ctx, t)
 			fetcher := New(&testClient, indexer.InMem)
 			if err := fetcher.Fetch(ctx, table.layer); err == nil {
 				t.Fatal("expected error, got nil")

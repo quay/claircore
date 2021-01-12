@@ -4,7 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/vulnstore"
@@ -29,14 +31,12 @@ func NewController(m driver.Matcher, store vulnstore.Vulnerability) *Controller 
 }
 
 func (mc *Controller) Match(ctx context.Context, records []*claircore.IndexRecord) (map[string][]*claircore.Vulnerability, error) {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "internal/matcher/Controller.Match").
-		Str("matcher", mc.m.Name()).
-		Logger()
-	ctx = log.WithContext(ctx)
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "internal/matcher/Controller.Match"),
+		label.String("matcher", mc.m.Name()))
 	// find the packages the matcher is interested in.
 	interested := mc.findInterested(records)
-	log.Debug().
+	zlog.Debug(ctx).
 		Int("interested", len(interested)).
 		Int("records", len(records)).
 		Msg("interest")
@@ -49,14 +49,14 @@ func (mc *Controller) Match(ctx context.Context, records []*claircore.IndexRecor
 	remoteMatcher, matchedVulns, err := mc.queryRemoteMatcher(ctx, interested)
 	if remoteMatcher {
 		if err != nil {
-			log.Error().Err(err).Msg("remote matcher error, returning empty results")
+			zlog.Error(ctx).Err(err).Msg("remote matcher error, returning empty results")
 			return map[string][]*claircore.Vulnerability{}, nil
 		}
 		return matchedVulns, nil
 	}
 
 	dbSide, authoritative := mc.dbFilter()
-	log.Debug().
+	zlog.Debug(ctx).
 		Bool("opt-in", dbSide).
 		Bool("authoritative", authoritative).
 		Msg("version filter compatible?")
@@ -66,7 +66,7 @@ func (mc *Controller) Match(ctx context.Context, records []*claircore.IndexRecor
 	if err != nil {
 		return nil, err
 	}
-	log.Debug().
+	zlog.Debug(ctx).
 		Int("vulnerabilities", len(vulns)).
 		Msg("query")
 
@@ -78,7 +78,7 @@ func (mc *Controller) Match(ctx context.Context, records []*claircore.IndexRecor
 	if err != nil {
 		return nil, err
 	}
-	log.Debug().
+	zlog.Debug(ctx).
 		Int("filtered", len(filteredVulns)).
 		Msg("filtered")
 	return filteredVulns, nil

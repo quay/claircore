@@ -8,10 +8,11 @@ import (
 	"strconv"
 
 	"github.com/google/uuid"
+	"github.com/quay/zlog"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	je "github.com/quay/claircore/pkg/jsonerr"
-	"github.com/rs/zerolog"
 )
 
 var _ http.Handler = (*HTTP)(nil)
@@ -33,7 +34,6 @@ func NewHandler(l *Libvuln) *HTTP {
 
 func (h *HTTP) UpdateDiff(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	log := zerolog.Ctx(ctx)
 	if r.Method != http.MethodGet {
 		resp := &je.Response{
 			Code:    "method-not-allowed",
@@ -92,13 +92,12 @@ func (h *HTTP) UpdateDiff(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// Can't change header or write a different response, because we
 		// already started.
-		log.Warn().Err(err).Msg("failed to encode response")
+		zlog.Warn(ctx).Err(err).Msg("failed to encode response")
 	}
 }
 
 func (h *HTTP) UpdateOperations(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	log := zerolog.Ctx(ctx)
 	switch r.Method {
 	case http.MethodGet:
 		var latest string
@@ -126,7 +125,7 @@ func (h *HTTP) UpdateOperations(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			// Can't change header or write a different response, because we
 			// already started.
-			log.Warn().Err(err).Msg("failed to encode response")
+			zlog.Warn(ctx).Err(err).Msg("failed to encode response")
 		}
 		return
 
@@ -139,7 +138,7 @@ func (h *HTTP) UpdateOperations(w http.ResponseWriter, r *http.Request) {
 				Code:    "bad-request",
 				Message: fmt.Sprintf("could not deserialize manifest: %v", err),
 			}
-			log.Warn().Err(err).Msg("could not deserialize manifest")
+			zlog.Warn(ctx).Err(err).Msg("could not deserialize manifest")
 			je.Error(w, resp, http.StatusBadRequest)
 			return
 		}
@@ -165,7 +164,6 @@ func (h *HTTP) UpdateOperations(w http.ResponseWriter, r *http.Request) {
 
 func (h *HTTP) VulnerabilityReport(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	log := zerolog.Ctx(ctx)
 	if r.Method != http.MethodPost {
 		resp := &je.Response{
 			Code:    "method-not-allowed",
@@ -183,7 +181,7 @@ func (h *HTTP) VulnerabilityReport(w http.ResponseWriter, r *http.Request) {
 			Code:    "bad-request",
 			Message: fmt.Sprintf("could not deserialize manifest: %v", err),
 		}
-		log.Warn().Err(err).Msg("could not deserialize manifest")
+		zlog.Warn(ctx).Err(err).Msg("could not deserialize manifest")
 		je.Error(w, resp, http.StatusBadRequest)
 		return
 	}
@@ -195,7 +193,7 @@ func (h *HTTP) VulnerabilityReport(w http.ResponseWriter, r *http.Request) {
 			Code:    "scan-error",
 			Message: fmt.Sprintf("failed to start scan: %v", err),
 		}
-		log.Warn().Err(err).Msg("failed to start scan")
+		zlog.Warn(ctx).Err(err).Msg("failed to start scan")
 		je.Error(w, resp, http.StatusInternalServerError)
 		return
 	}
@@ -204,7 +202,7 @@ func (h *HTTP) VulnerabilityReport(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// Can't change header or write a different response, because we
 		// already started.
-		log.Warn().Err(err).Msg("failed to encode response")
+		zlog.Warn(ctx).Err(err).Msg("failed to encode response")
 	}
 	return
 }

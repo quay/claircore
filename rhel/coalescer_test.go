@@ -5,10 +5,11 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/quay/zlog"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/test"
-	"github.com/quay/claircore/test/log"
 )
 
 // Test_Coalescer tests the private method coalesce on the rhel.Coalescer.
@@ -16,9 +17,7 @@ import (
 // database access would have occurred. Thus we do not use a black box test
 // and instead test private methods.
 func Test_Coalescer(t *testing.T) {
-	ctx := context.Background()
-	ctx, done := log.TestLogger(ctx, t)
-	defer done()
+	ctx := zlog.Test(context.Background(), t)
 	coalescer := NewCoalescer()
 	// we will test
 	// 1) packages before a distribution was discovered are tagged with
@@ -86,9 +85,7 @@ func Test_Coalescer(t *testing.T) {
 }
 
 func Test_Coalescer_cpe_repos(t *testing.T) {
-	ctx := context.Background()
-	ctx, done := log.TestLogger(ctx, t)
-	defer done()
+	ctx := zlog.Test(context.Background(), t)
 	coalescer := NewCoalescer()
 	repo1 := &claircore.Repository{
 		ID:   "1",
@@ -161,9 +158,7 @@ func Test_Coalescer_cpe_repos(t *testing.T) {
 }
 
 func Test_Coalescer_updated_package(t *testing.T) {
-	ctx := context.Background()
-	ctx, done := log.TestLogger(ctx, t)
-	defer done()
+	ctx := zlog.Test(context.Background(), t)
 	coalescer := NewCoalescer()
 	repo1 := &claircore.Repository{
 		ID:   "1",
@@ -226,9 +221,7 @@ func Test_Coalescer_updated_package(t *testing.T) {
 }
 
 func Test_Coalescer_downgraded_package(t *testing.T) {
-	ctx := context.Background()
-	ctx, done := log.TestLogger(ctx, t)
-	defer done()
+	ctx := zlog.Test(context.Background(), t)
 	coalescer := NewCoalescer()
 	repo1 := &claircore.Repository{
 		ID:   "1",
@@ -291,9 +284,7 @@ func Test_Coalescer_downgraded_package(t *testing.T) {
 }
 
 func Test_Coalescer_removed_package(t *testing.T) {
-	ctx := context.Background()
-	ctx, done := log.TestLogger(ctx, t)
-	defer done()
+	ctx := zlog.Test(context.Background(), t)
 	coalescer := NewCoalescer()
 	repo1 := &claircore.Repository{
 		ID:   "1",

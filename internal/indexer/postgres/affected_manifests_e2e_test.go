@@ -9,27 +9,24 @@ import (
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/lib/pq"
+	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/test/integration"
-	"github.com/quay/claircore/test/log"
 )
 
 type affectedE2E struct {
-	failed bool
-	store  indexer.Store
-	pool   *pgxpool.Pool
-	ctx    context.Context
-	ir     claircore.IndexReport
-	vr     claircore.VulnerabilityReport
+	store indexer.Store
+	pool  *pgxpool.Pool
+	ctx   context.Context
+	ir    claircore.IndexReport
+	vr    claircore.VulnerabilityReport
 }
 
 func TestAffectedE2E(t *testing.T) {
 	integration.Skip(t)
-	ctx := context.Background()
-	ctx, done := log.TestLogger(ctx, t)
-	defer done()
+	ctx := zlog.Test(context.Background(), t)
 	pool, teardown := TestDatabase(ctx, t)
 	defer teardown()
 	store := NewStore(pool)
@@ -149,10 +146,8 @@ func (e *affectedE2E) Run(t *testing.T) {
 		{"IndexManifest", e.IndexManifest},
 		{"AffectedManifests", e.AffectedManifests},
 	}
-	for i := range subtests {
-		subtest := subtests[i]
-		t.Run(subtest.name, subtest.do)
-		if e.failed {
+	for _, subtest := range subtests {
+		if !t.Run(subtest.name, subtest.do) {
 			t.FailNow()
 		}
 	}
@@ -164,12 +159,7 @@ func (e *affectedE2E) Run(t *testing.T) {
 // this is required so foreign key constraints do not
 // fail in later tests.
 func (e *affectedE2E) IndexArtifacts(t *testing.T) {
-	ctx := context.Background()
-	ctx, done := log.TestLogger(ctx, t)
-	defer func() {
-		done()
-		e.failed = t.Failed()
-	}()
+	ctx := zlog.Test(e.ctx, t)
 	const (
 		insertManifest = `
 		INSERT INTO	manifest 
@@ -263,13 +253,8 @@ func (e *affectedE2E) IndexArtifacts(t *testing.T) {
 // IndexManifest confirms the contents of a manifest
 // can be written to the manifest index table.
 func (e *affectedE2E) IndexManifest(t *testing.T) {
-	ctx := context.Background()
-	ctx, done := log.TestLogger(ctx, t)
-	defer func() {
-		done()
-		e.failed = t.Failed()
-	}()
-	err := e.store.IndexManifest(e.ctx, &e.ir)
+	ctx := zlog.Test(e.ctx, t)
+	err := e.store.IndexManifest(ctx, &e.ir)
 	if err != nil {
 		t.Fatalf("failed to index manifest: %v", err)
 	}
@@ -279,14 +264,9 @@ func (e *affectedE2E) IndexManifest(t *testing.T) {
 // in the vulnereability report reports the associated
 // manifest is affected.
 func (e *affectedE2E) AffectedManifests(t *testing.T) {
-	ctx := context.Background()
-	ctx, done := log.TestLogger(ctx, t)
-	defer func() {
-		done()
-		e.failed = t.Failed()
-	}()
+	ctx := zlog.Test(e.ctx, t)
 	for _, vuln := range e.vr.Vulnerabilities {
-		hashes, err := e.store.AffectedManifests(e.ctx, *vuln)
+		hashes, err := e.store.AffectedManifests(ctx, *vuln)
 		if err != nil {
 			t.Fatalf("failed to retrieve affected manifest for vuln %s: %v", vuln.ID, err)
 		}

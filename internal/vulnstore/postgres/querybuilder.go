@@ -7,7 +7,6 @@ import (
 
 	"github.com/doug-martin/goqu/v8"
 	_ "github.com/doug-martin/goqu/v8/dialect/postgres"
-	"github.com/rs/zerolog/log"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/vulnstore"
@@ -126,9 +125,7 @@ func buildGetQuery(record *claircore.IndexRecord, opts *vulnstore.GetOpts) (stri
 
 	sql, _, err := query.ToSQL()
 	if err != nil {
-		log.Debug().
-			Err(err).
-			Msg("error generating sql")
+		return "", err
 	}
 	return sql, nil
 }

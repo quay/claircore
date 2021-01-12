@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
+	"github.com/quay/zlog"
+
 	"github.com/quay/claircore/internal/indexer"
 )
 
@@ -33,6 +35,7 @@ func Test_IndexManifest(t *testing.T) {
 		t.Run(table.name, func(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
+			ctx = zlog.Test(ctx, t)
 			s := table.mock(t)
 			indexer := New(&indexer.Opts{
 				Store: s,
@@ -73,6 +76,7 @@ func Test_IndexManifest_Failure(t *testing.T) {
 		t.Run(table.name, func(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
+			ctx = zlog.Test(ctx, t)
 			s := table.mock(t)
 			indexer := New(&indexer.Opts{
 				Store: s,

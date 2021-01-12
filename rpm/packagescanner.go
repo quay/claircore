@@ -15,7 +15,9 @@ import (
 	"runtime/trace"
 	"strings"
 
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
@@ -66,14 +68,12 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	}
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	trace.Log(ctx, "layer", layer.Hash.String())
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "rpm/Scanner.Scan").
-		Str("version", ps.Version()).
-		Str("layer", layer.Hash.String()).
-		Logger()
-	ctx = log.WithContext(ctx)
-	log.Debug().Msg("start")
-	defer log.Debug().Msg("done")
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "rpm/Scanner.Scan"),
+		label.String("version", ps.Version()),
+		label.String("layer", layer.Hash.String()))
+	zlog.Debug(ctx).Msg("start")
+	defer zlog.Debug(ctx).Msg("done")
 
 	r, err := layer.Reader()
 	if err != nil {
@@ -113,7 +113,7 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 			found = append(found, filepath.Join("/", k))
 		}
 	}
-	log.Debug().Int("count", len(found)).Msg("found possible databases")
+	zlog.Debug(ctx).Int("count", len(found)).Msg("found possible databases")
 	if len(found) == 0 {
 		return nil, nil
 	}
@@ -127,7 +127,7 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 		err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 			// If err != nil, then info will be nil.
 			if err != nil {
-				log.Warn().
+				zlog.Warn(ctx).
 					Str("path", path).
 					Err(err).
 					Msg("error walking files")
@@ -140,10 +140,10 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 			return nil
 		})
 		if err != nil {
-			log.Warn().Err(err).Msg("error removing extracted files")
+			zlog.Warn(ctx).Err(err).Msg("error removing extracted files")
 		}
 		if err := os.RemoveAll(root); err != nil {
-			log.Warn().Err(err).Msg("error removing extracted files")
+			zlog.Warn(ctx).Err(err).Msg("error removing extracted files")
 		}
 	}()
 	// Extract tarball
@@ -167,9 +167,9 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 		"--delay-directory-restore")
 	tarcmd.Stdin = rd
 	tarcmd.Stderr = &errbuf
-	log.Debug().Str("dir", root).Strs("cmd", tarcmd.Args).Msg("tar invocation")
+	zlog.Debug(ctx).Str("dir", root).Strs("cmd", tarcmd.Args).Msg("tar invocation")
 	if err := tarcmd.Run(); err != nil {
-		log.Error().
+		zlog.Error(ctx).
 			Str("dir", root).
 			Strs("cmd", tarcmd.Args).
 			Str("stderr", errbuf.String()).
@@ -177,12 +177,12 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 			Msg("error extracting layer")
 		return nil, fmt.Errorf("rpm: failed to untar: %w", err)
 	}
-	log.Debug().Str("dir", root).Msg("extracted layer")
+	zlog.Debug(ctx).Str("dir", root).Msg("extracted layer")
 
 	var pkgs []*claircore.Package
 	// Using --root and --dbpath, run rpm query on every suspected database
 	for _, db := range found {
-		log.Debug().Str("db", db).Msg("examining database")
+		zlog.Debug(ctx).Str("db", db).Msg("examining database")
 
 		cmd := exec.CommandContext(ctx, "rpm",
 			`--root`, root, `--dbpath`, db,
@@ -193,7 +193,7 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 		}
 		errbuf := bytes.Buffer{}
 		cmd.Stderr = &errbuf
-		log.Debug().Str("db", db).Strs("cmd", cmd.Args).Msg("rpm invocation")
+		zlog.Debug(ctx).Str("db", db).Strs("cmd", cmd.Args).Msg("rpm invocation")
 		if err := cmd.Start(); err != nil {
 			r.Close()
 			return nil, err
@@ -206,7 +206,7 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 			s.Split(querySplit)
 
 			for s.Scan() {
-				p, err := parsePackage(ctx, log, srcs, bytes.NewBuffer(s.Bytes()))
+				p, err := parsePackage(ctx, srcs, bytes.NewBuffer(s.Bytes()))
 				if err != nil {
 					return err
 				}
@@ -217,7 +217,7 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 			return s.Err()
 		}(); err != nil {
 			if errbuf.Len() != 0 {
-				log.Warn().
+				zlog.Warn(ctx).
 					Str("db", db).
 					Strs("cmd", cmd.Args).
 					Str("err", errbuf.String()).
@@ -261,7 +261,7 @@ func querySplit(data []byte, atEOF bool) (advance int, token []byte, err error) 
 	return len(tok) + len(delim), tok, nil
 }
 
-func parsePackage(ctx context.Context, log zerolog.Logger, src map[string]*claircore.Package, buf *bytes.Buffer) (*claircore.Package, error) {
+func parsePackage(ctx context.Context, src map[string]*claircore.Package, buf *bytes.Buffer) (*claircore.Package, error) {
 	defer trace.StartRegion(ctx, "parsePackage").End()
 	p := claircore.Package{
 		Kind: claircore.BINARY,
@@ -277,7 +277,7 @@ func parsePackage(ctx context.Context, log zerolog.Logger, src map[string]*clair
 			continue
 		}
 		if line == "" && err == nil {
-			log.Info().
+			zlog.Info(ctx).
 				Str("package", p.Name).
 				Int("lineno", i).
 				Msg("unexpected empty line")

@@ -5,7 +5,9 @@ import (
 	"context"
 	"runtime/trace"
 
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
@@ -48,14 +50,13 @@ func (*Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.
 	}
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	trace.Log(ctx, "layer", layer.Hash.String())
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "alpine/Scanner.Scan").
-		Str("version", pkgVersion).
-		Str("layer", layer.Hash.String()).
-		Logger()
-	ctx = log.WithContext(ctx)
-	log.Debug().Msg("start")
-	defer log.Debug().Msg("done")
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "alpine/Scanner.Scan"),
+		label.String("version", pkgVersion),
+		label.String("layer", layer.Hash.String()))
+
+	zlog.Debug(ctx).Msg("start")
+	defer zlog.Debug(ctx).Msg("done")
 
 	fs, err := layer.Files(installedFile)
 	switch err {
@@ -69,7 +70,7 @@ func (*Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.
 	if !ok {
 		return nil, nil
 	}
-	log.Debug().Msg("found database")
+	zlog.Debug(ctx).Msg("found database")
 
 	pkgs := []*claircore.Package{}
 	srcs := make(map[string]*claircore.Package)
@@ -116,7 +117,7 @@ func (*Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.
 		}
 		pkgs = append(pkgs, &p)
 	}
-	log.Debug().Int("count", len(pkgs)).Msg("found packages")
+	zlog.Debug(ctx).Int("count", len(pkgs)).Msg("found packages")
 
 	return pkgs, nil
 }

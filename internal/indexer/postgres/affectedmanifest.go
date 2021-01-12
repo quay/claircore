@@ -9,7 +9,9 @@ import (
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/omnimatcher"
@@ -69,10 +71,8 @@ WHERE
 		);
 `
 	)
-	log := zerolog.Ctx(ctx).
-		With().
-		Str("component", "internal/indexer/postgres/affectedManifests").
-		Logger()
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "internal/indexer/postgres/affectedManifests"))
 
 	// confirm the incoming vuln can be
 	// resolved into a prototype index record
@@ -129,7 +129,7 @@ WHERE
 		}
 		pkgsToFilter = append(pkgsToFilter, pkg)
 	}
-	log.Debug().Int("count", len(pkgsToFilter)).Msg("packages to filter")
+	zlog.Debug(ctx).Int("count", len(pkgsToFilter)).Msg("packages to filter")
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("error scanning packages: %v", err)
 	}
@@ -153,7 +153,7 @@ WHERE
 			})
 		}
 	}
-	log.Debug().Int("count", len(filteredRecords)).Msg("vulnerable indexrecords")
+	zlog.Debug(ctx).Int("count", len(filteredRecords)).Msg("vulnerable indexrecords")
 
 	// Query the manifest index for manifests containing
 	// the vulnerable indexrecords and create a set
@@ -204,7 +204,7 @@ WHERE
 			return nil, err
 		}
 	}
-	log.Debug().Int("count", len(out)).Msg("affected manifests")
+	zlog.Debug(ctx).Int("count", len(out)).Msg("affected manifests")
 	return out, nil
 }
 
@@ -233,10 +233,8 @@ func protoRecord(ctx context.Context, pool *pgxpool.Pool, v claircore.Vulnerabil
 			AND uri = $3;
 		`
 	)
-	log := zerolog.Ctx(ctx).
-		With().
-		Str("component", "internal/indexer/postgres/protoRecord").
-		Logger()
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "internal/indexer/postgres/protoRecord"))
 
 	protoRecord := claircore.IndexRecord{}
 	// fill dist into prototype index record if exists
@@ -272,7 +270,7 @@ func protoRecord(ctx context.Context, pool *pgxpool.Pool, v claircore.Vulnerabil
 				VersionCodeName: v.Dist.VersionCodeName,
 				VersionID:       v.Dist.VersionID,
 			}
-			log.Debug().Str("id", id).Msg("discovered distribution id")
+			zlog.Debug(ctx).Str("id", id).Msg("discovered distribution id")
 		}
 	}
 
@@ -298,7 +296,7 @@ func protoRecord(ctx context.Context, pool *pgxpool.Pool, v claircore.Vulnerabil
 				Name: v.Repo.Name,
 				URI:  v.Repo.URI,
 			}
-			log.Debug().Str("id", id).Msg("discovered repo id")
+			zlog.Debug(ctx).Str("id", id).Msg("discovered repo id")
 		}
 	}
 

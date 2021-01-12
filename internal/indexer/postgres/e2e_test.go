@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
@@ -32,7 +33,6 @@ func (m mockScnr) Version() string {
 
 type e2e struct {
 	name       string
-	failed     bool
 	store      indexer.Store
 	ctx        context.Context
 	manifest   claircore.Manifest
@@ -199,7 +199,7 @@ func (e *e2e) Run(t *testing.T) {
 	}
 	subtests := [...]subtest{
 		{"RegisterScanner", e.RegisterScanner},
-		{"PersistManifest", e.PersisteManifest},
+		{"PersistManifest", e.PersistManifest},
 		{"IndexAndRetrievePackages", e.IndexAndRetrievePackages},
 		{"IndexAndRetrieveDistributions", e.IndexAndRetrieveDistributions},
 		{"IndexAndRetrieveRepos", e.IndexAndRetrieveRepos},
@@ -208,10 +208,8 @@ func (e *e2e) Run(t *testing.T) {
 		{"LayerScannedFalse", e.LayerScannedFalse},
 		{"IndexReport", e.IndexReport},
 	}
-	for i := range subtests {
-		subtest := subtests[i]
-		t.Run(subtest.name, subtest.do)
-		if e.failed {
+	for _, subtest := range subtests {
+		if !t.Run(subtest.name, subtest.do) {
 			t.FailNow()
 		}
 	}
@@ -220,11 +218,9 @@ func (e *e2e) Run(t *testing.T) {
 // PersistManifest confirms we create the necessary
 // Manifest and Layer identifies so layer code
 // foreign key references do not fail.
-func (e *e2e) PersisteManifest(t *testing.T) {
-	defer func() {
-		e.failed = t.Failed()
-	}()
-	err := e.store.PersistManifest(e.ctx, e.manifest)
+func (e *e2e) PersistManifest(t *testing.T) {
+	ctx := zlog.Test(e.ctx, t)
+	err := e.store.PersistManifest(ctx, e.manifest)
 	if err != nil {
 		t.Fatalf("failed to persist manifest: %v", err)
 	}
@@ -233,10 +229,8 @@ func (e *e2e) PersisteManifest(t *testing.T) {
 // RegisterScanner confirms a scanner can be registered
 // and provides this scanner for other subtests to use
 func (e *e2e) RegisterScanner(t *testing.T) {
-	defer func() {
-		e.failed = t.Failed()
-	}()
-	err := e.store.RegisterScanners(e.ctx, e.scnrs)
+	ctx := zlog.Test(e.ctx, t)
+	err := e.store.RegisterScanners(ctx, e.scnrs)
 	if err != nil {
 		t.Fatalf("failed to register scnr: %v", err)
 	}
@@ -246,19 +240,17 @@ func (e *e2e) RegisterScanner(t *testing.T) {
 // selecting packages associated with a layer works
 // correctly.
 func (e *e2e) IndexAndRetrievePackages(t *testing.T) {
-	defer func() {
-		e.failed = t.Failed()
-	}()
+	ctx := zlog.Test(e.ctx, t)
 	A := test.GenUniquePackages(e.packageGen)
 
 	for _, scnr := range e.scnrs {
-		err := e.store.IndexPackages(e.ctx, A, e.manifest.Layers[0], scnr)
+		err := e.store.IndexPackages(ctx, A, e.manifest.Layers[0], scnr)
 		if err != nil {
 			t.Fatalf("failed to index package: %v", err)
 		}
 	}
 
-	B, err := e.store.PackagesByLayer(e.ctx, e.manifest.Layers[0].Hash, e.scnrs)
+	B, err := e.store.PackagesByLayer(ctx, e.manifest.Layers[0].Hash, e.scnrs)
 	if err != nil {
 		t.Fatalf("failed to retrieve packages by layer: %v", err)
 	}
@@ -272,19 +264,17 @@ func (e *e2e) IndexAndRetrievePackages(t *testing.T) {
 // selecting distributions associated with a layer works
 // correctly.
 func (e *e2e) IndexAndRetrieveDistributions(t *testing.T) {
-	defer func() {
-		e.failed = t.Failed()
-	}()
+	ctx := zlog.Test(e.ctx, t)
 	A := test.GenUniqueDistributions(e.distGen)
 
 	for _, scnr := range e.scnrs {
-		err := e.store.IndexDistributions(e.ctx, A, e.manifest.Layers[0], scnr)
+		err := e.store.IndexDistributions(ctx, A, e.manifest.Layers[0], scnr)
 		if err != nil {
 			t.Fatalf("failed to index distributions: %v", err)
 		}
 	}
 
-	B, err := e.store.DistributionsByLayer(e.ctx, e.manifest.Layers[0].Hash, e.scnrs)
+	B, err := e.store.DistributionsByLayer(ctx, e.manifest.Layers[0].Hash, e.scnrs)
 	if err != nil {
 		t.Fatalf("failed to retrieve distributions by layer: %v", err)
 	}
@@ -298,19 +288,17 @@ func (e *e2e) IndexAndRetrieveDistributions(t *testing.T) {
 // selecting repositories associated with a layer works
 // correctly.
 func (e *e2e) IndexAndRetrieveRepos(t *testing.T) {
-	defer func() {
-		e.failed = t.Failed()
-	}()
+	ctx := zlog.Test(e.ctx, t)
 	A := test.GenUniqueRepositories(e.repoGen)
 
 	for _, scnr := range e.scnrs {
-		err := e.store.IndexRepositories(e.ctx, A, e.manifest.Layers[0], scnr)
+		err := e.store.IndexRepositories(ctx, A, e.manifest.Layers[0], scnr)
 		if err != nil {
 			t.Fatalf("failed to index repos: %v", err)
 		}
 	}
 
-	B, err := e.store.RepositoriesByLayer(e.ctx, e.manifest.Layers[0].Hash, e.scnrs)
+	B, err := e.store.RepositoriesByLayer(ctx, e.manifest.Layers[0].Hash, e.scnrs)
 	if err != nil {
 		t.Fatalf("failed to retrieve repos by layer: %v", err)
 	}
@@ -323,16 +311,14 @@ func (e *e2e) IndexAndRetrieveRepos(t *testing.T) {
 // LayerScanned confirms the book keeping involved in marking a layer
 // scanned works correctly.
 func (e *e2e) LayerScanned(t *testing.T) {
-	defer func() {
-		e.failed = t.Failed()
-	}()
+	ctx := zlog.Test(e.ctx, t)
 	for _, scnr := range e.scnrs {
-		err := e.store.SetLayerScanned(e.ctx, e.manifest.Layers[0].Hash, scnr)
+		err := e.store.SetLayerScanned(ctx, e.manifest.Layers[0].Hash, scnr)
 		if err != nil {
 			t.Fatalf("failed to set layer scanned: %v", err)
 		}
 
-		b, err := e.store.LayerScanned(e.ctx, e.manifest.Layers[0].Hash, scnr)
+		b, err := e.store.LayerScanned(ctx, e.manifest.Layers[0].Hash, scnr)
 		if err != nil {
 			t.Fatalf("failed to query if layer is scanned: %v", err)
 		}
@@ -345,16 +331,14 @@ func (e *e2e) LayerScanned(t *testing.T) {
 // LayerScannedNotExists confirms an error is returned when attempting
 // to obtain if a layer was scanned by a non-existent scanner.
 func (e *e2e) LayerScannedNotExists(t *testing.T) {
-	defer func() {
-		e.failed = t.Failed()
-	}()
+	ctx := zlog.Test(e.ctx, t)
 	scnr := mockScnr{
 		name:    "invalid",
 		kind:    "invalid",
 		version: "invalid",
 	}
 
-	_, err := e.store.LayerScanned(e.ctx, e.manifest.Layers[0].Hash, scnr)
+	_, err := e.store.LayerScanned(ctx, e.manifest.Layers[0].Hash, scnr)
 	if err == nil {
 		t.Fatalf("expected error scnr not found error condition")
 	}
@@ -363,16 +347,14 @@ func (e *e2e) LayerScannedNotExists(t *testing.T) {
 // LayerScannedFalse confirms a false boolean is returned when attempting
 // to obtain if a non-exitent layer was scanned by a valid scanner
 func (e *e2e) LayerScannedFalse(t *testing.T) {
-	defer func() {
-		e.failed = t.Failed()
-	}()
+	ctx := zlog.Test(e.ctx, t)
 
 	// create a layer that has not been persisted to the store
 	layer := &claircore.Layer{
 		Hash: claircore.MustParseDigest(`sha256:5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03`),
 	}
 
-	b, err := e.store.LayerScanned(e.ctx, layer.Hash, e.scnrs[0])
+	b, err := e.store.LayerScanned(ctx, layer.Hash, e.scnrs[0])
 	if err != nil {
 		t.Fatalf("failed to query if layer is scanned: %v", err)
 	}
@@ -384,20 +366,18 @@ func (e *e2e) LayerScannedFalse(t *testing.T) {
 // IndexReport confirms the book keeping around index reports works
 // correctly.
 func (e *e2e) IndexReport(t *testing.T) {
-	defer func() {
-		e.failed = t.Failed()
-	}()
+	ctx := zlog.Test(e.ctx, t)
 
 	A := &claircore.IndexReport{
 		Hash:  e.manifest.Hash,
 		State: "Testing",
 	}
 
-	err := e.store.SetIndexReport(e.ctx, A)
+	err := e.store.SetIndexReport(ctx, A)
 	if err != nil {
 		t.Fatalf("failed to set index report: %v", err)
 	}
-	B, ok, err := e.store.IndexReport(e.ctx, e.manifest.Hash)
+	B, ok, err := e.store.IndexReport(ctx, e.manifest.Hash)
 	if err != nil {
 		t.Fatalf("failed to retrieve index report: %v", err)
 	}
@@ -412,12 +392,12 @@ func (e *e2e) IndexReport(t *testing.T) {
 	}
 
 	A.State = "IndexFinished"
-	err = e.store.SetIndexFinished(e.ctx, A, e.scnrs)
+	err = e.store.SetIndexFinished(ctx, A, e.scnrs)
 	if err != nil {
 		t.Fatalf("failed to set index as finished: %v", err)
 	}
 
-	b, err := e.store.ManifestScanned(e.ctx, e.manifest.Hash, e.scnrs)
+	b, err := e.store.ManifestScanned(ctx, e.manifest.Hash, e.scnrs)
 	if err != nil {
 		t.Fatalf("failed to query if manifest was scanned: %v", err)
 	}
@@ -425,7 +405,7 @@ func (e *e2e) IndexReport(t *testing.T) {
 		t.Fatalf("expected manifest to be scanned")
 	}
 
-	B, ok, err = e.store.IndexReport(e.ctx, e.manifest.Hash)
+	B, ok, err = e.store.IndexReport(ctx, e.manifest.Hash)
 	if err != nil {
 		t.Fatalf("failed to retrieve index report: %v", err)
 	}

@@ -8,11 +8,11 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/cpe"
 	"github.com/quay/claircore/test/fetch"
-	"github.com/quay/claircore/test/log"
 )
 
 type parsecase struct {
@@ -22,9 +22,7 @@ type parsecase struct {
 
 func (c parsecase) Test(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
-	ctx, done := log.TestLogger(ctx, t)
-	defer done()
+	ctx := zlog.Test(context.Background(), t)
 	ctx, task := trace.NewTask(ctx, "parse test")
 	defer task.End()
 	trace.Log(ctx, "parse test:file", c.File)
@@ -142,9 +140,7 @@ type layerspec struct {
 
 func (lc layercase) Test(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
-	ctx, done := log.TestLogger(ctx, t)
-	defer done()
+	ctx := zlog.Test(context.Background(), t)
 	s := Scanner{}
 	l := &claircore.Layer{}
 	f, err := fetch.Layer(ctx, t, nil, lc.Layer.From, lc.Layer.Repo, lc.Layer.Blob)

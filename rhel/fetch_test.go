@@ -8,8 +8,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/quay/zlog"
+
 	"github.com/quay/claircore/libvuln/driver"
-	"github.com/quay/claircore/test/log"
 )
 
 func TestFetch(t *testing.T) {
@@ -22,8 +23,7 @@ func TestFetch(t *testing.T) {
 	defer srv.Close()
 
 	t.Run("FetchContext", func(t *testing.T) {
-		ctx, done := log.TestLogger(ctx, t)
-		defer done()
+		ctx := zlog.Test(ctx, t)
 		u, err := NewUpdater(3, WithClient(srv.Client()), WithURL(srv.URL, ""))
 		if err != nil {
 			t.Fatal(err)
@@ -53,8 +53,7 @@ func TestFetch(t *testing.T) {
 	})
 
 	t.Run("Fetch", func(t *testing.T) {
-		ctx, done := log.TestLogger(ctx, t)
-		defer done()
+		ctx := zlog.Test(ctx, t)
 		u, err := NewUpdater(3, WithClient(srv.Client()), WithURL(srv.URL, ""))
 		if err != nil {
 			t.Fatal(err)

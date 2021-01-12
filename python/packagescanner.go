@@ -13,7 +13,9 @@ import (
 	"runtime/trace"
 	"strings"
 
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
@@ -49,14 +51,12 @@ func (*Scanner) Kind() string { return "package" }
 func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.Package, error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	trace.Log(ctx, "layer", layer.Hash.String())
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "python/Scanner.Scan").
-		Str("version", ps.Version()).
-		Str("layer", layer.Hash.String()).
-		Logger()
-	ctx = log.WithContext(ctx)
-	log.Debug().Msg("start")
-	defer log.Debug().Msg("done")
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "python/Scanner.Scan"),
+		label.String("version", ps.Version()),
+		label.String("layer", layer.Hash.String()))
+	zlog.Debug(ctx).Msg("start")
+	defer zlog.Debug(ctx).Msg("done")
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -87,9 +87,9 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 			// Should we chase symlinks with the correct name?
 			continue
 		case strings.HasSuffix(n, `.egg-info/PKG-INFO`):
-			log.Debug().Str("file", n).Msg("found egg")
+			zlog.Debug(ctx).Str("file", n).Msg("found egg")
 		case strings.HasSuffix(n, `.dist-info/METADATA`):
-			log.Debug().Str("file", n).Msg("found wheel")
+			zlog.Debug(ctx).Str("file", n).Msg("found wheel")
 		default:
 			continue
 		}
@@ -98,7 +98,7 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 		rd := textproto.NewReader(bufio.NewReader(tr))
 		hdr, err := rd.ReadMIMEHeader()
 		if err != nil && hdr == nil {
-			log.Warn().
+			zlog.Warn(ctx).
 				Err(err).
 				Str("path", n).
 				Msg("unable to read metadata, skipping")

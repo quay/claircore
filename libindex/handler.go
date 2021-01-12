@@ -6,7 +6,9 @@ import (
 	"net/http"
 	"path"
 
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/jsonerr"
@@ -32,11 +34,6 @@ func NewHandler(l *Libindex) *HTTP {
 
 func (h *HTTP) AffectedManifests(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	log := zerolog.Ctx(ctx).With().
-		Str("method", "index").
-		Logger()
-	ctx = log.WithContext(ctx)
-
 	if r.Method != http.MethodPost {
 		resp := &jsonerr.Response{
 			Code:    "method-not-allowed",
@@ -75,11 +72,6 @@ func (h *HTTP) AffectedManifests(w http.ResponseWriter, r *http.Request) {
 
 func (h *HTTP) State(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	log := zerolog.Ctx(ctx).With().
-		Str("method", "index").
-		Logger()
-	ctx = log.WithContext(ctx)
-
 	w.Header().Set("content-type", "text/plain")
 	s, _ := h.l.State(ctx)
 	fmt.Fprintln(w, s)
@@ -87,10 +79,6 @@ func (h *HTTP) State(w http.ResponseWriter, r *http.Request) {
 
 func (h *HTTP) Index(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	log := zerolog.Ctx(ctx).With().
-		Str("method", "index").
-		Logger()
-	ctx = log.WithContext(ctx)
 	if r.Method != http.MethodPost {
 		resp := &jsonerr.Response{
 			Code:    "method-not-allowed",
@@ -108,7 +96,7 @@ func (h *HTTP) Index(w http.ResponseWriter, r *http.Request) {
 			Code:    "bad-request",
 			Message: fmt.Sprintf("could not deserialize manifest: %v", err),
 		}
-		log.Debug().Err(err).Msg("could not deserialize manifest")
+		zlog.Debug(ctx).Err(err).Msg("could not deserialize manifest")
 		jsonerr.Error(w, resp, http.StatusBadRequest)
 		return
 	}
@@ -120,7 +108,7 @@ func (h *HTTP) Index(w http.ResponseWriter, r *http.Request) {
 			Code:    "scan-error",
 			Message: fmt.Sprintf("failed to start scan: %v", err),
 		}
-		log.Error().
+		zlog.Error(ctx).
 			Err(err).
 			Msg("failed to start scan")
 		jsonerr.Error(w, resp, http.StatusInternalServerError)
@@ -130,16 +118,13 @@ func (h *HTTP) Index(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("location", path.Join(r.URL.Path, m.Hash.String()))
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(&ir); err != nil {
-		log.Error().Err(err).Msg("failed to serialize results")
+		zlog.Error(ctx).Err(err).Msg("failed to serialize results")
 	}
 	return
 }
 
 func (h *HTTP) IndexReport(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	log := zerolog.Ctx(ctx).With().
-		Str("method", "index_report").
-		Logger()
 	// Added to Context later.
 	if r.Method != http.MethodGet {
 		resp := &jsonerr.Response{
@@ -157,7 +142,7 @@ func (h *HTTP) IndexReport(w http.ResponseWriter, r *http.Request) {
 			Code:    "bad-request",
 			Message: "could not find manifest hash in path",
 		}
-		log.Debug().Str("path", r.URL.Path).Msg(resp.Message)
+		zlog.Debug(ctx).Str("path", r.URL.Path).Msg(resp.Message)
 		jsonerr.Error(w, resp, http.StatusBadRequest)
 		return
 	}
@@ -167,12 +152,12 @@ func (h *HTTP) IndexReport(w http.ResponseWriter, r *http.Request) {
 			Code:    "bad-request",
 			Message: "could not find manifest hash in path",
 		}
-		log.Debug().Str("path", r.URL.Path).Msg(resp.Message)
+		zlog.Debug(ctx).Str("path", r.URL.Path).Msg(resp.Message)
 		jsonerr.Error(w, resp, http.StatusBadRequest)
 		return
 	}
-	log = log.With().Str("manifest", hash.String()).Logger()
-	ctx = log.WithContext(ctx)
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("manifest", hash.String()))
 
 	// issue retrieval
 	sr, ok, err := h.l.IndexReport(ctx, hash)
@@ -182,7 +167,7 @@ func (h *HTTP) IndexReport(w http.ResponseWriter, r *http.Request) {
 			Code:    "index-report",
 			Message: msg,
 		}
-		log.Warn().Err(err).Msg(msg)
+		zlog.Warn(ctx).Err(err).Msg(msg)
 		jsonerr.Error(w, resp, http.StatusInternalServerError)
 		return
 	}
@@ -192,7 +177,7 @@ func (h *HTTP) IndexReport(w http.ResponseWriter, r *http.Request) {
 			Code:    "not-found",
 			Message: fmt.Sprintf("index report for %v does not exist", hash),
 		}
-		log.Debug().Msg("index report does not exist")
+		zlog.Debug(ctx).Msg("index report does not exist")
 		jsonerr.Error(w, resp, http.StatusNotFound)
 		return
 	}
@@ -201,7 +186,7 @@ func (h *HTTP) IndexReport(w http.ResponseWriter, r *http.Request) {
 	// serialize and return scanresult
 	if err = json.NewEncoder(w).Encode(sr); err != nil {
 		const msg = "could not return index report"
-		log.Error().Err(err).Msg(msg)
+		zlog.Error(ctx).Err(err).Msg(msg)
 		// Too late to change our header, now.
 	}
 }

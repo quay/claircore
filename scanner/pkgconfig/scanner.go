@@ -16,7 +16,9 @@ import (
 	"path/filepath"
 	"runtime/trace"
 
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
@@ -49,14 +51,12 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	}
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	trace.Log(ctx, "layer", layer.Hash.String())
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "scanner/pkgconfig/Scanner.Scan").
-		Str("version", ps.Version()).
-		Str("layer", layer.Hash.String()).
-		Logger()
-	ctx = log.WithContext(ctx)
-	log.Debug().Msg("start")
-	defer log.Debug().Msg("done")
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "scanner/pkgconfig/Scanner.Scan"),
+		label.String("version", ps.Version()),
+		label.String("layer", layer.Hash.String()))
+	zlog.Debug(ctx).Msg("start")
+	defer zlog.Debug(ctx).Msg("done")
 
 	r, err := layer.Reader()
 	if err != nil {
@@ -75,7 +75,7 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 		if filepath.Ext(n) != ".pc" {
 			continue
 		}
-		log.Debug().
+		zlog.Debug(ctx).
 			Str("path", n).
 			Msg("found possible pkg-config file")
 		if _, err := buf.ReadFrom(tr); err != nil {
@@ -85,7 +85,7 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 		switch err := pc.Scan(&buf); err {
 		case nil:
 		case errInvalid: // skip
-			log.Info().
+			zlog.Info(ctx).
 				Str("path", n).
 				Msg("invalid pkg-config file")
 			continue

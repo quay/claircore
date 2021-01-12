@@ -15,6 +15,7 @@ import (
 
 	"github.com/quay/goval-parser/oval"
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/debian"
@@ -32,9 +33,8 @@ func main() {
 		os.Exit(1)
 	}
 	ctx := context.Background()
-	log := zerolog.New(zerolog.NewConsoleWriter(func(w *zerolog.ConsoleWriter) { w.Out = os.Stderr })).
+	log.Logger = zerolog.New(zerolog.NewConsoleWriter(func(w *zerolog.ConsoleWriter) { w.Out = os.Stderr })).
 		Level(zerolog.DebugLevel)
-	ctx = log.WithContext(ctx)
 
 	for _, u := range flag.Args() {
 		u, err := url.Parse(u)

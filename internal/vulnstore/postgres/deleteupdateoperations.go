@@ -6,16 +6,16 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 )
 
 // DeleteUpdaterOperations removes an UpdateOperation from the vulnstore.
 func deleteUpdateOperations(ctx context.Context, pool *pgxpool.Pool, ref ...uuid.UUID) error {
 	const query = `DELETE FROM update_operation WHERE ref = ANY($1::uuid[]);`
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "internal/vulnstore/postgres/deleteUpdateOperations").
-		Logger()
-	ctx = log.WithContext(ctx)
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "internal/vulnstore/postgres/deleteUpdateOperations"))
 	if len(ref) == 0 {
 		return nil
 	}
@@ -31,7 +31,7 @@ func deleteUpdateOperations(ctx context.Context, pool *pgxpool.Pool, ref ...uuid
 		return fmt.Errorf("failed to delete: %w", err)
 	}
 	if tag.RowsAffected() <= 0 {
-		log.Warn().Msg("delete operation deleted no rows")
+		zlog.Warn(ctx).Msg("delete operation deleted no rows")
 	}
 	return nil
 }

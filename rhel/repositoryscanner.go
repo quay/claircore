@@ -17,7 +17,9 @@ import (
 	"time"
 
 	"github.com/docker-slim/docker-slim/pkg/docker/dockerfile/ast"
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
@@ -68,15 +70,14 @@ var localUpdater struct {
 // NewRepositoryScanner create new Repo scanner struct and initialize mapping updater
 func NewRepositoryScanner(ctx context.Context, c *http.Client, cs2cpeURL string) *RepositoryScanner {
 	scanner := &RepositoryScanner{}
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "rhel/RepositoryScanner/NewRepositoryScanner").
-		Str("version", scanner.Version()).
-		Logger()
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "rhel/RepositoryScanner/NewRepositoryScanner"),
+		label.String("version", scanner.Version()))
 
 	// initialize local updater for repository scanner if not done before.
 	localUpdater.once.Do(
 		func() {
-			log.Debug().Msg("initializing local updater job. this log should only be seen once.")
+			zlog.Debug(ctx).Msg("initializing local updater job. this log should only be seen once.")
 			// TODO (araszka): replace it with config value when it will
 			// be possible to store these values in config
 			if cs2cpeURL == "" {
@@ -86,7 +87,7 @@ func NewRepositoryScanner(ctx context.Context, c *http.Client, cs2cpeURL string)
 				}
 			}
 			u := repo2cpe.NewLocalUpdaterJob(cs2cpeURL, nil)
-			u.Start(context.TODO())
+			u.Start(ctx)
 			localUpdater.u = u
 		})
 
@@ -134,16 +135,14 @@ func (r *RepositoryScanner) Configure(ctx context.Context, f indexer.ConfigDeser
 // Scan gets Red Hat repositories information.
 func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) (repositories []*claircore.Repository, err error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "rhel/RepositoryScanner.Scan").
-		Str("version", r.Version()).
-		Str("layer", l.Hash.String()).
-		Logger()
-	ctx = log.WithContext(ctx)
-	log.Debug().Msg("start")
-	defer log.Debug().Msg("done")
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "rhel/RepositoryScanner.Scan"),
+		label.String("version", r.Version()),
+		label.String("layer", l.Hash.String()))
+	zlog.Debug(ctx).Msg("start")
+	defer zlog.Debug(ctx).Msg("done")
 
-	CPEs, err := r.getCPEsUsingEmbeddedContentSets(ctx, &log, l)
+	CPEs, err := r.getCPEsUsingEmbeddedContentSets(ctx, l)
 	if err != nil {
 		return []*claircore.Repository{}, err
 	}
@@ -152,7 +151,7 @@ func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) (repos
 		// For old images, use fallback option and query Red Hat Container API.
 		ctx, done := context.WithTimeout(ctx, r.timeout)
 		defer done()
-		CPEs, err = r.getCPEsUsingContainerAPI(ctx, &log, l)
+		CPEs, err = r.getCPEsUsingContainerAPI(ctx, l)
 		if err != nil {
 			return []*claircore.Repository{}, err
 		}
@@ -176,11 +175,11 @@ func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) (repos
 
 // getCPEsUsingEmbeddedContentSets returns a slice of CPEs bound into strings, as discovered by
 // examining information contained within the container.
-func (r *RepositoryScanner) getCPEsUsingEmbeddedContentSets(ctx context.Context, log *zerolog.Logger, l *claircore.Layer) ([]string, error) {
+func (r *RepositoryScanner) getCPEsUsingEmbeddedContentSets(ctx context.Context, l *claircore.Layer) ([]string, error) {
 	// Get CPEs using embedded content-set files.
 	// The files is be stored in /root/buildinfo/content_manifests/ and will need to
 	// be translated using mapping file provided by Red Hat's PST team.
-	path, buf, err := findContentManifestFile(log, l)
+	path, buf, err := findContentManifestFile(l)
 	switch {
 	case err == nil:
 	case buf == nil:
@@ -190,7 +189,7 @@ func (r *RepositoryScanner) getCPEsUsingEmbeddedContentSets(ctx context.Context,
 	default:
 		return nil, err
 	}
-	log.Debug().Str("manifest-path", path).Msg("Found content manifest file")
+	zlog.Debug(ctx).Str("manifest-path", path).Msg("Found content manifest file")
 	contentManifestData := contentmanifest.ContentManifest{}
 	err = json.NewDecoder(buf).Decode(&contentManifestData)
 	if err != nil {
@@ -199,8 +198,8 @@ func (r *RepositoryScanner) getCPEsUsingEmbeddedContentSets(ctx context.Context,
 	return r.mapping.RepositoryToCPE(ctx, contentManifestData.ContentSets)
 }
 
-func (r *RepositoryScanner) getCPEsUsingContainerAPI(ctx context.Context, log *zerolog.Logger, l *claircore.Layer) ([]string, error) {
-	path, buf, err := findDockerfile(log, l)
+func (r *RepositoryScanner) getCPEsUsingContainerAPI(ctx context.Context, l *claircore.Layer) ([]string, error) {
+	path, buf, err := findDockerfile(l)
 	switch {
 	case err == nil:
 	case buf == nil:
@@ -220,7 +219,7 @@ func (r *RepositoryScanner) getCPEsUsingContainerAPI(ctx context.Context, log *z
 	}
 
 	cpes, err := r.apiFetcher.GetCPEs(ctx, nvr, arch)
-	log.Debug().
+	zlog.Debug(ctx).
 		Str("nvr", nvr).
 		Str("arch", arch).
 		Strs("cpes", cpes).
@@ -231,7 +230,7 @@ func (r *RepositoryScanner) getCPEsUsingContainerAPI(ctx context.Context, log *z
 	return cpes, nil
 }
 
-func findContentManifestFile(log *zerolog.Logger, l *claircore.Layer) (string, *bytes.Buffer, error) {
+func findContentManifestFile(l *claircore.Layer) (string, *bytes.Buffer, error) {
 	re, err := regexp.Compile(`^root/buildinfo/content_manifests/.*\.json`)
 	if err != nil {
 		return "", nil, err
@@ -249,7 +248,7 @@ func findContentManifestFile(log *zerolog.Logger, l *claircore.Layer) (string, *
 
 // FindDockerfile finds a Dockerfile in layer tarball and returns its name and
 // content.
-func findDockerfile(log *zerolog.Logger, l *claircore.Layer) (string, *bytes.Buffer, error) {
+func findDockerfile(l *claircore.Layer) (string, *bytes.Buffer, error) {
 	// Dockerfile which was used to build given image/layer is stored by OSBS in /root/buildinfo/
 	// Name of dockerfiles is in following format "Dockerfile-NAME-VERSION-RELEASE"
 	// Name, version and release are labels defined in the dockerfile

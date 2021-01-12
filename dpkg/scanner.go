@@ -13,8 +13,10 @@ import (
 	"runtime/trace"
 	"strings"
 
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
 	"github.com/tadasv/go-dpkg"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
@@ -58,14 +60,12 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	// Preamble
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	trace.Log(ctx, "layer", layer.Hash.String())
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "dpkg/Scanner.Scan").
-		Str("version", ps.Version()).
-		Str("layer", layer.Hash.String()).
-		Logger()
-	ctx = log.WithContext(ctx)
-	log.Debug().Msg("start")
-	defer log.Debug().Msg("done")
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "dpkg/Scanner.Scan"),
+		label.String("version", ps.Version()),
+		label.String("layer", layer.Hash.String()))
+	zlog.Debug(ctx).Msg("start")
+	defer zlog.Debug(ctx).Msg("done")
 
 	// Grab a handle to the tarball, make sure we can seek.
 	// If we can't, we'd need another reader for every database found.
@@ -102,7 +102,7 @@ Find:
 			}
 		}
 	}
-	log.Debug().Msg("scanned for possible databases")
+	zlog.Debug(ctx).Msg("scanned for possible databases")
 
 	// If we didn't find anything, this loop is completely skipped.
 	var pkgs []*claircore.Package
@@ -110,10 +110,8 @@ Find:
 		if x != 2 { // If we didn't find both files, skip this directory.
 			continue
 		}
-		log := log.With().
-			Str("database", p).
-			Logger()
-		log.Debug().Msg("examining package database")
+		ctx = baggage.ContextWithValues(ctx, label.String("database", p))
+		zlog.Debug(ctx).Msg("examining package database")
 
 		// Reset the tar reader.
 		if n, err := r.Seek(0, io.SeekStart); n != 0 || err != nil {
@@ -138,7 +136,7 @@ Find:
 		case err != nil:
 			return nil, fmt.Errorf("reading status file from layer failed: %w", err)
 		case db == nil:
-			log.Error().
+			zlog.Error(ctx).
 				Str("filename", fn).
 				Msg("unable to get reader for file")
 			panic("file existed, but now doesn't")
@@ -189,14 +187,14 @@ Find:
 			}
 			p, ok := found[n]
 			if !ok {
-				log.Debug().
+				zlog.Debug(ctx).
 					Str("package", n).
 					Msg("extra metadata found, ignoring")
 				continue
 			}
 			hash := md5.New()
 			if _, err := io.Copy(hash, tr); err != nil {
-				log.Warn().
+				zlog.Warn(ctx).
 					Err(err).
 					Str("package", n).
 					Msg("unable to read package metadata")
@@ -204,7 +202,7 @@ Find:
 			}
 			p.RepositoryHint = hex.EncodeToString(hash.Sum(nil))
 		}
-		log.Debug().
+		zlog.Debug(ctx).
 			Int("count", len(found)).
 			Msg("found packages")
 	}

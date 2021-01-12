@@ -6,7 +6,9 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore/libvuln/driver"
 )
@@ -31,10 +33,8 @@ type Factory struct {
 
 // UpdaterSet returns updaters for all releases that have available databases.
 func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "ubuntu/Factory/UpdaterSet").
-		Logger()
-	ctx = log.WithContext(ctx)
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "ubuntu/Factory/UpdaterSet"))
 
 	us := make([]*Updater, len(f.Releases))
 	ch := make(chan int, len(f.Releases))
@@ -50,12 +50,10 @@ func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
 					return
 				default:
 				}
-				log := log.With().
-					Str("release", string(us[i].release)).
-					Logger()
+				ctx = baggage.ContextWithValues(ctx, label.String("release", string(us[i].release)))
 				req, err := http.NewRequestWithContext(ctx, http.MethodHead, us[i].url, nil)
 				if err != nil {
-					log.Warn().Err(err).Msg("unable to create request")
+					zlog.Warn(ctx).Err(err).Msg("unable to create request")
 					us[i] = nil
 					return
 				}
@@ -64,7 +62,7 @@ func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
 					res.Body.Close()
 				}
 				if err != nil || res.StatusCode != http.StatusOK {
-					ev := log.Info()
+					ev := zlog.Info(ctx)
 					if err != nil {
 						ev = ev.Err(err)
 					} else {

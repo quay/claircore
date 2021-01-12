@@ -8,13 +8,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/quay/zlog"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/matcher"
 	"github.com/quay/claircore/internal/updater"
 	vulnstore "github.com/quay/claircore/internal/vulnstore/postgres"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/test/integration"
-	"github.com/quay/claircore/test/log"
 )
 
 // Test_Matcher_Integration confirms packages are matched
@@ -23,9 +24,7 @@ import (
 // CVE data
 func Test_Matcher_Integration(t *testing.T) {
 	integration.Skip(t)
-	ctx := context.Background()
-	ctx, done := log.TestLogger(ctx, t)
-	defer done()
+	ctx := zlog.Test(context.Background(), t)
 	pool, teardown := vulnstore.TestDB(ctx, t)
 	defer teardown()
 	store := vulnstore.NewVulnStore(pool)

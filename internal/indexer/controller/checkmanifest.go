@@ -4,15 +4,16 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
+
 	"github.com/quay/claircore/internal/indexer"
-	"github.com/rs/zerolog"
 )
 
 func checkManifest(ctx context.Context, s *Controller) (State, error) {
-	log := zerolog.Ctx(ctx).With().
-		Str("state", s.getState().String()).
-		Logger()
-	ctx = log.WithContext(ctx)
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("state", s.getState().String()))
 
 	// determine if we've seen this manifest and if we've
 	// scanned it with the desired scanners
@@ -24,7 +25,7 @@ func checkManifest(ctx context.Context, s *Controller) (State, error) {
 	// if we haven't seen this manifest, determine which scanners to use, persist it
 	// and transition to FetchLayer state.
 	if !ok {
-		log.Info().Msg("manifest to be scanned...")
+		zlog.Info(ctx).Msg("manifest to be scanned")
 
 		// if a manifest was analyzed by a particular scanner we can
 		// omit it from this index, as all its comprising layers were analyzed
@@ -50,7 +51,7 @@ func checkManifest(ctx context.Context, s *Controller) (State, error) {
 
 	// we have seen this manifest before and it's been been processed with the desired scanners
 	// retrieve the existing one and transition to Terminal.
-	log.Info().Msg("manifest already scanned")
+	zlog.Info(ctx).Msg("manifest already scanned")
 	sr, ok, err := s.Store.IndexReport(ctx, s.manifest.Hash)
 	if err != nil {
 		return Terminal, fmt.Errorf("failed to retrieve manifest: %v", err)

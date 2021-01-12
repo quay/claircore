@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/rs/zerolog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/quay/claircore"
@@ -14,10 +15,8 @@ import (
 
 // coalesce calls each ecosystem's coalescer and merges the returned IndexReports
 func coalesce(ctx context.Context, s *Controller) (State, error) {
-	log := zerolog.Ctx(ctx).With().
-		Str("state", s.getState().String()).
-		Logger()
-	ctx = log.WithContext(ctx)
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("state", s.getState().String()))
 	cctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	mu := sync.Mutex{}

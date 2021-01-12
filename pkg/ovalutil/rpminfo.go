@@ -7,7 +7,9 @@ import (
 	"strings"
 
 	"github.com/quay/goval-parser/oval"
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/cpe"
@@ -53,10 +55,8 @@ func (r *RPMInfo) dist(v string) *claircore.Distribution {
 // Extract pulls out all Vulnerabilites by walking all the definition's criteria
 // and pulling out rpm_info objects that have rpm_info evr tests.
 func (r *RPMInfo) Extract(ctx context.Context) ([]*claircore.Vulnerability, error) {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "pkg/ovalutil/RPMInfo.Extract").
-		Logger()
-	ctx = log.WithContext(ctx)
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "pkg/ovalutil/RPMInfo.Extract"))
 	defs := r.root.Definitions.Definitions
 	vs := make([]*claircore.Vulnerability, 0, len(defs))
 
@@ -122,7 +122,7 @@ func (r *RPMInfo) Extract(ctx context.Context) ([]*claircore.Vulnerability, erro
 		}
 	}
 
-	log.Info().
+	zlog.Info(ctx).
 		Int("vulnerabilities", len(vs)).
 		Int("definitions", len(defs)).
 		Msg("database processed")

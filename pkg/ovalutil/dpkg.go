@@ -6,7 +6,9 @@ import (
 	"fmt"
 
 	"github.com/quay/goval-parser/oval"
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 )
@@ -15,10 +17,8 @@ import (
 //
 // Each Criterion encountered with an EVR string will be translated into a claircore.Vulnerability
 func DpkgDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulnsFunc) ([]*claircore.Vulnerability, error) {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "ovalutil/DpkgDefsToVulns").
-		Logger()
-	ctx = log.WithContext(ctx)
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "ovalutil/DpkgDefsToVulns"))
 	vulns := make([]*claircore.Vulnerability, 0, 10000)
 	pkgcache := map[string]*claircore.Package{}
 	cris := []*oval.Criterion{}
@@ -26,7 +26,7 @@ func DpkgDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulns
 		// create our prototype vulnerability
 		protoVulns, err := protoVulns(def)
 		if err != nil {
-			log.Debug().
+			zlog.Debug(ctx).
 				Err(err).
 				Str("def_id", def.ID).
 				Msg("could not create prototype vulnerabilities")
@@ -48,7 +48,7 @@ func DpkgDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulns
 			case errors.Is(err, errTestSkip):
 				continue
 			default:
-				log.Debug().Str("test_ref", criterion.TestRef).Msg("test ref lookup failure. moving to next criterion")
+				zlog.Debug(ctx).Str("test_ref", criterion.TestRef).Msg("test ref lookup failure. moving to next criterion")
 				continue
 			}
 
@@ -70,7 +70,7 @@ func DpkgDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulns
 				continue
 			default:
 				if err != nil {
-					log.Debug().
+					zlog.Debug(ctx).
 						Err(err).
 						Str("object_ref", objRef).
 						Msg("failed object lookup. moving to next criterion")
@@ -83,7 +83,7 @@ func DpkgDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulns
 				stateRef := stateRefs[0].StateRef
 				state, err = dpkgStateLookup(root, stateRef)
 				if err != nil {
-					log.Debug().
+					zlog.Debug(ctx).
 						Err(err).
 						Str("state_ref", stateRef).
 						Msg("failed state lookup. moving to next criterion")
@@ -108,7 +108,7 @@ func DpkgDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulns
 				if len(name.Ref) > 0 {
 					_, i, err := root.Variables.Lookup(name.Ref)
 					if err != nil {
-						log.Error().Err(err).Msg("could not lookup variable id")
+						zlog.Error(ctx).Err(err).Msg("could not lookup variable id")
 						continue
 					}
 					consts := root.Variables.ConstantVariables[i]

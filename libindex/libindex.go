@@ -10,7 +10,9 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/quay/claircore"
@@ -35,10 +37,8 @@ type Libindex struct {
 
 // New creates a new instance of libindex
 func New(ctx context.Context, opts *Opts) (*Libindex, error) {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "libindex/New").
-		Logger()
-	ctx = log.WithContext(ctx)
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "libindex/New"))
 	err := opts.Parse(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse opts: %v", err)
@@ -48,7 +48,7 @@ func New(ctx context.Context, opts *Opts) (*Libindex, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Info().Msg("created database connection")
+	zlog.Info(ctx).Msg("created database connection")
 
 	l := &Libindex{
 		Opts:   opts,
@@ -74,7 +74,7 @@ func New(ctx context.Context, opts *Opts) (*Libindex, error) {
 		return nil, fmt.Errorf("failed to set the indexer state: %v", err)
 	}
 
-	log.Info().Msg("registered configured scanners")
+	zlog.Info(ctx).Msg("registered configured scanners")
 	l.Opts.vscnrs = vscnrs
 	return l, nil
 }
@@ -89,13 +89,11 @@ func (l *Libindex) Close(ctx context.Context) error {
 // If the index operation cannot start an error will be returned.
 // If an error occurs during scan the error will be propagated inside the IndexReport.
 func (l *Libindex) Index(ctx context.Context, manifest *claircore.Manifest) (*claircore.IndexReport, error) {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "libindex/Libindex.Index").
-		Str("manifest", manifest.Hash.String()).
-		Logger()
-	ctx = log.WithContext(ctx)
-	log.Info().Msg("index request start")
-	defer log.Info().Msg("index request done")
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "libindex/Libindex.Index"),
+		label.String("manifest", manifest.Hash.String()))
+	zlog.Info(ctx).Msg("index request start")
+	defer zlog.Info(ctx).Msg("index request done")
 	c, err := l.ControllerFactory(ctx, l, l.Opts)
 	if err != nil {
 		return nil, fmt.Errorf("scanner factory failed to construct a scanner: %v", err)
@@ -145,18 +143,16 @@ func (l *Libindex) setState(ctx context.Context, vscnrs indexer.VersionedScanner
 }
 
 func (l *Libindex) index(ctx context.Context, s *controller.Controller, m *claircore.Manifest) *claircore.IndexReport {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "libindex/Libindex.index").
-		Logger()
-	ctx = log.WithContext(ctx)
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "libindex/Libindex.index"))
 	// attempt to get lock
-	log.Debug().Msg("locking")
+	zlog.Debug(ctx).Msg("locking")
 	// will block until available or ctx times out
 	err := s.Lock(ctx, m.Hash.String())
 	if err != nil {
 		// something went wrong with getting a lock
 		// this is not an error saying another process has the lock
-		log.Error().
+		zlog.Error(ctx).
 			Err(err).
 			Msg("unexpected error acquiring lock")
 		ir := &claircore.IndexReport{
@@ -167,9 +163,9 @@ func (l *Libindex) index(ctx context.Context, s *controller.Controller, m *clair
 		_ = l.store.SetIndexReport(ctx, ir)
 		return ir
 	}
-	defer log.Debug().Msg("unlocked")
+	defer zlog.Debug(ctx).Msg("unlocked")
 	defer s.Unlock()
-	log.Debug().Msg("locked")
+	zlog.Debug(ctx).Msg("locked")
 	ir := s.Index(ctx, m)
 	return ir
 }
@@ -185,9 +181,8 @@ func (l *Libindex) AffectedManifests(ctx context.Context, vulns []claircore.Vuln
 	const (
 		maxGroupSize = 100
 	)
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "libindex/Libindex.AffectedManifests").
-		Logger()
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "libindex/Libindex.AffectedManifests"))
 
 	groupSize := int(math.Sqrt(float64(len(vulns))))
 	if groupSize > maxGroupSize {
@@ -207,7 +202,7 @@ func (l *Libindex) AffectedManifests(ctx context.Context, vulns []claircore.Vuln
 		for n := start; n < end; n++ {
 			nn := n
 			do := func() error {
-				log.Debug().Str("id", vulns[nn].ID).Msg("evaluting vulnerability")
+				zlog.Debug(ctx).Str("id", vulns[nn].ID).Msg("evaluating vulnerability")
 				if eCTX.Err() != nil {
 					return eCTX.Err()
 				}

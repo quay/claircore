@@ -12,7 +12,9 @@ import (
 	"runtime/trace"
 	"strings"
 
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
@@ -51,14 +53,12 @@ func (*Scanner) Kind() string { return scannerKind }
 // present in the layer.
 func (s *Scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Distribution, error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "osrelease/Scanner.Scan").
-		Str("version", s.Version()).
-		Str("layer", l.Hash.String()).
-		Logger()
-	ctx = log.WithContext(ctx)
-	log.Debug().Msg("start")
-	defer log.Debug().Msg("done")
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "osrelease/Scanner.Scan"),
+		label.String("version", s.Version()),
+		label.String("layer", l.Hash.String()))
+	zlog.Debug(ctx).Msg("start")
+	defer zlog.Debug(ctx).Msg("done")
 
 	r, err := l.Reader()
 	if err != nil {
@@ -93,16 +93,15 @@ func (s *Scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Di
 		return nil, ctx.Err()
 	}
 
-	log.Debug().Msg("didn't find an os-release file")
+	zlog.Debug(ctx).Msg("didn't find an os-release file")
 	return nil, nil
 }
 
 // Parse returns the distribution information from the file contents provided on
 // r.
 func parse(ctx context.Context, r io.Reader) (*claircore.Distribution, error) {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "osrelease/parse").
-		Logger()
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "osrelease/parse"))
 	defer trace.StartRegion(ctx, "parse").End()
 	d := claircore.Distribution{
 		Name: "Linux",
@@ -159,18 +158,18 @@ func parse(ctx context.Context, r io.Reader) (*claircore.Distribution, error) {
 
 		switch key {
 		case "ID":
-			log.Debug().Msg("found ID")
+			zlog.Debug(ctx).Msg("found ID")
 			d.DID = value
 		case "VERSION_ID":
-			log.Debug().Msg("found VERSION_ID")
+			zlog.Debug(ctx).Msg("found VERSION_ID")
 			d.VersionID = value
 		case "BUILD_ID":
 		case "VARIANT_ID":
 		case "CPE_NAME":
-			log.Debug().Msg("found CPE_NAME")
+			zlog.Debug(ctx).Msg("found CPE_NAME")
 			wfn, err := cpe.Unbind(value)
 			if err != nil {
-				log.Warn().
+				zlog.Warn(ctx).
 					Err(err).
 					Str("value", value).
 					Msg("failed to unbind the cpe")
@@ -178,20 +177,20 @@ func parse(ctx context.Context, r io.Reader) (*claircore.Distribution, error) {
 			}
 			d.CPE = wfn
 		case "NAME":
-			log.Debug().Msg("found NAME")
+			zlog.Debug(ctx).Msg("found NAME")
 			d.Name = value
 		case "VERSION":
-			log.Debug().Msg("found VERSION")
+			zlog.Debug(ctx).Msg("found VERSION")
 			d.Version = value
 		case "ID_LIKE":
 		case "VERSION_CODENAME":
-			log.Debug().Msg("found VERISON_CODENAME")
+			zlog.Debug(ctx).Msg("found VERISON_CODENAME")
 			d.VersionCodeName = value
 		case "PRETTY_NAME":
-			log.Debug().Msg("found PRETTY_NAME")
+			zlog.Debug(ctx).Msg("found PRETTY_NAME")
 			d.PrettyName = value
 		case "REDHAT_BUGZILLA_PRODUCT":
-			log.Debug().Msg("using RHEL hack")
+			zlog.Debug(ctx).Msg("using RHEL hack")
 			// This is a dirty hack because the Red Hat OVAL database and the
 			// CPE contained in the os-release file don't agree.
 			d.PrettyName = value
@@ -203,6 +202,6 @@ func parse(ctx context.Context, r io.Reader) (*claircore.Distribution, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	log.Debug().Str("name", d.Name).Msg("found dist")
+	zlog.Debug(ctx).Str("name", d.Name).Msg("found dist")
 	return &d, nil
 }

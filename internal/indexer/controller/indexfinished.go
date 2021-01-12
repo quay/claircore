@@ -4,25 +4,25 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 )
 
 // indexFinished is the terminal stateFunc. once it transitions the
 // indexer to the IndexFinished state the indexer will no longer transition
 // and return an IndexReport to the caller
 func indexFinished(ctx context.Context, s *Controller) (State, error) {
-	log := zerolog.Ctx(ctx).With().
-		Str("state", s.getState().String()).
-		Logger()
-	ctx = log.WithContext(ctx)
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("state", s.getState().String()))
 	s.report.Success = true
-	log.Info().Msg("finishing scan")
+	zlog.Info(ctx).Msg("finishing scan")
 
 	err := s.Store.SetIndexFinished(ctx, s.report, s.Vscnrs)
 	if err != nil {
 		return Terminal, fmt.Errorf("failed finish scan. attempt a rescan of the manifest: %v", err)
 	}
 
-	log.Info().Msg("manifest successfully scanned")
+	zlog.Info(ctx).Msg("manifest successfully scanned")
 	return Terminal, nil
 }

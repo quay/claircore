@@ -8,7 +8,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore/libvuln/driver"
 )
@@ -16,10 +18,8 @@ import (
 // GetLatestUpdateRef implements driver.Updater.
 func (s *Store) GetLatestUpdateRef(ctx context.Context) (uuid.UUID, error) {
 	const query = `SELECT ref FROM update_operation ORDER BY id USING > LIMIT 1;`
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "internal/vulnstore/postgres/getLatestRef").
-		Logger()
-	ctx = log.WithContext(ctx)
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "internal/vulnstore/postgres/getLatestRef"))
 
 	var ref uuid.UUID
 	if err := s.pool.QueryRow(ctx, query).Scan(&ref); err != nil {
@@ -30,10 +30,8 @@ func (s *Store) GetLatestUpdateRef(ctx context.Context) (uuid.UUID, error) {
 
 func getLatestRefs(ctx context.Context, pool *pgxpool.Pool) (map[string][]driver.UpdateOperation, error) {
 	const query = `SELECT DISTINCT ON (updater) updater, ref, fingerprint, date FROM update_operation ORDER BY updater, id USING >;`
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "internal/vulnstore/postgres/getLatestRefs").
-		Logger()
-	ctx = log.WithContext(ctx)
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "internal/vulnstore/postgres/getLatestRefs"))
 
 	rows, err := pool.Query(ctx, query)
 	if err != nil {
@@ -58,7 +56,7 @@ func getLatestRefs(ctx context.Context, pool *pgxpool.Pool) (map[string][]driver
 		}
 		ret[uo.Updater] = ops
 	}
-	log.Debug().
+	zlog.Debug(ctx).
 		Int("count", len(ret)).
 		Msg("found updaters")
 	return ret, nil
@@ -69,10 +67,8 @@ func getUpdateOperations(ctx context.Context, pool *pgxpool.Pool, updater ...str
 		query       = `SELECT ref, updater, fingerprint, date FROM update_operation WHERE updater = $1 ORDER BY id DESC;`
 		getUpdaters = `SELECT DISTINCT(updater) FROM update_operation;`
 	)
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "internal/vulnstore/postgres/getUpdateOperations").
-		Logger()
-	ctx = log.WithContext(ctx)
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "internal/vulnstore/postgres/getUpdateOperations"))
 
 	tx, err := pool.Begin(ctx)
 	if err != nil {
@@ -114,7 +110,7 @@ func getUpdateOperations(ctx context.Context, pool *pgxpool.Pool, updater ...str
 		switch {
 		case err == nil:
 		case errors.Is(err, pgx.ErrNoRows):
-			log.Warn().Str("updater", u).Msg("no update operations for this updater")
+			zlog.Warn(ctx).Str("updater", u).Msg("no update operations for this updater")
 			rows.Close()
 			continue
 		default:

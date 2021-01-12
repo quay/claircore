@@ -5,7 +5,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/rs/zerolog"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/matcher"
@@ -28,17 +30,15 @@ type Libvuln struct {
 
 // New creates a new instance of the Libvuln library
 func New(ctx context.Context, opts *Opts) (*Libvuln, error) {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "libvuln/New").
-		Logger()
-	ctx = log.WithContext(ctx)
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "libvuln/New"))
 
 	err := opts.parse(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Info().
+	zlog.Info(ctx).
 		Int32("count", opts.MaxConnPool).
 		Msg("initializing store")
 	if err := opts.migrations(ctx); err != nil {
@@ -69,15 +69,14 @@ func New(ctx context.Context, opts *Opts) (*Libvuln, error) {
 
 	// perform initial update
 	if err := updateMgr.Run(ctx); err != nil {
-		log.Error().Err(err).Msg("encountered error while updating")
+		zlog.Error(ctx).Err(err).Msg("encountered error while updating")
 	}
 
 	// launch background updater
 	if !opts.DisableBackgroundUpdates {
 		go updateMgr.Start(ctx)
 	}
-
-	log.Info().Msg("libvuln initialized")
+	zlog.Info(ctx).Msg("libvuln initialized")
 	return l, nil
 }
 
