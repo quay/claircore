@@ -214,11 +214,15 @@ func (s *Store) GetLatestUpdateRef(context.Context) (uuid.UUID, error) {
 }
 
 // DeleteUpdateOperations is unimplemented.
-func (s *Store) DeleteUpdateOperations(context.Context, ...uuid.UUID) error {
-	return nil
+func (s *Store) DeleteUpdateOperations(context.Context, ...uuid.UUID) (int64, error) {
+	return 0, nil
 }
 
 // GetUpdateDiff is unimplemented.
 func (s *Store) GetUpdateDiff(ctx context.Context, prev, cur uuid.UUID) (*driver.UpdateDiff, error) {
 	return nil, nil
+}
+
+func (s *Store) GC(_ context.Context, _ int) (int64, error) {
+	return 0, nil
 }

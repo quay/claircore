@@ -91,8 +91,7 @@ func (e *e2e) failed(t *testing.T) {
 }
 
 const (
-	opStep  = 10
-	opLimit = 10 // 10 is hard-coded into the SQL that manages the update_operations table.
+	opStep = 10
 )
 
 func (e *e2e) vulns() [][]*claircore.Vulnerability {
@@ -151,17 +150,13 @@ func (e *e2e) GetUpdateOperations(ctx context.Context) func(*testing.T) {
 		if err != nil {
 			t.Fatalf("failed to get UpdateOperations: %v", err)
 		}
-		nOps := opLimit
-		if e.Updates < nOps {
-			nOps = e.Updates
-		}
 		// confirm number of update operations
-		if got, want := len(out[e.updater]), nOps; got != want {
+		if got, want := len(out[e.updater]), e.Updates; got != want {
 			t.Fatalf("wrong number of update operations: got: %d, want: %d", got, want)
 		}
 		// confirm retrieved update operations match
 		// test generated values
-		for i := 0; i < nOps; i++ {
+		for i := 0; i < e.Updates; i++ {
 			ri := e.Updates - i - 1
 			want, got := e.updateOps[ri], out[e.updater][i]
 			if !cmp.Equal(want, got, updateOpCmp) {
@@ -193,7 +188,7 @@ func (e *e2e) Diff(ctx context.Context) func(t *testing.T) {
 	return func(t *testing.T) {
 		defer e.failed(t)
 
-		absOff := orZero(e.Updates - opLimit)
+		absOff := orZero(e.Updates)
 		t.Logf("offset %d into generated updateOps", absOff)
 		for n := range e.vulns()[absOff:] {
 			// This does a bunch of checks so that the first operation is
@@ -289,7 +284,7 @@ func (e *e2e) DeleteUpdateOperations(ctx context.Context) func(*testing.T) {
 		)
 		var exists bool
 		for _, op := range e.updateOps {
-			err := e.s.DeleteUpdateOperations(ctx, op.Ref)
+			_, err := e.s.DeleteUpdateOperations(ctx, op.Ref)
 			if err != nil {
 				t.Fatalf("failed to get delete UpdateOperation: %v", err)
 			}

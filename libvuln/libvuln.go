@@ -2,6 +2,7 @@ package libvuln
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -23,9 +24,10 @@ import (
 // Libvuln also runs background updaters which keep the vulnerability
 // database consistent.
 type Libvuln struct {
-	store    vulnstore.Store
-	pool     *pgxpool.Pool
-	matchers []driver.Matcher
+	store           vulnstore.Store
+	pool            *pgxpool.Pool
+	matchers        []driver.Matcher
+	updateRetention int
 }
 
 // New creates a new instance of the Libvuln library
@@ -50,9 +52,10 @@ func New(ctx context.Context, opts *Opts) (*Libvuln, error) {
 	}
 
 	l := &Libvuln{
-		store:    postgres.NewVulnStore(pool),
-		pool:     pool,
-		matchers: opts.Matchers,
+		store:           postgres.NewVulnStore(pool),
+		pool:            pool,
+		matchers:        opts.Matchers,
+		updateRetention: opts.UpdateRetention,
 	}
 
 	// create update manager
@@ -65,6 +68,7 @@ func New(ctx context.Context, opts *Opts) (*Libvuln, error) {
 		updates.WithEnabled(opts.UpdaterSets),
 		updates.WithConfigs(opts.UpdaterConfigs),
 		updates.WithOutOfTree(opts.Updaters),
+		updates.WithGC(opts.UpdateRetention),
 	)
 
 	// perform initial update
@@ -93,7 +97,7 @@ func (l *Libvuln) UpdateOperations(ctx context.Context, updaters ...string) (map
 
 // DeleteUpdateOperations removes one or more update operations and their
 // associated vulnerabilities from the vulnerability database.
-func (l *Libvuln) DeleteUpdateOperations(ctx context.Context, ref ...uuid.UUID) error {
+func (l *Libvuln) DeleteUpdateOperations(ctx context.Context, ref ...uuid.UUID) (int64, error) {
 	return l.store.DeleteUpdateOperations(ctx, ref...)
 }
 
@@ -117,4 +121,42 @@ func (l *Libvuln) LatestUpdateOperations(ctx context.Context) (map[string][]driv
 // return new results.
 func (l *Libvuln) LatestUpdateOperation(ctx context.Context) (uuid.UUID, error) {
 	return l.store.GetLatestUpdateRef(ctx)
+}
+
+// GC will cleanup any update operations older then the configured UpdatesRetention value.
+// GC returns
+//
+// GC is throttled and ensure its a good citizen to the database.
+// To run GC to completion use the GCFull method.
+func (l *Libvuln) GC(ctx context.Context) (int64, error) {
+	if l.updateRetention == 0 {
+		return 0, fmt.Errorf("gc is disabled")
+	}
+	return l.store.GC(ctx, l.updateRetention)
+}
+
+// GCFull will run garbage collection until all expired update operations
+// and stale vulnerabilites are removed in accordance with the UpdateRetention
+// value.
+//
+// GCFull may return an error accompanied by its other two return values;
+// the number of oustanding update operations to remove and the number of
+// vulnerabilities deleted.
+func (l *Libvuln) GCFull(ctx context.Context) (int64, error) {
+	if l.updateRetention == 0 {
+		return 0, fmt.Errorf("gc is disabled")
+	}
+	i, err := l.store.GC(ctx, l.updateRetention)
+	if err != nil {
+		return i, err
+	}
+
+	for i > 0 {
+		i, err = l.store.GC(ctx, l.updateRetention)
+		if err != nil {
+			return i, err
+		}
+	}
+
+	return i, err
 }

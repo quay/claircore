@@ -12,8 +12,8 @@ import (
 	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/label"
 
-	"github.com/quay/claircore/internal/vulnstore/jsonblob"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/libvuln/jsonblob"
 )
 
 // Offline is a controller for running Updaters in an offline matter.
