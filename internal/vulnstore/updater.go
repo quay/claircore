@@ -31,7 +31,7 @@ type Updater interface {
 	// updater.
 	GetLatestUpdateRef(context.Context) (uuid.UUID, error)
 	// DeleteUpdateOperations removes an UpdateOperation.
-	DeleteUpdateOperations(context.Context, ...uuid.UUID) error
+	DeleteUpdateOperations(context.Context, ...uuid.UUID) (int64, error)
 	// GetUpdateOperationDiff reports the UpdateDiff of the two referenced
 	// Operations.
 	//
@@ -40,4 +40,12 @@ type Updater interface {
 	//	diff prev cur
 	//
 	GetUpdateDiff(ctx context.Context, prev, cur uuid.UUID) (*driver.UpdateDiff, error)
+	// GC will delete any update operations for an updater which exceeds the provided keep
+	// value.
+	//
+	// Implementations may throttle the GC process for datastore efficiency reasons.
+	//
+	// The returned int64 value indicates the remaining number of update operations needing GC.
+	// Running this method till the returned value is 0 accomplishes a full GC of the vulnstore.
+	GC(ctx context.Context, keep int) (int64, error)
 }

@@ -142,7 +142,7 @@ func (h *HTTP) UpdateOperations(w http.ResponseWriter, r *http.Request) {
 			je.Error(w, resp, http.StatusBadRequest)
 			return
 		}
-		err = h.l.DeleteUpdateOperations(ctx, uuid)
+		_, err = h.l.DeleteUpdateOperations(ctx, uuid)
 		if err != nil {
 			resp := &je.Response{
 				Code:    "internal server error",

@@ -81,3 +81,14 @@ func WithOutOfTree(outOfTree []driver.Updater) ManagerOption {
 		m.factories["outOfTree"] = driver.StaticSet(us)
 	}
 }
+
+// WithGC instructs the manager to run garbage collection
+// at the end of an update interval.
+//
+// The provided retention value informs the manager how many
+// update operations to keep.
+func WithGC(retention int) ManagerOption {
+	return func(m *Manager) {
+		m.updateRetention = retention
+	}
+}

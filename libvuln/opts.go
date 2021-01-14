@@ -27,9 +27,10 @@ import (
 )
 
 const (
-	DefaultUpdateInterval = 30 * time.Minute
-	DefaultUpdateWorkers  = 10
-	DefaultMaxConnPool    = 50
+	DefaultUpdateInterval  = 30 * time.Minute
+	DefaultUpdateWorkers   = 10
+	DefaultMaxConnPool     = 50
+	DefaultUpdateRetention = 2
 )
 
 type Opts struct {
@@ -78,14 +79,19 @@ type Opts struct {
 	// If less than or equal to zero, a sensible default will be used.
 	UpdateWorkers int
 
+	// UpdateRetention controls the number of updates to retain between
+	// garbage collection periods.
+	//
+	// The lowest possible value is 2 in order to compare updates for notification
+	// purposes.
+	UpdateRetention int
+
 	// If set to true, there will not be a goroutine launched to periodically
 	// run updaters.
 	DisableBackgroundUpdates bool
 
 	// UpdaterConfigs is a map of functions for configuration of Updaters.
 	UpdaterConfigs map[string]driver.ConfigUnmarshaler
-
-	UpdaterFilter func(name string) (keep bool)
 
 	// Client is an http.Client for use by all updaters. If unset,
 	// http.DefaultClient will be used.
@@ -115,8 +121,10 @@ func (o *Opts) parse(ctx context.Context) error {
 	if o.ConnString == "" {
 		return fmt.Errorf("no connection string provided")
 	}
+	if o.UpdateRetention == 1 || o.UpdateRetention < 0 {
+		return fmt.Errorf("update retention must be 0 or greater then 1")
+	}
 
-	// optional
 	if o.UpdateInterval == 0 || o.UpdateInterval < time.Minute {
 		o.UpdateInterval = DefaultUpdateInterval
 	}

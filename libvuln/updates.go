@@ -12,9 +12,9 @@ import (
 	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore/internal/updater"
-	"github.com/quay/claircore/internal/vulnstore/jsonblob"
 	"github.com/quay/claircore/internal/vulnstore/postgres"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/libvuln/jsonblob"
 )
 
 func NewUpdater(pool *pgxpool.Pool, client *http.Client, config map[string]driver.ConfigUnmarshaler, workers int, filter func(string) bool) (*UpdateDriver, error) {
