@@ -12,11 +12,11 @@ import (
 	"github.com/quay/claircore/test"
 )
 
-// Test_Coalescer tests the private method coalesce on the rhel.Coalescer.
+// TestCoalescer tests the private method coalesce on the rhel.Coalescer.
 // it's simpler to test the core business logic of a rhel.Coalescer after
 // database access would have occurred. Thus we do not use a black box test
 // and instead test private methods.
-func Test_Coalescer(t *testing.T) {
+func TestCoalescer(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
 	coalescer := NewCoalescer()
 	// we will test
@@ -84,7 +84,7 @@ func Test_Coalescer(t *testing.T) {
 	}
 }
 
-func Test_Coalescer_cpe_repos(t *testing.T) {
+func TestCoalescerCPERepos(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
 	coalescer := NewCoalescer()
 	repo1 := &claircore.Repository{
@@ -157,7 +157,7 @@ func Test_Coalescer_cpe_repos(t *testing.T) {
 	}
 }
 
-func Test_Coalescer_updated_package(t *testing.T) {
+func TestCoalescerUpdatedPackage(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
 	coalescer := NewCoalescer()
 	repo1 := &claircore.Repository{
@@ -220,7 +220,7 @@ func Test_Coalescer_updated_package(t *testing.T) {
 	}
 }
 
-func Test_Coalescer_downgraded_package(t *testing.T) {
+func TestCoalescerDowngradedPackage(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
 	coalescer := NewCoalescer()
 	repo1 := &claircore.Repository{
@@ -283,7 +283,7 @@ func Test_Coalescer_downgraded_package(t *testing.T) {
 	}
 }
 
-func Test_Coalescer_removed_package(t *testing.T) {
+func TestCoalescerRemovedPackage(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
 	coalescer := NewCoalescer()
 	repo1 := &claircore.Repository{
