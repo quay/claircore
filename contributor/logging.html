@@ -154,37 +154,27 @@
                     <main>
                         <h1><a class="header" href="#logging" id="logging">Logging</a></h1>
 <p>All the logging in claircore is done with <a href="https://pkg.go.dev/github.com/rs/zerolog@v1.15.0">zerolog</a> via <code>context.Context</code>
-values. Loggers are extracted from the Contexts via the <code>zerolog.Ctx</code> function,
-then a child logger is created via the <code>With</code> method and associated with a new
-Context via the <code>(*zerolog.Logger).WithContext</code> method.</p>
+values. The <code>zlog</code> package takes OpenTelemetry labels and attaches them to
+<code>zerolog</code> events.</p>
 <p>This allows for claircore's logging to be used consistently throughout all the
 packages without having unintended prints to stderr.</p>
 <h2><a class="header" href="#how-to-log" id="how-to-log">How to Log</a></h2>
-<h3><a class="header" href="#getting-a-logger" id="getting-a-logger">Getting a logger</a></h3>
-<p>In a function, first obtain a logger:</p>
-<pre><code class="language-go">	log := zerolog.Ctx(ctx).With().
+<h3><a class="header" href="#adding-context" id="adding-context">Adding Context</a></h3>
+<p>In a function, use the <code>baggage</code> package to add key-value pairs of any
+relevant context:</p>
+<pre><code class="language-go">	ctx = baggage.ContextWithValues(ctx,
+		label.String(&quot;component&quot;, &quot;Example.Logger&quot;))
 </code></pre>
-<p>then add key-value pairs of any relevant context:</p>
-<pre><code class="language-go">		Str(&quot;component&quot;, &quot;Example.Logger&quot;).
-</code></pre>
-<p>then create the new logger:</p>
-<pre><code class="language-go">		Logger()
-</code></pre>
-<p>then add the logger back to the Context so that child functions will have the
-annotations on the logger they extract from the Context.</p>
-<pre><code class="language-go">	ctx = log.WithContext(ctx)
-</code></pre>
-<p>The log object shouldn't be stored in a struct and should stay function local.</p>
 <h3><a class="header" href="#logging-style" id="logging-style">Logging style</a></h3>
 <h4><a class="header" href="#constant-messages" id="constant-messages">Constant Messages</a></h4>
 <p>Zerolog emits lines when the <code>Msg</code> or <code>Msgf</code> methods are called. Project style
 is to <em>not</em> use <code>Msgf</code>. Any variable data should be set as key-value pairs on
 the Event object.</p>
 <p>For example, don't do this:</p>
-<pre><code class="language-go">	log.Info().Msgf(&quot;done at: %v&quot;, time.Now())
+<pre><code class="language-go">	zlog.Info(ctx).Msgf(&quot;done at: %v&quot;, time.Now())
 </code></pre>
 <p>Do this instead:</p>
-<pre><code class="language-go">	log.Info().
+<pre><code class="language-go">	zlog.Info(ctx).
 		Time(&quot;time&quot;, time.Now()).
 		Msgf(&quot;done&quot;)
 </code></pre>
