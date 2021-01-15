@@ -2,11 +2,9 @@ package debian
 
 import (
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
-func Test_ResolveVersionCodeName_Found(t *testing.T) {
+func TestResolveVersionCodeName(t *testing.T) {
 	table := []struct {
 		str    string
 		expect string
@@ -43,21 +41,6 @@ func Test_ResolveVersionCodeName_Found(t *testing.T) {
 			str:    "7 (wheezy)",
 			expect: "wheezy",
 		},
-	}
-
-	for _, tt := range table {
-		out := ResolveVersionCodeName(map[string]string{
-			"test": tt.str,
-		})
-		assert.Equal(t, tt.expect, out)
-	}
-}
-
-func Test_ResolveVersionCodeName_NotFound(t *testing.T) {
-	table := []struct {
-		str    string
-		expect string
-	}{
 		{
 			str:    "Debian GNU/Linux 10",
 			expect: "",
@@ -96,6 +79,8 @@ func Test_ResolveVersionCodeName_NotFound(t *testing.T) {
 		out := ResolveVersionCodeName(map[string]string{
 			"test": tt.str,
 		})
-		assert.Equal(t, tt.expect, out)
+		if got, want := out, tt.expect; got != want {
+			t.Errorf("got: %q, want: %q", got, want)
+		}
 	}
 }

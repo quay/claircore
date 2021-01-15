@@ -5,12 +5,11 @@ import (
 	"testing"
 
 	"github.com/quay/zlog"
-	"github.com/stretchr/testify/assert"
 
 	"github.com/quay/claircore/test/integration"
 )
 
-func Test_Updater(t *testing.T) {
+func TestUpdater(t *testing.T) {
 	integration.Skip(t)
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
@@ -43,12 +42,23 @@ func Test_Updater(t *testing.T) {
 			t.Log(updater.url)
 
 			contents, updateHash, err := updater.Fetch(ctx, "")
-			assert.NoError(t, err)
-			assert.NotEmpty(t, updateHash)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if contents == nil {
+				t.Fatal("got nil io.ReadCloser")
+			}
+			if updateHash == "" {
+				t.Fatal("got empty updateHash")
+			}
 
 			vulns, err := updater.Parse(ctx, contents)
-			assert.NoError(t, err)
-			assert.Greater(t, len(vulns), 1)
+			if err != nil {
+				t.Error(err)
+			}
+			if got := len(vulns); got < 2 {
+				t.Errorf("got: len==%d, want: len>2", got)
+			}
 		})
 	}
 }

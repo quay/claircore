@@ -18,11 +18,11 @@ import (
 	"github.com/quay/claircore/test/integration"
 )
 
-// Test_Matcher_Integration confirms packages are matched
+// TestMatcherIntegration confirms packages are matched
 // with vulnerabilities correctly. the returned
 // store from postgres.NewTestStore must have Ubuntu
 // CVE data
-func Test_Matcher_Integration(t *testing.T) {
+func TestMatcherIntegration(t *testing.T) {
 	integration.Skip(t)
 	ctx := zlog.Test(context.Background(), t)
 	pool := vulnstore.TestDB(ctx, t)
