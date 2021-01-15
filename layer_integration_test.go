@@ -31,7 +31,7 @@ func init() {
 	}
 }
 
-func Test_Layer_Files_Miss(t *testing.T) {
+func TestLayerFilesMiss(t *testing.T) {
 	integration.Skip(t)
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
@@ -74,7 +74,7 @@ func Test_Layer_Files_Miss(t *testing.T) {
 	}
 }
 
-func Test_Layer_Files_Hit(t *testing.T) {
+func TestLayerFilesHit(t *testing.T) {
 	integration.Skip(t)
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
