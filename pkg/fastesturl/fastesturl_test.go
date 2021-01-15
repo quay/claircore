@@ -15,9 +15,7 @@ import (
 //
 // The returned RespCheck function must be used to ensure that both servers
 // return responses.
-func server(t *testing.T, a, b int) (*url.URL, *url.URL, fastesturl.RespCheck, func()) {
-	// TODO Use t.Cleanup instead of returning a function when our minimum go
-	// version is 1.14.
+func server(t *testing.T, a, b int) (*url.URL, *url.URL, fastesturl.RespCheck) {
 	var closeSem sync.Once
 	sem := make(chan struct{})
 	srv1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -39,16 +37,16 @@ func server(t *testing.T, a, b int) (*url.URL, *url.URL, fastesturl.RespCheck, f
 	if err != nil {
 		t.Error(err)
 	}
+	t.Cleanup(func() {
+		srv1.CloseClientConnections()
+		srv1.Close()
+		srv2.CloseClientConnections()
+		srv2.Close()
+	})
 	return urla, urlb,
 		func(resp *http.Response) bool {
 			defer closeSem.Do(func() { close(sem) })
 			return resp.StatusCode == http.StatusOK
-		},
-		func() {
-			srv1.CloseClientConnections()
-			srv1.Close()
-			srv2.CloseClientConnections()
-			srv2.Close()
 		}
 }
 
@@ -57,8 +55,7 @@ func server(t *testing.T, a, b int) (*url.URL, *url.URL, fastesturl.RespCheck, f
 func TestFastestURLAllFailure(t *testing.T) {
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
-	a, b, check, cleanup := server(t, http.StatusBadRequest, http.StatusBadRequest)
-	defer cleanup()
+	a, b, check := server(t, http.StatusBadRequest, http.StatusBadRequest)
 
 	furl := fastesturl.New(nil, nil, check, []*url.URL{a, b})
 	resp := furl.Do(ctx)
@@ -73,8 +70,7 @@ func TestFastestURLAllFailure(t *testing.T) {
 func TestFastestURLFailure(t *testing.T) {
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
-	a, b, check, cleanup := server(t, http.StatusBadRequest, http.StatusOK)
-	defer cleanup()
+	a, b, check := server(t, http.StatusBadRequest, http.StatusOK)
 
 	furl := fastesturl.New(nil, nil, check, []*url.URL{a, b})
 	resp := furl.Do(ctx)
@@ -95,8 +91,7 @@ func TestFastestURLFailure(t *testing.T) {
 func TestSuccess(t *testing.T) {
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
-	a, b, check, cleanup := server(t, http.StatusOK, http.StatusOK)
-	defer cleanup()
+	a, b, check := server(t, http.StatusOK, http.StatusOK)
 
 	furl := fastesturl.New(nil, nil, check, []*url.URL{a, b})
 	resp := furl.Do(ctx)
