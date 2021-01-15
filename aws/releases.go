@@ -1,6 +1,8 @@
 package aws
 
 import (
+	"fmt"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/cpe"
 )
@@ -13,6 +15,16 @@ const (
 	// os-release name ID field consistently available on official amazon linux images
 	ID = "amzn"
 )
+
+func (r Release) mirrorlist() string {
+	switch r {
+	case Linux1:
+		return "http://repo.us-west-2.amazonaws.com/2018.03/updates/x86_64/mirror.list"
+	case Linux2:
+		return "https://cdn.amazonlinux.com/2/core/latest/x86_64/mirror.list"
+	}
+	panic(fmt.Sprintf("unknown release %q", r))
+}
 
 var linux1Dist = &claircore.Distribution{
 	Name:       "Amazon Linux AMI",

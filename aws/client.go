@@ -27,12 +27,6 @@ const (
 	defaultOpTimeout = 15 * time.Second
 )
 
-// overwritten in tests
-var (
-	amazonLinux1Mirrors = "http://repo.us-west-2.amazonaws.com/2018.03/updates/x86_64/mirror.list"
-	amazonLinux2Mirrors = "https://cdn.amazonlinux.com/2/core/latest/x86_64/mirror.list"
-)
-
 // Client is an http for accessing ALAS mirrors.
 type Client struct {
 	c       *http.Client
@@ -44,9 +38,11 @@ func NewClient(ctx context.Context, release Release) (*Client, error) {
 		c:       &http.Client{},
 		mirrors: []*url.URL{},
 	}
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("release", string(release)))
 	tctx, cancel := context.WithTimeout(ctx, defaultOpTimeout)
 	defer cancel()
-	err := client.getMirrors(tctx, release)
+	err := client.getMirrors(tctx, release.mirrorlist())
 	return client, err
 }
 
@@ -175,27 +171,17 @@ type gzippedFile struct {
 	io.Closer
 }
 
-func (c *Client) getMirrors(ctx context.Context, release Release) error {
-	var (
-		req *http.Request
-		err error
-	)
+func (c *Client) getMirrors(ctx context.Context, list string) error {
 	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "aws/Client.getMirrors"),
-		label.String("release", string(release)))
+		label.String("component", "aws/Client.getMirrors"))
 
-	switch release {
-	case Linux1:
-		req, err = http.NewRequestWithContext(ctx, http.MethodGet, amazonLinux1Mirrors, nil)
-	case Linux2:
-		req, err = http.NewRequestWithContext(ctx, http.MethodGet, amazonLinux2Mirrors, nil)
-	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, list, nil)
 	if err != nil {
-		return fmt.Errorf("failed to create request for mirror list %v : %v", amazonLinux1Mirrors, err)
+		return fmt.Errorf("failed to create request for mirror list: %v", err)
 	}
 	resp, err := c.c.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to make request for %v mirrors: %v", release, err)
+		return fmt.Errorf("failed to make request for mirrors: %v", err)
 	}
 	defer resp.Body.Close()
 
@@ -203,7 +189,7 @@ func (c *Client) getMirrors(ctx context.Context, release Release) error {
 	case http.StatusOK:
 		// break
 	default:
-		return fmt.Errorf("failed to make request for %v mirrors: unexpected response %d %s", release, resp.StatusCode, resp.Status)
+		return fmt.Errorf("failed to make request for mirrors: unexpected response %d %s", resp.StatusCode, resp.Status)
 	}
 
 	if err := ctx.Err(); err != nil {
@@ -227,7 +213,6 @@ func (c *Client) getMirrors(ctx context.Context, release Release) error {
 	}
 
 	zlog.Debug(ctx).
-		Str("mirrors", fmt.Sprint(c.mirrors)).
 		Msg("successfully got list of mirrors")
 	return nil
 }
