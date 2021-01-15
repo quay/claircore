@@ -6,12 +6,11 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/quay/zlog"
-	"github.com/stretchr/testify/assert"
 
 	"github.com/quay/claircore/internal/indexer"
 )
 
-func Test_ScanLayers(t *testing.T) {
+func TestScanLayers(t *testing.T) {
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
 	var tt = []struct {
@@ -20,7 +19,7 @@ func Test_ScanLayers(t *testing.T) {
 		mock          func(t *testing.T) (indexer.LayerScanner, indexer.Store)
 	}{
 		{
-			name:          "successful scan",
+			name:          "Success",
 			expectedState: Coalesce,
 			mock: func(t *testing.T) (indexer.LayerScanner, indexer.Store) {
 				ctrl := gomock.NewController(t)
@@ -47,8 +46,12 @@ func Test_ScanLayers(t *testing.T) {
 			})
 
 			state, err := scanLayers(ctx, scnr)
-			assert.NoError(t, err)
-			assert.Equal(t, table.expectedState, state)
+			if err != nil {
+				t.Error(err)
+			}
+			if got, want := state, table.expectedState; got != want {
+				t.Errorf("got: %v, want: %v", got, want)
+			}
 		})
 	}
 }

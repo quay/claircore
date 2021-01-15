@@ -11,16 +11,17 @@ import (
 	"github.com/quay/claircore/internal/indexer"
 )
 
-func Test_IndexManifest(t *testing.T) {
+func TestIndexManifest(t *testing.T) {
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
 	var tt = []struct {
 		name          string
 		expectedState State
+		err           bool
 		mock          func(t *testing.T) indexer.Store
 	}{
 		{
-			name:          "successful index",
+			name:          "Success",
 			expectedState: IndexFinished,
 			mock: func(t *testing.T) indexer.Store {
 				ctrl := gomock.NewController(t)
@@ -29,40 +30,10 @@ func Test_IndexManifest(t *testing.T) {
 				return s
 			},
 		},
-	}
-
-	for _, table := range tt {
-		t.Run(table.name, func(t *testing.T) {
-			ctx, done := context.WithCancel(ctx)
-			defer done()
-			ctx = zlog.Test(ctx, t)
-			s := table.mock(t)
-			indexer := New(&indexer.Opts{
-				Store: s,
-			})
-
-			state, err := indexManifest(ctx, indexer)
-			if err != nil {
-				t.Fatalf("did not expect error: %v", err)
-			}
-			if table.expectedState != state {
-				t.Fatalf("got: %v, want: %v", state, table.expectedState)
-			}
-		})
-	}
-}
-
-func Test_IndexManifest_Failure(t *testing.T) {
-	ctx, done := context.WithCancel(context.Background())
-	defer done()
-	var tt = []struct {
-		name          string
-		expectedState State
-		mock          func(t *testing.T) indexer.Store
-	}{
 		{
-			name:          "index failure",
+			name:          "Failure",
 			expectedState: Terminal,
+			err:           true,
 			mock: func(t *testing.T) indexer.Store {
 				ctrl := gomock.NewController(t)
 				s := indexer.NewMockStore(ctrl)
@@ -83,8 +54,8 @@ func Test_IndexManifest_Failure(t *testing.T) {
 			})
 
 			state, err := indexManifest(ctx, indexer)
-			if err == nil {
-				t.Fatalf("expected error")
+			if (err == nil) == table.err {
+				t.Fatalf("did not expect error: %v", err)
 			}
 			if table.expectedState != state {
 				t.Fatalf("got: %v, want: %v", state, table.expectedState)

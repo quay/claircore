@@ -13,13 +13,13 @@ import (
 	"github.com/quay/claircore/internal/indexer"
 )
 
-// Test_Controller_IndexError confirms the state machines does the correct
+// TestControllerIndexError confirms the state machines does the correct
 // thing when a stateFunc returns an error.
 //
 // the controller is hardcoded to start in checkManifest state. We will have the mock
 // fail the call to s.Store.ManifestScanned forcing checkManifest to return an error
 // and evaluate our scanner's state afterwards.
-func Test_Controller_IndexerError(t *testing.T) {
+func TestControllerIndexerError(t *testing.T) {
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
 	var tt = []struct {
@@ -27,7 +27,7 @@ func Test_Controller_IndexerError(t *testing.T) {
 		mock func(t *testing.T) (indexer.Store, indexer.Fetcher)
 	}{
 		{
-			name: "checkManifest error induced error state",
+			name: "CheckManifest",
 			mock: func(t *testing.T) (indexer.Store, indexer.Fetcher) {
 				ctrl := gomock.NewController(t)
 				store := indexer.NewMockStore(ctrl)
@@ -73,13 +73,13 @@ func Test_Controller_IndexerError(t *testing.T) {
 	}
 }
 
-// Test_Controller_IndexFinished tests that out state machine does the correct thing
+// TestControllerIndexFinished tests that out state machine does the correct thing
 // when it reaches ScanFinished terminal state.
 //
 // we use the global variable startState to force the state machine into running the scanFinished
 // state. we then confirm the IndexReport success bool is set, the appropriate store methods are called,
 // and the scanner is in the correct state
-func Test_Controller_IndexFinished(t *testing.T) {
+func TestControllerIndexFinished(t *testing.T) {
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
 	var tt = []struct {
@@ -89,7 +89,7 @@ func Test_Controller_IndexFinished(t *testing.T) {
 		mock                  func(t *testing.T) (indexer.Store, indexer.Fetcher)
 	}{
 		{
-			name:                  "IndexFinished success",
+			name:                  "Success",
 			expectedState:         IndexFinished,
 			expectedResultSuccess: true,
 			mock: func(t *testing.T) (indexer.Store, indexer.Fetcher) {

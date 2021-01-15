@@ -6,12 +6,11 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/quay/zlog"
-	"github.com/stretchr/testify/assert"
 
 	"github.com/quay/claircore/internal/indexer"
 )
 
-func Test_IndexFinished_Success(t *testing.T) {
+func TestIndexFinished(t *testing.T) {
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
 	var tt = []struct {
@@ -20,7 +19,7 @@ func Test_IndexFinished_Success(t *testing.T) {
 		mock          func(t *testing.T) indexer.Store
 	}{
 		{
-			name:          "successful index finished",
+			name:          "Success",
 			expectedState: Terminal,
 			mock: func(t *testing.T) indexer.Store {
 				ctrl := gomock.NewController(t)
@@ -45,9 +44,12 @@ func Test_IndexFinished_Success(t *testing.T) {
 			})
 
 			state, err := indexFinished(ctx, scnr)
-
-			assert.NoError(t, err)
-			assert.Equal(t, table.expectedState, state)
+			if err != nil {
+				t.Error(err)
+			}
+			if got, want := state, table.expectedState; got != want {
+				t.Errorf("got: %v, want: %v", got, want)
+			}
 		})
 	}
 }

@@ -7,13 +7,13 @@ import (
 	"github.com/quay/claircore/internal/indexer"
 )
 
-// Test_Coalesce confirms when no error is encountered
-// the the coalesce method will transition to the correct
-// state
+// TestCoalesce confirms when no error is encountered
+// the coalesce method will transition to the correct
+// state.
 //
-// this test simply provides no Ecosystems to the index
+// This test simply provides no Ecosystems to the index
 // controller and does no work.
-func Test_Coalesce(t *testing.T) {
+func TestCoalesce(t *testing.T) {
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
 	var tt = []struct {
@@ -21,7 +21,7 @@ func Test_Coalesce(t *testing.T) {
 		expectedState State
 	}{
 		{
-			name:          "successful index",
+			name:          "Success",
 			expectedState: IndexManifest,
 		},
 	}
