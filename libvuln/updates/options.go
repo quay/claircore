@@ -28,16 +28,26 @@ func WithInterval(interval time.Duration) ManagerOption {
 }
 
 // WithEnabled configures the Manager to only run the specified
-// updaters.
+// updater sets.
+//
+// If enabled == nil all default updater sets will run (same as not providing this option to the constructor at all).
+// If len(enabled) == 0 no default updater sets will run.
+// If len(enabled) > 0 only provided updater sets will be ran.
 func WithEnabled(enabled []string) ManagerOption {
 	return func(m *Manager) {
+		if enabled == nil {
+			return
+		}
+
+		factories := map[string]driver.UpdaterSetFactory{}
 		for _, enable := range enabled {
-			for name := range m.factories {
+			for name, factory := range m.factories {
 				if name == enable {
-					delete(m.factories, name)
+					factories[name] = factory
 				}
 			}
 		}
+		m.factories = factories
 	}
 }
 
