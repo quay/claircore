@@ -58,7 +58,6 @@ type e2e struct {
 
 	// These are all computed values or results that need to hang around between
 	// tests.
-	bail      func()
 	updater   string
 	s         vulnstore.Store
 	pool      *pgxpool.Pool
@@ -66,27 +65,32 @@ type e2e struct {
 }
 
 func (e *e2e) Run(ctx context.Context) func(*testing.T) {
-	ctx, e.bail = context.WithCancel(ctx)
 	h := fnv.New64a()
 	h.Write([]byte(e.Name))
 	binary.Write(h, binary.BigEndian, e.Insert)
 	binary.Write(h, binary.BigEndian, e.Updates)
 	e.updater = strconv.FormatUint(h.Sum64(), 36)
+	order := []struct {
+		Name string
+		Test func(context.Context) func(*testing.T)
+	}{
+
+		{"Update", e.Update},
+		{"GetUpdateOperations", e.GetUpdateOperations},
+		{"Diff", e.Diff},
+		{"DeleteUpdateOperations", e.DeleteUpdateOperations},
+	}
 	return func(t *testing.T) {
 		pool := TestDB(ctx, t)
+		ctx, done := context.WithCancel(ctx)
+		defer done()
 		e.pool = pool
 		e.s = NewVulnStore(pool)
-		defer teardown()
-		t.Run("Update", e.Update(ctx))
-		t.Run("GetUpdateOperations", e.GetUpdateOperations(ctx))
-		t.Run("Diff", e.Diff(ctx))
-		t.Run("DeleteUpdateOperations", e.DeleteUpdateOperations(ctx))
-	}
-}
-
-func (e *e2e) failed(t *testing.T) {
-	if t.Failed() {
-		e.bail()
+		for _, sub := range order {
+			if !t.Run(sub.Name, sub.Test(ctx)) {
+				t.FailNow()
+			}
+		}
 	}
 }
 
@@ -110,13 +114,8 @@ var updateOpCmp = cmpopts.IgnoreFields(driver.UpdateOperation{}, "Date")
 // Update confirms multiple updates to the vulstore
 // do the correct things.
 func (e *e2e) Update(ctx context.Context) func(*testing.T) {
-	if err := ctx.Err(); err != nil {
-		return func(t *testing.T) { t.Skip(err) }
-	}
 	fp := driver.Fingerprint(uuid.New().String())
 	return func(t *testing.T) {
-		defer e.failed(t)
-
 		ctx := zlog.Test(ctx, t)
 		e.updateOps = make([]driver.UpdateOperation, 0, e.Updates)
 		for _, vs := range e.vulns() {
@@ -142,11 +141,7 @@ func (e *e2e) Update(ctx context.Context) func(*testing.T) {
 // GetUpdateOperations confirms retrieving an update
 // operation returns the expected results.
 func (e *e2e) GetUpdateOperations(ctx context.Context) func(*testing.T) {
-	if err := ctx.Err(); err != nil {
-		return func(t *testing.T) { t.Skip(err) }
-	}
 	return func(t *testing.T) {
-		defer e.failed(t)
 		ctx := zlog.Test(ctx, t)
 		out, err := e.s.GetUpdateOperations(ctx, e.updater)
 		if err != nil {
@@ -184,12 +179,7 @@ func orZero(a int) int {
 // Diff fetches Operation diffs from the database and compares them against
 // independently calculated diffs.
 func (e *e2e) Diff(ctx context.Context) func(t *testing.T) {
-	if err := ctx.Err(); err != nil {
-		return func(t *testing.T) { t.Skip(err) }
-	}
 	return func(t *testing.T) {
-		defer e.failed(t)
-
 		ctx := zlog.Test(ctx, t)
 		absOff := orZero(e.Updates)
 		t.Logf("offset %d into generated updateOps", absOff)
@@ -275,12 +265,7 @@ func (e *e2e) calcDiff(i int) [2][]*claircore.Vulnerability {
 // the test and confirms both the UpdateOperation and vulnerabilities are
 // removed from the vulnstore.
 func (e *e2e) DeleteUpdateOperations(ctx context.Context) func(*testing.T) {
-	if err := ctx.Err(); err != nil {
-		return func(t *testing.T) { t.Skip(err) }
-	}
 	return func(t *testing.T) {
-		defer e.failed(t)
-
 		const (
 			opExists    = `SELECT EXISTS(SELECT 1 FROM update_operation WHERE ref = $1::uuid);`
 			assocExists = `SELECT EXISTS(SELECT 1 FROM uo_vuln JOIN update_operation uo ON (uo_vuln.uo = uo.id) WHERE uo.ref = $1::uuid);`
