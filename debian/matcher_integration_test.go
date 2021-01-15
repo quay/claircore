@@ -25,8 +25,7 @@ import (
 func Test_Matcher_Integration(t *testing.T) {
 	integration.Skip(t)
 	ctx := zlog.Test(context.Background(), t)
-	pool, teardown := vulnstore.TestDB(ctx, t)
-	defer teardown()
+	pool := vulnstore.TestDB(ctx, t)
 	store := vulnstore.NewVulnStore(pool)
 
 	m := &Matcher{}

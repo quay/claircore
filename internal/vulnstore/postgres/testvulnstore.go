@@ -14,7 +14,7 @@ import (
 	"github.com/quay/claircore/test/integration"
 )
 
-func TestDB(ctx context.Context, t testing.TB) (*pgxpool.Pool, func()) {
+func TestDB(ctx context.Context, t testing.TB) *pgxpool.Pool {
 	db, err := integration.NewDB(ctx, t)
 	if err != nil {
 		t.Fatalf("unable to create test database: %v", err)
@@ -36,8 +36,9 @@ func TestDB(ctx context.Context, t testing.TB) (*pgxpool.Pool, func()) {
 		t.Fatalf("failed to perform migrations: %v", err)
 	}
 
-	return pool, func() {
+	t.Cleanup(func() {
 		pool.Close()
 		db.Close(ctx, t)
-	}
+	})
+	return pool
 }

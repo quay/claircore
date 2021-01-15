@@ -22,8 +22,7 @@ import (
 func TestMatcherIntegration(t *testing.T) {
 	integration.Skip(t)
 	ctx := zlog.Test(context.Background(), t)
-	pool, teardown := vulnstore.TestDB(ctx, t)
-	defer teardown()
+	pool := vulnstore.TestDB(ctx, t)
 	store := vulnstore.NewVulnStore(pool)
 	m := &Matcher{}
 	fs, err := filepath.Glob("testdata/*.xml")

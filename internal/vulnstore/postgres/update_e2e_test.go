@@ -73,7 +73,7 @@ func (e *e2e) Run(ctx context.Context) func(*testing.T) {
 	binary.Write(h, binary.BigEndian, e.Updates)
 	e.updater = strconv.FormatUint(h.Sum64(), 36)
 	return func(t *testing.T) {
-		pool, teardown := TestDB(ctx, t)
+		pool := TestDB(ctx, t)
 		e.pool = pool
 		e.s = NewVulnStore(pool)
 		defer teardown()
@@ -117,6 +117,7 @@ func (e *e2e) Update(ctx context.Context) func(*testing.T) {
 	return func(t *testing.T) {
 		defer e.failed(t)
 
+		ctx := zlog.Test(ctx, t)
 		e.updateOps = make([]driver.UpdateOperation, 0, e.Updates)
 		for _, vs := range e.vulns() {
 			ref, err := e.s.UpdateVulnerabilities(ctx, e.updater, fp, vs)
@@ -146,6 +147,7 @@ func (e *e2e) GetUpdateOperations(ctx context.Context) func(*testing.T) {
 	}
 	return func(t *testing.T) {
 		defer e.failed(t)
+		ctx := zlog.Test(ctx, t)
 		out, err := e.s.GetUpdateOperations(ctx, e.updater)
 		if err != nil {
 			t.Fatalf("failed to get UpdateOperations: %v", err)
@@ -188,6 +190,7 @@ func (e *e2e) Diff(ctx context.Context) func(t *testing.T) {
 	return func(t *testing.T) {
 		defer e.failed(t)
 
+		ctx := zlog.Test(ctx, t)
 		absOff := orZero(e.Updates)
 		t.Logf("offset %d into generated updateOps", absOff)
 		for n := range e.vulns()[absOff:] {
@@ -283,6 +286,7 @@ func (e *e2e) DeleteUpdateOperations(ctx context.Context) func(*testing.T) {
 			assocExists = `SELECT EXISTS(SELECT 1 FROM uo_vuln JOIN update_operation uo ON (uo_vuln.uo = uo.id) WHERE uo.ref = $1::uuid);`
 		)
 		var exists bool
+		ctx := zlog.Test(ctx, t)
 		for _, op := range e.updateOps {
 			_, err := e.s.DeleteUpdateOperations(ctx, op.Ref)
 			if err != nil {
