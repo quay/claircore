@@ -14,7 +14,7 @@ import (
 	"github.com/quay/claircore/test"
 )
 
-func Test_GetQueryBuilder_Deterministic_Args(t *testing.T) {
+func TestGetQueryBuilderDeterministicArgs(t *testing.T) {
 	const (
 		preamble = `SELECT
 		"id", "name", "description", "issued", "links", "severity", "normalized_severity", "package_name", "package_version",
