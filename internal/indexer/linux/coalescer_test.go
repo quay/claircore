@@ -12,7 +12,7 @@ import (
 	"github.com/quay/claircore/test"
 )
 
-func Test_Coalescer(t *testing.T) {
+func TestCoalescer(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
 	coalescer := &Coalescer{
 		ir: &claircore.IndexReport{
