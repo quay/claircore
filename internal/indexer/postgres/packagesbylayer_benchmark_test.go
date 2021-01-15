@@ -93,8 +93,7 @@ func Benchmark_PackagesByLayer(b *testing.B) {
 	for _, bench := range benchmarks {
 		b.Run(bench.name, func(b *testing.B) {
 			ctx := zlog.Test(ctx, b)
-			pool, teardown := TestDatabase(ctx, b)
-			defer teardown()
+			pool := TestDatabase(ctx, b)
 			store := NewStore(pool)
 
 			// generate a specific number of packages

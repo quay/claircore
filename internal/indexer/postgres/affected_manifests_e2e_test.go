@@ -27,8 +27,7 @@ type affectedE2E struct {
 func TestAffectedE2E(t *testing.T) {
 	integration.Skip(t)
 	ctx := zlog.Test(context.Background(), t)
-	pool, teardown := TestDatabase(ctx, t)
-	defer teardown()
+	pool := TestDatabase(ctx, t)
 	store := NewStore(pool)
 
 	table := []struct {

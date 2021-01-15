@@ -172,8 +172,7 @@ func TestE2E(t *testing.T) {
 	}
 
 	for _, e := range e2es {
-		pool, teardown := TestDatabase(ctx, t)
-		defer teardown()
+		pool := TestDatabase(ctx, t)
 		store := NewStore(pool)
 
 		layer := &claircore.Layer{

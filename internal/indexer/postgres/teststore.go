@@ -16,7 +16,7 @@ import (
 	"github.com/quay/claircore/test/integration"
 )
 
-func TestDatabase(ctx context.Context, t testing.TB) (*pgxpool.Pool, func()) {
+func TestDatabase(ctx context.Context, t testing.TB) *pgxpool.Pool {
 	db, err := integration.NewDB(ctx, t)
 	if err != nil {
 		t.Fatalf("unable to create test database: %v", err)
@@ -46,9 +46,14 @@ func TestDatabase(ctx context.Context, t testing.TB) (*pgxpool.Pool, func()) {
 	if err != nil {
 		t.Fatalf("failed to perform migrations: %v", err)
 	}
-
-	return pool, func() {
+	// BUG(hank) TestDatabase closes over the passed-in Context and uses it for
+	// the Cleanup method. Because Cleanup functions are earlier in the stack
+	// than any defers inside the test, make sure the Context isn't one that's
+	// deferred to be cancelled.
+	t.Cleanup(func() {
 		pool.Close()
 		db.Close(ctx, t)
-	}
+	})
+
+	return pool
 }

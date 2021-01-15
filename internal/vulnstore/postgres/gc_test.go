@@ -7,6 +7,8 @@ import (
 	"io"
 	"testing"
 
+	"github.com/quay/zlog"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/updates"
@@ -90,11 +92,11 @@ func TestGC(t *testing.T) {
 		},
 	}
 
+	ctx := context.Background()
 	for _, tt := range table {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx := context.Background()
-			pool, teardown := TestDB(ctx, t)
-			defer teardown()
+			ctx := zlog.Test(ctx, t)
+			pool := TestDB(ctx, t)
 			store := NewVulnStore(pool)
 			mgr, err := updates.NewManager(
 				ctx,
