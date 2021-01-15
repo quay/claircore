@@ -16,7 +16,6 @@ require (
 	github.com/knqyf263/go-apk-version v0.0.0-20200609155635-041fdbb8563f
 	github.com/knqyf263/go-deb-version v0.0.0-20190517075300-09fca494f03d
 	github.com/knqyf263/go-rpm-version v0.0.0-20170716094938-74609b86c936
-	github.com/lib/pq v1.3.0
 	github.com/quay/alas v1.0.1
 	github.com/quay/goval-parser v0.8.6
 	github.com/quay/zlog v0.0.0-20210113185248-ce16eed1dcec
