@@ -7,17 +7,19 @@ import (
 	"time"
 
 	"github.com/golang/mock/gomock"
+	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/test"
 )
 
-// Test_Scan_NoError confirms each scanner is called for each layer presented
+// TestScanNoErrors confirms each scanner is called for each layer presented
 // to the layerscanner and no blocking occurs.
-func Test_Scan_NoErrors(t *testing.T) {
+func TestScanNoErrors(t *testing.T) {
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
+	ctx = zlog.Test(ctx, t)
 	ctrl := gomock.NewController(t)
 
 	mock_ps := indexer.NewMockPackageScanner(ctrl)
