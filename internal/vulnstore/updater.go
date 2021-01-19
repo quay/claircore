@@ -31,6 +31,10 @@ type Updater interface {
 	// updater.
 	GetLatestUpdateRef(context.Context) (uuid.UUID, error)
 	// DeleteUpdateOperations removes an UpdateOperation.
+	// A call to GC must be run after this to garbage collect vulnerabilities associated
+	// with the UpdateOperation.
+	//
+	// The number of UpdateOperations deleted is returned.
 	DeleteUpdateOperations(context.Context, ...uuid.UUID) (int64, error)
 	// GetUpdateOperationDiff reports the UpdateDiff of the two referenced
 	// Operations.

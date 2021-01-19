@@ -37,7 +37,7 @@ type Opts struct {
 	// The maximum number of database connections in the
 	// connection pool.
 	MaxConnPool int32
-	// A connection string to the database Lbvuln will use.
+	// A connection string to the database Libvuln will use.
 	ConnString string
 	// An interval on which Libvuln will check for new security database
 	// updates.
@@ -45,7 +45,7 @@ type Opts struct {
 	// This duration will have jitter added to it, to help with smearing load on
 	// installations.
 	UpdateInterval time.Duration
-	// Determines if Livuln will manage database migrations
+	// Determines if Libvuln will manage database migrations
 	Migrations bool
 	// A slice of strings representing which updaters libvuln will create.
 	//
