@@ -95,8 +95,11 @@ func (l *Libvuln) UpdateOperations(ctx context.Context, updaters ...string) (map
 	return l.store.GetUpdateOperations(ctx, updaters...)
 }
 
-// DeleteUpdateOperations removes one or more update operations and their
-// associated vulnerabilities from the vulnerability database.
+// DeleteUpdateOperations removes UpdateOperations.
+// A call to GC or GCFull must be run after this to garbage collect vulnerabilities associated
+// with the UpdateOperation.
+//
+// The number of UpdateOperations deleted is returned.
 func (l *Libvuln) DeleteUpdateOperations(ctx context.Context, ref ...uuid.UUID) (int64, error) {
 	return l.store.DeleteUpdateOperations(ctx, ref...)
 }
@@ -124,9 +127,9 @@ func (l *Libvuln) LatestUpdateOperation(ctx context.Context) (uuid.UUID, error) 
 }
 
 // GC will cleanup any update operations older then the configured UpdatesRetention value.
-// GC returns
-//
 // GC is throttled and ensure its a good citizen to the database.
+//
+// The returned int is the number of outstanding UpdateOperations not deleted due to throttling.
 // To run GC to completion use the GCFull method.
 func (l *Libvuln) GC(ctx context.Context) (int64, error) {
 	if l.updateRetention == 0 {
@@ -139,9 +142,8 @@ func (l *Libvuln) GC(ctx context.Context) (int64, error) {
 // and stale vulnerabilites are removed in accordance with the UpdateRetention
 // value.
 //
-// GCFull may return an error accompanied by its other two return values;
-// the number of oustanding update operations to remove and the number of
-// vulnerabilities deleted.
+// GCFull may return an error accompanied by its other return value,
+// the number of oustanding update operations not deleted.
 func (l *Libvuln) GCFull(ctx context.Context) (int64, error) {
 	if l.updateRetention == 0 {
 		return 0, fmt.Errorf("gc is disabled")
