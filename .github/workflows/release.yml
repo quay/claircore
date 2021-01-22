@@ -26,8 +26,8 @@ jobs:
         run: |
           curl -o git-chglog -L https://github.com/git-chglog/git-chglog/releases/download/0.9.1/git-chglog_linux_amd64
           chmod u+x git-chglog
-          echo "creating change log for tag: $TAG"
-          ./git-chglog "${TAG}" > "${{github.workspace}}/changelog"
+          echo "creating change log for tag: $VERSION"
+          ./git-chglog "${VERSION}" > "${{github.workspace}}/changelog"
       - name: Create Release
         uses: actions/create-release@latest
         env:
