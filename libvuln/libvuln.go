@@ -28,6 +28,7 @@ type Libvuln struct {
 	pool            *pgxpool.Pool
 	matchers        []driver.Matcher
 	updateRetention int
+	updaters        *updates.Manager
 }
 
 // New creates a new instance of the Libvuln library
@@ -59,7 +60,7 @@ func New(ctx context.Context, opts *Opts) (*Libvuln, error) {
 	}
 
 	// create update manager
-	updateMgr, err := updates.NewManager(ctx,
+	l.updaters, err = updates.NewManager(ctx,
 		l.store,
 		pool,
 		opts.Client,
@@ -70,18 +71,21 @@ func New(ctx context.Context, opts *Opts) (*Libvuln, error) {
 		updates.WithOutOfTree(opts.Updaters),
 		updates.WithGC(opts.UpdateRetention),
 	)
-
-	// perform initial update
-	if err := updateMgr.Run(ctx); err != nil {
-		zlog.Error(ctx).Err(err).Msg("encountered error while updating")
+	if err != nil {
+		return nil, err
 	}
 
 	// launch background updater
 	if !opts.DisableBackgroundUpdates {
-		go updateMgr.Start(ctx)
+		go l.updaters.Start(ctx)
 	}
 	zlog.Info(ctx).Msg("libvuln initialized")
 	return l, nil
+}
+
+// FetchUpdates runs configured updaters.
+func (l *Libvuln) FetchUpdates(ctx context.Context) error {
+	return l.updaters.Run(ctx)
 }
 
 // Scan creates a VulnerabilityReport given a manifest's IndexReport.
@@ -161,4 +165,9 @@ func (l *Libvuln) GCFull(ctx context.Context) (int64, error) {
 	}
 
 	return i, err
+}
+
+// Initialized reports whether the backing vulnerability store is initialized.
+func (l *Libvuln) Initialized(ctx context.Context) (bool, error) {
+	return l.store.Initialized(ctx)
 }
