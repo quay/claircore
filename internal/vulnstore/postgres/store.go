@@ -19,6 +19,8 @@ import (
 // store implements all interfaces in the vulnstore package
 type Store struct {
 	pool *pgxpool.Pool
+	// Initialized is used as an atomic bool for tracking initialization.
+	initialized uint32
 }
 
 func NewVulnStore(pool *pgxpool.Pool) *Store {

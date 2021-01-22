@@ -223,6 +223,14 @@ func (s *Store) GetUpdateDiff(ctx context.Context, prev, cur uuid.UUID) (*driver
 	return nil, nil
 }
 
+// Initialized implements vulnstore.Updater.
+func (s *Store) Initialized(context.Context) (bool, error) {
+	s.RLock()
+	defer s.RUnlock()
+	return len(s.entry) != 0, nil
+}
+
+// GC is unimplemented.
 func (s *Store) GC(_ context.Context, _ int) (int64, error) {
 	return 0, nil
 }
