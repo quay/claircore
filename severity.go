@@ -17,7 +17,6 @@ const (
 	Medium
 	High
 	Critical
-	Defcon1
 )
 
 func (s *Severity) MarshalText() ([]byte, error) {

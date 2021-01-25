@@ -37,15 +37,16 @@ func (m *MockUpdater) EXPECT() *MockUpdaterMockRecorder {
 }
 
 // DeleteUpdateOperations mocks base method
-func (m *MockUpdater) DeleteUpdateOperations(arg0 context.Context, arg1 ...uuid.UUID) error {
+func (m *MockUpdater) DeleteUpdateOperations(arg0 context.Context, arg1 ...uuid.UUID) (int64, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
 	for _, a := range arg1 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "DeleteUpdateOperations", varargs...)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // DeleteUpdateOperations indicates an expected call of DeleteUpdateOperations
@@ -53,6 +54,21 @@ func (mr *MockUpdaterMockRecorder) DeleteUpdateOperations(arg0 interface{}, arg1
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0}, arg1...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUpdateOperations", reflect.TypeOf((*MockUpdater)(nil).DeleteUpdateOperations), varargs...)
+}
+
+// GC mocks base method
+func (m *MockUpdater) GC(arg0 context.Context, arg1 int) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GC", arg0, arg1)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GC indicates an expected call of GC
+func (mr *MockUpdaterMockRecorder) GC(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GC", reflect.TypeOf((*MockUpdater)(nil).GC), arg0, arg1)
 }
 
 // GetLatestUpdateRef mocks base method
@@ -71,10 +87,10 @@ func (mr *MockUpdaterMockRecorder) GetLatestUpdateRef(arg0 interface{}) *gomock.
 }
 
 // GetLatestUpdateRefs mocks base method
-func (m *MockUpdater) GetLatestUpdateRefs(arg0 context.Context) (map[string]uuid.UUID, error) {
+func (m *MockUpdater) GetLatestUpdateRefs(arg0 context.Context) (map[string][]driver.UpdateOperation, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLatestUpdateRefs", arg0)
-	ret0, _ := ret[0].(map[string]uuid.UUID)
+	ret0, _ := ret[0].(map[string][]driver.UpdateOperation)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -118,6 +134,21 @@ func (mr *MockUpdaterMockRecorder) GetUpdateOperations(arg0 interface{}, arg1 ..
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0}, arg1...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUpdateOperations", reflect.TypeOf((*MockUpdater)(nil).GetUpdateOperations), varargs...)
+}
+
+// Initialized mocks base method
+func (m *MockUpdater) Initialized(arg0 context.Context) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Initialized", arg0)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Initialized indicates an expected call of Initialized
+func (mr *MockUpdaterMockRecorder) Initialized(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Initialized", reflect.TypeOf((*MockUpdater)(nil).Initialized), arg0)
 }
 
 // UpdateVulnerabilities mocks base method

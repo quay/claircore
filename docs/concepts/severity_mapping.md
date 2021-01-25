@@ -14,7 +14,6 @@ Low
 Medium
 High
 Critical
-Defcon1
 ```
 
 ## Alpine Mapping
