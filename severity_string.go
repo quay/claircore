@@ -14,12 +14,11 @@ func _() {
 	_ = x[Medium-3]
 	_ = x[High-4]
 	_ = x[Critical-5]
-	_ = x[Defcon1-6]
 }
 
-const _Severity_name = "UnknownNegligibleLowMediumHighCriticalDefcon1"
+const _Severity_name = "UnknownNegligibleLowMediumHighCritical"
 
-var _Severity_index = [...]uint8{0, 7, 17, 20, 26, 30, 38, 45}
+var _Severity_index = [...]uint8{0, 7, 17, 20, 26, 30, 38}
 
 func (i Severity) String() string {
 	if i >= Severity(len(_Severity_index)-1) {

@@ -5,11 +5,11 @@
 package matcher
 
 import (
-	reflect "reflect"
-
+	context "context"
 	gomock "github.com/golang/mock/gomock"
 	claircore "github.com/quay/claircore"
 	driver "github.com/quay/claircore/libvuln/driver"
+	reflect "reflect"
 )
 
 // MockMatcher is a mock of Matcher interface
@@ -78,15 +78,16 @@ func (mr *MockMatcherMockRecorder) Query() *gomock.Call {
 }
 
 // Vulnerable mocks base method
-func (m *MockMatcher) Vulnerable(arg0 *claircore.IndexRecord, arg1 *claircore.Vulnerability) (bool, error) {
+func (m *MockMatcher) Vulnerable(arg0 context.Context, arg1 *claircore.IndexRecord, arg2 *claircore.Vulnerability) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Vulnerable", arg0, arg1)
+	ret := m.ctrl.Call(m, "Vulnerable", arg0, arg1, arg2)
 	ret0, _ := ret[0].(bool)
-	return ret0, nil
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // Vulnerable indicates an expected call of Vulnerable
-func (mr *MockMatcherMockRecorder) Vulnerable(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockMatcherMockRecorder) Vulnerable(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Vulnerable", reflect.TypeOf((*MockMatcher)(nil).Vulnerable), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Vulnerable", reflect.TypeOf((*MockMatcher)(nil).Vulnerable), arg0, arg1, arg2)
 }
