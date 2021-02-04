@@ -98,6 +98,9 @@ func NewManager(ctx context.Context, store vulnstore.Updater, pool *pgxpool.Pool
 //
 // Start is designed to be ran as a go routine.
 // Cancel the provided ctx to end the updater loop.
+//
+// Start must only be called once between context
+// cancelations.
 func (m *Manager) Start(ctx context.Context) error {
 	log := zerolog.Ctx(ctx).With().
 		Str("component", "libvuln/updates/Manager.Start").
@@ -108,9 +111,12 @@ func (m *Manager) Start(ctx context.Context) error {
 	}
 	log.Info().Str("interval", m.interval.String()).Msg("starting background updates")
 
+	// perform the initial run
+	m.Run(ctx)
+
+	// perform run on every tick
 	t := time.NewTicker(m.interval)
 	defer t.Stop()
-
 	for {
 		select {
 		case <-ctx.Done():
