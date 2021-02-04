@@ -105,7 +105,7 @@ WHERE array_length(ordered_ops.refs, 1) > $2;
 `
 
 		deleteVulns = `
-DELETE FROM vuln WHERE id NOT IN (SELECT vuln FROM uo_vuln);
+DELETE FROM vuln WHERE NOT EXISTS (SELECT * FROM uo_vuln WHERE vuln.id = uo_vuln.vuln);
 `
 	)
 
