@@ -2,8 +2,26 @@
 ## [Unreleased]
 
 
+<a name="v0.3.0"></a>
+## [v0.3.0] - 2021-02-04
+### Cicd
+- [1d47ccd](https://github.com/quay/claircore/commit/1d47ccd24fe3ececf141779ce535472b2da9a0e8): fix release notes
+### Docs
+- [480dcf7](https://github.com/quay/claircore/commit/480dcf740ae45f89f6adb22465e3d77f517871f0): various doc fixups
+### Libvuln
+- [b0ba2f2](https://github.com/quay/claircore/commit/b0ba2f2a0929c17cd349a733392eb6180558865b): rework constuctor
+### Remotematcher
+- [b95d984](https://github.com/quay/claircore/commit/b95d9840113db0b3ca4937a10f3a8eef920d2ffd): Implement RemoteMatcher for CRDA
+### Severity-Mapping
+- [fc1aa30](https://github.com/quay/claircore/commit/fc1aa30841820e309653733db660c56deae033f8): remove defcon1 severity
+### Updates
+- [966de96](https://github.com/quay/claircore/commit/966de967953448b7358fbbfc26e7905ad64b71a2): perform implicit run
+### Vulnstore
+- [20a4437](https://github.com/quay/claircore/commit/20a4437a078309864db9a0fad8a0f4c81b6059a4): fix gc live lock
+- [1f4717f](https://github.com/quay/claircore/commit/1f4717f22ad65342fb127f718bd7a55faed23cd1): add Initialized method
+
 <a name="v0.2.0"></a>
-## [v0.2.0] - 2021-01-15
+## [v0.2.0] - 2021-01-19
 ### All
 - [3a4e3d3](https://github.com/quay/claircore/commit/3a4e3d3e053cd3856795565e1b674e2ba4b03900): logging switch
 ### Alpine
@@ -12,6 +30,8 @@
 - [1cdf08c](https://github.com/quay/claircore/commit/1cdf08cc721306466222555c552f41994c08da49): test cleanup
 ### Cctool
 - [826aacb](https://github.com/quay/claircore/commit/826aacbf6ed9abcd78529fedc91417a511743863): copy loop variable
+### Chore
+- [4fac8b5](https://github.com/quay/claircore/commit/4fac8b5e210d2446d13680c2f3d062c0efb02efa): v0.2.0 changelog bump
 ### Cicd
 - [e749f3b](https://github.com/quay/claircore/commit/e749f3b414416f823a545753419c9574cecaecc7): drop go1.13 support
 - [733d8f1](https://github.com/quay/claircore/commit/733d8f1560b6c3d48560f7cc170536578fa7b7ac): use quay.io/claircore/golang in CI
@@ -636,7 +656,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.3.0...HEAD
+[v0.3.0]: https://github.com/quay/claircore/compare/v0.2.0...v0.3.0
 [v0.2.0]: https://github.com/quay/claircore/compare/v0.1.20...v0.2.0
 [v0.1.20]: https://github.com/quay/claircore/compare/v0.1.19...v0.1.20
 [v0.1.19]: https://github.com/quay/claircore/compare/v0.1.18...v0.1.19
