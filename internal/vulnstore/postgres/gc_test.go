@@ -77,8 +77,8 @@ func TestGC(t *testing.T) {
 		},
 		{
 			"Large",
+			100,
 			50,
-			20,
 		},
 		{
 			"Odd",
@@ -92,10 +92,9 @@ func TestGC(t *testing.T) {
 		},
 	}
 
-	ctx := context.Background()
 	for _, tt := range table {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx := zlog.Test(ctx, t)
+			ctx := zlog.Test(context.Background(), t)
 			pool := TestDB(ctx, t)
 			store := NewVulnStore(pool)
 			mgr, err := updates.NewManager(
@@ -129,7 +128,6 @@ func TestGC(t *testing.T) {
 
 			// run gc
 			done, err := store.GC(ctx, tt.keep)
-
 			switch {
 			case err != nil:
 				t.Fatalf("error while performing GC: %v", err)

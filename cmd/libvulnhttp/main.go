@@ -82,7 +82,7 @@ func confToLibvulnOpts(conf Config) *libvuln.Opts {
 		Migrations:               true,
 		UpdaterSets:              nil,
 		DisableBackgroundUpdates: conf.DisableBackgroundUpdates,
-		UpdateInterval:           30 * time.Second,
+		UpdateInterval:           1 * time.Minute,
 		UpdateWorkers:            10,
 		UpdateRetention:          10,
 	}

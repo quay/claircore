@@ -19,7 +19,6 @@ import (
 	"github.com/quay/claircore/pkg/distlock/postgres"
 	"github.com/quay/claircore/updater"
 	"github.com/quay/zlog"
-	"github.com/rs/zerolog"
 )
 
 const (
@@ -58,10 +57,8 @@ type Manager struct {
 
 // NewManager will return a manager ready to have its Start or Run methods called.
 func NewManager(ctx context.Context, store vulnstore.Updater, pool *pgxpool.Pool, client *http.Client, opts ...ManagerOption) (*Manager, error) {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "libvuln/updates/NewManager").
-		Logger()
-	ctx = log.WithContext(ctx)
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "libvuln/updates/NewManager"))
 
 	if client == nil {
 		client = http.DefaultClient
@@ -102,19 +99,19 @@ func NewManager(ctx context.Context, store vulnstore.Updater, pool *pgxpool.Pool
 // Start must only be called once between context
 // cancelations.
 func (m *Manager) Start(ctx context.Context) error {
-	log := zerolog.Ctx(ctx).With().
-		Str("component", "libvuln/updates/Manager.Start").
-		Logger()
-	ctx = log.WithContext(ctx)
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "libvuln/updates/Manager.Start"))
+
 	if m.interval == 0 {
 		return fmt.Errorf("manager must be configured with an interval to start")
 	}
-	log.Info().Str("interval", m.interval.String()).Msg("starting background updates")
 
 	// perform the initial run
-	m.Run(ctx)
+	zlog.Info(ctx).Msg("starting initial updates")
+	m.Run(ctx) // errors reported via log messages internal to this call
 
 	// perform run on every tick
+	zlog.Info(ctx).Str("interval", m.interval.String()).Msg("starting background updates")
 	t := time.NewTicker(m.interval)
 	defer t.Stop()
 	for {
@@ -206,15 +203,17 @@ func (m *Manager) Run(ctx context.Context) error {
 
 	// unconditionally wait for all in-flight go routines to return.
 	// the use of context.Background and lack of error checking is intentional.
-	// all in-flight go routines are gauranteed to release their sems.
+	// all in-flight go routines are guaranteed to release their sems.
 	sem.Acquire(context.Background(), int64(m.batchSize))
 
 	if m.updateRetention != 0 {
+		zlog.Info(ctx).Int("retention", m.updateRetention).Msg("GC started")
 		i, err := m.store.GC(ctx, m.updateRetention)
 		if err != nil {
-			errChan <- fmt.Errorf("error performing gc: %w\n", err)
+			zlog.Error(ctx).Err(err).Msg("error while performing GC")
+		} else {
+			zlog.Info(ctx).Int64("remaining_ops", i).Int("retention", m.updateRetention).Msg("GC completed")
 		}
-		zlog.Info(ctx).Int64("remaining update operations", i).Int("retention", m.updateRetention).Msg("GC completed")
 	}
 
 	close(errChan)
