@@ -5,8 +5,6 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/label"
@@ -85,84 +83,4 @@ func (s *Store) Get(ctx context.Context, records []*claircore.IndexRecord, opts 
 		return nil, fmt.Errorf("failed to get vulnerabilities: %v", err)
 	}
 	return vulns, nil
-}
-
-func (s *Store) GC(ctx context.Context, keep int) (int64, error) {
-	const (
-		// GCThrottle sets a limit for the number of update
-		// operations deleted in a single GC run.
-		GCThrottle = 3
-
-		// this query will return rows of string,[]uuid.UUID where string is the updater's name
-		// and []uuid.UUID is a slice of update operation refs exceeding the provided keep value.
-		updateOps = `
-WITH ordered_ops AS (
-    SELECT updater, array_agg(ref ORDER BY date DESC) AS refs FROM update_operation GROUP BY updater
-)
-SELECT ordered_ops.updater, ordered_ops.refs[$1:]
-FROM ordered_ops
-WHERE array_length(ordered_ops.refs, 1) > $2;
-`
-
-		deleteVulns = `
-DELETE FROM vuln WHERE NOT EXISTS (SELECT * FROM uo_vuln WHERE vuln.id = uo_vuln.vuln);
-`
-	)
-
-	// keys are updater names, values are a slice of stale
-	// update operations.
-	m := map[string][]uuid.UUID{}
-
-	// gather any update operations exceeding our keep value.
-	// keep+1 is used because PG's array slicing is inclusive,
-	// we want to grab all items once after our keep value.
-	rows, err := s.pool.Query(ctx, updateOps, keep+1, keep)
-	switch err {
-	case nil:
-	case pgx.ErrNoRows:
-		return 0, nil
-	default:
-		return 0, fmt.Errorf("error querying for update operations: %w", err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var updater string
-		// pgx will not scan directly into a []uuid.UUID
-		tmp := pgtype.UUIDArray{}
-		err := rows.Scan(&updater, &tmp)
-		if err != nil {
-			return 0, fmt.Errorf("error scanning update operations: %w", err)
-		}
-		for _, u := range tmp.Elements {
-			m[updater] = append(m[updater], u.Bytes) // this works since [16]byte value is assignable to uuid.UUID
-		}
-
-	}
-
-	// delete update operations up until GCThrottle
-	var i int
-	for updater, refs := range m {
-		if i == GCThrottle {
-			break
-		}
-		deleted, err := s.DeleteUpdateOperations(ctx, refs...)
-		if err != nil {
-			return 0, fmt.Errorf("error deleting update operations: %w", err)
-		}
-		delete(m, updater)
-		if deleted > 0 {
-			i++
-		}
-	}
-
-	// perform a delete of any un-ref'd vulnerabilities.
-	// subtly, this cleans up any vulnerabilities un-linked
-	// by external calls to vulnstore.DeleteUpdateOperations.
-	_, err = s.pool.Exec(ctx, deleteVulns)
-	if err != nil {
-		return 0, fmt.Errorf("error deleting vulns: %w", err)
-	}
-	return int64(len(m)), nil
-
 }
