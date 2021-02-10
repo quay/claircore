@@ -17,8 +17,8 @@ func getUpdateDiff(ctx context.Context, pool *pgxpool.Pool, prev, cur uuid.UUID)
 	// Query takes two update IDs and returns rows that only exist in first
 	// argument's set of vulnerabilities.
 	const query = `WITH
-		lhs AS (SELECT id FROM update_operation WHERE ref = $1),
-		rhs AS (SELECT id FROM update_operation WHERE ref = $2)
+		lhs AS (SELECT id, updater FROM update_operation WHERE ref = $1),
+		rhs AS (SELECT id, updater  FROM update_operation WHERE ref = $2)
 	SELECT
 		id,
 		name,
@@ -51,7 +51,10 @@ func getUpdateDiff(ctx context.Context, pool *pgxpool.Pool, prev, cur uuid.UUID)
 		vuln.id IN (
 			SELECT vuln AS id FROM uo_vuln JOIN lhs ON (uo_vuln.uo = lhs.id)
 			EXCEPT ALL
-			SELECT vuln AS id FROM uo_vuln JOIN rhs ON (uo_vuln.uo = rhs.id));`
+			SELECT vuln AS id FROM uo_vuln JOIN rhs ON (uo_vuln.uo = rhs.id))
+        AND vuln.updater = (SELECT updater FROM rhs)
+        OR  vuln.updater = (SELECT updater FROM lhs);
+`
 
 	if cur == uuid.Nil {
 		return nil, errors.New("nil uuid is invalid as \"current\" endpoint")
