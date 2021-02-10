@@ -3,6 +3,7 @@ package libindex
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 
@@ -23,6 +24,8 @@ func controllerFactory(ctx context.Context, lib *Libindex, opts *Opts) (*control
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse ConnString: %v", err)
 	}
+	cfg.MaxConns = 1
+	cfg.MaxConnIdleTime = time.Minute * 5
 	pool, err := pgxpool.ConnectConfig(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ConnPool: %v", err)
