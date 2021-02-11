@@ -2,8 +2,15 @@
 ## [Unreleased]
 
 
+<a name="v0.3.1"></a>
+## [v0.3.1] - 2021-02-10
+### Libindex
+- [2cf7d4a](https://github.com/quay/claircore/commit/2cf7d4ad5002677f3f8e0baf047d66acbe93ea47): limit MaxConns in controller pool to 1
+
 <a name="v0.3.0"></a>
-## [v0.3.0] - 2021-02-04
+## [v0.3.0] - 2021-02-05
+### Chore
+- [533316c](https://github.com/quay/claircore/commit/533316c18965c9007f1fb60bead2f33cf012d715): v0.3.0 changelog bump
 ### Cicd
 - [1d47ccd](https://github.com/quay/claircore/commit/1d47ccd24fe3ececf141779ce535472b2da9a0e8): fix release notes
 ### Docs
@@ -656,7 +663,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.3.1...HEAD
+[v0.3.1]: https://github.com/quay/claircore/compare/v0.3.0...v0.3.1
 [v0.3.0]: https://github.com/quay/claircore/compare/v0.2.0...v0.3.0
 [v0.2.0]: https://github.com/quay/claircore/compare/v0.1.20...v0.2.0
 [v0.1.20]: https://github.com/quay/claircore/compare/v0.1.19...v0.1.20
