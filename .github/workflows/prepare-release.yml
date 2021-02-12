@@ -32,7 +32,8 @@ jobs:
           # if this is a release branch filter our change
           # log to only include logs with the same minor
           # versions
-          branch=${{ github.event.inputs.tag }}
+          branch=${{ github.event.inputs.branch }}
+          echo "discovered branch $branch"
           if [[ ${branch%-*} == "release" ]]; then 
             filter_tag="--tag-filter-pattern v${branch#release-}"
           fi
