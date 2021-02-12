@@ -28,7 +28,16 @@ jobs:
           curl -o /tmp/git-chglog -L https://github.com/git-chglog/git-chglog/releases/download/0.9.1/git-chglog_linux_amd64
           chmod u+x /tmp/git-chglog
           echo "creating change log for tag: ${{ github.event.inputs.tag }}"
-          /tmp/git-chglog --next-tag "${{ github.event.inputs.tag }}" -o CHANGELOG.md
+          
+          # if this is a release branch filter our change
+          # log to only include logs with the same minor
+          # versions
+          branch = "${{ github.event.inputs.tag }}"
+          if [[ ${branch%-*} == "release" ]]; then 
+            filter_tag="--tag-filter-pattern v${branch#release-}"
+          fi
+
+          /tmp/git-chglog --next-tag "${{ github.event.inputs.tag }}" $filter_tag -o CHANGELOG.md
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v3.5.1
         with:
