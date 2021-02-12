@@ -2,8 +2,15 @@
 ## [Unreleased]
 
 
+<a name="v0.1.22"></a>
+## [v0.1.22] - 2021-01-22
+### Cicd
+- [d493b6f](https://github.com/quay/claircore/commit/d493b6f685344ce8de0bafc410e757d95f77b007): fix release notes
+
 <a name="v0.1.21"></a>
 ## [v0.1.21] - 2021-02-12
+### Chore
+- [bf12f91](https://github.com/quay/claircore/commit/bf12f910ba89a92beb0ef2c01bf0a676c2c7ed06): v0.1.21 changelog bump
 ### Rhel
 - [17a73b5](https://github.com/quay/claircore/commit/17a73b58e3092bca946582c68367fc9ccad0183d): fix cpe mapping type assertion
 ### Reverts
@@ -403,7 +410,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.1.21...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.1.22...HEAD
+[v0.1.22]: https://github.com/quay/claircore/compare/v0.1.21...v0.1.22
 [v0.1.21]: https://github.com/quay/claircore/compare/v0.1.20...v0.1.21
 [v0.1.20]: https://github.com/quay/claircore/compare/v0.1.19...v0.1.20
 [v0.1.19]: https://github.com/quay/claircore/compare/v0.1.18...v0.1.19
