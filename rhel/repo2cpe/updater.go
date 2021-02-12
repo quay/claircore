@@ -33,10 +33,12 @@ func NewLocalUpdaterJob(url string, client *http.Client) *LocalUpdaterJob {
 	if client == nil {
 		client = http.DefaultClient
 	}
-	return &LocalUpdaterJob{
+	lu := &LocalUpdaterJob{
 		URL:    url,
 		Client: client,
 	}
+	lu.mapping.Store((*MappingFile)(nil))
+	return lu
 }
 
 // Get translates repositories into CPEs using a mapping file.
@@ -50,9 +52,10 @@ func (updater *LocalUpdaterJob) Get(ctx context.Context, repositories []string) 
 	}
 
 	cpes := []string{}
-	var mapping *MappingFile = updater.mapping.Load().(*MappingFile)
+	// interface conversion guaranteed to pass, see
+	// constructor.
+	mapping := updater.mapping.Load().(*MappingFile)
 	if mapping == nil {
-		// mapping not set yet. not an error
 		return cpes, nil
 	}
 
