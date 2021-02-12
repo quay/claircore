@@ -179,7 +179,9 @@ func (f *fetcher) fetch(ctx context.Context, layer *claircore.Layer) error {
 
 	var r io.Reader
 	switch {
-	case ct == "application/gzip":
+	case ct == "application/gzip" ||
+		ct == "application/vnd.docker.image.rootfs.diff.tar.gzip":
+		// Catch the old docker media type.
 		fallthrough
 	case strings.HasSuffix(ct, ".tar+gzip"):
 		g, err := gzip.NewReader(br)
