@@ -2,10 +2,111 @@
 ## [Unreleased]
 
 
+<a name="v0.1.21"></a>
+## [v0.1.21] - 2021-02-12
+### Rhel
+- [17a73b5](https://github.com/quay/claircore/commit/17a73b58e3092bca946582c68367fc9ccad0183d): fix cpe mapping type assertion
+
+<a name="v0.3.1"></a>
+## [v0.3.1] - 2021-02-11
+### Chore
+- [e5743e3](https://github.com/quay/claircore/commit/e5743e3fd13268bda568de194d9f04d32c12b9f3): v0.3.1 changelog bump
+### Libindex
+- [2cf7d4a](https://github.com/quay/claircore/commit/2cf7d4ad5002677f3f8e0baf047d66acbe93ea47): limit MaxConns in controller pool to 1
+
+<a name="v0.3.0"></a>
+## [v0.3.0] - 2021-02-05
+### Chore
+- [533316c](https://github.com/quay/claircore/commit/533316c18965c9007f1fb60bead2f33cf012d715): v0.3.0 changelog bump
+### Cicd
+- [1d47ccd](https://github.com/quay/claircore/commit/1d47ccd24fe3ececf141779ce535472b2da9a0e8): fix release notes
+### Docs
+- [480dcf7](https://github.com/quay/claircore/commit/480dcf740ae45f89f6adb22465e3d77f517871f0): various doc fixups
+### Libvuln
+- [b0ba2f2](https://github.com/quay/claircore/commit/b0ba2f2a0929c17cd349a733392eb6180558865b): rework constuctor
+### Remotematcher
+- [b95d984](https://github.com/quay/claircore/commit/b95d9840113db0b3ca4937a10f3a8eef920d2ffd): Implement RemoteMatcher for CRDA
+### Severity-Mapping
+- [fc1aa30](https://github.com/quay/claircore/commit/fc1aa30841820e309653733db660c56deae033f8): remove defcon1 severity
+### Updates
+- [966de96](https://github.com/quay/claircore/commit/966de967953448b7358fbbfc26e7905ad64b71a2): perform implicit run
+### Vulnstore
+- [20a4437](https://github.com/quay/claircore/commit/20a4437a078309864db9a0fad8a0f4c81b6059a4): fix gc live lock
+- [1f4717f](https://github.com/quay/claircore/commit/1f4717f22ad65342fb127f718bd7a55faed23cd1): add Initialized method
+
+<a name="v0.2.0"></a>
+## [v0.2.0] - 2021-01-19
+### All
+- [3a4e3d3](https://github.com/quay/claircore/commit/3a4e3d3e053cd3856795565e1b674e2ba4b03900): logging switch
+### Alpine
+- [f639452](https://github.com/quay/claircore/commit/f639452bfe3872d730e11462e117f122a5fcde7a): fix typo of ecosystem
+### Aws
+- [1cdf08c](https://github.com/quay/claircore/commit/1cdf08cc721306466222555c552f41994c08da49): test cleanup
+### Cctool
+- [826aacb](https://github.com/quay/claircore/commit/826aacbf6ed9abcd78529fedc91417a511743863): copy loop variable
+### Chore
+- [4fac8b5](https://github.com/quay/claircore/commit/4fac8b5e210d2446d13680c2f3d062c0efb02efa): v0.2.0 changelog bump
+### Cicd
+- [e749f3b](https://github.com/quay/claircore/commit/e749f3b414416f823a545753419c9574cecaecc7): drop go1.13 support
+- [733d8f1](https://github.com/quay/claircore/commit/733d8f1560b6c3d48560f7cc170536578fa7b7ac): use quay.io/claircore/golang in CI
+### Claircore
+- [316fc25](https://github.com/quay/claircore/commit/316fc25dfc829bd57d3716ff9dce54af5a19c899): lint test names
+### Controller
+- [e36877c](https://github.com/quay/claircore/commit/e36877c2d7f6a7cdf627b69472c72cf4496146d2): test cleanup
+### Debian
+- [31956a9](https://github.com/quay/claircore/commit/31956a91be90cb37bd00d23e19b7a3584ecc9cd0): test cleanup
+### Fastesturl
+- [cd55757](https://github.com/quay/claircore/commit/cd557578d12a62345e1a7d34304e3bd678a3db3c): use Cleanup method in tests
+### Fetch
+- [5ac709b](https://github.com/quay/claircore/commit/5ac709b5fb90641ee0a0972faf9a826cba278063): turn layer fetcher into a generic fetcher
+### Go.Mod
+- [eed4aaa](https://github.com/quay/claircore/commit/eed4aaa16ee12899d728b0f6f35cba4a5f9aca25): remove testify dependency
+### Go.Sum
+- [11df716](https://github.com/quay/claircore/commit/11df71637e1291477846c199d6352dcf7f66fbb5): clean sum database
+### Indexer
+- [313c8c4](https://github.com/quay/claircore/commit/313c8c43e180b080c675b4e0629485c76f553cbd): filter scanners during manifest check
+### Layerscanner
+- [4695c34](https://github.com/quay/claircore/commit/4695c348ad4bb6c3d7038dd4f2f612e449fdd357): test cleanup
+- [0615a7b](https://github.com/quay/claircore/commit/0615a7b0550e5326e06c69354cd0d00647b7abb6): return unused error
+### Libindex
+- [ddb6b59](https://github.com/quay/claircore/commit/ddb6b5951bf9e053b4e3dad686dc2792b9b33877): remove sqlx
+- [bf73eb8](https://github.com/quay/claircore/commit/bf73eb8663872ad42efe84852a0c1cc3bda07c44): return pointer to AffectedManifests
+### Libvulnhttp
+- [f31eec7](https://github.com/quay/claircore/commit/f31eec798c64c1ecd81b54906d3b49ab28231ed1): add DisableBackgroundUpdates config option
+### Linux
+- [8bb87e2](https://github.com/quay/claircore/commit/8bb87e23e68ec95b4f110cafdb9f473798113851): lint test name
+### Misc
+- [4840e07](https://github.com/quay/claircore/commit/4840e07d7f9b423084d450843d1f1b11048e1190): go vet fixes
+### Photon
+- [e6e2310](https://github.com/quay/claircore/commit/e6e2310b90ff2bdff09e2f84575cc49764a26e4e): add normalized severity
+### Postgres
+- [a1519ae](https://github.com/quay/claircore/commit/a1519ae885e2a9cfcee60e7dd4f28a18bab69a80): test cleanup
+- [f865df5](https://github.com/quay/claircore/commit/f865df54ed9152bc992956ac71822d4d2466a35c): lint test name
+- [bb8324d](https://github.com/quay/claircore/commit/bb8324d9aff155f87b52c4060abe985d48d0dcee): check subtest return instead of closure
+- [46d391e](https://github.com/quay/claircore/commit/46d391eb1e4eca7999d7a4149291d52c4bd228ec): use Cleanup in tests
+- [b3d19dd](https://github.com/quay/claircore/commit/b3d19ddadbb520f13371b69434ead88006e68755): use Cleanup in tests
+- [8017e85](https://github.com/quay/claircore/commit/8017e8535c5c8f61f8fa6f92d25de1531ab72825): remove distlock sqlx implementation
+- [e19e115](https://github.com/quay/claircore/commit/e19e115e80c9040be0e2142eea37c4165f0eba22): remove test harness sqlx usage
+- [d84781f](https://github.com/quay/claircore/commit/d84781f7800ffeb352303031e47776df7e56b411): remove indexer sqlx usage
+- [947e853](https://github.com/quay/claircore/commit/947e85375c6f53d23521fa0294cf0ea8fa575835): remove unused file
+- [0cc6579](https://github.com/quay/claircore/commit/0cc6579839ec54e03e1456ac4a2444c269010795): fix update_operation response
+### Rhel
+- [b7a279c](https://github.com/quay/claircore/commit/b7a279ceecd47a87460be86b0dc93b2987a17414): lint test names
+### Updaters
+- [886d62b](https://github.com/quay/claircore/commit/886d62bdbee04ab01ce0237d69145907b33ee893): fix WithEnabled option
+- [5385f5d](https://github.com/quay/claircore/commit/5385f5d5b78486e6f73f00e70d2cd21d57a17827): consolidate into manager
+### Vulnstore
+- [77df2c7](https://github.com/quay/claircore/commit/77df2c77881678726d601df50f0e2600de3cb67f): implement active gc
+### Reverts
+- cicd: use CI golang image from quay.io
+
+
 <a name="v0.1.20"></a>
-## [v0.1.20] - 2020-12-10
+## [v0.1.20] - 2020-12-11
 ### Alpine
 - [98d3828](https://github.com/quay/claircore/commit/98d3828bb616ec5e3096575670e3f1a8f7430ee8): switch to JSON security DB
+### Chore
+- [2313419](https://github.com/quay/claircore/commit/231341985ebe018d1970b70d3c9ebd55a2d1a6cd): v0.1.20 changelog bump
 ### Cicd
 - [97fa28b](https://github.com/quay/claircore/commit/97fa28bcb92a7b0db1b15cfb6cc45bd678d3f268): use CI golang image from quay.io
 ### Docs
@@ -569,7 +670,11 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.1.20...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.1.21...HEAD
+[v0.1.21]: https://github.com/quay/claircore/compare/v0.3.1...v0.1.21
+[v0.3.1]: https://github.com/quay/claircore/compare/v0.3.0...v0.3.1
+[v0.3.0]: https://github.com/quay/claircore/compare/v0.2.0...v0.3.0
+[v0.2.0]: https://github.com/quay/claircore/compare/v0.1.20...v0.2.0
 [v0.1.20]: https://github.com/quay/claircore/compare/v0.1.19...v0.1.20
 [v0.1.19]: https://github.com/quay/claircore/compare/v0.1.18...v0.1.19
 [v0.1.18]: https://github.com/quay/claircore/compare/v0.1.17...v0.1.18
