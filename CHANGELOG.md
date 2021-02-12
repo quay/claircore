@@ -2,8 +2,18 @@
 ## [Unreleased]
 
 
+<a name="v0.3.2"></a>
+## [v0.3.2] - 2021-02-12
+### Cicd
+- [6efb496](https://github.com/quay/claircore/commit/6efb496f0e8ddf9dc71857ab8ffd5b8753314a59): fix gh action script
+- [67fa955](https://github.com/quay/claircore/commit/67fa9554f929364f7c6d9fad47011d627efe5578): filter tags for stable branch releases
+### Rhel
+- [5eba440](https://github.com/quay/claircore/commit/5eba4405925a56e073b10cf4959f9fca0788a666): fix cpe mapping type assertion
+
 <a name="v0.3.1"></a>
-## [v0.3.1] - 2021-02-10
+## [v0.3.1] - 2021-02-11
+### Chore
+- [e5743e3](https://github.com/quay/claircore/commit/e5743e3fd13268bda568de194d9f04d32c12b9f3): v0.3.1 changelog bump
 ### Libindex
 - [2cf7d4a](https://github.com/quay/claircore/commit/2cf7d4ad5002677f3f8e0baf047d66acbe93ea47): limit MaxConns in controller pool to 1
 
@@ -663,7 +673,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.3.2...HEAD
+[v0.3.2]: https://github.com/quay/claircore/compare/v0.3.1...v0.3.2
 [v0.3.1]: https://github.com/quay/claircore/compare/v0.3.0...v0.3.1
 [v0.3.0]: https://github.com/quay/claircore/compare/v0.2.0...v0.3.0
 [v0.2.0]: https://github.com/quay/claircore/compare/v0.1.20...v0.2.0
