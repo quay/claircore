@@ -83,7 +83,7 @@ func NewManager(ctx context.Context, store vulnstore.Updater, pool *pgxpool.Pool
 		return nil, errors.New("update retention cannot be 1")
 	}
 
-	err := updater.Configure(ctx, m.factories, m.configs, m.client)
+	err := driver.Configure(ctx, m.factories, m.configs, m.client)
 	if err != nil {
 		return nil, fmt.Errorf("failed to configure updater set factory: %w", err)
 	}

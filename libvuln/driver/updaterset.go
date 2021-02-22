@@ -2,8 +2,11 @@ package driver
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 	"regexp"
+	"strings"
 )
 
 // ErrExists is an error returned if the updater
@@ -101,6 +104,34 @@ func (s *UpdaterSet) RegexFilter(regex string) error {
 		if !re.MatchString(u.Name()) {
 			delete(s.set, name)
 		}
+	}
+	return nil
+}
+
+// Configure calls the Configure method on all the passed-in
+// UpdaterSetFactories.
+func Configure(ctx context.Context, fs map[string]UpdaterSetFactory, cfg map[string]ConfigUnmarshaler, c *http.Client) error {
+	errd := false
+	var b strings.Builder
+	b.WriteString("updater: errors configuring factories:")
+	if c == nil {
+		c = http.DefaultClient
+	}
+
+	for name, fac := range fs {
+		f, fOK := fac.(Configurable)
+		cf, cfOK := cfg[name]
+		if fOK && cfOK {
+			if err := f.Configure(ctx, cf, c); err != nil {
+				errd = true
+				b.WriteString("\n\t")
+				b.WriteString(err.Error())
+			}
+		}
+	}
+
+	if errd {
+		return errors.New(b.String())
 	}
 	return nil
 }
