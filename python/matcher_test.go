@@ -39,19 +39,11 @@ func TestMatcher(t *testing.T) {
 			R: claircore.IndexRecord{
 				Package: &claircore.Package{
 					Version: "0.9.8",
-					NormalizedVersion: claircore.Version{
-						Kind: "pep440",
-						V:    [...]int32{0, 0, 9, 8, 0, 0, 0, 0, 0, 0},
-					},
 				},
 			},
 			V: claircore.Vulnerability{
-				Range: &claircore.Range{
-					Lower: claircore.Version{Kind: "pep440"},
-					Upper: claircore.Version{
-						Kind: "pep440",
-						V:    [...]int32{0, 1, 0, 0, 0, 0, 0, 0, 0, 0},
-					},
+				Package: &claircore.Package{
+					Version: "==0.9.8",
 				},
 			},
 			Want:    true,
@@ -62,22 +54,11 @@ func TestMatcher(t *testing.T) {
 			R: claircore.IndexRecord{
 				Package: &claircore.Package{
 					Version: "1.4.3",
-					NormalizedVersion: claircore.Version{
-						Kind: "pep440",
-						V:    [...]int32{0, 1, 4, 3, 0, 0, 0, 0, 0, 0},
-					},
 				},
 			},
 			V: claircore.Vulnerability{
-				Range: &claircore.Range{
-					Lower: claircore.Version{
-						Kind: "pep440",
-						V:    [...]int32{0, 1, 0, 0, 0, 0, 0, 0, 0, 0},
-					},
-					Upper: claircore.Version{
-						Kind: "pep440",
-						V:    [...]int32{0, 1, 5, 0, 0, 0, 0, 0, 0, 0},
-					},
+				Package: &claircore.Package{
+					Version: "<1.5.0,>1.4.1",
 				},
 			},
 			Want:    true,
@@ -88,22 +69,11 @@ func TestMatcher(t *testing.T) {
 			R: claircore.IndexRecord{
 				Package: &claircore.Package{
 					Version: "1.4.3",
-					NormalizedVersion: claircore.Version{
-						Kind: "pep440",
-						V:    [...]int32{0, 1, 4, 3, 0, 0, 0, 0, 0, 0},
-					},
 				},
 			},
 			V: claircore.Vulnerability{
-				Range: &claircore.Range{
-					Lower: claircore.Version{
-						Kind: "pep440",
-						V:    [...]int32{0, 1, 0, 0, 0, 0, 0, 0, 0, 0},
-					},
-					Upper: claircore.Version{
-						Kind: "pep440",
-						V:    [...]int32{0, 1, 4, 3, 0, 0, 0, 0, 0, 0},
-					},
+				Package: &claircore.Package{
+					Version: "==1.4.1",
 				},
 			},
 			Matcher: &python.Matcher{},
