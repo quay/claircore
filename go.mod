@@ -3,6 +3,7 @@ module github.com/quay/claircore
 go 1.14
 
 require (
+	github.com/aquasecurity/go-pep440-version v0.0.0-20210121094942-22b2f8951d46
 	github.com/crgimenes/goconfig v1.2.1
 	github.com/docker-slim/docker-slim v0.0.0-20200524075151-79490f5f1cde
 	github.com/doug-martin/goqu/v8 v8.6.0
@@ -25,6 +26,5 @@ require (
 	go.opentelemetry.io/otel v0.15.0
 	golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208
 	golang.org/x/tools v0.0.0-20200811032001-fd80f4dbb3ea
-	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
 )
