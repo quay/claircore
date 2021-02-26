@@ -3,14 +3,13 @@ package python
 import (
 	"context"
 
+	pep440 "github.com/aquasecurity/go-pep440-version"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
-	"github.com/quay/claircore/pkg/pep440"
 )
 
 var (
-	_ driver.Matcher       = (*Matcher)(nil)
-	_ driver.VersionFilter = (*Matcher)(nil)
+	_ driver.Matcher = (*Matcher)(nil)
 )
 
 // Matcher attempts to correlate discovered python packages with reported
@@ -32,24 +31,24 @@ func (*Matcher) Query() []driver.MatchConstraint {
 
 // Vulnerable implements driver.Matcher.
 func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
-	if vuln.Range != nil && record.Package.NormalizedVersion.Kind != "" {
-		return vuln.Range.Contains(&record.Package.NormalizedVersion), nil
+	// if the vuln is not associated with any package,
+	// return not vulnerable.
+	if vuln.Package == nil {
+		return false, nil
 	}
 
-	pkg, err := pep440.Parse(record.Package.Version)
+	v, err := pep440.Parse(record.Package.Version)
 	if err != nil {
-		return false, err
+		return false, nil
 	}
-	fixed, err := pep440.Parse(vuln.FixedInVersion)
+
+	spec, err := pep440.NewSpecifiers(vuln.Package.Version)
 	if err != nil {
-		return false, err
+		return false, nil
 	}
-	// pkg < fixed
-	return pkg.Compare(&fixed) == -1, nil
+
+	if spec.Check(v) {
+		return true, nil
+	}
+	return false, nil
 }
-
-// VersionFilter opts in to filtering versions in the database.
-func (*Matcher) VersionFilter() {}
-
-// VersionAuthoritative implements driver.VersionFilter.
-func (*Matcher) VersionAuthoritative() bool { return true }

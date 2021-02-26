@@ -18,9 +18,9 @@ import (
 	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/label"
 
+	pep440 "github.com/aquasecurity/go-pep440-version"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
-	"github.com/quay/claircore/pkg/pep440"
 	"github.com/quay/claircore/pkg/tmp"
 )
 
@@ -251,10 +251,8 @@ func init() {
 }
 
 func (db db) Vulnerabilites(ctx context.Context, repo *claircore.Repository, updater string) ([]*claircore.Vulnerability, error) {
-	const opSet = `<>=!`
 	ctx = baggage.ContextWithValues(ctx,
 		label.String("component", "pyupio/db.Vulnerabilities"))
-
 	var mungeCt int
 	var ret []*claircore.Vulnerability
 	for k, m := range db {
@@ -266,77 +264,35 @@ func (db db) Vulnerabilites(ctx context.Context, repo *claircore.Repository, upd
 			return nil, err
 		}
 		for _, e := range es {
-		Vuln:
-			for _, spec := range e.Specs {
-				v := &claircore.Vulnerability{
-					Name:        e.ID,
-					Updater:     updater,
-					Description: e.Advisory,
-					Package:     &claircore.Package{Name: strings.ToLower(k), Kind: claircore.BINARY},
-					Repo:        repo,
-					Range:       &claircore.Range{},
-				}
-				if e.CVE != nil {
-					v.Name += fmt.Sprintf(" (%s)", *e.CVE)
-				}
-				specs := strings.Split(spec, ",")
-				ls := len(specs)
-				if ls == 1 {
-					v.Range.Lower = vZero.Version()
-				}
-				if ls > 2 && ls%2 == 1 {
-					zlog.Warn(ctx).
-						Str("spec", spec).
-						Msg("malformed database entry")
-					continue
-				}
-				for _, r := range specs {
-					i := strings.LastIndexAny(r, opSet) + 1
-					ver, err := pep440.Parse(r[i:])
-					if err != nil {
-						zlog.Info(ctx).
-							Err(err).
-							Str("version", r[i:]).
-							Msg("unable to parse version as pep440")
-						continue Vuln
-					}
-					switch strings.TrimSpace(r[:i]) {
-					case ">":
-						// Treat the same as greater-than-equal becase we can't
-						// turn one into the other without having a list of
-						// versions.
-						mungeCt++
-						fallthrough
-					case ">=":
-						v.Range.Lower = ver.Version()
-					case "<=":
-						mungeCt++
-						ver.Post++
-						fallthrough
-					case "<":
-						v.FixedInVersion = ver.String()
-						v.Range.Upper = ver.Version()
-					case "==":
-						// Since range is half-open, this is equivalent to
-						// specifying exactly one version.
-						v.Range.Lower = ver.Version()
-						v.Range.Upper = ver.Version()
-					default:
-						zlog.Warn(ctx).
-							Str("comparison", r[:i]).
-							Msg("unexpected comparison, please file an issue")
-					}
-				}
-				if v.Range.Lower.Compare(&v.Range.Upper) == 1 {
-					zlog.Debug(ctx).
-						Str("id", e.ID).
-						Str("name", k).
-						Str("spec", spec).
-						Msg("malformed range")
-					continue
-				}
-				ret = append(ret, v)
+			// is specifier valid
+			_, err := pep440.NewSpecifiers(e.V)
+			if err != nil {
+				zlog.Warn(ctx).
+					Str("spec", e.V).
+					Msg("malformed database entry")
+				mungeCt++
+				continue
 			}
+			v := &claircore.Vulnerability{
+				Name:        e.ID,
+				Updater:     updater,
+				Description: e.Advisory,
+				Package: &claircore.Package{
+					Name: strings.ToLower(k), // pip database lower cases all package names?
+					Kind: claircore.BINARY,
+					// pip provides a "specifier" to understand if a particular package
+					// version is affected by a vulnerability.
+					// we will store this "specifier" here indicating this vulnerability
+					// affects the package versions in this "specifier".
+					Version: e.V,
+				},
+				Repo: repo,
+			}
+			// add cve name to vuln name
+			if e.CVE != nil {
+				v.Name += fmt.Sprintf(" (%s)", *e.CVE)
+			}
+			ret = append(ret, v)
 		}
 	}
 	if mungeCt > 0 {
