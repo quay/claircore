@@ -13,17 +13,9 @@ import (
 	"github.com/jackc/pgx/v4/stdlib"
 	"github.com/remind101/migrate"
 
-	"github.com/quay/claircore/alpine"
-	"github.com/quay/claircore/aws"
-	"github.com/quay/claircore/debian"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/migrations"
-	"github.com/quay/claircore/oracle"
-	"github.com/quay/claircore/photon"
 	"github.com/quay/claircore/python"
-	"github.com/quay/claircore/rhel"
-	"github.com/quay/claircore/suse"
-	"github.com/quay/claircore/ubuntu"
 )
 
 const (
@@ -102,15 +94,15 @@ type Opts struct {
 // all the matchers libvuln will use to match
 // index records to vulnerabilities.
 var defaultMatchers = []driver.Matcher{
-	&alpine.Matcher{},
-	&aws.Matcher{},
-	&debian.Matcher{},
-	&oracle.Matcher{},
-	&photon.Matcher{},
+	// &alpine.Matcher{},
+	// &aws.Matcher{},
+	// &debian.Matcher{},
+	// &oracle.Matcher{},
+	// &photon.Matcher{},
 	&python.Matcher{},
-	&rhel.Matcher{},
-	&suse.Matcher{},
-	&ubuntu.Matcher{},
+	// &rhel.Matcher{},
+	// &suse.Matcher{},
+	// &ubuntu.Matcher{},
 }
 
 // parse is an internal method for constructing

@@ -272,7 +272,7 @@ func (db db) Vulnerabilites(ctx context.Context, repo *claircore.Repository, upd
 					Name:        e.ID,
 					Updater:     updater,
 					Description: e.Advisory,
-					Package:     &claircore.Package{Name: strings.ToLower(k), Kind: claircore.BINARY},
+					Package:     &claircore.Package{Name: strings.ToLower(k), Kind: claircore.BINARY, Version: e.V},
 					Repo:        repo,
 					Range:       &claircore.Range{},
 				}

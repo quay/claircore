@@ -25,6 +25,10 @@ func Match(ctx context.Context, ir *claircore.IndexReport, matchers []driver.Mat
 
 	// extract IndexRecords from the IndexReport
 	records := ir.IndexRecords()
+	for _, record := range records {
+		if record.Package.Name == "cryptography" {
+		}
+	}
 	// a channel where concurrent controllers will deliver vulnerabilities affecting a package.
 	// maps a package id to a list of vulnerabilities.
 	ctrlC := make(chan map[string][]*claircore.Vulnerability, 1024)
