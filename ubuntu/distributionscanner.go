@@ -113,7 +113,7 @@ func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]
 // parse attempts to match all Ubuntu release regexp and returns the associated
 // distribution if it exists.
 //
-// separated to it's own method to aide testing.
+// separated into its own method to aid testing.
 func (ds *DistributionScanner) parse(buff *bytes.Buffer) *claircore.Distribution {
 	for _, ur := range ubuntuRegexes {
 		if ur.regexp.Match(buff.Bytes()) {
