@@ -269,7 +269,6 @@ func (e *affectedE2E) IndexManifest(t *testing.T) {
 func (e *affectedE2E) AffectedManifests(t *testing.T) {
 	ctx := zlog.Test(e.ctx, t)
 	for _, vuln := range e.vr.Vulnerabilities {
-		zlog.Debug(ctx).Msgf("vuln: %+v", vuln)
 		hashes, err := e.store.AffectedManifests(ctx, *vuln)
 		if err != nil {
 			t.Fatalf("failed to retrieve affected manifest for vuln %s: %v", vuln.ID, err)
