@@ -202,7 +202,6 @@ func (l *Libindex) AffectedManifests(ctx context.Context, vulns []claircore.Vuln
 		for n := start; n < end; n++ {
 			nn := n
 			do := func() error {
-				zlog.Debug(ctx).Str("id", vulns[nn].ID).Msg("evaluating vulnerability")
 				if eCTX.Err() != nil {
 					return eCTX.Err()
 				}
