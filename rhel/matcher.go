@@ -44,6 +44,9 @@ func (m *Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord,
 	if vuln.FixedInVersion != "" {
 		vulnVer = version.NewVersion(vuln.FixedInVersion)
 		cmp = func(i int) bool { return i == version.LESS }
+	} else {
+		// If a vulnerability doesn't have FixedInVersion, assume it is unfixed.
+		vulnVer = version.NewVersion("65535:0")
 	}
 	// compare version and architecture
 	return cmp(pkgVer.Compare(vulnVer)) && vuln.ArchOperation.Cmp(record.Package.Arch, vuln.Package.Arch), nil
