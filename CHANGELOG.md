@@ -2,8 +2,21 @@
 ## [Unreleased]
 
 
+<a name="v0.1.23"></a>
+## [v0.1.23] - 2021-03-08
+### Cicd
+- [62575fd](https://github.com/quay/claircore/commit/62575fdb7181d456a3507887bee6c06379fe50e5): bump out go1.14 and bump in go1.16
+### Fetcher
+- [fef216a](https://github.com/quay/claircore/commit/fef216a02f17792913850ccbc82d94abcf90bb64): relax allowable gzip types
+ - Closes [#303](https://github.com/quay/claircore/issues/303)### Indexer
+- [6bf358b](https://github.com/quay/claircore/commit/6bf358b384114bf440db8c2f70be5eee8b6d71cd): regen indexer test data
+### Python
+- [763ccdc](https://github.com/quay/claircore/commit/763ccdc115b3d05dcf8572d0f1374303f81b674c): move to traditional mapping
+
 <a name="v0.1.22"></a>
-## [v0.1.22] - 2021-01-22
+## [v0.1.22] - 2021-02-12
+### Chore
+- [a9c9919](https://github.com/quay/claircore/commit/a9c99190124272360804571c0540d1b0a6b9edbd): v0.1.22 changelog bump
 ### Cicd
 - [d493b6f](https://github.com/quay/claircore/commit/d493b6f685344ce8de0bafc410e757d95f77b007): fix release notes
 
@@ -410,7 +423,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.1.22...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.1.23...HEAD
+[v0.1.23]: https://github.com/quay/claircore/compare/v0.1.22...v0.1.23
 [v0.1.22]: https://github.com/quay/claircore/compare/v0.1.21...v0.1.22
 [v0.1.21]: https://github.com/quay/claircore/compare/v0.1.20...v0.1.21
 [v0.1.20]: https://github.com/quay/claircore/compare/v0.1.19...v0.1.20
