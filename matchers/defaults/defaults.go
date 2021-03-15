@@ -1,5 +1,4 @@
-//
-// Importing this package registers default updaters via its init function.
+// Importing this package registers default matchers via its init function.
 package defaults
 
 import (
@@ -33,7 +32,7 @@ func init() {
 }
 
 // Error reports if an error was encountered when initializing the default
-// updaters.
+// matchers.
 func Error() error {
 	return regerr
 }
