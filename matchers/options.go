@@ -5,11 +5,11 @@ import (
 )
 
 // WithEnabled configures the Matchers to only run the specified
-// updater sets.
+// matchers.
 //
-// If enabled == nil all default updater sets will run (same as not providing this option to the constructor at all).
-// If len(enabled) == 0 no default updater sets will run.
-// If len(enabled) > 0 only provided updater sets will be ran.
+// If enabled == nil all default matchers will run (same as not providing this option to the constructor at all).
+// If len(enabled) == 0 no default matchers will run.
+// If len(enabled) > 0 only provided matchers will be ran.
 func WithEnabled(enabled []string) MatchersOption {
 	return func(m *Matchers) {
 		if enabled == nil {
@@ -28,10 +28,10 @@ func WithEnabled(enabled []string) MatchersOption {
 	}
 }
 
-// WithConfigs tells the Matchers to configure each updater where
+// WithConfigs tells the Matchers to configure each matcher where
 // a configuration is provided.
 //
-// Configuration of individual updaters is delegated to updater/registry.go
+// Configuration of individual matchers is delegated to matchers/registry/registry.go
 // Note: this option is optimal when ran after WithEnabled option. However,
 // this option has no strict depedency on others.
 func WithConfigs(cfgs Configs) MatchersOption {
@@ -41,11 +41,7 @@ func WithConfigs(cfgs Configs) MatchersOption {
 }
 
 // WithOutOfTree allows callers to provide their own out-of-tree
-// updaters.
-//
-// note: currently we will never configure the outOfTree matcher
-// factory. if this changes consider making this option a required
-// to avoid missing configuration
+// matchers.
 func WithOutOfTree(outOfTree []driver.Matcher) MatchersOption {
 	return func(m *Matchers) {
 		m.matchers = outOfTree

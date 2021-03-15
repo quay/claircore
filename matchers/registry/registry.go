@@ -1,7 +1,4 @@
 // Package matchers holds a registry of default matchers.
-//
-// A set of in-tree matchers can be added by using the defaults package's Set
-// function.
 package registry
 
 import (
@@ -49,7 +46,7 @@ func Registered() map[string]driver.MatcherFactory {
 func Configure(ctx context.Context, fs map[string]driver.MatcherFactory, cfg map[string]driver.MatcherConfigUnmarshaler, c *http.Client) error {
 	errd := false
 	var b strings.Builder
-	b.WriteString("updater: errors configuring factories:")
+	b.WriteString("matchers: errors configuring factories:")
 	if c == nil {
 		c = http.DefaultClient
 	}
