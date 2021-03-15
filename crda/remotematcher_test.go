@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -47,7 +48,8 @@ type matcherTestcase struct {
 }
 
 func newMatcher(t *testing.T, srv *httptest.Server) *Matcher {
-	m, err := NewMatcher(WithClient(srv.Client()), WithURL(srv.URL))
+	url, _ := url.Parse(srv.URL)
+	m, err := NewMatcher(WithClient(srv.Client()), WithURL(url))
 	if err != nil {
 		t.Errorf("there should be no err %v", err)
 	}

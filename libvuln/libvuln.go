@@ -16,6 +16,7 @@ import (
 	"github.com/quay/claircore/internal/vulnstore/postgres"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/updates"
+	"github.com/quay/claircore/matchers"
 )
 
 // Libvuln exports methods for scanning an IndexReport and created
@@ -55,8 +56,19 @@ func New(ctx context.Context, opts *Opts) (*Libvuln, error) {
 	l := &Libvuln{
 		store:           postgres.NewVulnStore(pool),
 		pool:            pool,
-		matchers:        opts.Matchers,
 		updateRetention: opts.UpdateRetention,
+	}
+
+	// create matchers based on the provided config.
+	l.matchers, err = matchers.NewMatchers(ctx,
+		opts.Client,
+		matchers.WithEnabled(opts.MatcherNames),
+		matchers.WithConfigs(opts.MatcherConfigs),
+		// matchers.WithOutOfTree(opts.Matchers),
+	)
+	zlog.Info(ctx).Int("len", len(l.matchers)).Msg("matchers created")
+	if err != nil {
+		return nil, err
 	}
 
 	// create update manager
