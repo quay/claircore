@@ -104,13 +104,9 @@ func WithClient(c *http.Client) Option {
 // WithHost sets the server host name that the matcher should use for requests.
 //
 // If not passed to NewMatcher, defaultHost will be used.
-func WithURL(uri string) Option {
-	u, err := url.Parse(uri)
+func WithURL(url *url.URL) Option {
 	return func(m *Matcher) error {
-		if err != nil {
-			return err
-		}
-		m.url = u
+		m.url = url
 		return nil
 	}
 }

@@ -69,10 +69,28 @@ type Opts struct {
 	// If you desire no updaters to run do not add an updater
 	// into this slice.
 	Updaters []driver.Updater
-	// A list of out-of-tree matchers you'd like libvuln to
-	// use.
+	// A slice of strings representing which
+	// matchers will be used.
 	//
-	// This list will me merged with the default matchers.
+	// If nil all default Matchers will be used
+	//
+	// The following names are supported by default:
+	// "alpine"
+	// "aws"
+	// "debian"
+	// "oracle"
+	// "photon"
+	// "python"
+	// "rhel"
+	// "suse"
+	// "ubuntu"
+	// "crda" - remotematcher calls hosted api via RPC.
+	MatcherNames []string
+
+	// Config holds configuration blocks for MatcherFactories and Matchers,
+	// keyed by name.
+	MatcherConfigs map[string]driver.MatcherConfigUnmarshaler
+
 	Matchers []driver.Matcher
 
 	// UpdateWorkers controls the number of update workers running concurrently.
