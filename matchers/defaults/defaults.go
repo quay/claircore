@@ -7,8 +7,18 @@ import (
 	"sync"
 	"time"
 
+	"github.com/quay/claircore/alpine"
+	"github.com/quay/claircore/aws"
 	"github.com/quay/claircore/crda"
+	"github.com/quay/claircore/debian"
+	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/matchers/registry"
+	"github.com/quay/claircore/oracle"
+	"github.com/quay/claircore/photon"
+	"github.com/quay/claircore/python"
+	"github.com/quay/claircore/rhel"
+	"github.com/quay/claircore/suse"
+	"github.com/quay/claircore/ubuntu"
 )
 
 var (
@@ -28,8 +38,28 @@ func Error() error {
 	return regerr
 }
 
+// defaultMatchers is a variable containing
+// all the matchers libvuln will use to match
+// index records to vulnerabilities.
+var defaultMatchers = []driver.Matcher{
+	&alpine.Matcher{},
+	&aws.Matcher{},
+	&debian.Matcher{},
+	&oracle.Matcher{},
+	&photon.Matcher{},
+	&python.Matcher{},
+	&rhel.Matcher{},
+	&suse.Matcher{},
+	&ubuntu.Matcher{},
+}
+
 func inner(ctx context.Context) error {
 	registry.Register("crda", &crda.Factory{})
+
+	for _, m := range defaultMatchers {
+		mf := driver.MatcherStatic(m)
+		registry.Register(m.Name(), mf)
+	}
 
 	return nil
 }

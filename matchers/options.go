@@ -43,18 +43,11 @@ func WithConfigs(cfgs Configs) MatchersOption {
 // WithOutOfTree allows callers to provide their own out-of-tree
 // updaters.
 //
-// note: currently we will never configure the outOfTree updater
+// note: currently we will never configure the outOfTree matcher
 // factory. if this changes consider making this option a required
 // to avoid missing configuration
-// func WithOutOfTree(outOfTree []driver.Updater) MatchersOption {
-// 	return func(m *Matchers) {
-// 		us := driver.NewUpdaterSet()
-// 		for _, u := range outOfTree {
-// 			if err := us.Add(u); err != nil {
-// 				// duplicate updater, ignore.
-// 				continue
-// 			}
-// 		}
-// 		m.factories["outOfTree"] = driver.StaticSet(us)
-// 	}
-// }
+func WithOutOfTree(outOfTree []driver.Matcher) MatchersOption {
+	return func(m *Matchers) {
+		m.matchers = outOfTree
+	}
+}

@@ -13,17 +13,8 @@ import (
 	"github.com/jackc/pgx/v4/stdlib"
 	"github.com/remind101/migrate"
 
-	"github.com/quay/claircore/alpine"
-	"github.com/quay/claircore/aws"
-	"github.com/quay/claircore/debian"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/migrations"
-	"github.com/quay/claircore/oracle"
-	"github.com/quay/claircore/photon"
-	"github.com/quay/claircore/python"
-	"github.com/quay/claircore/rhel"
-	"github.com/quay/claircore/suse"
-	"github.com/quay/claircore/ubuntu"
 )
 
 const (
@@ -116,21 +107,6 @@ type Opts struct {
 	Client *http.Client
 }
 
-// defaultMatchers is a variable containing
-// all the matchers libvuln will use to match
-// index records to vulnerabilities.
-var defaultMatchers = []driver.Matcher{
-	&alpine.Matcher{},
-	&aws.Matcher{},
-	&debian.Matcher{},
-	&oracle.Matcher{},
-	&photon.Matcher{},
-	&python.Matcher{},
-	&rhel.Matcher{},
-	&suse.Matcher{},
-	&ubuntu.Matcher{},
-}
-
 // parse is an internal method for constructing
 // the necessary Updaters and Matchers for Libvuln
 // usage
@@ -159,9 +135,6 @@ func (o *Opts) parse(ctx context.Context) error {
 	if o.UpdateWorkers <= 0 {
 		o.UpdateWorkers = DefaultUpdateWorkers
 	}
-
-	// merge default matchers with any out-of-tree specified
-	o.Matchers = append(o.Matchers, defaultMatchers...)
 
 	if o.Client == nil {
 		o.Client = http.DefaultClient
