@@ -64,7 +64,7 @@ func New(ctx context.Context, opts *Opts) (*Libvuln, error) {
 		opts.Client,
 		matchers.WithEnabled(opts.MatcherNames),
 		matchers.WithConfigs(opts.MatcherConfigs),
-		// matchers.WithOutOfTree(opts.Matchers),
+		matchers.WithOutOfTree(opts.Matchers),
 	)
 	zlog.Info(ctx).Int("len", len(l.matchers)).Msg("matchers created")
 	if err != nil {

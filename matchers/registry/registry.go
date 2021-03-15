@@ -33,7 +33,7 @@ func Register(name string, f driver.MatcherFactory) {
 	pkg.fs[name] = f
 }
 
-// Registered returns a new map populated with the registered UpdaterSetFactories.
+// Registered returns a new map populated with the registered MatcherFactories.
 func Registered() map[string]driver.MatcherFactory {
 	pkg.Lock()
 	defer pkg.Unlock()
@@ -45,7 +45,7 @@ func Registered() map[string]driver.MatcherFactory {
 }
 
 // Configure calls the Configure method on all the passed-in
-// UpdaterSetFactories.
+// MatcherFactories.
 func Configure(ctx context.Context, fs map[string]driver.MatcherFactory, cfg map[string]driver.MatcherConfigUnmarshaler, c *http.Client) error {
 	errd := false
 	var b strings.Builder

@@ -22,6 +22,8 @@ type Matchers struct {
 	// configs provided to matchers once constructed.
 	configs Configs
 	client  *http.Client
+	// out-of-tree matchers
+	matchers []driver.Matcher
 }
 
 type MatchersOption func(m *Matchers)
@@ -48,14 +50,13 @@ func NewMatchers(ctx context.Context, client *http.Client, opts ...MatchersOptio
 
 	err := registry.Configure(ctx, m.factories, m.configs, m.client)
 	if err != nil {
-		return nil, fmt.Errorf("failed to configure updater set factory: %w", err)
+		return nil, fmt.Errorf("failed to configure matchers factory: %w", err)
 	}
 
 	matchers := []driver.Matcher{}
-	// constructing updater sets may require network access,
+	// constructing matchers may require network access,
 	// depending on the factory.
-	// if construction fails we will simply ignore those updater
-	// sets.
+	// if construction fails we will simply ignore those matcher.
 	for _, factory := range m.factories {
 		matcher, err := factory.Matcher(ctx)
 		if err != nil {
@@ -64,5 +65,9 @@ func NewMatchers(ctx context.Context, client *http.Client, opts ...MatchersOptio
 		}
 		matchers = append(matchers, matcher)
 	}
+
+	// merge default matchers with any out-of-tree specified.
+	matchers = append(matchers, m.matchers...)
+
 	return matchers, nil
 }

@@ -23,3 +23,18 @@ type MatcherConfigUnmarshaler func(interface{}) error
 type MatcherConfigurable interface {
 	Configure(context.Context, MatcherConfigUnmarshaler, *http.Client) error
 }
+
+// MatcherFactoryFunc would ease the registration of Matchers which doesn't
+// need Configurability.
+type MatcherFactoryFunc func(context.Context) (Matcher, error)
+
+func (u MatcherFactoryFunc) Matcher(ctx context.Context) (Matcher, error) {
+	return u(ctx)
+}
+
+// MatcherStatic creates an MatcherFactoryFunc returning the provided matcher.
+func MatcherStatic(s Matcher) MatcherFactory {
+	return MatcherFactoryFunc(func(_ context.Context) (Matcher, error) {
+		return s, nil
+	})
+}
