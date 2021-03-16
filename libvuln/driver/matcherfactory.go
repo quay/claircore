@@ -24,7 +24,7 @@ type MatcherConfigurable interface {
 	Configure(context.Context, MatcherConfigUnmarshaler, *http.Client) error
 }
 
-// MatcherFactoryFunc would ease the registration of Matchers which doesn't
+// MatcherFactoryFunc would ease the registration of Matchers which don't
 // need Configurability.
 type MatcherFactoryFunc func(context.Context) (Matcher, error)
 
