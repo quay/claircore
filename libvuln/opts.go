@@ -82,6 +82,10 @@ type Opts struct {
 	// keyed by name.
 	MatcherConfigs map[string]driver.MatcherConfigUnmarshaler
 
+	// A list of out-of-tree matchers you'd like libvuln to
+	// use.
+	//
+	// This list will me merged with the default matchers.
 	Matchers []driver.Matcher
 
 	// UpdateWorkers controls the number of update workers running concurrently.

@@ -22,13 +22,14 @@ type Matchers struct {
 	// configs provided to matchers once constructed.
 	configs Configs
 	client  *http.Client
-	// out-of-tree matchers
+	// out-of-tree matchers.
 	matchers []driver.Matcher
 }
 
 type MatchersOption func(m *Matchers)
 
-// NewManager will return a manager ready to have its Start or Run methods called.
+// NewMatchers will return a slice of Matcher created based on the provided
+// MatchersOption.
 func NewMatchers(ctx context.Context, client *http.Client, opts ...MatchersOption) ([]driver.Matcher, error) {
 	ctx = baggage.ContextWithValues(ctx,
 		label.String("component", "libvuln/matchers/NewMatchers"))
@@ -37,7 +38,6 @@ func NewMatchers(ctx context.Context, client *http.Client, opts ...MatchersOptio
 		client = http.DefaultClient
 	}
 
-	// the default Manager
 	m := &Matchers{
 		factories: registry.Registered(),
 		client:    client,
@@ -54,7 +54,7 @@ func NewMatchers(ctx context.Context, client *http.Client, opts ...MatchersOptio
 	}
 
 	matchers := []driver.Matcher{}
-	// constructing matchers may require network access,
+	// constructing matchers may return error,
 	// depending on the factory.
 	// if construction fails we will simply ignore those matcher.
 	for _, factory := range m.factories {

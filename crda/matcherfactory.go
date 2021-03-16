@@ -12,7 +12,7 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 )
 
-// Factory contains the configuration for fetching and parsing a pulp manifest.
+// Factory contains the configuration to connect with CRDA remote matcher.
 type Factory struct {
 	url    *url.URL
 	client *http.Client
