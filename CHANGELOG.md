@@ -2,8 +2,43 @@
 ## [Unreleased]
 
 
+<a name="v0.3.2"></a>
+## [v0.3.2] - 2021-03-18
+### Chore
+- [bfb37f0](https://github.com/quay/claircore/commit/bfb37f01c616db804aab3f6a361404a69a79ce28): update comments in distribution scanners
+### Chore: Release Quay.Io/Claircore/Golang
+- [d3ac00e](https://github.com/quay/claircore/commit/d3ac00e1808c61f47a8505de4931b694c54e5b7a): 1.16
+### Cicd
+- [7d55319](https://github.com/quay/claircore/commit/7d55319f6202145cbfe38faf3fde183642c53123): sort changelog by semver
+- [eae2b15](https://github.com/quay/claircore/commit/eae2b158422d7f53bce9a43a3a6e83f106ef2092): bump out go1.14 and bump in go1.16
+- [d9f28c4](https://github.com/quay/claircore/commit/d9f28c4f839c4c95cd4b9b6ed3f4d1226c7bcea3): gh action echo branch
+- [6efb496](https://github.com/quay/claircore/commit/6efb496f0e8ddf9dc71857ab8ffd5b8753314a59): fix gh action script
+- [67fa955](https://github.com/quay/claircore/commit/67fa9554f929364f7c6d9fad47011d627efe5578): filter tags for stable branch releases
+### Fetcher
+- [a30c62d](https://github.com/quay/claircore/commit/a30c62d09f709577f550e6be195c79dc6034e62f): relax allowable gzip types
+ - Closes [#303](https://github.com/quay/claircore/issues/303)### Fix
+- [892ba0c](https://github.com/quay/claircore/commit/892ba0c1d25ee2f3975e2fd1a1f3de569b149f5c): comments and docs
+- [7b054c2](https://github.com/quay/claircore/commit/7b054c2ed9226ee428019db3816d1e1c8a7f6f90): provide a way for default and out-of-tree matchers
+### Indexer
+- [47b877a](https://github.com/quay/claircore/commit/47b877a291acb619f2fa7a7acc34e17e7f3af3af): regen indexer test data
+### Libindex
+- [f49cea5](https://github.com/quay/claircore/commit/f49cea5d9de7eecdc7a260c274d39957788aff3c): remove annoying log
+### Matcherfactory
+- [25dd763](https://github.com/quay/claircore/commit/25dd763a32d25df98036039ba8871c99bf8ea21b): fix typos in comments
+### Matchers
+- [14bc1d2](https://github.com/quay/claircore/commit/14bc1d2e61b383c9e945efc170188dbe5493bdb7): add factory pattern
+### Python
+- [2cef538](https://github.com/quay/claircore/commit/2cef538f9b607447c3d9d186576cae5b0e115f63): move to traditional mapping
+### Rhel
+- [5eba440](https://github.com/quay/claircore/commit/5eba4405925a56e073b10cf4959f9fca0788a666): fix cpe mapping type assertion
+### Vulnstore
+- [aa46c6b](https://github.com/quay/claircore/commit/aa46c6bd1535df5850c52c3b219c0f48c6822abd): update-diff optimize
+- [7856456](https://github.com/quay/claircore/commit/78564563897a3f1573987ae05fb6ecb6539abe57): chunked vuln cleanup
+
 <a name="v0.3.1"></a>
-## [v0.3.1] - 2021-02-10
+## [v0.3.1] - 2021-02-11
+### Chore
+- [e5743e3](https://github.com/quay/claircore/commit/e5743e3fd13268bda568de194d9f04d32c12b9f3): v0.3.1 changelog bump
 ### Libindex
 - [2cf7d4a](https://github.com/quay/claircore/commit/2cf7d4ad5002677f3f8e0baf047d66acbe93ea47): limit MaxConns in controller pool to 1
 
@@ -90,6 +125,31 @@
 - [5385f5d](https://github.com/quay/claircore/commit/5385f5d5b78486e6f73f00e70d2cd21d57a17827): consolidate into manager
 ### Vulnstore
 - [77df2c7](https://github.com/quay/claircore/commit/77df2c77881678726d601df50f0e2600de3cb67f): implement active gc
+
+<a name="v0.1.23"></a>
+## [v0.1.23] - 2021-03-08
+### Cicd
+- [7076853](https://github.com/quay/claircore/commit/7076853d4f66c6a5b16d5a04b57f4b6eaf7564c2): bump out go1.14 and bump in go1.16
+### Fetcher
+- [fef216a](https://github.com/quay/claircore/commit/fef216a02f17792913850ccbc82d94abcf90bb64): relax allowable gzip types
+ - Closes [#303](https://github.com/quay/claircore/issues/303)### Indexer
+- [b79d4d6](https://github.com/quay/claircore/commit/b79d4d67e58854b84f60822f2bd995f6621125e6): regen indexer test data
+### Python
+- [710aaf4](https://github.com/quay/claircore/commit/710aaf48efe33478369d6cd7c9c00dff64ee7b6a): move to traditional mapping
+
+<a name="v0.1.22"></a>
+## [v0.1.22] - 2021-02-12
+### Chore
+- [a9c9919](https://github.com/quay/claircore/commit/a9c99190124272360804571c0540d1b0a6b9edbd): v0.1.22 changelog bump
+### Cicd
+- [d493b6f](https://github.com/quay/claircore/commit/d493b6f685344ce8de0bafc410e757d95f77b007): fix release notes
+
+<a name="v0.1.21"></a>
+## [v0.1.21] - 2021-02-12
+### Chore
+- [bf12f91](https://github.com/quay/claircore/commit/bf12f910ba89a92beb0ef2c01bf0a676c2c7ed06): v0.1.21 changelog bump
+### Rhel
+- [17a73b5](https://github.com/quay/claircore/commit/17a73b58e3092bca946582c68367fc9ccad0183d): fix cpe mapping type assertion
 ### Reverts
 - cicd: use CI golang image from quay.io
 
@@ -402,6 +462,9 @@
 
 <a name="v0.0.17"></a>
 ## [v0.0.17] - 2020-03-05
+
+<a name="v0.0.16"></a>
+## [v0.0.16] - 2020-02-28
 ### Alpine
 - [e800a02](https://github.com/quay/claircore/commit/e800a02a66bcf9787ae0249110613446c7329925): don't choke on very large package entries
 ### Cctool
@@ -442,48 +505,8 @@
 
 <a name="v0.0.15"></a>
 ## [v0.0.15] - 2020-03-03
-
-<a name="v0.0.16"></a>
-## [v0.0.16] - 2020-02-28
-### Alpine
-- [e800a02](https://github.com/quay/claircore/commit/e800a02a66bcf9787ae0249110613446c7329925): don't choke on very large package entries
-### Cctool
-- [ae4be45](https://github.com/quay/claircore/commit/ae4be45aff5e6e92906b29e8539120e6e776704f): dump vulnerability report with dump flag
-### Claircore
-- [c99a5c8](https://github.com/quay/claircore/commit/c99a5c81795384467cdf084e9e0dd399a679b6bd): add Version and Range types
-### Controller
-- [f6587f8](https://github.com/quay/claircore/commit/f6587f843e38d711cb6dd814fa5421981afa1dad): record manifest before using in logger
-### Driver
-- [e2d3d34](https://github.com/quay/claircore/commit/e2d3d3401a8b1b623ef29849bdc41543d822f3b5): add optional interface for database filtering
-### Fetcher
-- [ee72da6](https://github.com/quay/claircore/commit/ee72da6f22bfae606cf0f0dd7f425e828e1408e1): handle servers returning binary/octect-stream
-### Indexer, Vulnstore
-- [062bf90](https://github.com/quay/claircore/commit/062bf902e2c0bb48a7471038b99dfac89015019e): use version and range in the database
-- [f8d17dc](https://github.com/quay/claircore/commit/f8d17dceb95fd28195454f25e38e6f448fe3a2de): database connection correctness
-### Libindex
-- [655312e](https://github.com/quay/claircore/commit/655312e246684905c90c1d8567547edc3ec135b3): add python to defaults
-### Libvuln
-- [4e038fb](https://github.com/quay/claircore/commit/4e038fb886cc1b9d67636a5304378457c2a1fb00): add python to defaults
-### Makefile
-- [116d63f](https://github.com/quay/claircore/commit/116d63fca2f7ee54a86de2c63b61004a34ac1dd5): use variables in podman targets
-### Matcher
-- [b72885d](https://github.com/quay/claircore/commit/b72885dece5cc37bc08d23515fad152122e31885): use db filtering in controller
-### Migrations
-- [a5b9f0d](https://github.com/quay/claircore/commit/a5b9f0dd7a2d037e26731d746396de374e85a23a): add version representation to database
 ### Ovalutil
 - [a57487f](https://github.com/quay/claircore/commit/a57487fee6d9991ceafbdd63640365796d5fff30): correctness fixes
-### Pep440
-- [4436de2](https://github.com/quay/claircore/commit/4436de2f86e59a5f0d521d49eb8b5e8156d957ee): add package supporting PEP-440 versioning
-### Python
-- [3f6abba](https://github.com/quay/claircore/commit/3f6abba1745a184f1ed5a3fbd59e966ce179ab0b): add python package scanner
-### Pyupio
-- [1ada901](https://github.com/quay/claircore/commit/1ada90173f5f48226b7270b629e3735e28df2ef6): add pyup.io updater
-### Rhel
-- [ad81962](https://github.com/quay/claircore/commit/ad819628990ec96d382c5325c7e1748a8dfd3e53): check before dereferencing record.Distribution
-### Rpm
-- [75ef273](https://github.com/quay/claircore/commit/75ef2737fd066e34646c774b3220d2c6710e5133): don't extract whiteout files
-### Test
-- [b9c767b](https://github.com/quay/claircore/commit/b9c767bef8f62439b9073dc242e979903fc84e6c): add common package scanner machinery
 
 <a name="v0.0.14"></a>
 ## [v0.0.14] - 2020-02-10
@@ -663,10 +686,14 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.3.2...HEAD
+[v0.3.2]: https://github.com/quay/claircore/compare/v0.3.1...v0.3.2
 [v0.3.1]: https://github.com/quay/claircore/compare/v0.3.0...v0.3.1
 [v0.3.0]: https://github.com/quay/claircore/compare/v0.2.0...v0.3.0
-[v0.2.0]: https://github.com/quay/claircore/compare/v0.1.20...v0.2.0
+[v0.2.0]: https://github.com/quay/claircore/compare/v0.1.23...v0.2.0
+[v0.1.23]: https://github.com/quay/claircore/compare/v0.1.22...v0.1.23
+[v0.1.22]: https://github.com/quay/claircore/compare/v0.1.21...v0.1.22
+[v0.1.21]: https://github.com/quay/claircore/compare/v0.1.20...v0.1.21
 [v0.1.20]: https://github.com/quay/claircore/compare/v0.1.19...v0.1.20
 [v0.1.19]: https://github.com/quay/claircore/compare/v0.1.18...v0.1.19
 [v0.1.18]: https://github.com/quay/claircore/compare/v0.1.17...v0.1.18
@@ -696,9 +723,9 @@
 [v0.0.20]: https://github.com/quay/claircore/compare/v0.0.19...v0.0.20
 [v0.0.19]: https://github.com/quay/claircore/compare/v0.0.18...v0.0.19
 [v0.0.18]: https://github.com/quay/claircore/compare/v0.0.17...v0.0.18
-[v0.0.17]: https://github.com/quay/claircore/compare/v0.0.15...v0.0.17
-[v0.0.15]: https://github.com/quay/claircore/compare/v0.0.16...v0.0.15
-[v0.0.16]: https://github.com/quay/claircore/compare/v0.0.14...v0.0.16
+[v0.0.17]: https://github.com/quay/claircore/compare/v0.0.16...v0.0.17
+[v0.0.16]: https://github.com/quay/claircore/compare/v0.0.15...v0.0.16
+[v0.0.15]: https://github.com/quay/claircore/compare/v0.0.14...v0.0.15
 [v0.0.14]: https://github.com/quay/claircore/compare/v0.0.13...v0.0.14
 [v0.0.13]: https://github.com/quay/claircore/compare/v0.0.12...v0.0.13
 [v0.0.12]: https://github.com/quay/claircore/compare/v0.0.11...v0.0.12
