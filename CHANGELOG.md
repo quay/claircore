@@ -2,9 +2,15 @@
 ## [Unreleased]
 
 
+<a name="v0.3.3"></a>
+## [v0.3.3] - 2021-03-18
+### Cicd
+- [6e26297](https://github.com/quay/claircore/commit/6e26297141d97342b0dc68b20f1494e364f7e036): fix release failure
+
 <a name="v0.3.2"></a>
 ## [v0.3.2] - 2021-03-18
 ### Chore
+- [280bf2b](https://github.com/quay/claircore/commit/280bf2b93a452642d9ae41ee59afbbb71a4790b8): v0.3.2 changelog bump
 - [bfb37f0](https://github.com/quay/claircore/commit/bfb37f01c616db804aab3f6a361404a69a79ce28): update comments in distribution scanners
 ### Chore: Release Quay.Io/Claircore/Golang
 - [d3ac00e](https://github.com/quay/claircore/commit/d3ac00e1808c61f47a8505de4931b694c54e5b7a): 1.16
@@ -686,7 +692,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.3.2...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.3.3...HEAD
+[v0.3.3]: https://github.com/quay/claircore/compare/v0.3.2...v0.3.3
 [v0.3.2]: https://github.com/quay/claircore/compare/v0.3.1...v0.3.2
 [v0.3.1]: https://github.com/quay/claircore/compare/v0.3.0...v0.3.1
 [v0.3.0]: https://github.com/quay/claircore/compare/v0.2.0...v0.3.0
