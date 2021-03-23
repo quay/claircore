@@ -28,6 +28,20 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 	zlog.Debug(ctx).Msg("xml decoded")
 	protoVulns := func(def oval.Definition) ([]*claircore.Vulnerability, error) {
 		vs := []*claircore.Vulnerability{}
+
+		defType, err := ovalutil.GetDefinitionType(def)
+		if err != nil {
+			return nil, err
+		}
+		// Red Hat OVAL data include information about vulnerabilities,
+		// that actually don't affect the package in any way. Storing them
+		// would increase number of records in DB without adding any value.
+		// TODO: Delete second part of the condition when all work related
+		// to new OVAL data is done.
+		if defType == ovalutil.UnaffectedDefinition || defType == ovalutil.CVEDefinition {
+			return vs, nil
+		}
+
 		for _, affected := range def.Advisory.AffectedCPEList {
 			// Work around having empty entries. This seems to be some issue
 			// with the tool used to produce the database but only seems to

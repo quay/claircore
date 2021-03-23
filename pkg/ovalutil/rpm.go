@@ -14,10 +14,19 @@ import (
 	"github.com/quay/claircore"
 )
 
-var moduleCommentRegex *regexp.Regexp
+const (
+	CVEDefinition        = "cve"
+	RHBADefinition       = "rhba"
+	RHEADefinition       = "rhea"
+	RHSADefinition       = "rhsa"
+	UnaffectedDefinition = "unaffected"
+)
+
+var moduleCommentRegex, definitionTypeRegex *regexp.Regexp
 
 func init() {
 	moduleCommentRegex = regexp.MustCompile(`(Module )(.*)( is enabled)`)
+	definitionTypeRegex = regexp.MustCompile(`^oval\:com\.redhat\.([a-z]+)\:def\:\d+$`)
 }
 
 // ProtoVulnsFunc allows a caller to create prototype vulnerabilities that will be
@@ -202,4 +211,13 @@ func rpmStateLookup(root *oval.Root, ref string) (*oval.RPMInfoState, error) {
 		return nil, fmt.Errorf("bad kind: %s", kind)
 	}
 	return &root.States.RPMInfoStates[index], nil
+}
+
+// GetDefinitionType parses an OVAL definition and extracts its type from ID.
+func GetDefinitionType(def oval.Definition) (string, error) {
+	match := definitionTypeRegex.FindStringSubmatch(def.ID)
+	if len(match) != 2 { // we should have match of the whole string and one submatch
+		return "", errors.New("cannot parse definition ID for its type")
+	}
+	return match[1], nil
 }
