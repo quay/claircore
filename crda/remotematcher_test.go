@@ -2,11 +2,12 @@ package crda
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -59,10 +60,34 @@ func newMatcher(t *testing.T, srv *httptest.Server) *Matcher {
 func TestRemoteMatcher(t *testing.T) {
 	t.Parallel()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		pathWithoutAPIPrefix := strings.Replace(r.URL.Path, "/api/v2/component-analyses/", "", 1)
-		testLocalPath := filepath.Join("testdata", pathWithoutAPIPrefix) + ".json"
-		t.Logf("serving request for %v", testLocalPath)
-		http.ServeFile(w, r, testLocalPath)
+		data, _ := ioutil.ReadAll(r.Body)
+		var vulnRequest VulnRequest
+		err := json.Unmarshal(data, &vulnRequest)
+		if err != nil {
+			t.Errorf("mock server unmarshall error %v", err)
+		}
+		var resp []VulnReport
+		for _, p := range vulnRequest.Packages {
+			res := VulnReport{
+				Name:    p.Name,
+				Version: p.Version,
+			}
+			testLocalPath := fmt.Sprintf("testdata/%s/%s/%s.json", vulnRequest.Ecosystem, p.Name, p.Version)
+			t.Logf("serving request for %v", testLocalPath)
+			jsonOut, err := ioutil.ReadFile(testLocalPath)
+			if err == nil {
+				err = json.Unmarshal(jsonOut, &res)
+				if err != nil {
+					t.Errorf("mock server unmarshall error %v", err)
+				}
+			}
+			resp = append(resp, res)
+		}
+		out, err := json.Marshal(&resp)
+		if err != nil {
+			t.Errorf("mock server marshall error %v", err)
+		}
+		w.Write(out)
 	}))
 	defer srv.Close()
 
