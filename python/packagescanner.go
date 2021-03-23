@@ -37,7 +37,7 @@ type Scanner struct{}
 func (*Scanner) Name() string { return "python" }
 
 // Version implements scanner.VersionedScanner.
-func (*Scanner) Version() string { return "0.0.1" }
+func (*Scanner) Version() string { return "0.1.0" }
 
 // Kind implements scanner.VersionedScanner.
 func (*Scanner) Kind() string { return "package" }
