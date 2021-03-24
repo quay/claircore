@@ -13,7 +13,6 @@ import (
 	"regexp"
 	"runtime/trace"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/docker-slim/docker-slim/pkg/docker/dockerfile/ast"
@@ -29,19 +28,29 @@ import (
 	"github.com/quay/claircore/rhel/repo2cpe"
 )
 
+// RepoCPEUpdater provides interface for providing a mapping
+// between repositories and CPEs
+type repoCPEMapper interface {
+	Get(context.Context, []string) ([]string, error)
+}
+
 // RepositoryScanner implements Red Hat repositories
 type RepositoryScanner struct {
+	cfg RepoScannerConfig
+
+	// These members are created after the Configure call.
 	apiFetcher *containerapi.ContainerAPI
-	mapping    *repo2cpe.RepoCPEMapping
-	timeout    time.Duration
+	mapper     repoCPEMapper
+	client     *http.Client
 }
 
 // RepoScannerConfig is the struct that will be passed to
 // (*RepositoryScanner).Configure's ConfigDeserializer argument.
 type RepoScannerConfig struct {
-	Timeout            time.Duration `json:"timeout" yaml:"timeout"`
-	API                string        `json:"api" yaml:"api"`
-	Repo2CPEMappingURL string        `json:"repo2cpe_mapping_url" yaml:"repo2cpe_mapping_url"`
+	Timeout             time.Duration `json:"timeout" yaml:"timeout"`
+	API                 string        `json:"api" yaml:"api"`
+	Repo2CPEMappingURL  string        `json:"repo2cpe_mapping_url" yaml:"repo2cpe_mapping_url"`
+	Repo2CPEMappingFile string        `json:"repo2cpe_mapping_file" yaml:"repo2cpe_mapping_file"`
 }
 
 // RedHatRepositoryKey is a key of Red Hat's CPE based repository
@@ -51,7 +60,7 @@ const RedHatRepositoryKey = "rhel-cpe-repository"
 func (*RepositoryScanner) Name() string { return "rhel-repository-scanner" }
 
 // Version implements scanner.VersionedScanner.
-func (*RepositoryScanner) Version() string { return "1.0" }
+func (*RepositoryScanner) Version() string { return "1.1" }
 
 // Kind implements scanner.VersionedScanner.
 func (*RepositoryScanner) Kind() string { return "repository" }
@@ -62,73 +71,97 @@ const DefaultContainerAPI = "https://catalog.redhat.com/api/containers/"
 // DefaultRepo2CPEMappingURL is default URL with a mapping file provided by Red Hat
 const DefaultRepo2CPEMappingURL = "https://www.redhat.com/security/data/metrics/repository-to-cpe.json"
 
-var localUpdater struct {
-	once sync.Once
-	u    repo2cpe.RepoCPEUpdater
-}
-
 // NewRepositoryScanner create new Repo scanner struct and initialize mapping updater
 func NewRepositoryScanner(ctx context.Context, c *http.Client, cs2cpeURL string) *RepositoryScanner {
 	scanner := &RepositoryScanner{}
 	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "rhel/RepositoryScanner/NewRepositoryScanner"),
+		label.String("component", "rhel/NewRepositoryScanner"),
 		label.String("version", scanner.Version()))
 
-	// initialize local updater for repository scanner if not done before.
-	localUpdater.once.Do(
-		func() {
-			zlog.Debug(ctx).Msg("initializing local updater job. this log should only be seen once.")
-			// TODO (araszka): replace it with config value when it will
-			// be possible to store these values in config
-			if cs2cpeURL == "" {
-				cs2cpeURL = os.Getenv("REPO_TO_CPE_URL")
-				if cs2cpeURL == "" {
-					cs2cpeURL = DefaultRepo2CPEMappingURL
-				}
-			}
-			u := repo2cpe.NewLocalUpdaterJob(cs2cpeURL, nil)
-			u.Start(ctx)
-			localUpdater.u = u
-		})
-
-	if c == nil {
-		c = http.DefaultClient
-	}
-	scanner.mapping = &repo2cpe.RepoCPEMapping{
-		RepoCPEUpdater: localUpdater.u,
-	}
+	scanner.client = c
 	return scanner
 }
 
 // Configure implements the RPCScanner interface.
 func (r *RepositoryScanner) Configure(ctx context.Context, f indexer.ConfigDeserializer, c *http.Client) error {
-	cfg := RepoScannerConfig{}
-	if err := f(&cfg); err != nil {
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "rhel/RepositoryScanner.Configure"),
+		label.String("version", r.Version()))
+	r.client = c
+	if err := f(&r.cfg); err != nil {
 		return err
 	}
 	// Set defaults if not set via passed function.
-	if cfg.Timeout == 0 {
-		cfg.Timeout = 30 * time.Second
-	}
-	if cfg.API == "" {
-		// TODO (araszka): replace it with config value when it will
-		// be possible to store these values in config
-		cfg.API = os.Getenv("CONTAINER_API_URL")
-		if cfg.API == "" {
-			cfg.API = DefaultContainerAPI
+	if r.cfg.API == "" {
+		const name = `CONTAINER_API_URL`
+		r.cfg.API = DefaultContainerAPI
+		if env := os.Getenv(name); env != "" {
+			zlog.Warn(ctx).
+				Str("name", name).
+				Msg("this environment variable will be ignored in the future, use the configuration")
+			r.cfg.API = env
 		}
 	}
+	if r.cfg.Timeout == 0 {
+		r.cfg.Timeout = 30 * time.Second
+	}
 
-	root, err := url.Parse(cfg.API)
+	switch {
+	case r.cfg.Repo2CPEMappingURL == "" && r.cfg.Repo2CPEMappingFile == "":
+		// defaults
+		const name = `REPO_TO_CPE_URL`
+		r.cfg.Repo2CPEMappingURL = DefaultRepo2CPEMappingURL
+		if env := os.Getenv(name); env != "" {
+			zlog.Warn(ctx).
+				Str("name", name).
+				Msg("this environment variable will be ignored in the future, use the configuration")
+			r.cfg.Repo2CPEMappingURL = env
+		}
+		fallthrough
+	case r.cfg.Repo2CPEMappingURL != "" && r.cfg.Repo2CPEMappingFile == "":
+		// remote only
+		u := repo2cpe.NewUpdatingMapper(r.client, r.cfg.Repo2CPEMappingURL, nil)
+		if err := u.Fetch(ctx); err != nil {
+			return err
+		}
+		r.mapper = u
+	case r.cfg.Repo2CPEMappingURL == "" && r.cfg.Repo2CPEMappingFile != "":
+		// local only
+		f, err := os.Open(r.cfg.Repo2CPEMappingFile)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		var mf repo2cpe.MappingFile
+		if err := json.NewDecoder(f).Decode(&mf); err != nil {
+			return err
+		}
+		r.mapper = &mf
+	case r.cfg.Repo2CPEMappingURL != "" && r.cfg.Repo2CPEMappingFile != "":
+		// load, then fetch later
+		f, err := os.Open(r.cfg.Repo2CPEMappingFile)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		var mf repo2cpe.MappingFile
+		if err := json.NewDecoder(f).Decode(&mf); err != nil {
+			return err
+		}
+		r.mapper = repo2cpe.NewUpdatingMapper(r.client, r.cfg.Repo2CPEMappingURL, &mf)
+	}
+
+	// Additional setup
+	root, err := url.Parse(r.cfg.API)
 	if err != nil {
 		return err
 	}
 
 	r.apiFetcher = &containerapi.ContainerAPI{
 		Root:   root,
-		Client: c,
+		Client: r.client,
 	}
-	r.timeout = cfg.Timeout
+
 	return nil
 }
 
@@ -138,7 +171,7 @@ func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) (repos
 	ctx = baggage.ContextWithValues(ctx,
 		label.String("component", "rhel/RepositoryScanner.Scan"),
 		label.String("version", r.Version()),
-		label.String("layer", l.Hash.String()))
+		label.Stringer("layer", l.Hash))
 	zlog.Debug(ctx).Msg("start")
 	defer zlog.Debug(ctx).Msg("done")
 
@@ -149,7 +182,7 @@ func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) (repos
 	if CPEs == nil && r.apiFetcher != nil {
 		// Embedded content-sets are available only for new images.
 		// For old images, use fallback option and query Red Hat Container API.
-		ctx, done := context.WithTimeout(ctx, r.timeout)
+		ctx, done := context.WithTimeout(ctx, r.cfg.Timeout)
 		defer done()
 		CPEs, err = r.getCPEsUsingContainerAPI(ctx, l)
 		if err != nil {
@@ -189,13 +222,15 @@ func (r *RepositoryScanner) getCPEsUsingEmbeddedContentSets(ctx context.Context,
 	default:
 		return nil, err
 	}
-	zlog.Debug(ctx).Str("manifest-path", path).Msg("Found content manifest file")
+	zlog.Debug(ctx).
+		Str("manifest-path", path).
+		Msg("found content manifest file")
 	contentManifestData := contentmanifest.ContentManifest{}
 	err = json.NewDecoder(buf).Decode(&contentManifestData)
 	if err != nil {
 		return nil, err
 	}
-	return r.mapping.RepositoryToCPE(ctx, contentManifestData.ContentSets)
+	return r.mapper.Get(ctx, contentManifestData.ContentSets)
 }
 
 func (r *RepositoryScanner) getCPEsUsingContainerAPI(ctx context.Context, l *claircore.Layer) ([]string, error) {

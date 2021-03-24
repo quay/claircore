@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"path"
+	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -73,14 +74,14 @@ func TestRepositoryScanner(t *testing.T) {
 			name: "FromAPI",
 			want: []*claircore.Repository{
 				&claircore.Repository{
-					Name: "cpe:/o:redhat:enterprise_linux:8::computenode",
-					Key:  RedHatRepositoryKey,
-					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8::computenode"),
-				},
-				&claircore.Repository{
 					Name: "cpe:/o:redhat:enterprise_linux:8::baseos",
 					Key:  RedHatRepositoryKey,
 					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8::baseos"),
+				},
+				&claircore.Repository{
+					Name: "cpe:/o:redhat:enterprise_linux:8::computenode",
+					Key:  RedHatRepositoryKey,
+					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8::computenode"),
 				},
 			},
 			cfg:       &RepoScannerConfig{API: srv.URL, Repo2CPEMappingURL: srv.URL + "/repository-2-cpe.json"},
@@ -136,6 +137,7 @@ func TestRepositoryScanner(t *testing.T) {
 			if err != nil {
 				t.Error(err)
 			}
+			sort.Slice(got, func(i, j int) bool { return got[i].Name < got[j].Name })
 			if !cmp.Equal(got, tt.want) {
 				t.Error(cmp.Diff(got, tt.want))
 			}
