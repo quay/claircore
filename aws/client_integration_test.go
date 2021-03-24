@@ -43,7 +43,7 @@ func TestClientRepoMD(t *testing.T) {
 	tests := []Release{Linux1, Linux2}
 
 	for _, test := range tests {
-		client, err := NewClient(ctx, test)
+		client, err := NewClient(ctx, http.DefaultClient, test)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -66,7 +66,7 @@ func TestClientUpdates(t *testing.T) {
 	tests := []Release{Linux1, Linux2}
 
 	for _, test := range tests {
-		client, err := NewClient(ctx, test)
+		client, err := NewClient(ctx, http.DefaultClient, test)
 		if err != nil {
 			t.Fatal(err)
 		}

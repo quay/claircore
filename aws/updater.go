@@ -5,10 +5,14 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
+	"net/http"
 	"strings"
 	"time"
 
 	"github.com/quay/alas"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
@@ -20,11 +24,13 @@ var _ driver.Updater = (*Updater)(nil)
 // interfaces making it eligible to be used as a claircore.Updater
 type Updater struct {
 	release Release
+	c       *http.Client
 }
 
 func NewUpdater(release Release) (*Updater, error) {
 	return &Updater{
 		release: release,
+		c:       http.DefaultClient, // TODO(hank) Remove DefaultClient
 	}, nil
 }
 
@@ -32,8 +38,19 @@ func (u *Updater) Name() string {
 	return fmt.Sprintf("aws-%v-updater", u.release)
 }
 
+func (u *Updater) Configure(ctx context.Context, _ driver.ConfigUnmarshaler, c *http.Client) error {
+	// TODO This should be able to configure things, actually.
+	u.c = c
+	return nil
+}
+
 func (u *Updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
-	client, err := NewClient(ctx, u.release)
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "aws/Updater.Fetch"))
+	if u.c == http.DefaultClient { // OK: checking for log purposes
+		zlog.Warn(ctx).Msg("DefaultClient used, this is almost certainly wrong")
+	}
+	client, err := NewClient(ctx, u.c, u.release)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to create client: %v", err)
 	}

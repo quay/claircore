@@ -4,6 +4,7 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -33,13 +34,16 @@ type Client struct {
 	mirrors []*url.URL
 }
 
-func NewClient(ctx context.Context, release Release) (*Client, error) {
-	client := &Client{
-		c:       &http.Client{},
-		mirrors: []*url.URL{},
-	}
+func NewClient(ctx context.Context, hc *http.Client, release Release) (*Client, error) {
 	ctx = baggage.ContextWithValues(ctx,
 		label.String("release", string(release)))
+	if hc == nil {
+		return nil, errors.New("http.Client not provided")
+	}
+	client := &Client{
+		c:       hc,
+		mirrors: []*url.URL{},
+	}
 	tctx, cancel := context.WithTimeout(ctx, defaultOpTimeout)
 	defer cancel()
 	err := client.getMirrors(tctx, release.mirrorlist())
