@@ -2,8 +2,18 @@
 ## [Unreleased]
 
 
+<a name="v0.1.24"></a>
+## [v0.1.24] - 2021-03-24
+### Libvuln
+- [0823927](https://github.com/quay/claircore/commit/082392732df1a6bfdaa49b6d17f7cb7f074fe7f6): sync migrations with upstream
+### Python
+- [da6e417](https://github.com/quay/claircore/commit/da6e417ed0451d09b08a1ee3933552a265813091): force re-fetch/parse
+- [e5e767b](https://github.com/quay/claircore/commit/e5e767b2d4605bbcdccd38ca714e6309bc99ef48): update package scanner version
+ -  [#348](https://github.com/quay/claircore/issues/348)
 <a name="v0.1.23"></a>
-## [v0.1.23] - 2021-03-08
+## [v0.1.23] - 2021-03-11
+### Chore
+- [8ec6001](https://github.com/quay/claircore/commit/8ec600102759ce8ee55935d02cd46f24f091e81e): v0.1.23 changelog bump
 ### Cicd
 - [62575fd](https://github.com/quay/claircore/commit/62575fdb7181d456a3507887bee6c06379fe50e5): bump out go1.14 and bump in go1.16
 ### Fetcher
@@ -423,7 +433,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.1.23...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.1.24...HEAD
+[v0.1.24]: https://github.com/quay/claircore/compare/v0.1.23...v0.1.24
 [v0.1.23]: https://github.com/quay/claircore/compare/v0.1.22...v0.1.23
 [v0.1.22]: https://github.com/quay/claircore/compare/v0.1.21...v0.1.22
 [v0.1.21]: https://github.com/quay/claircore/compare/v0.1.20...v0.1.21
