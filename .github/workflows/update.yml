@@ -1,10 +1,10 @@
 ---
-name: Deploy Master
+name: Deploy Main
 
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   deploy-documentation:
