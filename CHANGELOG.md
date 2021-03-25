@@ -2,16 +2,31 @@
 ## [Unreleased]
 
 
+<a name="v0.1.24"></a>
+## [v0.1.24] - 2021-03-24
+### Chore
+- [8ec6001](https://github.com/quay/claircore/commit/8ec600102759ce8ee55935d02cd46f24f091e81e): v0.1.23 changelog bump
+### Cicd
+- [62575fd](https://github.com/quay/claircore/commit/62575fdb7181d456a3507887bee6c06379fe50e5): bump out go1.14 and bump in go1.16
+### Indexer
+- [6bf358b](https://github.com/quay/claircore/commit/6bf358b384114bf440db8c2f70be5eee8b6d71cd): regen indexer test data
+### Libvuln
+- [0823927](https://github.com/quay/claircore/commit/082392732df1a6bfdaa49b6d17f7cb7f074fe7f6): sync migrations with upstream
+### Python
+- [da6e417](https://github.com/quay/claircore/commit/da6e417ed0451d09b08a1ee3933552a265813091): force re-fetch/parse
+- [e5e767b](https://github.com/quay/claircore/commit/e5e767b2d4605bbcdccd38ca714e6309bc99ef48): update package scanner version
+ -  [#348](https://github.com/quay/claircore/issues/348)- [763ccdc](https://github.com/quay/claircore/commit/763ccdc115b3d05dcf8572d0f1374303f81b674c): move to traditional mapping
+
 <a name="v0.1.23"></a>
 ## [v0.1.23] - 2021-03-08
 ### Cicd
-- [62575fd](https://github.com/quay/claircore/commit/62575fdb7181d456a3507887bee6c06379fe50e5): bump out go1.14 and bump in go1.16
+- [7076853](https://github.com/quay/claircore/commit/7076853d4f66c6a5b16d5a04b57f4b6eaf7564c2): bump out go1.14 and bump in go1.16
 ### Fetcher
 - [fef216a](https://github.com/quay/claircore/commit/fef216a02f17792913850ccbc82d94abcf90bb64): relax allowable gzip types
  - Closes [#303](https://github.com/quay/claircore/issues/303)### Indexer
-- [6bf358b](https://github.com/quay/claircore/commit/6bf358b384114bf440db8c2f70be5eee8b6d71cd): regen indexer test data
+- [b79d4d6](https://github.com/quay/claircore/commit/b79d4d67e58854b84f60822f2bd995f6621125e6): regen indexer test data
 ### Python
-- [763ccdc](https://github.com/quay/claircore/commit/763ccdc115b3d05dcf8572d0f1374303f81b674c): move to traditional mapping
+- [710aaf4](https://github.com/quay/claircore/commit/710aaf48efe33478369d6cd7c9c00dff64ee7b6a): move to traditional mapping
 
 <a name="v0.1.22"></a>
 ## [v0.1.22] - 2021-02-12
@@ -423,7 +438,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.1.23...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.1.24...HEAD
+[v0.1.24]: https://github.com/quay/claircore/compare/v0.1.23...v0.1.24
 [v0.1.23]: https://github.com/quay/claircore/compare/v0.1.22...v0.1.23
 [v0.1.22]: https://github.com/quay/claircore/compare/v0.1.21...v0.1.22
 [v0.1.21]: https://github.com/quay/claircore/compare/v0.1.20...v0.1.21
