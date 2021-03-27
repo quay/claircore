@@ -5,12 +5,37 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v4"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
+)
+
+var (
+	packagesByLayerCounter = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "claircore",
+			Subsystem: "indexer",
+			Name:      "packagesbylayer_total",
+			Help:      "Total number of database queries issued in the PackagesByLayer method.",
+		},
+		[]string{"query"},
+	)
+
+	packagesByLayerDuration = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "claircore",
+			Subsystem: "indexer",
+			Name:      "packagesbylayer_duration_seconds",
+			Help:      "The duration of all queries issued in the PackagesByLayer method",
+		},
+		[]string{"query"},
+	)
 )
 
 func (s *store) PackagesByLayer(ctx context.Context, hash claircore.Digest, scnrs indexer.VersionedScanners) ([]*claircore.Package, error) {
@@ -61,13 +86,18 @@ WHERE
 	// get scanner ids
 	scannerIDs := make([]int64, len(scnrs))
 	for i, scnr := range scnrs {
+
+		start := time.Now()
 		err := s.pool.QueryRow(ctx, selectScanner, scnr.Name(), scnr.Version(), scnr.Kind()).
 			Scan(&scannerIDs[i])
 		if err != nil {
 			return nil, fmt.Errorf("store:packageByLayer failed to retrieve scanner ids for scnr %v: %v", scnr, err)
 		}
+		packagesByLayerCounter.WithLabelValues("selectScanner").Add(1)
+		packagesByLayerDuration.WithLabelValues("selectScanner").Observe(time.Since(start).Seconds())
 	}
 
+	start := time.Now()
 	rows, err := s.pool.Query(ctx, query, hash, scannerIDs)
 	switch {
 	case errors.Is(err, nil):
@@ -76,6 +106,8 @@ WHERE
 	default:
 		return nil, fmt.Errorf("store:packagesByLayer failed to retrieve package rows for hash %v and scanners %v: %v", hash, scnrs, err)
 	}
+	packagesByLayerCounter.WithLabelValues("query").Add(1)
+	packagesByLayerDuration.WithLabelValues("query").Observe(time.Since(start).Seconds())
 	defer rows.Close()
 
 	res := []*claircore.Package{}

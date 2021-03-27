@@ -3,8 +3,33 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/claircore"
+)
+
+var (
+	setIndexReportCounter = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "claircore",
+			Subsystem: "indexer",
+			Name:      "setindexreport_total",
+			Help:      "Total number of database queries issued in the SetIndexReport method.",
+		},
+		[]string{"query"},
+	)
+
+	setIndexReportDuration = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "claircore",
+			Subsystem: "indexer",
+			Name:      "setindexreport_duration_seconds",
+			Help:      "The duration of all queries issued in the SetIndexReport method",
+		},
+		[]string{"query"},
+	)
 )
 
 func (s *store) SetIndexReport(ctx context.Context, ir *claircore.IndexReport) error {
@@ -31,10 +56,14 @@ DO
 `
 	// we cast scanner.IndexReport to jsonbIndexReport in order to obtain the value/scan
 	// implementations
+
+	start := time.Now()
 	_, err := s.pool.Exec(ctx, query, ir.Hash, jsonbIndexReport(*ir))
 	if err != nil {
 		return fmt.Errorf("failed to upsert index report: %v", err)
 	}
+	setIndexReportCounter.WithLabelValues("query").Add(1)
+	setIndexReportDuration.WithLabelValues("query").Observe(time.Since(start).Seconds())
 
 	return nil
 }

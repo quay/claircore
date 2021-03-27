@@ -5,9 +5,33 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/pkg/microbatch"
+)
+
+var (
+	indexDistributionsCounter = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "claircore",
+			Subsystem: "indexer",
+			Name:      "indexdistributions_total",
+			Help:      "Total number of database queries issued in the IndexDistributions method.",
+		},
+		[]string{"query"},
+	)
+
+	indexDistributionsDuration = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "claircore",
+			Subsystem: "indexer",
+			Name:      "indexdistributions_duration_seconds",
+			Help:      "The duration of all queries issued in the IndexDistributions method",
+		},
+		[]string{"query"},
+	)
 )
 
 func (s *store) IndexDistributions(ctx context.Context, dists []*claircore.Distribution, layer *claircore.Layer, scnr indexer.VersionedScanner) error {
@@ -73,6 +97,7 @@ func (s *store) IndexDistributions(ctx context.Context, dists []*claircore.Distr
 		return fmt.Errorf("failed to create statement: %v", err)
 	}
 
+	start := time.Now()
 	mBatcher := microbatch.NewInsert(tx, 500, time.Minute)
 	for _, dist := range dists {
 		err := mBatcher.Queue(
@@ -95,8 +120,11 @@ func (s *store) IndexDistributions(ctx context.Context, dists []*claircore.Distr
 	if err != nil {
 		return fmt.Errorf("final batch insert failed for dist: %v", err)
 	}
+	indexDistributionsCounter.WithLabelValues("insert_batch").Add(1)
+	indexDistributionsDuration.WithLabelValues("insert_batch").Observe(time.Since(start).Seconds())
 
 	// make dist scan artifacts
+	start = time.Now()
 	mBatcher = microbatch.NewInsert(tx, 500, time.Minute)
 	for _, dist := range dists {
 		err := mBatcher.Queue(
@@ -123,6 +151,8 @@ func (s *store) IndexDistributions(ctx context.Context, dists []*claircore.Distr
 	if err != nil {
 		return fmt.Errorf("final batch insert failed for dist_scanartifact: %v", err)
 	}
+	indexDistributionsCounter.WithLabelValues("insertWith_batch").Add(1)
+	indexDistributionsDuration.WithLabelValues("insertWith_batch").Observe(time.Since(start).Seconds())
 
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("store:indexDistributions failed to commit tx: %v", err)

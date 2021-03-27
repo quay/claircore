@@ -4,15 +4,75 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/zlog"
 	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore/libvuln/driver"
+)
+
+var (
+	getLatestUpdateRefCounter = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "claircore",
+			Subsystem: "vulnstore",
+			Name:      "getlatestupdateref_total",
+			Help:      "Total number of database queries issued in the GetLatestUpdateRef method.",
+		},
+		[]string{"query"},
+	)
+	getLatestUpdateRefDuration = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "claircore",
+			Subsystem: "vulnstore",
+			Name:      "getlatestupdateref_duration_seconds",
+			Help:      "The duration of all queries issued in the GetLatestUpdateRef method",
+		},
+		[]string{"query"},
+	)
+	getLatestRefsCounter = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "claircore",
+			Subsystem: "vulnstore",
+			Name:      "getlatestrefs_total",
+			Help:      "Total number of database queries issued in the getLatestRefs method.",
+		},
+		[]string{"query"},
+	)
+	getLatestRefsDuration = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "claircore",
+			Subsystem: "vulnstore",
+			Name:      "getlatestrefs_duration_seconds",
+			Help:      "The duration of all queries issued in the getLatestRefs method",
+		},
+		[]string{"query"},
+	)
+	getUpdateOperationsCounter = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "claircore",
+			Subsystem: "vulnstore",
+			Name:      "getupdateoperations_total",
+			Help:      "Total number of database queries issued in the getUpdateOperations method.",
+		},
+		[]string{"query"},
+	)
+	getUpdateOperationsDuration = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "claircore",
+			Subsystem: "vulnstore",
+			Name:      "getupdateoperations_duration_seconds",
+			Help:      "The duration of all queries issued in the getUpdateOperations method",
+		},
+		[]string{"query"},
+	)
 )
 
 // GetLatestUpdateRef implements driver.Updater.
@@ -22,9 +82,12 @@ func (s *Store) GetLatestUpdateRef(ctx context.Context) (uuid.UUID, error) {
 		label.String("component", "internal/vulnstore/postgres/getLatestRef"))
 
 	var ref uuid.UUID
+	start := time.Now()
 	if err := s.pool.QueryRow(ctx, query).Scan(&ref); err != nil {
 		return uuid.Nil, err
 	}
+	getLatestUpdateRefCounter.WithLabelValues("query").Add(1)
+	getLatestUpdateRefDuration.WithLabelValues("query").Observe(time.Since(start).Seconds())
 	return ref, nil
 }
 
@@ -33,10 +96,16 @@ func getLatestRefs(ctx context.Context, pool *pgxpool.Pool) (map[string][]driver
 	ctx = baggage.ContextWithValues(ctx,
 		label.String("component", "internal/vulnstore/postgres/getLatestRefs"))
 
+	start := time.Now()
+
 	rows, err := pool.Query(ctx, query)
 	if err != nil {
 		return nil, err
 	}
+
+	getLatestRefsCounter.WithLabelValues("query").Add(1)
+	getLatestRefsDuration.WithLabelValues("query").Observe(time.Since(start).Seconds())
+
 	defer rows.Close()
 
 	ret := make(map[string][]driver.UpdateOperation)
@@ -80,6 +149,9 @@ func getUpdateOperations(ctx context.Context, pool *pgxpool.Pool, updater ...str
 	// Get distinct updaters from database if nothing specified.
 	if len(updater) == 0 {
 		updater = []string{}
+
+		start := time.Now()
+
 		rows, err := tx.Query(ctx, getUpdaters)
 		switch {
 		case err == nil:
@@ -88,7 +160,12 @@ func getUpdateOperations(ctx context.Context, pool *pgxpool.Pool, updater ...str
 		default:
 			return nil, fmt.Errorf("failed to get distinct updates: %w", err)
 		}
+
+		getUpdateOperationsCounter.WithLabelValues("getUpdaters").Add(1)
+		getUpdateOperationsDuration.WithLabelValues("getUpdaters").Observe(time.Since(start).Seconds())
+
 		defer rows.Close() // OK to defer and call, as per docs.
+
 		for rows.Next() {
 			var u string
 			err := rows.Scan(&u)
@@ -106,6 +183,9 @@ func getUpdateOperations(ctx context.Context, pool *pgxpool.Pool, updater ...str
 	// Take care to close the rows object on every iteration.
 	var rows pgx.Rows
 	for _, u := range updater {
+
+		start := time.Now()
+
 		rows, err = tx.Query(ctx, query, u)
 		switch {
 		case err == nil:
@@ -118,6 +198,10 @@ func getUpdateOperations(ctx context.Context, pool *pgxpool.Pool, updater ...str
 			return nil, fmt.Errorf("failed to retrieve update operation for updater %v: %w", updater, err)
 		}
 		ops := []driver.UpdateOperation{}
+
+		getUpdateOperationsCounter.WithLabelValues("query").Add(1)
+		getUpdateOperationsDuration.WithLabelValues("query").Observe(time.Since(start).Seconds())
+
 		for rows.Next() {
 			ops = append(ops, driver.UpdateOperation{})
 			uo := &ops[len(ops)-1]

@@ -8,12 +8,35 @@ import (
 
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/zlog"
 	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/vulnstore"
+)
+
+var (
+	getCounter = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "claircore",
+			Subsystem: "vulnstore",
+			Name:      "get_total",
+			Help:      "Total number of database queries issued in the get method.",
+		},
+		[]string{"query"},
+	)
+	getDuration = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "claircore",
+			Subsystem: "vulnstore",
+			Name:      "get_duration_seconds",
+			Help:      "The duration of all queries issued in the get method",
+		},
+		[]string{"query"},
+	)
 )
 
 func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.IndexRecord, opts vulnstore.GetOpts) (map[string][]*claircore.Vulnerability, error) {
@@ -42,6 +65,8 @@ func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.IndexReco
 	// send the batch
 	tctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
+
+	start := time.Now()
 	res := tx.SendBatch(tctx, batch)
 	// Can't just defer the close, because the batch must be fully handled
 	// before resolving the transaction. Maybe we can move this result handling
@@ -114,6 +139,9 @@ func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.IndexReco
 	if err := res.Close(); err != nil {
 		return nil, fmt.Errorf("some weird batch error: %v", err)
 	}
+
+	getCounter.WithLabelValues("query_batch").Add(1)
+	getDuration.WithLabelValues("query_batch").Observe(time.Since(start).Seconds())
 
 	if err := tx.Commit(ctx); err != nil {
 		return nil, fmt.Errorf("failed to commit tx: %v", err)

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v4"
@@ -13,6 +14,8 @@ import (
 	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/label"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/omnimatcher"
 )
@@ -20,7 +23,43 @@ import (
 var (
 	// ErrNotIndexed indicates the vulnerability being queried has a dist or repo not
 	// indexed into the database.
-	ErrNotIndexed = fmt.Errorf("vulnerability containers data not indexed by any scannners")
+	ErrNotIndexed            = fmt.Errorf("vulnerability containers data not indexed by any scannners")
+	affectedManifestsCounter = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "claircore",
+			Subsystem: "indexer",
+			Name:      "affectedmanifests_total",
+			Help:      "Total number of database queries issued in the AffectedManifests method.",
+		},
+		[]string{"query"},
+	)
+	affectedManifestsDuration = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "claircore",
+			Subsystem: "indexer",
+			Name:      "affectedmanifests_duration_seconds",
+			Help:      "The duration of all queries issued in the AffectedManifests method",
+		},
+		[]string{"query"},
+	)
+	protoRecordCounter = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "claircore",
+			Subsystem: "indexer",
+			Name:      "protorecord_total",
+			Help:      "Total number of database queries issued in the protoRecord  method.",
+		},
+		[]string{"query"},
+	)
+	protoRecordDuration = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "claircore",
+			Subsystem: "indexer",
+			Name:      "protorecord_duration_seconds",
+			Help:      "The duration of all queries issued in the protoRecord method",
+		},
+		[]string{"query"},
+	)
 )
 
 // AffectedManifests finds the manifests digests which are affected by the provided vulnerability.
@@ -91,6 +130,8 @@ WHERE
 	// collect all packages which may be affected
 	// by the vulnerability in question.
 	pkgsToFilter := []claircore.Package{}
+
+	start := time.Now()
 	rows, err := s.pool.Query(ctx, selectPackages, v.Package.Name)
 	switch {
 	case errors.Is(err, nil):
@@ -99,6 +140,9 @@ WHERE
 	default:
 		return nil, fmt.Errorf("failed to query packages associated with vulnerability %+v: %v", v, err)
 	}
+	affectedManifestsCounter.WithLabelValues("selectPackages").Add(1)
+	affectedManifestsDuration.WithLabelValues(("selectPackages")).Observe(time.Since(start).Seconds())
+
 	defer rows.Close()
 
 	for rows.Next() {
@@ -170,6 +214,7 @@ WHERE
 			return nil, fmt.Errorf("failed to resolve record %+v to sql values for query: %v", record, err)
 		}
 
+		start := time.Now()
 		rows, err := s.pool.Query(ctx,
 			selectAffected,
 			record.Package.ID,
@@ -185,6 +230,8 @@ WHERE
 			rows.Close()
 			return nil, err
 		}
+		affectedManifestsCounter.WithLabelValues("selectAffected").Add(1)
+		affectedManifestsDuration.WithLabelValues(("selectAffected")).Observe(time.Since(start).Seconds())
 
 		for rows.Next() {
 			var hash claircore.Digest
@@ -239,6 +286,7 @@ func protoRecord(ctx context.Context, pool *pgxpool.Pool, v claircore.Vulnerabil
 	protoRecord := claircore.IndexRecord{}
 	// fill dist into prototype index record if exists
 	if (v.Dist != nil) && (v.Dist.Name != "") {
+		start := time.Now()
 		row := pool.QueryRow(ctx,
 			selectDist,
 			v.Dist.Arch,
@@ -257,6 +305,9 @@ func protoRecord(ctx context.Context, pool *pgxpool.Pool, v claircore.Vulnerabil
 				return protoRecord, fmt.Errorf("failed to scan dist: %v", err)
 			}
 		}
+		protoRecordCounter.WithLabelValues("selectDist").Add(1)
+		protoRecordDuration.WithLabelValues("selectDist").Observe(time.Since(start).Seconds())
+
 		if id.Status == pgtype.Present {
 			id := strconv.FormatInt(id.Int, 10)
 			protoRecord.Distribution = &claircore.Distribution{
@@ -276,6 +327,7 @@ func protoRecord(ctx context.Context, pool *pgxpool.Pool, v claircore.Vulnerabil
 
 	// fill repo into prototype index record if exists
 	if (v.Repo != nil) && (v.Repo.Name != "") {
+		start := time.Now()
 		row := pool.QueryRow(ctx, selectRepo,
 			v.Repo.Name,
 			v.Repo.Key,
@@ -288,6 +340,9 @@ func protoRecord(ctx context.Context, pool *pgxpool.Pool, v claircore.Vulnerabil
 				return protoRecord, fmt.Errorf("failed to scan repo: %v", err)
 			}
 		}
+		protoRecordCounter.WithLabelValues("selectDist").Add(1)
+		protoRecordDuration.WithLabelValues("selectDist").Observe(time.Since(start).Seconds())
+
 		if id.Status == pgtype.Present {
 			id := strconv.FormatInt(id.Int, 10)
 			protoRecord.Repository = &claircore.Repository{

@@ -11,6 +11,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/zlog"
 	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/label"
@@ -23,6 +25,27 @@ import (
 var (
 	zeroRepo claircore.Repository
 	zeroDist claircore.Distribution
+)
+
+var (
+	updateVulnerabilitiesCounter = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "claircore",
+			Subsystem: "vulnstore",
+			Name:      "updatevulnerabilities_total",
+			Help:      "Total number of database queries issued in the updateVulnerabilities method.",
+		},
+		[]string{"query"},
+	)
+	updateVulnerabilitiesDuration = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "claircore",
+			Subsystem: "vulnstore",
+			Name:      "updatevulnerabilities_duration_seconds",
+			Help:      "The duration of all queries issued in the updateVulnerabilities method",
+		},
+		[]string{"query"},
+	)
 )
 
 // UpdateVulnerabilities creates a new UpdateOperation for this update call,
@@ -69,15 +92,25 @@ func updateVulnerabilites(ctx context.Context, pool *pgxpool.Pool, updater strin
 
 	var id uint64
 	var ref uuid.UUID
+
+	start := time.Now()
+
 	if err := pool.QueryRow(ctx, create, updater, string(fingerprint)).Scan(&id, &ref); err != nil {
 		return uuid.Nil, fmt.Errorf("failed to create update_operation: %w", err)
 	}
+
+	updateVulnerabilitiesCounter.WithLabelValues("create").Add(1)
+	updateVulnerabilitiesDuration.WithLabelValues("create").Observe(time.Since(start).Seconds())
+
 	zlog.Debug(ctx).
 		Str("ref", ref.String()).
 		Msg("update_operation created")
 
 	// batch insert vulnerabilities
 	skipCt := 0
+
+	start = time.Now()
+
 	mBatcher := microbatch.NewInsert(tx, 2000, time.Minute)
 	for _, vuln := range vulns {
 		if vuln.Package == nil || vuln.Package.Name == "" {
@@ -116,6 +149,9 @@ func updateVulnerabilites(ctx context.Context, pool *pgxpool.Pool, updater strin
 	if err := mBatcher.Done(ctx); err != nil {
 		return uuid.Nil, fmt.Errorf("failed to finish batch vulnerability insert: %w", err)
 	}
+
+	updateVulnerabilitiesCounter.WithLabelValues("insert_batch").Add(1)
+	updateVulnerabilitiesDuration.WithLabelValues("insert_batch").Observe(time.Since(start).Seconds())
 
 	if err := tx.Commit(ctx); err != nil {
 		return uuid.Nil, fmt.Errorf("failed to commit transaction: %w", err)

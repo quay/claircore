@@ -3,9 +3,34 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
+)
+
+var (
+	manifestScannedCounter = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "claircore",
+			Subsystem: "indexer",
+			Name:      "manifestscanned_total",
+			Help:      "Total number of database queries issued in the ManifestScanned method.",
+		},
+		[]string{"query"},
+	)
+
+	manifestScannedDuration = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "claircore",
+			Subsystem: "indexer",
+			Name:      "manifestscanned_duration_seconds",
+			Help:      "The duration of all queries issued in the ManifestScanned method",
+		},
+		[]string{"query"},
+	)
 )
 
 // ManifestScanned determines if a manifest has been scanned by ALL the provided
@@ -28,10 +53,14 @@ func (s *store) ManifestScanned(ctx context.Context, hash claircore.Digest, vs i
 
 	// get a map of the found ids which have scanned this package
 	var foundIDs = map[int64]struct{}{}
+
+	start := time.Now()
 	rows, err := s.pool.Query(ctx, selectScanned, hash)
 	if err != nil {
 		return false, fmt.Errorf("store:manifestScanned failed to select scanner IDs for manifest: %v", err)
 	}
+	manifestScannedCounter.WithLabelValues("selectScanned").Add(1)
+	manifestScannedDuration.WithLabelValues("selectScanned").Observe(time.Since(start).Seconds())
 	defer rows.Close()
 	var t int64
 	for rows.Next() {

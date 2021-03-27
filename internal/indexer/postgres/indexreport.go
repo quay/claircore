@@ -4,10 +4,35 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v4"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/quay/claircore"
+)
+
+var (
+	indexReportCounter = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "claircore",
+			Subsystem: "indexer",
+			Name:      "indexreport_total",
+			Help:      "Total number of database queries issued in the IndexReport method.",
+		},
+		[]string{"query"},
+	)
+
+	indexReportDuration = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "claircore",
+			Subsystem: "indexer",
+			Name:      "indexreport_duration_seconds",
+			Help:      "The duration of all queries issued in the IndexReport method",
+		},
+		[]string{"query"},
+	)
 )
 
 func (s *store) IndexReport(ctx context.Context, hash claircore.Digest) (*claircore.IndexReport, bool, error) {
@@ -21,6 +46,7 @@ func (s *store) IndexReport(ctx context.Context, hash claircore.Digest) (*clairc
 	// then type convert back to scanner.domain object
 	var jsr jsonbIndexReport
 
+	start := time.Now()
 	err := s.pool.QueryRow(ctx, query, hash).Scan(&jsr)
 	switch {
 	case errors.Is(err, nil):
@@ -29,6 +55,8 @@ func (s *store) IndexReport(ctx context.Context, hash claircore.Digest) (*clairc
 	default:
 		return nil, false, fmt.Errorf("store:indexReport failed to retrieve index report: %v", err)
 	}
+	indexReportCounter.WithLabelValues("query").Add(1)
+	indexReportDuration.WithLabelValues("query").Observe(time.Since(start).Seconds())
 
 	var sr claircore.IndexReport
 	sr = claircore.IndexReport(jsr)

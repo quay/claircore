@@ -5,9 +5,33 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/pkg/microbatch"
+)
+
+var (
+	indexRepositoriesCounter = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "claircore",
+			Subsystem: "indexer",
+			Name:      "indexrepositories_total",
+			Help:      "Total number of database queries issued in the IndexRepositories method.",
+		},
+		[]string{"query"},
+	)
+
+	indexRepositoriesDuration = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "claircore",
+			Subsystem: "indexer",
+			Name:      "indexrepositories_duration_seconds",
+			Help:      "The duration of all queries issued in the IndexRepositories method",
+		},
+		[]string{"query"},
+	)
 )
 
 func (s *store) IndexRepositories(ctx context.Context, repos []*claircore.Repository, l *claircore.Layer, scnr indexer.VersionedScanner) error {
@@ -66,6 +90,7 @@ func (s *store) IndexRepositories(ctx context.Context, repos []*claircore.Reposi
 		return fmt.Errorf("failed to create statement: %v", err)
 	}
 
+	start := time.Now()
 	mBatcher := microbatch.NewInsert(tx, 500, time.Minute)
 	for _, repo := range repos {
 		err := mBatcher.Queue(
@@ -84,8 +109,12 @@ func (s *store) IndexRepositories(ctx context.Context, repos []*claircore.Reposi
 	if err != nil {
 		return fmt.Errorf("final batch insert failed for repo: %v", err)
 	}
+	indexRepositoriesCounter.WithLabelValues("insert_batch").Add(1)
+	indexRepositoriesDuration.WithLabelValues("insert_batch").Observe(time.Since(start).Seconds())
 
 	// make repo scan artifacts
+
+	start = time.Now()
 	mBatcher = microbatch.NewInsert(tx, 500, time.Minute)
 	for _, repo := range repos {
 		err := mBatcher.Queue(
@@ -107,6 +136,8 @@ func (s *store) IndexRepositories(ctx context.Context, repos []*claircore.Reposi
 	if err != nil {
 		return fmt.Errorf("final batch insert failed for repo_scanartifact: %v", err)
 	}
+	indexRepositoriesCounter.WithLabelValues("insertWith_batch").Add(1)
+	indexRepositoriesDuration.WithLabelValues("insertWith_batch").Observe(time.Since(start).Seconds())
 
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("store:indexRepositories failed to commit tx: %v", err)

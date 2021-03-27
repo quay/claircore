@@ -5,11 +5,36 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/jackc/pgx/v4"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
+)
+
+var (
+	distributionByLayerCounter = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "claircore",
+			Subsystem: "indexer",
+			Name:      "distributionbylayer_total",
+			Help:      "The count of all queries issued in the DistributionsByLayer method",
+		},
+		[]string{"query"},
+	)
+
+	distributionByLayerDuration = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "claircore",
+			Subsystem: "indexer",
+			Name:      "distributionbylayer_duration_seconds",
+			Help:      "The duration of all queries issued in the DistributionByLayer method",
+		},
+		[]string{"query"},
+	)
 )
 
 func (s *store) DistributionsByLayer(ctx context.Context, hash claircore.Digest, scnrs indexer.VersionedScanners) ([]*claircore.Distribution, error) {
@@ -46,13 +71,17 @@ func (s *store) DistributionsByLayer(ctx context.Context, hash claircore.Digest,
 	// get scanner ids
 	scannerIDs := make([]int64, len(scnrs))
 	for i, scnr := range scnrs {
+		start := time.Now()
 		err := s.pool.QueryRow(ctx, selectScanner, scnr.Name(), scnr.Version(), scnr.Kind()).
 			Scan(&scannerIDs[i])
 		if err != nil {
 			return nil, fmt.Errorf("store:distributionseByLayer failed to retrieve scanner ids for scanner %v: %v", scnr, err)
 		}
+		distributionByLayerCounter.WithLabelValues("selectScanner").Add(1)
+		distributionByLayerDuration.WithLabelValues("seletScanner").Observe(time.Since(start).Seconds())
 	}
 
+	start := time.Now()
 	rows, err := s.pool.Query(ctx, query, hash, scannerIDs)
 	switch {
 	case errors.Is(err, nil):
@@ -61,6 +90,8 @@ func (s *store) DistributionsByLayer(ctx context.Context, hash claircore.Digest,
 	default:
 		return nil, fmt.Errorf("store:distributionsByLayer failed to retrieve package rows for hash %v and scanners %v: %v", hash, scnrs, err)
 	}
+	protoRecordCounter.WithLabelValues("query").Add(1)
+	protoRecordDuration.WithLabelValues("query").Observe(time.Since(start).Seconds())
 	defer rows.Close()
 
 	res := []*claircore.Distribution{}
