@@ -5,11 +5,36 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/jackc/pgx/v4"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
+)
+
+var (
+	repositoriesByLayerCounter = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "claircore",
+			Subsystem: "indexer",
+			Name:      "repositoriesbylayer_total",
+			Help:      "Total number of database queries issued in the RepositoriesByLayer method.",
+		},
+		[]string{"query"},
+	)
+
+	repositoriesByLayerDuration = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "claircore",
+			Subsystem: "indexer",
+			Name:      "repositoriesbylayer_duration_seconds",
+			Help:      "The duration of all queries issued in the RepositoriesByLayer method",
+		},
+		[]string{"query"},
+	)
 )
 
 func (s *store) RepositoriesByLayer(ctx context.Context, hash claircore.Digest, scnrs indexer.VersionedScanners) ([]*claircore.Repository, error) {
@@ -33,6 +58,7 @@ WHERE
 		return nil, fmt.Errorf("store:repositoriesByLayer %v", err)
 	}
 
+	start := time.Now()
 	rows, err := s.pool.Query(ctx, query, hash, scannerIDs)
 	switch {
 	case errors.Is(err, nil):
@@ -41,6 +67,8 @@ WHERE
 	default:
 		return nil, fmt.Errorf("store:repositoriesByLayer failed to retrieve package rows for hash %v and scanners %v: %v", hash, scnrs, err)
 	}
+	repositoriesByLayerCounter.WithLabelValues("query").Add(1)
+	repositoriesByLayerDuration.WithLabelValues("query").Observe(time.Since(start).Seconds())
 	defer rows.Close()
 
 	res := []*claircore.Repository{}

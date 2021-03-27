@@ -3,8 +3,33 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/claircore/internal/indexer"
+)
+
+var (
+	registerScannerCounter = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "claircore",
+			Subsystem: "indexer",
+			Name:      "registerscanners_total",
+			Help:      "Total number of database queries issued in the RegiterScanners method.",
+		},
+		[]string{"query"},
+	)
+
+	registerScannerDuration = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "claircore",
+			Subsystem: "indexer",
+			Name:      "registerscanners_duration_seconds",
+			Help:      "The duration of all queries issued in the RegiterScanners method",
+		},
+		[]string{"query"},
+	)
 )
 
 func (s *store) RegisterScanners(ctx context.Context, vs indexer.VersionedScanners) error {
@@ -36,18 +61,26 @@ SELECT
 	var ok bool
 	var err error
 	for _, v := range vs {
+
+		start := time.Now()
 		err = s.pool.QueryRow(ctx, exists, v.Name(), v.Version(), v.Kind()).
 			Scan(&ok)
 		if err != nil {
 			return fmt.Errorf("failed getting id for scanner %q: %v", v.Name(), err)
 		}
+		registerScannerCounter.WithLabelValues("exists").Add(1)
+		registerScannerDuration.WithLabelValues("exists").Observe(time.Since(start).Seconds())
 		if ok {
 			continue
 		}
+
+		start = time.Now()
 		_, err = s.pool.Exec(ctx, insert, v.Name(), v.Version(), v.Kind())
 		if err != nil {
 			return fmt.Errorf("failed to insert scanner %v: %v", v.Name(), err)
 		}
+		registerScannerCounter.WithLabelValues("insert").Add(1)
+		registerScannerDuration.WithLabelValues("insert").Observe(time.Since(start).Seconds())
 	}
 
 	return nil

@@ -3,9 +3,34 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
+)
+
+var (
+	setIndexedFinishedCounter = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "claircore",
+			Subsystem: "indexer",
+			Name:      "setindexedfinished_total",
+			Help:      "Total number of database queries issued in the SetIndexFinished method.",
+		},
+		[]string{"query"},
+	)
+
+	setIndexedFinishedDuration = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "claircore",
+			Subsystem: "indexer",
+			Name:      "setindexfinished_duration_seconds",
+			Help:      "The duration of all queries issued in the SetIndexFinished method",
+		},
+		[]string{"query"},
+	)
 )
 
 func (s *store) SetIndexFinished(ctx context.Context, ir *claircore.IndexReport, scnrs indexer.VersionedScanners) error {
@@ -63,19 +88,26 @@ DO
 
 	// link extracted scanner IDs with incoming manifest
 	for _, id := range scannerIDs {
+		start := time.Now()
 		_, err := tx.Exec(ctx, insertManifestScanned, ir.Hash, id)
 		if err != nil {
 			return fmt.Errorf("store:storeManifest failed to link manifest with scanner list: %v", err)
 		}
+		setIndexedFinishedCounter.WithLabelValues("insertManifestScanned").Add(1)
+		setIndexedFinishedDuration.WithLabelValues("insertManifestScanned").Observe(time.Since(start).Seconds())
 	}
 
 	// push IndexReport to the store
 	// we cast claircore.IndexReport to jsonbIndexReport in order to obtain the value/scan
 	// implementations
+
+	start := time.Now()
 	_, err = tx.Exec(ctx, upsertIndexReport, ir.Hash, jsonbIndexReport(*ir))
 	if err != nil {
 		return fmt.Errorf("failed to upsert scan result: %v", err)
 	}
+	setIndexedFinishedCounter.WithLabelValues("upsertIndexReport").Add(1)
+	setIndexedFinishedDuration.WithLabelValues("upsertIndexReport").Observe(time.Since(start).Seconds())
 
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("failed to commit transaction: %v", err)

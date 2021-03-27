@@ -4,13 +4,55 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
+)
+
+var (
+	getUpdateDiffCounter = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "claircore",
+			Subsystem: "vulnstore",
+			Name:      "getupdatediff_total",
+			Help:      "Total number of database queries issued in the getUpdateDiff  method.",
+		},
+		[]string{"query"},
+	)
+	getUpdateDiffDuration = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "claircore",
+			Subsystem: "vulnstore",
+			Name:      "getupdatediff_duration_seconds",
+			Help:      "The duration of all queries issued in the getUpdateDiff method",
+		},
+		[]string{"query"},
+	)
+	populateRefsCounter = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "claircore",
+			Subsystem: "vulnstore",
+			Name:      "populaterefs_total",
+			Help:      "Total number of database queries issued in the populateRefs  method.",
+		},
+		[]string{"query"},
+	)
+	populateRefsDuration = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "claircore",
+			Subsystem: "vulnstore",
+			Name:      "populaterefs_duration_seconds",
+			Help:      "The duration of all queries issued in the populateRefs method",
+		},
+		[]string{"query"},
+	)
 )
 
 func getUpdateDiff(ctx context.Context, pool *pgxpool.Pool, prev, cur uuid.UUID) (*driver.UpdateDiff, error) {
@@ -65,11 +107,18 @@ func getUpdateDiff(ctx context.Context, pool *pgxpool.Pool, prev, cur uuid.UUID)
 	}
 
 	// Retrieve added first.
+	start := time.Now()
+
 	rows, err := pool.Query(ctx, query, cur, prev)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve added vulnerabilities: %w", err)
 	}
+
+	getUpdateDiffCounter.WithLabelValues("query").Add(1)
+	getUpdateDiffDuration.WithLabelValues("query").Observe(time.Since(start).Seconds())
+
 	defer rows.Close()
+
 	for rows.Next() {
 		v := claircore.Vulnerability{
 			Package: &claircore.Package{},
@@ -121,6 +170,7 @@ func populateRefs(ctx context.Context, diff *driver.UpdateDiff, pool *pgxpool.Po
 	var err error
 
 	diff.Cur.Ref = cur
+	start := time.Now()
 	err = pool.QueryRow(ctx, query, cur).Scan(
 		&diff.Cur.Updater,
 		&diff.Cur.Fingerprint,
@@ -133,11 +183,15 @@ func populateRefs(ctx context.Context, diff *driver.UpdateDiff, pool *pgxpool.Po
 	default:
 		return fmt.Errorf("failed to scan current UpdateOperation: %w", err)
 	}
+	populateRefsCounter.WithLabelValues("query").Add(1)
+	populateRefsDuration.WithLabelValues("query").Observe(time.Since(start).Seconds())
 
 	if prev == uuid.Nil {
 		return nil
 	}
 	diff.Prev.Ref = prev
+
+	start = time.Now()
 	err = pool.QueryRow(ctx, query, prev).Scan(
 		&diff.Prev.Updater,
 		&diff.Prev.Fingerprint,
@@ -150,6 +204,8 @@ func populateRefs(ctx context.Context, diff *driver.UpdateDiff, pool *pgxpool.Po
 	default:
 		return fmt.Errorf("failed to scan previous UpdateOperation: %w", err)
 	}
+	populateRefsCounter.WithLabelValues("query").Add(1)
+	populateRefsDuration.WithLabelValues("query").Observe(time.Since(start).Seconds())
 
 	return nil
 }

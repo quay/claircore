@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/zlog"
 	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/label"
@@ -15,6 +17,28 @@ import (
 )
 
 var zeroPackage = claircore.Package{}
+
+var (
+	indexPackageCounter = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "claircore",
+			Subsystem: "indexer",
+			Name:      "indexpackage_total",
+			Help:      "Total number of database queries issued in the IndexPackage method.",
+		},
+		[]string{"query"},
+	)
+
+	indexPackageDuration = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "claircore",
+			Subsystem: "indexer",
+			Name:      "indexpackage_duration_seconds",
+			Help:      "The duration of all queries issued in the IndexPackage method",
+		},
+		[]string{"query"},
+	)
+)
 
 // IndexPackages indexes all provided packages along with creating a scan artifact.
 //
@@ -97,6 +121,8 @@ func (s *store) IndexPackages(ctx context.Context, pkgs []*claircore.Package, la
 	}
 
 	skipCt := 0
+
+	start := time.Now()
 	mBatcher := microbatch.NewInsert(tx, 500, time.Minute)
 	for _, pkg := range pkgs {
 		if pkg.Name == "" {
@@ -117,6 +143,9 @@ func (s *store) IndexPackages(ctx context.Context, pkgs []*claircore.Package, la
 	if err != nil {
 		return fmt.Errorf("final batch insert failed for pkg: %v", err)
 	}
+	indexPackageCounter.WithLabelValues("insert_batch").Add(1)
+	indexPackageDuration.WithLabelValues("insert_batch").Observe(time.Since(start).Seconds())
+
 	zlog.Debug(ctx).
 		Int("skipped", skipCt).
 		Int("inserted", len(pkgs)-skipCt).
@@ -125,6 +154,8 @@ func (s *store) IndexPackages(ctx context.Context, pkgs []*claircore.Package, la
 	skipCt = 0
 	// make package scan artifacts
 	mBatcher = microbatch.NewInsert(tx, 500, time.Minute)
+
+	start = time.Now()
 	for _, pkg := range pkgs {
 		if pkg.Name == "" {
 			skipCt++
@@ -158,6 +189,8 @@ func (s *store) IndexPackages(ctx context.Context, pkgs []*claircore.Package, la
 	if err != nil {
 		return fmt.Errorf("final batch insert failed for package_scanartifact: %v", err)
 	}
+	indexPackageCounter.WithLabelValues("insertWith_batch").Add(1)
+	indexPackageDuration.WithLabelValues("insertWith_batch").Observe(time.Since(start).Seconds())
 	zlog.Debug(ctx).
 		Int("skipped", skipCt).
 		Int("inserted", len(pkgs)-skipCt).

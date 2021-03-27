@@ -6,12 +6,36 @@ import (
 	"fmt"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/sync/semaphore"
+)
+
+var (
+	gcCounter = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "claircore",
+			Subsystem: "vulnstore",
+			Name:      "gc_total",
+			Help:      "Total number of database queries issued in the GC method.",
+		},
+		[]string{"query"},
+	)
+	gcDuration = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "claircore",
+			Subsystem: "vulnstore",
+			Name:      "gc_duration_seconds",
+			Help:      "The duration of all queries issued in the GC method",
+		},
+		[]string{"query"},
+	)
 )
 
 // GC is split into two phases, first it will identify any update operations
@@ -143,12 +167,18 @@ WHERE array_length(ordered_ops.refs, 1) > $2;
 	// keep+1 is used because PG's array slicing is inclusive,
 	// we want to grab all items once after our keep value.
 	m := []uuid.UUID{}
+
+	start := time.Now()
 	rows, err := pool.Query(ctx, updateOps, keep+1, keep)
 	switch err {
 	case nil:
 	default:
 		return nil, 0, fmt.Errorf("error querying for update operations: %v", err)
 	}
+
+	gcCounter.WithLabelValues("updateOps").Add(1)
+	gcDuration.WithLabelValues("updateOps").Observe(time.Since(start).Seconds())
+
 	defer rows.Close()
 	for rows.Next() {
 		// pgx will not scan directly into a []uuid.UUID
@@ -191,6 +221,8 @@ DELETE FROM vuln WHERE id = $1;
 		// collect ids which the provided updater created.
 		// note arguments via closure
 		err := func() error {
+			start := time.Now()
+
 			rows, err := pool.Query(ctx, paginatedSelect, updater, largestID)
 			if err != nil {
 				return err
@@ -207,6 +239,9 @@ DELETE FROM vuln WHERE id = $1;
 			if rows.Err() != nil {
 				return rows.Err()
 			}
+
+			gcCounter.WithLabelValues("paginatedSelect").Add(1)
+			gcDuration.WithLabelValues("paginatedSelect").Observe(time.Since(start).Seconds())
 			return nil
 		}()
 		if err != nil {
@@ -235,6 +270,7 @@ DELETE FROM vuln WHERE id = $1;
 				b.Queue(shouldDelete, id)
 			}
 
+			start := time.Now()
 			res := pool.SendBatch(ctx, b)
 			defer res.Close()
 
@@ -248,6 +284,10 @@ DELETE FROM vuln WHERE id = $1;
 					toDelete.Queue(deleteVuln, ids[i])
 				}
 			}
+
+			gcCounter.WithLabelValues("shoulddelete_batch").Add(1)
+			gcDuration.WithLabelValues("shoulddelete_batch").Observe(time.Since(start).Seconds())
+
 			return toDelete, nil
 		}()
 		if err != nil {
@@ -261,6 +301,7 @@ DELETE FROM vuln WHERE id = $1;
 				return nil
 			}
 
+			start := time.Now()
 			res := pool.SendBatch(ctx, toDelete)
 			defer res.Close()
 
@@ -270,6 +311,8 @@ DELETE FROM vuln WHERE id = $1;
 					return fmt.Errorf("failed while exec'ing vuln delete: %v", err)
 				}
 			}
+			gcCounter.WithLabelValues("deletevuln_batch").Add(1)
+			gcDuration.WithLabelValues("deletevuln_batch").Observe(time.Since(start).Seconds())
 			return nil
 		}()
 		if err != nil {

@@ -6,12 +6,36 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/zlog"
 	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/microbatch"
+)
+
+var (
+	indexManifesCounter = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "claircore",
+			Subsystem: "indexer",
+			Name:      "indexmanifest_total",
+			Help:      "Total number of database queries issued in the IndexManifest method.",
+		},
+		[]string{"query"},
+	)
+
+	indexManifestDuration = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Namespace: "claircore",
+			Subsystem: "indexer",
+			Name:      "indexmanifest_duration_seconds",
+			Help:      "The duration of all queries issued in the IndexManifest method",
+		},
+		[]string{"query"},
+	)
 )
 
 func (s *store) IndexManifest(ctx context.Context, ir *claircore.IndexReport) error {
@@ -54,6 +78,7 @@ func (s *store) IndexManifest(ctx context.Context, ir *claircore.IndexReport) er
 		return fmt.Errorf("failed to create statement: %v", err)
 	}
 
+	start := time.Now()
 	mBatcher := microbatch.NewInsert(tx, 500, time.Minute)
 	for _, record := range records {
 		// ignore nil packages
@@ -98,6 +123,8 @@ func (s *store) IndexManifest(ctx context.Context, ir *claircore.IndexReport) er
 	if err != nil {
 		return fmt.Errorf("final batch insert failed: %v", err)
 	}
+	indexManifesCounter.WithLabelValues("query_batch").Add(1)
+	indexManifestDuration.WithLabelValues("query_batch").Observe(time.Since(start).Seconds())
 
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("failed to commit tx: %v", err)
