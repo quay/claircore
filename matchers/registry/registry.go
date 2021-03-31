@@ -44,12 +44,13 @@ func Registered() map[string]driver.MatcherFactory {
 // Configure calls the Configure method on all the passed-in
 // MatcherFactories.
 func Configure(ctx context.Context, fs map[string]driver.MatcherFactory, cfg map[string]driver.MatcherConfigUnmarshaler, c *http.Client) error {
+	if c == nil {
+		return errors.New("invalid *http.Client")
+	}
+
 	errd := false
 	var b strings.Builder
 	b.WriteString("matchers: errors configuring factories:")
-	if c == nil {
-		c = http.DefaultClient
-	}
 
 	for name, fac := range fs {
 		f, fOK := fac.(driver.MatcherConfigurable)
