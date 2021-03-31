@@ -2,6 +2,7 @@ package matchers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -33,9 +34,8 @@ type MatchersOption func(m *Matchers)
 func NewMatchers(ctx context.Context, client *http.Client, opts ...MatchersOption) ([]driver.Matcher, error) {
 	ctx = baggage.ContextWithValues(ctx,
 		label.String("component", "libvuln/matchers/NewMatchers"))
-
 	if client == nil {
-		client = http.DefaultClient
+		return nil, errors.New("invalid *http.Client")
 	}
 
 	m := &Matchers{
