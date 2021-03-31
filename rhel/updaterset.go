@@ -29,7 +29,7 @@ const DefaultManifest = `https://www.redhat.com/security/data/oval/v2/PULP_MANIF
 func NewFactory(ctx context.Context, manifest string, opts ...FactoryOption) (*Factory, error) {
 	var err error
 	f := Factory{
-		client: http.DefaultClient,
+		client: http.DefaultClient, // TODO(hank) Remove DefaultClient
 	}
 	f.url, err = url.Parse(manifest)
 	if err != nil {
@@ -53,9 +53,14 @@ type Factory struct {
 	manifestEtag string
 }
 
+// FactoryConfig is the configuration accepted by the rhel updaters.
+//
+// By convention, this should be in a map called "rhel".
 type FactoryConfig struct {
 	URL string `json:"url" yaml:"url"`
 }
+
+var _ driver.Configurable = (*Factory)(nil)
 
 func (f *Factory) Configure(ctx context.Context, cfg driver.ConfigUnmarshaler, c *http.Client) error {
 	ctx = baggage.ContextWithValues(ctx,
@@ -73,7 +78,7 @@ func (f *Factory) Configure(ctx context.Context, cfg driver.ConfigUnmarshaler, c
 			return err
 		}
 		zlog.Info(ctx).
-			Str("url", u.String()).
+			Stringer("url", u).
 			Msg("configured manifest URL")
 		f.url = u
 	}
@@ -82,6 +87,7 @@ func (f *Factory) Configure(ctx context.Context, cfg driver.ConfigUnmarshaler, c
 		zlog.Info(ctx).
 			Msg("configured HTTP client")
 		f.client = c
+		f.updaterOpts = append(f.updaterOpts, WithClient(c))
 	}
 
 	return nil
