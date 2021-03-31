@@ -12,6 +12,10 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jackc/pgx/v4/stdlib"
 	"github.com/remind101/migrate"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
+
+	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/migrations"
@@ -115,6 +119,8 @@ type Opts struct {
 // the necessary Updaters and Matchers for Libvuln
 // usage
 func (o *Opts) parse(ctx context.Context) error {
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "libvuln/Opts.parse"))
 	// required
 	if o.ConnString == "" {
 		return fmt.Errorf("no connection string provided")
@@ -141,7 +147,9 @@ func (o *Opts) parse(ctx context.Context) error {
 	}
 
 	if o.Client == nil {
-		o.Client = http.DefaultClient
+		zlog.Warn(ctx).
+			Msg("using default HTTP client; this will become an error in the future")
+		o.Client = http.DefaultClient // TODO(hank) Remove DefaultClient
 	}
 	if o.UpdaterConfigs == nil {
 		o.UpdaterConfigs = make(map[string]driver.ConfigUnmarshaler)
