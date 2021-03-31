@@ -19,7 +19,7 @@ const (
 )
 
 // Fetcher is responsible for downloading a layer, uncompressing
-// if ncessary, and making the uncompressed tar contents availble for
+// if necessary, and making the uncompressed tar contents available for
 // reading.
 type Fetcher interface {
 	Fetch(ctx context.Context, layers []*claircore.Layer) error

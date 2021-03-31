@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -60,7 +61,7 @@ func Unpack(cmd context.Context, cfg *commonConfig, args []string) error {
 	defer done()
 
 	log.Printf("fetching layers")
-	f := fetcher.New(nil, "")
+	f := fetcher.New(http.DefaultClient, "")
 	err = f.Fetch(ctx, m.Layers)
 	if err != nil {
 		return err

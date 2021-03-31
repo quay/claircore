@@ -34,15 +34,11 @@ type fetcher struct {
 }
 
 // New creates a new indexer.Fetcher which downloads layers to temporary files.
-// If a nil *http.Client is provided, the default client will be used.
 //
 // Fetcher is safe to share concurrently.
 //
 // The provided LayerFetchOpt is currently ignored.
 func New(client *http.Client, _ indexer.LayerFetchOpt) *fetcher {
-	if client == nil {
-		client = http.DefaultClient
-	}
 	return &fetcher{
 		wc: client,
 	}
