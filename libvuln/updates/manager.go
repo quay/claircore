@@ -154,7 +154,8 @@ func (m *Manager) Run(ctx context.Context) error {
 		updaters = append(updaters, set.Updaters()...)
 	}
 
-	// reconfigure updaters
+	// configure updaters
+	toRun := make([]driver.Updater, 0, len(updaters))
 	for _, u := range updaters {
 		f, fOK := u.(driver.Configurable)
 		cfg, cfgOK := m.configs[u.Name()]
@@ -164,17 +165,22 @@ func (m *Manager) Run(ctx context.Context) error {
 				continue
 			}
 		}
+		toRun = append(toRun, u)
 	}
 
-	zlog.Info(ctx).Int("total", len(updaters)).Int("batchSize", m.batchSize).Msg("running updaters")
+	zlog.Info(ctx).
+		Int("total", len(toRun)).
+		Int("batchSize", m.batchSize).
+		Msg("running updaters")
 
 	sem := semaphore.NewWeighted(int64(m.batchSize))
-	errChan := make(chan error, len(updaters)+1) // +1 for a potential ctx error
-	for i := range updaters {
-
+	errChan := make(chan error, len(toRun)+1) // +1 for a potential ctx error
+	for i := range toRun {
 		err := sem.Acquire(ctx, 1)
 		if err != nil {
-			zlog.Error(ctx).Err(err).Msg("sem acquire failed, ending updater run.")
+			zlog.Error(ctx).
+				Err(err).
+				Msg("sem acquire failed, ending updater run")
 			break
 		}
 
@@ -203,7 +209,7 @@ func (m *Manager) Run(ctx context.Context) error {
 			if err != nil {
 				errChan <- fmt.Errorf("%v: %w", u.Name(), err)
 			}
-		}(updaters[i])
+		}(toRun[i])
 	}
 
 	// Unconditionally wait for all in-flight go routines to return.
