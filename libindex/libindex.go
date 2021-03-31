@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -35,14 +36,22 @@ type Libindex struct {
 	state string
 }
 
-// New creates a new instance of libindex
-func New(ctx context.Context, opts *Opts) (*Libindex, error) {
+// New creates a new instance of libindex.
+//
+// The passed http.Client will be used for fetching layers and any HTTP requests
+// made by scanners.
+func New(ctx context.Context, opts *Opts, cl *http.Client) (*Libindex, error) {
 	ctx = baggage.ContextWithValues(ctx,
 		label.String("component", "libindex/New"))
 	err := opts.Parse(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse opts: %v", err)
 	}
+	if cl == nil {
+		return nil, errors.New("invalid *http.Client")
+	}
+	// TODO(hank) If "airgap" is set, we should wrap the client and return
+	// errors on non-RFC1918 and non-RFC4193 addresses.
 
 	store, err := initStore(ctx, opts)
 	if err != nil {
@@ -53,7 +62,7 @@ func New(ctx context.Context, opts *Opts) (*Libindex, error) {
 	l := &Libindex{
 		Opts:   opts,
 		store:  store,
-		client: &http.Client{},
+		client: cl,
 	}
 
 	// register any new scanners.

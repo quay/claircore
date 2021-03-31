@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
+	"net/http"
 	"strings"
 	"testing"
 	"time"
@@ -102,7 +103,7 @@ func (tc testcase) RunInner(ctx context.Context, t *testing.T, dsn string, next 
 		LayerScanConcurrency: 1,
 	}
 
-	lib, err := New(ctx, opts)
+	lib, err := New(ctx, opts, http.DefaultClient)
 	if err != nil {
 		t.Fatalf("failed to create libindex instance: %v", err)
 	}

@@ -47,7 +47,7 @@ func main() {
 	}
 
 	// create libindex
-	lib, err := libindex.New(ctx, opts)
+	lib, err := libindex.New(ctx, opts, http.DefaultClient)
 	if err != nil {
 		log.Fatal().Msgf("failed to create libindex %v", err)
 	}
