@@ -11,6 +11,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/quay/zlog"
+
 	"github.com/quay/claircore/libvuln/driver"
 )
 
@@ -55,14 +57,22 @@ func Configure(ctx context.Context, fs map[string]driver.UpdaterSetFactory, cfg 
 	}
 
 	for name, fac := range fs {
-		f, fOK := fac.(driver.Configurable)
-		cf, cfOK := cfg[name]
-		if fOK && cfOK {
+		ev := zlog.Debug(ctx).
+			Str("factory", name)
+		f, ok := fac.(driver.Configurable)
+		if ok {
+			ev.Msg("configuring factory")
+			cf := cfg[name]
+			if cf == nil {
+				cf = noopConfig
+			}
 			if err := f.Configure(ctx, cf, c); err != nil {
 				errd = true
 				b.WriteString("\n\t")
 				b.WriteString(err.Error())
 			}
+		} else {
+			ev.Msg("factory unconfigurable")
 		}
 	}
 
@@ -71,3 +81,6 @@ func Configure(ctx context.Context, fs map[string]driver.UpdaterSetFactory, cfg 
 	}
 	return nil
 }
+
+// NoopConfig is used when an explicit config is not provided.
+func noopConfig(_ interface{}) error { return nil }
