@@ -14,11 +14,11 @@ import (
 	"path/filepath"
 	"strings"
 
+	pep440 "github.com/aquasecurity/go-pep440-version"
 	"github.com/quay/zlog"
 	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/label"
 
-	pep440 "github.com/aquasecurity/go-pep440-version"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/tmp"
@@ -27,7 +27,8 @@ import (
 const defaultURL = `https://github.com/pyupio/safety-db/archive/master.tar.gz`
 
 var (
-	_ driver.Updater = (*Updater)(nil)
+	_ driver.Updater      = (*Updater)(nil)
+	_ driver.Configurable = (*Updater)(nil)
 
 	defaultRepo = claircore.Repository{
 		Name: "pypi",
@@ -61,7 +62,7 @@ func NewUpdater(opt ...Option) (*Updater, error) {
 		}
 	}
 	if u.client == nil {
-		u.client = http.DefaultClient
+		u.client = http.DefaultClient // TODO(hank) Remove DefaultClient
 	}
 	if u.repo == nil {
 		u.repo = &defaultRepo
@@ -84,7 +85,7 @@ func WithClient(c *http.Client) Option {
 }
 
 // WithRepo sets the repository information that will be associated with all the
-// vulnerabilites found.
+// vulnerabilities found.
 //
 // If not passed to NewUpdater, a default Repository will be used.
 func WithRepo(r *claircore.Repository) Option {
@@ -110,6 +111,37 @@ func WithURL(uri string) Option {
 		up.url = u
 		return nil
 	}
+}
+
+// Config is the configuration for the updater.
+//
+// By convention, this is in a map called "pyupio".
+type Config struct {
+	URL string `json:"url" yaml:"url"`
+}
+
+// Configure implements driver.Configurable.
+func (u *Updater) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *http.Client) error {
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "pyupio/Updater.Configure"))
+	var cfg Config
+	if err := f(&cfg); err != nil {
+		return err
+	}
+
+	if cfg.URL != "" {
+		uri, err := url.Parse(cfg.URL)
+		if err != nil {
+			return err
+		}
+		u.url = uri
+		zlog.Info(ctx).
+			Msg("configured URL")
+	}
+	u.client = c
+	zlog.Info(ctx).
+		Msg("configured HTTP client")
+	return nil
 }
 
 // Name implements driver.Updater.
