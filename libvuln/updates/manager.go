@@ -66,10 +66,6 @@ func NewManager(ctx context.Context, store vulnstore.Updater, locks LockSource, 
 	ctx = baggage.ContextWithValues(ctx,
 		label.String("component", "libvuln/updates/NewManager"))
 
-	if client == nil {
-		client = http.DefaultClient
-	}
-
 	// the default Manager
 	m := &Manager{
 		store:     store,
@@ -157,11 +153,17 @@ func (m *Manager) Run(ctx context.Context) error {
 	// configure updaters
 	toRun := make([]driver.Updater, 0, len(updaters))
 	for _, u := range updaters {
-		f, fOK := u.(driver.Configurable)
-		cfg, cfgOK := m.configs[u.Name()]
-		if fOK && cfgOK {
-			if err := f.Configure(ctx, cfg, nil); err != nil {
-				zlog.Warn(ctx).Err(err).Str("updater", u.Name()).Msg("failed configuring updater, excluding from current run")
+		if f, ok := u.(driver.Configurable); ok {
+			name := u.Name()
+			cfg := m.configs[name]
+			if cfg == nil {
+				cfg = noopConfig
+			}
+			if err := f.Configure(ctx, cfg, m.client); err != nil {
+				zlog.Warn(ctx).
+					Err(err).
+					Str("updater", name).
+					Msg("failed configuring updater, excluding from current run")
 				continue
 			}
 		}
@@ -288,3 +290,6 @@ func (m *Manager) driveUpdater(ctx context.Context, u driver.Updater) error {
 
 	return nil
 }
+
+// NoopConfig is used when an explicit config is not provided.
+func noopConfig(_ interface{}) error { return nil }
