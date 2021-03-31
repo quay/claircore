@@ -55,6 +55,52 @@ type Fetcher struct {
 	Client      *http.Client
 }
 
+// Configure implements driver.Configurable.
+//
+// For users that embed a Fetcher, this provides a configuration hook by
+// default.
+func (f *Fetcher) Configure(ctx context.Context, cf driver.ConfigUnmarshaler, c *http.Client) error {
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "pkg/ovalutil/Fetcher.Configure"))
+	var cfg FetcherConfig
+	if err := cf(&cfg); err != nil {
+		return err
+	}
+	if cfg.URL != "" {
+		uri, err := url.Parse(cfg.URL)
+		if err != nil {
+			return err
+		}
+		f.URL = uri
+		zlog.Info(ctx).
+			Msg("configured database URL")
+	}
+	if cfg.Compression != "" {
+		c, err := ParseCompressor(cfg.Compression)
+		if err != nil {
+			return err
+		}
+		f.Compression = c
+		zlog.Info(ctx).
+			Msg("configured database compression")
+	}
+
+	f.Client = c
+	zlog.Info(ctx).
+		Msg("configured HTTP client")
+	return nil
+}
+
+// FetcherConfig is the configuration that the Fetcher's Configure method works
+// with.
+//
+// Users the embed Fetcher and use Fetcher.Configure should make sure any of
+// their configuration keys don't conflict with these names.
+type FetcherConfig struct {
+	URL         string `json:"url" yaml:"url"`
+	Compression string `json:"compression" yaml:"compression"`
+}
+
 // Fetch fetches the resource as specified by Fetcher.URL and
 // Fetcher.Compression, using the client provided as Fetcher.Client.
 //
