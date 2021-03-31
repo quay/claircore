@@ -12,7 +12,10 @@ import (
 // We currently grab the oval databases db distro-wise.
 const dbURL = `https://www.redhat.com/security/data/oval/com.redhat.rhsa-RHEL%d.xml`
 
-var _ driver.Updater = (*Updater)(nil)
+var (
+	_ driver.Updater      = (*Updater)(nil)
+	_ driver.Configurable = (*Updater)(nil)
+)
 
 // Updater fetches and parses RHEL-flavored OVAL databases.
 type Updater struct {
@@ -38,7 +41,7 @@ func NewUpdater(v Release, opt ...Option) (*Updater, error) {
 		}
 	}
 	if u.Fetcher.Client == nil {
-		u.Fetcher.Client = http.DefaultClient
+		u.Fetcher.Client = http.DefaultClient // TODO(hank) Remove DefaultClient
 	}
 	return u, nil
 }
