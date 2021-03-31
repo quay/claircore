@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 
 	"github.com/quay/zlog"
 	"go.opentelemetry.io/otel/baggage"
@@ -33,7 +34,10 @@ var shouldBzipFetch = map[Release]bool{
 	Eoan:    true,
 }
 
-var _ driver.Updater = (*Updater)(nil)
+var (
+	_ driver.Updater      = (*Updater)(nil)
+	_ driver.Configurable = (*Updater)(nil)
+)
 
 // Updater implements the claircore.Updater.Fetcher and claircore.Updater.Parser
 // interfaces making it eligible to be used as an Updater.
@@ -63,12 +67,45 @@ func NewUpdater(release Release) *Updater {
 	return &Updater{
 		url:     url,
 		release: release,
-		c:       http.DefaultClient,
+		c:       http.DefaultClient, // TODO(hank) Remove DefaultClient
 	}
 }
 
 func (u *Updater) Name() string {
 	return fmt.Sprintf("ubuntu-%s-updater", u.release)
+}
+
+func (u *Updater) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *http.Client) error {
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "ubuntu/Updater.Configure"),
+		label.String("updater", u.Name()))
+
+	var cfg UpdaterConfig
+	if err := f(&cfg); err != nil {
+		return err
+	}
+
+	if cfg.URL != "" {
+		if _, err := url.Parse(cfg.URL); err != nil {
+			return err
+		}
+		u.url = cfg.URL
+		zlog.Info(ctx).
+			Msg("configured database URL")
+	}
+	u.c = c
+	zlog.Info(ctx).
+		Msg("configured HTTP client")
+
+	return nil
+}
+
+// UpdaterConfig is the configuration for the updater.
+//
+// By convention, this is in a map called "ubuntu-${RELEASE}-updater", e.g.
+// "ubuntu-focal-updater".
+type UpdaterConfig struct {
+	URL string `json:"url" yaml:"url"`
 }
 
 func (u *Updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {

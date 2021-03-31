@@ -24,17 +24,50 @@ var Releases = []Release{
 	Eoan,
 }
 
+var (
+	_ driver.Configurable      = (*Factory)(nil)
+	_ driver.UpdaterSetFactory = (*Factory)(nil)
+)
+
 // Factory implements driver.UpdaterSetFactory.
 //
-// A Factory should be constructed directly.
+// A Factory should be constructed directly, and Configure must be called to
+// provide an http.Client.
 type Factory struct {
-	Releases []Release
+	Releases []Release `json:"releases" yaml:"releases"`
+	c        *http.Client
+}
+
+// FactoryConfig is the shadow type for marshaling, so we can tell if something
+// was specified. The tags on the Factory above are just for documentation.
+type factoryConfig struct {
+	Releases []Release `json:"releases" yaml:"releases"`
+}
+
+// Configure implements driver.Configurable.
+func (f *Factory) Configure(ctx context.Context, cf driver.ConfigUnmarshaler, c *http.Client) error {
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "ubuntu/Factory.Configure"))
+	var cfg factoryConfig
+	if err := cf(&cfg); err != nil {
+		return err
+	}
+	if cfg.Releases != nil {
+		f.Releases = cfg.Releases
+		zlog.Info(ctx).
+			Msg("configured releases")
+	}
+
+	f.c = c
+	zlog.Info(ctx).
+		Msg("configured HTTP client")
+	return nil
 }
 
 // UpdaterSet returns updaters for all releases that have available databases.
 func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
 	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "ubuntu/Factory/UpdaterSet"))
+		label.String("component", "ubuntu/Factory.UpdaterSet"))
 
 	us := make([]*Updater, len(f.Releases))
 	ch := make(chan int, len(f.Releases))
@@ -57,18 +90,15 @@ func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
 					us[i] = nil
 					return
 				}
-				res, err := http.DefaultClient.Do(req)
-				if res != nil {
-					res.Body.Close()
+				res, err := f.c.Do(req)
+				if err != nil {
+					zlog.Info(ctx).Err(err).Msg("ignoring release")
+					us[i] = nil
+					return
 				}
-				if err != nil || res.StatusCode != http.StatusOK {
-					ev := zlog.Info(ctx)
-					if err != nil {
-						ev = ev.Err(err)
-					} else {
-						ev = ev.Int("status_code", res.StatusCode)
-					}
-					ev.Msg("ignoring release")
+				res.Body.Close()
+				if res.StatusCode != http.StatusOK {
+					zlog.Info(ctx).Int("status_code", res.StatusCode).Msg("ignoring release")
 					us[i] = nil
 				}
 			}
