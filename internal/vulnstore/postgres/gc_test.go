@@ -97,10 +97,14 @@ func TestGC(t *testing.T) {
 			ctx := zlog.Test(context.Background(), t)
 			pool := TestDB(ctx, t)
 			store := NewVulnStore(pool)
+			locks, err := updates.PoolLockSource(pool, 0)
+			if err != nil {
+				t.Fatal(err)
+			}
 			mgr, err := updates.NewManager(
 				ctx,
 				NewVulnStore(pool),
-				pool,
+				locks,
 				nil,
 				updates.WithEnabled([]string{}),
 				updates.WithOutOfTree([]driver.Updater{mock}),

@@ -72,9 +72,13 @@ func New(ctx context.Context, opts *Opts) (*Libvuln, error) {
 	}
 
 	// create update manager
+	locks, err := updates.PoolLockSource(pool, 0)
+	if err != nil {
+		return nil, err
+	}
 	l.updaters, err = updates.NewManager(ctx,
 		l.store,
-		pool,
+		locks,
 		opts.Client,
 		updates.WithBatchSize(opts.UpdateWorkers),
 		updates.WithInterval(opts.UpdateInterval),

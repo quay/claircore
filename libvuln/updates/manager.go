@@ -9,16 +9,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/quay/zlog"
 	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/label"
 	"golang.org/x/sync/semaphore"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/quay/claircore/internal/vulnstore"
 	"github.com/quay/claircore/libvuln/driver"
-	"github.com/quay/claircore/pkg/distlock/postgres"
+	"github.com/quay/claircore/pkg/distlock"
 	"github.com/quay/claircore/updater"
-	"github.com/quay/zlog"
 )
 
 const (
@@ -31,10 +30,18 @@ var (
 
 type Configs map[string]driver.ConfigUnmarshaler
 
-// Manager oversees the configuration and invocation of vulstore updaters.
+// LockSource abstracts over how locks are implemented.
 //
-// The Manager may be used in a one-shot fashion, configured
-// to run background jobs, or both.
+// An online system needs distributed locks, offline use cases can use
+// process-local locks.
+type LockSource interface {
+	NewLock() distlock.Locker
+}
+
+// Manager oversees the configuration and invocation of vulnstore updaters.
+//
+// The Manager may be used in a one-shot fashion, configured to run background
+// jobs, or both.
 type Manager struct {
 	// provides run-time updater construction.
 	factories map[string]driver.UpdaterSetFactory
@@ -48,15 +55,14 @@ type Manager struct {
 	// instructs manager to run gc and provides the number of
 	// update operations to keep.
 	updateRetention int
-	// provided to construct distributed locks.
-	// TODO(louis): this will be replaced by newest distlock implementation.
-	pool   *pgxpool.Pool
+
+	locks  LockSource
 	client *http.Client
 	store  vulnstore.Updater
 }
 
 // NewManager will return a manager ready to have its Start or Run methods called.
-func NewManager(ctx context.Context, store vulnstore.Updater, pool *pgxpool.Pool, client *http.Client, opts ...ManagerOption) (*Manager, error) {
+func NewManager(ctx context.Context, store vulnstore.Updater, locks LockSource, client *http.Client, opts ...ManagerOption) (*Manager, error) {
 	ctx = baggage.ContextWithValues(ctx,
 		label.String("component", "libvuln/updates/NewManager"))
 
@@ -67,7 +73,7 @@ func NewManager(ctx context.Context, store vulnstore.Updater, pool *pgxpool.Pool
 	// the default Manager
 	m := &Manager{
 		store:     store,
-		pool:      pool,
+		locks:     locks,
 		factories: updater.Registered(),
 		batchSize: DefaultBatchSize,
 		interval:  DefaultInterval,
@@ -93,11 +99,10 @@ func NewManager(ctx context.Context, store vulnstore.Updater, pool *pgxpool.Pool
 
 // Start will run updaters at the given interval.
 //
-// Start is designed to be ran as a go routine.
-// Cancel the provided ctx to end the updater loop.
+// Start is designed to be ran as a goroutine. Cancel the provided Context
+// to end the updater loop.
 //
-// Start must only be called once between context
-// cancelations.
+// Start must only be called once between context cancellations.
 func (m *Manager) Start(ctx context.Context) error {
 	ctx = baggage.ContextWithValues(ctx,
 		label.String("component", "libvuln/updates/Manager.Start"))
@@ -124,11 +129,11 @@ func (m *Manager) Start(ctx context.Context) error {
 	}
 }
 
-// Run constructs updaters from factories, configures them
-// and runs them in Manager.batchSize batches.
+// Run constructs updaters from factories, configures them and runs them
+// in batches.
 //
-// Run is safe to call at anytime, regardless of whether
-// background updaters are running.
+// Run is safe to call at anytime, regardless of whether background updaters
+// are running.
 func (m *Manager) Run(ctx context.Context) error {
 	ctx = baggage.ContextWithValues(
 		ctx,
@@ -136,9 +141,9 @@ func (m *Manager) Run(ctx context.Context) error {
 	)
 
 	updaters := []driver.Updater{}
-	// constructing updater sets may require network access,
+	// Constructing updater sets may require network access
 	// depending on the factory.
-	// if construction fails we will simply ignore those updater
+	// If construction fails, we will simply ignore those updater
 	// sets.
 	for _, factory := range m.factories {
 		set, err := factory.UpdaterSet(ctx)
@@ -180,30 +185,30 @@ func (m *Manager) Run(ctx context.Context) error {
 				return
 			}
 
-			if m.pool != nil {
-				lock := postgres.NewPool(m.pool, 0)
-				ok, err := lock.TryLock(ctx, u.Name())
-				if err != nil {
-					errChan <- err
-					return
-				}
-				if !ok {
-					zlog.Debug(ctx).Str("updater", u.Name()).Msg("another process running updater, excluding from run.")
-					return
-				}
-				defer lock.Unlock()
+			lock := m.locks.NewLock()
+			ok, err := lock.TryLock(ctx, u.Name())
+			if err != nil {
+				errChan <- err
+				return
 			}
+			if !ok {
+				zlog.Debug(ctx).
+					Str("updater", u.Name()).
+					Msg("another process running updater, excluding from run")
+				return
+			}
+			defer lock.Unlock()
 
 			err = m.driveUpdater(ctx, u)
 			if err != nil {
-				errChan <- fmt.Errorf("%v: %w\n", u.Name(), err)
+				errChan <- fmt.Errorf("%v: %w", u.Name(), err)
 			}
 		}(updaters[i])
 	}
 
-	// unconditionally wait for all in-flight go routines to return.
-	// the use of context.Background and lack of error checking is intentional.
-	// all in-flight go routines are guaranteed to release their sems.
+	// Unconditionally wait for all in-flight go routines to return.
+	// The use of context.Background and lack of error checking is intentional.
+	// All in-flight goroutines are guaranteed to release their semaphores.
 	sem.Acquire(context.Background(), int64(m.batchSize))
 
 	if m.updateRetention != 0 {
@@ -212,14 +217,17 @@ func (m *Manager) Run(ctx context.Context) error {
 		if err != nil {
 			zlog.Error(ctx).Err(err).Msg("error while performing GC")
 		} else {
-			zlog.Info(ctx).Int64("remaining_ops", i).Int("retention", m.updateRetention).Msg("GC completed")
+			zlog.Info(ctx).
+				Int64("remaining_ops", i).
+				Int("retention", m.updateRetention).
+				Msg("GC completed")
 		}
 	}
 
 	close(errChan)
 	if len(errChan) != 0 {
 		var b strings.Builder
-		b.WriteString("Updating errors:\n")
+		b.WriteString("updating errors:\n")
 		for err := range errChan {
 			fmt.Fprintf(&b, "%v\n", err)
 		}
@@ -228,7 +236,7 @@ func (m *Manager) Run(ctx context.Context) error {
 	return nil
 }
 
-// driveUpdaters perform the business logic of fetching, parsing, and loading
+// DriveUpdater performs the business logic of fetching, parsing, and loading
 // vulnerabilities discovered by an updater into the database.
 func (m *Manager) driveUpdater(ctx context.Context, u driver.Updater) error {
 	name := u.Name()
