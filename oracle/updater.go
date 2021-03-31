@@ -47,7 +47,7 @@ func NewUpdater(year int, opts ...Option) (*Updater, error) {
 		}
 	}
 	if u.Fetcher.Client == nil {
-		u.Fetcher.Client = http.DefaultClient
+		u.Fetcher.Client = http.DefaultClient // TODO(hank) Remove DefaultClient
 	}
 
 	return &u, nil
@@ -80,7 +80,10 @@ func WithURL(uri, compression string) Option {
 	}
 }
 
-var _ driver.Updater = (*Updater)(nil)
+var (
+	_ driver.Updater      = (*Updater)(nil)
+	_ driver.Configurable = (*Updater)(nil)
+)
 
 // Name satifies the driver.Updater interface.
 func (u *Updater) Name() string {
