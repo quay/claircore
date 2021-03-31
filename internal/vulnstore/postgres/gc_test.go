@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"io"
+	"net/http"
 	"testing"
 
 	"github.com/quay/zlog"
@@ -105,7 +106,7 @@ func TestGC(t *testing.T) {
 				ctx,
 				NewVulnStore(pool),
 				locks,
-				nil,
+				http.DefaultClient,
 				updates.WithEnabled([]string{}),
 				updates.WithOutOfTree([]driver.Updater{mock}),
 			)

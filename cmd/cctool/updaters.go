@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -12,8 +13,8 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/quay/claircore/libvuln"
-	"github.com/quay/claircore/libvuln/driver"
-	"github.com/quay/claircore/updater"
+	"github.com/quay/claircore/libvuln/jsonblob"
+	"github.com/quay/claircore/libvuln/updates"
 	_ "github.com/quay/claircore/updater/defaults"
 )
 
@@ -56,18 +57,20 @@ func RunUpdaters(cmd context.Context, cfg *commonConfig, args []string) error {
 		return nil
 	}
 
-	u, err := libvuln.NewOfflineUpdater(nil, nil, out)
+	store, err := jsonblob.New()
 	if err != nil {
 		return err
 	}
-
-	d := updater.Registered()
-	ufs := make([]driver.UpdaterSetFactory, 0, len(d))
-	for _, f := range d {
-		ufs = append(ufs, f)
+	defer func() {
+		if err := store.Store(out); err != nil {
+			zlog.Warn(ctx).Err(err).Send()
+		}
+	}()
+	mgr, err := updates.NewManager(ctx, store, updates.LocalLockSource(), http.DefaultClient)
+	if err != nil {
+		return err
 	}
-
-	if err := u.RunUpdaters(ctx, ufs...); err != nil {
+	if err := mgr.Run(ctx); err != nil {
 		if strict {
 			return err
 		}

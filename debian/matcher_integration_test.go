@@ -3,6 +3,7 @@ package debian
 import (
 	"context"
 	"encoding/json"
+	"net/http"
 	"os"
 	"path/filepath"
 	"testing"
@@ -12,9 +13,9 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/matcher"
-	"github.com/quay/claircore/internal/updater"
 	vulnstore "github.com/quay/claircore/internal/vulnstore/postgres"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/libvuln/updates"
 	"github.com/quay/claircore/test/integration"
 )
 
@@ -29,19 +30,30 @@ func TestMatcherIntegration(t *testing.T) {
 	store := vulnstore.NewVulnStore(pool)
 
 	m := &Matcher{}
-	// seed the test vulnstore with CVE data
-	ch := make(chan driver.Updater)
-	go func() {
-		ch <- NewUpdater(Buster)
-		close(ch)
-	}()
-	exec := updater.Online{Pool: pool}
+
+	locks, err := updates.PoolLockSource(pool, 0)
+	if err != nil {
+		t.Error(err)
+	}
+	facs := make(map[string]driver.UpdaterSetFactory, 1)
+	upd := NewUpdater(Buster)
+	set := driver.NewUpdaterSet()
+	if err := set.Add(upd); err != nil {
+		t.Error(err)
+	} else {
+		facs[upd.Name()] = driver.StaticSet(set)
+	}
+	mgr, err := updates.NewManager(ctx, store, locks, http.DefaultClient, updates.WithFactories(facs))
+	if err != nil {
+		t.Error(err)
+	}
 	// force update
 	tctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
-	if err := exec.Run(tctx, ch); err != nil {
+	if err := mgr.Run(tctx); err != nil {
 		t.Error(err)
 	}
+
 	path := filepath.Join("testdata", "indexreport-buster-jackson-databind.json")
 	f, err := os.Open(path)
 	if err != nil {

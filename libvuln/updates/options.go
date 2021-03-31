@@ -92,3 +92,10 @@ func WithGC(retention int) ManagerOption {
 		m.updateRetention = retention
 	}
 }
+
+// WithFactories resets UpdaterSetFactories used by the Manager.
+func WithFactories(f map[string]driver.UpdaterSetFactory) ManagerOption {
+	return func(m *Manager) {
+		m.factories = f
+	}
+}

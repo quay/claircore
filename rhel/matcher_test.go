@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
 	"testing"
@@ -12,9 +13,9 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/matcher"
-	"github.com/quay/claircore/internal/updater"
 	vulnstore "github.com/quay/claircore/internal/vulnstore/postgres"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/libvuln/updates"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 )
@@ -29,23 +30,31 @@ func TestMatcherIntegration(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	locks, err := updates.PoolLockSource(pool, 0)
+	if err != nil {
+		t.Error(err)
+	}
 
-	ch := make(chan driver.Updater)
-	go func() {
-		for _, f := range fs {
-			u, err := test.Updater(f)
-			if err != nil {
-				t.Error(err)
-				continue
-			}
-			ch <- u
+	facs := make(map[string]driver.UpdaterSetFactory, len(fs))
+	for _, f := range fs {
+		u, err := test.Updater(f)
+		if err != nil {
+			t.Error(err)
+			continue
 		}
-		close(ch)
-	}()
-	exec := updater.Online{Pool: pool}
-
+		s := driver.NewUpdaterSet()
+		if err := s.Add(u); err != nil {
+			t.Error(err)
+			continue
+		}
+		facs[u.Name()] = driver.StaticSet(s)
+	}
+	mgr, err := updates.NewManager(ctx, store, locks, http.DefaultClient, updates.WithFactories(facs))
+	if err != nil {
+		t.Error(err)
+	}
 	// force update
-	if err := exec.Run(ctx, ch); err != nil {
+	if err := mgr.Run(ctx); err != nil {
 		t.Error(err)
 	}
 
