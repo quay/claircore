@@ -32,7 +32,10 @@ type pkgInfo struct {
 	version string
 }
 
-var _ driver.Updater = (*Updater)(nil)
+var (
+	_ driver.Updater      = (*Updater)(nil)
+	_ driver.Configurable = (*Updater)(nil)
+)
 
 // Updater implements the claircore.Updater.Fetcher and claircore.Updater.Parser
 // interfaces making it eligible to be used as an Updater.
@@ -44,18 +47,46 @@ type Updater struct {
 	c       *http.Client
 }
 
+// UpdaterConfig is the configuration for the updater.
+//
+// By convention, this is in a map called "debian-${RELEASE}-updater", e.g.
+// "debian-buster-updater".
+type UpdaterConfig struct {
+	URL string `json:"url" yaml:"url"`
+}
+
 func NewUpdater(release Release) *Updater {
 	url := fmt.Sprintf(OVALTemplate, release)
 
 	return &Updater{
 		url:     url,
 		release: release,
-		c:       http.DefaultClient,
+		c:       http.DefaultClient, // TODO(hank) Remove DefaultClient
 	}
 }
 
 func (u *Updater) Name() string {
 	return fmt.Sprintf(`debian-%s-updater`, string(u.release))
+}
+
+// Configure implements driver.Configurable.
+func (u *Updater) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *http.Client) error {
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "debian/Updater.Configure"))
+	var cfg UpdaterConfig
+	if err := f(&cfg); err != nil {
+		return nil
+	}
+	if cfg.URL != "" {
+		u.url = cfg.URL
+		zlog.Info(ctx).
+			Msg("configured database URL")
+	}
+	u.c = c
+	zlog.Info(ctx).
+		Msg("configured HTTP client")
+
+	return nil
 }
 
 func (u *Updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
