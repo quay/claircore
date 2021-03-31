@@ -49,12 +49,12 @@ func Registered() map[string]driver.UpdaterSetFactory {
 // Configure calls the Configure method on all the passed-in
 // UpdaterSetFactories.
 func Configure(ctx context.Context, fs map[string]driver.UpdaterSetFactory, cfg map[string]driver.ConfigUnmarshaler, c *http.Client) error {
+	if c == nil {
+		return errors.New("passed invalid *http.Client")
+	}
 	errd := false
 	var b strings.Builder
 	b.WriteString("updater: errors configuring factories:")
-	if c == nil {
-		c = http.DefaultClient
-	}
 
 	for name, fac := range fs {
 		ev := zlog.Debug(ctx).
