@@ -5,12 +5,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"golang.org/x/sync/errgroup"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 
 	"github.com/quay/zlog"
 	"go.opentelemetry.io/otel/baggage"
@@ -21,8 +22,9 @@ import (
 )
 
 var (
-	_ driver.Matcher       = (*Matcher)(nil)
-	_ driver.RemoteMatcher = (*Matcher)(nil)
+	_ driver.Matcher             = (*Matcher)(nil)
+	_ driver.RemoteMatcher       = (*Matcher)(nil)
+	_ driver.MatcherConfigurable = (*Matcher)(nil)
 )
 
 const (
@@ -110,7 +112,7 @@ func NewMatcher(ecosystem string, opt ...Option) (*Matcher, error) {
 	}
 
 	if m.client == nil {
-		m.client = http.DefaultClient
+		m.client = http.DefaultClient // TODO(hank) Remove DefaultClient
 	}
 
 	// defaults to a sane concurrency limit.
@@ -200,10 +202,48 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 	panic("unreachable")
 }
 
+// Config is the configuration accepted by the Matcher.
+//
+// By convention, it's in a map key called "crda".
+type Config struct {
+	URL         string `json:"url" yaml:"url"`
+	Concurrency int    `json:"concurrent_requests" yaml:"concurrent_requests"`
+}
+
+// Configure implements driver.MatcherConfigurable.
+func (m *Matcher) Configure(ctx context.Context, f driver.MatcherConfigUnmarshaler, c *http.Client) error {
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "crda/Matcher.Configure"))
+	var cfg Config
+	if err := f(&cfg); err != nil {
+		return err
+	}
+
+	if cfg.Concurrency > 0 {
+		m.requestConcurrency = cfg.Concurrency
+		zlog.Info(ctx).
+			Msg("configured concurrent requests")
+	}
+	if cfg.URL != "" {
+		u, err := url.Parse(cfg.URL)
+		if err != nil {
+			return err
+		}
+		m.url = u
+		zlog.Info(ctx).
+			Msg("configured API URL")
+	}
+	m.client = c
+	zlog.Info(ctx).
+		Msg("configured HTTP client")
+
+	return nil
+}
+
 // QueryRemoteMatcher implements driver.RemoteMatcher.
 func (m *Matcher) QueryRemoteMatcher(ctx context.Context, records []*claircore.IndexRecord) (map[string][]*claircore.Vulnerability, error) {
 	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "crda/remotematcher.QueryRemoteMatcher"))
+		label.String("component", "crda/Matcher.QueryRemoteMatcher"))
 	zlog.Debug(ctx).
 		Int("records", len(records)).
 		Msg("request")
