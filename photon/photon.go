@@ -27,8 +27,9 @@ type Updater struct {
 }
 
 var (
-	_ driver.Updater = (*Updater)(nil)
-	_ driver.Fetcher = (*Updater)(nil)
+	_ driver.Updater      = (*Updater)(nil)
+	_ driver.Fetcher      = (*Updater)(nil)
+	_ driver.Configurable = (*Updater)(nil)
 )
 
 // NewUpdater configures an updater to fetch the specified Release.
@@ -42,7 +43,7 @@ func NewUpdater(r Release, opts ...Option) (*Updater, error) {
 		}
 	}
 	if u.Fetcher.Client == nil {
-		u.Fetcher.Client = http.DefaultClient
+		u.Fetcher.Client = http.DefaultClient // TODO(hank) Remove DefaultClient
 	}
 	if u.Fetcher.URL == nil {
 		var err error
