@@ -2,9 +2,12 @@ package main
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"os"
+	"runtime"
 	"strings"
 	"time"
 
@@ -25,6 +28,7 @@ type Config struct {
 	LogLevel                 string `cfgDefault:"debug" cfg:"LOG_LEVEL" cfgHelper:"Log levels: debug, info, warning, error, fatal, panic" `
 	Migrations               bool   `cfgDefault:"true" cfg:"MIGRATIONS" cfgHelper:"Should server run migrations"`
 	DisableBackgroundUpdates bool   `cfgDefault:"false" cfg:"DISABLE_BACKGROUND_UPDATES" cfgHelper:"Should matcher regularly update vulnerability database"`
+	DeadlyHTTPClient         bool   `cfgDefault:"false" cfg:"DEADLY_HTTP_CLIENT" cfgHelper:"Poison the net/http default transport and client"`
 }
 
 func main() {
@@ -45,6 +49,15 @@ func main() {
 	// configure logging
 	log = log.Level(logLevel(conf))
 	zlog.Set(&log)
+
+	// HTTP client config
+	if conf.DeadlyHTTPClient {
+		http.DefaultClient = &http.Client{
+			Transport: new(nofun),
+		}
+		http.DefaultTransport = nil
+		origClient.Transport = origTransport
+	}
 
 	// create libvuln
 	opts := confToLibvulnOpts(conf)
@@ -85,7 +98,23 @@ func confToLibvulnOpts(conf Config) *libvuln.Opts {
 		UpdateInterval:           1 * time.Minute,
 		UpdateWorkers:            10,
 		UpdateRetention:          10,
+		Client:                   origClient,
 	}
 
 	return opts
+}
+
+var (
+	origTransport = http.DefaultTransport.(*http.Transport).Clone()
+	origClient    = http.DefaultClient
+)
+
+type nofun struct{}
+
+func (_ *nofun) RoundTrip(_ *http.Request) (*http.Response, error) {
+	_, file, line, ok := runtime.Caller(6) // determined experimentally
+	if ok {
+		return nil, fmt.Errorf("request denied by policy; occurred at %s:%d", file, line)
+	}
+	return nil, errors.New("request denied by policy")
 }
