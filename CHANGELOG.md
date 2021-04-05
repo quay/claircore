@@ -2,8 +2,25 @@
 ## [Unreleased]
 
 
+<a name="v0.4.0"></a>
+## [v0.4.0] - 2021-03-27
+### Cicd
+- [ab1208b](https://github.com/quay/claircore/commit/ab1208b03c8f85de35f528eefdc200a8e7f41b7a): update doc building to main
+### Docs
+- [99d6eff](https://github.com/quay/claircore/commit/99d6eff84baa2f0229f53830cd981fd93682c090): note default updater URLs
+### Introspection
+- [880166b](https://github.com/quay/claircore/commit/880166b1f81200c6044b5db4011f2c783d5eaeb1): datastore metrics
+### Python
+- [24aad97](https://github.com/quay/claircore/commit/24aad97311e9ceb14b6d0d9718a35a4a58a3b97d): force re-fetch/parse
+- [1f881b5](https://github.com/quay/claircore/commit/1f881b5c578385ad522e0bb49bfbe6510e262f57): update package scanner version
+### Rhel
+- [8cc2823](https://github.com/quay/claircore/commit/8cc282379a39c822b125a7c424b753b4fe9586eb): discard unaffected vulnerabilities
+- [ddd2621](https://github.com/quay/claircore/commit/ddd2621e8c3eb91b91b4b912b1b93bbbc2c7d785): treat vulns without FixedInVersion as unfixed
+
 <a name="v0.3.3"></a>
 ## [v0.3.3] - 2021-03-18
+### Chore
+- [278fd77](https://github.com/quay/claircore/commit/278fd77be94ebaea46819da7a1d7bf8a054f898d): v0.3.3 changelog bump
 ### Cicd
 - [6e26297](https://github.com/quay/claircore/commit/6e26297141d97342b0dc68b20f1494e364f7e036): fix release failure
 
@@ -132,16 +149,28 @@
 ### Vulnstore
 - [77df2c7](https://github.com/quay/claircore/commit/77df2c77881678726d601df50f0e2600de3cb67f): implement active gc
 
+<a name="v0.1.24"></a>
+## [v0.1.24] - 2021-03-25
+### Chore
+- [8060abe](https://github.com/quay/claircore/commit/8060abe904a11c3b84aac45117b81fc3e1e8f362): v0.1.24 changelog bump
+### Libvuln
+- [0823927](https://github.com/quay/claircore/commit/082392732df1a6bfdaa49b6d17f7cb7f074fe7f6): sync migrations with upstream
+### Python
+- [da6e417](https://github.com/quay/claircore/commit/da6e417ed0451d09b08a1ee3933552a265813091): force re-fetch/parse
+- [e5e767b](https://github.com/quay/claircore/commit/e5e767b2d4605bbcdccd38ca714e6309bc99ef48): update package scanner version
+ -  [#348](https://github.com/quay/claircore/issues/348)
 <a name="v0.1.23"></a>
-## [v0.1.23] - 2021-03-08
+## [v0.1.23] - 2021-03-11
+### Chore
+- [8ec6001](https://github.com/quay/claircore/commit/8ec600102759ce8ee55935d02cd46f24f091e81e): v0.1.23 changelog bump
 ### Cicd
-- [7076853](https://github.com/quay/claircore/commit/7076853d4f66c6a5b16d5a04b57f4b6eaf7564c2): bump out go1.14 and bump in go1.16
+- [62575fd](https://github.com/quay/claircore/commit/62575fdb7181d456a3507887bee6c06379fe50e5): bump out go1.14 and bump in go1.16
 ### Fetcher
 - [fef216a](https://github.com/quay/claircore/commit/fef216a02f17792913850ccbc82d94abcf90bb64): relax allowable gzip types
  - Closes [#303](https://github.com/quay/claircore/issues/303)### Indexer
-- [b79d4d6](https://github.com/quay/claircore/commit/b79d4d67e58854b84f60822f2bd995f6621125e6): regen indexer test data
+- [6bf358b](https://github.com/quay/claircore/commit/6bf358b384114bf440db8c2f70be5eee8b6d71cd): regen indexer test data
 ### Python
-- [710aaf4](https://github.com/quay/claircore/commit/710aaf48efe33478369d6cd7c9c00dff64ee7b6a): move to traditional mapping
+- [763ccdc](https://github.com/quay/claircore/commit/763ccdc115b3d05dcf8572d0f1374303f81b674c): move to traditional mapping
 
 <a name="v0.1.22"></a>
 ## [v0.1.22] - 2021-02-12
@@ -692,12 +721,14 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.3.3...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.4.0...HEAD
+[v0.4.0]: https://github.com/quay/claircore/compare/v0.3.3...v0.4.0
 [v0.3.3]: https://github.com/quay/claircore/compare/v0.3.2...v0.3.3
 [v0.3.2]: https://github.com/quay/claircore/compare/v0.3.1...v0.3.2
 [v0.3.1]: https://github.com/quay/claircore/compare/v0.3.0...v0.3.1
 [v0.3.0]: https://github.com/quay/claircore/compare/v0.2.0...v0.3.0
-[v0.2.0]: https://github.com/quay/claircore/compare/v0.1.23...v0.2.0
+[v0.2.0]: https://github.com/quay/claircore/compare/v0.1.24...v0.2.0
+[v0.1.24]: https://github.com/quay/claircore/compare/v0.1.23...v0.1.24
 [v0.1.23]: https://github.com/quay/claircore/compare/v0.1.22...v0.1.23
 [v0.1.22]: https://github.com/quay/claircore/compare/v0.1.21...v0.1.22
 [v0.1.21]: https://github.com/quay/claircore/compare/v0.1.20...v0.1.21
