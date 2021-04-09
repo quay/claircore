@@ -11,6 +11,7 @@ import (
 	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore/internal/vulnstore/postgres"
+	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/jsonblob"
 )
 
@@ -35,7 +36,7 @@ func OfflineImport(ctx context.Context, pool *pgxpool.Pool, in io.Reader) error 
 		return err
 	}
 
-	ops, err := s.GetUpdateOperations(ctx)
+	ops, err := s.GetUpdateOperations(ctx, driver.VulnerabilityKind)
 	if err != nil {
 		return err
 	}

@@ -8,6 +8,11 @@ import (
 	"github.com/quay/claircore"
 )
 
+type UpdateKind string
+
+var VulnerabilityKind UpdateKind = "vulnerability"
+var EnrichmentKind UpdateKind = "enrichment"
+
 // Our diff terminology uses UpdateOpeartion A and UpdateOperation B as arguments.
 // A is always the base and B is the update being applied over A.
 
@@ -17,6 +22,7 @@ type UpdateOperation struct {
 	Updater     string      `json:"updater"`
 	Fingerprint Fingerprint `json:"fingerprint"`
 	Date        time.Time   `json:"date"`
+	Kind        UpdateKind  `json:"kind"`
 }
 
 // UpdateDiff represents added or removed vulnerabilities between update operations

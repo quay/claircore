@@ -54,7 +54,7 @@ var (
 func updateVulnerabilites(ctx context.Context, pool *pgxpool.Pool, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability) (uuid.UUID, error) {
 	const (
 		// Create makes a new update operation and returns the reference and ID.
-		create = `INSERT INTO update_operation (updater, fingerprint) VALUES ($1, $2) RETURNING id, ref;`
+		create = `INSERT INTO update_operation (updater, fingerprint, kind) VALUES ($1, $2, 'vulnerability') RETURNING id, ref;`
 		// Insert attempts to create a new vulnerability. It fails silently.
 		insert = `
 		INSERT INTO vuln (

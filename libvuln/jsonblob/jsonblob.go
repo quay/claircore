@@ -12,8 +12,11 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/vulnstore"
 	"github.com/quay/claircore/libvuln/driver"
 )
+
+var _ vulnstore.Updater = (*Store)(nil)
 
 // New constructs an empty Store.
 func New() (*Store, error) {
@@ -171,6 +174,7 @@ func (s *Store) UpdateVulnerabilities(_ context.Context, updater string, fingerp
 		Date:        now,
 		Fingerprint: fingerprint,
 		Updater:     updater,
+		Kind:        driver.VulnerabilityKind,
 	}}, s.ops[updater]...)
 	return ref, nil
 }
@@ -193,7 +197,7 @@ func (s *Store) copyops() map[string][]driver.UpdateOperation {
 // The returned map is keyed by Updater implementation's unique names.
 //
 // If no updaters are specified, all UpdateOperations are returned.
-func (s *Store) GetUpdateOperations(context.Context, ...string) (map[string][]driver.UpdateOperation, error) {
+func (s *Store) GetUpdateOperations(context.Context, driver.UpdateKind, ...string) (map[string][]driver.UpdateOperation, error) {
 	s.RLock()
 	defer s.RUnlock()
 	return s.copyops(), nil
@@ -201,7 +205,7 @@ func (s *Store) GetUpdateOperations(context.Context, ...string) (map[string][]dr
 
 // GetLatestUpdateRefs reports the latest update reference for every known
 // updater.
-func (s *Store) GetLatestUpdateRefs(context.Context) (map[string][]driver.UpdateOperation, error) {
+func (s *Store) GetLatestUpdateRefs(context.Context, driver.UpdateKind) (map[string][]driver.UpdateOperation, error) {
 	s.RLock()
 	defer s.RUnlock()
 	return s.copyops(), nil
@@ -209,7 +213,7 @@ func (s *Store) GetLatestUpdateRefs(context.Context) (map[string][]driver.Update
 
 // GetLatestUpdateRef reports the latest update reference of any known
 // updater.
-func (s *Store) GetLatestUpdateRef(context.Context) (uuid.UUID, error) {
+func (s *Store) GetLatestUpdateRef(context.Context, driver.UpdateKind) (uuid.UUID, error) {
 	s.RLock()
 	defer s.RUnlock()
 	return s.latest, nil

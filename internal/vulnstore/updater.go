@@ -22,14 +22,13 @@ type Updater interface {
 	// The returned map is keyed by Updater implementation's unique names.
 	//
 	// If no updaters are specified, all UpdateOperations are returned.
-	GetUpdateOperations(context.Context, ...string) (map[string][]driver.UpdateOperation, error)
-
+	GetUpdateOperations(context.Context, driver.UpdateKind, ...string) (map[string][]driver.UpdateOperation, error)
 	// GetLatestUpdateRefs reports the latest update reference for every known
 	// updater.
-	GetLatestUpdateRefs(context.Context) (map[string][]driver.UpdateOperation, error)
+	GetLatestUpdateRefs(context.Context, driver.UpdateKind) (map[string][]driver.UpdateOperation, error)
 	// GetLatestUpdateRef reports the latest update reference of any known
 	// updater.
-	GetLatestUpdateRef(context.Context) (uuid.UUID, error)
+	GetLatestUpdateRef(context.Context, driver.UpdateKind) (uuid.UUID, error)
 	// DeleteUpdateOperations removes an UpdateOperation.
 	// A call to GC must be run after this to garbage collect vulnerabilities associated
 	// with the UpdateOperation.

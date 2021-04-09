@@ -143,7 +143,7 @@ func (e *e2e) Update(ctx context.Context) func(*testing.T) {
 func (e *e2e) GetUpdateOperations(ctx context.Context) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx := zlog.Test(ctx, t)
-		out, err := e.s.GetUpdateOperations(ctx, e.updater)
+		out, err := e.s.GetUpdateOperations(ctx, driver.VulnerabilityKind, e.updater)
 		if err != nil {
 			t.Fatalf("failed to get UpdateOperations: %v", err)
 		}

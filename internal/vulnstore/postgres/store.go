@@ -37,11 +37,6 @@ func (s *Store) UpdateVulnerabilities(ctx context.Context, updater string, finge
 	return updateVulnerabilites(ctx, s.pool, updater, fingerprint, vulns)
 }
 
-// GetUpdateOperations implements vulnstore.Updater.
-func (s *Store) GetUpdateOperations(ctx context.Context, updater ...string) (map[string][]driver.UpdateOperation, error) {
-	return getUpdateOperations(ctx, s.pool, updater...)
-}
-
 // DeleteUpdateOperations implements vulnstore.Updater.
 func (s *Store) DeleteUpdateOperations(ctx context.Context, id ...uuid.UUID) (int64, error) {
 	const query = `DELETE FROM update_operation WHERE ref = ANY($1::uuid[]);`
@@ -62,18 +57,6 @@ func (s *Store) DeleteUpdateOperations(ctx context.Context, id ...uuid.UUID) (in
 		return 0, fmt.Errorf("failed to delete: %w", err)
 	}
 	return tag.RowsAffected(), nil
-}
-
-// GetUpdateOperationDiff implements vulnstore.Updater.
-func (s *Store) GetUpdateOperationDiff(ctx context.Context, a, b uuid.UUID) (*driver.UpdateDiff, error) {
-	return getUpdateDiff(ctx, s.pool, a, b)
-}
-func (s *Store) GetUpdateDiff(ctx context.Context, a, b uuid.UUID) (*driver.UpdateDiff, error) {
-	return getUpdateDiff(ctx, s.pool, a, b)
-}
-
-func (s *Store) GetLatestUpdateRefs(ctx context.Context) (map[string][]driver.UpdateOperation, error) {
-	return getLatestRefs(ctx, s.pool)
 }
 
 // Get implements vulnstore.Vulnerability.

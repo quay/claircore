@@ -109,9 +109,9 @@ func (h *HTTP) UpdateOperations(w http.ResponseWriter, r *http.Request) {
 		var uos map[string][]driver.UpdateOperation
 		var err error
 		if b, _ := strconv.ParseBool(latest); b {
-			uos, err = h.l.LatestUpdateOperations(ctx)
+			uos, err = h.l.LatestUpdateOperations(ctx, driver.VulnerabilityKind)
 		} else {
-			uos, err = h.l.UpdateOperations(ctx)
+			uos, err = h.l.UpdateOperations(ctx, driver.VulnerabilityKind)
 		}
 		if err != nil {
 			resp := &je.Response{

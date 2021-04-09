@@ -76,19 +76,93 @@ var (
 )
 
 // GetLatestUpdateRef implements driver.Updater.
-func (s *Store) GetLatestUpdateRef(ctx context.Context) (uuid.UUID, error) {
-	const query = `SELECT ref FROM update_operation ORDER BY id USING > LIMIT 1;`
+func (s *Store) GetLatestUpdateRef(ctx context.Context, kind driver.UpdateKind) (uuid.UUID, error) {
+	const (
+		query              = `SELECT ref FROM update_operation ORDER BY id USING > LIMIT 1;`
+		queryEnrichment    = `SELECT ref FROM update_operation WHERE kind = 'enrichment' ORDER BY id USING > LIMIT 1;`
+		queryVulnerability = `SELECT ref FROM update_operation WHERE kind = 'vulnerability' ORDER BY id USING > LIMIT 1;`
+	)
 	ctx = baggage.ContextWithValues(ctx,
 		label.String("component", "internal/vulnstore/postgres/getLatestRef"))
 
+	var q string
+	var label string
+	switch kind {
+	case "":
+		q = query
+		label = "query"
+	case driver.EnrichmentKind:
+		q = queryEnrichment
+		label = "query_enrichment"
+	case driver.VulnerabilityKind:
+		q = queryVulnerability
+		label = "query_vulnerability"
+	}
+
 	var ref uuid.UUID
 	start := time.Now()
-	if err := s.pool.QueryRow(ctx, query).Scan(&ref); err != nil {
+	if err := s.pool.QueryRow(ctx, q).Scan(&ref); err != nil {
 		return uuid.Nil, err
 	}
-	getLatestUpdateRefCounter.WithLabelValues("query").Add(1)
-	getLatestUpdateRefDuration.WithLabelValues("query").Observe(time.Since(start).Seconds())
+	getLatestUpdateRefCounter.WithLabelValues(label).Add(1)
+	getLatestUpdateRefDuration.WithLabelValues(label).Observe(time.Since(start).Seconds())
 	return ref, nil
+}
+
+func (s *Store) GetLatestUpdateRefs(ctx context.Context, kind driver.UpdateKind) (map[string][]driver.UpdateOperation, error) {
+	const (
+		query              = `SELECT DISTINCT ON (updater) updater, ref, fingerprint, date FROM update_operation ORDER BY updater, id USING >;`
+		queryEnrichment    = `SELECT DISTINCT ON (updater) updater, ref, fingerprint, date FROM update_operation WHERE kind = 'enrichment' ORDER BY updater, id USING >;`
+		queryVulnerability = `SELECT DISTINCT ON (updater) updater, ref, fingerprint, date FROM update_operation WHERE kind = 'enrichment' ORDER BY updater, id USING >;`
+	)
+
+	var q string
+	var label string
+	switch kind {
+	case "":
+		q = query
+		label = "query"
+	case driver.EnrichmentKind:
+		q = queryEnrichment
+		label = "query_enrichment"
+	case driver.VulnerabilityKind:
+		q = queryVulnerability
+		label = "query_vulnerability"
+	}
+
+	start := time.Now()
+
+	rows, err := s.pool.Query(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+
+	getLatestRefsCounter.WithLabelValues(label).Add(1)
+	getLatestRefsDuration.WithLabelValues(label).Observe(time.Since(start).Seconds())
+
+	defer rows.Close()
+
+	ret := make(map[string][]driver.UpdateOperation)
+	for rows.Next() {
+		ops := []driver.UpdateOperation{}
+		ops = append(ops, driver.UpdateOperation{})
+		uo := &ops[len(ops)-1]
+		err := rows.Scan(
+			&uo.Updater,
+			&uo.Ref,
+			&uo.Fingerprint,
+			&uo.Date,
+		)
+		if err != nil {
+			rows.Close()
+			return nil, fmt.Errorf("failed to scan update operation for updater %q: %w", uo.Updater, err)
+		}
+		ret[uo.Updater] = ops
+	}
+	zlog.Debug(ctx).
+		Int("count", len(ret)).
+		Msg("found updaters")
+	return ret, nil
 }
 
 func getLatestRefs(ctx context.Context, pool *pgxpool.Pool) (map[string][]driver.UpdateOperation, error) {
@@ -131,15 +205,17 @@ func getLatestRefs(ctx context.Context, pool *pgxpool.Pool) (map[string][]driver
 	return ret, nil
 }
 
-func getUpdateOperations(ctx context.Context, pool *pgxpool.Pool, updater ...string) (map[string][]driver.UpdateOperation, error) {
+func (s *Store) GetUpdateOperations(ctx context.Context, kind driver.UpdateKind, updater ...string) (map[string][]driver.UpdateOperation, error) {
 	const (
-		query       = `SELECT ref, updater, fingerprint, date FROM update_operation WHERE updater = $1 ORDER BY id DESC;`
-		getUpdaters = `SELECT DISTINCT(updater) FROM update_operation;`
+		query              = `SELECT ref, updater, fingerprint, date FROM update_operation WHERE updater = ANY($1) ORDER BY id DESC;`
+		queryVulnerability = `SELECT ref, updater, fingerprint, date FROM update_operation WHERE updater = ANY($1) AND kind = 'vulnerability' ORDER BY id DESC;`
+		queryEnrichment    = `SELECT ref, updater, fingerprint, date FROM update_operation WHERE updater = ANY($1) AND kind = 'enrichment' ORDER BY id DESC;`
+		getUpdaters        = `SELECT DISTINCT(updater) FROM update_operation;`
 	)
 	ctx = baggage.ContextWithValues(ctx,
 		label.String("component", "internal/vulnstore/postgres/getUpdateOperations"))
 
-	tx, err := pool.Begin(ctx)
+	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
@@ -156,7 +232,7 @@ func getUpdateOperations(ctx context.Context, pool *pgxpool.Pool, updater ...str
 		switch {
 		case err == nil:
 		case errors.Is(err, pgx.ErrNoRows):
-			return nil, nil
+			return out, nil
 		default:
 			return nil, fmt.Errorf("failed to get distinct updates: %w", err)
 		}
@@ -180,50 +256,45 @@ func getUpdateOperations(ctx context.Context, pool *pgxpool.Pool, updater ...str
 		rows.Close()
 	}
 
-	// Take care to close the rows object on every iteration.
-	var rows pgx.Rows
-	for _, u := range updater {
-
-		start := time.Now()
-
-		rows, err = tx.Query(ctx, query, u)
-		switch {
-		case err == nil:
-		case errors.Is(err, pgx.ErrNoRows):
-			zlog.Warn(ctx).Str("updater", u).Msg("no update operations for this updater")
-			rows.Close()
-			continue
-		default:
-			rows.Close()
-			return nil, fmt.Errorf("failed to retrieve update operation for updater %v: %w", updater, err)
-		}
-		ops := []driver.UpdateOperation{}
-
-		getUpdateOperationsCounter.WithLabelValues("query").Add(1)
-		getUpdateOperationsDuration.WithLabelValues("query").Observe(time.Since(start).Seconds())
-
-		for rows.Next() {
-			ops = append(ops, driver.UpdateOperation{})
-			uo := &ops[len(ops)-1]
-			err := rows.Scan(
-				&uo.Ref,
-				&uo.Updater,
-				&uo.Fingerprint,
-				&uo.Date,
-			)
-			if err != nil {
-				rows.Close()
-				return nil, fmt.Errorf("failed to scan update operation for updater %q: %w", u, err)
-			}
-		}
-		rows.Close()
-		if err := rows.Err(); err != nil {
-			return nil, err
-		}
-		out[u] = ops
+	var q string
+	var label string
+	switch kind {
+	case "":
+		q = query
+		label = "query"
+	case driver.EnrichmentKind:
+		q = queryEnrichment
+		label = "query_enrichment"
+	case driver.VulnerabilityKind:
+		q = queryVulnerability
+		label = "query_vulnerability"
 	}
-	if err := tx.Commit(ctx); err != nil {
-		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+
+	start := time.Now()
+	rows, err := tx.Query(ctx, q, updater)
+	switch {
+	case err == nil:
+	case errors.Is(err, pgx.ErrNoRows):
+		return nil, nil
+	default:
+		return nil, fmt.Errorf("failed to get distinct updates: %w", err)
+	}
+	getUpdateOperationsCounter.WithLabelValues(label).Add(1)
+	getUpdateOperationsDuration.WithLabelValues(label).Observe(time.Since(start).Seconds())
+
+	for rows.Next() {
+		var uo driver.UpdateOperation
+		err := rows.Scan(
+			&uo.Ref,
+			&uo.Updater,
+			&uo.Fingerprint,
+			&uo.Date,
+		)
+		if err != nil {
+			rows.Close()
+			return nil, fmt.Errorf("failed to scan update operation for updater %q: %w", uo.Updater, err)
+		}
+		out[uo.Updater] = append(out[uo.Updater], uo)
 	}
 	return out, nil
 }

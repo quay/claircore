@@ -55,7 +55,14 @@ var (
 	)
 )
 
-func getUpdateDiff(ctx context.Context, pool *pgxpool.Pool, prev, cur uuid.UUID) (*driver.UpdateDiff, error) {
+func (s *Store) GetUpdateDiff(ctx context.Context, prev, cur uuid.UUID) (*driver.UpdateDiff, error) {
+	// confirmRefs will return a row only if both refs are kind = 'vulnerability'
+	// therefore, if a pgx.ErrNoRows is returned from this query, at least one
+	// of the incoming refs is not of kind = 'vulnerability'.
+	const confirmRefs = `
+SELECT 1
+WHERE ROW ('vulnerability') = ALL (SELECT kind FROM update_operation WHERE ref = $1 OR ref = $2);
+`
 	// Query takes two update IDs and returns rows that only exist in first
 	// argument's set of vulnerabilities.
 	const query = `WITH
@@ -101,15 +108,28 @@ func getUpdateDiff(ctx context.Context, pool *pgxpool.Pool, prev, cur uuid.UUID)
 	if cur == uuid.Nil {
 		return nil, errors.New("nil uuid is invalid as \"current\" endpoint")
 	}
+
+	// confirm both refs are of type == 'vulnerability'
+	start := time.Now()
+	rows, err := s.pool.Query(ctx, confirmRefs, cur, prev)
+	switch err {
+	case nil:
+		rows.Close()
+	case pgx.ErrNoRows:
+		return nil, fmt.Errorf("provided ref was not of kind 'vulnerability'")
+	default:
+		return nil, fmt.Errorf("failed to confirm update op ref types: %w", err)
+	}
+	getUpdateDiffCounter.WithLabelValues("confirmrefs").Add(1)
+	getUpdateDiffDuration.WithLabelValues("confirmrefs").Observe(time.Since(start).Seconds())
+
+	// Retrieve added first.
 	var diff driver.UpdateDiff
-	if err := populateRefs(ctx, &diff, pool, prev, cur); err != nil {
+	if err := populateRefs(ctx, &diff, s.pool, prev, cur); err != nil {
 		return nil, err
 	}
 
-	// Retrieve added first.
-	start := time.Now()
-
-	rows, err := pool.Query(ctx, query, cur, prev)
+	rows, err = s.pool.Query(ctx, query, cur, prev)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve added vulnerabilities: %w", err)
 	}
@@ -140,7 +160,7 @@ func getUpdateDiff(ctx context.Context, pool *pgxpool.Pool, prev, cur uuid.UUID)
 	if prev == uuid.Nil {
 		return &diff, nil
 	}
-	rows, err = pool.Query(ctx, query, prev, cur)
+	rows, err = s.pool.Query(ctx, query, prev, cur)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve removed vulnerabilities: %w", err)
 	}
