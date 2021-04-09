@@ -32,4 +32,11 @@ var Migrations = []migrate.Migration{
 			return err
 		},
 	},
+	{
+		ID: 4,
+		Up: func(tx *sql.Tx) error {
+			_, err := tx.Exec(migration4)
+			return err
+		},
+	},
 }
