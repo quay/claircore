@@ -63,7 +63,7 @@ func NewMatchers(ctx context.Context, client *http.Client, opts ...MatchersOptio
 			zlog.Error(ctx).Err(err).Msg("failed constructing factory, excluding from run")
 			continue
 		}
-		matchers = append(matchers, matcher)
+		matchers = append(matchers, matcher...)
 	}
 
 	// merge default matchers with any out-of-tree specified.
