@@ -8,7 +8,7 @@ import (
 
 // MatcherFactory is used to construct matchers at run-time.
 type MatcherFactory interface {
-	Matcher(context.Context) (Matcher, error)
+	Matcher(context.Context) ([]Matcher, error)
 }
 
 // MatcherConfigUnmarshaler can be thought of as an Unmarshal function with the byte
@@ -26,15 +26,15 @@ type MatcherConfigurable interface {
 
 // MatcherFactoryFunc would ease the registration of Matchers which don't
 // need Configurability.
-type MatcherFactoryFunc func(context.Context) (Matcher, error)
+type MatcherFactoryFunc func(context.Context) ([]Matcher, error)
 
-func (u MatcherFactoryFunc) Matcher(ctx context.Context) (Matcher, error) {
+func (u MatcherFactoryFunc) Matcher(ctx context.Context) ([]Matcher, error) {
 	return u(ctx)
 }
 
 // MatcherStatic creates an MatcherFactoryFunc returning the provided matcher.
 func MatcherStatic(s Matcher) MatcherFactory {
-	return MatcherFactoryFunc(func(_ context.Context) (Matcher, error) {
-		return s, nil
+	return MatcherFactoryFunc(func(_ context.Context) ([]Matcher, error) {
+		return []Matcher{s}, nil
 	})
 }

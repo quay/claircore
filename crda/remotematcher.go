@@ -28,10 +28,13 @@ var (
 const (
 	// Bounded concurrency limit.
 	defaultBatchSize          = 100
-	defaultEcosystem          = "pypi"
 	defaultEndPoint           = "/api/v2/component-analyses"
 	defaultRequestConcurrency = 10
 	defaultURL                = "https://f8a-analytics-2445582058137.production.gw.apicast.io/?user_key=9e7da76708fe374d8c10fa752e72989f"
+)
+
+var (
+	supportedEcosystems = []string{"pypi", "maven"}
 )
 
 // Matcher attempts to correlate discovered python packages with reported
@@ -79,8 +82,12 @@ type VulnRequest struct {
 type Option func(*Matcher) error
 
 // NewMatcher returns a configured Matcher or reports an error.
-func NewMatcher(opt ...Option) (*Matcher, error) {
-	m := Matcher{}
+func NewMatcher(ecosystem string, opt ...Option) (*Matcher, error) {
+	if ecosystem == "" {
+		return nil, fmt.Errorf("empty ecosystem")
+	}
+	m := Matcher{ecosystem: ecosystem}
+
 	for _, f := range opt {
 		if err := f(&m); err != nil {
 			return nil, err
@@ -116,9 +123,6 @@ func NewMatcher(opt ...Option) (*Matcher, error) {
 		m.batchSize = defaultBatchSize
 	}
 
-	if m.ecosystem == "" {
-		m.ecosystem = defaultEcosystem
-	}
 	return &m, nil
 }
 
@@ -162,22 +166,14 @@ func WithBatchSize(batchSize int) Option {
 	}
 }
 
-// WithEcosystem sets the type supported library type.
-//
-// If not passed to NewMatcher, a defaultEcosystem will be used.
-func WithEcosystem(ecosystem string) Option {
-	return func(m *Matcher) error {
-		m.ecosystem = ecosystem
-		return nil
-	}
-}
-
 // Name implements driver.Matcher.
 func (*Matcher) Name() string { return "crda" }
 
 // Maps the crda ecosystem to claircore.Repository.Name.
 func ecosystemToRepositoryName(ecosystem string) string {
 	switch ecosystem {
+	case "maven":
+		return "maven"
 	case "pypi":
 		return "pypi"
 	default:
