@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"sort"
 	"sync"
 	"time"
 
@@ -180,7 +181,8 @@ func (s *Store) copyops() map[string][]driver.UpdateOperation {
 	for k, v := range s.ops {
 		n := make([]driver.UpdateOperation, len(v))
 		copy(n, v)
-		m[k] = v
+		sort.Slice(n, func(i, j int) bool { return n[i].Date.Before(n[j].Date) })
+		m[k] = n
 	}
 	return m
 }
