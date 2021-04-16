@@ -2,8 +2,18 @@
 ## [Unreleased]
 
 
+<a name="v0.1.25"></a>
+## [v0.1.25] - 2021-04-16
+### Cicd
+- [9ba3cdc](https://github.com/quay/claircore/commit/9ba3cdc40bab372b35a4766e70ea176a37501b79): use git-chglog fork to sort by semver
+- [aaab793](https://github.com/quay/claircore/commit/aaab793089a1785b63061f6fba0a877cb0d38a10): sort changelog by semver
+### Indexer
+- [ed50b6a](https://github.com/quay/claircore/commit/ed50b6a8f39fba597c48c967c0985721a9ed2bea): filter scanners during manifest check
+
 <a name="v0.1.24"></a>
-## [v0.1.24] - 2021-03-24
+## [v0.1.24] - 2021-03-25
+### Chore
+- [8060abe](https://github.com/quay/claircore/commit/8060abe904a11c3b84aac45117b81fc3e1e8f362): v0.1.24 changelog bump
 ### Libvuln
 - [0823927](https://github.com/quay/claircore/commit/082392732df1a6bfdaa49b6d17f7cb7f074fe7f6): sync migrations with upstream
 ### Python
@@ -433,7 +443,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.1.24...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.1.25...HEAD
+[v0.1.25]: https://github.com/quay/claircore/compare/v0.1.24...v0.1.25
 [v0.1.24]: https://github.com/quay/claircore/compare/v0.1.23...v0.1.24
 [v0.1.23]: https://github.com/quay/claircore/compare/v0.1.22...v0.1.23
 [v0.1.22]: https://github.com/quay/claircore/compare/v0.1.21...v0.1.22
