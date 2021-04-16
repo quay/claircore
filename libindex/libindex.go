@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
-	"math"
 	"net/http"
 	"sort"
 
@@ -14,6 +13,7 @@ import (
 	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/label"
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/sync/semaphore"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
@@ -178,47 +178,36 @@ func (l *Libindex) IndexReport(ctx context.Context, hash claircore.Digest) (*cla
 
 // AffectedManifests retrieves a list of affected manifests when provided a list of vulnerabilities.
 func (l *Libindex) AffectedManifests(ctx context.Context, vulns []claircore.Vulnerability) (*claircore.AffectedManifests, error) {
-	const (
-		maxGroupSize = 100
-	)
+	sem := semaphore.NewWeighted(50)
 	ctx = baggage.ContextWithValues(ctx,
 		label.String("component", "libindex/Libindex.AffectedManifests"))
 
-	groupSize := int(math.Sqrt(float64(len(vulns))))
-	if groupSize > maxGroupSize {
-		groupSize = maxGroupSize
-	}
-
 	affected := claircore.NewAffectedManifests()
-	for i := 0; i < len(vulns); i += groupSize {
-		errGrp, eCTX := errgroup.WithContext(ctx)
+	errGrp, eCTX := errgroup.WithContext(ctx)
+	for i := 0; i < len(vulns); i++ {
+		ii := i
 
-		start := i
-		end := i + groupSize
-		if end > len(vulns) {
-			end = len(vulns)
-		}
-
-		for n := start; n < end; n++ {
-			nn := n
-			do := func() error {
-				if eCTX.Err() != nil {
-					return eCTX.Err()
-				}
-				hashes, err := l.store.AffectedManifests(eCTX, vulns[nn])
-				if err != nil {
-					return err
-				}
-				affected.Add(&vulns[nn], hashes...)
-				return nil
+		do := func() error {
+			defer sem.Release(1)
+			if eCTX.Err() != nil {
+				return eCTX.Err()
 			}
-			errGrp.Go(do)
+			hashes, err := l.store.AffectedManifests(eCTX, vulns[ii])
+			if err != nil {
+				return err
+			}
+			affected.Add(&vulns[ii], hashes...)
+			return nil
 		}
 
-		err := errGrp.Wait()
-		if err != nil {
-			return &affected, fmt.Errorf("received error retrieving affected manifests: %v", err)
+		// Try to acquire the sem before starting the goroutine for bounded parallelism.
+		if err := sem.Acquire(eCTX, 1); err != nil {
+			return nil, err
 		}
+		errGrp.Go(do)
+	}
+	if err := errGrp.Wait(); err != nil {
+		return &affected, fmt.Errorf("received error retrieving affected manifests: %v", err)
 	}
 	affected.Sort()
 	return &affected, nil
