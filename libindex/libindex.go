@@ -178,8 +178,7 @@ func (l *Libindex) IndexReport(ctx context.Context, hash claircore.Digest) (*cla
 
 // AffectedManifests retrieves a list of affected manifests when provided a list of vulnerabilities.
 func (l *Libindex) AffectedManifests(ctx context.Context, vulns []claircore.Vulnerability) (*claircore.AffectedManifests, error) {
-	// This concurrency number could be another opt for Libindex
-	sem := semaphore.NewWeighted(50)
+	sem := semaphore.NewWeighted(20)
 	ctx = baggage.ContextWithValues(ctx,
 		label.String("component", "libindex/Libindex.AffectedManifests"))
 

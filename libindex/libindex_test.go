@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"io"
+	"strconv"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -12,31 +13,23 @@ import (
 	"github.com/quay/zlog"
 )
 
-var testVulns = []claircore.Vulnerability{
-	{
-		ID:                 "123",
-		Name:               "CVE-2018-20187",
-		Links:              "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2018-20187",
-		Updater:            "alpine-community-v3.10-updater",
-		FixedInVersion:     "2.9.0-r0",
-		NormalizedSeverity: claircore.Unknown,
-		Package: &claircore.Package{
-			Name: "botan",
-			Kind: claircore.BINARY,
-		},
-	},
-	{
-		ID:                 "456",
-		Name:               "CVE-2018-12435",
-		Links:              "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2018-12435",
-		Updater:            "alpine-community-v3.10-updater",
-		FixedInVersion:     "2.7.0-r0",
-		NormalizedSeverity: claircore.Unknown,
-		Package: &claircore.Package{
-			Name: "botan",
-			Kind: claircore.BINARY,
-		},
-	},
+func createTestVulns(n int) []claircore.Vulnerability {
+	vulns := []claircore.Vulnerability{}
+	for i := 0; i < n; i++ {
+		vulns = append(vulns, claircore.Vulnerability{
+			ID:                 strconv.Itoa(i),
+			Name:               "CVE-2018-20187",
+			Links:              "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2018-20187",
+			Updater:            "alpine-community-v3.10-updater",
+			FixedInVersion:     "2.9.0-r0",
+			NormalizedSeverity: claircore.Unknown,
+			Package: &claircore.Package{
+				Name: "botan",
+				Kind: claircore.BINARY,
+			},
+		})
+	}
+	return vulns
 }
 
 func digest(inp string) claircore.Digest {
@@ -62,7 +55,7 @@ func TestAffectedManifests(t *testing.T) {
 	}{
 		{
 			name:                 "Simple path",
-			inputVulns:           testVulns,
+			inputVulns:           createTestVulns(2),
 			numExpectedVulns:     2,
 			numExpectedManifests: 2,
 			mockStore: func(t *testing.T) indexer.Store {
@@ -75,6 +68,24 @@ func TestAffectedManifests(t *testing.T) {
 					},
 					nil,
 				).MaxTimes(2)
+				return s
+			},
+		},
+		{
+			name:                 "Many vulns",
+			inputVulns:           createTestVulns(40),
+			numExpectedVulns:     40,
+			numExpectedManifests: 40,
+			mockStore: func(t *testing.T) indexer.Store {
+				ctrl := gomock.NewController(t)
+				s := indexer.NewMockStore(ctrl)
+				s.EXPECT().AffectedManifests(gomock.Any(), gomock.Any()).Return(
+					[]claircore.Digest{
+						digest("first digest"),
+						digest("second digest"),
+					},
+					nil,
+				).MaxTimes(40)
 				return s
 			},
 		},
@@ -100,5 +111,31 @@ func TestAffectedManifests(t *testing.T) {
 				t.Fatalf("got: %d vulnerabilities, want: %d", len(affected.Vulnerabilities), table.numExpectedManifests)
 			}
 		})
+	}
+}
+
+func BenchmarkAffectedManifests(b *testing.B) {
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
+
+	// create store
+	ctrl := gomock.NewController(b)
+	s := indexer.NewMockStore(ctrl)
+	s.EXPECT().AffectedManifests(gomock.Any(), gomock.Any()).Return(
+		[]claircore.Digest{
+			digest("first digest"),
+			digest("second digest"),
+		},
+		nil,
+	).MaxTimes(100 * b.N)
+
+	ctx = zlog.Test(ctx, b)
+	li := &Libindex{store: s}
+
+	for n := 0; n < b.N; n++ {
+		_, err := li.AffectedManifests(ctx, createTestVulns(100))
+		if err != nil {
+			b.Fatalf("did not expect error: %v", err)
+		}
 	}
 }
