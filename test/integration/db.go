@@ -75,7 +75,7 @@ func NewDB(ctx context.Context, t testing.TB) (*DB, error) {
 		return nil, err
 	}
 	cfg.ConnConfig.Logger = testingadapter.NewLogger(t)
-
+	cfg.MaxConns = 10
 	dbid, roleid := mkIDs()
 	database := fmt.Sprintf("db%x", dbid)
 	role := fmt.Sprintf("role%x", roleid)
