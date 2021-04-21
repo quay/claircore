@@ -51,23 +51,29 @@ func (updater *LocalUpdaterJob) Get(ctx context.Context, repositories []string) 
 		return []string{}, nil
 	}
 
-	cpes := []string{}
+	uniqueCPEs := map[string]struct{}{}
 	// interface conversion guaranteed to pass, see
 	// constructor.
 	mapping := updater.mapping.Load().(*MappingFile)
 	if mapping == nil {
-		return cpes, nil
+		return []string{}, nil
 	}
 
 	for _, repo := range repositories {
 		if repoCPEs, ok := mapping.Data[repo]; ok {
 			for _, cpe := range repoCPEs.CPEs {
-				cpes = appendUnique(cpes, cpe)
+				uniqueCPEs[cpe] = struct{}{}
 			}
 		} else {
 			zlog.Debug(ctx).Str("repository", repo).Msg("The repository is not present in a mapping file")
 		}
 	}
+
+	cpes := make([]string, 0, len(uniqueCPEs))
+	for cpe := range uniqueCPEs {
+		cpes = append(cpes, cpe)
+	}
+
 	return cpes, nil
 }
 
@@ -151,14 +157,4 @@ func (updater *LocalUpdaterJob) do(ctx context.Context) error {
 	updater.mapping.Store(mapping)
 	zlog.Debug(ctx).Msg("atomic update of local mapping file complete")
 	return nil
-}
-
-func appendUnique(items []string, item string) []string {
-	for _, value := range items {
-		if value == item {
-			return items
-		}
-	}
-	items = append(items, item)
-	return items
 }
