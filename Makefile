@@ -1,5 +1,6 @@
 docker ?= docker
 docker-compose ?= docker-compose
+vendor := vendor/modules.txt
 
 # clears any go code in various caches
 .PHONY: clear-cache
@@ -44,11 +45,15 @@ integration-v:
 unit-v:
 	go test -race -v ./...
 
+# create vendor directory for docker-compose volume mount.
+$(vendor): go.mod
+	go mod vendor
+
 .PHONY: local-dev-up
 local-dev-up:
 	$(docker-compose) up -d claircore-db
 	$(docker) exec -it claircore-db bash -c 'while ! pg_isready; do echo "waiting for postgres"; sleep 2; done'
-	go mod vendor
+	$(MAKE) $(vendor)
 	$(docker-compose) up -d libindexhttp
 	$(docker-compose) up -d libvulnhttp
 
@@ -71,11 +76,11 @@ claircore-db-restart:
 	make claircore-db-up
 
 .PHONY: libindexhttp-restart
-libindexhttp-restart:
+libindexhttp-restart: $(vendor)
 	$(docker-compose) up -d --force-recreate libindexhttp
 
 .PHONY: libvulnhttp-restart
-libvulnhttp-restart:
+libvulnhttp-restart: $(vendor)
 	$(docker-compose) up -d --force-recreate libvulnhttp
 
 etc/podman.yaml: etc/podman.yaml.in
