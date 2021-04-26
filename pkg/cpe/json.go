@@ -7,7 +7,7 @@ func (w *WFN) MarshalText() ([]byte, error) {
 	switch err := w.Valid(); {
 	case err == nil:
 	case errors.Is(err, ErrUnset):
-		return nil, nil
+		return []byte{}, nil
 	default:
 		return nil, err
 	}

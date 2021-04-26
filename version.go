@@ -24,7 +24,7 @@ func VersionSort(vs []Version) func(int, int) bool {
 // MarshalText implments encoding.TextMarshaler.
 func (v *Version) MarshalText() ([]byte, error) {
 	if v.Kind == "" {
-		return nil, nil
+		return []byte{}, nil
 	}
 	var buf bytes.Buffer
 	b := make([]byte, 0, 16) // 16 byte wide scratch buffer
