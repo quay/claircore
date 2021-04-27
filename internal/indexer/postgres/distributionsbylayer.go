@@ -78,7 +78,7 @@ func (s *store) DistributionsByLayer(ctx context.Context, hash claircore.Digest,
 			return nil, fmt.Errorf("store:distributionseByLayer failed to retrieve scanner ids for scanner %v: %v", scnr, err)
 		}
 		distributionByLayerCounter.WithLabelValues("selectScanner").Add(1)
-		distributionByLayerDuration.WithLabelValues("seletScanner").Observe(time.Since(start).Seconds())
+		distributionByLayerDuration.WithLabelValues("selectScanner").Observe(time.Since(start).Seconds())
 	}
 
 	start := time.Now()
