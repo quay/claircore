@@ -108,7 +108,10 @@ func (m *Manager) Start(ctx context.Context) error {
 
 	// perform the initial run
 	zlog.Info(ctx).Msg("starting initial updates")
-	m.Run(ctx) // errors reported via log messages internal to this call
+	err := m.Run(ctx)
+	if err != nil {
+		zlog.Error(ctx).Err(err).Msg("error while running updater")
+	}
 
 	// perform run on every tick
 	zlog.Info(ctx).Str("interval", m.interval.String()).Msg("starting background updates")
@@ -119,7 +122,10 @@ func (m *Manager) Start(ctx context.Context) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-t.C:
-			m.Run(ctx)
+			err := m.Run(ctx)
+			if err != nil {
+				zlog.Error(ctx).Err(err).Msg("error while running updater")
+			}
 		}
 	}
 }
