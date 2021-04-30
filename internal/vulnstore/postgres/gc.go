@@ -14,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/quay/claircore/libvuln/driver"
 	"golang.org/x/sync/semaphore"
 )
 
@@ -319,4 +320,61 @@ DELETE FROM vuln WHERE id = $1;
 			return err
 		}
 	}
+}
+
+func (s *Store) Reconcile(ctx context.Context, updaters []driver.Updater) error {
+	// obtain persisted updaters
+	dbUpdaters, err := distinctUpdaters(ctx, s.pool)
+	if err != nil {
+		return err
+	}
+	if dbUpdaters == nil { // fresh DB, no need for reconciling
+		return nil
+	}
+
+	// get names of updaters we're pulling from vulnerability DB
+	currentUpdaters := make([]string, len(updaters))
+	for i, u := range updaters {
+		currentUpdaters[i] = u.Name()
+	}
+
+	// determine which updaters are in clair DB but not in vulnerability DB
+	mapCurrent := make(map[string]struct{}, len(currentUpdaters))
+	for _, u := range currentUpdaters {
+		mapCurrent[u] = struct{}{}
+	}
+	var diff []string
+	for _, u := range dbUpdaters {
+		if _, found := mapCurrent[u]; !found {
+			diff = append(diff, u)
+		}
+	}
+
+	// Delete all vulns and update operations for no longer tracked updaters.
+	// This is fast because we operate on indexes.
+	// Entries from uo_vuln table are removed for free thanks to cascading.
+	for _, u := range diff {
+		err := updaterCleanup(ctx, s.pool, u)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func updaterCleanup(ctx context.Context, pool *pgxpool.Pool, updater string) error {
+	const deleteUOs = `DELETE FROM update_operation WHERE updater = $1`
+	const deleteVulns = `DELETE FROM vuln WHERE updater = $1`
+
+	_, err := pool.Exec(ctx, deleteUOs, updater)
+	if err != nil {
+		return err
+	}
+
+	_, err = pool.Exec(ctx, deleteVulns, updater)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

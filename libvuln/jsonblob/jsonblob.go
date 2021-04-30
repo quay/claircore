@@ -234,3 +234,8 @@ func (s *Store) Initialized(context.Context) (bool, error) {
 func (s *Store) GC(_ context.Context, _ int) (int64, error) {
 	return 0, nil
 }
+
+// Reconcile is unimplemented.
+func (s *Store) Reconcile(_ context.Context, _ []driver.Updater) error {
+	return nil
+}

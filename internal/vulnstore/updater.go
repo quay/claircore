@@ -52,6 +52,8 @@ type Updater interface {
 	// The returned int64 value indicates the remaining number of update operations needing GC.
 	// Running this method till the returned value is 0 accomplishes a full GC of the vulnstore.
 	GC(ctx context.Context, keep int) (int64, error)
+	// Reconcile will have a docstring.
+	Reconcile(ctx context.Context, updaters []driver.Updater) error
 	// Initialized reports whether the vulnstore contains vulnerabilities.
 	Initialized(context.Context) (bool, error)
 }

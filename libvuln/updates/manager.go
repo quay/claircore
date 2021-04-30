@@ -163,6 +163,11 @@ func (m *Manager) Run(ctx context.Context) error {
 
 	zlog.Info(ctx).Int("total", len(updaters)).Int("batchSize", m.batchSize).Msg("running updaters")
 
+	err := m.store.Reconcile(ctx, updaters)
+	if err != nil {
+		panic("not good!")
+	}
+
 	sem := semaphore.NewWeighted(int64(m.batchSize))
 	errChan := make(chan error, len(updaters)+1) // +1 for a potential ctx error
 	for i := range updaters {
