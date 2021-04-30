@@ -5,10 +5,6 @@
 package updater
 
 import (
-	"context"
-	"errors"
-	"net/http"
-	"strings"
 	"sync"
 
 	"github.com/quay/claircore/libvuln/driver"
@@ -42,32 +38,4 @@ func Registered() map[string]driver.UpdaterSetFactory {
 		r[k] = v
 	}
 	return r
-}
-
-// Configure calls the Configure method on all the passed-in
-// UpdaterSetFactories.
-func Configure(ctx context.Context, fs map[string]driver.UpdaterSetFactory, cfg map[string]driver.ConfigUnmarshaler, c *http.Client) error {
-	errd := false
-	var b strings.Builder
-	b.WriteString("updater: errors configuring factories:")
-	if c == nil {
-		c = http.DefaultClient
-	}
-
-	for name, fac := range fs {
-		f, fOK := fac.(driver.Configurable)
-		cf, cfOK := cfg[name]
-		if fOK && cfOK {
-			if err := f.Configure(ctx, cf, c); err != nil {
-				errd = true
-				b.WriteString("\n\t")
-				b.WriteString(err.Error())
-			}
-		}
-	}
-
-	if errd {
-		return errors.New(b.String())
-	}
-	return nil
 }
