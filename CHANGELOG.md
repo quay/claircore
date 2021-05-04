@@ -2,8 +2,31 @@
 ## [Unreleased]
 
 
+<a name="v0.4.1"></a>
+## [v0.4.1] - 2021-04-27
+### All
+- [def957b](https://github.com/quay/claircore/commit/def957b472e57fc18eb127f840b4802da4eb6d52): return empty byte slices from MarshalText
+### Cicd
+- [b764338](https://github.com/quay/claircore/commit/b76433852ca2c1760a202b9fd383a9f24ab51327): remove chglog fork
+### Crda
+- [1405b57](https://github.com/quay/claircore/commit/1405b573a27c08e12d974f0f2b7f4dcf1b149183): use bulk API in remotematcher
+### Indexer
+- [905d6f3](https://github.com/quay/claircore/commit/905d6f3dae321e0a445964abd2d0e06f0376cf25): Implement package indexer for maven
+ - Fixes [#236](https://github.com/quay/claircore/issues/236)### Introspection
+- [9ecfbb0](https://github.com/quay/claircore/commit/9ecfbb0413648f1183dfedb27dc13b02b115d564): Fix a typo in the query label for the distributionbylayer metric
+### Libindex
+- [5877dc1](https://github.com/quay/claircore/commit/5877dc1a192514204f33a22bf82ac425fd3df464): set concurrency number
+- [254c094](https://github.com/quay/claircore/commit/254c0945b0af17cd9c3b97815d3505b5b8286d3d): AffectedManifests to be bounded
+### Matcher
+- [78f069b](https://github.com/quay/claircore/commit/78f069b30625424146cb9294edcdc153646abd39): add ability to return multiple matchers from same type
+### Testing
+- [bb26dab](https://github.com/quay/claircore/commit/bb26dabc4e4118d5d8b1e43aef6ecbe0e74e70e6): add unittest
+- [d6d7e8e](https://github.com/quay/claircore/commit/d6d7e8e352c0f86220f6acf85571b82d67a6cc37): maxConns to 10
+
 <a name="v0.4.0"></a>
-## [v0.4.0] - 2021-03-27
+## [v0.4.0] - 2021-04-05
+### Chore
+- [f56014b](https://github.com/quay/claircore/commit/f56014b44205f4390fc9352e63b2545a28bcebfb): v0.4.0 changelog bump
 ### Cicd
 - [ab1208b](https://github.com/quay/claircore/commit/ab1208b03c8f85de35f528eefdc200a8e7f41b7a): update doc building to main
 ### Docs
@@ -148,6 +171,16 @@
 - [5385f5d](https://github.com/quay/claircore/commit/5385f5d5b78486e6f73f00e70d2cd21d57a17827): consolidate into manager
 ### Vulnstore
 - [77df2c7](https://github.com/quay/claircore/commit/77df2c77881678726d601df50f0e2600de3cb67f): implement active gc
+
+<a name="v0.1.25"></a>
+## [v0.1.25] - 2021-04-16
+### Chore
+- [6f7bc34](https://github.com/quay/claircore/commit/6f7bc341c2dbaa92300b07fe6eec8ae753b75fcf): v0.1.25 changelog bump
+### Cicd
+- [9ba3cdc](https://github.com/quay/claircore/commit/9ba3cdc40bab372b35a4766e70ea176a37501b79): use git-chglog fork to sort by semver
+- [aaab793](https://github.com/quay/claircore/commit/aaab793089a1785b63061f6fba0a877cb0d38a10): sort changelog by semver
+### Indexer
+- [ed50b6a](https://github.com/quay/claircore/commit/ed50b6a8f39fba597c48c967c0985721a9ed2bea): filter scanners during manifest check
 
 <a name="v0.1.24"></a>
 ## [v0.1.24] - 2021-03-25
@@ -721,13 +754,15 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.4.1...HEAD
+[v0.4.1]: https://github.com/quay/claircore/compare/v0.4.0...v0.4.1
 [v0.4.0]: https://github.com/quay/claircore/compare/v0.3.3...v0.4.0
 [v0.3.3]: https://github.com/quay/claircore/compare/v0.3.2...v0.3.3
 [v0.3.2]: https://github.com/quay/claircore/compare/v0.3.1...v0.3.2
 [v0.3.1]: https://github.com/quay/claircore/compare/v0.3.0...v0.3.1
 [v0.3.0]: https://github.com/quay/claircore/compare/v0.2.0...v0.3.0
-[v0.2.0]: https://github.com/quay/claircore/compare/v0.1.24...v0.2.0
+[v0.2.0]: https://github.com/quay/claircore/compare/v0.1.25...v0.2.0
+[v0.1.25]: https://github.com/quay/claircore/compare/v0.1.24...v0.1.25
 [v0.1.24]: https://github.com/quay/claircore/compare/v0.1.23...v0.1.24
 [v0.1.23]: https://github.com/quay/claircore/compare/v0.1.22...v0.1.23
 [v0.1.22]: https://github.com/quay/claircore/compare/v0.1.21...v0.1.22
