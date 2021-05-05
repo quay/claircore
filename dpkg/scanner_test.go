@@ -825,6 +825,41 @@ func TestScanner(t *testing.T) {
 	}
 }
 
+func TestScannerACMEImage(t *testing.T) {
+	// The image below has special file system paths structures, where file could start with "./etc/status" instead of "/etc/status"
+	// Image: gcr.io/vmwarecloudadvocacy/acmeshop-user@sha256:dc95f357f226415aced988a213fb5c1e45e1a6d202e38e2951a4618e14222dc2
+	// Layer: sha256:3c9020349340788076971d5ea638b71e35233fd8e149e269d8eebfa17960c03f
+	hash, err := claircore.ParseDigest("sha256:3c9020349340788076971d5ea638b71e35233fd8e149e269d8eebfa17960c03f")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := zlog.Test(context.Background(), t)
+	l := &claircore.Layer{
+		Hash: hash,
+	}
+
+	tctx, done := context.WithTimeout(ctx, 30*time.Second)
+	defer done()
+	n, err := fetch.Layer(tctx, t, http.DefaultClient, "gcr.io", "vmwarecloudadvocacy/acmeshop-user", hash)
+	if err != nil {
+		t.Error(err)
+	}
+	defer n.Close()
+
+	if err := l.SetLocal(n.Name()); err != nil {
+		t.Error(err)
+	}
+
+	s := &Scanner{}
+	got, err := s.Scan(ctx, l)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) == 0 {
+		t.Fatal("No packages found for ACME image")
+	}
+}
+
 func TestExtraMetadata(t *testing.T) {
 	const layerfile = `testdata/extrametadata.layer`
 	l := claircore.Layer{

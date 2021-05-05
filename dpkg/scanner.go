@@ -124,7 +124,10 @@ Find:
 		var db io.Reader
 		var h *tar.Header
 		for h, err = tr.Next(); err == nil; h, err = tr.Next() {
-			if h.Name == fn {
+			// in case we have "./" as prefix, the filepath.Dir(h.Name) in "Find" loop will return the path without the prefix
+			// so we must normalize it
+			fileName := strings.TrimPrefix(h.Name, "./")
+			if fileName == fn {
 				db = tr
 				break
 			}
