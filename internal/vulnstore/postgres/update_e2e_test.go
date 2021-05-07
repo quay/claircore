@@ -168,12 +168,11 @@ var vulnCmp = cmp.Options{
 	cmpopts.IgnoreFields(claircore.Vulnerability{}, "ID", "Package.ID", "Dist.ID", "Repo.ID"),
 }
 
-// OrZero returns a or zero if a is negative.
-func orZero(a int) int {
+func orNoIndex(a int) string {
 	if a < 0 {
-		return 0
+		return "no index"
 	}
-	return a
+	return fmt.Sprintf("index %d", a)
 }
 
 // Diff fetches Operation diffs from the database and compares them against
@@ -181,18 +180,15 @@ func orZero(a int) int {
 func (e *e2e) Diff(ctx context.Context) func(t *testing.T) {
 	return func(t *testing.T) {
 		ctx := zlog.Test(ctx, t)
-		absOff := orZero(e.Updates)
-		t.Logf("offset %d into generated updateOps", absOff)
-		for n := range e.vulns()[absOff:] {
+		for n := range e.vulns() {
 			// This does a bunch of checks so that the first operation is
 			// compared appropriately.
-			i := n + absOff
 			prev := uuid.Nil
 			if n != 0 {
-				prev = e.updateOps[i-1].Ref
+				prev = e.updateOps[n-1].Ref
 			}
-			cur := e.updateOps[i].Ref
-			t.Logf("comparing %v (index %d) and %v (index %d)", prev, (i-1)-absOff, cur, i-absOff)
+			cur := e.updateOps[n].Ref
+			t.Logf("comparing %v (%s) and %v (index %d)", prev, orNoIndex(n-1), cur, n)
 
 			diff, err := e.s.GetUpdateDiff(ctx, prev, cur)
 			if err != nil {
@@ -221,8 +217,8 @@ func (e *e2e) Diff(ctx context.Context) func(t *testing.T) {
 				t.Errorf("want: %v, got: %v", diff.Cur.Ref, cur)
 			}
 
-			// confirm removed and add vulnerabilities are the ones we expect
-			pair := e.calcDiff(i)
+			// confirm removed and added vulnerabilities are the ones we expect
+			pair := e.calcDiff(n)
 			if n == 0 {
 				pair[0] = []*claircore.Vulnerability{}
 			}

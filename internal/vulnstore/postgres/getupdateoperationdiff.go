@@ -100,9 +100,12 @@ WHERE ROW ('vulnerability') = ALL (SELECT kind FROM update_operation WHERE ref =
 		vuln.id IN (
 			SELECT vuln AS id FROM uo_vuln JOIN lhs ON (uo_vuln.uo = lhs.id)
 			EXCEPT ALL
-			SELECT vuln AS id FROM uo_vuln JOIN rhs ON (uo_vuln.uo = rhs.id))
-        AND vuln.updater = (SELECT updater FROM rhs)
-        OR  vuln.updater = (SELECT updater FROM lhs);
+			SELECT vuln AS id FROM uo_vuln JOIN rhs ON (uo_vuln.uo = rhs.id)
+		)
+		AND (
+			vuln.updater = (SELECT updater FROM rhs)
+			OR  vuln.updater = (SELECT updater FROM lhs)
+		);
 `
 
 	if cur == uuid.Nil {
