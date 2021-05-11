@@ -94,7 +94,7 @@ GO_VERSION ?= 1.16
 GO_CHECKSUM ?= 013a489ebb3e24ef3d915abe5b94c3286c070dfe0818d5bca8108f1d6e8440d2
 .PHONY: baseimage
 baseimage:
-	buildah bud -f etc/Dockerfile -t quay.io/claircore/golang:$(GO_VERSION) \
+	buildah bud -f etc/Dockerfile -t quay.io/projectquay/golang:$(GO_VERSION) \
 		--build-arg GO_VERSION=$(GO_VERSION) \
 	   	--build-arg GO_CHECKSUM=$(GO_CHECKSUM) \
 		etc
