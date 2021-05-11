@@ -2,10 +2,70 @@
 ## [Unreleased]
 
 
+<a name="v0.4.2"></a>
+## [v0.4.2] - 2021-05-07
+### Alpine
+- [f92e1be](https://github.com/quay/claircore/commit/f92e1bea4f163be841fbc459c4b909a0512f1d04): implement driver.Configurable
+### Aws
+- [4738610](https://github.com/quay/claircore/commit/473861086b27d77e19aa6e788a60c1796d305ae1): add http.Client configurability
+### Cicd
+- [fe6cb92](https://github.com/quay/claircore/commit/fe6cb92b085e5907814dcb4f4ec756c2436baa3f): use golang major version tag for dev env
+- [0a04053](https://github.com/quay/claircore/commit/0a04053358a6fa1a5d5a71fae0d4b29607a4457d): use quay.io/projectquay/golang image
+- [d62b5ad](https://github.com/quay/claircore/commit/d62b5ad8ab8e4f83d8dda8173a6734c81e0df7ec): add golang-image workflow
+### Crda
+- [5146d8c](https://github.com/quay/claircore/commit/5146d8c775f21bac302369e91062bfafbf54eab0): implement driver.MatcherConfigurable
+### Debian
+- [3d2d700](https://github.com/quay/claircore/commit/3d2d7007b4726f0159c22f8867ae67225c153d9b): implement driver.Configurable
+### Enrichments
+- [9a3b349](https://github.com/quay/claircore/commit/9a3b349a3b7a23683e41ef55a3b242bc51edb43e): datamodel updates
+### Fetcher
+- [cd6b7fa](https://github.com/quay/claircore/commit/cd6b7fa9d78fd705965f56b2333a6fae72f633d7): remove DefaultClient usage
+### Jsonblob
+- [bd2487d](https://github.com/quay/claircore/commit/bd2487dabd7c1dd75868c3fce013a82cd1342cf3): fix copyops
+### Libindex
+- [eec427f](https://github.com/quay/claircore/commit/eec427fcf78e78d1f1654a997fb33385a7150fd5): use configurable http.Client
+### Libvuln
+- [34de61e](https://github.com/quay/claircore/commit/34de61ee0ef7ec47b7be2ddcd97928f92d61d9e6): add warn logs when not providing an http.Client
+### Libvulnhttp
+- [ef4ee5c](https://github.com/quay/claircore/commit/ef4ee5c29a12bf2c90cd84476942feed23448070): add HTTP client debugging flag
+### Matchers
+- [07fcc40](https://github.com/quay/claircore/commit/07fcc403a55296e6ce73dab45e3957839173d586): require http.Client
+### Oracle
+- [de18d67](https://github.com/quay/claircore/commit/de18d67e8d40773567c0549000790108c07c251a): add assertion for Configurable interface
+### Ovalutil
+- [d3106a3](https://github.com/quay/claircore/commit/d3106a3a2c3480f6621cc8bdd3b1cd6a5bc05340): implement driver.Configurable
+### Photon
+- [28341b9](https://github.com/quay/claircore/commit/28341b9d4b96f02baf1ca319812c7baec7bdfafa): add assertion for Configurable interface
+### Pyupio
+- [2cf6a9e](https://github.com/quay/claircore/commit/2cf6a9ef937a7cbe5dcb52fb88120aa8ba7c4049): implement driver.Configurable
+### Registry
+- [891a6df](https://github.com/quay/claircore/commit/891a6dfda0412160bf01dcd23fe6ccc056c284a8): require http.Client
+### Rhel
+- [5c873b4](https://github.com/quay/claircore/commit/5c873b422360f4a3107880b795c6d9b7e746ab19): add assertion for Configurable interface
+- [2112153](https://github.com/quay/claircore/commit/2112153f33f8ec9e1ce3f3519cae7b972309db39): pass Client through Factory
+- [ad16c39](https://github.com/quay/claircore/commit/ad16c397573c28f140285eee99925fe053554c75): make repo2cpe mapping a work stealing scheme
+### Suse
+- [0039063](https://github.com/quay/claircore/commit/00390632187fdbd04cb914a24056501cee7b3827): add assertion for Configurable interface
+### Ubuntu
+- [2976e93](https://github.com/quay/claircore/commit/2976e93452bb3afcaad9593f666fad021995e644): implement driver.Configurable
+### Updater
+- [9145453](https://github.com/quay/claircore/commit/914545363ea38e6dda086463bf7a657f14b1458b): report error on nil *http.Client
+- [ece3005](https://github.com/quay/claircore/commit/ece3005d6dbaef946a9ca3dab3b8662e0b2013c5): call Configure method if present
+### Updates
+- [59bec1f](https://github.com/quay/claircore/commit/59bec1fb35f589485c5e5775199efa2d5b4bd035): call Configure method if present
+- [de4be78](https://github.com/quay/claircore/commit/de4be78fc0e8104fb64af50cd18851dc383780a8): drop updater when configuration fails
+- [9bc81ca](https://github.com/quay/claircore/commit/9bc81ca1303274f280a0fb8348cffb079674a0ae): consolidate update logic
+- [9ade4e1](https://github.com/quay/claircore/commit/9ade4e1808bc518a8997f1c01980d1c9a599c857): add LockSource interface
+### Vulnstore
+- [e9cd964](https://github.com/quay/claircore/commit/e9cd964a7ae5ce923e86ae110c57222c02de2589): fix getting update operation diff
+- [bfafd2f](https://github.com/quay/claircore/commit/bfafd2f7ad2b4d4b33fb0ab644bb09191d42732c): enrichment migration
+
 <a name="v0.4.1"></a>
-## [v0.4.1] - 2021-04-27
+## [v0.4.1] - 2021-05-04
 ### All
 - [def957b](https://github.com/quay/claircore/commit/def957b472e57fc18eb127f840b4802da4eb6d52): return empty byte slices from MarshalText
+### Chore
+- [990cd41](https://github.com/quay/claircore/commit/990cd41b7f73730d2360a1ecd35c00613f77d789): v0.4.1 changelog bump
 ### Cicd
 - [b764338](https://github.com/quay/claircore/commit/b76433852ca2c1760a202b9fd383a9f24ab51327): remove chglog fork
 ### Crda
@@ -754,7 +814,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.4.2...HEAD
+[v0.4.2]: https://github.com/quay/claircore/compare/v0.4.1...v0.4.2
 [v0.4.1]: https://github.com/quay/claircore/compare/v0.4.0...v0.4.1
 [v0.4.0]: https://github.com/quay/claircore/compare/v0.3.3...v0.4.0
 [v0.3.3]: https://github.com/quay/claircore/compare/v0.3.2...v0.3.3
