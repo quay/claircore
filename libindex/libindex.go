@@ -21,7 +21,7 @@ import (
 	"github.com/quay/claircore/internal/indexer/controller"
 )
 
-const versionMagic = "libindex number: 1\n"
+const versionMagic = "libindex number: 2\n"
 
 // Libindex implements the method set for scanning and indexing a Manifest.
 type Libindex struct {
