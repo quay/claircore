@@ -11,7 +11,10 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v4"
+	"github.com/quay/zlog"
 	"golang.org/x/sync/errgroup"
+
+	"github.com/quay/claircore/test/integration"
 )
 
 const (
@@ -30,7 +33,6 @@ func stopDB(t testing.TB) {
 	}
 	log.Printf("db down")
 }
-
 func startDB(t testing.TB) {
 	// a command to start local postgres instance
 	cmd := exec.Command(
@@ -86,18 +88,40 @@ func pgLocksCount(t *testing.T) int {
 	return i
 }
 
+func locksCount(ctx context.Context, t *testing.T, cfg *pgx.ConnConfig) int {
+	const query = `SELECT count(*) FROM pg_locks WHERE locktype = 'advisory';`
+	conn, err := pgx.ConnectConfig(ctx, cfg)
+	if err != nil {
+		t.Error(err)
+		return -1
+	}
+	defer conn.Close(ctx)
+	var ct int
+	if err := conn.QueryRow(ctx, query).Scan(&ct); err != nil {
+		ct = -1
+		t.Error(err)
+	}
+	return ct
+}
+
 func TestManager(t *testing.T) {
-	startDB(t)
+	integration.Skip(t)
+	ctx := zlog.Test(nil, t)
+	db, err := integration.NewDB(ctx, t)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close(ctx, t)
 	waitDB(t)
 
 	// all tests start with database up. all tests should restore
 	// db if they tear it down.
 
+	ParentCancelation(ctx, db, t)
+	ChildCancelation(ctx, db, t)
 	// these use random counts, perform in a loop to maximize test effectiveness.
 	for i := 0; i < 4; i++ {
 		s := strconv.Itoa(i)
-		t.Run("CtxParentCancelation", test_CtxParentCancelation)
-		t.Run("CtxChildCancelation", test_CtxChildCancelation)
 		t.Run("BasicUsage-Run-"+s, test_BasicUsage)
 		t.Run("Counter-Run-"+s, test_Counter)
 		t.Run("TryLockSingleSessionMutualExclusion-Run-"+s, test_TryLockSingleSessionMutualExclusion)
@@ -108,72 +132,111 @@ func TestManager(t *testing.T) {
 		t.Run("DBFlap", test_DBFlap)
 		t.Run("CTXCancelDBFailure", test_CTXCancelDBFailure)
 	}
-
-	stopDB(t)
 }
 
-func test_CtxParentCancelation(t *testing.T) {
-	// create a manager
-	mCtx, mCancel := context.WithCancel(context.Background())
-	manager, err := NewManager(mCtx, dsn)
-	if err != nil {
-		t.Fatal(err)
-	}
+func ParentCancelation(ctx context.Context, db *integration.DB, t *testing.T) {
+	const key = `test-key`
+	t.Run("ParentCancelation", func(t *testing.T) {
+		ctx = zlog.Test(ctx, t)
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+		manager, err := NewManagerConfig(ctx, db.Config().ConnConfig.Copy())
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	// create a parent context
-	pCtx, pCancel := context.WithCancel(context.Background())
+		// Create a new context chain.
+		ctx, cancel = context.WithTimeout(ctx, 2*time.Second)
+		defer cancel()
+		lctx, done := manager.TryLock(ctx, key)
+		defer done()
+		if err := lctx.Err(); err != nil {
+			t.Fatal(err)
+		}
 
-	// create lock with child ctx
-	key := "test-key"
-	cCtx, cancel := manager.TryLock(pCtx, key)
-	if err := cCtx.Err(); err != nil {
-		t.Fatal(err)
-	}
+		// block on lock
+		<-lctx.Done()
+		t.Log(lctx.Err())
+	})
+}
+func ChildCancelation(ctx context.Context, db *integration.DB, t *testing.T) {
+	const key = `test-key`
+	t.Run("ChildCancelation", func(t *testing.T) {
+		ctx = zlog.Test(ctx, t)
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+		manager, err := NewManagerConfig(ctx, db.Config().ConnConfig.Copy())
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	// launch go routine to cancel parent context after
-	// some time
-	go func() {
-		time.Sleep(1 * time.Second)
-		pCancel()
-	}()
-	// block on lock
-	<-cCtx.Done()
+		// Create a new context chain.
+		ctx, cancel = context.WithTimeout(ctx, 2*time.Second)
+		defer cancel()
+		lctx, done := manager.TryLock(ctx, key)
+		defer done()
+		if err := lctx.Err(); err != nil {
+			t.Fatal(err)
+		}
+		// derive two children
+		ctx1, done := context.WithCancel(lctx)
+		defer done()
+		ctx2, done := context.WithCancel(lctx)
+		defer done()
 
-	// call cancel to confirm its a no-op
-	cancel()
-
-	mCancel()
+		// block on lock
+		<-lctx.Done()
+		t.Log(lctx.Err())
+		if err := ctx1.Err(); err != context.Canceled {
+			t.Error(err)
+		}
+		if err := ctx2.Err(); err != context.Canceled {
+			t.Error(err)
+		}
+	})
 }
 
-func test_CtxChildCancelation(t *testing.T) {
-	// create a manager
-	mCtx, mCancel := context.WithCancel(context.Background())
-	manager, err := NewManager(mCtx, dsn)
-	if err != nil {
-		t.Fatal(err)
-	}
+func BasicUsage(ctx context.Context, db *integration.DB, t *testing.T) {
+	const key = `test-key`
+	t.Run("BasicUsage", func(t *testing.T) {
+		ctx = zlog.Test(ctx, t)
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+		manager, err := NewManagerConfig(ctx, db.Config().ConnConfig.Copy())
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	// create parent ctx
-	pCtx, pCancel := context.WithCancel(context.Background())
+		ctx, cancel = context.WithTimeout(ctx, 2*time.Second)
+		defer cancel()
+		lctx, done := manager.TryLock(ctx, key)
+		defer done()
+		if err := lctx.Err(); err != nil {
+			t.Fatal(err)
+		}
+		<-lctx.Done()
+	})
+}
 
-	// create lock
-	lCtx, _ := manager.TryLock(pCtx, "test-key")
+func ManagerCancel(ctx context.Context, db *integration.DB, t *testing.T) {
+	const key = `test-key`
+	t.Run("ManagerCancel", func(t *testing.T) {
+		ctx = zlog.Test(ctx, t)
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+		manager, err := NewManagerConfig(ctx, db.Config().ConnConfig.Copy())
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	// dervice two children
-	ctx1, _ := context.WithCancel(lCtx)
-	ctx2, _ := context.WithCancel(lCtx)
-
-	go func() {
-		time.Sleep(1 * time.Second)
-		pCancel()
-	}()
-
-	// make sure none of these block
-	<-lCtx.Done()
-	<-ctx1.Done()
-	<-ctx2.Done()
-
-	mCancel()
+		lctx, done := manager.TryLock(ctx, key)
+		defer done()
+		if err := lctx.Err(); err != nil {
+			t.Fatal(err)
+		}
+		cancel()
+		<-lctx.Done()
+	})
 }
 
 func test_BasicUsage(t *testing.T) {

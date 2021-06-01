@@ -2,21 +2,20 @@ package distlock
 
 import (
 	"context"
-	"log"
 	"math"
 	"time"
 
 	"github.com/jackc/pgx/v4"
 )
 
-// Manager provides a client facing api for obtaining and returning
+// Manager provides a client facing API for obtaining and returning
 // distributed locks.
 //
 // Manager must not be copied after construction.
 type Manager struct {
 	pool *reqPool
-	// Guard provides a concurrency safe request/response api with
-	// guarentees against deadlocks and races.
+	// Guard provides a concurrency safe request/response API with
+	// guarantees against deadlocks and races.
 	g *guard
 }
 
@@ -31,22 +30,25 @@ func WithMax(max uint64) Opt {
 }
 
 func NewManager(ctx context.Context, dsn string, opts ...Opt) (*Manager, error) {
-	reqChan := make(chan request, 1024)
-	locks := make(map[string]*lctx)
-
-	conf, err := pgx.ParseConfig(dsn)
+	cfg, err := pgx.ParseConfig(dsn)
 	if err != nil {
 		return nil, err
 	}
+	return NewManagerConfig(ctx, cfg, opts...)
+}
 
-	conn, err := pgx.ConnectConfig(ctx, conf)
+func NewManagerConfig(ctx context.Context, cfg *pgx.ConnConfig, opts ...Opt) (*Manager, error) {
+	reqChan := make(chan request, 1024)
+	locks := make(map[string]*lctx)
+
+	conn, err := pgx.ConnectConfig(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}
 
 	g := &guard{
 		reqChan: reqChan,
-		dsn:     dsn,
+		cfg:     cfg,
 		locks:   locks,
 		conn:    conn,
 	}
@@ -75,18 +77,20 @@ func NewManager(ctx context.Context, dsn string, opts ...Opt) (*Manager, error) 
 // Regardless of success or failure a context.Context is returned and it's
 // error must be checked.
 //
-// If the incoming context was canceled or the database is not available an ErrContextCanceled
-// or ErrDatabaseUnavailable error will be returned, respectively.
+// If the incoming context was canceled or the database is not available a
+// context.Canceled or ErrDatabaseUnavailable error will be returned,
+// respectively.
 //
-// If a lock for the incoming key is held by another process an ErrMutualExclusion error will be
-// returned.
+// If a lock for the incoming key is held by another process an
+// ErrMutualExclusion error will be returned.
 //
-// If the method call successfully acquired a lock the returned context's Err() method will return
-// nil and the caller is free to branch off this context further.
+// If the method call successfully acquired a lock the returned Context's Err
+// method will return  nil and the caller is free to branch off this context
+// further.
 func (m *Manager) TryLock(ctx context.Context, key string) (context.Context, context.CancelFunc) {
 	// parent context already done
 	if err := ctx.Err(); err != nil {
-		return &lctx{done: closedchan, err: ErrContextCanceled}, func() {}
+		return ctx, func() {}
 	}
 
 	// manager is not connected to database
@@ -174,11 +178,10 @@ func (m *Manager) unlock(key string) {
 
 	req := m.pool.Get()
 	req.t, req.key = Unlock, key
-
 	resp := m.g.request(req)
 	m.pool.Put(req)
 
 	if !resp.ok {
-		log.Printf("unlock err: %v", resp.ctx.Err())
+		//log.Printf("unlock err: %v", resp.ctx.Err())
 	}
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"hash/fnv"
-	"io"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -27,32 +26,28 @@ var ErrMutualExclusion = fmt.Errorf("another process is holding the requested lo
 // Signifies the database is unavialable. Locks cannot be provided.
 var ErrDatabaseUnavailable = fmt.Errorf("database currently unavailable.")
 
-// ErrContextCanceled indicates the parent's context was canceled or
-// the lock's cancelFunc was invoked.
-var ErrContextCanceled = fmt.Errorf("ErrContextCanceled")
-
 // ErrMaxLocks informs caller maximum number of locks have been
 // taken.
 var ErrMaxLocks = fmt.Errorf("maximum number of locks acquired")
 
 func keyify(key string) []byte {
 	h := fnv.New64a()
-	io.WriteString(h, key)
-	b := []byte{}
+	h.Write([]byte(key))
+	b := make([]byte, 0, 8)
 	return h.Sum(b)
 }
 
-type RequestType int
+type requestType int
 
 const (
-	Invalid RequestType = iota
+	Invalid requestType = iota
 	Lock
 	Unlock
 )
 
 // request is an internal request for a lock
 type request struct {
-	t        RequestType
+	t        requestType
 	key      string
 	respChan chan response
 }
@@ -74,7 +69,7 @@ type guard struct {
 	counter      uint64
 	chanMu       sync.Mutex
 	reqChan      chan request
-	dsn          string
+	cfg          *pgx.ConnConfig
 	locks        map[string]*lctx
 	conn         *pgx.Conn
 	online       atomic.Value
@@ -109,9 +104,9 @@ func (m *guard) ioLoop(ctx context.Context) {
 	}
 }
 
-// reconnect occurs when the database connection is lost.
+// Reconnect occurs when the database connection is lost.
 //
-// gaurenteed to have exclusive access to internal data structures.
+// Expected to have exclusive access to internal data structures.
 func (m *guard) reconnect(ctx context.Context) {
 	ctx = baggage.ContextWithValues(ctx,
 		label.String("component", "distlock/guard.reconnect"),
@@ -134,11 +129,12 @@ func (m *guard) reconnect(ctx context.Context) {
 				return
 			}
 
-			zlog.Info(ctx).Str("timeout", (500*time.Millisecond).String()).
-				Str("dsn", m.dsn).
+			zlog.Info(ctx).
+				Dur("timeout", 500*time.Millisecond).
+				Str("dsn", m.cfg.ConnString()).
 				Msg("attempting database reconnect with timeout")
 			tctx, cancel := context.WithTimeout(ctx, 500*time.Millisecond)
-			conn, err := pgx.Connect(tctx, m.dsn)
+			conn, err := pgx.ConnectConfig(tctx, m.cfg)
 			cancel()
 			if err != nil {
 				continue
@@ -152,7 +148,9 @@ func (m *guard) reconnect(ctx context.Context) {
 
 			// set status back to online
 			m.online.Store(true)
-			zlog.Info(ctx).Str("dsn", m.dsn).Msg("database connection restored")
+			zlog.Info(ctx).
+				Str("dsn", m.cfg.ConnString()).
+				Msg("database connection restored")
 			return
 		}
 	}(ctx)
@@ -172,7 +170,7 @@ func (m *guard) request(r request) response {
 	default:
 		// this will only happen if guard is shutting down
 		// and reqChan is nil
-		return response{ok: false, ctx: &lctx{done: closedchan, err: ErrContextCanceled}}
+		return response{ok: false, ctx: &lctx{done: closedchan, err: context.Canceled}}
 	}
 }
 
@@ -206,7 +204,7 @@ func (m *guard) quit(ctx context.Context) {
 		var resp response
 		resp.ctx = &lctx{
 			done: closedchan,
-			err:  ErrContextCanceled,
+			err:  context.Canceled,
 		}
 		resp.ok = false
 		req.respChan <- resp
@@ -214,7 +212,7 @@ func (m *guard) quit(ctx context.Context) {
 
 	// cancel all locks
 	for key, lock := range m.locks {
-		lock.cancel(ErrContextCanceled)
+		lock.cancel(context.Canceled)
 		delete(m.locks, key)
 	}
 
@@ -263,9 +261,8 @@ func (m *guard) lock(ctx context.Context, key string) response {
 		return response{false, &lctx{done: closedchan, err: ErrMaxLocks}}
 	}
 
-	// this looks odd, but allows us to
-	// avoid a large amount of allocs.
-	// see: https://www.ldelossa.is/blog/posts/allocation_optimization_in_go.post
+	// This looks odd, but allows us to avoid a large amount of allocs.
+	// See: https://www.ldelossa.is/blog/posts/allocation_optimization_in_go.post
 	rr := m.conn.PgConn().ExecParams(ctx,
 		trySessionLock,
 		[][]byte{
@@ -301,7 +298,7 @@ func (m *guard) unlock(ctx context.Context, key string) response {
 
 	// lock cancelation and counter decrement
 	defer func() {
-		lock.cancel(ErrContextCanceled)
+		lock.cancel(context.Canceled)
 		delete(m.locks, key)
 		m.counter--
 	}()
