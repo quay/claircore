@@ -79,7 +79,6 @@ type Opts struct {
 	// "rhel"
 	// "suse"
 	// "ubuntu"
-	// "crda" - remotematcher calls hosted api via RPC.
 	MatcherNames []string
 
 	// Config holds configuration blocks for MatcherFactories and Matchers,
