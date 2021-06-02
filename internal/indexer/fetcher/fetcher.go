@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -138,7 +139,15 @@ func (f *fetcher) fetch(ctx context.Context, layer *claircore.Layer) error {
 	switch resp.StatusCode {
 	case http.StatusOK:
 	default:
-		return fmt.Errorf("fetcher: unexpected status code: %d %s", resp.StatusCode, resp.Status)
+		// Especially for 4xx errors, the response body may indicate what's going
+		// on, so include some of it in the error message. Capped at 256 bytes in
+		// order to not flood the log.
+		bodyStart, err := ioutil.ReadAll(io.LimitReader(resp.Body, 256))
+		if err == nil {
+			return fmt.Errorf("fetcher: unexpected status code: %s (body starts: %q)",
+				resp.Status, bodyStart)
+		}
+		return fmt.Errorf("fetcher: unexpected status code: %s", resp.Status)
 	}
 	tr := io.TeeReader(resp.Body, vh)
 
