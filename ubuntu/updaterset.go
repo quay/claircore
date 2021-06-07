@@ -72,7 +72,7 @@ func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
 	us := make([]*Updater, len(f.Releases))
 	ch := make(chan int, len(f.Releases))
 	var wg sync.WaitGroup
-	for i, lim := 0, runtime.NumCPU(); i < lim; i++ {
+	for i, lim := 0, runtime.GOMAXPROCS(0); i < lim; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()

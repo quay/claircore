@@ -25,7 +25,7 @@ const (
 )
 
 var (
-	DefaultBatchSize = runtime.NumCPU()
+	DefaultBatchSize = runtime.GOMAXPROCS(0)
 )
 
 type Configs map[string]driver.ConfigUnmarshaler
@@ -71,7 +71,7 @@ func NewManager(ctx context.Context, store vulnstore.Updater, locks LockSource, 
 		store:     store,
 		locks:     locks,
 		factories: updater.Registered(),
-		batchSize: DefaultBatchSize,
+		batchSize: runtime.GOMAXPROCS(0),
 		interval:  DefaultInterval,
 		client:    client,
 	}

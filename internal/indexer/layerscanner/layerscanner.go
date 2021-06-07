@@ -42,7 +42,7 @@ func New(ctx context.Context, concurrent int, opts *indexer.Opts) (indexer.Layer
 			Msg("rectifying nonsense 'concurrent' argument")
 		fallthrough
 	case concurrent == 0:
-		concurrent = runtime.NumCPU()
+		concurrent = runtime.GOMAXPROCS(0)
 	}
 
 	ps, ds, rs, err := indexer.EcosystemsToScanners(ctx, opts.Ecosystems, opts.Airgap)

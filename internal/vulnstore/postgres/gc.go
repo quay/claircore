@@ -77,8 +77,8 @@ func (s *Store) GC(ctx context.Context, keep int) (int64, error) {
 	}
 
 	// issue concurrent chunked deletion for known updaters
-	// limit concurrency by available CPUs.
-	cpus := int64(runtime.NumCPU())
+	// limit concurrency by available goroutines.
+	cpus := int64(runtime.GOMAXPROCS(0))
 	sem := semaphore.NewWeighted(cpus)
 
 	errC := make(chan error, len(updaters))
