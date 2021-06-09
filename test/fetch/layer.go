@@ -27,6 +27,7 @@ const (
 var registry = map[string]*client{
 	"docker.io": &client{Root: "https://registry-1.docker.io/"},
 	"quay.io":   &client{Root: "https://quay.io/"},
+	"gcr.io":    &client{Root: "https://gcr.io/"},
 }
 
 func Layer(ctx context.Context, t *testing.T, c *http.Client, from, repo string, blob claircore.Digest) (*os.File, error) {
