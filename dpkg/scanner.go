@@ -126,7 +126,8 @@ Find:
 		var db io.Reader
 		var h *tar.Header
 		for h, err = tr.Next(); err == nil; h, err = tr.Next() {
-			if h.Name == fn {
+			// The location from above is cleaned, so make sure to do that.
+			if c := filepath.Clean(h.Name); c == fn {
 				db = tr
 				break
 			}
