@@ -825,6 +825,39 @@ func TestScanner(t *testing.T) {
 	}
 }
 
+func TestAbsolutePaths(t *testing.T) {
+	ctx := zlog.Test(context.Background(), t)
+	hash, err := claircore.ParseDigest("sha256:3c9020349340788076971d5ea638b71e35233fd8e149e269d8eebfa17960c03f")
+	if err != nil {
+		t.Fatal(err)
+	}
+	l := &claircore.Layer{
+		Hash: hash,
+	}
+
+	tctx, done := context.WithTimeout(ctx, 30*time.Second)
+	defer done()
+	n, err := fetch.Layer(tctx, t, http.DefaultClient, "gcr.io", "vmwarecloudadvocacy/acmeshop-user", hash)
+	if err != nil {
+		t.Error(err)
+	}
+	defer n.Close()
+
+	if err := l.SetLocal(n.Name()); err != nil {
+		t.Error(err)
+	}
+
+	s := &Scanner{}
+	got, err := s.Scan(ctx, l)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("found %d packages", len(got))
+	if len(got) == 0 {
+		t.Fail()
+	}
+}
+
 func TestExtraMetadata(t *testing.T) {
 	const layerfile = `testdata/extrametadata.layer`
 	l := claircore.Layer{
