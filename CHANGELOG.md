@@ -2,8 +2,21 @@
 ## [Unreleased]
 
 
+<a name="v0.1.26"></a>
+## [v0.1.26] - 2021-06-09
+### Cicd
+- [88527c0](https://github.com/quay/claircore/commit/88527c0809e55d3f869ca13371a53bc53dfba747): remove chglog fork
+### Dpkg
+- [6d2134e](https://github.com/quay/claircore/commit/6d2134e38e7b42574be7a3461663058e338389ce): fix path handling
+ -  [#381](https://github.com/quay/claircore/issues/381) -  [#402](https://github.com/quay/claircore/issues/402)### Libindex
+- [a217608](https://github.com/quay/claircore/commit/a2176088af61968c6a1ed12b138de1df954452a2): fix manifest_index unique constraint
+### Vulnstore
+- [32c55bd](https://github.com/quay/claircore/commit/32c55bdd68c81df36751ace7da1e495aadf16728): enrichment migration
+
 <a name="v0.1.25"></a>
 ## [v0.1.25] - 2021-04-16
+### Chore
+- [6f7bc34](https://github.com/quay/claircore/commit/6f7bc341c2dbaa92300b07fe6eec8ae753b75fcf): v0.1.25 changelog bump
 ### Cicd
 - [9ba3cdc](https://github.com/quay/claircore/commit/9ba3cdc40bab372b35a4766e70ea176a37501b79): use git-chglog fork to sort by semver
 - [aaab793](https://github.com/quay/claircore/commit/aaab793089a1785b63061f6fba0a877cb0d38a10): sort changelog by semver
@@ -443,7 +456,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.1.25...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.1.26...HEAD
+[v0.1.26]: https://github.com/quay/claircore/compare/v0.1.25...v0.1.26
 [v0.1.25]: https://github.com/quay/claircore/compare/v0.1.24...v0.1.25
 [v0.1.24]: https://github.com/quay/claircore/compare/v0.1.23...v0.1.24
 [v0.1.23]: https://github.com/quay/claircore/compare/v0.1.22...v0.1.23
