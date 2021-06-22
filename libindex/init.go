@@ -12,10 +12,12 @@ import (
 	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/internal/indexer/postgres"
 	"github.com/quay/claircore/libindex/migrations"
+	"github.com/quay/claircore/pkg/distlock"
+	pgdistlock "github.com/quay/claircore/pkg/distlock/postgres"
 )
 
-// initialize a indexer.Store given libindex.Opts
-func initStore(ctx context.Context, opts *Opts) (indexer.Store, error) {
+// initialize a postgres pgxpool.Pool based on the given libindex.Opts
+func initDB(ctx context.Context, opts *Opts) (*pgxpool.Pool, error) {
 	// we are going to use pgx for more control over connection pool and
 	// and a cleaner api around bulk inserts
 	cfg, err := pgxpool.ParseConfig(opts.ConnString)
@@ -28,6 +30,11 @@ func initStore(ctx context.Context, opts *Opts) (indexer.Store, error) {
 		return nil, fmt.Errorf("failed to create ConnPool: %v", err)
 	}
 
+	return pool, nil
+}
+
+// initialize a indexer.Store given libindex.Opts
+func initStore(ctx context.Context, pool *pgxpool.Pool, opts *Opts) (indexer.Store, error) {
 	db, err := sql.Open("pgx", opts.ConnString)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open db: %v", err)
@@ -46,4 +53,11 @@ func initStore(ctx context.Context, opts *Opts) (indexer.Store, error) {
 
 	store := postgres.NewStore(pool)
 	return store, nil
+}
+
+// initialize a lock factory that can be used to create distlock.Lockers
+func initLockFactory(ctx context.Context, pool *pgxpool.Pool, opts *Opts) func() distlock.Locker {
+	return func() distlock.Locker {
+		return pgdistlock.NewPool(pool, opts.ScanLockRetry)
+	}
 }
