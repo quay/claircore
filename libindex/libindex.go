@@ -19,6 +19,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/internal/indexer/controller"
+	"github.com/quay/claircore/pkg/distlock"
 )
 
 const versionMagic = "libindex number: 2\n"
@@ -34,6 +35,10 @@ type Libindex struct {
 	// an opaque and unique string representing the configured
 	// state of the indexer. see setState for more information.
 	state string
+	// a locker to ensure that two indexers aren't performing
+	// the same actions at the same time, the factory allows processes
+	// to grab a new lock when needed.
+	lockerFactoryFunc func() distlock.Locker
 }
 
 // New creates a new instance of libindex.
@@ -53,16 +58,24 @@ func New(ctx context.Context, opts *Opts, cl *http.Client) (*Libindex, error) {
 	// TODO(hank) If "airgap" is set, we should wrap the client and return
 	// errors on non-RFC1918 and non-RFC4193 addresses.
 
-	store, err := initStore(ctx, opts)
+	dbPool, err := initDB(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 	zlog.Info(ctx).Msg("created database connection")
 
+	store, err := initStore(ctx, dbPool, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	lockFactory := initLockFactory(ctx, dbPool, opts)
+
 	l := &Libindex{
-		Opts:   opts,
-		store:  store,
-		client: cl,
+		Opts:              opts,
+		store:             store,
+		client:            cl,
+		lockerFactoryFunc: lockFactory,
 	}
 
 	// register any new scanners.
