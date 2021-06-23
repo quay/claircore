@@ -25,7 +25,7 @@ type affectedE2E struct {
 }
 
 func TestAffectedE2E(t *testing.T) {
-	integration.Skip(t)
+	integration.NeedDB(t)
 	ctx := zlog.Test(context.Background(), t)
 	pool := TestDatabase(ctx, t)
 	store := NewStore(pool)

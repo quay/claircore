@@ -2,14 +2,12 @@ package postgres
 
 import (
 	"context"
-	"database/sql"
-	"fmt"
 	"testing"
 
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/log/testingadapter"
 	"github.com/jackc/pgx/v4/pgxpool"
-	_ "github.com/jackc/pgx/v4/stdlib" // Needed for sql.Open
+	"github.com/jackc/pgx/v4/stdlib"
 	"github.com/remind101/migrate"
 
 	"github.com/quay/claircore/libindex/migrations"
@@ -31,12 +29,7 @@ func TestDatabase(ctx context.Context, t testing.TB) *pgxpool.Pool {
 		t.Fatalf("failed to create connpool: %v", err)
 	}
 
-	dsn := fmt.Sprintf("host=%s port=%d database=%s user=%s", cfg.ConnConfig.Host, cfg.ConnConfig.Port, cfg.ConnConfig.Database, cfg.ConnConfig.User)
-	t.Log(dsn)
-	dbh, err := sql.Open("pgx", dsn)
-	if err != nil {
-		t.Fatalf("failed sql.Open: %v", err)
-	}
+	dbh := stdlib.OpenDB(*cfg.ConnConfig)
 	defer dbh.Close()
 
 	// run migrations

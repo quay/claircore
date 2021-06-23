@@ -43,7 +43,7 @@ type e2e struct {
 }
 
 func TestE2E(t *testing.T) {
-	integration.Skip(t)
+	integration.NeedDB(t)
 	ctx := context.Background()
 
 	e2es := []e2e{

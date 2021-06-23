@@ -13,7 +13,7 @@ import (
 )
 
 func Benchmark_PackagesByLayer(b *testing.B) {
-	integration.Skip(b)
+	integration.NeedDB(b)
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
 	benchmarks := []struct {
