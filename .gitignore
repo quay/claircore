@@ -3,3 +3,4 @@ vendor
 book
 cctool
 !cctool/
+**/testdata/pg*
