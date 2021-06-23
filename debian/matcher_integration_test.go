@@ -19,12 +19,19 @@ import (
 	"github.com/quay/claircore/test/integration"
 )
 
+func TestMain(m *testing.M) {
+	var c int
+	defer func() { os.Exit(c) }()
+	defer integration.DBSetup()()
+	c = m.Run()
+}
+
 // TestMatcherIntegration confirms packages are matched
 // with vulnerabilities correctly. the returned
 // store from postgres.NewTestStore must have Ubuntu
 // CVE data
 func TestMatcherIntegration(t *testing.T) {
-	integration.Skip(t)
+	integration.NeedDB(t)
 	ctx := zlog.Test(context.Background(), t)
 	pool := vulnstore.TestDB(ctx, t)
 	store := vulnstore.NewVulnStore(pool)

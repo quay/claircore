@@ -38,7 +38,7 @@ func (u *updaterMock) Parse(ctx context.Context, contents io.ReadCloser) ([]*cla
 // TestGC confirms the garbage collection of
 // vulnerabilities works correctly.
 func TestGC(t *testing.T) {
-	integration.Skip(t)
+	integration.NeedDB(t)
 
 	// mock returns exactly one random vuln each time its Parse method is called.
 	// each update operation will be associated with a single vuln.

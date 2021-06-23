@@ -23,7 +23,7 @@ import (
 
 // TestE2E performs an end to end test of update operations and diffing
 func TestE2E(t *testing.T) {
-	integration.Skip(t)
+	integration.NeedDB(t)
 	ctx := zlog.Test(context.Background(), t)
 
 	cases := []e2e{

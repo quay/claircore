@@ -6,10 +6,11 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/quay/zlog"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/test/integration"
-	"github.com/quay/zlog"
 )
 
 const updater string = "test-updater"
@@ -23,7 +24,7 @@ type diffTestCase struct {
 // their diff. This flow is also tested in TestE2E. However, not all the cases
 // are captured there, e.g. if there's no difference between the two operations.
 func TestGetUpdateDiff(t *testing.T) {
-	integration.Skip(t)
+	integration.NeedDB(t)
 	ctx := zlog.Test(context.Background(), t)
 
 	cases := []diffTestCase{
