@@ -8,7 +8,6 @@ import (
 	"io"
 	"path/filepath"
 	"runtime/trace"
-	"strings"
 
 	"github.com/aquasecurity/go-dep-parser/pkg/jar"
 	"github.com/quay/zlog"
@@ -68,17 +67,7 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	tr := tar.NewReader(r)
 	var h *tar.Header
 	for h, err = tr.Next(); err == nil; h, err = tr.Next() {
-		switch {
-		case h.Typeflag != tar.TypeReg:
-			// Should we chase symlinks with the correct name?
-			continue
-		case strings.HasSuffix(h.Name, `.jar`):
-			zlog.Debug(ctx).Str("file", h.Name).Msg("found jar")
-		case strings.HasSuffix(h.Name, `.war`):
-			zlog.Debug(ctx).Str("file", h.Name).Msg("found war")
-		case strings.HasSuffix(h.Name, `.ear`):
-			zlog.Debug(ctx).Str("file", h.Name).Msg("found ear")
-		default:
+		if !isArchive(ctx, h) {
 			continue
 		}
 		packages, err := getPackagesFromJarFamily(tr, h.Name)

@@ -6,9 +6,7 @@ import (
 	"archive/tar"
 	"context"
 	"io"
-	"path/filepath"
 	"runtime/trace"
-	"strings"
 
 	"github.com/quay/zlog"
 	"go.opentelemetry.io/otel/baggage"
@@ -65,24 +63,9 @@ func (rs *RepoScanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*cla
 	tr := tar.NewReader(r)
 	var h *tar.Header
 	for h, err = tr.Next(); err == nil; h, err = tr.Next() {
-		n, err := filepath.Rel("/", filepath.Join("/", h.Name))
-		if err != nil {
-			return nil, err
-		}
-		switch {
-		case h.Typeflag != tar.TypeReg:
-			// Should we chase symlinks with the correct name?
-			continue
-		case strings.HasSuffix(n, `.jar`):
-			zlog.Debug(ctx).Str("file", n).Msg("found jar")
-		case strings.HasSuffix(n, `.war`):
-			zlog.Debug(ctx).Str("file", n).Msg("found war")
-		case strings.HasSuffix(h.Name, `.ear`):
-			zlog.Debug(ctx).Str("file", h.Name).Msg("found ear")
-		default:
+		if !isArchive(ctx, h) {
 			continue
 		}
-
 		// Just claim these came from java.
 		return []*claircore.Repository{&Repository}, nil
 	}
