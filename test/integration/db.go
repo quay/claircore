@@ -131,7 +131,7 @@ type DB struct {
 
 // Config returns a pgxpool.Config for the created database.
 func (db *DB) Config() *pgxpool.Config {
-	return db.cfg
+	return db.cfg.Copy()
 }
 
 // Close tears down the created database.
