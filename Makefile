@@ -5,6 +5,7 @@ docker-compose ?= docker-compose
 .PHONY: clear-cache
 clear-cache:
 	go clean -cache -testcache -modcache
+	test -d $${XDG_CACHE_HOME:-$${HOME}/.cache}/clair-testing && rm -rf $${XDG_CACHE_HOME:-$${HOME}/.cache}/clair-testing
 
 # generates mocks of interfaces for testing
 .PHONY: genmocks
@@ -12,17 +13,11 @@ genmocks:
 	@command -v mockgen >/dev/null || go install github.com/golang/mock/mockgen
 	go generate ./...
 
-# runs integration tests. database must be available. use the db commands below to ensure this
+# Runs integration tests. An embedded postgres binary will be fetched if the
+# environment variable "POSTGRES_CONNECTION_STRING" isn't set.
 .PHONY: integration
 integration:
 	go test -count=1 -race -tags integration ./...
-
-# runs integration test which may fail on darwin but must succeed on linux/unix
-# using the docker-shell makefile first will drop you into a unix container where
-# you may run this target if you are on darwin/macOS
-.PHONY: integration-unix
-integration-unix:
-	go test -count=1 -p 1 -race -tags unix ./...
 
 # runs unit tests. no db necessary
 .PHONY: unit
