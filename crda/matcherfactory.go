@@ -18,6 +18,8 @@ type Factory struct {
 	url        *url.URL
 	client     *http.Client
 	ecosystems []string
+	source     string
+	key        string
 }
 
 // MatcherFactory implements driver.MatcherFactory.
@@ -45,7 +47,7 @@ EcosystemSubSet:
 
 	var matchers []driver.Matcher
 	for _, e := range f.ecosystems {
-		m, err := NewMatcher(e, WithClient(f.client), WithURL(f.url))
+		m, err := NewMatcher(e, WithClient(f.client), WithURL(f.url), WithKey(f.key), WithSource(f.source))
 		if err != nil {
 			return nil, err
 		}
@@ -58,6 +60,8 @@ EcosystemSubSet:
 type FactoryConfig struct {
 	URL        string   `json:"url" yaml:"url"`
 	Ecosystems []string `json:"ecosystems" yaml:"ecosystems"`
+	Source     string   `json:"source" yaml:"source"`
+	Key        string   `json:"key" yaml:"key"`
 }
 
 // MatcherFactory implements driver.MatcherConfigurable.
@@ -80,6 +84,20 @@ func (f *Factory) Configure(ctx context.Context, cfg driver.MatcherConfigUnmarsh
 			Str("url", u.String()).
 			Msg("configured manifest URL")
 		f.url = u
+	}
+
+	if fc.Source != "" {
+		f.source = fc.Source
+		zlog.Info(ctx).
+			Str("source", fc.Source).
+			Msg("configured source of clair user")
+	}
+
+	if fc.Key != "" {
+		f.key = fc.Key
+		zlog.Info(ctx).
+			Str("key", f.key).
+			Msg("configured 3-scale-key for crda api")
 	}
 
 	if c != nil {

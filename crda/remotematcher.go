@@ -30,10 +30,11 @@ var (
 const (
 	// Bounded concurrency limit.
 	defaultBatchSize          = 100
-	defaultEndPoint           = "/api/v2/component-analyses"
+	defaultEndPoint           = "/api/v2/vulnerability-analysis"
 	defaultRequestConcurrency = 10
-	defaultURL                = "https://f8a-analytics-2445582058137.production.gw.apicast.io/?user_key=9e7da76708fe374d8c10fa752e72989f"
+	defaultURL                = "https://f8a-analytics-2445582058137.production.gw.apicast.io/api/v2/"
 	defaultSource             = "clair-upstream"
+	defaultKey                = "user_key=9e7da76708fe374d8c10fa752e72989f"
 )
 
 var (
@@ -48,26 +49,24 @@ type Matcher struct {
 	ecosystem          string
 	requestConcurrency int
 	url                *url.URL
+	key                string
+	source             string
 }
 
 // Build struct to model CRDA V2 ComponentAnalysis response which
 // delivers Snyk sourced Vulnerability information.
 type Vulnerability struct {
+	FixedIn  []string `json:"fixed_in"`
 	ID       string   `json:"id"`
-	CVSS     string   `json:"cvss"`
-	CVES     []string `json:"cve_ids"`
 	Severity string   `json:"severity"`
 	Title    string   `json:"title"`
 	URL      string   `json:"url"`
-	FixedIn  []string `json:"fixed_in"`
 }
 
 type VulnReport struct {
-	Name               string          `json:"package"`
-	Version            string          `json:"version"`
-	RecommendedVersion string          `json:"recommended_versions"`
-	Message            string          `json:"message"`
-	Vulnerabilities    []Vulnerability `json:"vulnerability"`
+	Name            string          `json:"name"`
+	Version         string          `json:"version"`
+	Vulnerabilities []Vulnerability `json:"vulnerabilities"`
 }
 
 // Request model.
@@ -105,11 +104,19 @@ func NewMatcher(ecosystem string, opt ...Option) (*Matcher, error) {
 		}
 
 	}
+
+	if m.key == "" {
+		m.key = defaultKey
+	} else {
+		m.key = "user_key=" + m.key
+	}
+
 	m.url = &url.URL{
-		Scheme:   m.url.Scheme,
-		Host:     m.url.Host,
-		Path:     defaultEndPoint,
-		RawQuery: m.url.RawQuery,
+		Scheme:     m.url.Scheme,
+		Host:       m.url.Host,
+		Path:       defaultEndPoint,
+		ForceQuery: true,
+		RawQuery:   m.key,
 	}
 
 	if m.client == nil {
@@ -145,6 +152,26 @@ func WithClient(c *http.Client) Option {
 func WithURL(url *url.URL) Option {
 	return func(m *Matcher) error {
 		m.url = url
+		return nil
+	}
+}
+
+// WithKey sets the api key that the matcher should use for requests.
+//
+// If not passed to NewMatcher, defaultKey will be used.
+func WithKey(key string) Option {
+	return func(m *Matcher) error {
+		m.key = key
+		return nil
+	}
+}
+
+// WithSource sets the source that the matcher should use for requests.
+//
+// If not passed to NewMatcher, defaultSource will be used.
+func WithSource(source string) Option {
+	return func(m *Matcher) error {
+		m.source = source
 		return nil
 	}
 }
@@ -209,6 +236,8 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 type Config struct {
 	URL         string `json:"url" yaml:"url"`
 	Concurrency int    `json:"concurrent_requests" yaml:"concurrent_requests"`
+	Source      string `json:"source" yaml:"source"`
+	Key         string `json:"key" yaml:"key"`
 }
 
 // Configure implements driver.MatcherConfigurable.
@@ -233,6 +262,16 @@ func (m *Matcher) Configure(ctx context.Context, f driver.MatcherConfigUnmarshal
 		m.url = u
 		zlog.Info(ctx).
 			Msg("configured API URL")
+	}
+	if cfg.Source != "" {
+		m.source = cfg.Source
+		zlog.Info(ctx).
+			Msg("configured source of clair user")
+	}
+	if cfg.Key != "" {
+		m.key = cfg.Key
+		zlog.Info(ctx).
+			Msg("configured 3-scale-key for crda api")
 	}
 	m.client = c
 	zlog.Info(ctx).
@@ -269,6 +308,7 @@ func (m *Matcher) QueryRemoteMatcher(ctx context.Context, records []*claircore.I
 	for vrs := range ctrlC {
 		for _, vr := range vrs {
 			ir := packageVersionToIndexRecord[key(vr.Name, vr.Version)]
+
 			// A package can have 0 or more vulnerabilities for a version.
 			var vulns []*claircore.Vulnerability
 			for _, vuln := range vr.Vulnerabilities {
@@ -346,6 +386,7 @@ func (m *Matcher) invokeComponentAnalyses(ctx context.Context, records []*clairc
 	req.Header.Set("User-Agent", "claircore/remote_matcher")
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Source-Type", defaultSource)
+
 	res, err := m.client.Do(req)
 	if res != nil {
 		defer res.Body.Close()
