@@ -11,6 +11,7 @@ import (
 	"github.com/quay/claircore/alpine"
 	"github.com/quay/claircore/aws"
 	"github.com/quay/claircore/debian"
+	"github.com/quay/claircore/enricher/cvss"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/oracle"
 	"github.com/quay/claircore/photon"
@@ -53,6 +54,10 @@ func inner(ctx context.Context) error {
 	updater.Register("photon", driver.UpdaterSetFactoryFunc(photon.UpdaterSet))
 	updater.Register("pyupio", driver.UpdaterSetFactoryFunc(pyupio.UpdaterSet))
 	updater.Register("suse", driver.UpdaterSetFactoryFunc(suse.UpdaterSet))
+
+	cvssSet := driver.NewUpdaterSet()
+	cvssSet.Add(&cvss.Enricher{})
+	updater.Register("clair.cvss", driver.StaticSet(cvssSet))
 
 	return nil
 }
