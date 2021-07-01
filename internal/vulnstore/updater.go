@@ -12,6 +12,8 @@ import (
 // Updater is an interface exporting the necessary methods
 // for updating a vulnerability database.
 type Updater interface {
+	EnrichmentUpdater
+
 	// UpdateVulnerabilities creates a new UpdateOperation, inserts the provided
 	// vulnerabilities, and ensures vulnerabilities from previous updates are
 	// not queried by clients.

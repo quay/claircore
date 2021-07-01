@@ -4,4 +4,5 @@ package vulnstore
 type Store interface {
 	Updater
 	Vulnerability
+	Enrichment
 }
