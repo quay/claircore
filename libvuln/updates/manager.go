@@ -4,16 +4,19 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"runtime"
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/quay/zlog"
 	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/label"
 	"golang.org/x/sync/semaphore"
 
+	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/vulnstore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/distlock"
@@ -260,9 +263,17 @@ func (m *Manager) driveUpdater(ctx context.Context, u driver.Updater) error {
 	)
 	zlog.Info(ctx).Msg("starting update")
 	defer zlog.Info(ctx).Msg("finished update")
+	uoKind := driver.VulnerabilityKind
+
+	eu, euOK := u.(driver.EnrichmentUpdater)
+	if euOK {
+		zlog.Info(ctx).
+			Msg("found EnrichmentUpdater")
+		uoKind = driver.EnrichmentKind
+	}
 
 	var prevFP driver.Fingerprint
-	opmap, err := m.store.GetUpdateOperations(ctx, driver.VulnerabilityKind, name)
+	opmap, err := m.store.GetUpdateOperations(ctx, uoKind, name)
 	if err != nil {
 		return err
 	}
@@ -271,7 +282,14 @@ func (m *Manager) driveUpdater(ctx context.Context, u driver.Updater) error {
 		prevFP = s[0].Fingerprint
 	}
 
-	vulnDB, newFP, err := u.Fetch(ctx, prevFP)
+	var vulnDB io.ReadCloser
+	var newFP driver.Fingerprint
+	switch {
+	case euOK:
+		vulnDB, newFP, err = eu.FetchEnrichment(ctx, prevFP)
+	default:
+		vulnDB, newFP, err = u.Fetch(ctx, prevFP)
+	}
 	if vulnDB != nil {
 		defer vulnDB.Close()
 	}
@@ -284,16 +302,31 @@ func (m *Manager) driveUpdater(ctx context.Context, u driver.Updater) error {
 		return err
 	}
 
-	vulns, err := u.Parse(ctx, vulnDB)
-	if err != nil {
-		return fmt.Errorf("database parse failed: %w", err)
-	}
+	var ref uuid.UUID
+	switch {
+	case euOK:
+		var ers []driver.EnrichmentRecord
+		ers, err = eu.ParseEnrichment(ctx, vulnDB)
+		if err != nil {
+			return fmt.Errorf("enrichment database parse failed: %v", err)
+		}
 
-	_, err = m.store.UpdateVulnerabilities(ctx, name, newFP, vulns)
-	if err != nil {
-		return fmt.Errorf("vulnstore update failed: %w", err)
-	}
+		ref, err = m.store.UpdateEnrichments(ctx, name, newFP, ers)
+	default:
+		var vulns []*claircore.Vulnerability
+		vulns, err = u.Parse(ctx, vulnDB)
+		if err != nil {
+			return fmt.Errorf("vulnerability database parse failed: %v", err)
+		}
 
+		ref, err = m.store.UpdateVulnerabilities(ctx, name, newFP, vulns)
+	}
+	if err != nil {
+		return fmt.Errorf("failed to update: %v", err)
+	}
+	zlog.Info(ctx).
+		Str("ref", ref.String()).
+		Msg("successful update")
 	return nil
 }
 
