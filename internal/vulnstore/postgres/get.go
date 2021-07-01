@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/zlog"
@@ -19,30 +18,31 @@ import (
 )
 
 var (
-	getCounter = promauto.NewCounterVec(
+	getVulnerabilitiesCounter = promauto.NewCounterVec(
 		prometheus.CounterOpts{
 			Namespace: "claircore",
 			Subsystem: "vulnstore",
-			Name:      "get_total",
+			Name:      "getvulnerabilities_total",
 			Help:      "Total number of database queries issued in the get method.",
 		},
 		[]string{"query"},
 	)
-	getDuration = promauto.NewHistogramVec(
+	getVulnerabilitiesDuration = promauto.NewHistogramVec(
 		prometheus.HistogramOpts{
 			Namespace: "claircore",
 			Subsystem: "vulnstore",
-			Name:      "get_duration_seconds",
+			Name:      "getvulnerabilities_duration_seconds",
 			Help:      "The duration of all queries issued in the get method",
 		},
 		[]string{"query"},
 	)
 )
 
-func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.IndexRecord, opts vulnstore.GetOpts) (map[string][]*claircore.Vulnerability, error) {
+// Get implements vulnstore.Vulnerability.
+func (s *Store) Get(ctx context.Context, records []*claircore.IndexRecord, opts vulnstore.GetOpts) (map[string][]*claircore.Vulnerability, error) {
 	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "internal/vulnstore/postgres/get"))
-	tx, err := pool.Begin(ctx)
+		label.String("component", "internal/vulnstore/postgres/Get"))
+	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -140,8 +140,8 @@ func get(ctx context.Context, pool *pgxpool.Pool, records []*claircore.IndexReco
 		return nil, fmt.Errorf("some weird batch error: %v", err)
 	}
 
-	getCounter.WithLabelValues("query_batch").Add(1)
-	getDuration.WithLabelValues("query_batch").Observe(time.Since(start).Seconds())
+	getVulnerabilitiesCounter.WithLabelValues("query_batch").Add(1)
+	getVulnerabilitiesDuration.WithLabelValues("query_batch").Observe(time.Since(start).Seconds())
 
 	if err := tx.Commit(ctx); err != nil {
 		return nil, fmt.Errorf("failed to commit tx: %v", err)
