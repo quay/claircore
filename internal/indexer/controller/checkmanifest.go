@@ -3,12 +3,27 @@ package controller
 import (
 	"context"
 	"fmt"
+	"strconv"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/zlog"
 	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore/internal/indexer"
+)
+
+var (
+	scannedManifestCounter = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "claircore",
+			Subsystem: "indexer",
+			Name:      "scanned_manifests",
+			Help:      "Total number of scanned manifests.",
+		},
+		[]string{"scanned_before"},
+	)
 )
 
 func checkManifest(ctx context.Context, s *Controller) (State, error) {
@@ -21,6 +36,8 @@ func checkManifest(ctx context.Context, s *Controller) (State, error) {
 	if err != nil {
 		return Terminal, err
 	}
+
+	scannedManifestCounter.WithLabelValues(strconv.FormatBool(ok)).Add(1)
 
 	// if we haven't seen this manifest, determine which scanners to use, persist it
 	// and transition to FetchLayer state.
