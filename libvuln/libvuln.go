@@ -28,6 +28,7 @@ type Libvuln struct {
 	store           vulnstore.Store
 	pool            *pgxpool.Pool
 	matchers        []driver.Matcher
+	enrichers       []driver.Enricher
 	updateRetention int
 	updaters        *updates.Manager
 }
@@ -57,6 +58,7 @@ func New(ctx context.Context, opts *Opts) (*Libvuln, error) {
 		store:           postgres.NewVulnStore(pool),
 		pool:            pool,
 		updateRetention: opts.UpdateRetention,
+		enrichers:       opts.Enrichers,
 	}
 
 	// create matchers based on the provided config.
@@ -106,6 +108,9 @@ func (l *Libvuln) FetchUpdates(ctx context.Context) error {
 
 // Scan creates a VulnerabilityReport given a manifest's IndexReport.
 func (l *Libvuln) Scan(ctx context.Context, ir *claircore.IndexReport) (*claircore.VulnerabilityReport, error) {
+	if s, ok := l.store.(matcher.Store); ok {
+		return matcher.EnrichedMatch(ctx, ir, l.matchers, l.enrichers, s)
+	}
 	return matcher.Match(ctx, ir, l.matchers, l.store)
 }
 

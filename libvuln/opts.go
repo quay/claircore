@@ -91,6 +91,10 @@ type Opts struct {
 	// This list will me merged with the default matchers.
 	Matchers []driver.Matcher
 
+	// Enrichers is a slice of enrichers to use with all VulnerabilityReport
+	// requests.
+	Enrichers []driver.Enricher
+
 	// UpdateWorkers controls the number of update workers running concurrently.
 	// If less than or equal to zero, a sensible default will be used.
 	UpdateWorkers int
