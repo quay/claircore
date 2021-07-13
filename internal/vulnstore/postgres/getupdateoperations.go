@@ -113,7 +113,7 @@ func (s *Store) GetLatestUpdateRefs(ctx context.Context, kind driver.UpdateKind)
 	const (
 		query              = `SELECT DISTINCT ON (updater) updater, ref, fingerprint, date FROM update_operation ORDER BY updater, id USING >;`
 		queryEnrichment    = `SELECT DISTINCT ON (updater) updater, ref, fingerprint, date FROM update_operation WHERE kind = 'enrichment' ORDER BY updater, id USING >;`
-		queryVulnerability = `SELECT DISTINCT ON (updater) updater, ref, fingerprint, date FROM update_operation WHERE kind = 'enrichment' ORDER BY updater, id USING >;`
+		queryVulnerability = `SELECT DISTINCT ON (updater) updater, ref, fingerprint, date FROM update_operation WHERE kind = 'vulnerability' ORDER BY updater, id USING >;`
 	)
 
 	var q string
