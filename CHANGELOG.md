@@ -2,12 +2,79 @@
 ## [Unreleased]
 
 
+<a name="v0.5.0"></a>
+## [v0.5.0] - 2021-07-14
+### All
+- [67c0791](https://github.com/quay/claircore/commit/67c0791e2670f00337484becd38ed2c08fd4c109): use GOMAXPROCS instead of NumCPU
+- [f7b23aa](https://github.com/quay/claircore/commit/f7b23aae539e7077a6f5544dcb64538594483b85): switch CODEOWNERS to use clair team
+- [6bd0386](https://github.com/quay/claircore/commit/6bd0386206b0a99c3423a806db77bb6a86f441a4): remove jzelinskie from CODEOWNERS
+### Claircore
+- [68e107a](https://github.com/quay/claircore/commit/68e107adf5197af890b93a9d833cb65b750dc8ab): add Enrichments to VulnerabilityReport
+### Crda
+- [7d5927a](https://github.com/quay/claircore/commit/7d5927a7be4a556f6cc21974513da5e98d4f25b4): remove matcher
+### Cvss
+- [9dd8d38](https://github.com/quay/claircore/commit/9dd8d38185cc44fdf5439634aa938aa63428d6d6): CVSS enricher
+### Defaults
+- [40282ac](https://github.com/quay/claircore/commit/40282ac3028c215648b9ef586b7b914205e72fcc): add cvss
+### Dpkg
+- [16993db](https://github.com/quay/claircore/commit/16993db5aa372b23e44720d93701bcf173758b2d): replace go-dpkg dependency
+- [f7a2925](https://github.com/quay/claircore/commit/f7a2925c8f5c6db83471bf149f7ddd3b546fc532): fix path handling
+ -  [#381](https://github.com/quay/claircore/issues/381) - Closes [#381](https://github.com/quay/claircore/issues/381)### Driver
+- [ed3a555](https://github.com/quay/claircore/commit/ed3a5551a2ffabf89ac98e2f571215bb4764ca8d): add enrichment types and interfaces
+### Fetcher
+- [2f1b61d](https://github.com/quay/claircore/commit/2f1b61db674fdec4f5f9718e9033041a1508ee85): include response body in error message for non-200 repsonses
+### Indexer
+- [f36da9f](https://github.com/quay/claircore/commit/f36da9fcbb2162c9639f18f06ec261a15116bbd0): avoid creating a new db pool for the locks
+### Integration
+- [b2eae4e](https://github.com/quay/claircore/commit/b2eae4e1d1e9c2ac495acecef8f7ecf9310e83b4): use embedded postgres
+### Introspection
+- [3f72eb7](https://github.com/quay/claircore/commit/3f72eb765b1c26af60e215b67a55f27e1f744198): add scanned_before metrics
+### Java
+- [dac6715](https://github.com/quay/claircore/commit/dac671542bfac423a3c60220d66389405e197f29): ignore whiteout files
+### Jsonblob
+- [dbd56bb](https://github.com/quay/claircore/commit/dbd56bbb408d05e87df9dcc6e7b463bf2c162958): implement enricher methods
+### Libindex
+- [526e1ba](https://github.com/quay/claircore/commit/526e1baa33d354baf1a407c83fb8617eb2d177e4): use new DB testing harness
+- [d7cea80](https://github.com/quay/claircore/commit/d7cea80e4b1278c1a095232a4bc9d96c4ebf8a9e): fix manifest_index unique constraint
+### Libvuln
+- [391adac](https://github.com/quay/claircore/commit/391adac027b2536f7bcf04d21b06563d4be0a349): add Enrichment API surface
+### Makefile
+- [2a3634d](https://github.com/quay/claircore/commit/2a3634d317d7efc3dc429e54057b0a4d62b2bbd8): update in light of test DB changes
+### Matcher
+- [574497a](https://github.com/quay/claircore/commit/574497a960c0a6c8ffba49b3bfcd89028889eb5f): add Enrichment support
+### Postgres
+- [dbaa2f7](https://github.com/quay/claircore/commit/dbaa2f753413d8ba82363de59c3b0f4135e4b068): fix query in GetLatestUpdateRefs
+- [0db5101](https://github.com/quay/claircore/commit/0db5101e14d21b4b4a268ee1c69b5f34a56e835b): implement enricher methods
+- [7b4475f](https://github.com/quay/claircore/commit/7b4475ff6b24d881dd6edb3d44011a4afafed558): use new DB testing harness
+- [e364e13](https://github.com/quay/claircore/commit/e364e134af28671a33694596a63b804e5f0012b2): use new DB testing harness
+### Rhel
+- [80a2826](https://github.com/quay/claircore/commit/80a28261e0f8b45a4494743548ef838da728cd8b): use new DB testing harness
+### Updater
+- [3de9f4d](https://github.com/quay/claircore/commit/3de9f4d0c7d9793a1c72a029c6bb7877834475b9): remove obsolete package
+### Updates
+- [aaea5ba](https://github.com/quay/claircore/commit/aaea5ba48d49f3c11de080ecbacb9177f56bf609): run enrichment updaters
+### Vulnstore
+- [bec40e2](https://github.com/quay/claircore/commit/bec40e2586e48207cada3a52bfb47d9c253276ce): add enrichment interfaces
+
+<a name="v0.4.3"></a>
+## [v0.4.3] - 2021-06-15
+### Chore
+- [3d4a413](https://github.com/quay/claircore/commit/3d4a413fb840bd3fdf37900b20f1d6b2542e9b28): v0.4.3 changelog bump
+### Crda
+- [fe112d7](https://github.com/quay/claircore/commit/fe112d7642cafe72cbe4b67865f4e4b00f97c9e6): remove matcher
+### Dpkg
+- [11837c4](https://github.com/quay/claircore/commit/11837c48bed4479e2259b831e2db5f8afe54b385): fix path handling
+ -  [#381](https://github.com/quay/claircore/issues/381) -  [#402](https://github.com/quay/claircore/issues/402)### Libindex
+- [c809930](https://github.com/quay/claircore/commit/c809930205eaad77f13427c7b965a6194ea671ac): fix manifest_index unique constraint
+
 <a name="v0.4.2"></a>
-## [v0.4.2] - 2021-05-07
+## [v0.4.2] - 2021-05-11
 ### Alpine
 - [f92e1be](https://github.com/quay/claircore/commit/f92e1bea4f163be841fbc459c4b909a0512f1d04): implement driver.Configurable
 ### Aws
 - [4738610](https://github.com/quay/claircore/commit/473861086b27d77e19aa6e788a60c1796d305ae1): add http.Client configurability
+### Chore
+- [51f6ca5](https://github.com/quay/claircore/commit/51f6ca568a3003c0379a29e8e4373aca63a19158): v0.4.2 changelog bump
 ### Cicd
 - [fe6cb92](https://github.com/quay/claircore/commit/fe6cb92b085e5907814dcb4f4ec756c2436baa3f): use golang major version tag for dev env
 - [0a04053](https://github.com/quay/claircore/commit/0a04053358a6fa1a5d5a71fae0d4b29607a4457d): use quay.io/projectquay/golang image
@@ -231,6 +298,19 @@
 - [5385f5d](https://github.com/quay/claircore/commit/5385f5d5b78486e6f73f00e70d2cd21d57a17827): consolidate into manager
 ### Vulnstore
 - [77df2c7](https://github.com/quay/claircore/commit/77df2c77881678726d601df50f0e2600de3cb67f): implement active gc
+
+<a name="v0.1.26"></a>
+## [v0.1.26] - 2021-06-15
+### Chore
+- [1e14a8c](https://github.com/quay/claircore/commit/1e14a8cc0c49043e4cef76b7f58a292fed256c5d): v0.1.26 changelog bump
+### Cicd
+- [88527c0](https://github.com/quay/claircore/commit/88527c0809e55d3f869ca13371a53bc53dfba747): remove chglog fork
+### Dpkg
+- [6d2134e](https://github.com/quay/claircore/commit/6d2134e38e7b42574be7a3461663058e338389ce): fix path handling
+ -  [#381](https://github.com/quay/claircore/issues/381) -  [#402](https://github.com/quay/claircore/issues/402)### Libindex
+- [a217608](https://github.com/quay/claircore/commit/a2176088af61968c6a1ed12b138de1df954452a2): fix manifest_index unique constraint
+### Vulnstore
+- [32c55bd](https://github.com/quay/claircore/commit/32c55bdd68c81df36751ace7da1e495aadf16728): enrichment migration
 
 <a name="v0.1.25"></a>
 ## [v0.1.25] - 2021-04-16
@@ -814,7 +894,9 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.4.2...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.5.0...HEAD
+[v0.5.0]: https://github.com/quay/claircore/compare/v0.4.3...v0.5.0
+[v0.4.3]: https://github.com/quay/claircore/compare/v0.4.2...v0.4.3
 [v0.4.2]: https://github.com/quay/claircore/compare/v0.4.1...v0.4.2
 [v0.4.1]: https://github.com/quay/claircore/compare/v0.4.0...v0.4.1
 [v0.4.0]: https://github.com/quay/claircore/compare/v0.3.3...v0.4.0
@@ -822,7 +904,8 @@
 [v0.3.2]: https://github.com/quay/claircore/compare/v0.3.1...v0.3.2
 [v0.3.1]: https://github.com/quay/claircore/compare/v0.3.0...v0.3.1
 [v0.3.0]: https://github.com/quay/claircore/compare/v0.2.0...v0.3.0
-[v0.2.0]: https://github.com/quay/claircore/compare/v0.1.25...v0.2.0
+[v0.2.0]: https://github.com/quay/claircore/compare/v0.1.26...v0.2.0
+[v0.1.26]: https://github.com/quay/claircore/compare/v0.1.25...v0.1.26
 [v0.1.25]: https://github.com/quay/claircore/compare/v0.1.24...v0.1.25
 [v0.1.24]: https://github.com/quay/claircore/compare/v0.1.23...v0.1.24
 [v0.1.23]: https://github.com/quay/claircore/compare/v0.1.22...v0.1.23
