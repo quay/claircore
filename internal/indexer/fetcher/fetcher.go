@@ -9,12 +9,14 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/klauspost/compress/gzip"
 	"github.com/klauspost/compress/zstd"
@@ -26,6 +28,10 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
 )
+
+func init() {
+	rand.Seed(time.Now().UTC().UnixNano())
+}
 
 // Fetcher is a private struct which implements indexer.Fetcher.
 type fetcher struct {
@@ -67,7 +73,7 @@ func (f *fetcher) Fetch(ctx context.Context, layers []*claircore.Layer) error {
 
 func (f *fetcher) filename(l *claircore.Layer) string {
 	// TODO(hank) Make this configurable directly, instead of only via TMPDIR.
-	return filepath.Join(os.TempDir(), l.Hash.String())
+	return filepath.Join(os.TempDir(), fmt.Sprintf("%s_%d", l.Hash.String(), rand.Uint32()))
 }
 
 // fetch is designed to be ran as a go routine. performs the logic for for
