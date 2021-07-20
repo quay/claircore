@@ -26,7 +26,7 @@ spec:
             sslmode=disable
         - name: LOG_LEVEL
           value: debug
-      image: quay.io/claircore/golang:1.13.5
+      image: quay.io/claircore/golang:1.15
       name: libvulnhttp
       restartPolicy: OnFailure
       ports:
@@ -56,7 +56,7 @@ spec:
             sslmode=disable
         - name: SCAN_LOCK_RETRY
           value: "1"
-      image: quay.io/claircore/golang:1.13.5
+      image: quay.io/claircore/golang:1.15
       name: libindexhttp
       restartPolicy: OnFailure
       ports:
@@ -81,7 +81,7 @@ spec:
           value: claircore
         - name: POSTGRES_DB
           value: claircore
-      image: docker.io/library/postgres:11
+      image: docker.io/library/postgres:11.5
       restartPolicy: OnFailure
       ports:
         - containerPort: 5434
