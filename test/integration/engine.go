@@ -14,7 +14,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"syscall"
 	"testing"
 
 	"github.com/ulikunitz/xz"
@@ -103,33 +102,12 @@ func (e *Engine) Stop() error {
 	return cmd.Run()
 }
 
-/*
-Code below does some shenanigans to lock the directory that we extract to. This
-has to be done because the `go test` will run package tests in parallel, so
-different packages may see the extracted binaries in various states if there
-was not any synchronization. We use an exclusive flock(2) as a write lock, and
-obtain a shared lock as a read gate.
-
-Without this, tests would flake on a cold cache.
-*/
-
 func fetchArchive(t testing.TB) {
 	p, err := cachedDir()
 	if errors.Is(err, os.ErrNotExist) {
 		os.MkdirAll(p, 0755)
 	}
-	lf, err := os.Open(p)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer lf.Close()
-	defer syscall.Flock(int(lf.Fd()), syscall.LOCK_UN)
-	if err := syscall.Flock(int(lf.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err != nil {
-		// Failed to lock, wait for a shared lock, then return
-		t.Log("waiting for another process to fetch binaries")
-		if err := syscall.Flock(int(lf.Fd()), syscall.LOCK_SH); err != nil {
-			t.Fatal(err)
-		}
+	if !lockDir(t, p) {
 		return
 	}
 
@@ -256,14 +234,7 @@ func binUncached(t testing.TB) bool {
 	// If it does exist, wait until we can grab a shared lock. If this blocks,
 	// it's because another process has the exclusive (write) lock. Any error
 	// during this process just fails the test.
-	lf, err := os.Open(p)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer lf.Close()
-	if err := syscall.Flock(int(lf.Fd()), syscall.LOCK_SH); err != nil {
-		t.Fatal(err)
-	}
+	lockDirShared(t, p)
 	return false
 }
 
