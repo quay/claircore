@@ -24,7 +24,7 @@ require (
 	github.com/quay/zlog v0.0.0-20210113185248-ce16eed1dcec
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
 	github.com/rs/zerolog v1.20.0
-	github.com/ulikunitz/xz v0.5.7
+	github.com/ulikunitz/xz v0.5.8
 	go.opentelemetry.io/otel v0.15.0
 	golang.org/x/sync v0.0.0-20201207232520-09787c993a3a
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba
