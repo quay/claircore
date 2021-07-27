@@ -58,5 +58,6 @@ func inner(ctx context.Context) error {
 		mf := driver.MatcherStatic(m)
 		registry.Register(m.Name(), mf)
 	}
+
 	return nil
 }

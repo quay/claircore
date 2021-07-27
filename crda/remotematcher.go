@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -29,12 +28,12 @@ var (
 
 const (
 	// Bounded concurrency limit.
-	defaultBatchSize          = 100
+	defaultBatchSize          = 10
 	defaultEndPoint           = "/api/v2/vulnerability-analysis"
 	defaultRequestConcurrency = 10
 	defaultURL                = "https://f8a-analytics-2445582058137.production.gw.apicast.io/api/v2/"
 	defaultSource             = "clair-upstream"
-	defaultKey                = "user_key=9e7da76708fe374d8c10fa752e72989f"
+	defaultKey                = "9e7da76708fe374d8c10fa752e72989f"
 )
 
 var (
@@ -107,8 +106,10 @@ func NewMatcher(ecosystem string, opt ...Option) (*Matcher, error) {
 
 	if m.key == "" {
 		m.key = defaultKey
-	} else {
-		m.key = "user_key=" + m.key
+	}
+
+	if m.source == "" {
+		m.source = defaultSource
 	}
 
 	m.url = &url.URL{
@@ -116,7 +117,7 @@ func NewMatcher(ecosystem string, opt ...Option) (*Matcher, error) {
 		Host:       m.url.Host,
 		Path:       defaultEndPoint,
 		ForceQuery: true,
-		RawQuery:   m.key,
+		RawQuery:   "user_key=" + m.key,
 	}
 
 	if m.client == nil {
@@ -242,8 +243,6 @@ type Config struct {
 
 // Configure implements driver.MatcherConfigurable.
 func (m *Matcher) Configure(ctx context.Context, f driver.MatcherConfigUnmarshaler, c *http.Client) error {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "crda/Matcher.Configure"))
 	var cfg Config
 	if err := f(&cfg); err != nil {
 		return err
@@ -251,31 +250,22 @@ func (m *Matcher) Configure(ctx context.Context, f driver.MatcherConfigUnmarshal
 
 	if cfg.Concurrency > 0 {
 		m.requestConcurrency = cfg.Concurrency
-		zlog.Info(ctx).
-			Msg("configured concurrent requests")
 	}
+
 	if cfg.URL != "" {
 		u, err := url.Parse(cfg.URL)
 		if err != nil {
 			return err
 		}
 		m.url = u
-		zlog.Info(ctx).
-			Msg("configured API URL")
 	}
 	if cfg.Source != "" {
 		m.source = cfg.Source
-		zlog.Info(ctx).
-			Msg("configured source of clair user")
 	}
 	if cfg.Key != "" {
 		m.key = cfg.Key
-		zlog.Info(ctx).
-			Msg("configured 3-scale-key for crda api")
 	}
 	m.client = c
-	zlog.Info(ctx).
-		Msg("configured HTTP client")
 
 	return nil
 }
@@ -298,35 +288,28 @@ func (m *Matcher) QueryRemoteMatcher(ctx context.Context, records []*claircore.I
 	}
 
 	results := make(map[string][]*claircore.Vulnerability)
-	ctrlC, errorC := m.invokeComponentAnalysesInBatch(ctx, records)
-	err := <-errorC // guaranteed to have an err or be closed.
-	// Don't propagate error, log and move on.
-	if err != nil {
-		zlog.Error(ctx).Err(err).Msg("remote api call failure")
-		return results, nil
-	}
-	for vrs := range ctrlC {
-		for _, vr := range vrs {
-			ir := packageVersionToIndexRecord[key(vr.Name, vr.Version)]
+	vulnReports := m.invokeComponentAnalysesInBatch(ctx, records)
 
-			// A package can have 0 or more vulnerabilities for a version.
-			var vulns []*claircore.Vulnerability
-			for _, vuln := range vr.Vulnerabilities {
-				vulns = append(vulns, &claircore.Vulnerability{
-					ID:                 vuln.ID,
-					Updater:            "CodeReadyAnalytics",
-					Name:               vuln.ID,
-					Description:        vuln.Title,
-					Links:              vuln.URL,
-					Severity:           vuln.Severity,
-					NormalizedSeverity: NormalizeSeverity(vuln.Severity),
-					FixedInVersion:     strings.Join(vuln.FixedIn, ", "),
-					Package:            ir.Package,
-					Repo:               ir.Repository,
-				})
-			}
-			results[ir.Package.ID] = append(results[ir.Package.ID], vulns...)
+	for _, vr := range vulnReports {
+		ir := packageVersionToIndexRecord[key(vr.Name, vr.Version)]
+
+		// A package can have 0 or more vulnerabilities for a version.
+		var vulns []*claircore.Vulnerability
+		for _, vuln := range vr.Vulnerabilities {
+			vulns = append(vulns, &claircore.Vulnerability{
+				ID:                 vuln.ID,
+				Updater:            "CodeReadyAnalytics",
+				Name:               vuln.ID,
+				Description:        vuln.Title,
+				Links:              vuln.URL,
+				Severity:           vuln.Severity,
+				NormalizedSeverity: normalizeSeverity(vuln.Severity),
+				FixedInVersion:     strings.Join(vuln.FixedIn, ", "),
+				Package:            ir.Package,
+				Repo:               ir.Repository,
+			})
 		}
+		results[ir.Package.ID] = append(results[ir.Package.ID], vulns...)
 	}
 	zlog.Debug(ctx).
 		Int("vulnerabilities", len(results)).
@@ -334,36 +317,35 @@ func (m *Matcher) QueryRemoteMatcher(ctx context.Context, records []*claircore.I
 	return results, nil
 }
 
-func (m *Matcher) invokeComponentAnalysesInBatch(ctx context.Context, records []*claircore.IndexRecord) (<-chan []*VulnReport, <-chan error) {
-	inC := make(chan []*claircore.IndexRecord, m.requestConcurrency)
-	ctrlC := make(chan []*VulnReport, m.requestConcurrency)
-	errorC := make(chan error, 1)
+func (m *Matcher) invokeComponentAnalysesInBatch(ctx context.Context, records []*claircore.IndexRecord) []*VulnReport {
+	ctrlC := make(chan []*VulnReport, len(records))
+	results := []*VulnReport{}
 	batchSize := m.batchSize
-	go func() {
-		defer close(errorC)
-		defer close(ctrlC)
-		var g errgroup.Group
-		for start := 0; start < len(records); start += batchSize {
-			end := start + batchSize
-			if end > len(records) {
-				end = len(records)
-			}
-			g.Go(func() error {
-				vulns, err := m.invokeComponentAnalyses(ctx, <-inC)
-				if err != nil {
-					return err
-				}
-				ctrlC <- vulns
+	defer close(ctrlC)
+	var g errgroup.Group
+	for start := 0; start < len(records); start += batchSize {
+		start := start
+		end := start + batchSize
+		if end > len(records) {
+			end = len(records)
+		}
+		g.Go(func() error {
+			vulns, err := m.invokeComponentAnalyses(ctx, records[start:end])
+			if err != nil {
+				zlog.Error(ctx).Err(err).Msg("remote api call failure")
 				return nil
-			})
-			inC <- records[start:end]
-		}
-		close(inC)
-		if err := g.Wait(); err != nil {
-			errorC <- err
-		}
-	}()
-	return ctrlC, errorC
+			}
+			ctrlC <- vulns
+			return nil
+		})
+	}
+	g.Wait()
+
+	for res := range ctrlC {
+		results = append(results, res...)
+	}
+
+	return results
 }
 
 func (m *Matcher) invokeComponentAnalyses(ctx context.Context, records []*claircore.IndexRecord) ([]*VulnReport, error) {
@@ -381,22 +363,26 @@ func (m *Matcher) invokeComponentAnalyses(ctx context.Context, records []*clairc
 	// A request shouldn't go beyound 5s.
 	tctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
-	reqBody, _ := json.Marshal(request)
-	req, err := http.NewRequestWithContext(tctx, http.MethodPost, m.url.String(), bytes.NewBuffer(reqBody))
-	req.Header.Set("User-Agent", "claircore/remote_matcher")
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Source-Type", defaultSource)
-
-	res, err := m.client.Do(req)
-	if res != nil {
-		defer res.Body.Close()
-	}
+	reqBody, err := json.Marshal(request)
 	if err != nil {
 		return nil, err
 	}
+
+	req, err := http.NewRequestWithContext(tctx, http.MethodPost, m.url.String(), bytes.NewBuffer(reqBody))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("User-Agent", m.source)
+	req.Header.Set("Content-Type", "application/json")
+
+	res, err := m.client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
 	var vulnReport []*VulnReport
-	data, _ := ioutil.ReadAll(res.Body)
-	err = json.Unmarshal(data, &vulnReport)
+	err = json.NewDecoder(res.Body).Decode(&vulnReport)
 	if err != nil {
 		return nil, err
 	}

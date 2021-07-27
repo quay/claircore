@@ -82,7 +82,7 @@ func (f *Factory) Configure(ctx context.Context, cfg driver.MatcherConfigUnmarsh
 		}
 		zlog.Info(ctx).
 			Str("url", u.String()).
-			Msg("configured manifest URL")
+			Msg("configured API URL")
 		f.url = u
 	}
 
@@ -90,19 +90,17 @@ func (f *Factory) Configure(ctx context.Context, cfg driver.MatcherConfigUnmarsh
 		f.source = fc.Source
 		zlog.Info(ctx).
 			Str("source", fc.Source).
-			Msg("configured source of clair user")
+			Msg("configured source")
 	}
 
 	if fc.Key != "" {
 		f.key = fc.Key
 		zlog.Info(ctx).
 			Str("key", f.key).
-			Msg("configured 3-scale-key for crda api")
+			Msg("configured API key")
 	}
 
 	if c != nil {
-		zlog.Info(ctx).
-			Msg("configured HTTP client")
 		f.client = c
 	}
 	f.ecosystems = fc.Ecosystems

@@ -78,14 +78,14 @@ func TestRemoteMatcher(t *testing.T) {
 			if err == nil {
 				err = json.Unmarshal(jsonOut, &res)
 				if err != nil {
-					t.Errorf("mock server unmarshall error %v", err)
+					t.Errorf("mock server unmarshal error %v", err)
 				}
 			}
 			resp = append(resp, res)
 		}
 		out, err := json.Marshal(&resp)
 		if err != nil {
-			t.Errorf("mock server marshall error %v", err)
+			t.Errorf("mock server marshal error %v", err)
 		}
 		w.Write(out)
 	}))
