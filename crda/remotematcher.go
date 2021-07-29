@@ -278,7 +278,7 @@ func (m *Matcher) QueryRemoteMatcher(ctx context.Context, records []*claircore.I
 		Int("records", len(records)).
 		Msg("request")
 
-	// Map Package{name@version} to Package to associate it with Vulnerability.
+	// map Packge{name@version} to Packge to associate it with Vulnerability.
 	packageVersionToIndexRecord := make(map[string]*claircore.IndexRecord)
 	key := func(Name, Version string) string {
 		return fmt.Sprintf("%s@%s", Name, Version)
