@@ -78,14 +78,14 @@ func TestRemoteMatcher(t *testing.T) {
 			if err == nil {
 				err = json.Unmarshal(jsonOut, &res)
 				if err != nil {
-					t.Errorf("mock server unmarshall error %v", err)
+					t.Errorf("mock server unmarshal error %v", err)
 				}
 			}
 			resp = append(resp, res)
 		}
 		out, err := json.Marshal(&resp)
 		if err != nil {
-			t.Errorf("mock server marshall error %v", err)
+			t.Errorf("mock server marshal error %v", err)
 		}
 		w.Write(out)
 	}))
@@ -220,11 +220,11 @@ func TestRemoteMatcher(t *testing.T) {
 						FixedInVersion: "0.12.3",
 					},
 					{
-						ID:                 "SNYK-PYTHON-FLASK-42185-xx",
+						ID:                 "SNYK-PYTHON-FLASK-451637",
 						Updater:            "CodeReadyAnalytics",
-						Name:               "SNYK-PYTHON-FLASK-42185-xx",
-						Description:        "Improper Input Validation",
-						Links:              "https://snyk.io/vuln/SNYK-PYTHON-FLASK-42185",
+						Name:               "SNYK-PYTHON-FLASK-451637",
+						Description:        "Denial of Service (DoS)",
+						Links:              "https://snyk.io/vuln/SNYK-PYTHON-FLASK-451637",
 						Severity:           "high",
 						NormalizedSeverity: claircore.High,
 						Package: &claircore.Package{
@@ -233,7 +233,7 @@ func TestRemoteMatcher(t *testing.T) {
 							Version: "0.12",
 						},
 						Repo:           &pypiRepo,
-						FixedInVersion: "0.12.3, 0.12.4",
+						FixedInVersion: "1.0",
 					},
 				},
 			},
