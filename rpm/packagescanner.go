@@ -122,28 +122,12 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	if err != nil {
 		return nil, err
 	}
-	// Need a big closure in this defer because of permissions being preserved.
 	defer func() {
-		err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-			// If err != nil, then info will be nil.
-			if err != nil {
-				zlog.Warn(ctx).
-					Str("path", path).
-					Err(err).
-					Msg("error walking files")
-				return nil
-			}
-			// If a directory isn't u+w, fix it.
-			if m := info.Mode(); info.IsDir() && m&0200 == 0 {
-				return os.Chmod(path, m|0200)
-			}
-			return nil
-		})
-		if err != nil {
-			zlog.Warn(ctx).Err(err).Msg("error removing extracted files")
-		}
 		if err := os.RemoveAll(root); err != nil {
-			zlog.Warn(ctx).Err(err).Msg("error removing extracted files")
+			// Raising an error should notify an operator?
+			//
+			// It's this or panic.
+			zlog.Error(ctx).Err(err).Msg("error removing extracted files")
 		}
 	}()
 	// Extract tarball
@@ -161,23 +145,35 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	errbuf := bytes.Buffer{}
 	// Unprivileged containers can't call mknod(2), so exclude /dev and
 	// hopefully there aren't any others strewn about.
-	tarcmd := exec.CommandContext(ctx, "tar", "-xC", root,
+	tarcmd := exec.CommandContext(ctx, "tar",
+		"--extract",
 		"--exclude", "dev",
 		"--exclude", ".wh*",
-		"--delay-directory-restore")
+		"--delay-directory-restore",
+		"--no-same-owner",
+		"--no-same-permissions",
+	)
 	tarcmd.Stdin = rd
 	tarcmd.Stderr = &errbuf
+	tarcmd.Dir = root
 	zlog.Debug(ctx).Str("dir", root).Strs("cmd", tarcmd.Args).Msg("tar invocation")
 	if err := tarcmd.Run(); err != nil {
 		zlog.Error(ctx).
 			Str("dir", root).
 			Strs("cmd", tarcmd.Args).
-			Str("stderr", errbuf.String()).
+			Stringer("stderr", &errbuf).
 			AnErr("err", err).
 			Msg("error extracting layer")
 		return nil, fmt.Errorf("rpm: failed to untar: %w", err)
 	}
 	zlog.Debug(ctx).Str("dir", root).Msg("extracted layer")
+	// Immediately fix permissions.
+	if err := filepath.Walk(root, fixDirs(ctx)); err != nil {
+		if rmerr := os.RemoveAll(root); rmerr != nil {
+			err = fmt.Errorf("%v (and during cleanup: %v)", err, rmerr)
+		}
+		return nil, fmt.Errorf("rpm: failed to change permissions: %w", err)
+	}
 
 	var pkgs []*claircore.Package
 	// Using --root and --dbpath, run rpm query on every suspected database
@@ -231,6 +227,28 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	}
 
 	return pkgs, nil
+}
+
+// FixDirs forces every directory to be u+w.
+//
+// The closed-over Context is used for logging.
+func fixDirs(ctx context.Context) filepath.WalkFunc {
+	// TODO(hank) 1.16+: Port to using fs.WalkDir, which is faster because it
+	// doesn't produce a FileInfo while walking.
+	return func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			zlog.Warn(ctx).
+				Err(err).
+				Str("path", path).
+				Interface("info", info).
+				Msg("error walking extracted layer")
+			return nil
+		}
+		if !info.IsDir() {
+			return nil
+		}
+		return os.Chmod(path, info.Mode()|0700)
+	}
 }
 
 // This is the query format we're using to get data out of rpm.
