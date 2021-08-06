@@ -2,8 +2,17 @@
 ## [Unreleased]
 
 
+<a name="v0.4.4"></a>
+## [v0.4.4] - 2021-08-05
+### Indexer
+- [302384b](https://github.com/quay/claircore/commit/302384bc01c2178f8123088430df9852a3155c9d): avoid creating a new db pool for the locks
+ -  [#408](https://github.com/quay/claircore/issues/408)### Rpm
+- [9b1d1e3](https://github.com/quay/claircore/commit/9b1d1e35fe7673136d9ac73c3d49dabc2e469bb8): eagerly change directory permissions
+
 <a name="v0.4.3"></a>
-## [v0.4.3] - 2021-06-09
+## [v0.4.3] - 2021-06-15
+### Chore
+- [3d4a413](https://github.com/quay/claircore/commit/3d4a413fb840bd3fdf37900b20f1d6b2542e9b28): v0.4.3 changelog bump
 ### Crda
 - [fe112d7](https://github.com/quay/claircore/commit/fe112d7642cafe72cbe4b67865f4e4b00f97c9e6): remove matcher
 ### Dpkg
@@ -476,7 +485,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.4.3...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.4.4...HEAD
+[v0.4.4]: https://github.com/quay/claircore/compare/v0.4.3...v0.4.4
 [v0.4.3]: https://github.com/quay/claircore/compare/v0.4.2...v0.4.3
 [v0.4.2]: https://github.com/quay/claircore/compare/v0.4.1...v0.4.2
 [v0.4.1]: https://github.com/quay/claircore/compare/v0.4.0...v0.4.1
