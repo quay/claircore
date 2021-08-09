@@ -71,12 +71,17 @@ jobs:
           echo "TAG=${TAG}" >> $GITHUB_ENV
           echo "::add-mask::${{ secrets.QUAY_TOKEN }}"
         if: env.BUILD_IMAGE == 1
-      - name: Build golang image
-        run: |
-          docker build -f etc/Dockerfile -t ${TAG} --build-arg GO_VERSION=${GO_VERSION} etc
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@master
+        with:
+          platforms: all
         if: env.BUILD_IMAGE == 1
-      - name: Publish golang image
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+        if: env.BUILD_IMAGE == 1
+      - name: Build and Publish golang image
         run: |
           docker login -u "${QUAY_USER}" -p '${{ secrets.QUAY_TOKEN }}' quay.io
-          docker push "${TAG}"
+          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+          docker buildx build --platform linux/amd64,linux/arm64 -f etc/Dockerfile -t ${TAG} --build-arg GO_VERSION=${GO_VERSION} --push etc
         if: env.BUILD_IMAGE == 1
