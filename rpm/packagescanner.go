@@ -164,11 +164,14 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 			Stringer("stderr", &errbuf).
 			AnErr("err", err).
 			Msg("error extracting layer")
+		if rmerr := os.RemoveAll(root); rmerr != nil {
+			err = fmt.Errorf("%v (and during cleanup: %v)", err, rmerr)
+		}
 		return nil, fmt.Errorf("rpm: failed to untar: %w", err)
 	}
 	zlog.Debug(ctx).Str("dir", root).Msg("extracted layer")
 	// Immediately fix permissions.
-	if err := filepath.Walk(root, fixDirs(ctx)); err != nil {
+	if err := filepath.Walk(root, fixPerms(ctx, root)); err != nil {
 		if rmerr := os.RemoveAll(root); rmerr != nil {
 			err = fmt.Errorf("%v (and during cleanup: %v)", err, rmerr)
 		}
@@ -229,10 +232,11 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	return pkgs, nil
 }
 
-// FixDirs forces every directory to be u+w.
+// FixPerms forces every directory to be u+wx and every file u+w.
 //
-// The closed-over Context is used for logging.
-func fixDirs(ctx context.Context) filepath.WalkFunc {
+// The closed-over Context is used for logging, and root is used for normalizing
+// any symlinks.
+func fixPerms(ctx context.Context, root string) filepath.WalkFunc {
 	// TODO(hank) 1.16+: Port to using fs.WalkDir, which is faster because it
 	// doesn't produce a FileInfo while walking.
 	return func(path string, info os.FileInfo, err error) error {
@@ -244,10 +248,18 @@ func fixDirs(ctx context.Context) filepath.WalkFunc {
 				Msg("error walking extracted layer")
 			return nil
 		}
-		if !info.IsDir() {
+		var mod os.FileMode = 0o0600
+		switch info.Mode() & os.ModeType {
+		case os.ModeDir:
+			// Add "x" bit.
+			mod |= 0o0100
+		case os.ModeSymlink:
+			// Skip Chmod on symlink, as that works on the target, which may be
+			// in a directory we haven't fixed yet or even an absolute path.
 			return nil
+		default:
 		}
-		return os.Chmod(path, info.Mode()|0700)
+		return os.Chmod(path, mod)
 	}
 }
 
