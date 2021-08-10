@@ -5,6 +5,7 @@ package java
 import (
 	"archive/tar"
 	"context"
+	"errors"
 	"io"
 	"path/filepath"
 	"runtime/trace"
@@ -70,7 +71,17 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 		if !isArchive(ctx, h) {
 			continue
 		}
-		packages, err := getPackagesFromJarFamily(tr, h.Name)
+		r, err := peekHeader(tr)
+		switch {
+		case errors.Is(err, nil):
+			// OK
+		case errors.Is(err, errBadHeader):
+			zlog.Debug(ctx).Str("file", h.Name).Msg("not actually a jar: bad header")
+			continue
+		default:
+			return nil, err
+		}
+		packages, err := getPackagesFromJarFamily(r, h.Name)
 		if err != nil {
 			return nil, err
 		}
@@ -84,6 +95,9 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 
 func getPackagesFromJarFamily(r io.Reader, name string) ([]*claircore.Package, error) {
 	n, err := filepath.Rel("/", filepath.Join("/", name))
+	if err != nil {
+		return nil, err
+	}
 	libs, err := jar.Parse(r, jar.WithFilePath(n))
 	if err != nil {
 		return nil, err
