@@ -2,8 +2,15 @@
 ## [Unreleased]
 
 
+<a name="v0.4.5"></a>
+## [v0.4.5] - 2021-08-09
+### Rpm
+- [a00ddef](https://github.com/quay/claircore/commit/a00ddef45bc3cfc6e4538b2f465a7866b7421186): special-case symlinks
+
 <a name="v0.4.4"></a>
-## [v0.4.4] - 2021-08-05
+## [v0.4.4] - 2021-08-06
+### Chore
+- [ce6c994](https://github.com/quay/claircore/commit/ce6c994ebf3746c7dda6e101913f91126668e7da): v0.4.4 changelog bump
 ### Indexer
 - [302384b](https://github.com/quay/claircore/commit/302384bc01c2178f8123088430df9852a3155c9d): avoid creating a new db pool for the locks
  -  [#408](https://github.com/quay/claircore/issues/408)### Rpm
@@ -485,7 +492,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.4.4...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.4.5...HEAD
+[v0.4.5]: https://github.com/quay/claircore/compare/v0.4.4...v0.4.5
 [v0.4.4]: https://github.com/quay/claircore/compare/v0.4.3...v0.4.4
 [v0.4.3]: https://github.com/quay/claircore/compare/v0.4.2...v0.4.3
 [v0.4.2]: https://github.com/quay/claircore/compare/v0.4.1...v0.4.2
