@@ -2,8 +2,16 @@
 ## [Unreleased]
 
 
+<a name="v0.5.2"></a>
+## [v0.5.2] - 2021-08-09
+### Rpm
+- [cca9933](https://github.com/quay/claircore/commit/cca9933814635f69b18d29cdcbf7279c1c42bf7c): special-case symlinks
+- [3060f8b](https://github.com/quay/claircore/commit/3060f8b89b2a468ff51c64c73ff1097031952ba7): eagerly change directory permissions
+
 <a name="v0.5.1"></a>
-## [v0.5.1] - 2021-07-23
+## [v0.5.1] - 2021-07-27
+### Chore
+- [38656e0](https://github.com/quay/claircore/commit/38656e03d98d80df4408289da810ddde93dd7efe): v0.5.1 changelog bump
 ### Integration
 - [81f8501](https://github.com/quay/claircore/commit/81f850123608311b3912c2b16c43888a36f69065): multiple OS support
  -  [#418](https://github.com/quay/claircore/issues/418)
@@ -470,5 +478,6 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.5.2...HEAD
+[v0.5.2]: https://github.com/quay/claircore/compare/v0.5.1...v0.5.2
 [v0.5.1]: https://github.com/quay/claircore/compare/v0.5.0...v0.5.1
