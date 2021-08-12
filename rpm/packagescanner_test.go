@@ -3,7 +3,9 @@ package rpm
 import (
 	"context"
 	"net/http"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -15,6 +17,12 @@ import (
 )
 
 func TestScan(t *testing.T) {
+	pat := filepath.Join(os.TempDir(), "rpmscanner.*")
+	prevs, err := filepath.Glob(pat)
+	if err != nil {
+		t.Error(err)
+	}
+
 	hash, err := claircore.ParseDigest("sha256:729ec3a6ada3a6d26faca9b4779a037231f1762f759ef34c08bdd61bf52cd704")
 	if err != nil {
 		t.Fatal(err)
@@ -1618,5 +1626,13 @@ func TestScan(t *testing.T) {
 	t.Logf("found %d packages", len(got))
 	if !cmp.Equal(got, want) {
 		t.Fatal(cmp.Diff(got, want))
+	}
+
+	ms, err := filepath.Glob(pat)
+	if err != nil {
+		t.Error(err)
+	}
+	if got, want := ms, prevs; !cmp.Equal(got, want) {
+		t.Error(cmp.Diff(got, want))
 	}
 }
