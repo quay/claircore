@@ -2,8 +2,19 @@
 ## [Unreleased]
 
 
+<a name="v0.4.6"></a>
+## [v0.4.6] - 2021-08-12
+### Java
+- [a6669db](https://github.com/quay/claircore/commit/a6669dbf4f324bd7e84548019e0321f1b178f623): bump scanner version
+ -  [#438](https://github.com/quay/claircore/issues/438) -  [#435](https://github.com/quay/claircore/issues/435)- [be81768](https://github.com/quay/claircore/commit/be8176840ce5c6eae405ef3cc01cd673aee43c8e): check magic number
+ -  [#435](https://github.com/quay/claircore/issues/435)- [c64d05c](https://github.com/quay/claircore/commit/c64d05c1f04060295f7c24dbeaf22f2d3f34b393): ignore whiteout files
+ -  [#409](https://github.com/quay/claircore/issues/409)### Rpm
+- [2f652f8](https://github.com/quay/claircore/commit/2f652f81f8f01cb8f1e857b07012c0d7134332ec): remove tar(1) call
+ -  [#437](https://github.com/quay/claircore/issues/437)
 <a name="v0.4.5"></a>
-## [v0.4.5] - 2021-08-09
+## [v0.4.5] - 2021-08-10
+### Chore
+- [9793200](https://github.com/quay/claircore/commit/9793200a6c4038395f155282af602f0897313b7f): v0.4.5 changelog bump
 ### Rpm
 - [a00ddef](https://github.com/quay/claircore/commit/a00ddef45bc3cfc6e4538b2f465a7866b7421186): special-case symlinks
 
@@ -492,7 +503,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.4.5...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.4.6...HEAD
+[v0.4.6]: https://github.com/quay/claircore/compare/v0.4.5...v0.4.6
 [v0.4.5]: https://github.com/quay/claircore/compare/v0.4.4...v0.4.5
 [v0.4.4]: https://github.com/quay/claircore/compare/v0.4.3...v0.4.4
 [v0.4.3]: https://github.com/quay/claircore/compare/v0.4.2...v0.4.3
