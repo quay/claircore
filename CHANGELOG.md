@@ -2,8 +2,18 @@
 ## [Unreleased]
 
 
+<a name="v0.5.3"></a>
+## [v0.5.3] - 2021-08-12
+### Java
+- [e6ea56f](https://github.com/quay/claircore/commit/e6ea56f7c4ad5662238e98142df53af37ca76e12): bump scanner version
+ -  [#435](https://github.com/quay/claircore/issues/435) -  [#438](https://github.com/quay/claircore/issues/438)- [2cd8c17](https://github.com/quay/claircore/commit/2cd8c1761baeacd631ee1764c651f2f98ff645fc): check magic number
+ -  [#435](https://github.com/quay/claircore/issues/435)### Rpm
+- [4455559](https://github.com/quay/claircore/commit/4455559bd1f6a5f810aeb86f9de5e245dd1bf18a): remove tar(1) call
+ -  [#437](https://github.com/quay/claircore/issues/437)
 <a name="v0.5.2"></a>
-## [v0.5.2] - 2021-08-09
+## [v0.5.2] - 2021-08-10
+### Chore
+- [b8224c7](https://github.com/quay/claircore/commit/b8224c7ba4b80c8d93ea021732478b32e06b2367): v0.5.2 changelog bump
 ### Rpm
 - [cca9933](https://github.com/quay/claircore/commit/cca9933814635f69b18d29cdcbf7279c1c42bf7c): special-case symlinks
 - [3060f8b](https://github.com/quay/claircore/commit/3060f8b89b2a468ff51c64c73ff1097031952ba7): eagerly change directory permissions
@@ -478,6 +488,7 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.5.2...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.5.3...HEAD
+[v0.5.3]: https://github.com/quay/claircore/compare/v0.5.2...v0.5.3
 [v0.5.2]: https://github.com/quay/claircore/compare/v0.5.1...v0.5.2
 [v0.5.1]: https://github.com/quay/claircore/compare/v0.5.0...v0.5.1
