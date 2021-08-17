@@ -2,8 +2,15 @@
 ## [Unreleased]
 
 
+<a name="v0.5.4"></a>
+## [v0.5.4] - 2021-08-17
+### Rpm
+- [c7c28fa](https://github.com/quay/claircore/commit/c7c28fa1f5d4d24de026fb1391b1780e972b6254): normalize link target
+ -  [#447](https://github.com/quay/claircore/issues/447)
 <a name="v0.5.3"></a>
-## [v0.5.3] - 2021-08-12
+## [v0.5.3] - 2021-08-16
+### Chore
+- [d4a3e8c](https://github.com/quay/claircore/commit/d4a3e8cc9a4bbc841665acc5d721edbff44f9c64): v0.5.3 changelog bump
 ### Java
 - [e6ea56f](https://github.com/quay/claircore/commit/e6ea56f7c4ad5662238e98142df53af37ca76e12): bump scanner version
  -  [#435](https://github.com/quay/claircore/issues/435) -  [#438](https://github.com/quay/claircore/issues/438)- [2cd8c17](https://github.com/quay/claircore/commit/2cd8c1761baeacd631ee1764c651f2f98ff645fc): check magic number
@@ -488,7 +495,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.5.3...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.5.4...HEAD
+[v0.5.4]: https://github.com/quay/claircore/compare/v0.5.3...v0.5.4
 [v0.5.3]: https://github.com/quay/claircore/compare/v0.5.2...v0.5.3
 [v0.5.2]: https://github.com/quay/claircore/compare/v0.5.1...v0.5.2
 [v0.5.1]: https://github.com/quay/claircore/compare/v0.5.0...v0.5.1
