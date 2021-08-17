@@ -26,7 +26,7 @@ import (
 const (
 	pkgName    = "rpm"
 	pkgKind    = "package"
-	pkgVersion = "v0.0.2"
+	pkgVersion = "3"
 )
 
 // DbNames is a set of files that make up an rpm database.
@@ -202,19 +202,23 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 			}
 			stats.Reg++
 		case tar.TypeSymlink:
-			err = os.Symlink(h.Linkname, tgt)
+			// Normalize the link target into the root.
+			ln := filepath.Join(root, filepath.Clean(h.Linkname))
+			err = os.Symlink(ln, tgt)
 			stats.Symlink++
 		case tar.TypeLink:
-			_, exists := os.Lstat(h.Linkname)
+			// Normalize the link target into the root.
+			ln := filepath.Join(root, filepath.Clean(h.Linkname))
+			_, exists := os.Lstat(ln)
 			switch {
 			case errors.Is(exists, nil):
-				err = os.Link(h.Linkname, tgt)
+				err = os.Link(ln, tgt)
 			case errors.Is(exists, os.ErrNotExist):
 				// Push onto a queue to fix later. Link(2) is documented to need
 				// a valid target, unlike symlink(2), which allows a missing
 				// target. Combined with tar's lack of ordering, this seems like
 				// the best solution.
-				deferLn = append(deferLn, [2]string{h.Linkname, tgt})
+				deferLn = append(deferLn, [2]string{ln, tgt})
 			default:
 				err = exists
 			}
