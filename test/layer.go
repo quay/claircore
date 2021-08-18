@@ -42,9 +42,7 @@ func (l *layerserver) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // ServeLayers constructs "n" random layers, arranges to serve them, and returns
 // a slice of filled Layer structs.
-//
-// The server goroutines can be cancelled via the passed-in context.
-func ServeLayers(ctx context.Context, t *testing.T, n int) []*claircore.Layer {
+func ServeLayers(t *testing.T, n int) (*http.Client, []*claircore.Layer) {
 	const filesize = 32
 	lsrv := &layerserver{
 		now:   time.Now(),
@@ -52,11 +50,10 @@ func ServeLayers(ctx context.Context, t *testing.T, n int) []*claircore.Layer {
 	}
 	ls := make([]*claircore.Layer, n)
 	srv := httptest.NewServer(lsrv)
-	go func() {
-		<-ctx.Done()
+	t.Cleanup(func() {
 		srv.CloseClientConnections()
 		srv.Close()
-	}()
+	})
 	u, err := url.Parse(srv.URL)
 	if err != nil {
 		t.Fatal(err)
@@ -99,7 +96,7 @@ func ServeLayers(ctx context.Context, t *testing.T, n int) []*claircore.Layer {
 		}
 	}
 
-	return ls
+	return srv.Client(), ls
 }
 
 type LayerSpec struct {

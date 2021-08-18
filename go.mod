@@ -27,7 +27,7 @@ require (
 	github.com/rs/zerolog v1.20.0
 	github.com/ulikunitz/xz v0.5.8
 	go.opentelemetry.io/otel v0.15.0
-	golang.org/x/sync v0.0.0-20201207232520-09787c993a3a
+	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba
 	golang.org/x/tools v0.0.0-20200811032001-fd80f4dbb3ea
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c

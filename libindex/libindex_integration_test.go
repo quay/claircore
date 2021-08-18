@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io"
-	"net/http"
 	"strings"
 	"testing"
 	"time"
@@ -61,7 +60,6 @@ func (tc testcase) Digest() claircore.Digest {
 // RunInner "exposes" just the test logic.
 func (tc testcase) RunInner(ctx context.Context, t *testing.T, dsn string, next checkFunc) {
 	ms := []*indexer.MockPackageScanner{}
-	ps := []indexer.PackageScanner{}
 	ctrl := gomock.NewController(t)
 
 	// create the desired number of package scanners. we will
@@ -85,16 +83,12 @@ func (tc testcase) RunInner(ctx context.Context, t *testing.T, dsn string, next 
 			m.EXPECT().Scan(gomock.Any(), gomock.Any()).Return(pkgs, nil)
 		}
 	}
-
-	// convert to scanner.PackageScanner array
-	for _, m := range ms {
-		ps = append(ps, indexer.PackageScanner(m))
-	}
+	c, ls := test.ServeLayers(t, tc.Layers)
 
 	// create manifest
 	m := &claircore.Manifest{
 		Hash:   tc.Digest(),
-		Layers: test.ServeLayers(ctx, t, tc.Layers),
+		Layers: ls,
 	}
 
 	// create libindex instance
@@ -104,7 +98,7 @@ func (tc testcase) RunInner(ctx context.Context, t *testing.T, dsn string, next 
 		LayerScanConcurrency: 1,
 	}
 
-	lib, err := New(ctx, opts, http.DefaultClient)
+	lib, err := New(ctx, opts, c)
 	if err != nil {
 		t.Fatalf("failed to create libindex instance: %v", err)
 	}

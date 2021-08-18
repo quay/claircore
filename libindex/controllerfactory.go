@@ -5,7 +5,6 @@ import (
 
 	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/internal/indexer/controller"
-	"github.com/quay/claircore/internal/indexer/fetcher"
 	"github.com/quay/claircore/internal/indexer/layerscanner"
 )
 
@@ -14,12 +13,10 @@ type ControllerFactory func(_ context.Context, lib *Libindex, opts *Opts) (*cont
 
 // controllerFactory is the default ControllerFactory
 func controllerFactory(ctx context.Context, lib *Libindex, opts *Opts) (*controller.Controller, error) {
-	ft := fetcher.New(lib.client, opts.LayerFetchOpt)
-
 	// convert libindex.Opts to indexer.Opts
 	sOpts := &indexer.Opts{
 		Store:         lib.store,
-		Fetcher:       ft,
+		Fetcher:       lib.fetchArena.Fetcher(),
 		Ecosystems:    opts.Ecosystems,
 		Vscnrs:        lib.vscnrs,
 		Client:        lib.client,

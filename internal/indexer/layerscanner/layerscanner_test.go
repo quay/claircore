@@ -28,7 +28,7 @@ func TestScanNoErrors(t *testing.T) {
 
 	mock_store := indexer.NewMockStore(ctrl)
 
-	layers := test.ServeLayers(ctx, t, 2)
+	_, layers := test.ServeLayers(t, 2)
 
 	mock_ps.EXPECT().Scan(gomock.Any(), layers[0]).Return([]*claircore.Package{}, nil)
 	mock_ps.EXPECT().Scan(gomock.Any(), layers[1]).Return([]*claircore.Package{}, nil)

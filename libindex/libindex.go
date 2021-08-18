@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"sort"
 
 	"github.com/quay/zlog"
@@ -36,6 +37,9 @@ type Libindex struct {
 	// an opaque and unique string representing the configured
 	// state of the indexer. see setState for more information.
 	state string
+	// FetchArena is an arena to fetch layers into. It ensures layers are
+	// fetched once and not removed while in use.
+	fetchArena FetchArena
 }
 
 // New creates a new instance of libindex.
@@ -78,6 +82,7 @@ func New(ctx context.Context, opts *Opts, cl *http.Client) (*Libindex, error) {
 		client: cl,
 		cl:     ctxLocker,
 	}
+	l.fetchArena.Init(cl, os.TempDir()) // TODO(hank) Add an option field for this 'root' argument.
 
 	// register any new scanners.
 	pscnrs, dscnrs, rscnrs, err := indexer.EcosystemsToScanners(ctx, opts.Ecosystems, opts.Airgap)
@@ -102,9 +107,11 @@ func New(ctx context.Context, opts *Opts, cl *http.Client) (*Libindex, error) {
 	return l, nil
 }
 
+// Close releases held resources.
 func (l *Libindex) Close(ctx context.Context) error {
 	l.cl.Close(ctx)
 	l.store.Close(ctx)
+	l.fetchArena.Close(ctx)
 	return nil
 }
 

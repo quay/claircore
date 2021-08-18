@@ -15,7 +15,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/quay/claircore/internal/indexer/fetcher"
+	"github.com/quay/claircore/libindex"
 )
 
 type unpackConfig struct {
@@ -61,7 +61,9 @@ func Unpack(cmd context.Context, cfg *commonConfig, args []string) error {
 	defer done()
 
 	log.Printf("fetching layers")
-	f := fetcher.New(http.DefaultClient, "")
+	a := &libindex.FetchArena{}
+	a.Init(http.DefaultClient, os.TempDir())
+	f := a.Fetcher()
 	err = f.Fetch(ctx, m.Layers)
 	if err != nil {
 		return err
@@ -70,6 +72,9 @@ func Unpack(cmd context.Context, cfg *commonConfig, args []string) error {
 
 	// create a tmp dir we will unpack layers to
 	td, err := ioutil.TempDir("", "cctool-unpack-")
+	if err != nil {
+		return err
+	}
 
 	log.Printf("exacting layers into tmp dir: %v.", td)
 	for i, layer := range m.Layers {

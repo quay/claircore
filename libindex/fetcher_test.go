@@ -1,49 +1,38 @@
-package fetcher
+package libindex
 
 import (
 	"context"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strconv"
 	"testing"
-	"time"
 
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/test"
 )
 
-// Custom TestMain to hook the TMPDIR environment variable.
-func TestMain(m *testing.M) {
-	p, err := filepath.Abs("testdata")
-	if err != nil {
-		panic(err)
-	}
-	os.Setenv("TMPDIR", p)
-	// call flag.Parse() here if TestMain uses flags
-	os.Exit(m.Run())
-}
-
-var testClient = http.Client{
-	Timeout: 5 * time.Second,
-}
-
-type testcase struct {
+type fetchTestcase struct {
 	N int
 }
 
-func (tc testcase) Run(ctx context.Context) func(*testing.T) {
+func (tc fetchTestcase) Run(ctx context.Context) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx := zlog.Test(ctx, t)
-		layers := test.ServeLayers(ctx, t, tc.N)
+		c, layers := test.ServeLayers(t, tc.N)
 		for _, l := range layers {
 			t.Logf("%+v", l)
 		}
+		p, err := filepath.Abs("testdata")
+		if err != nil {
+			t.Error(err)
+		}
 
-		fetcher := New(&testClient, indexer.LayerFetchOpt(""))
+		a := &FetchArena{}
+		a.Init(c, p)
+
+		fetcher := a.Fetcher()
 		if err := fetcher.Fetch(ctx, layers); err != nil {
 			t.Error(err)
 		}
@@ -56,10 +45,10 @@ func (tc testcase) Run(ctx context.Context) func(*testing.T) {
 	}
 }
 
-func TestSimple(t *testing.T) {
+func TestFetchSimple(t *testing.T) {
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
-	var tt = []testcase{
+	tt := []fetchTestcase{
 		{N: 1},
 		{N: 4},
 		{N: 32},
@@ -70,10 +59,11 @@ func TestSimple(t *testing.T) {
 	}
 }
 
-func TestInvalid(t *testing.T) {
+func TestFetchInvalid(t *testing.T) {
+	// TODO(hank) Rewrite this into unified testcases.
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
-	var tt = []struct {
+	tt := []struct {
 		name  string
 		layer []*claircore.Layer
 	}{
@@ -98,7 +88,14 @@ func TestInvalid(t *testing.T) {
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
 			ctx := zlog.Test(ctx, t)
-			fetcher := New(&testClient, indexer.InMem)
+			p, err := filepath.Abs("testdata")
+			if err != nil {
+				t.Error(err)
+			}
+			a := &FetchArena{}
+			a.Init(http.DefaultClient, p)
+
+			fetcher := a.Fetcher()
 			if err := fetcher.Fetch(ctx, table.layer); err == nil {
 				t.Fatal("expected error, got nil")
 			}
