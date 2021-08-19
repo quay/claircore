@@ -242,6 +242,9 @@ func (r *result) Do(ctx context.Context, s indexer.VersionedScanner, l *claircor
 	default:
 		panic(fmt.Sprintf("programmer error: unknown type %T used as scanner", s))
 	}
+	if err != nil {
+		zlog.Info(ctx).Err(err).Send()
+	}
 	return err
 }
 
