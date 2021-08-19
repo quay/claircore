@@ -231,6 +231,9 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 			return nil, err
 		}
 	}
+	if err != io.EOF {
+		return nil, err
+	}
 	for _, l := range deferLn {
 		if err := os.Link(l[0], l[1]); err != nil {
 			zlog.Error(ctx).
