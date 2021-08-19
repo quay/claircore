@@ -68,9 +68,11 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	tr := tar.NewReader(r)
 	var h *tar.Header
 	for h, err = tr.Next(); err == nil; h, err = tr.Next() {
-		if !isArchive(ctx, h) {
+		// The minimum size of a zip archive is 22 bytes.
+		if h.Size < 22 || !isArchive(ctx, h) {
 			continue
 		}
+
 		r, err := peekHeader(tr)
 		switch {
 		case errors.Is(err, nil):
