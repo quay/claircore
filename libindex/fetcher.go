@@ -215,8 +215,11 @@ func (a *FetchArena) realizeLayer(ctx context.Context, l *claircore.Layer) (stri
 
 	var r io.Reader
 	switch {
-	case ct == "application/gzip" || ct == "application/vnd.docker.image.rootfs.diff.tar.gzip":
+	case ct == "application/vnd.docker.image.rootfs.diff.tar.gzip":
 		// Catch the old docker media type.
+		fallthrough
+	case ct == "application/gzip" || ct == "application/x-gzip":
+		// GHCR reports gzipped layers as the latter.
 		fallthrough
 	case strings.HasSuffix(ct, ".tar+gzip"):
 		g, err := gzip.NewReader(br)
