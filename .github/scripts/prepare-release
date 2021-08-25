@@ -1,0 +1,37 @@
+#!/bin/sh
+set -e
+command -v gh >/dev/null 2>&1 || {
+	printf 'need "gh" tool: https://github.com/cli/cli\n'>&2
+	exit 1
+}
+: ${GH_REPO:=quay/claircore}
+export GH_REPO
+: ${BRANCH:=$(git branch --show-current)}
+# Autodetect weirdos that use upsteam+origin instead of origin+fork.
+: ${REMOTE:=$(git remote | grep -q '^upstream$' && echo upstream || echo origin)}
+while getopts hb:r: arg; do
+	case "$arg" in
+		b) BRANCH="$OPTARG";;
+		r) REMOTE="$OPTARG";;
+		?) printf 'usage: %s: [-h] [-b BRANCH] [-r REMOTE] version\n' "$0"
+			exit 2;;
+	esac
+done
+shift $(($OPTIND - 1))
+VERSION="${1:?need a version argument}"
+
+printf 'operating on branch: %s\n' "$BRANCH" >&2
+gh workflow run prepare-release.yml -F "branch=$BRANCH" -F "tag=$VERSION"
+# TODO(hank) Watch for a gh update that has the above command output the ID.
+id=$(gh run list --workflow=prepare-release.yml --limit=1  | grep -Eo '[0-9]{9,}')
+gh run watch "${id}"
+cat <<.
+Now, to merge and release:
+
+	git checkout ${BRANCH}
+	git fetch ${REMOTE}
+	git merge --ff-only ${REMOTE}/ready-${VERSION}
+	git tag -s ${VERSION}
+	git push ${REMOTE} ${BRANCH} :ready-${VERSION} tag ${VERSION}
+
+.

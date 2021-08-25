@@ -26,7 +26,7 @@ import (
 const (
 	pkgName    = "rpm"
 	pkgKind    = "package"
-	pkgVersion = "v0.0.2"
+	pkgVersion = "3"
 )
 
 // DbNames is a set of files that make up an rpm database.
@@ -61,7 +61,7 @@ func (*Scanner) Kind() string { return pkgKind }
 //
 // A return of (nil, nil) is expected if there's no rpm database.
 //
-// The external commands "tar" and "rpm" are used and expected to be in PATH.
+// The external command "rpm" is used and expected to be in PATH.
 func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.Package, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
@@ -130,6 +130,7 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 			zlog.Error(ctx).Err(err).Msg("error removing extracted files")
 		}
 	}()
+
 	// Extract tarball
 	if err := ctx.Err(); err != nil {
 		return nil, err
@@ -137,46 +138,124 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	if _, err := rd.Seek(0, io.SeekStart); err != nil {
 		return nil, fmt.Errorf("rpm: unable to seek: %w", err)
 	}
-	// Using an external tar (probably GNU tar) works where things like
-	// docker/docker's pkg/archive don't because it seems to set directory
-	// permissions later. Otherwise, some layers will have directories without
-	// the write bit created and the permissions set before their contents are
-	// created.
-	errbuf := bytes.Buffer{}
-	// Unprivileged containers can't call mknod(2), so exclude /dev and
-	// hopefully there aren't any others strewn about.
-	tarcmd := exec.CommandContext(ctx, "tar",
-		"--extract",
-		"--exclude", "dev",
-		"--exclude", ".wh*",
-		"--delay-directory-restore",
-		"--no-same-owner",
-		"--no-same-permissions",
+	tr = tar.NewReader(rd)
+	const (
+		// Any mode bits need to be or'd with these constants so that this
+		// process can always remove and traverse files it writes.
+		dirMode  = 0o0700
+		fileMode = 0o0600
 	)
-	tarcmd.Stdin = rd
-	tarcmd.Stderr = &errbuf
-	tarcmd.Dir = root
-	zlog.Debug(ctx).Str("dir", root).Strs("cmd", tarcmd.Args).Msg("tar invocation")
-	if err := tarcmd.Run(); err != nil {
-		zlog.Error(ctx).
-			Str("dir", root).
-			Strs("cmd", tarcmd.Args).
-			Stringer("stderr", &errbuf).
-			AnErr("err", err).
-			Msg("error extracting layer")
-		if rmerr := os.RemoveAll(root); rmerr != nil {
-			err = fmt.Errorf("%v (and during cleanup: %v)", err, rmerr)
-		}
-		return nil, fmt.Errorf("rpm: failed to untar: %w", err)
+	// For logging what we've done.
+	var stats struct {
+		Reg, Link, Symlink, Dir, Whiteout int
+		OutOfOrder                        int
 	}
-	zlog.Debug(ctx).Str("dir", root).Msg("extracted layer")
-	// Immediately fix permissions.
-	if err := filepath.Walk(root, fixPerms(ctx, root)); err != nil {
-		if rmerr := os.RemoveAll(root); rmerr != nil {
-			err = fmt.Errorf("%v (and during cleanup: %v)", err, rmerr)
+	// Made tracks directory creation to prevent excessive mkdir calls.
+	made := map[string]struct{}{root: {}}
+	// DeferLn is for queuing up out-of-order hard links.
+	var deferLn [][2]string
+	for h, err = tr.Next(); err == nil; h, err = tr.Next() {
+		if strings.HasPrefix(filepath.Base(h.Name), ".wh.") {
+			// Whiteout, skip.
+			stats.Whiteout++
+			continue
 		}
-		return nil, fmt.Errorf("rpm: failed to change permissions: %w", err)
+		// Build the path on the filesystem.
+		tgt := filepath.Join(root, filepath.Clean(h.Name))
+		// Since tar, as a format, doesn't impose ordering requirements, make
+		// sure to create all parent directories of the current entry.
+		d := filepath.Dir(tgt)
+		if _, ok := made[d]; !ok {
+			if err := os.MkdirAll(d, dirMode); err != nil {
+				return nil, err
+			}
+			made[d] = struct{}{}
+			stats.OutOfOrder++
+		}
+
+		// Populate the target file.
+		var err error
+		switch h.Typeflag {
+		case tar.TypeDir:
+			m := h.FileInfo().Mode() | dirMode
+			if _, ok := made[tgt]; ok {
+				// If we had made this directory by seeing a child first, touch
+				// up the permissions.
+				err = os.Chmod(tgt, m)
+				break
+			}
+			err = os.Mkdir(tgt, m)
+			// Make sure to preempt the MkdirAll call if the entries were
+			// ordered nicely.
+			made[d] = struct{}{}
+			stats.Dir++
+		case tar.TypeReg:
+			m := h.FileInfo().Mode() | fileMode
+			var f *os.File
+			f, err = os.OpenFile(tgt, os.O_CREATE|os.O_WRONLY, m)
+			if err != nil {
+				break // Handle after the switch.
+			}
+			_, err = io.Copy(f, tr)
+			if err := f.Close(); err != nil {
+				zlog.Warn(ctx).Err(err).Msg("error closing new file")
+			}
+			stats.Reg++
+		case tar.TypeSymlink:
+			// Normalize the link target into the root.
+			ln := filepath.Join(root, filepath.Clean(h.Linkname))
+			err = os.Symlink(ln, tgt)
+			stats.Symlink++
+		case tar.TypeLink:
+			// Normalize the link target into the root.
+			ln := filepath.Join(root, filepath.Clean(h.Linkname))
+			_, exists := os.Lstat(ln)
+			switch {
+			case errors.Is(exists, nil):
+				err = os.Link(ln, tgt)
+			case errors.Is(exists, os.ErrNotExist):
+				// Push onto a queue to fix later. Link(2) is documented to need
+				// a valid target, unlike symlink(2), which allows a missing
+				// target. Combined with tar's lack of ordering, this seems like
+				// the best solution.
+				deferLn = append(deferLn, [2]string{ln, tgt})
+			default:
+				err = exists
+			}
+			stats.Link++
+		default:
+			// Skip everything else: Can't mknod as an unprivileged user and
+			// fifos are only useful to a running system.
+		}
+		if err != nil {
+			return nil, err
+		}
 	}
+	if err != io.EOF {
+		return nil, err
+	}
+	for _, l := range deferLn {
+		if err := os.Link(l[0], l[1]); err != nil {
+			zlog.Error(ctx).
+				Err(err).
+				Msg("failed to finish links")
+			return nil, err
+		}
+	}
+	if ct := len(deferLn); ct != 0 {
+		zlog.Debug(ctx).
+			Int("count", ct).
+			Msg("processed deferred links")
+	}
+
+	zlog.Info(ctx).
+		Int("file", stats.Reg).
+		Int("dir", stats.Dir).
+		Int("dir(out of order)", stats.OutOfOrder).
+		Int("symlink", stats.Symlink).
+		Int("link", stats.Link).
+		Int("whiteout", stats.Whiteout).
+		Msg("extracted layer")
 
 	var pkgs []*claircore.Package
 	// Using --root and --dbpath, run rpm query on every suspected database
@@ -230,37 +309,6 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	}
 
 	return pkgs, nil
-}
-
-// FixPerms forces every directory to be u+wx and every file u+w.
-//
-// The closed-over Context is used for logging, and root is used for normalizing
-// any symlinks.
-func fixPerms(ctx context.Context, root string) filepath.WalkFunc {
-	// TODO(hank) 1.16+: Port to using fs.WalkDir, which is faster because it
-	// doesn't produce a FileInfo while walking.
-	return func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			zlog.Warn(ctx).
-				Err(err).
-				Str("path", path).
-				Interface("info", info).
-				Msg("error walking extracted layer")
-			return nil
-		}
-		var mod os.FileMode = 0o0600
-		switch info.Mode() & os.ModeType {
-		case os.ModeDir:
-			// Add "x" bit.
-			mod |= 0o0100
-		case os.ModeSymlink:
-			// Skip Chmod on symlink, as that works on the target, which may be
-			// in a directory we haven't fixed yet or even an absolute path.
-			return nil
-		default:
-		}
-		return os.Chmod(path, mod)
-	}
 }
 
 // This is the query format we're using to get data out of rpm.
