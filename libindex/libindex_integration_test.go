@@ -27,10 +27,10 @@ import (
 
 // Testcase is a test case for calling libindex.
 type testcase struct {
-	// Layers is the number of layers to place in the manifest under test.
-	Layers int
 	// Packages is the number of packages to generate for each layer.
 	Packages []int
+	// Layers is the number of layers to place in the manifest under test.
+	Layers int
 	// Scanners is the number of mock scanners to create. Must be at least 1.
 	Scanners int
 }
@@ -110,7 +110,7 @@ func (tc testcase) RunInner(ctx context.Context, t *testing.T, dsn string, next 
 	}
 	defer lib.Close(ctx)
 
-	//setup scan and run
+	// setup scan and run
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
@@ -164,7 +164,6 @@ type checkFunc func(context.Context, *testing.T, testcase, *Libindex, *claircore
 // CheckEqual is a checkFunc that does what it says on the tin.
 func checkEqual(ctx context.Context, t *testing.T, tc testcase, lib *Libindex, ir *claircore.IndexReport) {
 	hash := tc.Digest()
-	// confirm sr ha the manifest hash we expect
 	if got, want := ir.Hash, hash; !cmp.Equal(got, want, cmp.AllowUnexported(claircore.Digest{})) {
 		t.Error(cmp.Diff(got, want))
 	}

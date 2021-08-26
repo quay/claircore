@@ -19,7 +19,6 @@ func controllerFactory(ctx context.Context, lib *Libindex, opts *Opts) (*control
 	// convert libindex.Opts to indexer.Opts
 	sOpts := &indexer.Opts{
 		Store:         lib.store,
-		ScanLock:      lib.lockerFactoryFunc(),
 		Fetcher:       ft,
 		Ecosystems:    opts.Ecosystems,
 		Vscnrs:        lib.vscnrs,

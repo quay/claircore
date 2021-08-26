@@ -18,8 +18,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
-	"github.com/quay/claircore/internal/indexer/controller"
-	"github.com/quay/claircore/pkg/distlock"
+	"github.com/quay/claircore/pkg/ctxlock"
 )
 
 const versionMagic = "libindex number: 2\n"
@@ -32,13 +31,11 @@ type Libindex struct {
 	store indexer.Store
 	// a shareable http client
 	client *http.Client
+	// Cl provides system-wide locks.
+	cl *ctxlock.Locker
 	// an opaque and unique string representing the configured
 	// state of the indexer. see setState for more information.
 	state string
-	// a locker to ensure that two indexers aren't performing
-	// the same actions at the same time, the factory allows processes
-	// to grab a new lock when needed.
-	lockerFactoryFunc func() distlock.Locker
 }
 
 // New creates a new instance of libindex.
@@ -56,7 +53,8 @@ func New(ctx context.Context, opts *Opts, cl *http.Client) (*Libindex, error) {
 		return nil, errors.New("invalid *http.Client")
 	}
 	// TODO(hank) If "airgap" is set, we should wrap the client and return
-	// errors on non-RFC1918 and non-RFC4193 addresses.
+	// errors on non-RFC1918 and non-RFC4193 addresses. As of go1.17, the net.IP
+	// type has a method for this purpose.
 
 	dbPool, err := initDB(ctx, opts)
 	if err != nil {
@@ -69,13 +67,16 @@ func New(ctx context.Context, opts *Opts, cl *http.Client) (*Libindex, error) {
 		return nil, err
 	}
 
-	lockFactory := initLockFactory(ctx, dbPool, opts)
+	ctxLocker, err := ctxlock.New(ctx, dbPool)
+	if err != nil {
+		return nil, err
+	}
 
 	l := &Libindex{
-		Opts:              opts,
-		store:             store,
-		client:            cl,
-		lockerFactoryFunc: lockFactory,
+		Opts:   opts,
+		store:  store,
+		client: cl,
+		cl:     ctxLocker,
 	}
 
 	// register any new scanners.
@@ -102,6 +103,7 @@ func New(ctx context.Context, opts *Opts, cl *http.Client) (*Libindex, error) {
 }
 
 func (l *Libindex) Close(ctx context.Context) error {
+	l.cl.Close(ctx)
 	l.store.Close(ctx)
 	return nil
 }
@@ -113,15 +115,25 @@ func (l *Libindex) Close(ctx context.Context) error {
 func (l *Libindex) Index(ctx context.Context, manifest *claircore.Manifest) (*claircore.IndexReport, error) {
 	ctx = baggage.ContextWithValues(ctx,
 		label.String("component", "libindex/Libindex.Index"),
-		label.String("manifest", manifest.Hash.String()))
+		label.Stringer("manifest", manifest.Hash))
 	zlog.Info(ctx).Msg("index request start")
 	defer zlog.Info(ctx).Msg("index request done")
 	c, err := l.ControllerFactory(ctx, l, l.Opts)
 	if err != nil {
 		return nil, fmt.Errorf("scanner factory failed to construct a scanner: %v", err)
 	}
-	rc := l.index(ctx, c, manifest)
-	return rc, nil
+
+	zlog.Debug(ctx).Msg("locking attempt")
+	lc, done := l.cl.Lock(ctx, manifest.Hash.String())
+	defer done()
+	// The process may have waited on the lock, so check that the context is
+	// still active.
+	if err := lc.Err(); !errors.Is(err, nil) {
+		return nil, err
+	}
+	zlog.Debug(ctx).Msg("locking OK")
+
+	return c.Index(lc, manifest)
 }
 
 // State returns an opaque identifier identifying how the struct is currently
@@ -164,38 +176,9 @@ func (l *Libindex) setState(ctx context.Context, vscnrs indexer.VersionedScanner
 	return nil
 }
 
-func (l *Libindex) index(ctx context.Context, s *controller.Controller, m *claircore.Manifest) *claircore.IndexReport {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "libindex/Libindex.index"))
-	// attempt to get lock
-	zlog.Debug(ctx).Msg("locking")
-	// will block until available or ctx times out
-	err := s.Lock(ctx, m.Hash.String())
-	if err != nil {
-		// something went wrong with getting a lock
-		// this is not an error saying another process has the lock
-		zlog.Error(ctx).
-			Err(err).
-			Msg("unexpected error acquiring lock")
-		ir := &claircore.IndexReport{
-			Success: false,
-			Err:     fmt.Sprintf("unexpected error acquiring lock: %v", err),
-		}
-		// best effort to push to persistence since we are about to bail anyway
-		_ = l.store.SetIndexReport(ctx, ir)
-		return ir
-	}
-	defer zlog.Debug(ctx).Msg("unlocked")
-	defer s.Unlock()
-	zlog.Debug(ctx).Msg("locked")
-	ir := s.Index(ctx, m)
-	return ir
-}
-
 // IndexReport retrieves an IndexReport for a particular manifest hash, if it exists.
 func (l *Libindex) IndexReport(ctx context.Context, hash claircore.Digest) (*claircore.IndexReport, bool, error) {
-	res, ok, err := l.store.IndexReport(ctx, hash)
-	return res, ok, err
+	return l.store.IndexReport(ctx, hash)
 }
 
 // AffectedManifests retrieves a list of affected manifests when provided a list of vulnerabilities.
