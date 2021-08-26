@@ -60,7 +60,6 @@ func New(opts *indexer.Opts) *Controller {
 
 // Index kicks off an index of a particular manifest.
 // Initial state set in constructor.
-// Call Lock() before using and Unlock() when finished scanning.
 func (s *Controller) Index(ctx context.Context, manifest *claircore.Manifest) *claircore.IndexReport {
 	// set manifest info on controller
 	s.manifest = manifest
@@ -130,18 +129,3 @@ func (s *Controller) getState() State {
 	return ss
 }
 
-func (s *Controller) Lock(ctx context.Context, hash string) error {
-	err := s.ScanLock.Lock(ctx, hash)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *Controller) Unlock() error {
-	err := s.ScanLock.Unlock()
-	if err != nil {
-		return err
-	}
-	return nil
-}
