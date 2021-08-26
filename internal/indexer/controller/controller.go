@@ -26,14 +26,14 @@ type Controller struct {
 	*indexer.Opts
 	// lock protecting State variable
 	sm *sync.RWMutex
-	// the current state of the controller
-	currentState State
 	// the manifest this controller is working on. populated on Scan() call
 	manifest *claircore.Manifest
 	// the result of this scan. each stateFunc manipulates this field.
 	report *claircore.IndexReport
 	// a fatal error halting the scanning process
 	err error
+	// the current state of the controller
+	currentState State
 }
 
 // New constructs a controller given an Opts struct
@@ -68,10 +68,7 @@ func (s *Controller) Index(ctx context.Context, manifest *claircore.Manifest) *c
 		label.String("component", "internal/indexer/controller/Controller.Index"),
 		label.String("manifest", s.manifest.Hash.String()),
 		label.String("state", s.getState().String()))
-	// defer the removal of any tmp files if fetcher is configured for OnDisk or Tee download
-	// no-op otherwise. see Fetcher for more info
 	defer s.Fetcher.Close()
-	// setup our logger. all stateFuncs may use this to log with a log context
 	zlog.Info(ctx).Msg("starting scan")
 	s.run(ctx)
 	return s.report

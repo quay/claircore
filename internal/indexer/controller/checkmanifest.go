@@ -14,16 +14,14 @@ import (
 	"github.com/quay/claircore/internal/indexer"
 )
 
-var (
-	scannedManifestCounter = promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Namespace: "claircore",
-			Subsystem: "indexer",
-			Name:      "scanned_manifests",
-			Help:      "Total number of scanned manifests.",
-		},
-		[]string{"scanned_before"},
-	)
+var scannedManifestCounter = promauto.NewCounterVec(
+	prometheus.CounterOpts{
+		Namespace: "claircore",
+		Subsystem: "indexer",
+		Name:      "scanned_manifests",
+		Help:      "Total number of scanned manifests.",
+	},
+	[]string{"scanned_before"},
 )
 
 func checkManifest(ctx context.Context, s *Controller) (State, error) {
