@@ -12,8 +12,9 @@ require (
 	github.com/google/go-cmp v0.5.4
 	github.com/google/go-containerregistry v0.0.0-20191206185556-eb7c14b719c6
 	github.com/google/uuid v1.1.1
-	github.com/jackc/pgtype v1.4.0
-	github.com/jackc/pgx/v4 v4.7.1
+	github.com/jackc/pgconn v1.10.0
+	github.com/jackc/pgtype v1.8.1
+	github.com/jackc/pgx/v4 v4.13.0
 	github.com/klauspost/compress v1.10.6
 	github.com/knqyf263/go-apk-version v0.0.0-20200609155635-041fdbb8563f
 	github.com/knqyf263/go-deb-version v0.0.0-20190517075300-09fca494f03d
