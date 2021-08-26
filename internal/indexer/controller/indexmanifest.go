@@ -20,7 +20,7 @@ func indexManifest(ctx context.Context, c *Controller) (State, error) {
 
 	err := c.Store.IndexManifest(ctx, c.report)
 	if err != nil {
-		return Terminal, fmt.Errorf("indexing manifest contents failed: %v", err)
+		return Terminal, fmt.Errorf("indexing manifest contents failed: %w", err)
 	}
 	return IndexFinished, nil
 }

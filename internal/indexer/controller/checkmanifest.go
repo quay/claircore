@@ -59,7 +59,7 @@ func checkManifest(ctx context.Context, s *Controller) (State, error) {
 
 		err := s.Store.PersistManifest(ctx, *s.manifest)
 		if err != nil {
-			return Terminal, fmt.Errorf("failed to persist manifest: %v", err)
+			return Terminal, fmt.Errorf("failed to persist manifest: %w", err)
 		}
 		return FetchLayers, nil
 	}
@@ -69,10 +69,10 @@ func checkManifest(ctx context.Context, s *Controller) (State, error) {
 	zlog.Info(ctx).Msg("manifest already scanned")
 	sr, ok, err := s.Store.IndexReport(ctx, s.manifest.Hash)
 	if err != nil {
-		return Terminal, fmt.Errorf("failed to retrieve manifest: %v", err)
+		return Terminal, fmt.Errorf("failed to retrieve manifest: %w", err)
 	}
 	if !ok {
-		return Terminal, fmt.Errorf("failed to retrieve manifest: %v", err)
+		return Terminal, fmt.Errorf("failed to retrieve manifest: %w", err)
 	}
 	s.report = sr
 

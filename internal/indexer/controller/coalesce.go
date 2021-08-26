@@ -39,21 +39,21 @@ func coalesce(ctx context.Context, s *Controller) (State, error) {
 			pkgs, err := s.Store.PackagesByLayer(cctx, layer.Hash, vscnrs)
 			if err != nil {
 				// on an early return cctx is canceled, and all inflight coalescers are canceled as well
-				return Terminal, fmt.Errorf("failed to retrieve packages for %v: %v", layer.Hash, err)
+				return Terminal, fmt.Errorf("failed to retrieve packages for %v: %w", layer.Hash, err)
 			}
 			la.Pkgs = append(la.Pkgs, pkgs...)
 			// get distributions from layer
 			vscnrs.DStoVS(distScanners) // method allocates new vscnr underlying array, clearing old contents
 			dists, err := s.Store.DistributionsByLayer(cctx, layer.Hash, vscnrs)
 			if err != nil {
-				return Terminal, fmt.Errorf("failed to retrieve distributions for %v: %v", layer.Hash, err)
+				return Terminal, fmt.Errorf("failed to retrieve distributions for %v: %w", layer.Hash, err)
 			}
 			la.Dist = append(la.Dist, dists...)
 			// get repositories from layer
 			vscnrs.RStoVS(repoScanners)
 			repos, err := s.Store.RepositoriesByLayer(cctx, layer.Hash, vscnrs)
 			if err != nil {
-				return Terminal, fmt.Errorf("failed to retrieve repositories for %v: %v", layer.Hash, err)
+				return Terminal, fmt.Errorf("failed to retrieve repositories for %v: %w", layer.Hash, err)
 			}
 			la.Repos = append(la.Repos, repos...)
 			// pack artifacts array in layer order

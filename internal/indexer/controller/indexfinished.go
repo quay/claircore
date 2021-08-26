@@ -20,7 +20,7 @@ func indexFinished(ctx context.Context, s *Controller) (State, error) {
 
 	err := s.Store.SetIndexFinished(ctx, s.report, s.Vscnrs)
 	if err != nil {
-		return Terminal, fmt.Errorf("failed finish scan. attempt a rescan of the manifest: %v", err)
+		return Terminal, fmt.Errorf("failed finish scan: %w", err)
 	}
 
 	zlog.Info(ctx).Msg("manifest successfully scanned")
