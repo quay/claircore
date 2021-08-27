@@ -5,13 +5,9 @@ import (
 	"fmt"
 
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 )
 
 func fetchLayers(ctx context.Context, s *Controller) (State, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("state", s.getState().String()))
 	zlog.Info(ctx).Msg("layers fetch start")
 	defer zlog.Info(ctx).Msg("layers fetch done")
 	toFetch, err := reduce(ctx, s.Store, s.Vscnrs, s.manifest.Layers)

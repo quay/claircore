@@ -8,8 +8,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore/internal/indexer"
 )
@@ -25,9 +23,6 @@ var scannedManifestCounter = promauto.NewCounterVec(
 )
 
 func checkManifest(ctx context.Context, s *Controller) (State, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("state", s.getState().String()))
-
 	// determine if we've seen this manifest and if we've
 	// scanned it with the desired scanners
 	ok, err := s.Store.ManifestScanned(ctx, s.manifest.Hash, s.Vscnrs)
