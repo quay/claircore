@@ -17,6 +17,7 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/updates"
 	"github.com/quay/claircore/matchers"
+	"github.com/quay/claircore/pkg/ctxlock"
 )
 
 // Libvuln exports methods for scanning an IndexReport and created
@@ -27,6 +28,7 @@ import (
 type Libvuln struct {
 	store           vulnstore.Store
 	pool            *pgxpool.Pool
+	locks           *ctxlock.Locker
 	matchers        []driver.Matcher
 	enrichers       []driver.Enricher
 	updateRetention int
@@ -74,7 +76,7 @@ func New(ctx context.Context, opts *Opts) (*Libvuln, error) {
 	}
 
 	// create update manager
-	locks, err := updates.PoolLockSource(pool, 0)
+	locks, err := ctxlock.New(ctx, pool)
 	if err != nil {
 		return nil, err
 	}
@@ -99,6 +101,12 @@ func New(ctx context.Context, opts *Opts) (*Libvuln, error) {
 	}
 	zlog.Info(ctx).Msg("libvuln initialized")
 	return l, nil
+}
+
+func (l *Libvuln) Close(ctx context.Context) error {
+	l.locks.Close(ctx)
+	l.pool.Close()
+	return nil
 }
 
 // FetchUpdates runs configured updaters.
