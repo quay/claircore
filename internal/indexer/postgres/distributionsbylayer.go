@@ -71,9 +71,11 @@ func (s *store) DistributionsByLayer(ctx context.Context, hash claircore.Digest,
 	// get scanner ids
 	scannerIDs := make([]int64, len(scnrs))
 	for i, scnr := range scnrs {
+		ctx, done := context.WithTimeout(ctx, time.Second)
 		start := time.Now()
 		err := s.pool.QueryRow(ctx, selectScanner, scnr.Name(), scnr.Version(), scnr.Kind()).
 			Scan(&scannerIDs[i])
+		done()
 		if err != nil {
 			return nil, fmt.Errorf("failed to retrieve distribution ids for scanner %q: %w", scnr, err)
 		}
@@ -81,6 +83,8 @@ func (s *store) DistributionsByLayer(ctx context.Context, hash claircore.Digest,
 		distributionByLayerDuration.WithLabelValues("selectScanner").Observe(time.Since(start).Seconds())
 	}
 
+	ctx, done := context.WithTimeout(ctx, 30*time.Second)
+	defer done()
 	start := time.Now()
 	rows, err := s.pool.Query(ctx, query, hash, scannerIDs)
 	switch {

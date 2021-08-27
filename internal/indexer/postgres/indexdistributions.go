@@ -79,17 +79,23 @@ func (s *store) IndexDistributions(ctx context.Context, dists []*claircore.Distr
 	)
 
 	// obtain a transaction scoped batch
-	tx, err := s.pool.Begin(ctx)
+	tctx, done := context.WithTimeout(ctx, 5*time.Second)
+	tx, err := s.pool.Begin(tctx)
+	done()
 	if err != nil {
 		return fmt.Errorf("store:indexDistributions failed to create transaction: %v", err)
 	}
 	defer tx.Rollback(ctx)
 
-	insertDistStmt, err := tx.Prepare(ctx, "insertDistStmt", insert)
+	tctx, done = context.WithTimeout(ctx, 5*time.Second)
+	insertDistStmt, err := tx.Prepare(tctx, "insertDistStmt", insert)
+	done()
 	if err != nil {
 		return fmt.Errorf("failed to create statement: %w", err)
 	}
-	insertDistScanArtifactWithStmt, err := tx.Prepare(ctx, "insertDistScanArtifactWith", insertWith)
+	tctx, done = context.WithTimeout(ctx, 5*time.Second)
+	insertDistScanArtifactWithStmt, err := tx.Prepare(tctx, "insertDistScanArtifactWith", insertWith)
+	done()
 	if err != nil {
 		return fmt.Errorf("failed to create statement: %w", err)
 	}
@@ -151,7 +157,10 @@ func (s *store) IndexDistributions(ctx context.Context, dists []*claircore.Distr
 	indexDistributionsCounter.WithLabelValues("insertWith_batch").Add(1)
 	indexDistributionsDuration.WithLabelValues("insertWith_batch").Observe(time.Since(start).Seconds())
 
-	if err := tx.Commit(ctx); err != nil {
+	tctx, done = context.WithTimeout(ctx, 5*time.Second)
+	err = tx.Commit(tctx)
+	done()
+	if err != nil {
 		return fmt.Errorf("store:indexDistributions failed to commit tx: %w", err)
 	}
 	return nil

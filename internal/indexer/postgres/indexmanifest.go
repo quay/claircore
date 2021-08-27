@@ -67,13 +67,17 @@ func (s *store) IndexManifest(ctx context.Context, ir *claircore.IndexReport) er
 	}
 
 	// obtain a transaction scoped batch
-	tx, err := s.pool.Begin(ctx)
+	tctx, done := context.WithTimeout(ctx, 5*time.Second)
+	tx, err := s.pool.Begin(tctx)
+	done()
 	if err != nil {
 		return fmt.Errorf("postgres: indexManifest failed to create transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
-	queryStmt, err := tx.Prepare(ctx, "queryStmt", query)
+	tctx, done = context.WithTimeout(ctx, 5*time.Second)
+	queryStmt, err := tx.Prepare(tctx, "queryStmt", query)
+	done()
 	if err != nil {
 		return fmt.Errorf("failed to create statement: %w", err)
 	}
@@ -126,7 +130,10 @@ func (s *store) IndexManifest(ctx context.Context, ir *claircore.IndexReport) er
 	indexManifesCounter.WithLabelValues("query_batch").Add(1)
 	indexManifestDuration.WithLabelValues("query_batch").Observe(time.Since(start).Seconds())
 
-	if err := tx.Commit(ctx); err != nil {
+	tctx, done = context.WithTimeout(ctx, 15*time.Second)
+	err = tx.Commit(tctx)
+	done()
+	if err != nil {
 		return fmt.Errorf("failed to commit tx: %w", err)
 	}
 	return nil

@@ -55,6 +55,8 @@ func (s *store) ManifestScanned(ctx context.Context, hash claircore.Digest, vs i
 	// get a map of the found ids which have scanned this package
 	foundIDs := map[int64]struct{}{}
 
+	ctx, done := context.WithTimeout(ctx, 10*time.Second)
+	defer done()
 	start := time.Now()
 	rows, err := s.pool.Query(ctx, selectScanned, hash)
 	if err != nil {
