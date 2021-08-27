@@ -2,6 +2,7 @@ package updates
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -9,44 +10,44 @@ import (
 
 func TestLocalLockUnlock(t *testing.T) {
 	ctx := context.Background()
-	locks := LocalLockSource()
-
-	l := locks.NewLock()
+	l := NewLocalLockSource()
 
 	t.Log("lock")
-	if err := l.Lock(ctx, t.Name()); err != nil {
+	c, done := l.Lock(ctx, t.Name())
+	if err := c.Err(); err != nil {
 		t.Error(err)
 	}
 	t.Log("unlock")
-	if err := l.Unlock(); err != nil {
-		t.Error(err)
+	done()
+	if l.peek(t.Name()) {
+		t.Error("lock held")
 	}
 
 	t.Log("lock")
-	if err := l.Lock(ctx, t.Name()); err != nil {
+	c, done = l.Lock(ctx, t.Name())
+	if err := c.Err(); err != nil {
 		t.Error(err)
 	}
 	t.Log("unlock")
-	if err := l.Unlock(); err != nil {
-		t.Error(err)
+	done()
+	if l.peek(t.Name()) {
+		t.Error("lock held")
 	}
 }
 
 func TestLocalTryLock(t *testing.T) {
 	ctx := context.Background()
-	locks := LocalLockSource()
+	locks := NewLocalLockSource()
 	locked := make(chan struct{})
 	unlock := make(chan struct{})
 	unlocked := make(chan struct{})
 	go func() {
-		l := locks.NewLock()
-		if err := l.Lock(ctx, t.Name()); err != nil {
+		ctx, done := locks.Lock(ctx, t.Name())
+		if err := ctx.Err(); err != nil {
 			t.Error(err)
 		}
 		defer func() {
-			if err := l.Unlock(); err != nil {
-				t.Error(err)
-			}
+			done()
 			close(unlocked)
 			t.Log("lock released")
 		}()
@@ -56,50 +57,34 @@ func TestLocalTryLock(t *testing.T) {
 	}()
 
 	<-locked
-	l := locks.NewLock()
-	ok, err := l.TryLock(ctx, t.Name())
-	if err != nil {
-		t.Error(err)
-	}
-	t.Logf("try: %v", ok)
-	if ok {
+	lc, done := locks.TryLock(ctx, t.Name())
+	t.Logf("try: %v", lc.Err())
+	if !errors.Is(lc.Err(), context.Canceled) {
 		t.Error("wanted TryLock to fail")
 	}
+	done()
 	close(unlock)
 	<-unlocked
-	ok, err = l.TryLock(ctx, t.Name())
-	if err != nil {
-		t.Error(err)
-	}
-	t.Logf("try: %v", ok)
-	if !ok {
+	lc, done = locks.TryLock(ctx, t.Name())
+	t.Logf("try: %v", lc.Err())
+	if !errors.Is(lc.Err(), nil) {
 		t.Error("wanted TryLock to succeed")
 	}
-	if err := l.Unlock(); err != nil {
-		t.Error(err)
-	}
+	done()
 	t.Log("unlocked")
 }
 
 func TestLocalLockSequential(t *testing.T) {
 	ctx := context.Background()
-	locks := LocalLockSource()
+	locks := NewLocalLockSource()
 	var wg sync.WaitGroup
 	wg.Add(2)
 	var ct uint64
-	l1 := locks.NewLock()
-	l2 := locks.NewLock()
-	if err := l1.Lock(ctx, t.Name()); err != nil {
-		t.Fatal(err)
-	}
+	_, d1 := locks.Lock(ctx, t.Name())
 	go func() {
-		if err := l2.Lock(ctx, t.Name()); err != nil {
-			t.Error(err)
-		}
+		_, d2 := locks.Lock(ctx, t.Name())
 		defer func() {
-			if err := l2.Unlock(); err != nil {
-				t.Error(err)
-			}
+			d2()
 			wg.Done()
 		}()
 		t.Log("1 → 2")
@@ -109,9 +94,7 @@ func TestLocalLockSequential(t *testing.T) {
 	}()
 	go func() {
 		defer func() {
-			if err := l1.Unlock(); err != nil {
-				t.Error(err)
-			}
+			d1()
 			wg.Done()
 		}()
 		t.Log("0 → 1")

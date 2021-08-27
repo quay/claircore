@@ -2,108 +2,67 @@ package updates
 
 import (
 	"context"
-	"errors"
 	"sync"
-	"time"
-
-	"github.com/jackc/pgx/v4/pgxpool"
-
-	"github.com/quay/claircore/pkg/distlock"
-	"github.com/quay/claircore/pkg/distlock/postgres"
 )
 
-var _ LockSource = (*poolLockSource)(nil)
-
-type poolLockSource struct {
-	p   *pgxpool.Pool
-	dur time.Duration
-}
-
-func (s *poolLockSource) NewLock() distlock.Locker {
-	return postgres.NewPool(s.p, s.dur)
-}
-
-// PoolLockSource provides locks backed by Postgres advisory locks.
-//
-// The provided duration is the retry period, as documented in postgres.NewPool.
-func PoolLockSource(p *pgxpool.Pool, dur time.Duration) (LockSource, error) {
-	return &poolLockSource{
-		p: p, dur: dur,
-	}, nil
-}
-
 var _ LockSource = (*localLockSource)(nil)
-var _ distlock.Locker = (*localLockTab)(nil)
 
 type localLockSource struct {
-	sync.RWMutex
-	m map[string]chan struct{}
+	sync.Mutex
+	wait *sync.Cond
+	m    map[string]struct{}
 }
 
-// LocalLockSource provides locks backed by local concurrency primitives.
-func LocalLockSource() LockSource {
-	return &localLockSource{
-		m: make(map[string]chan struct{}),
+// NewLocalLockSource provides locks backed by local concurrency primitives.
+func NewLocalLockSource() *localLockSource {
+	l := &localLockSource{
+		m: make(map[string]struct{}),
+	}
+	l.wait = sync.NewCond(&l.Mutex)
+	return l
+}
+
+// BUG(hank) The API provided by localLockSource does not respect the parent
+// context cancellation when waiting for a lock.
+
+func (s *localLockSource) Lock(ctx context.Context, key string) (context.Context, context.CancelFunc) {
+	s.Mutex.Lock()
+	defer s.Mutex.Unlock()
+	for _, exists := s.m[key]; exists; _, exists = s.m[key] {
+		s.wait.Wait()
+	}
+	s.m[key] = struct{}{}
+	c, f := context.WithCancel(ctx)
+	return c, s.cancelfunc(key, f)
+}
+
+func (s *localLockSource) TryLock(ctx context.Context, key string) (context.Context, context.CancelFunc) {
+	c, f := context.WithCancel(ctx)
+	s.Mutex.Lock()
+	defer s.Mutex.Unlock()
+	if _, exists := s.m[key]; exists {
+		f()
+		return c, f
+	}
+	s.m[key] = struct{}{}
+	return c, s.cancelfunc(key, f)
+}
+
+// Cancelfunc returns a CancelFunc that calls "next" and then unlocks.
+func (s *localLockSource) cancelfunc(key string, next context.CancelFunc) context.CancelFunc {
+	return func() {
+		next()
+		s.Mutex.Lock()
+		defer s.Mutex.Unlock()
+		delete(s.m, key)
+		s.wait.Broadcast()
 	}
 }
 
-func (s *localLockSource) NewLock() distlock.Locker {
-	return &localLockTab{s: s}
-}
-
-func (s *localLockSource) getch(key string) chan struct{} {
-	s.RLock()
-	ch, ok := s.m[key]
-	s.RUnlock()
-	if !ok {
-		s.Lock()
-		defer s.Unlock()
-		ch, ok = s.m[key]
-		if !ok {
-			ch = make(chan struct{}, 1)
-			ch <- struct{}{}
-			s.m[key] = ch
-		}
-	}
-	return ch
-}
-
-type localLockTab struct {
-	s  *localLockSource
-	ch chan struct{}
-}
-
-func (t *localLockTab) Lock(ctx context.Context, key string) error {
-	ch := t.s.getch(key)
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-ch:
-		t.ch = ch
-		return nil
-	}
-}
-
-func (t *localLockTab) TryLock(ctx context.Context, key string) (bool, error) {
-	ch := t.s.getch(key)
-	select {
-	case <-ctx.Done():
-		return false, ctx.Err()
-	case <-ch:
-		t.ch = ch
-		return true, nil
-	default:
-		return false, nil
-	}
-}
-
-var errLocalNotLocked = errors.New("not locked")
-
-func (t *localLockTab) Unlock() error {
-	if t.ch == nil {
-		return errLocalNotLocked
-	}
-	t.ch <- struct{}{}
-	t.ch = nil
-	return nil
+// Peek reports whether the key is locked or not.
+func (s *localLockSource) peek(key string) bool {
+	s.Mutex.Lock()
+	defer s.Mutex.Unlock()
+	_, ok := s.m[key]
+	return ok
 }

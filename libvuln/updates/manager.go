@@ -19,7 +19,6 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/vulnstore"
 	"github.com/quay/claircore/libvuln/driver"
-	"github.com/quay/claircore/pkg/distlock"
 	"github.com/quay/claircore/updater"
 )
 
@@ -27,9 +26,7 @@ const (
 	DefaultInterval = time.Duration(30 * time.Minute)
 )
 
-var (
-	DefaultBatchSize = runtime.GOMAXPROCS(0)
-)
+var DefaultBatchSize = runtime.GOMAXPROCS(0)
 
 type Configs map[string]driver.ConfigUnmarshaler
 
@@ -38,7 +35,8 @@ type Configs map[string]driver.ConfigUnmarshaler
 // An online system needs distributed locks, offline use cases can use
 // process-local locks.
 type LockSource interface {
-	NewLock() distlock.Locker
+	TryLock(context.Context, string) (context.Context, context.CancelFunc)
+	Lock(context.Context, string) (context.Context, context.CancelFunc)
 }
 
 // Manager oversees the configuration and invocation of vulnstore updaters.
@@ -198,23 +196,15 @@ func (m *Manager) Run(ctx context.Context) error {
 		go func(u driver.Updater) {
 			defer sem.Release(1)
 
+			ctx, done := m.locks.TryLock(ctx, u.Name())
+			defer done()
 			if err := ctx.Err(); err != nil {
-				return
-			}
-
-			lock := m.locks.NewLock()
-			ok, err := lock.TryLock(ctx, u.Name())
-			if err != nil {
-				errChan <- err
-				return
-			}
-			if !ok {
 				zlog.Debug(ctx).
+					Err(err).
 					Str("updater", u.Name()).
-					Msg("another process running updater, excluding from run")
+					Msg("lock context canceled, excluding from run")
 				return
 			}
-			defer lock.Unlock()
 
 			err = m.driveUpdater(ctx, u)
 			if err != nil {
