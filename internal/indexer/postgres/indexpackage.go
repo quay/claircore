@@ -104,20 +104,17 @@ func (s *store) IndexPackages(ctx context.Context, pkgs []*claircore.Package, la
 	// obtain a transaction scoped batch
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
-		return fmt.Errorf("store:indexPackage failed to create transaction: %v", err)
+		return fmt.Errorf("store:indexPackage failed to create transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
 	insertPackageStmt, err := tx.Prepare(ctx, "insertPackageStmt", insert)
 	if err != nil {
-		return fmt.Errorf("failed to create statement: %v", err)
+		return fmt.Errorf("failed to create statement: %w", err)
 	}
 	insertPackageScanArtifactWithStmt, err := tx.Prepare(ctx, "insertPackageScanArtifactWith", insertWith)
 	if err != nil {
-		return fmt.Errorf("failed to create statement: %v", err)
-	}
-	if err != nil {
-		return fmt.Errorf("failed to create statement: %v", err)
+		return fmt.Errorf("failed to create statement: %w", err)
 	}
 
 	skipCt := 0
@@ -141,7 +138,7 @@ func (s *store) IndexPackages(ctx context.Context, pkgs []*claircore.Package, la
 	}
 	err = mBatcher.Done(ctx)
 	if err != nil {
-		return fmt.Errorf("final batch insert failed for pkg: %v", err)
+		return fmt.Errorf("final batch insert failed for pkg: %w", err)
 	}
 	indexPackageCounter.WithLabelValues("insert_batch").Add(1)
 	indexPackageDuration.WithLabelValues("insert_batch").Observe(time.Since(start).Seconds())
@@ -182,12 +179,12 @@ func (s *store) IndexPackages(ctx context.Context, pkgs []*claircore.Package, la
 			pkg.RepositoryHint,
 		)
 		if err != nil {
-			return fmt.Errorf("batch insert failed for package_scanartifact %v: %v", pkg, err)
+			return fmt.Errorf("batch insert failed for package_scanartifact %v: %w", pkg, err)
 		}
 	}
 	err = mBatcher.Done(ctx)
 	if err != nil {
-		return fmt.Errorf("final batch insert failed for package_scanartifact: %v", err)
+		return fmt.Errorf("final batch insert failed for package_scanartifact: %w", err)
 	}
 	indexPackageCounter.WithLabelValues("insertWith_batch").Add(1)
 	indexPackageDuration.WithLabelValues("insertWith_batch").Observe(time.Since(start).Seconds())
@@ -197,7 +194,7 @@ func (s *store) IndexPackages(ctx context.Context, pkgs []*claircore.Package, la
 		Msg("scanartifacts inserted")
 
 	if err := tx.Commit(ctx); err != nil {
-		return fmt.Errorf("store:indexPackages failed to commit tx: %v", err)
+		return fmt.Errorf("store:indexPackages failed to commit tx: %w", err)
 	}
 	return nil
 }

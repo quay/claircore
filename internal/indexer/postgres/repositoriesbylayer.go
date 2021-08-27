@@ -55,7 +55,7 @@ WHERE
 	}
 	scannerIDs, err := s.selectScanners(ctx, scnrs)
 	if err != nil {
-		return nil, fmt.Errorf("store:repositoriesByLayer %v", err)
+		return nil, fmt.Errorf("unable to select scanners: %w", err)
 	}
 
 	start := time.Now()
@@ -63,9 +63,9 @@ WHERE
 	switch {
 	case errors.Is(err, nil):
 	case errors.Is(err, pgx.ErrNoRows):
-		return nil, fmt.Errorf("store:repositoriesByLayer no repositories found for hash %v and scanners %v", hash, scnrs)
+		return nil, fmt.Errorf("no repositories found for layer, scanners set")
 	default:
-		return nil, fmt.Errorf("store:repositoriesByLayer failed to retrieve package rows for hash %v and scanners %v: %v", hash, scnrs, err)
+		return nil, fmt.Errorf("failed to retrieve repositories for layer, scanners set: %w", err)
 	}
 	repositoriesByLayerCounter.WithLabelValues("query").Add(1)
 	repositoriesByLayerDuration.WithLabelValues("query").Observe(time.Since(start).Seconds())
@@ -85,7 +85,7 @@ WHERE
 		)
 		repo.ID = strconv.FormatInt(id, 10)
 		if err != nil {
-			return nil, fmt.Errorf("store:repositoriesByLayer failed to scan repositories: %v", err)
+			return nil, fmt.Errorf("failed to scan repositories: %w", err)
 		}
 
 		res = append(res, &repo)

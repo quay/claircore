@@ -7,6 +7,9 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
 )
@@ -34,6 +37,7 @@ var (
 )
 
 func (s *store) SetLayerScanned(ctx context.Context, hash claircore.Digest, vs indexer.VersionedScanner) error {
+	ctx = baggage.ContextWithValues(ctx, label.String("scanner", vs.Name()))
 	const query = `
 WITH
 	scanner
@@ -63,7 +67,7 @@ DO
 	start := time.Now()
 	_, err := s.pool.Exec(ctx, query, hash, vs.Name(), vs.Version(), vs.Kind())
 	if err != nil {
-		return fmt.Errorf("store:setLayerScanned scanner %v: %v", vs, err)
+		return fmt.Errorf("error setting layer scanned: %w", err)
 	}
 	setLayerScannedCounter.WithLabelValues("query").Add(1)
 	setLayerScannedDuration.WithLabelValues("query").Observe(time.Since(start).Seconds())

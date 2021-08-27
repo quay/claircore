@@ -7,6 +7,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
 )
@@ -77,12 +78,12 @@ DO
 
 	scannerIDs, err := s.selectScanners(ctx, scnrs)
 	if err != nil {
-		return fmt.Errorf("store:storeManifest failed to select package scanner id: %v", err)
+		return fmt.Errorf("failed to select package scanner id: %w", err)
 	}
 
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
-		return fmt.Errorf("store:setScannerList failed to create transaction for hash %v: %v", ir.Hash, err)
+		return fmt.Errorf("failed to create transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
@@ -91,7 +92,7 @@ DO
 		start := time.Now()
 		_, err := tx.Exec(ctx, insertManifestScanned, ir.Hash, id)
 		if err != nil {
-			return fmt.Errorf("store:storeManifest failed to link manifest with scanner list: %v", err)
+			return fmt.Errorf("failed to link manifest with scanner list: %w", err)
 		}
 		setIndexedFinishedCounter.WithLabelValues("insertManifestScanned").Add(1)
 		setIndexedFinishedDuration.WithLabelValues("insertManifestScanned").Observe(time.Since(start).Seconds())
@@ -104,13 +105,13 @@ DO
 	start := time.Now()
 	_, err = tx.Exec(ctx, upsertIndexReport, ir.Hash, jsonbIndexReport(*ir))
 	if err != nil {
-		return fmt.Errorf("failed to upsert scan result: %v", err)
+		return fmt.Errorf("failed to upsert scan result: %w", err)
 	}
 	setIndexedFinishedCounter.WithLabelValues("upsertIndexReport").Add(1)
 	setIndexedFinishedDuration.WithLabelValues("upsertIndexReport").Observe(time.Since(start).Seconds())
 
 	if err := tx.Commit(ctx); err != nil {
-		return fmt.Errorf("failed to commit transaction: %v", err)
+		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 	return nil
 }

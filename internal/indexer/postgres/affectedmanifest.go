@@ -10,12 +10,12 @@ import (
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/zlog"
 	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/label"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/omnimatcher"
 )
@@ -138,12 +138,11 @@ WHERE
 	case errors.Is(err, pgx.ErrNoRows):
 		return []claircore.Digest{}, nil
 	default:
-		return nil, fmt.Errorf("failed to query packages associated with vulnerability %+v: %v", v, err)
+		return nil, fmt.Errorf("failed to query packages associated with vulnerability %q: %w", v.ID, err)
 	}
-	affectedManifestsCounter.WithLabelValues("selectPackages").Add(1)
-	affectedManifestsDuration.WithLabelValues(("selectPackages")).Observe(time.Since(start).Seconds())
-
 	defer rows.Close()
+	affectedManifestsCounter.WithLabelValues("selectPackages").Add(1)
+	affectedManifestsDuration.WithLabelValues("selectPackages").Observe(time.Since(start).Seconds())
 
 	for rows.Next() {
 		var pkg claircore.Package
@@ -161,7 +160,7 @@ WHERE
 			&pkg.Arch,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan package: %v", err)
+			return nil, fmt.Errorf("failed to scan package: %w", err)
 		}
 		idStr := strconv.FormatInt(id, 10)
 		pkg.ID = idStr
@@ -175,7 +174,7 @@ WHERE
 	}
 	zlog.Debug(ctx).Int("count", len(pkgsToFilter)).Msg("packages to filter")
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error scanning packages: %v", err)
+		return nil, fmt.Errorf("error scanning packages: %w", err)
 	}
 
 	// for each package discovered create an index record
@@ -211,7 +210,7 @@ WHERE
 	for _, record := range filteredRecords {
 		v, err := toValues(record)
 		if err != nil {
-			return nil, fmt.Errorf("failed to resolve record %+v to sql values for query: %v", record, err)
+			return nil, fmt.Errorf("failed to resolve record %+v to sql values for query: %w", record, err)
 		}
 
 		start := time.Now()
@@ -302,7 +301,7 @@ func protoRecord(ctx context.Context, pool *pgxpool.Pool, v claircore.Vulnerabil
 		err := row.Scan(&id)
 		if err != nil {
 			if !errors.Is(err, pgx.ErrNoRows) {
-				return protoRecord, fmt.Errorf("failed to scan dist: %v", err)
+				return protoRecord, fmt.Errorf("failed to scan dist: %w", err)
 			}
 		}
 		protoRecordCounter.WithLabelValues("selectDist").Add(1)
@@ -337,7 +336,7 @@ func protoRecord(ctx context.Context, pool *pgxpool.Pool, v claircore.Vulnerabil
 		err := row.Scan(&id)
 		if err != nil {
 			if !errors.Is(err, pgx.ErrNoRows) {
-				return protoRecord, fmt.Errorf("failed to scan repo: %v", err)
+				return protoRecord, fmt.Errorf("failed to scan repo: %w", err)
 			}
 		}
 		protoRecordCounter.WithLabelValues("selectDist").Add(1)

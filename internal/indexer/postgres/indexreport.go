@@ -53,12 +53,11 @@ func (s *store) IndexReport(ctx context.Context, hash claircore.Digest) (*clairc
 	case errors.Is(err, pgx.ErrNoRows):
 		return nil, false, nil
 	default:
-		return nil, false, fmt.Errorf("store:indexReport failed to retrieve index report: %v", err)
+		return nil, false, fmt.Errorf("failed to retrieve index report: %w", err)
 	}
 	indexReportCounter.WithLabelValues("query").Add(1)
 	indexReportDuration.WithLabelValues("query").Observe(time.Since(start).Seconds())
 
-	var sr claircore.IndexReport
-	sr = claircore.IndexReport(jsr)
+	sr := claircore.IndexReport(jsr)
 	return &sr, true, nil
 }

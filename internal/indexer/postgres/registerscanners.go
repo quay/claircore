@@ -66,7 +66,7 @@ SELECT
 		err = s.pool.QueryRow(ctx, exists, v.Name(), v.Version(), v.Kind()).
 			Scan(&ok)
 		if err != nil {
-			return fmt.Errorf("failed getting id for scanner %q: %v", v.Name(), err)
+			return fmt.Errorf("failed getting id for scanner %q: %w", v.Name(), err)
 		}
 		registerScannerCounter.WithLabelValues("exists").Add(1)
 		registerScannerDuration.WithLabelValues("exists").Observe(time.Since(start).Seconds())
@@ -77,7 +77,7 @@ SELECT
 		start = time.Now()
 		_, err = s.pool.Exec(ctx, insert, v.Name(), v.Version(), v.Kind())
 		if err != nil {
-			return fmt.Errorf("failed to insert scanner %v: %v", v.Name(), err)
+			return fmt.Errorf("failed to insert scanner %q: %w", v.Name(), err)
 		}
 		registerScannerCounter.WithLabelValues("insert").Add(1)
 		registerScannerDuration.WithLabelValues("insert").Observe(time.Since(start).Seconds())

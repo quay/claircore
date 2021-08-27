@@ -87,14 +87,11 @@ func (s *store) IndexDistributions(ctx context.Context, dists []*claircore.Distr
 
 	insertDistStmt, err := tx.Prepare(ctx, "insertDistStmt", insert)
 	if err != nil {
-		return fmt.Errorf("failed to create statement: %v", err)
+		return fmt.Errorf("failed to create statement: %w", err)
 	}
 	insertDistScanArtifactWithStmt, err := tx.Prepare(ctx, "insertDistScanArtifactWith", insertWith)
 	if err != nil {
-		return fmt.Errorf("failed to create statement: %v", err)
-	}
-	if err != nil {
-		return fmt.Errorf("failed to create statement: %v", err)
+		return fmt.Errorf("failed to create statement: %w", err)
 	}
 
 	start := time.Now()
@@ -113,12 +110,12 @@ func (s *store) IndexDistributions(ctx context.Context, dists []*claircore.Distr
 			dist.PrettyName,
 		)
 		if err != nil {
-			return fmt.Errorf("batch insert failed for dist %v: %v", dist, err)
+			return fmt.Errorf("batch insert failed for dist %v: %w", dist, err)
 		}
 	}
 	err = mBatcher.Done(ctx)
 	if err != nil {
-		return fmt.Errorf("final batch insert failed for dist: %v", err)
+		return fmt.Errorf("final batch insert failed for dist: %w", err)
 	}
 	indexDistributionsCounter.WithLabelValues("insert_batch").Add(1)
 	indexDistributionsDuration.WithLabelValues("insert_batch").Observe(time.Since(start).Seconds())
@@ -144,18 +141,18 @@ func (s *store) IndexDistributions(ctx context.Context, dists []*claircore.Distr
 			layer.Hash,
 		)
 		if err != nil {
-			return fmt.Errorf("batch insert failed for dist_scanartifact %v: %v", dist, err)
+			return fmt.Errorf("batch insert failed for dist_scanartifact %v: %w", dist, err)
 		}
 	}
 	err = mBatcher.Done(ctx)
 	if err != nil {
-		return fmt.Errorf("final batch insert failed for dist_scanartifact: %v", err)
+		return fmt.Errorf("final batch insert failed for dist_scanartifact: %w", err)
 	}
 	indexDistributionsCounter.WithLabelValues("insertWith_batch").Add(1)
 	indexDistributionsDuration.WithLabelValues("insertWith_batch").Observe(time.Since(start).Seconds())
 
 	if err := tx.Commit(ctx); err != nil {
-		return fmt.Errorf("store:indexDistributions failed to commit tx: %v", err)
+		return fmt.Errorf("store:indexDistributions failed to commit tx: %w", err)
 	}
 	return nil
 }

@@ -75,7 +75,7 @@ func (s *store) DistributionsByLayer(ctx context.Context, hash claircore.Digest,
 		err := s.pool.QueryRow(ctx, selectScanner, scnr.Name(), scnr.Version(), scnr.Kind()).
 			Scan(&scannerIDs[i])
 		if err != nil {
-			return nil, fmt.Errorf("store:distributionseByLayer failed to retrieve scanner ids for scanner %v: %v", scnr, err)
+			return nil, fmt.Errorf("failed to retrieve distribution ids for scanner %q: %w", scnr, err)
 		}
 		distributionByLayerCounter.WithLabelValues("selectScanner").Add(1)
 		distributionByLayerDuration.WithLabelValues("selectScanner").Observe(time.Since(start).Seconds())
@@ -88,7 +88,7 @@ func (s *store) DistributionsByLayer(ctx context.Context, hash claircore.Digest,
 	case errors.Is(err, pgx.ErrNoRows):
 		return nil, fmt.Errorf("store:distributionsByLayer no distribution found for hash %v and scanners %v", hash, scnrs)
 	default:
-		return nil, fmt.Errorf("store:distributionsByLayer failed to retrieve package rows for hash %v and scanners %v: %v", hash, scnrs, err)
+		return nil, fmt.Errorf("store:distributionsByLayer failed to retrieve package rows for hash %v and scanners %v: %w", hash, scnrs, err)
 	}
 	protoRecordCounter.WithLabelValues("query").Add(1)
 	protoRecordDuration.WithLabelValues("query").Observe(time.Since(start).Seconds())
@@ -112,7 +112,7 @@ func (s *store) DistributionsByLayer(ctx context.Context, hash claircore.Digest,
 		)
 		dist.ID = strconv.FormatInt(id, 10)
 		if err != nil {
-			return nil, fmt.Errorf("store:distributionsByLayer failed to scan distribution: %v", err)
+			return nil, fmt.Errorf("failed to scan distribution: %w", err)
 		}
 
 		res = append(res, &dist)

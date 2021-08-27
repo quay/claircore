@@ -90,5 +90,4 @@ SELECT
 	layerScannedDuration.WithLabelValues("selectScanned").Observe(time.Since(start).Seconds())
 
 	return ok, nil
-
 }

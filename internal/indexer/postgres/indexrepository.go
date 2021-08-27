@@ -74,20 +74,17 @@ func (s *store) IndexRepositories(ctx context.Context, repos []*claircore.Reposi
 	// obtain a transaction scoped batch
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
-		return fmt.Errorf("store:indexRepositories failed to create transaction: %v", err)
+		return fmt.Errorf("store:indexRepositories failed to create transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
 	insertRepoStmt, err := tx.Prepare(ctx, "insertRepoStmt", insert)
 	if err != nil {
-		return fmt.Errorf("failed to create insert repo statement: %v", err)
+		return fmt.Errorf("failed to create insert repo statement: %w", err)
 	}
 	insertRepoScanArtifactWithStmt, err := tx.Prepare(ctx, "insertRepoScanArtifactWith", insertWith)
 	if err != nil {
-		return fmt.Errorf("failed to create insert repo scanartifact statement: %v", err)
-	}
-	if err != nil {
-		return fmt.Errorf("failed to create statement: %v", err)
+		return fmt.Errorf("failed to create insert repo scanartifact statement: %w", err)
 	}
 
 	start := time.Now()
@@ -102,12 +99,12 @@ func (s *store) IndexRepositories(ctx context.Context, repos []*claircore.Reposi
 			repo.CPE,
 		)
 		if err != nil {
-			return fmt.Errorf("batch insert failed for repo %v: %v", repo, err)
+			return fmt.Errorf("batch insert failed for repo %v: %w", repo, err)
 		}
 	}
 	err = mBatcher.Done(ctx)
 	if err != nil {
-		return fmt.Errorf("final batch insert failed for repo: %v", err)
+		return fmt.Errorf("final batch insert failed for repo: %w", err)
 	}
 	indexRepositoriesCounter.WithLabelValues("insert_batch").Add(1)
 	indexRepositoriesDuration.WithLabelValues("insert_batch").Observe(time.Since(start).Seconds())
@@ -129,18 +126,18 @@ func (s *store) IndexRepositories(ctx context.Context, repos []*claircore.Reposi
 			l.Hash,
 		)
 		if err != nil {
-			return fmt.Errorf("batch insert failed for repo_scanartifact %v: %v", repo, err)
+			return fmt.Errorf("batch insert failed for repo_scanartifact %v: %w", repo, err)
 		}
 	}
 	err = mBatcher.Done(ctx)
 	if err != nil {
-		return fmt.Errorf("final batch insert failed for repo_scanartifact: %v", err)
+		return fmt.Errorf("final batch insert failed for repo_scanartifact: %w", err)
 	}
 	indexRepositoriesCounter.WithLabelValues("insertWith_batch").Add(1)
 	indexRepositoriesDuration.WithLabelValues("insertWith_batch").Observe(time.Since(start).Seconds())
 
 	if err := tx.Commit(ctx); err != nil {
-		return fmt.Errorf("store:indexRepositories failed to commit tx: %v", err)
+		return fmt.Errorf("store:indexRepositories failed to commit tx: %w", err)
 	}
 	return nil
 }

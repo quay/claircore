@@ -7,6 +7,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/quay/claircore"
 )
 
@@ -66,14 +67,14 @@ func (s *store) PersistManifest(ctx context.Context, manifest claircore.Manifest
 
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
-		return fmt.Errorf("postgres:persistManifest: failed to create transaction: %v", err)
+		return fmt.Errorf("failed to create transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
 	start := time.Now()
 	_, err = tx.Exec(ctx, insertManifest, manifest.Hash)
 	if err != nil {
-		return fmt.Errorf("postgres:persistManifest: failed to insert manifest: %v", err)
+		return fmt.Errorf("failed to insert manifest: %w", err)
 	}
 	persistManifestCounter.WithLabelValues("insertManifest").Add(1)
 	persistManifestDuration.WithLabelValues("insertManifest").Observe(time.Since(start).Seconds())
@@ -83,7 +84,7 @@ func (s *store) PersistManifest(ctx context.Context, manifest claircore.Manifest
 		start := time.Now()
 		_, err = tx.Exec(ctx, insertLayer, layer.Hash)
 		if err != nil {
-			return fmt.Errorf("postgres:persistManifest: failed to insert layer: %v", err)
+			return fmt.Errorf("failed to insert layer: %w", err)
 		}
 		persistManifestCounter.WithLabelValues("insertLayer").Add(1)
 		persistManifestDuration.WithLabelValues("insertLayer").Observe(time.Since(start).Seconds())
@@ -91,7 +92,7 @@ func (s *store) PersistManifest(ctx context.Context, manifest claircore.Manifest
 		start = time.Now()
 		_, err = tx.Exec(ctx, insertManifestLayer, manifest.Hash, layer.Hash, i)
 		if err != nil {
-			return fmt.Errorf("postgres:persistManifest: failed to insert manifest -> layer link: %v", err)
+			return fmt.Errorf("failed to insert manifest -> layer link: %w", err)
 		}
 		persistManifestCounter.WithLabelValues("insertManifestLayer").Add(1)
 		persistManifestDuration.WithLabelValues("insertManifestLayer").Observe(time.Since(start).Seconds())
@@ -99,7 +100,7 @@ func (s *store) PersistManifest(ctx context.Context, manifest claircore.Manifest
 
 	err = tx.Commit(ctx)
 	if err != nil {
-		return fmt.Errorf("postgres:persisteManifest: failed to commit tx: %v", err)
+		return fmt.Errorf("failed to commit tx: %w", err)
 	}
 	return nil
 }

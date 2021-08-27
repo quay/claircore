@@ -69,13 +69,13 @@ func (s *store) IndexManifest(ctx context.Context, ir *claircore.IndexReport) er
 	// obtain a transaction scoped batch
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
-		return fmt.Errorf("postgres: indexManifest failed to create transaction: %v", err)
+		return fmt.Errorf("postgres: indexManifest failed to create transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
 	queryStmt, err := tx.Prepare(ctx, "queryStmt", query)
 	if err != nil {
-		return fmt.Errorf("failed to create statement: %v", err)
+		return fmt.Errorf("failed to create statement: %w", err)
 	}
 
 	start := time.Now()
@@ -102,7 +102,7 @@ func (s *store) IndexManifest(ctx context.Context, ir *claircore.IndexReport) er
 				hash,
 			)
 			if err != nil {
-				return fmt.Errorf("batch insert failed for source package record %v: %v", record, err)
+				return fmt.Errorf("batch insert failed for source package record %v: %w", record, err)
 			}
 		}
 
@@ -115,19 +115,19 @@ func (s *store) IndexManifest(ctx context.Context, ir *claircore.IndexReport) er
 			hash,
 		)
 		if err != nil {
-			return fmt.Errorf("batch insert failed for package record %v: %v", record, err)
+			return fmt.Errorf("batch insert failed for package record %v: %w", record, err)
 		}
 
 	}
 	err = mBatcher.Done(ctx)
 	if err != nil {
-		return fmt.Errorf("final batch insert failed: %v", err)
+		return fmt.Errorf("final batch insert failed: %w", err)
 	}
 	indexManifesCounter.WithLabelValues("query_batch").Add(1)
 	indexManifestDuration.WithLabelValues("query_batch").Observe(time.Since(start).Seconds())
 
 	if err := tx.Commit(ctx); err != nil {
-		return fmt.Errorf("failed to commit tx: %v", err)
+		return fmt.Errorf("failed to commit tx: %w", err)
 	}
 	return nil
 }
