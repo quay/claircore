@@ -13,6 +13,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/updates"
+	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 )
@@ -98,10 +99,11 @@ func TestGC(t *testing.T) {
 			ctx := zlog.Test(context.Background(), t)
 			pool := TestDB(ctx, t)
 			store := NewVulnStore(pool)
-			locks, err := updates.PoolLockSource(pool, 0)
+			locks, err := ctxlock.New(ctx, pool)
 			if err != nil {
-				t.Fatal(err)
+				t.Error(err)
 			}
+			defer locks.Close(ctx)
 			mgr, err := updates.NewManager(
 				ctx,
 				NewVulnStore(pool),
@@ -153,7 +155,6 @@ func TestGC(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func randString(t *testing.T) string {
