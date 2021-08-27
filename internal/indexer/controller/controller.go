@@ -2,7 +2,6 @@ package controller
 
 import (
 	"context"
-	"sync"
 	"errors"
 	"math/rand"
 	"time"
@@ -15,20 +14,12 @@ import (
 	"github.com/quay/claircore/internal/indexer"
 )
 
-// StartState is a global variable which is normally set to the starting state
-// of the controller. this global maybe overwritten to aide in testing. for example
-// confirming that the controller does the correct thing in terminal states.
-// see controller_test.go
-var startState State = CheckManifest
-
 // Controller is a control structure for scanning a manifest.
 //
 // Controller is implemented as an FSM.
 type Controller struct {
 	// holds dependencies for a indexer.controller
 	*indexer.Opts
-	// lock protecting State variable
-	sm *sync.RWMutex
 	// the manifest this controller is working on. populated on Scan() call
 	manifest *claircore.Manifest
 	// the result of this scan. each stateFunc manipulates this field.
@@ -50,10 +41,8 @@ func New(opts *indexer.Opts) *Controller {
 	}
 
 	s := &Controller{
-		Opts: opts,
-		sm:   &sync.RWMutex{},
-		// this is a global var which maybe overwritten by tests
-		currentState: startState,
+		Opts:         opts,
+		currentState: CheckManifest,
 		report:       scanRes,
 		manifest:     &claircore.Manifest{},
 	}
@@ -157,14 +146,6 @@ func (s *Controller) run(ctx context.Context) (err error) {
 func (s *Controller) setState(state State) {
 	s.currentState = state
 	s.report.State = state.String()
-}
-
-// getState is a concurrency safe method for obtaining the current state of the controller
-func (s *Controller) getState() State {
-	s.sm.RLock()
-	ss := s.currentState
-	s.sm.RUnlock()
-	return ss
 }
 
 // Jitter produces a duration of at least 1 second and no more than 5 seconds.

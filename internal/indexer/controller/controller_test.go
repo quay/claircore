@@ -13,18 +13,18 @@ import (
 	"github.com/quay/claircore/internal/indexer"
 )
 
-// TestControllerIndexError confirms the state machines does the correct
-// thing when a stateFunc returns an error.
+// TestControllerIndexError confirms the state machines does the correct thing
+// when a stateFunc returns an error.
 //
-// the controller is hardcoded to start in checkManifest state. We will have the mock
-// fail the call to s.Store.ManifestScanned forcing checkManifest to return an error
-// and evaluate our scanner's state afterwards.
+// The controller starts in checkManifest state. We will have the mock fail the
+// call to s.Store.ManifestScanned forcing checkManifest to return an error and
+// evaluate our scanner's state afterwards.
 func TestControllerIndexerError(t *testing.T) {
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
-	var tt = []struct {
-		name string
+	tt := []struct {
 		mock func(t *testing.T) (indexer.Store, indexer.Fetcher)
+		name string
 	}{
 		{
 			name: "CheckManifest",
@@ -73,20 +73,16 @@ func TestControllerIndexerError(t *testing.T) {
 	}
 }
 
-// TestControllerIndexFinished tests that out state machine does the correct thing
-// when it reaches ScanFinished terminal state.
-//
-// we use the global variable startState to force the state machine into running the scanFinished
-// state. we then confirm the IndexReport success bool is set, the appropriate store methods are called,
-// and the scanner is in the correct state
+// TestControllerIndexFinished tests that out state machine does the correct
+// thing when it reaches ScanFinished terminal state.
 func TestControllerIndexFinished(t *testing.T) {
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
-	var tt = []struct {
+	tt := []struct {
+		mock                  func(t *testing.T) (indexer.Store, indexer.Fetcher)
 		name                  string
 		expectedState         State
 		expectedResultSuccess bool
-		mock                  func(t *testing.T) (indexer.Store, indexer.Fetcher)
 	}{
 		{
 			name:                  "Success",
@@ -112,19 +108,18 @@ func TestControllerIndexFinished(t *testing.T) {
 		t.Run(table.name, func(t *testing.T) {
 			ctx := zlog.Test(ctx, t)
 			store, fetcher := table.mock(t)
-			// set global startState for purpose of this test
-			startState = IndexFinished
 			c := New(&indexer.Opts{
 				Store:   store,
 				Fetcher: fetcher,
 			})
+			c.setState(IndexFinished)
 
 			c.Index(ctx, &claircore.Manifest{})
-			if !cmp.Equal(table.expectedResultSuccess, c.report.Success) {
-				t.Fatal(cmp.Diff(table.expectedResultSuccess, c.report.Success))
+			if got, want := c.report.Success, table.expectedResultSuccess; !cmp.Equal(got, want) {
+				t.Fatal(cmp.Diff(got, want))
 			}
-			if !cmp.Equal(table.expectedState, c.currentState) {
-				t.Fatal(cmp.Diff(table.expectedResultSuccess, c.report.Success))
+			if got, want := c.currentState, table.expectedState; !cmp.Equal(got, want) {
+				t.Fatal(cmp.Diff(got, want))
 			}
 		})
 	}
