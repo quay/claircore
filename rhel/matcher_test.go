@@ -16,6 +16,7 @@ import (
 	vulnstore "github.com/quay/claircore/internal/vulnstore/postgres"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/updates"
+	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 )
@@ -37,10 +38,11 @@ func TestMatcherIntegration(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	locks, err := updates.PoolLockSource(pool, 0)
+	locks, err := ctxlock.New(ctx, pool)
 	if err != nil {
 		t.Error(err)
 	}
+	defer locks.Close(ctx)
 
 	facs := make(map[string]driver.UpdaterSetFactory, len(fs))
 	for _, f := range fs {
@@ -121,7 +123,7 @@ func TestVulnerable(t *testing.T) {
 		FixedInVersion: "",
 	}
 
-	var testCases = []vulnerableTestCase{
+	testCases := []vulnerableTestCase{
 		{ir: record, v: fixedVulnPast, want: false, name: "vuln fixed in past version"},
 		{ir: record, v: fixedVulnCurrent, want: false, name: "vuln fixed in current version"},
 		{ir: record, v: fixedVulnFuture, want: true, name: "outdated package"},
