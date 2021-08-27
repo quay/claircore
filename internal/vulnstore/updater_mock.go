@@ -72,33 +72,33 @@ func (mr *MockUpdaterMockRecorder) GC(arg0, arg1 interface{}) *gomock.Call {
 }
 
 // GetLatestUpdateRef mocks base method
-func (m *MockUpdater) GetLatestUpdateRef(arg0 context.Context) (uuid.UUID, error) {
+func (m *MockUpdater) GetLatestUpdateRef(arg0 context.Context, arg1 driver.UpdateKind) (uuid.UUID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLatestUpdateRef", arg0)
+	ret := m.ctrl.Call(m, "GetLatestUpdateRef", arg0, arg1)
 	ret0, _ := ret[0].(uuid.UUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetLatestUpdateRef indicates an expected call of GetLatestUpdateRef
-func (mr *MockUpdaterMockRecorder) GetLatestUpdateRef(arg0 interface{}) *gomock.Call {
+func (mr *MockUpdaterMockRecorder) GetLatestUpdateRef(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestUpdateRef", reflect.TypeOf((*MockUpdater)(nil).GetLatestUpdateRef), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestUpdateRef", reflect.TypeOf((*MockUpdater)(nil).GetLatestUpdateRef), arg0, arg1)
 }
 
 // GetLatestUpdateRefs mocks base method
-func (m *MockUpdater) GetLatestUpdateRefs(arg0 context.Context) (map[string][]driver.UpdateOperation, error) {
+func (m *MockUpdater) GetLatestUpdateRefs(arg0 context.Context, arg1 driver.UpdateKind) (map[string][]driver.UpdateOperation, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLatestUpdateRefs", arg0)
+	ret := m.ctrl.Call(m, "GetLatestUpdateRefs", arg0, arg1)
 	ret0, _ := ret[0].(map[string][]driver.UpdateOperation)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetLatestUpdateRefs indicates an expected call of GetLatestUpdateRefs
-func (mr *MockUpdaterMockRecorder) GetLatestUpdateRefs(arg0 interface{}) *gomock.Call {
+func (mr *MockUpdaterMockRecorder) GetLatestUpdateRefs(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestUpdateRefs", reflect.TypeOf((*MockUpdater)(nil).GetLatestUpdateRefs), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestUpdateRefs", reflect.TypeOf((*MockUpdater)(nil).GetLatestUpdateRefs), arg0, arg1)
 }
 
 // GetUpdateDiff mocks base method
@@ -117,10 +117,10 @@ func (mr *MockUpdaterMockRecorder) GetUpdateDiff(arg0, arg1, arg2 interface{}) *
 }
 
 // GetUpdateOperations mocks base method
-func (m *MockUpdater) GetUpdateOperations(arg0 context.Context, arg1 ...string) (map[string][]driver.UpdateOperation, error) {
+func (m *MockUpdater) GetUpdateOperations(arg0 context.Context, arg1 driver.UpdateKind, arg2 ...string) (map[string][]driver.UpdateOperation, error) {
 	m.ctrl.T.Helper()
-	varargs := []interface{}{arg0}
-	for _, a := range arg1 {
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
 		varargs = append(varargs, a)
 	}
 	ret := m.ctrl.Call(m, "GetUpdateOperations", varargs...)
@@ -130,9 +130,9 @@ func (m *MockUpdater) GetUpdateOperations(arg0 context.Context, arg1 ...string) 
 }
 
 // GetUpdateOperations indicates an expected call of GetUpdateOperations
-func (mr *MockUpdaterMockRecorder) GetUpdateOperations(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
+func (mr *MockUpdaterMockRecorder) GetUpdateOperations(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	varargs := append([]interface{}{arg0}, arg1...)
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUpdateOperations", reflect.TypeOf((*MockUpdater)(nil).GetUpdateOperations), varargs...)
 }
 
@@ -149,6 +149,21 @@ func (m *MockUpdater) Initialized(arg0 context.Context) (bool, error) {
 func (mr *MockUpdaterMockRecorder) Initialized(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Initialized", reflect.TypeOf((*MockUpdater)(nil).Initialized), arg0)
+}
+
+// UpdateEnrichments mocks base method
+func (m *MockUpdater) UpdateEnrichments(arg0 context.Context, arg1 string, arg2 driver.Fingerprint, arg3 []driver.EnrichmentRecord) (uuid.UUID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateEnrichments", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(uuid.UUID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateEnrichments indicates an expected call of UpdateEnrichments
+func (mr *MockUpdaterMockRecorder) UpdateEnrichments(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEnrichments", reflect.TypeOf((*MockUpdater)(nil).UpdateEnrichments), arg0, arg1, arg2, arg3)
 }
 
 // UpdateVulnerabilities mocks base method
