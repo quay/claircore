@@ -27,7 +27,7 @@ import (
 const (
 	name    = "dpkg"
 	kind    = "package"
-	version = "v0.0.2"
+	version = "v0.0.3"
 )
 
 var (
@@ -98,9 +98,13 @@ Find:
 			return nil, fmt.Errorf("reading next header failed: %w", err)
 		}
 		switch filepath.Base(h.Name) {
-		case "status", "available":
+		case "status":
 			if h.Typeflag == tar.TypeReg {
 				loc[filepath.Dir(h.Name)]++
+			}
+		case "info":
+			if h.Typeflag == tar.TypeDir {
+				loc[filepath.Dir(filepath.Dir(h.Name))]++
 			}
 		}
 	}
