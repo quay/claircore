@@ -17,6 +17,6 @@ dynamically.
 - https://packages.vmware.com/photon/photon_oval_definitions/
 - https://github.com/pyupio/safety-db/archive/
 - https://catalog.redhat.com/api/containers/
-- https://www.redhat.com/security/data/
+- https://access.redhat.com/security/data/
 - https://support.novell.com/security/oval/
 - https://people.canonical.com/~ubuntu-security/oval/

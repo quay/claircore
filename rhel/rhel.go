@@ -10,7 +10,7 @@ import (
 )
 
 // We currently grab the oval databases db distro-wise.
-const dbURL = `https://www.redhat.com/security/data/oval/com.redhat.rhsa-RHEL%d.xml`
+const dbURL = `https://access.redhat.com/security/data/oval/com.redhat.rhsa-RHEL%d.xml`
 
 var (
 	_ driver.Updater      = (*Updater)(nil)
