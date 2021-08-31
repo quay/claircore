@@ -69,7 +69,7 @@ func (*RepositoryScanner) Kind() string { return "repository" }
 const DefaultContainerAPI = "https://catalog.redhat.com/api/containers/"
 
 // DefaultRepo2CPEMappingURL is default URL with a mapping file provided by Red Hat
-const DefaultRepo2CPEMappingURL = "https://www.redhat.com/security/data/metrics/repository-to-cpe.json"
+const DefaultRepo2CPEMappingURL = "https://access.redhat.com/security/data/metrics/repository-to-cpe.json"
 
 // NewRepositoryScanner create new Repo scanner struct and initialize mapping updater
 func NewRepositoryScanner(ctx context.Context, c *http.Client, cs2cpeURL string) *RepositoryScanner {
