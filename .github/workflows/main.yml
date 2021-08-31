@@ -23,7 +23,7 @@ jobs:
   tidy:
     name: Tidy
     runs-on: ubuntu-latest
-    container: quay.io/projectquay/golang:1.15
+    container: quay.io/projectquay/golang:1.16
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -65,7 +65,7 @@ jobs:
           --health-retries 5
     strategy:
       matrix:
-        go: ['1.15', '1.16']
+        go: ['1.16', '1.17']
     steps:
       - name: Checkout
         uses: actions/checkout@v2
