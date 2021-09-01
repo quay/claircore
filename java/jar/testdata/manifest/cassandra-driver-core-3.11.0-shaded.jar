@@ -1,0 +1,40 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1615471569340
+Build-Jdk: 1.8.0_252
+Built-By: alexandredutra
+Bundle-Description: A driver for Apache Cassandra 1.2+ that works exclus
+ ively with the Cassandra Query Language version 3        (CQL3) and Cas
+ sandra's binary protocol.
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.txt
+Bundle-ManifestVersion: 2
+Bundle-Name: DataStax Java Driver for Apache Cassandra - Core
+Bundle-SymbolicName: com.datastax.driver.core
+Bundle-Version: 3.11.0
+Created-By: Apache Maven Bundle Plugin
+Export-Package: com.datastax.driver.core;version="3.11.0";uses:="com.cod
+ ahale.metrics,com.datastax.driver.core.exceptions,com.datastax.driver.c
+ ore.policies,com.datastax.driver.core.querybuilder,com.google.common.ba
+ se,com.google.common.net,com.google.common.reflect,com.google.common.ut
+ il.concurrent,javax.net.ssl,org.slf4j",com.datastax.driver.core.querybu
+ ilder;version="3.11.0";uses:="com.datastax.driver.core,com.datastax.dri
+ ver.core.policies",com.datastax.driver.core.utils;version="3.11.0";uses
+ :="com.google.common.util.concurrent",com.datastax.driver.core.exceptio
+ ns;version="3.11.0";uses:="com.datastax.driver.core,com.google.common.r
+ eflect",com.datastax.driver.core.policies;version="3.11.0";uses:="com.d
+ atastax.driver.core,com.datastax.driver.core.exceptions,com.google.comm
+ on.base",com.datastax.driver.core.schemabuilder;version="3.11.0";uses:=
+ "com.datastax.driver.core,com.google.common.base"
+Import-Package: com.google.common.base;version="16.0.1",com.google.commo
+ n.cache;version="16.0.1",com.google.common.collect;version="16.0.1",com
+ .google.common.io;version="16.0.1",com.google.common.net;version="16.0.
+ 1",com.google.common.primitives;version="16.0.1",com.google.common.refl
+ ect;version="16.0.1",com.google.common.util.concurrent;version="16.0.1"
+ ,com.codahale.metrics;version="[3.2,4)",com.fasterxml.jackson.core;vers
+ ion="[2.8,3)",com.fasterxml.jackson.databind;version="[2.7,3)",javax.na
+ ming,javax.naming.directory,javax.net.ssl,net.jpountz.lz4;resolution:=o
+ ptional,org.HdrHistogram;version="[2.1,3)";resolution:=optional,org.slf
+ 4j;version="[1.7,2)",org.xerial.snappy;version="[1.1,2)";resolution:=op
+ tional,javax.security.cert
+Originally-Created-By: Apache Maven Bundle Plugin
+Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.6))"
+Tool: Bnd-2.4.1.201501161923

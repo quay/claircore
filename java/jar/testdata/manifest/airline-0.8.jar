@@ -1,0 +1,13 @@
+Manifest-Version: 1.0
+Implementation-Title: airline
+Implementation-Version: 0.8
+Archiver-Version: Plexus Archiver
+Built-By: dphillips
+Specification-Title: airline
+Implementation-Vendor-Id: io.airlift
+Build-Time: 2017-08-28T11:30:03-0700
+Git-Commit-Id: 072f9ae31cbcc222bda36c03a479b6d9f3189e83
+Created-By: Apache Maven 3.5.0
+Build-Jdk: 1.8.0_144
+Specification-Version: 0.8
+

@@ -1,0 +1,17 @@
+Manifest-Version: 1.0
+Ant-Version: Apache Ant 1.5.3 
+Created-By: Apache Maven
+Built-By: hen
+Package: org.apache.commons
+Build-Jdk: 1.4.2_12
+Extension-Name: commons-cli
+Specification-Title: Jakarta Commons CLI
+Specification-Vendor: Apache Software Foundation
+Implementation-Title: Jakarta Commons CLI
+Implementation-Vendor: Apache Software Foundation
+Implementation-Version: 1.1
+Implementation-Vendor-Id: org.apache
+X-Compile-Source-JDK: 1.3
+X-Compile-Target-JDK: 1.3
+Specification-Version: 1.1
+

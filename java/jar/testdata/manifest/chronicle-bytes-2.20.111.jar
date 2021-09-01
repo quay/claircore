@@ -1,0 +1,47 @@
+Manifest-Version: 1.0
+Automatic-Module-Name: chronicle.bytes
+Bnd-LastModified: 1608225734083
+Build-Jdk: 1.8.0_252
+Built-By: teamcity
+Bundle-Description: Chronicle-Bytes
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0
+Bundle-ManifestVersion: 2
+Bundle-Name: OpenHFT :: chronicle-bytes
+Bundle-SymbolicName: net.openhft.chronicle-bytes
+Bundle-Version: 2.20.111
+Class-Path: chronicle-core-2.20.125.jar chronicle-analytics-2.20.5.jar
+  slf4j-api-1.7.30.jar annotations-19.0.0.jar
+Created-By: Apache Maven Bundle Plugin
+Export-Package: net.openhft.chronicle.bytes;version="2.20.111";uses:="
+ javax.crypto,net.openhft.chronicle.core,net.openhft.chronicle.core.an
+ notation,net.openhft.chronicle.core.io,net.openhft.chronicle.core.tim
+ e,net.openhft.chronicle.core.util,org.slf4j",net.openhft.chronicle.by
+ tes.algo;version="2.20.111";uses:="net.openhft.chronicle.bytes,net.op
+ enhft.chronicle.core",net.openhft.chronicle.bytes.pool;version="2.20.
+ 111";uses:="net.openhft.chronicle.bytes",net.openhft.chronicle.bytes.
+ ref;version="2.20.111";uses:="net.openhft.chronicle.bytes,net.openhft
+ .chronicle.core.io,net.openhft.chronicle.core.values",net.openhft.chr
+ onicle.bytes.util;version="2.20.111";uses:="net.openhft.chronicle.byt
+ es,net.openhft.chronicle.core.annotation,net.openhft.chronicle.core.i
+ o,net.openhft.chronicle.core.pool,net.openhft.chronicle.core.util"
+Implementation-Title: OpenHFT/Chronicle-Bytes
+Implementation-URL: https://chronicle.software/java-parent-pom/chronic
+ le-bytes
+Implementation-Vendor-Id: net.openhft
+Implementation-Version: 2.20.111
+Import-Package: javax.crypto,net.openhft.chronicle.core;version="[2.20
+ ,3)",net.openhft.chronicle.core.annotation;version="[2.20,3)",net.ope
+ nhft.chronicle.core.cleaner;version="[2.20,3)",net.openhft.chronicle.
+ core.cleaner.spi;version="[2.20,3)",net.openhft.chronicle.core.io;ver
+ sion="[2.20,3)",net.openhft.chronicle.core.onoes;version="[2.20,3)",n
+ et.openhft.chronicle.core.pool;version="[2.20,3)",net.openhft.chronic
+ le.core.time;version="[2.20,3)",net.openhft.chronicle.core.util;versi
+ on="[2.20,3)",net.openhft.chronicle.core.values;version="[2.20,3)",or
+ g.slf4j;version="[1.7,2)",software.chronicle.enterprise.queue,softwar
+ e.chronicle.enterprise.ring,sun.misc,org.xerial.snappy;resolution:=op
+ tional
+Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))"
+Specification-Title: OpenHFT/Chronicle-Bytes
+Specification-Version: 2.20.111
+Tool: Bnd-4.2.0.201903051501
+

@@ -1,0 +1,20 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1596712850073
+Build-Jdk: 1.8.0_265
+Built-By: yak
+Bundle-Description: Java Concurrency Tools Core Library
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.txt
+Bundle-ManifestVersion: 2
+Bundle-Name: Java Concurrency Tools Core Library
+Bundle-SymbolicName: org.jctools.core
+Bundle-Version: 3.1.0
+Created-By: Apache Maven Bundle Plugin
+Export-Package: org.jctools.maps;version="3.0.1",org.jctools.util;vers
+ ion="3.0.1";uses:="sun.misc",org.jctools.queues;version="3.0.1";uses:
+ ="org.jctools.queues.spec",org.jctools.queues.spec;version="3.0.1",or
+ g.jctools.queues.atomic;version="3.0.1";uses:="org.jctools.queues,org
+ .jctools.queues.spec"
+Import-Package: sun.misc;resolution:=optional
+Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.6))"
+Tool: Bnd-4.2.0.201903051501
+

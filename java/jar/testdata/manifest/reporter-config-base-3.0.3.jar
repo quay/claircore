@@ -1,0 +1,13 @@
+Manifest-Version: 1.0
+Implementation-Title: metrics reporter config base
+Implementation-Version: 3.0.3
+Archiver-Version: Plexus Archiver
+Built-By: jenkins
+Specification-Vendor: AddThis
+Specification-Title: metrics reporter config base
+Implementation-Vendor-Id: com.addthis.metrics
+Created-By: Apache Maven 3.0.5
+Build-Jdk: 1.8.0_45
+Specification-Version: 3.0.3
+Implementation-Vendor: AddThis
+

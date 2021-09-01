@@ -1,0 +1,4 @@
+#Created by Apache Maven 3.5.2
+groupId=com.carrotsearch
+artifactId=hppc
+version=0.8.1

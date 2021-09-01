@@ -1,0 +1,34 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1608163060066
+Build-Jdk: 1.8.0_252
+Built-By: teamcity
+Bundle-Description: Chronicle-Wire
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0
+Bundle-ManifestVersion: 2
+Bundle-Name: OpenHFT :: chronicle-wire
+Bundle-SymbolicName: net.openhft.chronicle-wire
+Bundle-Version: 2.20.117
+Created-By: Apache Maven Bundle Plugin
+Export-Package: net.openhft.chronicle.wire;version="2.20.117";uses:="n
+ et.openhft.chronicle.bytes,net.openhft.chronicle.bytes.ref,net.openhf
+ t.chronicle.core,net.openhft.chronicle.core.annotation,net.openhft.ch
+ ronicle.core.io,net.openhft.chronicle.core.pool,net.openhft.chronicle
+ .core.time,net.openhft.chronicle.core.util,net.openhft.chronicle.core
+ .values,net.openhft.chronicle.threads,net.openhft.chronicle.wire.util
+ s,net.openhft.compiler",net.openhft.chronicle.wire.utils;version="2.2
+ 0.117"
+Import-Package: net.openhft.chronicle.bytes;version="[2.20,3)",net.ope
+ nhft.chronicle.bytes.ref;version="[2.20,3)",net.openhft.chronicle.byt
+ es.util;version="[2.20,3)",net.openhft.chronicle.core;version="[2.20,
+ 3)",net.openhft.chronicle.core.annotation;version="[2.20,3)",net.open
+ hft.chronicle.core.io;version="[2.20,3)",net.openhft.chronicle.core.o
+ noes;version="[2.20,3)",net.openhft.chronicle.core.pool;version="[2.2
+ 0,3)",net.openhft.chronicle.core.threads;version="[2.20,3)",net.openh
+ ft.chronicle.core.time;version="[2.20,3)",net.openhft.chronicle.core.
+ util;version="[2.20,3)",net.openhft.chronicle.core.values;version="[2
+ .20,3)",net.openhft.chronicle.threads;version="[2.20,3)",net.openhft.
+ compiler;version="[2.4,3)",org.slf4j;version="[1.7,2)",software.chron
+ icle.wire,org.xerial.snappy;resolution:=optional
+Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))"
+Tool: Bnd-4.2.0.201903051501
+
