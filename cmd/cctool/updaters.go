@@ -21,11 +21,10 @@ import (
 func RunUpdaters(cmd context.Context, cfg *commonConfig, args []string) error {
 	ctx, cancel := context.WithCancel(cmd)
 	defer cancel()
-	var (
-		// Strict controls whether the command should exit non-zero if any
-		// updater fails.
-		strict bool
-	)
+
+	// Strict controls whether the command should exit non-zero if any
+	// updater fails.
+	var strict bool
 	fs := flag.NewFlagSet("cctool run-updaters", flag.ExitOnError)
 	fs.BoolVar(&strict, "strict", false, "exit non-zero is any updater fails")
 	fs.Usage = func() {
@@ -66,7 +65,7 @@ func RunUpdaters(cmd context.Context, cfg *commonConfig, args []string) error {
 			zlog.Warn(ctx).Err(err).Send()
 		}
 	}()
-	mgr, err := updates.NewManager(ctx, store, updates.LocalLockSource(), http.DefaultClient)
+	mgr, err := updates.NewManager(ctx, store, updates.NewLocalLockSource(), http.DefaultClient)
 	if err != nil {
 		return err
 	}
@@ -82,9 +81,7 @@ func RunUpdaters(cmd context.Context, cfg *commonConfig, args []string) error {
 func LoadUpdates(cmd context.Context, cfg *commonConfig, args []string) error {
 	ctx, cancel := context.WithCancel(cmd)
 	defer cancel()
-	var (
-		cfgFile string
-	)
+	var cfgFile string
 	fs := flag.NewFlagSet("cctool load-updates", flag.ExitOnError)
 	fs.StringVar(&cfgFile, "config", "", "file to read database configuration from ")
 	fs.Usage = func() {
