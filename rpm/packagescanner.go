@@ -170,7 +170,7 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 			continue
 		}
 		// Build the path on the filesystem.
-		tgt := filepath.Join(root, filepath.Clean(h.Name))
+		tgt := relPath(root, h.Name)
 		// Since tar, as a format, doesn't impose ordering requirements, make
 		// sure to create all parent directories of the current entry.
 		d := filepath.Dir(tgt)
@@ -212,12 +212,12 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 			stats.Reg++
 		case tar.TypeSymlink:
 			// Normalize the link target into the root.
-			ln := filepath.Join(root, filepath.Clean(h.Linkname))
+			ln := relPath(root, h.Linkname)
 			err = os.Symlink(ln, tgt)
 			stats.Symlink++
 		case tar.TypeLink:
 			// Normalize the link target into the root.
-			ln := filepath.Join(root, filepath.Clean(h.Linkname))
+			ln := relPath(root, h.Linkname)
 			_, exists := os.Lstat(ln)
 			switch {
 			case errors.Is(exists, nil):
@@ -468,4 +468,12 @@ func checkMagic(ctx context.Context, r io.Reader) bool {
 	}
 
 	return false
+}
+
+// RelPath takes a member and forcibly interprets it as a path underneath root.
+//
+// This should be used anytime a path for a new file on disk is needed when
+// unpacking a tar.
+func relPath(root, member string) string {
+	return filepath.Join(root, filepath.Join("/", member))
 }
