@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -1634,5 +1635,41 @@ func TestScan(t *testing.T) {
 	}
 	if got, want := ms, prevs; !cmp.Equal(got, want) {
 		t.Error(cmp.Diff(got, want))
+	}
+}
+
+func TestRelPath(t *testing.T) {
+	root := `/tmp/fakedata`
+	tt := [][2]string{
+		{
+			"dev/null",
+			"/dev/null",
+		},
+		{
+			"dev/null",
+			"./dev/null",
+		},
+		{
+			"dev/null",
+			"dev/null",
+		},
+		{
+			"dev/null",
+			strings.Repeat("../", 10) + "dev/null",
+		},
+		{
+			"dev/null",
+			strings.Repeat("../", 10) + "dev/./../dev/null",
+		},
+	}
+
+	for _, tc := range tt {
+		want := filepath.Join(root, tc[0])
+		t.Logf("in: %q + %q", root, tc[1])
+		got := relPath(root, tc[1])
+		t.Logf("got: %q, want: %q", got, want)
+		if got != want {
+			t.Error()
+		}
 	}
 }
