@@ -16,6 +16,8 @@ type Release string
 
 // These are known releases.
 const (
+	V3_14 Release = "v3.14"
+	V3_13 Release = "v3.13"
 	V3_12 Release = "v3.12"
 	V3_11 Release = "v3.11"
 	V3_10 Release = "v3.10"
@@ -54,6 +56,8 @@ var (
 	alpine3_10Dist = mkdist(3, 10)
 	alpine3_11Dist = mkdist(3, 11)
 	alpine3_12Dist = mkdist(3, 12)
+	alpine3_13Dist = mkdist(3, 13)
+	alpine3_14Dist = mkdist(3, 14)
 )
 
 func releaseToDist(r Release) *claircore.Distribution {
@@ -78,6 +82,10 @@ func releaseToDist(r Release) *claircore.Distribution {
 		return alpine3_11Dist
 	case V3_12:
 		return alpine3_12Dist
+	case V3_13:
+		return alpine3_13Dist
+	case V3_14:
+		return alpine3_14Dist
 	default:
 		// return empty dist
 		return &claircore.Distribution{}
