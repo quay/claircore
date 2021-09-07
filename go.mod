@@ -3,7 +3,6 @@ module github.com/quay/claircore
 go 1.14
 
 require (
-	github.com/aquasecurity/go-dep-parser v0.0.0-20210329064738-2751c4603480
 	github.com/aquasecurity/go-pep440-version v0.0.0-20210121094942-22b2f8951d46
 	github.com/crgimenes/goconfig v1.2.1
 	github.com/docker-slim/docker-slim v0.0.0-20200524075151-79490f5f1cde
