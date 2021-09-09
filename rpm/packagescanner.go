@@ -26,7 +26,7 @@ import (
 const (
 	pkgName    = "rpm"
 	pkgKind    = "package"
-	pkgVersion = "3"
+	pkgVersion = "4"
 )
 
 // DbNames is a set of files that make up an rpm database.
@@ -130,6 +130,14 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 			zlog.Error(ctx).Err(err).Msg("error removing extracted files")
 		}
 	}()
+	empty := filepath.Join(os.TempDir(), "rpm.emptyfile")
+	ef, err := os.Create(empty)
+	if err != nil {
+		return nil, err
+	}
+	if err := ef.Close(); err != nil {
+		return nil, err
+	}
 
 	// Extract tarball
 	if err := ctx.Err(); err != nil {
@@ -236,10 +244,12 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	}
 	for _, l := range deferLn {
 		if err := os.Link(l[0], l[1]); err != nil {
-			zlog.Error(ctx).
+			zlog.Debug(ctx).
 				Err(err).
-				Msg("failed to finish links")
-			return nil, err
+				Msg("cross-layer (or invalid) hardlink found")
+			if err := os.Link(empty, l[1]); err != nil {
+				return nil, err
+			}
 		}
 	}
 	if ct := len(deferLn); ct != 0 {
