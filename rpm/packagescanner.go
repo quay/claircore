@@ -5,6 +5,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -97,7 +98,7 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	for h, err = tr.Next(); err == nil; h, err = tr.Next() {
 		n := filepath.Base(h.Name)
 		d := filepath.Dir(h.Name)
-		if _, ok := dbnames[n]; ok {
+		if _, ok := dbnames[n]; ok && checkMagic(ctx, tr) {
 			possible[d]++
 		}
 	}
@@ -424,4 +425,47 @@ func parsePackage(ctx context.Context, src map[string]*claircore.Package, buf *b
 			return nil, err
 		}
 	}
+}
+
+// CheckMagic looks at bit of the provided Reader to see if it looks like a
+// BerkeleyDB file.
+//
+// According to the libmagic database I looked at:
+//
+//	# Hash 1.85/1.86 databases store metadata in network byte order.
+//	# Btree 1.85/1.86 databases store the metadata in host byte order.
+//	# Hash and Btree 2.X and later databases store the metadata in host byte order.
+//
+// Since this process can't (and doesn't want to) know the endian-ness of the
+// layer's eventual host, we just look both ways for everything.
+func checkMagic(ctx context.Context, r io.Reader) bool {
+	const (
+		Hash  = 0x00061561
+		BTree = 0x00053162
+		Queue = 0x00042253
+		Log   = 0x00040988
+	)
+	// Most hosts are still x86, try LE first.
+	be := []binary.ByteOrder{binary.LittleEndian, binary.BigEndian}
+	b := make([]byte, 4)
+
+	// Look at position 0 and 12 for a magic number.
+	for _, discard := range []int64{0, 8} {
+		if _, err := io.Copy(io.Discard, io.LimitReader(r, discard)); err != nil {
+			zlog.Warn(ctx).Err(err).Msg("unexpected error checking magic")
+			return false
+		}
+		if _, err := io.ReadFull(r, b); err != nil {
+			zlog.Warn(ctx).Err(err).Msg("unexpected error checking magic")
+			return false
+		}
+		for _, o := range be {
+			n := o.Uint32(b)
+			if n == Hash || n == BTree || n == Queue || n == Log {
+				return true
+			}
+		}
+	}
+
+	return false
 }
