@@ -54,6 +54,10 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 		return true, nil
 	}
 
+	if vuln.FixedInVersion == "0" {
+		return true, nil
+	}
+
 	if v1.LessThan(v2) {
 		return true, nil
 	}
