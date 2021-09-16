@@ -1,0 +1,27 @@
+FROM sha256:b3749cc58242c3fda50fb4541cd23144d42a85054d70bfe1e79eb719d212ac6f
+
+LABEL maintainer="Red Hat, Inc."
+
+LABEL com.redhat.component="ubi8-minimal-container" \
+      name="ubi8-minimal" \
+      version="8.4"
+
+#label for EULA 
+LABEL com.redhat.license_terms="https://www.redhat.com/en/about/red-hat-end-user-license-agreements#UBI"
+
+#labels for container catalog
+LABEL summary="Provides the latest release of the minimal Red Hat Universal Base Image 8."
+LABEL description="The Universal Base Image Minimal is a stripped down image that uses microdnf as a package manager. This base image is freely redistributable, but Red Hat only supports Red Hat technologies through subscriptions for Red Hat products. This image is maintained by Red Hat and updated regularly."
+LABEL io.k8s.display-name="Red Hat Universal Base Image 8 Minimal"
+LABEL io.openshift.expose-services=""
+LABEL io.openshift.tags="minimal rhel8"
+
+ENV container oci
+ENV PATH /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+CMD ["/bin/bash"]
+
+RUN rm -rf /var/log/*
+
+ADD ubi8-minimal-container-8.4-208.json /root/buildinfo/content_manifests/ubi8-minimal-container-8.4-208.json
+LABEL "release"="208" "distribution-scope"="public" "vendor"="Red Hat, Inc." "build-date"="2021-08-03T16:57:21.054109" "architecture"="x86_64" "vcs-type"="git" "vcs-ref"="7256039d3c371a38cf13906dcf5688c19700c73b" "com.redhat.build-host"="cpt-1002.osbs.prod.upshift.rdu2.redhat.com" "io.k8s.description"="The Universal Base Image Minimal is a stripped down image that uses microdnf as a package manager. This base image is freely redistributable, but Red Hat only supports Red Hat technologies through subscriptions for Red Hat products. This image is maintained by Red Hat and updated regularly." "url"="https://access.redhat.com/containers/#/registry.access.redhat.com/ubi8-minimal/images/8.4-208"
