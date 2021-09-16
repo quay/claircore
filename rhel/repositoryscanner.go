@@ -254,14 +254,14 @@ func (r *RepositoryScanner) getCPEsUsingContainerAPI(ctx context.Context, l *cla
 	}
 
 	cpes, err := r.apiFetcher.GetCPEs(ctx, nvr, arch)
+	if err != nil {
+		return nil, err
+	}
 	zlog.Debug(ctx).
 		Str("nvr", nvr).
 		Str("arch", arch).
 		Strs("cpes", cpes).
 		Msg("Got CPEs from container API")
-	if err != nil {
-		return nil, err
-	}
 	return cpes, nil
 }
 
