@@ -188,6 +188,22 @@ func (l *Libindex) IndexReport(ctx context.Context, hash claircore.Digest) (*cla
 	return l.store.IndexReport(ctx, hash)
 }
 
+// ForgetManifest has the system forget the state of the specified manifest.
+//
+// The return values report whether an action was taken and any errors,
+// respectively. Attempting to forget an unknown manifest is not an error.
+func (l *Libindex) ForgetManifest(ctx context.Context, hash claircore.Digest) (bool, error) {
+	err := l.store.DeleteManifest(ctx, hash)
+	switch {
+	case errors.Is(err, nil):
+	case errors.Is(err, indexer.ErrNoSuchManifest):
+		return false, nil
+	default:
+		return false, err
+	}
+	return true, nil
+}
+
 // AffectedManifests retrieves a list of affected manifests when provided a list of vulnerabilities.
 func (l *Libindex) AffectedManifests(ctx context.Context, vulns []claircore.Vulnerability) (*claircore.AffectedManifests, error) {
 	sem := semaphore.NewWeighted(20)
