@@ -2,6 +2,7 @@ package indexer
 
 import (
 	"context"
+	"errors"
 
 	"github.com/quay/claircore"
 )
@@ -44,7 +45,16 @@ type Setter interface {
 	// Also a call to Querier.IndexReport with the manifest hash represted in the provided IndexReport must return the IndexReport
 	// in finished state.
 	SetIndexFinished(ctx context.Context, sr *claircore.IndexReport, scnrs VersionedScanners) error
+	// DeleteManifest ...
+	//
+	// May return ErrNoSuchManifest if the provided manifest is unknown.
+	DeleteManifest(ctx context.Context, hash claircore.Digest) error
 }
+
+// Sentinel errors
+var (
+	ErrNoSuchManifest = errors.New("no such manifest")
+)
 
 // Querier interface provides the method set to ascertain indexed artifacts and query whether a layer
 // or manifest has been scanned.
