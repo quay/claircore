@@ -5,7 +5,7 @@ go 1.14
 require (
 	github.com/aquasecurity/go-pep440-version v0.0.0-20210121094942-22b2f8951d46
 	github.com/crgimenes/goconfig v1.2.1
-	github.com/docker-slim/docker-slim v0.0.0-20200524075151-79490f5f1cde
+	github.com/docker/docker v1.4.2-0.20191101170500-ac7306503d23 // indirect
 	github.com/doug-martin/goqu/v8 v8.6.0
 	github.com/golang/mock v1.3.1
 	github.com/google/go-cmp v0.5.4
@@ -30,5 +30,6 @@ require (
 	golang.org/x/text v0.3.6
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba
 	golang.org/x/tools v0.0.0-20200811032001-fd80f4dbb3ea
+	google.golang.org/appengine v1.6.6 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
 )

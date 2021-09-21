@@ -15,7 +15,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/docker-slim/docker-slim/pkg/docker/dockerfile/ast"
 	"github.com/quay/zlog"
 	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/label"
@@ -25,6 +24,7 @@ import (
 	"github.com/quay/claircore/pkg/cpe"
 	"github.com/quay/claircore/rhel/containerapi"
 	"github.com/quay/claircore/rhel/contentmanifest"
+	"github.com/quay/claircore/rhel/dockerfile"
 	"github.com/quay/claircore/rhel/repo2cpe"
 )
 
@@ -245,7 +245,7 @@ func (r *RepositoryScanner) getCPEsUsingContainerAPI(ctx context.Context, l *cla
 		return nil, err
 	}
 
-	nvr, arch, err := extractBuildNVR(path, buf)
+	nvr, arch, err := extractBuildNVR(ctx, path, buf)
 	if err != nil {
 		return nil, err
 	}
@@ -307,75 +307,25 @@ func findDockerfile(l *claircore.Layer) (string, *bytes.Buffer, error) {
 // The redhat.com.component LABEL is extracted from dockerfile and it is used as name
 // Version and release is extracted from Dockerfile name
 // Arch is extracted from 'architecture' LABEL
-func extractBuildNVR(dockerfilePath string, buf *bytes.Buffer) (string, string, error) {
-	res, err := ast.Parse(buf)
+func extractBuildNVR(ctx context.Context, dockerfilePath string, buf *bytes.Buffer) (string, string, error) {
+	const (
+		comp = `com.redhat.component`
+		arch = `architecture`
+	)
+	ls, err := dockerfile.GetLabels(ctx, buf)
 	if err != nil {
 		return "", "", err
 	}
-
-	if !res.AST.IsValid {
-		return "", "", fmt.Errorf("rhel: invalid Dockerfile at %q", dockerfilePath)
+	n, ok := ls[comp]
+	if !ok {
+		return "", "", fmt.Errorf("dockerfile missing expected label %q", comp)
 	}
-	vm := map[string]string{}
-	for _, node := range res.AST.Children {
-		cmd := node.Value
-		if cmd != "env" && cmd != "arg" {
-			continue
-		}
-		var args []string
-		for n := node.Next; n != nil; n = n.Next {
-			args = append(args, n.Value)
-		}
-		switch cmd {
-		case "arg":
-			for _, arg := range args {
-				if strings.Contains(arg, "=") {
-					pair := strings.SplitN(arg, "=", 2)
-					vm[pair[0]] = pair[1]
-				} else {
-					vm[arg] = ""
-				}
-			}
-		case "env":
-			if len(args)%2 != 0 {
-				return "", "", errors.New("dockerfile botch")
-			}
-			for i := 0; i < len(args); i += 2 {
-				if args[i] == "" {
-					continue
-				}
-				vm[args[i]] = args[i+1]
-			}
-		}
+	a, ok := ls[arch]
+	if !ok {
+		return "", "", fmt.Errorf("dockerfile missing expected label %q", arch)
 	}
-	expand := func(v string) string {
-		return vm[v]
-	}
-
-	var name, arch string
-	for _, node := range res.AST.Children {
-		cmd := node.Value
-		if cmd != "label" {
-			continue
-		}
-		var args []string
-		for n := node.Next; n != nil; n = n.Next {
-			args = append(args, n.Value)
-		}
-		for i, v := range args {
-			switch strings.Trim(v, "\"") {
-			case "com.redhat.component":
-				name = strings.Trim(args[i+1], "\"")
-				name = os.Expand(name, expand)
-			case "architecture":
-				arch = strings.Trim(args[i+1], "\"")
-				arch = os.Expand(arch, expand)
-			}
-		}
-	}
-
-	version, release := parseVersionRelease(filepath.Base(dockerfilePath))
-	return fmt.Sprintf("%s-%s-%s", name, version, release), arch, nil
+	v, r := parseVersionRelease(filepath.Base(dockerfilePath))
+	return fmt.Sprintf("%s-%s-%s", n, v, r), a, nil
 }
 
 // parseVersionRelease - parse release and version from NVR
