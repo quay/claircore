@@ -2,8 +2,18 @@
 ## [Unreleased]
 
 
+<a name="v0.5.5"></a>
+## [v0.5.5] - 2021-09-07
+### Gc
+- [3defe60](https://github.com/quay/claircore/commit/3defe60ae6e1249fa0ec311b8ea2d89883b4fb88): add foreign key ON DELETE CASCADES to uo_enrich table ([#470](https://github.com/quay/claircore/issues/470)) ([#477](https://github.com/quay/claircore/issues/477))
+ -  [#470](https://github.com/quay/claircore/issues/470) -  [#477](https://github.com/quay/claircore/issues/477)### Rpm
+- [ed5f52a](https://github.com/quay/claircore/commit/ed5f52aec1c82746725e9cc23e98316eab8be25a): prevent directory traversal when extracting
+ -  [#478](https://github.com/quay/claircore/issues/478)- [95f60b3](https://github.com/quay/claircore/commit/95f60b3b3139d910d3aa5128674391ca941a1136): handle cross-layer hardlinks when extracting ([#475](https://github.com/quay/claircore/issues/475))
+ -  [#475](https://github.com/quay/claircore/issues/475) -  [#465](https://github.com/quay/claircore/issues/465)
 <a name="v0.5.4"></a>
 ## [v0.5.4] - 2021-08-17
+### Chore
+- [d3590dd](https://github.com/quay/claircore/commit/d3590ddaa813d24807859afc0dcb9d9c7e6a0acc): v0.5.4 changelog bump
 ### Rpm
 - [c7c28fa](https://github.com/quay/claircore/commit/c7c28fa1f5d4d24de026fb1391b1780e972b6254): normalize link target
  -  [#447](https://github.com/quay/claircore/issues/447)
@@ -495,7 +505,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.5.4...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v0.5.5...HEAD
+[v0.5.5]: https://github.com/quay/claircore/compare/v0.5.4...v0.5.5
 [v0.5.4]: https://github.com/quay/claircore/compare/v0.5.3...v0.5.4
 [v0.5.3]: https://github.com/quay/claircore/compare/v0.5.2...v0.5.3
 [v0.5.2]: https://github.com/quay/claircore/compare/v0.5.1...v0.5.2
