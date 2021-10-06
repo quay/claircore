@@ -10,6 +10,14 @@ func TestResolveVersionCodeName(t *testing.T) {
 		expect string
 	}{
 		{
+			str:    "Debian GNU/Linux 11 (bullseye)",
+			expect: "bullseye",
+		},
+		{
+			str:    "11 (bullseye)",
+			expect: "bullseye",
+		},
+		{
 			str:    "Debian GNU/Linux 10 (buster)",
 			expect: "buster",
 		},

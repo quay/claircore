@@ -5,24 +5,36 @@ import "github.com/quay/claircore"
 type Release string
 
 const (
-	Buster  Release = "buster"
-	Jessie  Release = "jessie"
-	Stretch Release = "stretch"
-	Wheezy  Release = "wheezy"
+	Bullseye Release = "bullseye"
+	Buster   Release = "buster"
+	Jessie   Release = "jessie"
+	Stretch  Release = "stretch"
+	Wheezy   Release = "wheezy"
 )
 
 var AllReleases = map[Release]struct{}{
-	Buster:  struct{}{},
-	Jessie:  struct{}{},
-	Stretch: struct{}{},
-	Wheezy:  struct{}{},
+	Bullseye: struct{}{},
+	Buster:   struct{}{},
+	Jessie:   struct{}{},
+	Stretch:  struct{}{},
+	Wheezy:   struct{}{},
 }
 
 var ReleaseToVersionID = map[Release]string{
-	Buster:  "10",
-	Jessie:  "8",
-	Stretch: "9",
-	Wheezy:  "7",
+	Bullseye: "11",
+	Buster:   "10",
+	Jessie:   "8",
+	Stretch:  "9",
+	Wheezy:   "7",
+}
+
+var bullseyeDist = &claircore.Distribution{
+	PrettyName:      "Debian GNU/Linux 11 (bullseye)",
+	Name:            "Debian GNU/Linux",
+	VersionID:       "11",
+	Version:         "11 (bullseye)",
+	VersionCodeName: "bullseye",
+	DID:             "debian",
 }
 
 var busterDist = &claircore.Distribution{
@@ -61,6 +73,8 @@ var wheezyDist = &claircore.Distribution{
 
 func releaseToDist(r Release) *claircore.Distribution {
 	switch r {
+	case Bullseye:
+		return bullseyeDist
 	case Buster:
 		return busterDist
 	case Jessie:

@@ -16,7 +16,7 @@ import (
 
 const (
 	scannerName    = "debian"
-	scannerVersion = "v0.0.1"
+	scannerVersion = "v0.0.2"
 	scannerKind    = "distribution"
 )
 
@@ -26,6 +26,10 @@ type debianRegex struct {
 }
 
 var debianRegexes = []debianRegex{
+	{
+		release: Bullseye,
+		regexp:  regexp.MustCompile(`(?is)debian gnu/linux 11`),
+	},
 	{
 		release: Buster,
 		regexp:  regexp.MustCompile(`(?is)debian gnu/linux 10`),

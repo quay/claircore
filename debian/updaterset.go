@@ -7,6 +7,7 @@ import (
 )
 
 var debianReleases = []Release{
+	Bullseye,
 	Buster,
 	Jessie,
 	Stretch,
