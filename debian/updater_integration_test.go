@@ -33,6 +33,10 @@ func TestUpdater(t *testing.T) {
 			name:    "buster",
 			release: Buster,
 		},
+		{
+			name:    "bullseye",
+			release: Bullseye,
+		},
 	}
 
 	for _, table := range tt {

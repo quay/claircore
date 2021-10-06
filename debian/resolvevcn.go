@@ -5,12 +5,14 @@ import (
 )
 
 func init() {
+	bullseyeRegex := regexp.MustCompile("bullseye")
 	busterRegex := regexp.MustCompile("buster")
 	jessieRegex := regexp.MustCompile("jessie")
 	stretchRegex := regexp.MustCompile("stretch")
 	wheezyRegex := regexp.MustCompile("wheezy")
 
 	resolvers = []vcnRegexp{
+		vcnRegexp{Bullseye, bullseyeRegex},
 		vcnRegexp{Buster, busterRegex},
 		vcnRegexp{Jessie, jessieRegex},
 		vcnRegexp{Stretch, stretchRegex},

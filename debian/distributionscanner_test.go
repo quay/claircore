@@ -7,6 +7,18 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
+var bullseyeOSRelease []byte = []byte(`PRETTY_NAME="Debian GNU/Linux 11 (bullseye)"
+NAME="Debian GNU/Linux"
+VERSION_ID="11"
+VERSION="11 (bullseye)"
+VERSION_CODENAME=bullseye
+ID=debian
+HOME_URL="https://www.debian.org/"
+SUPPORT_URL="https://www.debian.org/support"
+BUG_REPORT_URL="https://bugs.debian.org/"`)
+
+var bullseyeIssue []byte = []byte(`Debian GNU/Linux 11 \n \l`)
+
 var busterOSRelease []byte = []byte(`PRETTY_NAME="Debian GNU/Linux 10 (buster)"
 NAME="Debian GNU/Linux"
 VERSION_ID="10"
@@ -61,6 +73,12 @@ func TestDistributionScanner(t *testing.T) {
 		osRelease []byte
 		issue     []byte
 	}{
+		{
+			name:      "bullseye",
+			release:   Bullseye,
+			osRelease: bullseyeOSRelease,
+			issue:     bullseyeIssue,
+		},
 		{
 			name:      "buster",
 			release:   Buster,
