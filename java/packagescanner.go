@@ -144,7 +144,17 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 			return nil, err
 		}
 		infos, err := jar.Parse(ctx, h.Name, z)
-		if err != nil {
+		switch {
+		case err == nil:
+		case errors.Is(err, jar.ErrUnidentified) || errors.Is(err, jar.ErrNotAJar):
+			// If there's an error that's one of the "known" reasons (e.g. not a
+			// read error or a malformed file), just log it and continue on.
+			zlog.Info(ctx).
+				Str("file", h.Name).
+				AnErr("reason", err).
+				Msg("skipping jar")
+			continue
+		default:
 			return nil, err
 		}
 		sh.Sum(ck[:0])
