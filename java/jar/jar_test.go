@@ -10,6 +10,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"io"
+	"io/fs"
 	"net/http"
 	"net/url"
 	"os"
@@ -164,4 +165,57 @@ func fetch(t testing.TB, u string, ck string) (name string) {
 	}
 	t.Log("🆗")
 	return name
+}
+
+func TestJAR(t *testing.T) {
+	ctx := context.Background()
+	td := os.DirFS("testdata/jar")
+	ls, err := fs.ReadDir(td, ".")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ls) == 0 {
+		t.Skip(`no jars found in "testdata" directory`)
+	}
+
+	var buf bytes.Buffer
+	for _, ent := range ls {
+		if !ent.Type().IsRegular() {
+			continue
+		}
+		n := path.Base(ent.Name())
+		if path.Ext(n) != ".jar" {
+			continue
+		}
+		t.Run(n, func(t *testing.T) {
+			ctx := zlog.Test(ctx, t)
+			f, err := td.Open(ent.Name())
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer f.Close()
+			fi, err := ent.Info()
+			if err != nil {
+				t.Fatal(err)
+			}
+			sz := fi.Size()
+			buf.Reset()
+			buf.Grow(int(sz))
+			if _, err := buf.ReadFrom(f); err != nil {
+				t.Error(err)
+			}
+
+			z, err := zip.NewReader(bytes.NewReader(buf.Bytes()), fi.Size())
+			if err != nil {
+				t.Error(err)
+			}
+			i, err := Parse(ctx, n, z)
+			if err != nil {
+				t.Error(err)
+			}
+			for _, i := range i {
+				t.Log(i)
+			}
+		})
+	}
 }
