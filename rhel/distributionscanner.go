@@ -64,7 +64,7 @@ var _ indexer.DistributionScanner = (*DistributionScanner)(nil)
 var _ indexer.VersionedScanner = (*DistributionScanner)(nil)
 
 // DistributionScanner attempts to discover if a layer
-// displays characteristics of a Oracle distribution
+// displays characteristics of a RHEL distribution
 type DistributionScanner struct{}
 
 // Name implements scanner.VersionedScanner.
@@ -76,8 +76,8 @@ func (*DistributionScanner) Version() string { return scannerVersion }
 // Kind implements scanner.VersionedScanner.
 func (*DistributionScanner) Kind() string { return scannerKind }
 
-// Scan will inspect the layer for an os-release or lsb-release file
-// and perform a regex match for keywords indicating the associated Oracle release
+// Scan will inspect the layer for an os-release or redhat-release file
+// and perform a regex match for keywords indicating the associated RHEL release
 //
 // If neither file is found a (nil,nil) is returned.
 // If the files are found but all regexp fail to match an empty slice is returned.
