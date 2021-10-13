@@ -31,9 +31,9 @@ const (
 	defaultBatchSize          = 10
 	defaultEndPoint           = "/api/v2/vulnerability-analysis"
 	defaultRequestConcurrency = 10
-	defaultURL                = "https://f8a-analytics-2445582058137.production.gw.apicast.io/api/v2/"
+	defaultURL                = "https://gw.api.openshift.io/api/v2/"
 	defaultSource             = "clair-upstream"
-	defaultKey                = "9e7da76708fe374d8c10fa752e72989f"
+	defaultKey                = "207c527cfc2a6b8dcf4fa43ad7a976da"
 )
 
 var (
