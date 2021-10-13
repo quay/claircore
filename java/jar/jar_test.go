@@ -3,6 +3,7 @@ package jar
 import (
 	"archive/tar"
 	"archive/zip"
+	"bufio"
 	"bytes"
 	"compress/gzip"
 	"context"
@@ -12,6 +13,7 @@ import (
 	"io"
 	"io/fs"
 	"net/http"
+	"net/mail"
 	"net/url"
 	"os"
 	"path"
@@ -50,29 +52,32 @@ func TestParse(t *testing.T) {
 			continue
 		}
 		t.Log("found jar:", h.Name)
-		buf.Reset()
-		buf.Grow(int(h.Size))
-		if _, err := io.Copy(&buf, tr); err != nil {
-			t.Error(err)
-			continue
-		}
-		z, err := zip.NewReader(bytes.NewReader(buf.Bytes()), h.Size)
-		if err != nil {
-			t.Error(err)
-			continue
-		}
-		ps, err := Parse(ctx, h.Name, z)
-		switch {
-		case errors.Is(err, nil):
-			t.Log(ps)
-		case errors.Is(err, ErrUnidentified):
-			t.Log(err)
-		case filepath.Base(h.Name) == "javax.inject-1.jar" && errors.Is(err, ErrNotAJar):
-			// This is an odd one, it has no metadata.
-			t.Log(err)
-		default:
-			t.Errorf("unexpected: %v", err)
-		}
+		t.Run(filepath.Base(h.Name), func(t *testing.T) {
+			ctx := zlog.Test(ctx, t)
+			buf.Reset()
+			buf.Grow(int(h.Size))
+			n, err := io.Copy(&buf, tr)
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Logf("read: %d bytes", n)
+			z, err := zip.NewReader(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
+			if err != nil {
+				t.Fatal(err)
+			}
+			ps, err := Parse(ctx, h.Name, z)
+			switch {
+			case errors.Is(err, nil):
+				t.Log(ps)
+			case errors.Is(err, ErrUnidentified):
+				t.Log(err)
+			case filepath.Base(h.Name) == "javax.inject-1.jar" && errors.Is(err, ErrNotAJar):
+				// This is an odd one, it has no metadata.
+				t.Log(err)
+			default:
+				t.Errorf("unexpected: %v", err)
+			}
+		})
 	}
 	if err != io.EOF {
 		t.Error(err)
@@ -215,6 +220,54 @@ func TestJAR(t *testing.T) {
 			}
 			for _, i := range i {
 				t.Log(i)
+			}
+		})
+	}
+}
+
+func TestManifestSectionReader(t *testing.T) {
+	var ms []string
+	d := os.DirFS("testdata")
+	for _, p := range []string{"manifest", "manifestSection"} {
+		ents, err := fs.ReadDir(d, p)
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		for _, e := range ents {
+			ms = append(ms, filepath.Join("testdata", p, e.Name()))
+		}
+	}
+
+	for _, n := range ms {
+		n := n
+		t.Run(filepath.Base(n), func(t *testing.T) {
+			f, err := os.Open(n)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer f.Close()
+
+			// 72 is the line length limit, so this means the section reader is
+			// going to see only chunks of a line on every read.
+			m := newMainSectionReader(bufio.NewReaderSize(f, 64))
+			var buf bytes.Buffer
+			n, err := io.Copy(&buf, m)
+			t.Logf("read %d bytes", n)
+			if err != nil {
+				t.Error(err)
+			}
+			t.Logf("read: %+#q", buf.String())
+			msg, err := mail.ReadMessage(&buf)
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Logf("headers: %+v", msg.Header)
+			if _, ok := msg.Header["Name"]; ok {
+				t.Error(`key "Name" exists when it shouldn't`)
+			}
+			if _, ok := msg.Header["Manifest-Version"]; !ok {
+				t.Error(`key "Manifest-Version" does not exist`)
 			}
 		})
 	}

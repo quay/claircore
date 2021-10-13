@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Created-By: 1.2 (Sun Microsystems Inc.)
+Sealed: true
+Name: foo/bar/
+Sealed: false

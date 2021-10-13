@@ -366,22 +366,18 @@ var errUnpopulated = errors.New("unpopulated")
 // This extracts "Main Attributes", as defined at
 // https://docs.oracle.com/javase/8/docs/technotes/guides/jar/jar.html.
 //
-// Also note that this spec gives and example that's invalid per their little
-// BNF grammar:
-// https://docs.oracle.com/javase/8/docs/technotes/guides/jar/jar.html#Per-Entry_Attributes.
-//
-// I'm not sure what to do with that... perhaps bail and resort to an in-order,
-// line-wise parser?
-//
 // This also examines "Bundle" metadata, aka OSGI metadata, as described in the
 // spec: https://github.com/osgi/osgi/wiki/Release:-Bundle-Hook-Service-Specification-1.1
 func (i *Info) parseManifest(ctx context.Context, r io.Reader) error {
-	msg, err := mail.ReadMessage(io.MultiReader(r, bytes.NewReader([]byte("\n\n"))))
+	rd := newMainSectionReader(r)
+	msg, err := mail.ReadMessage(rd)
 	if err != nil {
 		return fmt.Errorf("unable to read manifest: %w", err)
 	}
 	// Sanity checks:
 	switch {
+	case len(msg.Header) == 0:
+		return errors.New("no headers found")
 	case !manifestVer.MatchString(msg.Header.Get("Manifest-Version")):
 		v := msg.Header.Get("Manifest-Version")
 		return fmt.Errorf("invalid manifest version: %q", v)
@@ -423,6 +419,76 @@ func (i *Info) parseManifest(ctx context.Context, r io.Reader) error {
 	i.Name = name
 	i.Version = version
 	return nil
+}
+
+// NewMainSectionReader returns a reader wrapping "r" that reads until the main
+// section of the manifest ends, or EOF. It appends newlines as needed to make
+// the manifest an rfc822 compatible.
+//
+// To quote from the spec:
+//
+//	A JAR file manifest consists of a main section followed by a list of
+//	sections for individual JAR file entries, each separated by a newline. Both
+//	the main section and individual sections follow the section syntax specified
+//	above. They each have their own specific restrictions and rules.
+//
+//	The main section contains security and configuration information about the
+//	JAR file itself, as well as the application or extension that this JAR file
+//	is a part of. It also defines main attributes that apply to every individual
+//	manifest entry.  No attribute in this section can have its name equal to
+//	"Name". This section is terminated by an empty line.
+//
+//	The individual sections define various attributes for packages or files
+//	contained in this JAR file. Not all files in the JAR file need to be listed
+//	in the manifest as entries, but all files which are to be signed must be
+//	listed. The manifest file itself must not be listed.  Each section must
+//	start with an attribute with the name as "Name", and the value must be
+//	relative path to the file, or an absolute URL referencing data outside the
+//	archive.
+//
+// This is contradicted by the example given and manifests seen in the wild, so
+// don't trust that the newline exists between sections.
+func newMainSectionReader(r io.Reader) io.Reader {
+	buf := bufio.NewReader(r)
+	end := bytes.NewReader([]byte("\r\n\r\n"))
+	return io.MultiReader(&mainSectionReader{Reader: buf}, end)
+}
+
+type mainSectionReader struct {
+	*bufio.Reader
+}
+
+var _ io.Reader = (*mainSectionReader)(nil)
+
+// Read implements io.Reader.
+func (m *mainSectionReader) Read(b []byte) (int, error) {
+	if m.Reader == nil {
+		return 0, io.EOF
+	}
+	n, err := m.Reader.Read(b)
+	switch {
+	case errors.Is(err, nil):
+	case errors.Is(err, io.EOF):
+		// Fall out and return the io.EOF to the caller.
+	default:
+		// Unknown error.
+		return 0, err
+	}
+	b = b[:n]
+	// Inspect for the end of the main section. If found, fuse the reader and
+	// return EOF.
+	if i := bytes.Index(b, []byte("\nName:")); i != -1 {
+		// Account for dos line endings:
+		if b[i-1] == '\r' {
+			i--
+		}
+		b = b[:i]
+		m.Reset(nil)
+		m.Reader = nil
+		err = io.EOF
+	}
+
+	return len(b), err
 }
 
 // ManifestVer is a regexp describing a manifest version string.
