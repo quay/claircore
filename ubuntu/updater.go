@@ -32,6 +32,7 @@ var shouldBzipFetch = map[Release]bool{
 	Xenial:  true,
 	Focal:   true,
 	Eoan:    true,
+	Impish:  true,
 }
 
 var (
