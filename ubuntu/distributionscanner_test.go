@@ -7,6 +7,25 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
+// impish test data
+var impishOSRelease []byte = []byte(`PRETTY_NAME="Ubuntu 21.10"
+NAME="Ubuntu"
+VERSION_ID="21.10"
+VERSION="21.10 (Impish Indri)"
+VERSION_CODENAME=impish
+ID=ubuntu
+ID_LIKE=debian
+HOME_URL="https://www.ubuntu.com/"
+SUPPORT_URL="https://help.ubuntu.com/"
+BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
+PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+UBUNTU_CODENAME=impish`)
+
+var impishLSBRelease []byte = []byte(`DISTRIB_ID=Ubuntu
+DISTRIB_RELEASE=21.10
+DISTRIB_CODENAME=impish
+DISTRIB_DESCRIPTION="Ubuntu 21.10"`)
+
 // eoan test data
 var eoanOSRelease []byte = []byte(`NAME="Ubuntu"
 VERSION="19.10 (Eoan Ermine)"
@@ -228,6 +247,12 @@ func TestDistributionScanner(t *testing.T) {
 			release:    Eoan,
 			osRelease:  eoanOSRelease,
 			lsbRelease: eoanLSBRelease,
+		},
+		{
+			name:       "impish",
+			release:    Impish,
+			osRelease:  impishOSRelease,
+			lsbRelease: impishLSBRelease,
 		},
 	}
 	for _, tt := range table {

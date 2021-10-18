@@ -16,6 +16,7 @@ const (
 	Xenial  Release = "xenial"
 	Eoan    Release = "eoan"
 	Focal   Release = "focal"
+	Impish  Release = "impish"
 )
 
 var AllReleases = map[Release]struct{}{
@@ -28,6 +29,7 @@ var AllReleases = map[Release]struct{}{
 	Xenial:  struct{}{},
 	Eoan:    struct{}{},
 	Focal:   struct{}{},
+	Impish:  struct{}{},
 }
 
 var ReleaseToVersionID = map[Release]string{
@@ -40,6 +42,7 @@ var ReleaseToVersionID = map[Release]string{
 	Xenial:  "16.04",
 	Eoan:    "19.10",
 	Focal:   "20.04",
+	Impish:  "21.10",
 }
 
 var artfulDist = &claircore.Distribution{
@@ -121,6 +124,15 @@ var focalDist = &claircore.Distribution{
 	VersionCodeName: "focal",
 }
 
+var impishDist = &claircore.Distribution{
+	Name:            "Ubuntu",
+	Version:         "21.10 (Impish Indri)",
+	DID:             "ubuntu",
+	PrettyName:      "Ubuntu 21.10",
+	VersionID:       "21.10",
+	VersionCodeName: "impish",
+}
+
 func releaseToDist(r Release) *claircore.Distribution {
 	switch r {
 	case Artful:
@@ -141,6 +153,8 @@ func releaseToDist(r Release) *claircore.Distribution {
 		return eoanDist
 	case Focal:
 		return focalDist
+	case Impish:
+		return impishDist
 	default:
 		// return empty dist
 		return &claircore.Distribution{}

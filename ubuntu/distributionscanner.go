@@ -62,6 +62,10 @@ var ubuntuRegexes = []ubuntuRegex{
 		release: Focal,
 		regexp:  regexp.MustCompile(`(?is)\bubuntu\b.*\bfocal\b`),
 	},
+	{
+		release: Impish,
+		regexp:  regexp.MustCompile(`(?is)\bubuntu\b.*\bimpish\b`),
+	},
 }
 
 const osReleasePath = `etc/os-release`
