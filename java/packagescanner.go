@@ -187,14 +187,19 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 			// BUG(hank) There's probably some bugs lurking in the jar.Info →
 			// claircore.Package mapping code around embedded jars. There's a
 			// testcase to be written, there.
-			switch {
-			case strings.HasSuffix(i.Source, "pom.properties") || (s.root != nil && i.Source == s.root.String()):
+
+			// Only examine the last element of the source list:
+			js := strings.Split(i.Source, ":")
+			switch l := js[len(js)-1]; {
+			case strings.HasSuffix(l, "pom.properties"):
+				fallthrough
+			case s.root != nil && i.Source == s.root.String():
 				// Populate as a maven artifact.
 				pkg.PackageDB = `maven:` + h.Name
-			case i.Source == "META-INF/MANIFEST.MF":
+			case l == "META-INF/MANIFEST.MF":
 				// information pulled from a manifest file
 				pkg.PackageDB = `jar:` + h.Name
-			case i.Source == ".":
+			case l == ".":
 				// Name guess.
 				pkg.PackageDB = `file:` + h.Name
 			default:
