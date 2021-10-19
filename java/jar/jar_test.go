@@ -189,7 +189,7 @@ func TestJAR(t *testing.T) {
 			continue
 		}
 		n := path.Base(ent.Name())
-		if path.Ext(n) != ".jar" {
+		if ok, _ := filepath.Match(".?ar", path.Ext(n)); !ok {
 			continue
 		}
 		t.Run(n, func(t *testing.T) {
@@ -219,7 +219,7 @@ func TestJAR(t *testing.T) {
 				t.Error(err)
 			}
 			for _, i := range i {
-				t.Log(i)
+				t.Log(i.String())
 			}
 		})
 	}
