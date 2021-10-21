@@ -965,3 +965,36 @@ Version: 1
 		t.Error(err)
 	}
 }
+
+// This layer has a giant status file from texlive.
+func TestGiantStatus(t *testing.T) {
+	hash, err := claircore.ParseDigest("sha256:a721353ec2be66177ac08da68ccf07a3d3f94b3f8a8f2861052d8b002a5b78f2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := zlog.Test(context.Background(), t)
+	l := &claircore.Layer{
+		Hash: hash,
+	}
+
+	tctx, done := context.WithTimeout(ctx, 30*time.Second)
+	defer done()
+	n, err := fetch.Layer(tctx, t, http.DefaultClient, "docker.io", "jupyter/datascience-notebook", hash)
+	if err != nil {
+		t.Error(err)
+	}
+	defer n.Close()
+
+	if err := l.SetLocal(n.Name()); err != nil {
+		t.Error(err)
+	}
+
+	s := &Scanner{}
+	got, err := s.Scan(ctx, l)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got == nil {
+		t.Fatal("wanted non-nil return from Scan")
+	}
+}

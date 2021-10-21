@@ -4,14 +4,13 @@ package dpkg
 import (
 	"archive/tar"
 	"bufio"
-	"bytes"
 	"context"
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
-	"net/mail"
+	"net/textproto"
 	"path/filepath"
 	"runtime/trace"
 	"strings"
@@ -27,7 +26,7 @@ import (
 const (
 	name    = "dpkg"
 	kind    = "package"
-	version = "v0.0.3"
+	version = "4"
 )
 
 var (
@@ -153,26 +152,22 @@ Find:
 		// defined outside the loop.
 		found := make(map[string]*claircore.Package)
 		// The database is actually an RFC822-like message with "\n\n"
-		// separators, so don't be alarmed by the usage of the "net/mail"
+		// separators, so don't be alarmed by the usage of the "net/textproto"
 		// package here.
-		s := bufio.NewScanner(db)
-		s.Split(dbSplit)
-		for s.Scan() {
-			msg, err := mail.ReadMessage(bytes.NewReader(s.Bytes()))
-			if err != nil {
-				zlog.Warn(ctx).Err(err).Msg("unable to read entry")
-				continue
-			}
-			name := msg.Header.Get("Package")
-			v := msg.Header.Get("Version")
+		tp := textproto.NewReader(bufio.NewReader(db))
+	Restart:
+		hdr, err := tp.ReadMIMEHeader()
+		for ; err == nil && len(hdr) > 0; hdr, err = tp.ReadMIMEHeader() {
+			name := hdr.Get("Package")
+			v := hdr.Get("Version")
 			p := &claircore.Package{
 				Name:      name,
 				Version:   v,
 				Kind:      claircore.BINARY,
-				Arch:      msg.Header.Get("Architecture"),
+				Arch:      hdr.Get("Architecture"),
 				PackageDB: fn,
 			}
-			if src := msg.Header.Get("Source"); src != "" {
+			if src := hdr.Get("Source"); src != "" {
 				p.Source = &claircore.Package{
 					Name: src,
 					Kind: claircore.SOURCE,
@@ -187,8 +182,11 @@ Find:
 			found[name] = p
 			pkgs = append(pkgs, p)
 		}
-		if err := s.Err(); err != nil {
-			return nil, fmt.Errorf("reading package database failed: %w", err)
+		switch {
+		case errors.Is(err, io.EOF):
+		default:
+			zlog.Warn(ctx).Err(err).Msg("unable to read entry")
+			goto Restart
 		}
 
 		// Reset the tar reader, again.
@@ -230,20 +228,4 @@ Find:
 	}
 
 	return pkgs, nil
-}
-
-// DbSplit is a bufio.SplitFunc that looks for a double-newline and leaves it
-// attached to the resulting token.
-func dbSplit(data []byte, atEOF bool) (int, []byte, error) {
-	const delim = "\n\n"
-	if atEOF && len(data) == 0 {
-		return 0, nil, nil
-	}
-	if i := bytes.Index(data, []byte(delim)); i >= 0 {
-		return i + len(delim), data[:i+len(delim)], nil
-	}
-	if atEOF {
-		return len(data), data, nil
-	}
-	return 0, nil, nil
 }
