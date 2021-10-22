@@ -1,0 +1,23 @@
+Manifest-Version: 1.0
+Ant-Version: Apache Ant 1.9.6
+Automatic-Module-Name: org.lz4.java
+Bnd-LastModified: 1579321039864
+Bundle-ManifestVersion: 2
+Bundle-Name: LZ4 Java Compression
+Bundle-SymbolicName: lz4-java
+Bundle-Version: 1.7.1
+Created-By: 1.7.0_95 (Oracle Corporation)
+DSTAMP: 20200117
+Export-Package: net.jpountz.util.win32.amd64;version:="1.7.1",net.jpount
+ z.util.darwin.x86_64;version:="1.7.1",net.jpountz.util;version:="1.7.1"
+ ;uses:="sun.misc",net.jpountz.util.linux.ppc64le;version:="1.7.1",net.j
+ pountz.xxhash;version:="1.7.1";uses:="net.jpountz.util",net.jpountz.lz4
+ ;version:="1.7.1";uses:="net.jpountz.util,net.jpountz.xxhash",net.jpoun
+ tz.util.linux.aarch64;version:="1.7.1",net.jpountz.util.linux.i386;vers
+ ion:="1.7.1",net.jpountz.util.linux.s390x;version:="1.7.1",net.jpountz.
+ util.linux.amd64;version:="1.7.1"
+Import-Package: sun.misc;resolution:=optional
+Originally-Created-By: 1.7.0_95-b00 (Oracle Corporation)
+TODAY: January 17 2020
+Tool: Bnd-1.50.0
+TSTAMP: 2217

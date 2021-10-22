@@ -3,7 +3,6 @@ package jar
 import (
 	"archive/tar"
 	"archive/zip"
-	"bufio"
 	"bytes"
 	"compress/gzip"
 	"context"
@@ -13,13 +12,13 @@ import (
 	"io"
 	"io/fs"
 	"net/http"
-	"net/mail"
 	"net/url"
 	"os"
 	"path"
 	"path/filepath"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/test/integration"
@@ -270,6 +269,9 @@ func TestManifestSectionReader(t *testing.T) {
 			return
 		}
 		for _, e := range ents {
+			if filepath.Ext(e.Name()) == ".want" {
+				continue
+			}
 			ms = append(ms, filepath.Join("testdata", p, e.Name()))
 		}
 	}
@@ -277,31 +279,28 @@ func TestManifestSectionReader(t *testing.T) {
 	for _, n := range ms {
 		n := n
 		t.Run(filepath.Base(n), func(t *testing.T) {
-			f, err := os.Open(n)
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer f.Close()
-			// 72 is the line length limit, so this means the section reader is
-			// going to see only chunks of a line on every read.
-			m := newMainSectionReader(bufio.NewReaderSize(f, 64))
-			var buf bytes.Buffer
-			n, err := io.Copy(&buf, m)
-			t.Logf("read %d bytes", n)
+			wantF, err := os.Open(n + ".want")
 			if err != nil {
 				t.Error(err)
 			}
-			t.Logf("read: %+#q", buf.String())
-			msg, err := mail.ReadMessage(&buf)
+			var want bytes.Buffer
+			_, err = want.ReadFrom(wantF)
+			wantF.Close()
 			if err != nil {
-				t.Fatal(err)
+				t.Error(err)
 			}
-			t.Logf("headers: %+v", msg.Header)
-			if _, ok := msg.Header["Name"]; ok {
-				t.Error(`key "Name" exists when it shouldn't`)
+			inF, err := os.Open(n)
+			if err != nil {
+				t.Error(err)
 			}
-			if _, ok := msg.Header["Manifest-Version"]; !ok {
-				t.Error(`key "Manifest-Version" does not exist`)
+			defer inF.Close()
+			var out bytes.Buffer
+			if _, err := io.Copy(&out, newMainSectionReader(inF)); err != nil {
+				t.Error(err)
+			}
+			// Can't use iotest.TestReader because we disallow tiny reads.
+			if got, want := out.String(), want.String(); !cmp.Equal(got, want) {
+				t.Error(cmp.Diff(got, want))
 			}
 		})
 	}

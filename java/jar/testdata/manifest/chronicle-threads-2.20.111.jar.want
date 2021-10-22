@@ -1,0 +1,24 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1608225700617
+Build-Jdk: 1.8.0_252
+Built-By: teamcity
+Bundle-Description: Chronicle-Threads
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0
+Bundle-ManifestVersion: 2
+Bundle-Name: OpenHFT :: chronicle-threads
+Bundle-SymbolicName: net.openhft.chronicle-threads
+Bundle-Version: 2.20.111
+Created-By: Apache Maven Bundle Plugin
+Export-Package: net.openhft.chronicle.threads;version="2.20.111";uses:
+ ="net.openhft.chronicle.core.annotation,net.openhft.chronicle.core.io
+ ,net.openhft.chronicle.core.threads,net.openhft.chronicle.core.util",
+ net.openhft.chronicle.threads.internal;version="2.20.111"
+Import-Package: net.openhft.affinity;version="[3.20,4)",net.openhft.ch
+ ronicle.core;version="[2.20,3)",net.openhft.chronicle.core.annotation
+ ;version="[2.20,3)",net.openhft.chronicle.core.io;version="[2.20,3)",
+ net.openhft.chronicle.core.onoes;version="[2.20,3)",net.openhft.chron
+ icle.core.threads;version="[2.20,3)",net.openhft.chronicle.core.util;
+ version="[2.20,3)",org.slf4j;version="[1.7,2)"
+Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))"
+Tool: Bnd-4.2.0.201903051501
+

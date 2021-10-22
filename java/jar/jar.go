@@ -36,7 +36,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"net/mail"
+	"net/textproto"
 	"path"
 	"path/filepath"
 	"regexp"
@@ -377,24 +377,24 @@ var errInsaneManifest = errors.New("jar manifest does not pass sanity checks")
 // This also examines "Bundle" metadata, aka OSGI metadata, as described in the
 // spec: https://github.com/osgi/osgi/wiki/Release:-Bundle-Hook-Service-Specification-1.1
 func (i *Info) parseManifest(ctx context.Context, r io.Reader) error {
-	rd := newMainSectionReader(r)
-	msg, err := mail.ReadMessage(rd)
+	tp := textproto.NewReader(bufio.NewReader(newMainSectionReader(r)))
+	hdr, err := tp.ReadMIMEHeader()
 	if err != nil {
 		return fmt.Errorf("unable to read manifest: %w", err)
 	}
 	// Sanity checks:
 	switch {
-	case len(msg.Header) == 0:
+	case len(hdr) == 0:
 		zlog.Debug(ctx).
 			Msg("no headers found")
 		return errInsaneManifest
-	case !manifestVer.MatchString(msg.Header.Get("Manifest-Version")):
-		v := msg.Header.Get("Manifest-Version")
+	case !manifestVer.MatchString(hdr.Get("Manifest-Version")):
+		v := hdr.Get("Manifest-Version")
 		zlog.Debug(ctx).
 			Str("manifest_version", v).
 			Msg("invalid manifest version")
 		return errInsaneManifest
-	case msg.Header.Get("Name") != "":
+	case hdr.Get("Name") != "":
 		zlog.Debug(ctx).
 			Msg("martian manifest")
 		// This shouldn't be happening in the Main section.
@@ -403,23 +403,23 @@ func (i *Info) parseManifest(ctx context.Context, r io.Reader) error {
 
 	var name, version string
 	switch {
-	case msg.Header.Get("Bundle-SymbolicName") != "":
-		n := msg.Header.Get("Bundle-SymbolicName")
+	case hdr.Get("Bundle-SymbolicName") != "":
+		n := hdr.Get("Bundle-SymbolicName")
 		if i := strings.IndexByte(n, ';'); i != -1 {
 			n = n[:i]
 		}
 		name = n
-	case msg.Header.Get("Implementation-Vendor-Id") != "":
+	case hdr.Get("Implementation-Vendor-Id") != "":
 		// This attribute is marked as "Deprecated," but there's nothing that
 		// provides the same information.
-		name = msg.Header.Get("Implementation-Vendor-Id")
+		name = hdr.Get("Implementation-Vendor-Id")
 	}
 	for _, key := range []string{
 		"Bundle-Version",
 		"Implementation-Version",
 		"Specification-Version",
 	} {
-		if v := msg.Header.Get(key); v != "" {
+		if v := hdr.Get(key); v != "" {
 			version = v
 			break
 		}
@@ -438,7 +438,7 @@ func (i *Info) parseManifest(ctx context.Context, r io.Reader) error {
 
 // NewMainSectionReader returns a reader wrapping "r" that reads until the main
 // section of the manifest ends, or EOF. It appends newlines as needed to make
-// the manifest an rfc822 compatible.
+// the manifest parse like MIME headers.
 //
 // To quote from the spec:
 //
@@ -464,47 +464,79 @@ func (i *Info) parseManifest(ctx context.Context, r io.Reader) error {
 // This is contradicted by the example given and manifests seen in the wild, so
 // don't trust that the newline exists between sections.
 func newMainSectionReader(r io.Reader) io.Reader {
-	buf := bufio.NewReader(r)
-	end := bytes.NewReader([]byte("\r\n\r\n"))
-	return io.MultiReader(&mainSectionReader{Reader: buf}, end)
+	return &mainSectionReader{
+		Reader: r,
+	}
 }
 
 type mainSectionReader struct {
-	*bufio.Reader
+	io.Reader
+	ended bool
 }
 
 var _ io.Reader = (*mainSectionReader)(nil)
 
 // Read implements io.Reader.
 func (m *mainSectionReader) Read(b []byte) (int, error) {
-	if m.Reader == nil {
-		return 0, io.EOF
-	}
-	n, err := m.Reader.Read(b)
 	switch {
-	case errors.Is(err, nil):
-	case errors.Is(err, io.EOF):
-		// Fall out and return the io.EOF to the caller.
-	default:
-		// Unknown error.
-		return 0, err
-	}
-	b = b[:n]
-	// Inspect for the end of the main section. If found, fuse the reader and
-	// return EOF.
-	if i := bytes.Index(b, []byte("\nName:")); i != -1 {
-		// Account for dos line endings:
-		if b[i-1] == '\r' {
-			i--
-		}
-		b = b[:i]
-		m.Reset(nil)
-		m.Reader = nil
-		err = io.EOF
+	case len(b) == 0:
+		return 0, nil
+	case len(b) < 6: // Minimum size to detect the "Name" header.
+		return 0, io.ErrShortBuffer
+	case m.Reader == nil && m.ended:
+		return 0, io.EOF
+	case m.Reader == nil && !m.ended:
+		b[0] = '\r'
+		b[1] = '\n'
+		b[2] = '\r'
+		b[3] = '\n'
+		m.ended = true
+		return 4, io.EOF
 	}
 
-	return len(b), err
+	n, err := m.Reader.Read(b)
+	peek := b[:n]
+	// Check for EOF conditions:
+	hPos := bytes.Index(peek, nameHeader)
+	switch {
+	case hPos != -1:
+		m.Reader = nil
+		// Skip the newline that's at hPos
+		b[hPos+1] = '\r'
+		b[hPos+2] = '\n'
+		n = hPos + 3
+		m.ended = true
+		return n, io.EOF
+	case errors.Is(err, io.EOF) && n == 0:
+		m.Reader = nil
+	case errors.Is(err, io.EOF):
+		m.Reader = nil
+		m.ended = true
+		slack := cap(b) - n
+		switch {
+		case bytes.HasSuffix(peek, []byte("\r\n\r\n")):
+		case bytes.HasSuffix(peek, []byte("\r\n")) && slack >= 2:
+			// add in extra line-end.
+			b[n+0] = '\r'
+			b[n+1] = '\n'
+			n += 2
+		case slack >= 4:
+			b[n+0] = '\r'
+			b[n+1] = '\n'
+			b[n+2] = '\r'
+			b[n+3] = '\n'
+			n += 4
+		default:
+			m.ended = false
+			// no slack space
+			return n, nil
+		}
+	}
+	return n, err
 }
+
+// NameHeader is the header that marks the end of the main section.
+var nameHeader = []byte("\nName:")
 
 // ManifestVer is a regexp describing a manifest version string.
 //

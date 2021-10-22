@@ -1,0 +1,15 @@
+Manifest-Version: 1.0
+Export-Package: com.github.benmanes.caffeine,com.github.benmanes.caffe
+ ine.base;uses:="sun.misc",com.github.benmanes.caffeine.cache;uses:="c
+ om.github.benmanes.caffeine.cache.stats",com.github.benmanes.caffeine
+ .cache.stats
+Bundle-SymbolicName: com.github.ben-manes.caffeine
+Bundle-Version: 2.3.5
+Bundle-Name: com.github.ben-manes.caffeine
+Bundle-ManifestVersion: 2
+Bnd-LastModified: 1478485586000
+Import-Package: sun.misc;resolution:=optional
+Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))"
+Created-By: 1.8.0_92 (Oracle Corporation)
+Tool: Bnd-3.2.0.201605172007
+

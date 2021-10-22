@@ -1,0 +1,95 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1609238908582
+Build-Jdk: 1.8.0_252
+Built-By: teamcity
+Bundle-Description: Java library for persisted low latency messaging (
+ Java 8+)
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0
+Bundle-ManifestVersion: 2
+Bundle-Name: OpenHFT :: chronicle-queue
+Bundle-SymbolicName: net.openhft.chronicle-queue
+Bundle-Version: 5.20.123
+Class-Path: chronicle-core-2.20.126.jar chronicle-analytics-2.20.5.jar
+  annotations-19.0.0.jar chronicle-bytes-2.20.111.jar chronicle-wire-2
+ .20.117.jar compiler-2.4.1.jar chronicle-threads-2.20.111.jar affinit
+ y-3.20.0.jar jna-5.5.0.jar jna-platform-5.5.0.jar jlbh-1.19.30.jar co
+ mmons-cli-1.4.jar slf4j-api-1.7.30.jar
+Created-By: Apache Maven Bundle Plugin
+Export-Package: net.openhft.chronicle.queue;version="5.20.123";uses:="
+ net.openhft.chronicle.bytes,net.openhft.chronicle.core.io,net.openhft
+ .chronicle.core.threads,net.openhft.chronicle.core.time,net.openhft.c
+ hronicle.core.util,net.openhft.chronicle.queue.batch,net.openhft.chro
+ nicle.queue.impl.single,net.openhft.chronicle.queue.reader,net.openhf
+ t.chronicle.wire,org.apache.commons.cli",net.openhft.chronicle.queue.
+ backed.map;version="5.20.123",net.openhft.chronicle.queue.batch;versi
+ on="5.20.123",net.openhft.chronicle.queue.impl;version="5.20.123";use
+ s:="net.openhft.chronicle.bytes,net.openhft.chronicle.core.io,net.ope
+ nhft.chronicle.core.values,net.openhft.chronicle.queue,net.openhft.ch
+ ronicle.queue.impl.single,net.openhft.chronicle.queue.impl.table,net.
+ openhft.chronicle.wire",net.openhft.chronicle.queue.impl.single;versi
+ on="5.20.123";uses:="javax.crypto.spec,net.openhft.chronicle.bytes,ne
+ t.openhft.chronicle.core.io,net.openhft.chronicle.core.threads,net.op
+ enhft.chronicle.core.time,net.openhft.chronicle.core.util,net.openhft
+ .chronicle.core.values,net.openhft.chronicle.queue,net.openhft.chroni
+ cle.queue.impl,net.openhft.chronicle.queue.impl.table,net.openhft.chr
+ onicle.queue.internal.domestic,net.openhft.chronicle.threads,net.open
+ hft.chronicle.wire",net.openhft.chronicle.queue.impl.table;version="5
+ .20.123";uses:="net.openhft.chronicle.bytes,net.openhft.chronicle.cor
+ e.io,net.openhft.chronicle.core.values,net.openhft.chronicle.queue.im
+ pl,net.openhft.chronicle.threads,net.openhft.chronicle.wire",net.open
+ hft.chronicle.queue.internal;version="5.20.123";uses:="net.openhft.ch
+ ronicle.core.analytics,net.openhft.chronicle.core.threads,net.openhft
+ .chronicle.queue.impl.single",net.openhft.chronicle.queue.internal.do
+ mestic;version="5.20.123";uses:="net.openhft.chronicle.queue.impl.sin
+ gle",net.openhft.chronicle.queue.internal.domestic.backed.map;version
+ ="5.20.123",net.openhft.chronicle.queue.internal.jdbc;version="5.20.1
+ 23";uses:="net.openhft.chronicle.bytes,net.openhft.chronicle.core.io,
+ net.openhft.chronicle.core.util,net.openhft.chronicle.queue",net.open
+ hft.chronicle.queue.internal.main;version="5.20.123";uses:="net.openh
+ ft.chronicle.queue.reader,org.apache.commons.cli",net.openhft.chronic
+ le.queue.internal.reader;version="5.20.123";uses:="net.openhft.chroni
+ cle.core.util,net.openhft.chronicle.queue,net.openhft.chronicle.queue
+ .reader,net.openhft.chronicle.wire",net.openhft.chronicle.queue.inter
+ nal.service;version="5.20.123";uses:="net.openhft.chronicle.bytes,net
+ .openhft.chronicle.core.threads,net.openhft.chronicle.queue,net.openh
+ ft.chronicle.queue.service",net.openhft.chronicle.queue.internal.util
+ ;version="5.20.123";uses:="net.openhft.chronicle.queue.util",net.open
+ hft.chronicle.queue.jitter;version="5.20.123",net.openhft.chronicle.q
+ ueue.main;version="5.20.123",net.openhft.chronicle.queue.reader;versi
+ on="5.20.123";uses:="net.openhft.chronicle.core.util,net.openhft.chro
+ nicle.queue,net.openhft.chronicle.wire",net.openhft.chronicle.queue.s
+ ervice;version="5.20.123";uses:="net.openhft.chronicle.bytes,net.open
+ hft.chronicle.core.io,net.openhft.chronicle.core.threads,net.openhft.
+ chronicle.queue",net.openhft.chronicle.queue.util;version="5.20.123";
+ uses:="net.openhft.chronicle.core.threads,net.openhft.chronicle.queue
+ .impl.single"
+Import-Package: javax.crypto.spec,net.openhft.chronicle.bytes;version=
+ "[2.20,3)",net.openhft.chronicle.bytes.util;version="[2.20,3)",net.op
+ enhft.chronicle.core;version="[2.20,3)",net.openhft.chronicle.core.an
+ alytics;version="[2.20,3)",net.openhft.chronicle.core.announcer;versi
+ on="[2.20,3)",net.openhft.chronicle.core.io;version="[2.20,3)",net.op
+ enhft.chronicle.core.onoes;version="[2.20,3)",net.openhft.chronicle.c
+ ore.pom;version="[2.20,3)",net.openhft.chronicle.core.pool;version="[
+ 2.20,3)",net.openhft.chronicle.core.threads;version="[2.20,3)",net.op
+ enhft.chronicle.core.time;version="[2.20,3)",net.openhft.chronicle.co
+ re.util;version="[2.20,3)",net.openhft.chronicle.core.values;version=
+ "[2.20,3)",net.openhft.chronicle.queue;version="[5.20,6)",net.openhft
+ .chronicle.queue.batch;version="[5.20,6)",net.openhft.chronicle.queue
+ .impl;version="[5.20,6)",net.openhft.chronicle.queue.impl.single;vers
+ ion="[5.20,6)",net.openhft.chronicle.queue.impl.table;version="[5.20,
+ 6)",net.openhft.chronicle.queue.internal;version="[5.20,6)",net.openh
+ ft.chronicle.queue.internal.domestic;version="[5.20,6)",net.openhft.c
+ hronicle.queue.internal.jdbc;version="[5.20,6)",net.openhft.chronicle
+ .queue.internal.main;version="[5.20,6)",net.openhft.chronicle.queue.i
+ nternal.reader;version="[5.20,6)",net.openhft.chronicle.queue.interna
+ l.service;version="[5.20,6)",net.openhft.chronicle.queue.internal.uti
+ l;version="[5.20,6)",net.openhft.chronicle.queue.main;version="[5.20,
+ 6)",net.openhft.chronicle.queue.reader;version="[5.20,6)",net.openhft
+ .chronicle.queue.service;version="[5.20,6)",net.openhft.chronicle.que
+ ue.util;version="[5.20,6)",net.openhft.chronicle.threads;version="[2.
+ 20,3)",net.openhft.chronicle.wire;version="[2.20,3)",org.apache.commo
+ ns.cli;version="[1.4,2)",org.slf4j;version="[1.7,2)",software.chronic
+ le.enterprise.queue,sun.misc
+Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))"
+Tool: Bnd-4.2.0.201903051501
+

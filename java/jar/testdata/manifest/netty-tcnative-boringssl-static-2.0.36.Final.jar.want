@@ -1,0 +1,7 @@
+Manifest-Version: 1.0
+Automatic-Module-Name: io.netty.tcnative.boringssl
+Archiver-Version: Plexus Archiver
+Built-By: norman
+Created-By: Apache Maven 3.6.3
+Build-Jdk: 1.8.0_252
+

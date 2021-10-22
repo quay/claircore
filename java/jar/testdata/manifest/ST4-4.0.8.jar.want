@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Implementation-Title: StringTemplate 4
+Implementation-Version: 4.0.8
+Archiver-Version: Plexus Archiver
+Built-By: Sam Harwell
+Implementation-Vendor-Id: org.antlr
+Created-By: Apache Maven 3.0.5
+Build-Jdk: 1.8.0
+

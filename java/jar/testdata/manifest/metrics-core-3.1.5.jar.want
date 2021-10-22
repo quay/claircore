@@ -1,0 +1,22 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1496426363036
+Build-Jdk: 1.8.0_131
+Built-By: artem
+Bundle-Description: Metrics is a Java library which gives you unparallel
+ ed insight into what your code does in        production. Metrics provi
+ des a powerful toolkit of ways to measure the behavior of critical     
+    components in your production environment.
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.html
+Bundle-ManifestVersion: 2
+Bundle-Name: Metrics Core
+Bundle-SymbolicName: io.dropwizard.metrics.core
+Bundle-Version: 3.1.5
+Created-By: Apache Maven Bundle Plugin
+Export-Package: com.codahale.metrics;uses:="org.slf4j,javax.management,s
+ un.misc";version="3.1.5"
+Implementation-Title: Metrics Core
+Implementation-Vendor-Id: io.dropwizard.metrics
+Implementation-Version: 3.1.5
+Import-Package: javax.management,org.slf4j;version="[1.6.0,2.0.0)",sun.m
+ isc;resolution:=optional
+Tool: Bnd-1.50.0

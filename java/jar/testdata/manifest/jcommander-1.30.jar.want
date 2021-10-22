@@ -1,0 +1,27 @@
+Manifest-Version: 1.0
+Archiver-Version: Plexus Archiver
+Created-By: 1.6.0_37 (Apple Inc.)
+Built-By: cbeust
+Build-Jdk: 1.6.0_37
+Export-Package: com.beust.jcommander;uses:="com.beust.jcommander.inter
+ nal,com.beust.jcommander.converters,com.beust.jcommander.validators";
+ version="1.30.0",com.beust.jcommander.converters;uses:="com.beust.jco
+ mmander";version="1.30.0",com.beust.jcommander.defaultprovider;uses:=
+ "com.beust.jcommander";version="1.30.0",com.beust.jcommander.internal
+ ;uses:="com.beust.jcommander,com.beust.jcommander.converters";version
+ ="1.30.0",com.beust.jcommander.validators;uses:="com.beust.jcommander
+ ";version="1.30.0"
+Bundle-Version: 1.30.0
+Tool: Bnd-0.0.357
+Bundle-Name: JCommander
+Bnd-LastModified: 1351352688580
+Bundle-ManifestVersion: 2
+Bundle-Description: A Java framework to parse command line options wit
+ h annotations.
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.txt
+Bundle-SymbolicName: com.beust.jcommander
+Import-Package: com.beust.jcommander;version="1.30.0",com.beust.jcomma
+ nder.converters;version="1.30.0",com.beust.jcommander.defaultprovider
+ ;version="1.30.0",com.beust.jcommander.internal;version="1.30.0",com.
+ beust.jcommander.validators;version="1.30.0"
+

@@ -1,0 +1,20 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1496426394122
+Build-Jdk: 1.8.0_131
+Built-By: artem
+Bundle-Description: A set of classes which allow you to monitor critical
+  aspects of your Java Virtual Machine        using Metrics.
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.html
+Bundle-ManifestVersion: 2
+Bundle-Name: JVM Integration for Metrics
+Bundle-SymbolicName: io.dropwizard.metrics.jvm
+Bundle-Version: 3.1.5
+Created-By: Apache Maven Bundle Plugin
+Export-Package: com.codahale.metrics.jvm;uses:="org.slf4j,javax.manageme
+ nt,com.codahale.metrics";version="3.1.5"
+Implementation-Title: JVM Integration for Metrics
+Implementation-Vendor-Id: io.dropwizard.metrics
+Implementation-Version: 3.1.5
+Import-Package: com.codahale.metrics;version="[3.1,4)",javax.management,
+ org.slf4j;version="[1.6.0,2.0.0)"
+Tool: Bnd-1.50.0

@@ -1,0 +1,21 @@
+Manifest-Version: 1.0
+Bnd-LastModified: 1496426839660
+Build-Jdk: 1.8.0_131
+Built-By: artem
+Bundle-Description: An instrumented appender for Logback.
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.html
+Bundle-ManifestVersion: 2
+Bundle-Name: Metrics Integration for Logback
+Bundle-SymbolicName: io.dropwizard.metrics.logback
+Bundle-Version: 3.1.5
+Created-By: Apache Maven Bundle Plugin
+Export-Package: com.codahale.metrics.logback;uses:="ch.qos.logback.class
+ ic.spi,ch.qos.logback.classic,ch.qos.logback.core,com.codahale.metrics"
+ ;version="3.1.5"
+Implementation-Title: Metrics Integration for Logback
+Implementation-Vendor-Id: io.dropwizard.metrics
+Implementation-Version: 3.1.5
+Import-Package: ch.qos.logback.classic;version="[1.1,2)",ch.qos.logback.
+ classic.spi;version="[1.1,2)",ch.qos.logback.core;version="[1.1,2)",com
+ .codahale.metrics;version="[3.1,4)"
+Tool: Bnd-1.50.0

@@ -1,0 +1,84 @@
+Manifest-Version: 1.0
+Export-Package: org.apache.commons.math3.transform;version="3.2",org.a
+ pache.commons.math3.exception;version="3.2",org.apache.commons.math3.
+ analysis.polynomials;version="3.2",org.apache.commons.math3.geometry;
+ version="3.2",org.apache.commons.math3.ode.sampling;version="3.2",org
+ .apache.commons.math3.distribution.fitting;version="3.2",org.apache.c
+ ommons.math3.geometry.euclidean.twod;version="3.2",org.apache.commons
+ .math3.optimization;version="3.2",org.apache.commons.math3.filter;ver
+ sion="3.2",org.apache.commons.math3.optimization.direct;version="3.2"
+ ,org.apache.commons.math3.exception.util;version="3.2",org.apache.com
+ mons.math3.stat.inference;version="3.2",org.apache.commons.math3.rand
+ om;version="3.2",org.apache.commons.math3.primes;version="3.2",org.ap
+ ache.commons.math3.optim.nonlinear.vector.jacobian;version="3.2",org.
+ apache.commons.math3.optim;version="3.2",org.apache.commons.math3.ana
+ lysis.solvers;version="3.2",org.apache.commons.math3.ode.nonstiff;ver
+ sion="3.2",org.apache.commons.math3.genetics;version="3.2",org.apache
+ .commons.math3.stat.clustering;version="3.2",org.apache.commons.math3
+ .optimization.linear;version="3.2",org.apache.commons.math3.optim.non
+ linear.scalar.gradient;version="3.2",org.apache.commons.math3.complex
+ ;version="3.2",org.apache.commons.math3.stat.correlation;version="3.2
+ ",org.apache.commons.math3.optim.nonlinear.vector;version="3.2",org.a
+ pache.commons.math3.dfp;version="3.2",org.apache.commons.math3.stat;v
+ ersion="3.2",org.apache.commons.math3.distribution;version="3.2",org.
+ apache.commons.math3.optim.linear;version="3.2",org.apache.commons.ma
+ th3.analysis.differentiation;version="3.2",org.apache.commons.math3.o
+ ptim.univariate;version="3.2",org.apache.commons.math3.special;versio
+ n="3.2",org.apache.commons.math3.fitting;version="3.2",org.apache.com
+ mons.math3.analysis.interpolation;version="3.2",org.apache.commons.ma
+ th3.optim.nonlinear.scalar;version="3.2",org.apache.commons.math3.geo
+ metry.partitioning.utilities;version="3.2",org.apache.commons.math3;v
+ ersion="3.2",org.apache.commons.math3.geometry.euclidean.threed;versi
+ on="3.2",org.apache.commons.math3.analysis;version="3.2",org.apache.c
+ ommons.math3.ode;version="3.2",org.apache.commons.math3.analysis.func
+ tion;version="3.2",org.apache.commons.math3.ode.events;version="3.2",
+ org.apache.commons.math3.stat.descriptive;version="3.2",org.apache.co
+ mmons.math3.stat.regression;version="3.2",org.apache.commons.math3.st
+ at.descriptive.moment;version="3.2",org.apache.commons.math3.stat.des
+ criptive.summary;version="3.2",org.apache.commons.math3.optimization.
+ fitting;version="3.2",org.apache.commons.math3.geometry.partitioning;
+ version="3.2",org.apache.commons.math3.geometry.euclidean.oned;versio
+ n="3.2",org.apache.commons.math3.linear;version="3.2",org.apache.comm
+ ons.math3.analysis.integration.gauss;version="3.2",org.apache.commons
+ .math3.stat.ranking;version="3.2",org.apache.commons.math3.optimizati
+ on.general;version="3.2",org.apache.commons.math3.fraction;version="3
+ .2",org.apache.commons.math3.ml.distance;version="3.2",org.apache.com
+ mons.math3.optimization.univariate;version="3.2",org.apache.commons.m
+ ath3.analysis.integration;version="3.2",org.apache.commons.math3.stat
+ .descriptive.rank;version="3.2",org.apache.commons.math3.optim.nonlin
+ ear.scalar.noderiv;version="3.2",org.apache.commons.math3.ml.clusteri
+ ng;version="3.2",org.apache.commons.math3.util;version="3.2"
+Private-Package: assets.org.apache.commons.math3.exception.util
+Implementation-Title: Commons Math
+Built-By: luc
+Tool: Bnd-1.50.0
+Implementation-Vendor: The Apache Software Foundation
+Implementation-Vendor-Id: org.apache
+Specification-Title: Commons Math
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.txt
+Bundle-SymbolicName: org.apache.commons.math3
+X-Compile-Target-JDK: 1.5
+Implementation-Version: 3.2
+Specification-Vendor: The Apache Software Foundation
+Bundle-Name: Commons Math
+Created-By: Apache Maven Bundle Plugin
+X-Compile-Source-JDK: 1.5
+Bundle-Vendor: The Apache Software Foundation
+Build-Jdk: 1.6.0_27
+Bundle-Version: 3.2.0
+Bnd-LastModified: 1364930749770
+Bundle-ManifestVersion: 2
+Bundle-Description: The Math project is a library of lightweight, self
+ -contained mathematics and statistics components addressing the most 
+ common practical problems not immediately available in the Java progr
+ amming language or commons-lang.
+Bundle-DocURL: http://commons.apache.org/proper/commons-math/
+Include-Resource: assets/org/apache/commons/math3/exception/util/Local
+ izedFormats_fr.properties=src/main/resources/assets/org/apache/common
+ s/math3/exception/util/LocalizedFormats_fr.properties,META-INF/LICENS
+ E.txt=LICENSE.txt,META-INF/NOTICE.txt=NOTICE.txt
+Implementation-Build: tags/MATH_3_2_RC5@r1463704; 2013-04-02 21:25:31+
+ 0200
+Specification-Version: 3.2
+Archiver-Version: Plexus Archiver
+
