@@ -2,10 +2,12 @@ package dpkg
 
 import (
 	"archive/tar"
+	"bufio"
 	"context"
 	"errors"
 	"io"
 	"net/http"
+	"net/textproto"
 	"os"
 	"testing"
 	"time"
@@ -18,6 +20,7 @@ import (
 )
 
 func TestScanner(t *testing.T) {
+	t.Parallel()
 	hash, err := claircore.ParseDigest("sha256:35c102085707f703de2d9eaad8752d6fe1b8f02b5d2149f1d8357c9cc7fb7d0a")
 	if err != nil {
 		t.Fatal(err)
@@ -826,6 +829,7 @@ func TestScanner(t *testing.T) {
 }
 
 func TestAbsolutePaths(t *testing.T) {
+	t.Parallel()
 	ctx := zlog.Test(context.Background(), t)
 	hash, err := claircore.ParseDigest("sha256:3c9020349340788076971d5ea638b71e35233fd8e149e269d8eebfa17960c03f")
 	if err != nil {
@@ -859,6 +863,7 @@ func TestAbsolutePaths(t *testing.T) {
 }
 
 func TestExtraMetadata(t *testing.T) {
+	t.Parallel()
 	const layerfile = `testdata/extrametadata.layer`
 	l := claircore.Layer{
 		Hash: claircore.MustParseDigest(`sha256:25fd87072f39aaebd1ee24dca825e61d9f5a0f87966c01551d31a4d8d79d37d8`),
@@ -966,35 +971,26 @@ Version: 1
 	}
 }
 
-// This layer has a giant status file from texlive.
+// This is a giant status file because texlive was installed.
 func TestGiantStatus(t *testing.T) {
-	hash, err := claircore.ParseDigest("sha256:a721353ec2be66177ac08da68ccf07a3d3f94b3f8a8f2861052d8b002a5b78f2")
+	t.Parallel()
+	zlog.Test(context.Background(), t)
+	db, err := os.Open(`testdata/texlive.status`)
 	if err != nil {
 		t.Fatal(err)
 	}
-	ctx := zlog.Test(context.Background(), t)
-	l := &claircore.Layer{
-		Hash: hash,
-	}
 
-	tctx, done := context.WithTimeout(ctx, 30*time.Second)
-	defer done()
-	n, err := fetch.Layer(tctx, t, http.DefaultClient, "docker.io", "jupyter/datascience-notebook", hash)
-	if err != nil {
+	var found int
+	tp := textproto.NewReader(bufio.NewReader(db))
+	hdr, err := tp.ReadMIMEHeader()
+	for ; err == nil && len(hdr) > 0; hdr, err = tp.ReadMIMEHeader() {
+		found++
+	}
+	t.Logf("found %d installed packages", found)
+	if got, want := found, 357; got != want {
+		t.Fail()
+	}
+	if err != nil && err != io.EOF {
 		t.Error(err)
-	}
-	defer n.Close()
-
-	if err := l.SetLocal(n.Name()); err != nil {
-		t.Error(err)
-	}
-
-	s := &Scanner{}
-	got, err := s.Scan(ctx, l)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got == nil {
-		t.Fatal("wanted non-nil return from Scan")
 	}
 }
