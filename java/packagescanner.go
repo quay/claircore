@@ -19,10 +19,9 @@ import (
 	"strings"
 
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/baggageutil"
 	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/java/jar"
 )
@@ -64,9 +63,9 @@ func (*Scanner) Kind() string { return "package" }
 
 // Configure implements indexer.RPCScanner.
 func (s *Scanner) Configure(ctx context.Context, f indexer.ConfigDeserializer, c *http.Client) error {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "java/Scanner.Configure"),
-		label.String("version", s.Version()))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "java/Scanner.Configure",
+		"version", s.Version())
 	var cfg ScannerConfig
 	s.client = c
 	if err := f(&cfg); err != nil {
@@ -94,10 +93,10 @@ func (s *Scanner) Configure(ctx context.Context, f indexer.ConfigDeserializer, c
 func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.Package, error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	trace.Log(ctx, "layer", layer.Hash.String())
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "java/Scanner.Scan"),
-		label.String("version", s.Version()),
-		label.String("layer", layer.Hash.String()))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "java/Scanner.Scan",
+		"version", s.Version(),
+		"layer", layer.Hash.String())
 	zlog.Debug(ctx).Msg("start")
 	defer zlog.Debug(ctx).Msg("done")
 	if err := ctx.Err(); err != nil {

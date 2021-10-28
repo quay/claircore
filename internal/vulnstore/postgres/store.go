@@ -6,10 +6,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/baggageutil"
 	"github.com/quay/claircore/internal/vulnstore"
 	"github.com/quay/claircore/libvuln/driver"
 )
@@ -40,8 +39,8 @@ func (s *Store) UpdateVulnerabilities(ctx context.Context, updater string, finge
 // DeleteUpdateOperations implements vulnstore.Updater.
 func (s *Store) DeleteUpdateOperations(ctx context.Context, id ...uuid.UUID) (int64, error) {
 	const query = `DELETE FROM update_operation WHERE ref = ANY($1::uuid[]);`
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "internal/vulnstore/postgres/deleteUpdateOperations"))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "internal/vulnstore/postgres/deleteUpdateOperations")
 	if len(id) == 0 {
 		return 0, nil
 	}

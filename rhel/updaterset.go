@@ -8,9 +8,8 @@ import (
 	"strings"
 
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
+	"github.com/quay/claircore/internal/baggageutil"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/rhel/pulp"
 )
@@ -63,8 +62,8 @@ type FactoryConfig struct {
 var _ driver.Configurable = (*Factory)(nil)
 
 func (f *Factory) Configure(ctx context.Context, cfg driver.ConfigUnmarshaler, c *http.Client) error {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "rhel/Factory.Configure"))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "rhel/Factory.Configure")
 	var fc FactoryConfig
 
 	if err := cfg(&fc); err != nil {

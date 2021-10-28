@@ -11,11 +11,11 @@ import (
 	"net/url"
 
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/tmp"
+
+	"github.com/quay/claircore/internal/baggageutil"
 )
 
 // Compressor is used by Fetcher to decompress data it fetches.
@@ -60,8 +60,8 @@ type Fetcher struct {
 // For users that embed a Fetcher, this provides a configuration hook by
 // default.
 func (f *Fetcher) Configure(ctx context.Context, cf driver.ConfigUnmarshaler, c *http.Client) error {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "pkg/ovalutil/Fetcher.Configure"))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "pkg/ovalutil/Fetcher.Configure")
 	var cfg FetcherConfig
 	if err := cf(&cfg); err != nil {
 		return err
@@ -109,8 +109,8 @@ type FetcherConfig struct {
 //
 // Tmp.File is used to return a ReadCloser that outlives the passed-in context.
 func (f *Fetcher) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "pkg/ovalutil/Fetcher.Fetch"))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "pkg/ovalutil/Fetcher.Fetch")
 	zlog.Info(ctx).Str("database", f.URL.String()).Msg("starting fetch")
 	req := http.Request{
 		Method: http.MethodGet,

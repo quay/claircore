@@ -10,10 +10,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/baggageutil"
 	"github.com/quay/claircore/internal/vulnstore"
 )
 
@@ -40,8 +39,8 @@ var (
 
 // Get implements vulnstore.Vulnerability.
 func (s *Store) Get(ctx context.Context, records []*claircore.IndexRecord, opts vulnstore.GetOpts) (map[string][]*claircore.Vulnerability, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "internal/vulnstore/postgres/Get"))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "internal/vulnstore/postgres/Get")
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return nil, err

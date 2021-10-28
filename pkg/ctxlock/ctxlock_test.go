@@ -1,12 +1,13 @@
 package ctxlock
 
 import (
+	"strconv"
 	"sync"
 	"testing"
 
 	"github.com/google/uuid"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
+
+	"github.com/quay/claircore/internal/baggageutil"
 )
 
 func TestUncontested(t *testing.T) {
@@ -32,7 +33,7 @@ func TestUncontested(t *testing.T) {
 	for i := range wi {
 		go func(i int) {
 			defer wg.Done()
-			ctx := baggage.ContextWithValues(ctx, label.Int("worker", i))
+			ctx := baggageutil.ContextWithValues(ctx, "worker", strconv.Itoa(i))
 			<-start
 			t.Logf("worker %d: start", i)
 			for _, id := range wi[i] {
@@ -68,7 +69,7 @@ func TestContested(t *testing.T) {
 	for i := 0; i < w; i++ {
 		go func(i int) {
 			defer wg.Done()
-			ctx := baggage.ContextWithValues(ctx, label.Int("worker", i))
+			ctx := baggageutil.ContextWithValues(ctx, "worker", strconv.Itoa(i))
 			<-start
 			t.Logf("worker %d: start", i)
 			for _, id := range ids {

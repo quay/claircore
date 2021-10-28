@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
+
+	"github.com/quay/claircore/internal/baggageutil"
 )
 
 // Ecosystems group together scanners and a Coalescer which are commonly used together.
@@ -24,8 +24,8 @@ type Ecosystem struct {
 
 // EcosystemsToScanners extracts and dedupes multiple ecosystems and returns their discrete scanners
 func EcosystemsToScanners(ctx context.Context, ecosystems []*Ecosystem, disallowRemote bool) ([]PackageScanner, []DistributionScanner, []RepositoryScanner, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "internal/indexer/EcosystemsToScanners"))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "internal/indexer/EcosystemsToScanners")
 	ps := []PackageScanner{}
 	ds := []DistributionScanner{}
 	rs := []RepositoryScanner{}

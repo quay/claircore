@@ -16,10 +16,9 @@ import (
 	"strings"
 
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/baggageutil"
 	"github.com/quay/claircore/internal/indexer"
 )
 
@@ -61,10 +60,10 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	// Preamble
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	trace.Log(ctx, "layer", layer.Hash.String())
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "dpkg/Scanner.Scan"),
-		label.String("version", ps.Version()),
-		label.String("layer", layer.Hash.String()))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "dpkg/Scanner.Scan",
+		"version", ps.Version(),
+		"layer", layer.Hash.String())
 	zlog.Debug(ctx).Msg("start")
 	defer zlog.Debug(ctx).Msg("done")
 
@@ -115,7 +114,7 @@ Find:
 		if x != 2 { // If we didn't find both files, skip this directory.
 			continue
 		}
-		ctx = baggage.ContextWithValues(ctx, label.String("database", p))
+		ctx = baggageutil.ContextWithValues(ctx, "database", p)
 		zlog.Debug(ctx).Msg("examining package database")
 
 		// Reset the tar reader.

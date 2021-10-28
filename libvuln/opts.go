@@ -11,12 +11,10 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jackc/pgx/v4/stdlib"
-	"github.com/remind101/migrate"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
-
 	"github.com/quay/zlog"
+	"github.com/remind101/migrate"
 
+	"github.com/quay/claircore/internal/baggageutil"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/migrations"
 )
@@ -122,8 +120,8 @@ type Opts struct {
 // the necessary Updaters and Matchers for Libvuln
 // usage
 func (o *Opts) parse(ctx context.Context) error {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "libvuln/Opts.parse"))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "libvuln/Opts.parse")
 	// required
 	if o.ConnString == "" {
 		return fmt.Errorf("no connection string provided")

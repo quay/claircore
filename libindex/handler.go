@@ -7,10 +7,9 @@ import (
 	"path"
 
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/baggageutil"
 	"github.com/quay/claircore/pkg/jsonerr"
 )
 
@@ -156,8 +155,8 @@ func (h *HTTP) IndexReport(w http.ResponseWriter, r *http.Request) {
 		jsonerr.Error(w, resp, http.StatusBadRequest)
 		return
 	}
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("manifest", hash.String()))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"manifest", hash.String())
 
 	// issue retrieval
 	sr, ok, err := h.l.IndexReport(ctx, hash)

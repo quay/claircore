@@ -16,10 +16,9 @@ import (
 
 	pep440 "github.com/aquasecurity/go-pep440-version"
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/baggageutil"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/tmp"
 )
@@ -122,8 +121,8 @@ type Config struct {
 
 // Configure implements driver.Configurable.
 func (u *Updater) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *http.Client) error {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "pyupio/Updater.Configure"))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "pyupio/Updater.Configure")
 	var cfg Config
 	if err := f(&cfg); err != nil {
 		return err
@@ -149,8 +148,8 @@ func (*Updater) Name() string { return "pyupio" }
 
 // Fetch implements driver.Updater.
 func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "pyupio/Updater.Fetch"))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "pyupio/Updater.Fetch")
 	zlog.Info(ctx).Str("database", u.url.String()).Msg("starting fetch")
 	req := http.Request{
 		Method:     http.MethodGet,
@@ -227,8 +226,8 @@ func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 
 // Parse implements driver.Updater.
 func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "pyupio/Updater.Parse"))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "pyupio/Updater.Parse")
 	zlog.Info(ctx).Msg("parse start")
 	defer r.Close()
 	defer zlog.Info(ctx).Msg("parse done")
@@ -283,8 +282,8 @@ func init() {
 }
 
 func (db db) Vulnerabilites(ctx context.Context, repo *claircore.Repository, updater string) ([]*claircore.Vulnerability, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "pyupio/db.Vulnerabilities"))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "pyupio/db.Vulnerabilities")
 	var mungeCt int
 	var ret []*claircore.Vulnerability
 	for k, m := range db {

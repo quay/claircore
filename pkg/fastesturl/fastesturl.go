@@ -7,8 +7,8 @@ import (
 	"sync"
 
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
+
+	"github.com/quay/claircore/internal/baggageutil"
 )
 
 // ReqCheckFunc checks if a *http.Response
@@ -61,8 +61,8 @@ func (f *FastestURL) Do(ctx context.Context) *http.Response {
 	wg.Add(len(f.URLs))
 	ctx, done := context.WithCancel(ctx)
 	defer done()
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "pkg/fastesturl/FastestURL.Do"))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "pkg/fastesturl/FastestURL.Do")
 
 	go func() {
 		wg.Wait()

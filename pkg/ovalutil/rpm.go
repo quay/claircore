@@ -8,10 +8,9 @@ import (
 
 	"github.com/quay/goval-parser/oval"
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/baggageutil"
 )
 
 const (
@@ -40,8 +39,8 @@ type ProtoVulnsFunc func(def oval.Definition) ([]*claircore.Vulnerability, error
 //
 // Each Criterion encountered with an EVR string will be translated into a claircore.Vulnerability
 func RPMDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulnsFunc) ([]*claircore.Vulnerability, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "ovalutil/RPMDefsToVulns"))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "ovalutil/RPMDefsToVulns")
 	vulns := make([]*claircore.Vulnerability, 0, 10000)
 	cris := []*oval.Criterion{}
 	for _, def := range root.Definitions.Definitions {

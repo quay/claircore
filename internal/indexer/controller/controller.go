@@ -7,10 +7,9 @@ import (
 	"time"
 
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/baggageutil"
 	"github.com/quay/claircore/internal/indexer"
 )
 
@@ -59,9 +58,9 @@ func (s *Controller) Index(ctx context.Context, manifest *claircore.Manifest) (*
 	// set manifest info on controller
 	s.manifest = manifest
 	s.report.Hash = manifest.Hash
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "internal/indexer/controller/Controller.Index"),
-		label.String("manifest", s.manifest.Hash.String()))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "internal/indexer/controller/Controller.Index",
+		"manifest", s.manifest.Hash.String())
 	defer s.Fetcher.Close()
 	zlog.Info(ctx).Msg("starting scan")
 	return s.report, s.run(ctx)
@@ -77,7 +76,7 @@ func (s *Controller) run(ctx context.Context) (err error) {
 	// As long as there's not an error and the current state isn't Terminal, run
 	// the corresponding function.
 	for err == nil && s.currentState != Terminal {
-		ctx := baggage.ContextWithValues(ctx, label.Stringer("state", s.currentState))
+		ctx := baggageutil.ContextWithValues(ctx, "state", s.currentState.String())
 		next, err = stateToStateFunc[s.currentState](ctx, s)
 		switch {
 		case errors.Is(err, nil) && !errors.Is(ctx.Err(), nil):

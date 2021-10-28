@@ -16,9 +16,8 @@ import (
 
 	"github.com/quay/alas"
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
+	"github.com/quay/claircore/internal/baggageutil"
 	"github.com/quay/claircore/pkg/tmp"
 )
 
@@ -35,8 +34,8 @@ type Client struct {
 }
 
 func NewClient(ctx context.Context, hc *http.Client, release Release) (*Client, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("release", string(release)))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"release", string(release))
 	if hc == nil {
 		return nil, errors.New("http.Client not provided")
 	}
@@ -52,13 +51,13 @@ func NewClient(ctx context.Context, hc *http.Client, release Release) (*Client, 
 
 // RepoMD returns a alas.RepoMD containing sha256 information of a repositories contents
 func (c *Client) RepoMD(ctx context.Context) (alas.RepoMD, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "aws/Client.RepoMD"))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "aws/Client.RepoMD")
 	for _, mirror := range c.mirrors {
 		m := *mirror
 		m.Path = path.Join(m.Path, repoDataPath)
-		ctx := baggage.ContextWithValues(ctx,
-			label.String("mirror", m.String()))
+		ctx := baggageutil.ContextWithValues(ctx,
+			"mirror", m.String())
 
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, m.String(), nil)
 		if err != nil {
@@ -104,13 +103,13 @@ func (c *Client) RepoMD(ctx context.Context) (alas.RepoMD, error) {
 
 // Updates returns the *http.Response of the first mirror to establish a connection
 func (c *Client) Updates(ctx context.Context) (io.ReadCloser, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "aws/Client.Updates"))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "aws/Client.Updates")
 	for _, mirror := range c.mirrors {
 		m := *mirror
 		m.Path = path.Join(m.Path, updatesPath)
-		ctx := baggage.ContextWithValues(ctx,
-			label.String("mirror", m.String()))
+		ctx := baggageutil.ContextWithValues(ctx,
+			"mirror", m.String())
 
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, m.String(), nil)
 		if err != nil {
@@ -176,8 +175,8 @@ type gzippedFile struct {
 }
 
 func (c *Client) getMirrors(ctx context.Context, list string) error {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "aws/Client.getMirrors"))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "aws/Client.getMirrors")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, list, nil)
 	if err != nil {

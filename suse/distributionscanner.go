@@ -7,10 +7,9 @@ import (
 	"runtime/trace"
 
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/baggageutil"
 	"github.com/quay/claircore/internal/indexer"
 )
 
@@ -85,10 +84,10 @@ func (*DistributionScanner) Kind() string { return scannerKind }
 // If the files are found but all regexp fail to match an empty slice is returned.
 func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Distribution, error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "suse/DistributionScanner.Scan"),
-		label.String("version", ds.Version()),
-		label.String("layer", l.Hash.String()))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "suse/DistributionScanner.Scan",
+		"version", ds.Version(),
+		"layer", l.Hash.String())
 	zlog.Debug(ctx).Msg("start")
 	defer zlog.Debug(ctx).Msg("done")
 	files, err := l.Files(osReleasePath, suseReleasePath)

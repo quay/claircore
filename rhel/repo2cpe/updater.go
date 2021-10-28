@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 	"golang.org/x/time/rate"
+
+	"github.com/quay/claircore/internal/baggageutil"
 )
 
 // Interval is how often we attempt to update the mapping file.
@@ -55,8 +55,8 @@ func NewUpdatingMapper(client *http.Client, url string, init *MappingFile) *Upda
 //
 // Get is safe for concurrent usage.
 func (u *UpdatingMapper) Get(ctx context.Context, rs []string) ([]string, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "rhel/repo2cpe/UpdatingMapper.Get"))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "rhel/repo2cpe/UpdatingMapper.Get")
 	if len(rs) == 0 {
 		return []string{}, nil
 	}
@@ -87,9 +87,9 @@ func (u *UpdatingMapper) Fetch(ctx context.Context) error {
 //
 // this method may be ran concurrently.
 func (u *UpdatingMapper) do(ctx context.Context) error {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "rhel/repo2cpe/UpdatingMapper.do"),
-		label.String("url", u.URL))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "rhel/repo2cpe/UpdatingMapper.do",
+		"url", u.URL)
 	zlog.Debug(ctx).Msg("attempting fetch of repo2cpe mapping file")
 
 	u.mu.Lock()

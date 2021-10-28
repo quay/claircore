@@ -12,12 +12,11 @@ import (
 	"sort"
 
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/baggageutil"
 	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/pkg/ctxlock"
 )
@@ -47,8 +46,7 @@ type Libindex struct {
 // The passed http.Client will be used for fetching layers and any HTTP requests
 // made by scanners.
 func New(ctx context.Context, opts *Opts, cl *http.Client) (*Libindex, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "libindex/New"))
+	ctx = baggageutil.ContextWithValues(ctx, "component", "libindex/New")
 	err := opts.Parse(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse opts: %v", err)
@@ -120,9 +118,9 @@ func (l *Libindex) Close(ctx context.Context) error {
 // If the index operation cannot start an error will be returned.
 // If an error occurs during scan the error will be propagated inside the IndexReport.
 func (l *Libindex) Index(ctx context.Context, manifest *claircore.Manifest) (*claircore.IndexReport, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "libindex/Libindex.Index"),
-		label.Stringer("manifest", manifest.Hash))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "libindex/Libindex.Index",
+		"manifest", manifest.Hash.String())
 	zlog.Info(ctx).Msg("index request start")
 	defer zlog.Info(ctx).Msg("index request done")
 	c, err := l.ControllerFactory(ctx, l, l.Opts)
@@ -191,8 +189,8 @@ func (l *Libindex) IndexReport(ctx context.Context, hash claircore.Digest) (*cla
 // AffectedManifests retrieves a list of affected manifests when provided a list of vulnerabilities.
 func (l *Libindex) AffectedManifests(ctx context.Context, vulns []claircore.Vulnerability) (*claircore.AffectedManifests, error) {
 	sem := semaphore.NewWeighted(20)
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "libindex/Libindex.AffectedManifests"))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "libindex/Libindex.AffectedManifests")
 
 	affected := claircore.NewAffectedManifests()
 	errGrp, eCTX := errgroup.WithContext(ctx)

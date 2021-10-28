@@ -43,8 +43,8 @@ import (
 	"sync"
 
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
+
+	"github.com/quay/claircore/internal/baggageutil"
 )
 
 // Header is the magic bytes at the beginning of a jar.
@@ -69,9 +69,9 @@ const MinSize = 22
 // The provided name is expected to be the full path within the layer to the jar
 // file being provided as "z".
 func Parse(ctx context.Context, name string, z *zip.Reader) ([]Info, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "java/jar/Parse"),
-		label.String("jar", name))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "java/jar/Parse",
+		"jar", name)
 
 	// This uses an admittedly non-idiomatic, C-like goto construction. We want
 	// to attempt a few heuristics and keep the results of the first one that
@@ -214,7 +214,7 @@ func extractProperties(ctx context.Context, name string, z fs.FS) ([]Info, error
 
 // ExtractInner recurses into anything that looks like a jar in "z".
 func extractInner(ctx context.Context, outer string, z fs.FS) ([]Info, error) {
-	ctx = baggage.ContextWithValues(ctx, label.String("parent", outer))
+	ctx = baggageutil.ContextWithValues(ctx, "parent", outer)
 	var ret []Info
 	// Zips need random access, so allocate a buffer for any we find.
 	// It's grown to the initial size upon first use.

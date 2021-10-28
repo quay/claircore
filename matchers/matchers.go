@@ -7,9 +7,8 @@ import (
 	"net/http"
 
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
+	"github.com/quay/claircore/internal/baggageutil"
 	"github.com/quay/claircore/libvuln/driver"
 	_ "github.com/quay/claircore/matchers/defaults"
 	"github.com/quay/claircore/matchers/registry"
@@ -32,8 +31,8 @@ type MatchersOption func(m *Matchers)
 // NewMatchers will return a slice of Matcher created based on the provided
 // MatchersOption.
 func NewMatchers(ctx context.Context, client *http.Client, opts ...MatchersOption) ([]driver.Matcher, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "libvuln/matchers/NewMatchers"))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "libvuln/matchers/NewMatchers")
 	if client == nil {
 		return nil, errors.New("invalid *http.Client")
 	}

@@ -12,14 +12,15 @@ import (
 	"errors"
 	"fmt"
 	"runtime"
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
+
+	"github.com/quay/claircore/internal/baggageutil"
 )
 
 // TODO(hank) Specify this algorithm to check its soundness.
@@ -90,8 +91,8 @@ var (
 
 // Run pulls a connection out of the pool and runs the reconnect loop.
 func (l *Locker) run(ctx context.Context) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "internal/ctxlock/Locker.run"))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "internal/ctxlock/Locker.run")
 	for {
 		tctx, done := context.WithTimeout(ctx, 5*time.Second)
 		err := l.p.AcquireFunc(tctx, l.reconnect(ctx))
@@ -131,8 +132,8 @@ func (l *Locker) Close(_ context.Context) (_ error) {
 // itself until awoken. All other methods should strobe the Cond to wake up this
 // loop and check if the connection has died.
 func (l *Locker) reconnect(ctx context.Context) func(*pgxpool.Conn) error {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "internal/ctxlock/Locker.reconnect"))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "internal/ctxlock/Locker.reconnect")
 	return func(c *pgxpool.Conn) error {
 		l.rc.L.Lock()
 		defer l.rc.L.Unlock()
@@ -140,7 +141,7 @@ func (l *Locker) reconnect(ctx context.Context) func(*pgxpool.Conn) error {
 		l.gone = make(chan struct{})
 		l.cur = make(map[string]struct{}, 100) // Guess at a good capacity.
 		l.gen++
-		ctx = baggage.ContextWithValues(ctx, label.Int("gen", l.gen))
+		ctx = baggageutil.ContextWithValues(ctx, "gen", strconv.Itoa(l.gen))
 		defer func() {
 			close(l.gone)
 			l.gone = nil

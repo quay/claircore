@@ -13,10 +13,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/baggageutil"
 	"github.com/quay/claircore/pkg/omnimatcher"
 )
 
@@ -110,8 +109,8 @@ WHERE
 		);
 `
 	)
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "internal/indexer/postgres/affectedManifests"))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "internal/indexer/postgres/affectedManifests")
 
 	// confirm the incoming vuln can be
 	// resolved into a prototype index record
@@ -279,8 +278,8 @@ func protoRecord(ctx context.Context, pool *pgxpool.Pool, v claircore.Vulnerabil
 		`
 		timeout = 5 * time.Second
 	)
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "internal/indexer/postgres/protoRecord"))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "internal/indexer/postgres/protoRecord")
 
 	protoRecord := claircore.IndexRecord{}
 	// fill dist into prototype index record if exists

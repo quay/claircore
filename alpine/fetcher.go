@@ -7,17 +7,19 @@ import (
 	"net/http"
 
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
+	"github.com/quay/claircore/internal/baggageutil"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/tmp"
 )
 
-var fetchLabel = label.String("component", "alpine/Updater.Fetch")
+const (
+	fetchLabelKey   = "component"
+	fetchLabelValue = "alpine/Updater.Fetch"
+)
 
 func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
-	ctx = baggage.ContextWithValues(ctx, fetchLabel)
+	ctx = baggageutil.ContextWithValues(ctx, fetchLabelKey, fetchLabelValue)
 
 	zlog.Info(ctx).Str("database", u.url).Msg("starting fetch")
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.url, nil)

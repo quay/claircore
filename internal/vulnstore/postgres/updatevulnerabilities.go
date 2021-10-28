@@ -14,10 +14,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/baggageutil"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/microbatch"
 )
@@ -81,8 +80,8 @@ func updateVulnerabilites(ctx context.Context, pool *pgxpool.Pool, updater strin
 			(SELECT id FROM vuln WHERE hash_kind = $1 AND hash = $2))
 		ON CONFLICT DO NOTHING;`
 	)
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "internal/vulnstore/postgres/updateVulnerabilities"))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "internal/vulnstore/postgres/updateVulnerabilities")
 
 	tx, err := pool.Begin(ctx)
 	if err != nil {

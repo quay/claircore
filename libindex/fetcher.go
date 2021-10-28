@@ -17,12 +17,11 @@ import (
 	"github.com/klauspost/compress/gzip"
 	"github.com/klauspost/compress/zstd"
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/singleflight"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/baggageutil"
 )
 
 // FetchArena is a struct that keeps track of all the layers fetched into it,
@@ -85,9 +84,9 @@ func (a *FetchArena) filename(l *claircore.Layer) string {
 // It's not an error to have active fetchers, but may cause errors to have files
 // unlinked underneath their users.
 func (a *FetchArena) Close(ctx context.Context) error {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "libindex/fetchArena.Close"),
-		label.String("arena", a.root))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "libindex/fetchArena.Close",
+		"arena", a.root)
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	if len(a.rc) != 0 {
@@ -117,11 +116,11 @@ func (a *FetchArena) Close(ctx context.Context) error {
 
 // RealizeLayer is the inner function used inside the singleflight.
 func (a *FetchArena) realizeLayer(ctx context.Context, l *claircore.Layer) (string, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "libindex/fetchArena.realizeLayer"),
-		label.String("arena", a.root),
-		label.Stringer("layer", l.Hash),
-		label.String("uri", l.URI))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "libindex/fetchArena.realizeLayer",
+		"arena", a.root,
+		"layer", l.Hash.String(),
+		"uri", l.URI)
 	zlog.Debug(ctx).Msg("layer fetch start")
 
 	// Validate the layer input.

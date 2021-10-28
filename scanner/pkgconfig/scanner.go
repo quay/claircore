@@ -17,10 +17,9 @@ import (
 	"runtime/trace"
 
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/baggageutil"
 	"github.com/quay/claircore/internal/indexer"
 )
 
@@ -51,10 +50,10 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	}
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	trace.Log(ctx, "layer", layer.Hash.String())
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "scanner/pkgconfig/Scanner.Scan"),
-		label.String("version", ps.Version()),
-		label.String("layer", layer.Hash.String()))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "scanner/pkgconfig/Scanner.Scan",
+		"version", ps.Version(),
+		"layer", layer.Hash.String())
 	zlog.Debug(ctx).Msg("start")
 	defer zlog.Debug(ctx).Msg("done")
 

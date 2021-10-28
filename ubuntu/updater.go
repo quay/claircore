@@ -9,10 +9,9 @@ import (
 	"net/url"
 
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/baggageutil"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/tmp"
 )
@@ -77,9 +76,9 @@ func (u *Updater) Name() string {
 }
 
 func (u *Updater) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *http.Client) error {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "ubuntu/Updater.Configure"),
-		label.String("updater", u.Name()))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "ubuntu/Updater.Configure",
+		"updater", u.Name())
 
 	var cfg UpdaterConfig
 	if err := f(&cfg); err != nil {
@@ -110,9 +109,9 @@ type UpdaterConfig struct {
 }
 
 func (u *Updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "ubuntu/Updater.Fetch"),
-		label.String("database", u.url))
+	ctx = baggageutil.ContextWithValues(ctx,
+		"component", "ubuntu/Updater.Fetch",
+		"database", u.url)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.url, nil)
 	if err != nil {

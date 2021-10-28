@@ -8,7 +8,7 @@ require (
 	github.com/docker/docker v1.4.2-0.20191101170500-ac7306503d23 // indirect
 	github.com/doug-martin/goqu/v8 v8.6.0
 	github.com/golang/mock v1.3.1
-	github.com/google/go-cmp v0.5.4
+	github.com/google/go-cmp v0.5.6
 	github.com/google/go-containerregistry v0.0.0-20191206185556-eb7c14b719c6
 	github.com/google/uuid v1.1.1
 	github.com/jackc/pgconn v1.10.0
@@ -25,7 +25,7 @@ require (
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
 	github.com/rs/zerolog v1.20.0
 	github.com/ulikunitz/xz v0.5.8
-	go.opentelemetry.io/otel v0.15.0
+	go.opentelemetry.io/otel v1.1.0
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/text v0.3.6
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba
@@ -33,3 +33,5 @@ require (
 	google.golang.org/appengine v1.6.6 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
 )
+
+replace github.com/quay/zlog => github.com/misberner/zlog v0.0.0-20211028205213-77215c8ab862
