@@ -2,12 +2,163 @@
 ## [Unreleased]
 
 
+<a name="1.1.1"></a>
+## [1.1.1] - 2021-09-21
+### Cicd
+- [3e7043f](https://github.com/quay/claircore/commit/3e7043f60ff181dffdb6f46dd6f030a5a27c721e): add caches for testdata, modules, and builds
+### Debian
+- [77080de](https://github.com/quay/claircore/commit/77080dea47fb2a18b733e4d3b6376a5794167661): add bullseye ([#483](https://github.com/quay/claircore/issues/483))
+ -  [#483](https://github.com/quay/claircore/issues/483)### Dockerfile
+- [b658fdf](https://github.com/quay/claircore/commit/b658fdf3f72d2c8411287de5a150c7545f85735d): add a low-dependency Dockerfile parser
+### Dpkg
+- [c8a6e7f](https://github.com/quay/claircore/commit/c8a6e7f9a12e8731eeb7a2c96a2c7872d66e3a12): test status file directly
+- [0977b3e](https://github.com/quay/claircore/commit/0977b3e31aa4c450344992e6a195af629a133153): remove bufio.Scanner usage
+### Jar
+- [eb85f0b](https://github.com/quay/claircore/commit/eb85f0b9f97a9bb5ab045e099025dc0d2c7021ae): parse any archive in test
+- [846c076](https://github.com/quay/claircore/commit/846c076a0e38b2caecaf3d8d4b12e1538c087f48): handle manifests with multiple sections
+- [f33c1fc](https://github.com/quay/claircore/commit/f33c1fcebb8269c0c8c7e9c17b981d4b4a9bed8f): add Parse test to help debugging
+### Java
+- [43703c7](https://github.com/quay/claircore/commit/43703c750e3d8ab22bd927186d1c1debed084911): properly handle embedded jars
+- [b44ca85](https://github.com/quay/claircore/commit/b44ca85887f073afe9927b2c1882ed09ab21b04b): don't error for known classes of failures
+ -  [#484](https://github.com/quay/claircore/issues/484)### Rhel
+- [505f2fc](https://github.com/quay/claircore/commit/505f2fc39ac14a53f6099b73c1fbf28854e585f4): replace docker-slim with local parser
+- [ce8b5b4](https://github.com/quay/claircore/commit/ce8b5b48eff8fc53076b80439af3b0badd5c11d5): remove unconditional log
+- [c0a18d6](https://github.com/quay/claircore/commit/c0a18d64dbceb448cee3610ae7243667d0b1099c): update comments ([#486](https://github.com/quay/claircore/issues/486))
+ -  [#486](https://github.com/quay/claircore/issues/486)### Ubuntu
+- [e25f7d4](https://github.com/quay/claircore/commit/e25f7d432c256fdf0910846e16f4c766f5e35260): add impish ([#491](https://github.com/quay/claircore/issues/491))
+ -  [#491](https://github.com/quay/claircore/issues/491)
+<a name="v1.1.0"></a>
+## [v1.1.0] - 2021-09-28
+
+<a name="v1.1.0-rc.1"></a>
+## [v1.1.0-rc.1] - 2021-09-28
+### Alpine
+- [94dd31b](https://github.com/quay/claircore/commit/94dd31beb122603b9b7b44847219387ca5e2b99a): add 0 check in fixed_in_version
+- [945cdf5](https://github.com/quay/claircore/commit/945cdf5e029e4f6a7cb7bf52318b754dff42258e): add new releases
+### Gc
+- [056d5e7](https://github.com/quay/claircore/commit/056d5e7956c798b97cfc9539bde3847c7f3c62db): add foreign key ON DELETE CASCADES to uo_enrich table ([#470](https://github.com/quay/claircore/issues/470))
+ -  [#470](https://github.com/quay/claircore/issues/470)### Jar
+- [088772a](https://github.com/quay/claircore/commit/088772a8f181562d8b95fa0c0a2bd7fe03766737): add jar metadata parser
+### Java
+- [2b9423d](https://github.com/quay/claircore/commit/2b9423daa64efdb24965da0cc9d0e3b228e090b8): move to internal jar package
+### Libindex
+- [c0a71c6](https://github.com/quay/claircore/commit/c0a71c6e4a9f3e11d712cb92672bb354c18c761f): recognize application/x-gzip content-type
+- [4836df6](https://github.com/quay/claircore/commit/4836df6f4fec6cd18403848ced5ca624efef719a): new fetcher implementation
+### Rpm
+- [691f202](https://github.com/quay/claircore/commit/691f2023a1720a0579e688b69a2f4bfe1f4b7821): prevent directory traversal when extracting
+- [dab4e19](https://github.com/quay/claircore/commit/dab4e1942a0303e7cd26a8074d7c6e6b360cf0f9): examine file for BDB magic numbers
+- [64f6249](https://github.com/quay/claircore/commit/64f62498c29e314f41bf01d3f85e3dfc378eadeb): handle cross-layer hardlinks when extracting
+
+<a name="v1.1.0-rc.0"></a>
+## [v1.1.0-rc.0] - 2021-09-02
+### Build(Deps)
+- [8ba0561](https://github.com/quay/claircore/commit/8ba05610db2e12f11ee8c495ae57bd9027b6222f): bump github.com/ulikunitz/xz from 0.5.7 to 0.5.8
+### Cctool
+- [dd069ae](https://github.com/quay/claircore/commit/dd069aea6a8283655f0d4639569bd77a0e36527f): LockSource name change
+### Chore
+- [ac4abbe](https://github.com/quay/claircore/commit/ac4abbec999b2aa2949eacf15024a19a53909c0f): update go versions ([#461](https://github.com/quay/claircore/issues/461))
+ -  [#461](https://github.com/quay/claircore/issues/461)- [6b1fa87](https://github.com/quay/claircore/commit/6b1fa87bbe9ca1f9773770d0ca280627bc92c8b7): Improve check for go versions ([#462](https://github.com/quay/claircore/issues/462))
+ -  [#462](https://github.com/quay/claircore/issues/462)### Cicd
+- [4647949](https://github.com/quay/claircore/commit/4647949d4c29dc1be2db815cdf5c10a62cfd1aa3): release golang Docker image for linux/arm64
+### Controller
+- [1ed79c6](https://github.com/quay/claircore/commit/1ed79c6c8f1b14c494490fe10d14670fc5e7d34d): cleanups
+- [02bd118](https://github.com/quay/claircore/commit/02bd118d8c9d41dc929fedbb6b71ea583e287cbc): add retry
+- [45c3b0d](https://github.com/quay/claircore/commit/45c3b0d8003d891a350dc5bd96e327bdfaa1346e): wrap all returned errors
+- [4953c27](https://github.com/quay/claircore/commit/4953c27f291573aa599f79765858bbaf46425feb): misc cleanups
+- [8f1d055](https://github.com/quay/claircore/commit/8f1d05568e1647cb20694aea2b15f9125db492ce): remove Lock/Unlock functions
+### Ctxlock
+- [8d77280](https://github.com/quay/claircore/commit/8d772807b71baeb5f8efd7f57c3fc2191e427c44): context based locks
+### Debian
+- [68a646f](https://github.com/quay/claircore/commit/68a646fece16903968e731561e4288dc24878ccd): update matcher test
+### Distlock
+- [56166c3](https://github.com/quay/claircore/commit/56166c3c0b3853b46df680cea781c33d171ca8f2): remove package
+### Dpkg
+- [bba58a3](https://github.com/quay/claircore/commit/bba58a30878f850cacb90653fb53dd3702d07adc): update identification method of dpkg DB dir ([#456](https://github.com/quay/claircore/issues/456))
+ -  [#456](https://github.com/quay/claircore/issues/456)### Fetcher
+- [3e873a3](https://github.com/quay/claircore/commit/3e873a3c0435b8c1bf2e43e94f3f10dc4c76275e): use security data from access.redhat.com instead of www.redhat.com ([#458](https://github.com/quay/claircore/issues/458))
+ -  [#458](https://github.com/quay/claircore/issues/458)### Indexer
+- [5a27c1f](https://github.com/quay/claircore/commit/5a27c1f4b078492f922144715b8d57cebd135b68): remove ScanLock member
+### Integration
+- [82b8f7c](https://github.com/quay/claircore/commit/82b8f7c51372e7bcf762c925897cb390f85f2583): multiple OS support
+### Java
+- [a7380b8](https://github.com/quay/claircore/commit/a7380b8f05b9b5387c8e6a15dd292ce17474d20e): don't attempt to read too-small files
+- [a8949df](https://github.com/quay/claircore/commit/a8949df7c0e336037c8e0dec1154d8243906b87b): bump scanner version
+ -  [#435](https://github.com/quay/claircore/issues/435)- [008aa23](https://github.com/quay/claircore/commit/008aa23728c60e881cc2bbd19cd18445f04cd060): check magic number
+ - Closes [#434](https://github.com/quay/claircore/issues/434)### Layerscanner
+- [a2899c5](https://github.com/quay/claircore/commit/a2899c55193a57cca5ea7eb3ff783ac19d2e1a6c): log returned errors with scanner
+### Libindex
+- [9115ee0](https://github.com/quay/claircore/commit/9115ee0129373880821676222c90d93a9a32e605): use new controller and ctxlock APIs
+### Libvuln
+- [ec85f4c](https://github.com/quay/claircore/commit/ec85f4cd0949bd96cc559583e8aa835a77b9c646): switch to ctxlock API
+### Postgres
+- [fa7d23e](https://github.com/quay/claircore/commit/fa7d23e49e76d9290bf25f73caec7ce009ffa49d): update gc test
+- [b68fdf8](https://github.com/quay/claircore/commit/b68fdf8c22a84b8d5898d3e99069a6d3015d28ed): add timeouts around database operations
+- [9217a95](https://github.com/quay/claircore/commit/9217a95ec4ee9cb1295645c1619994bf4b625996): use wrap formatting verb
+### Rhel
+- [94a6da0](https://github.com/quay/claircore/commit/94a6da04dfac6640b55586cc36fb73a48a516881): update matcher test
+### Rpm
+- [a056e57](https://github.com/quay/claircore/commit/a056e5797dcee3fe57f9e77553c8aae05d0528c1): check tar error return
+- [5528de0](https://github.com/quay/claircore/commit/5528de0780fc06fddc5b9599105cbe09c5c5b320): normalize link target
+- [3c2fafc](https://github.com/quay/claircore/commit/3c2fafca5b051ec99cbd2a608271667b82d87d98): remove tar(1) call
+ -  [#436](https://github.com/quay/claircore/issues/436)- [636b243](https://github.com/quay/claircore/commit/636b24343eadde834c83553ca1aa245ded5b9242): special-case symlinks
+- [0a00be2](https://github.com/quay/claircore/commit/0a00be25295e423aa9e07b60e708030d24afdd27): eagerly change directory permissions
+### Scripts
+- [0d7ac64](https://github.com/quay/claircore/commit/0d7ac64d3b8444550412e0fd3be8232b4da4f6dc): check in a prepare-release script
+### Updates
+- [896fd8a](https://github.com/quay/claircore/commit/896fd8a0953a5c5bfb86a34a4e498ec4af79990b): remove distlock-like API
+### Vulnstore
+- [5abfb9e](https://github.com/quay/claircore/commit/5abfb9ec0b67caf4050f5320b4a83ff7fb12c6df): update mock
+
+<a name="v0.5.5"></a>
+## [v0.5.5] - 2021-09-28
+### Chore
+- [0e113c3](https://github.com/quay/claircore/commit/0e113c3b96354e6565a523e1196204af282bbdee): v0.5.5 changelog bump
+### Gc
+- [3defe60](https://github.com/quay/claircore/commit/3defe60ae6e1249fa0ec311b8ea2d89883b4fb88): add foreign key ON DELETE CASCADES to uo_enrich table ([#470](https://github.com/quay/claircore/issues/470)) ([#477](https://github.com/quay/claircore/issues/477))
+ -  [#470](https://github.com/quay/claircore/issues/470) -  [#477](https://github.com/quay/claircore/issues/477)### Rpm
+- [ed5f52a](https://github.com/quay/claircore/commit/ed5f52aec1c82746725e9cc23e98316eab8be25a): prevent directory traversal when extracting
+ -  [#478](https://github.com/quay/claircore/issues/478)- [95f60b3](https://github.com/quay/claircore/commit/95f60b3b3139d910d3aa5128674391ca941a1136): handle cross-layer hardlinks when extracting ([#475](https://github.com/quay/claircore/issues/475))
+ -  [#475](https://github.com/quay/claircore/issues/475) -  [#465](https://github.com/quay/claircore/issues/465)
+<a name="v0.5.4"></a>
+## [v0.5.4] - 2021-08-17
+### Chore
+- [d3590dd](https://github.com/quay/claircore/commit/d3590ddaa813d24807859afc0dcb9d9c7e6a0acc): v0.5.4 changelog bump
+### Rpm
+- [c7c28fa](https://github.com/quay/claircore/commit/c7c28fa1f5d4d24de026fb1391b1780e972b6254): normalize link target
+ -  [#447](https://github.com/quay/claircore/issues/447)
+<a name="v0.5.3"></a>
+## [v0.5.3] - 2021-08-16
+### Chore
+- [d4a3e8c](https://github.com/quay/claircore/commit/d4a3e8cc9a4bbc841665acc5d721edbff44f9c64): v0.5.3 changelog bump
+### Java
+- [e6ea56f](https://github.com/quay/claircore/commit/e6ea56f7c4ad5662238e98142df53af37ca76e12): bump scanner version
+ -  [#435](https://github.com/quay/claircore/issues/435) -  [#438](https://github.com/quay/claircore/issues/438)- [2cd8c17](https://github.com/quay/claircore/commit/2cd8c1761baeacd631ee1764c651f2f98ff645fc): check magic number
+ -  [#435](https://github.com/quay/claircore/issues/435)### Rpm
+- [4455559](https://github.com/quay/claircore/commit/4455559bd1f6a5f810aeb86f9de5e245dd1bf18a): remove tar(1) call
+ -  [#437](https://github.com/quay/claircore/issues/437)
+<a name="v0.5.2"></a>
+## [v0.5.2] - 2021-08-10
+### Chore
+- [b8224c7](https://github.com/quay/claircore/commit/b8224c7ba4b80c8d93ea021732478b32e06b2367): v0.5.2 changelog bump
+### Rpm
+- [cca9933](https://github.com/quay/claircore/commit/cca9933814635f69b18d29cdcbf7279c1c42bf7c): special-case symlinks
+- [3060f8b](https://github.com/quay/claircore/commit/3060f8b89b2a468ff51c64c73ff1097031952ba7): eagerly change directory permissions
+
+<a name="v0.5.1"></a>
+## [v0.5.1] - 2021-07-27
+### Chore
+- [38656e0](https://github.com/quay/claircore/commit/38656e03d98d80df4408289da810ddde93dd7efe): v0.5.1 changelog bump
+### Integration
+- [81f8501](https://github.com/quay/claircore/commit/81f850123608311b3912c2b16c43888a36f69065): multiple OS support
+ -  [#418](https://github.com/quay/claircore/issues/418)
 <a name="v0.5.0"></a>
-## [v0.5.0] - 2021-07-14
+## [v0.5.0] - 2021-07-15
 ### All
 - [67c0791](https://github.com/quay/claircore/commit/67c0791e2670f00337484becd38ed2c08fd4c109): use GOMAXPROCS instead of NumCPU
 - [f7b23aa](https://github.com/quay/claircore/commit/f7b23aae539e7077a6f5544dcb64538594483b85): switch CODEOWNERS to use clair team
 - [6bd0386](https://github.com/quay/claircore/commit/6bd0386206b0a99c3423a806db77bb6a86f441a4): remove jzelinskie from CODEOWNERS
+### Chore
+- [bbafc5c](https://github.com/quay/claircore/commit/bbafc5c7dd593cce380fe0615d0adefbdf961075): v0.5.0 changelog bump
 ### Claircore
 - [68e107a](https://github.com/quay/claircore/commit/68e107adf5197af890b93a9d833cb65b750dc8ab): add Enrichments to VulnerabilityReport
 ### Crda
@@ -55,6 +206,50 @@
 - [aaea5ba](https://github.com/quay/claircore/commit/aaea5ba48d49f3c11de080ecbacb9177f56bf609): run enrichment updaters
 ### Vulnstore
 - [bec40e2](https://github.com/quay/claircore/commit/bec40e2586e48207cada3a52bfb47d9c253276ce): add enrichment interfaces
+
+<a name="v0.4.8"></a>
+## [v0.4.8] - 2021-09-28
+### Chore
+- [e9fb1c3](https://github.com/quay/claircore/commit/e9fb1c39e3a49b45f8061d2d60a903e35a58d54d): v0.4.8 changelog bump
+### Gc
+- [9682889](https://github.com/quay/claircore/commit/968288909226c51216cb66ec5a1811acc97ecd7c): add foreign key ON DELETE CASCADES to uo_enrich table ([#470](https://github.com/quay/claircore/issues/470)) ([#476](https://github.com/quay/claircore/issues/476))
+ -  [#470](https://github.com/quay/claircore/issues/470) -  [#476](https://github.com/quay/claircore/issues/476)### Rpm
+- [dff671c](https://github.com/quay/claircore/commit/dff671c665141f126c072de8a744855d4916c9c7): prevent directory traversal when extracting
+ -  [#478](https://github.com/quay/claircore/issues/478)- [a6e9b97](https://github.com/quay/claircore/commit/a6e9b9773c0d4f24e439734d6da0a57814a38e6b): handle cross-layer hardlinks when extracting ([#474](https://github.com/quay/claircore/issues/474))
+ -  [#474](https://github.com/quay/claircore/issues/474) -  [#465](https://github.com/quay/claircore/issues/465)
+<a name="v0.4.7"></a>
+## [v0.4.7] - 2021-08-17
+### Chore
+- [7410a33](https://github.com/quay/claircore/commit/7410a3320ef31753808fa5d6abe34376089890de): v0.4.7 changelog bump
+### Rpm
+- [950d9dd](https://github.com/quay/claircore/commit/950d9ddd544d089ddfd880c3c1514170543768a7): normalize link target
+ -  [#477](https://github.com/quay/claircore/issues/477)
+<a name="v0.4.6"></a>
+## [v0.4.6] - 2021-08-16
+### Chore
+- [c2cd4fa](https://github.com/quay/claircore/commit/c2cd4faf1b18328159e5fe1f22220e5f38b31f13): v0.4.6 changelog bump
+### Java
+- [a6669db](https://github.com/quay/claircore/commit/a6669dbf4f324bd7e84548019e0321f1b178f623): bump scanner version
+ -  [#438](https://github.com/quay/claircore/issues/438) -  [#435](https://github.com/quay/claircore/issues/435)- [be81768](https://github.com/quay/claircore/commit/be8176840ce5c6eae405ef3cc01cd673aee43c8e): check magic number
+ -  [#435](https://github.com/quay/claircore/issues/435)- [c64d05c](https://github.com/quay/claircore/commit/c64d05c1f04060295f7c24dbeaf22f2d3f34b393): ignore whiteout files
+ -  [#409](https://github.com/quay/claircore/issues/409)### Rpm
+- [2f652f8](https://github.com/quay/claircore/commit/2f652f81f8f01cb8f1e857b07012c0d7134332ec): remove tar(1) call
+ -  [#437](https://github.com/quay/claircore/issues/437)
+<a name="v0.4.5"></a>
+## [v0.4.5] - 2021-08-10
+### Chore
+- [9793200](https://github.com/quay/claircore/commit/9793200a6c4038395f155282af602f0897313b7f): v0.4.5 changelog bump
+### Rpm
+- [a00ddef](https://github.com/quay/claircore/commit/a00ddef45bc3cfc6e4538b2f465a7866b7421186): special-case symlinks
+
+<a name="v0.4.4"></a>
+## [v0.4.4] - 2021-08-06
+### Chore
+- [ce6c994](https://github.com/quay/claircore/commit/ce6c994ebf3746c7dda6e101913f91126668e7da): v0.4.4 changelog bump
+### Indexer
+- [302384b](https://github.com/quay/claircore/commit/302384bc01c2178f8123088430df9852a3155c9d): avoid creating a new db pool for the locks
+ -  [#408](https://github.com/quay/claircore/issues/408)### Rpm
+- [9b1d1e3](https://github.com/quay/claircore/commit/9b1d1e35fe7673136d9ac73c3d49dabc2e469bb8): eagerly change directory permissions
 
 <a name="v0.4.3"></a>
 ## [v0.4.3] - 2021-06-15
@@ -894,8 +1089,22 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v0.5.0...HEAD
-[v0.5.0]: https://github.com/quay/claircore/compare/v0.4.3...v0.5.0
+[Unreleased]: https://github.com/quay/claircore/compare/1.1.1...HEAD
+[1.1.1]: https://github.com/quay/claircore/compare/v1.1.0...1.1.1
+[v1.1.0]: https://github.com/quay/claircore/compare/v1.1.0-rc.1...v1.1.0
+[v1.1.0-rc.1]: https://github.com/quay/claircore/compare/v1.1.0-rc.0...v1.1.0-rc.1
+[v1.1.0-rc.0]: https://github.com/quay/claircore/compare/v0.5.5...v1.1.0-rc.0
+[v0.5.5]: https://github.com/quay/claircore/compare/v0.5.4...v0.5.5
+[v0.5.4]: https://github.com/quay/claircore/compare/v0.5.3...v0.5.4
+[v0.5.3]: https://github.com/quay/claircore/compare/v0.5.2...v0.5.3
+[v0.5.2]: https://github.com/quay/claircore/compare/v0.5.1...v0.5.2
+[v0.5.1]: https://github.com/quay/claircore/compare/v0.5.0...v0.5.1
+[v0.5.0]: https://github.com/quay/claircore/compare/v0.4.8...v0.5.0
+[v0.4.8]: https://github.com/quay/claircore/compare/v0.4.7...v0.4.8
+[v0.4.7]: https://github.com/quay/claircore/compare/v0.4.6...v0.4.7
+[v0.4.6]: https://github.com/quay/claircore/compare/v0.4.5...v0.4.6
+[v0.4.5]: https://github.com/quay/claircore/compare/v0.4.4...v0.4.5
+[v0.4.4]: https://github.com/quay/claircore/compare/v0.4.3...v0.4.4
 [v0.4.3]: https://github.com/quay/claircore/compare/v0.4.2...v0.4.3
 [v0.4.2]: https://github.com/quay/claircore/compare/v0.4.1...v0.4.2
 [v0.4.1]: https://github.com/quay/claircore/compare/v0.4.0...v0.4.1
