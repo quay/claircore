@@ -97,6 +97,11 @@ func NewDB(ctx context.Context, t testing.TB) (*DB, error) {
 	if _, err := conn.Exec(ctx, loadUUID); err != nil {
 		return nil, err
 	}
+	var oid uint32
+	if err := conn.QueryRow(ctx, `SELECT oid::int4 FROM pg_database WHERE datname = current_database();`).Scan(&oid); err != nil {
+		return nil, err
+	}
+	t.Logf("database oid: %d", oid)
 	if err := conn.Close(ctx); err != nil {
 		return nil, err
 	}
