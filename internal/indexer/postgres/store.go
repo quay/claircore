@@ -2,9 +2,11 @@ package postgres
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v4/pgxpool"
 
 	"github.com/quay/claircore/internal/indexer"
@@ -52,4 +54,16 @@ func (s *store) selectScanners(ctx context.Context, vs indexer.VersionedScanners
 	}
 
 	return ids, nil
+}
+
+func (s *store) DatabaseID(ctx context.Context) ([]byte, error) {
+	const query = `SELECT oid FROM pg_database WHERE datname = current_database();`
+	var oid pgtype.OID
+	err := s.pool.QueryRow(ctx, query).Scan(&oid)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]byte, 4)
+	binary.BigEndian.PutUint32(out, uint32(oid))
+	return out, nil
 }
