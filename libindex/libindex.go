@@ -34,8 +34,7 @@ type Libindex struct {
 	client *http.Client
 	// Cl provides system-wide locks.
 	cl *ctxlock.Locker
-	// an opaque and unique string representing the configured
-	// state of the indexer. see setState for more information.
+	// An opaque string representing the configured state of the indexer.
 	state string
 	// FetchArena is an arena to fetch layers into. It ensures layers are
 	// fetched once and not removed while in use.
@@ -97,7 +96,7 @@ func New(ctx context.Context, opts *Opts, cl *http.Client) (*Libindex, error) {
 	}
 
 	// set the indexer's state
-	err = l.setState(ctx, vscnrs)
+	l.state, err = l.calculateState(ctx, vscnrs)
 	if err != nil {
 		return nil, fmt.Errorf("failed to set the indexer state: %v", err)
 	}
@@ -152,13 +151,13 @@ func (l *Libindex) State(ctx context.Context) (string, error) {
 	return l.state, nil
 }
 
-// setState creates a unique and opaque identifier representing the indexer's
+// CalculateState creates an opaque identifier representing the indexer's
 // configuration state.
 //
 // Indexers running different scanner versions will produce different state strings.
 // Thus this state value can be used as a cue for clients to re-index their manifests
 // and obtain a new IndexReport.
-func (l *Libindex) setState(ctx context.Context, vscnrs indexer.VersionedScanners) error {
+func (l *Libindex) calculateState(ctx context.Context, vscnrs indexer.VersionedScanners) (string, error) {
 	h := md5.New()
 	var ns []string
 	m := make(map[string][]byte)
@@ -171,16 +170,23 @@ func (l *Libindex) setState(ctx context.Context, vscnrs indexer.VersionedScanner
 		ns = append(ns, n)
 	}
 	if _, err := io.WriteString(h, versionMagic); err != nil {
-		return err
+		return "", err
 	}
 	sort.Strings(ns)
 	for _, n := range ns {
 		if _, err := h.Write(m[n]); err != nil {
-			return err
+			return "", err
 		}
 	}
-	l.state = hex.EncodeToString(h.Sum(nil))
-	return nil
+	b, err := l.store.DatabaseID(ctx)
+	if err != nil {
+		return "", err
+	}
+	if _, err := h.Write(b); err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
 // IndexReport retrieves an IndexReport for a particular manifest hash, if it exists.
