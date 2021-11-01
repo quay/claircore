@@ -63,6 +63,21 @@ func (mr *MockStoreMockRecorder) Close(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockStore)(nil).Close), arg0)
 }
 
+// DatabaseID mocks base method
+func (m *MockStore) DatabaseID(arg0 context.Context) ([]byte, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DatabaseID", arg0)
+	ret0, _ := ret[0].([]byte)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DatabaseID indicates an expected call of DatabaseID
+func (mr *MockStoreMockRecorder) DatabaseID(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DatabaseID", reflect.TypeOf((*MockStore)(nil).DatabaseID), arg0)
+}
+
 // DistributionsByLayer mocks base method
 func (m *MockStore) DistributionsByLayer(arg0 context.Context, arg1 claircore.Digest, arg2 VersionedScanners) ([]*claircore.Distribution, error) {
 	m.ctrl.T.Helper()

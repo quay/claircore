@@ -12,6 +12,9 @@ type Store interface {
 	Setter
 	Querier
 	Indexer
+	// DatabaseID should report a stable, opaque identifier for this database
+	// instance.
+	DatabaseID(context.Context) ([]byte, error)
 	// Close frees any resources associated with the Store.
 	Close(context.Context) error
 }
