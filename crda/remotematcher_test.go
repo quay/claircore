@@ -11,17 +11,15 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
-	"github.com/quay/zlog"
 )
 
-var (
-	pypiRepo = claircore.Repository{
-		Name: "python",
-		URI:  "https://python.org",
-	}
-)
+var pypiRepo = claircore.Repository{
+	Name: "python",
+	URI:  "https://python.org",
+}
 
 func (tc matcherTestcase) Run(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
@@ -30,22 +28,22 @@ func (tc matcherTestcase) Run(t *testing.T) {
 	if err != nil {
 		t.Errorf("RemoteMatcher error %v", err)
 	}
-	for k, expectedVulns := range tc.Expected {
+	for k, want := range tc.Expected {
 		got, ok := got[k]
 		if !ok {
 			t.Errorf("Expected key %s not found", k)
 		}
-		if diff := cmp.Diff(expectedVulns, got); diff != "" {
-			t.Errorf("Vuln mismatch (-want, +got):\n%s", diff)
+		if !cmp.Equal(got, want) {
+			t.Error(cmp.Diff(got, want))
 		}
 	}
 }
 
 type matcherTestcase struct {
-	Name     string
-	R        []*claircore.IndexRecord
 	Expected map[string][]*claircore.Vulnerability
 	Matcher  *Matcher
+	Name     string
+	R        []*claircore.IndexRecord
 }
 
 func newMatcher(t *testing.T, srv *httptest.Server) *Matcher {
@@ -119,7 +117,7 @@ func TestRemoteMatcher(t *testing.T) {
 				},
 			},
 			Expected: map[string][]*claircore.Vulnerability{
-				"pyyaml": []*claircore.Vulnerability{
+				"pyyaml": {
 					{
 						ID:                 "SNYK-PYTHON-PYYAML-559098",
 						Updater:            "CodeReadyAnalytics",
@@ -184,7 +182,7 @@ func TestRemoteMatcher(t *testing.T) {
 				},
 			},
 			Expected: map[string][]*claircore.Vulnerability{
-				"pyyaml": []*claircore.Vulnerability{
+				"pyyaml": {
 					{
 						ID:                 "SNYK-PYTHON-PYYAML-559098",
 						Updater:            "CodeReadyAnalytics",
@@ -202,7 +200,7 @@ func TestRemoteMatcher(t *testing.T) {
 						FixedInVersion: "5.3.1",
 					},
 				},
-				"flask": []*claircore.Vulnerability{
+				"flask": {
 					{
 						ID:                 "SNYK-PYTHON-FLASK-42185",
 						Updater:            "CodeReadyAnalytics",
@@ -238,7 +236,8 @@ func TestRemoteMatcher(t *testing.T) {
 				},
 			},
 			Matcher: newMatcher(t, srv),
-		}}
+		},
+	}
 	for _, tc := range tt {
 		t.Run(tc.Name, tc.Run)
 	}

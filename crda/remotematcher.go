@@ -10,11 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/sync/errgroup"
-
 	"github.com/quay/zlog"
 	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/label"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
@@ -36,30 +35,28 @@ const (
 	defaultKey                = "207c527cfc2a6b8dcf4fa43ad7a976da"
 )
 
-var (
-	supportedEcosystems = []string{"pypi", "maven"}
-)
+var supportedEcosystems = []string{"pypi", "maven"}
 
 // Matcher attempts to correlate discovered python packages with reported
 // vulnerabilities.
 type Matcher struct {
-	batchSize          int
 	client             *http.Client
-	ecosystem          string
-	requestConcurrency int
 	url                *url.URL
+	ecosystem          string
 	key                string
 	source             string
+	batchSize          int
+	requestConcurrency int
 }
 
 // Build struct to model CRDA V2 ComponentAnalysis response which
 // delivers Snyk sourced Vulnerability information.
 type Vulnerability struct {
-	FixedIn  []string `json:"fixed_in"`
 	ID       string   `json:"id"`
 	Severity string   `json:"severity"`
 	Title    string   `json:"title"`
 	URL      string   `json:"url"`
+	FixedIn  []string `json:"fixed_in"`
 }
 
 type VulnReport struct {
@@ -236,9 +233,9 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 // By convention, it's in a map key called "crda".
 type Config struct {
 	URL         string `json:"url" yaml:"url"`
-	Concurrency int    `json:"concurrent_requests" yaml:"concurrent_requests"`
 	Source      string `json:"source" yaml:"source"`
 	Key         string `json:"key" yaml:"key"`
+	Concurrency int    `json:"concurrent_requests" yaml:"concurrent_requests"`
 }
 
 // Configure implements driver.MatcherConfigurable.
@@ -278,7 +275,7 @@ func (m *Matcher) QueryRemoteMatcher(ctx context.Context, records []*claircore.I
 		Int("records", len(records)).
 		Msg("request")
 
-	// map Packge{name@version} to Packge to associate it with Vulnerability.
+	// map Package{name@version} to Package to associate it with Vulnerability.
 	packageVersionToIndexRecord := make(map[string]*claircore.IndexRecord)
 	key := func(Name, Version string) string {
 		return fmt.Sprintf("%s@%s", Name, Version)
@@ -342,7 +339,6 @@ func (m *Matcher) invokeComponentAnalysesInBatch(ctx context.Context, records []
 	g.Wait()
 	close(ctrlC)
 
-	// Not sure how big
 	for res := range ctrlC {
 		results = append(results, res...)
 	}
@@ -362,7 +358,7 @@ func (m *Matcher) invokeComponentAnalyses(ctx context.Context, records []*clairc
 			Version: ir.Package.Version,
 		}
 	}
-	// A request shouldn't go beyound 5s.
+	// A request shouldn't go beyond 5s.
 	tctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	reqBody, err := json.Marshal(request)
