@@ -2,8 +2,21 @@
 ## [Unreleased]
 
 
+<a name="v1.1.2"></a>
+## [v1.1.2] - 2021-11-04
+### Crda
+- [8d90253](https://github.com/quay/claircore/commit/8d90253ee0e343632789ba8b5bcc4d4d347037ae): simplifications, formatting, and typos
+- [edd435b](https://github.com/quay/claircore/commit/edd435b72f8665b8c19dd1575757fc0b1757ee52): update defaults
+- [659db9f](https://github.com/quay/claircore/commit/659db9fed6cf8d69c3192c224624cb8d8dff7120): updated remote-matcher
+### Crda: Revert "Crda
+- [f319d74](https://github.com/quay/claircore/commit/f319d74079334a305559be8e67c605cc0577f51e): remove matcher"
+### Dockerfile
+- [e0a2bac](https://github.com/quay/claircore/commit/e0a2bace4a280076c66de5d18e1d2304584e01a4): fix terminal expansion with too-small destination
+
 <a name="v1.1.1"></a>
-## [v1.1.1] - 2021-09-21
+## [v1.1.1] - 2021-10-28
+### Chore
+- [2843d93](https://github.com/quay/claircore/commit/2843d93852e5cfc5617c65acbd3c591f64f1d85c): v1.1.1 changelog bump
 ### Cicd
 - [3e7043f](https://github.com/quay/claircore/commit/3e7043f60ff181dffdb6f46dd6f030a5a27c721e): add caches for testdata, modules, and builds
 ### Debian
@@ -1089,7 +1102,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v1.1.1...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v1.1.2...HEAD
+[v1.1.2]: https://github.com/quay/claircore/compare/v1.1.1...v1.1.2
 [v1.1.1]: https://github.com/quay/claircore/compare/v1.1.0...v1.1.1
 [v1.1.0]: https://github.com/quay/claircore/compare/v1.1.0-rc.1...v1.1.0
 [v1.1.0-rc.1]: https://github.com/quay/claircore/compare/v1.1.0-rc.0...v1.1.0-rc.1
