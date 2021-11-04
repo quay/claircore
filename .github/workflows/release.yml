@@ -1,13 +1,10 @@
 ---
 name: Release
-# releaes occurs when a v0.* tag is pushed to the repository
-# a release will be created consisting of the change log details.
-# github managed documentation will be pushed
 
 on:
   push:
     tags:
-      - v0.*
+      - v*.*.*
 
 jobs:
   release:

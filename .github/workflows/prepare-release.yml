@@ -7,7 +7,7 @@ on:
       branch:
         description: 'the branch to prepare the release against'
         required: true
-        default: 'master'
+        default: 'main'
       tag:
         description: 'the tag to be released'
         required: true
