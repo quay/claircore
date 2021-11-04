@@ -57,4 +57,4 @@ jobs:
         with:
           personal_token: ${{ secrets.ACTIONS_DEPLOY_KEY }}
           publish_dir: ./book
-          keepFiles: true
+          keep_files: true

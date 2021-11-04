@@ -26,5 +26,5 @@ jobs:
         with:
           personal_token: ${{ secrets.ACTIONS_DEPLOY_KEY }}
           publish_dir: ./book
-          keepFiles: true
-          emptyCommits: false
+          keep_files: true
+          allow_empty_commit: false
