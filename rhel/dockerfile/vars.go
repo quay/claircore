@@ -78,6 +78,16 @@ func (v *Vars) Reset() {
 func (v *Vars) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err error) {
 	varStart := -1
 	r, sz := rune(0), 0
+	if v.state == varEmit {
+		// If we're here, we need to emit first thing.
+		var done bool
+		n, done := v.emit(dst)
+		if !done {
+			return 0, 0, transform.ErrShortDst
+		}
+		v.state = varConsume
+		return n, 0, nil
+	}
 	for ; nSrc < len(src); nSrc += sz {
 		r, sz = utf8.DecodeRune(src[nSrc:])
 		if r == utf8.RuneError {
@@ -104,7 +114,7 @@ func (v *Vars) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err error
 			case r == VarMeta:
 				// Record current position in case the destination is too small
 				// and the process backs out.
-				varStart = nSrc
+				varStart = nSrc + sz
 				v.varName.Reset()
 				v.varExpand.Reset()
 				v.state = varBegin
@@ -130,7 +140,8 @@ func (v *Vars) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err error
 			sz = 0 // Re-handle this rune.
 			n, done := v.emit(dst[nDst:])
 			if !done {
-				nSrc = varStart // Reset
+				nSrc += sz
+				v.state = varEmit
 				return nDst, nSrc, transform.ErrShortDst
 			}
 			nDst += n
@@ -157,7 +168,8 @@ func (v *Vars) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err error
 			case '}':
 				n, done := v.emit(dst[nDst:])
 				if !done {
-					nSrc = varStart // Reset
+					nSrc += sz
+					v.state = varEmit
 					return nDst, nSrc, transform.ErrShortDst
 				}
 				nDst += n
@@ -173,7 +185,8 @@ func (v *Vars) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err error
 			}
 			n, done := v.emit(dst[nDst:])
 			if !done {
-				nSrc = varStart
+				nSrc += sz
+				v.state = varEmit
 				return nDst, nSrc, transform.ErrShortDst
 			}
 			nDst += n
@@ -186,7 +199,7 @@ func (v *Vars) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err error
 		// Hit EOF, so variable name is complete.
 		n, done := v.emit(dst[nDst:])
 		if !done {
-			nSrc = varStart
+			v.state = varEmit
 			return nDst, nSrc, transform.ErrShortDst
 		}
 		nDst += n
@@ -289,6 +302,7 @@ const (
 	varBareword
 	varBraceName
 	varBraceExpand
+	varEmit
 )
 
 // VarExpand tracks how the current brace expression expects to be expanded.
