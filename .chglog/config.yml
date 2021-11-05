@@ -10,7 +10,7 @@ options:
   commit_groups:
     group_by: Scope
   header:
-    pattern: '^(.*):\s*(.*)$'
+    pattern: '^(.*?):\s*(.*)$'
     pattern_maps:
       - Scope
       - Subject
