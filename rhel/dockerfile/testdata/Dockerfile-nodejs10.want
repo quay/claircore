@@ -1,0 +1,20 @@
+{
+  "com.redhat.component": "nodejs-10-container",
+  "com.redhat.deployments-dir": "/src",
+  "com.redhat.dev-mode": "DEV_MODE:false",
+  "com.redhat.dev-mode.port": "DEBUG_PORT:5858",
+  "com.redhat.license_terms": "https://www.redhat.com/en/about/red-hat-end-user-license-agreements#UBI",
+  "description": "Node.js 10 available as container is a base platform for building and running various Node.js 10 applications and frameworks. Node.js is a platform built on Chrome's JavaScript runtime for easily building fast, scalable network applications. Node.js uses an event-driven, non-blocking I/O model that makes it lightweight and efficient, perfect for data-intensive real-time applications that run across distributed devices.",
+  "help": "For more information visit https://github.com/sclorg/s2i-nodejs-container",
+  "io.k8s.description": "Node.js 10 available as container is a base platform for building and running various Node.js 10 applications and frameworks. Node.js is a platform built on Chrome's JavaScript runtime for easily building fast, scalable network applications. Node.js uses an event-driven, non-blocking I/O model that makes it lightweight and efficient, perfect for data-intensive real-time applications that run across distributed devices.",
+  "io.k8s.display-name": "Node.js 10",
+  "io.openshift.expose-services": "8080:http",
+  "io.openshift.s2i.scripts-url": "image:///usr/libexec/s2i",
+  "io.openshift.tags": "builder,nodejs,nodejs10",
+  "io.s2i.scripts-url": "image:///usr/libexec/s2i",
+  "maintainer": "SoftwareCollections.org <sclorg@redhat.com>",
+  "name": "ubi8/10",
+  "summary": "Platform for building and running Node.js 10 applications",
+  "usage": "s2i build <SOURCE-REPOSITORY> ubi8/10:latest <APP-NAME>",
+  "version": "1"
+}

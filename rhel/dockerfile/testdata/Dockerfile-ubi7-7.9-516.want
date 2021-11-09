@@ -1,0 +1,20 @@
+{
+  "architecture": "x86_64",
+  "build-date": "2021-10-05T10:17:02.802845",
+  "com.redhat.build-host": "cpt-1007.osbs.prod.upshift.rdu2.redhat.com",
+  "com.redhat.component": "ubi7-container",
+  "com.redhat.license_terms": "https://www.redhat.com/en/about/red-hat-end-user-license-agreements#UBI",
+  "description": "The Universal Base Image is designed and engineered to be the base layer for all of your containerized applications, middleware and utilities. This base image is freely redistributable, but Red Hat only supports Red Hat technologies through subscriptions for Red Hat products. This image is maintained by Red Hat and updated regularly.",
+  "distribution-scope": "public",
+  "io.k8s.description": "The Universal Base Image is designed and engineered to be the base layer for all of your containerized applications, middleware and utilities. This base image is freely redistributable, but Red Hat only supports Red Hat technologies through subscriptions for Red Hat products. This image is maintained by Red Hat and updated regularly.",
+  "io.k8s.display-name": "Red Hat Universal Base Image 7",
+  "io.openshift.tags": "base rhel7",
+  "name": "ubi7",
+  "release": "516",
+  "summary": "Provides the latest release of the Red Hat Universal Base Image 7.",
+  "url": "https://access.redhat.com/containers/#/registry.access.redhat.com/ubi7/images/7.9-516",
+  "vcs-ref": "a4e710a688a6374670ecdd56637c3f683d11cbe3",
+  "vcs-type": "git",
+  "vendor": "Red Hat, Inc.",
+  "version": "7.9"
+}

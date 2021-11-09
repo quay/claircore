@@ -1,0 +1,23 @@
+{
+  "architecture": "x86_64",
+  "build-date": "2021-10-20T13:56:03.899740",
+  "com.redhat.build-host": "cpt-1007.osbs.prod.upshift.rdu2.redhat.com",
+  "com.redhat.component": "rh-redis5-container",
+  "com.redhat.license_terms": "https://www.redhat.com/en/about/red-hat-end-user-license-agreements#rhel",
+  "description": "Redis 5 available as container, is an advanced key-value store. It is often referred to as a data structure server since keys can contain strings, hashes, lists, sets and sorted sets. You can run atomic operations on these types, like appending to a string; incrementing the value in a hash; pushing to a list; computing set intersection, union and difference; or getting the member with highest ranking in a sorted set. In order to achieve its outstanding performance, Redis works with an in-memory dataset. Depending on your use case, you can persist it either by dumping the dataset to disk every once in a while, or by appending each command to a log.",
+  "distribution-scope": "public",
+  "io.k8s.description": "Redis 5 available as container, is an advanced key-value store. It is often referred to as a data structure server since keys can contain strings, hashes, lists, sets and sorted sets. You can run atomic operations on these types, like appending to a string; incrementing the value in a hash; pushing to a list; computing set intersection, union and difference; or getting the member with highest ranking in a sorted set. In order to achieve its outstanding performance, Redis works with an in-memory dataset. Depending on your use case, you can persist it either by dumping the dataset to disk every once in a while, or by appending each command to a log.",
+  "io.k8s.display-name": "Redis 5",
+  "io.openshift.expose-services": "6379:redis",
+  "io.openshift.tags": "database,redis,redis5,rh-redis5",
+  "maintainer": "SoftwareCollections.org <sclorg@redhat.com>",
+  "name": "rhscl/redis-5-rhel7",
+  "release": "53.1634738116",
+  "summary": "Redis in-memory data structure store, used as database, cache and message broker",
+  "url": "https://access.redhat.com/containers/#/registry.access.redhat.com/rhscl/redis-5-rhel7/images/5-53.1634738116",
+  "usage": "podman run -d --name redis_database -p 6379:6379 rhscl/redis-5-rhel7",
+  "vcs-ref": "1ca08b535089c4828147120ead2699d9f237260a",
+  "vcs-type": "git",
+  "vendor": "Red Hat, Inc.",
+  "version": "5"
+}
