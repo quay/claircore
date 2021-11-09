@@ -161,6 +161,7 @@ func (p *labelParser) Run() error {
 func splitKV(escchar rune, in string) ([]string, error) {
 	var ret []string
 	var esc, quote bool
+	var quotechar rune
 	start := 0
 	for cur, r := range in {
 		switch {
@@ -170,8 +171,10 @@ func splitKV(escchar rune, in string) ([]string, error) {
 			esc = true
 		case !esc && !quote && (r == '"' || r == '\''):
 			quote = true
-		case !esc && quote && (r == '"' || r == '\''):
+			quotechar = r
+		case !esc && quote && r == quotechar:
 			quote = false
+			quotechar = 0
 		case !esc && !quote && isWhitespace(r):
 			runlen := cur - start
 			switch {
