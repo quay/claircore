@@ -13,7 +13,7 @@ type Attribute int
 
 //go:generate stringer -type Attribute -linecomment
 
-// These are the valid Attributes
+// These are the valid Attributes, in CPE 2.3 binding order.
 const (
 	Part      Attribute = iota // part
 	Vendor                     // vendor
@@ -21,12 +21,15 @@ const (
 	Version                    // version
 	Update                     // update
 	Edition                    // edition
+	Language                   // language
 	SwEdition                  // sw_edition
 	TargetSW                   // target_sw
 	TargetHW                   // target_hw
-	Language                   // language
 	Other                      // other
 )
+
+// NB This order is different from 2.2 order, and some don't exist in that
+// binding. This makes the test cases a little hard to reason about.
 
 // NumAttr is the number of attributes in a 2.3 WFN.
 const NumAttr = 11

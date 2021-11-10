@@ -14,16 +14,16 @@ func _() {
 	_ = x[Version-3]
 	_ = x[Update-4]
 	_ = x[Edition-5]
-	_ = x[SwEdition-6]
-	_ = x[TargetSW-7]
-	_ = x[TargetHW-8]
-	_ = x[Language-9]
+	_ = x[Language-6]
+	_ = x[SwEdition-7]
+	_ = x[TargetSW-8]
+	_ = x[TargetHW-9]
 	_ = x[Other-10]
 }
 
-const _Attribute_name = "partvendorproductversionupdateeditionsw_editiontarget_swtarget_hwlanguageother"
+const _Attribute_name = "partvendorproductversionupdateeditionlanguagesw_editiontarget_swtarget_hwother"
 
-var _Attribute_index = [...]uint8{0, 4, 10, 17, 24, 30, 37, 47, 56, 65, 73, 78}
+var _Attribute_index = [...]uint8{0, 4, 10, 17, 24, 30, 37, 45, 55, 64, 73, 78}
 
 func (i Attribute) String() string {
 	if i < 0 || i >= Attribute(len(_Attribute_index)-1) {

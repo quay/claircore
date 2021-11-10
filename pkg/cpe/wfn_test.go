@@ -1,6 +1,11 @@
 package cpe
 
 import (
+	"compress/gzip"
+	"encoding/xml"
+	"os"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -62,7 +67,7 @@ func TestBinding(t *testing.T) {
 	//
 	// The wfn from the text is kept in a comment, then transcribed by hand into a
 	// WFN literal, and the expected binding is copied verbatim.
-	var bindTable = []struct {
+	bindTable := []struct {
 		WFN   WFN
 		Bound string
 	}{
@@ -183,7 +188,7 @@ func TestUnbinding(t *testing.T) {
 	//
 	// The goal wfn from the text is kept in a comment, then transcribed by hand into a
 	// WFN literal, and the starting binding is copied verbatim.
-	var unbindTable = []struct {
+	unbindTable := []struct {
 		Bound string
 		WFN   WFN
 		Error bool
@@ -280,13 +285,10 @@ func TestURIUnbinding(t *testing.T) {
 				{Kind: ValueSet, V: `8\.0\.6001`},
 				{Kind: ValueSet, V: "beta"},
 				{Kind: ValueAny},
-				{},
-				{},
-				{},
 				{Kind: ValueAny},
-				{},
 			}},
-			Bound: `cpe:/a:microsoft:internet_explorer:8.0.6001:beta`},
+			Bound: `cpe:/a:microsoft:internet_explorer:8.0.6001:beta`,
+		},
 		// wfn:[part="a",vendor="microsoft",product="internet_explorer",version="8\.\*",update="sp\?",edition=ANY,language=ANY]
 		{
 			WFN: WFN{Attr: [NumAttr]Value{
@@ -296,13 +298,10 @@ func TestURIUnbinding(t *testing.T) {
 				{Kind: ValueSet, V: `8\.\*`},
 				{Kind: ValueSet, V: `sp\?`},
 				{Kind: ValueAny},
-				{},
-				{},
-				{},
 				{Kind: ValueAny},
-				{},
 			}},
-			Bound: `cpe:/a:microsoft:internet_explorer:8.%2a:sp%3f`},
+			Bound: `cpe:/a:microsoft:internet_explorer:8.%2a:sp%3f`,
+		},
 		// wfn:[part="a",vendor="microsoft",product="internet_explorer",version="8\.*",update="sp?",edition=ANY,language=ANY]
 		{
 			WFN: WFN{Attr: [NumAttr]Value{
@@ -312,13 +311,10 @@ func TestURIUnbinding(t *testing.T) {
 				{Kind: ValueSet, V: `8\.*`},
 				{Kind: ValueSet, V: "sp?"},
 				{Kind: ValueAny},
-				{},
-				{},
-				{},
 				{Kind: ValueAny},
-				{},
 			}},
-			Bound: `cpe:/a:microsoft:internet_explorer:8.%02:sp%01`},
+			Bound: `cpe:/a:microsoft:internet_explorer:8.%02:sp%01`,
+		},
 		// wfn:[part="a",vendor="hp",product="insight_diagnostics",version="7\.4\.0\.1570",update=ANY,edition=ANY,sw_edition="online",target_sw="win2003",target_hw="x64",other=ANY,language=ANY]
 		{
 			WFN: WFN{Attr: [NumAttr]Value{
@@ -328,13 +324,14 @@ func TestURIUnbinding(t *testing.T) {
 				{Kind: ValueSet, V: `7\.4\.0\.1570`},
 				{Kind: ValueAny},
 				{Kind: ValueAny},
+				{Kind: ValueAny},
 				{Kind: ValueSet, V: "online"},
 				{Kind: ValueSet, V: "win2003"},
 				{Kind: ValueSet, V: "x64"},
 				{Kind: ValueAny},
-				{Kind: ValueAny},
 			}},
-			Bound: `cpe:/a:hp:insight_diagnostics:7.4.0.1570::~~online~win2003~x64~`},
+			Bound: `cpe:/a:hp:insight_diagnostics:7.4.0.1570::~~online~win2003~x64~`,
+		},
 		// wfn:[part="a",vendor="hp",product="openview_network_manager",version="7\.51",update=NA,edition=ANY,sw_edition=ANY,target_sw="linux",target_HW=ANY,other=ANY,language=ANY]
 		{
 			WFN: WFN{Attr: [NumAttr]Value{
@@ -345,12 +342,13 @@ func TestURIUnbinding(t *testing.T) {
 				{Kind: ValueNA},
 				{Kind: ValueAny},
 				{Kind: ValueAny},
+				{Kind: ValueAny},
 				{Kind: ValueSet, V: "linux"},
 				{Kind: ValueAny},
 				{Kind: ValueAny},
-				{Kind: ValueAny},
 			}},
-			Bound: `cpe:/a:hp:openview_network_manager:7.51:-:~~~linux~~`},
+			Bound: `cpe:/a:hp:openview_network_manager:7.51:-:~~~linux~~`,
+		},
 		// An error is raised when this URI is unbound, because it contains an illegal percent-encoded form,"%07".
 		{
 			Bound: `cpe:/a:foo%5cbar:big%24money_2010%07:::~~special~ipod_touch~80gb~`,
@@ -365,13 +363,10 @@ func TestURIUnbinding(t *testing.T) {
 				{Kind: ValueAny},
 				{Kind: ValueAny},
 				{Kind: ValueAny},
-				{},
-				{},
-				{},
 				{Kind: ValueAny},
-				{},
 			}},
-			Bound: `cpe:/a:foo~bar:big%7emoney_2010`},
+			Bound: `cpe:/a:foo~bar:big%7emoney_2010`,
+		},
 		// An error is raised when this URI is unbound, because it contains a special character ("%02") embedded within a valuestring.
 		{
 			Bound: `cpe:/a:foo:bar:12.%02.1234`,
@@ -392,7 +387,94 @@ func TestURIUnbinding(t *testing.T) {
 			t.Error(err)
 		}
 		if want := tc.WFN; !cmp.Equal(got, want) {
+			t.Logf("\ngot:\t%v\nwant:\t%v", got.Debug(), want.Debug())
 			t.Error(cmp.Diff(got, want))
 		}
 	}
+}
+
+func TestDictionary(t *testing.T) {
+	const fmt = "in: %+q\ngot:\t%q\nwant:\t%q"
+	f, err := os.Open("testdata/official-cpe-dictionary_v2.3.xml.gz")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	gz, err := gzip.NewReader(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer gz.Close()
+
+	var l xmlCPEList
+	if err := xml.NewDecoder(gz).Decode(&l); err != nil {
+		t.Error(err)
+	}
+	for _, i := range l.Items {
+		n := i.Name
+		wfn, err := UnbindURI(n)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, want := wfn.BindFS(), i.Item.Name
+		if got != want {
+			t.Logf(fmt, n, got, want)
+			t.Logf("wfn: %s", wfn.Debug())
+			t.FailNow()
+		}
+
+		n = i.Item.Name
+		wfn, err = UnbindFS(n)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, want = wfn.BindFS(), n
+		if got != want {
+			t.Logf(fmt, n, got, want)
+			t.Logf("wfn: %s", wfn.Debug())
+			t.FailNow()
+		}
+	}
+}
+
+type xmlCPEList struct {
+	XMLName xml.Name     `xml:"cpe-list"`
+	Items   []xmlCPEItem `xml:"cpe-item"`
+}
+
+type xmlCPEItem struct {
+	XMLName xml.Name     `xml:"cpe-item"`
+	Name    string       `xml:"name,attr"`
+	Item    xmlCPE23Item `xml:"cpe23-item"`
+}
+
+type xmlCPE23Item struct {
+	XMLName xml.Name `xml:"cpe23-item"`
+	Name    string   `xml:"name,attr"`
+}
+
+func (w *WFN) Debug() string {
+	var b strings.Builder
+
+	b.WriteString(`wfn:[`)
+	for i := 0; i < NumAttr; i++ {
+		if w.Attr[i].Kind == ValueUnset || w.Attr[i].Kind == ValueNA {
+			continue
+		}
+		if i != 0 {
+			b.WriteByte(',')
+		}
+		b.WriteString(Attribute(i).String())
+		b.WriteByte('=')
+		switch w.Attr[i].Kind {
+		case ValueAny:
+			b.WriteString(`ANY`)
+		case ValueSet:
+			b.WriteString(strconv.Quote(w.Attr[i].V))
+		default:
+			panic("unknown kind")
+		}
+	}
+	b.WriteByte(']')
+	return b.String()
 }
