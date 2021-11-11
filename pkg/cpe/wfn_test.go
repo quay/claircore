@@ -68,63 +68,46 @@ func TestBinding(t *testing.T) {
 	// The wfn from the text is kept in a comment, then transcribed by hand into a
 	// WFN literal, and the expected binding is copied verbatim.
 	bindTable := []struct {
-		WFN   WFN
 		Bound string
+		WFN   WFN
 	}{
 		// wfn:[part="a",vendor="microsoft",product="internet_explorer",version="8\.0\.6001",update="beta",edition=ANY]
 		{
-			WFN{Attr: [NumAttr]Value{
+			WFN: WFN{Attr: [NumAttr]Value{
 				{Kind: ValueSet, V: "a"},
 				{Kind: ValueSet, V: "microsoft"},
 				{Kind: ValueSet, V: "internet_explorer"},
 				{Kind: ValueSet, V: "8\\.0\\.6001"},
 				{Kind: ValueSet, V: "beta"},
 				{Kind: ValueAny},
-				{},
-				{},
-				{},
-				{},
-				{},
 			}},
-			`cpe:2.3:a:microsoft:internet_explorer:8.0.6001:beta:*:*:*:*:*:*`,
+			Bound: `cpe:2.3:a:microsoft:internet_explorer:8.0.6001:beta:*:*:*:*:*:*`,
 		},
 		// wfn:[part="a",vendor="microsoft",product="internet_explorer",version="8\.*",update="sp?",edition=ANY]
 		{
-			WFN{Attr: [NumAttr]Value{
+			WFN: WFN{Attr: [NumAttr]Value{
 				{Kind: ValueSet, V: "a"},
 				{Kind: ValueSet, V: "microsoft"},
 				{Kind: ValueSet, V: "internet_explorer"},
 				{Kind: ValueSet, V: "8\\.*"},
 				{Kind: ValueSet, V: "sp?"},
-				{},
-				{},
-				{},
-				{},
-				{},
-				{},
 			}},
-			`cpe:2.3:a:microsoft:internet_explorer:8.*:sp?:*:*:*:*:*:*`,
+			Bound: `cpe:2.3:a:microsoft:internet_explorer:8.*:sp?:*:*:*:*:*:*`,
 		},
 		// wfn:[part="a",vendor="microsoft",product="internet_explorer",version="8\.\*",update="sp?"]
 		{
-			WFN{Attr: [NumAttr]Value{
+			WFN: WFN{Attr: [NumAttr]Value{
 				{Kind: ValueSet, V: "a"},
 				{Kind: ValueSet, V: "microsoft"},
 				{Kind: ValueSet, V: "internet_explorer"},
 				{Kind: ValueSet, V: "8\\.\\*"},
 				{Kind: ValueSet, V: "sp?"},
-				{},
-				{},
-				{},
-				{},
-				{},
-				{},
 			}},
-			`cpe:2.3:a:microsoft:internet_explorer:8.\*:sp?:*:*:*:*:*:*`,
+			Bound: `cpe:2.3:a:microsoft:internet_explorer:8.\*:sp?:*:*:*:*:*:*`,
 		},
 		// wfn:[part="a",vendor="hp",product="insight",version="7\.4\.0\.1570",update=NA,sw_edition="online",target_sw="win2003",target_hw="x64"]
 		{
-			WFN{Attr: [NumAttr]Value{
+			WFN: WFN{Attr: [NumAttr]Value{
 				{Kind: ValueSet, V: "a"},
 				{Kind: ValueSet, V: "hp"},
 				{Kind: ValueSet, V: "insight"},
@@ -135,13 +118,12 @@ func TestBinding(t *testing.T) {
 				{Kind: ValueSet, V: "online"},
 				{Kind: ValueSet, V: "win2003"},
 				{Kind: ValueSet, V: "x64"},
-				{},
 			}},
-			`cpe:2.3:a:hp:insight:7.4.0.1570:-:*:*:online:win2003:x64:*`,
+			Bound: `cpe:2.3:a:hp:insight:7.4.0.1570:-:*:*:online:win2003:x64:*`,
 		},
 		// wfn:[part="a",vendor="hp",product="openview_network_manager",version="7\.51",target_sw="linux"]
 		{
-			WFN{Attr: [NumAttr]Value{
+			WFN: WFN{Attr: [NumAttr]Value{
 				{Kind: ValueSet, V: "a"},
 				{Kind: ValueSet, V: "hp"},
 				{Kind: ValueSet, V: "openview_network_manager"},
@@ -151,14 +133,12 @@ func TestBinding(t *testing.T) {
 				{},
 				{},
 				{Kind: ValueSet, V: "linux"},
-				{},
-				{},
 			}},
-			`cpe:2.3:a:hp:openview_network_manager:7.51:*:*:*:*:linux:*:*`,
+			Bound: `cpe:2.3:a:hp:openview_network_manager:7.51:*:*:*:*:linux:*:*`,
 		},
 		// wfn:[part="a",vendor="foo\\bar",product="big\$money_2010",sw_edition="special",target_sw="ipod_touch",target_hw="80gb"]
 		{
-			WFN{Attr: [NumAttr]Value{
+			WFN: WFN{Attr: [NumAttr]Value{
 				{Kind: ValueSet, V: "a"},
 				{Kind: ValueSet, V: `foo\\bar`},
 				{Kind: ValueSet, V: `big\$money_2010`},
@@ -169,9 +149,8 @@ func TestBinding(t *testing.T) {
 				{Kind: ValueSet, V: "special"},
 				{Kind: ValueSet, V: "ipod_touch"},
 				{Kind: ValueSet, V: "80gb"},
-				{},
 			}},
-			`cpe:2.3:a:foo\\bar:big\$money_2010:*:*:*:*:special:ipod_touch:80gb:*`,
+			Bound: `cpe:2.3:a:foo\\bar:big\$money_2010:*:*:*:*:special:ipod_touch:80gb:*`,
 		},
 	}
 
@@ -272,8 +251,8 @@ func TestUnbinding(t *testing.T) {
 func TestURIUnbinding(t *testing.T) {
 	// This table is made the URI unbinding examples in the standards document.
 	tt := []struct {
-		WFN   WFN
 		Bound string
+		WFN   WFN
 		Error bool
 	}{
 		// wfn:[part="a",vendor="microsoft",product="internet_explorer",version="8\.0\.6001",update="beta",edition=ANY,language=ANY]

@@ -42,10 +42,10 @@ func nonASCII(r rune) bool {
 // Reserved reports true if the rune is in the "reserved" set for CPE
 // strings and needs quoting.
 func reserved(r rune) bool {
-	return !((r >= 0x30 && r <= 0x39) ||
-		(r >= 0x41 && r <= 0x5a) ||
-		(r >= 0x61 && r <= 0x7a) ||
-		r == '_')
+	return (r < 0x30 || r > 0x39) &&
+		(r < 0x41 || r > 0x5a) &&
+		(r < 0x61 || r > 0x7a) &&
+		r != '_'
 }
 
 // Validate is adapted from
@@ -116,8 +116,8 @@ func validate(s string) error {
 
 // Value represents all the states for an attribute's value.
 type Value struct {
-	Kind ValueKind
 	V    string
+	Kind ValueKind
 }
 
 // NewValue constructs a specific value and ensures it's a valid string.
