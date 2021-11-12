@@ -219,16 +219,24 @@ func (m *Manager) Run(ctx context.Context) error {
 	sem.Acquire(context.Background(), int64(m.batchSize))
 
 	if m.updateRetention != 0 {
-		zlog.Info(ctx).Int("retention", m.updateRetention).Msg("GC started")
-		i, err := m.store.GC(ctx, m.updateRetention)
-		if err != nil {
-			zlog.Error(ctx).Err(err).Msg("error while performing GC")
+		ctx, done := m.locks.TryLock(ctx, "garbage-collection")
+		if err := ctx.Err(); err != nil {
+			zlog.Debug(ctx).
+				Err(err).
+				Msg("lock context canceled, garbage collection already running")
 		} else {
-			zlog.Info(ctx).
-				Int64("remaining_ops", i).
-				Int("retention", m.updateRetention).
-				Msg("GC completed")
+			zlog.Info(ctx).Int("retention", m.updateRetention).Msg("GC started")
+			i, err := m.store.GC(ctx, m.updateRetention)
+			if err != nil {
+				zlog.Error(ctx).Err(err).Msg("error while performing GC")
+			} else {
+				zlog.Info(ctx).
+					Int64("remaining_ops", i).
+					Int("retention", m.updateRetention).
+					Msg("GC completed")
+			}
 		}
+		done()
 	}
 
 	close(errChan)

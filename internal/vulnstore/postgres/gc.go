@@ -10,10 +10,12 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/label"
 	"golang.org/x/sync/semaphore"
 )
 
@@ -25,7 +27,7 @@ var (
 			Name:      "gc_total",
 			Help:      "Total number of database queries issued in the GC method.",
 		},
-		[]string{"query"},
+		[]string{"query", "success"},
 	)
 	gcDuration = promauto.NewHistogramVec(
 		prometheus.HistogramOpts{
@@ -38,22 +40,22 @@ var (
 	)
 )
 
+const (
+	// GCThrottle sets a limit for the number of deleted update operations
+	// (and subsequent cascade deletes in the uo_vuln table) that can occur in a GC run.
+	GCThrottle = 50
+)
+
 // GC is split into two phases, first it will identify any update operations
 // which are older then the provided keep value and delete these.
 //
-// Next it will perform chunked deletions of any vulns from the vuln table
+// Next it will perform updater based deletions of any vulns from the vuln table
 // which are not longer referenced by update operations.
 //
 // The GC is throttled to not overload the database with cascade deletes.
 // If a full GC is required run this method until the returned int64 value
 // is 0.
 func (s *Store) GC(ctx context.Context, keep int) (int64, error) {
-	const (
-		// GCThrottle sets a limit for the number of deleted update operations
-		// (and subsequent cascade deletes in the uo_vuln table) that can occur in a GC run.
-		GCThrottle = 50
-	)
-
 	// obtain update operations which need deletin'
 	ops, totalOps, err := eligibleUpdateOpts(ctx, s.pool, keep)
 	if err != nil {
@@ -76,7 +78,7 @@ func (s *Store) GC(ctx context.Context, keep int) (int64, error) {
 		return totalOps - deletedOps, err
 	}
 
-	// issue concurrent chunked deletion for known updaters
+	// issue concurrent updater-based deletion for known updaters
 	// limit concurrency by available goroutines.
 	cpus := int64(runtime.GOMAXPROCS(0))
 	sem := semaphore.NewWeighted(cpus)
@@ -90,7 +92,7 @@ func (s *Store) GC(ctx context.Context, keep int) (int64, error) {
 		}
 		go func(u string) {
 			defer sem.Release(1)
-			err := chunkedCleanup(ctx, s.pool, u)
+			err := vulnCleanup(ctx, s.pool, u)
 			if err != nil {
 				errC <- err
 			}
@@ -173,10 +175,11 @@ WHERE array_length(ordered_ops.refs, 1) > $2;
 	switch err {
 	case nil:
 	default:
+		gcCounter.WithLabelValues("updateOps", "false").Inc()
 		return nil, 0, fmt.Errorf("error querying for update operations: %v", err)
 	}
 
-	gcCounter.WithLabelValues("updateOps").Add(1)
+	gcCounter.WithLabelValues("updateOps", "true").Inc()
 	gcDuration.WithLabelValues("updateOps").Observe(time.Since(start).Seconds())
 
 	defer rows.Close()
@@ -197,126 +200,31 @@ WHERE array_length(ordered_ops.refs, 1) > $2;
 	return m, int64(len(m)), nil
 }
 
-func chunkedCleanup(ctx context.Context, pool *pgxpool.Pool, updater string) error {
+func vulnCleanup(ctx context.Context, pool *pgxpool.Pool, updater string) error {
 	const (
-		paginatedSelect = `
-SELECT id FROM vuln WHERE vuln.updater = $1 AND id > $2 ORDER BY id ASC LIMIT 10000;
-`
-		shouldDelete = `
-SELECT NOT EXISTS(SELECT 1 FROM uo_vuln WHERE vuln = $1);
-`
-		deleteVuln = `
-DELETE FROM vuln WHERE id = $1;
+		deleteOrphanedVulns = `
+DELETE FROM vuln v1 USING
+	vuln v2
+	LEFT JOIN uo_vuln uvl
+		ON v2.id = uvl.vuln
+	WHERE uvl.vuln IS NULL
+	AND v2.updater = $1
+AND v1.id = v2.id;
 `
 	)
 
-	ids := make([]int64, 0, 10000)
-	var largestID int64
-
-	// loop is only terminated by returning from the function.
-	for {
-		// idempotently reslice for next chunk operation.
-		ids = ids[:0]
-
-		// collect ids which the provided updater created.
-		// note arguments via closure
-		err := func() error {
-			start := time.Now()
-
-			rows, err := pool.Query(ctx, paginatedSelect, updater, largestID)
-			if err != nil {
-				return err
-			}
-			defer rows.Close()
-			for rows.Next() {
-				var id int64
-				err := rows.Scan(&id)
-				if err != nil {
-					return fmt.Errorf("encountered error while scanning vuln id: %v", err)
-				}
-				ids = append(ids, id)
-			}
-			if rows.Err() != nil {
-				return rows.Err()
-			}
-
-			gcCounter.WithLabelValues("paginatedSelect").Add(1)
-			gcDuration.WithLabelValues("paginatedSelect").Observe(time.Since(start).Seconds())
-			return nil
-		}()
-		if err != nil {
-			return fmt.Errorf("failed to collect vuln ids for updater %v: %v", updater, err)
-		}
-
-		// if the ids array is empty we processed all
-		// vulns, we terminate the entire function here.
-		if len(ids) == 0 {
-			return nil
-		}
-
-		// keep track of largest id for next paginated request.
-		largestID = ids[len(ids)-1]
-
-		// cross reference uo_vuln table to determine which ids should be
-		// deleted. these operations are small and fast so batching is optimal.
-		// note arguments via closure
-		//
-		// a new batch is returned containing, if any, delete queries to run.
-		toDelete, err := func() (*pgx.Batch, error) {
-			b := &pgx.Batch{}
-			toDelete := &pgx.Batch{}
-
-			for _, id := range ids {
-				b.Queue(shouldDelete, id)
-			}
-
-			start := time.Now()
-			res := pool.SendBatch(ctx, b)
-			defer res.Close()
-
-			var do bool
-			for i := 0; i < b.Len(); i++ {
-				err = res.QueryRow().Scan(&do)
-				if err != nil {
-					return nil, fmt.Errorf("failed while scanning existence check boolean: %v", err)
-				}
-				if do {
-					toDelete.Queue(deleteVuln, ids[i])
-				}
-			}
-
-			gcCounter.WithLabelValues("shoulddelete_batch").Add(1)
-			gcDuration.WithLabelValues("shoulddelete_batch").Observe(time.Since(start).Seconds())
-
-			return toDelete, nil
-		}()
-		if err != nil {
-			return err
-		}
-
-		// perform the delete branch
-		// note arguments via closure
-		err = func() error {
-			if toDelete.Len() == 0 {
-				return nil
-			}
-
-			start := time.Now()
-			res := pool.SendBatch(ctx, toDelete)
-			defer res.Close()
-
-			for i := 0; i < toDelete.Len(); i++ {
-				_, err := res.Exec()
-				if err != nil {
-					return fmt.Errorf("failed while exec'ing vuln delete: %v", err)
-				}
-			}
-			gcCounter.WithLabelValues("deletevuln_batch").Add(1)
-			gcDuration.WithLabelValues("deletevuln_batch").Observe(time.Since(start).Seconds())
-			return nil
-		}()
-		if err != nil {
-			return err
-		}
+	start := time.Now()
+	ctx = baggage.ContextWithValues(ctx, label.String("updater", updater))
+	zlog.Debug(ctx).
+		Msg("starting clean up")
+	res, err := pool.Exec(ctx, deleteOrphanedVulns, updater)
+	if err != nil {
+		gcCounter.WithLabelValues("deleteVulns", "false").Inc()
+		return fmt.Errorf("failed while exec'ing vuln delete: %w", err)
 	}
+	zlog.Debug(ctx).Int64("rows affected", res.RowsAffected()).Msg("vulns deleted")
+	gcCounter.WithLabelValues("deleteVulns", "true").Inc()
+	gcDuration.WithLabelValues("deleteVulns").Observe(time.Since(start).Seconds())
+
+	return nil
 }
