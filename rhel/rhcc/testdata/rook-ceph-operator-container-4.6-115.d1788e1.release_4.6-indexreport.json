@@ -1,0 +1,68 @@
+{
+  "err": "",
+  "state": "IndexFinished",
+  "success": true,
+  "packages": {
+    "4538": {
+      "id": "4538",
+      "cpe": "",
+      "arch": "x86_64",
+      "kind": "source",
+      "name": "rook-ceph-operator-container",
+      "source": {
+        "id": "1",
+        "cpe": "",
+        "name": "",
+        "version": "",
+        "normalized_version": ""
+      },
+      "version": "4.6-115.d1788e1.release_4.6",
+      "normalized_version": "rhctag:4.6.0.0.0.0.0.0.0.0"
+    },
+    "4540": {
+      "id": "4540",
+      "cpe": "",
+      "arch": "x86_64",
+      "kind": "binary",
+      "name": "ocs4/rook-ceph-rhel8-operator",
+      "source": {
+        "id": "4538",
+        "cpe": "",
+        "arch": "x86_64",
+        "kind": "source",
+        "name": "rook-ceph-operator-container",
+        "version": "4.6-115.d1788e1.release_4.6",
+        "normalized_version": ""
+      },
+      "version": "4.6-115.d1788e1.release_4.6",
+      "normalized_version": "rhctag:4.6.0.0.0.0.0.0.0.0"
+    }
+  },
+  "repository": {
+    "1": {
+      "name": "Red Hat Container Catalog",
+      "uri": "https://catalog.redhat.com/software/containers/explore"
+    }
+  },
+  "environments": {
+    "4538": [
+      {
+        "package_db": "root/buildinfo/Dockerfile-rook-ceph-4.6-115.d1788e1.release_4.6",
+        "introduced_in": "sha256:b922d7e2891ae5710b2e2f6dec59751e1ed086df761bc1ec37440f1f7b6a0247",
+        "repository_ids": [
+          "1"
+        ]
+      }
+    ],
+    "4540": [
+      {
+        "package_db": "root/buildinfo/Dockerfile-rook-ceph-4.6-115.d1788e1.release_4.6",
+        "introduced_in": "sha256:b922d7e2891ae5710b2e2f6dec59751e1ed086df761bc1ec37440f1f7b6a0247",
+        "repository_ids": [
+          "1"
+        ]
+      }
+    ]
+  },
+  "manifest_hash": "sha256:c71f151c22429e4833cb512dcab641a9cbc6400d95d0c24b577e1ab97bda5f33"
+}

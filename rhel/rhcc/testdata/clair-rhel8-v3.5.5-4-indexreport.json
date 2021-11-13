@@ -1,0 +1,120 @@
+{
+  "err": "",
+  "state": "IndexFinished",
+  "success": true,
+  "packages": {
+    "32": {
+      "id": "32",
+      "cpe": "",
+      "arch": "x86_64",
+      "kind": "source",
+      "name": "quay-clair-container",
+      "source": {
+        "id": "1",
+        "cpe": "",
+        "name": "",
+        "version": "",
+        "normalized_version": ""
+      },
+      "version": "v3.5.5-4",
+      "normalized_version": "rhctag:3.5.0.0.0.0.0.0.0.0"
+    },
+    "34": {
+      "id": "34",
+      "cpe": "",
+      "arch": "x86_64",
+      "kind": "binary",
+      "name": "quay/clair-rhel8",
+      "source": {
+        "id": "32",
+        "cpe": "",
+        "arch": "x86_64",
+        "kind": "source",
+        "name": "quay-clair-container",
+        "version": "v3.5.5-4",
+        "normalized_version": ""
+      },
+      "version": "v3.5.5-4",
+      "normalized_version": "rhctag:3.5.0.0.0.0.0.0.0.0"
+    },
+    "36": {
+      "id": "36",
+      "cpe": "",
+      "arch": "x86_64",
+      "kind": "source",
+      "name": "ubi8-container",
+      "source": {
+        "id": "1",
+        "cpe": "",
+        "name": "",
+        "version": "",
+        "normalized_version": ""
+      },
+      "version": "8.4-206.1626828523",
+      "normalized_version": "rhctag:8.4.0.0.0.0.0.0.0.0"
+    },
+    "38": {
+      "id": "38",
+      "cpe": "",
+      "arch": "x86_64",
+      "kind": "binary",
+      "name": "ubi8",
+      "source": {
+        "id": "36",
+        "cpe": "",
+        "arch": "x86_64",
+        "kind": "source",
+        "name": "ubi8-container",
+        "version": "8.4-206.1626828523",
+        "normalized_version": ""
+      },
+      "version": "8.4-206.1626828523",
+      "normalized_version": "rhctag:8.4.0.0.0.0.0.0.0.0"
+    }
+  },
+  "repository": {
+    "1": {
+      "name": "Red Hat Container Catalog",
+      "uri": "https://catalog.redhat.com/software/containers/explore"
+    }
+  },
+  "environments": {
+    "32": [
+      {
+        "package_db": "root/buildinfo/Dockerfile-quay-clair-rhel8-v3.5.5-4",
+        "introduced_in": "sha256:a5ac7bbd6645d6b98e41600a1510d7378d74e6b0b858622b57fce2a8a05a87e5",
+        "repository_ids": [
+          "1"
+        ]
+      }
+    ],
+    "34": [
+      {
+        "package_db": "root/buildinfo/Dockerfile-quay-clair-rhel8-v3.5.5-4",
+        "introduced_in": "sha256:a5ac7bbd6645d6b98e41600a1510d7378d74e6b0b858622b57fce2a8a05a87e5",
+        "repository_ids": [
+          "1"
+        ]
+      }
+    ],
+    "36": [
+      {
+        "package_db": "root/buildinfo/Dockerfile-ubi8-8.4-206.1626828523",
+        "introduced_in": "sha256:a50df8fd88fecefc26fd331f832672108deb08cf9d2b303a5b86156a7f51b5d8",
+        "repository_ids": [
+          "1"
+        ]
+      }
+    ],
+    "38": [
+      {
+        "package_db": "root/buildinfo/Dockerfile-ubi8-8.4-206.1626828523",
+        "introduced_in": "sha256:a50df8fd88fecefc26fd331f832672108deb08cf9d2b303a5b86156a7f51b5d8",
+        "repository_ids": [
+          "1"
+        ]
+      }
+    ]
+  },
+  "manifest_hash": "sha256:e7a9c9de4b2375d2d846b6b3d3e476f9a180d5d2a27282f62ff8f5d6fb96889c"
+}

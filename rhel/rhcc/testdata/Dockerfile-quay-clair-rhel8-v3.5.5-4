@@ -1,0 +1,68 @@
+FROM sha256:0ced1c7c9b23d0e107c7b15d5a0017abbbcf7e64e49a4c9f9efa1b9589ca8b68 AS build-pip
+
+COPY $REMOTE_SOURCE $REMOTE_SOURCE_DIR
+WORKDIR $REMOTE_SOURCE_DIR/app
+
+RUN INSTALL_PKGS="\
+	python3 \
+        gcc-c++ \
+    " && \
+    yum -y --setopt=tsflags=nodocs --setopt=skip_missing_names_on_install=False install $INSTALL_PKGS && \
+    yum -y update && \
+    yum -y clean all
+
+RUN alternatives --set python /usr/bin/python3 && \
+    python -m pip install --no-cache-dir --upgrade setuptools pip && \
+    python -m pip install --no-cache-dir -r requirements.txt --no-cache && \
+    python -m pip freeze
+
+
+FROM sha256:320c4c36df196f57b67205292ec1514cce5d6c742cbdc01443f465d931d2bbd4 AS build-gomod
+
+COPY --from=build-pip $REMOTE_SOURCE_DIR $REMOTE_SOURCE_DIR
+WORKDIR $REMOTE_SOURCE_DIR/app
+
+ARG CLAIR_VERSION=v4.1.1
+
+# RUN go mod vendor
+RUN go build \
+	-ldflags="-X main.Version=${CLAIR_VERSION}" \
+	./cmd/clair
+RUN go build \
+	./cmd/clairctl
+
+FROM sha256:0ced1c7c9b23d0e107c7b15d5a0017abbbcf7e64e49a4c9f9efa1b9589ca8b68
+
+LABEL com.redhat.component="quay-clair-container"
+LABEL name="quay/clair-rhel8"
+LABEL version="v3.5.5"
+LABEL io.k8s.display-name="Red Hat Quay - Clair"
+LABEL io.k8s.description="Red Hat Quay container image scanner"
+LABEL summary="Red Hat Quay container image scanner"
+LABEL maintainer="support@redhat.com"
+LABEL io.openshift.tags="quay"
+
+RUN INSTALL_PKGS="\
+	rpm \
+	tar \
+    " && \
+    yum -y --setopt=tsflags=nodocs --setopt=skip_missing_names_on_install=False install $INSTALL_PKGS && \
+    yum -y update && \
+    yum -y clean all
+
+VOLUME /config
+EXPOSE 6060
+WORKDIR /run
+ENV CLAIR_CONF=/config/config.yaml
+ENV CLAIR_MODE=combo
+ENV SSL_CERT_DIR="/etc/ssl/certs:/etc/pki/tls/certs:/var/run/certs"
+USER nobody:nobody
+
+COPY --from=build-pip /usr/local/bin/dumb-init /usr/bin/dumb-init
+COPY --from=build-gomod $REMOTE_SOURCE_DIR/app/clair /bin/clair
+COPY --from=build-gomod $REMOTE_SOURCE_DIR/app/clairctl /bin/clairctl
+
+ENTRYPOINT ["/usr/bin/dumb-init", "--", "/bin/clair"]
+
+ADD quay-clair-container-v3.5.5-4.json /root/buildinfo/content_manifests/quay-clair-container-v3.5.5-4.json
+LABEL "release"="4" "com.redhat.license_terms"="https://www.redhat.com/agreements" "distribution-scope"="public" "vendor"="Red Hat, Inc." "build-date"="2021-08-02T15:56:16.824320" "architecture"="x86_64" "vcs-type"="git" "vcs-ref"="60e980fc47a5b270aa1118213135d951b875d43d" "com.redhat.build-host"="cpt-1007.osbs.prod.upshift.rdu2.redhat.com" "description"="Red Hat Quay container image scanner" "url"="https://access.redhat.com/containers/#/registry.access.redhat.com/quay/clair-rhel8/images/v3.5.5-4"
