@@ -3,6 +3,8 @@ package test
 import (
 	"context"
 	"net/http"
+	"sort"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -39,6 +41,7 @@ func (tc ScannerTestcase) Digest() claircore.Digest {
 
 // Run returns a function suitable for using with (*testing.T).Run.
 func (tc ScannerTestcase) Run(ctx context.Context) func(*testing.T) {
+	sort.Slice(tc.Want, pkgSort(tc.Want))
 	return func(t *testing.T) {
 		ctx := zlog.Test(ctx, t)
 		d := tc.Digest()
@@ -56,9 +59,23 @@ func (tc ScannerTestcase) Run(ctx context.Context) func(*testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		sort.Slice(got, pkgSort(got))
 		t.Logf("found %d packages", len(got))
 		if !cmp.Equal(tc.Want, got) {
 			t.Error(cmp.Diff(tc.Want, got))
 		}
+	}
+}
+
+func pkgSort(s []*claircore.Package) func(i, j int) bool {
+	return func(i, j int) bool {
+		switch strings.Compare(s[i].Name, s[j].Name) {
+		case -1:
+			return true
+		case 0:
+			return strings.Compare(s[i].RepositoryHint, s[j].RepositoryHint) == -1
+		default:
+		}
+		return false
 	}
 }
