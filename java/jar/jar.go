@@ -37,10 +37,10 @@ import (
 	"io"
 	"io/fs"
 	"net/mail"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
-	"sync"
 
 	"github.com/quay/zlog"
 	"go.opentelemetry.io/otel/baggage"
@@ -143,7 +143,7 @@ Finish:
 // ExtractManifest attempts to open the manifest file at the well-known path.
 //
 // Reports NotAJar if the file doesn't exist.
-func extractManifest(ctx context.Context, name string, z fs.FS) (Info, error) {
+func extractManifest(ctx context.Context, name string, z *zip.Reader) (Info, error) {
 	const manifestPath = `META-INF/MANIFEST.MF`
 	mf, err := z.Open(manifestPath)
 	switch {
@@ -164,33 +164,32 @@ func extractManifest(ctx context.Context, name string, z fs.FS) (Info, error) {
 }
 
 // ExtractProperties pulls pom.properties files out of the META-INF directory
-// of the provided fs.FS.
-func extractProperties(ctx context.Context, name string, z fs.FS) ([]Info, error) {
+// of the provided zip.
+func extractProperties(ctx context.Context, name string, z *zip.Reader) ([]Info, error) {
 	const filename = "pom.properties"
-	var pf []string
-	// Walk the fs looking for properties files.
-	// We should end up with one info for every properties file.
-	wf := func(path string, d fs.DirEntry, err error) error {
-		// Tolerate no errors. We also need to walk everything.
-		switch {
-		case err != nil:
-			return err
-		case d.Name() != filename:
-			return nil
+	if _, err := z.Open(`META-INF`); err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil, mkErr("properties", notAJar(name, err))
 		}
-		zlog.Info(ctx).
-			Str("path", path).
-			Msg("found properties file")
-		pf = append(pf, path)
-		return nil
+		return nil, mkErr("properties", err)
 	}
-	err := fs.WalkDir(z, `META-INF`, wf)
-	switch {
-	case errors.Is(err, nil):
-	case errors.Is(err, fs.ErrNotExist):
-		return nil, mkErr("properties", notAJar(name, err))
-	default:
-		return nil, err
+	var pf []string
+	// Go through the zip looking for properties files.
+	// We should end up with one info for every properties file.
+	for _, f := range z.File {
+		// Normalize the path to handle any attempted traversals
+		// encoded in the file names.
+		p := normName(f.Name)
+		if path.Base(p) == filename {
+			zlog.Info(ctx).
+				Str("path", p).
+				Msg("found properties file")
+			pf = append(pf, p)
+		}
+	}
+	if len(pf) == 0 {
+		zlog.Debug(ctx).Msg("properties not found")
+		return nil, errUnpopulated
 	}
 	ret := make([]Info, len(pf))
 	for i, p := range pf {
@@ -205,57 +204,43 @@ func extractProperties(ctx context.Context, name string, z fs.FS) ([]Info, error
 		}
 		ret[i].Source = p
 	}
-	if len(ret) == 0 {
-		zlog.Debug(ctx).Msg("properties not found")
-		return nil, errUnpopulated
-	}
 	return ret, nil
 }
 
 // ExtractInner recurses into anything that looks like a jar in "z".
-func extractInner(ctx context.Context, outer string, z fs.FS) ([]Info, error) {
+func extractInner(ctx context.Context, outer string, z *zip.Reader) ([]Info, error) {
 	ctx = baggage.ContextWithValues(ctx, label.String("parent", outer))
 	var ret []Info
 	// Zips need random access, so allocate a buffer for any we find.
-	// It's grown to the initial size upon first use.
 	var buf bytes.Buffer
-	var grow sync.Once
-	const bufSz = 4 * 1024 * 1024
 	h := sha1.New()
-	wf := func(path string, d fs.DirEntry, err error) error {
-		// Tolerate no errors. We also need to walk everything.
-		// This has a series of checks before calling Parse:
-		switch {
-		case err != nil:
-			return err
-		case !checkExt(d.Name()): // Check name
+	checkFile := func(ctx context.Context, f *zip.File) error {
+		name := normName(f.Name)
+		// Check name.
+		if !checkExt(name) {
 			return nil
 		}
-		fi, err := d.Info()
-		if err != nil {
-			return err
-		}
-		// Check size
+		fi := f.FileInfo()
+		// Check size.
 		if fi.Size() < MinSize {
-			zlog.Debug(ctx).Str("member", d.Name()).Msg("not actually a jar: too small")
+			zlog.Debug(ctx).Str("member", name).Msg("not actually a jar: too small")
 			return nil
 		}
-		f, err := z.Open(path)
+		rc, err := f.Open()
 		if err != nil {
 			return err
 		}
-		defer f.Close()
-		grow.Do(func() { buf.Grow(bufSz) })
+		defer rc.Close()
 		buf.Reset()
 		h.Reset()
-		sz, err := buf.ReadFrom(io.TeeReader(f, h))
+		sz, err := buf.ReadFrom(io.TeeReader(rc, h))
 		if err != nil {
 			return err
 		}
 		bs := buf.Bytes()
 		// Check header.
 		if !bytes.Equal(bs[:4], Header) {
-			zlog.Debug(ctx).Str("member", d.Name()).Msg("not actually a jar: bad header")
+			zlog.Debug(ctx).Str("member", name).Msg("not actually a jar: bad header")
 			return nil
 		}
 		// Okay, now reasonably certain this is a jar.
@@ -263,12 +248,12 @@ func extractInner(ctx context.Context, outer string, z fs.FS) ([]Info, error) {
 		if err != nil {
 			return err
 		}
-		ps, err := Parse(ctx, d.Name(), zr)
+		ps, err := Parse(ctx, name, zr)
 		switch {
 		case errors.Is(err, nil):
 		case errors.Is(err, ErrNotAJar) || errors.Is(err, ErrUnidentified):
 			zlog.Debug(ctx).
-				Str("member", d.Name()).
+				Str("member", name).
 				Err(err).
 				Msg("not actually a jar")
 			return nil
@@ -284,14 +269,24 @@ func extractInner(ctx context.Context, outer string, z fs.FS) ([]Info, error) {
 		ret = append(ret, ps...)
 		return nil
 	}
-	if err := fs.WalkDir(z, ".", wf); err != nil {
-		return nil, fmt.Errorf("walking %s: %w", outer, err)
+
+	for _, f := range z.File {
+		if err := checkFile(ctx, f); err != nil {
+			return nil, fmt.Errorf("walking %s: %w", outer, err)
+		}
 	}
 	if len(ret) == 0 {
 		zlog.Debug(ctx).
 			Msg("found no bundled jars")
 	}
 	return ret, nil
+}
+
+// NormName normalizes a name from a raw zip file header.
+//
+// This should be used in all cases that pull the name out of the zip header.
+func normName(p string) string {
+	return path.Join("/", p)[1:]
 }
 
 // NameRegexp is used to attempt to pull a name and version out of a jar's
