@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/quay/claircore/internal/indexer"
 )
@@ -52,4 +53,18 @@ func (s *store) selectScanners(ctx context.Context, vs indexer.VersionedScanners
 	}
 
 	return ids, nil
+}
+
+func promTimer(h *prometheus.HistogramVec, name string, err *error) func() time.Duration {
+	t := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
+		h.WithLabelValues(name, success(*err)).Observe(v)
+	}))
+	return t.ObserveDuration
+}
+
+func success(err error) string {
+	if err == nil {
+		return "true"
+	}
+	return "false"
 }
