@@ -2,34 +2,44 @@ package migrations
 
 import (
 	"database/sql"
+	"embed"
 
 	"github.com/remind101/migrate"
 )
 
-const (
-	MigrationTable = "libindex_migrations"
-)
+//go:embed *.sql
+var fs embed.FS
+
+func runFile(n string) func(*sql.Tx) error {
+	b, err := fs.ReadFile(n)
+	return func(tx *sql.Tx) error {
+		if err != nil {
+			return err
+		}
+		if _, err := tx.Exec(string(b)); err != nil {
+			return err
+		}
+		return nil
+	}
+}
+
+const MigrationTable = "libindex_migrations"
 
 var Migrations = []migrate.Migration{
 	{
 		ID: 1,
-		Up: func(tx *sql.Tx) error {
-			_, err := tx.Exec(migration1)
-			return err
-		},
+		Up: runFile("01-init.sql"),
 	},
 	{
 		ID: 2,
-		Up: func(tx *sql.Tx) error {
-			_, err := tx.Exec(migration2)
-			return err
-		},
+		Up: runFile("02-digests.sql"),
 	},
 	{
 		ID: 3,
-		Up: func(tx *sql.Tx) error {
-			_, err := tx.Exec(migration3)
-			return err
-		},
+		Up: runFile("03-unique-manifest_index.sql"),
+	},
+	{
+		ID: 4,
+		Up: runFile("04-foreign-key-cascades.sql"),
 	},
 }
