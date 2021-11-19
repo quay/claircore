@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	indexManifesCounter = promauto.NewCounterVec(
+	indexManifestCounter = promauto.NewCounterVec(
 		prometheus.CounterOpts{
 			Namespace: "claircore",
 			Subsystem: "indexer",
@@ -127,7 +127,7 @@ func (s *store) IndexManifest(ctx context.Context, ir *claircore.IndexReport) er
 	if err != nil {
 		return fmt.Errorf("final batch insert failed: %w", err)
 	}
-	indexManifesCounter.WithLabelValues("query_batch").Add(1)
+	indexManifestCounter.WithLabelValues("query_batch").Add(1)
 	indexManifestDuration.WithLabelValues("query_batch").Observe(time.Since(start).Seconds())
 
 	tctx, done = context.WithTimeout(ctx, 15*time.Second)
