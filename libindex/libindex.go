@@ -224,3 +224,12 @@ func (l *Libindex) AffectedManifests(ctx context.Context, vulns []claircore.Vuln
 	affected.Sort()
 	return &affected, nil
 }
+
+// DeleteManifests removes manifests specified by the provided digests.
+//
+// Providing an unknown digest is not an error.
+func (l *Libindex) DeleteManifests(ctx context.Context, d ...claircore.Digest) ([]claircore.Digest, error) {
+	ctx = baggage.ContextWithValues(ctx,
+		label.String("component", "libindex/Libindex.DeleteManifests"))
+	return l.store.DeleteManifests(ctx, d...)
+}

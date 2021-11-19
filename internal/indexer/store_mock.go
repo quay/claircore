@@ -63,6 +63,26 @@ func (mr *MockStoreMockRecorder) Close(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockStore)(nil).Close), arg0)
 }
 
+// DeleteManifests mocks base method
+func (m *MockStore) DeleteManifests(arg0 context.Context, arg1 ...claircore.Digest) ([]claircore.Digest, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0}
+	for _, a := range arg1 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DeleteManifests", varargs...)
+	ret0, _ := ret[0].([]claircore.Digest)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteManifests indicates an expected call of DeleteManifests
+func (mr *MockStoreMockRecorder) DeleteManifests(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0}, arg1...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteManifests", reflect.TypeOf((*MockStore)(nil).DeleteManifests), varargs...)
+}
+
 // DistributionsByLayer mocks base method
 func (m *MockStore) DistributionsByLayer(arg0 context.Context, arg1 claircore.Digest, arg2 VersionedScanners) ([]*claircore.Distribution, error) {
 	m.ctrl.T.Helper()

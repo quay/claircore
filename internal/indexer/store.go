@@ -24,6 +24,10 @@ type Setter interface {
 	// Typically this will write into identity tables so later methods have a foreign key
 	// to reference and data integrity is applied.
 	PersistManifest(ctx context.Context, manifest claircore.Manifest) error
+	// DeleteManifests removes the manifests indicated by the passed digests
+	// from the backing store.
+	DeleteManifests(context.Context, ...claircore.Digest) ([]claircore.Digest, error)
+
 	// SetLayerScanned marks the provided layer hash successfully scanned by the provided versioned scanner.
 	//
 	// After this method is returned a call to Querier.LayerScanned with the same arguments must return true.
