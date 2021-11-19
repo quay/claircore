@@ -2,11 +2,28 @@
 ## [Unreleased]
 
 
+<a name="v1.1.3"></a>
+## [v1.1.3] - 2021-11-17
+### Chore
+- [8cc7c71](https://github.com/quay/claircore/commit/8cc7c71b716d19d7b94a8e8c40cbf785d5e675de): update changelog config
+### Cpe
+- [5f2731f](https://github.com/quay/claircore/commit/5f2731f51130e5ceb92f85845510d18f951dc3a0): code simplifications
+- [5582bca](https://github.com/quay/claircore/commit/5582bca7a356a5249330a6181ffc1b6b6f2811ec): add dictionary test
+### Dockerfile
+- [ff6f74c](https://github.com/quay/claircore/commit/ff6f74c073f844686181b4637bcc02079ff88e7a): update GetLabel test
+- [d841f1a](https://github.com/quay/claircore/commit/d841f1aa948983bdd29e6178e1be1a3ebac6e101): fix quote confusion
+### Jar
+- [c37acbc](https://github.com/quay/claircore/commit/c37acbc11d39b0ab08e9e489c9974c2c6b936d09): handle archives with invalid filesystem semantics
+### Test
+- [2fa9642](https://github.com/quay/claircore/commit/2fa96420746a7c418d60b62a10de11eb3ad15026): sort comparison inputs
+
 <a name="v1.1.2"></a>
 ## [v1.1.2] - 2021-11-05
 ### Build(Deps)
 - [c81b37a](https://github.com/quay/claircore/commit/c81b37a50dac63d370480a501411c9b3d9d10c8a): bump peaceiris/actions-gh-pages from 2 to 3.8.0
 - [a401058](https://github.com/quay/claircore/commit/a4010584ab3785ee1b3da7efc3ff3c00e00eeff0): bump peter-evans/create-pull-request from 3.5.1 to 3.11.0
+### Chore
+- [77a443e](https://github.com/quay/claircore/commit/77a443ec9caa46f6a6ab2c55ef5ed83c0fa9661a): v1.1.2 changelog bump
 ### Cicd
 - [fa1f877](https://github.com/quay/claircore/commit/fa1f877f006a65f7749666f93a4ae8c31432d969): switch gh-pages action to use default token
 - [44bbd6a](https://github.com/quay/claircore/commit/44bbd6a5e97074fd45cb245980d95581f37a81e1): update documentation arguments
@@ -17,8 +34,7 @@
 - [8d90253](https://github.com/quay/claircore/commit/8d90253ee0e343632789ba8b5bcc4d4d347037ae): simplifications, formatting, and typos
 - [edd435b](https://github.com/quay/claircore/commit/edd435b72f8665b8c19dd1575757fc0b1757ee52): update defaults
 - [659db9f](https://github.com/quay/claircore/commit/659db9fed6cf8d69c3192c224624cb8d8dff7120): updated remote-matcher
-### Crda: Revert "Crda
-- [f319d74](https://github.com/quay/claircore/commit/f319d74079334a305559be8e67c605cc0577f51e): remove matcher"
+- [f319d74](https://github.com/quay/claircore/commit/f319d74079334a305559be8e67c605cc0577f51e): revert "crda: remove matcher"
 ### Dockerfile
 - [e0a2bac](https://github.com/quay/claircore/commit/e0a2bace4a280076c66de5d18e1d2304584e01a4): fix terminal expansion with too-small destination
 
@@ -435,9 +451,8 @@
 ## [v0.3.2] - 2021-03-18
 ### Chore
 - [280bf2b](https://github.com/quay/claircore/commit/280bf2b93a452642d9ae41ee59afbbb71a4790b8): v0.3.2 changelog bump
+- [d3ac00e](https://github.com/quay/claircore/commit/d3ac00e1808c61f47a8505de4931b694c54e5b7a): release quay.io/claircore/golang:1.16
 - [bfb37f0](https://github.com/quay/claircore/commit/bfb37f01c616db804aab3f6a361404a69a79ce28): update comments in distribution scanners
-### Chore: Release Quay.Io/Claircore/Golang
-- [d3ac00e](https://github.com/quay/claircore/commit/d3ac00e1808c61f47a8505de4931b694c54e5b7a): 1.16
 ### Cicd
 - [7d55319](https://github.com/quay/claircore/commit/7d55319f6202145cbfe38faf3fde183642c53123): sort changelog by semver
 - [eae2b15](https://github.com/quay/claircore/commit/eae2b158422d7f53bce9a43a3a6e83f106ef2092): bump out go1.14 and bump in go1.16
@@ -1162,7 +1177,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v1.1.2...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v1.1.3...HEAD
+[v1.1.3]: https://github.com/quay/claircore/compare/v1.1.2...v1.1.3
 [v1.1.2]: https://github.com/quay/claircore/compare/v1.1.1...v1.1.2
 [v1.1.1]: https://github.com/quay/claircore/compare/v1.1.0...v1.1.1
 [v1.1.0]: https://github.com/quay/claircore/compare/v1.1.0-rc.1...v1.1.0
