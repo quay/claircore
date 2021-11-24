@@ -103,7 +103,7 @@ func Parse(ctx context.Context, name string, z *zip.Reader) ([]Info, error) {
 			Msg("using discovered manifest")
 		ret = append(ret, i)
 		goto Finish
-	case errors.Is(err, errUnpopulated):
+	case errors.Is(err, errUnpopulated) || errors.Is(err, errInsaneManifest):
 	case strings.HasPrefix(base, "javax") && errors.Is(err, ErrNotAJar):
 	default:
 		return nil, err
@@ -251,7 +251,9 @@ func extractInner(ctx context.Context, outer string, z *zip.Reader) ([]Info, err
 		ps, err := Parse(ctx, name, zr)
 		switch {
 		case errors.Is(err, nil):
-		case errors.Is(err, ErrNotAJar) || errors.Is(err, ErrUnidentified):
+		case errors.Is(err, ErrNotAJar) ||
+			errors.Is(err, ErrUnidentified) ||
+			errors.Is(err, errInsaneManifest):
 			zlog.Debug(ctx).
 				Str("member", name).
 				Err(err).
@@ -356,6 +358,10 @@ func (i *Info) String() string {
 // the Info struct.
 var errUnpopulated = errors.New("unpopulated")
 
+// ErrInsaneManifest is returned by the parse* method when it the expected sanity
+// checks fail.
+var errInsaneManifest = errors.New("jar manifest does not pass sanity checks")
+
 // ParseManifest does what it says on the tin.
 //
 // This extracts "Main Attributes", as defined at
@@ -372,13 +378,20 @@ func (i *Info) parseManifest(ctx context.Context, r io.Reader) error {
 	// Sanity checks:
 	switch {
 	case len(msg.Header) == 0:
-		return errors.New("no headers found")
+		zlog.Debug(ctx).
+			Msg("no headers found")
+		return errInsaneManifest
 	case !manifestVer.MatchString(msg.Header.Get("Manifest-Version")):
 		v := msg.Header.Get("Manifest-Version")
-		return fmt.Errorf("invalid manifest version: %q", v)
+		zlog.Debug(ctx).
+			Str("manifest_version", v).
+			Msg("invalid manifest version")
+		return errInsaneManifest
 	case msg.Header.Get("Name") != "":
+		zlog.Debug(ctx).
+			Msg("martian manifest")
 		// This shouldn't be happening in the Main section.
-		return fmt.Errorf("martian manifest")
+		return errInsaneManifest
 	}
 
 	var name, version string
