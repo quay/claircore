@@ -36,6 +36,10 @@ type alpineRegex struct {
 // ex: "Welcome to Alpine Linux 3.3"
 var alpineRegexes = []alpineRegex{
 	{
+		dist:   alpine3_15Dist,
+		regexp: regexp.MustCompile(`Alpine Linux v?3\.15`),
+	},
+	{
 		dist:   alpine3_14Dist,
 		regexp: regexp.MustCompile(`Alpine Linux v?3\.14`),
 	},
