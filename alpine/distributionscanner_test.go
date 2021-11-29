@@ -75,6 +75,11 @@ func TestDistributionScanner(t *testing.T) {
 			OSRelease: v3_14_OSRelease,
 			Issue:     v3_14_Issue,
 		},
+		{
+			Release:   V3_15,
+			OSRelease: v3_15_OSRelease,
+			Issue:     v3_15_Issue,
+		},
 	}
 	for _, tt := range table {
 		t.Run(string(tt.Release), func(t *testing.T) {
@@ -175,7 +180,7 @@ HOME_URL="https://alpinelinux.org/"
 BUG_REPORT_URL="https://bugs.alpinelinux.org/"`
 	v3_12_Issue = `Welcome to Alpine Linux 3.12
 Kernel \r on an \m (\l)`
-    v3_13_OSRelease = `NAME="Alpine Linux"
+	v3_13_OSRelease = `NAME="Alpine Linux"
 ID=alpine
 VERSION_ID=3.13.4
 PRETTY_NAME="Alpine Linux v3.13"
@@ -183,12 +188,20 @@ HOME_URL="https://alpinelinux.org/"
 BUG_REPORT_URL="https://bugs.alpinelinux.org/"`
 	v3_13_Issue = `Welcome to Alpine Linux 3.13
 Kernel \r on an \m (\l)`
-    v3_14_OSRelease = `NAME="Alpine Linux"
+	v3_14_OSRelease = `NAME="Alpine Linux"
 ID=alpine
 VERSION_ID=3.14.1
 PRETTY_NAME="Alpine Linux v3.14"
 HOME_URL="https://alpinelinux.org/"
 BUG_REPORT_URL="https://bugs.alpinelinux.org/"`
 	v3_14_Issue = `Welcome to Alpine Linux 3.14
+Kernel \r on an \m (\l)`
+	v3_15_OSRelease = `NAME="Alpine Linux"
+ID=alpine
+VERSION_ID=3.15.0
+PRETTY_NAME="Alpine Linux v3.15"
+HOME_URL="https://alpinelinux.org/"
+BUG_REPORT_URL="https://bugs.alpinelinux.org/"`
+	v3_15_Issue = `Welcome to Alpine Linux 3.15
 Kernel \r on an \m (\l)`
 )
