@@ -96,6 +96,9 @@ func (p *labelParser) Run() error {
 				}
 				for _, kv := range pairs {
 					i := strings.IndexByte(kv, '=')
+					if i == -1 {
+						return fmt.Errorf("unrecognised format of env key value pair in dockerfile: %s", kv)
+					}
 					k, _, err := transform.String(p.unquote, kv[:i])
 					if err != nil {
 						return err
@@ -160,13 +163,23 @@ func (p *labelParser) Run() error {
 // Label and Env instructions allow for key-value pairs with this syntax.
 func splitKV(escchar rune, in string) ([]string, error) {
 	var ret []string
-	var esc, quote bool
+	var esc, quote, escapedNewLine bool
 	var quotechar rune
 	start := 0
 	for cur, r := range in {
 		switch {
 		case esc:
 			esc = false
+			if r == '\n' {
+				escapedNewLine = true
+			}
+		case escapedNewLine && unicode.IsSpace(r): // advance
+		case escapedNewLine:
+			escapedNewLine = false
+			start = start + 1
+			if !esc && r == escchar {
+				esc = true
+			}
 		case !esc && r == escchar:
 			esc = true
 		case !esc && !quote && (r == '"' || r == '\''):
@@ -179,7 +192,7 @@ func splitKV(escchar rune, in string) ([]string, error) {
 			runlen := cur - start
 			switch {
 			case runlen > 1:
-				ret = append(ret, in[start:cur])
+				ret = append(ret, strings.TrimSpace(in[start:cur]))
 				fallthrough
 			case runlen == 1:
 				start = cur + 1
@@ -189,7 +202,7 @@ func splitKV(escchar rune, in string) ([]string, error) {
 		}
 	}
 	if rem := in[start:]; len(rem) > 0 {
-		ret = append(ret, rem)
+		ret = append(ret, strings.TrimSpace(rem))
 	}
 	return ret, nil
 }
