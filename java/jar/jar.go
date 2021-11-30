@@ -245,9 +245,18 @@ func extractInner(ctx context.Context, outer string, z *zip.Reader) ([]Info, err
 		}
 		// Okay, now reasonably certain this is a jar.
 		zr, err := zip.NewReader(bytes.NewReader(bs), sz)
-		if err != nil {
+		switch {
+		case errors.Is(err, nil):
+		case errors.Is(err, zip.ErrFormat):
+			zlog.Debug(ctx).
+				Str("member", name).
+				Err(err).
+				Msg("not actually a jar: invalid zip")
+			return nil
+		default:
 			return err
 		}
+
 		ps, err := Parse(ctx, name, zr)
 		switch {
 		case errors.Is(err, nil):
