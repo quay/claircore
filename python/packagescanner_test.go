@@ -3,16 +3,19 @@ package python_test
 import (
 	"context"
 	"path"
+	"sort"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/python"
 	"github.com/quay/claircore/test"
+	"github.com/quay/zlog"
 )
 
 // TestScan runs the python scanner over some layers known to have python
 // packages installed.
-func TestScan(t *testing.T) {
+func TestScanRemote(t *testing.T) {
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
 	for _, tc := range scanTable {
@@ -573,4 +576,39 @@ var scanTable = []test.ScannerTestcase{
 		},
 		Scanner: &python.Scanner{},
 	},
+}
+
+func TestScanLocal(t *testing.T) {
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
+
+	table := []struct {
+		name      string
+		want      []*claircore.Package
+		layerPath string
+	}{
+		{
+			name:      "bad version",
+			want:      nil,
+			layerPath: "testdata/layer-with-bad-version.tar",
+		},
+	}
+	for _, tt := range table {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := zlog.Test(ctx, t)
+			scanner := &python.Scanner{}
+			l := &claircore.Layer{}
+			l.SetLocal(tt.layerPath)
+
+			got, err := scanner.Scan(ctx, l)
+			if err != nil {
+				t.Error(err)
+			}
+			sort.Slice(got, func(i, j int) bool { return got[i].Name < got[j].Name })
+			if !cmp.Equal(got, tt.want) {
+				t.Error(cmp.Diff(got, tt.want))
+			}
+		})
+	}
+
 }
