@@ -12,6 +12,7 @@ import (
 	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/xmlutil"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/ovalutil"
 )
@@ -24,7 +25,9 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 	zlog.Info(ctx).Msg("starting parse")
 	defer r.Close()
 	root := oval.Root{}
-	if err := xml.NewDecoder(r).Decode(&root); err != nil {
+	dec := xml.NewDecoder(r)
+	dec.CharsetReader = xmlutil.CharsetReader
+	if err := dec.Decode(&root); err != nil {
 		return nil, fmt.Errorf("photon: unable to decode OVAL document: %w", err)
 	}
 	zlog.Debug(ctx).Msg("xml decoded")
@@ -43,7 +46,8 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 				// specific xml database. we'll use the updater's release
 				// to map the parsed vulnerabilities
 				Dist: releaseToDist(u.release),
-			}}, nil
+			},
+		}, nil
 	}
 	vulns, err := ovalutil.RPMDefsToVulns(ctx, &root, protoVulns)
 	if err != nil {
