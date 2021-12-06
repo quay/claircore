@@ -246,11 +246,15 @@ func (r *RepositoryScanner) getCPEsUsingContainerAPI(ctx context.Context, l *cla
 	}
 
 	nvr, arch, err := extractBuildNVR(ctx, path, buf)
-	if err != nil {
-		return nil, err
-	}
-	if nvr == "" || arch == "" {
+	switch {
+	case errors.Is(err, nil):
+	case errors.Is(err, errBadDockerfile):
+		zlog.Info(ctx).
+			AnErr("label_error", err).
+			Msg("bad dockerfile")
 		return nil, nil
+	default:
+		return nil, err
 	}
 
 	cpes, err := r.apiFetcher.GetCPEs(ctx, nvr, arch)
@@ -318,14 +322,29 @@ func extractBuildNVR(ctx context.Context, dockerfilePath string, buf *bytes.Buff
 	}
 	n, ok := ls[comp]
 	if !ok {
-		return "", "", fmt.Errorf("dockerfile missing expected label %q", comp)
+		return "", "", missingLabel(comp)
 	}
 	a, ok := ls[arch]
 	if !ok {
-		return "", "", fmt.Errorf("dockerfile missing expected label %q", arch)
+		return "", "", missingLabel(arch)
 	}
 	v, r := parseVersionRelease(filepath.Base(dockerfilePath))
 	return fmt.Sprintf("%s-%s-%s", n, v, r), a, nil
+}
+
+var errBadDockerfile = errors.New("bad dockerfile")
+
+type missingLabel string
+
+func (e missingLabel) Error() string {
+	return fmt.Sprintf("dockerfile missing expected label %q", string(e))
+}
+
+func (e missingLabel) Is(tgt error) bool {
+	if oe, ok := tgt.(missingLabel); ok {
+		return string(oe) == string(e)
+	}
+	return errors.Is(tgt, errBadDockerfile)
 }
 
 // parseVersionRelease - parse release and version from NVR

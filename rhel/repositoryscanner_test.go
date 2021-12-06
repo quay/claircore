@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"path"
@@ -142,5 +143,16 @@ func TestRepositoryScanner(t *testing.T) {
 				t.Error(cmp.Diff(got, tt.want))
 			}
 		})
+	}
+}
+
+func TestLabelError(t *testing.T) {
+	err := missingLabel("test")
+	t.Log(err)
+	if got, want := err, errBadDockerfile; !errors.Is(got, want) {
+		t.Errorf("%v != %v", got, want)
+	}
+	if got, want := err, missingLabel("test"); !errors.Is(got, want) {
+		t.Errorf("%v != %v", got, want)
 	}
 }
