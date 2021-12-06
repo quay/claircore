@@ -3,7 +3,6 @@
 package pep440
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -131,7 +130,7 @@ func (a *Version) Compare(b *Version) int {
 // Parse attempts to extract a PEP-440 version string from the provided string.
 func Parse(s string) (v Version, err error) {
 	if !pattern.MatchString(s) {
-		return v, errors.New("no version found")
+		return v, fmt.Errorf("invalid pep440 version: %q", s)
 	}
 
 	ms := pattern.FindStringSubmatch(s)

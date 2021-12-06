@@ -106,7 +106,11 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 		}
 		v, err := pep440.Parse(hdr.Get("Version"))
 		if err != nil {
-			return nil, err
+			zlog.Warn(ctx).
+				Err(err).
+				Str("path", n).
+				Msg("couldn't parse the version, skipping")
+			continue
 		}
 		ret = append(ret, &claircore.Package{
 			Name:              strings.ToLower(hdr.Get("Name")),
