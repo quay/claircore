@@ -196,27 +196,32 @@ func TestJAR(t *testing.T) {
 			ctx := zlog.Test(ctx, t)
 			f, err := td.Open(ent.Name())
 			if err != nil {
-				t.Fatal(err)
+				t.Error(err)
+				return
 			}
 			defer f.Close()
 			fi, err := ent.Info()
 			if err != nil {
-				t.Fatal(err)
+				t.Error(err)
+				return
 			}
 			sz := fi.Size()
 			buf.Reset()
 			buf.Grow(int(sz))
 			if _, err := buf.ReadFrom(f); err != nil {
 				t.Error(err)
+				return
 			}
 
 			z, err := zip.NewReader(bytes.NewReader(buf.Bytes()), fi.Size())
 			if err != nil {
-				t.Error(err)
+				t.Fatal(err)
+				return
 			}
 			i, err := Parse(ctx, n, z)
 			if err != nil {
 				t.Error(err)
+				return
 			}
 			for _, i := range i {
 				t.Log(i.String())

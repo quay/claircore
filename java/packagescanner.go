@@ -140,9 +140,18 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 			continue
 		}
 		z, err := zip.NewReader(bytes.NewReader(zb), sz)
-		if err != nil {
+		switch {
+		case errors.Is(err, nil):
+		case errors.Is(err, zip.ErrFormat):
+			zlog.Info(ctx).
+				Str("file", h.Name).
+				Err(err).
+				Msg("not actually a jar: invalid zip")
+			continue
+		default:
 			return nil, err
 		}
+
 		infos, err := jar.Parse(ctx, h.Name, z)
 		switch {
 		case err == nil:
