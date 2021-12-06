@@ -15,6 +15,7 @@ import (
 	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/xmlutil"
 	"github.com/quay/claircore/libvuln/driver"
 )
 
@@ -82,8 +83,9 @@ func (u *Updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io
 
 func (u *Updater) Parse(ctx context.Context, contents io.ReadCloser) ([]*claircore.Vulnerability, error) {
 	var updates alas.Updates
-	err := xml.NewDecoder(contents).Decode(&updates)
-	if err != nil {
+	dec := xml.NewDecoder(contents)
+	dec.CharsetReader = xmlutil.CharsetReader
+	if err := dec.Decode(&updates); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal updates xml: %v", err)
 	}
 	dist := releaseToDist(u.release)

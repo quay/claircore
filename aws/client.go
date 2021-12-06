@@ -19,6 +19,7 @@ import (
 	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/label"
 
+	"github.com/quay/claircore/internal/xmlutil"
 	"github.com/quay/claircore/pkg/tmp"
 )
 
@@ -86,8 +87,9 @@ func (c *Client) RepoMD(ctx context.Context) (alas.RepoMD, error) {
 		}
 
 		repoMD := alas.RepoMD{}
-		err = xml.NewDecoder(resp.Body).Decode(&repoMD)
-		if err != nil {
+		dec := xml.NewDecoder(resp.Body)
+		dec.CharsetReader = xmlutil.CharsetReader
+		if err := dec.Decode(&repoMD); err != nil {
 			zlog.Error(ctx).
 				Err(err).
 				Msg("failed xml unmarshal")
