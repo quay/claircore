@@ -225,6 +225,35 @@ func TestJAR(t *testing.T) {
 	}
 }
 
+func TestJARBadManifest(t *testing.T) {
+	ctx := context.Background()
+	path := "testdata/malformed-manifests"
+	d := os.DirFS(path)
+	ls, err := fs.ReadDir(d, ".")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ls) == 0 {
+		t.Skip(`no jars found in "testdata" directory`)
+	}
+
+	for _, n := range ls {
+		t.Log(n)
+		t.Run(n.Name(), func(t *testing.T) {
+			f, err := os.Open(filepath.Join(path, n.Name()))
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer f.Close()
+			i := &Info{}
+			err = i.parseManifest(ctx, f)
+			if err != nil && !errors.Is(err, errInsaneManifest) {
+				t.Fatal(err)
+			}
+		})
+	}
+}
+
 func TestManifestSectionReader(t *testing.T) {
 	var ms []string
 	d := os.DirFS("testdata")
@@ -247,7 +276,6 @@ func TestManifestSectionReader(t *testing.T) {
 				t.Fatal(err)
 			}
 			defer f.Close()
-
 			// 72 is the line length limit, so this means the section reader is
 			// going to see only chunks of a line on every read.
 			m := newMainSectionReader(bufio.NewReaderSize(f, 64))
