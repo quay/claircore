@@ -2,8 +2,19 @@
 ## [Unreleased]
 
 
+<a name="v1.1.6"></a>
+## [v1.1.6] - 2021-12-07
+### Dockerfile
+- [8b5a73d](https://github.com/quay/claircore/commit/8b5a73de49ea1410597d581762615e579d7f3722): handle whitespace runs correctly
+  - [#526](https://github.com/quay/claircore/issues/526)
+### Ubuntu
+- [00537e5](https://github.com/quay/claircore/commit/00537e528732a26d7db75fa364bd28c842b40ce8): updater log evaluation bug ([#537](https://github.com/quay/claircore/issues/537))
+  - [#537](https://github.com/quay/claircore/issues/537)
+
 <a name="v1.1.5"></a>
 ## [v1.1.5] - 2021-12-07
+### Chore
+- [62a6547](https://github.com/quay/claircore/commit/62a6547eb6a9ff0bf21d4b1479a46890534ef44b): v1.1.5 changelog bump
 ### Crda
 - [d9e2950](https://github.com/quay/claircore/commit/d9e2950e685fe13283590e9b05c148c7927452e7): fix typo ([#534](https://github.com/quay/claircore/issues/534))
   - [#534](https://github.com/quay/claircore/issues/534)
@@ -1221,7 +1232,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v1.1.5...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v1.1.6...HEAD
+[v1.1.6]: https://github.com/quay/claircore/compare/v1.1.5...v1.1.6
 [v1.1.5]: https://github.com/quay/claircore/compare/v1.1.4...v1.1.5
 [v1.1.4]: https://github.com/quay/claircore/compare/v1.1.3...v1.1.4
 [v1.1.3]: https://github.com/quay/claircore/compare/v1.1.2...v1.1.3
