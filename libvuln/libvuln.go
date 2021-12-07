@@ -70,10 +70,15 @@ func New(ctx context.Context, opts *Opts) (*Libvuln, error) {
 		matchers.WithConfigs(opts.MatcherConfigs),
 		matchers.WithOutOfTree(opts.Matchers),
 	)
-	zlog.Info(ctx).Int("len", len(l.matchers)).Msg("matchers created")
 	if err != nil {
 		return nil, err
 	}
+
+	matcherNames := make([]string, 0, len(l.matchers))
+	for _, m := range l.matchers {
+		matcherNames = append(matcherNames, m.Name())
+	}
+	zlog.Info(ctx).Strs("matchers", matcherNames).Msg("matchers created")
 
 	// create update manager
 	locks, err := ctxlock.New(ctx, pool)
