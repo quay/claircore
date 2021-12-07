@@ -195,7 +195,7 @@ func WithBatchSize(batchSize int) Option {
 }
 
 // Name implements driver.Matcher.
-func (m *Matcher) Name() string { return fmt.Sprintf("crda-%s)", m.ecosystem) }
+func (m *Matcher) Name() string { return fmt.Sprintf("crda-%s", m.ecosystem) }
 
 // Maps the crda ecosystem to claircore.Repository.Name.
 func ecosystemToRepositoryName(ecosystem string) string {
