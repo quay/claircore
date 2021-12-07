@@ -83,7 +83,7 @@ func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
 					return
 				default:
 				}
-				ctx = baggage.ContextWithValues(ctx, label.String("release", string(us[i].release)))
+				ctx := baggage.ContextWithValues(ctx, label.String("release", string(us[i].release)))
 				req, err := http.NewRequestWithContext(ctx, http.MethodHead, us[i].url, nil)
 				if err != nil {
 					zlog.Warn(ctx).Err(err).Msg("unable to create request")
