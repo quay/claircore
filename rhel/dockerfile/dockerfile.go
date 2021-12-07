@@ -160,31 +160,40 @@ func (p *labelParser) Run() error {
 // Label and Env instructions allow for key-value pairs with this syntax.
 func splitKV(escchar rune, in string) ([]string, error) {
 	var ret []string
-	var esc, quote bool
+	var esc, quote, ws bool
 	var quotechar rune
 	start := 0
 	for cur, r := range in {
+	Backup:
 		switch {
 		case esc:
 			esc = false
 		case !esc && r == escchar:
 			esc = true
 		case !esc && !quote && (r == '"' || r == '\''):
+			if ws {
+				// If this ends a whitespace run, update the starting position.
+				start = cur
+			}
+			ws = false
 			quote = true
 			quotechar = r
 		case !esc && quote && r == quotechar:
 			quote = false
 			quotechar = 0
-		case !esc && !quote && isWhitespace(r):
-			runlen := cur - start
-			switch {
-			case runlen > 1:
-				ret = append(ret, in[start:cur])
-				fallthrough
-			case runlen == 1:
-				start = cur + 1
-			default: // advance
+		case !esc && !quote && ws:
+			// In a run of unquoted whitespace.
+			if isWhitespace(r) {
+				break
 			}
+			// A non-quote character has ended the whitespace run; reset flags
+			// and re-process the character.
+			start = cur
+			ws = false
+			goto Backup
+		case !esc && !quote && isWhitespace(r):
+			ret = append(ret, in[start:cur])
+			ws = true
 		default: // advance
 		}
 	}

@@ -88,6 +88,10 @@ func TestSplit(t *testing.T) {
 			In: "k=' v '	\v k=\"   \"",
 			Want: []string{`k=' v '`, `k="   "`},
 		},
+		{
+			In:   "k=' v ' \t\"k\"=\"   \"",
+			Want: []string{`k=' v '`, `"k"="   "`},
+		},
 	} {
 		t.Logf("input: %#q", p.In)
 		got, err := splitKV('\\', p.In)
