@@ -2,6 +2,12 @@
 ## [Unreleased]
 
 
+<a name="v1.1.5"></a>
+## [v1.1.5] - 2021-12-07
+### Crda
+- [d9e2950](https://github.com/quay/claircore/commit/d9e2950e685fe13283590e9b05c148c7927452e7): fix typo ([#534](https://github.com/quay/claircore/issues/534))
+  - [#534](https://github.com/quay/claircore/issues/534)
+
 <a name="v1.1.4"></a>
 ## [v1.1.4] - 2021-12-07
 ### Alpine
@@ -9,6 +15,8 @@
   - [#524](https://github.com/quay/claircore/issues/524)
 ### Aws
 - [1075235](https://github.com/quay/claircore/commit/10752350eb394d61464500ee2a8be05572c58cdc): use CharsetReader
+### Chore
+- [c52e0e0](https://github.com/quay/claircore/commit/c52e0e00bb33929146239faad242af1e40bab0e4): v1.1.4 changelog bump
 ### Debian
 - [87ca1ab](https://github.com/quay/claircore/commit/87ca1ab2f52e5abf884d6b2edad2aed1b7afccd4): use CharsetReader
 ### Jar
@@ -1213,7 +1221,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v1.1.4...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v1.1.5...HEAD
+[v1.1.5]: https://github.com/quay/claircore/compare/v1.1.4...v1.1.5
 [v1.1.4]: https://github.com/quay/claircore/compare/v1.1.3...v1.1.4
 [v1.1.3]: https://github.com/quay/claircore/compare/v1.1.2...v1.1.3
 [v1.1.2]: https://github.com/quay/claircore/compare/v1.1.1...v1.1.2
