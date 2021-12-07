@@ -2,9 +2,45 @@
 ## [Unreleased]
 
 
+<a name="v1.1.4"></a>
+## [v1.1.4] - 2021-12-07
+### Alpine
+- [84ab16a](https://github.com/quay/claircore/commit/84ab16a9e05cec84226be3216f25d43f004fa7d4): Add Release 3.15 ([#524](https://github.com/quay/claircore/issues/524))
+  - [#524](https://github.com/quay/claircore/issues/524)
+### Aws
+- [1075235](https://github.com/quay/claircore/commit/10752350eb394d61464500ee2a8be05572c58cdc): use CharsetReader
+### Debian
+- [87ca1ab](https://github.com/quay/claircore/commit/87ca1ab2f52e5abf884d6b2edad2aed1b7afccd4): use CharsetReader
+### Jar
+- [5542f5a](https://github.com/quay/claircore/commit/5542f5ad98466ba676dc95b46fc9646a0cda29cd): Deal with non-sane manifests without erroring ([#523](https://github.com/quay/claircore/issues/523))
+  - [#523](https://github.com/quay/claircore/issues/523)
+### Java
+- [fc125c3](https://github.com/quay/claircore/commit/fc125c35f5c5f235d1df208ad4fa932969a5a528): account for zip reporting file with bad format ([#528](https://github.com/quay/claircore/issues/528))
+  - [#528](https://github.com/quay/claircore/issues/528)
+### Libvuln
+- [90b2e7d](https://github.com/quay/claircore/commit/90b2e7d111450bbeba0186ac4d411e4c325a1d94): log the names of all the configured matchers ([#529](https://github.com/quay/claircore/issues/529))
+  - [#529](https://github.com/quay/claircore/issues/529)
+### Oracle
+- [43d5cba](https://github.com/quay/claircore/commit/43d5cba1cb9a859c1a01624a0bf7ed48d70e86c3): use CharsetReader
+### Pep440
+- [781e346](https://github.com/quay/claircore/commit/781e346769e914f13b3c40de7b762e43c1474179): deal with invalid version ([#530](https://github.com/quay/claircore/issues/530))
+  - [#530](https://github.com/quay/claircore/issues/530)
+### Photon
+- [f89a444](https://github.com/quay/claircore/commit/f89a444087dfc35be05d8ea5be60e9f5c99f67fd): use CharsetReader
+### Rhel
+- [a207cf5](https://github.com/quay/claircore/commit/a207cf5c284c75c1cbc282b47b75a57fee913240): fix error on old containers
+- [605ee51](https://github.com/quay/claircore/commit/605ee512be4a906950fdce1586ee0343858ad47c): use CharsetReader
+### Suse
+- [d1a4d06](https://github.com/quay/claircore/commit/d1a4d0600e7df1967140b412053ccf516fcc1536): use CharsetReader
+### Ubuntu
+- [5dc4edf](https://github.com/quay/claircore/commit/5dc4edf93d7c99efa0aaf30f566bc66048c71d4f): use CharsetReader
+### Xmlutil
+- [a27a18b](https://github.com/quay/claircore/commit/a27a18b533ac8b4acc115db2031cb6f031522909): add package for XML helpers
+
 <a name="v1.1.3"></a>
-## [v1.1.3] - 2021-11-17
+## [v1.1.3] - 2021-11-19
 ### Chore
+- [9f26d7f](https://github.com/quay/claircore/commit/9f26d7faf42e0f988e00237299145f0a593e1a6f): v1.1.3 changelog bump
 - [8cc7c71](https://github.com/quay/claircore/commit/8cc7c71b716d19d7b94a8e8c40cbf785d5e675de): update changelog config
 ### Cpe
 - [5f2731f](https://github.com/quay/claircore/commit/5f2731f51130e5ceb92f85845510d18f951dc3a0): code simplifications
@@ -1177,7 +1213,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v1.1.3...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v1.1.4...HEAD
+[v1.1.4]: https://github.com/quay/claircore/compare/v1.1.3...v1.1.4
 [v1.1.3]: https://github.com/quay/claircore/compare/v1.1.2...v1.1.3
 [v1.1.2]: https://github.com/quay/claircore/compare/v1.1.1...v1.1.2
 [v1.1.1]: https://github.com/quay/claircore/compare/v1.1.0...v1.1.1
