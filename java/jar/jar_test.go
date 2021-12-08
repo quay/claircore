@@ -245,6 +245,7 @@ func TestJARBadManifest(t *testing.T) {
 	for _, n := range ls {
 		t.Log(n)
 		t.Run(n.Name(), func(t *testing.T) {
+			ctx := zlog.Test(ctx, t)
 			f, err := os.Open(filepath.Join(path, n.Name()))
 			if err != nil {
 				t.Fatal(err)
