@@ -3,10 +3,12 @@ package libvuln
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/quay/zlog"
+	"github.com/rs/zerolog"
 	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/label"
 
@@ -74,11 +76,7 @@ func New(ctx context.Context, opts *Opts) (*Libvuln, error) {
 		return nil, err
 	}
 
-	matcherNames := make([]string, 0, len(l.matchers))
-	for _, m := range l.matchers {
-		matcherNames = append(matcherNames, m.Name())
-	}
-	zlog.Info(ctx).Strs("matchers", matcherNames).Msg("matchers created")
+	zlog.Info(ctx).Array("matchers", matcherLog(l.matchers)).Msg("matchers created")
 
 	// create update manager
 	locks, err := ctxlock.New(ctx, pool)
@@ -204,4 +202,17 @@ func (l *Libvuln) GCFull(ctx context.Context) (int64, error) {
 // Initialized reports whether the backing vulnerability store is initialized.
 func (l *Libvuln) Initialized(ctx context.Context) (bool, error) {
 	return l.store.Initialized(ctx)
+}
+
+// Matcherlog is a logging helper. It prints the name of every matcher and a
+// generated documentation URL.
+type matcherLog []driver.Matcher
+
+func (l matcherLog) MarshalZerologArray(a *zerolog.Array) {
+	for _, m := range l {
+		t := reflect.ValueOf(m).Elem().Type()
+		a.Dict(zerolog.Dict().
+			Str("name", m.Name()).
+			Str("docs", `https://pkg.go.dev/`+t.PkgPath()))
+	}
 }
