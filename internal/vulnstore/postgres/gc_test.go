@@ -69,7 +69,7 @@ func TestGC(t *testing.T) {
 		name string
 		// number of update operations to create
 		updateOps int
-		// number to update operations to keep
+		// number of update operations to keep
 		keep int
 	}{
 		{
@@ -91,6 +91,11 @@ func TestGC(t *testing.T) {
 			"Inversed",
 			10,
 			50,
+		},
+		{
+			"Throttle",
+			60,
+			5,
 		},
 	}
 
@@ -130,16 +135,17 @@ func TestGC(t *testing.T) {
 				t.Fatalf("failed obtaining update ops: %v", err)
 			}
 			if len(ops["MockUpdater"]) != tt.updateOps {
-				t.Fatalf("got: %v want: %v", len(ops["MockUpdater"]), tt.updateOps)
+				t.Fatalf("%s got: %v want: %v", tt.name, len(ops["MockUpdater"]), tt.updateOps)
 			}
 
 			// run gc
-			done, err := store.GC(ctx, tt.keep)
+			expectedNotDone := Max(tt.updateOps-tt.keep-GCThrottle, 0)
+			notDone, err := store.GC(ctx, tt.keep)
 			switch {
 			case err != nil:
 				t.Fatalf("error while performing GC: %v", err)
-			case done != 0:
-				t.Fatalf("got: %v, want: %v", done, 0)
+			case notDone != int64(expectedNotDone):
+				t.Fatalf("%s got: %v, want: %v", tt.name, notDone, expectedNotDone)
 			}
 
 			wantKeep := tt.keep
@@ -150,8 +156,10 @@ func TestGC(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed obtaining update ops: %v", err)
 			}
-			if len(ops["MockUpdater"]) != wantKeep {
-				t.Fatalf("got: %v want: %v", len(ops["MockUpdater"]), wantKeep)
+			t.Logf("ops %v", ops)
+			expectedRemaining := wantKeep + expectedNotDone
+			if len(ops["MockUpdater"]) != expectedRemaining {
+				t.Fatalf("%s got: %v want: %v", tt.name, len(ops["MockUpdater"]), expectedRemaining)
 			}
 		})
 	}
@@ -164,4 +172,11 @@ func randString(t *testing.T) string {
 		t.Fatalf("failed to generate random string: %v", err)
 	}
 	return hex.EncodeToString(buf)
+}
+
+func Max(x, y int) int {
+	if x < y {
+		return y
+	}
+	return x
 }
