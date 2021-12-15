@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("# Normal comments are fine\nFROM scratch\n\nLABEL \\\n\t# This style of comment is buck wild, but allowed.\n\tA=B \\\n\tC=D\n\t# This comment is stripped despite the apparent continuation\n\n")

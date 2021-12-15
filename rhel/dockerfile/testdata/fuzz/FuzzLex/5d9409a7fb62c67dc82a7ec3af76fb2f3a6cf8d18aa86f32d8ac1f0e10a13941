@@ -1,0 +1,2 @@
+go test fuzz v1
+[]byte("FROM scratch\n\nENV A=\"B C\" \\\n    D=E\n\nLABEL label=\"$A $D\"\n")
