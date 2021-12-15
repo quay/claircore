@@ -11,11 +11,10 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jackc/pgx/v4/stdlib"
+	"github.com/quay/zlog"
 	"github.com/remind101/migrate"
 	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/label"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/migrations"
@@ -169,6 +168,11 @@ func (o *Opts) pool(ctx context.Context) (*pgxpool.Pool, error) {
 		return nil, fmt.Errorf("failed to parse ConnString: %v", err)
 	}
 	cfg.MaxConns = o.MaxConnPool
+	const appnameKey = `application_name`
+	params := cfg.ConnConfig.RuntimeParams
+	if _, ok := params[appnameKey]; !ok {
+		params[appnameKey] = `libvuln`
+	}
 
 	pool, err := pgxpool.ConnectConfig(ctx, cfg)
 	if err != nil {
