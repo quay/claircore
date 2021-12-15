@@ -23,6 +23,12 @@ func initDB(ctx context.Context, opts *Opts) (*pgxpool.Pool, error) {
 		return nil, fmt.Errorf("failed to parse ConnString: %v", err)
 	}
 	cfg.MaxConns = 30
+	const appnameKey = `application_name`
+	params := cfg.ConnConfig.RuntimeParams
+	if _, ok := params[appnameKey]; !ok {
+		params[appnameKey] = `libindex`
+	}
+
 	pool, err := pgxpool.ConnectConfig(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ConnPool: %v", err)
