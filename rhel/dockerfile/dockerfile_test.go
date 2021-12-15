@@ -1,6 +1,7 @@
 package dockerfile
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io/fs"
@@ -20,7 +21,9 @@ func TestGetLabels(t *testing.T) {
 	}
 	for _, de := range de {
 		n := de.Name()
-		if !strings.HasPrefix(n, "Dockerfile") || strings.HasSuffix(n, ".want") {
+		if !strings.HasPrefix(n, "Dockerfile") ||
+			strings.HasSuffix(n, ".want") ||
+			strings.HasSuffix(n, ".want.err") {
 			continue
 		}
 		t.Run(n, func(t *testing.T) {
@@ -34,14 +37,25 @@ func TestGetLabels(t *testing.T) {
 				t.Fatal(err)
 			}
 			defer w.Close()
+			wantErr, _ := fs.ReadFile(td, n+".want.err")
 
 			want := make(map[string]string)
 			if err := json.NewDecoder(w).Decode(&want); err != nil {
 				t.Error(err)
 			}
 			got, err := GetLabels(ctx, f)
-			if err != nil {
-				t.Error(err)
+			if len(wantErr) == 0 {
+				if err != nil {
+					t.Error(err)
+				}
+			} else {
+				if err == nil {
+					t.Error("got nil, wanted error")
+				} else {
+					if got, want := err.Error(), string(bytes.TrimSpace(wantErr)); got != want {
+						t.Errorf("got: %+#q, want: %+#q", got, want)
+					}
+				}
 			}
 
 			if !cmp.Equal(got, want) {
