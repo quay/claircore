@@ -58,6 +58,8 @@ type item struct {
 
 type itemKind int
 
+//go:generate stringer -type itemKind $GOFILE
+
 const (
 	itemError itemKind = iota
 	itemComment
@@ -118,13 +120,18 @@ func (l *lexer) consumeWhitespace() (err error) {
 func (l *lexer) collectLine() (err error) {
 	var r rune
 	var sz int
-	var esc bool
+	var esc, inComment, started bool
 Read:
 	for r, sz, err = l.rd.ReadRune(); err == nil; r, sz, err = l.rd.ReadRune() {
 		switch {
+		case inComment && r == '\n':
+			inComment = false
+			started = false
+		case inComment: // Skip
 		case esc && r == '\r': // Lexer hack: why do some things have DOS line endings?
 		case esc && r == '\n':
 			esc = false
+			started = false
 		case esc:
 			// This little lexer only cares about constructing the lines
 			// correctly, so everything else gets passed through.
@@ -134,9 +141,17 @@ Read:
 			_, err = l.sb.WriteRune(r)
 		case r == l.escchar:
 			esc = true
+			started = true
 		case !esc && r == '\n':
 			err = l.rd.UnreadRune()
 			break Read
+		case !started && !esc && r == '#':
+			inComment = true
+		case !started:
+			if !unicode.IsSpace(r) {
+				started = true
+			}
+			fallthrough
 		default:
 			_, err = l.sb.WriteRune(r)
 		}

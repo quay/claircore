@@ -95,12 +95,15 @@ func (p *labelParser) Run() error {
 					return err
 				}
 				for _, kv := range pairs {
-					i := strings.IndexByte(kv, '=')
-					k, _, err := transform.String(p.unquote, kv[:i])
+					idx := strings.IndexByte(kv, '=')
+					if idx == -1 {
+						return fmt.Errorf(`invalid syntax: %+#q`, i.val)
+					}
+					k, _, err := transform.String(p.unquote, kv[:idx])
 					if err != nil {
 						return err
 					}
-					v, _, err := transform.String(transform.Chain(p.unquote, p.vars), kv[i+1:])
+					v, _, err := transform.String(transform.Chain(p.unquote, p.vars), kv[idx+1:])
 					if err != nil {
 						return err
 					}
@@ -127,12 +130,15 @@ func (p *labelParser) Run() error {
 				return err
 			}
 			for _, kv := range pairs {
-				i := strings.IndexByte(kv, '=')
-				k, _, err := transform.String(p.unquote, kv[:i])
+				idx := strings.IndexByte(kv, '=')
+				if idx == -1 {
+					return fmt.Errorf(`invalid syntax: %+#q`, i.val)
+				}
+				k, _, err := transform.String(p.unquote, kv[:idx])
 				if err != nil {
 					return err
 				}
-				v, _, err := transform.String(transform.Chain(p.unquote, p.vars), kv[i+1:])
+				v, _, err := transform.String(transform.Chain(p.unquote, p.vars), kv[idx+1:])
 				if err != nil {
 					return err
 				}
