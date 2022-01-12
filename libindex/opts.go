@@ -74,7 +74,7 @@ func (o *Opts) Parse(ctx context.Context) error {
 	if o.ControllerFactory == nil {
 		o.ControllerFactory = controllerFactory
 	}
-	if o.Ecosystems == nil {
+	if o.Airgap == false && o.Ecosystems == nil {
 		o.Ecosystems = []*indexer.Ecosystem{
 			dpkg.NewEcosystem(ctx),
 			alpine.NewEcosystem(ctx),
