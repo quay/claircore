@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -55,4 +56,14 @@ func (s *Store) DeleteUpdateOperations(ctx context.Context, id ...uuid.UUID) (in
 		return 0, fmt.Errorf("failed to delete: %w", err)
 	}
 	return tag.RowsAffected(), nil
+}
+
+// RecordUpdaterUpdateTime records that an updater is up to date with vulnerabilities at this time
+func (s *Store) RecordUpdaterUpdateTime(ctx context.Context, updaterName string, updateTime time.Time) error {
+	return recordUpdaterUpdateTime(ctx, s.pool, updaterName, updateTime)
+}
+
+// RecordUpdaterSetUpdateTime records that all updaters from a updater set are up to date with vulnerabilities at this time
+func (s *Store) RecordUpdaterSetUpdateTime(ctx context.Context, updaterSet string, updateTime time.Time) error {
+	return recordUpdaterSetUpdateTime(ctx, s.pool, updaterSet, updateTime)
 }

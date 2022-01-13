@@ -288,3 +288,13 @@ func (s *Store) UpdateEnrichments(ctx context.Context, kind string, fp driver.Fi
 	}}, s.ops[kind]...)
 	return ref, nil
 }
+
+// RecordUpdaterUpdateTime is unimplimented
+func (s *Store) RecordUpdaterUpdateTime(ctx context.Context, updaterName string, updateTime time.Time) error {
+	return nil
+}
+
+// recordUpdaterSetUpdateTime is unimplimented
+func (s *Store) RecordUpdaterSetUpdateTime(ctx context.Context, updaterSet string, updateTime time.Time) error {
+	return nil
+}

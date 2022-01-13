@@ -136,6 +136,9 @@ func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
 		}
 		fallthrough
 	case http.StatusNotModified:
+		// return stub updater to allow us to record that all rhel updaters are up to date
+		stubUpdater := Updater{name: "rhel-all"}
+		s.Add(&stubUpdater)
 		return s, nil
 	default:
 		return s, fmt.Errorf("unexpected response: %v", res.Status)

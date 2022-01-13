@@ -142,9 +142,13 @@ func (m *Manager) Run(ctx context.Context) error {
 	// If construction fails, we will simply ignore those updater
 	// sets.
 	for _, factory := range m.factories {
+		updateTime := time.Now()
 		set, err := factory.UpdaterSet(ctx)
 		if err != nil {
 			zlog.Error(ctx).Err(err).Msg("failed constructing factory, excluding from run")
+			continue
+		}
+		if m.updaterSetUpToDate(ctx, set, updateTime) {
 			continue
 		}
 		updaters = append(updaters, set.Updaters()...)
@@ -199,9 +203,19 @@ func (m *Manager) Run(ctx context.Context) error {
 				return
 			}
 
+			updateTime := time.Now()
 			err = m.driveUpdater(ctx, u)
 			if err != nil {
 				errChan <- fmt.Errorf("%v: %w", u.Name(), err)
+			} else {
+				err = m.store.RecordUpdaterUpdateTime(ctx, u.Name(), updateTime)
+				if err != nil {
+					zlog.Error(ctx).
+						Err(err).
+						Str("updater", u.Name()).
+						Str("updateTime", updateTime.String()).
+						Msg("error while recording updater run time")
+				}
 			}
 		}(toRun[i])
 	}
@@ -242,6 +256,26 @@ func (m *Manager) Run(ctx context.Context) error {
 		return errors.New(b.String())
 	}
 	return nil
+}
+
+// updaterSetUpToDate checks for a stub updater set indicating that the whole updater set
+// is up to date and then be recorded the time in the db
+func (m *Manager) updaterSetUpToDate(ctx context.Context, set driver.UpdaterSet, updateTime time.Time) bool {
+	if len(set.Updaters()) == 1 {
+		if set.Updaters()[0].Name() == "rhel-all" {
+			updaterSet := "RHEL"
+			err := m.store.RecordUpdaterSetUpdateTime(ctx, updaterSet, updateTime)
+			if err != nil {
+				zlog.Error(ctx).
+					Err(err).
+					Str("updaterSet", updaterSet).
+					Str("updateTime", updateTime.String()).
+					Msg(fmt.Sprintf("error while recording update time for all updaters in updater set %s", updaterSet))
+			}
+			return true
+		}
+	}
+	return false
 }
 
 // DriveUpdater performs the business logic of fetching, parsing, and loading
