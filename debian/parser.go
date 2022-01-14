@@ -28,6 +28,11 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 		return nil, fmt.Errorf("debian: unable to decode OVAL document: %w", err)
 	}
 	zlog.Debug(ctx).Msg("xml decoded")
+
+	sourcesMapFunc := func(_ oval.Definition, name *oval.DpkgName) []string {
+		return u.sm.Get(name.Body)
+	}
+
 	protoVulns := func(def oval.Definition) ([]*claircore.Vulnerability, error) {
 		vs := []*claircore.Vulnerability{}
 		v := &claircore.Vulnerability{
@@ -42,7 +47,7 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 		vs = append(vs, v)
 		return vs, nil
 	}
-	vulns, err := ovalutil.DpkgDefsToVulns(ctx, &root, protoVulns)
+	vulns, err := ovalutil.DpkgDefsToVulns(ctx, &root, protoVulns, sourcesMapFunc)
 	if err != nil {
 		return nil, err
 	}

@@ -1,10 +1,3 @@
-package migrations
-
-const (
-	// this migration modifies the database to support
-	// enrichments.
-	// see: https://github.com/quay/clair-enrichment-spec
-	migration4 = `
 ALTER TABLE update_operation
     ADD COLUMN kind text;
 CREATE INDEX on update_operation (kind);
@@ -34,5 +27,3 @@ CREATE TABLE uo_enrich
     date        timestamptz,
     PRIMARY KEY (uo, enrich)
 );
-`
-)

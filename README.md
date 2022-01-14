@@ -4,7 +4,7 @@
 ClairCore provides a set of go modules which handle scanning container layers for installed packages and reporting any discovered vulnerabilities.  
 ClairCore is designed to be embedded into a service wrapper.  
 
-For a full overview see: [ClairCore Book](https://quay.github.io/claircore)  
+For a full overview see: [ClairCore Book](https://quay.github.io/claircore)
 
 # Local development and testing
 

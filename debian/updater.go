@@ -45,6 +45,7 @@ type Updater struct {
 	// the release name as described by os-release "VERSION_CODENAME"
 	release Release
 	c       *http.Client
+	sm      *SourcesMap
 }
 
 // UpdaterConfig is the configuration for the updater.
@@ -58,10 +59,12 @@ type UpdaterConfig struct {
 func NewUpdater(release Release) *Updater {
 	url := fmt.Sprintf(OVALTemplate, release)
 
+	c := http.DefaultClient // TODO(hank) Remove DefaultClient
 	return &Updater{
 		url:     url,
 		release: release,
-		c:       http.DefaultClient, // TODO(hank) Remove DefaultClient
+		c:       c,
+		sm:      NewSourcesMap(release, c),
 	}
 }
 
@@ -134,7 +137,13 @@ func (u *Updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io
 		f.Close()
 		return nil, "", fmt.Errorf("failed to seek body: %v", err)
 	}
-
 	zlog.Info(ctx).Msg("fetched latest oval database successfully")
+
+	err = u.sm.Update(ctx)
+	if err != nil {
+		return nil, "", fmt.Errorf("could not update source to binary map: %w", err)
+	}
+	zlog.Info(ctx).Msg("updated the debian source to binary map successfully")
+
 	return f, driver.Fingerprint(fp), err
 }

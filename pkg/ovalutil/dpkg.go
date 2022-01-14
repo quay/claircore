@@ -13,10 +13,15 @@ import (
 	"github.com/quay/claircore"
 )
 
+// PackageExpansionFunc allows a caller to expand the inserted vulns. For example
+// when the OVAL DB reports vulnerabilities from the source package only (Debian). Or
+// the name field has a var_ref indicating a variable lookup is needed (Ubuntu).
+type PackageExpansionFunc func(def oval.Definition, name *oval.DpkgName) []string
+
 // DpkgDefsToVulns iterates over the definitions in an oval root and assumes DpkgInfo objects and states.
 //
 // Each Criterion encountered with an EVR string will be translated into a claircore.Vulnerability
-func DpkgDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulnsFunc) ([]*claircore.Vulnerability, error) {
+func DpkgDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulnsFunc, expansionFunc PackageExpansionFunc) ([]*claircore.Vulnerability, error) {
 	ctx = baggage.ContextWithValues(ctx,
 		label.String("component", "ovalutil/DpkgDefsToVulns"))
 	vulns := make([]*claircore.Vulnerability, 0, 10000)
@@ -38,10 +43,7 @@ func DpkgDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulns
 		// unpack criterions into vulnerabilities
 		for _, criterion := range cris {
 			test, err := TestLookup(root, criterion.TestRef, func(kind string) bool {
-				if kind != "dpkginfo_test" {
-					return false
-				}
-				return true
+				return kind == "dpkginfo_test"
 			})
 			switch {
 			case errors.Is(err, nil):
@@ -98,26 +100,8 @@ func DpkgDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulns
 
 			for _, protoVuln := range protoVulns {
 				name := object.Name
-
-				// if the dpkginfo_object>name field has a var_ref it indicates
-				// a variable lookup for all packages affected by this vuln is necessary.
-				//
-				// if the name.Ref field is empty it indicates a single package is affected
-				// by the vuln and that package's name is in name.Body.
 				var ns []string
-				if len(name.Ref) > 0 {
-					_, i, err := root.Variables.Lookup(name.Ref)
-					if err != nil {
-						zlog.Error(ctx).Err(err).Msg("could not lookup variable id")
-						continue
-					}
-					consts := root.Variables.ConstantVariables[i]
-					for _, v := range consts.Values {
-						ns = append(ns, v.Body)
-					}
-				} else {
-					ns = append(ns, name.Body)
-				}
+				ns = append(ns, expansionFunc(def, name)...)
 				for _, n := range ns {
 					vuln := *protoVuln
 					if state != nil {
