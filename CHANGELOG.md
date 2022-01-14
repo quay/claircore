@@ -2,8 +2,40 @@
 ## [Unreleased]
 
 
+<a name="v1.2.0"></a>
+## [v1.2.0] - 2022-01-12
+### Build(Deps)
+- [9fbff76](https://github.com/quay/claircore/commit/9fbff76907cb1876de202527fd41b10660c5ad7a): bump peter-evans/create-pull-request from 3.11.0 to 3.12.0
+### Dockerfile
+- [397136f](https://github.com/quay/claircore/commit/397136fb7ff959dfb994f67b3c0df1f760ec33c7): add some fuzz testing
+- [5d08565](https://github.com/quay/claircore/commit/5d08565efe7c2704ec827e730c99914d3faaa477): handle comments correctly
+- [467ad76](https://github.com/quay/claircore/commit/467ad767d0bb7d364c5381fe13cc698829de062b): extend test harness
+### GC
+- [1123788](https://github.com/quay/claircore/commit/112378887a835468d64816d518648b8ed535b0f7): Do query execution all in one rather than separate ([#517](https://github.com/quay/claircore/issues/517))
+  - [#517](https://github.com/quay/claircore/issues/517)
+### Go.Mod
+- [2aac174](https://github.com/quay/claircore/commit/2aac1740d27fd056ad375bf647d1e350ec1de514): update minimum go version
+### Jar
+- [3ce352a](https://github.com/quay/claircore/commit/3ce352ad4ce31aaf0d72e5228250b741f90ce467): fix text harness
+### Libindex
+- [f53a08f](https://github.com/quay/claircore/commit/f53a08f588f29e599ce99fa3d0b61152d232db1d): set postgres application name
+- [d390f79](https://github.com/quay/claircore/commit/d390f79ca84ff0b6a3104fab3bfa8ef41faabd99): expose DeleteManifests method
+### Libvuln
+- [58abf35](https://github.com/quay/claircore/commit/58abf35d416c9aba4ff7702437b139fc71c6f5bb): set postgres application name
+- [5b95f97](https://github.com/quay/claircore/commit/5b95f97a58bccb12941a741e06e0a5387d104cda): print documentation links with matcher names
+### Migrations
+- [08db7b9](https://github.com/quay/claircore/commit/08db7b99956c50c8ccd01d6039df9c1ad86eae48): add foreign key cascade constraints
+### Postgres
+- [78448fa](https://github.com/quay/claircore/commit/78448fa91e3dd76f9dee58861d74bf354efc6f6a): add DeleteManifests method
+- [8af4a24](https://github.com/quay/claircore/commit/8af4a249b8bb70499def1fcd5ecb5065f3b89158): add metric lint test
+- [937155c](https://github.com/quay/claircore/commit/937155c6a863f2489475c2d2439a0d63555509b5): add digest helper
+- [da6d413](https://github.com/quay/claircore/commit/da6d4131dc48c044914179656263fa8e7380d309): add some prometheus helpers
+- [3575d9c](https://github.com/quay/claircore/commit/3575d9ce53174ba825cd4308b4ae9c323cc4f923): fix typo
+
 <a name="v1.1.6"></a>
 ## [v1.1.6] - 2021-12-07
+### Chore
+- [8332795](https://github.com/quay/claircore/commit/8332795ed7d2c6b4e5d2dcdbc2cb61c0f5270aac): v1.1.6 changelog bump
 ### Dockerfile
 - [8b5a73d](https://github.com/quay/claircore/commit/8b5a73de49ea1410597d581762615e579d7f3722): handle whitespace runs correctly
   - [#526](https://github.com/quay/claircore/issues/526)
@@ -1232,7 +1264,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v1.1.6...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v1.2.0...HEAD
+[v1.2.0]: https://github.com/quay/claircore/compare/v1.1.6...v1.2.0
 [v1.1.6]: https://github.com/quay/claircore/compare/v1.1.5...v1.1.6
 [v1.1.5]: https://github.com/quay/claircore/compare/v1.1.4...v1.1.5
 [v1.1.4]: https://github.com/quay/claircore/compare/v1.1.3...v1.1.4
