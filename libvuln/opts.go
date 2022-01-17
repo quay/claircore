@@ -32,6 +32,9 @@ type Opts struct {
 	// connection pool.
 	MaxConnPool int32
 	// A connection string to the database Libvuln will use.
+	//
+	// TODO(hank) This should be a factory function so the data store can be
+	// a clean abstraction.
 	ConnString string
 	// An interval on which Libvuln will check for new security database
 	// updates.
@@ -125,9 +128,6 @@ func (o *Opts) parse(ctx context.Context) error {
 	ctx = baggage.ContextWithValues(ctx,
 		label.String("component", "libvuln/Opts.parse"))
 	// required
-	if o.ConnString == "" {
-		return fmt.Errorf("no connection string provided")
-	}
 	if o.UpdateRetention == 1 || o.UpdateRetention < 0 {
 		return fmt.Errorf("update retention must be 0 or greater then 1")
 	}
