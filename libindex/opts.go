@@ -2,7 +2,6 @@ package libindex
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/quay/claircore/alpine"
@@ -22,7 +21,10 @@ const (
 
 // Opts are dependencies and options for constructing an instance of libindex
 type Opts struct {
-	// the connection string for the datastore specified above
+	// The connection string for the data store.
+	//
+	// TODO(hank) This should be a factory function so the data store can be
+	// a clean abstraction.
 	ConnString string
 	// how often we should try to acquire a lock for scanning a given manifest if lock is taken
 	ScanLockRetry time.Duration
@@ -59,11 +61,6 @@ type Opts struct {
 }
 
 func (o *Opts) Parse(ctx context.Context) error {
-	// required
-	if o.ConnString == "" {
-		return fmt.Errorf("ConnString not provided")
-	}
-
 	// optional
 	if (o.ScanLockRetry == 0) || (o.ScanLockRetry < time.Second) {
 		o.ScanLockRetry = DefaultScanLockRetry
