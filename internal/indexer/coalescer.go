@@ -6,7 +6,7 @@ import (
 	"github.com/quay/claircore"
 )
 
-// layerArifact aggregates the any artifacts found within a layer
+// LayerArifact aggregates the artifacts found within a layer.
 type LayerArtifacts struct {
 	Hash  claircore.Digest
 	Pkgs  []*claircore.Package

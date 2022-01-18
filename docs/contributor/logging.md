@@ -94,4 +94,4 @@ out what level to use is:
   and exiting functions, stepping through a function, or specific file paths
   used while work is being done.
 
-[doc]: https://pkg.go.dev/github.com/rs/zerolog@v1.15.0
+[doc]: https://pkg.go.dev/github.com/rs/zerolog@v1.26.0

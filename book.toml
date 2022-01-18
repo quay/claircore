@@ -11,3 +11,6 @@ create-missing = true
 
 [output.html]
 git-repository-url= "https://github.com/quay/claircore"
+
+[preprocessor.godoc]
+command = "go run docs/godoc.go"

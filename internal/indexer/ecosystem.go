@@ -8,21 +8,24 @@ import (
 	"go.opentelemetry.io/otel/label"
 )
 
-// Ecosystems group together scanners and a Coalescer which are commonly used together.
+// Ecosystems group together scanners and a Coalescer which are commonly used
+// together.
 //
-// A typical ecosystem is "DPKG" which will use the DPKG package indexer, the "OS-Release"
-// distribution scanner and the "APT" repository scanner.
+// A typical ecosystem is "dpkg" which will use the "dpkg" package indexer, the
+// "os-release" distribution scanner and the "apt" repository scanner.
 //
-// A Controller will scan layers with all scanners present in its configured ecosystems.
+// A Controller will scan layers with all scanners present in its configured
+// ecosystems.
 type Ecosystem struct {
-	Name                 string
 	PackageScanners      func(ctx context.Context) ([]PackageScanner, error)
 	DistributionScanners func(ctx context.Context) ([]DistributionScanner, error)
 	RepositoryScanners   func(ctx context.Context) ([]RepositoryScanner, error)
 	Coalescer            func(ctx context.Context) (Coalescer, error)
+	Name                 string
 }
 
-// EcosystemsToScanners extracts and dedupes multiple ecosystems and returns their discrete scanners
+// EcosystemsToScanners extracts and dedupes multiple ecosystems and returns
+// their discrete scanners.
 func EcosystemsToScanners(ctx context.Context, ecosystems []*Ecosystem, disallowRemote bool) ([]PackageScanner, []DistributionScanner, []RepositoryScanner, error) {
 	ctx = baggage.ContextWithValues(ctx,
 		label.String("component", "internal/indexer/EcosystemsToScanners"))
