@@ -19,6 +19,7 @@ import (
 	"github.com/ulikunitz/xz"
 )
 
+// Engine is a helper for managing a postgres engine.
 type Engine struct {
 	DSN     string
 	binroot string
@@ -77,6 +78,9 @@ func (e *Engine) init(t testing.TB) {
 	}
 }
 
+// Start configures and starts the database engine.
+//
+// This should not be called multiple times.
 func (e *Engine) Start(t testing.TB) error {
 	e.init(t)
 	cmd := exec.Command(filepath.Join(e.binroot, "pg_ctl"),
@@ -91,6 +95,9 @@ func (e *Engine) Start(t testing.TB) error {
 	return cmd.Run()
 }
 
+// Stop stops the database engine.
+//
+// It's an error to call Stop before a successful Start.
 func (e *Engine) Stop() error {
 	cmd := exec.Command(filepath.Join(e.binroot, "pg_ctl"),
 		"-w",

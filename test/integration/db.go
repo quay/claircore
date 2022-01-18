@@ -59,13 +59,12 @@ const (
 	dropRole        = `DROP ROLE %s;`
 )
 
-// NewDB generates a unique database instance for use in concurrent integration tests.
+// NewDB generates a unique database for use in integration tests.
 //
-// An environment variable maybe use to provide the root connection string used to
-// generate a test specific database.
+// The returned database has a random name and a dedicated owner role
+// configured. The "uuid-ossp" extension is already loaded.
 //
-// If no environment variable is specified the root connection string defaults to our local
-// development db connection string DefaultDSN.
+// DBSetup and NeedDB are expected to have been called correctly.
 func NewDB(ctx context.Context, t testing.TB) (*DB, error) {
 	cfg := pkgConfig.Copy()
 	cfg.ConnConfig.Logger = testingadapter.NewLogger(t)
@@ -106,10 +105,10 @@ func NewDB(ctx context.Context, t testing.TB) (*DB, error) {
 	cfg.ConnConfig.Password = role
 	t.Logf("config: %+v", struct {
 		Host     string
-		Port     uint16
 		Database string
 		User     string
 		Password string
+		Port     uint16
 	}{
 		Host:     cfg.ConnConfig.Host,
 		Port:     cfg.ConnConfig.Port,
@@ -124,12 +123,12 @@ func NewDB(ctx context.Context, t testing.TB) (*DB, error) {
 	}, nil
 }
 
-// DB is a handle for connecting to an cleaning up a created database.
+// DB is a handle for connecting to and cleaning up a test database.
 type DB struct {
 	cfg *pgxpool.Config
 }
 
-// Config returns a pgxpool.Config for the created database.
+// Config returns a pgxpool.Config for the test database.
 func (db *DB) Config() *pgxpool.Config {
 	return db.cfg.Copy()
 }
@@ -159,6 +158,8 @@ func (db *DB) Close(ctx context.Context, t testing.TB) {
 
 // NeedDB is like Skip, except that the test will run if the needed binaries
 // have been fetched.
+//
+// See the example for usage.
 func NeedDB(t testing.TB) {
 	t.Helper()
 	if skip && binUncached(t) {
@@ -173,14 +174,7 @@ func NeedDB(t testing.TB) {
 // build tag is provided, then the value of that environment variable is used
 // instead of an embedded postgres binary.
 //
-// This function is meant to be called from TestMain like so:
-//
-//	func TestMain(m *testing.M) {
-//		var c int
-//		defer func() { os.Exit(c) }()
-//		defer integration.DBSetup()()
-//		c = m.Run()
-//	}
+// See the example for usage.
 func DBSetup() func() {
 	dsn := os.Getenv(EnvPGConnString)
 	if dsn != "" {

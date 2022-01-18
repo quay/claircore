@@ -11,11 +11,7 @@ import (
 // This should be used as an annotation at the top of the function, like
 // (*testing.T).Parallel().
 //
-//	func TestThatTouchesNetwork(t *testing.T) {
-//		t.Parallel()
-//		integration.Skip(t)
-//		// ...
-//	}
+// See the example for usage.
 func Skip(t testing.TB) {
 	if skip {
 		t.Skip("skipping integration test: integration tag not provided")
