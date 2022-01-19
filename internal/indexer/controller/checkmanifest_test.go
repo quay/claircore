@@ -8,7 +8,7 @@ import (
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/indexer"
+	indexer "github.com/quay/claircore/test/mock/indexer"
 )
 
 // confirm checkManfest statefunc acts appropriately
@@ -17,7 +17,7 @@ func TestCheckManifest(t *testing.T) {
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
 	ctx = zlog.Test(ctx, t)
-	var tt = []struct {
+	tt := []struct {
 		// the name of this test
 		name string
 		// the expected state returned

@@ -18,10 +18,10 @@ import (
 	"github.com/remind101/migrate"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/libindex/migrations"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
+	indexer "github.com/quay/claircore/test/mock/indexer"
 )
 
 // Testcase is a test case for calling libindex.

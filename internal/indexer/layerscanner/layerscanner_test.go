@@ -10,8 +10,8 @@ import (
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/test"
+	indexer "github.com/quay/claircore/test/mock/indexer"
 )
 
 // TestScanNoErrors confirms each scanner is called for each layer presented

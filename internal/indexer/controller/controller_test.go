@@ -10,7 +10,7 @@ import (
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/indexer"
+	indexer "github.com/quay/claircore/test/mock/indexer"
 )
 
 // TestControllerIndexError confirms the state machines does the correct thing

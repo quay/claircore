@@ -7,16 +7,16 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/quay/zlog"
 
-	"github.com/quay/claircore/internal/indexer"
+	indexer "github.com/quay/claircore/test/mock/indexer"
 )
 
 func TestScanLayers(t *testing.T) {
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
-	var tt = []struct {
+	tt := []struct {
+		mock          func(t *testing.T) (indexer.LayerScanner, indexer.Store)
 		name          string
 		expectedState State
-		mock          func(t *testing.T) (indexer.LayerScanner, indexer.Store)
 	}{
 		{
 			name:          "Success",

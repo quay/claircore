@@ -8,13 +8,13 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/quay/zlog"
 
-	"github.com/quay/claircore/internal/indexer"
+	indexer "github.com/quay/claircore/test/mock/indexer"
 )
 
 func TestIndexManifest(t *testing.T) {
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
-	var tt = []struct {
+	tt := []struct {
 		name          string
 		expectedState State
 		err           bool

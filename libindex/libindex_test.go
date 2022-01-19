@@ -8,9 +8,10 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/zlog"
+
+	"github.com/quay/claircore"
+	indexer "github.com/quay/claircore/test/mock/indexer"
 )
 
 func createTestVulns(n int) []claircore.Vulnerability {
@@ -45,7 +46,7 @@ func digest(inp string) claircore.Digest {
 func TestAffectedManifests(t *testing.T) {
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
-	var tt = []struct {
+	tt := []struct {
 		name                 string
 		inputVulns           []claircore.Vulnerability
 		numExpectedVulns     int
