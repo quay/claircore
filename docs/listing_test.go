@@ -15,6 +15,13 @@ import (
 // TestListing fails if the SUMMARY.md falls out of sync with the markdown files
 // in this directory.
 func TestListing(t *testing.T) {
+	// Check that this is the docs test.
+	// These files are copied into the "book" directory, so when left around in
+	// a work tree, test will run there as well.
+	if _, err := os.Stat("index.html"); err == nil {
+		t.Skip("skip listing check in compiled docs")
+	}
+
 	linkline, err := regexp.Compile(`\s*- \[.+\]\((.+)\)`)
 	if err != nil {
 		t.Fatal(err)
