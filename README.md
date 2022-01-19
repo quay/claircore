@@ -6,66 +6,6 @@ ClairCore is designed to be embedded into a service wrapper.
 
 For a full overview see: [ClairCore Book](https://quay.github.io/claircore)  
 
-# Usage
-
-Two packages exist `libindex` and `libvuln`.  
-These packages export the methods for indexing an image's contents and matching the results of the index to vulnerabilities respectively.   
-
-## libindex usage
-
-Creating an instance  
-```
-opts := &libindex.Opts{
-    ConnString: "postgres://host:port",
-    Migrations: true,
-    // see definition for more configuration options
-}
-lib := libindex.New(opts)
-``` 
-call libindex with a populated Manifest  
-```
-m := &claircore.Manifest{
-    ...
-}
-
-ir, err := lib.Index(m)
-if err != nil {
-    log.Printf("%v", err)
-}
-if ir.State == "IndexError" {
-    log.Printf("scan failed: %s", sr.Err)
-}
-```
-
-## libvuln usage
-
-creating an instance  
-```
-opts := &libvuln.Opts{
-    ConnString: "postgres://host:port",
-    Migrations: true,
-    // see definition for more configuration option
-}
-lib := libvuln.New(opts)
-```
-call libvuln with a populated IndexReport  
-```
-ir := &claircore.IndexReport{
-    ...
-}
-vr, err := libvuln.Scan(ir)
-if err != nil {
-    log.Printf("%v", err)
-}
-```
-
-Libvuln will first initialize all updaters before returning from its constructor.  
-Controlling how many updaters initialize in parallel is provided via the libvuln.Opts struct  
-
-To further understand how these packages work together see:  
-[Highlevel Architecture](./docs/highlevel_architecture.md)  
-[Vulnerability Matching](./docs/vulnerability_matching.md)  
-
 # Local development and testing
 
 The following targets start and stop a local development environment  
