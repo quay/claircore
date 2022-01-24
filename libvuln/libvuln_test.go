@@ -11,6 +11,9 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 )
 
+// Race gets set if tests are being run under the race detector.
+var race bool
+
 func TestMatcherLog(t *testing.T) {
 	const want = `{"matchers":[{"name":"test-matcher","docs":"https://pkg.go.dev/github.com/quay/claircore/libvuln"}]}` + "\n"
 	var buf bytes.Buffer

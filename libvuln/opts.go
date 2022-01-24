@@ -119,6 +119,9 @@ type Opts struct {
 	// Client is an http.Client for use by all updaters. If unset,
 	// http.DefaultClient will be used.
 	Client *http.Client
+
+	// PluginDirectory ...
+	PluginDirectory string
 }
 
 // parse is an internal method for constructing
