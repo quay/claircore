@@ -5,8 +5,9 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	_ "github.com/jackc/pgx/v4/stdlib"
+	"github.com/jackc/pgx/v4/stdlib"
 	"github.com/remind101/migrate"
 
 	"github.com/quay/claircore/internal/indexer"
@@ -38,10 +39,14 @@ func initDB(ctx context.Context, opts *Opts) (*pgxpool.Pool, error) {
 }
 
 // initialize a indexer.Store given libindex.Opts
-func initStore(ctx context.Context, pool *pgxpool.Pool, opts *Opts) (indexer.Store, error) {
-	db, err := sql.Open("pgx", opts.ConnString)
+func initStore(_ context.Context, pool *pgxpool.Pool, opts *Opts) (indexer.Store, error) {
+	cfg, err := pgx.ParseConfig(opts.ConnString)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open db: %v", err)
+		return nil, err
+	}
+	db, err := sql.Open("pgx", stdlib.RegisterConnConfig(cfg))
+	if err != nil {
+		return nil, err
 	}
 	defer db.Close()
 
