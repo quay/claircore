@@ -120,7 +120,13 @@ type Opts struct {
 	// http.DefaultClient will be used.
 	Client *http.Client
 
-	// PluginDirectory ...
+	// PluginDirectory is a local directory containing go plugins (i.e. "go doc
+	// plugin") that will attempt to be loaded for Matcher, Enricher, and
+	// Updaters. See the driver package's documentation for the expected
+	// entrypoints.
+	//
+	// Note that plugins are required to be build with the same version of the
+	// go runtime, the same version of claircore, and the same build flags.
 	PluginDirectory string
 }
 
