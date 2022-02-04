@@ -57,7 +57,7 @@ func TestMatcherIntegration(t *testing.T) {
 		t.Error(err)
 	}
 	// force update
-	tctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+	tctx, cancel := context.WithTimeout(ctx, 4*time.Minute)
 	defer cancel()
 	if err := mgr.Run(tctx); err != nil {
 		t.Error(err)
