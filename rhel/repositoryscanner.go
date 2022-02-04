@@ -197,7 +197,12 @@ func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) (repos
 		}
 		r.CPE, err = cpe.Unbind(cpeID)
 		if err != nil {
-			return nil, err
+			zlog.Warn(ctx).
+				Err(err).
+				Str("url", `https://bugzilla.redhat.com/enter_bug.cgi?product=Container%20Factory`).
+				Str("cpeID", cpeID).
+				Msg("invalid CPE, please report a bug upstream")
+			continue
 		}
 
 		repositories = append(repositories, r)
