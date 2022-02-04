@@ -8,11 +8,14 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jackc/pgx/v4/stdlib"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/quay/zlog"
 	"github.com/remind101/migrate"
 
 	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/internal/indexer/postgres"
 	"github.com/quay/claircore/libindex/migrations"
+	"github.com/quay/claircore/pkg/poolstats"
 )
 
 // initialize a postgres pgxpool.Pool based on the given libindex.Opts
@@ -33,6 +36,10 @@ func initDB(ctx context.Context, opts *Opts) (*pgxpool.Pool, error) {
 	pool, err := pgxpool.ConnectConfig(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ConnPool: %v", err)
+	}
+
+	if err := prometheus.Register(poolstats.NewCollector(pool, "libindex")); err != nil {
+		zlog.Info(ctx).Msg("pool metrics already registered")
 	}
 
 	return pool, nil
