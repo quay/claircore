@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -51,33 +52,61 @@ func (a *FetchArena) Init(wc *http.Client, root string) {
 	a.rc = make(map[string]int)
 }
 
-func (a *FetchArena) incRef(digest string) error {
+func (a *FetchArena) forget(digest string) error {
 	a.mu.Lock()
-	a.rc[digest]++
-	a.mu.Unlock()
+	defer a.mu.Unlock()
+	ct, ok := a.rc[digest]
+	if !ok {
+		return nil
+	}
+	ct--
+	if ct == 0 {
+		delete(a.rc, digest)
+		defer a.sf.Forget(digest)
+		return os.Remove(filepath.Join(a.root, digest))
+	}
+	a.rc[digest] = ct
 	return nil
 }
 
-func (a *FetchArena) decRef(digest string) (int, error) {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	a.rc[digest]--
-	ct := a.rc[digest]
-	if ct == 0 {
-		delete(a.rc, digest)
-		a.sf.Forget(digest)
-		return 0, os.Remove(filepath.Join(a.root, digest))
+// FetchOne does a deduplicated fetch, then increments the refcount and renames
+// the file to the permanent place if applicable.
+func (a *FetchArena) fetchOne(ctx context.Context, l *claircore.Layer) (do func() error) {
+	do = func() error {
+		h := l.Hash.String()
+		tgt := filepath.Join(a.root, h)
+		var ff string
+		select {
+		case res := <-a.sf.DoChan(h, func() (interface{}, error) {
+			return a.realizeLayer(ctx, l)
+		}):
+			if err := res.Err; err != nil {
+				return err
+			}
+			ff = res.Val.(string)
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+		a.mu.Lock()
+		ct, ok := a.rc[h]
+		if !ok {
+			// Did the file get removed while we were waiting on the lock?
+			if _, err := os.Stat(ff); errors.Is(err, os.ErrNotExist) {
+				a.mu.Unlock()
+				return do()
+			}
+			if err := os.Rename(ff, tgt); err != nil {
+				a.mu.Unlock()
+				return err
+			}
+		}
+		defer a.mu.Unlock()
+		ct++
+		a.rc[h] = ct
+		l.SetLocal(tgt)
+		return nil
 	}
-	return ct, nil
-}
-
-func (a *FetchArena) filename(l *claircore.Layer) string {
-	digest := l.Hash.String()
-	n := filepath.Join(a.root, digest)
-	a.mu.Lock()
-	a.rc[digest] = 0
-	a.mu.Unlock()
-	return n
+	return do
 }
 
 // Close removes all files left in the arena.
@@ -116,6 +145,8 @@ func (a *FetchArena) Close(ctx context.Context) error {
 }
 
 // RealizeLayer is the inner function used inside the singleflight.
+//
+// The returned value is a temporary filename in the arena.
 func (a *FetchArena) realizeLayer(ctx context.Context, l *claircore.Layer) (string, error) {
 	ctx = baggage.ContextWithValues(ctx,
 		label.String("component", "libindex/fetchArena.realizeLayer"),
@@ -139,12 +170,12 @@ func (a *FetchArena) realizeLayer(ctx context.Context, l *claircore.Layer) (stri
 	want := l.Hash.Checksum()
 
 	// Open our target file before hitting the network.
-	name := a.filename(l)
 	rm := true
-	fd, err := os.OpenFile(name, os.O_RDWR|os.O_CREATE|os.O_EXCL, 0600)
+	fd, err := os.CreateTemp(a.root, "fetch.*")
 	if err != nil {
 		return "", fmt.Errorf("fetcher: unable to create file: %w", err)
 	}
+	name := fd.Name()
 	defer func() {
 		if err := fd.Close(); err != nil {
 			zlog.Warn(ctx).Err(err).Msg("unable to close layer file")
@@ -276,56 +307,20 @@ func (a *FetchArena) Fetcher() *FetchProxy {
 // This can be unexported if FetchArena gets unexported.
 type FetchProxy struct {
 	a     *FetchArena
-	mu    sync.Mutex
 	clean []string
 }
 
 // Fetch populates all the layers locally.
 func (p *FetchProxy) Fetch(ctx context.Context, ls []*claircore.Layer) error {
 	g, ctx := errgroup.WithContext(ctx)
-	for _, l := range ls {
-		g.Go(p.fetchOne(ctx, l))
+	p.clean = make([]string, len(ls))
+	for i, l := range ls {
+		p.clean[i] = l.Hash.String()
+		g.Go(p.a.fetchOne(ctx, l))
 	}
 	if err := g.Wait(); err != nil {
 		return fmt.Errorf("encountered error while fetching a layer: %v", err)
 	}
-	return nil
-}
-
-// FetchOne runs a fetch though the singleflight while waiting on the passed-in
-// context.
-func (p *FetchProxy) fetchOne(ctx context.Context, l *claircore.Layer) func() error {
-	fn := func() (interface{}, error) {
-		return p.a.realizeLayer(ctx, l)
-	}
-	return func() error {
-		h := l.Hash.String()
-		select {
-		case res := <-p.a.sf.DoChan(h, fn):
-			if err := res.Err; err != nil {
-				return err
-			}
-			fn := res.Val.(string)
-			if err := l.SetLocal(fn); err != nil {
-				return err
-			}
-			if err := p.addRef(h); err != nil {
-				return err
-			}
-		case <-ctx.Done():
-			return ctx.Err()
-		}
-		return nil
-	}
-}
-
-func (p *FetchProxy) addRef(digest string) error {
-	if err := p.a.incRef(digest); err != nil {
-		return err
-	}
-	p.mu.Lock()
-	p.clean = append(p.clean, digest)
-	p.mu.Unlock()
 	return nil
 }
 
@@ -334,10 +329,8 @@ func (p *FetchProxy) addRef(digest string) error {
 // This method may actually delete the backing files.
 func (p *FetchProxy) Close() error {
 	var err error
-	p.mu.Lock()
-	defer p.mu.Unlock()
 	for _, digest := range p.clean {
-		_, e := p.a.decRef(digest)
+		e := p.a.forget(digest)
 		if e != nil {
 			if err == nil {
 				err = e

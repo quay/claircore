@@ -1,8 +1,15 @@
 package libindex
 
 import (
+	"archive/tar"
 	"context"
+	"crypto/sha256"
+	"fmt"
+	"io"
+	"math/rand"
 	"net/http"
+	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"strconv"
 	"testing"
@@ -70,7 +77,7 @@ func TestFetchInvalid(t *testing.T) {
 		{
 			name: "no remote path or local path provided",
 			layer: []*claircore.Layer{
-				&claircore.Layer{
+				{
 					URI: "",
 				},
 			},
@@ -78,7 +85,7 @@ func TestFetchInvalid(t *testing.T) {
 		{
 			name: "path with no scheme",
 			layer: []*claircore.Layer{
-				&claircore.Layer{
+				{
 					URI: "www.example.com/path/to/tar?query=one",
 				},
 			},
@@ -101,4 +108,93 @@ func TestFetchInvalid(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestFetchConcurrent(t *testing.T) {
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
+	ctx = zlog.Test(ctx, t)
+	ls, h := commonLayerServer(t, 100)
+	srv := httptest.NewUnstartedServer(h)
+	srv.Start()
+	for i := range ls {
+		ls[i].URI = srv.URL + ls[i].URI
+	}
+	defer srv.Close()
+	a := &FetchArena{}
+	a.Init(srv.Client(), t.TempDir())
+
+	subtest := func(a *FetchArena, ls []claircore.Layer) func(*testing.T) {
+		// Need to make a copy of all our layers.
+		l := make([]claircore.Layer, len(ls))
+		copy(l, ls)
+		// And then turn into pointers for reasons.
+		ps := make([]*claircore.Layer, len(l))
+		// Leave the bottom half the same, shuffle the top half.
+		rand.Shuffle(len(ps), func(i, j int) {
+			ps[i], ps[j] = &l[j], &l[i]
+		})
+		for i := range ps[:len(ps)/2] {
+			ps[i] = &l[i]
+		}
+		f := a.Fetcher()
+		return func(t *testing.T) {
+			t.Parallel()
+			t.Cleanup(func() {
+				if err := f.Close(); err != nil {
+					t.Error(err)
+				}
+			})
+			ctx := zlog.Test(ctx, t)
+			if err := f.Fetch(ctx, ps); err != nil {
+				t.Error(err)
+			}
+		}
+	}
+	t.Run("group", func(t *testing.T) {
+		for i := 0; i < 2; i++ {
+			t.Run(strconv.Itoa(i), subtest(a, ls))
+		}
+	})
+
+	if err := a.Close(ctx); err != nil {
+		t.Error(err)
+	}
+}
+
+func commonLayerServer(t testing.TB, ct int) ([]claircore.Layer, http.Handler) {
+	t.Helper()
+	dir := t.TempDir()
+	ls := make([]claircore.Layer, ct)
+	for i := 0; i < ct; i++ {
+		n := strconv.Itoa(i)
+		f, err := os.Create(filepath.Join(dir, strconv.Itoa(i)))
+		if err != nil {
+			t.Fatal(err)
+		}
+		h := sha256.New()
+		w := tar.NewWriter(io.MultiWriter(f, h))
+		if err := w.WriteHeader(&tar.Header{
+			Name: n,
+			Size: 33,
+		}); err != nil {
+			t.Fatal(err)
+		}
+		fmt.Fprintf(w, "%032d\n", i)
+
+		if err := w.Close(); err != nil {
+			t.Fatal(err)
+		}
+		if err := f.Close(); err != nil {
+			t.Fatal(err)
+		}
+		l := &ls[i]
+		l.URI = "/" + strconv.Itoa(i)
+		l.Hash, err = claircore.NewDigest("sha256", h.Sum(nil))
+		l.Headers = make(http.Header)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	return ls, http.FileServer(http.Dir(dir))
 }
