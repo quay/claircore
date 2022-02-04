@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jackc/pgx/v4/stdlib"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/quay/zlog"
 	"github.com/remind101/migrate"
 	"go.opentelemetry.io/otel/baggage"
@@ -18,6 +19,7 @@ import (
 
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/migrations"
+	"github.com/quay/claircore/pkg/poolstats"
 )
 
 const (
@@ -178,6 +180,11 @@ func (o *Opts) pool(ctx context.Context) (*pgxpool.Pool, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Pool: %v", err)
 	}
+
+	if err := prometheus.Register(poolstats.NewCollector(pool, "libvuln")); err != nil {
+		zlog.Info(ctx).Msg("pool metrics already registered")
+	}
+
 	return pool, nil
 }
 
