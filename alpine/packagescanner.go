@@ -3,12 +3,15 @@ package alpine
 import (
 	"bytes"
 	"context"
+	"errors"
+	"io/fs"
 	"runtime/trace"
 
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
+	"github.com/quay/claircore/pkg/tarfs"
 )
 
 const (
@@ -56,17 +59,21 @@ func (*Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.
 	zlog.Debug(ctx).Msg("start")
 	defer zlog.Debug(ctx).Msg("done")
 
-	fs, err := layer.Files(installedFile)
-	switch err {
-	case nil:
-	case claircore.ErrNotFound:
+	rc, err := layer.Reader()
+	if err != nil {
+		return nil, err
+	}
+	sys, err := tarfs.New(rc)
+	if err != nil {
+		return nil, err
+	}
+	b, err := fs.ReadFile(sys, installedFile)
+	switch {
+	case err == nil:
+	case errors.Is(err, fs.ErrNotExist):
 		return nil, nil
 	default:
 		return nil, err
-	}
-	b, ok := fs[installedFile]
-	if !ok {
-		return nil, nil
 	}
 	zlog.Debug(ctx).Msg("found database")
 
@@ -77,7 +84,7 @@ func (*Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.
 	// can't because the database "keys" are case sensitive, unlike MIME
 	// headers. So, roll our own entry and header splitting.
 	delim := []byte("\n\n")
-	entries := bytes.Split(b.Bytes(), delim)
+	entries := bytes.Split(b, delim)
 	for _, entry := range entries {
 		if len(entry) == 0 {
 			continue

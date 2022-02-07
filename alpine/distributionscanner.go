@@ -3,13 +3,19 @@ package alpine
 import (
 	"bytes"
 	"context"
+	"errors"
+	"fmt"
+	"io/fs"
 	"regexp"
 	"runtime/trace"
+	"strings"
 
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
+	"github.com/quay/claircore/osrelease"
+	"github.com/quay/claircore/pkg/tarfs"
 )
 
 // Alpine linux has patch releases but their security database
@@ -113,7 +119,7 @@ func (*DistributionScanner) Kind() string { return scannerKind }
 // Scan will inspect the layer for an os-release or lsb-release file
 // and perform a regex match for keywords indicating the associated alpine release
 //
-// If neither file is found a (nil,nil) is returned.
+// If neither file is found a (nil, nil) is returned.
 // If the files are found but all regexp fail to match an empty slice is returned.
 func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Distribution, error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
@@ -123,26 +129,93 @@ func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]
 		"layer", l.Hash.String())
 	zlog.Debug(ctx).Msg("start")
 	defer zlog.Debug(ctx).Msg("done")
-	files, err := l.Files(osReleasePath, issuePath)
+	rc, err := l.Reader()
 	if err != nil {
-		zlog.Debug(ctx).Msg("didn't find an os-release or issue file")
-		return nil, nil
+		return nil, err
 	}
-	// Always check the os-release file first.
-	if b, ok := files[osReleasePath]; ok {
-		dist := ds.parse(b)
-		if dist != nil {
-			return []*claircore.Distribution{dist}, nil
-		}
+	defer rc.Close()
+	sys, err := tarfs.New(rc)
+	if err != nil {
+		return nil, err
 	}
-	if b, ok := files[issuePath]; ok {
-		dist := ds.parse(b)
-		if dist != nil {
-			return []*claircore.Distribution{dist}, nil
-		}
-	}
-	return []*claircore.Distribution{}, nil
+	return ds.scanFs(ctx, sys)
 }
+
+func (s *DistributionScanner) scanFs(ctx context.Context, sys fs.FS) (d []*claircore.Distribution, err error) {
+	// Use weirdo goto construction to pick the first instance.
+	var b []byte
+
+	// Look for an os-release file.
+	b, err = fs.ReadFile(sys, osrelease.Path)
+	switch {
+	case errors.Is(err, nil):
+		// parse here
+		m, err := osrelease.Parse(ctx, bytes.NewReader(b))
+		if err != nil {
+			return nil, err
+		}
+		if id := m[`ID`]; id != `alpine` {
+			zlog.Debug(ctx).Str("id", id).Msg("seemingly not alpine")
+			break
+		}
+		vid := m[`VERSION_ID`]
+		idx := strings.LastIndexByte(vid, '.')
+		if idx == -1 {
+			zlog.Debug(ctx).Str("val", vid).Msg("martian VERSION_ID")
+			break
+		}
+		v := vid[:idx]
+		d = append(d, &claircore.Distribution{
+			Name:    m[`NAME`],
+			DID:     m[`ID`],
+			Version: v,
+			// BUG(hank) The current version omit the VERSION_ID data. Need to
+			// investigate why. Probably because it's not in the etc/issue
+			// file.
+			// VersionID:  vid,
+			PrettyName: m[`PRETTY_NAME`],
+		})
+		goto Done
+	case errors.Is(err, fs.ErrNotExist):
+		zlog.Debug(ctx).
+			Str("path", osrelease.Path).
+			Msg("file doesn't exist")
+	default:
+		return nil, err
+	}
+	// Look for the issue file.
+	b, err = fs.ReadFile(sys, issuePath)
+	switch {
+	case errors.Is(err, nil):
+		// parse here
+		ms := issueRegexp.FindSubmatch(b)
+		if ms == nil {
+			zlog.Debug(ctx).Msg("seemingly not alpine")
+			break
+		}
+		v := string(ms[1])
+		d = append(d, &claircore.Distribution{
+			Name:       `Alpine Linux`,
+			DID:        `alpine`,
+			Version:    v,
+			PrettyName: fmt.Sprintf(`Alpine Linux v%s`, v),
+		})
+		goto Done
+	case errors.Is(err, fs.ErrNotExist):
+		zlog.Debug(ctx).
+			Str("path", issuePath).
+			Msg("file doesn't exist")
+	default:
+		return nil, err
+	}
+	// Found nothing.
+	return nil, nil
+
+Done:
+	return d, nil
+}
+
+var issueRegexp = regexp.MustCompile(`Alpine Linux ([[:digit:]]+\.[[:digit:]]+)`)
 
 // parse attempts to match all Alpine release regexp and returns the associated
 // distribution if it exists.
