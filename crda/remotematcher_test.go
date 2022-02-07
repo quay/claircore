@@ -97,7 +97,7 @@ func TestRemoteMatcher(t *testing.T) {
 			Matcher:  newMatcher(t, srv),
 		},
 		{
-			Name: "pypi/{pyyaml-vuln,flask-novuln}",
+			Name: "pypi/pyyaml",
 			R: []*claircore.IndexRecord{
 				{
 					Package: &claircore.Package{
@@ -139,7 +139,7 @@ func TestRemoteMatcher(t *testing.T) {
 			Matcher: newMatcher(t, srv),
 		},
 		{
-			Name: "pypi/{pyyaml-novuln,flask-novuln}",
+			Name: "pypi/none",
 			R: []*claircore.IndexRecord{
 				{
 					Package: &claircore.Package{
@@ -162,7 +162,7 @@ func TestRemoteMatcher(t *testing.T) {
 			Matcher:  newMatcher(t, srv),
 		},
 		{
-			Name: "pypi/{pyyaml-vuln,flask-vuln}",
+			Name: "pypi/pyyaml-flask",
 			R: []*claircore.IndexRecord{
 				{
 					Package: &claircore.Package{
