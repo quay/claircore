@@ -32,7 +32,7 @@ func (c parsecase) Test(t *testing.T) {
 		t.Errorf("unable to open file: %v", err)
 	}
 
-	got, err := parse(ctx, f)
+	got, err := toDist(ctx, f)
 	if err != nil {
 		t.Errorf("parse error: %v", err)
 	}

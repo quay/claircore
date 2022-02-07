@@ -10,6 +10,7 @@ import (
 	"io"
 	"path/filepath"
 	"runtime/trace"
+	"sort"
 	"strings"
 
 	"github.com/quay/zlog"
@@ -25,7 +26,12 @@ const (
 	scannerKind    = "distribution"
 )
 
-const fpath = `etc/os-release`
+// Path and FallbackPath are the two documented locations for the os-release
+// file. The latter should be consulted only if the former does not exist.
+const (
+	Path         = `etc/os-release`
+	FallbackPath = `usr/lib/os-release`
+)
 
 var (
 	_ indexer.DistributionScanner = (*Scanner)(nil)
@@ -77,7 +83,7 @@ func (s *Scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Di
 			if base != "os-release" {
 				continue
 			}
-			d, err := parse(ctx, tr)
+			d, err := toDist(ctx, tr)
 			if err == nil {
 				return []*claircore.Distribution{d}, nil
 			}
@@ -97,65 +103,27 @@ func (s *Scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Di
 	return nil, nil
 }
 
-// Parse returns the distribution information from the file contents provided on
+// ToDist returns the distribution information from the file contents provided on
 // r.
-func parse(ctx context.Context, r io.Reader) (*claircore.Distribution, error) {
+func toDist(ctx context.Context, r io.Reader) (*claircore.Distribution, error) {
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "osrelease/parse")
 	defer trace.StartRegion(ctx, "parse").End()
+	m, err := Parse(ctx, r)
+	if err != nil {
+		return nil, err
+	}
 	d := claircore.Distribution{
 		Name: "Linux",
 		DID:  "linux",
 	}
-	s := bufio.NewScanner(r)
-	s.Split(bufio.ScanLines)
-	for s.Scan() && ctx.Err() == nil {
-		b := s.Bytes()
-		switch {
-		case len(b) == 0:
-			continue
-		case b[0] == '#':
-			continue
-		}
-		eq := bytes.IndexRune(b, '=')
-		if eq == -1 {
-			return nil, fmt.Errorf("osrelease: malformed line %q", s.Text())
-		}
-		key := strings.TrimSpace(string(b[:eq]))
-		value := strings.TrimSpace(string(b[eq+1:]))
-
-		// The value side is defined to follow shell-like quoting rules, which I
-		// take to mean:
-		//
-		// * Within single quotes, no characters are special, and escaping is
-		//   not possible. The only special case that needs to be handled is
-		//   getting a single quote, which is done in shell by ending the
-		//   string, escaping a single quote, then starting a new string.
-		//
-		// * Within double quotes, single quotes are not special, but double
-		//   quotes and a handful of other characters are, and almost the entire
-		//   lower-case ASCII alphabet can be escaped to produce various
-		//   codepoints.
-		//
-		// With these in mind, the arms of the switch below implement the first
-		// case and a limited version of the second.
-		switch value[0] {
-		case '\'':
-			value = strings.TrimFunc(value, func(r rune) bool { return r == '\'' })
-			value = strings.ReplaceAll(value, `'\''`, `'`)
-		case '"':
-			// This only implements the metacharacters that are called out in
-			// the os-release documentation.
-			value = strings.TrimFunc(value, func(r rune) bool { return r == '"' })
-			value = strings.NewReplacer(
-				"\\`", "`",
-				`\\`, `\`,
-				`\"`, `"`,
-				`\$`, `$`,
-			).Replace(value)
-		default:
-		}
-
+	ks := make([]string, 0, len(m))
+	for key := range m {
+		ks = append(ks, key)
+	}
+	sort.Strings(ks)
+	for _, key := range ks {
+		value := m[key]
 		switch key {
 		case "ID":
 			zlog.Debug(ctx).Msg("found ID")
@@ -196,12 +164,76 @@ func parse(ctx context.Context, r io.Reader) (*claircore.Distribution, error) {
 			d.PrettyName = value
 		}
 	}
+	zlog.Debug(ctx).Str("name", d.Name).Msg("found dist")
+	return &d, nil
+}
+
+// Parse splits the contents r into key-value pairs as described in
+// os-release(5).
+//
+// See comments in the source for edge cases.
+func Parse(ctx context.Context, r io.Reader) (map[string]string, error) {
+	ctx = zlog.ContextWithValues(ctx, "component", "osrelease/Parse")
+	defer trace.StartRegion(ctx, "Parse").End()
+	m := make(map[string]string)
+	s := bufio.NewScanner(r)
+	s.Split(bufio.ScanLines)
+	for s.Scan() && ctx.Err() == nil {
+		b := s.Bytes()
+		switch {
+		case len(b) == 0:
+			continue
+		case b[0] == '#':
+			continue
+		}
+		eq := bytes.IndexRune(b, '=')
+		if eq == -1 {
+			return nil, fmt.Errorf("osrelease: malformed line %q", s.Text())
+		}
+		key := strings.TrimSpace(string(b[:eq]))
+		value := strings.TrimSpace(string(b[eq+1:]))
+
+		// The value side is defined to follow shell-like quoting rules, which I
+		// take to mean:
+		//
+		// - Within single quotes, no characters are special, and escaping is
+		//   not possible. The only special case that needs to be handled is
+		//   getting a single quote, which is done in shell by ending the
+		//   string, escaping a single quote, then starting a new string.
+		//
+		// - Within double quotes, single quotes are not special, but double
+		//   quotes and a handful of other characters are, and almost the entire
+		//   lower-case ASCII alphabet can be escaped to produce various
+		//   codepoints.
+		//
+		// With these in mind, the arms of the switch below implement the first
+		// case and a limited version of the second.
+		switch value[0] {
+		case '\'':
+			value = strings.TrimFunc(value, func(r rune) bool { return r == '\'' })
+			value = strings.ReplaceAll(value, `'\''`, `'`)
+		case '"':
+			// This only implements the metacharacters that are called out in
+			// the os-release documentation.
+			value = strings.TrimFunc(value, func(r rune) bool { return r == '"' })
+			value = dqReplacer.Replace(value)
+		default:
+		}
+
+		m[key] = value
+	}
 	if err := s.Err(); err != nil {
 		return nil, err
 	}
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	zlog.Debug(ctx).Str("name", d.Name).Msg("found dist")
-	return &d, nil
+	return m, nil
 }
+
+var dqReplacer = strings.NewReplacer(
+	"\\`", "`",
+	`\\`, `\`,
+	`\"`, `"`,
+	`\$`, `$`,
+)
