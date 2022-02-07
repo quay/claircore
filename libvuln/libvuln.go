@@ -9,8 +9,6 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/quay/zlog"
 	"github.com/rs/zerolog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/matcher"
@@ -39,8 +37,7 @@ type Libvuln struct {
 
 // New creates a new instance of the Libvuln library
 func New(ctx context.Context, opts *Opts) (*Libvuln, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "libvuln/New"))
+	ctx = zlog.ContextWithValues(ctx, "component", "libvuln/New")
 
 	err := opts.parse(ctx)
 	if err != nil {

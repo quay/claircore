@@ -16,8 +16,6 @@ import (
 	"time"
 
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
@@ -99,6 +97,7 @@ func (e *Enricher) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c 
 func metafileURL(root *url.URL, yr int) (*url.URL, error) {
 	return root.Parse(fmt.Sprintf("nvdcve-1.1-%d.meta", yr))
 }
+
 func gzURL(root *url.URL, yr int) (*url.URL, error) {
 	return root.Parse(fmt.Sprintf("nvdcve-1.1-%d.json.gz", yr))
 }
@@ -108,8 +107,7 @@ func (*Enricher) Name() string { return name }
 
 // FetchEnrichment implements driver.EnrichmentUpdater.
 func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "enricher/cvss/Enricher/FetchEnrichment"))
+	ctx = zlog.ContextWithValues(ctx, "component", "enricher/cvss/Enricher/FetchEnrichment")
 
 	// year → sha256
 	prev := make(map[int]string)
@@ -222,8 +220,7 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 
 // ParseEnrichment implements driver.EnrichmentUpdater.
 func (e *Enricher) ParseEnrichment(ctx context.Context, rc io.ReadCloser) ([]driver.EnrichmentRecord, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "enricher/cvss/Enricher/ParseEnrichment"))
+	ctx = zlog.ContextWithValues(ctx, "component", "enricher/cvss/Enricher/ParseEnrichment")
 	// Our Fetch method actually has all the smarts w/r/t to constructing the
 	// records, so this is just decoding in a loop.
 	defer rc.Close()
@@ -253,16 +250,15 @@ var cveRegexp = regexp.MustCompile(`(?i:cve)[-_][0-9]{4}[-_][0-9]{4,}`)
 
 // Enrich implements driver.Enricher.
 func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *claircore.VulnerabilityReport) (string, []json.RawMessage, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "enricher/cvss/Enricher/Enrich"))
+	ctx = zlog.ContextWithValues(ctx, "component", "enricher/cvss/Enricher/Enrich")
 
 	// We return any CVSS blobs for CVEs mentioned in the free-form parts of the
 	// vulnerability.
 	m := make(map[string][]json.RawMessage)
 	for id, v := range r.Vulnerabilities {
 		t := make(map[string]struct{})
-		ctx := baggage.ContextWithValues(ctx,
-			label.String("vuln", v.Name))
+		ctx := zlog.ContextWithValues(ctx,
+			"vuln", v.Name)
 		for _, elem := range []string{
 			v.Description,
 			v.Name,

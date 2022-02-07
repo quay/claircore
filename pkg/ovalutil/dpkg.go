@@ -7,8 +7,6 @@ import (
 
 	"github.com/quay/goval-parser/oval"
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 )
@@ -22,8 +20,7 @@ type PackageExpansionFunc func(def oval.Definition, name *oval.DpkgName) []strin
 //
 // Each Criterion encountered with an EVR string will be translated into a claircore.Vulnerability
 func DpkgDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulnsFunc, expansionFunc PackageExpansionFunc) ([]*claircore.Vulnerability, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "ovalutil/DpkgDefsToVulns"))
+	ctx = zlog.ContextWithValues(ctx, "component", "ovalutil/DpkgDefsToVulns")
 	vulns := make([]*claircore.Vulnerability, 0, 10000)
 	pkgcache := map[string]*claircore.Package{}
 	cris := []*oval.Criterion{}

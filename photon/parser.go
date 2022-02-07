@@ -8,8 +8,6 @@ import (
 
 	"github.com/quay/goval-parser/oval"
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/xmlutil"
@@ -20,8 +18,7 @@ import (
 var _ driver.Parser = (*Updater)(nil)
 
 func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "photon/Updater.Parse"))
+	ctx = zlog.ContextWithValues(ctx, "component", "photon/Updater.Parse")
 	zlog.Info(ctx).Msg("starting parse")
 	defer r.Close()
 	root := oval.Root{}

@@ -7,8 +7,6 @@ import (
 	"runtime/trace"
 
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
@@ -42,8 +40,10 @@ var awsRegexes = []awsRegex{
 
 const osReleasePath = `etc/os-release`
 
-var _ indexer.DistributionScanner = (*DistributionScanner)(nil)
-var _ indexer.VersionedScanner = (*DistributionScanner)(nil)
+var (
+	_ indexer.DistributionScanner = (*DistributionScanner)(nil)
+	_ indexer.VersionedScanner    = (*DistributionScanner)(nil)
+)
 
 // DistributionScanner attempts to discover if a layer
 // displays characteristics of a AWS distribution
@@ -65,12 +65,12 @@ func (*DistributionScanner) Kind() string { return scannerKind }
 // If the files are found but all regexp fail to match an empty slice is returned.
 func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Distribution, error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "aws_dist_scanner"),
-		label.String("name", ds.Name()),
-		label.String("version", ds.Version()),
-		label.String("kind", ds.Kind()),
-		label.String("layer", l.Hash.String()))
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "aws_dist_scanner",
+		"name", ds.Name(),
+		"version", ds.Version(),
+		"kind", ds.Kind(),
+		"layer", l.Hash.String())
 	zlog.Debug(ctx).Msg("start")
 	defer zlog.Debug(ctx).Msg("done")
 	files, err := l.Files(osReleasePath)

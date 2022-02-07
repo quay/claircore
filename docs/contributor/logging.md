@@ -9,11 +9,13 @@ packages without having unintended prints to stderr.
 ## How to Log
 
 ### Adding Context
-In a function, use the `baggage` package to add key-value pairs of any
-relevant context:
+In a function, use `zlog` to add key-value pairs of any relevant context:
 ```go
 {{#include ../logger_test.go:kvs}}
 ```
+
+Alternatively, the `go.opentelemetry.io/otel/baggage` package can be used for
+more explicit control around the baggage values.
 
 ### Logging style
 

@@ -43,8 +43,6 @@ import (
 	"strings"
 
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 )
 
 // Header is the magic bytes at the beginning of a jar.
@@ -69,9 +67,9 @@ const MinSize = 22
 // The provided name is expected to be the full path within the layer to the jar
 // file being provided as "z".
 func Parse(ctx context.Context, name string, z *zip.Reader) ([]Info, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "java/jar/Parse"),
-		label.String("jar", name))
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "java/jar/Parse",
+		"jar", name)
 
 	// This uses an admittedly non-idiomatic, C-like goto construction. We want
 	// to attempt a few heuristics and keep the results of the first one that
@@ -209,7 +207,7 @@ func extractProperties(ctx context.Context, name string, z *zip.Reader) ([]Info,
 
 // ExtractInner recurses into anything that looks like a jar in "z".
 func extractInner(ctx context.Context, outer string, z *zip.Reader) ([]Info, error) {
-	ctx = baggage.ContextWithValues(ctx, label.String("parent", outer))
+	ctx = zlog.ContextWithValues(ctx, "parent", outer)
 	var ret []Info
 	// Zips need random access, so allocate a buffer for any we find.
 	var buf bytes.Buffer

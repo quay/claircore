@@ -13,16 +13,12 @@ import (
 	"sync"
 
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 	"golang.org/x/sync/errgroup"
 )
 
 const sourcesURL = "https://ftp.debian.org/debian/dists/%s/%s/source/Sources.gz"
 
-var (
-	sourceRepos = [3]string{"main", "contrib", "non-free"}
-)
+var sourceRepos = [3]string{"main", "contrib", "non-free"}
 
 // NewSourcesMap returns a SourcesMap but does not perform any
 // inserts into the map. That needs to be done explitly by calling
@@ -93,9 +89,9 @@ func (m *SourcesMap) Update(ctx context.Context) error {
 }
 
 func (m *SourcesMap) fetchSources(ctx context.Context, url string) error {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "debian/sourcemapper.fetchSources"),
-		label.String("url", url))
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "debian/sourcemapper.fetchSources",
+		"url", url)
 	zlog.Debug(ctx).Msg("attempting fetch of Sources file")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)

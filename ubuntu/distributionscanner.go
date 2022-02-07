@@ -7,8 +7,6 @@ import (
 	"runtime/trace"
 
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
@@ -68,11 +66,15 @@ var ubuntuRegexes = []ubuntuRegex{
 	},
 }
 
-const osReleasePath = `etc/os-release`
-const lsbReleasePath = `etc/lsb-release`
+const (
+	osReleasePath  = `etc/os-release`
+	lsbReleasePath = `etc/lsb-release`
+)
 
-var _ indexer.DistributionScanner = (*DistributionScanner)(nil)
-var _ indexer.VersionedScanner = (*DistributionScanner)(nil)
+var (
+	_ indexer.DistributionScanner = (*DistributionScanner)(nil)
+	_ indexer.VersionedScanner    = (*DistributionScanner)(nil)
+)
 
 // DistributionScanner attempts to discover if a layer
 // displays characteristics of a Ubuntu distribution
@@ -94,10 +96,10 @@ func (*DistributionScanner) Kind() string { return scannerKind }
 // If the files are found but all regexp fail to match an empty slice is returned.
 func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Distribution, error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "ubuntu/DistributionScanner.Scan"),
-		label.String("version", ds.Version()),
-		label.String("layer", l.Hash.String()))
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "ubuntu/DistributionScanner.Scan",
+		"version", ds.Version(),
+		"layer", l.Hash.String())
 	zlog.Debug(ctx).Msg("start")
 	defer zlog.Debug(ctx).Msg("done")
 	files, err := l.Files(osReleasePath, lsbReleasePath)

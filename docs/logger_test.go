@@ -5,8 +5,6 @@ import (
 	"time"
 
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 )
 
 // Example_logger is an example annotated for inclusion in the prose
@@ -14,8 +12,8 @@ import (
 func Example_logger() {
 	ctx := context.Background()
 	// ANCHOR: kvs
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "Example.Logger"))
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "Example.Logger")
 	// ANCHOR_END: kvs
 
 	// ANCHOR: bad_example

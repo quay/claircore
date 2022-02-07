@@ -7,8 +7,6 @@ import (
 	"sync"
 
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore/libvuln/driver"
 )
@@ -46,8 +44,8 @@ type factoryConfig struct {
 
 // Configure implements driver.Configurable.
 func (f *Factory) Configure(ctx context.Context, cf driver.ConfigUnmarshaler, c *http.Client) error {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "ubuntu/Factory.Configure"))
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "ubuntu/Factory.Configure")
 	var cfg factoryConfig
 	if err := cf(&cfg); err != nil {
 		return err
@@ -66,8 +64,8 @@ func (f *Factory) Configure(ctx context.Context, cf driver.ConfigUnmarshaler, c 
 
 // UpdaterSet returns updaters for all releases that have available databases.
 func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "ubuntu/Factory.UpdaterSet"))
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "ubuntu/Factory.UpdaterSet")
 
 	us := make([]*Updater, len(f.Releases))
 	ch := make(chan int, len(f.Releases))
@@ -83,7 +81,7 @@ func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
 					return
 				default:
 				}
-				ctx := baggage.ContextWithValues(ctx, label.String("release", string(us[i].release)))
+				ctx := zlog.ContextWithValues(ctx, "release", string(us[i].release))
 				req, err := http.NewRequestWithContext(ctx, http.MethodHead, us[i].url, nil)
 				if err != nil {
 					zlog.Warn(ctx).Err(err).Msg("unable to create request")

@@ -18,8 +18,6 @@ import (
 	"github.com/klauspost/compress/gzip"
 	"github.com/klauspost/compress/zstd"
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/singleflight"
 
@@ -114,9 +112,9 @@ func (a *FetchArena) fetchOne(ctx context.Context, l *claircore.Layer) (do func(
 // It's not an error to have active fetchers, but may cause errors to have files
 // unlinked underneath their users.
 func (a *FetchArena) Close(ctx context.Context) error {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "libindex/fetchArena.Close"),
-		label.String("arena", a.root))
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "libindex/fetchArena.Close",
+		"arena", a.root)
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	if len(a.rc) != 0 {
@@ -148,11 +146,11 @@ func (a *FetchArena) Close(ctx context.Context) error {
 //
 // The returned value is a temporary filename in the arena.
 func (a *FetchArena) realizeLayer(ctx context.Context, l *claircore.Layer) (string, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "libindex/fetchArena.realizeLayer"),
-		label.String("arena", a.root),
-		label.Stringer("layer", l.Hash),
-		label.String("uri", l.URI))
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "libindex/fetchArena.realizeLayer",
+		"arena", a.root,
+		"layer", l.Hash.String(),
+		"uri", l.URI)
 	zlog.Debug(ctx).Msg("layer fetch start")
 
 	// Validate the layer input.

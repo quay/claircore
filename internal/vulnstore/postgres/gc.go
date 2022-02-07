@@ -14,8 +14,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 	"golang.org/x/sync/semaphore"
 )
 
@@ -214,7 +212,7 @@ AND v1.id = v2.id;
 	)
 
 	start := time.Now()
-	ctx = baggage.ContextWithValues(ctx, label.String("updater", updater))
+	ctx = zlog.ContextWithValues(ctx, "updater", updater)
 	zlog.Debug(ctx).
 		Msg("starting clean up")
 	res, err := pool.Exec(ctx, deleteOrphanedVulns, updater)

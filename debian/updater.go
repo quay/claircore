@@ -8,8 +8,6 @@ import (
 	"regexp"
 
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/tmp"
@@ -74,8 +72,7 @@ func (u *Updater) Name() string {
 
 // Configure implements driver.Configurable.
 func (u *Updater) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *http.Client) error {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "debian/Updater.Configure"))
+	ctx = zlog.ContextWithValues(ctx, "component", "debian/Updater.Configure")
 	var cfg UpdaterConfig
 	if err := f(&cfg); err != nil {
 		return nil
@@ -93,10 +90,10 @@ func (u *Updater) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *
 }
 
 func (u *Updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "debian/Updater.Fetch"),
-		label.String("release", string(u.release)),
-		label.String("database", u.url))
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "debian/Updater.Fetch",
+		"release", string(u.release),
+		"database", u.url)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.url, nil)
 	if err != nil {

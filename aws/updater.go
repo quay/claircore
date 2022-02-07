@@ -11,8 +11,6 @@ import (
 
 	"github.com/quay/alas"
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/xmlutil"
@@ -46,8 +44,7 @@ func (u *Updater) Configure(ctx context.Context, _ driver.ConfigUnmarshaler, c *
 }
 
 func (u *Updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "aws/Updater.Fetch"))
+	ctx = zlog.ContextWithValues(ctx, "component", "aws/Updater.Fetch")
 	if u.c == http.DefaultClient { // OK: checking for log purposes
 		zlog.Warn(ctx).Msg("DefaultClient used, this is almost certainly wrong")
 	}

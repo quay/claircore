@@ -14,8 +14,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/quay/zlog"
 	"github.com/remind101/migrate"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/migrations"
@@ -127,8 +125,7 @@ type Opts struct {
 // the necessary Updaters and Matchers for Libvuln
 // usage
 func (o *Opts) parse(ctx context.Context) error {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "libvuln/Opts.parse"))
+	ctx = zlog.ContextWithValues(ctx, "component", "libvuln/Opts.parse")
 	// required
 	if o.UpdateRetention == 1 || o.UpdateRetention < 0 {
 		return fmt.Errorf("update retention must be 0 or greater then 1")

@@ -6,8 +6,6 @@ import (
 	"runtime/trace"
 
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
@@ -50,10 +48,10 @@ func (*Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.
 	}
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	trace.Log(ctx, "layer", layer.Hash.String())
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "alpine/Scanner.Scan"),
-		label.String("version", pkgVersion),
-		label.String("layer", layer.Hash.String()))
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "alpine/Scanner.Scan",
+		"version", pkgVersion,
+		"layer", layer.Hash.String())
 
 	zlog.Debug(ctx).Msg("start")
 	defer zlog.Debug(ctx).Msg("done")
@@ -78,7 +76,7 @@ func (*Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.
 	// It'd be great if we could just use the textproto package here, but we
 	// can't because the database "keys" are case sensitive, unlike MIME
 	// headers. So, roll our own entry and header splitting.
-	var delim = []byte("\n\n")
+	delim := []byte("\n\n")
 	entries := bytes.Split(b.Bytes(), delim)
 	for _, entry := range entries {
 		if len(entry) == 0 {

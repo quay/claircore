@@ -7,8 +7,6 @@ import (
 	"net/url"
 
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore/libvuln/driver"
 )
@@ -24,8 +22,7 @@ type Factory struct {
 
 // MatcherFactory implements driver.MatcherFactory.
 func (f *Factory) Matcher(ctx context.Context) ([]driver.Matcher, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "crda/MatcherFactory.Matcher"))
+	ctx = zlog.ContextWithValues(ctx, "component", "crda/MatcherFactory.Matcher")
 EcosystemSubSet:
 	for _, e := range f.ecosystems {
 		for _, se := range supportedEcosystems {
@@ -66,8 +63,7 @@ type FactoryConfig struct {
 
 // MatcherFactory implements driver.MatcherConfigurable.
 func (f *Factory) Configure(ctx context.Context, cfg driver.MatcherConfigUnmarshaler, c *http.Client) error {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "crda/MatcherFactory.Configure"))
+	ctx = zlog.ContextWithValues(ctx, "component", "crda/MatcherFactory.Configure")
 	var fc FactoryConfig
 
 	if err := cfg(&fc); err != nil {

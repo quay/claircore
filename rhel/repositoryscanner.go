@@ -16,8 +16,6 @@ import (
 	"time"
 
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
@@ -74,9 +72,9 @@ const DefaultRepo2CPEMappingURL = "https://access.redhat.com/security/data/metri
 // NewRepositoryScanner create new Repo scanner struct and initialize mapping updater
 func NewRepositoryScanner(ctx context.Context, c *http.Client, cs2cpeURL string) *RepositoryScanner {
 	scanner := &RepositoryScanner{}
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "rhel/NewRepositoryScanner"),
-		label.String("version", scanner.Version()))
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "rhel/NewRepositoryScanner",
+		"version", scanner.Version())
 
 	scanner.client = c
 	return scanner
@@ -84,9 +82,9 @@ func NewRepositoryScanner(ctx context.Context, c *http.Client, cs2cpeURL string)
 
 // Configure implements the RPCScanner interface.
 func (r *RepositoryScanner) Configure(ctx context.Context, f indexer.ConfigDeserializer, c *http.Client) error {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "rhel/RepositoryScanner.Configure"),
-		label.String("version", r.Version()))
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "rhel/RepositoryScanner.Configure",
+		"version", r.Version())
 	r.client = c
 	if err := f(&r.cfg); err != nil {
 		return err
@@ -168,10 +166,10 @@ func (r *RepositoryScanner) Configure(ctx context.Context, f indexer.ConfigDeser
 // Scan gets Red Hat repositories information.
 func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) (repositories []*claircore.Repository, err error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "rhel/RepositoryScanner.Scan"),
-		label.String("version", r.Version()),
-		label.Stringer("layer", l.Hash))
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "rhel/RepositoryScanner.Scan",
+		"version", r.Version(),
+		"layer", l.Hash.String())
 	zlog.Debug(ctx).Msg("start")
 	defer zlog.Debug(ctx).Msg("done")
 

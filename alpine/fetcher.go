@@ -7,17 +7,13 @@ import (
 	"net/http"
 
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/tmp"
 )
 
-var fetchLabel = label.String("component", "alpine/Updater.Fetch")
-
 func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
-	ctx = baggage.ContextWithValues(ctx, fetchLabel)
+	ctx = zlog.ContextWithValues(ctx, "component", "alpine/Updater.Fetch")
 
 	zlog.Info(ctx).Str("database", u.url).Msg("starting fetch")
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.url, nil)
@@ -40,7 +36,7 @@ func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 
 	switch res.StatusCode {
 	case http.StatusOK:
-		//break
+		// break
 	case http.StatusNotModified:
 		zlog.Info(ctx).Msg("database unchanged since last fetch")
 		return nil, hint, driver.Unchanged

@@ -6,8 +6,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 )
@@ -34,8 +32,7 @@ var (
 )
 
 func (s *store) DeleteManifests(ctx context.Context, d ...claircore.Digest) ([]claircore.Digest, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "internal/indexer/postgres/DeleteManifests"))
+	ctx = zlog.ContextWithValues(ctx, "component", "internal/indexer/postgres/DeleteManifests")
 	rm, err := s.deleteManifests(ctx, d)
 	if err != nil {
 		return nil, err

@@ -5,8 +5,6 @@ import (
 	"time"
 
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/vulnstore"
@@ -31,9 +29,9 @@ func NewController(m driver.Matcher, store vulnstore.Vulnerability) *Controller 
 }
 
 func (mc *Controller) Match(ctx context.Context, records []*claircore.IndexRecord) (map[string][]*claircore.Vulnerability, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "internal/matcher/Controller.Match"),
-		label.String("matcher", mc.m.Name()))
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "internal/matcher/Controller.Match",
+		"matcher", mc.m.Name())
 	// find the packages the matcher is interested in.
 	interested := mc.findInterested(records)
 	zlog.Debug(ctx).

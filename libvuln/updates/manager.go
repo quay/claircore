@@ -12,8 +12,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 	"golang.org/x/sync/semaphore"
 
 	"github.com/quay/claircore"
@@ -64,8 +62,7 @@ type Manager struct {
 
 // NewManager will return a manager ready to have its Start or Run methods called.
 func NewManager(ctx context.Context, store vulnstore.Updater, locks LockSource, client *http.Client, opts ...ManagerOption) (*Manager, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "libvuln/updates/NewManager"))
+	ctx = zlog.ContextWithValues(ctx, "component", "libvuln/updates/NewManager")
 
 	// the default Manager
 	m := &Manager{
@@ -101,8 +98,7 @@ func NewManager(ctx context.Context, store vulnstore.Updater, locks LockSource, 
 //
 // Start must only be called once between context cancellations.
 func (m *Manager) Start(ctx context.Context) error {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "libvuln/updates/Manager.Start"))
+	ctx = zlog.ContextWithValues(ctx, "component", "libvuln/updates/Manager.Start")
 
 	if m.interval == 0 {
 		return fmt.Errorf("manager must be configured with an interval to start")
@@ -138,10 +134,7 @@ func (m *Manager) Start(ctx context.Context) error {
 // Run is safe to call at anytime, regardless of whether background updaters
 // are running.
 func (m *Manager) Run(ctx context.Context) error {
-	ctx = baggage.ContextWithValues(
-		ctx,
-		label.String("component", "libvuln/updates/Manager.Run"),
-	)
+	ctx = zlog.ContextWithValues(ctx, "component", "libvuln/updates/Manager.Run")
 
 	updaters := []driver.Updater{}
 	// Constructing updater sets may require network access
@@ -255,10 +248,9 @@ func (m *Manager) Run(ctx context.Context) error {
 // vulnerabilities discovered by an updater into the database.
 func (m *Manager) driveUpdater(ctx context.Context, u driver.Updater) error {
 	name := u.Name()
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "libvuln/updates/Manager.driveUpdater"),
-		label.String("updater", name),
-	)
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "libvuln/updates/Manager.driveUpdater",
+		"updater", name)
 	zlog.Info(ctx).Msg("starting update")
 	defer zlog.Info(ctx).Msg("finished update")
 	uoKind := driver.VulnerabilityKind

@@ -7,8 +7,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
+	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
@@ -37,7 +36,7 @@ var (
 )
 
 func (s *store) SetLayerScanned(ctx context.Context, hash claircore.Digest, vs indexer.VersionedScanner) error {
-	ctx = baggage.ContextWithValues(ctx, label.String("scanner", vs.Name()))
+	ctx = zlog.ContextWithValues(ctx, "scanner", vs.Name())
 	const query = `
 WITH
 	scanner

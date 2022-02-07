@@ -13,8 +13,6 @@ import (
 	"strings"
 
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
@@ -29,8 +27,10 @@ const (
 
 const fpath = `etc/os-release`
 
-var _ indexer.DistributionScanner = (*Scanner)(nil)
-var _ indexer.VersionedScanner = (*Scanner)(nil)
+var (
+	_ indexer.DistributionScanner = (*Scanner)(nil)
+	_ indexer.VersionedScanner    = (*Scanner)(nil)
+)
 
 // Scanner implements a scanner.DistributionScanner that examines os-release
 // files, as documented at
@@ -53,10 +53,10 @@ func (*Scanner) Kind() string { return scannerKind }
 // present in the layer.
 func (s *Scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Distribution, error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "osrelease/Scanner.Scan"),
-		label.String("version", s.Version()),
-		label.String("layer", l.Hash.String()))
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "osrelease/Scanner.Scan",
+		"version", s.Version(),
+		"layer", l.Hash.String())
 	zlog.Debug(ctx).Msg("start")
 	defer zlog.Debug(ctx).Msg("done")
 
@@ -100,8 +100,8 @@ func (s *Scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Di
 // Parse returns the distribution information from the file contents provided on
 // r.
 func parse(ctx context.Context, r io.Reader) (*claircore.Distribution, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "osrelease/parse"))
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "osrelease/parse")
 	defer trace.StartRegion(ctx, "parse").End()
 	d := claircore.Distribution{
 		Name: "Linux",

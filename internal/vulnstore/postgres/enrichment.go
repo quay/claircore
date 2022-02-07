@@ -12,8 +12,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/microbatch"
@@ -105,8 +103,7 @@ ON CONFLICT
 DO
 	NOTHING;`
 	)
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "internal/vulnstore/postgres/UpdateEnrichments"))
+	ctx = zlog.ContextWithValues(ctx, "component", "internal/vulnstore/postgres/UpdateEnrichments")
 
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
@@ -194,8 +191,7 @@ WHERE
 	AND uo.enrich = e.id
 	AND e.tags && $2::text[];`
 
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "internal/vulnstore/postgres/GetEnrichment"))
+	ctx = zlog.ContextWithValues(ctx, "component", "internal/vulnstore/postgres/GetEnrichment")
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return nil, err

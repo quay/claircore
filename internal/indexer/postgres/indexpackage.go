@@ -8,8 +8,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
@@ -99,8 +97,7 @@ func (s *store) IndexPackages(ctx context.Context, pkgs []*claircore.Package, la
 		`
 	)
 
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "internal/indexer/postgres/indexPackages"))
+	ctx = zlog.ContextWithValues(ctx, "component", "internal/indexer/postgres/indexPackages")
 	// obtain a transaction scoped batch
 	tctx, done := context.WithTimeout(ctx, 5*time.Second)
 	tx, err := s.pool.Begin(tctx)

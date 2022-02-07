@@ -7,8 +7,6 @@ import (
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore/internal/vulnstore/postgres"
 	"github.com/quay/claircore/libvuln/driver"
@@ -21,8 +19,7 @@ func OfflineImport(ctx context.Context, pool *pgxpool.Pool, in io.Reader) error 
 	// BUG(hank) The OfflineImport function is a wart, needed to work around
 	// some package namespacing issues. It should get refactored if claircore
 	// gets merged into clair.
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "libvuln/OfflineImporter"))
+	ctx = zlog.ContextWithValues(ctx, "component", "libvuln/OfflineImporter")
 
 	gz, err := gzip.NewReader(in)
 	if err != nil {

@@ -6,8 +6,6 @@ import (
 	"runtime"
 
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
@@ -32,8 +30,7 @@ type layerScanner struct {
 //
 // The provided Context is only used for the duration of the call.
 func New(ctx context.Context, concurrent int, opts *indexer.Opts) (indexer.LayerScanner, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "internal/indexer/layerscannner/New"))
+	ctx = zlog.ContextWithValues(ctx, "component", "internal/indexer/layerscannner/New")
 
 	switch {
 	case concurrent < 1:
@@ -147,9 +144,9 @@ func configAndFilter(ctx context.Context, opts *indexer.Opts, s indexer.Versione
 // The provided Context controls cancellation for all scanners. The first error
 // reported halts all work and is returned from Scan.
 func (ls *layerScanner) Scan(ctx context.Context, manifest claircore.Digest, layers []*claircore.Layer) error {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "internal/indexer/layerscannner/layerScanner.Scan"),
-		label.String("manifest", manifest.String()))
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "internal/indexer/layerscannner/layerScanner.Scan",
+		"manifest", manifest.String())
 
 	sem := semaphore.NewWeighted(ls.inflight)
 	g, ctx := errgroup.WithContext(ctx)
@@ -187,11 +184,11 @@ func (ls *layerScanner) Scan(ctx context.Context, manifest claircore.Digest, lay
 // ScanLayer (along with the result type) handles an individual (scanner, layer)
 // pair.
 func (ls *layerScanner) scanLayer(ctx context.Context, l *claircore.Layer, s indexer.VersionedScanner) error {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "internal/indexer/layerscannner/layerScanner.scan"),
-		label.String("scanner", s.Name()),
-		label.String("kind", s.Kind()),
-		label.String("layer", l.Hash.String()))
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "internal/indexer/layerscannner/layerScanner.scan",
+		"scanner", s.Name(),
+		"kind", s.Kind(),
+		"layer", l.Hash.String())
 	zlog.Debug(ctx).Msg("scan start")
 	defer zlog.Debug(ctx).Msg("scan done")
 

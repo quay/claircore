@@ -11,8 +11,6 @@ import (
 	"time"
 
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/quay/claircore"
@@ -269,8 +267,7 @@ func (m *Matcher) Configure(ctx context.Context, f driver.MatcherConfigUnmarshal
 
 // QueryRemoteMatcher implements driver.RemoteMatcher.
 func (m *Matcher) QueryRemoteMatcher(ctx context.Context, records []*claircore.IndexRecord) (map[string][]*claircore.Vulnerability, error) {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "crda/Matcher.QueryRemoteMatcher"))
+	ctx = zlog.ContextWithValues(ctx, "component", "crda/Matcher.QueryRemoteMatcher")
 	zlog.Debug(ctx).
 		Int("records", len(records)).
 		Msg("request")

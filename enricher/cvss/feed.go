@@ -6,8 +6,6 @@ import (
 	"io"
 
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 
 	"github.com/quay/claircore/libvuln/driver"
 )
@@ -58,8 +56,7 @@ func newItemFeed(year int, r io.Reader) (*itemFeed, error) {
 // entire serialization in memory.
 
 func (f *itemFeed) WriteCVSS(ctx context.Context, w io.Writer) error {
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "enricher/cvss/itemFeed/WriteCVSS"))
+	ctx = zlog.ContextWithValues(ctx, "component", "enricher/cvss/itemFeed/WriteCVSS")
 	// Use records directly because our parse step doesn't actually parse
 	// anything -- the Fetch step rips out the relevant JSON.
 	var skip, wrote uint
