@@ -17,68 +17,68 @@ func TestDistributionScanner(t *testing.T) {
 	table := []distTestcase{
 		{
 			Release:   V3_3,
-			OSRelease: v3_3_OSRelease,
-			Issue:     v3_3_Issue,
+			OSRelease: mustRead(t, `testdata/3.3/etc/os-release`),
+			Issue:     mustRead(t, `testdata/3.3/etc/issue`),
 		},
 		{
 			Release:   V3_4,
-			OSRelease: v3_4_OSRelease,
-			Issue:     v3_4_Issue,
+			OSRelease: mustRead(t, `testdata/3.4/etc/os-release`),
+			Issue:     mustRead(t, `testdata/3.4/etc/issue`),
 		},
 		{
 			Release:   V3_5,
-			OSRelease: v3_5_OSRelease,
-			Issue:     v3_5_Issue,
+			OSRelease: mustRead(t, `testdata/3.5/etc/os-release`),
+			Issue:     mustRead(t, `testdata/3.5/etc/issue`),
 		},
 		{
 			Release:   V3_6,
-			OSRelease: v3_6_OSRelease,
-			Issue:     v3_6_Issue,
+			OSRelease: mustRead(t, `testdata/3.6/etc/os-release`),
+			Issue:     mustRead(t, `testdata/3.6/etc/issue`),
 		},
 		{
 			Release:   V3_7,
-			OSRelease: v3_7_OSRelease,
-			Issue:     v3_7_Issue,
+			OSRelease: mustRead(t, `testdata/3.7/etc/os-release`),
+			Issue:     mustRead(t, `testdata/3.7/etc/issue`),
 		},
 		{
 			Release:   V3_8,
-			OSRelease: v3_8_OSRelease,
-			Issue:     v3_8_Issue,
+			OSRelease: mustRead(t, `testdata/3.8/etc/os-release`),
+			Issue:     mustRead(t, `testdata/3.8/etc/issue`),
 		},
 		{
 			Release:   V3_9,
-			OSRelease: v3_9_OSRelease,
-			Issue:     v3_9_Issue,
+			OSRelease: mustRead(t, `testdata/3.9/etc/os-release`),
+			Issue:     mustRead(t, `testdata/3.9/etc/issue`),
 		},
 		{
 			Release:   V3_10,
-			OSRelease: v3_10_OSRelease,
-			Issue:     v3_10_Issue,
+			OSRelease: mustRead(t, `testdata/3.10/etc/os-release`),
+			Issue:     mustRead(t, `testdata/3.10/etc/issue`),
 		},
 		{
 			Release:   V3_11,
-			OSRelease: v3_11_OSRelease,
-			Issue:     v3_11_Issue,
+			OSRelease: mustRead(t, `testdata/3.11/etc/os-release`),
+			Issue:     mustRead(t, `testdata/3.11/etc/issue`),
 		},
 		{
 			Release:   V3_12,
-			OSRelease: v3_12_OSRelease,
-			Issue:     v3_12_Issue,
+			OSRelease: mustRead(t, `testdata/3.12/etc/os-release`),
+			Issue:     mustRead(t, `testdata/3.12/etc/issue`),
 		},
 		{
 			Release:   V3_13,
-			OSRelease: v3_13_OSRelease,
-			Issue:     v3_13_Issue,
+			OSRelease: mustRead(t, `testdata/3.13/etc/os-release`),
+			Issue:     mustRead(t, `testdata/3.13/etc/issue`),
 		},
 		{
 			Release:   V3_14,
-			OSRelease: v3_14_OSRelease,
-			Issue:     v3_14_Issue,
+			OSRelease: mustRead(t, `testdata/3.14/etc/os-release`),
+			Issue:     mustRead(t, `testdata/3.14/etc/issue`),
 		},
 		{
 			Release:   V3_15,
-			OSRelease: v3_15_OSRelease,
-			Issue:     v3_15_Issue,
+			OSRelease: mustRead(t, `testdata/3.15/etc/os-release`),
+			Issue:     mustRead(t, `testdata/3.15/etc/issue`),
 		},
 	}
 	for _, tt := range table {
@@ -96,112 +96,15 @@ func TestDistributionScanner(t *testing.T) {
 	}
 }
 
-// These are a mess of constants copied out of alpine containers.
-//
-// Might make sense to move these into testdata files at some point.
-const (
-	v3_3_OSRelease = `NAME="Alpine Linux"
-ID=alpine
-VERSION_ID=3.3.3
-PRETTY_NAME="Alpine Linux v3.3"
-HOME_URL="http://alpinelinux.org"
-BUG_REPORT_URL="http://bugs.alpinelinux.org"`
-	v3_3_Issue = `Welcome to Alpine Linux 3.3
-Kernel \r on an \m (\l)`
-	v3_4_OSRelease = `NAME="Alpine Linux"
-ID=alpine
-VERSION_ID=3.4.6
-PRETTY_NAME="Alpine Linux v3.4"
-HOME_URL="http://alpinelinux.org"
-BUG_REPORT_URL="http://bugs.alpinelinux.org"`
-	v3_4_Issue = `Welcome to Alpine Linux 3.4
-Kernel \r on an \m (\l)`
-	v3_5_OSRelease = `NAME="Alpine Linux"
-ID=alpine
-VERSION_ID=3.5.3
-PRETTY_NAME="Alpine Linux v3.5"
-HOME_URL="http://alpinelinux.org"
-BUG_REPORT_URL="http://bugs.alpinelinux.org"`
-	v3_5_Issue = `Welcome to Alpine Linux 3.5
-Kernel \r on an \m (\l)`
-	v3_6_OSRelease = `NAME="Alpine Linux"
-ID=alpine
-VERSION_ID=3.6.5
-PRETTY_NAME="Alpine Linux v3.6"
-HOME_URL="http://alpinelinux.org"
-BUG_REPORT_URL="http://bugs.alpinelinux.org"`
-	v3_6_Issue = `Welcome to Alpine Linux 3.6
-Kernel \r on an \m (\l)`
-	v3_7_OSRelease = `NAME="Alpine Linux"
-ID=alpine
-VERSION_ID=3.7.3
-PRETTY_NAME="Alpine Linux v3.7"
-HOME_URL="http://alpinelinux.org"
-BUG_REPORT_URL="http://bugs.alpinelinux.org"`
-	v3_7_Issue = `Welcome to Alpine Linux 3.7
-Kernel \r on an \m (\l)`
-	v3_8_OSRelease = `NAME="Alpine Linux"
-ID=alpine
-VERSION_ID=3.8.4
-PRETTY_NAME="Alpine Linux v3.8"
-HOME_URL="http://alpinelinux.org"
-BUG_REPORT_URL="http://bugs.alpinelinux.org"`
-	v3_8_Issue = `Welcome to Alpine Linux 3.8
-Kernel \r on an \m (\l)`
-	v3_9_OSRelease = `NAME="Alpine Linux"
-ID=alpine
-VERSION_ID=3.9.4
-PRETTY_NAME="Alpine Linux v3.9"
-HOME_URL="https://alpinelinux.org/"
-BUG_REPORT_URL="https://bugs.alpinelinux.org/"`
-	v3_9_Issue = `Welcome to Alpine Linux 3.9
-Kernel \r on an \m (\l)`
-	v3_10_OSRelease = `NAME="Alpine Linux"
-ID=alpine
-VERSION_ID=3.10.3
-PRETTY_NAME="Alpine Linux v3.10"
-HOME_URL="https://alpinelinux.org/"
-BUG_REPORT_URL="https://bugs.alpinelinux.org/"`
-	v3_10_Issue = `Welcome to Alpine Linux 3.10
-Kernel \r on an \m (\l)`
-	v3_11_OSRelease = `NAME="Alpine Linux"
-ID=alpine
-VERSION_ID=3.11.6
-PRETTY_NAME="Alpine Linux v3.11"
-HOME_URL="https://alpinelinux.org/"
-BUG_REPORT_URL="https://bugs.alpinelinux.org/"`
-	v3_11_Issue = `Welcome to Alpine Linux 3.11
-Kernel \r on an \m (\l)`
-	v3_12_OSRelease = `NAME="Alpine Linux"
-ID=alpine
-VERSION_ID=3.12.1
-PRETTY_NAME="Alpine Linux v3.12"
-HOME_URL="https://alpinelinux.org/"
-BUG_REPORT_URL="https://bugs.alpinelinux.org/"`
-	v3_12_Issue = `Welcome to Alpine Linux 3.12
-Kernel \r on an \m (\l)`
-	v3_13_OSRelease = `NAME="Alpine Linux"
-ID=alpine
-VERSION_ID=3.13.4
-PRETTY_NAME="Alpine Linux v3.13"
-HOME_URL="https://alpinelinux.org/"
-BUG_REPORT_URL="https://bugs.alpinelinux.org/"`
-	v3_13_Issue = `Welcome to Alpine Linux 3.13
-Kernel \r on an \m (\l)`
-	v3_14_OSRelease = `NAME="Alpine Linux"
-ID=alpine
-VERSION_ID=3.14.1
-PRETTY_NAME="Alpine Linux v3.14"
-HOME_URL="https://alpinelinux.org/"
-BUG_REPORT_URL="https://bugs.alpinelinux.org/"`
-	v3_14_Issue = `Welcome to Alpine Linux 3.14
-Kernel \r on an \m (\l)`
-	v3_15_OSRelease = `NAME="Alpine Linux"
-ID=alpine
-VERSION_ID=3.15.0
-PRETTY_NAME="Alpine Linux v3.15"
-HOME_URL="https://alpinelinux.org/"
-BUG_REPORT_URL="https://bugs.alpinelinux.org/"`
-	v3_15_Issue = `Welcome to Alpine Linux 3.15
-Kernel \r on an \m (\l)`
-)
+func mustRead(t *testing.T, p string) string {
+	f, err := os.Open(p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	b, err := io.ReadAll(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(b)
+}
