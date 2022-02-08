@@ -1,0 +1,21 @@
+{
+    "com.redhat.component": "quay-registry-container",
+    "name": "quay/quay-rhel8",
+    "version": "v3.5.6",
+    "io.k8s.display-name": "Red Hat Quay",
+    "io.k8s.description": "Red Hat Quay",
+    "summary": "Red Hat Quay",
+    "maintainer": "support@redhat.com",
+    "io.openshift.tags": "quay",
+    "release": "4",
+    "com.redhat.license_terms": "https://www.redhat.com/agreements",
+    "distribution-scope": "public",
+    "vendor": "Red Hat, Inc.",
+    "build-date": "2021-08-17T21:16:14.144538",
+    "architecture": "x86_64",
+    "vcs-type": "git",
+    "vcs-ref": "0e033c625b6a775f5be730ce5a938aa91cc46d29",
+    "com.redhat.build-host": "example.com",
+    "description": "Red Hat Quay",
+    "url": "https://access.redhat.com/containers/#/registry.access.redhat.com/quay/quay-rhel8/images/v3.5.6-4"
+}

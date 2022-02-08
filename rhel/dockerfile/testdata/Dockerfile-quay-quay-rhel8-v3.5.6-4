@@ -1,0 +1,155 @@
+FROM sha256:ad42391b9b4670e68a759d4cdb8780896071a1cb1ed519b474f901e597bf3b3d AS build-npm
+
+COPY $REMOTE_SOURCE $REMOTE_SOURCE_DIR
+WORKDIR $REMOTE_SOURCE_DIR/app
+
+RUN INSTALL_PKGS="\
+        nodejs \
+    " && \
+    yum -y --setopt=tsflags=nodocs --setopt=skip_missing_names_on_install=False install $INSTALL_PKGS
+
+RUN cd source/config-tool/pkg/lib/editor && \
+    npm config list && \
+    npm install --ignore-engines --loglevel verbose && \
+    npm run build
+
+RUN cd source/quay && \
+    npm config list && \
+    npm install --ignore-engines --loglevel verbose && \
+    npm run build
+
+
+FROM sha256:320c4c36df196f57b67205292ec1514cce5d6c742cbdc01443f465d931d2bbd4 AS build-gomod
+
+COPY --from=build-npm $REMOTE_SOURCE_DIR/app $REMOTE_SOURCE_DIR/app
+WORKDIR $REMOTE_SOURCE_DIR/app
+
+COPY --from=build-npm $REMOTE_SOURCE_DIR/app/source/config-tool/pkg/lib/editor/static/build $REMOTE_SOURCE_DIR/app/source/config-tool/pkg/lib/editor/static/build
+
+# https://projects.engineering.redhat.com/browse/CLOUDBLD-1611
+# Until above is fixed, "go mod vendor" can't be run since the go.mod must be
+# in the root dir (ie. no multiples). Once fixed, add "go mod vendor" as a step
+# here and remove vendor dirs from quay-osbs repo
+#
+RUN cd source/config-tool && \
+    go build ./cmd/config-tool
+
+RUN cd source/jwtproxy && \
+    go build ./cmd/jwtproxy
+
+RUN cd source/pushgateway && \
+    go build
+
+
+FROM sha256:ad42391b9b4670e68a759d4cdb8780896071a1cb1ed519b474f901e597bf3b3d
+
+LABEL com.redhat.component="quay-registry-container"
+LABEL name="quay/quay-rhel8"
+LABEL version="v3.5.6"
+LABEL io.k8s.display-name="Red Hat Quay"
+LABEL io.k8s.description="Red Hat Quay"
+LABEL summary="Red Hat Quay"
+LABEL maintainer="support@redhat.com"
+LABEL io.openshift.tags="quay"
+
+ENV PYTHON_VERSION=3.8 \
+    PYTHON_ROOT=/usr/local/lib/python3.8 \
+    PATH=$HOME/.local/bin/:$PATH \
+    PYTHONUNBUFFERED=1 \
+    PYTHONIOENCODING=UTF-8 \
+    LANG=en_US.utf8
+
+ENV QUAYDIR=/quay-registry \
+    QUAYCONF=/quay-registry/conf \
+    QUAYPATH="."
+
+RUN mkdir $QUAYDIR
+WORKDIR $QUAYDIR
+
+ARG PIP_CERT
+COPY --from=build-npm $REMOTE_SOURCE_DIR $REMOTE_SOURCE_DIR
+COPY --from=build-npm $PIP_CERT $PIP_CERT
+RUN cp -Rp $REMOTE_SOURCE_DIR/app/source/quay/* $QUAYDIR
+
+COPY --from=build-gomod $REMOTE_SOURCE_DIR/app/source/config-tool/config-tool /usr/local/bin/config-tool
+COPY --from=build-gomod $REMOTE_SOURCE_DIR/app/source/jwtproxy/jwtproxy /usr/local/bin/jwtproxy
+COPY --from=build-gomod $REMOTE_SOURCE_DIR/app/source/config-tool/pkg/lib/editor $QUAYDIR/config_app
+COPY --from=build-gomod $REMOTE_SOURCE_DIR/app/source/pushgateway/pushgateway /usr/local/bin/pushgateway
+
+RUN INSTALL_PKGS="\
+        python38 \
+        nginx \
+        openldap \
+        postgresql \
+        gcc-c++ git \
+        openldap-devel \
+        dnsmasq \
+        memcached \
+        openssl \
+        skopeo \
+        python38-devel \
+        libffi-devel \
+        openssl-devel \
+        postgresql-devel \
+        libjpeg-devel \
+        " && \
+    yum -y --setopt=tsflags=nodocs --setopt=skip_missing_names_on_install=False install $INSTALL_PKGS && \
+    yum -y update && \
+    yum -y clean all
+
+RUN alternatives --set python /usr/bin/python3 && \
+    python -m pip install --no-cache-dir --upgrade setuptools pip && \
+    python -m pip install --no-cache-dir wheel && \
+    python -m pip install --no-cache-dir -r requirements-osbs.txt --no-cache && \
+    python -m pip freeze
+
+RUN ln -s $QUAYCONF /conf && \
+    ln -sf /dev/stdout /var/log/nginx/access.log && \
+    ln -sf /dev/stdout /var/log/nginx/error.log && \
+    chmod -R a+rwx /var/log/nginx
+
+# Cleanup
+RUN UNINSTALL_PKGS="\
+        gcc-c++ git \
+        openldap-devel \
+        python38-devel \
+        libffi-devel \
+        openssl-devel \
+        postgresql-devel \
+        libjpeg-devel \
+        kernel-headers \
+    " && \
+    yum remove -y $UNINSTALL_PKGS && \
+    yum clean all && \
+    rm -rf /var/cache/yum /tmp/* /var/tmp/* /root/.cache && \
+    rm -rf $REMOTE_SOURCE_DIR
+
+EXPOSE 8080 8443 7443
+
+RUN chgrp -R 0 $QUAYDIR && \
+    chmod -R g=u $QUAYDIR
+
+RUN mkdir /datastorage && chgrp 0 /datastorage && chmod g=u /datastorage && \
+    mkdir -p /var/log/nginx && chgrp 0 /var/log/nginx && chmod g=u /var/log/nginx && \
+    mkdir -p /conf/stack && chgrp 0 /conf/stack && chmod g=u /conf/stack && \
+    mkdir -p /tmp && chgrp 0 /tmp && chmod g=u /tmp && \
+    chmod g=u /etc/passwd
+
+RUN chgrp 0 /var/log/nginx && \
+    chmod g=u /var/log/nginx && \
+    chgrp -R 0 /etc/pki/ca-trust/extracted && \
+    chmod -R g=u /etc/pki/ca-trust/extracted && \
+    chgrp -R 0 /etc/pki/ca-trust/source/anchors && \
+    chmod -R g=u /etc/pki/ca-trust/source/anchors && \
+    chgrp -R 0 /usr/local/lib/python3.8/site-packages/certifi && \
+    chmod -R g=u /usr/local/lib/python3.8/site-packages/certifi
+
+VOLUME ["/var/log", "/datastorage", "/tmp", "/conf/stack"]
+
+USER 1001
+
+ENTRYPOINT ["dumb-init", "--", "/quay-registry/quay-entrypoint.sh"]
+CMD ["registry"]
+
+ADD quay-registry-container-v3.5.6-4.json /root/buildinfo/content_manifests/quay-registry-container-v3.5.6-4.json
+LABEL "release"="4" "com.redhat.license_terms"="https://www.redhat.com/agreements" "distribution-scope"="public" "vendor"="Red Hat, Inc." "build-date"="2021-08-17T21:16:14.144538" "architecture"="x86_64" "vcs-type"="git" "vcs-ref"="0e033c625b6a775f5be730ce5a938aa91cc46d29" "com.redhat.build-host"="example.com" "description"="Red Hat Quay" "url"="https://access.redhat.com/containers/#/registry.access.redhat.com/quay/quay-rhel8/images/v3.5.6-4"
