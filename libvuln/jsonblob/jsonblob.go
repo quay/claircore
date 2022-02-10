@@ -290,7 +290,7 @@ func (s *Store) UpdateEnrichments(ctx context.Context, kind string, fp driver.Fi
 }
 
 // RecordUpdaterUpdateTime is unimplimented
-func (s *Store) RecordUpdaterUpdateTime(ctx context.Context, updaterName string, updateTime time.Time) error {
+func (s *Store) RecordUpdaterUpdateTime(ctx context.Context, updaterName string, updateTime time.Time, fingerprint driver.Fingerprint, updaterError error) error {
 	return nil
 }
 

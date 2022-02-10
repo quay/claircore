@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/zlog"
 	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/label"
@@ -13,19 +14,49 @@ import (
 
 // recordUpdaterUpdateTime records that an updater is up to date with vulnerabilities at this time
 // inserts an updater with last update timestamp, or updates an existing updater with a new update time
-func recordUpdaterUpdateTime(ctx context.Context, pool *pgxpool.Pool, updaterName string, updateTime time.Time) error {
+func recordUpdaterUpdateTime(ctx context.Context, pool *pgxpool.Pool, updaterName string, updateTime time.Time, fingerprint driver.Fingerprint, updaterError error) error {
 	const (
-		// upsert inserts or updates a record of the last time an updater was checked for new vulns
-		upsert = `INSERT INTO update_time (
+		// upsertSuccessfulUpdate inserts or updates a record of the last time an updater successfully checked for new vulns
+		upsertSuccessfulUpdate = `INSERT INTO updater_status (
 			updater_name,
-			last_update_time
+			last_attempt,
+			last_success,
+			last_run_succeeded,
+			last_attempt_fingerprint
 		) VALUES (
 			$1,
-			$2
+			$2,
+			$2,
+			'true',
+			$3
 		)
 		ON CONFLICT (updater_name) DO UPDATE
-		SET last_update_time = $2
+		SET last_attempt = $2,
+			last_success = $2,
+			last_run_succeeded = 'true',
+			last_attempt_fingerprint = $3
 		RETURNING updater_name;`
+
+		// upsertFailedUpdate inserts or updates a record of the last time an updater attempted but failed to check for new vulns
+		upsertFailedUpdate = `INSERT INTO updater_status (
+					updater_name,
+					last_attempt,
+					last_run_succeeded,
+					last_attempt_fingerprint,
+					last_error
+				) VALUES (
+					$1,
+					$2,
+					'false',
+					$3,
+					$4
+				)
+				ON CONFLICT (updater_name) DO UPDATE
+				SET last_attempt = $2,
+					last_run_succeeded = 'false',
+					last_attempt_fingerprint = $3,
+					last_error = $4
+				RETURNING updater_name;`
 	)
 
 	ctx = baggage.ContextWithValues(ctx,
@@ -39,8 +70,22 @@ func recordUpdaterUpdateTime(ctx context.Context, pool *pgxpool.Pool, updaterNam
 
 	var returnedUpdaterName string
 
-	if err := pool.QueryRow(ctx, upsert, updaterName, updateTime).Scan(&returnedUpdaterName); err != nil {
-		return fmt.Errorf("failed to upsert last update time: %w", err)
+	if updaterError == nil {
+		zlog.Debug(ctx).
+			Str("updater", updaterName).
+			Msg("debug: using upsertSuccessfulUpdate")
+		fmt.Printf("debug: using upsertSuccessfulUpdate")
+		if err := pool.QueryRow(ctx, upsertSuccessfulUpdate, updaterName, updateTime, fingerprint).Scan(&returnedUpdaterName); err != nil {
+			return fmt.Errorf("failed to upsert last update time: %w", err)
+		}
+	} else {
+		zlog.Debug(ctx).
+			Str("updater", updaterName).
+			Msg("debug: using upsertFailedUpdate")
+		fmt.Printf("debug: using upsertFailedUpdate")
+		if err := pool.QueryRow(ctx, upsertFailedUpdate, updaterName, updateTime, fingerprint, updaterError.Error()).Scan(&returnedUpdaterName); err != nil {
+			return fmt.Errorf("failed to upsert last update time: %w", err)
+		}
 	}
 
 	zlog.Debug(ctx).
@@ -55,8 +100,10 @@ func recordUpdaterUpdateTime(ctx context.Context, pool *pgxpool.Pool, updaterNam
 // the updater set parameteer passed needs to match the prefix of the given udpdater set name format
 func recordUpdaterSetUpdateTime(ctx context.Context, pool *pgxpool.Pool, updaterSet string, updateTime time.Time) error {
 	const (
-		update = `UPDATE update_time
-		SET last_update_time = $1
+		update = `UPDATE updater_status
+		SET last_attempt = $1,
+			last_success = $1,
+			last_run_succeeded = 'true'
 		WHERE updater_name like $2 || '%'
 		RETURNING updater_name;`
 	)

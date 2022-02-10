@@ -57,7 +57,7 @@ type Updater interface {
 	// Initialized reports whether the vulnstore contains vulnerabilities.
 	Initialized(context.Context) (bool, error)
 	// RecordUpdaterUpdateTime records that an updater is up to date with vulnerabilities at this time
-	RecordUpdaterUpdateTime(ctx context.Context, updaterName string, updateTime time.Time) error
+	RecordUpdaterUpdateTime(ctx context.Context, updaterName string, updateTime time.Time, fingerprint driver.Fingerprint, updaterError error) error
 	// RecordUpdaterSetUpdateTime records that all updaters from a updater set are up to date with vulnerabilities at this time
 	RecordUpdaterSetUpdateTime(ctx context.Context, updaterSet string, updateTime time.Time) error
 }

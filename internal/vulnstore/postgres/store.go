@@ -59,8 +59,8 @@ func (s *Store) DeleteUpdateOperations(ctx context.Context, id ...uuid.UUID) (in
 }
 
 // RecordUpdaterUpdateTime records that an updater is up to date with vulnerabilities at this time
-func (s *Store) RecordUpdaterUpdateTime(ctx context.Context, updaterName string, updateTime time.Time) error {
-	return recordUpdaterUpdateTime(ctx, s.pool, updaterName, updateTime)
+func (s *Store) RecordUpdaterUpdateTime(ctx context.Context, updaterName string, updateTime time.Time, fingerprint driver.Fingerprint, updaterError error) error {
+	return recordUpdaterUpdateTime(ctx, s.pool, updaterName, updateTime, fingerprint, updaterError)
 }
 
 // RecordUpdaterSetUpdateTime records that all updaters from a updater set are up to date with vulnerabilities at this time
