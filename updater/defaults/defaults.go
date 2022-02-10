@@ -17,6 +17,7 @@ import (
 	"github.com/quay/claircore/photon"
 	"github.com/quay/claircore/pyupio"
 	"github.com/quay/claircore/rhel"
+	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/quay/claircore/suse"
 	"github.com/quay/claircore/ubuntu"
 	"github.com/quay/claircore/updater"
@@ -54,6 +55,7 @@ func inner(ctx context.Context) error {
 	updater.Register("photon", driver.UpdaterSetFactoryFunc(photon.UpdaterSet))
 	updater.Register("pyupio", driver.UpdaterSetFactoryFunc(pyupio.UpdaterSet))
 	updater.Register("suse", driver.UpdaterSetFactoryFunc(suse.UpdaterSet))
+	updater.Register("rhcc", driver.UpdaterSetFactoryFunc(rhcc.UpdaterSet))
 
 	cvssSet := driver.NewUpdaterSet()
 	cvssSet.Add(&cvss.Enricher{})
