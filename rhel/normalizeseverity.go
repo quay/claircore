@@ -1,17 +1,21 @@
 package rhel
 
-import "github.com/quay/claircore"
+import (
+	"strings"
+
+	"github.com/quay/claircore"
+)
 
 const (
-	None      = "None"
-	Low       = "Low"
-	Moderate  = "Moderate"
-	Important = "Important"
-	Critical  = "Critical"
+	None      = "none"
+	Low       = "low"
+	Moderate  = "moderate"
+	Important = "important"
+	Critical  = "critical"
 )
 
 func NormalizeSeverity(severity string) claircore.Severity {
-	switch severity {
+	switch strings.ToLower(severity) {
 	case None:
 		return claircore.Unknown
 	case Low:
