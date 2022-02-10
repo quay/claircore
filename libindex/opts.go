@@ -10,6 +10,7 @@ import (
 	"github.com/quay/claircore/java"
 	"github.com/quay/claircore/python"
 	"github.com/quay/claircore/rhel"
+	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/quay/claircore/rpm"
 )
 
@@ -79,6 +80,7 @@ func (o *Opts) Parse(ctx context.Context) error {
 			rpm.NewEcosystem(ctx),
 			python.NewEcosystem(ctx),
 			java.NewEcosystem(ctx),
+			rhcc.NewEcosystem(ctx),
 		}
 	}
 	o.LayerFetchOpt = DefaultLayerFetchOpt
