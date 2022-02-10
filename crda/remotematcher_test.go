@@ -41,16 +41,19 @@ func (tc matcherTestcase) Run(t *testing.T) {
 
 type matcherTestcase struct {
 	Expected map[string][]*claircore.Vulnerability
-	Matcher  *Matcher
+	Matcher  *matcher
 	Name     string
 	R        []*claircore.IndexRecord
 }
 
-func newMatcher(t *testing.T, srv *httptest.Server) *Matcher {
-	url, _ := url.Parse(srv.URL)
-	m, err := NewMatcher("pypi", WithClient(srv.Client()), WithURL(url))
+func mkMatcher(t *testing.T, srv *httptest.Server) *matcher {
+	url, err := url.Parse(srv.URL)
 	if err != nil {
-		t.Errorf("there should be no err %v", err)
+		t.Fatal(err)
+	}
+	m, err := newMatcher("pypi", "", withClient(srv.Client()), withURL(url))
+	if err != nil {
+		t.Fatal(err)
 	}
 	return m
 }
@@ -58,11 +61,10 @@ func newMatcher(t *testing.T, srv *httptest.Server) *Matcher {
 func TestRemoteMatcher(t *testing.T) {
 	t.Parallel()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		data, _ := ioutil.ReadAll(r.Body)
 		var vulnRequest VulnRequest
-		err := json.Unmarshal(data, &vulnRequest)
-		if err != nil {
-			t.Errorf("mock server unmarshall error %v", err)
+		defer r.Body.Close()
+		if err := json.NewDecoder(r.Body).Decode(&vulnRequest); err != nil {
+			t.Error(err)
 		}
 		var resp []VulnReport
 		for _, p := range vulnRequest.Packages {
@@ -73,19 +75,19 @@ func TestRemoteMatcher(t *testing.T) {
 			testLocalPath := fmt.Sprintf("testdata/%s/%s/%s.json", vulnRequest.Ecosystem, p.Name, p.Version)
 			t.Logf("serving request for %v", testLocalPath)
 			jsonOut, err := ioutil.ReadFile(testLocalPath)
-			if err == nil {
-				err = json.Unmarshal(jsonOut, &res)
-				if err != nil {
-					t.Errorf("mock server unmarshal error %v", err)
-				}
+			if err != nil {
+				t.Log(err)
+				continue
+			}
+			if err := json.Unmarshal(jsonOut, &res); err != nil {
+				t.Errorf("mock server unmarshal error %v", err)
+				continue
 			}
 			resp = append(resp, res)
 		}
-		out, err := json.Marshal(&resp)
-		if err != nil {
-			t.Errorf("mock server marshal error %v", err)
+		if err := json.NewEncoder(w).Encode(&resp); err != nil {
+			t.Error(err)
 		}
-		w.Write(out)
 	}))
 	defer srv.Close()
 
@@ -94,7 +96,7 @@ func TestRemoteMatcher(t *testing.T) {
 			Name:     "pypi/empty",
 			R:        []*claircore.IndexRecord{},
 			Expected: map[string][]*claircore.Vulnerability{},
-			Matcher:  newMatcher(t, srv),
+			Matcher:  mkMatcher(t, srv),
 		},
 		{
 			Name: "pypi/pyyaml",
@@ -136,7 +138,7 @@ func TestRemoteMatcher(t *testing.T) {
 					},
 				},
 			},
-			Matcher: newMatcher(t, srv),
+			Matcher: mkMatcher(t, srv),
 		},
 		{
 			Name: "pypi/none",
@@ -159,7 +161,7 @@ func TestRemoteMatcher(t *testing.T) {
 				},
 			},
 			Expected: map[string][]*claircore.Vulnerability{},
-			Matcher:  newMatcher(t, srv),
+			Matcher:  mkMatcher(t, srv),
 		},
 		{
 			Name: "pypi/pyyaml-flask",
@@ -235,7 +237,7 @@ func TestRemoteMatcher(t *testing.T) {
 					},
 				},
 			},
-			Matcher: newMatcher(t, srv),
+			Matcher: mkMatcher(t, srv),
 		},
 	}
 	for _, tc := range tt {

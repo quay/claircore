@@ -11,18 +11,25 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 )
 
-// Factory contains the configuration to connect with CRDA remote matcher.
+// Factory contains the configuration to connect to the CRDA remote matcher.
 type Factory struct {
 	url        *url.URL
 	client     *http.Client
-	ecosystems []string
 	source     string
 	key        string
+	ecosystems []string
 }
 
 // MatcherFactory implements driver.MatcherFactory.
 func (f *Factory) Matcher(ctx context.Context) ([]driver.Matcher, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "crda/MatcherFactory.Matcher")
+
+	if f.key == "" {
+		zlog.Info(ctx).
+			Msg("no key configured, skipping")
+		return nil, nil
+	}
+
 EcosystemSubSet:
 	for _, e := range f.ecosystems {
 		for _, se := range supportedEcosystems {
@@ -43,8 +50,15 @@ EcosystemSubSet:
 	}
 
 	var matchers []driver.Matcher
+	opts := []option{withClient(f.client)}
+	if f.url != nil {
+		opts = append(opts, withURL(f.url))
+	}
+	if f.source != "" {
+		opts = append(opts, withSource(f.source))
+	}
 	for _, e := range f.ecosystems {
-		m, err := NewMatcher(e, WithClient(f.client), WithURL(f.url), WithKey(f.key), WithSource(f.source))
+		m, err := newMatcher(e, f.key, opts...)
 		if err != nil {
 			return nil, err
 		}
@@ -53,18 +67,18 @@ EcosystemSubSet:
 	return matchers, nil
 }
 
-// To decode the config.
-type FactoryConfig struct {
+// Config is the structure accepted to configure all matchers.
+type Config struct {
 	URL        string   `json:"url" yaml:"url"`
-	Ecosystems []string `json:"ecosystems" yaml:"ecosystems"`
 	Source     string   `json:"source" yaml:"source"`
 	Key        string   `json:"key" yaml:"key"`
+	Ecosystems []string `json:"ecosystems" yaml:"ecosystems"`
 }
 
 // MatcherFactory implements driver.MatcherConfigurable.
 func (f *Factory) Configure(ctx context.Context, cfg driver.MatcherConfigUnmarshaler, c *http.Client) error {
 	ctx = zlog.ContextWithValues(ctx, "component", "crda/MatcherFactory.Configure")
-	var fc FactoryConfig
+	var fc Config
 
 	if err := cfg(&fc); err != nil {
 		return err
@@ -81,14 +95,12 @@ func (f *Factory) Configure(ctx context.Context, cfg driver.MatcherConfigUnmarsh
 			Msg("configured API URL")
 		f.url = u
 	}
-
 	if fc.Source != "" {
 		f.source = fc.Source
 		zlog.Info(ctx).
 			Str("source", fc.Source).
 			Msg("configured source")
 	}
-
 	if fc.Key != "" {
 		f.key = fc.Key
 		zlog.Info(ctx).
@@ -96,9 +108,7 @@ func (f *Factory) Configure(ctx context.Context, cfg driver.MatcherConfigUnmarsh
 			Msg("configured API key")
 	}
 
-	if c != nil {
-		f.client = c
-	}
+	f.client = c
 	f.ecosystems = fc.Ecosystems
 	return nil
 }
