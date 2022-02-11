@@ -4,6 +4,7 @@ import (
 	"context"
 	crand "crypto/rand"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"math/rand"
@@ -11,6 +12,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/log/testingadapter"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -66,43 +68,13 @@ const (
 //
 // DBSetup and NeedDB are expected to have been called correctly.
 func NewDB(ctx context.Context, t testing.TB) (*DB, error) {
-	cfg := pkgConfig.Copy()
-	cfg.ConnConfig.Logger = testingadapter.NewLogger(t)
-	cfg.MaxConns = 10
 	dbid, roleid := mkIDs()
 	database := fmt.Sprintf("db%x", dbid)
 	role := fmt.Sprintf("role%x", roleid)
-
-	conn, err := pgx.ConnectConfig(ctx, cfg.ConnConfig)
-	if err != nil {
-		return nil, err
+	cfg := configureDatabase(ctx, t, pkgConfig, database, role)
+	if t.Failed() {
+		return nil, fmt.Errorf("failed to create database")
 	}
-	if _, err := conn.Exec(ctx, fmt.Sprintf(createRole, role)); err != nil {
-		return nil, err
-	}
-	if _, err := conn.Exec(ctx, fmt.Sprintf(createDatabase, role, database)); err != nil {
-		return nil, err
-	}
-	if err := conn.Close(ctx); err != nil {
-		return nil, err
-	}
-
-	cfg = cfg.Copy()
-	cfg.ConnConfig.Database = database
-	conn, err = pgx.ConnectConfig(ctx, cfg.ConnConfig)
-	if err != nil {
-		return nil, err
-	}
-	if _, err := conn.Exec(ctx, loadUUID); err != nil {
-		return nil, err
-	}
-	if err := conn.Close(ctx); err != nil {
-		return nil, err
-	}
-
-	cfg = cfg.Copy()
-	cfg.ConnConfig.User = role
-	cfg.ConnConfig.Password = role
 	t.Logf("config: %+v", struct {
 		Host     string
 		Database string
@@ -116,16 +88,100 @@ func NewDB(ctx context.Context, t testing.TB) (*DB, error) {
 		User:     cfg.ConnConfig.User,
 		Password: cfg.ConnConfig.Password,
 	})
-	cfg.ConnConfig.Logger = nil
 
 	return &DB{
 		cfg: cfg,
 	}, nil
 }
 
+func configureDatabase(ctx context.Context, t testing.TB, root *pgxpool.Config, database, role string) *pgxpool.Config {
+	var cfg *pgxpool.Config
+	// First, connect as the superuser to create the new database and role.
+	cfg = root.Copy()
+	cfg.ConnConfig.Logger = testingadapter.NewLogger(t)
+	cfg.MaxConns = 10
+	conn, err := pgx.ConnectConfig(ctx, cfg.ConnConfig)
+	if err != nil {
+		t.Error(err)
+		return nil
+	}
+	// The creation commands don't have "IF NOT EXISTS" forms, so check for the
+	// specific error codes that mean they already exist.
+	var pgErr *pgconn.PgError
+	_, err = conn.Exec(ctx, fmt.Sprintf(createRole, role))
+	switch {
+	case errors.Is(err, nil):
+	case errors.As(err, &pgErr):
+		if pgErr.Code == "42710" {
+			t.Log("expected error:", pgErr.Message)
+			break
+		}
+		fallthrough
+	default:
+		t.Error(err)
+	}
+	_, err = conn.Exec(ctx, fmt.Sprintf(createDatabase, role, database))
+	switch {
+	case errors.Is(err, nil):
+	case errors.As(err, &pgErr):
+		if pgErr.Code == "42P04" {
+			t.Log("expected error:", pgErr.Message)
+			break
+		}
+		fallthrough
+	default:
+		t.Error(err)
+	}
+	if err := conn.Close(ctx); err != nil {
+		t.Error(err)
+	}
+	if t.Failed() {
+		return nil
+	}
+
+	// Next, connect to the newly created database as the superuser to load the
+	// uuid extension
+	cfg = cfg.Copy()
+	cfg.ConnConfig.Database = database
+	conn, err = pgx.ConnectConfig(ctx, cfg.ConnConfig)
+	if err != nil {
+		t.Error(err)
+		return nil
+	}
+	if _, err := conn.Exec(ctx, loadUUID); err != nil {
+		t.Error(err)
+	}
+	if err := conn.Close(ctx); err != nil {
+		t.Error(err)
+	}
+	if t.Failed() {
+		return nil
+	}
+
+	// Finally, return a config setup to connect as the new role to the new
+	// database.
+	cfg = root.Copy()
+	cfg.ConnConfig.User = role
+	cfg.ConnConfig.Password = role
+	cfg.ConnConfig.Database = database
+
+	return cfg
+}
+
 // DB is a handle for connecting to and cleaning up a test database.
 type DB struct {
-	cfg *pgxpool.Config
+	cfg    *pgxpool.Config
+	noDrop bool
+}
+
+func (db *DB) String() string {
+	const dsnFmt = `host=%s port=%d database=%s user=%s password=%s sslmode=disable`
+	return fmt.Sprintf(dsnFmt,
+		db.cfg.ConnConfig.Host,
+		db.cfg.ConnConfig.Port,
+		db.cfg.ConnConfig.Database,
+		db.cfg.ConnConfig.User,
+		db.cfg.ConnConfig.Password)
 }
 
 // Config returns a pgxpool.Config for the test database.
@@ -147,11 +203,13 @@ func (db *DB) Close(ctx context.Context, t testing.TB) {
 		t.Error(err)
 	}
 
-	if _, err := conn.Exec(ctx, fmt.Sprintf(dropDatabase, db.cfg.ConnConfig.Database)); err != nil {
-		t.Error(err)
-	}
-	if _, err := conn.Exec(ctx, fmt.Sprintf(dropRole, db.cfg.ConnConfig.User)); err != nil {
-		t.Error(err)
+	if !db.noDrop {
+		if _, err := conn.Exec(ctx, fmt.Sprintf(dropDatabase, db.cfg.ConnConfig.Database)); err != nil {
+			t.Error(err)
+		}
+		if _, err := conn.Exec(ctx, fmt.Sprintf(dropRole, db.cfg.ConnConfig.User)); err != nil {
+			t.Error(err)
+		}
 	}
 	db.cfg = nil
 }
@@ -200,8 +258,13 @@ func startEmbedded(t testing.TB) func() {
 	return func() {
 		pkgDB = &Engine{}
 		if err := pkgDB.Start(t); err != nil {
-			t.Error(err)
-			return
+			t.Log("unclean shutdown?", err)
+			if err := pkgDB.Stop(); err != nil {
+				t.Fatal(err)
+			}
+			if err := pkgDB.Start(t); err != nil {
+				t.Fatal(err)
+			}
 		}
 		cfg, err := pgxpool.ParseConfig(pkgDB.DSN)
 		if err != nil {
