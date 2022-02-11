@@ -7,19 +7,14 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
 	"flag"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"net/http"
 	"os"
 	"os/exec"
-	"time"
-
-	"golang.org/x/sync/errgroup"
+	"os/signal"
+	"path/filepath"
 )
-
-var V io.Writer = ioutil.Discard
 
 func main() {
 	var exit int
@@ -28,161 +23,137 @@ func main() {
 			os.Exit(exit)
 		}
 	}()
-	targetUp := flag.String("target-up", "podman-dev-up", "makefile target to bring up local services")
-	targetDown := flag.String("target-down", "podman-dev-down", "makefile target to bring down local services")
-	timeoutUp := flag.Duration("timeout-up", 5*time.Minute, "timeout for services to come up")
-	timeoutTest := flag.Duration("timeout-test", 5*time.Minute, "timeout for cctool tests")
-	verbose := flag.Bool("v", false, "enable verbose output")
+	args := Args{}
+	flag.BoolVar(&args.Verbose, "v", false, "verbose output")
+	flag.BoolVar(&args.Warmup, "warmup", false, "do a warmup run before making any requests.")
+	flag.String("dump-manifest", "{{.}}.manifest.json", "dump manifest to templated location, if provided")
+	flag.String("dump-index", "{{.}}.index.json", "dump index to templated location, if provided")
+	flag.String("dump-report", "{{.}}.report.json", "dump report to templated location, if provided")
 	flag.Parse()
-
-	if *verbose {
-		V = os.Stderr
-		defer os.Stderr.Sync()
-	}
-
-	ctx := interrupt(context.Background())
-	ctx, done := context.WithCancel(ctx)
-
-	imgs := flag.Args()
-	fmt.Printf("testing: %v\n", imgs)
-
-	defer func() {
-		if err := setupCmd(context.Background(), nil, nil, "make", *targetDown).Run(); err != nil {
-			fmt.Fprintln(os.Stderr, err)
-			exit = 1
+	flag.Visit(func(f *flag.Flag) {
+		switch f.Name {
+		case "dump-manifest":
+			if f.Value.String() == "" {
+				f.Value.Set(f.DefValue)
+			}
+			v := f.Value.String()
+			args.DumpManifest = &v
+		case "dump-index":
+			if f.Value.String() == "" {
+				f.Value.Set(f.DefValue)
+			}
+			v := f.Value.String()
+			args.DumpIndex = &v
+		case "dump-report":
+			if f.Value.String() == "" {
+				f.Value.Set(f.DefValue)
+			}
+			v := f.Value.String()
+			args.DumpReport = &v
 		}
-	}()
-
-	if err := setupCmd(ctx, nil, nil, "go", "mod", "vendor").Run(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		exit = 1
-		return
-	}
-
-	if err := setupCmd(ctx, nil, nil, "make", *targetUp).Run(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		exit = 1
-		return
-	}
-
-	var toolPath string
-
-	tctx, cancel := context.WithTimeout(ctx, *timeoutUp)
-	defer cancel()
-	eg, gctx := errgroup.WithContext(tctx)
-	eg.Go(checkURL(gctx, `http://localhost:8080/`))
-	eg.Go(checkURL(gctx, `http://localhost:8081/`))
-	eg.Go(func() error {
-		var err error
-		toolPath, err = buildTool(ctx)
-		return err
 	})
-	if err := eg.Wait(); err != nil {
+
+	ctx, done := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
+	defer done()
+	if err := Main(ctx, args, flag.Args()); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		exit = 1
-		return
 	}
-
-	tctx, cancel = context.WithTimeout(ctx, *timeoutTest)
-	defer cancel()
-	eg, gctx = errgroup.WithContext(tctx)
-	for _, img := range imgs {
-		eg.Go(runTool(gctx, toolPath, img))
-	}
-	if err := eg.Wait(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		exit = 1
-		return
-	}
-
-	done()
 }
 
-func setupCmd(ctx context.Context, stdout, stderr io.Writer, exe string, args ...string) *exec.Cmd {
-	cmd := exec.CommandContext(ctx, exe, args...)
-	cmd.Stdout = os.Stdout
-	if stdout != nil {
-		cmd.Stdout = io.MultiWriter(stdout, os.Stdout)
-	}
-	cmd.Stderr = os.Stderr
-	if stderr != nil {
-		cmd.Stderr = io.MultiWriter(stderr, os.Stderr)
-	}
-	fmt.Fprintf(V, "command: %q\n", cmd.Args)
-	return cmd
+type Args struct {
+	DumpManifest *string
+	DumpIndex    *string
+	DumpReport   *string
+	Verbose      bool
+	Warmup       bool
 }
 
-func buildTool(ctx context.Context) (string, error) {
-	f, err := ioutil.TempFile("", "cctool.")
+func Main(ctx context.Context, args Args, imgs []string) error {
+	if err := checkDeps(ctx); err != nil {
+		return err
+	}
+	root, err := findRoot(ctx)
 	if err != nil {
-		return "", err
+		return err
 	}
-	exe := f.Name()
-	go func() {
-		<-ctx.Done()
-		os.Remove(exe)
-	}()
-	if err := f.Close(); err != nil {
-		return "", err
-	}
-	cmd := setupCmd(ctx, nil, nil, "go", "build", "-o", exe, "./cmd/cctool")
+	workDir := filepath.Join(root, `test/bisect`)
+	cmd := exec.CommandContext(ctx, "go", "test", "-tags", "integration", "-c")
+	cmd.Dir = workDir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		return "", err
+		return err
 	}
-	fmt.Fprintf(V, "%s: built\n", exe)
-	return exe, nil
-}
 
-func runTool(ctx context.Context, exe, img string) func() error {
-	buf := &bytes.Buffer{}
-	cmd := setupCmd(ctx, buf, nil, exe, `report`, img)
-	return func() error {
+	if flag.NArg() == 0 {
+		flag.PrintDefaults()
+		return errors.New("no arguments given")
+	}
+
+	if args.Warmup {
+		cmd = exec.CommandContext(ctx, filepath.Join(workDir, `bisect.test`), "-enable")
+		if args.Verbose {
+			cmd.Args = append(cmd.Args, "-stderr")
+		}
+		cmd.Dir = workDir
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
 		if err := cmd.Run(); err != nil {
 			return err
 		}
-		if bytes.Count(buf.Bytes(), []byte{'\n'}) < 2 {
-			return fmt.Errorf("!!! %q failed to index+match successfully", img)
-		}
-		return nil
 	}
+
+	cmd = exec.CommandContext(ctx, filepath.Join(workDir, `bisect.test`), "-enable")
+	if args.Verbose {
+		cmd.Args = append(cmd.Args, "-stderr")
+	}
+	if f := args.DumpManifest; f != nil {
+		p, err := filepath.Abs(*f)
+		if err != nil {
+			return err
+		}
+		cmd.Args = append(cmd.Args, "-dump-manifest", p)
+	}
+	if f := args.DumpIndex; f != nil {
+		p, err := filepath.Abs(*f)
+		if err != nil {
+			return err
+		}
+		cmd.Args = append(cmd.Args, "-dump-index", p)
+	}
+	if f := args.DumpReport; f != nil {
+		p, err := filepath.Abs(*f)
+		if err != nil {
+			return err
+		}
+		cmd.Args = append(cmd.Args, "-dump-report", p)
+	}
+	cmd.Args = append(cmd.Args, imgs...)
+	cmd.Dir = workDir
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
 }
 
-func interrupt(ctx context.Context) context.Context {
-	ctx, done := context.WithCancel(ctx)
-	ch := make(chan os.Signal, 1)
-	go func() {
-		for range ch {
-			done()
-		}
-	}()
-	return ctx
+func findRoot(ctx context.Context) (string, error) {
+	cmd := exec.CommandContext(ctx, "git", "rev-parse", "--show-toplevel")
+	cmd.Stderr = nil
+	b, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+	return string(bytes.TrimSpace(b)), nil
 }
 
-func checkURL(ctx context.Context, u string) func() error {
-	return func() error {
-		t := time.NewTicker(2 * time.Second)
-		defer t.Stop()
-		for {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case <-t.C:
-			}
-			req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
-			if err != nil {
-				return err
-			}
-			res, err := http.DefaultClient.Do(req)
-			if res != nil {
-				res.Body.Close()
-			}
-			if err != nil {
-				continue
-			}
-			if res.StatusCode == http.StatusNotFound {
-				fmt.Fprintf(V, "%s: ok\n", u)
-				return nil
-			}
+func checkDeps(_ context.Context) error {
+	for _, exe := range []string{
+		"git",
+		"skopeo",
+	} {
+		if _, err := exec.LookPath(exe); err != nil {
+			return err
 		}
 	}
+	return nil
 }
