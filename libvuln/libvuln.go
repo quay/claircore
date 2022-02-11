@@ -79,13 +79,13 @@ func New(ctx context.Context, opts *Opts) (*Libvuln, error) {
 	zlog.Info(ctx).Array("matchers", matcherLog(l.matchers)).Msg("matchers created")
 
 	// create update manager
-	locks, err := ctxlock.New(ctx, pool)
+	l.locks, err = ctxlock.New(ctx, pool)
 	if err != nil {
 		return nil, err
 	}
 	l.updaters, err = updates.NewManager(ctx,
 		l.store,
-		locks,
+		l.locks,
 		opts.Client,
 		updates.WithBatchSize(opts.UpdateWorkers),
 		updates.WithInterval(opts.UpdateInterval),
