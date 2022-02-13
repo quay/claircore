@@ -161,37 +161,32 @@ func (tc testcase) RunInner(ctx context.Context, t *testing.T, dsn string, next 
 
 // Run does per-test setup and calls RunInner
 func (tc testcase) Run(ctx context.Context, check checkFunc) func(*testing.T) {
-	const dsnFmt = `host=%s port=%d database=%s user=%s password=%s sslmode=disable`
 	return func(t *testing.T) {
 		t.Parallel()
 		integration.NeedDB(t)
 		ctx := zlog.Test(ctx, t)
 		db, err := integration.NewDB(ctx, t)
 		if err != nil {
-			t.Fatal(err)
+			t.Error(err)
 		}
 		defer db.Close(ctx, t)
-		cfg := db.Config()
-		cfg.ConnConfig.LogLevel = pgx.LogLevelError
-		cfg.ConnConfig.Logger = testingadapter.NewLogger(t)
-		mdb := stdlib.OpenDB(*cfg.ConnConfig)
-		defer mdb.Close()
+		cfg := db.Config().ConnConfig.Copy()
+		cfg.LogLevel = pgx.LogLevelError
+		cfg.Logger = testingadapter.NewLogger(t)
+		mdb := stdlib.OpenDB(*cfg)
 		migrator := migrate.NewPostgresMigrator(mdb)
 		migrator.Table = migrations.IndexerMigrationTable
 		if err := migrator.Exec(migrate.Up, migrations.IndexerMigrations...); err != nil {
 			t.Fatalf("failed to perform migrations: %v", err)
 		}
+		if err := mdb.Close(); err != nil {
+			t.Error(err)
+		}
+		if t.Failed() {
+			t.FailNow()
+		}
 
-		// Can't use ConnString(), because it doesn't re-render the string.
-
-		tc.RunInner(ctx, t,
-			fmt.Sprintf(dsnFmt,
-				cfg.ConnConfig.Host,
-				cfg.ConnConfig.Port,
-				cfg.ConnConfig.Database,
-				cfg.ConnConfig.User,
-				cfg.ConnConfig.Password),
-			check)
+		tc.RunInner(ctx, t, db.String(), check)
 	}
 }
 
