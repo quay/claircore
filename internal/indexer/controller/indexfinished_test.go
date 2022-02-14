@@ -26,7 +26,6 @@ func TestIndexFinished(t *testing.T) {
 				m := indexer.NewMockStore(ctrl)
 
 				m.EXPECT().SetIndexFinished(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
-				m.EXPECT().SetIndexReport(gomock.Any(), gomock.Any()).Return(nil)
 
 				return m
 			},

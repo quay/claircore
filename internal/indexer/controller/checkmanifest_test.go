@@ -31,7 +31,6 @@ func TestCheckManifest(t *testing.T) {
 			mock: func(t *testing.T) *indexer.MockStore {
 				ctrl := gomock.NewController(t)
 				m := indexer.NewMockStore(ctrl)
-				m.EXPECT().SetIndexReport(gomock.Any(), gomock.Any()).Return(nil)
 				m.EXPECT().ManifestScanned(gomock.Any(), gomock.Any(), gomock.Any()).Return(true, nil)
 				m.EXPECT().IndexReport(gomock.Any(), gomock.Any()).Return(&claircore.IndexReport{}, true, nil)
 				return m
@@ -43,9 +42,7 @@ func TestCheckManifest(t *testing.T) {
 			mock: func(t *testing.T) *indexer.MockStore {
 				ctrl := gomock.NewController(t)
 				m := indexer.NewMockStore(ctrl)
-				m.EXPECT().SetIndexReport(gomock.Any(), gomock.Any()).Return(nil)
 				m.EXPECT().ManifestScanned(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, nil)
-				m.EXPECT().IndexReport(gomock.Any(), gomock.Any()).Return(&claircore.IndexReport{}, true, nil)
 				m.EXPECT().PersistManifest(gomock.Any(), gomock.Any()).Return(nil)
 				return m
 			},

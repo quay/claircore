@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 
@@ -42,9 +43,6 @@ func TestControllerIndexerError(t *testing.T) {
 				// if all is well scanner should hijack SFM flow into entering scanError state
 				store.EXPECT().ManifestScanned(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, fmt.Errorf("expected failure for test"))
 
-				// let the call to SetIndexReport in scanError state success. scanErr should return nil. nil from here
-				store.EXPECT().SetIndexReport(gomock.Any(), gomock.Any()).Return(nil)
-
 				return store, fetcher
 			},
 		},
@@ -59,7 +57,10 @@ func TestControllerIndexerError(t *testing.T) {
 				Fetcher: fetcher,
 			})
 
-			c.Index(ctx, &claircore.Manifest{})
+			_, err := c.Index(ctx, &claircore.Manifest{})
+			if errors.Is(err, nil) {
+				t.Error("expected nil error")
+			}
 			if !cmp.Equal(false, c.report.Success) {
 				t.Fatal(cmp.Diff(false, c.report.Success))
 			}
