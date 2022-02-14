@@ -25,46 +25,45 @@ func TestScanNoErrors(t *testing.T) {
 	mock_ps := indexer.NewMockPackageScanner(ctrl)
 	mock_ds := indexer.NewMockDistributionScanner(ctrl)
 	mock_rs := indexer.NewMockRepositoryScanner(ctrl)
-
 	mock_store := indexer.NewMockStore(ctrl)
 
 	_, layers := test.ServeLayers(t, 2)
 
 	mock_ps.EXPECT().Scan(gomock.Any(), layers[0]).Return([]*claircore.Package{}, nil)
 	mock_ps.EXPECT().Scan(gomock.Any(), layers[1]).Return([]*claircore.Package{}, nil)
-	mock_ps.EXPECT().Kind().AnyTimes()
-	mock_ps.EXPECT().Name().AnyTimes()
-	mock_ps.EXPECT().Version().AnyTimes()
-
-	mock_ds.EXPECT().Scan(gomock.Any(), layers[0]).Return([]*claircore.Distribution{}, nil)
-	mock_ds.EXPECT().Scan(gomock.Any(), layers[1]).Return([]*claircore.Distribution{}, nil)
-	mock_ds.EXPECT().Kind().AnyTimes()
-	mock_ds.EXPECT().Name().AnyTimes()
-	mock_ds.EXPECT().Version().AnyTimes()
-
-	mock_rs.EXPECT().Scan(gomock.Any(), layers[0]).Return([]*claircore.Repository{}, nil)
-	mock_rs.EXPECT().Scan(gomock.Any(), layers[1]).Return([]*claircore.Repository{}, nil)
-	mock_rs.EXPECT().Kind().AnyTimes()
-	mock_rs.EXPECT().Name().AnyTimes()
-	mock_rs.EXPECT().Version().AnyTimes()
-
-	mock_store.EXPECT().LayerScanned(gomock.Any(), layers[0].Hash, mock_ps).Return(true, nil)
-	mock_store.EXPECT().LayerScanned(gomock.Any(), layers[1].Hash, mock_ps).Return(true, nil)
-
-	mock_store.EXPECT().LayerScanned(gomock.Any(), layers[0].Hash, mock_ds).Return(true, nil)
-	mock_store.EXPECT().LayerScanned(gomock.Any(), layers[1].Hash, mock_ds).Return(true, nil)
-
-	mock_store.EXPECT().LayerScanned(gomock.Any(), layers[0].Hash, mock_rs).Return(true, nil)
-	mock_store.EXPECT().LayerScanned(gomock.Any(), layers[1].Hash, mock_rs).Return(true, nil)
-
+	mock_ps.EXPECT().Kind().MinTimes(1).Return("package")
+	mock_ps.EXPECT().Name().AnyTimes().Return("package")
+	mock_ps.EXPECT().Version().AnyTimes().Return("1")
+	mock_store.EXPECT().LayerScanned(gomock.Any(), layers[0].Hash, mock_ps).Return(false, nil)
+	mock_store.EXPECT().LayerScanned(gomock.Any(), layers[1].Hash, mock_ps).Return(false, nil)
+	mock_store.EXPECT().SetLayerScanned(gomock.Any(), layers[0].Hash, mock_ps).Return(nil)
+	mock_store.EXPECT().SetLayerScanned(gomock.Any(), layers[1].Hash, mock_ps).Return(nil)
 	mock_store.EXPECT().IndexPackages(gomock.Any(), gomock.Any(), layers[0], mock_ps).Return(nil)
 	mock_store.EXPECT().IndexPackages(gomock.Any(), gomock.Any(), layers[1], mock_ps).Return(nil)
 
-	mock_store.EXPECT().IndexPackages(gomock.Any(), gomock.Any(), layers[0], mock_rs).Return(nil)
-	mock_store.EXPECT().IndexPackages(gomock.Any(), gomock.Any(), layers[1], mock_rs).Return(nil)
+	mock_ds.EXPECT().Scan(gomock.Any(), layers[0]).Return([]*claircore.Distribution{}, nil)
+	mock_ds.EXPECT().Scan(gomock.Any(), layers[1]).Return([]*claircore.Distribution{}, nil)
+	mock_ds.EXPECT().Kind().MinTimes(1).Return("distribution")
+	mock_ds.EXPECT().Name().AnyTimes().Return("distribution")
+	mock_ds.EXPECT().Version().AnyTimes().Return("1")
+	mock_store.EXPECT().LayerScanned(gomock.Any(), layers[0].Hash, mock_ds).Return(false, nil)
+	mock_store.EXPECT().LayerScanned(gomock.Any(), layers[1].Hash, mock_ds).Return(false, nil)
+	mock_store.EXPECT().SetLayerScanned(gomock.Any(), layers[0].Hash, mock_ds).Return(nil)
+	mock_store.EXPECT().SetLayerScanned(gomock.Any(), layers[1].Hash, mock_ds).Return(nil)
+	mock_store.EXPECT().IndexDistributions(gomock.Any(), gomock.Any(), layers[0], mock_ds).Return(nil)
+	mock_store.EXPECT().IndexDistributions(gomock.Any(), gomock.Any(), layers[1], mock_ds).Return(nil)
 
-	mock_store.EXPECT().IndexPackages(gomock.Any(), gomock.Any(), layers[0], mock_ds).Return(nil)
-	mock_store.EXPECT().IndexPackages(gomock.Any(), gomock.Any(), layers[1], mock_ds).Return(nil)
+	mock_rs.EXPECT().Scan(gomock.Any(), layers[0]).Return([]*claircore.Repository{}, nil)
+	mock_rs.EXPECT().Scan(gomock.Any(), layers[1]).Return([]*claircore.Repository{}, nil)
+	mock_rs.EXPECT().Kind().MinTimes(1).Return("repository")
+	mock_rs.EXPECT().Name().AnyTimes().Return("repository")
+	mock_rs.EXPECT().Version().AnyTimes().Return("1")
+	mock_store.EXPECT().LayerScanned(gomock.Any(), layers[0].Hash, mock_rs).Return(false, nil)
+	mock_store.EXPECT().LayerScanned(gomock.Any(), layers[1].Hash, mock_rs).Return(false, nil)
+	mock_store.EXPECT().SetLayerScanned(gomock.Any(), layers[0].Hash, mock_rs).Return(nil)
+	mock_store.EXPECT().SetLayerScanned(gomock.Any(), layers[1].Hash, mock_rs).Return(nil)
+	mock_store.EXPECT().IndexRepositories(gomock.Any(), gomock.Any(), layers[0], mock_rs).Return(nil)
+	mock_store.EXPECT().IndexRepositories(gomock.Any(), gomock.Any(), layers[1], mock_rs).Return(nil)
 
 	ecosystem := &indexer.Ecosystem{
 		Name: "test-ecosystem",

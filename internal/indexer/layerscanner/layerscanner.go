@@ -15,7 +15,7 @@ import (
 	"github.com/quay/claircore/internal/indexer"
 )
 
-// LayerScanner implements the indexer.LayerScanner interface.
+// layerScanner implements the indexer.layerScanner interface.
 type layerScanner struct {
 	store indexer.Store
 
@@ -151,15 +151,6 @@ func (ls *layerScanner) Scan(ctx context.Context, manifest claircore.Digest, lay
 		label.String("component", "internal/indexer/layerscannner/layerScanner.Scan"),
 		label.String("manifest", manifest.String()))
 
-	layersToScan := make([]*claircore.Layer, 0, len(layers))
-	dedupe := map[string]struct{}{}
-	for _, layer := range layers {
-		if _, ok := dedupe[layer.Hash.String()]; !ok {
-			layersToScan = append(layersToScan, layer)
-			dedupe[layer.Hash.String()] = struct{}{}
-		}
-	}
-
 	sem := semaphore.NewWeighted(ls.inflight)
 	g, ctx := errgroup.WithContext(ctx)
 	// Launch is a closure to capture the loop variables and then call the
@@ -173,7 +164,12 @@ func (ls *layerScanner) Scan(ctx context.Context, manifest claircore.Digest, lay
 			return ls.scanLayer(ctx, l, s)
 		}
 	}
-	for _, l := range layersToScan {
+	dedupe := make(map[string]struct{})
+	for _, l := range layers {
+		if _, ok := dedupe[l.Hash.String()]; ok {
+			continue
+		}
+		dedupe[l.Hash.String()] = struct{}{}
 		for _, s := range ls.ps {
 			g.Go(launch(l, s))
 		}
