@@ -160,11 +160,12 @@ values. The <code>zlog</code> package takes OpenTelemetry labels and attaches th
 packages without having unintended prints to stderr.</p>
 <h2><a class="header" href="#how-to-log" id="how-to-log">How to Log</a></h2>
 <h3><a class="header" href="#adding-context" id="adding-context">Adding Context</a></h3>
-<p>In a function, use the <code>baggage</code> package to add key-value pairs of any
-relevant context:</p>
-<pre><code class="language-go">	ctx = baggage.ContextWithValues(ctx,
-		label.String(&quot;component&quot;, &quot;Example.Logger&quot;))
+<p>In a function, use <code>zlog</code> to add key-value pairs of any relevant context:</p>
+<pre><code class="language-go">	ctx = zlog.ContextWithValues(ctx,
+		&quot;component&quot;, &quot;Example.Logger&quot;)
 </code></pre>
+<p>Alternatively, the <code>go.opentelemetry.io/otel/baggage</code> package can be used for
+more explicit control around the baggage values.</p>
 <h3><a class="header" href="#logging-style" id="logging-style">Logging style</a></h3>
 <h4><a class="header" href="#constant-messages" id="constant-messages">Constant Messages</a></h4>
 <p>Zerolog emits lines when the <code>Msg</code> or <code>Msgf</code> methods are called. Project style
