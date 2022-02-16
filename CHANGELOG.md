@@ -2,10 +2,64 @@
 ## [Unreleased]
 
 
+<a name="v1.3.0"></a>
+## [v1.3.0] - 2022-02-11
+### All
+- [8ca8736](https://github.com/quay/claircore/commit/8ca8736724c6c985e8f3f51412c31061db490cc4): update zlog and otel
+### Build(Deps)
+- [8f79866](https://github.com/quay/claircore/commit/8f79866439fdd9c9d8e6aff13ca6bdb3693a3b58): bump peter-evans/create-pull-request from 3.12.0 to 3.12.1
+### Controller
+- [b6fd709](https://github.com/quay/claircore/commit/b6fd70906ebe9d852bbe2dca53c728f9f0348904): fix mocks
+### Crda
+- [790cf86](https://github.com/quay/claircore/commit/790cf86a7e9a62e3ec17ec9914441e1b07d8a8a2): remove default key
+- [c1bbfa2](https://github.com/quay/claircore/commit/c1bbfa2d16519c36ca9c1d5d83d0534cd7698935): fix invalid test name
+### Debian
+- [df34db7](https://github.com/quay/claircore/commit/df34db77a3ab9f16afaac16a2fde27c189c895ab): split OVAL feed into binary packages ([#550](https://github.com/quay/claircore/issues/550))
+  - [#550](https://github.com/quay/claircore/issues/550)
+### Docs
+- [33c7142](https://github.com/quay/claircore/commit/33c7142b71c9fbcb916bdd74e0e533d4d7cf3e58): fix test in compiled docs
+- [20c31c9](https://github.com/quay/claircore/commit/20c31c9e42f21814fadae3b40c3003abd14b0f13): update README
+- [8cfac96](https://github.com/quay/claircore/commit/8cfac969a1fd4909c91e111a6a50733209679d09): add test for linked pages
+- [4d8902a](https://github.com/quay/claircore/commit/4d8902a20e3406c812f04a0579e1fa27fdbbc652): update any code or documentation samples
+### Fastesturl
+- [4e27f1f](https://github.com/quay/claircore/commit/4e27f1f459f9ef8ac78e4b6a60c564df102f2d4c): remove unused package
+### Go.Mod
+- [23537ab](https://github.com/quay/claircore/commit/23537abd56de7da5c7e23dd97d113efd72711cc8): update dependencies
+- [a10db52](https://github.com/quay/claircore/commit/a10db52f283804029dae65195ffd9f7f2b9f408d): update gomock
+### Integration
+- [b533b20](https://github.com/quay/claircore/commit/b533b201b2b333b994464ebec46c46c8547bffcd): move code snippets to examples
+### Layerscanner
+- [2b212f8](https://github.com/quay/claircore/commit/2b212f8ab6e7be776962ddf99bb1bd6206ef00bf): fix mocks
+### Libindex
+- [168989d](https://github.com/quay/claircore/commit/168989d2f60738efdf329bdcb72f9af0203b1578): fix integration test
+- [df1115a](https://github.com/quay/claircore/commit/df1115a70789610af3e1b8e74021e5400366da09): add pgxpool metrics
+- [b2eca12](https://github.com/quay/claircore/commit/b2eca12cfe6fa329f5a19766a7d3de7738b0cee8): fix file access race
+- [34a38fd](https://github.com/quay/claircore/commit/34a38fdce99c5d39e51a59ae44ebdb1c481e7a93): treat ConnString same as libvuln
+- [2176bcc](https://github.com/quay/claircore/commit/2176bccd81754601787b8cd4867be746e0ed35cf): add example from README
+- [ea826b7](https://github.com/quay/claircore/commit/ea826b702d9ba308afd41906be944b53f7a4cece): remove requirement on Opts.ConnString
+### Libvuln
+- [edafd21](https://github.com/quay/claircore/commit/edafd21efbc32de0cd87cead7f016df05b537e3c): fix leaked lock manager
+- [2f312f0](https://github.com/quay/claircore/commit/2f312f030c9e035de8835aa63ab980edb921776b): add pgxpool metrics
+- [6b82f45](https://github.com/quay/claircore/commit/6b82f45646576fb370993a27f0cedcefb0f775aa): add example from README
+- [2ec1818](https://github.com/quay/claircore/commit/2ec1818a1fcee145732da9fbee2be07661e6d1db): remove requirement on Opts.ConnString
+### Mock/Driver
+- [a969bc1](https://github.com/quay/claircore/commit/a969bc1a0cb3b746d293d6f0f275f7ceb935e1bf): move Matcher mock to dedicated package
+### Mock/Indexer
+- [305da17](https://github.com/quay/claircore/commit/305da17c8de4c8c5ae0dd7eb535dcd320995ee5b): use dedicated mocks package
+- [d305501](https://github.com/quay/claircore/commit/d305501d18a49078b1a8d0bdd1e0518fd9f68140): move indexer mocks to dedicated package
+### Mock/Vulnstore
+- [61c2335](https://github.com/quay/claircore/commit/61c2335744e313e489168acedb26b5ac66815690): move Store mock to dedicated package
+### Poolstats
+- [a1eaf2c](https://github.com/quay/claircore/commit/a1eaf2c6412f85386f594272cf668189b2a44e36): add package for collecting pgx pool stats
+### Rhel
+- [03f3190](https://github.com/quay/claircore/commit/03f31909dafd5c6310b811b1b1b5371b8e4ca902): tolerate invalid CPEs
+
 <a name="v1.2.0"></a>
-## [v1.2.0] - 2022-01-12
+## [v1.2.0] - 2022-01-14
 ### Build(Deps)
 - [9fbff76](https://github.com/quay/claircore/commit/9fbff76907cb1876de202527fd41b10660c5ad7a): bump peter-evans/create-pull-request from 3.11.0 to 3.12.0
+### Chore
+- [48444ec](https://github.com/quay/claircore/commit/48444ecb128bdcbf849fe744c7ee5f21b2fff28c): v1.2.0 changelog bump
 ### Dockerfile
 - [397136f](https://github.com/quay/claircore/commit/397136fb7ff959dfb994f67b3c0df1f760ec33c7): add some fuzz testing
 - [5d08565](https://github.com/quay/claircore/commit/5d08565efe7c2704ec827e730c99914d3faaa477): handle comments correctly
@@ -1264,7 +1318,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v1.3.0...HEAD
+[v1.3.0]: https://github.com/quay/claircore/compare/v1.2.0...v1.3.0
 [v1.2.0]: https://github.com/quay/claircore/compare/v1.1.6...v1.2.0
 [v1.1.6]: https://github.com/quay/claircore/compare/v1.1.5...v1.1.6
 [v1.1.5]: https://github.com/quay/claircore/compare/v1.1.4...v1.1.5
