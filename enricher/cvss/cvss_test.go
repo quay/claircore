@@ -289,7 +289,7 @@ func (tc parseTestcase) Run(ctx context.Context, srv *httptest.Server) func(*tes
 
 func TestEnrich(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(nil, t)
+	ctx := zlog.Test(context.TODO(), t)
 	feedIn, err := os.Open("testdata/feed.json")
 	if err != nil {
 		t.Fatal(err)
@@ -301,14 +301,17 @@ func TestEnrich(t *testing.T) {
 	g := &fakeGetter{itemFeed: f}
 	r := &claircore.VulnerabilityReport{
 		Vulnerabilities: map[string]*claircore.Vulnerability{
-			"-1": &claircore.Vulnerability{
+			"-1": {
 				Description: "This is a fake vulnerability that doesn't have a CVE.",
 			},
-			"1": &claircore.Vulnerability{
+			"1": {
 				Description: "This is a fake vulnerability that looks like CVE-2021-0498.",
 			},
-			"6004": &claircore.Vulnerability{
+			"6004": {
 				Description: "CVE-2020-6004 was unassigned",
+			},
+			"6005": {
+				Description: "CVE-2021-0498 duplicate",
 			},
 		},
 	}
@@ -322,6 +325,20 @@ func TestEnrich(t *testing.T) {
 	}
 	want := map[string][]map[string]interface{}{
 		"1": {{
+			"version":               "3.1",
+			"vectorString":          "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+			"attackVector":          "LOCAL",
+			"attackComplexity":      "LOW",
+			"privilegesRequired":    "LOW",
+			"userInteraction":       "NONE",
+			"scope":                 "UNCHANGED",
+			"confidentialityImpact": "HIGH",
+			"integrityImpact":       "HIGH",
+			"availabilityImpact":    "HIGH",
+			"baseScore":             7.8,
+			"baseSeverity":          "HIGH",
+		}},
+		"6005": {{
 			"version":               "3.1",
 			"vectorString":          "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
 			"attackVector":          "LOCAL",
