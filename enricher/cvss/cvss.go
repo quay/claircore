@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -255,6 +256,8 @@ func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *cla
 	// We return any CVSS blobs for CVEs mentioned in the free-form parts of the
 	// vulnerability.
 	m := make(map[string][]json.RawMessage)
+
+	erCache := make(map[string][]driver.EnrichmentRecord)
 	for id, v := range r.Vulnerabilities {
 		t := make(map[string]struct{})
 		ctx := zlog.ContextWithValues(ctx,
@@ -278,9 +281,17 @@ func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *cla
 		zlog.Debug(ctx).
 			Strs("cve", ts).
 			Msg("found CVEs")
-		rec, err := g.GetEnrichment(ctx, ts)
-		if err != nil {
-			return "", nil, err
+
+		sort.Strings(ts)
+		cveKey := strings.Join(ts, "_")
+		rec, ok := erCache[cveKey]
+		if !ok {
+			var err error
+			rec, err = g.GetEnrichment(ctx, ts)
+			if err != nil {
+				return "", nil, err
+			}
+			erCache[cveKey] = rec
 		}
 		zlog.Debug(ctx).
 			Int("count", len(rec)).
