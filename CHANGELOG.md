@@ -2,12 +2,20 @@
 ## [Unreleased]
 
 
+<a name="v1.3.1"></a>
+## [v1.3.1] - 2022-02-21
+### Enrichment
+- [f91fd65](https://github.com/quay/claircore/commit/f91fd655720f0ee59e1865fb4afef29d642c1800): Optimize the way enrichments are queried ([#570](https://github.com/quay/claircore/issues/570))
+  - [#570](https://github.com/quay/claircore/issues/570)
+
 <a name="v1.3.0"></a>
-## [v1.3.0] - 2022-02-11
+## [v1.3.0] - 2022-02-16
 ### All
 - [8ca8736](https://github.com/quay/claircore/commit/8ca8736724c6c985e8f3f51412c31061db490cc4): update zlog and otel
 ### Build(Deps)
 - [8f79866](https://github.com/quay/claircore/commit/8f79866439fdd9c9d8e6aff13ca6bdb3693a3b58): bump peter-evans/create-pull-request from 3.12.0 to 3.12.1
+### Chore
+- [6ec7ec5](https://github.com/quay/claircore/commit/6ec7ec524470c23e903b932c320d9db27163415f): v1.3.0 changelog bump
 ### Controller
 - [b6fd709](https://github.com/quay/claircore/commit/b6fd70906ebe9d852bbe2dca53c728f9f0348904): fix mocks
 ### Crda
@@ -1318,7 +1326,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v1.3.1...HEAD
+[v1.3.1]: https://github.com/quay/claircore/compare/v1.3.0...v1.3.1
 [v1.3.0]: https://github.com/quay/claircore/compare/v1.2.0...v1.3.0
 [v1.2.0]: https://github.com/quay/claircore/compare/v1.1.6...v1.2.0
 [v1.1.6]: https://github.com/quay/claircore/compare/v1.1.5...v1.1.6
