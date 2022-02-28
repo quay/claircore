@@ -8,9 +8,9 @@ require (
 	github.com/crgimenes/goconfig v1.2.1
 	github.com/doug-martin/goqu/v8 v8.6.0
 	github.com/golang/mock v1.6.0
-	github.com/google/go-cmp v0.5.6
+	github.com/google/go-cmp v0.5.7
 	github.com/google/go-containerregistry v0.0.0-20191206185556-eb7c14b719c6
-	github.com/google/uuid v1.1.1
+	github.com/google/uuid v1.3.0
 	github.com/jackc/pgconn v1.10.0
 	github.com/jackc/pgtype v1.8.1
 	github.com/jackc/pgx/v4 v4.13.0
@@ -21,6 +21,7 @@ require (
 	github.com/prometheus/client_golang v1.9.0
 	github.com/prometheus/client_model v0.2.0
 	github.com/quay/alas v1.0.1
+	github.com/quay/claircore/updater/driver v1.0.0
 	github.com/quay/goval-parser v0.8.6
 	github.com/quay/zlog v1.1.0
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
@@ -51,6 +52,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/common v0.15.0 // indirect
 	github.com/prometheus/procfs v0.2.0 // indirect
+	github.com/quay/claircore/toolkit v1.0.0 // indirect
 	go.opentelemetry.io/otel v1.3.0 // indirect
 	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97 // indirect
 	golang.org/x/mod v0.5.1 // indirect
@@ -58,3 +60,7 @@ require (
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/protobuf v1.23.0 // indirect
 )
+
+replace github.com/quay/claircore/toolkit => ./toolkit
+
+replace github.com/quay/claircore/updater/driver => ./updater/driver
