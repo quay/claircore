@@ -6,36 +6,37 @@ package mock_indexer
 
 import (
 	context "context"
+	reflect "reflect"
+
 	gomock "github.com/golang/mock/gomock"
 	claircore "github.com/quay/claircore"
 	indexer "github.com/quay/claircore/internal/indexer"
-	reflect "reflect"
 )
 
-// MockStore is a mock of Store interface
+// MockStore is a mock of Store interface.
 type MockStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockStoreMockRecorder
 }
 
-// MockStoreMockRecorder is the mock recorder for MockStore
+// MockStoreMockRecorder is the mock recorder for MockStore.
 type MockStoreMockRecorder struct {
 	mock *MockStore
 }
 
-// NewMockStore creates a new mock instance
+// NewMockStore creates a new mock instance.
 func NewMockStore(ctrl *gomock.Controller) *MockStore {
 	mock := &MockStore{ctrl: ctrl}
 	mock.recorder = &MockStoreMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
-// AffectedManifests mocks base method
+// AffectedManifests mocks base method.
 func (m *MockStore) AffectedManifests(arg0 context.Context, arg1 claircore.Vulnerability) ([]claircore.Digest, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AffectedManifests", arg0, arg1)
@@ -44,13 +45,13 @@ func (m *MockStore) AffectedManifests(arg0 context.Context, arg1 claircore.Vulne
 	return ret0, ret1
 }
 
-// AffectedManifests indicates an expected call of AffectedManifests
+// AffectedManifests indicates an expected call of AffectedManifests.
 func (mr *MockStoreMockRecorder) AffectedManifests(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AffectedManifests", reflect.TypeOf((*MockStore)(nil).AffectedManifests), arg0, arg1)
 }
 
-// Close mocks base method
+// Close mocks base method.
 func (m *MockStore) Close(arg0 context.Context) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Close", arg0)
@@ -58,13 +59,13 @@ func (m *MockStore) Close(arg0 context.Context) error {
 	return ret0
 }
 
-// Close indicates an expected call of Close
+// Close indicates an expected call of Close.
 func (mr *MockStoreMockRecorder) Close(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockStore)(nil).Close), arg0)
 }
 
-// DeleteManifests mocks base method
+// DeleteManifests mocks base method.
 func (m *MockStore) DeleteManifests(arg0 context.Context, arg1 ...claircore.Digest) ([]claircore.Digest, error) {
 	m.ctrl.T.Helper()
 	varargs := []interface{}{arg0}
@@ -77,14 +78,14 @@ func (m *MockStore) DeleteManifests(arg0 context.Context, arg1 ...claircore.Dige
 	return ret0, ret1
 }
 
-// DeleteManifests indicates an expected call of DeleteManifests
+// DeleteManifests indicates an expected call of DeleteManifests.
 func (mr *MockStoreMockRecorder) DeleteManifests(arg0 interface{}, arg1 ...interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	varargs := append([]interface{}{arg0}, arg1...)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteManifests", reflect.TypeOf((*MockStore)(nil).DeleteManifests), varargs...)
 }
 
-// DistributionsByLayer mocks base method
+// DistributionsByLayer mocks base method.
 func (m *MockStore) DistributionsByLayer(arg0 context.Context, arg1 claircore.Digest, arg2 indexer.VersionedScanners) ([]*claircore.Distribution, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DistributionsByLayer", arg0, arg1, arg2)
@@ -93,13 +94,13 @@ func (m *MockStore) DistributionsByLayer(arg0 context.Context, arg1 claircore.Di
 	return ret0, ret1
 }
 
-// DistributionsByLayer indicates an expected call of DistributionsByLayer
+// DistributionsByLayer indicates an expected call of DistributionsByLayer.
 func (mr *MockStoreMockRecorder) DistributionsByLayer(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DistributionsByLayer", reflect.TypeOf((*MockStore)(nil).DistributionsByLayer), arg0, arg1, arg2)
 }
 
-// IndexDistributions mocks base method
+// IndexDistributions mocks base method.
 func (m *MockStore) IndexDistributions(arg0 context.Context, arg1 []*claircore.Distribution, arg2 *claircore.Layer, arg3 indexer.VersionedScanner) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IndexDistributions", arg0, arg1, arg2, arg3)
@@ -107,13 +108,13 @@ func (m *MockStore) IndexDistributions(arg0 context.Context, arg1 []*claircore.D
 	return ret0
 }
 
-// IndexDistributions indicates an expected call of IndexDistributions
+// IndexDistributions indicates an expected call of IndexDistributions.
 func (mr *MockStoreMockRecorder) IndexDistributions(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexDistributions", reflect.TypeOf((*MockStore)(nil).IndexDistributions), arg0, arg1, arg2, arg3)
 }
 
-// IndexManifest mocks base method
+// IndexManifest mocks base method.
 func (m *MockStore) IndexManifest(arg0 context.Context, arg1 *claircore.IndexReport) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IndexManifest", arg0, arg1)
@@ -121,13 +122,13 @@ func (m *MockStore) IndexManifest(arg0 context.Context, arg1 *claircore.IndexRep
 	return ret0
 }
 
-// IndexManifest indicates an expected call of IndexManifest
+// IndexManifest indicates an expected call of IndexManifest.
 func (mr *MockStoreMockRecorder) IndexManifest(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexManifest", reflect.TypeOf((*MockStore)(nil).IndexManifest), arg0, arg1)
 }
 
-// IndexPackages mocks base method
+// IndexPackages mocks base method.
 func (m *MockStore) IndexPackages(arg0 context.Context, arg1 []*claircore.Package, arg2 *claircore.Layer, arg3 indexer.VersionedScanner) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IndexPackages", arg0, arg1, arg2, arg3)
@@ -135,13 +136,13 @@ func (m *MockStore) IndexPackages(arg0 context.Context, arg1 []*claircore.Packag
 	return ret0
 }
 
-// IndexPackages indicates an expected call of IndexPackages
+// IndexPackages indicates an expected call of IndexPackages.
 func (mr *MockStoreMockRecorder) IndexPackages(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexPackages", reflect.TypeOf((*MockStore)(nil).IndexPackages), arg0, arg1, arg2, arg3)
 }
 
-// IndexReport mocks base method
+// IndexReport mocks base method.
 func (m *MockStore) IndexReport(arg0 context.Context, arg1 claircore.Digest) (*claircore.IndexReport, bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IndexReport", arg0, arg1)
@@ -151,13 +152,13 @@ func (m *MockStore) IndexReport(arg0 context.Context, arg1 claircore.Digest) (*c
 	return ret0, ret1, ret2
 }
 
-// IndexReport indicates an expected call of IndexReport
+// IndexReport indicates an expected call of IndexReport.
 func (mr *MockStoreMockRecorder) IndexReport(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexReport", reflect.TypeOf((*MockStore)(nil).IndexReport), arg0, arg1)
 }
 
-// IndexRepositories mocks base method
+// IndexRepositories mocks base method.
 func (m *MockStore) IndexRepositories(arg0 context.Context, arg1 []*claircore.Repository, arg2 *claircore.Layer, arg3 indexer.VersionedScanner) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IndexRepositories", arg0, arg1, arg2, arg3)
@@ -165,13 +166,13 @@ func (m *MockStore) IndexRepositories(arg0 context.Context, arg1 []*claircore.Re
 	return ret0
 }
 
-// IndexRepositories indicates an expected call of IndexRepositories
+// IndexRepositories indicates an expected call of IndexRepositories.
 func (mr *MockStoreMockRecorder) IndexRepositories(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexRepositories", reflect.TypeOf((*MockStore)(nil).IndexRepositories), arg0, arg1, arg2, arg3)
 }
 
-// LayerScanned mocks base method
+// LayerScanned mocks base method.
 func (m *MockStore) LayerScanned(arg0 context.Context, arg1 claircore.Digest, arg2 indexer.VersionedScanner) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "LayerScanned", arg0, arg1, arg2)
@@ -180,13 +181,13 @@ func (m *MockStore) LayerScanned(arg0 context.Context, arg1 claircore.Digest, ar
 	return ret0, ret1
 }
 
-// LayerScanned indicates an expected call of LayerScanned
+// LayerScanned indicates an expected call of LayerScanned.
 func (mr *MockStoreMockRecorder) LayerScanned(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LayerScanned", reflect.TypeOf((*MockStore)(nil).LayerScanned), arg0, arg1, arg2)
 }
 
-// ManifestScanned mocks base method
+// ManifestScanned mocks base method.
 func (m *MockStore) ManifestScanned(arg0 context.Context, arg1 claircore.Digest, arg2 indexer.VersionedScanners) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ManifestScanned", arg0, arg1, arg2)
@@ -195,13 +196,13 @@ func (m *MockStore) ManifestScanned(arg0 context.Context, arg1 claircore.Digest,
 	return ret0, ret1
 }
 
-// ManifestScanned indicates an expected call of ManifestScanned
+// ManifestScanned indicates an expected call of ManifestScanned.
 func (mr *MockStoreMockRecorder) ManifestScanned(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ManifestScanned", reflect.TypeOf((*MockStore)(nil).ManifestScanned), arg0, arg1, arg2)
 }
 
-// PackagesByLayer mocks base method
+// PackagesByLayer mocks base method.
 func (m *MockStore) PackagesByLayer(arg0 context.Context, arg1 claircore.Digest, arg2 indexer.VersionedScanners) ([]*claircore.Package, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PackagesByLayer", arg0, arg1, arg2)
@@ -210,13 +211,13 @@ func (m *MockStore) PackagesByLayer(arg0 context.Context, arg1 claircore.Digest,
 	return ret0, ret1
 }
 
-// PackagesByLayer indicates an expected call of PackagesByLayer
+// PackagesByLayer indicates an expected call of PackagesByLayer.
 func (mr *MockStoreMockRecorder) PackagesByLayer(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PackagesByLayer", reflect.TypeOf((*MockStore)(nil).PackagesByLayer), arg0, arg1, arg2)
 }
 
-// PersistManifest mocks base method
+// PersistManifest mocks base method.
 func (m *MockStore) PersistManifest(arg0 context.Context, arg1 claircore.Manifest) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PersistManifest", arg0, arg1)
@@ -224,13 +225,13 @@ func (m *MockStore) PersistManifest(arg0 context.Context, arg1 claircore.Manifes
 	return ret0
 }
 
-// PersistManifest indicates an expected call of PersistManifest
+// PersistManifest indicates an expected call of PersistManifest.
 func (mr *MockStoreMockRecorder) PersistManifest(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PersistManifest", reflect.TypeOf((*MockStore)(nil).PersistManifest), arg0, arg1)
 }
 
-// RegisterScanners mocks base method
+// RegisterScanners mocks base method.
 func (m *MockStore) RegisterScanners(arg0 context.Context, arg1 indexer.VersionedScanners) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RegisterScanners", arg0, arg1)
@@ -238,13 +239,13 @@ func (m *MockStore) RegisterScanners(arg0 context.Context, arg1 indexer.Versione
 	return ret0
 }
 
-// RegisterScanners indicates an expected call of RegisterScanners
+// RegisterScanners indicates an expected call of RegisterScanners.
 func (mr *MockStoreMockRecorder) RegisterScanners(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterScanners", reflect.TypeOf((*MockStore)(nil).RegisterScanners), arg0, arg1)
 }
 
-// RepositoriesByLayer mocks base method
+// RepositoriesByLayer mocks base method.
 func (m *MockStore) RepositoriesByLayer(arg0 context.Context, arg1 claircore.Digest, arg2 indexer.VersionedScanners) ([]*claircore.Repository, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "RepositoriesByLayer", arg0, arg1, arg2)
@@ -253,13 +254,13 @@ func (m *MockStore) RepositoriesByLayer(arg0 context.Context, arg1 claircore.Dig
 	return ret0, ret1
 }
 
-// RepositoriesByLayer indicates an expected call of RepositoriesByLayer
+// RepositoriesByLayer indicates an expected call of RepositoriesByLayer.
 func (mr *MockStoreMockRecorder) RepositoriesByLayer(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RepositoriesByLayer", reflect.TypeOf((*MockStore)(nil).RepositoriesByLayer), arg0, arg1, arg2)
 }
 
-// SetIndexFinished mocks base method
+// SetIndexFinished mocks base method.
 func (m *MockStore) SetIndexFinished(arg0 context.Context, arg1 *claircore.IndexReport, arg2 indexer.VersionedScanners) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetIndexFinished", arg0, arg1, arg2)
@@ -267,13 +268,13 @@ func (m *MockStore) SetIndexFinished(arg0 context.Context, arg1 *claircore.Index
 	return ret0
 }
 
-// SetIndexFinished indicates an expected call of SetIndexFinished
+// SetIndexFinished indicates an expected call of SetIndexFinished.
 func (mr *MockStoreMockRecorder) SetIndexFinished(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetIndexFinished", reflect.TypeOf((*MockStore)(nil).SetIndexFinished), arg0, arg1, arg2)
 }
 
-// SetIndexReport mocks base method
+// SetIndexReport mocks base method.
 func (m *MockStore) SetIndexReport(arg0 context.Context, arg1 *claircore.IndexReport) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetIndexReport", arg0, arg1)
@@ -281,13 +282,13 @@ func (m *MockStore) SetIndexReport(arg0 context.Context, arg1 *claircore.IndexRe
 	return ret0
 }
 
-// SetIndexReport indicates an expected call of SetIndexReport
+// SetIndexReport indicates an expected call of SetIndexReport.
 func (mr *MockStoreMockRecorder) SetIndexReport(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetIndexReport", reflect.TypeOf((*MockStore)(nil).SetIndexReport), arg0, arg1)
 }
 
-// SetLayerScanned mocks base method
+// SetLayerScanned mocks base method.
 func (m *MockStore) SetLayerScanned(arg0 context.Context, arg1 claircore.Digest, arg2 indexer.VersionedScanner) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SetLayerScanned", arg0, arg1, arg2)
@@ -295,36 +296,36 @@ func (m *MockStore) SetLayerScanned(arg0 context.Context, arg1 claircore.Digest,
 	return ret0
 }
 
-// SetLayerScanned indicates an expected call of SetLayerScanned
+// SetLayerScanned indicates an expected call of SetLayerScanned.
 func (mr *MockStoreMockRecorder) SetLayerScanned(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetLayerScanned", reflect.TypeOf((*MockStore)(nil).SetLayerScanned), arg0, arg1, arg2)
 }
 
-// MockFetcher is a mock of Fetcher interface
+// MockFetcher is a mock of Fetcher interface.
 type MockFetcher struct {
 	ctrl     *gomock.Controller
 	recorder *MockFetcherMockRecorder
 }
 
-// MockFetcherMockRecorder is the mock recorder for MockFetcher
+// MockFetcherMockRecorder is the mock recorder for MockFetcher.
 type MockFetcherMockRecorder struct {
 	mock *MockFetcher
 }
 
-// NewMockFetcher creates a new mock instance
+// NewMockFetcher creates a new mock instance.
 func NewMockFetcher(ctrl *gomock.Controller) *MockFetcher {
 	mock := &MockFetcher{ctrl: ctrl}
 	mock.recorder = &MockFetcherMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockFetcher) EXPECT() *MockFetcherMockRecorder {
 	return m.recorder
 }
 
-// Close mocks base method
+// Close mocks base method.
 func (m *MockFetcher) Close() error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Close")
@@ -332,13 +333,13 @@ func (m *MockFetcher) Close() error {
 	return ret0
 }
 
-// Close indicates an expected call of Close
+// Close indicates an expected call of Close.
 func (mr *MockFetcherMockRecorder) Close() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockFetcher)(nil).Close))
 }
 
-// Fetch mocks base method
+// Fetch mocks base method.
 func (m *MockFetcher) Fetch(arg0 context.Context, arg1 []*claircore.Layer) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Fetch", arg0, arg1)
@@ -346,36 +347,36 @@ func (m *MockFetcher) Fetch(arg0 context.Context, arg1 []*claircore.Layer) error
 	return ret0
 }
 
-// Fetch indicates an expected call of Fetch
+// Fetch indicates an expected call of Fetch.
 func (mr *MockFetcherMockRecorder) Fetch(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Fetch", reflect.TypeOf((*MockFetcher)(nil).Fetch), arg0, arg1)
 }
 
-// MockLayerScanner is a mock of LayerScanner interface
+// MockLayerScanner is a mock of LayerScanner interface.
 type MockLayerScanner struct {
 	ctrl     *gomock.Controller
 	recorder *MockLayerScannerMockRecorder
 }
 
-// MockLayerScannerMockRecorder is the mock recorder for MockLayerScanner
+// MockLayerScannerMockRecorder is the mock recorder for MockLayerScanner.
 type MockLayerScannerMockRecorder struct {
 	mock *MockLayerScanner
 }
 
-// NewMockLayerScanner creates a new mock instance
+// NewMockLayerScanner creates a new mock instance.
 func NewMockLayerScanner(ctrl *gomock.Controller) *MockLayerScanner {
 	mock := &MockLayerScanner{ctrl: ctrl}
 	mock.recorder = &MockLayerScannerMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockLayerScanner) EXPECT() *MockLayerScannerMockRecorder {
 	return m.recorder
 }
 
-// Scan mocks base method
+// Scan mocks base method.
 func (m *MockLayerScanner) Scan(arg0 context.Context, arg1 claircore.Digest, arg2 []*claircore.Layer) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Scan", arg0, arg1, arg2)
@@ -383,36 +384,36 @@ func (m *MockLayerScanner) Scan(arg0 context.Context, arg1 claircore.Digest, arg
 	return ret0
 }
 
-// Scan indicates an expected call of Scan
+// Scan indicates an expected call of Scan.
 func (mr *MockLayerScannerMockRecorder) Scan(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Scan", reflect.TypeOf((*MockLayerScanner)(nil).Scan), arg0, arg1, arg2)
 }
 
-// MockPackageScanner is a mock of PackageScanner interface
+// MockPackageScanner is a mock of PackageScanner interface.
 type MockPackageScanner struct {
 	ctrl     *gomock.Controller
 	recorder *MockPackageScannerMockRecorder
 }
 
-// MockPackageScannerMockRecorder is the mock recorder for MockPackageScanner
+// MockPackageScannerMockRecorder is the mock recorder for MockPackageScanner.
 type MockPackageScannerMockRecorder struct {
 	mock *MockPackageScanner
 }
 
-// NewMockPackageScanner creates a new mock instance
+// NewMockPackageScanner creates a new mock instance.
 func NewMockPackageScanner(ctrl *gomock.Controller) *MockPackageScanner {
 	mock := &MockPackageScanner{ctrl: ctrl}
 	mock.recorder = &MockPackageScannerMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockPackageScanner) EXPECT() *MockPackageScannerMockRecorder {
 	return m.recorder
 }
 
-// Kind mocks base method
+// Kind mocks base method.
 func (m *MockPackageScanner) Kind() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Kind")
@@ -420,13 +421,13 @@ func (m *MockPackageScanner) Kind() string {
 	return ret0
 }
 
-// Kind indicates an expected call of Kind
+// Kind indicates an expected call of Kind.
 func (mr *MockPackageScannerMockRecorder) Kind() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Kind", reflect.TypeOf((*MockPackageScanner)(nil).Kind))
 }
 
-// Name mocks base method
+// Name mocks base method.
 func (m *MockPackageScanner) Name() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Name")
@@ -434,13 +435,13 @@ func (m *MockPackageScanner) Name() string {
 	return ret0
 }
 
-// Name indicates an expected call of Name
+// Name indicates an expected call of Name.
 func (mr *MockPackageScannerMockRecorder) Name() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Name", reflect.TypeOf((*MockPackageScanner)(nil).Name))
 }
 
-// Scan mocks base method
+// Scan mocks base method.
 func (m *MockPackageScanner) Scan(arg0 context.Context, arg1 *claircore.Layer) ([]*claircore.Package, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Scan", arg0, arg1)
@@ -449,13 +450,13 @@ func (m *MockPackageScanner) Scan(arg0 context.Context, arg1 *claircore.Layer) (
 	return ret0, ret1
 }
 
-// Scan indicates an expected call of Scan
+// Scan indicates an expected call of Scan.
 func (mr *MockPackageScannerMockRecorder) Scan(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Scan", reflect.TypeOf((*MockPackageScanner)(nil).Scan), arg0, arg1)
 }
 
-// Version mocks base method
+// Version mocks base method.
 func (m *MockPackageScanner) Version() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Version")
@@ -463,36 +464,36 @@ func (m *MockPackageScanner) Version() string {
 	return ret0
 }
 
-// Version indicates an expected call of Version
+// Version indicates an expected call of Version.
 func (mr *MockPackageScannerMockRecorder) Version() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Version", reflect.TypeOf((*MockPackageScanner)(nil).Version))
 }
 
-// MockVersionedScanner is a mock of VersionedScanner interface
+// MockVersionedScanner is a mock of VersionedScanner interface.
 type MockVersionedScanner struct {
 	ctrl     *gomock.Controller
 	recorder *MockVersionedScannerMockRecorder
 }
 
-// MockVersionedScannerMockRecorder is the mock recorder for MockVersionedScanner
+// MockVersionedScannerMockRecorder is the mock recorder for MockVersionedScanner.
 type MockVersionedScannerMockRecorder struct {
 	mock *MockVersionedScanner
 }
 
-// NewMockVersionedScanner creates a new mock instance
+// NewMockVersionedScanner creates a new mock instance.
 func NewMockVersionedScanner(ctrl *gomock.Controller) *MockVersionedScanner {
 	mock := &MockVersionedScanner{ctrl: ctrl}
 	mock.recorder = &MockVersionedScannerMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockVersionedScanner) EXPECT() *MockVersionedScannerMockRecorder {
 	return m.recorder
 }
 
-// Kind mocks base method
+// Kind mocks base method.
 func (m *MockVersionedScanner) Kind() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Kind")
@@ -500,13 +501,13 @@ func (m *MockVersionedScanner) Kind() string {
 	return ret0
 }
 
-// Kind indicates an expected call of Kind
+// Kind indicates an expected call of Kind.
 func (mr *MockVersionedScannerMockRecorder) Kind() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Kind", reflect.TypeOf((*MockVersionedScanner)(nil).Kind))
 }
 
-// Name mocks base method
+// Name mocks base method.
 func (m *MockVersionedScanner) Name() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Name")
@@ -514,13 +515,13 @@ func (m *MockVersionedScanner) Name() string {
 	return ret0
 }
 
-// Name indicates an expected call of Name
+// Name indicates an expected call of Name.
 func (mr *MockVersionedScannerMockRecorder) Name() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Name", reflect.TypeOf((*MockVersionedScanner)(nil).Name))
 }
 
-// Version mocks base method
+// Version mocks base method.
 func (m *MockVersionedScanner) Version() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Version")
@@ -528,36 +529,36 @@ func (m *MockVersionedScanner) Version() string {
 	return ret0
 }
 
-// Version indicates an expected call of Version
+// Version indicates an expected call of Version.
 func (mr *MockVersionedScannerMockRecorder) Version() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Version", reflect.TypeOf((*MockVersionedScanner)(nil).Version))
 }
 
-// MockDistributionScanner is a mock of DistributionScanner interface
+// MockDistributionScanner is a mock of DistributionScanner interface.
 type MockDistributionScanner struct {
 	ctrl     *gomock.Controller
 	recorder *MockDistributionScannerMockRecorder
 }
 
-// MockDistributionScannerMockRecorder is the mock recorder for MockDistributionScanner
+// MockDistributionScannerMockRecorder is the mock recorder for MockDistributionScanner.
 type MockDistributionScannerMockRecorder struct {
 	mock *MockDistributionScanner
 }
 
-// NewMockDistributionScanner creates a new mock instance
+// NewMockDistributionScanner creates a new mock instance.
 func NewMockDistributionScanner(ctrl *gomock.Controller) *MockDistributionScanner {
 	mock := &MockDistributionScanner{ctrl: ctrl}
 	mock.recorder = &MockDistributionScannerMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockDistributionScanner) EXPECT() *MockDistributionScannerMockRecorder {
 	return m.recorder
 }
 
-// Kind mocks base method
+// Kind mocks base method.
 func (m *MockDistributionScanner) Kind() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Kind")
@@ -565,13 +566,13 @@ func (m *MockDistributionScanner) Kind() string {
 	return ret0
 }
 
-// Kind indicates an expected call of Kind
+// Kind indicates an expected call of Kind.
 func (mr *MockDistributionScannerMockRecorder) Kind() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Kind", reflect.TypeOf((*MockDistributionScanner)(nil).Kind))
 }
 
-// Name mocks base method
+// Name mocks base method.
 func (m *MockDistributionScanner) Name() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Name")
@@ -579,13 +580,13 @@ func (m *MockDistributionScanner) Name() string {
 	return ret0
 }
 
-// Name indicates an expected call of Name
+// Name indicates an expected call of Name.
 func (mr *MockDistributionScannerMockRecorder) Name() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Name", reflect.TypeOf((*MockDistributionScanner)(nil).Name))
 }
 
-// Scan mocks base method
+// Scan mocks base method.
 func (m *MockDistributionScanner) Scan(arg0 context.Context, arg1 *claircore.Layer) ([]*claircore.Distribution, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Scan", arg0, arg1)
@@ -594,13 +595,13 @@ func (m *MockDistributionScanner) Scan(arg0 context.Context, arg1 *claircore.Lay
 	return ret0, ret1
 }
 
-// Scan indicates an expected call of Scan
+// Scan indicates an expected call of Scan.
 func (mr *MockDistributionScannerMockRecorder) Scan(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Scan", reflect.TypeOf((*MockDistributionScanner)(nil).Scan), arg0, arg1)
 }
 
-// Version mocks base method
+// Version mocks base method.
 func (m *MockDistributionScanner) Version() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Version")
@@ -608,36 +609,36 @@ func (m *MockDistributionScanner) Version() string {
 	return ret0
 }
 
-// Version indicates an expected call of Version
+// Version indicates an expected call of Version.
 func (mr *MockDistributionScannerMockRecorder) Version() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Version", reflect.TypeOf((*MockDistributionScanner)(nil).Version))
 }
 
-// MockRepositoryScanner is a mock of RepositoryScanner interface
+// MockRepositoryScanner is a mock of RepositoryScanner interface.
 type MockRepositoryScanner struct {
 	ctrl     *gomock.Controller
 	recorder *MockRepositoryScannerMockRecorder
 }
 
-// MockRepositoryScannerMockRecorder is the mock recorder for MockRepositoryScanner
+// MockRepositoryScannerMockRecorder is the mock recorder for MockRepositoryScanner.
 type MockRepositoryScannerMockRecorder struct {
 	mock *MockRepositoryScanner
 }
 
-// NewMockRepositoryScanner creates a new mock instance
+// NewMockRepositoryScanner creates a new mock instance.
 func NewMockRepositoryScanner(ctrl *gomock.Controller) *MockRepositoryScanner {
 	mock := &MockRepositoryScanner{ctrl: ctrl}
 	mock.recorder = &MockRepositoryScannerMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockRepositoryScanner) EXPECT() *MockRepositoryScannerMockRecorder {
 	return m.recorder
 }
 
-// Kind mocks base method
+// Kind mocks base method.
 func (m *MockRepositoryScanner) Kind() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Kind")
@@ -645,13 +646,13 @@ func (m *MockRepositoryScanner) Kind() string {
 	return ret0
 }
 
-// Kind indicates an expected call of Kind
+// Kind indicates an expected call of Kind.
 func (mr *MockRepositoryScannerMockRecorder) Kind() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Kind", reflect.TypeOf((*MockRepositoryScanner)(nil).Kind))
 }
 
-// Name mocks base method
+// Name mocks base method.
 func (m *MockRepositoryScanner) Name() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Name")
@@ -659,13 +660,13 @@ func (m *MockRepositoryScanner) Name() string {
 	return ret0
 }
 
-// Name indicates an expected call of Name
+// Name indicates an expected call of Name.
 func (mr *MockRepositoryScannerMockRecorder) Name() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Name", reflect.TypeOf((*MockRepositoryScanner)(nil).Name))
 }
 
-// Scan mocks base method
+// Scan mocks base method.
 func (m *MockRepositoryScanner) Scan(arg0 context.Context, arg1 *claircore.Layer) ([]*claircore.Repository, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Scan", arg0, arg1)
@@ -674,13 +675,13 @@ func (m *MockRepositoryScanner) Scan(arg0 context.Context, arg1 *claircore.Layer
 	return ret0, ret1
 }
 
-// Scan indicates an expected call of Scan
+// Scan indicates an expected call of Scan.
 func (mr *MockRepositoryScannerMockRecorder) Scan(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Scan", reflect.TypeOf((*MockRepositoryScanner)(nil).Scan), arg0, arg1)
 }
 
-// Version mocks base method
+// Version mocks base method.
 func (m *MockRepositoryScanner) Version() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Version")
@@ -688,36 +689,36 @@ func (m *MockRepositoryScanner) Version() string {
 	return ret0
 }
 
-// Version indicates an expected call of Version
+// Version indicates an expected call of Version.
 func (mr *MockRepositoryScannerMockRecorder) Version() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Version", reflect.TypeOf((*MockRepositoryScanner)(nil).Version))
 }
 
-// MockCoalescer is a mock of Coalescer interface
+// MockCoalescer is a mock of Coalescer interface.
 type MockCoalescer struct {
 	ctrl     *gomock.Controller
 	recorder *MockCoalescerMockRecorder
 }
 
-// MockCoalescerMockRecorder is the mock recorder for MockCoalescer
+// MockCoalescerMockRecorder is the mock recorder for MockCoalescer.
 type MockCoalescerMockRecorder struct {
 	mock *MockCoalescer
 }
 
-// NewMockCoalescer creates a new mock instance
+// NewMockCoalescer creates a new mock instance.
 func NewMockCoalescer(ctrl *gomock.Controller) *MockCoalescer {
 	mock := &MockCoalescer{ctrl: ctrl}
 	mock.recorder = &MockCoalescerMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockCoalescer) EXPECT() *MockCoalescerMockRecorder {
 	return m.recorder
 }
 
-// Coalesce mocks base method
+// Coalesce mocks base method.
 func (m *MockCoalescer) Coalesce(arg0 context.Context, arg1 []*indexer.LayerArtifacts) (*claircore.IndexReport, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Coalesce", arg0, arg1)
@@ -726,7 +727,7 @@ func (m *MockCoalescer) Coalesce(arg0 context.Context, arg1 []*indexer.LayerArti
 	return ret0, ret1
 }
 
-// Coalesce indicates an expected call of Coalesce
+// Coalesce indicates an expected call of Coalesce.
 func (mr *MockCoalescerMockRecorder) Coalesce(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Coalesce", reflect.TypeOf((*MockCoalescer)(nil).Coalesce), arg0, arg1)

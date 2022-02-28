@@ -1,7 +1,3 @@
-// Package updater holds a registry of default updaters.
-//
-// A set of in-tree updaters can be added by using the defaults package's Set
-// function.
 package updater
 
 import (
@@ -26,6 +22,8 @@ var pkg = struct {
 // Register registers an UpdaterSetFactory.
 //
 // Register will panic if the same name is used twice.
+//
+// Deprecated: See [Updater].
 func Register(name string, f driver.UpdaterSetFactory) {
 	pkg.Lock()
 	defer pkg.Unlock()
@@ -36,6 +34,8 @@ func Register(name string, f driver.UpdaterSetFactory) {
 }
 
 // Registered returns a new map populated with the registered UpdaterSetFactories.
+//
+// Deprecated: See [Updater].
 func Registered() map[string]driver.UpdaterSetFactory {
 	pkg.Lock()
 	defer pkg.Unlock()
@@ -48,6 +48,8 @@ func Registered() map[string]driver.UpdaterSetFactory {
 
 // Configure calls the Configure method on all the passed-in
 // UpdaterSetFactories.
+//
+// Deprecated: See [Updater].
 func Configure(ctx context.Context, fs map[string]driver.UpdaterSetFactory, cfg map[string]driver.ConfigUnmarshaler, c *http.Client) error {
 	if c == nil {
 		return errors.New("passed invalid *http.Client")
