@@ -14,7 +14,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/quay/zlog"
 
-	"github.com/quay/claircore"
 	mock_updater "github.com/quay/claircore/test/mock/updater"
 	mock_driver "github.com/quay/claircore/test/mock/updater/driver/v1"
 	"github.com/quay/claircore/updater/driver/v1"
@@ -70,7 +69,7 @@ var (
 	matchUUID   = gomock.AssignableToTypeOf(reflect.TypeOf(uuid.Nil))
 )
 
-func fetchFunc(es []driver.EnrichmentRecord, vs []claircore.Vulnerability) func(context.Context, *zip.Writer, driver.Fingerprint, *http.Client) (driver.Fingerprint, error) {
+func fetchFunc(es []driver.EnrichmentRecord, vs *driver.ParsedVulnerabilities) func(context.Context, *zip.Writer, driver.Fingerprint, *http.Client) (driver.Fingerprint, error) {
 	return func(_ context.Context, z *zip.Writer, fp driver.Fingerprint, _ *http.Client) (driver.Fingerprint, error) {
 		if len(fp) != 0 {
 			return fp, driver.ErrUnchanged
@@ -93,15 +92,16 @@ func fetchFunc(es []driver.EnrichmentRecord, vs []claircore.Vulnerability) func(
 	}
 }
 
-func parseVuln(_ context.Context, in fs.FS) (r []claircore.Vulnerability, err error) {
-	f, err := in.Open(enrichmentFile)
+func parseVuln(_ context.Context, in fs.FS) (*driver.ParsedVulnerabilities, error) {
+	var r driver.ParsedVulnerabilities
+	f, err := in.Open(vulnerabilityFile)
 	if err != nil {
 		return nil, err
 	}
 	if err := json.NewDecoder(f).Decode(&r); err != nil {
 		return nil, err
 	}
-	return r, f.Close()
+	return &r, f.Close()
 }
 
 func parseEnrich(_ context.Context, in fs.FS) (r []driver.EnrichmentRecord, err error) {
@@ -119,8 +119,9 @@ func TestRun(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
 	ctl := gomock.NewController(t)
 	n := path.Base(t.Name())
-	vs := []claircore.Vulnerability{
-		{},
+	vs := &driver.ParsedVulnerabilities{
+		Updater:       t.Name(),
+		Vulnerability: []driver.Vulnerability{{}},
 	}
 	es := []driver.EnrichmentRecord{
 		{Enrichment: json.RawMessage("null")},

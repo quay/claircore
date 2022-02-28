@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/quay/claircore/updater/driver/v1"
+	driver "github.com/quay/claircore/updater/driver/v1"
 )
 
 type Store interface {

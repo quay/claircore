@@ -19,8 +19,7 @@ import (
 	"github.com/quay/zlog"
 	"golang.org/x/sync/errgroup"
 
-	"github.com/quay/claircore"
-	"github.com/quay/claircore/updater/driver/v1"
+	driver "github.com/quay/claircore/updater/driver/v1"
 )
 
 // Updater coordinates running Updaters and saving the results.
@@ -294,25 +293,25 @@ func (u *Updater) parseOne(ctx context.Context, upd driver.Updater, in fs.FS) (*
 			zlog.Debug(ctx).Msg("implements VulnerabilityParser")
 			any = true
 			res.Vulnerabilities, err = p.ParseVulnerability(ctx, in)
+			if err != nil {
+				return
+			}
 			zlog.Debug(ctx).
 				Err(err).
-				Int("ct", len(res.Vulnerabilities)).
+				Int("ct", len(res.Vulnerabilities.Vulnerability)).
 				Msg("found vulnerabilities")
-		}
-		if err != nil {
-			return
 		}
 		if p, ok := upd.(driver.EnrichmentParser); ok {
 			zlog.Debug(ctx).Msg("implements EnrichmentParser")
 			any = true
 			res.Enrichments, err = p.ParseEnrichment(ctx, in)
+			if err != nil {
+				return
+			}
 			zlog.Debug(ctx).
 				Err(err).
 				Int("ct", len(res.Enrichments)).
 				Msg("found enrichments")
-		}
-		if err != nil {
-			return
 		}
 	})
 	switch {
@@ -325,7 +324,7 @@ func (u *Updater) parseOne(ctx context.Context, upd driver.Updater, in fs.FS) (*
 }
 
 type parseResult struct {
-	Vulnerabilities []claircore.Vulnerability
+	Vulnerabilities *driver.ParsedVulnerabilities
 	Enrichments     []driver.EnrichmentRecord
 }
 

@@ -15,16 +15,16 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/quay/zlog"
 
-	"github.com/quay/claircore"
 	mock_updater "github.com/quay/claircore/test/mock/updater"
 	mock_driver "github.com/quay/claircore/test/mock/updater/driver/v1"
-	"github.com/quay/claircore/updater/driver/v1"
+	driver "github.com/quay/claircore/updater/driver/v1"
 )
 
 func TestOffline(t *testing.T) {
 	ctx := context.Background()
-	vs := []claircore.Vulnerability{
-		{},
+	vs := &driver.ParsedVulnerabilities{
+		Updater:       t.Name(),
+		Vulnerability: []driver.Vulnerability{{}},
 	}
 	es := []driver.EnrichmentRecord{
 		{

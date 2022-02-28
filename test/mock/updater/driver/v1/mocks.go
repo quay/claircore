@@ -12,7 +12,6 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	claircore "github.com/quay/claircore"
 	driver "github.com/quay/claircore/updater/driver/v1"
 )
 
@@ -144,10 +143,10 @@ func (m *MockVulnerabilityParser) EXPECT() *MockVulnerabilityParserMockRecorder 
 }
 
 // ParseVulnerability mocks base method.
-func (m *MockVulnerabilityParser) ParseVulnerability(arg0 context.Context, arg1 fs.FS) ([]claircore.Vulnerability, error) {
+func (m *MockVulnerabilityParser) ParseVulnerability(arg0 context.Context, arg1 fs.FS) (*driver.ParsedVulnerabilities, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ParseVulnerability", arg0, arg1)
-	ret0, _ := ret[0].([]claircore.Vulnerability)
+	ret0, _ := ret[0].(*driver.ParsedVulnerabilities)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

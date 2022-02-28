@@ -10,7 +10,6 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	uuid "github.com/google/uuid"
-	claircore "github.com/quay/claircore"
 	driver "github.com/quay/claircore/updater/driver/v1"
 )
 
