@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 
 	"github.com/quay/goval-parser/oval"
 	"github.com/quay/zlog"
@@ -102,7 +103,7 @@ func DpkgDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulns
 				for _, n := range ns {
 					vuln := *protoVuln
 					if state != nil {
-						vuln.FixedInVersion = state.EVR.Body
+						vuln.FixedInVersion = correctDoubleEpoch(state.EVR.Body)
 						if state.Arch != nil {
 							vuln.ArchOperation = mapArchOp(state.Arch.Operation)
 							vuln.Package.Arch = state.Arch.Body
@@ -125,6 +126,19 @@ func DpkgDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulns
 
 	}
 	return vulns, nil
+}
+
+var doubleEpochRe = regexp.MustCompile(`^(\d+\:)(\d+\:.*)$`)
+
+// CorrectDoubleEpoch is needed to mitigate against a bug in the debian
+// OVAL generation code that always adds an epoch to the version even
+// if one already exists. Example: 0:1:3.0.1p1-1 -> 1:3.0.1p1-1
+// TODO(crozzy): Remove code once debian OVAL generation code is fixed.
+func correctDoubleEpoch(version string) string {
+	if m := doubleEpochRe.FindStringSubmatch(version); m != nil {
+		return m[len(m)-1]
+	}
+	return version
 }
 
 func dpkgStateLookup(root *oval.Root, ref string) (*oval.DpkgInfoState, error) {
