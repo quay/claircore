@@ -71,44 +71,8 @@ func (p *labelParser) Run() error {
 		case itemError:
 			return errors.New(i.val)
 		case itemEnv:
-			idxEq := strings.IndexByte(i.val, '=')
-			idxSp := strings.IndexFunc(i.val, unicode.IsSpace)
-			if idxEq == -1 || (idxSp != -1 && idxSp < idxEq) {
-				// If there's no "=", or there are both "=" and whitespace but
-				// the whitespace comes first, this is an `ENV NAME VALUE`
-				// instruction.
-				k, _, err := transform.String(p.unquote, i.val[:idxSp])
-				if err != nil {
-					return err
-				}
-				v, _, err := transform.String(p.vars, strings.TrimLeftFunc(i.val[idxSp:], unicode.IsSpace))
-				if err != nil {
-					return err
-				}
-				p.vars.Set(k, v)
-			} else {
-				// This is a bunch of k=v pairs. First, we need to split the
-				// pairs. Values can be quoted strings, so using FieldsFunc is
-				// incorrect.
-				pairs, err := splitKV(p.escchar, i.val)
-				if err != nil {
-					return err
-				}
-				for _, kv := range pairs {
-					idx := strings.IndexByte(kv, '=')
-					if idx == -1 {
-						return fmt.Errorf(`invalid syntax: %+#q`, i.val)
-					}
-					k, _, err := transform.String(p.unquote, kv[:idx])
-					if err != nil {
-						return err
-					}
-					v, _, err := transform.String(transform.Chain(p.unquote, p.vars), kv[idx+1:])
-					if err != nil {
-						return err
-					}
-					p.vars.Set(k, v)
-				}
+			if err := p.handleAssign(i.val, p.vars.Set); err != nil {
+				return err
 			}
 		case itemArg:
 			idx := strings.IndexByte(i.val, '=')
@@ -125,24 +89,11 @@ func (p *labelParser) Run() error {
 			}
 			p.vars.Set(k, v)
 		case itemLabel:
-			pairs, err := splitKV(p.escchar, i.val)
-			if err != nil {
+			// NOTE(hank) This sucks. This is not documented to work this way
+			// but experimentally, does.
+			//	skopeo inspect docker://registry.redhat.io/rhel7/etcd:3.2.32-14
+			if err := p.handleAssign(i.val, func(k, v string) { p.Labels[k] = v }); err != nil {
 				return err
-			}
-			for _, kv := range pairs {
-				idx := strings.IndexByte(kv, '=')
-				if idx == -1 {
-					return fmt.Errorf(`invalid syntax: %+#q`, i.val)
-				}
-				k, _, err := transform.String(p.unquote, kv[:idx])
-				if err != nil {
-					return err
-				}
-				v, _, err := transform.String(transform.Chain(p.unquote, p.vars), kv[idx+1:])
-				if err != nil {
-					return err
-				}
-				p.Labels[k] = v
 			}
 		case itemComment:
 			v := strings.ToLower(strings.TrimSpace(i.val))
@@ -159,6 +110,48 @@ func (p *labelParser) Run() error {
 		default: // discard
 		}
 	}
+}
+
+// HandleAssign handles the assignment commands.
+//
+// Only `ENV` commands should have this ambiguity in their handling, but some
+// Dockerfiles in the wild have `LABEL` commands that work this way, also.
+func (p *labelParser) handleAssign(val string, f func(k, v string)) error {
+	if isKV(val) {
+		// This is a bunch of k=v pairs. First, we need to split the pairs.
+		// Values can be quoted strings, so using FieldsFunc is incorrect.
+		pairs, err := splitKV(p.escchar, val)
+		if err != nil {
+			return err
+		}
+		for _, kv := range pairs {
+			idx := strings.IndexByte(kv, '=')
+			if idx == -1 {
+				return fmt.Errorf(`invalid assignment syntax: %+#q`, val)
+			}
+			k, _, err := transform.String(p.unquote, kv[:idx])
+			if err != nil {
+				return err
+			}
+			v, _, err := transform.String(transform.Chain(p.unquote, p.vars), kv[idx+1:])
+			if err != nil {
+				return err
+			}
+			f(k, v)
+		}
+		return nil
+	}
+	idxSp := strings.IndexFunc(val, unicode.IsSpace)
+	k, _, err := transform.String(p.unquote, val[:idxSp])
+	if err != nil {
+		return err
+	}
+	v, _, err := transform.String(p.vars, strings.TrimLeftFunc(val[idxSp:], unicode.IsSpace))
+	if err != nil {
+		return err
+	}
+	f(k, v)
+	return nil
 }
 
 // SplitKV splits a string on unquoted or un-escaped whitespace.
@@ -212,4 +205,10 @@ func splitKV(escchar rune, in string) ([]string, error) {
 // IsWhitespace reports whether the rune is valid intraline whitespace.
 func isWhitespace(r rune) bool {
 	return unicode.IsSpace(r) && r != '\n'
+}
+
+func isKV(s string) bool {
+	idxEq := strings.IndexByte(s, '=')
+	idxSp := strings.IndexFunc(s, unicode.IsSpace)
+	return idxEq != -1 && (idxSp == -1 || idxSp >= idxEq)
 }

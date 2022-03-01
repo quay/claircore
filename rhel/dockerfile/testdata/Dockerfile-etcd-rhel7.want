@@ -1,0 +1,15 @@
+{
+  "com.redhat.component": "etcd-container",
+  "description": "etcd is a distributed reliable key-value store for the most critical data of a distributed system.",
+  "install": "/usr/bin/docker run --rm $OPT1 --privileged -v /:/host -e HOST=/host -e NAME=$NAME -e IMAGE=$IMAGE $IMAGE $OPT2 /usr/bin/install.sh  $OPT3",
+  "io.k8s.description": "etcd is a distributed reliable key-value store for the most critical data of a distributed system.",
+  "io.k8s.display-name": "etcd",
+  "io.openshift.expose-services": "2379:tcp,2380:tcp",
+  "io.openshift.tags": "etcd",
+  "name": "rhel7/etcd",
+  "run": "/usr/bin/docker run -d $OPT1 -p 4001:4001 -p 7001:7001 -p 2379:2379 -p 2380:2380 --name $NAME $IMAGE $OPT2 $OPT3",
+  "summary": "A highly-available key value store for shared configuration",
+  "uninstall": "/usr/bin/docker run --rm $OPT1 --privileged -v /:/host -e HOST=/host -e NAME=$NAME -e IMAGE=$IMAGE $IMAGE $OPT2 /usr/bin/uninstall.sh $OPT3",
+  "usage": "etcd -help ",
+  "version": "3.2.32"
+}

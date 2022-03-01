@@ -1,0 +1,32 @@
+FROM registry.stage.redhat.io/rhel7/rhel:7.9
+
+ENV container=docker
+
+LABEL com.redhat.component="etcd-container" \
+      name="rhel7/etcd" \
+      version="3.2.32" \
+      summary="A highly-available key value store for shared configuration" \
+      usage="etcd -help " \
+      io.k8s.display-name="etcd" \
+      io.openshift.tags="etcd" \
+      description="etcd is a distributed reliable key-value store for the most critical data of a distributed system." \
+      io.k8s.description="etcd is a distributed reliable key-value store for the most critical data of a distributed system." \
+      io.openshift.expose-services="2379:tcp,2380:tcp"
+
+RUN yum-config-manager --enable rhel-7-server-extras-rpms || : && yum -y install etcd hostname && yum clean all
+
+LABEL install /usr/bin/docker run --rm \$OPT1 --privileged -v /:/host -e HOST=/host -e NAME=\$NAME -e IMAGE=\$IMAGE \$IMAGE \$OPT2 /usr/bin/install.sh  \$OPT3
+LABEL uninstall /usr/bin/docker run --rm \$OPT1 --privileged -v /:/host -e HOST=/host -e NAME=\$NAME -e IMAGE=\$IMAGE \$IMAGE \$OPT2 /usr/bin/uninstall.sh \$OPT3
+LABEL run /usr/bin/docker run -d \$OPT1 -p 4001:4001 -p 7001:7001 -p 2379:2379 -p 2380:2380 --name \$NAME \$IMAGE \$OPT2 \$OPT3
+
+ADD etcd_container_template.service /etc/systemd/system/etcd_container_template.service
+ADD etcd-env.sh /usr/bin/etcd-env.sh
+ADD install.sh  /usr/bin/install.sh
+ADD uninstall.sh /usr/bin/uninstall.sh
+
+EXPOSE 4001 7001 2379 2380
+
+ADD tmpfiles.template config.json.template service.template manifest.json /exports/
+
+CMD ["/usr/bin/etcd-env.sh", "/usr/bin/etcd"]
+

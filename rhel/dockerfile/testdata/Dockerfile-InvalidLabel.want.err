@@ -1,1 +1,1 @@
-invalid syntax: `A=B 	C=D # Comments not allowed in this position`
+invalid assignment syntax: `A=B 	C=D # Comments not allowed in this position`
