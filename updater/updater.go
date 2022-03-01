@@ -210,12 +210,13 @@ func (u *Updater) updaters(ctx context.Context, cfg driver.Configs) ([]driver.Up
 	us := make(driver.UpdaterSet)
 	ns := make([]string, 0)
 	for _, fac := range u.factories {
-		// BUG(hank) Goroutines can escape labeling if spawned in a Factory's
-		// Name method.
-		key := fac.Name()
+		var key string
+		pprof.Do(ctx, pprof.Labels("task", "factory_name"), func(_ context.Context) {
+			key = fac.Name()
+		})
 		var set driver.UpdaterSet
 		var err error
-		pprof.Do(ctx, pprof.Labels("factory", key), func(ctx context.Context) {
+		pprof.Do(ctx, pprof.Labels("task", "factory_create", "factory", key), func(ctx context.Context) {
 			set, err = fac.Create(ctx, cfg[key])
 		})
 		if err != nil {
@@ -244,11 +245,14 @@ func (u *Updater) updaters(ctx context.Context, cfg driver.Configs) ([]driver.Up
 }
 
 func (u *Updater) fetchOne(ctx context.Context, upd driver.Updater, pfp driver.Fingerprint, out io.Writer) (fp driver.Fingerprint, err error) {
-	n := upd.Name()
-	ctx = zlog.ContextWithValues(ctx, "updater", n)
+	var name string
+	pprof.Do(ctx, pprof.Labels("task", "updater_name"), func(_ context.Context) {
+		name = upd.Name()
+	})
+	ctx = zlog.ContextWithValues(ctx, "updater", name)
 	zlog.Info(ctx).Msg("fetch start")
 	defer zlog.Info(ctx).Msg("fetch done")
-	lctx, done := u.locker.TryLock(ctx, n)
+	lctx, done := u.locker.TryLock(ctx, name)
 	defer done()
 	if err := lctx.Err(); err != nil {
 		if pErr := ctx.Err(); pErr != nil {
@@ -266,11 +270,10 @@ func (u *Updater) fetchOne(ctx context.Context, upd driver.Updater, pfp driver.F
 			zlog.Warn(ctx).Err(err).Msg("unable to close zip writer")
 		}
 	}()
-	if pfp != "" {
-		zlog.Debug(ctx).Str("fingerprint", string(pfp)).Msg("found previous fingerprint")
+	if len(pfp) != 0 {
+		zlog.Debug(ctx).Bytes("fingerprint", pfp).Msg("found previous fingerprint")
 	}
-	// Use pprof to help track down any goroutine leaks.
-	pprof.Do(ctx, pprof.Labels("updater", n), func(ctx context.Context) {
+	pprof.Do(ctx, pprof.Labels("task", "updater_fetch", "updater", name), func(ctx context.Context) {
 		fp, err = upd.Fetch(ctx, zw, pfp, u.client)
 	})
 	return fp, err
@@ -281,13 +284,16 @@ func (u *Updater) parseOne(ctx context.Context, upd driver.Updater, in fs.FS) (*
 		any  bool
 		res  parseResult
 		err  error
-		name = upd.Name()
+		name string
 	)
+	pprof.Do(ctx, pprof.Labels("task", "updater_name"), func(_ context.Context) {
+		name = upd.Name()
+	})
 	ctx = zlog.ContextWithValues(ctx, "updater", name)
 	zlog.Info(ctx).Msg("parse start")
 	defer zlog.Info(ctx).Msg("parse done")
 
-	pprof.Do(ctx, pprof.Labels("updater", name), func(ctx context.Context) {
+	pprof.Do(ctx, pprof.Labels("task", "updater_parse", "updater", name), func(ctx context.Context) {
 		ctx = zlog.ContextWithValues(ctx, "updater", name)
 		if p, ok := upd.(driver.VulnerabilityParser); ok {
 			zlog.Debug(ctx).Msg("implements VulnerabilityParser")
@@ -314,10 +320,7 @@ func (u *Updater) parseOne(ctx context.Context, upd driver.Updater, in fs.FS) (*
 				Msg("found enrichments")
 		}
 	})
-	switch {
-	case !errors.Is(err, nil):
-		return nil, err
-	case !any:
+	if !any {
 		return nil, errors.New("did nothing")
 	}
 	return &res, nil

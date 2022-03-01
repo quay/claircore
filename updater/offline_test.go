@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -47,7 +48,7 @@ func TestOffline(t *testing.T) {
 		upd.EXPECT().
 			Name().MinTimes(1).Return(n)
 		upd.EXPECT().
-			Fetch(matchCtx, matchZip, matchFp, matchClient).DoAndReturn(fetchFunc(es, vs))
+			Fetch(matchCtx, matchZip, matchFp, matchClient).DoAndReturn(fetchFunc(t, es, vs))
 		fac := mock_driver.NewMockUpdaterFactory(ctl)
 		fac.EXPECT().
 			Name().MinTimes(1).Return(n)
@@ -118,6 +119,49 @@ func TestOffline(t *testing.T) {
 		}()
 
 		if err := u.Parse(ctx, spool); err != nil {
+			t.Error(err)
+		}
+	})
+
+	t.Run("Prev", func(t *testing.T) {
+		ctx := zlog.Test(ctx, t)
+		ctl := gomock.NewController(t)
+		n := path.Dir(t.Name())
+		if _, err := spool.Seek(0, io.SeekStart); err != nil {
+			t.Fatal(err)
+		}
+
+		upd := mock_driver.NewMockUpdater(ctl)
+		upd.EXPECT().Name().
+			MinTimes(1).
+			Return(n)
+		upd.EXPECT().Fetch(matchCtx, matchZip, matchFp, matchClient).
+			Times(1).
+			DoAndReturn(fetchFunc(t, es, vs))
+		fac := mock_driver.NewMockUpdaterFactory(ctl)
+		fac.EXPECT().Name().
+			MinTimes(1).
+			Return(n)
+		fac.EXPECT().Create(matchCtx, gomock.Nil()).
+			Times(1).
+			Return(driver.UpdaterSet{n: upd}, nil)
+		store := mock_updater.NewMockStore(ctl)
+
+		u, err := New(ctx, &Options{
+			Store:     store,
+			Client:    &http.Client{Transport: nil},
+			Factories: []driver.UpdaterFactory{fac},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() {
+			if err := u.Close(); err != nil {
+				t.Error(err)
+			}
+		}()
+
+		if err := u.Fetch(ctx, spool, io.Discard); err != nil {
 			t.Error(err)
 		}
 	})

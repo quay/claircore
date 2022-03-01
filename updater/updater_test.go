@@ -2,8 +2,11 @@ package updater
 
 import (
 	"archive/zip"
+	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/json"
+	"io"
 	"io/fs"
 	"net/http"
 	"path"
@@ -62,33 +65,45 @@ const (
 
 var (
 	matchCtx    = gomock.AssignableToTypeOf(reflect.TypeOf((*context.Context)(nil)).Elem())
-	matchFp     = gomock.AssignableToTypeOf(reflect.TypeOf(driver.Fingerprint("")))
+	matchFp     = gomock.AssignableToTypeOf(reflect.TypeOf(driver.Fingerprint(nil)))
 	matchZip    = gomock.AssignableToTypeOf(reflect.TypeOf((*zip.Writer)(nil)))
 	matchClient = gomock.AssignableToTypeOf(reflect.TypeOf((*http.Client)(nil)))
 	matchFS     = gomock.AssignableToTypeOf(reflect.TypeOf((*fs.FS)(nil)).Elem())
 	matchUUID   = gomock.AssignableToTypeOf(reflect.TypeOf(uuid.Nil))
 )
 
-func fetchFunc(es []driver.EnrichmentRecord, vs *driver.ParsedVulnerabilities) func(context.Context, *zip.Writer, driver.Fingerprint, *http.Client) (driver.Fingerprint, error) {
+func fetchFunc(t *testing.T, es []driver.EnrichmentRecord, vs *driver.ParsedVulnerabilities) func(context.Context, *zip.Writer, driver.Fingerprint, *http.Client) (driver.Fingerprint, error) {
 	return func(_ context.Context, z *zip.Writer, fp driver.Fingerprint, _ *http.Client) (driver.Fingerprint, error) {
-		if len(fp) != 0 {
+		h := sha256.New()
+		var vb, eb bytes.Buffer
+		if err := json.NewEncoder(io.MultiWriter(h, &vb)).Encode(vs); err != nil {
+			return nil, err
+		}
+		if err := json.NewEncoder(io.MultiWriter(h, &eb)).Encode(es); err != nil {
+			return nil, err
+		}
+		cfp := driver.Fingerprint(h.Sum(nil))
+		t.Logf("prev fp: %x", fp)
+		t.Logf("calc fp: %x", cfp)
+		if bytes.Equal(fp, cfp) {
 			return fp, driver.ErrUnchanged
 		}
+
 		w, err := z.Create(vulnerabilityFile)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
-		if err := json.NewEncoder(w).Encode(vs); err != nil {
-			return "", err
+		if _, err := io.Copy(w, &vb); err != nil {
+			return nil, err
 		}
 		w, err = z.Create(enrichmentFile)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
-		if err := json.NewEncoder(w).Encode(es); err != nil {
-			return "", err
+		if _, err := io.Copy(w, &eb); err != nil {
+			return nil, err
 		}
-		return fp, nil
+		return cfp, nil
 	}
 }
 
@@ -128,25 +143,31 @@ func TestRun(t *testing.T) {
 	}
 
 	upd := mock_driver.NewMockUpdater(ctl)
-	upd.EXPECT().
-		Name().MinTimes(2).Return(n)
-	upd.EXPECT().
-		Fetch(matchCtx, matchZip, matchFp, matchClient).Times(2).DoAndReturn(fetchFunc(es, vs))
+	upd.EXPECT().Name().
+		MinTimes(2).
+		Return(n)
+	upd.EXPECT().Fetch(matchCtx, matchZip, matchFp, matchClient).
+		Times(2).
+		DoAndReturn(fetchFunc(t, es, vs))
 	vp := mock_driver.NewMockVulnerabilityParser(ctl)
-	vp.EXPECT().
-		ParseVulnerability(matchCtx, matchFS).DoAndReturn(parseVuln)
+	vp.EXPECT().ParseVulnerability(matchCtx, matchFS).
+		Times(1).
+		DoAndReturn(parseVuln)
 	ep := mock_driver.NewMockEnrichmentParser(ctl)
-	ep.EXPECT().
-		ParseEnrichment(matchCtx, matchFS).DoAndReturn(parseEnrich)
+	ep.EXPECT().ParseEnrichment(matchCtx, matchFS).
+		Times(1).
+		DoAndReturn(parseEnrich)
 	fac := mock_driver.NewMockUpdaterFactory(ctl)
-	fac.EXPECT().
-		Name().MinTimes(2).Return(n)
-	fac.EXPECT().
-		Create(matchCtx, gomock.Nil()).Times(2).Return(driver.UpdaterSet{n: &mockparser{
-		Updater:             upd,
-		VulnerabilityParser: vp,
-		EnrichmentParser:    ep,
-	}}, nil)
+	fac.EXPECT().Name().
+		MinTimes(2).
+		Return(n)
+	fac.EXPECT().Create(matchCtx, gomock.Nil()).
+		Times(2).
+		Return(driver.UpdaterSet{n: &mockparser{
+			Updater:             upd,
+			VulnerabilityParser: vp,
+			EnrichmentParser:    ep,
+		}}, nil)
 	store := mock_updater.NewMockStore(ctl)
 	var ops []driver.UpdateOperation
 	store.EXPECT().UpdateVulnerabilities(matchCtx, matchUUID, gomock.Eq(n), matchFp, gomock.Eq(vs)).
