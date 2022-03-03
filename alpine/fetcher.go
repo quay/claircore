@@ -36,7 +36,10 @@ func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 
 	switch res.StatusCode {
 	case http.StatusOK:
-		// break
+		if t := string(hint); t == "" || t != res.Header.Get("etag") {
+			break
+		}
+		fallthrough
 	case http.StatusNotModified:
 		zlog.Info(ctx).Msg("database unchanged since last fetch")
 		return nil, hint, driver.Unchanged
