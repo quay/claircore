@@ -131,6 +131,10 @@ func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
 
 	switch res.StatusCode {
 	case http.StatusOK:
+		if t := f.manifestEtag; t == "" || t != res.Header.Get("etag") {
+			break
+		}
+		fallthrough
 	case http.StatusNotModified:
 		return s, nil
 	default:
