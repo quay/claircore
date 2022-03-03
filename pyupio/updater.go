@@ -174,10 +174,13 @@ func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 		return nil, hint, err
 	}
 	switch res.StatusCode {
+	case http.StatusOK:
+		if t := string(hint); t == "" || t != res.Header.Get("etag") {
+			break
+		}
+		fallthrough
 	case http.StatusNotModified:
 		return nil, hint, driver.Unchanged
-	case http.StatusOK:
-		// break
 	default:
 		return nil, hint, fmt.Errorf("pyupio: fetcher got unexpected HTTP response: %d (%s)", res.StatusCode, res.Status)
 	}
