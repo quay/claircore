@@ -99,8 +99,9 @@ func (m *SourcesMap) fetchSources(ctx context.Context, url string) error {
 		return err
 	}
 	m.etagMu.RLock()
-	req.Header.Set("If-None-Match", m.etagMap[url])
+	etag := m.etagMap[url]
 	m.etagMu.RUnlock()
+	req.Header.Set("If-None-Match", etag)
 
 	resp, err := m.client.Do(req)
 	if err != nil {
@@ -110,6 +111,10 @@ func (m *SourcesMap) fetchSources(ctx context.Context, url string) error {
 	defer resp.Body.Close()
 	switch resp.StatusCode {
 	case http.StatusOK:
+		if etag == "" || etag != resp.Header.Get("etag") {
+			break
+		}
+		fallthrough
 	case http.StatusNotModified:
 		zlog.Debug(ctx).Msg("already processed the latest version of the file")
 		return nil

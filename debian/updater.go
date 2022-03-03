@@ -114,7 +114,11 @@ func (u *Updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io
 
 	switch resp.StatusCode {
 	case http.StatusOK:
-		zlog.Info(ctx).Msg("fetching latest oval database")
+		if fingerprint == "" || string(fingerprint) != resp.Header.Get("etag") {
+			zlog.Info(ctx).Msg("fetching latest oval database")
+			break
+		}
+		fallthrough
 	case http.StatusNotModified:
 		return nil, fingerprint, driver.Unchanged
 	default:
