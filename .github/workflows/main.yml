@@ -26,7 +26,7 @@ jobs:
     container: quay.io/projectquay/golang:1.16
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Go Tidy
         run: go mod tidy
       - name: Git Diff
@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Setup mdBook
         uses: peaceiris/actions-mdbook@v1
         with:
@@ -68,7 +68,7 @@ jobs:
         go: ['1.16', '1.17']
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Cache Go dependencies
         uses: actions/cache@v2
         with:
