@@ -50,4 +50,8 @@ var Migrations = []migrate.Migration{
 		ID: 6,
 		Up: runFile("06-delete-debian-update_operation.sql"),
 	},
+	{
+		ID: 7,
+		Up: runFile("07-delete-alpine-update_operation.sql"),
+	},
 }

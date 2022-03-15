@@ -1,0 +1,44 @@
+{
+    "apkurl": "{{urlprefix}}/{{distroversion}}/{{reponame}}/{{arch}}/{{pkg.name}}-{{pkg.ver}}.apk",
+    "archs": [
+        "aarch64",
+        "armhf",
+        "armv7",
+        "ppc64le",
+        "s390x",
+        "x86",
+        "x86_64"
+    ],
+    "reponame": "main",
+    "urlprefix": "https://dl-cdn.alpinelinux.org/alpine",
+    "distroversion": "v3.15",
+    "packages": [
+        {
+            "pkg": {
+                "name": "bash",
+                "secfixes": {
+                    "4.4.12-r1": [
+                        "CVE-2016-0634"
+                    ]
+                }
+            }
+        },
+        {
+            "pkg": {
+                "name": "busybox",
+                "secfixes": {
+                    "0": [
+                        "CVE-2021-42373",
+                        "CVE-2021-42376",
+                        "CVE-2021-42377"
+                    ],
+                    "1.27.2-r4": [
+                        "CVE-2017-16544",
+                        "CVE-2017-15873",
+                        "CVE-2017-15874"
+                    ]
+                }
+            }
+        }
+    ]
+}

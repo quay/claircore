@@ -124,6 +124,57 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 	},
 }
 
+var V3_15_main_truncated_vulns = []*claircore.Vulnerability{
+	{
+		Name:               "CVE-2017-15873",
+		Links:              "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2017-15873",
+		Updater:            "alpine-main-v3.15-updater",
+		FixedInVersion:     "1.27.2-r4",
+		NormalizedSeverity: claircore.Unknown,
+		Package: &claircore.Package{
+			Name: "busybox",
+			Kind: claircore.BINARY,
+		},
+		Dist: releaseToDist(V3_15),
+	},
+	{
+		Name:               "CVE-2016-0634",
+		Links:              "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2016-0634",
+		Updater:            "alpine-main-v3.15-updater",
+		FixedInVersion:     "4.4.12-r1",
+		NormalizedSeverity: claircore.Unknown,
+		Package: &claircore.Package{
+			Name: "bash",
+			Kind: claircore.BINARY,
+		},
+		Dist: releaseToDist(V3_15),
+	},
+	{
+		Name:               "CVE-2017-16544",
+		Links:              "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2017-16544",
+		Updater:            "alpine-main-v3.15-updater",
+		FixedInVersion:     "1.27.2-r4",
+		NormalizedSeverity: claircore.Unknown,
+		Package: &claircore.Package{
+			Name: "busybox",
+			Kind: claircore.BINARY,
+		},
+		Dist: releaseToDist(V3_15),
+	},
+	{
+		Name:               "CVE-2017-15874",
+		Links:              "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2017-15874",
+		Updater:            "alpine-main-v3.15-updater",
+		FixedInVersion:     "1.27.2-r4",
+		NormalizedSeverity: claircore.Unknown,
+		Package: &claircore.Package{
+			Name: "busybox",
+			Kind: claircore.BINARY,
+		},
+		Dist: releaseToDist(V3_15),
+	},
+}
+
 func TestParser(t *testing.T) {
 	t.Parallel()
 	ctx, done := context.WithCancel(context.Background())
@@ -139,6 +190,12 @@ func TestParser(t *testing.T) {
 			repo:     Community,
 			testFile: "v3_10_community_truncated.json",
 			expected: V3_10_community_truncated_vulns,
+		},
+		{
+			release:  V3_15,
+			repo:     Main,
+			testFile: "v3_15_main_truncated.json",
+			expected: V3_15_main_truncated_vulns,
 		},
 	}
 

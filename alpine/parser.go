@@ -55,6 +55,10 @@ func (u *Updater) parse(ctx context.Context, sdb *SecurityDB) ([]*claircore.Vuln
 func unpackSecFixes(partial claircore.Vulnerability, secFixes map[string][]string) []*claircore.Vulnerability {
 	out := []*claircore.Vulnerability{}
 	for fixedIn, IDs := range secFixes {
+		if fixedIn == "0" {
+			// This means "not-affected" in the Alpine secfixes context
+			continue
+		}
 		for _, id := range IDs {
 			v := partial
 			v.Name = id
