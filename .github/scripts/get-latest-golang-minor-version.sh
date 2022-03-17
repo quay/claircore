@@ -1,26 +1,19 @@
-#!/usr/bin/env bash
+#!/bin/sh
 MAJOR_VERSION=$1
-LOGFILE=$2
-
-LATEST_MINOR_VERSION=0
-
-LATEST_VERSION="none"
 CHECK_VERSION=$MAJOR_VERSION
+CHECK_MINOR_VERSION=0
 
-while true
-do
+while true; do
     URL=https://dl.google.com/go/go${CHECK_VERSION}.linux-amd64.tar.gz
-    echo -n "${URL} " >> ${LOGFILE}
-    HTTP_RESP_CODE=`curl -I -o /dev/null -s -w "%{http_code}\n" "${URL}"`
-    echo "${HTTP_RESP_CODE}" >> ${LOGFILE}
-    if [[ HTTP_RESP_CODE -ne 200 ]]
-    then
-        break
-    fi
-    LATEST_VERSION=${CHECK_VERSION}
-    let CHECK_MINOR_VERSION++
-    CHECK_VERSION=${MAJOR_VERSION}.${CHECK_MINOR_VERSION}
+	code=$(curl -I -o /dev/null -s -w "%{http_code}\n" "$URL")
+	printf '%s\t%d\n' "$URL" "$code" >&2
+	case "$code" in
+	200)
+		CHECK_VERSION=${MAJOR_VERSION}.$((CHECK_MINOR_VERSION+=1))
+		;;
+	*)
+		echo "$CHECK_VERSION"
+		exit 0
+		;;
+	esac
 done
-
-# Return latest Golang version available for download in format "1.15.6"
-echo "${LATEST_VERSION}"
