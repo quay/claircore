@@ -9,10 +9,12 @@ while true; do
 	printf '%s\t%d\n' "$URL" "$code" >&2
 	case "$code" in
 	200)
+		OK="$CHECK_VERSION"
 		CHECK_VERSION=${MAJOR_VERSION}.$((CHECK_MINOR_VERSION+=1))
 		;;
 	*)
-		echo "$CHECK_VERSION"
+		test -z "$OK" && exit 99
+		echo "$OK"
 		exit 0
 		;;
 	esac
