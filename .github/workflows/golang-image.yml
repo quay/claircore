@@ -44,7 +44,9 @@ jobs:
         run: |
           TAG=$(date -d "${TAG_LAST_MODIFIED}" +%s)
           GO=$(date -d "${GO_LAST_MODIFIED}" +%s)
-          test "$GO" -gt "$TAG" && echo "BUILD_IMAGE=1" >> "$GITHUB_ENV"
+          if test "$GO" -gt "$TAG"; then
+            echo "BUILD_IMAGE=1" >> "$GITHUB_ENV"
+          fi
       - name: Set up QEMU
         uses: docker/setup-qemu-action@master
         with:
