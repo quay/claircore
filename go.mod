@@ -1,6 +1,6 @@
 module github.com/quay/claircore
 
-go 1.16
+go 1.18
 
 require (
 	github.com/aquasecurity/go-pep440-version v0.0.0-20210121094942-22b2f8951d46
