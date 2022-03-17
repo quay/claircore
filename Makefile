@@ -85,11 +85,11 @@ podman-dev-down: etc/podman.yaml
 	podman pod stop -t 10 $$(awk '/^  name:/{print $$NF}' <$<)
 	podman pod rm $$(awk '/^  name:/{print $$NF}' <$<)
 
-GO_VERSION ?= 1.16
-GO_CHECKSUM ?= 013a489ebb3e24ef3d915abe5b94c3286c070dfe0818d5bca8108f1d6e8440d2
+GO_VERSION ?= 1.18
+GO_CHECKSUM ?= e85278e98f57cdb150fe8409e6e5df5343ecb13cebf03a5d5ff12bd55a80264f
 .PHONY: baseimage
 baseimage:
-	buildah bud -f etc/Dockerfile -t quay.io/projectquay/golang:$(GO_VERSION) \
+	podman build -f etc/Dockerfile -t quay.io/projectquay/golang:$(GO_VERSION) \
 		--build-arg GO_VERSION=$(GO_VERSION) \
 	   	--build-arg GO_CHECKSUM=$(GO_CHECKSUM) \
 		etc
