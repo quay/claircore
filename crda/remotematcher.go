@@ -100,9 +100,10 @@ func newMatcher(ecosystem string, key string, opt ...option) (*matcher, error) {
 	if m.source == "" {
 		m.source = defaultSource
 	}
-	if m.client == nil {
-		m.client = http.DefaultClient // TODO(hank) Remove DefaultClient
-	}
+	// The CRDA remote matcher doesn't use the clair roundtripper
+	// client as the ratelimiting doesn't apply and a specific
+	// timeout is preferred.
+	m.client = &http.Client{Timeout: 5 * time.Second}
 
 	return &m, nil
 }

@@ -108,7 +108,6 @@ func (f *Factory) Configure(ctx context.Context, cfg driver.MatcherConfigUnmarsh
 			Msg("configured API key")
 	}
 
-	f.client = c
 	f.ecosystems = fc.Ecosystems
 	return nil
 }
