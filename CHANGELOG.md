@@ -2,8 +2,47 @@
 ## [Unreleased]
 
 
+<a name="v1.3.2"></a>
+## [v1.3.2] - 2022-03-21
+### Alpine
+- [051b3c7](https://github.com/quay/claircore/commit/051b3c7f1ff1fdf9c6c6c712d35b1015926c2278): Ignore any vulns that have 0 as the fixed_in_version ([#581](https://github.com/quay/claircore/issues/581))
+  - [#581](https://github.com/quay/claircore/issues/581)
+- [99dec48](https://github.com/quay/claircore/commit/99dec48d812887f392615f3d22b70e3c6b418ebb): check validator on 200 response
+### Build(Deps)
+- [171469d](https://github.com/quay/claircore/commit/171469d12bfffd019b78a2eda5867b2524d94cce): bump peter-evans/create-pull-request from 3.12.1 to 3.14.0
+- [907037e](https://github.com/quay/claircore/commit/907037e45015fae73e790a79ee05d32ff449d1be): bump actions/checkout from 2 to 3
+### Ci
+- [12fa580](https://github.com/quay/claircore/commit/12fa580b9e1914f99685288636fcd027ac8e7936): remember to log into quay.io
+- [353e1f9](https://github.com/quay/claircore/commit/353e1f9c79b39b4401666e2550f6d94440052a73): don't fail job when there's nothing to do
+- [f48ae57](https://github.com/quay/claircore/commit/f48ae57d3b60cb16eff80c232fb2d9bf9fbffa3d): fix version checker script
+- [55db234](https://github.com/quay/claircore/commit/55db23481e49b14c5b104d4a1f2135b51df1bad6): update main ci workflow
+- [cab09db](https://github.com/quay/claircore/commit/cab09db1cf9da3424839969639d9b0840f7f7f83): update base image builder machinery
+### Crda
+- [108d9f5](https://github.com/quay/claircore/commit/108d9f50d96623b30750f420b10761dc0204a300): Stop using the Client Clair instanciates ([#583](https://github.com/quay/claircore/issues/583))
+  - [#583](https://github.com/quay/claircore/issues/583)
+### Cvss
+- [11fd04f](https://github.com/quay/claircore/commit/11fd04fa24bb4be8515a229552545b75f3ab16ec): fix vet errors, lints
+### Debian
+- [3a7988d](https://github.com/quay/claircore/commit/3a7988d75ae11c5d1d768d90533cc2c98788c95c): check validator on 200 response
+### Dockerfile
+- [0dcf0c7](https://github.com/quay/claircore/commit/0dcf0c7be00343c5c8ff6769fe11177969c8b0b6): support invalid label syntax
+### Etc
+- [02ca493](https://github.com/quay/claircore/commit/02ca4939f6a321acd20d472399da36cdc9ab0591): update Dockerfile and Makefile
+### Jar
+- [e5bb400](https://github.com/quay/claircore/commit/e5bb4007e85e30121b329dd027f72a5ca8a84690): use textproto in place of mail
+### Ovalutil
+- [00acbb5](https://github.com/quay/claircore/commit/00acbb5e6ff39a85b9ea4722620bf0050e1aa23f): check validator on 200 response
+### Pyupio
+- [cd8aa81](https://github.com/quay/claircore/commit/cd8aa81167e35df1bb4efc1dfc8adb472dcb870c): check validator on 200 response
+### Rhel
+- [243f329](https://github.com/quay/claircore/commit/243f329c81625a1b15f76705ccebcb0c8da62f84): check validator on 200 response
+### Ubuntu
+- [c8ee8b9](https://github.com/quay/claircore/commit/c8ee8b9438f1ac20db31ea1895ef2bfe541528c0): check validator on 200 response
+
 <a name="v1.3.1"></a>
 ## [v1.3.1] - 2022-02-21
+### Chore
+- [5d254d8](https://github.com/quay/claircore/commit/5d254d8516b42f0a50f38a0820a73575ddabee1d): v1.3.1 changelog bump
 ### Enrichment
 - [f91fd65](https://github.com/quay/claircore/commit/f91fd655720f0ee59e1865fb4afef29d642c1800): Optimize the way enrichments are queried ([#570](https://github.com/quay/claircore/issues/570))
   - [#570](https://github.com/quay/claircore/issues/570)
@@ -1326,7 +1365,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v1.3.1...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v1.3.2...HEAD
+[v1.3.2]: https://github.com/quay/claircore/compare/v1.3.1...v1.3.2
 [v1.3.1]: https://github.com/quay/claircore/compare/v1.3.0...v1.3.1
 [v1.3.0]: https://github.com/quay/claircore/compare/v1.2.0...v1.3.0
 [v1.2.0]: https://github.com/quay/claircore/compare/v1.1.6...v1.2.0
