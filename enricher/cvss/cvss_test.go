@@ -25,7 +25,7 @@ import (
 
 func TestConfigure(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(nil, t)
+	ctx := zlog.Test(context.Background(), t)
 	tt := []configTestcase{
 		{
 			Name: "None",
@@ -83,9 +83,9 @@ func TestConfigure(t *testing.T) {
 }
 
 type configTestcase struct {
-	Name   string
 	Config func(interface{}) error
 	Check  func(*testing.T, error)
+	Name   string
 }
 
 func (tc configTestcase) Run(ctx context.Context) func(*testing.T) {
@@ -111,7 +111,7 @@ func noopConfig(_ interface{}) error { return nil }
 
 func TestFetch(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(nil, t)
+	ctx := zlog.Test(context.Background(), t)
 	srv := mockServer(t)
 	tt := []fetchTestcase{
 		{
@@ -149,7 +149,7 @@ func TestFetch(t *testing.T) {
 				b.WriteByte('}')
 				return b.String()
 			}(),
-			Check: func(t *testing.T, rc io.ReadCloser, fp driver.Fingerprint, err error) {
+			Check: func(t *testing.T, rc io.ReadCloser, _ driver.Fingerprint, err error) {
 				if rc != nil {
 					t.Error("got non-nil ReadCloser")
 				}
@@ -167,9 +167,9 @@ func TestFetch(t *testing.T) {
 }
 
 type fetchTestcase struct {
+	Check func(*testing.T, io.ReadCloser, driver.Fingerprint, error)
 	Name  string
 	Hint  string
-	Check func(*testing.T, io.ReadCloser, driver.Fingerprint, error)
 }
 
 func (tc fetchTestcase) Run(ctx context.Context, srv *httptest.Server) func(*testing.T) {
@@ -186,9 +186,7 @@ func (tc fetchTestcase) Run(ctx context.Context, srv *httptest.Server) func(*tes
 			return nil
 		}
 		if err := e.Configure(ctx, f, srv.Client()); err != nil {
-			if err != nil {
-				t.Errorf("unexpected error: %v", err)
-			}
+			t.Errorf("unexpected error: %v", err)
 		}
 		rc, fp, err := e.FetchEnrichment(ctx, driver.Fingerprint(tc.Hint))
 		if rc != nil {
@@ -211,7 +209,7 @@ func mockServer(t *testing.T) *httptest.Server {
 		case ".gz": // return the gzipped feed
 			f, err := os.Open(filepath.Join(root, "feed.json"))
 			if err != nil {
-				t.Errorf("open failed: %w", err)
+				t.Errorf("open failed: %v", err)
 				w.WriteHeader(http.StatusInternalServerError)
 				break
 			}
@@ -219,7 +217,7 @@ func mockServer(t *testing.T) *httptest.Server {
 			gz := gzip.NewWriter(w)
 			defer gz.Close()
 			if _, err := io.Copy(gz, f); err != nil {
-				t.Errorf("write error: %w", err)
+				t.Errorf("write error: %v", err)
 				w.WriteHeader(http.StatusInternalServerError)
 				break
 			}
@@ -236,7 +234,7 @@ func mockServer(t *testing.T) *httptest.Server {
 
 func TestParse(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(nil, t)
+	ctx := zlog.Test(context.Background(), t)
 	srv := mockServer(t)
 	tt := []parseTestcase{
 		{
@@ -249,8 +247,8 @@ func TestParse(t *testing.T) {
 }
 
 type parseTestcase struct {
-	Name  string
 	Check func(*testing.T, []driver.EnrichmentRecord, error)
+	Name  string
 }
 
 func (tc parseTestcase) Run(ctx context.Context, srv *httptest.Server) func(*testing.T) {
@@ -267,9 +265,7 @@ func (tc parseTestcase) Run(ctx context.Context, srv *httptest.Server) func(*tes
 			return nil
 		}
 		if err := e.Configure(ctx, f, srv.Client()); err != nil {
-			if err != nil {
-				t.Errorf("unexpected error: %v", err)
-			}
+			t.Errorf("unexpected error: %v", err)
 		}
 		rc, _, err := e.FetchEnrichment(ctx, "")
 		if err != nil {
@@ -289,7 +285,7 @@ func (tc parseTestcase) Run(ctx context.Context, srv *httptest.Server) func(*tes
 
 func TestEnrich(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(context.TODO(), t)
+	ctx := zlog.Test(context.Background(), t)
 	feedIn, err := os.Open("testdata/feed.json")
 	if err != nil {
 		t.Fatal(err)
