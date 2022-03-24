@@ -3,7 +3,7 @@ package java
 import (
 	"context"
 
-	"github.com/quay/claircore/internal/indexer"
+	"github.com/quay/claircore/indexer"
 )
 
 var reposcanners = []indexer.RepositoryScanner{&RepoScanner{}}

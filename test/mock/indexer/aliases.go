@@ -1,6 +1,8 @@
 package mock_indexer
 
-import indexer "github.com/quay/claircore/internal/indexer"
+import (
+	indexer "github.com/quay/claircore/indexer"
+)
 
 type (
 	Opts                = indexer.Opts

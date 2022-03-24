@@ -19,7 +19,7 @@ import (
 	"github.com/remind101/migrate"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/indexer/linux"
+	"github.com/quay/claircore/indexer/linux"
 	"github.com/quay/claircore/libindex/migrations"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"

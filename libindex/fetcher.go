@@ -24,11 +24,19 @@ import (
 	"github.com/quay/claircore"
 )
 
-// FetchArena is a struct that keeps track of all the layers fetched into it,
+type FetchArena interface {
+	Init(wc *http.Client, root string)
+	FetchOne(ctx context.Context, l *claircore.Layer) (do func() error)
+	Forget(digest string) error
+	Fetcher() *FetchProxy
+	Close(ctx context.Context) error
+}
+
+// RemoteFetchArena is a struct that keeps track of all the layers fetched into it,
 // and only removes them once all the users have gone away.
 //
 // Exported for use in cctool. If cctool goes away, this can get unexported.
-type FetchArena struct {
+type RemoteFetchArena struct {
 	wc *http.Client
 	sf *singleflight.Group
 
@@ -39,18 +47,20 @@ type FetchArena struct {
 	root string
 }
 
-// Init initializes the FetchArena.
+var _ FetchArena = (*RemoteFetchArena)(nil)
+
+// Init initializes the RemoteFetchArena.
 //
 // This method is provided instead of a constructor function to make embedding
 // easier.
-func (a *FetchArena) Init(wc *http.Client, root string) {
+func (a *RemoteFetchArena) Init(wc *http.Client, root string) {
 	a.wc = wc
 	a.root = root
 	a.sf = &singleflight.Group{}
 	a.rc = make(map[string]int)
 }
 
-func (a *FetchArena) forget(digest string) error {
+func (a *RemoteFetchArena) Forget(digest string) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	ct, ok := a.rc[digest]
@@ -69,7 +79,7 @@ func (a *FetchArena) forget(digest string) error {
 
 // FetchOne does a deduplicated fetch, then increments the refcount and renames
 // the file to the permanent place if applicable.
-func (a *FetchArena) fetchOne(ctx context.Context, l *claircore.Layer) (do func() error) {
+func (a *RemoteFetchArena) FetchOne(ctx context.Context, l *claircore.Layer) (do func() error) {
 	do = func() error {
 		h := l.Hash.String()
 		tgt := filepath.Join(a.root, h)
@@ -111,7 +121,7 @@ func (a *FetchArena) fetchOne(ctx context.Context, l *claircore.Layer) (do func(
 //
 // It's not an error to have active fetchers, but may cause errors to have files
 // unlinked underneath their users.
-func (a *FetchArena) Close(ctx context.Context) error {
+func (a *RemoteFetchArena) Close(ctx context.Context) error {
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "libindex/fetchArena.Close",
 		"arena", a.root)
@@ -145,7 +155,7 @@ func (a *FetchArena) Close(ctx context.Context) error {
 // RealizeLayer is the inner function used inside the singleflight.
 //
 // The returned value is a temporary filename in the arena.
-func (a *FetchArena) realizeLayer(ctx context.Context, l *claircore.Layer) (string, error) {
+func (a *RemoteFetchArena) realizeLayer(ctx context.Context, l *claircore.Layer) (string, error) {
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "libindex/fetchArena.realizeLayer",
 		"arena", a.root,
@@ -296,16 +306,20 @@ func (a *FetchArena) realizeLayer(ctx context.Context, l *claircore.Layer) (stri
 }
 
 // Fetcher returns an indexer.Fetcher.
-func (a *FetchArena) Fetcher() *FetchProxy {
-	return &FetchProxy{a: a}
+func (a *RemoteFetchArena) Fetcher() *FetchProxy {
+	return NewFetchProxy(a)
 }
 
 // FetchProxy tracks the files fetched for layers.
 //
 // This can be unexported if FetchArena gets unexported.
 type FetchProxy struct {
-	a     *FetchArena
+	a     FetchArena
 	clean []string
+}
+
+func NewFetchProxy(fa FetchArena) *FetchProxy {
+	return &FetchProxy{a: fa}
 }
 
 // Fetch populates all the layers locally.
@@ -314,7 +328,7 @@ func (p *FetchProxy) Fetch(ctx context.Context, ls []*claircore.Layer) error {
 	p.clean = make([]string, len(ls))
 	for i, l := range ls {
 		p.clean[i] = l.Hash.String()
-		g.Go(p.a.fetchOne(ctx, l))
+		g.Go(p.a.FetchOne(ctx, l))
 	}
 	if err := g.Wait(); err != nil {
 		return fmt.Errorf("encountered error while fetching a layer: %v", err)
@@ -328,7 +342,7 @@ func (p *FetchProxy) Fetch(ctx context.Context, ls []*claircore.Layer) error {
 func (p *FetchProxy) Close() error {
 	var err error
 	for _, digest := range p.clean {
-		e := p.a.forget(digest)
+		e := p.a.Forget(digest)
 		if e != nil {
 			if err == nil {
 				err = e

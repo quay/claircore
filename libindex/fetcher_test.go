@@ -36,7 +36,7 @@ func (tc fetchTestcase) Run(ctx context.Context) func(*testing.T) {
 			t.Error(err)
 		}
 
-		a := &FetchArena{}
+		a := &RemoteFetchArena{}
 		a.Init(c, p)
 
 		fetcher := a.Fetcher()
@@ -99,7 +99,7 @@ func TestFetchInvalid(t *testing.T) {
 			if err != nil {
 				t.Error(err)
 			}
-			a := &FetchArena{}
+			a := &RemoteFetchArena{}
 			a.Init(http.DefaultClient, p)
 
 			fetcher := a.Fetcher()
@@ -121,10 +121,10 @@ func TestFetchConcurrent(t *testing.T) {
 		ls[i].URI = srv.URL + ls[i].URI
 	}
 	defer srv.Close()
-	a := &FetchArena{}
+	a := &RemoteFetchArena{}
 	a.Init(srv.Client(), t.TempDir())
 
-	subtest := func(a *FetchArena, ls []claircore.Layer) func(*testing.T) {
+	subtest := func(a *RemoteFetchArena, ls []claircore.Layer) func(*testing.T) {
 		// Need to make a copy of all our layers.
 		l := make([]claircore.Layer, len(ls))
 		copy(l, ls)

@@ -10,12 +10,12 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/vulnstore"
+	"github.com/quay/claircore/datastore"
 	"github.com/quay/claircore/libvuln/driver"
 )
 
 // Match receives an IndexReport and creates a VulnerabilityReport containing matched vulnerabilities
-func Match(ctx context.Context, ir *claircore.IndexReport, matchers []driver.Matcher, store vulnstore.Vulnerability) (*claircore.VulnerabilityReport, error) {
+func Match(ctx context.Context, ir *claircore.IndexReport, matchers []driver.Matcher, store datastore.Vulnerability) (*claircore.VulnerabilityReport, error) {
 	// the vulnerability report we are creating
 	vr := &claircore.VulnerabilityReport{
 		Hash:                   ir.Hash,
@@ -74,8 +74,8 @@ func Match(ctx context.Context, ir *claircore.IndexReport, matchers []driver.Mat
 
 // Store is the interface that can retrieve Enrichments and Vulnerabilities.
 type Store interface {
-	vulnstore.Vulnerability
-	vulnstore.Enrichment
+	datastore.Vulnerability
+	datastore.Enrichment
 }
 
 // EnrichedMatch receives an IndexReport and creates a VulnerabilityReport
@@ -228,12 +228,12 @@ func EnrichedMatch(ctx context.Context, ir *claircore.IndexReport, ms []driver.M
 }
 
 // Getter returns a type implementing driver.EnrichmentGetter.
-func getter(s vulnstore.Enrichment, name string) *enrichmentGetter {
+func getter(s datastore.Enrichment, name string) *enrichmentGetter {
 	return &enrichmentGetter{s: s, name: name}
 }
 
 type enrichmentGetter struct {
-	s    vulnstore.Enrichment
+	s    datastore.Enrichment
 	name string
 }
 

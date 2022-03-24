@@ -6,7 +6,7 @@ import (
 
 	"github.com/quay/claircore/alpine"
 	"github.com/quay/claircore/dpkg"
-	"github.com/quay/claircore/internal/indexer"
+	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/java"
 	"github.com/quay/claircore/python"
 	"github.com/quay/claircore/rhel"
@@ -27,6 +27,9 @@ type Opts struct {
 	// TODO(hank) This should be a factory function so the data store can be
 	// a clean abstraction.
 	ConnString string
+	Store      indexer.Store
+	Lock       LockSource
+	FetchArena FetchArena
 	// how often we should try to acquire a lock for scanning a given manifest if lock is taken
 	ScanLockRetry time.Duration
 	// the number of layers to be scanned in parallel.

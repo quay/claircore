@@ -16,11 +16,21 @@ import (
 	"golang.org/x/sync/semaphore"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/indexer"
-	"github.com/quay/claircore/pkg/ctxlock"
+	"github.com/quay/claircore/indexer"
+	"github.com/quay/claircore/pkg/omnimatcher"
 )
 
 const versionMagic = "libindex number: 2\n"
+
+// LockSource abstracts over how locks are implemented.
+//
+// An online system needs distributed locks, offline use cases can use
+// process-local locks.
+type LockSource interface {
+	TryLock(context.Context, string) (context.Context, context.CancelFunc)
+	Lock(context.Context, string) (context.Context, context.CancelFunc)
+	Close(context.Context) error
+}
 
 // Libindex implements the method set for scanning and indexing a Manifest.
 type Libindex struct {
@@ -31,13 +41,13 @@ type Libindex struct {
 	// a shareable http client
 	client *http.Client
 	// Cl provides system-wide locks.
-	cl *ctxlock.Locker
+	cl LockSource
 	// an opaque and unique string representing the configured
 	// state of the indexer. see setState for more information.
 	state string
 	// FetchArena is an arena to fetch layers into. It ensures layers are
 	// fetched once and not removed while in use.
-	fetchArena FetchArena
+	fa FetchArena
 }
 
 // New creates a new instance of libindex.
@@ -50,36 +60,22 @@ func New(ctx context.Context, opts *Opts, cl *http.Client) (*Libindex, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse opts: %v", err)
 	}
-	if cl == nil {
-		return nil, errors.New("invalid *http.Client")
-	}
 	// TODO(hank) If "airgap" is set, we should wrap the client and return
 	// errors on non-RFC1918 and non-RFC4193 addresses. As of go1.17, the net.IP
 	// type has a method for this purpose.
-
-	dbPool, err := initDB(ctx, opts)
-	if err != nil {
-		return nil, err
-	}
-	zlog.Info(ctx).Msg("created database connection")
-
-	store, err := initStore(ctx, dbPool, opts)
-	if err != nil {
-		return nil, err
-	}
-
-	ctxLocker, err := ctxlock.New(ctx, dbPool)
-	if err != nil {
-		return nil, err
+	if cl == nil {
+		return nil, errors.New("invalid *http.Client")
 	}
 
 	l := &Libindex{
 		Opts:   opts,
-		store:  store,
 		client: cl,
-		cl:     ctxLocker,
+		store:  opts.Store,
+		cl:     opts.Lock,
+		fa:     opts.FetchArena,
 	}
-	l.fetchArena.Init(cl, os.TempDir()) // TODO(hank) Add an option field for this 'root' argument.
+
+	l.fa.Init(cl, os.TempDir()) // TODO(hank) Add an option field for this 'root' argument.
 
 	// register any new scanners.
 	pscnrs, dscnrs, rscnrs, err := indexer.EcosystemsToScanners(ctx, opts.Ecosystems, opts.Airgap)
@@ -108,7 +104,7 @@ func New(ctx context.Context, opts *Opts, cl *http.Client) (*Libindex, error) {
 func (l *Libindex) Close(ctx context.Context) error {
 	l.cl.Close(ctx)
 	l.store.Close(ctx)
-	l.fetchArena.Close(ctx)
+	l.fa.Close(ctx)
 	return nil
 }
 
@@ -189,6 +185,7 @@ func (l *Libindex) IndexReport(ctx context.Context, hash claircore.Digest) (*cla
 func (l *Libindex) AffectedManifests(ctx context.Context, vulns []claircore.Vulnerability) (*claircore.AffectedManifests, error) {
 	sem := semaphore.NewWeighted(20)
 	ctx = zlog.ContextWithValues(ctx, "component", "libindex/Libindex.AffectedManifests")
+	om := omnimatcher.New(nil)
 
 	affected := claircore.NewAffectedManifests()
 	errGrp, eCTX := errgroup.WithContext(ctx)
@@ -200,7 +197,7 @@ func (l *Libindex) AffectedManifests(ctx context.Context, vulns []claircore.Vuln
 			if eCTX.Err() != nil {
 				return eCTX.Err()
 			}
-			hashes, err := l.store.AffectedManifests(eCTX, vulns[ii])
+			hashes, err := l.store.AffectedManifests(eCTX, vulns[ii], om.Vulnerable)
 			if err != nil {
 				return err
 			}

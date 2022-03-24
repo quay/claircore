@@ -8,7 +8,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/quay/zlog"
 
-	"github.com/quay/claircore/internal/vulnstore/postgres"
+	"github.com/quay/claircore/datastore/postgres"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/jsonblob"
 )
@@ -27,7 +27,7 @@ func OfflineImport(ctx context.Context, pool *pgxpool.Pool, in io.Reader) error 
 	}
 	defer gz.Close()
 
-	s := postgres.NewVulnStore(pool)
+	s := postgres.NewMatcherStore(pool)
 	l, err := jsonblob.Load(ctx, gz)
 	if err != nil {
 		return err

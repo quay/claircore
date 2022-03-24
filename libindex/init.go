@@ -10,8 +10,8 @@ import (
 	"github.com/quay/zlog"
 	"github.com/remind101/migrate"
 
-	"github.com/quay/claircore/internal/indexer"
-	"github.com/quay/claircore/internal/indexer/postgres"
+	"github.com/quay/claircore/datastore/postgres"
+	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/libindex/migrations"
 	"github.com/quay/claircore/pkg/poolstats"
 )
@@ -61,6 +61,6 @@ func initStore(_ context.Context, pool *pgxpool.Pool, opts *Opts) (indexer.Store
 		}
 	}
 
-	store := postgres.NewStore(pool)
+	store := postgres.NewIndexerStore(pool)
 	return store, nil
 }
