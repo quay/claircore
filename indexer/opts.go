@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-// IndexerOptsOpts are options to instantiate a indexer
+// Opts are options to instantiate a indexer
 type Opts struct {
 	Client        *http.Client
 	ScannerConfig struct {

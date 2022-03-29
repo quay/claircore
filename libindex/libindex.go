@@ -10,14 +10,21 @@ import (
 	"net/http"
 	"os"
 	"sort"
+	"time"
 
 	"github.com/quay/zlog"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/alpine"
+	"github.com/quay/claircore/dpkg"
 	"github.com/quay/claircore/indexer"
+	"github.com/quay/claircore/java"
 	"github.com/quay/claircore/pkg/omnimatcher"
+	"github.com/quay/claircore/python"
+	"github.com/quay/claircore/rhel"
+	"github.com/quay/claircore/rpm"
 )
 
 const versionMagic = "libindex number: 2\n"
@@ -35,13 +42,13 @@ type LockSource interface {
 // Libindex implements the method set for scanning and indexing a Manifest.
 type Libindex struct {
 	// holds dependencies for creating a libindex instance
-	*Opts
+	*Options
 	// a Store which will be shared between scanner instances
 	store indexer.Store
 	// a shareable http client
 	client *http.Client
-	// Cl provides system-wide locks.
-	cl LockSource
+	// Locker provides system-wide locks.
+	locker LockSource
 	// an opaque and unique string representing the configured
 	// state of the indexer. see setState for more information.
 	state string
@@ -54,12 +61,51 @@ type Libindex struct {
 //
 // The passed http.Client will be used for fetching layers and any HTTP requests
 // made by scanners.
-func New(ctx context.Context, opts *Opts, cl *http.Client) (*Libindex, error) {
+func New(ctx context.Context, opts *Options, cl *http.Client) (*Libindex, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "libindex/New")
-	err := opts.Parse(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse opts: %v", err)
+	// required
+	if opts.Locker == nil {
+		return nil, fmt.Errorf("field Locker cannot be nil")
 	}
+	if opts.Store == nil {
+		return nil, fmt.Errorf("field Store cannot be nil")
+	}
+	if opts.FetchArena == nil {
+		return nil, fmt.Errorf("field FetchArena cannot be nil")
+	}
+
+	// optional
+	if (opts.ScanLockRetry == 0) || (opts.ScanLockRetry < time.Second) {
+		opts.ScanLockRetry = DefaultScanLockRetry
+	}
+	if opts.LayerScanConcurrency == 0 {
+		opts.LayerScanConcurrency = DefaultLayerScanConcurrency
+	}
+	if opts.ControllerFactory == nil {
+		opts.ControllerFactory = controllerFactory
+	}
+	if opts.Ecosystems == nil {
+		opts.Ecosystems = []*indexer.Ecosystem{
+			dpkg.NewEcosystem(ctx),
+			alpine.NewEcosystem(ctx),
+			rhel.NewEcosystem(ctx),
+			rpm.NewEcosystem(ctx),
+			python.NewEcosystem(ctx),
+			java.NewEcosystem(ctx),
+		}
+	}
+	opts.LayerFetchOpt = DefaultLayerFetchOpt
+
+	if opts.Locker == nil {
+		return nil, fmt.Errorf("field Locker cannot be nil")
+	}
+	if opts.Store == nil {
+		return nil, fmt.Errorf("field Store cannot be nil")
+	}
+	if opts.FetchArena == nil {
+		return nil, fmt.Errorf("field FetchArena cannot be nil")
+	}
+
 	// TODO(hank) If "airgap" is set, we should wrap the client and return
 	// errors on non-RFC1918 and non-RFC4193 addresses. As of go1.17, the net.IP
 	// type has a method for this purpose.
@@ -68,11 +114,11 @@ func New(ctx context.Context, opts *Opts, cl *http.Client) (*Libindex, error) {
 	}
 
 	l := &Libindex{
-		Opts:   opts,
-		client: cl,
-		store:  opts.Store,
-		cl:     opts.Lock,
-		fa:     opts.FetchArena,
+		Options: opts,
+		client:  cl,
+		store:   opts.Store,
+		locker:  opts.Locker,
+		fa:      opts.FetchArena,
 	}
 
 	l.fa.Init(cl, os.TempDir()) // TODO(hank) Add an option field for this 'root' argument.
@@ -96,13 +142,13 @@ func New(ctx context.Context, opts *Opts, cl *http.Client) (*Libindex, error) {
 	}
 
 	zlog.Info(ctx).Msg("registered configured scanners")
-	l.Opts.vscnrs = vscnrs
+	l.Options.vscnrs = vscnrs
 	return l, nil
 }
 
 // Close releases held resources.
 func (l *Libindex) Close(ctx context.Context) error {
-	l.cl.Close(ctx)
+	l.locker.Close(ctx)
 	l.store.Close(ctx)
 	l.fa.Close(ctx)
 	return nil
@@ -118,13 +164,13 @@ func (l *Libindex) Index(ctx context.Context, manifest *claircore.Manifest) (*cl
 		"manifest", manifest.Hash.String())
 	zlog.Info(ctx).Msg("index request start")
 	defer zlog.Info(ctx).Msg("index request done")
-	c, err := l.ControllerFactory(ctx, l, l.Opts)
+	c, err := l.ControllerFactory(ctx, l, l.Options)
 	if err != nil {
 		return nil, fmt.Errorf("scanner factory failed to construct a scanner: %v", err)
 	}
 
 	zlog.Debug(ctx).Msg("locking attempt")
-	lc, done := l.cl.Lock(ctx, manifest.Hash.String())
+	lc, done := l.locker.Lock(ctx, manifest.Hash.String())
 	defer done()
 	// The process may have waited on the lock, so check that the context is
 	// still active.

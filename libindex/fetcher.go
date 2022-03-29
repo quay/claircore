@@ -35,7 +35,8 @@ type FetchArena interface {
 // RemoteFetchArena is a struct that keeps track of all the layers fetched into it,
 // and only removes them once all the users have gone away.
 //
-// Exported for use in cctool. If cctool goes away, this can get unexported.
+// Exported for use in cctool. If cctool goes away, this can get unexported. It is
+// remote in the sense that it pulls layers from the internet.
 type RemoteFetchArena struct {
 	wc *http.Client
 	sf *singleflight.Group

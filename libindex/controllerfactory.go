@@ -9,10 +9,10 @@ import (
 )
 
 // ControllerFactory is a factory method to return a Controller during libindex runtime.
-type ControllerFactory func(_ context.Context, lib *Libindex, opts *Opts) (*controller.Controller, error)
+type ControllerFactory func(_ context.Context, lib *Libindex, opts *Options) (*controller.Controller, error)
 
 // controllerFactory is the default ControllerFactory
-func controllerFactory(ctx context.Context, lib *Libindex, opts *Opts) (*controller.Controller, error) {
+func controllerFactory(ctx context.Context, lib *Libindex, opts *Options) (*controller.Controller, error) {
 	// convert libindex.Opts to indexer.Opts
 	sOpts := &indexer.Opts{
 		Store:         lib.store,

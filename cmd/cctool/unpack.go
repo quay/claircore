@@ -61,7 +61,7 @@ func Unpack(cmd context.Context, cfg *commonConfig, args []string) error {
 	defer done()
 
 	log.Printf("fetching layers")
-	a := &libindex.FetchArena{}
+	a := &libindex.RemoteFetchArena{}
 	a.Init(http.DefaultClient, os.TempDir())
 	f := a.Fetcher()
 	err = f.Fetch(ctx, m.Layers)

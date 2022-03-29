@@ -13,7 +13,7 @@ func Example_libindex() {
 	ctx := context.TODO()
 
 	// ANCHOR: new
-	opts := new(libindex.Opts)
+	opts := new(libindex.Options)
 	// Populate with desired settings...
 	lib, err := libindex.New(ctx, opts, http.DefaultClient)
 	if err != nil {

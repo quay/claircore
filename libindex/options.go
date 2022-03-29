@@ -1,18 +1,6 @@
 package libindex
 
-import (
-	"context"
-	"time"
-
-	"github.com/quay/claircore/alpine"
-	"github.com/quay/claircore/dpkg"
-	"github.com/quay/claircore/indexer"
-	"github.com/quay/claircore/java"
-	"github.com/quay/claircore/python"
-	"github.com/quay/claircore/rhel"
-	"github.com/quay/claircore/rhel/rhcc"
-	"github.com/quay/claircore/rpm"
-)
+import "time"
 
 const (
 	DefaultScanLockRetry        = 5 * time.Second
@@ -20,15 +8,11 @@ const (
 	DefaultLayerFetchOpt        = indexer.OnDisk
 )
 
-// Opts are dependencies and options for constructing an instance of libindex
-type Opts struct {
-	// The connection string for the data store.
-	//
-	// TODO(hank) This should be a factory function so the data store can be
-	// a clean abstraction.
-	ConnString string
+// Options are dependencies and options for constructing an instance of libindex
+type Options struct {
+	// TODO(crozzy): docs
 	Store      indexer.Store
-	Lock       LockSource
+	Locker     LockSource
 	FetchArena FetchArena
 	// how often we should try to acquire a lock for scanning a given manifest if lock is taken
 	ScanLockRetry time.Duration
@@ -62,31 +46,4 @@ type Opts struct {
 	}
 	// a convenience method for holding a list of versioned scanners
 	vscnrs indexer.VersionedScanners
-}
-
-func (o *Opts) Parse(ctx context.Context) error {
-	// optional
-	if (o.ScanLockRetry == 0) || (o.ScanLockRetry < time.Second) {
-		o.ScanLockRetry = DefaultScanLockRetry
-	}
-	if o.LayerScanConcurrency == 0 {
-		o.LayerScanConcurrency = DefaultLayerScanConcurrency
-	}
-	if o.ControllerFactory == nil {
-		o.ControllerFactory = controllerFactory
-	}
-	if o.Ecosystems == nil {
-		o.Ecosystems = []*indexer.Ecosystem{
-			dpkg.NewEcosystem(ctx),
-			alpine.NewEcosystem(ctx),
-			rhel.NewEcosystem(ctx),
-			rpm.NewEcosystem(ctx),
-			python.NewEcosystem(ctx),
-			java.NewEcosystem(ctx),
-			rhcc.NewEcosystem(ctx),
-		}
-	}
-	o.LayerFetchOpt = DefaultLayerFetchOpt
-
-	return nil
 }
