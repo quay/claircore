@@ -97,7 +97,7 @@ func (s *IndexerStore) IndexPackages(ctx context.Context, pkgs []*claircore.Pack
 		`
 	)
 
-	ctx = zlog.ContextWithValues(ctx, "component", "internal/indexer/postgres/indexPackages")
+	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/indexPackages")
 	// obtain a transaction scoped batch
 	tctx, done := context.WithTimeout(ctx, 5*time.Second)
 	tx, err := s.pool.Begin(tctx)

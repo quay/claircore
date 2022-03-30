@@ -32,7 +32,7 @@ var (
 )
 
 func (s *IndexerStore) DeleteManifests(ctx context.Context, d ...claircore.Digest) ([]claircore.Digest, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "internal/indexer/postgres/DeleteManifests")
+	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/DeleteManifests")
 	rm, err := s.deleteManifests(ctx, d)
 	if err != nil {
 		return nil, err

@@ -43,7 +43,7 @@ type LockSource interface {
 type Libindex struct {
 	// holds dependencies for creating a libindex instance
 	*Options
-	// a Store which will be shared between scanner instances
+	// a store implementation which will be shared between scanner instances
 	store indexer.Store
 	// a shareable http client
 	client *http.Client
@@ -95,16 +95,6 @@ func New(ctx context.Context, opts *Options, cl *http.Client) (*Libindex, error)
 		}
 	}
 	opts.LayerFetchOpt = DefaultLayerFetchOpt
-
-	if opts.Locker == nil {
-		return nil, fmt.Errorf("field Locker cannot be nil")
-	}
-	if opts.Store == nil {
-		return nil, fmt.Errorf("field Store cannot be nil")
-	}
-	if opts.FetchArena == nil {
-		return nil, fmt.Errorf("field FetchArena cannot be nil")
-	}
 
 	// TODO(hank) If "airgap" is set, we should wrap the client and return
 	// errors on non-RFC1918 and non-RFC4193 addresses. As of go1.17, the net.IP

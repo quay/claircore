@@ -25,7 +25,7 @@ type Ecosystem struct {
 // EcosystemsToScanners extracts and dedupes multiple ecosystems and returns
 // their discrete scanners.
 func EcosystemsToScanners(ctx context.Context, ecosystems []*Ecosystem, disallowRemote bool) ([]PackageScanner, []DistributionScanner, []RepositoryScanner, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "internal/indexer/EcosystemsToScanners")
+	ctx = zlog.ContextWithValues(ctx, "component", "indexer/EcosystemsToScanners")
 	ps := []PackageScanner{}
 	ds := []DistributionScanner{}
 	rs := []RepositoryScanner{}

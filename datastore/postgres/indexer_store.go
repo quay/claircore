@@ -42,7 +42,7 @@ func InitDB(ctx context.Context, connString string) (*pgxpool.Pool, error) {
 
 var _ indexer.Store = (*IndexerStore)(nil)
 
-// Store implements the claircore.Store interface.
+// IndexerStore implements the claircore.Store interface.
 //
 // All the other exported methods live in their own files.
 type IndexerStore struct {

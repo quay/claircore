@@ -58,7 +58,7 @@ func (s *Controller) Index(ctx context.Context, manifest *claircore.Manifest) (*
 	s.manifest = manifest
 	s.report.Hash = manifest.Hash
 	ctx = zlog.ContextWithValues(ctx,
-		"component", "internal/indexer/controller/Controller.Index",
+		"component", "indexer/controller/Controller.Index",
 		"manifest", s.manifest.Hash.String())
 	defer s.Fetcher.Close()
 	zlog.Info(ctx).Msg("starting scan")

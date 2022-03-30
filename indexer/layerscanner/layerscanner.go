@@ -30,7 +30,7 @@ type layerScanner struct {
 //
 // The provided Context is only used for the duration of the call.
 func New(ctx context.Context, concurrent int, opts *indexer.Opts) (indexer.LayerScanner, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "internal/indexer/layerscannner/New")
+	ctx = zlog.ContextWithValues(ctx, "component", "datastore/layerscannner/New")
 
 	switch {
 	case concurrent < 1:
@@ -145,7 +145,7 @@ func configAndFilter(ctx context.Context, opts *indexer.Opts, s indexer.Versione
 // reported halts all work and is returned from Scan.
 func (ls *layerScanner) Scan(ctx context.Context, manifest claircore.Digest, layers []*claircore.Layer) error {
 	ctx = zlog.ContextWithValues(ctx,
-		"component", "internal/indexer/layerscannner/layerScanner.Scan",
+		"component", "datastore/layerscannner/layerScanner.Scan",
 		"manifest", manifest.String())
 
 	sem := semaphore.NewWeighted(ls.inflight)
@@ -185,7 +185,7 @@ func (ls *layerScanner) Scan(ctx context.Context, manifest claircore.Digest, lay
 // pair.
 func (ls *layerScanner) scanLayer(ctx context.Context, l *claircore.Layer, s indexer.VersionedScanner) error {
 	ctx = zlog.ContextWithValues(ctx,
-		"component", "internal/indexer/layerscannner/layerScanner.scan",
+		"component", "indexer/layerscannner/layerScanner.scan",
 		"scanner", s.Name(),
 		"kind", s.Kind(),
 		"layer", l.Hash.String())

@@ -50,7 +50,7 @@ func (s *IndexerStore) IndexManifest(ctx context.Context, ir *claircore.IndexRep
 		ON CONFLICT DO NOTHING;
 		`
 	)
-	ctx = zlog.ContextWithValues(ctx, "component", "internal/indexer/postgres/indexManifest")
+	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/indexManifest")
 
 	if ir.Hash.String() == "" {
 		return fmt.Errorf("received empty hash. cannot associate contents with a manifest hash")
