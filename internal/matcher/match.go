@@ -3,6 +3,7 @@ package matcher
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"runtime"
 	"sync/atomic"
 
@@ -112,10 +113,7 @@ func EnrichedMatch(ctx context.Context, ir *claircore.IndexReport, ms []driver.M
 				}
 				vs, err := NewController(m, s).Match(mctx, records)
 				if err != nil {
-					zlog.Error(ctx).
-						Err(err).
-						Msg("matcher error")
-					continue
+					return fmt.Errorf("matcher error: %w", err)
 				}
 				vCh <- vs
 			}
