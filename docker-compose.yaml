@@ -10,7 +10,6 @@ networks:
       com.docker.network.bridge.name: claircore
 
 services:
-
   claircore-db:
     image: postgres:11.5
     container_name: claircore-db
@@ -25,33 +24,3 @@ services:
       timeout: 9s
       retries: 3
       start_period: 10s
-
-  libindexhttp:
-    image: quay.io/projectquay/golang:1.16
-    container_name: libindexhttp
-    ports:
-      - "8080:8080"
-    environment:
-      HTTP_LISTEN_ADDR: "0.0.0.0:8080"
-      CONNECTION_STRING: "host=claircore-db port=5432 user=claircore dbname=claircore sslmode=disable"
-      SCAN_LOCK_RETRY: 1
-      LAYER_SCAN_CONCURRENCY: 10
-      LOG_LEVEL: "debug"
-    volumes:
-      - "./:/src/claircore/:z"
-    command:
-      [ "bash", "-c", "cd /src/claircore/cmd/libindexhttp; go run -mod vendor ." ]
-
-  libvulnhttp:
-    image: quay.io/projectquay/golang:1.16
-    container_name: libvulnhttp
-    ports:
-      - "8081:8081"
-    environment:
-      HTTP_LISTEN_ADDR: "0.0.0.0:8081"
-      CONNECTION_STRING: "host=claircore-db port=5432 user=claircore dbname=claircore sslmode=disable"
-      LOG_LEVEL: "debug"
-    volumes:
-      - "./:/src/claircore/:z"
-    command:
-      [ "bash", "-c", "cd /src/claircore/cmd/libvulnhttp; go run -mod vendor ." ]

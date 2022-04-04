@@ -14,3 +14,6 @@ git-repository-url= "https://github.com/quay/claircore"
 
 [preprocessor.godoc]
 command = "go run docs/godoc.go"
+
+[preprocessor.make_target]
+command = "go run docs/make_target.go"

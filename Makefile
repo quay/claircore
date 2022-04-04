@@ -39,22 +39,6 @@ integration-v:
 unit-v:
 	go test -race -v ./...
 
-.PHONY: local-dev-up
-local-dev-up:
-	$(docker-compose) up -d claircore-db
-	$(docker) exec -it claircore-db bash -c 'while ! pg_isready; do echo "waiting for postgres"; sleep 2; done'
-	go mod vendor
-	$(docker-compose) up -d libindexhttp
-	$(docker-compose) up -d libvulnhttp
-
-.PHONY: local-dev-down
-local-dev-down:
-	$(docker-compose) down
-
-.PHONY: local-dev-logs
-local-dev-logs:
-	$(docker-compose) logs -f
-
 .PHONY: claircore-db-up
 claircore-db-up:
 	$(docker-compose) up -d claircore-db
@@ -64,26 +48,6 @@ claircore-db-up:
 claircore-db-restart:
 	$(docker) kill claircore-db && $(docker) rm claircore-db
 	make claircore-db-up
-
-.PHONY: libindexhttp-restart
-libindexhttp-restart:
-	$(docker-compose) up -d --force-recreate libindexhttp
-
-.PHONY: libvulnhttp-restart
-libvulnhttp-restart:
-	$(docker-compose) up -d --force-recreate libvulnhttp
-
-etc/podman.yaml: etc/podman.yaml.in
-	m4 -D_ROOT=$$(git rev-parse --show-toplevel) <$< >$@
-
-.PHONY: podman-dev-up
-podman-dev-up: etc/podman.yaml
-	podman play kube $<
-
-.PHONY: podman-dev-down
-podman-dev-down: etc/podman.yaml
-	podman pod stop -t 10 $$(awk '/^  name:/{print $$NF}' <$<)
-	podman pod rm $$(awk '/^  name:/{print $$NF}' <$<)
 
 GO_VERSION ?= 1.18
 GO_CHECKSUM ?= e85278e98f57cdb150fe8409e6e5df5343ecb13cebf03a5d5ff12bd55a80264f
