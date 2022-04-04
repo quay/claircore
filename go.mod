@@ -3,6 +3,7 @@ module github.com/quay/claircore
 go 1.17
 
 require (
+	github.com/Masterminds/semver v1.5.0
 	github.com/aquasecurity/go-pep440-version v0.0.0-20210121094942-22b2f8951d46
 	github.com/crgimenes/goconfig v1.2.1
 	github.com/doug-martin/goqu/v8 v8.6.0
