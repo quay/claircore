@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
+	"sync"
 )
 
 func main() {
@@ -105,8 +106,9 @@ type Chapter struct {
 
 func (c *Chapter) Process(b *strings.Builder, cfg *Config) error {
 	if c.Path != nil {
+		var print sync.Once
 		c.Content = marker.ReplaceAllStringFunc(c.Content, func(sub string) string {
-			log.Println("inserting docs into:", *c.Path)
+			print.Do(func() { log.Println("inserting docs into:", *c.Path) })
 			ms := marker.FindStringSubmatch(sub)
 			if ct := len(ms); ct != 2 {
 				err := fmt.Errorf("unexpected number of arguments: %d", ct)

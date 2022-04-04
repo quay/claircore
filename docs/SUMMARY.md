@@ -34,4 +34,3 @@
 - [Contributors](./contributor.md)
   - [Logging](./contributor/logging.md)
   - [Local Development](./contributor/local-dev.md)
-  - [cctool](./contributor/cctool.md)
