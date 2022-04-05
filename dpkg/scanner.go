@@ -2,7 +2,6 @@
 package dpkg
 
 import (
-	"archive/tar"
 	"bufio"
 	"context"
 	"crypto/md5"
@@ -10,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/textproto"
 	"path/filepath"
 	"runtime/trace"
@@ -19,6 +19,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
+	"github.com/quay/claircore/pkg/tarfs"
 )
 
 const (
@@ -74,36 +75,29 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 		return nil, fmt.Errorf("opening layer failed: %w", err)
 	}
 	defer rd.Close()
-	r, ok := rd.(io.ReadSeeker)
-	if !ok {
-		err := errors.New("unable to coerce to io.Seeker")
+	sys, err := tarfs.New(rd)
+	if err != nil {
 		return nil, fmt.Errorf("opening layer failed: %w", err)
 	}
 
-	tr := tar.NewReader(r)
 	// This is a map keyed by directory. A "score" of 2 means this is almost
 	// certainly a dpkg database.
 	loc := make(map[string]int)
-Find:
-	for {
-		h, err := tr.Next()
-		switch err {
-		case nil:
-		case io.EOF:
-			break Find
-		default:
-			return nil, fmt.Errorf("reading next header failed: %w", err)
+	walk := func(p string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
 		}
-		switch filepath.Base(h.Name) {
-		case "status":
-			if h.Typeflag == tar.TypeReg {
-				loc[filepath.Dir(h.Name)]++
-			}
-		case "info":
-			if h.Typeflag == tar.TypeDir {
-				loc[filepath.Dir(filepath.Dir(h.Name))]++
-			}
+		switch dir, f := filepath.Split(p); {
+		case f == "status" && !d.IsDir():
+			loc[dir]++
+		case f == "info" && d.IsDir():
+			loc[dir]++
 		}
+		return nil
+	}
+
+	if err := fs.WalkDir(sys, ".", walk); err != nil {
+		return nil, err
 	}
 	zlog.Debug(ctx).Msg("scanned for possible databases")
 
@@ -116,34 +110,18 @@ Find:
 		ctx = zlog.ContextWithValues(ctx, "database", p)
 		zlog.Debug(ctx).Msg("examining package database")
 
-		// Reset the tar reader.
-		if n, err := r.Seek(0, io.SeekStart); n != 0 || err != nil {
-			return nil, fmt.Errorf("unable to seek reader: %w", err)
-		}
-		tr = tar.NewReader(r)
-
-		// We want the "status" file, so search the archive for it.
+		// We want the "status" file.
 		fn := filepath.Join(p, "status")
-		var db io.Reader
-		var h *tar.Header
-		for h, err = tr.Next(); err == nil; h, err = tr.Next() {
-			// The location from above is cleaned, so make sure to do that.
-			if c := filepath.Clean(h.Name); c == fn {
-				db = tr
-				break
-			}
-		}
-		// Check what happened in the above loop.
+		db, err := sys.Open(fn)
 		switch {
-		case errors.Is(err, io.EOF):
-			return nil, nil
-		case err != nil:
-			return nil, fmt.Errorf("reading status file from layer failed: %w", err)
-		case db == nil:
-			zlog.Error(ctx).
+		case errors.Is(err, nil):
+		case errors.Is(err, fs.ErrNotExist):
+			zlog.Debug(ctx).
 				Str("filename", fn).
-				Msg("unable to get reader for file")
-			panic("file existed, but now doesn't")
+				Msg("false positive")
+			continue
+		default:
+			return nil, fmt.Errorf("reading status file from layer failed: %w", err)
 		}
 
 		// Take all the packages found in the database and attach to the slice
@@ -187,31 +165,33 @@ Find:
 			goto Restart
 		}
 
-		// Reset the tar reader, again.
-		if n, err := r.Seek(0, io.SeekStart); n != 0 || err != nil {
+		const suffix = ".md5sums"
+		ms, err := fs.Glob(sys, filepath.Join(p, "info", "*"+suffix))
+		if err != nil {
+			// ???
 			return nil, fmt.Errorf("resetting tar reader failed: %w", err)
 		}
-		tr = tar.NewReader(r)
-		prefix := filepath.Join(p, "info") + string(filepath.Separator)
-		const suffix = ".md5sums"
-		for h, err = tr.Next(); err == nil; h, err = tr.Next() {
-			if !strings.HasPrefix(h.Name, prefix) || !strings.HasSuffix(h.Name, suffix) {
-				continue
+		hash := md5.New()
+		for _, n := range ms {
+			k := strings.TrimSuffix(filepath.Base(n), suffix)
+			if i := strings.IndexRune(k, ':'); i != -1 {
+				k = k[:i]
 			}
-			n := filepath.Base(h.Name)
-			n = strings.TrimSuffix(n, suffix)
-			if i := strings.IndexRune(n, ':'); i != -1 {
-				n = n[:i]
-			}
-			p, ok := found[n]
+			p, ok := found[k]
 			if !ok {
 				zlog.Debug(ctx).
-					Str("package", n).
+					Str("package", k).
 					Msg("extra metadata found, ignoring")
 				continue
 			}
-			hash := md5.New()
-			if _, err := io.Copy(hash, tr); err != nil {
+			f, err := sys.Open(n)
+			if err != nil {
+				return nil, fmt.Errorf("unable to open file %q: %w", n, err)
+			}
+			hash.Reset()
+			_, err = io.Copy(hash, f)
+			f.Close()
+			if err != nil {
 				zlog.Warn(ctx).
 					Err(err).
 					Str("package", n).
