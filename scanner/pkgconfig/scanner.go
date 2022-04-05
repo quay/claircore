@@ -5,13 +5,13 @@
 package pkgconfig
 
 import (
-	"archive/tar"
 	"bufio"
 	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime/trace"
@@ -20,6 +20,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
+	"github.com/quay/claircore/pkg/tarfs"
 )
 
 var _ indexer.PackageScanner = (*Scanner)(nil)
@@ -58,47 +59,53 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 
 	r, err := layer.Reader()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("pkgconfig: opening layer failed: %w", err)
 	}
-	tr := tar.NewReader(r)
-	var h *tar.Header
-	var buf bytes.Buffer
-	var ret []*claircore.Package
+	defer r.Close()
+	sys, err := tarfs.New(r)
+	if err != nil {
+		return nil, fmt.Errorf("pkgconfig: opening layer failed: %w", err)
+	}
 
-	for h, err = tr.Next(); err == nil; h, err = tr.Next() {
-		n, err := filepath.Rel("/", filepath.Join("/", h.Name))
-		if err != nil {
-			return nil, err
-		}
-		if filepath.Ext(n) != ".pc" {
-			continue
+	var ret []*claircore.Package
+	err = fs.WalkDir(sys, ".", func(p string, d fs.DirEntry, err error) error {
+		switch {
+		case err != nil:
+			return err
+		case d.IsDir():
+			return nil
+		case filepath.Ext(d.Name()) != ".pc":
+			return nil
 		}
 		zlog.Debug(ctx).
-			Str("path", n).
+			Str("path", p).
 			Msg("found possible pkg-config file")
-		if _, err := buf.ReadFrom(tr); err != nil {
-			return nil, err
+		f, err := sys.Open(p)
+		if err != nil {
+			return err
 		}
 		var pc pc
-		switch err := pc.Scan(&buf); err {
-		case nil:
-		case errInvalid: // skip
+		err = pc.Scan(f)
+		f.Close()
+		switch {
+		case errors.Is(nil, err):
+		case errors.Is(errInvalid, err): // skip
 			zlog.Info(ctx).
-				Str("path", n).
+				Str("path", p).
 				Msg("invalid pkg-config file")
-			continue
+			return nil
 		default:
-			return nil, err
+			return err
 		}
 		ret = append(ret, &claircore.Package{
 			Name:           pc.Name,
 			Version:        pc.Version,
-			PackageDB:      filepath.Dir(n),
+			PackageDB:      filepath.Dir(p),
 			RepositoryHint: pc.URL,
 		})
-	}
-
-	if err != io.EOF {
+		return nil
+	})
+	if err != nil {
 		return nil, err
 	}
 	return ret, nil
@@ -107,9 +114,10 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 /*
 Below implements a subset of a pkg-config file scanner.
 
-In theory, we could just look for the Name an Version fields, extract the value,
-and be on our way. But the C source (https://cgit.freedesktop.org/pkg-config/tree/parse.c)
-makes sure to run all values through trim_and_sub, so we should do the same.
+In theory, we could just look for the Name and Version fields, extract the
+value, and be on our way. But the C source
+(https://cgit.freedesktop.org/pkg-config/tree/parse.c) makes sure to run all
+values through trim_and_sub, so we should do the same.
 */
 
 type pc struct {
