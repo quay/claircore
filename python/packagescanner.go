@@ -3,11 +3,11 @@
 package python
 
 import (
-	"archive/tar"
 	"bufio"
+	"bytes"
 	"context"
-	"errors"
-	"io"
+	"fmt"
+	"io/fs"
 	"net/textproto"
 	"path/filepath"
 	"runtime/trace"
@@ -18,6 +18,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/pkg/pep440"
+	"github.com/quay/claircore/pkg/tarfs"
 )
 
 var (
@@ -64,36 +65,24 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 		return nil, err
 	}
 	defer r.Close()
-	rd, ok := r.(interface {
-		io.ReadCloser
-		io.Seeker
-	})
-	if !ok {
-		return nil, errors.New("python: cannot seek on returned layer Reader")
+	sys, err := tarfs.New(r)
+	if err != nil {
+		return nil, fmt.Errorf("python: unable to open tar: %w", err)
 	}
 
+	ms, err := findDeliciousEgg(ctx, sys)
+	if err != nil {
+		return nil, fmt.Errorf("python: failed to find delicious egg: %w", err)
+	}
 	var ret []*claircore.Package
-	tr := tar.NewReader(rd)
-	var h *tar.Header
-	for h, err = tr.Next(); err == nil; h, err = tr.Next() {
-		n, err := filepath.Rel("/", filepath.Join("/", h.Name))
+	for _, n := range ms {
+		b, err := fs.ReadFile(sys, n)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("python: unable to read file: %w", err)
 		}
-		switch {
-		case h.Typeflag != tar.TypeReg:
-			// Should we chase symlinks with the correct name?
-			continue
-		case strings.HasSuffix(n, `.egg-info/PKG-INFO`):
-			zlog.Debug(ctx).Str("file", n).Msg("found egg")
-		case strings.HasSuffix(n, `.dist-info/METADATA`):
-			zlog.Debug(ctx).Str("file", n).Msg("found wheel")
-		default:
-			continue
-		}
-		// These two files are in RFC8288 (email message) format, and the
+		// The two files we read are in RFC8288 (email message) format, and the
 		// keys we care about are shared.
-		rd := textproto.NewReader(bufio.NewReader(tr))
+		rd := textproto.NewReader(bufio.NewReader(bytes.NewReader(b)))
 		hdr, err := rd.ReadMIMEHeader()
 		if err != nil && hdr == nil {
 			zlog.Warn(ctx).
@@ -121,8 +110,26 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 			RepositoryHint: "https://pypi.org/simple",
 		})
 	}
-	if err != io.EOF {
-		return nil, err
-	}
 	return ret, nil
+}
+
+// FindDeliciousEgg finds eggs and wheels.
+func findDeliciousEgg(ctx context.Context, sys fs.FS) (out []string, err error) {
+	return out, fs.WalkDir(sys, ".", func(p string, d fs.DirEntry, err error) error {
+		switch {
+		case err != nil:
+			return err
+		case !d.Type().IsRegular():
+			// Should we chase symlinks with the correct name?
+			return nil
+		case strings.HasSuffix(p, `.egg-info/PKG-INFO`):
+			zlog.Debug(ctx).Str("file", p).Msg("found egg")
+		case strings.HasSuffix(p, `.dist-info/METADATA`):
+			zlog.Debug(ctx).Str("file", p).Msg("found wheel")
+		default:
+			return nil
+		}
+		out = append(out, p)
+		return nil
+	})
 }

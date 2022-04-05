@@ -3,18 +3,15 @@
 package python
 
 import (
-	"archive/tar"
 	"context"
-	"errors"
-	"io"
-	"path/filepath"
+	"fmt"
 	"runtime/trace"
-	"strings"
 
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
+	"github.com/quay/claircore/pkg/tarfs"
 )
 
 var (
@@ -60,38 +57,19 @@ func (rs *RepoScanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*cla
 		return nil, err
 	}
 	defer r.Close()
-	rd, ok := r.(interface {
-		io.ReadCloser
-		io.Seeker
-	})
-	if !ok {
-		return nil, errors.New("python: cannot seek on returned layer Reader")
+	sys, err := tarfs.New(r)
+	if err != nil {
+		return nil, fmt.Errorf("python: unable to open tar: %w", err)
 	}
 
-	tr := tar.NewReader(rd)
-	var h *tar.Header
-	for h, err = tr.Next(); err == nil; h, err = tr.Next() {
-		n, err := filepath.Rel("/", filepath.Join("/", h.Name))
-		if err != nil {
-			return nil, err
-		}
-		switch {
-		case h.Typeflag != tar.TypeReg:
-			// Should we chase symlinks with the correct name?
-			continue
-		case strings.HasSuffix(n, `.egg-info/PKG-INFO`):
-			zlog.Debug(ctx).Str("file", n).Msg("found egg")
-		case strings.HasSuffix(n, `.dist-info/METADATA`):
-			zlog.Debug(ctx).Str("file", n).Msg("found wheel")
-		default:
-			continue
-		}
-
+	ms, err := findDeliciousEgg(ctx, sys)
+	if err != nil {
+		return nil, fmt.Errorf("python: failed to find delicious egg: %w", err)
+	}
+	if len(ms) != 0 {
 		// Just claim these came from pypi.
 		return []*claircore.Repository{&Repository}, nil
 	}
-	if err != io.EOF {
-		return nil, err
-	}
+
 	return nil, nil
 }
