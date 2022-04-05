@@ -3,7 +3,6 @@
 package java
 
 import (
-	"archive/tar"
 	"archive/zip"
 	"bytes"
 	"context"
@@ -23,6 +22,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/java/jar"
+	"github.com/quay/claircore/pkg/tarfs"
 )
 
 var (
@@ -107,34 +107,41 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 		return nil, err
 	}
 	defer r.Close()
+	sys, err := tarfs.New(r)
+	if err != nil {
+		return nil, err
+	}
 
-	tr := tar.NewReader(r)
+	ars, err := archives(ctx, sys)
+	if err != nil {
+		return nil, err
+	}
 	// All used in the loop below.
 	var ret []*claircore.Package
-	var h *tar.Header
 	buf := getBuf()
 	sh := sha1.New()
 	ck := make([]byte, sha1.Size)
 	doSearch := s.root != nil
 	defer putBuf(buf)
-	for h, err = tr.Next(); err == nil; h, err = tr.Next() {
-		// The minimum size of a zip archive is 22 bytes.
-		if h.Size < jar.MinSize || !isArchive(ctx, h) {
-			continue
-		}
-
+	for _, n := range ars {
+		ctx := zlog.ContextWithValues(ctx, "file", n)
 		sh.Reset()
 		buf.Reset()
 		// Calculate the SHA1 as it's buffered, since it may be needed for
 		// searching later.
-		sz, err := buf.ReadFrom(io.TeeReader(tr, sh))
+		f, err := sys.Open(n)
+		if err != nil {
+			return nil, err
+		}
+		sz, err := buf.ReadFrom(io.TeeReader(f, sh))
+		f.Close()
 		if err != nil {
 			return nil, err
 		}
 		zb := buf.Bytes()
 		if !bytes.Equal(zb[:4], jar.Header) {
 			// Has a reasonable size and name, but isn't really a zip.
-			zlog.Debug(ctx).Str("file", h.Name).Msg("not actually a jar: bad header")
+			zlog.Debug(ctx).Msg("not actually a jar: bad header")
 			continue
 		}
 		z, err := zip.NewReader(bytes.NewReader(zb), sz)
@@ -142,7 +149,6 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 		case errors.Is(err, nil):
 		case errors.Is(err, zip.ErrFormat):
 			zlog.Info(ctx).
-				Str("file", h.Name).
 				Err(err).
 				Msg("not actually a jar: invalid zip")
 			continue
@@ -150,14 +156,13 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 			return nil, err
 		}
 
-		infos, err := jar.Parse(ctx, h.Name, z)
+		infos, err := jar.Parse(ctx, n, z)
 		switch {
 		case err == nil:
 		case errors.Is(err, jar.ErrUnidentified) || errors.Is(err, jar.ErrNotAJar):
 			// If there's an error that's one of the "known" reasons (e.g. not a
 			// read error or a malformed file), just log it and continue on.
 			zlog.Info(ctx).
-				Str("file", h.Name).
 				AnErr("reason", err).
 				Msg("skipping jar")
 			continue
@@ -202,22 +207,19 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 				fallthrough
 			case s.root != nil && i.Source == s.root.String():
 				// Populate as a maven artifact.
-				pkg.PackageDB = `maven:` + h.Name
+				pkg.PackageDB = `maven:` + n
 			case l == "META-INF/MANIFEST.MF":
 				// information pulled from a manifest file
-				pkg.PackageDB = `jar:` + h.Name
+				pkg.PackageDB = `jar:` + n
 			case l == ".":
 				// Name guess.
-				pkg.PackageDB = `file:` + h.Name
+				pkg.PackageDB = `file:` + n
 			default:
 				return nil, fmt.Errorf("java: martian Info: %+v", i)
 			}
 			ps[j] = &pkg
 		}
 		ret = append(ret, ps...)
-	}
-	if err != io.EOF {
-		return nil, err
 	}
 	return ret, nil
 }

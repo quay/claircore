@@ -3,8 +3,9 @@
 package java
 
 import (
-	"archive/tar"
 	"context"
+	"errors"
+	"fmt"
 	"io"
 	"runtime/trace"
 
@@ -12,6 +13,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
+	"github.com/quay/claircore/pkg/tarfs"
 )
 
 var (
@@ -57,18 +59,22 @@ func (rs *RepoScanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*cla
 		return nil, err
 	}
 	defer r.Close()
-
-	tr := tar.NewReader(r)
-	var h *tar.Header
-	for h, err = tr.Next(); err == nil; h, err = tr.Next() {
-		if !isArchive(ctx, h) {
-			continue
-		}
+	ra, ok := r.(io.ReaderAt)
+	if !ok {
+		err := errors.New("unable to coerce to io.ReaderAt")
+		return nil, fmt.Errorf("opening layer failed: %w", err)
+	}
+	sys, err := tarfs.New(ra)
+	if err != nil {
+		return nil, err
+	}
+	ars, err := archives(ctx, sys)
+	if err != nil {
+		return nil, err
+	}
+	if len(ars) != 0 {
 		// Just claim these came from java.
 		return []*claircore.Repository{&Repository}, nil
-	}
-	if err != io.EOF {
-		return nil, err
 	}
 	return nil, nil
 }
