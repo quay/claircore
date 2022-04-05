@@ -85,6 +85,9 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	if !ok {
 		return nil, errors.New("rpm: cannot seek on returned layer Reader")
 	}
+	// TODO(hank) Port this to use tarfs.
+	// This is grandfathered in because it needs to extract the layer.
+	// In the future when we don't need to shell out, this can all go away.
 
 	// Map of directory to confidence score. Confidence of len(dbnames) means
 	// it's almost certainly an rpm database.
