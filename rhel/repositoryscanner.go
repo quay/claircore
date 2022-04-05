@@ -6,11 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
-	"regexp"
 	"runtime/trace"
 	"strings"
 	"time"
@@ -20,6 +20,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/pkg/cpe"
+	"github.com/quay/claircore/pkg/tarfs"
 	"github.com/quay/claircore/rhel/containerapi"
 	"github.com/quay/claircore/rhel/contentmanifest"
 	"github.com/quay/claircore/rhel/dockerfile"
@@ -173,7 +174,17 @@ func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) (repos
 	zlog.Debug(ctx).Msg("start")
 	defer zlog.Debug(ctx).Msg("done")
 
-	CPEs, err := r.getCPEsUsingEmbeddedContentSets(ctx, l)
+	rd, err := l.Reader()
+	if err != nil {
+		return nil, fmt.Errorf("rhel: unable to open layer: %w", err)
+	}
+	defer rd.Close()
+	sys, err := tarfs.New(rd)
+	if err != nil {
+		return nil, fmt.Errorf("rhel: unable to open layer: %w", err)
+	}
+
+	CPEs, err := r.getCPEsUsingEmbeddedContentSets(ctx, sys)
 	if err != nil {
 		return []*claircore.Repository{}, err
 	}
@@ -182,7 +193,7 @@ func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) (repos
 		// For old images, use fallback option and query Red Hat Container API.
 		ctx, done := context.WithTimeout(ctx, r.cfg.Timeout)
 		defer done()
-		CPEs, err = r.getCPEsUsingContainerAPI(ctx, l)
+		CPEs, err = r.getCPEsUsingContainerAPI(ctx, sys)
 		if err != nil {
 			return []*claircore.Repository{}, err
 		}
@@ -211,44 +222,47 @@ func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) (repos
 
 // getCPEsUsingEmbeddedContentSets returns a slice of CPEs bound into strings, as discovered by
 // examining information contained within the container.
-func (r *RepositoryScanner) getCPEsUsingEmbeddedContentSets(ctx context.Context, l *claircore.Layer) ([]string, error) {
+func (r *RepositoryScanner) getCPEsUsingEmbeddedContentSets(ctx context.Context, sys fs.FS) ([]string, error) {
 	// Get CPEs using embedded content-set files.
 	// The files is be stored in /root/buildinfo/content_manifests/ and will need to
 	// be translated using mapping file provided by Red Hat's PST team.
-	path, buf, err := findContentManifestFile(l)
-	switch {
-	case err == nil:
-	case buf == nil:
-		fallthrough
-	case errors.Is(err, claircore.ErrNotFound):
-		return nil, nil
-	default:
-		return nil, err
-	}
-	zlog.Debug(ctx).
-		Str("manifest-path", path).
-		Msg("found content manifest file")
-	contentManifestData := contentmanifest.ContentManifest{}
-	err = json.NewDecoder(buf).Decode(&contentManifestData)
+	ms, err := fs.Glob(sys, `root/buildinfo/content_manifests/*.json`)
 	if err != nil {
+		panic(fmt.Errorf("programmer error: %w", err))
+	}
+	if ms == nil {
+		return nil, nil
+	}
+	p := ms[0]
+	zlog.Debug(ctx).
+		Str("manifest-path", p).
+		Msg("found content manifest file")
+	b, err := fs.ReadFile(sys, p)
+	if err != nil {
+		return nil, fmt.Errorf("rhel: unable to read %q: %w", p, err)
+	}
+	var m contentmanifest.ContentManifest
+	if err := json.Unmarshal(b, &m); err != nil {
 		return nil, err
 	}
-	return r.mapper.Get(ctx, contentManifestData.ContentSets)
+	return r.mapper.Get(ctx, m.ContentSets)
 }
 
-func (r *RepositoryScanner) getCPEsUsingContainerAPI(ctx context.Context, l *claircore.Layer) ([]string, error) {
-	path, buf, err := findDockerfile(l)
-	switch {
-	case err == nil:
-	case buf == nil:
-		fallthrough
-	case errors.Is(err, claircore.ErrNotFound):
+func (r *RepositoryScanner) getCPEsUsingContainerAPI(ctx context.Context, sys fs.FS) ([]string, error) {
+	ms, err := fs.Glob(sys, "root/buildinfo/Dockerfile-*")
+	if err != nil {
+		panic(fmt.Errorf("programmer error: %w", err))
+	}
+	if ms == nil {
 		return nil, nil
-	default:
-		return nil, err
+	}
+	p := ms[0]
+	b, err := fs.ReadFile(sys, p)
+	if err != nil {
+		return nil, fmt.Errorf("rhel: unable to read %q: %w", p, err)
 	}
 
-	nvr, arch, err := extractBuildNVR(ctx, path, buf)
+	nvr, arch, err := extractBuildNVR(ctx, p, b)
 	switch {
 	case errors.Is(err, nil):
 	case errors.Is(err, errBadDockerfile):
@@ -272,54 +286,17 @@ func (r *RepositoryScanner) getCPEsUsingContainerAPI(ctx context.Context, l *cla
 	return cpes, nil
 }
 
-func findContentManifestFile(l *claircore.Layer) (string, *bytes.Buffer, error) {
-	re, err := regexp.Compile(`^root/buildinfo/content_manifests/.*\.json`)
-	if err != nil {
-		return "", nil, err
-	}
-	files, err := filesByRegexp(l, re)
-	if err != nil {
-		return "", nil, err
-	}
-	// there should be always just one content manifest file - return the first from a map
-	for name, buf := range files {
-		return name, buf, nil
-	}
-	return "", nil, nil
-}
-
-// FindDockerfile finds a Dockerfile in layer tarball and returns its name and
-// content.
-func findDockerfile(l *claircore.Layer) (string, *bytes.Buffer, error) {
-	// Dockerfile which was used to build given image/layer is stored by OSBS in /root/buildinfo/
-	// Name of dockerfiles is in following format "Dockerfile-NAME-VERSION-RELEASE"
-	// Name, version and release are labels defined in the dockerfile
-	re, err := regexp.Compile("root/buildinfo/Dockerfile-.*")
-	if err != nil {
-		return "", nil, err
-	}
-	files, err := filesByRegexp(l, re)
-	if err != nil {
-		return "", nil, err
-	}
-	// there should be always just one Dockerfile - return the first from a map
-	for name, buf := range files {
-		return name, buf, nil
-	}
-	return "", nil, nil
-}
-
 // extractBuildNVR - extract build NVR (name-version-release) from Dockerfile
 // stored in filesystem
 // The redhat.com.component LABEL is extracted from dockerfile and it is used as name
 // Version and release is extracted from Dockerfile name
 // Arch is extracted from 'architecture' LABEL
-func extractBuildNVR(ctx context.Context, dockerfilePath string, buf *bytes.Buffer) (string, string, error) {
+func extractBuildNVR(ctx context.Context, dockerfilePath string, b []byte) (string, string, error) {
 	const (
 		comp = `com.redhat.component`
 		arch = `architecture`
 	)
-	ls, err := dockerfile.GetLabels(ctx, buf)
+	ls, err := dockerfile.GetLabels(ctx, bytes.NewReader(b))
 	if err != nil {
 		return "", "", err
 	}
