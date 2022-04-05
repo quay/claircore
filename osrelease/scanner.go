@@ -2,13 +2,11 @@
 package osrelease
 
 import (
-	"archive/tar"
 	"bufio"
 	"bytes"
 	"context"
 	"fmt"
 	"io"
-	"path/filepath"
 	"runtime/trace"
 	"sort"
 	"strings"
@@ -18,11 +16,12 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
 	"github.com/quay/claircore/pkg/cpe"
+	"github.com/quay/claircore/pkg/tarfs"
 )
 
 const (
 	scannerName    = "os-release"
-	scannerVersion = "v0.0.2"
+	scannerVersion = "2"
 	scannerKind    = "distribution"
 )
 
@@ -71,36 +70,36 @@ func (s *Scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Di
 		return nil, fmt.Errorf("osrelease: unable to open layer: %w", err)
 	}
 	defer r.Close()
+	sys, err := tarfs.New(r)
+	if err != nil {
+		return nil, fmt.Errorf("osrelease: unable to open layer: %w", err)
+	}
 
-	// iterate through the tar and attempt to parse each os-release file encountered.
-	// on a successful parse return the distribution.
-	tr := tar.NewReader(r)
-	hdr, err := tr.Next()
-	for ; err == nil && ctx.Err() == nil; hdr, err = tr.Next() {
-		switch hdr.Typeflag {
-		case tar.TypeReg:
-			base := filepath.Base(hdr.Name)
-			if base != "os-release" {
-				continue
-			}
-			d, err := toDist(ctx, tr)
-			if err == nil {
-				return []*claircore.Distribution{d}, nil
-			}
+	// Attempt to parse each os-release file encountered. On a successful parse,
+	// return the distribution.
+	var rd io.Reader
+	for _, n := range []string{Path, FallbackPath} {
+		f, err := sys.Open(n)
+		if err != nil {
+			zlog.Debug(ctx).
+				Str("name", n).
+				Err(err).
+				Msg("unable to open file")
+			continue
 		}
+		defer f.Close()
+		rd = f
+		break
 	}
-	switch err {
-	case nil:
-	case io.EOF: // OK
-	default:
-		return nil, fmt.Errorf("encountered a tar error: %v", err)
+	if rd == nil {
+		zlog.Debug(ctx).Msg("didn't find an os-release file")
+		return nil, nil
 	}
-	if ctx.Err() != nil {
-		return nil, ctx.Err()
+	d, err := toDist(ctx, rd)
+	if err != nil {
+		return nil, err
 	}
-
-	zlog.Debug(ctx).Msg("didn't find an os-release file")
-	return nil, nil
+	return []*claircore.Distribution{d}, nil
 }
 
 // ToDist returns the distribution information from the file contents provided on

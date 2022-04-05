@@ -171,7 +171,7 @@ func TestLayer(t *testing.T) {
 				Blob: claircore.MustParseDigest(`sha256:35c102085707f703de2d9eaad8752d6fe1b8f02b5d2149f1d8357c9cc7fb7d0a`),
 			},
 			Want: []*claircore.Distribution{
-				&claircore.Distribution{
+				{
 					DID:             "ubuntu",
 					Name:            "Ubuntu",
 					Version:         "18.04.3 LTS (Bionic Beaver)",
