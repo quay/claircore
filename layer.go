@@ -1,13 +1,15 @@
 package claircore
 
 import (
-	"archive/tar"
 	"bytes"
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
+
+	"github.com/quay/claircore/pkg/tarfs"
 )
 
 // Layer is a container image filesystem layer. Layers are stacked
@@ -33,10 +35,10 @@ func (l *Layer) Fetched() bool {
 	return err == nil
 }
 
-// Reader returns a ReadCloser of the layer.
+// Reader returns a ReadAtCloser of the layer.
 //
 // It should also implement io.Seeker, and should be a tar stream.
-func (l *Layer) Reader() (io.ReadCloser, error) {
+func (l *Layer) Reader() (ReadAtCloser, error) {
 	if l.localPath == "" {
 		return nil, fmt.Errorf("claircore: Layer not fetched")
 	}
@@ -45,6 +47,12 @@ func (l *Layer) Reader() (io.ReadCloser, error) {
 		return nil, fmt.Errorf("claircore: unable to open tar: %w", err)
 	}
 	return f, nil
+}
+
+// ReadAtCloser is an io.ReadCloser and also an io.ReaderAt
+type ReadAtCloser interface {
+	io.ReadCloser
+	io.ReaderAt
 }
 
 // NormalizeIn is used to make sure paths are tar-root relative.
@@ -72,13 +80,18 @@ var ErrNotFound = errors.New("claircore: unable to find any requested files")
 // For example, requesting paths of "/etc/os-release", "./etc/os-release", and
 // "etc/os-release" will all result in any found content being stored with the
 // key "etc/os-release".
+//
+// Deprecated: Callers should instead use `pkg/tarfs` and the `io/fs` package.
 func (l *Layer) Files(paths ...string) (map[string]*bytes.Buffer, error) {
 	r, err := l.Reader()
 	if err != nil {
 		return nil, err
 	}
 	defer r.Close()
-	rs := r.(io.ReadSeeker)
+	sys, err := tarfs.New(r.(*os.File))
+	if err != nil {
+		return nil, err
+	}
 
 	// Clean the input paths.
 	want := make(map[string]struct{})
@@ -88,66 +101,27 @@ func (l *Layer) Files(paths ...string) (map[string]*bytes.Buffer, error) {
 		want[p] = struct{}{}
 	}
 
-	alias := make(map[string]string)
 	f := make(map[string]*bytes.Buffer)
-	again := true // again is our flag for re-reading the tarball.
-	for rs.Seek(0, io.SeekStart); again; rs.Seek(0, io.SeekStart) {
-		again = false
-		tr := tar.NewReader(rs)
-		hdr, err := tr.Next()
-		for ; err == nil; hdr, err = tr.Next() {
-			name := filepath.Clean(hdr.Name)
-			// check if the current header has a path name we are
-			// searching for.
-			if _, ok := want[name]; !ok {
-				continue
-			}
-			delete(want, name)
-
-			switch hdr.Typeflag {
-			case tar.TypeLink, tar.TypeSymlink:
-				n := normalizeIn(filepath.Join("/", filepath.Dir(name)), hdr.Linkname)
-				if _, ok := f[n]; !ok { // If we don't already have it, add to the want set.
-					want[n] = struct{}{}
-					again = true
-				}
-				alias[name] = n
-			case tar.TypeReg:
-				b := make([]byte, hdr.Size)
-				if n, err := io.ReadFull(tr, b); int64(n) != hdr.Size || err != nil {
-					return nil, fmt.Errorf("claircore: unable to read file from archive: read %d bytes (wanted: %d): %w", n, hdr.Size, err)
-				}
-				f[name] = bytes.NewBuffer(b)
-			default:
-				// skip
-			}
+	// Walk the fs. ReadFile will handle symlink resolution.
+	if err := fs.WalkDir(sys, ".", func(p string, d fs.DirEntry, err error) error {
+		switch {
+		case err != nil:
+			return err
+		case d.IsDir():
+			return nil
 		}
-		if err != io.EOF {
-			return nil, err
+		if _, ok := want[p]; !ok {
+			return nil
 		}
-	}
-
-	// Fixup the names from chasing symlinks.
-	notfound := &bytes.Buffer{}
-	for n := range want {
-		// If the target is still in the want list, we didn't find it. So,
-		// use the notfound sentinel.
-		f[n] = notfound
-	}
-	for len(alias) != 0 {
-		for from, to := range alias {
-			f[from] = f[to]
-			// Once we've chased any symlinks all the way through, remove them.
-			if f[from] != nil {
-				delete(alias, from)
-			}
+		delete(want, p)
+		b, err := fs.ReadFile(sys, p)
+		if err != nil {
+			return err
 		}
-	}
-	// Now remove anything that's resolved to the notfound sentinel.
-	for n, v := range f {
-		if v == notfound {
-			delete(f, n)
-		}
+		f[p] = bytes.NewBuffer(b)
+		return nil
+	}); err != nil {
+		return nil, err
 	}
 
 	// If there's nothing in the "f" map, we didn't find anything.
