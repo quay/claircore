@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v4/stdlib"
 	"github.com/remind101/migrate"
 
-	"github.com/quay/claircore/libvuln/migrations"
+	"github.com/quay/claircore/datastore/postgres/migrations"
 	"github.com/quay/claircore/test/integration"
 )
 
@@ -30,8 +30,8 @@ func TestMatcherDB(ctx context.Context, t testing.TB) *pgxpool.Pool {
 	defer mdb.Close()
 	// run migrations
 	migrator := migrate.NewPostgresMigrator(mdb)
-	migrator.Table = migrations.MigrationTable
-	err = migrator.Exec(migrate.Up, migrations.Migrations...)
+	migrator.Table = migrations.MatcherMigrationTable
+	err = migrator.Exec(migrate.Up, migrations.MatcherMigrations...)
 	if err != nil {
 		t.Fatalf("failed to perform migrations: %v", err)
 	}
