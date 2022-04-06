@@ -10,7 +10,7 @@ process.
 Libindex is runtime constructed via the `libindex.New` method. New requires an `libindex.Opts` struct.
 
 ### Options
-{{# godoc libindex Options }}
+{{# godoc libindex.Options }}
 
 The above outlines the relevant bits of the Options structure.
 

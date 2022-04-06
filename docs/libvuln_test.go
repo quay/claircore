@@ -14,7 +14,7 @@ func Example_libvuln() {
 	ctx := context.TODO()
 
 	// ANCHOR: new
-	opts := new(libvuln.Opts)
+	opts := new(libvuln.Options)
 	// Populate with desired settings...
 	lib, err := libvuln.New(ctx, opts)
 	if err != nil {

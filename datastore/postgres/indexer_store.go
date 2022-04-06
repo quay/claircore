@@ -10,8 +10,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/remind101/migrate"
 
+	"github.com/quay/claircore/datastore/postgres/migrations"
 	"github.com/quay/claircore/indexer"
-	"github.com/quay/claircore/libindex/migrations"
 )
 
 // InitPostgresIndexerStore initialize a indexer.Store given the pgxpool.Pool
@@ -22,8 +22,8 @@ func InitPostgresIndexerStore(_ context.Context, pool *pgxpool.Pool, doMigration
 	// do migrations if requested
 	if doMigration {
 		migrator := migrate.NewPostgresMigrator(db)
-		migrator.Table = migrations.MigrationTable
-		err := migrator.Exec(migrate.Up, migrations.Migrations...)
+		migrator.Table = migrations.IndexerMigrationTable
+		err := migrator.Exec(migrate.Up, migrations.IndexerMigrations...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to perform migrations: %w", err)
 		}

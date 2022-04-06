@@ -15,7 +15,10 @@ import (
 	"github.com/quay/zlog"
 	"github.com/rs/zerolog"
 
+	"github.com/quay/claircore/datastore"
+	"github.com/quay/claircore/datastore/postgres"
 	"github.com/quay/claircore/libvuln"
+	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/claircore/updater/defaults"
 )
 
@@ -59,8 +62,17 @@ func main() {
 		origClient.Transport = origTransport
 	}
 
+	pool, err := postgres.Connect(ctx, conf.ConnString, "libindexhttp")
+	if err != nil {
+		log.Fatal().Msgf("failed to create db pool: %v", err)
+	}
+	store, err := postgres.InitPostgresMatcherStore(ctx, pool, true)
+	if err != nil {
+		log.Fatal().Msgf("failed to create store: %v", err)
+	}
+
 	// create libvuln
-	opts := confToLibvulnOpts(conf)
+	opts := confToLibvulnOpts(conf, store)
 	lib, err := libvuln.New(ctx, opts)
 	if err != nil {
 		log.Fatal().Msgf("failed to create libvuln %v", err)
@@ -88,11 +100,10 @@ func logLevel(conf Config) zerolog.Level {
 	return zerolog.InfoLevel
 }
 
-func confToLibvulnOpts(conf Config) *libvuln.Opts {
-	opts := &libvuln.Opts{
-		ConnString:               conf.ConnString,
-		MaxConnPool:              int32(conf.MaxConnPool),
-		Migrations:               true,
+func confToLibvulnOpts(conf Config, store datastore.MatcherStore) *libvuln.Options {
+	opts := &libvuln.Options{
+		Store:                    store,
+		Locker:                   &ctxlock.Locker{},
 		UpdaterSets:              nil,
 		DisableBackgroundUpdates: conf.DisableBackgroundUpdates,
 		UpdateInterval:           1 * time.Minute,

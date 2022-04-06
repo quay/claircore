@@ -3,7 +3,10 @@ package libvuln
 import (
 	"context"
 	"fmt"
+	"math/rand"
+	"net/http"
 	"reflect"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -12,12 +15,10 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore"
-	"github.com/quay/claircore/datastore/postgres"
 	"github.com/quay/claircore/internal/matcher"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/updates"
 	"github.com/quay/claircore/matchers"
-	"github.com/quay/claircore/pkg/ctxlock"
 )
 
 // Libvuln exports methods for scanning an IndexReport and created
@@ -27,42 +28,70 @@ import (
 // database consistent.
 type Libvuln struct {
 	store           datastore.MatcherStore
+	locker          LockSource
 	pool            *pgxpool.Pool
-	locks           *ctxlock.Locker
 	matchers        []driver.Matcher
 	enrichers       []driver.Enricher
 	updateRetention int
 	updaters        *updates.Manager
 }
 
+// TODO (crozzy): Find a home for this and stop redefining it.
+// LockSource abstracts over how locks are implemented.
+//
+// An online system needs distributed locks, offline use cases can use
+// process-local locks.
+type LockSource interface {
+	TryLock(context.Context, string) (context.Context, context.CancelFunc)
+	Lock(context.Context, string) (context.Context, context.CancelFunc)
+	Close(context.Context) error
+}
+
 // New creates a new instance of the Libvuln library
-func New(ctx context.Context, opts *Opts) (*Libvuln, error) {
+func New(ctx context.Context, opts *Options) (*Libvuln, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "libvuln/New")
 
-	err := opts.parse(ctx)
-	if err != nil {
-		return nil, err
+	// required
+	if opts.Store == nil {
+		return nil, fmt.Errorf("field Store cannot be nil")
+	}
+	if opts.UpdateRetention == 1 || opts.UpdateRetention < 0 {
+		return nil, fmt.Errorf("update retention must be 0 or greater then 1")
 	}
 
-	zlog.Info(ctx).
-		Int32("count", opts.MaxConnPool).
-		Msg("initializing store")
-	if err := opts.migrations(ctx); err != nil {
-		return nil, err
+	// optional
+	if opts.UpdateInterval == 0 || opts.UpdateInterval < time.Minute {
+		opts.UpdateInterval = DefaultUpdateInterval
 	}
-	pool, err := opts.pool(ctx)
-	if err != nil {
-		return nil, err
+	// This gives us a ±60 second range, rounded to the nearest tenth of a
+	// second.
+	const jitter = 120000
+	ms := time.Duration(rand.Intn(jitter)-(jitter/2)) * time.Microsecond
+	ms = ms.Round(100 * time.Millisecond)
+	opts.UpdateInterval += ms
+
+	if opts.UpdateWorkers <= 0 {
+		opts.UpdateWorkers = DefaultUpdateWorkers
+	}
+
+	if opts.Client == nil {
+		zlog.Warn(ctx).
+			Msg("using default HTTP client; this will become an error in the future")
+		opts.Client = http.DefaultClient // TODO(hank) Remove DefaultClient
+	}
+	if opts.UpdaterConfigs == nil {
+		opts.UpdaterConfigs = make(map[string]driver.ConfigUnmarshaler)
 	}
 
 	l := &Libvuln{
-		store:           postgres.NewMatcherStore(pool),
-		pool:            pool,
+		store:           opts.Store,
+		locker:          opts.Locker,
 		updateRetention: opts.UpdateRetention,
 		enrichers:       opts.Enrichers,
 	}
 
 	// create matchers based on the provided config.
+	var err error
 	l.matchers, err = matchers.NewMatchers(ctx,
 		opts.Client,
 		matchers.WithEnabled(opts.MatcherNames),
@@ -75,14 +104,9 @@ func New(ctx context.Context, opts *Opts) (*Libvuln, error) {
 
 	zlog.Info(ctx).Array("matchers", matcherLog(l.matchers)).Msg("matchers created")
 
-	// create update manager
-	l.locks, err = ctxlock.New(ctx, pool)
-	if err != nil {
-		return nil, err
-	}
 	l.updaters, err = updates.NewManager(ctx,
 		l.store,
-		l.locks,
+		l.locker,
 		opts.Client,
 		updates.WithBatchSize(opts.UpdateWorkers),
 		updates.WithInterval(opts.UpdateInterval),
@@ -99,12 +123,13 @@ func New(ctx context.Context, opts *Opts) (*Libvuln, error) {
 	if !opts.DisableBackgroundUpdates {
 		go l.updaters.Start(ctx)
 	}
+
 	zlog.Info(ctx).Msg("libvuln initialized")
 	return l, nil
 }
 
 func (l *Libvuln) Close(ctx context.Context) error {
-	l.locks.Close(ctx)
+	l.locker.Close(ctx)
 	l.pool.Close()
 	return nil
 }

@@ -8,8 +8,8 @@ database.
 `Libvuln` is runtime constructed via the `libvuln.New` method. `New` requires a
 `libvuln.Opts` struct.
 
-### Opts
-{{# godoc libvuln.Opts }}
+### Options
+{{# godoc libvuln.Options }}
 
 The above outlines the relevant bits of the Opts structure.
 

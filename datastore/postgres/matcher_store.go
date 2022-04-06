@@ -6,12 +6,34 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v4/stdlib"
 	"github.com/quay/zlog"
+	"github.com/remind101/migrate"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore"
+	"github.com/quay/claircore/datastore/postgres/migrations"
 	"github.com/quay/claircore/libvuln/driver"
 )
+
+// InitPostgresMatcherStore initialize a indexer.Store given libindex.Opts
+func InitPostgresMatcherStore(_ context.Context, pool *pgxpool.Pool, doMigration bool) (datastore.MatcherStore, error) {
+	db := stdlib.OpenDB(*pool.Config().ConnConfig)
+	defer db.Close()
+
+	// do migrations if requested
+	if doMigration {
+		migrator := migrate.NewPostgresMigrator(db)
+		migrator.Table = migrations.MatcherMigrationTable
+		err := migrator.Exec(migrate.Up, migrations.MatcherMigrations...)
+		if err != nil {
+			return nil, fmt.Errorf("failed to perform migrations: %w", err)
+		}
+	}
+
+	store := NewMatcherStore(pool)
+	return store, nil
+}
 
 // MatcherStore implements all interfaces in the vulnstore package
 type MatcherStore struct {

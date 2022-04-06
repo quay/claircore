@@ -21,8 +21,8 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore/postgres"
+	"github.com/quay/claircore/datastore/postgres/migrations"
 	"github.com/quay/claircore/indexer/linux"
-	"github.com/quay/claircore/libindex/migrations"
 	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
@@ -177,8 +177,8 @@ func (tc testcase) Run(ctx context.Context, check checkFunc) func(*testing.T) {
 		mdb := stdlib.OpenDB(*cfg.ConnConfig)
 		defer mdb.Close()
 		migrator := migrate.NewPostgresMigrator(mdb)
-		migrator.Table = migrations.MigrationTable
-		if err := migrator.Exec(migrate.Up, migrations.Migrations...); err != nil {
+		migrator.Table = migrations.IndexerMigrationTable
+		if err := migrator.Exec(migrate.Up, migrations.IndexerMigrations...); err != nil {
 			t.Fatalf("failed to perform migrations: %v", err)
 		}
 
