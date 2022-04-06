@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -114,7 +115,7 @@ func (tc testcase) RunInner(ctx context.Context, t *testing.T, dsn string, next 
 	opts := &Options{
 		Store:                store,
 		Locker:               ctxLocker,
-		FetchArena:           &RemoteFetchArena{},
+		FetchArena:           NewRemoteFetchArena(c, os.TempDir()),
 		ScanLockRetry:        2 * time.Second,
 		LayerScanConcurrency: 1,
 		Ecosystems: []*indexer.Ecosystem{

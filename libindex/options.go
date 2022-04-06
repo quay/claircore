@@ -13,7 +13,7 @@ type Options struct {
 	// TODO(crozzy): docs
 	Store      indexer.Store
 	Locker     LockSource
-	FetchArena FetchArena
+	FetchArena Arena
 	// how often we should try to acquire a lock for scanning a given manifest if lock is taken
 	ScanLockRetry time.Duration
 	// the number of layers to be scanned in parallel.

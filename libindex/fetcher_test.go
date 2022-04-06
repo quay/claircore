@@ -36,11 +36,10 @@ func (tc fetchTestcase) Run(ctx context.Context) func(*testing.T) {
 			t.Error(err)
 		}
 
-		a := &RemoteFetchArena{}
-		a.Init(c, p)
+		a := NewRemoteFetchArena(c, p)
 
-		fetcher := a.Fetcher()
-		if err := fetcher.Fetch(ctx, layers); err != nil {
+		fetcher := a.Realizer(ctx)
+		if err := fetcher.Realize(ctx, layers); err != nil {
 			t.Error(err)
 		}
 		for _, l := range layers {
@@ -99,11 +98,9 @@ func TestFetchInvalid(t *testing.T) {
 			if err != nil {
 				t.Error(err)
 			}
-			a := &RemoteFetchArena{}
-			a.Init(http.DefaultClient, p)
-
-			fetcher := a.Fetcher()
-			if err := fetcher.Fetch(ctx, table.layer); err == nil {
+			a := NewRemoteFetchArena(http.DefaultClient, p)
+			fetcher := a.Realizer(ctx)
+			if err := fetcher.Realize(ctx, table.layer); err == nil {
 				t.Fatal("expected error, got nil")
 			}
 		})
@@ -121,8 +118,7 @@ func TestFetchConcurrent(t *testing.T) {
 		ls[i].URI = srv.URL + ls[i].URI
 	}
 	defer srv.Close()
-	a := &RemoteFetchArena{}
-	a.Init(srv.Client(), t.TempDir())
+	a := NewRemoteFetchArena(srv.Client(), t.TempDir())
 
 	subtest := func(a *RemoteFetchArena, ls []claircore.Layer) func(*testing.T) {
 		// Need to make a copy of all our layers.
@@ -137,7 +133,7 @@ func TestFetchConcurrent(t *testing.T) {
 		for i := range ps[:len(ps)/2] {
 			ps[i] = &l[i]
 		}
-		f := a.Fetcher()
+		f := a.Realizer(ctx)
 		return func(t *testing.T) {
 			t.Parallel()
 			t.Cleanup(func() {
@@ -146,7 +142,7 @@ func TestFetchConcurrent(t *testing.T) {
 				}
 			})
 			ctx := zlog.Test(ctx, t)
-			if err := f.Fetch(ctx, ps); err != nil {
+			if err := f.Realize(ctx, ps); err != nil {
 				t.Error(err)
 			}
 		}

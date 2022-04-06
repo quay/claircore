@@ -12,7 +12,7 @@ type Opts struct {
 	}
 	Store        Store
 	LayerScanner LayerScanner
-	Fetcher      Fetcher
+	Realizer     Realizer
 	Ecosystems   []*Ecosystem
 	Vscnrs       VersionedScanners
 	Airgap       bool

@@ -16,7 +16,7 @@ func controllerFactory(ctx context.Context, lib *Libindex, opts *Options) (*cont
 	// convert libindex.Opts to indexer.Opts
 	sOpts := &indexer.Opts{
 		Store:         lib.store,
-		Fetcher:       lib.fa.Fetcher(),
+		Realizer:      lib.fa.Realizer(ctx),
 		Ecosystems:    opts.Ecosystems,
 		Vscnrs:        lib.vscnrs,
 		Client:        lib.client,

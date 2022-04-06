@@ -55,7 +55,7 @@ func main() {
 	opts := &libindex.Options{
 		Store:      store,
 		Locker:     &ctxlock.Locker{},
-		FetchArena: &libindex.RemoteFetchArena{},
+		FetchArena: libindex.NewRemoteFetchArena(http.DefaultClient, os.TempDir()),
 	}
 
 	// create libindex

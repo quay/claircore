@@ -18,10 +18,10 @@ const (
 	Tee LayerFetchOpt = "tee"
 )
 
-// Fetcher is responsible for downloading a layer, uncompressing
+// Realizer is responsible for downloading a layer, uncompressing
 // if necessary, and making the uncompressed tar contents available for
 // reading.
-type Fetcher interface {
-	Fetch(ctx context.Context, layers []*claircore.Layer) error
+type Realizer interface {
+	Realize(context.Context, []*claircore.Layer) error
 	Close() error
 }

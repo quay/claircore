@@ -17,6 +17,7 @@ import (
 
 	"github.com/klauspost/compress/gzip"
 	"github.com/klauspost/compress/zstd"
+	"github.com/quay/claircore/indexer"
 	"github.com/quay/zlog"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/singleflight"
@@ -24,13 +25,16 @@ import (
 	"github.com/quay/claircore"
 )
 
-type FetchArena interface {
-	Init(wc *http.Client, root string)
-	FetchOne(ctx context.Context, l *claircore.Layer) (do func() error)
-	Forget(digest string) error
-	Fetcher() *FetchProxy
-	Close(ctx context.Context) error
+// Arena does coordination and global refcounting.
+type Arena interface {
+	Realizer(context.Context) indexer.Realizer
+	Close(context.Context) error
 }
+
+var (
+	_ Arena            = (*RemoteFetchArena)(nil)
+	_ indexer.Realizer = (*FetchProxy)(nil)
+)
 
 // RemoteFetchArena is a struct that keeps track of all the layers fetched into it,
 // and only removes them once all the users have gone away.
@@ -48,20 +52,20 @@ type RemoteFetchArena struct {
 	root string
 }
 
-var _ FetchArena = (*RemoteFetchArena)(nil)
-
 // Init initializes the RemoteFetchArena.
 //
 // This method is provided instead of a constructor function to make embedding
 // easier.
-func (a *RemoteFetchArena) Init(wc *http.Client, root string) {
-	a.wc = wc
-	a.root = root
-	a.sf = &singleflight.Group{}
-	a.rc = make(map[string]int)
+func NewRemoteFetchArena(wc *http.Client, root string) *RemoteFetchArena {
+	return &RemoteFetchArena{
+		wc:   wc,
+		root: root,
+		sf:   &singleflight.Group{},
+		rc:   make(map[string]int),
+	}
 }
 
-func (a *RemoteFetchArena) Forget(digest string) error {
+func (a *RemoteFetchArena) forget(digest string) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	ct, ok := a.rc[digest]
@@ -80,7 +84,7 @@ func (a *RemoteFetchArena) Forget(digest string) error {
 
 // FetchOne does a deduplicated fetch, then increments the refcount and renames
 // the file to the permanent place if applicable.
-func (a *RemoteFetchArena) FetchOne(ctx context.Context, l *claircore.Layer) (do func() error) {
+func (a *RemoteFetchArena) fetchOne(ctx context.Context, l *claircore.Layer) (do func() error) {
 	do = func() error {
 		h := l.Hash.String()
 		tgt := filepath.Join(a.root, h)
@@ -307,29 +311,25 @@ func (a *RemoteFetchArena) realizeLayer(ctx context.Context, l *claircore.Layer)
 }
 
 // Fetcher returns an indexer.Fetcher.
-func (a *RemoteFetchArena) Fetcher() *FetchProxy {
-	return NewFetchProxy(a)
+func (a *RemoteFetchArena) Realizer(_ context.Context) indexer.Realizer {
+	return &FetchProxy{a: a}
 }
 
 // FetchProxy tracks the files fetched for layers.
 //
 // This can be unexported if FetchArena gets unexported.
 type FetchProxy struct {
-	a     FetchArena
+	a     *RemoteFetchArena
 	clean []string
 }
 
-func NewFetchProxy(fa FetchArena) *FetchProxy {
-	return &FetchProxy{a: fa}
-}
-
-// Fetch populates all the layers locally.
-func (p *FetchProxy) Fetch(ctx context.Context, ls []*claircore.Layer) error {
+// Realize populates all the layers locally.
+func (p *FetchProxy) Realize(ctx context.Context, ls []*claircore.Layer) error {
 	g, ctx := errgroup.WithContext(ctx)
 	p.clean = make([]string, len(ls))
 	for i, l := range ls {
 		p.clean[i] = l.Hash.String()
-		g.Go(p.a.FetchOne(ctx, l))
+		g.Go(p.a.fetchOne(ctx, l))
 	}
 	if err := g.Wait(); err != nil {
 		return fmt.Errorf("encountered error while fetching a layer: %v", err)
@@ -343,7 +343,7 @@ func (p *FetchProxy) Fetch(ctx context.Context, ls []*claircore.Layer) error {
 func (p *FetchProxy) Close() error {
 	var err error
 	for _, digest := range p.clean {
-		e := p.a.Forget(digest)
+		e := p.a.forget(digest)
 		if e != nil {
 			if err == nil {
 				err = e

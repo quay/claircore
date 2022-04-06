@@ -7,7 +7,6 @@ import (
 type (
 	Opts                = indexer.Opts
 	Store               = indexer.Store
-	Fetcher             = indexer.Fetcher
 	LayerScanner        = indexer.LayerScanner
 	PackageScanner      = indexer.PackageScanner
 	VersionedScanner    = indexer.VersionedScanner
@@ -15,4 +14,5 @@ type (
 	RepositoryScanner   = indexer.RepositoryScanner
 	Coalescer           = indexer.Coalescer
 	Ecosystem           = indexer.Ecosystem
+	Realizer            = indexer.Realizer
 )

@@ -17,7 +17,7 @@ func fetchLayers(ctx context.Context, s *Controller) (State, error) {
 	zlog.Debug(ctx).
 		Int("count", len(toFetch)).
 		Msg("fetching layers")
-	if err := s.Fetcher.Fetch(ctx, toFetch); err != nil {
+	if err := s.Realizer.Realize(ctx, toFetch); err != nil {
 		zlog.Warn(ctx).
 			Err(err).
 			Msg("layers fetch failure")

@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"sort"
 	"time"
 
@@ -54,7 +53,7 @@ type Libindex struct {
 	state string
 	// FetchArena is an arena to fetch layers into. It ensures layers are
 	// fetched once and not removed while in use.
-	fa FetchArena
+	fa Arena
 }
 
 // New creates a new instance of libindex.
@@ -110,8 +109,6 @@ func New(ctx context.Context, opts *Options, cl *http.Client) (*Libindex, error)
 		locker:  opts.Locker,
 		fa:      opts.FetchArena,
 	}
-
-	l.fa.Init(cl, os.TempDir()) // TODO(hank) Add an option field for this 'root' argument.
 
 	// register any new scanners.
 	pscnrs, dscnrs, rscnrs, err := indexer.EcosystemsToScanners(ctx, opts.Ecosystems, opts.Airgap)
