@@ -3,6 +3,7 @@ package libindex_test
 import (
 	"context"
 	"net/http"
+	"os"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore/postgres"
@@ -17,7 +18,7 @@ func ExampleLibindex() {
 		panic(err)
 	}
 
-	store, err := libindex.InitPostgresStore(ctx, pool, true)
+	store, err := postgres.InitPostgresIndexerStore(ctx, pool, true)
 	if err != nil {
 		panic(err)
 	}
@@ -30,7 +31,7 @@ func ExampleLibindex() {
 	opts := &libindex.Options{
 		Store:      store,
 		Locker:     ctxLocker,
-		FetchArena: &libindex.RemoteFetchArena{},
+		FetchArena: libindex.NewRemoteFetchArena(http.DefaultClient, os.TempDir()),
 		// see definition for more configuration options
 	}
 	lib, err := libindex.New(ctx, opts, http.DefaultClient)

@@ -5,32 +5,35 @@ import "time"
 const (
 	DefaultScanLockRetry        = 5 * time.Second
 	DefaultLayerScanConcurrency = 10
-	DefaultLayerFetchOpt        = indexer.OnDisk
 )
 
 // Options are dependencies and options for constructing an instance of libindex
 type Options struct {
-	// TODO(crozzy): docs
-	Store      indexer.Store
-	Locker     LockSource
+	// Store is the interface used to persist and retrieve results of indexing.
+	Store indexer.Store
+	// Locker provides system-wide locks. If the indexing work is distributed the
+	// lock should be backed by a distributed store.
+	Locker LockSource
+	// FetchArena is an interface tied to the lifecycle of LibIndex to enable management
+	// of the filesystem while separate processes are dealing with layers, for example:
+	// you can reference count downloaded layer files to avoid racing.
 	FetchArena Arena
-	// how often we should try to acquire a lock for scanning a given manifest if lock is taken
+	// ScanLockRetry specifies how often we should try to acquire a lock for scanning a
+	// given manifest if lock is taken.
 	ScanLockRetry time.Duration
-	// the number of layers to be scanned in parallel.
+	// LayerScanConcurrency specifies the number of layers to be scanned in parallel.
 	LayerScanConcurrency int
-	// how we store layers we fetch remotely. see LayerFetchOpt type def above for more details
-	LayerFetchOpt indexer.LayerFetchOpt
+	// LayerFetchOpt is unused and kept here for backwards compatibility.
+	LayerFetchOpt interface{}
 	// NoLayerValidation controls whether layers are checked to actually be
 	// content-addressed. With this option toggled off, callers can trigger
 	// layers to be indexed repeatedly by changing the identifier in the
 	// manifest.
 	NoLayerValidation bool
-	// set to true to have libindex check and potentially run migrations
-	Migrations bool
-	// provides an alternative method for creating a scanner during libindex runtime
+	// ControllerFactory provides an alternative method for creating a scanner during libindex runtime
 	// if nil the default factory will be used. useful for testing purposes
 	ControllerFactory ControllerFactory
-	// a list of ecosystems to use which define which package databases and coalescing methods we use
+	// Ecosystems a list of ecosystems to use which define which package databases and coalescing methods we use
 	Ecosystems []*indexer.Ecosystem
 	// Airgap should be set to disallow any scanners that mark themselves as
 	// making network calls.
@@ -44,6 +47,6 @@ type Options struct {
 	ScannerConfig struct {
 		Package, Dist, Repo map[string]func(interface{}) error
 	}
-	// a convenience method for holding a list of versioned scanners
+	// vscnrs is a convenience object for holding a list of versioned scanners
 	vscnrs indexer.VersionedScanners
 }

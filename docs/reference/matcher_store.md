@@ -1,4 +1,4 @@
-# Datastore MatcherStore
+# Matcher Store
 The `datastore.MatcherStore` interface defines all necessary persistence methods for `Libvuln`
 to provide its functionality.
 

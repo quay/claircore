@@ -47,7 +47,7 @@ func main() {
 	if err != nil {
 		log.Fatal().Msgf("failed to create db pool: %v", err)
 	}
-	store, err := libindex.InitPostgresStore(ctx, pool, true)
+	store, err := postgres.InitPostgresIndexerStore(ctx, pool, true)
 	if err != nil {
 		log.Fatal().Msgf("failed to create store: %v", err)
 	}

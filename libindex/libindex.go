@@ -93,7 +93,6 @@ func New(ctx context.Context, opts *Options, cl *http.Client) (*Libindex, error)
 			java.NewEcosystem(ctx),
 		}
 	}
-	opts.LayerFetchOpt = DefaultLayerFetchOpt
 
 	// TODO(hank) If "airgap" is set, we should wrap the client and return
 	// errors on non-RFC1918 and non-RFC4193 addresses. As of go1.17, the net.IP

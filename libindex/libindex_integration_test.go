@@ -101,7 +101,7 @@ func (tc testcase) RunInner(ctx context.Context, t *testing.T, dsn string, next 
 		t.Fatalf("failed to create postgres connection: %v", err)
 	}
 
-	store, err := InitPostgresStore(ctx, pool, false)
+	store, err := postgres.InitPostgresIndexerStore(ctx, pool, false)
 	if err != nil {
 		t.Fatalf("failed to create postgres connection: %v", err)
 	}

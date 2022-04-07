@@ -52,7 +52,7 @@ type RemoteFetchArena struct {
 	root string
 }
 
-// Init initializes the RemoteFetchArena.
+// NewRemoteFetchArena initializes the RemoteFetchArena.
 //
 // This method is provided instead of a constructor function to make embedding
 // easier.

@@ -19,7 +19,7 @@
   - [Ecosystem](./reference/ecosystem.md)
   - [Index Report](./reference/index_report.md)
   - [Indexer Store](./reference/indexer_store.md)
-  - [Datastore MatcherStore](./reference/matcher_store.md)
+  - [Matcher Store](./reference/matcher_store.md)
   - [Manifest](./reference/manifest.md)
   - [Matcher](./reference/matcher.md)
   - [Package Scanner](./reference/package_scanner.md)
