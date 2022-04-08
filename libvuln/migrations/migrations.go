@@ -50,4 +50,11 @@ var Migrations = []migrate.Migration{
 		ID: 6,
 		Up: runFile("06-delete-debian-update_operation.sql"),
 	},
+	{
+		ID: 5,
+		Up: func(tx *sql.Tx) error {
+			_, err := tx.Exec(migration5)
+			return err
+		},
+	},
 }
