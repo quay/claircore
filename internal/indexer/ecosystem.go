@@ -29,7 +29,11 @@ func EcosystemsToScanners(ctx context.Context, ecosystems []*Ecosystem, disallow
 	ps := []PackageScanner{}
 	ds := []DistributionScanner{}
 	rs := []RepositoryScanner{}
-	seen := map[string]struct{}{}
+	seen := struct{ pkg, dist, repo map[string]struct{} }{
+		make(map[string]struct{}),
+		make(map[string]struct{}),
+		make(map[string]struct{}),
+	}
 
 	for _, ecosystem := range ecosystems {
 		pscanners, err := ecosystem.PackageScanners(ctx)
@@ -38,10 +42,10 @@ func EcosystemsToScanners(ctx context.Context, ecosystems []*Ecosystem, disallow
 		}
 		for _, s := range pscanners {
 			n := s.Name()
-			if _, ok := seen[n]; ok {
+			if _, ok := seen.pkg[n]; ok {
 				continue
 			}
-			seen[n] = struct{}{}
+			seen.pkg[n] = struct{}{}
 			if _, ok := s.(RPCScanner); ok && disallowRemote {
 				zlog.Info(ctx).
 					Str("scanner", n).
@@ -57,10 +61,10 @@ func EcosystemsToScanners(ctx context.Context, ecosystems []*Ecosystem, disallow
 		}
 		for _, s := range dscanners {
 			n := s.Name()
-			if _, ok := seen[n]; ok {
+			if _, ok := seen.dist[n]; ok {
 				continue
 			}
-			seen[n] = struct{}{}
+			seen.dist[n] = struct{}{}
 			if _, ok := s.(RPCScanner); ok && disallowRemote {
 				zlog.Info(ctx).
 					Str("scanner", n).
@@ -76,10 +80,10 @@ func EcosystemsToScanners(ctx context.Context, ecosystems []*Ecosystem, disallow
 		}
 		for _, s := range rscanners {
 			n := s.Name()
-			if _, ok := seen[n]; ok {
+			if _, ok := seen.repo[n]; ok {
 				continue
 			}
-			seen[n] = struct{}{}
+			seen.repo[n] = struct{}{}
 			if _, ok := s.(RPCScanner); ok && disallowRemote {
 				zlog.Info(ctx).
 					Str("scanner", n).
