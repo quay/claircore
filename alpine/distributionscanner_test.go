@@ -87,6 +87,11 @@ func TestDistributionScanner(t *testing.T) {
 			OSRelease: mustRead(t, `testdata/3.15/etc/os-release`),
 			Issue:     mustRead(t, `testdata/3.15/etc/issue`),
 		},
+		{
+			Release:   V3_16,
+			OSRelease: mustRead(t, `testdata/3.16/etc/os-release`),
+			Issue:     mustRead(t, `testdata/3.16/etc/issue`),
+		},
 	}
 	for _, tt := range table {
 		t.Run(string(tt.Release), func(t *testing.T) {
