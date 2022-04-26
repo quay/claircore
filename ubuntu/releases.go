@@ -140,7 +140,7 @@ func releaseToDist(r Release) *claircore.Distribution {
 	case Bionic:
 		return bionicDist
 	case Cosmic:
-		return bionicDist
+		return cosmicDist
 	case Disco:
 		return discoDist
 	case Precise:
