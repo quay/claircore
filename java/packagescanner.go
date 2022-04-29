@@ -244,7 +244,7 @@ func (s *Scanner) search(ctx context.Context, i *jar.Info, ck []byte) error {
 		return errRPC
 	}
 	v := req.URL.Query()
-	// 40 == 2 * sha1.Size. I don't there's a good way to keep it as
+	// 40 == 2 * sha1.Size. I don't think there's a good way to keep it as
 	// a constant.
 	v.Set("q", fmt.Sprintf(`1:"%40x"`, ck))
 	v.Set("wt", "json")

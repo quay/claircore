@@ -618,7 +618,7 @@ func (e *ecs) LookupRepository(name string) (r *claircore.Repository) {
 		case "rubygems":
 			e.Repository[i].URI = `https://rubygems.org/gems/`
 		case "maven":
-			e.Repository[i].URI = `https://maven.apache.org/repository/`
+			e.Repository[i].URI = `https://repo1.maven.apache.org/maven2`
 		}
 		e.repoindex[key] = i
 	}
