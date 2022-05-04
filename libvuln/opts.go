@@ -2,13 +2,11 @@ package libvuln
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"math/rand"
 	"net/http"
 	"time"
 
-	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jackc/pgx/v4/stdlib"
 	"github.com/prometheus/client_golang/prometheus"
@@ -23,13 +21,16 @@ import (
 const (
 	DefaultUpdateInterval  = 30 * time.Minute
 	DefaultUpdateWorkers   = 10
-	DefaultMaxConnPool     = 50
 	DefaultUpdateRetention = 2
 )
 
 type Opts struct {
 	// The maximum number of database connections in the
 	// connection pool.
+	//
+	// Deprecated: This is no longer used. Clients should adjust any pooling
+	// via the database driver's method, usually an additional parameter to
+	// the connection string.
 	MaxConnPool int32
 	// A connection string to the database Libvuln will use.
 	//
@@ -141,9 +142,6 @@ func (o *Opts) parse(ctx context.Context) error {
 	ms = ms.Round(100 * time.Millisecond)
 	o.UpdateInterval += ms
 
-	if o.MaxConnPool == 0 {
-		o.MaxConnPool = DefaultMaxConnPool
-	}
 	if o.UpdateWorkers <= 0 {
 		o.UpdateWorkers = DefaultUpdateWorkers
 	}
@@ -166,7 +164,6 @@ func (o *Opts) pool(ctx context.Context) (*pgxpool.Pool, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse ConnString: %v", err)
 	}
-	cfg.MaxConns = o.MaxConnPool
 	const appnameKey = `application_name`
 	params := cfg.ConnConfig.RuntimeParams
 	if _, ok := params[appnameKey]; !ok {
@@ -191,14 +188,11 @@ func (o *Opts) migrations(_ context.Context) error {
 	if !o.Migrations {
 		return nil
 	}
-	cfg, err := pgx.ParseConfig(o.ConnString)
+	cfg, err := pgxpool.ParseConfig(o.ConnString)
 	if err != nil {
 		return err
 	}
-	db, err := sql.Open("pgx", stdlib.RegisterConnConfig(cfg))
-	if err != nil {
-		return err
-	}
+	db := stdlib.OpenDB(*cfg.ConnConfig)
 	defer db.Close()
 
 	migrator := migrate.NewPostgresMigrator(db)
