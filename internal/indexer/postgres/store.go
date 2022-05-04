@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"runtime"
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -20,13 +21,23 @@ type store struct {
 	pool *pgxpool.Pool
 }
 
+// NewStore returns an initialized object implementing the [indexer.Store] interface.
+//
+// Close must be called or the program may panic.
 func NewStore(pool *pgxpool.Pool) *store {
-	return &store{
+	s := &store{
 		pool: pool,
 	}
+	_, file, line, _ := runtime.Caller(1)
+	runtime.SetFinalizer(s, func(s *store) {
+		panic(fmt.Sprintf("%s:%d: store not closed", file, line))
+	})
+	return s
 }
 
+// Close tears down the store.
 func (s *store) Close(_ context.Context) error {
+	runtime.SetFinalizer(s, nil)
 	s.pool.Close()
 	return nil
 }

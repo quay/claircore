@@ -174,6 +174,7 @@ func TestE2E(t *testing.T) {
 	for _, e := range e2es {
 		pool := TestDatabase(ctx, t)
 		store := NewStore(pool)
+		defer store.Close(ctx)
 
 		layer := &claircore.Layer{
 			Hash: claircore.MustParseDigest(`sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef`),

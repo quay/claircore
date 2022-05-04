@@ -29,6 +29,7 @@ func TestAffectedE2E(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
 	pool := TestDatabase(ctx, t)
 	store := NewStore(pool)
+	defer store.Close(ctx)
 
 	table := []struct {
 		// name of the defined affectedE2E test
