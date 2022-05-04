@@ -2,10 +2,8 @@ package libindex
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
-	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jackc/pgx/v4/stdlib"
 	"github.com/prometheus/client_golang/prometheus"
@@ -26,7 +24,6 @@ func initDB(ctx context.Context, opts *Opts) (*pgxpool.Pool, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse ConnString: %v", err)
 	}
-	cfg.MaxConns = 30
 	const appnameKey = `application_name`
 	params := cfg.ConnConfig.RuntimeParams
 	if _, ok := params[appnameKey]; !ok {
@@ -47,14 +44,11 @@ func initDB(ctx context.Context, opts *Opts) (*pgxpool.Pool, error) {
 
 // initialize a indexer.Store given libindex.Opts
 func initStore(_ context.Context, pool *pgxpool.Pool, opts *Opts) (indexer.Store, error) {
-	cfg, err := pgx.ParseConfig(opts.ConnString)
+	cfg, err := pgxpool.ParseConfig(opts.ConnString)
 	if err != nil {
 		return nil, err
 	}
-	db, err := sql.Open("pgx", stdlib.RegisterConnConfig(cfg))
-	if err != nil {
-		return nil, err
-	}
+	db := stdlib.OpenDB(*cfg.ConnConfig)
 	defer db.Close()
 
 	// do migrations if requested
