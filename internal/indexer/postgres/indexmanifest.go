@@ -78,19 +78,19 @@ func (s *store) IndexManifest(ctx context.Context, ir *claircore.IndexReport) er
 			continue
 		}
 
-		v, err := toValues(*record)
+		v, err := toValues(record)
 		if err != nil {
 			return fmt.Errorf("received a record with an invalid id: %v", err)
 		}
 
 		// if source package exists create record
-		if v[0] != nil {
+		if v.Source != nil {
 			err = mBatcher.Queue(
 				ctx,
 				queryStmt.SQL,
-				v[0],
-				v[2],
-				v[3],
+				v.Source,
+				v.Distribution,
+				v.Repository,
 				hash,
 			)
 			if err != nil {
@@ -101,9 +101,9 @@ func (s *store) IndexManifest(ctx context.Context, ir *claircore.IndexReport) er
 		err = mBatcher.Queue(
 			ctx,
 			queryStmt.SQL,
-			v[1],
-			v[2],
-			v[3],
+			v.Package,
+			v.Distribution,
+			v.Repository,
 			hash,
 		)
 		if err != nil {
@@ -136,42 +136,39 @@ func (s *store) IndexManifest(ctx context.Context, ir *claircore.IndexReport) er
 // v[1] package id or nil
 // v[2] distribution id or nil
 // v[3] repository id or nil
-func toValues(r claircore.IndexRecord) ([4]*uint64, error) {
-	res := [4]*uint64{}
-
+func toValues(r *claircore.IndexRecord) (res recordIDs, err error) {
 	if r.Package.Source != nil {
-		id, err := strconv.ParseUint(r.Package.Source.ID, 10, 64)
+		res.Source = new(uint64)
+		*res.Source, err = strconv.ParseUint(r.Package.Source.ID, 10, 64)
 		if err != nil {
 			return res, fmt.Errorf("source package id %v: %v", r.Package.ID, err)
 		}
-		res[0] = &id
 	}
-
 	if r.Package != nil {
-		id, err := strconv.ParseUint(r.Package.ID, 10, 64)
+		res.Package = new(uint64)
+		*res.Package, err = strconv.ParseUint(r.Package.ID, 10, 64)
 		if err != nil {
 			return res, fmt.Errorf("package id %v: %v", r.Package.ID, err)
 		}
-		res[1] = &id
-
 	}
-
 	if r.Distribution != nil {
-		id, err := strconv.ParseUint(r.Distribution.ID, 10, 64)
+		res.Distribution = new(uint64)
+		*res.Distribution, err = strconv.ParseUint(r.Distribution.ID, 10, 64)
 		if err != nil {
 			return res, fmt.Errorf("distribution id %v: %v", r.Distribution.ID, err)
 		}
-		res[2] = &id
 	}
-
 	if r.Repository != nil {
-		id, err := strconv.ParseUint(r.Repository.ID, 10, 64)
+		res.Repository = new(uint64)
+		*res.Repository, err = strconv.ParseUint(r.Repository.ID, 10, 64)
 		if err != nil {
 			// return res, fmt.Errorf("repository id %v: %v", r.Package.ID, err)
 			return res, nil
 		}
-		res[3] = &id
 	}
-
 	return res, nil
+}
+
+type recordIDs struct {
+	Source, Package, Distribution, Repository *uint64
 }
