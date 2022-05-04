@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"time"
 
@@ -33,38 +34,16 @@ var (
 	)
 )
 
-func (s *store) PersistManifest(ctx context.Context, manifest claircore.Manifest) error {
-	const (
-		insertManifest = `
-		INSERT INTO manifest (hash)
-		VALUES ($1)
-		ON CONFLICT DO NOTHING;
-		`
-		insertLayer = `
-		INSERT INTO layer (hash)
-		VALUES ($1)
-		ON CONFLICT DO NOTHING;
-		`
-		insertManifestLayer = `
-		WITH manifests AS (
-			SELECT id AS manifest_id
-			FROM manifest
-			WHERE hash = $1
-		),
-			 layers AS (
-				 SELECT id AS layer_id
-				 FROM layer
-				 WHERE hash = $2
-			 )
-		INSERT
-		INTO manifest_layer (manifest_id, layer_id, i)
-		VALUES ((SELECT manifest_id FROM manifests),
-				(SELECT layer_id FROM layers),
-				$3)
-		ON CONFLICT DO NOTHING;
-		`
-	)
+var (
+	//go:embed sql/insert_manifest.sql
+	insertManifestSQL string
+	//go:embed sql/insert_layer.sql
+	insertLayerSQL string
+	//go:embed sql/insert_manifest_layer.sql
+	insertManifestLayerSQL string
+)
 
+func (s *store) PersistManifest(ctx context.Context, manifest claircore.Manifest) error {
 	tctx, done := context.WithTimeout(ctx, 5*time.Second)
 	tx, err := s.pool.Begin(tctx)
 	done()
@@ -75,7 +54,7 @@ func (s *store) PersistManifest(ctx context.Context, manifest claircore.Manifest
 
 	tctx, done = context.WithTimeout(ctx, 5*time.Second)
 	start := time.Now()
-	_, err = tx.Exec(tctx, insertManifest, manifest.Hash)
+	_, err = tx.Exec(tctx, insertManifestSQL, manifest.Hash)
 	done()
 	if err != nil {
 		return fmt.Errorf("failed to insert manifest: %w", err)
@@ -86,7 +65,7 @@ func (s *store) PersistManifest(ctx context.Context, manifest claircore.Manifest
 	for i, layer := range manifest.Layers {
 		tctx, done = context.WithTimeout(ctx, 5*time.Second)
 		start := time.Now()
-		_, err = tx.Exec(tctx, insertLayer, layer.Hash)
+		_, err = tx.Exec(tctx, insertLayerSQL, layer.Hash)
 		done()
 		if err != nil {
 			return fmt.Errorf("failed to insert layer: %w", err)
@@ -96,10 +75,10 @@ func (s *store) PersistManifest(ctx context.Context, manifest claircore.Manifest
 
 		tctx, done = context.WithTimeout(ctx, 5*time.Second)
 		start = time.Now()
-		_, err = tx.Exec(tctx, insertManifestLayer, manifest.Hash, layer.Hash, i)
+		_, err = tx.Exec(tctx, insertManifestLayerSQL, manifest.Hash, layer.Hash, i)
 		done()
 		if err != nil {
-			return fmt.Errorf("failed to insert manifest -> layer link: %w", err)
+			return fmt.Errorf("failed to insert manifest → layer link: %w", err)
 		}
 		persistManifestCounter.WithLabelValues("insertManifestLayer").Add(1)
 		persistManifestDuration.WithLabelValues("insertManifestLayer").Observe(time.Since(start).Seconds())

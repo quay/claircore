@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"strconv"
 	"time"
@@ -36,20 +37,10 @@ var (
 	)
 )
 
+//go:embed sql/insert_manifest_index.sql
+var insertManifestIndexSQL string
+
 func (s *store) IndexManifest(ctx context.Context, ir *claircore.IndexReport) error {
-	const (
-		query = `
-		WITH manifests AS (
-			SELECT id AS manifest_id
-			FROM manifest
-			WHERE hash = $4
-		)
-		INSERT
-		INTO manifest_index(package_id, dist_id, repo_id, manifest_id)
-		VALUES ($1, $2, $3, (SELECT manifest_id FROM manifests))
-		ON CONFLICT DO NOTHING;
-		`
-	)
 	ctx = zlog.ContextWithValues(ctx, "component", "internal/indexer/postgres/indexManifest")
 
 	if ir.Hash.String() == "" {
@@ -73,7 +64,7 @@ func (s *store) IndexManifest(ctx context.Context, ir *claircore.IndexReport) er
 	defer tx.Rollback(ctx)
 
 	tctx, done = context.WithTimeout(ctx, 5*time.Second)
-	queryStmt, err := tx.Prepare(tctx, "queryStmt", query)
+	queryStmt, err := tx.Prepare(tctx, "queryStmt", insertManifestIndexSQL)
 	done()
 	if err != nil {
 		return fmt.Errorf("failed to create statement: %w", err)

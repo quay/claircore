@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"time"
 
@@ -38,6 +39,13 @@ var (
 	)
 )
 
+var (
+	//go:embed sql/insert_package.sql
+	insertPackageSQL string
+	//go:embed sql/associate_layer_package_scanner.sql
+	associateLayerPackageSQL string
+)
+
 // IndexPackages indexes all provided packages along with creating a scan artifact.
 //
 // If a source package is nested inside a binary package we index the source
@@ -47,56 +55,6 @@ var (
 // Scan artifacts are used to determine if a particular layer has been scanned by a
 // particular scanner. See the LayerScanned method for more details.
 func (s *store) IndexPackages(ctx context.Context, pkgs []*claircore.Package, layer *claircore.Layer, scnr indexer.VersionedScanner) error {
-	const (
-		insert = ` 
-		INSERT INTO package (name, kind, version, norm_kind, norm_version, module, arch)
-		VALUES ($1, $2, $3, $4, $5::int[], $6, $7)
-		ON CONFLICT (name, kind, version, module, arch) DO NOTHING;
-		`
-
-		insertWith = `
-		WITH source_package AS (
-			SELECT id AS source_id
-			FROM package
-			WHERE name = $1
-			  AND kind = $2
-			  AND version = $3
-			  AND module = $4
-			  AND arch = $5
-		),
-			 binary_package AS (
-				 SELECT id AS package_id
-				 FROM package
-				 WHERE name = $6
-				   AND kind = $7
-				   AND version = $8
-				   AND module = $9
-				   AND arch = $10
-			 ),
-			 scanner AS (
-				 SELECT id AS scanner_id
-				 FROM scanner
-				 WHERE name = $11
-				   AND version = $12
-				   AND kind = $13
-			 ),
-			 layer AS (
-				 SELECT id AS layer_id
-				 FROM layer
-				 WHERE layer.hash = $14
-			 )
-		INSERT
-		INTO package_scanartifact (layer_id, package_db, repository_hint, package_id, source_id, scanner_id)
-		VALUES ((SELECT layer_id FROM layer),
-				$15,
-				$16,
-				(SELECT package_id FROM binary_package),
-				(SELECT source_id FROM source_package),
-				(SELECT scanner_id FROM scanner))
-		ON CONFLICT DO NOTHING;
-		`
-	)
-
 	ctx = zlog.ContextWithValues(ctx, "component", "internal/indexer/postgres/indexPackages")
 	// obtain a transaction scoped batch
 	tctx, done := context.WithTimeout(ctx, 5*time.Second)
@@ -108,13 +66,13 @@ func (s *store) IndexPackages(ctx context.Context, pkgs []*claircore.Package, la
 	defer tx.Rollback(ctx)
 
 	tctx, done = context.WithTimeout(ctx, 5*time.Second)
-	insertPackageStmt, err := tx.Prepare(tctx, "insertPackageStmt", insert)
+	insertPackageStmt, err := tx.Prepare(tctx, "insertPackageStmt", insertPackageSQL)
 	done()
 	if err != nil {
 		return fmt.Errorf("failed to create statement: %w", err)
 	}
 	tctx, done = context.WithTimeout(ctx, 5*time.Second)
-	insertPackageScanArtifactWithStmt, err := tx.Prepare(tctx, "insertPackageScanArtifactWith", insertWith)
+	insertPackageScanArtifactWithStmt, err := tx.Prepare(tctx, "insertPackageScanArtifactWith", associateLayerPackageSQL)
 	done()
 	if err != nil {
 		return fmt.Errorf("failed to create statement: %w", err)

@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"time"
 
@@ -32,32 +33,14 @@ var (
 	)
 )
 
-func (s *store) RegisterScanners(ctx context.Context, vs indexer.VersionedScanners) error {
-	const (
-		insert = `
-INSERT
-INTO
-	scanner (name, version, kind)
-VALUES
-	($1, $2, $3)
-ON CONFLICT
-	(name, version, kind)
-DO
-	NOTHING;
-`
-		exists = `
-SELECT
-	EXISTS(
-		SELECT
-			1
-		FROM
-			scanner
-		WHERE
-			name = $1 AND version = $2 AND kind = $3
-	);
-`
-	)
+var (
+	//go:embed sql/insert_scanner.sql
+	insertScannerSQL string
+	//go:embed sql/scanner_exists.sql
+	scannerExistsSQL string
+)
 
+func (s *store) RegisterScanners(ctx context.Context, vs indexer.VersionedScanners) error {
 	var ok bool
 	var err error
 	var tctx context.Context
@@ -65,7 +48,7 @@ SELECT
 	for _, v := range vs {
 		tctx, done = context.WithTimeout(ctx, time.Second)
 		start := time.Now()
-		err = s.pool.QueryRow(tctx, exists, v.Name(), v.Version(), v.Kind()).
+		err = s.pool.QueryRow(tctx, scannerExistsSQL, v.Name(), v.Version(), v.Kind()).
 			Scan(&ok)
 		done()
 		if err != nil {
@@ -79,7 +62,7 @@ SELECT
 
 		tctx, done = context.WithTimeout(ctx, time.Second)
 		start = time.Now()
-		_, err = s.pool.Exec(tctx, insert, v.Name(), v.Version(), v.Kind())
+		_, err = s.pool.Exec(tctx, insertScannerSQL, v.Name(), v.Version(), v.Kind())
 		done()
 		if err != nil {
 			return fmt.Errorf("failed to insert scanner %q: %w", v.Name(), err)

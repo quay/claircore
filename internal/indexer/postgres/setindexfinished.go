@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"time"
 
@@ -28,54 +29,20 @@ var (
 			Namespace: "claircore",
 			Subsystem: "indexer",
 			Name:      "setindexfinished_duration_seconds",
-			Help:      "The duration of all queries issued in the SetIndexFinished method",
+			Help:      "Duration of all queries issued in the SetIndexFinished method.",
 		},
 		[]string{"query"},
 	)
 )
 
-func (s *store) SetIndexFinished(ctx context.Context, ir *claircore.IndexReport, scnrs indexer.VersionedScanners) error {
-	const (
-		insertManifestScanned = `
-WITH
-	manifests
-		AS (
-			SELECT
-				id AS manifest_id
-			FROM
-				manifest
-			WHERE
-				hash = $1
-		)
-INSERT
-INTO
-	scanned_manifest (manifest_id, scanner_id)
-VALUES
-	((SELECT manifest_id FROM manifests), $2);
-`
-		upsertIndexReport = `
-WITH
-	manifests
-		AS (
-			SELECT
-				id AS manifest_id
-			FROM
-				manifest
-			WHERE
-				hash = $1
-		)
-INSERT
-INTO
-	indexreport (manifest_id, scan_result)
-VALUES
-	((SELECT manifest_id FROM manifests), $2)
-ON CONFLICT
-	(manifest_id)
-DO
-	UPDATE SET scan_result = excluded.scan_result;
-`
-	)
+var (
+	//go:embed sql/insert_manifest_scanned.sql
+	insertManifestScannedSQL string
+	//go:embed sql/upsert_indexreport.sql
+	upsertIndexReportSQL string
+)
 
+func (s *store) SetIndexFinished(ctx context.Context, ir *claircore.IndexReport, scnrs indexer.VersionedScanners) error {
 	scannerIDs, err := s.selectScanners(ctx, scnrs)
 	if err != nil {
 		return fmt.Errorf("failed to select package scanner id: %w", err)
@@ -93,7 +60,7 @@ DO
 	for _, id := range scannerIDs {
 		tctx, done := context.WithTimeout(ctx, 5*time.Second)
 		start := time.Now()
-		_, err := tx.Exec(tctx, insertManifestScanned, ir.Hash, id)
+		_, err := tx.Exec(tctx, insertManifestScannedSQL, ir.Hash, id)
 		done()
 		if err != nil {
 			return fmt.Errorf("failed to link manifest with scanner list: %w", err)
@@ -108,7 +75,7 @@ DO
 
 	tctx, done = context.WithTimeout(ctx, 5*time.Second)
 	start := time.Now()
-	_, err = tx.Exec(tctx, upsertIndexReport, ir.Hash, jsonbIndexReport(*ir))
+	_, err = tx.Exec(tctx, upsertIndexReportSQL, ir.Hash, jsonbIndexReport(*ir))
 	done()
 	if err != nil {
 		return fmt.Errorf("failed to upsert scan result: %w", err)

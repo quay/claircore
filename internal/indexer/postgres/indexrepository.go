@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"time"
 
@@ -34,43 +35,14 @@ var (
 	)
 )
 
-func (s *store) IndexRepositories(ctx context.Context, repos []*claircore.Repository, l *claircore.Layer, scnr indexer.VersionedScanner) error {
-	const (
-		insert = `
-		INSERT INTO repo
-			(name, key, uri, cpe)
-		VALUES ($1, $2, $3, $4)
-		ON CONFLICT (name, key, uri) DO NOTHING;
-		`
+var (
+	//go:embed sql/insert_repository.sql
+	insertRepositorySQL string
+	//go:embed sql/associate_layer_repository_scanner.sql
+	associateLayerPkgSQL string
+)
 
-		insertWith = `
-		WITH repositories AS (
-			SELECT id AS repo_id
-			FROM repo
-			WHERE name = $1
-			  AND key = $2
-			  AND uri = $3
-		),
-			 scanner AS (
-				 SELECT id AS scanner_id
-				 FROM scanner
-				 WHERE name = $4
-				   AND version = $5
-				   AND kind = $6
-			 ),
-			 layer AS (
-				 SELECT id AS layer_id
-				 FROM layer
-				 WHERE layer.hash = $7
-			 )
-		INSERT
-		INTO repo_scanartifact (layer_id, repo_id, scanner_id)
-		VALUES ((SELECT layer_id FROM layer),
-				(SELECT repo_id FROM repositories),
-				(SELECT scanner_id FROM scanner))
-		ON CONFLICT DO NOTHING;
-		`
-	)
+func (s *store) IndexRepositories(ctx context.Context, repos []*claircore.Repository, l *claircore.Layer, scnr indexer.VersionedScanner) error {
 	// obtain a transaction scoped batch
 	tctx, done := context.WithTimeout(ctx, 5*time.Second)
 	tx, err := s.pool.Begin(tctx)
@@ -81,13 +53,13 @@ func (s *store) IndexRepositories(ctx context.Context, repos []*claircore.Reposi
 	defer tx.Rollback(ctx)
 
 	tctx, done = context.WithTimeout(ctx, 5*time.Second)
-	insertRepoStmt, err := tx.Prepare(tctx, "insertRepoStmt", insert)
+	insertRepoStmt, err := tx.Prepare(tctx, "insertRepoStmt", insertRepositorySQL)
 	done()
 	if err != nil {
 		return fmt.Errorf("failed to create insert repo statement: %w", err)
 	}
 	tctx, done = context.WithTimeout(ctx, 5*time.Second)
-	insertRepoScanArtifactWithStmt, err := tx.Prepare(tctx, "insertRepoScanArtifactWith", insertWith)
+	insertRepoScanArtifactWithStmt, err := tx.Prepare(tctx, "insertRepoScanArtifactWith", associateLayerPkgSQL)
 	done()
 	if err != nil {
 		return fmt.Errorf("failed to create insert repo scanartifact statement: %w", err)
