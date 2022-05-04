@@ -21,6 +21,9 @@ func TestDatabase(ctx context.Context, t testing.TB) *pgxpool.Pool {
 	}
 	cfg := db.Config()
 	cfg.ConnConfig.LogLevel = pgx.LogLevelError
+	if testing.Verbose() {
+		cfg.ConnConfig.LogLevel = pgx.LogLevelInfo
+	}
 	cfg.ConnConfig.Logger = testingadapter.NewLogger(t)
 	// we are going to use pgx for more control over connection pool and
 	// and a cleaner api around bulk inserts

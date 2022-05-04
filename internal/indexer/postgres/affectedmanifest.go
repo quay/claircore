@@ -2,10 +2,11 @@ package postgres
 
 import (
 	"context"
+	_ "embed"
 	"errors"
 	"fmt"
+	"runtime/trace"
 	"strconv"
-	"time"
 
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v4"
@@ -13,6 +14,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/zlog"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/omnimatcher"
@@ -21,7 +23,8 @@ import (
 var (
 	// ErrNotIndexed indicates the vulnerability being queried has a dist or repo not
 	// indexed into the database.
-	ErrNotIndexed            = fmt.Errorf("vulnerability containers data not indexed by any scannners")
+	ErrNotIndexed = fmt.Errorf("vulnerability containers data not indexed by any scannners")
+
 	affectedManifestsCounter = promauto.NewCounterVec(
 		prometheus.CounterOpts{
 			Namespace: "claircore",
@@ -36,7 +39,7 @@ var (
 			Namespace: "claircore",
 			Subsystem: "indexer",
 			Name:      "affectedmanifests_duration_seconds",
-			Help:      "The duration of all queries issued in the AffectedManifests method",
+			Help:      "Duration of all queries issued in the AffectedManifests method.",
 		},
 		[]string{"query"},
 	)
@@ -45,7 +48,7 @@ var (
 			Namespace: "claircore",
 			Subsystem: "indexer",
 			Name:      "protorecord_total",
-			Help:      "Total number of database queries issued in the protoRecord  method.",
+			Help:      "Total number of database queries issued in the protoRecord method.",
 		},
 		[]string{"query"},
 	)
@@ -54,10 +57,21 @@ var (
 			Namespace: "claircore",
 			Subsystem: "indexer",
 			Name:      "protorecord_duration_seconds",
-			Help:      "The duration of all queries issued in the protoRecord method",
+			Help:      "Duration of all queries issued in the protoRecord method.",
 		},
 		[]string{"query"},
 	)
+)
+
+var (
+	//go:embed sql/select_dist.sql
+	selectDistSQL string
+	//go:embed sql/select_repo.sql
+	selectRepoSQL string
+	//go:embed sql/select_packages.sql
+	selectPackagesSQL string
+	//go:embed sql/select_affected.sql
+	selectAffectedSQL string
 )
 
 // AffectedManifests finds the manifests digests which are affected by the provided vulnerability.
@@ -69,82 +83,229 @@ var (
 // The manifest index is then queried to resolve a list of manifest hashes containing the affected
 // artifacts.
 func (s *store) AffectedManifests(ctx context.Context, v claircore.Vulnerability) ([]claircore.Digest, error) {
-	const (
-		selectPackages = `
-SELECT
-	id,
-	name,
-	version,
-	kind,
-	norm_kind,
-	norm_version,
-	module,
-	arch
-FROM
-	package
-WHERE
-	name = $1;
-`
-		selectAffected = `
-SELECT
-	manifest.hash
-FROM
-	manifest_index
-	JOIN manifest ON
-			manifest_index.manifest_id = manifest.id
-WHERE
-	package_id = $1
-	AND (
-			CASE
-			WHEN $2::INT8 IS NULL THEN dist_id IS NULL
-			ELSE dist_id = $2
-			END
-		)
-	AND (
-			CASE
-			WHEN $3::INT8 IS NULL THEN repo_id IS NULL
-			ELSE repo_id = $3
-			END
-		);
-`
-	)
-	ctx = zlog.ContextWithValues(ctx, "component", "internal/indexer/postgres/affectedManifests")
+	ctx = zlog.ContextWithValues(ctx, "component", "internal/indexer/postgres/store.AffectedManifests")
+	ctx, task := trace.NewTask(ctx, "AffectedManifests")
+	defer task.End()
 
-	// confirm the incoming vuln can be
-	// resolved into a prototype index record
-	pr, err := protoRecord(ctx, s.pool, v)
-	switch {
-	case err == nil:
-		// break out
-	case errors.Is(err, ErrNotIndexed):
-		// This is a common case: the system knows of a vulnerability but
-		// doesn't know of any manifests it could apply to.
-		return nil, nil
-	default:
-		return nil, err
+	var (
+		pr       *claircore.IndexRecord
+		toFilter []claircore.Package
+	)
+	eg, gctx := errgroup.WithContext(ctx)
+	eg.Go(func() (err error) {
+		// confirm the incoming vuln can be
+		// resolved into a prototype index record
+		pr, err = s.protoRecord(gctx, &v)
+		switch {
+		case err == nil:
+		case errors.Is(err, ErrNotIndexed):
+			// This is a common case: the system knows of a vulnerability but
+			// doesn't know of any manifests it could apply to.
+		default:
+			return fmt.Errorf("error resolving index record: %w", err)
+		}
+		return nil
+	})
+	eg.Go(func() (err error) {
+		// collect all packages which may be affected
+		// by the vulnerability in question.
+		toFilter, err = s.vulnerabilityToPackages(gctx, &v)
+		if err != nil {
+			return fmt.Errorf("error extracting packages: %w", err)
+		}
+		return nil
+	})
+	if err := eg.Wait(); err != nil {
+		return nil, fmt.Errorf("error during preparation: %w", err)
 	}
 
-	// collect all packages which may be affected
-	// by the vulnerability in question.
-	pkgsToFilter := []claircore.Package{}
+	// for each package discovered create an index record
+	// and determine if any in-tree matcher finds the record vulnerable
+	filteredRecords := make([]claircore.IndexRecord, 0, len(toFilter))
+	om := omnimatcher.New(nil)
+	for i := range toFilter {
+		pkg := &toFilter[i]
+		pr.Package = pkg
+		match, err := om.Vulnerable(ctx, pr, &v)
+		if err != nil {
+			return nil, err
+		}
+		if match {
+			filteredRecords = append(filteredRecords, claircore.IndexRecord{
+				Package:      pkg,
+				Distribution: pr.Distribution,
+				Repository:   pr.Repository,
+			})
+		}
+	}
+	zlog.Debug(ctx).Int("count", len(filteredRecords)).Msg("vulnerable index records")
 
-	tctx, done := context.WithTimeout(ctx, 30*time.Second)
-	defer done()
-	start := time.Now()
-	rows, err := s.pool.Query(tctx, selectPackages, v.Package.Name)
+	// Query the manifest index for manifests containing the vulnerable
+	// IndexRecords and create a set containing each unique manifest.
+	set := map[string]struct{}{}
+	out := []claircore.Digest{}
+	// This could get parallelized if we were willing to do the duplication handling another way.
+	for i := range filteredRecords {
+		v, err := toValues(&filteredRecords[i])
+		if err != nil {
+			return nil, fmt.Errorf("failed to resolve record: %w", err)
+		}
+		err = s.pool.AcquireFunc(ctx, func(c *pgxpool.Conn) error {
+			const name = "selectAffected"
+			defer trace.StartRegion(ctx, name).End()
+			defer prometheus.NewTimer(affectedManifestsDuration.WithLabelValues(name)).ObserveDuration()
+			affectedManifestsCounter.WithLabelValues(name).Add(1)
+			rows, err := c.Query(ctx,
+				selectAffectedSQL,
+				v.Package,
+				v.Distribution,
+				v.Repository,
+			)
+			switch {
+			case errors.Is(err, nil):
+			case errors.Is(err, pgx.ErrNoRows):
+				err = fmt.Errorf("failed to query the manifest index: %w", err)
+				fallthrough
+			default:
+				return err
+			}
+			defer rows.Close()
+
+			for rows.Next() {
+				var hash claircore.Digest
+				err := rows.Scan(&hash)
+				if err != nil {
+					return fmt.Errorf("failed scanning manifest hash into digest: %w", err)
+				}
+				if _, ok := set[hash.String()]; !ok {
+					set[hash.String()] = struct{}{}
+					out = append(out, hash)
+				}
+			}
+			return rows.Err()
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+	zlog.Debug(ctx).Int("count", len(out)).Msg("affected manifests")
+	return out, nil
+}
+
+// protoRecord is a helper method which resolves a Vulnerability to an IndexRecord with no Package defined.
+//
+// it is an error for both a distribution and a repo to be missing from the Vulnerability.
+func (s *store) protoRecord(ctx context.Context, v *claircore.Vulnerability) (*claircore.IndexRecord, error) {
+	ctx = zlog.ContextWithValues(ctx, "component", "internal/indexer/postgres/protoRecord")
+	defer trace.StartRegion(ctx, "protoRecord").End()
+	if v.Dist == nil && v.Repo == nil {
+		return nil, errors.New("bad vulnerability: no distribution or repository")
+	}
+	var ret claircore.IndexRecord
+
+	// fill dist into prototype index record if exists
+	if (v.Dist != nil) && (v.Dist.Name != "") {
+		var id pgtype.Int8
+		err := s.pool.AcquireFunc(ctx, func(c *pgxpool.Conn) error {
+			const name = "selectDist"
+			defer trace.StartRegion(ctx, name).End()
+			defer prometheus.NewTimer(protoRecordDuration.WithLabelValues(name)).ObserveDuration()
+			protoRecordCounter.WithLabelValues(name).Add(1)
+			return c.QueryRow(ctx,
+				selectDistSQL,
+				v.Dist.Arch,
+				v.Dist.CPE,
+				v.Dist.DID,
+				v.Dist.Name,
+				v.Dist.PrettyName,
+				v.Dist.Version,
+				v.Dist.VersionCodeName,
+				v.Dist.VersionID,
+			).Scan(&id)
+		})
+		switch {
+		case err == nil:
+		case errors.Is(err, pgx.ErrNoRows):
+		default:
+			return nil, fmt.Errorf("failed to scan dist: %w", err)
+		}
+		if id.Status == pgtype.Present {
+			id := strconv.FormatInt(id.Int, 10)
+			ret.Distribution = &claircore.Distribution{
+				ID:              id,
+				Arch:            v.Dist.Arch,
+				CPE:             v.Dist.CPE,
+				DID:             v.Dist.DID,
+				Name:            v.Dist.Name,
+				PrettyName:      v.Dist.PrettyName,
+				Version:         v.Dist.Version,
+				VersionCodeName: v.Dist.VersionCodeName,
+				VersionID:       v.Dist.VersionID,
+			}
+			zlog.Debug(ctx).Str("id", id).Msg("discovered distribution id")
+		}
+	}
+
+	// fill repo into prototype index record if exists
+	if (v.Repo != nil) && (v.Repo.Name != "") {
+		var id pgtype.Int8
+		err := s.pool.AcquireFunc(ctx, func(c *pgxpool.Conn) error {
+			const name = "selectRepo"
+			defer trace.StartRegion(ctx, name).End()
+			defer prometheus.NewTimer(protoRecordDuration.WithLabelValues(name)).ObserveDuration()
+			protoRecordCounter.WithLabelValues(name).Add(1)
+			return c.QueryRow(ctx, selectRepoSQL,
+				v.Repo.Name,
+				v.Repo.Key,
+				v.Repo.URI,
+			).Scan(&id)
+		})
+		switch {
+		case err == nil:
+		case errors.Is(err, pgx.ErrNoRows):
+		default:
+			return nil, fmt.Errorf("failed to scan repo: %w", err)
+		}
+		if id.Status == pgtype.Present {
+			id := strconv.FormatInt(id.Int, 10)
+			ret.Repository = &claircore.Repository{
+				ID:   id,
+				Key:  v.Repo.Key,
+				Name: v.Repo.Name,
+				URI:  v.Repo.URI,
+			}
+			zlog.Debug(ctx).Str("id", id).Msg("discovered repo id")
+		}
+	}
+
+	// we need at least a repo or distribution to continue
+	if (ret.Distribution == nil) && (ret.Repository == nil) {
+		return nil, ErrNotIndexed
+	}
+
+	return &ret, nil
+}
+
+func (s *store) vulnerabilityToPackages(ctx context.Context, v *claircore.Vulnerability) ([]claircore.Package, error) {
+	const name = "vulnerabilityToPackages"
+	defer trace.StartRegion(ctx, name).End()
+	defer prometheus.NewTimer(affectedManifestsDuration.WithLabelValues(name)).ObserveDuration()
+	affectedManifestsCounter.WithLabelValues(name).Add(1)
+	rows, err := s.pool.Query(ctx, selectPackagesSQL, v.Package.Name)
 	switch {
 	case errors.Is(err, nil):
 	case errors.Is(err, pgx.ErrNoRows):
-		return []claircore.Digest{}, nil
+		return nil, nil
 	default:
 		return nil, fmt.Errorf("failed to query packages associated with vulnerability %q: %w", v.ID, err)
 	}
 	defer rows.Close()
-	affectedManifestsCounter.WithLabelValues("selectPackages").Add(1)
-	affectedManifestsDuration.WithLabelValues("selectPackages").Observe(time.Since(start).Seconds())
+	var out []claircore.Package
 
 	for rows.Next() {
-		var pkg claircore.Package
+		i := len(out)
+		out = append(out, claircore.Package{})
+		pkg := &out[i]
 		var id int64
 		var nKind *string
 		var nVer pgtype.Int4Array
@@ -169,195 +330,10 @@ WHERE
 				pkg.NormalizedVersion.V[i] = n.Int
 			}
 		}
-		pkgsToFilter = append(pkgsToFilter, pkg)
 	}
-	zlog.Debug(ctx).Int("count", len(pkgsToFilter)).Msg("packages to filter")
+	zlog.Debug(ctx).Int("count", len(out)).Msg("packages to filter")
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("error scanning packages: %w", err)
 	}
-
-	// for each package discovered create an index record
-	// and determine if any in-tree matcher finds the record vulnerable
-	var filteredRecords []claircore.IndexRecord
-	om := omnimatcher.New(nil)
-	for _, pkg := range pkgsToFilter {
-		pr.Package = &pkg
-		match, err := om.Vulnerable(ctx, &pr, &v)
-		if err != nil {
-			return nil, err
-		}
-		if match {
-			p := pkg // make a copy, or else you'll get a stale reference later
-			filteredRecords = append(filteredRecords, claircore.IndexRecord{
-				Package:      &p,
-				Distribution: pr.Distribution,
-				Repository:   pr.Repository,
-			})
-		}
-	}
-	zlog.Debug(ctx).Int("count", len(filteredRecords)).Msg("vulnerable index records")
-
-	// Query the manifest index for manifests containing the vulnerable
-	// IndexRecords and create a set containing each unique manifest.
-	set := map[string]struct{}{}
-	out := []claircore.Digest{}
-	for _, record := range filteredRecords {
-		v, err := toValues(record)
-		if err != nil {
-			return nil, fmt.Errorf("failed to resolve record %+v to sql values for query: %w", record, err)
-		}
-
-		err = func() error {
-			tctx, done := context.WithTimeout(ctx, 30*time.Second)
-			defer done()
-			start := time.Now()
-			rows, err := s.pool.Query(tctx,
-				selectAffected,
-				record.Package.ID,
-				v[2],
-				v[3],
-			)
-			switch {
-			case errors.Is(err, nil):
-			case errors.Is(err, pgx.ErrNoRows):
-				err = fmt.Errorf("failed to query the manifest index: %w", err)
-				fallthrough
-			default:
-				return err
-			}
-			defer rows.Close()
-			affectedManifestsCounter.WithLabelValues("selectAffected").Add(1)
-			affectedManifestsDuration.WithLabelValues("selectAffected").Observe(time.Since(start).Seconds())
-
-			for rows.Next() {
-				var hash claircore.Digest
-				err := rows.Scan(&hash)
-				if err != nil {
-					return fmt.Errorf("failed scanning manifest hash into digest: %w", err)
-				}
-				if _, ok := set[hash.String()]; !ok {
-					set[hash.String()] = struct{}{}
-					out = append(out, hash)
-				}
-			}
-			return rows.Err()
-		}()
-		if err != nil {
-			return nil, err
-		}
-	}
-	zlog.Debug(ctx).Int("count", len(out)).Msg("affected manifests")
 	return out, nil
-}
-
-// protoRecord is a helper method which resolves a Vulnerability to an IndexRecord with no Package defined.
-//
-// it is an error for both a distribution and a repo to be missing from the Vulnerability.
-func protoRecord(ctx context.Context, pool *pgxpool.Pool, v claircore.Vulnerability) (claircore.IndexRecord, error) {
-	const (
-		selectDist = `
-		SELECT id
-		FROM dist
-		WHERE arch = $1
-		  AND cpe = $2
-		  AND did = $3
-		  AND name = $4
-		  AND pretty_name = $5
-		  AND version = $6
-		  AND version_code_name = $7
-		  AND version_id = $8;
-		`
-		selectRepo = `
-		SELECT id
-		FROM repo
-		WHERE name = $1
-			AND key = $2
-			AND uri = $3;
-		`
-		timeout = 5 * time.Second
-	)
-	ctx = zlog.ContextWithValues(ctx, "component", "internal/indexer/postgres/protoRecord")
-
-	protoRecord := claircore.IndexRecord{}
-	// fill dist into prototype index record if exists
-	if (v.Dist != nil) && (v.Dist.Name != "") {
-		start := time.Now()
-		ctx, done := context.WithTimeout(ctx, timeout)
-		row := pool.QueryRow(ctx,
-			selectDist,
-			v.Dist.Arch,
-			v.Dist.CPE,
-			v.Dist.DID,
-			v.Dist.Name,
-			v.Dist.PrettyName,
-			v.Dist.Version,
-			v.Dist.VersionCodeName,
-			v.Dist.VersionID,
-		)
-		var id pgtype.Int8
-		err := row.Scan(&id)
-		done()
-		if err != nil {
-			if !errors.Is(err, pgx.ErrNoRows) {
-				return protoRecord, fmt.Errorf("failed to scan dist: %w", err)
-			}
-		}
-		protoRecordCounter.WithLabelValues("selectDist").Add(1)
-		protoRecordDuration.WithLabelValues("selectDist").Observe(time.Since(start).Seconds())
-
-		if id.Status == pgtype.Present {
-			id := strconv.FormatInt(id.Int, 10)
-			protoRecord.Distribution = &claircore.Distribution{
-				ID:              id,
-				Arch:            v.Dist.Arch,
-				CPE:             v.Dist.CPE,
-				DID:             v.Dist.DID,
-				Name:            v.Dist.Name,
-				PrettyName:      v.Dist.PrettyName,
-				Version:         v.Dist.Version,
-				VersionCodeName: v.Dist.VersionCodeName,
-				VersionID:       v.Dist.VersionID,
-			}
-			zlog.Debug(ctx).Str("id", id).Msg("discovered distribution id")
-		}
-	}
-
-	// fill repo into prototype index record if exists
-	if (v.Repo != nil) && (v.Repo.Name != "") {
-		start := time.Now()
-		ctx, done := context.WithTimeout(ctx, timeout)
-		row := pool.QueryRow(ctx, selectRepo,
-			v.Repo.Name,
-			v.Repo.Key,
-			v.Repo.URI,
-		)
-		var id pgtype.Int8
-		err := row.Scan(&id)
-		done()
-		if err != nil {
-			if !errors.Is(err, pgx.ErrNoRows) {
-				return protoRecord, fmt.Errorf("failed to scan repo: %w", err)
-			}
-		}
-		protoRecordCounter.WithLabelValues("selectDist").Add(1)
-		protoRecordDuration.WithLabelValues("selectDist").Observe(time.Since(start).Seconds())
-
-		if id.Status == pgtype.Present {
-			id := strconv.FormatInt(id.Int, 10)
-			protoRecord.Repository = &claircore.Repository{
-				ID:   id,
-				Key:  v.Repo.Key,
-				Name: v.Repo.Name,
-				URI:  v.Repo.URI,
-			}
-			zlog.Debug(ctx).Str("id", id).Msg("discovered repo id")
-		}
-	}
-
-	// we need at least a repo or distribution to continue
-	if (protoRecord.Distribution == nil) && (protoRecord.Repository == nil) {
-		return protoRecord, ErrNotIndexed
-	}
-
-	return protoRecord, nil
 }

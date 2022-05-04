@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	_ "embed"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -153,6 +154,17 @@ func (e *affectedE2E) Run(t *testing.T) {
 	}
 }
 
+var (
+	//go:embed sql/test/insert_manifest.sql
+	insertManifest string
+	//go:embed sql/test/insert_package.sql
+	insertPkg string
+	//go:embed sql/test/insert_distribution.sql
+	insertDist string
+	//go:embed sql/test/insert_repository.sql
+	insertRepo string
+)
+
 // IndexArtifacts manually writes all the necessary
 // artifacts to the db.
 //
@@ -160,32 +172,6 @@ func (e *affectedE2E) Run(t *testing.T) {
 // fail in later tests.
 func (e *affectedE2E) IndexArtifacts(t *testing.T) {
 	ctx := zlog.Test(e.ctx, t)
-	const (
-		insertManifest = `
-		INSERT INTO	manifest 
-			(hash)
-		VALUES ($1)
-		ON CONFLICT DO NOTHING;
-		`
-		insertPkg = ` 
-		INSERT INTO package (name, kind, version, norm_kind, norm_version, module, arch, id)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-		ON CONFLICT DO NOTHING;
-		`
-		insertDist = `
-		INSERT INTO dist 
-			(name, did, version, version_code_name, version_id, arch, cpe, pretty_name, id) 
-		VALUES 
-			($1, $2, $3, $4, $5, $6, $7, $8, $9) 
-		ON CONFLICT DO NOTHING;
-		`
-		insertRepo = `
-		INSERT INTO repo
-			(name, key, uri, id)
-		VALUES ($1, $2, $3, $4)
-		ON CONFLICT DO NOTHING;
-		`
-	)
 	_, err := e.pool.Exec(ctx, insertManifest, e.ir.Hash.String())
 	if err != nil {
 		t.Fatalf("failed to insert manifest: %v", err)
