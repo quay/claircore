@@ -21,6 +21,7 @@ import (
 	"github.com/quay/claircore/suse"
 	"github.com/quay/claircore/ubuntu"
 	"github.com/quay/claircore/updater"
+	"github.com/quay/claircore/updater/osv"
 )
 
 var (
@@ -56,6 +57,7 @@ func inner(ctx context.Context) error {
 	updater.Register("pyupio", driver.UpdaterSetFactoryFunc(pyupio.UpdaterSet))
 	updater.Register("suse", driver.UpdaterSetFactoryFunc(suse.UpdaterSet))
 	updater.Register("rhcc", driver.UpdaterSetFactoryFunc(rhcc.UpdaterSet))
+	updater.Register("osv", osv.Factory)
 
 	cvssSet := driver.NewUpdaterSet()
 	cvssSet.Add(&cvss.Enricher{})

@@ -1,12 +1,52 @@
 package java
 
-import "testing"
+import (
+	"context"
+	"encoding/json"
+	"os"
+	"testing"
+
+	"github.com/quay/zlog"
+
+	"github.com/quay/claircore"
+)
 
 func TestMatcher(t *testing.T) {
+	ctx := zlog.Test(context.Background(), t)
 	m := &matcher{}
-	t.Skip("todo")
+	var (
+		rs []claircore.IndexRecord
+		v  claircore.Vulnerability
+	)
+	f, err := os.Open("testdata/matcher_indexrecord.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	if err := json.NewDecoder(f).Decode(&rs); err != nil {
+		t.Fatal(err)
+	}
+	f, err = os.Open("testdata/matcher_vulnerability.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	if err := json.NewDecoder(f).Decode(&v); err != nil {
+		t.Fatal(err)
+	}
 
-	_ = m
+	for i := range rs {
+		r := &rs[i]
+		if !m.Filter(r) {
+			continue
+		}
+		ok, err := m.Vulnerable(ctx, r, &v)
+		if err != nil {
+			t.Error(err)
+			continue
+		}
+		t.Logf("vulnerable? %v", ok)
+	}
 }
 
 func TestMavenVersions(t *testing.T) {

@@ -1,5 +1,3 @@
-// Package java contains components for interrogating java packages in
-// container layers.
 package java
 
 import (
@@ -31,6 +29,11 @@ var (
 	_ indexer.RPCScanner       = (*Scanner)(nil)
 )
 
+// DefaultSearchAPI is the API consulted for archives that do no have sufficient
+// embedded metadata to guess the package name and version. The expected
+// API is documented [here].
+//
+// [here]: https://central.sonatype.org/search/rest-api-guide/
 const DefaultSearchAPI = `https://search.maven.org/solrsearch/select`
 
 // ScannerConfig is the struct used to configure a Scanner.

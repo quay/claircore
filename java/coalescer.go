@@ -7,10 +7,6 @@ import (
 	"github.com/quay/claircore/internal/indexer"
 )
 
-func NewCoalescer(_ context.Context) (indexer.Coalescer, error) {
-	return (*coalescer)(nil), nil
-}
-
 type coalescer struct{}
 
 func (*coalescer) Coalesce(ctx context.Context, ls []*indexer.LayerArtifacts) (*claircore.IndexReport, error) {
