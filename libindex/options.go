@@ -47,6 +47,4 @@ type Options struct {
 	ScannerConfig struct {
 		Package, Dist, Repo map[string]func(interface{}) error
 	}
-	// vscnrs is a convenience object for holding a list of versioned scanners
-	vscnrs indexer.VersionedScanners
 }
