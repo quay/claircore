@@ -166,6 +166,10 @@ database. </p>
 type Opts struct {
 	// The maximum number of database connections in the
 	// connection pool.
+	//
+	// Deprecated: This is no longer used. Clients should adjust any pooling
+	// via the database driver's method, usually an additional parameter to
+	// the connection string.
 	MaxConnPool int32
 	// A connection string to the database Libvuln will use.
 	//
