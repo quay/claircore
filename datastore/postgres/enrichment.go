@@ -107,7 +107,7 @@ ON CONFLICT
 DO
 	NOTHING;`
 	)
-	ctx = zlog.ContextWithValues(ctx, "component", "internal/vulnstore/postgres/UpdateEnrichments")
+	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/UpdateEnrichments")
 
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
@@ -172,7 +172,7 @@ func hashEnrichment(r *driver.EnrichmentRecord) (k string, d []byte) {
 	return "md5", h.Sum(nil)
 }
 
-func (s *MatcherStore) GetEnrichment(ctx context.Context, name string, tags []string) (res []driver.EnrichmentRecord, error) {
+func (s *MatcherStore) GetEnrichment(ctx context.Context, name string, tags []string) (res []driver.EnrichmentRecord, err error) {
 	const query = `
 WITH
 	latest
@@ -195,7 +195,7 @@ WHERE
 	AND uo.enrich = e.id
 	AND e.tags && $2::text[];`
 
-	ctx = zlog.ContextWithValues(ctx, "component", "internal/vulnstore/postgres/GetEnrichment")
+	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/GetEnrichment")
 	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
 		getEnrichmentsDuration.WithLabelValues("query", strconv.FormatBool(errors.Is(err, nil)))
 	}))
