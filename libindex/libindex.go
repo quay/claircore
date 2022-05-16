@@ -23,6 +23,7 @@ import (
 	"github.com/quay/claircore/pkg/omnimatcher"
 	"github.com/quay/claircore/python"
 	"github.com/quay/claircore/rhel"
+	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/quay/claircore/rpm"
 )
 
@@ -93,6 +94,7 @@ func New(ctx context.Context, opts *Options, cl *http.Client) (*Libindex, error)
 			rpm.NewEcosystem(ctx),
 			python.NewEcosystem(ctx),
 			java.NewEcosystem(ctx),
+			rhcc.NewEcosystem(ctx),
 		}
 	}
 

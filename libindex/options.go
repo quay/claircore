@@ -1,6 +1,10 @@
 package libindex
 
-import "time"
+import (
+	"time"
+
+	"github.com/quay/claircore/indexer"
+)
 
 const (
 	DefaultScanLockRetry        = 5 * time.Second
