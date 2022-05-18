@@ -3,20 +3,20 @@ package libindex
 import (
 	"context"
 
-	"github.com/quay/claircore/internal/indexer"
-	"github.com/quay/claircore/internal/indexer/controller"
-	"github.com/quay/claircore/internal/indexer/layerscanner"
+	"github.com/quay/claircore/indexer"
+	"github.com/quay/claircore/indexer/controller"
+	"github.com/quay/claircore/indexer/layerscanner"
 )
 
 // ControllerFactory is a factory method to return a Controller during libindex runtime.
-type ControllerFactory func(_ context.Context, lib *Libindex, opts *Opts) (*controller.Controller, error)
+type ControllerFactory func(_ context.Context, lib *Libindex, opts *Options) (*controller.Controller, error)
 
 // controllerFactory is the default ControllerFactory
-func controllerFactory(ctx context.Context, lib *Libindex, opts *Opts) (*controller.Controller, error) {
+func controllerFactory(ctx context.Context, lib *Libindex, opts *Options) (*controller.Controller, error) {
 	// convert libindex.Opts to indexer.Opts
 	sOpts := &indexer.Opts{
 		Store:         lib.store,
-		Fetcher:       lib.fetchArena.Fetcher(),
+		Realizer:      lib.fa.Realizer(ctx),
 		Ecosystems:    opts.Ecosystems,
 		Vscnrs:        lib.vscnrs,
 		Client:        lib.client,

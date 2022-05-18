@@ -15,7 +15,7 @@ import (
 	"golang.org/x/sync/semaphore"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/vulnstore"
+	"github.com/quay/claircore/datastore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/updater"
 )
@@ -57,11 +57,11 @@ type Manager struct {
 
 	locks  LockSource
 	client *http.Client
-	store  vulnstore.Updater
+	store  datastore.Updater
 }
 
 // NewManager will return a manager ready to have its Start or Run methods called.
-func NewManager(ctx context.Context, store vulnstore.Updater, locks LockSource, client *http.Client, opts ...ManagerOption) (*Manager, error) {
+func NewManager(ctx context.Context, store datastore.Updater, locks LockSource, client *http.Client, opts ...ManagerOption) (*Manager, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "libvuln/updates/NewManager")
 
 	// the default Manager

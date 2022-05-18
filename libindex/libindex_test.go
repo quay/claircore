@@ -11,6 +11,7 @@ import (
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/pkg/omnimatcher"
 	indexer "github.com/quay/claircore/test/mock/indexer"
 )
 
@@ -62,7 +63,7 @@ func TestAffectedManifests(t *testing.T) {
 			mockStore: func(t *testing.T) indexer.Store {
 				ctrl := gomock.NewController(t)
 				s := indexer.NewMockStore(ctrl)
-				s.EXPECT().AffectedManifests(gomock.Any(), gomock.Any()).Return(
+				s.EXPECT().AffectedManifests(gomock.Any(), gomock.Any(), gomock.Any()).Return(
 					[]claircore.Digest{
 						digest("first digest"),
 						digest("second digest"),
@@ -80,7 +81,7 @@ func TestAffectedManifests(t *testing.T) {
 			mockStore: func(t *testing.T) indexer.Store {
 				ctrl := gomock.NewController(t)
 				s := indexer.NewMockStore(ctrl)
-				s.EXPECT().AffectedManifests(gomock.Any(), gomock.Any()).Return(
+				s.EXPECT().AffectedManifests(gomock.Any(), gomock.Any(), gomock.Any()).Return(
 					[]claircore.Digest{
 						digest("first digest"),
 						digest("second digest"),
@@ -117,12 +118,13 @@ func TestAffectedManifests(t *testing.T) {
 
 func BenchmarkAffectedManifests(b *testing.B) {
 	ctx, done := context.WithCancel(context.Background())
+	om := omnimatcher.New(nil)
 	defer done()
 
 	// create store
 	ctrl := gomock.NewController(b)
 	s := indexer.NewMockStore(ctrl)
-	s.EXPECT().AffectedManifests(gomock.Any(), gomock.Any()).Return(
+	s.EXPECT().AffectedManifests(gomock.Any(), gomock.Any(), om.Vulnerable).Return(
 		[]claircore.Digest{
 			digest("first digest"),
 			digest("second digest"),

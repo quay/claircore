@@ -6,4 +6,4 @@ package manager, such as `dpkg`.  See `dpkg/ecosystem.go` for an example.
 The Indexer will retrieve artifacts from the provided scanners and provide these
 scan artifacts to the coalescer in the Ecosystem.
 
-{{# godoc internal/indexer.Ecosystem}}
+{{# godoc indexer.Ecosystem}}

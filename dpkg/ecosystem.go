@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/quay/claircore/debian"
-	"github.com/quay/claircore/internal/indexer"
-	"github.com/quay/claircore/internal/indexer/linux"
+	"github.com/quay/claircore/indexer"
+	"github.com/quay/claircore/indexer/linux"
 	"github.com/quay/claircore/ubuntu"
 )
 

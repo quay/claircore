@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io"
+	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -19,8 +20,10 @@ import (
 	"github.com/remind101/migrate"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/indexer/linux"
+	"github.com/quay/claircore/datastore/postgres"
+	"github.com/quay/claircore/indexer/linux"
 	"github.com/quay/claircore/libindex/migrations"
+	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 	indexer "github.com/quay/claircore/test/mock/indexer"
@@ -93,9 +96,26 @@ func (tc testcase) RunInner(ctx context.Context, t *testing.T, dsn string, next 
 		Layers: ls,
 	}
 
+	pool, err := postgres.Connect(ctx, dsn, "libindex")
+	if err != nil {
+		t.Fatalf("failed to create postgres connection: %v", err)
+	}
+
+	store, err := postgres.InitPostgresIndexerStore(ctx, pool, false)
+	if err != nil {
+		t.Fatalf("failed to create postgres connection: %v", err)
+	}
+
+	ctxLocker, err := ctxlock.New(ctx, pool)
+	if err != nil {
+		t.Fatalf("failed to create context locker: %v", err)
+	}
+
 	// create libindex instance
-	opts := &Opts{
-		ConnString:           dsn,
+	opts := &Options{
+		Store:                store,
+		Locker:               ctxLocker,
+		FetchArena:           NewRemoteFetchArena(c, os.TempDir()),
 		ScanLockRetry:        2 * time.Second,
 		LayerScanConcurrency: 1,
 		Ecosystems: []*indexer.Ecosystem{

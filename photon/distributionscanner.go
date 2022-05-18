@@ -9,7 +9,7 @@ import (
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/indexer"
+	"github.com/quay/claircore/indexer"
 )
 
 // Photon provides one security database file per major version. So far, there are 3 versions
