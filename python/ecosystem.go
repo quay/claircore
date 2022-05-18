@@ -3,7 +3,7 @@ package python
 import (
 	"context"
 
-	"github.com/quay/claircore/internal/indexer"
+	"github.com/quay/claircore/indexer"
 )
 
 var scanners = []indexer.PackageScanner{&Scanner{}}

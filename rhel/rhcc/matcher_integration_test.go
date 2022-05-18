@@ -14,12 +14,13 @@ import (
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/datastore/postgres"
 	match_engine "github.com/quay/claircore/internal/matcher"
-	vulnstore "github.com/quay/claircore/internal/vulnstore/postgres"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/updates"
 	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/claircore/test/integration"
+	testpostgres "github.com/quay/claircore/test/postgres"
 )
 
 func TestMain(m *testing.M) {
@@ -60,8 +61,8 @@ func TestMatcherIntegration(t *testing.T) {
 		t.Run(tt.indexReport, func(t *testing.T) {
 			integration.NeedDB(t)
 			ctx := zlog.Test(context.Background(), t)
-			pool := vulnstore.TestDB(ctx, t)
-			store := vulnstore.NewVulnStore(pool)
+			pool := testpostgres.TestMatcherDB(ctx, t)
+			store := postgres.NewMatcherStore(pool)
 			m := &matcher{}
 
 			serveFile := fmt.Sprintf("testdata/%s.xml", tt.cvemap)

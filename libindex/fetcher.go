@@ -17,6 +17,7 @@ import (
 
 	"github.com/klauspost/compress/gzip"
 	"github.com/klauspost/compress/zstd"
+	"github.com/quay/claircore/indexer"
 	"github.com/quay/zlog"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/singleflight"
@@ -24,11 +25,23 @@ import (
 	"github.com/quay/claircore"
 )
 
-// FetchArena is a struct that keeps track of all the layers fetched into it,
+// Arena does coordination and global refcounting.
+type Arena interface {
+	Realizer(context.Context) indexer.Realizer
+	Close(context.Context) error
+}
+
+var (
+	_ Arena            = (*RemoteFetchArena)(nil)
+	_ indexer.Realizer = (*FetchProxy)(nil)
+)
+
+// RemoteFetchArena is a struct that keeps track of all the layers fetched into it,
 // and only removes them once all the users have gone away.
 //
-// Exported for use in cctool. If cctool goes away, this can get unexported.
-type FetchArena struct {
+// Exported for use in cctool. If cctool goes away, this can get unexported. It is
+// remote in the sense that it pulls layers from the internet.
+type RemoteFetchArena struct {
 	wc *http.Client
 	sf *singleflight.Group
 
@@ -39,18 +52,20 @@ type FetchArena struct {
 	root string
 }
 
-// Init initializes the FetchArena.
+// NewRemoteFetchArena initializes the RemoteFetchArena.
 //
 // This method is provided instead of a constructor function to make embedding
 // easier.
-func (a *FetchArena) Init(wc *http.Client, root string) {
-	a.wc = wc
-	a.root = root
-	a.sf = &singleflight.Group{}
-	a.rc = make(map[string]int)
+func NewRemoteFetchArena(wc *http.Client, root string) *RemoteFetchArena {
+	return &RemoteFetchArena{
+		wc:   wc,
+		root: root,
+		sf:   &singleflight.Group{},
+		rc:   make(map[string]int),
+	}
 }
 
-func (a *FetchArena) forget(digest string) error {
+func (a *RemoteFetchArena) forget(digest string) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	ct, ok := a.rc[digest]
@@ -69,7 +84,7 @@ func (a *FetchArena) forget(digest string) error {
 
 // FetchOne does a deduplicated fetch, then increments the refcount and renames
 // the file to the permanent place if applicable.
-func (a *FetchArena) fetchOne(ctx context.Context, l *claircore.Layer) (do func() error) {
+func (a *RemoteFetchArena) fetchOne(ctx context.Context, l *claircore.Layer) (do func() error) {
 	do = func() error {
 		h := l.Hash.String()
 		tgt := filepath.Join(a.root, h)
@@ -111,7 +126,7 @@ func (a *FetchArena) fetchOne(ctx context.Context, l *claircore.Layer) (do func(
 //
 // It's not an error to have active fetchers, but may cause errors to have files
 // unlinked underneath their users.
-func (a *FetchArena) Close(ctx context.Context) error {
+func (a *RemoteFetchArena) Close(ctx context.Context) error {
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "libindex/fetchArena.Close",
 		"arena", a.root)
@@ -145,7 +160,7 @@ func (a *FetchArena) Close(ctx context.Context) error {
 // RealizeLayer is the inner function used inside the singleflight.
 //
 // The returned value is a temporary filename in the arena.
-func (a *FetchArena) realizeLayer(ctx context.Context, l *claircore.Layer) (string, error) {
+func (a *RemoteFetchArena) realizeLayer(ctx context.Context, l *claircore.Layer) (string, error) {
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "libindex/fetchArena.realizeLayer",
 		"arena", a.root,
@@ -296,7 +311,7 @@ func (a *FetchArena) realizeLayer(ctx context.Context, l *claircore.Layer) (stri
 }
 
 // Fetcher returns an indexer.Fetcher.
-func (a *FetchArena) Fetcher() *FetchProxy {
+func (a *RemoteFetchArena) Realizer(_ context.Context) indexer.Realizer {
 	return &FetchProxy{a: a}
 }
 
@@ -304,12 +319,12 @@ func (a *FetchArena) Fetcher() *FetchProxy {
 //
 // This can be unexported if FetchArena gets unexported.
 type FetchProxy struct {
-	a     *FetchArena
+	a     *RemoteFetchArena
 	clean []string
 }
 
-// Fetch populates all the layers locally.
-func (p *FetchProxy) Fetch(ctx context.Context, ls []*claircore.Layer) error {
+// Realize populates all the layers locally.
+func (p *FetchProxy) Realize(ctx context.Context, ls []*claircore.Layer) error {
 	g, ctx := errgroup.WithContext(ctx)
 	p.clean = make([]string, len(ls))
 	for i, l := range ls {

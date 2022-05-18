@@ -9,7 +9,7 @@ import (
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/indexer"
+	"github.com/quay/claircore/indexer"
 )
 
 // Suse Enterprise Server has service pack releases however their security database files are bundled together

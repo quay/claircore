@@ -7,7 +7,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/indexer"
+	"github.com/quay/claircore/indexer"
 )
 
 func InsertRepoScanArtifact(ctx context.Context, pool *pgxpool.Pool, layerHash claircore.Digest, repos []*claircore.Repository, scnrs indexer.VersionedScanners) error {

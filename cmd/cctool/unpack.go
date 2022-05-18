@@ -61,10 +61,9 @@ func Unpack(cmd context.Context, cfg *commonConfig, args []string) error {
 	defer done()
 
 	log.Printf("fetching layers")
-	a := &libindex.FetchArena{}
-	a.Init(http.DefaultClient, os.TempDir())
-	f := a.Fetcher()
-	err = f.Fetch(ctx, m.Layers)
+	a := libindex.NewRemoteFetchArena(http.DefaultClient, os.TempDir())
+	r := a.Realizer(ctx)
+	err = r.Realize(ctx, m.Layers)
 	if err != nil {
 		return err
 	}
@@ -115,7 +114,7 @@ func Unpack(cmd context.Context, cfg *commonConfig, args []string) error {
 			log.Printf("failed to recursively remove %v: %v", td, err)
 		}
 		log.Printf("deleting downloaded layers in tmp dir")
-		err = f.Close()
+		err = r.Close()
 		if err != nil {
 			log.Printf("failed to clean layer files in tmp directory: %v", err)
 		}

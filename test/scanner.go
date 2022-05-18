@@ -3,7 +3,7 @@ package test
 import (
 	"fmt"
 
-	"github.com/quay/claircore/internal/indexer"
+	"github.com/quay/claircore/indexer"
 )
 
 // GenUniquePackageScanners creates n number of unique PackageScanners. the array is gauranteed to not have

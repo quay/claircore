@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/quay/claircore/aws"
-	"github.com/quay/claircore/internal/indexer"
-	"github.com/quay/claircore/internal/indexer/linux"
+	"github.com/quay/claircore/indexer"
+	"github.com/quay/claircore/indexer/linux"
 	"github.com/quay/claircore/oracle"
 	"github.com/quay/claircore/photon"
 	"github.com/quay/claircore/suse"
