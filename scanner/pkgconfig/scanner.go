@@ -19,7 +19,7 @@ import (
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/indexer"
+	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/pkg/tarfs"
 )
 

@@ -8,78 +8,110 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"sort"
+	"time"
 
 	"github.com/quay/zlog"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/indexer"
-	"github.com/quay/claircore/pkg/ctxlock"
+	"github.com/quay/claircore/alpine"
+	"github.com/quay/claircore/dpkg"
+	"github.com/quay/claircore/indexer"
+	"github.com/quay/claircore/java"
+	"github.com/quay/claircore/pkg/omnimatcher"
+	"github.com/quay/claircore/python"
+	"github.com/quay/claircore/rhel"
+	"github.com/quay/claircore/rhel/rhcc"
+	"github.com/quay/claircore/rpm"
 )
 
 const versionMagic = "libindex number: 2\n"
 
+// LockSource abstracts over how locks are implemented.
+//
+// An online system needs distributed locks, offline use cases can use
+// process-local locks.
+type LockSource interface {
+	TryLock(context.Context, string) (context.Context, context.CancelFunc)
+	Lock(context.Context, string) (context.Context, context.CancelFunc)
+	Close(context.Context) error
+}
+
 // Libindex implements the method set for scanning and indexing a Manifest.
 type Libindex struct {
 	// holds dependencies for creating a libindex instance
-	*Opts
-	// a Store which will be shared between scanner instances
+	*Options
+	// a store implementation which will be shared between scanner instances
 	store indexer.Store
 	// a shareable http client
 	client *http.Client
-	// Cl provides system-wide locks.
-	cl *ctxlock.Locker
+	// Locker provides system-wide locks.
+	locker LockSource
 	// an opaque and unique string representing the configured
 	// state of the indexer. see setState for more information.
 	state string
 	// FetchArena is an arena to fetch layers into. It ensures layers are
 	// fetched once and not removed while in use.
-	fetchArena FetchArena
+	fa Arena
+	// vscnrs is a convenience object for holding a list of versioned scanners
+	vscnrs indexer.VersionedScanners
 }
 
 // New creates a new instance of libindex.
 //
 // The passed http.Client will be used for fetching layers and any HTTP requests
 // made by scanners.
-func New(ctx context.Context, opts *Opts, cl *http.Client) (*Libindex, error) {
+func New(ctx context.Context, opts *Options, cl *http.Client) (*Libindex, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "libindex/New")
-	err := opts.Parse(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse opts: %v", err)
+	// required
+	if opts.Locker == nil {
+		return nil, fmt.Errorf("field Locker cannot be nil")
 	}
-	if cl == nil {
-		return nil, errors.New("invalid *http.Client")
+	if opts.Store == nil {
+		return nil, fmt.Errorf("field Store cannot be nil")
 	}
+	if opts.FetchArena == nil {
+		return nil, fmt.Errorf("field FetchArena cannot be nil")
+	}
+
+	// optional
+	if (opts.ScanLockRetry == 0) || (opts.ScanLockRetry < time.Second) {
+		opts.ScanLockRetry = DefaultScanLockRetry
+	}
+	if opts.LayerScanConcurrency == 0 {
+		opts.LayerScanConcurrency = DefaultLayerScanConcurrency
+	}
+	if opts.ControllerFactory == nil {
+		opts.ControllerFactory = controllerFactory
+	}
+	if opts.Ecosystems == nil {
+		opts.Ecosystems = []*indexer.Ecosystem{
+			dpkg.NewEcosystem(ctx),
+			alpine.NewEcosystem(ctx),
+			rhel.NewEcosystem(ctx),
+			rpm.NewEcosystem(ctx),
+			python.NewEcosystem(ctx),
+			java.NewEcosystem(ctx),
+			rhcc.NewEcosystem(ctx),
+		}
+	}
+
 	// TODO(hank) If "airgap" is set, we should wrap the client and return
 	// errors on non-RFC1918 and non-RFC4193 addresses. As of go1.17, the net.IP
 	// type has a method for this purpose.
-
-	dbPool, err := initDB(ctx, opts)
-	if err != nil {
-		return nil, err
-	}
-	zlog.Info(ctx).Msg("created database connection")
-
-	store, err := initStore(ctx, dbPool, opts)
-	if err != nil {
-		return nil, err
-	}
-
-	ctxLocker, err := ctxlock.New(ctx, dbPool)
-	if err != nil {
-		return nil, err
+	if cl == nil {
+		return nil, errors.New("invalid *http.Client")
 	}
 
 	l := &Libindex{
-		Opts:   opts,
-		store:  store,
-		client: cl,
-		cl:     ctxLocker,
+		Options: opts,
+		client:  cl,
+		store:   opts.Store,
+		locker:  opts.Locker,
+		fa:      opts.FetchArena,
 	}
-	l.fetchArena.Init(cl, os.TempDir()) // TODO(hank) Add an option field for this 'root' argument.
 
 	// register any new scanners.
 	pscnrs, dscnrs, rscnrs, err := indexer.EcosystemsToScanners(ctx, opts.Ecosystems, opts.Airgap)
@@ -100,15 +132,15 @@ func New(ctx context.Context, opts *Opts, cl *http.Client) (*Libindex, error) {
 	}
 
 	zlog.Info(ctx).Msg("registered configured scanners")
-	l.Opts.vscnrs = vscnrs
+	l.vscnrs = vscnrs
 	return l, nil
 }
 
 // Close releases held resources.
 func (l *Libindex) Close(ctx context.Context) error {
-	l.cl.Close(ctx)
+	l.locker.Close(ctx)
 	l.store.Close(ctx)
-	l.fetchArena.Close(ctx)
+	l.fa.Close(ctx)
 	return nil
 }
 
@@ -122,13 +154,13 @@ func (l *Libindex) Index(ctx context.Context, manifest *claircore.Manifest) (*cl
 		"manifest", manifest.Hash.String())
 	zlog.Info(ctx).Msg("index request start")
 	defer zlog.Info(ctx).Msg("index request done")
-	c, err := l.ControllerFactory(ctx, l, l.Opts)
+	c, err := l.ControllerFactory(ctx, l, l.Options)
 	if err != nil {
 		return nil, fmt.Errorf("scanner factory failed to construct a scanner: %v", err)
 	}
 
 	zlog.Debug(ctx).Msg("locking attempt")
-	lc, done := l.cl.Lock(ctx, manifest.Hash.String())
+	lc, done := l.locker.Lock(ctx, manifest.Hash.String())
 	defer done()
 	// The process may have waited on the lock, so check that the context is
 	// still active.
@@ -189,6 +221,7 @@ func (l *Libindex) IndexReport(ctx context.Context, hash claircore.Digest) (*cla
 func (l *Libindex) AffectedManifests(ctx context.Context, vulns []claircore.Vulnerability) (*claircore.AffectedManifests, error) {
 	sem := semaphore.NewWeighted(20)
 	ctx = zlog.ContextWithValues(ctx, "component", "libindex/Libindex.AffectedManifests")
+	om := omnimatcher.New(nil)
 
 	affected := claircore.NewAffectedManifests()
 	errGrp, eCTX := errgroup.WithContext(ctx)
@@ -200,7 +233,7 @@ func (l *Libindex) AffectedManifests(ctx context.Context, vulns []claircore.Vuln
 			if eCTX.Err() != nil {
 				return eCTX.Err()
 			}
-			hashes, err := l.store.AffectedManifests(eCTX, vulns[ii])
+			hashes, err := l.store.AffectedManifests(eCTX, vulns[ii], om.Vulnerable)
 			if err != nil {
 				return err
 			}

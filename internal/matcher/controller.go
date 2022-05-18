@@ -7,7 +7,7 @@ import (
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/vulnstore"
+	"github.com/quay/claircore/datastore"
 	"github.com/quay/claircore/libvuln/driver"
 )
 
@@ -17,11 +17,11 @@ type Controller struct {
 	// an implemented Matcher
 	m driver.Matcher
 	// a vulnstore.Vulnerability instance for querying vulnerabilities
-	store vulnstore.Vulnerability
+	store datastore.Vulnerability
 }
 
 // NewController is a constructor for a Controller
-func NewController(m driver.Matcher, store vulnstore.Vulnerability) *Controller {
+func NewController(m driver.Matcher, store datastore.Vulnerability) *Controller {
 	return &Controller{
 		m:     m,
 		store: store,
@@ -120,7 +120,7 @@ func (mc *Controller) findInterested(records []*claircore.IndexRecord) []*clairc
 func (mc *Controller) query(ctx context.Context, interested []*claircore.IndexRecord, dbSide bool) (map[string][]*claircore.Vulnerability, error) {
 	// ask the matcher how we should query the vulnstore
 	matchers := mc.m.Query()
-	getOpts := vulnstore.GetOpts{
+	getOpts := datastore.GetOpts{
 		Matchers:         matchers,
 		Debug:            true,
 		VersionFiltering: dbSide,

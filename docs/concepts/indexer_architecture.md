@@ -1,5 +1,5 @@
 # Indexer
-`claircore/internal/indexer`  
+`claircore/indexer`  
 
 The Indexer package performs LibIndex's heavy lifting. It is responsible for retreiving Manifest layers, parsing the contents of each layer, and computing an IndexReport.  
 

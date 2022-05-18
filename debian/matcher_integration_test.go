@@ -12,12 +12,13 @@ import (
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/datastore/postgres"
 	"github.com/quay/claircore/internal/matcher"
-	vulnstore "github.com/quay/claircore/internal/vulnstore/postgres"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/updates"
 	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/claircore/test/integration"
+	pgtest "github.com/quay/claircore/test/postgres"
 )
 
 func TestMain(m *testing.M) {
@@ -34,8 +35,8 @@ func TestMain(m *testing.M) {
 func TestMatcherIntegration(t *testing.T) {
 	integration.NeedDB(t)
 	ctx := zlog.Test(context.Background(), t)
-	pool := vulnstore.TestDB(ctx, t)
-	store := vulnstore.NewVulnStore(pool)
+	pool := pgtest.TestMatcherDB(ctx, t)
+	store := postgres.NewMatcherStore(pool)
 
 	m := &Matcher{}
 
