@@ -7,4 +7,4 @@ Implementers of this interface *must* provide a unique name.
 Making changes to a scanner's implementation *must* return a new value from `Version`.
 Implementers *must* return the correct kind: one of "package", "distribution", or "repository"
 
-{{# godoc internal/indexer.VersionedScanner}}
+{{# godoc indexer.VersionedScanner}}

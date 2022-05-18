@@ -9,10 +9,16 @@ process.
 ## Usage
 Libindex is runtime constructed via the `libindex.New` method. New requires an `libindex.Opts` struct.
 
-### Opts
-{{# godoc libindex Opts }}
+### Options
+{{# godoc libindex Options }}
 
-The above outlines the relevant bits of the Opts structure.
+The above outlines the relevant bits of the Options structure.
+
+Store is required needs to be an object that satisfies the indexer.Store interface.
+
+Locker is required and needs to satisfy the LockSource interface.
+
+FetchArena is required and needs to satify the FetchArena interface.
 
 Providing a nil "Ecosystems" slice will supply the default set, instructing
 Libindex to index for all supported content in a layer, and is typically

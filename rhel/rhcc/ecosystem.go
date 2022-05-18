@@ -3,7 +3,7 @@ package rhcc
 import (
 	"context"
 
-	"github.com/quay/claircore/internal/indexer"
+	"github.com/quay/claircore/indexer"
 )
 
 func NewEcosystem(_ context.Context) *indexer.Ecosystem {

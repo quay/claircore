@@ -6,7 +6,7 @@ import (
 
 	"github.com/jackc/pgx/v4/pgxpool"
 
-	"github.com/quay/claircore/internal/indexer"
+	"github.com/quay/claircore/indexer"
 )
 
 // InsertUniqueScanners inserts each unique scanner into the database. the scanner's primary key (int) is set

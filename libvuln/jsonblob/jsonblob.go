@@ -12,11 +12,11 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/vulnstore"
+	"github.com/quay/claircore/datastore"
 	"github.com/quay/claircore/libvuln/driver"
 )
 
-var _ vulnstore.Updater = (*Store)(nil)
+var _ datastore.Updater = (*Store)(nil)
 
 // New constructs an empty Store.
 func New() (*Store, error) {

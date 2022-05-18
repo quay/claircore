@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/internal/indexer"
+	"github.com/quay/claircore/indexer"
 )
 
 func NewCoalescer(_ context.Context) (indexer.Coalescer, error) {

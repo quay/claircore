@@ -11,9 +11,9 @@ import (
 	"github.com/rs/zerolog"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/datastore"
+	"github.com/quay/claircore/datastore/postgres"
 	"github.com/quay/claircore/internal/matcher"
-	"github.com/quay/claircore/internal/vulnstore"
-	"github.com/quay/claircore/internal/vulnstore/postgres"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/updates"
 	"github.com/quay/claircore/matchers"
@@ -26,7 +26,7 @@ import (
 // Libvuln also runs background updaters which keep the vulnerability
 // database consistent.
 type Libvuln struct {
-	store           vulnstore.Store
+	store           datastore.MatcherStore
 	pool            *pgxpool.Pool
 	locks           *ctxlock.Locker
 	matchers        []driver.Matcher
@@ -56,7 +56,7 @@ func New(ctx context.Context, opts *Opts) (*Libvuln, error) {
 	}
 
 	l := &Libvuln{
-		store:           postgres.NewVulnStore(pool),
+		store:           postgres.NewMatcherStore(pool),
 		pool:            pool,
 		updateRetention: opts.UpdateRetention,
 		enrichers:       opts.Enrichers,

@@ -48,6 +48,10 @@ func (s *localLockSource) TryLock(ctx context.Context, key string) (context.Cont
 	return c, s.cancelfunc(key, f)
 }
 
+func (s *localLockSource) Close(ctx context.Context) error {
+	return nil
+}
+
 // Cancelfunc returns a CancelFunc that calls "next" and then unlocks.
 func (s *localLockSource) cancelfunc(key string, next context.CancelFunc) context.CancelFunc {
 	return func() {

@@ -23,7 +23,7 @@ func Example_libvuln() {
 	defer lib.Close(ctx)
 	// ANCHOR_END: new
 
-	liopts := new(libindex.Opts)
+	liopts := new(libindex.Options)
 	// Populate with desired settings...
 	indexer, err := libindex.New(ctx, liopts, http.DefaultClient)
 	if err != nil {

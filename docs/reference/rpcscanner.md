@@ -6,5 +6,5 @@ The `Scanner` may pass its config as an argument to the `ConfigDeserializer`
 function to populate the struct and use the HTTP client for any remote access
 necessary during the scanning process.
 
-{{# godoc internal/indexer.RPCScanner}}
-{{# godoc internal/indexer.ConfigDeserializer}}
+{{# godoc indexer.RPCScanner}}
+{{# godoc indexer.ConfigDeserializer}}

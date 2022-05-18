@@ -11,7 +11,9 @@ import (
 	"github.com/quay/zlog"
 	"github.com/rs/zerolog"
 
+	"github.com/quay/claircore/datastore/postgres"
 	"github.com/quay/claircore/libindex"
+	"github.com/quay/claircore/pkg/ctxlock"
 )
 
 // Config this struct is using the goconfig library for simple flag and env var
@@ -41,9 +43,19 @@ func main() {
 	log = log.Level(logLevel(conf))
 	zlog.Set(&log)
 
-	opts := &libindex.Opts{
-		ConnString: conf.ConnString,
-		Migrations: true,
+	pool, err := postgres.Connect(ctx, conf.ConnString, "libindex")
+	if err != nil {
+		log.Fatal().Msgf("failed to create db pool: %v", err)
+	}
+	store, err := postgres.InitPostgresIndexerStore(ctx, pool, true)
+	if err != nil {
+		log.Fatal().Msgf("failed to create store: %v", err)
+	}
+
+	opts := &libindex.Options{
+		Store:      store,
+		Locker:     &ctxlock.Locker{},
+		FetchArena: libindex.NewRemoteFetchArena(http.DefaultClient, os.TempDir()),
 	}
 
 	// create libindex
