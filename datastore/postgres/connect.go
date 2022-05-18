@@ -10,8 +10,8 @@ import (
 	"github.com/quay/zlog"
 )
 
-// InitDB initialize a postgres pgxpool.Pool based on the connection string
-func InitDB(ctx context.Context, connString string, applicationName string) (*pgxpool.Pool, error) {
+// Connect initialize a postgres pgxpool.Pool based on the connection string
+func Connect(ctx context.Context, connString string, applicationName string) (*pgxpool.Pool, error) {
 	// we are going to use pgx for more control over connection pool and
 	// and a cleaner api around bulk inserts
 	cfg, err := pgxpool.ParseConfig(connString)

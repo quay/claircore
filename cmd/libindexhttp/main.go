@@ -43,7 +43,7 @@ func main() {
 	log = log.Level(logLevel(conf))
 	zlog.Set(&log)
 
-	pool, err := postgres.InitDB(ctx, conf.ConnString, "libindex")
+	pool, err := postgres.Connect(ctx, conf.ConnString, "libindex")
 	if err != nil {
 		log.Fatal().Msgf("failed to create db pool: %v", err)
 	}
