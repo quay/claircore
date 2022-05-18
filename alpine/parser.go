@@ -42,7 +42,7 @@ func (u *Updater) parse(ctx context.Context, sdb *SecurityDB) ([]*claircore.Vuln
 			NormalizedSeverity: claircore.Unknown,
 			Package: &claircore.Package{
 				Name: pkg.Pkg.Name,
-				Kind: claircore.BINARY,
+				Kind: claircore.SOURCE,
 			},
 			Dist: releaseToDist(u.release),
 		}
