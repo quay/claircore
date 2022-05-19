@@ -22,7 +22,7 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 		NormalizedSeverity: claircore.Unknown,
 		Package: &claircore.Package{
 			Name: "botan",
-			Kind: claircore.BINARY,
+			Kind: claircore.SOURCE,
 		},
 		Dist: releaseToDist(V3_10),
 	},
@@ -34,7 +34,7 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 		NormalizedSeverity: claircore.Unknown,
 		Package: &claircore.Package{
 			Name: "botan",
-			Kind: claircore.BINARY,
+			Kind: claircore.SOURCE,
 		},
 		Dist: releaseToDist(V3_10),
 	},
@@ -46,7 +46,7 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 		NormalizedSeverity: claircore.Unknown,
 		Package: &claircore.Package{
 			Name: "botan",
-			Kind: claircore.BINARY,
+			Kind: claircore.SOURCE,
 		},
 		Dist: releaseToDist(V3_10),
 	},
@@ -58,7 +58,7 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 		NormalizedSeverity: claircore.Unknown,
 		Package: &claircore.Package{
 			Name: "botan",
-			Kind: claircore.BINARY,
+			Kind: claircore.SOURCE,
 		},
 		Dist: releaseToDist(V3_10),
 	},
@@ -70,7 +70,7 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 		NormalizedSeverity: claircore.Unknown,
 		Package: &claircore.Package{
 			Name: "cfengine",
-			Kind: claircore.BINARY,
+			Kind: claircore.SOURCE,
 		},
 		Dist: releaseToDist(V3_10),
 	},
@@ -82,7 +82,7 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 		NormalizedSeverity: claircore.Unknown,
 		Package: &claircore.Package{
 			Name: "chicken",
-			Kind: claircore.BINARY,
+			Kind: claircore.SOURCE,
 		},
 		Dist: releaseToDist(V3_10),
 	},
@@ -94,7 +94,7 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 		NormalizedSeverity: claircore.Unknown,
 		Package: &claircore.Package{
 			Name: "chicken",
-			Kind: claircore.BINARY,
+			Kind: claircore.SOURCE,
 		},
 		Dist: releaseToDist(V3_10),
 	},
@@ -106,7 +106,7 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 		NormalizedSeverity: claircore.Unknown,
 		Package: &claircore.Package{
 			Name: "chicken",
-			Kind: claircore.BINARY,
+			Kind: claircore.SOURCE,
 		},
 		Dist: releaseToDist(V3_10),
 	},
@@ -118,7 +118,7 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 		NormalizedSeverity: claircore.Unknown,
 		Package: &claircore.Package{
 			Name: "chicken",
-			Kind: claircore.BINARY,
+			Kind: claircore.SOURCE,
 		},
 		Dist: releaseToDist(V3_10),
 	},
