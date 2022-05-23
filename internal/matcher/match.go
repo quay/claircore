@@ -81,7 +81,7 @@ type Store interface {
 
 // EnrichedMatch receives an IndexReport and creates a VulnerabilityReport
 // containing matched vulnerabilities and any relevant enrichments.
-func EnrichedMatch(ctx context.Context, ir *claircore.IndexReport, ms []driver.Matcher, es []driver.Enricher, s Store) (*claircore.VulnerabilityReport, error) {
+func EnrichedMatch(ctx context.Context, ir *claircore.IndexReport, ms []driver.Matcher, es []driver.Enricher, s Store, ro *driver.ReportOptions) (*claircore.VulnerabilityReport, error) {
 	// the vulnerability report we are creating
 	vr := &claircore.VulnerabilityReport{
 		Hash:                   ir.Hash,
@@ -151,6 +151,9 @@ func EnrichedMatch(ctx context.Context, ir *claircore.IndexReport, ms []driver.M
 	})
 	if err := vg.Wait(); err != nil {
 		return nil, err
+	}
+	if !ro.IncludeEnrichment {
+		return vr, nil
 	}
 
 	// Set up a pool to run the enrichers and attach results to the report.

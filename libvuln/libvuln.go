@@ -139,10 +139,23 @@ func (l *Libvuln) FetchUpdates(ctx context.Context) error {
 	return l.updaters.Run(ctx)
 }
 
+var defaultScanOptions = &driver.ReportOptions{
+	IncludeEnrichment: true,
+}
+
 // Scan creates a VulnerabilityReport given a manifest's IndexReport.
 func (l *Libvuln) Scan(ctx context.Context, ir *claircore.IndexReport) (*claircore.VulnerabilityReport, error) {
 	if s, ok := l.store.(matcher.Store); ok {
-		return matcher.EnrichedMatch(ctx, ir, l.matchers, l.enrichers, s)
+		return matcher.EnrichedMatch(ctx, ir, l.matchers, l.enrichers, s, defaultScanOptions)
+	}
+	return matcher.Match(ctx, ir, l.matchers, l.store)
+}
+
+// ScanWithOptions creates a VulnerabilityReport given a manifest's IndexReport using the ReportOptions
+// to inform the report output.
+func (l *Libvuln) ScanWithOptions(ctx context.Context, ir *claircore.IndexReport, ro *driver.ReportOptions) (*claircore.VulnerabilityReport, error) {
+	if s, ok := l.store.(matcher.Store); ok {
+		return matcher.EnrichedMatch(ctx, ir, l.matchers, l.enrichers, s, ro)
 	}
 	return matcher.Match(ctx, ir, l.matchers, l.store)
 }
