@@ -79,7 +79,7 @@ func (e *e2e) Run(ctx context.Context) func(*testing.T) {
 
 		{"Update", e.Update},
 		{"GetUpdateOperations", e.GetUpdateOperations},
-		{"recordUpdaterUpdateTime", e.recordUpdateTimes},
+		{"recordUpdaterStatus", e.recordUpdaterStatus},
 		{"Diff", e.Diff},
 		{"DeleteUpdateOperations", e.DeleteUpdateOperations},
 	}
@@ -176,9 +176,9 @@ type update struct {
 	LastError              *string            `json:"last_error"`
 }
 
-// recordUpdateTimes confirms multiple updates to record last update times
+// recordUpdaterStatus confirms multiple updates to record last update times
 // and then an update to an whole updater set
-func (e *e2e) recordUpdateTimes(ctx context.Context) func(*testing.T) {
+func (e *e2e) recordUpdaterStatus(ctx context.Context) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx := zlog.Test(ctx, t)
 		errorText := "test error"
@@ -221,7 +221,7 @@ func (e *e2e) recordUpdateTimes(ctx context.Context) func(*testing.T) {
 			if update.LastError != nil {
 				updateError = errors.New(*update.LastError)
 			}
-			err := e.s.RecordUpdaterUpdateTime(ctx, update.UpdaterName, update.LastAttempt, update.LastAttemptFingerprint, updateError)
+			err := e.s.RecordUpdaterStatus(ctx, update.UpdaterName, update.LastAttempt, update.LastAttemptFingerprint, updateError)
 			if err != nil {
 				t.Fatalf("failed to perform update: %v", err)
 			}
@@ -230,7 +230,7 @@ func (e *e2e) recordUpdateTimes(ctx context.Context) func(*testing.T) {
 		checkUpdateTimes(ctx, t, e.pool, expectedTableContents)
 
 		newUpdaterSetTime := time.Date(2021, time.Month(2), 25, 1, 10, 30, 0, time.UTC)
-		e.s.RecordUpdaterSetUpdateTime(ctx, "test", newUpdaterSetTime)
+		e.s.RecordFactoryUpdateStatus(ctx, "test", newUpdaterSetTime)
 		for updater, row := range expectedTableContents {
 			row.LastAttempt = newUpdaterSetTime
 			row.LastSuccess = &newUpdaterSetTime

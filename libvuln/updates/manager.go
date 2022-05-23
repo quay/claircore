@@ -148,7 +148,21 @@ func (m *Manager) Run(ctx context.Context) error {
 			zlog.Error(ctx).Err(err).Msg("failed constructing factory, excluding from run")
 			continue
 		}
-		if m.updaterSetUpToDate(ctx, set, updateTime) {
+		if stubUpdaterInSet(set) {
+			updaterSetName, err := getFactoryNameFromStubUpdater(set)
+			if err != nil {
+				zlog.Error(ctx).
+					Err(err).
+					Msg("error getting updater set name")
+			}
+			err = m.store.RecordFactoryUpdateStatus(ctx, updaterSetName, updateTime)
+			if err != nil {
+				zlog.Error(ctx).
+					Err(err).
+					Str("updaterSetName", updaterSetName).
+					Time("updateTime", updateTime).
+					Msg("error while recording update success for all updaters in updater set")
+			}
 			continue
 		}
 		updaters = append(updaters, set.Updaters()...)
@@ -248,24 +262,23 @@ func (m *Manager) Run(ctx context.Context) error {
 	return nil
 }
 
-// updaterSetUpToDate checks for a stub updater set indicating that the whole updater set
-// is up to date and then be recorded the time in the db
-func (m *Manager) updaterSetUpToDate(ctx context.Context, set driver.UpdaterSet, updateTime time.Time) bool {
+// stubUpdaterInSet works out if an updater set contains a stub updater,
+// signifying all updaters are up to date for this factory
+func stubUpdaterInSet(set driver.UpdaterSet) bool {
 	if len(set.Updaters()) == 1 {
 		if set.Updaters()[0].Name() == "rhel-all" {
-			updaterSet := "RHEL"
-			err := m.store.RecordUpdaterSetUpdateTime(ctx, updaterSet, updateTime)
-			if err != nil {
-				zlog.Error(ctx).
-					Err(err).
-					Str("updaterSet", updaterSet).
-					Str("updateTime", updateTime.String()).
-					Msg(fmt.Sprintf("error while recording update time for all updaters in updater set %s", updaterSet))
-			}
 			return true
 		}
 	}
 	return false
+}
+
+// getFactoryNameFromStubUpdater retrieves the factory name from an updater set with a stub updater
+func getFactoryNameFromStubUpdater(set driver.UpdaterSet) (string, error) {
+	if set.Updaters()[0].Name() == "rhel-all" {
+		return "RHEL", nil
+	}
+	return "", errors.New("unrecognized stub updater name")
 }
 
 // DriveUpdater performs the business logic of fetching, parsing, and loading
@@ -275,13 +288,13 @@ func (m *Manager) driveUpdater(ctx context.Context, u driver.Updater) error {
 	var err error
 	updateTime := time.Now()
 	defer func() {
-		deferErr := m.store.RecordUpdaterUpdateTime(ctx, u.Name(), updateTime, newFP, err)
+		deferErr := m.store.RecordUpdaterStatus(ctx, u.Name(), updateTime, newFP, err)
 		if deferErr != nil {
 			zlog.Error(ctx).
 				Err(deferErr).
 				Str("updater", u.Name()).
-				Str("updateTime", updateTime.String()).
-				Msg("error while recording updater run time")
+				Time("updateTime", updateTime).
+				Msg("error while recording updater status")
 		}
 	}()
 

@@ -51,15 +51,11 @@ var Migrations = []migrate.Migration{
 		Up: runFile("06-delete-debian-update_operation.sql"),
 	},
 	{
-<<<<<<< HEAD
 		ID: 7,
 		Up: runFile("07-force-alpine-update.sql"),
-=======
-		ID: 6,
-		Up: func(tx *sql.Tx) error {
-			_, err := tx.Exec(migration6)
-			return err
-		},
->>>>>>> 68834dd (updates: Record in a new table each time updaters check for vulns)
+	},
+	{
+		ID: 8,
+		Up: runFile("08-updater-status.sql"),
 	},
 }

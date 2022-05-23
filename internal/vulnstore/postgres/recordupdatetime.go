@@ -8,13 +8,11 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/zlog"
-	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/label"
 )
 
-// recordUpdaterUpdateTime records that an updater is up to date with vulnerabilities at this time
+// recordUpdaterStatus records that an updater is up to date with vulnerabilities at this time
 // inserts an updater with last update timestamp, or updates an existing updater with a new update time
-func recordUpdaterUpdateTime(ctx context.Context, pool *pgxpool.Pool, updaterName string, updateTime time.Time, fingerprint driver.Fingerprint, updaterError error) error {
+func recordUpdaterStatus(ctx context.Context, pool *pgxpool.Pool, updaterName string, updateTime time.Time, fingerprint driver.Fingerprint, updaterError error) error {
 	const (
 		// upsertSuccessfulUpdate inserts or updates a record of the last time an updater successfully checked for new vulns
 		upsertSuccessfulUpdate = `INSERT INTO updater_status (
@@ -59,8 +57,8 @@ func recordUpdaterUpdateTime(ctx context.Context, pool *pgxpool.Pool, updaterNam
 				RETURNING updater_name;`
 	)
 
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "internal/vulnstore/postgres/recordUpdaterUpdateTime"))
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "internal/vulnstore/postgres/recordUpdaterStatus")
 
 	tx, err := pool.Begin(ctx)
 	if err != nil {
@@ -73,19 +71,21 @@ func recordUpdaterUpdateTime(ctx context.Context, pool *pgxpool.Pool, updaterNam
 	if updaterError == nil {
 		zlog.Debug(ctx).
 			Str("updater", updaterName).
-			Msg("debug: using upsertSuccessfulUpdate")
-		fmt.Printf("debug: using upsertSuccessfulUpdate")
+			Msg("Recording successful update")
 		if err := pool.QueryRow(ctx, upsertSuccessfulUpdate, updaterName, updateTime, fingerprint).Scan(&returnedUpdaterName); err != nil {
 			return fmt.Errorf("failed to upsert last update time: %w", err)
 		}
 	} else {
 		zlog.Debug(ctx).
 			Str("updater", updaterName).
-			Msg("debug: using upsertFailedUpdate")
-		fmt.Printf("debug: using upsertFailedUpdate")
+			Msg("Recording failed update")
 		if err := pool.QueryRow(ctx, upsertFailedUpdate, updaterName, updateTime, fingerprint, updaterError.Error()).Scan(&returnedUpdaterName); err != nil {
 			return fmt.Errorf("failed to upsert last update time: %w", err)
 		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	zlog.Debug(ctx).
@@ -95,10 +95,10 @@ func recordUpdaterUpdateTime(ctx context.Context, pool *pgxpool.Pool, updaterNam
 	return nil
 }
 
-// recordUpdaterSetUpdateTime records that all updaters for a single updaterSet are up to date with vulnerabilities at this time
-// updates all existing updaters from this upater set with the new update time
-// the updater set parameteer passed needs to match the prefix of the given udpdater set name format
-func recordUpdaterSetUpdateTime(ctx context.Context, pool *pgxpool.Pool, updaterSet string, updateTime time.Time) error {
+// recordFactoryUpdateStatus records that all updaters for a single updaterSet are up to date with vulnerabilities at this time
+// updates all existing updaters from this updater set with the new update time
+// the updater set parameter passed needs to match the prefix of the given updater set name format
+func recordFactoryUpdateStatus(ctx context.Context, pool *pgxpool.Pool, updaterSet string, updateTime time.Time) error {
 	const (
 		update = `UPDATE updater_status
 		SET last_attempt = $1,
@@ -108,8 +108,8 @@ func recordUpdaterSetUpdateTime(ctx context.Context, pool *pgxpool.Pool, updater
 		RETURNING updater_name;`
 	)
 
-	ctx = baggage.ContextWithValues(ctx,
-		label.String("component", "internal/vulnstore/postgres/recordUpdaterSetUpdateTime"))
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "internal/vulnstore/postgres/recordFactoryUpdateStatus")
 
 	tx, err := pool.Begin(ctx)
 	if err != nil {
@@ -121,6 +121,10 @@ func recordUpdaterSetUpdateTime(ctx context.Context, pool *pgxpool.Pool, updater
 
 	if err := pool.QueryRow(ctx, update, updateTime, updaterSet).Scan(&updaterName); err != nil {
 		return fmt.Errorf("failed to update all last update times for updater set %s: %w", updaterSet, err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
 	zlog.Debug(ctx).
