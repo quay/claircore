@@ -56,6 +56,9 @@ func (a *apiStub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case p == "/":
 		p = "list.xml." + r.URL.Query().Get(`continuation-token`)
+		if p == "list.xml." {
+			p = "list.xml"
+		}
 		f, err := sys.Open(p)
 		if err != nil {
 			a.Error(err)

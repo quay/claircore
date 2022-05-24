@@ -7,7 +7,7 @@ import (
 )
 
 func TestXML(t *testing.T) {
-	f, err := os.Open("testdata/list.xml.")
+	f, err := os.Open("testdata/list.xml")
 	if err != nil {
 		t.Fatal(err)
 	}
