@@ -2,6 +2,78 @@
 ## [Unreleased]
 
 
+<a name="v1.4.0"></a>
+## [v1.4.0] - 2022-05-24
+### Alpine
+- [ece632e](https://github.com/quay/claircore/commit/ece632ed83fd3e1c498b9aa281069ae52ef051c7): ingest alpine vulnerabilities as type SOURCE ([#615](https://github.com/quay/claircore/issues/615))
+  - [#615](https://github.com/quay/claircore/issues/615)
+- [c52b6e3](https://github.com/quay/claircore/commit/c52b6e341748199ba43d7a5dcc174dfce9e8858e): use tarfs in scanners
+- [79a61e2](https://github.com/quay/claircore/commit/79a61e278d4e56f04baa371d61d4c5e73f42c481): move test fixtures to files
+### Build(Deps)
+- [dd3b32c](https://github.com/quay/claircore/commit/dd3b32cf233f631c9d804ccf60c92084be49d7b1): bump docker/build-push-action from 2 to 3
+- [3af44fd](https://github.com/quay/claircore/commit/3af44fd9ea7243f3a88745ab3cad293801fce19d): bump docker/setup-buildx-action from 1 to 2
+- [3b83f2e](https://github.com/quay/claircore/commit/3b83f2ee56c2f5bd4487453f4abfb1b0d508e5e8): bump docker/login-action from 1 to 2
+- [3a4c69b](https://github.com/quay/claircore/commit/3a4c69bf32bab95e129de14ca901978f27dfede3): bump peter-evans/create-pull-request from 4.0.2 to 4.0.3
+- [8901d07](https://github.com/quay/claircore/commit/8901d07c5e8563992d9a097887a927dfd79dfa23): bump actions/cache from 3.0.1 to 3.0.2
+- [efa8e87](https://github.com/quay/claircore/commit/efa8e8796f2102c70cce2f1bb7e1f92e3f0c4e83): bump peter-evans/create-pull-request from 4.0.1 to 4.0.2
+- [93d74a6](https://github.com/quay/claircore/commit/93d74a696a683ebedc44419ddd30b676d38adce3): bump peter-evans/create-pull-request from 3.14.0 to 4.0.1
+- [2df3f9f](https://github.com/quay/claircore/commit/2df3f9fb4cd18b9a5cb5d180ebc8af1f66a3c4a5): bump actions/cache from 2 to 3.0.1
+### Claircore
+- [635aab5](https://github.com/quay/claircore/commit/635aab5ef1e8052110033815408c86eb38247b0f): use tarfs and expand Reader return
+### Contrib
+- [8072112](https://github.com/quay/claircore/commit/8072112aa7243b2c88679e9d62599a2bb092b329): Add Release Alpine 3.16 Alpine 3.16 is not supported yet
+### Defaults
+- [5f92e96](https://github.com/quay/claircore/commit/5f92e962501fb568856cac8c782fcfe1ce76f9d9): update defaults
+- [44117e6](https://github.com/quay/claircore/commit/44117e67733bbdf1c3e9f64947ede726c73a4e3d): update defaults
+### Dockerfile
+- [6d3940b](https://github.com/quay/claircore/commit/6d3940b19709e759d8e9bbcc9e8e66f9c5098c16): add quay dockerfile tests
+### Dpkg
+- [604fd61](https://github.com/quay/claircore/commit/604fd61c42b38e642f0c89839a12cc56405d56bc): use tarfs in scanner
+### Go.Mod
+- [c28a174](https://github.com/quay/claircore/commit/c28a1749e7e243be0c54f97eb4c42fb8f2bd07a2): update minimum go version
+### Indexer
+- [5994349](https://github.com/quay/claircore/commit/599434933bef4d54b7b2241958c04b4337d34bbb): fix indexer deduplication
+### Java
+- [00e2239](https://github.com/quay/claircore/commit/00e223920545b61acc2011750e684f39ac6a2d3b): use tarfs in scanners
+### Libindex
+- [44aeb93](https://github.com/quay/claircore/commit/44aeb933233e4e7aed732f4099b3f76bb74c4235): fix pool DSN parameter handling
+- [d12ada0](https://github.com/quay/claircore/commit/d12ada06cc6930991704b472232bfac069f64642): update defaults
+### Libvuln
+- [6243056](https://github.com/quay/claircore/commit/6243056da4f7d71a5b886d57d358de2ae93cbf8e): fix pool DSN parameter handling
+### Matcher
+- [4590fd6](https://github.com/quay/claircore/commit/4590fd6c10ec5a9af546247fa26bdac55199e208): fail vuln report on matcher error
+  - Fixes [#593](https://github.com/quay/claircore/issues/593)
+### Osrelease
+- [559487d](https://github.com/quay/claircore/commit/559487d820fdd1dbc115f34777703fbd978d3e10): use tarfs in scanner
+- [d51f97d](https://github.com/quay/claircore/commit/d51f97d7399f309218ed98c077baa6698020fe6d): export Parse function
+### Osv
+- [6a1787e](https://github.com/quay/claircore/commit/6a1787ed161ec7345ef4a6cdc34df88e3ae5e611): removed trailing dot in file path
+  - [#619](https://github.com/quay/claircore/issues/619)
+- [3e15a4a](https://github.com/quay/claircore/commit/3e15a4a1a1e7d1ee56d993cf0c71631b30843006): osv updater
+### Periodic
+- [2f7d621](https://github.com/quay/claircore/commit/2f7d621c92cce0dd55fd909a196e7d67b60084ef): add package for periodic tests
+### Pkgconfig
+- [cf2a86a](https://github.com/quay/claircore/commit/cf2a86a3cb0b074b39eb1b64ce234da81f06c972): use tarfs in scanner
+### Postgres
+- [4655883](https://github.com/quay/claircore/commit/46558830d91c05cd4c06c281513b0364d55727b1): update metrics on GetEnrichment
+### Python
+- [865069f](https://github.com/quay/claircore/commit/865069fd183b78bde37df15912de5fa815302182): use tarfs in scanners
+### Rhcc
+- [839adc6](https://github.com/quay/claircore/commit/839adc6e99410392808a4f52ff497d718674b11f): add machinery for the Red Hat Container Catalog
+  - [#513](https://github.com/quay/claircore/issues/513)
+### Rhctag
+- [aaa4de6](https://github.com/quay/claircore/commit/aaa4de6f7ce977e3596fcfdd56f77bef271b4477): add package for Red Hat Container versions
+### Rhel
+- [c38558a](https://github.com/quay/claircore/commit/c38558afd437df66ba7b53679c003b667596dd42): normalize serverity to all-lower strings
+- [8f021ab](https://github.com/quay/claircore/commit/8f021ab672f50200f2e0d3d9ebfc99b7fb2b6d25): use tarfs in scanner
+### Rpm
+- [b2d722e](https://github.com/quay/claircore/commit/b2d722effeeb0ce684104122b8a2a4bc71ab402e): tarfs todo
+### Tarfs
+- [361a2ca](https://github.com/quay/claircore/commit/361a2cad3c1de31968152b9928fdd98752bfe752): package for implementing fs.FS over a tar
+### Ubuntu
+- [ec67a8f](https://github.com/quay/claircore/commit/ec67a8fb5784f2c0fb4e85d8418ad5120c687a17): update releaseToDist to correct cosmic error ([#600](https://github.com/quay/claircore/issues/600))
+  - [#600](https://github.com/quay/claircore/issues/600)
+
 <a name="v1.3.2"></a>
 ## [v1.3.2] - 2022-03-21
 ### Alpine
@@ -11,6 +83,8 @@
 ### Build(Deps)
 - [171469d](https://github.com/quay/claircore/commit/171469d12bfffd019b78a2eda5867b2524d94cce): bump peter-evans/create-pull-request from 3.12.1 to 3.14.0
 - [907037e](https://github.com/quay/claircore/commit/907037e45015fae73e790a79ee05d32ff449d1be): bump actions/checkout from 2 to 3
+### Chore
+- [acf65f9](https://github.com/quay/claircore/commit/acf65f9d026020d0c94ad9d511c6df460765e5fc): v1.3.2 changelog bump
 ### Ci
 - [12fa580](https://github.com/quay/claircore/commit/12fa580b9e1914f99685288636fcd027ac8e7936): remember to log into quay.io
 - [353e1f9](https://github.com/quay/claircore/commit/353e1f9c79b39b4401666e2550f6d94440052a73): don't fail job when there's nothing to do
@@ -1365,7 +1439,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v1.3.2...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v1.4.0...HEAD
+[v1.4.0]: https://github.com/quay/claircore/compare/v1.3.2...v1.4.0
 [v1.3.2]: https://github.com/quay/claircore/compare/v1.3.1...v1.3.2
 [v1.3.1]: https://github.com/quay/claircore/compare/v1.3.0...v1.3.1
 [v1.3.0]: https://github.com/quay/claircore/compare/v1.2.0...v1.3.0
