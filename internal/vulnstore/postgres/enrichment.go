@@ -109,12 +109,6 @@ DO
 	)
 	ctx = zlog.ContextWithValues(ctx, "component", "internal/vulnstore/postgres/UpdateEnrichments")
 
-	tx, err := s.pool.Begin(ctx)
-	if err != nil {
-		return uuid.Nil, fmt.Errorf("unable to start transaction: %w", err)
-	}
-	defer tx.Rollback(ctx)
-
 	var id uint64
 	var ref uuid.UUID
 
@@ -126,6 +120,12 @@ DO
 
 	updateEnrichmentsCounter.WithLabelValues("create").Add(1)
 	updateEnrichmentsDuration.WithLabelValues("create").Observe(time.Since(start).Seconds())
+
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("unable to start transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
 
 	zlog.Debug(ctx).
 		Str("ref", ref.String()).

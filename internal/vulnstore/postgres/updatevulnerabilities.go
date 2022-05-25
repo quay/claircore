@@ -81,12 +81,6 @@ func updateVulnerabilites(ctx context.Context, pool *pgxpool.Pool, updater strin
 	)
 	ctx = zlog.ContextWithValues(ctx, "component", "internal/vulnstore/postgres/updateVulnerabilities")
 
-	tx, err := pool.Begin(ctx)
-	if err != nil {
-		return uuid.Nil, fmt.Errorf("unable to start transaction: %w", err)
-	}
-	defer tx.Rollback(ctx)
-
 	var id uint64
 	var ref uuid.UUID
 
@@ -98,6 +92,12 @@ func updateVulnerabilites(ctx context.Context, pool *pgxpool.Pool, updater strin
 
 	updateVulnerabilitiesCounter.WithLabelValues("create").Add(1)
 	updateVulnerabilitiesDuration.WithLabelValues("create").Observe(time.Since(start).Seconds())
+
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("unable to start transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
 
 	zlog.Debug(ctx).
 		Str("ref", ref.String()).
