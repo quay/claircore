@@ -63,7 +63,7 @@ func (s *Store) RecordUpdaterStatus(ctx context.Context, updaterName string, upd
 	return recordUpdaterStatus(ctx, s.pool, updaterName, updateTime, fingerprint, updaterError)
 }
 
-// RecordFactoryUpdateStatus records that all updaters from a updater set are up to date with vulnerabilities at this time
-func (s *Store) RecordFactoryUpdateStatus(ctx context.Context, updaterSet string, updateTime time.Time) error {
-	return recordFactoryUpdateStatus(ctx, s.pool, updaterSet, updateTime)
+// RecordUpdaterSetStatus records that all updaters from a updater set are up to date with vulnerabilities at this time
+func (s *Store) RecordUpdaterSetStatus(ctx context.Context, updaterSet string, updateTime time.Time) error {
+	return recordUpdaterSetStatus(ctx, s.pool, updaterSet, updateTime)
 }

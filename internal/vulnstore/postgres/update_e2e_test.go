@@ -230,7 +230,7 @@ func (e *e2e) recordUpdaterStatus(ctx context.Context) func(*testing.T) {
 		checkUpdateTimes(ctx, t, e.pool, expectedTableContents)
 
 		newUpdaterSetTime := time.Date(2021, time.Month(2), 25, 1, 10, 30, 0, time.UTC)
-		e.s.RecordFactoryUpdateStatus(ctx, "test", newUpdaterSetTime)
+		e.s.RecordUpdaterSetStatus(ctx, "test", newUpdaterSetTime)
 		for updater, row := range expectedTableContents {
 			row.LastAttempt = newUpdaterSetTime
 			row.LastSuccess = &newUpdaterSetTime

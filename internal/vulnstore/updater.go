@@ -58,6 +58,6 @@ type Updater interface {
 	Initialized(context.Context) (bool, error)
 	// RecordUpdaterStatus records that an updater is up to date with vulnerabilities at this time
 	RecordUpdaterStatus(ctx context.Context, updaterName string, updateTime time.Time, fingerprint driver.Fingerprint, updaterError error) error
-	// RecordFactoryUpdateStatus records that all updaters from a updater set are up to date with vulnerabilities at this time
-	RecordFactoryUpdateStatus(ctx context.Context, updaterSet string, updateTime time.Time) error
+	// RecordUpdaterSetStatus records that all updaters from an updater set are up to date with vulnerabilities at this time
+	RecordUpdaterSetStatus(ctx context.Context, updaterSet string, updateTime time.Time) error
 }

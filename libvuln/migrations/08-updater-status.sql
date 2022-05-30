@@ -1,8 +1,8 @@
 CREATE TABLE IF NOT EXISTS updater_status (
-	updater_name TEXT PRIMARY KEY,
-	last_attempt TIMESTAMP WITH TIME ZONE DEFAULT now(),
-	last_success TIMESTAMP WITH TIME ZONE,
-	last_run_succeeded BOOL,
-    last_attempt_fingerprint TEXT,
-    last_error TEXT
+    updater_name text PRIMARY KEY,
+    last_attempt timestamp with time zone DEFAULT now(),
+    last_success timestamp with time zone,
+    last_run_succeeded bool,
+    last_attempt_fingerprint text,
+    last_error text
 );

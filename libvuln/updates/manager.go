@@ -155,7 +155,7 @@ func (m *Manager) Run(ctx context.Context) error {
 					Err(err).
 					Msg("error getting updater set name")
 			}
-			err = m.store.RecordFactoryUpdateStatus(ctx, updaterSetName, updateTime)
+			err = m.store.RecordUpdaterSetStatus(ctx, updaterSetName, updateTime)
 			if err != nil {
 				zlog.Error(ctx).
 					Err(err).
@@ -283,9 +283,8 @@ func getFactoryNameFromStubUpdater(set driver.UpdaterSet) (string, error) {
 
 // DriveUpdater performs the business logic of fetching, parsing, and loading
 // vulnerabilities discovered by an updater into the database.
-func (m *Manager) driveUpdater(ctx context.Context, u driver.Updater) error {
+func (m *Manager) driveUpdater(ctx context.Context, u driver.Updater) (err error) {
 	var newFP driver.Fingerprint
-	var err error
 	updateTime := time.Now()
 	defer func() {
 		deferErr := m.store.RecordUpdaterStatus(ctx, u.Name(), updateTime, newFP, err)
@@ -316,7 +315,7 @@ func (m *Manager) driveUpdater(ctx context.Context, u driver.Updater) error {
 	var prevFP driver.Fingerprint
 	opmap, err := m.store.GetUpdateOperations(ctx, uoKind, name)
 	if err != nil {
-		return err
+		return
 	}
 
 	if s := opmap[name]; len(s) > 0 {
@@ -338,9 +337,9 @@ func (m *Manager) driveUpdater(ctx context.Context, u driver.Updater) error {
 	case errors.Is(err, driver.Unchanged):
 		zlog.Info(ctx).Msg("vulnerability database unchanged")
 		err = nil
-		return nil
+		return
 	default:
-		return err
+		return
 	}
 
 	var ref uuid.UUID
@@ -350,7 +349,7 @@ func (m *Manager) driveUpdater(ctx context.Context, u driver.Updater) error {
 		ers, err = eu.ParseEnrichment(ctx, vulnDB)
 		if err != nil {
 			err = fmt.Errorf("enrichment database parse failed: %v", err)
-			return err
+			return
 		}
 
 		ref, err = m.store.UpdateEnrichments(ctx, name, newFP, ers)
@@ -359,14 +358,14 @@ func (m *Manager) driveUpdater(ctx context.Context, u driver.Updater) error {
 		vulns, err = u.Parse(ctx, vulnDB)
 		if err != nil {
 			err = fmt.Errorf("vulnerability database parse failed: %v", err)
-			return err
+			return
 		}
 
 		ref, err = m.store.UpdateVulnerabilities(ctx, name, newFP, vulns)
 	}
 	if err != nil {
 		err = fmt.Errorf("failed to update: %v", err)
-		return err
+		return
 	}
 	zlog.Info(ctx).
 		Str("ref", ref.String()).

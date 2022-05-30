@@ -294,7 +294,7 @@ func (s *Store) RecordUpdaterStatus(ctx context.Context, updaterName string, upd
 	return nil
 }
 
-// RecordFactoryUpdateStatus is unimplemented
-func (s *Store) RecordFactoryUpdateStatus(ctx context.Context, updaterSet string, updateTime time.Time) error {
+// RecordUpdaterSetStatus is unimplemented
+func (s *Store) RecordUpdaterSetStatus(ctx context.Context, updaterSet string, updateTime time.Time) error {
 	return nil
 }

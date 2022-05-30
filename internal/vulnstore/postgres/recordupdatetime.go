@@ -71,16 +71,17 @@ func recordUpdaterStatus(ctx context.Context, pool *pgxpool.Pool, updaterName st
 	if updaterError == nil {
 		zlog.Debug(ctx).
 			Str("updater", updaterName).
-			Msg("Recording successful update")
-		if err := pool.QueryRow(ctx, upsertSuccessfulUpdate, updaterName, updateTime, fingerprint).Scan(&returnedUpdaterName); err != nil {
-			return fmt.Errorf("failed to upsert last update time: %w", err)
+			Msg("recording successful update")
+		_, err := pool.Exec(ctx, upsertSuccessfulUpdate, updaterName, updateTime, fingerprint)
+		if err != nil {
+			return fmt.Errorf("failed to upsert successful updater status: %w", err)
 		}
 	} else {
 		zlog.Debug(ctx).
 			Str("updater", updaterName).
-			Msg("Recording failed update")
+			Msg("recording failed update")
 		if err := pool.QueryRow(ctx, upsertFailedUpdate, updaterName, updateTime, fingerprint, updaterError.Error()).Scan(&returnedUpdaterName); err != nil {
-			return fmt.Errorf("failed to upsert last update time: %w", err)
+			return fmt.Errorf("failed to upsert failed updater status: %w", err)
 		}
 	}
 
@@ -90,26 +91,25 @@ func recordUpdaterStatus(ctx context.Context, pool *pgxpool.Pool, updaterName st
 
 	zlog.Debug(ctx).
 		Str("updater", updaterName).
-		Msg("Updater last update time stored in database")
+		Msg("updater status stored in database")
 
 	return nil
 }
 
-// recordFactoryUpdateStatus records that all updaters for a single updaterSet are up to date with vulnerabilities at this time
+// recordUpdaterSetStatus records that all updaters for a single updater set are up to date with vulnerabilities at this time
 // updates all existing updaters from this updater set with the new update time
 // the updater set parameter passed needs to match the prefix of the given updater set name format
-func recordFactoryUpdateStatus(ctx context.Context, pool *pgxpool.Pool, updaterSet string, updateTime time.Time) error {
+func recordUpdaterSetStatus(ctx context.Context, pool *pgxpool.Pool, updaterSet string, updateTime time.Time) error {
 	const (
 		update = `UPDATE updater_status
 		SET last_attempt = $1,
 			last_success = $1,
 			last_run_succeeded = 'true'
-		WHERE updater_name like $2 || '%'
-		RETURNING updater_name;`
+		WHERE updater_name like $2 || '%';`
 	)
 
 	ctx = zlog.ContextWithValues(ctx,
-		"component", "internal/vulnstore/postgres/recordFactoryUpdateStatus")
+		"component", "internal/vulnstore/postgres/recordUpdaterSetStatus")
 
 	tx, err := pool.Begin(ctx)
 	if err != nil {
@@ -117,10 +117,9 @@ func recordFactoryUpdateStatus(ctx context.Context, pool *pgxpool.Pool, updaterS
 	}
 	defer tx.Rollback(ctx)
 
-	var updaterName string
-
-	if err := pool.QueryRow(ctx, update, updateTime, updaterSet).Scan(&updaterName); err != nil {
-		return fmt.Errorf("failed to update all last update times for updater set %s: %w", updaterSet, err)
+	tag, err := pool.Exec(ctx, update, updateTime, updaterSet)
+	if err != nil {
+		return fmt.Errorf("failed to update updater statuses for updater set %s: %w", updaterSet, err)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
@@ -128,8 +127,9 @@ func recordFactoryUpdateStatus(ctx context.Context, pool *pgxpool.Pool, updaterS
 	}
 
 	zlog.Debug(ctx).
-		Str("updaterSet", updaterSet).
-		Msg(fmt.Sprintf("Last update time stored in database for all %s updaters", updaterSet))
+		Str("factory", updaterSet).
+		Int64("rowsAffected", tag.RowsAffected()).
+		Msg("status updated for factory updaters")
 
 	return nil
 }
