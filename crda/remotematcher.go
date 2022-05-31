@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"path"
@@ -221,6 +222,7 @@ func (m *matcher) invokeComponentAnalysesInBatch(ctx context.Context, records []
 			vulns, err := m.invokeComponentAnalyses(ctx, records[start:end])
 			if err != nil {
 				zlog.Error(ctx).Err(err).Msg("remote api call failure")
+				return
 			}
 			ctrlC <- vulns
 		}()
@@ -247,19 +249,18 @@ func (m *matcher) invokeComponentAnalyses(ctx context.Context, records []*clairc
 			Version: ir.Package.Version,
 		}
 	}
-	// A request shouldn't go beyond 5s.
-	tctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
 	reqBody, err := json.Marshal(request)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(tctx, http.MethodPost, m.url.String(), bytes.NewBuffer(reqBody))
+	// A request shouldn't go beyond 5s.
+	tctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(tctx, http.MethodPost, m.url.String(), bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, err
 	}
-
 	req.Header.Set("User-Agent", m.source)
 	req.Header.Set("Content-Type", "application/json")
 
@@ -268,9 +269,15 @@ func (m *matcher) invokeComponentAnalyses(ctx context.Context, records []*clairc
 		return nil, err
 	}
 	defer res.Body.Close()
+	switch res.StatusCode {
+	case http.StatusOK:
+	default:
+		var buf bytes.Buffer
+		buf.ReadFrom(&io.LimitedReader{R: res.Body, N: 256})
+		return nil, fmt.Errorf("reported error: %q (body: %q)", res.Status, buf.String())
+	}
 	var vulnReport []*VulnReport
-	err = json.NewDecoder(res.Body).Decode(&vulnReport)
-	if err != nil {
+	if err := json.NewDecoder(res.Body).Decode(&vulnReport); err != nil {
 		return nil, err
 	}
 	return vulnReport, nil
