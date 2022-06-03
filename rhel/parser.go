@@ -43,7 +43,7 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 		// Red Hat OVAL data include information about vulnerabilities,
 		// that actually don't affect the package in any way. Storing them
 		// would increase number of records in DB without adding any value.
-		if isSkippableDefinitionType(defType) {
+		if isSkippableDefinitionType(defType, u.ignoreUnpatched) {
 			return vs, nil
 		}
 
@@ -85,10 +85,8 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 	return vulns, nil
 }
 
-func isSkippableDefinitionType(defType ovalutil.DefinitionType) bool {
-	// TODO: Delete CVEDefinition of the condition when all work related
-	// to new OVAL data is done.
+func isSkippableDefinitionType(defType ovalutil.DefinitionType, ignoreUnpatched bool) bool {
 	return defType == ovalutil.UnaffectedDefinition ||
 		defType == ovalutil.NoneDefinition ||
-		defType == ovalutil.CVEDefinition
+		(ignoreUnpatched && defType == ovalutil.CVEDefinition)
 }

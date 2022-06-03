@@ -9,7 +9,65 @@ import (
 
 	"github.com/quay/goval-parser/oval"
 	"github.com/quay/zlog"
+
+	"github.com/quay/claircore/libvuln/driver"
 )
+
+func TestCVEDefFromUnpatched(t *testing.T) {
+	ctx, done := context.WithCancel(context.Background())
+	defer done()
+	var table = []struct {
+		name              string
+		fileName          string
+		configFunc        driver.ConfigUnmarshaler
+		expectedVulnCount int
+	}{
+		{
+			name:              "default path",
+			fileName:          "testdata/rhel-8-rpm-unpatched.xml",
+			configFunc:        func(_ interface{}) error { return nil },
+			expectedVulnCount: 192,
+		},
+		{
+			name:     "ignore unpatched path",
+			fileName: "testdata/rhel-8-rpm-unpatched.xml",
+			configFunc: func(c interface{}) error {
+				cfg, ok := c.(*UpdaterConfig)
+				if ok {
+					cfg.IgnoreUnpatched = true
+				}
+				return nil
+			},
+			expectedVulnCount: 0,
+		},
+	}
+
+	for _, test := range table {
+		t.Run(test.name, func(t *testing.T) {
+			ctx := zlog.Test(ctx, t)
+
+			f, err := os.Open(test.fileName)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer f.Close()
+			u, err := NewUpdater("rhel-8-unpatched-updater", 8, "file:///dev/null")
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			u.Configure(ctx, test.configFunc, nil)
+
+			vulns, err := u.Parse(ctx, f)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(vulns) != test.expectedVulnCount {
+				t.Fatalf("was expecting %d vulns, but got %d", test.expectedVulnCount, len(vulns))
+			}
+		})
+	}
+}
 
 func TestParse(t *testing.T) {
 	t.Parallel()
