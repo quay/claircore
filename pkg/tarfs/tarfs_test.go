@@ -149,6 +149,29 @@ func TestFS(t *testing.T) {
 	})
 }
 
+// TestEmpty tests that a wholly empty tar still creates an empty root.
+func TestEmpty(t *testing.T) {
+	// Two zero blocks is the tar footer, so just make one up.
+	rd := bytes.NewReader(make([]byte, 2*512))
+	sys, err := New(rd)
+	if err != nil {
+		t.Error(err)
+	}
+	if _, err := fs.Stat(sys, "."); err != nil {
+		t.Error(err)
+	}
+	ent, err := fs.ReadDir(sys, ".")
+	if err != nil {
+		t.Error(err)
+	}
+	for _, e := range ent {
+		t.Log(e)
+	}
+	if len(ent) != 0 {
+		t.Errorf("got: %d, want: 0", len(ent))
+	}
+}
+
 func checktar(t *testing.T, name string) {
 	t.Helper()
 	out, err := os.Create(name)

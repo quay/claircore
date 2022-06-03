@@ -34,6 +34,17 @@ func normPath(p string) (s string) {
 	return
 }
 
+func newDir(n string) inode {
+	return inode{
+		h: &tar.Header{
+			Typeflag: tar.TypeDir,
+			Name:     n,
+			Mode:     int64(fs.ModeDir | 0o644),
+		},
+		children: make(map[int]struct{}),
+	}
+}
+
 // New creates an FS from the tar contained in the ReaderAt.
 //
 // The ReaderAt must remain valid for the entire life of the returned FS and any
@@ -43,6 +54,9 @@ func New(r io.ReaderAt) (*FS, error) {
 	s := FS{
 		r:      r,
 		lookup: make(map[string]int),
+	}
+	if err := s.add(".", newDir(".")); err != nil {
+		return nil, err
 	}
 
 	segs, err := findSegments(r)
@@ -114,14 +128,7 @@ func (f *FS) add(name string, ino inode) error {
 		ti, ok := f.lookup[n]
 		if !ok {
 			ti = len(f.inode)
-			f.inode = append(f.inode, inode{
-				h: &tar.Header{
-					Typeflag: tar.TypeDir,
-					Name:     n,
-					Mode:     int64(fs.ModeDir | 0o644),
-				},
-			})
-			f.inode[ti].children = make(map[int]struct{})
+			f.inode = append(f.inode, newDir(n))
 			f.lookup[n] = ti
 		}
 		f.inode[ti].children[i] = struct{}{}
