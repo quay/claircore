@@ -83,8 +83,6 @@ func (f *Fetcher) Configure(ctx context.Context, cf driver.ConfigUnmarshaler, c 
 	}
 
 	f.Client = c
-	zlog.Info(ctx).
-		Msg("configured HTTP client")
 	return nil
 }
 
