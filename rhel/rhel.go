@@ -29,6 +29,7 @@ type Updater struct {
 	ovalutil.Fetcher // fetch method promoted via embed
 	dist             *claircore.Distribution
 	name             string
+	ignoreUnpatched  bool
 }
 
 // UpdaterConfig is the configuration expected for any given updater.
@@ -36,7 +37,8 @@ type Updater struct {
 // See also [ovalutil.FetcherConfig].
 type UpdaterConfig struct {
 	ovalutil.FetcherConfig
-	Release int64 `json:"release" yaml:"release"`
+	Release         int64 `json:"release" yaml:"release"`
+	IgnoreUnpatched bool  `json:"ignore_unpatched" yaml:"ignore_unpatched"`
 }
 
 // NewUpdater returns an Updater.
@@ -63,6 +65,7 @@ func (u *Updater) Configure(ctx context.Context, cf driver.ConfigUnmarshaler, c 
 	if cfg.Release != 0 {
 		u.dist = mkRelease(cfg.Release)
 	}
+	u.ignoreUnpatched = cfg.IgnoreUnpatched
 	return u.Fetcher.Configure(ctx, cf, c)
 }
 
