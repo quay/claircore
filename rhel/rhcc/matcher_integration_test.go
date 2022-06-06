@@ -39,19 +39,19 @@ func TestMatcherIntegration(t *testing.T) {
 		{
 			cvemap:      "cve-2021-3762",
 			indexReport: "clair-rhel8-v3.5.5-4",
-			cveID:       "CVE-2021-3762",
+			cveID:       "RHSA-2021:3665",
 			match:       true,
 		},
 		{
 			cvemap:      "cve-2020-8565",
 			indexReport: "rook-ceph-operator-container-4.6-115.d1788e1.release_4.6",
-			cveID:       "CVE-2020-8565",
+			cveID:       "RHSA-2021:2041",
 			match:       true,
 		},
 		{
 			cvemap:      "cve-2020-8565",
 			indexReport: "rook-ceph-operator-container-4.7-159.76b9b11.release_4.7",
-			cveID:       "CVE-2020-8565",
+			cveID:       "RHSA-2021:2041",
 			match:       false,
 		},
 	}

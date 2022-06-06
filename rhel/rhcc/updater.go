@@ -9,6 +9,8 @@ import (
 	"sort"
 
 	"github.com/quay/zlog"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
@@ -19,7 +21,8 @@ import (
 )
 
 const (
-	dbURL = "https://access.redhat.com/security/data/metrics/cvemap.xml"
+	dbURL  = "https://access.redhat.com/security/data/metrics/cvemap.xml"
+	cveURL = "https://access.redhat.com/security/cve/"
 )
 
 var (
@@ -168,6 +171,8 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 			} else {
 				severity = vuln.ThreatSeverity
 			}
+			titleCase := cases.Title(language.Und)
+			severity = titleCase.String(severity)
 			// parse cpe
 			cpe, err := cpe.Unbind(release.Cpe)
 			if err != nil {
@@ -188,6 +193,7 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 				Issued:       release.ReleaseDate.time,
 				Severity:     severity,
 				AdvisoryLink: release.Advisory.URL,
+				AdvisoryName: release.Advisory.Text,
 			}
 			// initialize and update the fixed in versions slice
 			if versionsByContainer[packageName][minorKey].FixedInVersions == nil {
@@ -227,16 +233,17 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 					Lower: start.Version(true),
 					Upper: firstPatch.Version(false),
 				}
+				links := fmt.Sprintf("%s %s%s", releasesByMinor[minor].AdvisoryLink, cveURL, vuln.Name)
 				v := &claircore.Vulnerability{
 					Updater:            updaterName,
-					Name:               vuln.Name,
+					Name:               releasesByMinor[minor].AdvisoryName,
 					Description:        description,
 					Issued:             releasesByMinor[minor].Issued,
 					Severity:           releasesByMinor[minor].Severity,
 					NormalizedSeverity: rhel.NormalizeSeverity(releasesByMinor[minor].Severity),
 					Package:            p,
 					Repo:               &goldRepo,
-					Links:              releasesByMinor[minor].AdvisoryLink,
+					Links:              links,
 					FixedInVersion:     firstPatch.Original,
 					Range:              r,
 				}

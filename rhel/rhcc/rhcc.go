@@ -39,6 +39,7 @@ type affectedRelease struct {
 
 type advisory struct {
 	XMLName xml.Name `xml:"Advisory"`
+	Text    string   `xml:",cdata"`
 	URL     string   `xml:"url,attr"`
 }
 
@@ -57,6 +58,7 @@ type consolidatedRelease struct {
 	FixedInVersions *rhctag.Versions
 	Severity        string
 	AdvisoryLink    string
+	AdvisoryName    string
 	Cpe             cpe.WFN
 }
 
