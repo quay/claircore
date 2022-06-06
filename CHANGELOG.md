@@ -2,6 +2,21 @@
 ## [Unreleased]
 
 
+<a name="v1.4.1"></a>
+## [v1.4.1] - 2022-06-06
+### Build(Deps)
+- [7200c3c](https://github.com/quay/claircore/commit/7200c3cc835df07a23c76a0cd17a029fdf6109e1): bump actions/cache from 3.0.2 to 3.0.3
+- [b0664a1](https://github.com/quay/claircore/commit/b0664a1bf673e2e1ed2f832678fd42f9df71082e): bump peter-evans/create-pull-request from 4.0.3 to 4.0.4
+### Crda
+- [c854b78](https://github.com/quay/claircore/commit/c854b78522352feb4b1f5a2281c53265598b4370): check response status code
+### Ovalutil
+- [547686f](https://github.com/quay/claircore/commit/547686f85cd48ff960c746106f59f9c96cd162a8): remove pointless log
+### Postgres
+- [1ea9fcf](https://github.com/quay/claircore/commit/1ea9fcf5c72c11afada39636378a7c2d3e0151aa): run creates before creating transaction ([#617](https://github.com/quay/claircore/issues/617))
+  - [#617](https://github.com/quay/claircore/issues/617)
+### Tarfs
+- [d58afbd](https://github.com/quay/claircore/commit/d58afbda3e2cbf2e204005ddf195f4d4a8e9accf): always create a root directory
+
 <a name="v1.4.0"></a>
 ## [v1.4.0] - 2022-05-24
 ### Alpine
@@ -18,6 +33,8 @@
 - [efa8e87](https://github.com/quay/claircore/commit/efa8e8796f2102c70cce2f1bb7e1f92e3f0c4e83): bump peter-evans/create-pull-request from 4.0.1 to 4.0.2
 - [93d74a6](https://github.com/quay/claircore/commit/93d74a696a683ebedc44419ddd30b676d38adce3): bump peter-evans/create-pull-request from 3.14.0 to 4.0.1
 - [2df3f9f](https://github.com/quay/claircore/commit/2df3f9fb4cd18b9a5cb5d180ebc8af1f66a3c4a5): bump actions/cache from 2 to 3.0.1
+### Chore
+- [1d16410](https://github.com/quay/claircore/commit/1d16410512685d926bd140f00f48eafa7410be0d): v1.4.0 changelog bump
 ### Claircore
 - [635aab5](https://github.com/quay/claircore/commit/635aab5ef1e8052110033815408c86eb38247b0f): use tarfs and expand Reader return
 ### Contrib
@@ -1439,7 +1456,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v1.4.1...HEAD
+[v1.4.1]: https://github.com/quay/claircore/compare/v1.4.0...v1.4.1
 [v1.4.0]: https://github.com/quay/claircore/compare/v1.3.2...v1.4.0
 [v1.3.2]: https://github.com/quay/claircore/compare/v1.3.1...v1.3.2
 [v1.3.1]: https://github.com/quay/claircore/compare/v1.3.0...v1.3.1
