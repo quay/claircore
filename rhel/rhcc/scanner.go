@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/fs"
 	"net/http"
 	"os"
@@ -129,17 +128,21 @@ func (s *scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Pa
 		// such as UBI.
 		return nil, nil
 	}
-	buildName, ok := labels[compLabel]
-	if !ok {
-		return nil, fmt.Errorf("expected label %s not found in dockerfile", compLabel)
-	}
-	arch, ok := labels[archLabel]
-	if !ok {
-		return nil, fmt.Errorf("expected label %s not found in dockerfile", archLabel)
-	}
-	name, ok := labels[nameLabel]
-	if !ok {
-		return nil, fmt.Errorf("expected label %s not found in dockerfile", nameLabel)
+	var buildName, arch, name string
+	for _, chk := range []struct {
+		Found *string
+		Want  string
+	}{
+		{&buildName, compLabel},
+		{&arch, archLabel},
+		{&name, nameLabel},
+	} {
+		var ok bool
+		(*chk.Found), ok = labels[chk.Want]
+		if !ok {
+			zlog.Info(ctx).Str("label", chk.Want).Msg("expected label not found in dockerfile")
+			return nil, nil
+		}
 	}
 
 	minorRange := rhctagVersion.MinorStart()
