@@ -118,9 +118,13 @@ func withClient(c *http.Client) option {
 }
 
 // WithURL sets the URL that the matcher should use for requests.
-func withURL(url *url.URL) option {
+func withURL(u *url.URL) option {
 	return func(m *matcher) error {
-		m.url = url
+		if u == nil {
+			return nil
+		}
+		urlClone := *u
+		m.url = &urlClone
 		return nil
 	}
 }

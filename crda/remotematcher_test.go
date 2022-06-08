@@ -58,6 +58,25 @@ func mkMatcher(t *testing.T, srv *httptest.Server) *matcher {
 	return m
 }
 
+func TestMatcherURL(t *testing.T) {
+	expectedURL := "https://gw.api.openshift.io/api/v2/vulnerability-analysis?user_key=algo"
+	url, err := url.Parse("https://gw.api.openshift.io/api/v2/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = newMatcher("pypi", "algo", withURL(url))
+	if err != nil {
+		t.Fatal(err)
+	}
+	m2, err := newMatcher("maven", "algo", withURL(url))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if m2.url.String() != expectedURL {
+		t.Fatalf("Invalid url %s, expected %s", m2.url.String(), expectedURL)
+	}
+}
+
 func TestRemoteMatcher(t *testing.T) {
 	t.Parallel()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
