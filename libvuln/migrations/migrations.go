@@ -54,4 +54,8 @@ var Migrations = []migrate.Migration{
 		ID: 7,
 		Up: runFile("07-force-alpine-update.sql"),
 	},
+	{
+		ID: 8,
+		Up: runFile("08-updater-status.sql"),
+	},
 }

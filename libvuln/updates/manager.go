@@ -142,9 +142,27 @@ func (m *Manager) Run(ctx context.Context) error {
 	// If construction fails, we will simply ignore those updater
 	// sets.
 	for _, factory := range m.factories {
+		updateTime := time.Now()
 		set, err := factory.UpdaterSet(ctx)
 		if err != nil {
 			zlog.Error(ctx).Err(err).Msg("failed constructing factory, excluding from run")
+			continue
+		}
+		if stubUpdaterInSet(set) {
+			updaterSetName, err := getFactoryNameFromStubUpdater(set)
+			if err != nil {
+				zlog.Error(ctx).
+					Err(err).
+					Msg("error getting updater set name")
+			}
+			err = m.store.RecordUpdaterSetStatus(ctx, updaterSetName, updateTime)
+			if err != nil {
+				zlog.Error(ctx).
+					Err(err).
+					Str("updaterSetName", updaterSetName).
+					Time("updateTime", updateTime).
+					Msg("error while recording update success for all updaters in updater set")
+			}
 			continue
 		}
 		updaters = append(updaters, set.Updaters()...)
@@ -244,9 +262,41 @@ func (m *Manager) Run(ctx context.Context) error {
 	return nil
 }
 
+// stubUpdaterInSet works out if an updater set contains a stub updater,
+// signifying all updaters are up to date for this factory
+func stubUpdaterInSet(set driver.UpdaterSet) bool {
+	if len(set.Updaters()) == 1 {
+		if set.Updaters()[0].Name() == "rhel-all" {
+			return true
+		}
+	}
+	return false
+}
+
+// getFactoryNameFromStubUpdater retrieves the factory name from an updater set with a stub updater
+func getFactoryNameFromStubUpdater(set driver.UpdaterSet) (string, error) {
+	if set.Updaters()[0].Name() == "rhel-all" {
+		return "RHEL", nil
+	}
+	return "", errors.New("unrecognized stub updater name")
+}
+
 // DriveUpdater performs the business logic of fetching, parsing, and loading
 // vulnerabilities discovered by an updater into the database.
-func (m *Manager) driveUpdater(ctx context.Context, u driver.Updater) error {
+func (m *Manager) driveUpdater(ctx context.Context, u driver.Updater) (err error) {
+	var newFP driver.Fingerprint
+	updateTime := time.Now()
+	defer func() {
+		deferErr := m.store.RecordUpdaterStatus(ctx, u.Name(), updateTime, newFP, err)
+		if deferErr != nil {
+			zlog.Error(ctx).
+				Err(deferErr).
+				Str("updater", u.Name()).
+				Time("updateTime", updateTime).
+				Msg("error while recording updater status")
+		}
+	}()
+
 	name := u.Name()
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "libvuln/updates/Manager.driveUpdater",
@@ -265,7 +315,7 @@ func (m *Manager) driveUpdater(ctx context.Context, u driver.Updater) error {
 	var prevFP driver.Fingerprint
 	opmap, err := m.store.GetUpdateOperations(ctx, uoKind, name)
 	if err != nil {
-		return err
+		return
 	}
 
 	if s := opmap[name]; len(s) > 0 {
@@ -273,7 +323,6 @@ func (m *Manager) driveUpdater(ctx context.Context, u driver.Updater) error {
 	}
 
 	var vulnDB io.ReadCloser
-	var newFP driver.Fingerprint
 	switch {
 	case euOK:
 		vulnDB, newFP, err = eu.FetchEnrichment(ctx, prevFP)
@@ -287,9 +336,10 @@ func (m *Manager) driveUpdater(ctx context.Context, u driver.Updater) error {
 	case err == nil:
 	case errors.Is(err, driver.Unchanged):
 		zlog.Info(ctx).Msg("vulnerability database unchanged")
-		return nil
+		err = nil
+		return
 	default:
-		return err
+		return
 	}
 
 	var ref uuid.UUID
@@ -298,7 +348,8 @@ func (m *Manager) driveUpdater(ctx context.Context, u driver.Updater) error {
 		var ers []driver.EnrichmentRecord
 		ers, err = eu.ParseEnrichment(ctx, vulnDB)
 		if err != nil {
-			return fmt.Errorf("enrichment database parse failed: %v", err)
+			err = fmt.Errorf("enrichment database parse failed: %v", err)
+			return
 		}
 
 		ref, err = m.store.UpdateEnrichments(ctx, name, newFP, ers)
@@ -306,13 +357,15 @@ func (m *Manager) driveUpdater(ctx context.Context, u driver.Updater) error {
 		var vulns []*claircore.Vulnerability
 		vulns, err = u.Parse(ctx, vulnDB)
 		if err != nil {
-			return fmt.Errorf("vulnerability database parse failed: %v", err)
+			err = fmt.Errorf("vulnerability database parse failed: %v", err)
+			return
 		}
 
 		ref, err = m.store.UpdateVulnerabilities(ctx, name, newFP, vulns)
 	}
 	if err != nil {
-		return fmt.Errorf("failed to update: %v", err)
+		err = fmt.Errorf("failed to update: %v", err)
+		return
 	}
 	zlog.Info(ctx).
 		Str("ref", ref.String()).

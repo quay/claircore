@@ -3,10 +3,12 @@ package postgres
 import (
 	"context"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"hash/fnv"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -77,6 +79,7 @@ func (e *e2e) Run(ctx context.Context) func(*testing.T) {
 
 		{"Update", e.Update},
 		{"GetUpdateOperations", e.GetUpdateOperations},
+		{"recordUpdaterStatus", e.recordUpdaterStatus},
 		{"Diff", e.Diff},
 		{"DeleteUpdateOperations", e.DeleteUpdateOperations},
 	}
@@ -160,6 +163,81 @@ func (e *e2e) GetUpdateOperations(ctx context.Context) func(*testing.T) {
 				t.Fatal(cmp.Diff(want, got, updateOpCmp))
 			}
 		}
+		t.Log("ok")
+	}
+}
+
+type update struct {
+	UpdaterName            string             `json:"updater_name"`
+	LastAttempt            time.Time          `json:"last_attempt"`
+	LastSuccess            *time.Time         `json:"last_success"`
+	LastRunSucceeded       bool               `json:"last_run_succeeded"`
+	LastAttemptFingerprint driver.Fingerprint `json:"last_attempt_fingerprint"`
+	LastError              *string            `json:"last_error"`
+}
+
+// recordUpdaterStatus confirms multiple updates to record last update times
+// and then an update to an whole updater set
+func (e *e2e) recordUpdaterStatus(ctx context.Context) func(*testing.T) {
+	return func(t *testing.T) {
+		ctx := zlog.Test(ctx, t)
+		errorText := "test error"
+		firstUpdateDate := time.Date(2020, time.Month(1), 22, 2, 10, 30, 0, time.UTC)
+		secondUpdateDate := time.Date(2021, time.Month(2), 21, 1, 10, 30, 0, time.UTC)
+		var emptyFingerprint driver.Fingerprint
+		updates := []update{
+			{
+				UpdaterName:            "test-updater-1",
+				LastAttempt:            firstUpdateDate,
+				LastSuccess:            &firstUpdateDate,
+				LastRunSucceeded:       true,
+				LastAttemptFingerprint: driver.Fingerprint(uuid.New().String()),
+			},
+			{
+				UpdaterName:            "test-updater-1",
+				LastAttempt:            secondUpdateDate,
+				LastSuccess:            &secondUpdateDate,
+				LastRunSucceeded:       true,
+				LastAttemptFingerprint: driver.Fingerprint(uuid.New().String()),
+			},
+			{
+				UpdaterName:            "test-updater-2",
+				LastAttempt:            firstUpdateDate,
+				LastSuccess:            &firstUpdateDate,
+				LastRunSucceeded:       true,
+				LastAttemptFingerprint: emptyFingerprint,
+			},
+			{
+				UpdaterName:            "test-updater-3",
+				LastAttempt:            firstUpdateDate,
+				LastRunSucceeded:       false,
+				LastAttemptFingerprint: driver.Fingerprint(uuid.New().String()),
+				LastError:              &errorText,
+			},
+		}
+		expectedTableContents := make(map[string]update)
+		for _, update := range updates {
+			var updateError error
+			if update.LastError != nil {
+				updateError = errors.New(*update.LastError)
+			}
+			err := e.s.RecordUpdaterStatus(ctx, update.UpdaterName, update.LastAttempt, update.LastAttemptFingerprint, updateError)
+			if err != nil {
+				t.Fatalf("failed to perform update: %v", err)
+			}
+			expectedTableContents[update.UpdaterName] = update
+		}
+		checkUpdateTimes(ctx, t, e.pool, expectedTableContents)
+
+		newUpdaterSetTime := time.Date(2021, time.Month(2), 25, 1, 10, 30, 0, time.UTC)
+		e.s.RecordUpdaterSetStatus(ctx, "test", newUpdaterSetTime)
+		for updater, row := range expectedTableContents {
+			row.LastAttempt = newUpdaterSetTime
+			row.LastSuccess = &newUpdaterSetTime
+			row.LastRunSucceeded = true
+			expectedTableContents[updater] = row
+		}
+		checkUpdateTimes(ctx, t, e.pool, expectedTableContents)
 		t.Log("ok")
 	}
 }
@@ -412,6 +490,57 @@ WHERE uo.ref = $1::uuid;`
 	for name := range expectedVulns {
 		if _, ok := queriedVulns[name]; !ok {
 			t.Fatalf("expected vuln %v was not found in query", name)
+		}
+	}
+}
+
+// checkUpdateTimes confirms updater update times are upserted into the database correctly when
+// store.RecordUpaterUptdateTime is called.
+func checkUpdateTimes(ctx context.Context, t *testing.T, pool *pgxpool.Pool, updates map[string]update) {
+	const query = `SELECT updater_name, last_attempt, last_success, last_run_succeeded, last_attempt_fingerprint, last_error
+FROM updater_status`
+
+	rows, err := pool.Query(ctx, query)
+	if err != nil {
+		t.Fatalf("query failed: %v", err)
+	}
+	defer rows.Close()
+
+	queriedUpdates := make(map[string]update)
+	for rows.Next() {
+		var updateEntry update
+		err := rows.Scan(
+			&updateEntry.UpdaterName,
+			&updateEntry.LastAttempt,
+			&updateEntry.LastSuccess,
+			&updateEntry.LastRunSucceeded,
+			&updateEntry.LastAttemptFingerprint,
+			&updateEntry.LastError,
+		)
+		if err != nil {
+			t.Fatalf("failed to scan update: %v", err)
+		}
+		queriedUpdates[updateEntry.UpdaterName] = updateEntry
+	}
+	if err := rows.Err(); err != nil {
+		t.Error(err)
+	}
+
+	// confirm we did not receive unexpected updates
+	for name, got := range queriedUpdates {
+		if want, ok := updates[name]; !ok {
+			t.Fatalf("received unexpected update: %s %v", name, got)
+		} else {
+			if !cmp.Equal(want, got) {
+				t.Fatal(cmp.Diff(want, got))
+			}
+		}
+	}
+
+	// confirm queriedUpdates contain all expected updates
+	for name := range updates {
+		if _, ok := queriedUpdates[name]; !ok {
+			t.Fatalf("expected update %v was not found in query", name)
 		}
 	}
 }

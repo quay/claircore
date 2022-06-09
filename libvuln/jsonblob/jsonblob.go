@@ -288,3 +288,13 @@ func (s *Store) UpdateEnrichments(ctx context.Context, kind string, fp driver.Fi
 	}}, s.ops[kind]...)
 	return ref, nil
 }
+
+// RecordUpdaterStatus is unimplemented
+func (s *Store) RecordUpdaterStatus(ctx context.Context, updaterName string, updateTime time.Time, fingerprint driver.Fingerprint, updaterError error) error {
+	return nil
+}
+
+// RecordUpdaterSetStatus is unimplemented
+func (s *Store) RecordUpdaterSetStatus(ctx context.Context, updaterSet string, updateTime time.Time) error {
+	return nil
+}
