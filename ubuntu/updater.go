@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	OVALTemplateBzip = "https://people.canonical.com/~ubuntu-security/oval/com.ubuntu.%s.cve.oval.xml.bz2"
-	OVALTemplate     = "https://people.canonical.com/~ubuntu-security/oval/com.ubuntu.%s.cve.oval.xml"
+	OVALTemplateBzip = "https://security-metadata.canonical.com/oval/com.ubuntu.%s.cve.oval.xml.bz2"
+	OVALTemplate     = "https://security-metadata.canonical.com/oval/com.ubuntu.%s.cve.oval.xml"
 )
 
 var shouldBzipFetch = map[Release]bool{
