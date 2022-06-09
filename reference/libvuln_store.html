@@ -210,6 +210,10 @@ type Updater interface {
 	GC(ctx context.Context, keep int) (int64, error)
 	// Initialized reports whether the vulnstore contains vulnerabilities.
 	Initialized(context.Context) (bool, error)
+	// RecordUpdaterStatus records that an updater is up to date with vulnerabilities at this time
+	RecordUpdaterStatus(ctx context.Context, updaterName string, updateTime time.Time, fingerprint driver.Fingerprint, updaterError error) error
+	// RecordUpdaterSetStatus records that all updaters from an updater set are up to date with vulnerabilities at this time
+	RecordUpdaterSetStatus(ctx context.Context, updaterSet string, updateTime time.Time) error
 }
     Updater is an interface exporting the necessary methods for updating a
     vulnerability database.
