@@ -2,11 +2,23 @@
 ## [Unreleased]
 
 
+<a name="v1.4.2"></a>
+## [v1.4.2] - 2022-06-08
+### Crda
+- [dc939a0](https://github.com/quay/claircore/commit/dc939a06a937d50ef65de81d67b3f3a07e409cce): clone url when creating a new matcher ([#633](https://github.com/quay/claircore/issues/633))
+  - [#633](https://github.com/quay/claircore/issues/633)
+### Rhcc
+- [4059faf](https://github.com/quay/claircore/commit/4059faff798b7eba45ed3a5a197835692dc77b6a): don't fatally error on unexpected Dockerfiles
+- [de0aac8](https://github.com/quay/claircore/commit/de0aac89c58b7d9fafab577f003a811b97a7787e): Update vulnerability details to match rhel patched
+  - [#627](https://github.com/quay/claircore/issues/627)
+
 <a name="v1.4.1"></a>
 ## [v1.4.1] - 2022-06-06
 ### Build(Deps)
 - [7200c3c](https://github.com/quay/claircore/commit/7200c3cc835df07a23c76a0cd17a029fdf6109e1): bump actions/cache from 3.0.2 to 3.0.3
 - [b0664a1](https://github.com/quay/claircore/commit/b0664a1bf673e2e1ed2f832678fd42f9df71082e): bump peter-evans/create-pull-request from 4.0.3 to 4.0.4
+### Chore
+- [f57b7a1](https://github.com/quay/claircore/commit/f57b7a150273ac604c193f692b0a3092d312c227): v1.4.1 changelog bump
 ### Crda
 - [c854b78](https://github.com/quay/claircore/commit/c854b78522352feb4b1f5a2281c53265598b4370): check response status code
 ### Ovalutil
@@ -1456,7 +1468,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v1.4.1...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v1.4.2...HEAD
+[v1.4.2]: https://github.com/quay/claircore/compare/v1.4.1...v1.4.2
 [v1.4.1]: https://github.com/quay/claircore/compare/v1.4.0...v1.4.1
 [v1.4.0]: https://github.com/quay/claircore/compare/v1.3.2...v1.4.0
 [v1.3.2]: https://github.com/quay/claircore/compare/v1.3.1...v1.3.2
