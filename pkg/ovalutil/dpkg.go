@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 
 	"github.com/quay/goval-parser/oval"
 	"github.com/quay/zlog"
@@ -102,6 +103,13 @@ func DpkgDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulns
 				for _, n := range ns {
 					vuln := *protoVuln
 					if state != nil {
+						if v := state.EVR.Body; !validVersion.MatchString(v) {
+							zlog.Debug(ctx).
+								Str("version", v).
+								Str("package", n).
+								Msg("bogus version")
+							continue
+						}
 						vuln.FixedInVersion = state.EVR.Body
 						if state.Arch != nil {
 							vuln.ArchOperation = mapArchOp(state.Arch.Operation)
@@ -126,6 +134,10 @@ func DpkgDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulns
 	}
 	return vulns, nil
 }
+
+// ValidVersion is a regexp that allows all valid Debian version strings.
+// It's more permissive than the actual algorithm; see also deb-version(5).
+var validVersion = regexp.MustCompile(`\A([0-9]+:)?[-A-Za-z0-9.+:~]+(-[A-Za-z0-9+.~]+)?\z`)
 
 func dpkgStateLookup(root *oval.Root, ref string) (*oval.DpkgInfoState, error) {
 	kind, i, err := root.States.Lookup(ref)
