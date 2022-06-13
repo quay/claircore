@@ -1,0 +1,23 @@
+Package: debian-archive-keyring
+Status: install ok installed
+Priority: important
+Section: misc
+Installed-Size: 198
+Maintainer: Debian Release Team <packages@release.debian.org>
+Architecture: all
+Multi-Arch: foreign
+Version: 2019.1
+Conffiles:
+ /etc/apt/trusted.gpg.d/debian-archive-buster-automatic.gpg 9e93d0a43d3a60272034c15900e9df6f
+ /etc/apt/trusted.gpg.d/debian-archive-buster-security-automatic.gpg f2d1b03b7a3c279ec66425d06aaab50f
+ /etc/apt/trusted.gpg.d/debian-archive-buster-stable.gpg 4797ff6df738da65413ef710cf73936f
+ /etc/apt/trusted.gpg.d/debian-archive-jessie-automatic.gpg 47d3fff11215d63917b41cb249ca0cbb
+ /etc/apt/trusted.gpg.d/debian-archive-jessie-security-automatic.gpg 762c194d687970dd37e6bbcb1f88be6b
+ /etc/apt/trusted.gpg.d/debian-archive-jessie-stable.gpg 396bc7a1b3a1c2a67b33366b9300897b
+ /etc/apt/trusted.gpg.d/debian-archive-stretch-automatic.gpg f8ca9f176f6a5747e113f62220671e0b
+ /etc/apt/trusted.gpg.d/debian-archive-stretch-security-automatic.gpg 986449e3c1ed5c157686f0166411b829
+ /etc/apt/trusted.gpg.d/debian-archive-stretch-stable.gpg 67fa5396fa0900c0abd1058d98d9247e
+Description: GnuPG archive keys of the Debian archive
+ The Debian project digitally signs its Release files. This package
+ contains the archive keys used for that.
+

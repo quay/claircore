@@ -994,3 +994,23 @@ func TestGiantStatus(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+// See quay/claircore#297 for more context.
+func TestKeyringPackage(t *testing.T) {
+	db, err := os.Open(`testdata/debian-only.status`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+
+	tp := textproto.NewReader(bufio.NewReader(db))
+	hdr, err := tp.ReadMIMEHeader()
+	if err != nil {
+		t.Error(err)
+	}
+	got, want := hdr.Get("Version"), `2019.1`
+	t.Logf("got: %q, want: %q", got, want)
+	if got != want {
+		t.Fail()
+	}
+}
