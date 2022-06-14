@@ -158,6 +158,8 @@ func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
 		p := uri.Path
 		var r Release
 		switch {
+		case strings.Contains(p, "RHEL9"):
+			r = RHEL9
 		case strings.Contains(p, "RHEL8"):
 			r = RHEL8
 		case strings.Contains(p, "RHEL7"):
