@@ -1,6 +1,9 @@
 package rhel
 
 import (
+	"strconv"
+	"sync"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/cpe"
 )
@@ -18,73 +21,32 @@ const (
 	RHEL6 Release = 6
 	RHEL7 Release = 7
 	RHEL8 Release = 8
+	RHEL9 Release = 9
 )
 
-var rhel3Dist = &claircore.Distribution{
-	Name:       "Red Hat Enterprise Linux Server",
-	Version:    "3",
-	VersionID:  "3",
-	DID:        "rhel",
-	PrettyName: "Red Hat Enterprise Linux Server 3",
-	CPE:        cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:3"),
-}
-var rhel4Dist = &claircore.Distribution{
-	Name:       "Red Hat Enterprise Linux Server",
-	Version:    "4",
-	VersionID:  "4",
-	DID:        "rhel",
-	PrettyName: "Red Hat Enterprise Linux Server 4",
-	CPE:        cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:4"),
-}
-var rhel5Dist = &claircore.Distribution{
-	Name:       "Red Hat Enterprise Linux Server",
-	Version:    "5",
-	VersionID:  "5",
-	DID:        "rhel",
-	PrettyName: "Red Hat Enterprise Linux Server 5",
-	CPE:        cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:5"),
-}
-var rhel6Dist = &claircore.Distribution{
-	Name:       "Red Hat Enterprise Linux Server",
-	Version:    "6",
-	VersionID:  "6",
-	DID:        "rhel",
-	PrettyName: "Red Hat Enterprise Linux Server 6",
-	CPE:        cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:6"),
-}
-var rhel7Dist = &claircore.Distribution{
-	Name:       "Red Hat Enterprise Linux Server",
-	Version:    "7",
-	VersionID:  "7",
-	DID:        "rhel",
-	PrettyName: "Red Hat Enterprise Linux Server 7",
-	CPE:        cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:7"),
-}
-var rhel8Dist = &claircore.Distribution{
-	Name:       "Red Hat Enterprise Linux Server",
-	Version:    "8",
-	VersionID:  "8",
-	DID:        "rhel",
-	PrettyName: "Red Hat Enterprise Linux Server 8",
-	CPE:        cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8"),
+func (r Release) Distribution() *claircore.Distribution {
+	return mkRelease(int64(r))
 }
 
-func releaseToDist(r Release) *claircore.Distribution {
-	switch r {
-	case RHEL3:
-		return rhel3Dist
-	case RHEL4:
-		return rhel4Dist
-	case RHEL5:
-		return rhel5Dist
-	case RHEL6:
-		return rhel6Dist
-	case RHEL7:
-		return rhel7Dist
-	case RHEL8:
-		return rhel8Dist
-	default:
-		// return empty dist
-		return &claircore.Distribution{}
+// RelMap memoizes the Distributions handed out by this package.
+//
+// Doing this is a cop-out to the previous approach of having a hard-coded set of structs.
+// In the case something is (mistakenly) doing pointer comparisons, this will make that work
+// but still allows us to have the list of distributions grow ad-hoc.
+var relMap sync.Map
+
+func mkRelease(n int64) *claircore.Distribution {
+	v, ok := relMap.Load(n)
+	if !ok {
+		s := strconv.FormatInt(n, 10)
+		v, _ = relMap.LoadOrStore(n, &claircore.Distribution{
+			Name:       "Red Hat Enterprise Linux Server",
+			Version:    s,
+			VersionID:  s,
+			DID:        "rhel",
+			PrettyName: "Red Hat Enterprise Linux Server " + s,
+			CPE:        cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:" + s),
+		})
 	}
+	return v.(*claircore.Distribution)
 }

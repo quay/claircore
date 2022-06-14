@@ -70,7 +70,7 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 				// each updater is configured to parse a rhel release
 				// specific xml database. we'll use the updater's release
 				// to map the parsed vulnerabilities
-				Dist: releaseToDist(u.release),
+				Dist: u.release.Distribution(),
 			}
 			vs = append(vs, v)
 		}
