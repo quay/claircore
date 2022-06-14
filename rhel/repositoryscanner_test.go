@@ -25,7 +25,7 @@ func TestRepositoryScanner(t *testing.T) {
 
 	// Set up a response map and test server to mock the Container API.
 	apiData := map[string]*containerapi.ContainerImages{
-		"rh-pkg-1-1": &containerapi.ContainerImages{Images: []containerapi.ContainerImage{
+		"rh-pkg-1-1": {Images: []containerapi.ContainerImage{
 			{
 				CPEs: []string{
 					"cpe:/o:redhat:enterprise_linux:8::computenode",
@@ -41,10 +41,10 @@ func TestRepositoryScanner(t *testing.T) {
 		}},
 	}
 	mappingData := repo2cpe.MappingFile{Data: map[string]repo2cpe.Repo{
-		"content-set-1": repo2cpe.Repo{
+		"content-set-1": {
 			CPEs: []string{"cpe:/o:redhat:enterprise_linux:6::server", "cpe:/o:redhat:enterprise_linux:7::server"},
 		},
-		"content-set-2": repo2cpe.Repo{
+		"content-set-2": {
 			CPEs: []string{"cpe:/o:redhat:enterprise_linux:7::server", "cpe:/o:redhat:enterprise_linux:8::server"},
 		},
 	}}
@@ -74,12 +74,12 @@ func TestRepositoryScanner(t *testing.T) {
 		{
 			name: "FromAPI",
 			want: []*claircore.Repository{
-				&claircore.Repository{
+				{
 					Name: "cpe:/o:redhat:enterprise_linux:8::baseos",
 					Key:  RedHatRepositoryKey,
 					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8::baseos"),
 				},
-				&claircore.Repository{
+				{
 					Name: "cpe:/o:redhat:enterprise_linux:8::computenode",
 					Key:  RedHatRepositoryKey,
 					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8::computenode"),
@@ -91,17 +91,17 @@ func TestRepositoryScanner(t *testing.T) {
 		{
 			name: "From mapping file",
 			want: []*claircore.Repository{
-				&claircore.Repository{
+				{
 					Name: "cpe:/o:redhat:enterprise_linux:6::server",
 					Key:  RedHatRepositoryKey,
 					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:6::server"),
 				},
-				&claircore.Repository{
+				{
 					Name: "cpe:/o:redhat:enterprise_linux:7::server",
 					Key:  RedHatRepositoryKey,
 					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:7::server"),
 				},
-				&claircore.Repository{
+				{
 					Name: "cpe:/o:redhat:enterprise_linux:8::server",
 					Key:  RedHatRepositoryKey,
 					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8::server"),
