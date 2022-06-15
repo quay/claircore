@@ -9,7 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-var V3_10_community_truncated_secDB = SecurityDB{
+var v3_10CommunityTruncatedSecDB = SecurityDB{
 	Distroversion: "v3.10",
 	Reponame:      "community",
 	Urlprefix:     "http://dl-cdn.alpinelinux.org/alpine",
@@ -19,10 +19,10 @@ var V3_10_community_truncated_secDB = SecurityDB{
 			Pkg: Details{
 				Name: "botan",
 				Secfixes: map[string][]string{
-					"2.9.0-r0": []string{"CVE-2018-20187"},
-					"2.7.0-r0": []string{"CVE-2018-12435"},
-					"2.6.0-r0": []string{"CVE-2018-9860"},
-					"2.5.0-r0": []string{"CVE-2018-9127"},
+					"2.9.0-r0": {"CVE-2018-20187"},
+					"2.7.0-r0": {"CVE-2018-12435"},
+					"2.6.0-r0": {"CVE-2018-9860"},
+					"2.5.0-r0": {"CVE-2018-9127"},
 				},
 			},
 		},
@@ -30,7 +30,7 @@ var V3_10_community_truncated_secDB = SecurityDB{
 			Pkg: Details{
 				Name: "cfengine",
 				Secfixes: map[string][]string{
-					"3.12.2-r0": []string{"CVE-2019-9929"},
+					"3.12.2-r0": {"CVE-2019-9929"},
 				},
 			},
 		},
@@ -38,9 +38,9 @@ var V3_10_community_truncated_secDB = SecurityDB{
 			Pkg: Details{
 				Name: "chicken",
 				Secfixes: map[string][]string{
-					"4.12.0-r3": []string{"CVE-2017-6949"},
-					"4.12.0-r2": []string{"CVE-2017-9334"},
-					"4.11.1-r0": []string{"CVE-2016-6830", "CVE-2016-6831"},
+					"4.12.0-r3": {"CVE-2017-6949"},
+					"4.12.0-r2": {"CVE-2017-9334"},
+					"4.11.1-r0": {"CVE-2016-6830", "CVE-2016-6831"},
 				},
 			},
 		},
