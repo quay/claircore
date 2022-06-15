@@ -13,7 +13,9 @@ import (
 	"github.com/quay/claircore"
 )
 
-var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
+var dist310 = release{3, 10}.Distribution()
+
+var v3_10CommunityTruncatedVulns = []*claircore.Vulnerability{
 	{
 		Name:               "CVE-2018-20187",
 		Links:              "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2018-20187",
@@ -24,7 +26,7 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 			Name: "botan",
 			Kind: claircore.SOURCE,
 		},
-		Dist: releaseToDist(V3_10),
+		Dist: dist310,
 	},
 	{
 		Name:               "CVE-2018-12435",
@@ -36,7 +38,7 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 			Name: "botan",
 			Kind: claircore.SOURCE,
 		},
-		Dist: releaseToDist(V3_10),
+		Dist: dist310,
 	},
 	{
 		Name:               "CVE-2018-9860",
@@ -48,7 +50,7 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 			Name: "botan",
 			Kind: claircore.SOURCE,
 		},
-		Dist: releaseToDist(V3_10),
+		Dist: dist310,
 	},
 	{
 		Name:               "CVE-2018-9127",
@@ -60,7 +62,7 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 			Name: "botan",
 			Kind: claircore.SOURCE,
 		},
-		Dist: releaseToDist(V3_10),
+		Dist: dist310,
 	},
 	{
 		Name:               "CVE-2019-9929",
@@ -72,7 +74,7 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 			Name: "cfengine",
 			Kind: claircore.SOURCE,
 		},
-		Dist: releaseToDist(V3_10),
+		Dist: dist310,
 	},
 	{
 		Name:               "CVE-2017-6949",
@@ -84,7 +86,7 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 			Name: "chicken",
 			Kind: claircore.SOURCE,
 		},
-		Dist: releaseToDist(V3_10),
+		Dist: dist310,
 	},
 	{
 		Name:               "CVE-2017-9334",
@@ -96,7 +98,7 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 			Name: "chicken",
 			Kind: claircore.SOURCE,
 		},
-		Dist: releaseToDist(V3_10),
+		Dist: dist310,
 	},
 	{
 		Name:               "CVE-2016-6830",
@@ -108,7 +110,7 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 			Name: "chicken",
 			Kind: claircore.SOURCE,
 		},
-		Dist: releaseToDist(V3_10),
+		Dist: dist310,
 	},
 	{
 		Name:               "CVE-2016-6831",
@@ -120,7 +122,7 @@ var V3_10_community_truncated_vulns = []*claircore.Vulnerability{
 			Name: "chicken",
 			Kind: claircore.SOURCE,
 		},
-		Dist: releaseToDist(V3_10),
+		Dist: dist310,
 	},
 }
 
@@ -129,16 +131,16 @@ func TestParser(t *testing.T) {
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
 	var table = []struct {
-		release  Release
-		repo     Repo
+		release  release
+		repo     string
 		testFile string
 		expected []*claircore.Vulnerability
 	}{
 		{
-			release:  V3_10,
-			repo:     Community,
-			testFile: "v3_10_community_truncated.json",
-			expected: V3_10_community_truncated_vulns,
+			release:  release{3, 10},
+			repo:     "community",
+			testFile: "fetch/v3.10/community.json",
+			expected: v3_10CommunityTruncatedVulns,
 		},
 	}
 
@@ -152,10 +154,7 @@ func TestParser(t *testing.T) {
 				t.Fatalf("failed to open test data: %v", path)
 			}
 
-			u, err := NewUpdater(test.release, test.repo)
-			if err != nil {
-				t.Fatalf("failed to create updater: %v", err)
-			}
+			u := &updater{release: test.release, repo: test.repo}
 			vulns, err := u.Parse(ctx, f)
 			if err != nil {
 				t.Fatalf("failed to parse: %v", err)

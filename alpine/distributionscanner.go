@@ -25,7 +25,7 @@ import (
 
 const (
 	scannerName    = "alpine"
-	scannerVersion = "v0.0.1"
+	scannerVersion = "2"
 	scannerKind    = "distribution"
 )
 

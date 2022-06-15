@@ -12,7 +12,7 @@ import (
 	"github.com/quay/claircore/pkg/tmp"
 )
 
-func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
+func (u *updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "alpine/Updater.Fetch")
 
 	zlog.Info(ctx).Str("database", u.url).Msg("starting fetch")

@@ -53,8 +53,8 @@ func TestSecDBParse(t *testing.T) {
 		expected SecurityDB
 	}{
 		{
-			testFile: "v3_10_community_truncated.json",
-			expected: V3_10_community_truncated_secDB,
+			testFile: "fetch/v3.10/community.json",
+			expected: v3_10CommunityTruncatedSecDB,
 		},
 	}
 

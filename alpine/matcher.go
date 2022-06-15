@@ -25,9 +25,9 @@ func (*Matcher) Filter(record *claircore.IndexRecord) bool {
 	}
 
 	switch {
-	case record.Distribution.DID == ID:
+	case record.Distribution.DID == distID:
 		return true
-	case record.Distribution.Name == Name:
+	case record.Distribution.Name == distName:
 		return true
 	default:
 		return false

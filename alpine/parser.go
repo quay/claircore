@@ -16,10 +16,10 @@ const (
 	nvdURLPrefix = "https://cve.mitre.org/cgi-bin/cvename.cgi?name=%s"
 )
 
-var _ driver.Parser = (*Updater)(nil)
+var _ driver.Parser = (*updater)(nil)
 
-func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "apline/Updater.Parse")
+func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
+	ctx = zlog.ContextWithValues(ctx, "component", "alpine/Updater.Parse")
 	zlog.Info(ctx).Msg("starting parse")
 	defer r.Close()
 
@@ -31,7 +31,7 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 }
 
 // parse parses the alpine SecurityDB
-func (u *Updater) parse(ctx context.Context, sdb *SecurityDB) ([]*claircore.Vulnerability, error) {
+func (u *updater) parse(ctx context.Context, sdb *SecurityDB) ([]*claircore.Vulnerability, error) {
 	out := []*claircore.Vulnerability{}
 	for _, pkg := range sdb.Packages {
 		if err := ctx.Err(); err != nil {
@@ -44,7 +44,7 @@ func (u *Updater) parse(ctx context.Context, sdb *SecurityDB) ([]*claircore.Vuln
 				Name: pkg.Pkg.Name,
 				Kind: claircore.SOURCE,
 			},
-			Dist: releaseToDist(u.release),
+			Dist: u.release.Distribution(),
 		}
 		out = append(out, unpackSecFixes(partial, pkg.Pkg.Secfixes)...)
 	}

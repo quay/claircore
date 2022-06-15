@@ -2,60 +2,48 @@ package alpine
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/quay/zlog"
-
-	"github.com/quay/claircore/libvuln/driver"
 )
 
-func TestFetcher(t *testing.T) {
+func serveSecDB(t *testing.T) (string, *http.Client) {
+	srv := httptest.NewServer(http.FileServer(http.Dir("testdata/fetch")))
+	t.Cleanup(srv.Close)
+	return srv.URL, srv.Client()
+}
+
+func TestFactory(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
-
-	var table = []struct {
-		release   Release
-		repo      Repo
-		serveFile string
-	}{
-		{
-			release:   V3_10,
-			repo:      Community,
-			serveFile: "testdata/v3_10_community_truncated.json",
-		},
+	root, c := serveSecDB(t)
+	fac := &Factory{}
+	err := fac.Configure(ctx, func(v interface{}) error {
+		cf := v.(*FactoryConfig)
+		cf.URL = root + "/"
+		return nil
+	}, c)
+	if err != nil {
+		t.Fatal(err)
 	}
-
-	for _, test := range table {
-		fi, err := os.Stat(test.serveFile)
-		if err != nil {
-			t.Fatal(err)
-		}
-		tag := fmt.Sprintf(`"%d"`, fi.ModTime().UnixNano())
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.Header.Get("if-none-match") == tag {
-				w.WriteHeader(http.StatusNotModified)
-				return
-			}
-			w.Header().Set("etag", tag)
-			http.ServeFile(w, r, test.serveFile)
-		}))
-
-		u, err := NewUpdater(test.release, test.repo, WithURL(srv.URL))
-
-		rd, hint, err := u.Fetch(ctx, "")
-		if err != nil {
-			t.Error(err)
-		}
-		if rd != nil {
-			rd.Close()
-		}
-
-		_, _, err = u.Fetch(ctx, driver.Fingerprint(hint))
-		if got, want := err, driver.Unchanged; got != want {
-			t.Errorf("got: %v, want: %v", got, want)
-		}
+	s, err := fac.UpdaterSet(ctx)
+	if err != nil {
+		t.Error(err)
+	}
+	us := s.Updaters()
+	if len(us) == 0 {
+		t.Errorf("expected more than 0 updaters")
+	}
+	got := make([]string, len(us))
+	for i, u := range us {
+		got[i] = u.Name()
+	}
+	want := []string{
+		"alpine-community-v3.10-updater",
+	}
+	if !cmp.Equal(got, want) {
+		t.Error(cmp.Diff(got, want))
 	}
 }
