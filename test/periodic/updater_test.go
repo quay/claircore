@@ -31,9 +31,17 @@ func TestAWS(t *testing.T) {
 
 func TestAlpine(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
-	set, err := alpine.UpdaterSet(ctx)
+	fac, err := alpine.NewFactory(ctx)
 	if err != nil {
 		t.Fatal()
+	}
+	err = fac.Configure(ctx, func(interface{}) error { return nil }, pkgClient)
+	if err != nil {
+		t.Fatal(err)
+	}
+	set, err := fac.UpdaterSet(ctx)
+	if err != nil {
+		t.Fatal(err)
 	}
 	runUpdaterSet(ctx, t, set)
 }
