@@ -46,9 +46,13 @@ func inner(ctx context.Context) error {
 		return err
 	}
 	updater.Register("rhel", rf)
+	af, err := alpine.NewFactory(ctx)
+	if err != nil {
+		return err
+	}
+	updater.Register("alpine", af)
 
 	updater.Register("ubuntu", &ubuntu.Factory{Releases: ubuntu.Releases})
-	updater.Register("alpine", driver.UpdaterSetFactoryFunc(alpine.UpdaterSet))
 	updater.Register("aws", driver.UpdaterSetFactoryFunc(aws.UpdaterSet))
 	updater.Register("debian", driver.UpdaterSetFactoryFunc(debian.UpdaterSet))
 	updater.Register("oracle", driver.UpdaterSetFactoryFunc(oracle.UpdaterSet))
