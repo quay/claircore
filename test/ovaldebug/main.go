@@ -21,7 +21,6 @@ import (
 	"github.com/quay/claircore/debian"
 	"github.com/quay/claircore/pkg/ovalutil"
 	"github.com/quay/claircore/rhel"
-	"github.com/quay/claircore/ubuntu"
 )
 
 func main() {
@@ -74,8 +73,7 @@ func main() {
 			u := debian.NewUpdater(debian.Buster)
 			vs, err = u.Parse(ctx, rc)
 		case "ubuntu":
-			u := ubuntu.NewUpdater(ubuntu.Focal)
-			vs, err = u.Parse(ctx, rc)
+			log.Fatal().Str("flavor", *flavor).Msg("ubuntu unsupported in this tool")
 		case "dpkg":
 			log.Fatal().Str("flavor", *flavor).Msg("unimplemented oval flavor")
 		default:

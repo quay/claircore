@@ -3,70 +3,25 @@ package ubuntu
 import (
 	"bytes"
 	"context"
-	"regexp"
+	"errors"
+	"fmt"
+	"io"
+	"io/fs"
 	"runtime/trace"
+	"strings"
 
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/indexer"
+	"github.com/quay/claircore/pkg/tarfs"
 )
 
 const (
 	scannerName    = "ubuntu"
-	scannerVersion = "v0.0.1"
+	scannerVersion = "2"
 	scannerKind    = "distribution"
-)
 
-type ubuntuRegex struct {
-	release Release
-	regexp  *regexp.Regexp
-}
-
-var ubuntuRegexes = []ubuntuRegex{
-	{
-		release: Artful,
-		regexp:  regexp.MustCompile(`(?is)\bubuntu\b.*\bartful\b`),
-	},
-	{
-		release: Bionic,
-		regexp:  regexp.MustCompile(`(?is)\bubuntu\b.*\bbionic\b`),
-	},
-	{
-		release: Cosmic,
-		regexp:  regexp.MustCompile(`(?is)\bubuntu\b.*\bcosmic\b`),
-	},
-	{
-		release: Disco,
-		regexp:  regexp.MustCompile(`(?is)\bubuntu\b.*\bdisco\b`),
-	},
-	{
-		release: Precise,
-		regexp:  regexp.MustCompile(`(?is)\bubuntu\b.*\bprecise\b`),
-	},
-	{
-		release: Trusty,
-		regexp:  regexp.MustCompile(`(?is)\bubuntu\b.*\btrusty\b`),
-	},
-	{
-		release: Xenial,
-		regexp:  regexp.MustCompile(`(?is)\bubuntu\b.*\bxenial\b`),
-	},
-	{
-		release: Eoan,
-		regexp:  regexp.MustCompile(`(?is)\bubuntu\b.*\beoan\b`),
-	},
-	{
-		release: Focal,
-		regexp:  regexp.MustCompile(`(?is)\bubuntu\b.*\bfocal\b`),
-	},
-	{
-		release: Impish,
-		regexp:  regexp.MustCompile(`(?is)\bubuntu\b.*\bimpish\b`),
-	},
-}
-
-const (
 	osReleasePath  = `etc/os-release`
 	lsbReleasePath = `etc/lsb-release`
 )
@@ -76,24 +31,19 @@ var (
 	_ indexer.VersionedScanner    = (*DistributionScanner)(nil)
 )
 
-// DistributionScanner attempts to discover if a layer
-// displays characteristics of a Ubuntu distribution
+// DistributionScanner implements [indexer.DistributionScanner] looking for Ubuntu distributions.
 type DistributionScanner struct{}
 
-// Name implements scanner.VersionedScanner.
+// Name implements [scanner.VersionedScanner].
 func (*DistributionScanner) Name() string { return scannerName }
 
-// Version implements scanner.VersionedScanner.
+// Version implements [scanner.VersionedScanner].
 func (*DistributionScanner) Version() string { return scannerVersion }
 
-// Kind implements scanner.VersionedScanner.
+// Kind implements [scanner.VersionedScanner].
 func (*DistributionScanner) Kind() string { return scannerKind }
 
-// Scan will inspect the layer for an os-release or lsb-release file
-// and perform a regex match for keywords indicating the associated Ubuntu release
-//
-// If neither file is found a (nil,nil) is returned.
-// If the files are found but all regexp fail to match an empty slice is returned.
+// Scan implements [indexer.DistributionScanner].
 func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Distribution, error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	ctx = zlog.ContextWithValues(ctx,
@@ -102,29 +52,69 @@ func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]
 		"layer", l.Hash.String())
 	zlog.Debug(ctx).Msg("start")
 	defer zlog.Debug(ctx).Msg("done")
-	files, err := l.Files(osReleasePath, lsbReleasePath)
+	rd, err := l.Reader()
 	if err != nil {
-		zlog.Debug(ctx).Msg("didn't find an os-release or lsb release file")
+		return nil, fmt.Errorf("ubuntu: unable to open layer: %w", err)
+	}
+	defer rd.Close()
+	sys, err := tarfs.New(rd)
+	if err != nil {
+		return nil, fmt.Errorf("ubuntu: unable to open layer: %w", err)
+	}
+	d, err := findDist(sys)
+	if err != nil {
+		return nil, fmt.Errorf("ubuntu: %w", err)
+	}
+	if d == nil {
 		return nil, nil
 	}
-	for _, buff := range files {
-		dist := ds.parse(buff)
-		if dist != nil {
-			return []*claircore.Distribution{dist}, nil
-		}
-	}
-	return []*claircore.Distribution{}, nil
+	return []*claircore.Distribution{d}, nil
 }
 
-// parse attempts to match all Ubuntu release regexp and returns the associated
-// distribution if it exists.
-//
-// separated into its own method to aid testing.
-func (ds *DistributionScanner) parse(buff *bytes.Buffer) *claircore.Distribution {
-	for _, ur := range ubuntuRegexes {
-		if ur.regexp.Match(buff.Bytes()) {
-			return releaseToDist(ur.release)
+func findDist(sys fs.FS) (*claircore.Distribution, error) {
+	var err error
+	var b []byte
+	var verKey, nameKey string
+
+	b, err = fs.ReadFile(sys, `etc/lsb-release`)
+	if errors.Is(err, nil) {
+		verKey = `DISTRIB_RELEASE`
+		nameKey = `DISTRIB_CODENAME`
+		goto Found
+	}
+	b, err = fs.ReadFile(sys, `etc/os-release`)
+	if errors.Is(err, nil) {
+		verKey = `VERSION_ID`
+		nameKey = `VERSION_CODENAME`
+		goto Found
+	}
+	return nil, nil
+
+Found:
+	var ver, name string
+	buf := bytes.NewBuffer(b)
+	for l, err := buf.ReadString('\n'); len(l) != 0; l, err = buf.ReadString('\n') {
+		switch {
+		case errors.Is(err, nil):
+		case errors.Is(err, io.EOF):
+		default:
+			return nil, fmt.Errorf("unexpected error looking for %q: %w", verKey, err)
+		}
+		// TODO(hank) Use Cut in 1.18
+		s := strings.SplitN(l, "=", 2)
+		if len(s) != 2 {
+			continue
+		}
+		val := strings.Trim(s[1], "\"\r\n")
+		switch s[0] {
+		case nameKey:
+			name = val
+		case verKey:
+			ver = val
 		}
 	}
-	return nil
+	if name != "" && ver != "" {
+		return mkDist(ver, name), nil
+	}
+	return nil, nil
 }

@@ -110,8 +110,11 @@ func TestSUSE(t *testing.T) {
 
 func TestUbuntu(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
-	fac := &ubuntu.Factory{Releases: ubuntu.Releases}
-	err := fac.Configure(ctx, func(interface{}) error { return nil }, pkgClient)
+	fac, err := ubuntu.NewFactory(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = fac.Configure(ctx, func(interface{}) error { return nil }, pkgClient)
 	if err != nil {
 		t.Fatal(err)
 	}

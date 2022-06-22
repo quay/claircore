@@ -9,34 +9,33 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 )
 
-const (
-	OSReleaseID   = "ubuntu"
-	OSReleaseName = "Ubuntu"
-)
-
 var _ driver.Matcher = (*Matcher)(nil)
 
+// Matcher is a [driver.Matcher] for Ubuntu distributions.
 type Matcher struct{}
 
+// Name implements [driver.Matcher].
 func (*Matcher) Name() string {
 	return "ubuntu-matcher"
 }
 
+// Filter implements [driver.Matcher].
 func (*Matcher) Filter(record *claircore.IndexRecord) bool {
 	if record.Distribution == nil {
 		return false
 	}
 
 	switch {
-	case record.Distribution.DID == OSReleaseID:
+	case record.Distribution.DID == "ubuntu":
 		return true
-	case record.Distribution.Name == OSReleaseName:
+	case record.Distribution.Name == "Ubuntu":
 		return true
 	default:
 		return false
 	}
 }
 
+// Query implements [driver.Matcher].
 func (*Matcher) Query() []driver.MatchConstraint {
 	return []driver.MatchConstraint{
 		driver.DistributionDID,
@@ -45,6 +44,7 @@ func (*Matcher) Query() []driver.MatchConstraint {
 	}
 }
 
+// Vulnerable implements [driver.Matcher].
 func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
 	if vuln.FixedInVersion == "" {
 		return true, nil
