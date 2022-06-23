@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/quay/goval-parser/oval"
 	"github.com/quay/zlog"
+	"github.com/rs/zerolog"
 
 	"github.com/quay/claircore"
 )
@@ -25,6 +27,11 @@ func DpkgDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulns
 	vulns := make([]*claircore.Vulnerability, 0, 10000)
 	pkgcache := map[string]*claircore.Package{}
 	cris := []*oval.Criterion{}
+	var stats struct {
+		Test, Obj, State int
+	}
+	badvers := make(map[string]string)
+
 	for _, def := range root.Definitions.Definitions {
 		// create our prototype vulnerability
 		protoVulns, err := protoVulns(def)
@@ -48,7 +55,7 @@ func DpkgDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulns
 			case errors.Is(err, errTestSkip):
 				continue
 			default:
-				zlog.Debug(ctx).Str("test_ref", criterion.TestRef).Msg("test ref lookup failure. moving to next criterion")
+				stats.Test++
 				continue
 			}
 
@@ -70,10 +77,7 @@ func DpkgDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulns
 				continue
 			default:
 				if err != nil {
-					zlog.Debug(ctx).
-						Err(err).
-						Str("object_ref", objRef).
-						Msg("failed object lookup. moving to next criterion")
+					stats.Obj++
 					continue
 				}
 			}
@@ -83,10 +87,7 @@ func DpkgDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulns
 				stateRef := stateRefs[0].StateRef
 				state, err = dpkgStateLookup(root, stateRef)
 				if err != nil {
-					zlog.Debug(ctx).
-						Err(err).
-						Str("state_ref", stateRef).
-						Msg("failed state lookup. moving to next criterion")
+					stats.State++
 					continue
 				}
 				// if EVR tag not present this is not a linux package
@@ -103,11 +104,10 @@ func DpkgDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulns
 				for _, n := range ns {
 					vuln := *protoVuln
 					if state != nil {
-						if v := state.EVR.Body; !validVersion.MatchString(v) {
-							zlog.Debug(ctx).
-								Str("version", v).
-								Str("package", n).
-								Msg("bogus version")
+						// Ubuntu has issues with whitespace, so fix it for them.
+						v := strings.TrimSpace(state.EVR.Body)
+						if !validVersion.MatchString(v) {
+							badvers[n] = v
 							continue
 						}
 						vuln.FixedInVersion = state.EVR.Body
@@ -130,14 +130,30 @@ func DpkgDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulns
 				}
 			}
 		}
-
+	}
+	zlog.Debug(ctx).
+		Int("test", stats.Test).
+		Int("object", stats.Obj).
+		Int("state", stats.State).
+		Msg("ref lookup failures")
+	if ev := zlog.Debug(ctx); ev.Enabled() {
+		d := zerolog.Dict()
+		for k, v := range badvers {
+			d.Str(k, v)
+		}
+		ev.
+			Dict("package-version", d).
+			Msg("bogus versions")
 	}
 	return vulns, nil
 }
 
 // ValidVersion is a regexp that allows all valid Debian version strings.
 // It's more permissive than the actual algorithm; see also deb-version(5).
-var validVersion = regexp.MustCompile(`\A([0-9]+:)?[-A-Za-z0-9.+:~]+(-[A-Za-z0-9+.~]+)?\z`)
+//
+// Notably, this allows underscores in the upstream part and doesn't enforce that parts start
+// with a numeric.
+var validVersion = regexp.MustCompile(`\A([0-9]+:)?[-_A-Za-z0-9.+:~]+(-[A-Za-z0-9+.~]+)?\z`)
 
 func dpkgStateLookup(root *oval.Root, ref string) (*oval.DpkgInfoState, error) {
 	kind, i, err := root.States.Lookup(ref)
