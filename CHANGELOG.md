@@ -2,8 +2,42 @@
 ## [Unreleased]
 
 
+<a name="v1.4.3"></a>
+## [v1.4.3] - 2022-06-29
+### Alpine
+- [9db8b16](https://github.com/quay/claircore/commit/9db8b168ad25b94115a000c00da999d3bebb2f1b): move to dynamic distributions
+- [c804ced](https://github.com/quay/claircore/commit/c804ced14d6b2211939d033c0be359f726376b33): syntax simplifications in tests
+- [bf21d03](https://github.com/quay/claircore/commit/bf21d0387e0ce058bf34309584763175ea522437): add documentation to Matcher type
+- [cef8829](https://github.com/quay/claircore/commit/cef8829f790390d03d56d982ce128cb65883402a): remove disused method
+### Build(Deps)
+- [7c33022](https://github.com/quay/claircore/commit/7c33022530b53500bf55f8ac67a389de53c81123): bump actions/cache from 3.0.3 to 3.0.4
+### Defaults
+- [8b93324](https://github.com/quay/claircore/commit/8b9332450c40bd5574181ca068c13bed270376b7): update alpine
+### Dpkg
+- [d475a7a](https://github.com/quay/claircore/commit/d475a7a9ab3b3414f40123ad83af05ad3c105b85): test with known-problematic status file
+  - [#297](https://github.com/quay/claircore/issues/297)
+### Ovalutil
+- [e8478a4](https://github.com/quay/claircore/commit/e8478a4f120f6543de80f6acc71b17f51625ff58): sanity-check incoming dpkg version strings
+  - [#395](https://github.com/quay/claircore/issues/395)
+### Periodic
+- [3d40ef6](https://github.com/quay/claircore/commit/3d40ef677b45c3ea2aa91de1b2cc84e5d63666a9): update alpine
+### Rhel
+- [98b6183](https://github.com/quay/claircore/commit/98b61830622e3fe445ec707cb59df2c2ea68260c): recognize RHEL9 for updaters
+- [2eba2c4](https://github.com/quay/claircore/commit/2eba2c4bced96ddb3ed66ec2ff0fe134bb63926a): construct distributions dynamically
+- [c959ca5](https://github.com/quay/claircore/commit/c959ca517e19f37f763b10a63a2aa0665bfc49f1): test structure simplifications
+### Tarfs
+- [4d1ba0d](https://github.com/quay/claircore/commit/4d1ba0d7dae41e990a958fd943376b1e261d545e): resolve symlinks when adding new files
+### Ubuntu
+- [7988203](https://github.com/quay/claircore/commit/798820309aaf35efd667d6288f0b3c0943e45379): update feed URLs
+  - [#588](https://github.com/quay/claircore/issues/588)
+### Updates
+- [0dad974](https://github.com/quay/claircore/commit/0dad974ecd1892731894f58f36693e1bd92bf838): Record in a new table each time updaters check for vulns ([#558](https://github.com/quay/claircore/issues/558))
+  - [#558](https://github.com/quay/claircore/issues/558)
+
 <a name="v1.4.2"></a>
-## [v1.4.2] - 2022-06-08
+## [v1.4.2] - 2022-06-09
+### Chore
+- [e9aa844](https://github.com/quay/claircore/commit/e9aa84485b3439a0b43e22b5fd02dab6d92afe43): v1.4.2 changelog bump
 ### Crda
 - [dc939a0](https://github.com/quay/claircore/commit/dc939a06a937d50ef65de81d67b3f3a07e409cce): clone url when creating a new matcher ([#633](https://github.com/quay/claircore/issues/633))
   - [#633](https://github.com/quay/claircore/issues/633)
@@ -1468,7 +1502,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v1.4.2...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v1.4.3...HEAD
+[v1.4.3]: https://github.com/quay/claircore/compare/v1.4.2...v1.4.3
 [v1.4.2]: https://github.com/quay/claircore/compare/v1.4.1...v1.4.2
 [v1.4.1]: https://github.com/quay/claircore/compare/v1.4.0...v1.4.1
 [v1.4.0]: https://github.com/quay/claircore/compare/v1.3.2...v1.4.0
