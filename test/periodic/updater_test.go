@@ -48,7 +48,15 @@ func TestAlpine(t *testing.T) {
 
 func TestDebian(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
-	set, err := debian.UpdaterSet(ctx)
+	fac, err := debian.NewFactory(ctx)
+	if err != nil {
+		t.Fatal()
+	}
+	err = fac.Configure(ctx, func(interface{}) error { return nil }, pkgClient)
+	if err != nil {
+		t.Fatal(err)
+	}
+	set, err := fac.UpdaterSet(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
