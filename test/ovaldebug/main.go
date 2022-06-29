@@ -18,7 +18,6 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/debian"
 	"github.com/quay/claircore/pkg/ovalutil"
 	"github.com/quay/claircore/rhel"
 )
@@ -70,8 +69,10 @@ func main() {
 			}
 			vs, err = u.Parse(ctx, rc)
 		case "debian":
+		/*
 			u := debian.NewUpdater(debian.Buster)
 			vs, err = u.Parse(ctx, rc)
+		*/
 		case "ubuntu":
 			log.Fatal().Str("flavor", *flavor).Msg("ubuntu unsupported in this tool")
 		case "dpkg":
