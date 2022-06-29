@@ -125,16 +125,43 @@ func (f *FS) add(name string, ino inode) error {
 	n := name
 	for n != "." {
 		n = filepath.Dir(n)
-		ti, ok := f.lookup[n]
-		if !ok {
-			ti = len(f.inode)
-			f.inode = append(f.inode, newDir(n))
-			f.lookup[n] = ti
+		ti := f.lookupOrMkdir(n)
+		// Now we need to resolve "ti" to an index of TypeDir.
+		// This handles the cases encoded in the "Symlinks" test.
+		cycle := make(map[int]struct{})
+	Resolve:
+		for {
+			if _, ok := cycle[ti]; ok {
+				return fmt.Errorf("tarfs: found cycle when resolving member %q", n)
+			}
+			cycle[ti] = struct{}{}
+			i := &f.inode[ti]
+			switch i.h.Typeflag {
+			case tar.TypeDir:
+				break Resolve
+			case tar.TypeSymlink:
+				ti = f.lookupOrMkdir(i.h.Linkname)
+			case tar.TypeReg:
+				return fmt.Errorf("tarfs: found symlink to regular file at %q while connecting child %q", n, name)
+			}
 		}
 		f.inode[ti].children[i] = struct{}{}
 		i = ti
 	}
 	return nil
+}
+
+// LookupOrMkdir looks up or creates a dir with the provided name.
+//
+// The inode index of the dir is reported.
+func (f *FS) lookupOrMkdir(n string) int {
+	i, ok := f.lookup[n]
+	if !ok {
+		i = len(f.inode)
+		f.inode = append(f.inode, newDir(n))
+		f.lookup[n] = i
+	}
+	return i
 }
 
 // GetInode returns the inode backing "name".

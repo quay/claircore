@@ -7,6 +7,8 @@ import (
 	"io"
 	"io/fs"
 	"os"
+	"path"
+	"path/filepath"
 	"sync"
 	"testing"
 	"testing/fstest"
@@ -226,4 +228,83 @@ func mktar(t *testing.T, in fs.FS, tw *tar.Writer) fs.WalkDirFunc {
 		}
 		return nil
 	}
+}
+
+func TestSymlinks(t *testing.T) {
+	tmp := t.TempDir()
+	run := func(wantErr bool, hs []tar.Header) func(*testing.T) {
+		return func(t *testing.T) {
+			t.Helper()
+			f, err := os.Create(filepath.Join(tmp, path.Base(t.Name())))
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer f.Close()
+
+			tw := tar.NewWriter(f)
+			for i := range hs {
+				if err := tw.WriteHeader(&hs[i]); err != nil {
+					t.Error(err)
+				}
+			}
+			if err := tw.Close(); err != nil {
+				t.Error(err)
+			}
+
+			_, err = New(f)
+			t.Log(err)
+			if (err != nil) != wantErr {
+				t.Fail()
+			}
+		}
+	}
+	t.Run("Ordered", run(false, []tar.Header{
+		{Name: `a/`},
+		{
+			Typeflag: tar.TypeSymlink,
+			Name:     `b`,
+			Linkname: `a`,
+		},
+		{Name: `b/c`},
+	}))
+	t.Run("Unordered", run(false, []tar.Header{
+		{
+			Typeflag: tar.TypeSymlink,
+			Name:     `b`,
+			Linkname: `a`,
+		},
+		{Name: `b/c`},
+		{Name: `a/`},
+	}))
+	t.Run("LinkToReg", run(true, []tar.Header{
+		{Name: `a`},
+		{
+			Typeflag: tar.TypeSymlink,
+			Name:     `b`,
+			Linkname: `a`,
+		},
+		{Name: `b/c`},
+	}))
+	t.Run("UnorderedLinkToReg", run(true, []tar.Header{
+		{
+			Typeflag: tar.TypeSymlink,
+			Name:     `b`,
+			Linkname: `a`,
+		},
+		{Name: `b/c`},
+		{Name: `a`},
+	}))
+	t.Run("Cycle", run(true, []tar.Header{
+		{
+			Typeflag: tar.TypeSymlink,
+			Name:     `b`,
+			Linkname: `a`,
+		},
+		{
+			Typeflag: tar.TypeSymlink,
+			Name:     `a`,
+			Linkname: `b`,
+		},
+		{Name: `b/c`},
+	}))
 }
