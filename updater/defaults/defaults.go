@@ -56,9 +56,13 @@ func inner(ctx context.Context) error {
 		return err
 	}
 	updater.Register("ubuntu", uf)
+	df, err := debian.NewFactory(ctx)
+	if err != nil {
+		return err
+	}
+	updater.Register("debian", df)
 
 	updater.Register("aws", driver.UpdaterSetFactoryFunc(aws.UpdaterSet))
-	updater.Register("debian", driver.UpdaterSetFactoryFunc(debian.UpdaterSet))
 	updater.Register("oracle", driver.UpdaterSetFactoryFunc(oracle.UpdaterSet))
 	updater.Register("photon", driver.UpdaterSetFactoryFunc(photon.UpdaterSet))
 	updater.Register("pyupio", driver.UpdaterSetFactoryFunc(pyupio.UpdaterSet))
