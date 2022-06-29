@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"testing"
 
@@ -50,7 +51,11 @@ func TestCreateSourcesMap(t *testing.T) {
 	if err != nil {
 		t.Fatalf("got the error %v", err)
 	}
-	mapper := NewSourcesMap(Bullseye, client)
+	u, err := url.Parse("http://[::1]/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	mapper := newSourcesMap(u, client)
 
 	err = mapper.Update(ctx)
 	if err != nil {

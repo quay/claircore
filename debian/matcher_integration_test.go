@@ -3,8 +3,12 @@ package debian
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"testing"
 	"time"
@@ -37,6 +41,54 @@ func TestMatcherIntegration(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
 	pool := pgtest.TestMatcherDB(ctx, t)
 	store := postgres.NewMatcherStore(pool)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case `/debian/dists/`:
+			fmt.Fprintln(w, `href="buster/"`)
+		case `/debian/dists/buster/Release`:
+			fmt.Fprintln(w, `Origin: Debian`)
+			fmt.Fprintln(w, `Label: Debian`)
+			fmt.Fprintln(w, `Suite: oldstable`)
+			fmt.Fprintln(w, `Version: 10.12`)
+			fmt.Fprintln(w, `Codename: buster`)
+		case `/oval-definitions-buster.xml`:
+			tgt, err := url.Parse(defaultOVAL)
+			if err != nil {
+				t.Error(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			loc, err := tgt.Parse(path.Join(tgt.Path, r.URL.Path))
+			if err != nil {
+				t.Error(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("Location", loc.String())
+			w.WriteHeader(http.StatusMovedPermanently)
+		case `/debian/dists/buster/main/source/Sources.gz`,
+			`/debian/dists/buster/contrib/source/Sources.gz`,
+			`/debian/dists/buster/non-free/source/Sources.gz`:
+			tgt, err := url.Parse(defaultMirror)
+			if err != nil {
+				t.Error(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			loc, err := tgt.Parse(path.Join(tgt.Path, r.URL.Path))
+			if err != nil {
+				t.Error(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("Location", loc.String())
+			w.WriteHeader(http.StatusMovedPermanently)
+		default:
+			t.Logf("requested: %q", r.URL.Path)
+			w.WriteHeader(http.StatusTeapot)
+		}
+	}))
+	defer srv.Close()
 
 	m := &Matcher{}
 
@@ -45,15 +97,24 @@ func TestMatcherIntegration(t *testing.T) {
 		t.Error(err)
 	}
 	defer locks.Close(ctx)
-	facs := make(map[string]driver.UpdaterSetFactory, 1)
-	upd := NewUpdater(Buster)
-	set := driver.NewUpdaterSet()
-	if err := set.Add(upd); err != nil {
-		t.Error(err)
-	} else {
-		facs[upd.Name()] = driver.StaticSet(set)
+	fac, err := NewFactory(ctx)
+	if err != nil {
+		t.Fatal(err)
 	}
-	mgr, err := updates.NewManager(ctx, store, locks, http.DefaultClient, updates.WithFactories(facs))
+	facs := map[string]driver.UpdaterSetFactory{
+		"debian": fac,
+	}
+	cfg := map[string]driver.ConfigUnmarshaler{
+		"debian": func(v interface{}) error {
+			cfg := v.(*FactoryConfig)
+			cfg.ArchiveURL = srv.URL
+			cfg.MirrorURL = srv.URL
+			cfg.OVALURL = srv.URL
+			return nil
+		},
+	}
+	mgr, err := updates.NewManager(ctx, store, locks, srv.Client(),
+		updates.WithFactories(facs), updates.WithConfigs(cfg))
 	if err != nil {
 		t.Error(err)
 	}

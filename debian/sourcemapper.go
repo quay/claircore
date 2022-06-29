@@ -9,6 +9,8 @@ import (
 	"io"
 	"net/http"
 	"net/textproto"
+	"net/url"
+	"path"
 	"strings"
 	"sync"
 
@@ -16,22 +18,19 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-const sourcesURL = "https://ftp.debian.org/debian/dists/%s/%s/source/Sources.gz"
-
 var sourceRepos = [3]string{"main", "contrib", "non-free"}
 
 // NewSourcesMap returns a SourcesMap but does not perform any
 // inserts into the map. That needs to be done explitly by calling
 // the Update method.
-func NewSourcesMap(release Release, client *http.Client) *SourcesMap {
-	return &SourcesMap{
-		release:    release,
-		sourcesURL: sourcesURL,
-		sourceMap:  make(map[string]map[string]struct{}),
-		mu:         &sync.RWMutex{},
-		etagMap:    make(map[string]string),
-		etagMu:     &sync.RWMutex{},
-		client:     client,
+func newSourcesMap(src *url.URL, client *http.Client) *sourcesMap {
+	return &sourcesMap{
+		url:       src,
+		sourceMap: make(map[string]map[string]struct{}),
+		mu:        &sync.RWMutex{},
+		etagMap:   make(map[string]string),
+		etagMu:    &sync.RWMutex{},
+		client:    client,
 	}
 }
 
@@ -41,9 +40,8 @@ func NewSourcesMap(release Release, client *http.Client) *SourcesMap {
 //
 // It should have the same lifespan as the Updater to save allocations
 // and take advantage of the entity tag that debian sends back.
-type SourcesMap struct {
-	release    Release
-	sourcesURL string
+type sourcesMap struct {
+	url        *url.URL
 	mu, etagMu *sync.RWMutex
 	sourceMap  map[string]map[string]struct{}
 	etagMap    map[string]string
@@ -53,7 +51,7 @@ type SourcesMap struct {
 // Get returns all the binaries associated with a source package
 // identified by a string. Empty slice is returned if the source
 // doesn't exist in the map.
-func (m *SourcesMap) Get(source string) []string {
+func (m *sourcesMap) Get(source string) []string {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	bins := []string{}
@@ -69,17 +67,15 @@ func (m *SourcesMap) Get(source string) []string {
 
 // Update pulls the Sources.gz files for the different repos and saves
 // the resulting source to binary relationships.
-func (m *SourcesMap) Update(ctx context.Context) error {
-	if m.release == Wheezy {
-		// There are no Wheezy records we assume the source->binary relationship of Jessie.
-		m.release = Jessie
-	}
+func (m *sourcesMap) Update(ctx context.Context) error {
 	g, ctx := errgroup.WithContext(ctx)
 	for _, r := range sourceRepos {
-		url := fmt.Sprintf(m.sourcesURL, m.release, r)
+		url, err := m.url.Parse(path.Join(r, `source`, `Sources.gz`))
 		g.Go(func() error {
-			err := m.fetchSources(ctx, url)
 			if err != nil {
+				return fmt.Errorf("unable to construct URL: %w", err)
+			}
+			if err := m.fetchSources(ctx, url.String()); err != nil {
 				return fmt.Errorf("unable to fetch sources: %w", err)
 			}
 			return nil
@@ -88,7 +84,7 @@ func (m *SourcesMap) Update(ctx context.Context) error {
 	return g.Wait()
 }
 
-func (m *SourcesMap) fetchSources(ctx context.Context, url string) error {
+func (m *sourcesMap) fetchSources(ctx context.Context, url string) error {
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "debian/sourcemapper.fetchSources",
 		"url", url)

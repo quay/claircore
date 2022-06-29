@@ -1,54 +1,21 @@
 package debian
 
 import (
-	"bytes"
 	"context"
-	"regexp"
+	"errors"
+	"fmt"
+	"io/fs"
 	"runtime/trace"
+	"strconv"
+	"strings"
+	"unicode"
 
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
-)
-
-const (
-	scannerName    = "debian"
-	scannerVersion = "v0.0.2"
-	scannerKind    = "distribution"
-)
-
-type debianRegex struct {
-	release Release
-	regexp  *regexp.Regexp
-}
-
-var debianRegexes = []debianRegex{
-	{
-		release: Bullseye,
-		regexp:  regexp.MustCompile(`(?is)debian gnu/linux 11`),
-	},
-	{
-		release: Buster,
-		regexp:  regexp.MustCompile(`(?is)debian gnu/linux 10`),
-	},
-	{
-		release: Jessie,
-		regexp:  regexp.MustCompile(`(?is)debian gnu/linux 8`),
-	},
-	{
-		release: Stretch,
-		regexp:  regexp.MustCompile(`(?is)debian gnu/linux 9`),
-	},
-	{
-		release: Wheezy,
-		regexp:  regexp.MustCompile(`(?is)debian gnu/linux 7`),
-	},
-}
-
-const (
-	osReleasePath = `etc/os-release`
-	issuePath     = `etc/issue`
+	"github.com/quay/claircore/osrelease"
+	"github.com/quay/claircore/pkg/tarfs"
 )
 
 var (
@@ -57,23 +24,19 @@ var (
 )
 
 // DistributionScanner attempts to discover if a layer
-// displays characteristics of a Debian distribution
+// displays characteristics of a Debian distribution.
 type DistributionScanner struct{}
 
-// Name implements scanner.VersionedScanner.
-func (*DistributionScanner) Name() string { return scannerName }
+// Name implements [indexer.VersionedScanner].
+func (*DistributionScanner) Name() string { return "debian" }
 
-// Version implements scanner.VersionedScanner.
-func (*DistributionScanner) Version() string { return scannerVersion }
+// Version implements [indexer.VersionedScanner].
+func (*DistributionScanner) Version() string { return "2" }
 
-// Kind implements scanner.VersionedScanner.
-func (*DistributionScanner) Kind() string { return scannerKind }
+// Kind implements [indexer.VersionedScanner].
+func (*DistributionScanner) Kind() string { return "distribution" }
 
-// Scan will inspect the layer for an os-release or lsb-release file
-// and perform a regex match for keywords indicating the associated Debian release
-//
-// If neither file is found a (nil,nil) is returned.
-// If the files are found but all regexp fail to match an empty slice is returned.
+// Scan implements [indexer.DistributionScanner].
 func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Distribution, error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	ctx = zlog.ContextWithValues(ctx,
@@ -82,29 +45,61 @@ func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]
 		"layer", l.Hash.String())
 	zlog.Debug(ctx).Msg("start")
 	defer zlog.Debug(ctx).Msg("done")
-	files, err := l.Files(osReleasePath, issuePath)
+
+	rd, err := l.Reader()
 	if err != nil {
-		zlog.Debug(ctx).Msg("didn't find an os-release or issue file")
+		return nil, fmt.Errorf("debian: unable to open layer: %w", err)
+	}
+	defer rd.Close()
+	sys, err := tarfs.New(rd)
+	if err != nil {
+		return nil, fmt.Errorf("debian: unable to open layer: %w", err)
+	}
+	d, err := findDist(ctx, sys)
+	if err != nil {
+		return nil, err
+	}
+	if d == nil {
 		return nil, nil
 	}
-	for _, buff := range files {
-		dist := ds.parse(buff)
-		if dist != nil {
-			return []*claircore.Distribution{dist}, nil
-		}
-	}
-	return []*claircore.Distribution{}, nil
+	return []*claircore.Distribution{d}, nil
 }
 
-// parse attempts to match all Debian release regexp and returns the associated
-// distribution if it exists.
-//
-// separated into its own method to aid testing.
-func (ds *DistributionScanner) parse(buff *bytes.Buffer) *claircore.Distribution {
-	for _, ur := range debianRegexes {
-		if ur.regexp.Match(buff.Bytes()) {
-			return releaseToDist(ur.release)
-		}
+func findDist(ctx context.Context, sys fs.FS) (*claircore.Distribution, error) {
+	f, err := sys.Open(osrelease.Path)
+	switch {
+	case errors.Is(err, nil):
+	case errors.Is(err, fs.ErrNotExist):
+		zlog.Debug(ctx).Msg("no os-release file")
+		return nil, nil
+	default:
+		return nil, fmt.Errorf("debian: unexpected error: %w", err)
 	}
-	return nil
+	kv, err := osrelease.Parse(ctx, f)
+	if err != nil {
+		zlog.Info(ctx).
+			Err(err).Msg("malformed os-release file")
+		return nil, nil
+	}
+	if kv[`ID`] != `debian` {
+		return nil, nil
+	}
+
+	name, nameok := kv[`VERSION_CODENAME`]
+	idstr := kv[`VERSION_ID`]
+	if !nameok {
+		name = strings.TrimFunc(kv[`VERSION`], func(r rune) bool { return !unicode.IsLetter(r) })
+	}
+	if name == "" || idstr == "" {
+		zlog.Info(ctx).
+			Err(err).Msg("malformed os-release file")
+		return nil, nil
+	}
+	id, err := strconv.ParseInt(idstr, 10, 32)
+	if err != nil {
+		zlog.Info(ctx).
+			Err(err).Msg("malformed os-release file")
+		return nil, nil
+	}
+	return mkDist(name, int(id)), nil
 }
