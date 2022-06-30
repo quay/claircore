@@ -17,3 +17,6 @@ command = "go run docs/godoc.go"
 
 [preprocessor.make_target]
 command = "go run docs/make_target.go"
+
+[preprocessor.injecturls]
+command = "go run docs/injecturls.go"
