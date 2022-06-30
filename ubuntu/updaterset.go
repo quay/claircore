@@ -22,10 +22,12 @@ var (
 	_ driver.UpdaterSetFactory = (*Factory)(nil)
 )
 
+//doc:url updater
 const (
-	defaultAPI  = `https://api.launchpad.net/1.0/`
-	defaultName = `ubuntu`
+	defaultAPI = `https://api.launchpad.net/1.0/`
+	ovalURL    = `https://security-metadata.canonical.com/oval/com.ubuntu.%s.cve.oval.xml`
 )
+const defaultName = `ubuntu`
 
 // NewFactory constructs a Factory.
 //
@@ -159,7 +161,7 @@ func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
 		// Double-check the distribution.
 		defer close(us)
 		for e := range ch {
-			url := fmt.Sprintf("https://security-metadata.canonical.com/oval/com.ubuntu.%s.cve.oval.xml", e.Name)
+			url := fmt.Sprintf(ovalURL, e.Name)
 			req, err := http.NewRequestWithContext(ctx, http.MethodHead, url, nil)
 			if err != nil {
 				return fmt.Errorf("ubuntu: unable to construct request: %w", err)
@@ -212,7 +214,7 @@ func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
 		ns := make([]string, 0, len(f.force))
 		for _, p := range f.force {
 			u := &updater{
-				url:      fmt.Sprintf("https://security-metadata.canonical.com/oval/com.ubuntu.%s.cve.oval.xml.bz2", p[0]),
+				url:      fmt.Sprintf(ovalURL+".bz2", p[0]),
 				useBzip2: true,
 				name:     p[0],
 				id:       p[1],

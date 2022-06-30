@@ -16,6 +16,8 @@ import (
 )
 
 // DefaultManifest is the url for the Red Hat OVAL pulp repository.
+//
+//doc:url updater
 const DefaultManifest = `https://access.redhat.com/security/data/oval/v2/PULP_MANIFEST`
 
 // NewFactory creates a Factory making updaters based on the contents of the

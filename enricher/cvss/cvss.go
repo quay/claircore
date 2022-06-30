@@ -38,6 +38,8 @@ const (
 	// The enricher expects the structure to mirror that found here: files
 	// organized by year, prefixed with `nvdcve-1.1-` and with `.meta` and
 	// `.json.gz` extensions.
+	//
+	//doc:url updater
 	DefaultFeeds = `https://nvd.nist.gov/feeds/json/cve/1.1/`
 
 	// This appears above and must be the same.

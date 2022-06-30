@@ -95,8 +95,12 @@ const (
 	// RepositoryKey marks a repository as being based on a Red Hat CPE.
 	repositoryKey = "rhel-cpe-repository"
 	// DefaultContainerAPI is the default Red Hat Container API URL.
+	//
+	//doc:url indexer
 	DefaultContainerAPI = "https://catalog.redhat.com/api/containers/"
 	// DefaultRepo2CPEMappingURL is default URL with a mapping file provided by Red Hat.
+	//
+	//doc:url indexer
 	DefaultRepo2CPEMappingURL = "https://access.redhat.com/security/data/metrics/repository-to-cpe.json"
 )
 

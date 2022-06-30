@@ -54,6 +54,8 @@ type ScannerConfig struct {
 
 // DefaultName2ReposMappingURL is the default URL with a mapping file provided by Red
 // Hat.
+//
+//doc:url indexer
 const DefaultName2ReposMappingURL = "https://access.redhat.com/security/data/metrics/container-name-repos-map.json"
 
 // Configure implements [indexer.RPCScanner].

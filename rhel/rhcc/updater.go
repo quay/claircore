@@ -22,6 +22,7 @@ import (
 	"github.com/quay/claircore/rhel/internal/common"
 )
 
+//doc:url updater
 const (
 	dbURL  = "https://access.redhat.com/security/data/metrics/cvemap.xml"
 	cveURL = "https://access.redhat.com/security/cve/"

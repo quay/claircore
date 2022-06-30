@@ -1,6 +1,6 @@
 # Matcher Architecture
-`claircore/internal/matcher`  
-`claircore/libvuln/driver`  
+`claircore/internal/matcher`
+`claircore/libvuln/driver`
 
 The Matcher architecture is based on a data flow application.
 
@@ -13,3 +13,11 @@ Each configured Matcher will be instantiated concurrently. Depending on the inte
 The provided IndexReport will be unpacked into a stream of IndexRecord structs. Each Matcher will evaluate each record in the stream and determine if the IndexRecord is vulnerable to a security advisory in their responsible databases.
 
 Once each Matcher returns the set of vulnerabities, LibVuln will merge the results into a VulnerabilityReport and return this to the client.
+
+## HTTP Resources
+
+"Remote matchers" may make HTTP requests during the matcher flow.
+These requests are time-bound and errors are not reported.
+The following are the URLs used.
+
+{{# injecturls matcher }}

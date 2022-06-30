@@ -22,6 +22,7 @@ import (
 	"github.com/quay/claircore/pkg/tmp"
 )
 
+//doc:url updater
 const defaultURL = `https://github.com/pyupio/safety-db/archive/master.tar.gz`
 
 var (

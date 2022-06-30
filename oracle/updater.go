@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	allDB   = `https://linux.oracle.com/security/oval/com.oracle.elsa-all.xml.bz2`
+	allDB = `https://linux.oracle.com/security/oval/com.oracle.elsa-all.xml.bz2`
+	//doc:url updater
 	baseURL = `https://linux.oracle.com/security/oval/com.oracle.elsa-%d.xml.bz2`
 )
 

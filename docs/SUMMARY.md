@@ -35,3 +35,4 @@
   - [Changelog](./contributor/changelog.md)
   - [Local Development](./contributor/local-dev.md)
   - [Logging](./contributor/logging.md)
+  - [Misc](./contributor/misc.md)

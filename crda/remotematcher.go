@@ -25,7 +25,8 @@ var (
 )
 
 const (
-	batchSize     = 10
+	batchSize = 10
+	//doc:url matcher
 	defaultURL    = "https://gw.api.openshift.io/api/v2/"
 	defaultSource = "clair-upstream"
 )

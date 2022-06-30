@@ -25,6 +25,7 @@ import (
 	"github.com/quay/claircore/pkg/tmp"
 )
 
+//doc:url updater
 const (
 	defaultMirror  = `https://deb.debian.org/`
 	defaultArchive = `http://archive.debian.org/`

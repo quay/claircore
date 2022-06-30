@@ -17,11 +17,16 @@ const (
 )
 
 func (r Release) mirrorlist() string {
+	//doc:url updater
+	const (
+		l1 = "http://repo.us-west-2.amazonaws.com/2018.03/updates/x86_64/mirror.list"
+		l2 = "https://cdn.amazonlinux.com/2/core/latest/x86_64/mirror.list"
+	)
 	switch r {
 	case Linux1:
-		return "http://repo.us-west-2.amazonaws.com/2018.03/updates/x86_64/mirror.list"
+		return l1
 	case Linux2:
-		return "https://cdn.amazonlinux.com/2/core/latest/x86_64/mirror.list"
+		return l2
 	}
 	panic(fmt.Sprintf("unknown release %q", r))
 }

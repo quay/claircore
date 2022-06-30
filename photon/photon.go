@@ -12,6 +12,7 @@ import (
 var upstreamBase *url.URL
 
 func init() {
+	//doc:url updater
 	const base = `https://packages.vmware.com/photon/photon_oval_definitions/`
 	var err error
 	upstreamBase, err = url.Parse(base)

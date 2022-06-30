@@ -12,6 +12,7 @@ import (
 var upstreamBase *url.URL
 
 func init() {
+	//doc:url updater
 	const base = `https://support.novell.com/security/oval/`
 	var err error
 	upstreamBase, err = url.Parse(base)

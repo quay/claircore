@@ -67,6 +67,8 @@ type Config struct {
 }
 
 // DefaultURL is the S3 bucket provided by the OSV project.
+//
+//doc:url updater
 const DefaultURL = `https://osv-vulnerabilities.storage.googleapis.com/`
 
 var _ driver.Updater = (*updater)(nil)

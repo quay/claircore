@@ -15,6 +15,7 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 )
 
+//doc:url updater
 const dbURL = "https://secdb.alpinelinux.org/"
 
 type updater struct {
