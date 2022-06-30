@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	_ "embed"
 	"errors"
 	"fmt"
 	"time"
@@ -35,13 +36,10 @@ var (
 	)
 )
 
+//go:embed sql/select_indexreport.sql
+var selectIndexReportSQL string
+
 func (s *store) IndexReport(ctx context.Context, hash claircore.Digest) (*claircore.IndexReport, bool, error) {
-	const query = `
-	SELECT scan_result
-	FROM indexreport
-			 JOIN manifest ON manifest.hash = $1
-	WHERE indexreport.manifest_id = manifest.id;
-	`
 	// we scan into a jsonbIndexReport which has value/scan method set
 	// then type convert back to scanner.domain object
 	var jsr jsonbIndexReport
@@ -49,7 +47,7 @@ func (s *store) IndexReport(ctx context.Context, hash claircore.Digest) (*clairc
 	ctx, done := context.WithTimeout(ctx, 5*time.Second)
 	defer done()
 	start := time.Now()
-	err := s.pool.QueryRow(ctx, query, hash).Scan(&jsr)
+	err := s.pool.QueryRow(ctx, selectIndexReportSQL, hash).Scan(&jsr)
 	switch {
 	case errors.Is(err, nil):
 	case errors.Is(err, pgx.ErrNoRows):

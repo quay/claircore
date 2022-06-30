@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	_ "embed"
 	"errors"
 	"fmt"
 	"strconv"
@@ -38,48 +39,10 @@ var (
 	)
 )
 
-func (s *store) PackagesByLayer(ctx context.Context, hash claircore.Digest, scnrs indexer.VersionedScanners) ([]*claircore.Package, error) {
-	const (
-		selectScanner = `
-SELECT
-	id
-FROM
-	scanner
-WHERE
-	name = $1 AND version = $2 AND kind = $3;
-`
-		query = `
-SELECT
-	package.id,
-	package.name,
-	package.kind,
-	package.version,
-	package.norm_kind,
-	package.norm_version,
-	package.module,
-	package.arch,
-	source_package.id,
-	source_package.name,
-	source_package.kind,
-	source_package.version,
-	source_package.module,
-	source_package.arch,
-	package_scanartifact.package_db,
-	package_scanartifact.repository_hint
-FROM
-	package_scanartifact
-	LEFT JOIN package ON
-			package_scanartifact.package_id = package.id
-	LEFT JOIN package AS source_package ON
-			package_scanartifact.source_id
-			= source_package.id
-	JOIN layer ON layer.hash = $1
-WHERE
-	package_scanartifact.layer_id = layer.id
-	AND package_scanartifact.scanner_id = ANY ($2);
-`
-	)
+//go:embed sql/packages_by_layer.sql
+var packagesByLayerSQL string
 
+func (s *store) PackagesByLayer(ctx context.Context, hash claircore.Digest, scnrs indexer.VersionedScanners) ([]*claircore.Package, error) {
 	if len(scnrs) == 0 {
 		return []*claircore.Package{}, nil
 	}
@@ -88,7 +51,7 @@ WHERE
 	for i, scnr := range scnrs {
 		ctx, done := context.WithTimeout(ctx, time.Second)
 		start := time.Now()
-		err := s.pool.QueryRow(ctx, selectScanner, scnr.Name(), scnr.Version(), scnr.Kind()).
+		err := s.pool.QueryRow(ctx, selectScannerSQL, scnr.Name(), scnr.Version(), scnr.Kind()).
 			Scan(&scannerIDs[i])
 		done()
 		if err != nil {
@@ -101,7 +64,7 @@ WHERE
 	ctx, done := context.WithTimeout(ctx, 15*time.Second)
 	defer done()
 	start := time.Now()
-	rows, err := s.pool.Query(ctx, query, hash, scannerIDs)
+	rows, err := s.pool.Query(ctx, packagesByLayerSQL, hash, scannerIDs)
 	switch {
 	case errors.Is(err, nil):
 	case errors.Is(err, pgx.ErrNoRows):

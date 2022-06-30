@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	_ "embed"
 	"errors"
 	"fmt"
 	"strconv"
@@ -37,19 +38,10 @@ var (
 	)
 )
 
-func (s *store) RepositoriesByLayer(ctx context.Context, hash claircore.Digest, scnrs indexer.VersionedScanners) ([]*claircore.Repository, error) {
-	const query = `
-SELECT
-	repo.id, repo.name, repo.key, repo.uri, repo.cpe
-FROM
-	repo_scanartifact
-	LEFT JOIN repo ON repo_scanartifact.repo_id = repo.id
-	JOIN layer ON layer.hash = $1
-WHERE
-	repo_scanartifact.layer_id = layer.id
-	AND repo_scanartifact.scanner_id = ANY ($2);
-`
+//go:embed sql/repositories_by_layer.sql
+var repositoriesByLayer string
 
+func (s *store) RepositoriesByLayer(ctx context.Context, hash claircore.Digest, scnrs indexer.VersionedScanners) ([]*claircore.Repository, error) {
 	if len(scnrs) == 0 {
 		return []*claircore.Repository{}, nil
 	}
@@ -61,7 +53,7 @@ WHERE
 	ctx, done := context.WithTimeout(ctx, 15*time.Second)
 	defer done()
 	start := time.Now()
-	rows, err := s.pool.Query(ctx, query, hash, scannerIDs)
+	rows, err := s.pool.Query(ctx, repositoriesByLayer, hash, scannerIDs)
 	switch {
 	case errors.Is(err, nil):
 	case errors.Is(err, pgx.ErrNoRows):

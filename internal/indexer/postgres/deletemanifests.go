@@ -2,6 +2,9 @@ package postgres
 
 import (
 	"context"
+	_ "embed"
+	"runtime/trace"
+	"strconv"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -33,6 +36,8 @@ var (
 
 func (s *store) DeleteManifests(ctx context.Context, d ...claircore.Digest) ([]claircore.Digest, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "internal/indexer/postgres/DeleteManifests")
+	ctx, task := trace.NewTask(ctx, "DeleteManifests")
+	defer task.End()
 	rm, err := s.deleteManifests(ctx, d)
 	if err != nil {
 		return nil, err
@@ -40,14 +45,22 @@ func (s *store) DeleteManifests(ctx context.Context, d ...claircore.Digest) ([]c
 	return rm, s.layerCleanup(ctx)
 }
 
+var (
+	//go:embed sql/delete_manifest.sql
+	deleteManifestSQL string
+	//go:embed sql/layer_cleanup.sql
+	layerCleanupSQL string
+)
+
 func (s *store) deleteManifests(ctx context.Context, d []claircore.Digest) ([]claircore.Digest, error) {
-	const deleteManifest = `DELETE FROM manifest WHERE hash = ANY($1::TEXT[]) RETURNING manifest.hash;`
+	const name = "deleteManifest"
 	var err error
-	defer promTimer(deleteManifestsDuration, "deleteManifest", &err)()
+	defer trace.StartRegion(ctx, name).End()
+	defer promTimer(deleteManifestsDuration, name, &err)()
 	defer func(e *error) {
-		deleteManifestsCounter.WithLabelValues("deleteManifest", success(*e)).Inc()
+		deleteManifestsCounter.WithLabelValues(name, strconv.FormatBool(*e == nil)).Inc()
 	}(&err)
-	rows, err := s.pool.Query(ctx, deleteManifest, digestSlice(d))
+	rows, err := s.pool.Query(ctx, deleteManifestSQL, digestSlice(d))
 	if err != nil {
 		return nil, err
 	}
@@ -73,10 +86,11 @@ func (s *store) deleteManifests(ctx context.Context, d []claircore.Digest) ([]cl
 }
 
 func (s *store) layerCleanup(ctx context.Context) (err error) {
-	const layerCleanup = `DELETE FROM layer WHERE NOT EXISTS (SELECT FROM manifest_layer WHERE manifest_layer.layer_id = layer.id);`
-	defer promTimer(deleteManifestsDuration, "layerCleanup", &err)()
-	tag, err := s.pool.Exec(ctx, layerCleanup)
-	deleteManifestsCounter.WithLabelValues("layerCleanup", success(err)).Inc()
+	const name = "layerCleanup"
+	defer trace.StartRegion(ctx, name).End()
+	defer promTimer(deleteManifestsDuration, name, &err)()
+	tag, err := s.pool.Exec(ctx, layerCleanupSQL)
+	deleteManifestsCounter.WithLabelValues(name, strconv.FormatBool(err == nil)).Inc()
 	if err != nil {
 		return err
 	}

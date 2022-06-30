@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"time"
 
@@ -34,18 +35,12 @@ var (
 	)
 )
 
+//go:embed sql/select_scanned_manifest.sql
+var selectScannedManifestSQL string
+
 // ManifestScanned determines if a manifest has been scanned by ALL the provided
 // scanners.
 func (s *store) ManifestScanned(ctx context.Context, hash claircore.Digest, vs indexer.VersionedScanners) (bool, error) {
-	const (
-		selectScanned = `
-		SELECT scanner_id
-		FROM scanned_manifest
-				 JOIN manifest ON scanned_manifest.manifest_id = manifest.id
-		WHERE manifest.hash = $1;
-		`
-	)
-
 	// get the ids of the scanners we are testing for.
 	expectedIDs, err := s.selectScanners(ctx, vs)
 	if err != nil {
@@ -58,7 +53,7 @@ func (s *store) ManifestScanned(ctx context.Context, hash claircore.Digest, vs i
 	ctx, done := context.WithTimeout(ctx, 10*time.Second)
 	defer done()
 	start := time.Now()
-	rows, err := s.pool.Query(ctx, selectScanned, hash)
+	rows, err := s.pool.Query(ctx, selectScannedManifestSQL, hash)
 	if err != nil {
 		return false, fmt.Errorf("failed to select scanner IDs for manifest: %w", err)
 	}

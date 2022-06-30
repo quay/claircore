@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	_ "embed"
 	"errors"
 	"fmt"
 	"strconv"
@@ -37,33 +38,10 @@ var (
 	)
 )
 
-func (s *store) DistributionsByLayer(ctx context.Context, hash claircore.Digest, scnrs indexer.VersionedScanners) ([]*claircore.Distribution, error) {
-	const (
-		selectScanner = `
-		SELECT id
-		FROM scanner
-		WHERE name = $1
-		  AND version = $2
-		  AND kind = $3;
-		`
-		query = `
-		SELECT dist.id,
-			   dist.name,
-			   dist.did,
-			   dist.version,
-			   dist.version_code_name,
-			   dist.version_id,
-			   dist.arch,
-			   dist.cpe,
-			   dist.pretty_name
-		FROM dist_scanartifact
-				 LEFT JOIN dist ON dist_scanartifact.dist_id = dist.id
-				 JOIN layer ON layer.hash = $1
-		WHERE dist_scanartifact.layer_id = layer.id
-		  AND dist_scanartifact.scanner_id = ANY($2);
-		`
-	)
+//go:embed sql/distributions_by_layer.sql
+var distributionsByLayerSQL string
 
+func (s *store) DistributionsByLayer(ctx context.Context, hash claircore.Digest, scnrs indexer.VersionedScanners) ([]*claircore.Distribution, error) {
 	if len(scnrs) == 0 {
 		return []*claircore.Distribution{}, nil
 	}
@@ -73,7 +51,7 @@ func (s *store) DistributionsByLayer(ctx context.Context, hash claircore.Digest,
 	for i, scnr := range scnrs {
 		ctx, done := context.WithTimeout(ctx, time.Second)
 		start := time.Now()
-		err := s.pool.QueryRow(ctx, selectScanner, scnr.Name(), scnr.Version(), scnr.Kind()).
+		err := s.pool.QueryRow(ctx, selectScannerSQL, scnr.Name(), scnr.Version(), scnr.Kind()).
 			Scan(&scannerIDs[i])
 		done()
 		if err != nil {
@@ -86,7 +64,7 @@ func (s *store) DistributionsByLayer(ctx context.Context, hash claircore.Digest,
 	ctx, done := context.WithTimeout(ctx, 30*time.Second)
 	defer done()
 	start := time.Now()
-	rows, err := s.pool.Query(ctx, query, hash, scannerIDs)
+	rows, err := s.pool.Query(ctx, distributionsByLayerSQL, hash, scannerIDs)
 	switch {
 	case errors.Is(err, nil):
 	case errors.Is(err, pgx.ErrNoRows):

@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"time"
 
@@ -33,35 +34,17 @@ var (
 	)
 )
 
+//go:embed sql/set_indexreport.sql
+var setIndexReportSQL string
+
 func (s *store) SetIndexReport(ctx context.Context, ir *claircore.IndexReport) error {
-	const query = `
-WITH
-	manifests
-		AS (
-			SELECT
-				id AS manifest_id
-			FROM
-				manifest
-			WHERE
-				hash = $1
-		)
-INSERT
-INTO
-	indexreport (manifest_id, scan_result)
-VALUES
-	((SELECT manifest_id FROM manifests), $2)
-ON CONFLICT
-	(manifest_id)
-DO
-	UPDATE SET scan_result = excluded.scan_result;
-`
 	// we cast scanner.IndexReport to jsonbIndexReport in order to obtain the value/scan
 	// implementations
 
 	ctx, done := context.WithTimeout(ctx, 30*time.Second)
 	defer done()
 	start := time.Now()
-	_, err := s.pool.Exec(ctx, query, ir.Hash, jsonbIndexReport(*ir))
+	_, err := s.pool.Exec(ctx, setIndexReportSQL, ir.Hash, jsonbIndexReport(*ir))
 	if err != nil {
 		return fmt.Errorf("failed to upsert index report: %w", err)
 	}
