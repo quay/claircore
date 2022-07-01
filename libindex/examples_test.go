@@ -13,7 +13,7 @@ import (
 
 func ExampleLibindex() {
 	ctx := context.TODO()
-	pool, err := postgres.Connect(ctx, "connection string", "libindex")
+	pool, err := postgres.Connect(ctx, "connection string", "libindex-test")
 	if err != nil {
 		panic(err)
 	}
