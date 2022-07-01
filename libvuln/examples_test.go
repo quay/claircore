@@ -10,9 +10,8 @@ import (
 
 func ExampleLibvuln() {
 	ctx := context.TODO()
-	opts := &libvuln.Opts{
-		Migrations: true,
-		// see definition for more configuration option
+	opts := &libvuln.Options{
+		// see definition for configuration option
 	}
 	lib, err := libvuln.New(ctx, opts)
 	if err != nil {

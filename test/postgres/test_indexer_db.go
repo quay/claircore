@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v4/stdlib"
 	"github.com/remind101/migrate"
 
-	"github.com/quay/claircore/libindex/migrations"
+	"github.com/quay/claircore/datastore/postgres/migrations"
 	"github.com/quay/claircore/test/integration"
 )
 
@@ -34,8 +34,8 @@ func TestIndexerDB(ctx context.Context, t testing.TB) *pgxpool.Pool {
 
 	// run migrations
 	migrator := migrate.NewPostgresMigrator(dbh)
-	migrator.Table = migrations.MigrationTable
-	err = migrator.Exec(migrate.Up, migrations.Migrations...)
+	migrator.Table = migrations.IndexerMigrationTable
+	err = migrator.Exec(migrate.Up, migrations.IndexerMigrations...)
 	if err != nil {
 		t.Fatalf("failed to perform migrations: %v", err)
 	}
