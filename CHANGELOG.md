@@ -2,6 +2,12 @@
 ## [Unreleased]
 
 
+<a name="v1.4.4"></a>
+## [v1.4.4] - 2022-07-05
+### Updates
+- [df37f2a](https://github.com/quay/claircore/commit/df37f2a8102995800f6bdc3fc2238f8d9a744bf3): Use the tx's methods to record updater's status ([#647](https://github.com/quay/claircore/issues/647))
+  - [#647](https://github.com/quay/claircore/issues/647)
+
 <a name="v1.4.3"></a>
 ## [v1.4.3] - 2022-06-29
 ### Alpine
@@ -11,6 +17,8 @@
 - [cef8829](https://github.com/quay/claircore/commit/cef8829f790390d03d56d982ce128cb65883402a): remove disused method
 ### Build(Deps)
 - [7c33022](https://github.com/quay/claircore/commit/7c33022530b53500bf55f8ac67a389de53c81123): bump actions/cache from 3.0.3 to 3.0.4
+### Chore
+- [b3f95ab](https://github.com/quay/claircore/commit/b3f95ab2c414bf17970cab3ca0fa8a5488f00c45): v1.4.3 changelog bump
 ### Defaults
 - [8b93324](https://github.com/quay/claircore/commit/8b9332450c40bd5574181ca068c13bed270376b7): update alpine
 ### Dpkg
@@ -1502,7 +1510,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v1.4.3...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v1.4.4...HEAD
+[v1.4.4]: https://github.com/quay/claircore/compare/v1.4.3...v1.4.4
 [v1.4.3]: https://github.com/quay/claircore/compare/v1.4.2...v1.4.3
 [v1.4.2]: https://github.com/quay/claircore/compare/v1.4.1...v1.4.2
 [v1.4.1]: https://github.com/quay/claircore/compare/v1.4.0...v1.4.1
