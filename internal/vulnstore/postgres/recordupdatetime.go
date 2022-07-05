@@ -72,7 +72,7 @@ func recordUpdaterStatus(ctx context.Context, pool *pgxpool.Pool, updaterName st
 		zlog.Debug(ctx).
 			Str("updater", updaterName).
 			Msg("recording successful update")
-		_, err := pool.Exec(ctx, upsertSuccessfulUpdate, updaterName, updateTime, fingerprint)
+		_, err := tx.Exec(ctx, upsertSuccessfulUpdate, updaterName, updateTime, fingerprint)
 		if err != nil {
 			return fmt.Errorf("failed to upsert successful updater status: %w", err)
 		}
@@ -80,7 +80,7 @@ func recordUpdaterStatus(ctx context.Context, pool *pgxpool.Pool, updaterName st
 		zlog.Debug(ctx).
 			Str("updater", updaterName).
 			Msg("recording failed update")
-		if err := pool.QueryRow(ctx, upsertFailedUpdate, updaterName, updateTime, fingerprint, updaterError.Error()).Scan(&returnedUpdaterName); err != nil {
+		if err := tx.QueryRow(ctx, upsertFailedUpdate, updaterName, updateTime, fingerprint, updaterError.Error()).Scan(&returnedUpdaterName); err != nil {
 			return fmt.Errorf("failed to upsert failed updater status: %w", err)
 		}
 	}
@@ -117,7 +117,7 @@ func recordUpdaterSetStatus(ctx context.Context, pool *pgxpool.Pool, updaterSet 
 	}
 	defer tx.Rollback(ctx)
 
-	tag, err := pool.Exec(ctx, update, updateTime, updaterSet)
+	tag, err := tx.Exec(ctx, update, updateTime, updaterSet)
 	if err != nil {
 		return fmt.Errorf("failed to update updater statuses for updater set %s: %w", updaterSet, err)
 	}
