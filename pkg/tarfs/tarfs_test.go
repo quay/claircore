@@ -232,7 +232,7 @@ func mktar(t *testing.T, in fs.FS, tw *tar.Writer) fs.WalkDirFunc {
 
 func TestSymlinks(t *testing.T) {
 	tmp := t.TempDir()
-	run := func(wantErr bool, hs []tar.Header) func(*testing.T) {
+	run := func(wantErr bool, hs []tar.Header, chk func(*testing.T, fs.FS)) func(*testing.T) {
 		return func(t *testing.T) {
 			t.Helper()
 			f, err := os.Create(filepath.Join(tmp, path.Base(t.Name())))
@@ -251,10 +251,14 @@ func TestSymlinks(t *testing.T) {
 				t.Error(err)
 			}
 
-			_, err = New(f)
+			sys, err := New(f)
 			t.Log(err)
 			if (err != nil) != wantErr {
 				t.Fail()
+			}
+
+			if chk != nil {
+				chk(t, sys)
 			}
 		}
 	}
@@ -266,7 +270,7 @@ func TestSymlinks(t *testing.T) {
 			Linkname: `a`,
 		},
 		{Name: `b/c`},
-	}))
+	}, nil))
 	t.Run("Unordered", run(false, []tar.Header{
 		{
 			Typeflag: tar.TypeSymlink,
@@ -275,7 +279,7 @@ func TestSymlinks(t *testing.T) {
 		},
 		{Name: `b/c`},
 		{Name: `a/`},
-	}))
+	}, nil))
 	t.Run("LinkToReg", run(true, []tar.Header{
 		{Name: `a`},
 		{
@@ -284,7 +288,7 @@ func TestSymlinks(t *testing.T) {
 			Linkname: `a`,
 		},
 		{Name: `b/c`},
-	}))
+	}, nil))
 	t.Run("UnorderedLinkToReg", run(true, []tar.Header{
 		{
 			Typeflag: tar.TypeSymlink,
@@ -293,7 +297,7 @@ func TestSymlinks(t *testing.T) {
 		},
 		{Name: `b/c`},
 		{Name: `a`},
-	}))
+	}, nil))
 	t.Run("Cycle", run(true, []tar.Header{
 		{
 			Typeflag: tar.TypeSymlink,
@@ -306,5 +310,52 @@ func TestSymlinks(t *testing.T) {
 			Linkname: `b`,
 		},
 		{Name: `b/c`},
+	}, nil))
+	t.Run("ReplaceSymlink", run(false, []tar.Header{
+		{Name: `a`},
+		{
+			Typeflag: tar.TypeSymlink,
+			Name:     `b`,
+			Linkname: `a`,
+		},
+		{Name: `b`},
+	}, func(t *testing.T, sys fs.FS) {
+		fi, err := fs.Stat(sys, "a")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if fi.Mode()&fs.ModeType != 0 {
+			t.Errorf("unexpected mode: %x", fi.Mode())
+		}
+
+		fi, err = fs.Stat(sys, "b")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if fi.Mode()&fs.ModeType != fs.ModeSymlink {
+			t.Errorf("unexpected mode: %x", fi.Mode())
+		}
+	}))
+	t.Run("AbsLink", run(false, []tar.Header{
+		{Name: `a/`},
+		{
+			Typeflag: tar.TypeSymlink,
+			Name:     `b`,
+			Linkname: `/a`,
+		},
+		{Name: `b/c`},
+	}, func(t *testing.T, sys fs.FS) {
+		d, err := sys.Open("b")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer d.Close()
+		fi, err := d.Stat()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if fi.Name() != "a" || !fi.IsDir() {
+			t.Error("unexpected stat: ", fi.Name(), fi.IsDir())
+		}
 	}))
 }

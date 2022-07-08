@@ -102,16 +102,30 @@ func New(r io.ReaderAt) (*FS, error) {
 // that already exists:
 // https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap01.html#tagtcjh_14
 func (f *FS) add(name string, ino inode) error {
+	const op = `create`
+Again:
 	if i, ok := f.lookup[name]; ok {
 		n := &f.inode[i]
-		et, nt := n.h.Mode&int64(fs.ModeType), ino.h.Mode&int64(fs.ModeType)
+		et, nt := n.h.FileInfo().Mode()&fs.ModeType, ino.h.FileInfo().Mode()&fs.ModeType
 		switch {
 		case nt != 0:
 			// If the new type isn't a regular file, fail.
-			return fmt.Errorf("tarfs: double-add %q: new type (%x) cannot replace existing type (%x)", name, nt, et)
-		case et&int64(fs.ModeDir) != 0:
+			return &fs.PathError{
+				Op:   op,
+				Path: name,
+				Err:  fmt.Errorf("new type (%x) cannot replace existing type (%x): %w", nt, et, fs.ErrExist),
+			}
+		case et&fs.ModeDir != 0:
 			// If the existing type is a directory, fail.
-			return fmt.Errorf("tarfs: double-add %q: new file cannot replace directory", name)
+			return &fs.PathError{
+				Op:   op,
+				Path: name,
+				Err:  fmt.Errorf("new file cannot replace directory: %w", fs.ErrExist),
+			}
+		case et&fs.ModeSymlink != 0:
+			// Follow the link target.
+			name = n.h.Linkname
+			goto Again
 		}
 		// Should be OK to replace now. Shadow the previous inode so we don't
 		// have to renumber everything.
@@ -132,7 +146,11 @@ func (f *FS) add(name string, ino inode) error {
 	Resolve:
 		for {
 			if _, ok := cycle[ti]; ok {
-				return fmt.Errorf("tarfs: found cycle when resolving member %q", n)
+				return &fs.PathError{
+					Op:   op,
+					Path: n,
+					Err:  fmt.Errorf("found cycle when resolving member: %w", fs.ErrInvalid),
+				}
 			}
 			cycle[ti] = struct{}{}
 			i := &f.inode[ti]
@@ -142,7 +160,11 @@ func (f *FS) add(name string, ino inode) error {
 			case tar.TypeSymlink:
 				ti = f.lookupOrMkdir(i.h.Linkname)
 			case tar.TypeReg:
-				return fmt.Errorf("tarfs: found symlink to regular file at %q while connecting child %q", n, name)
+				return &fs.PathError{
+					Op:   op,
+					Path: n,
+					Err:  fmt.Errorf("found symlink to regular file while connecting child %q: %w", name, fs.ErrExist),
+				}
 			}
 		}
 		f.inode[ti].children[i] = struct{}{}

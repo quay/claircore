@@ -16,6 +16,22 @@ var (
 	magicOldGNU = []byte("ustar  \x00")
 )
 
+// ErrFormat can be compared via [errors.Is] against errors reported by [New]
+// to determine if the tar fail is considered well-formed.
+var ErrFormat = errors.New("tarfs: format error reading file")
+
+// ParseErr returns an error that .Is reports true for ErrFormat.
+//
+// The `%w` verb does not work.
+func parseErr(f string, v ...interface{}) error {
+	return parseError(fmt.Sprintf(f, v...))
+}
+
+type parseError string
+
+func (e parseError) Is(tgt error) bool { return tgt == ErrFormat }
+func (e parseError) Error() string     { return string(e) }
+
 // FindSegments looks at a tar blockwise to establish where individual files and
 // their headers are stored. Each returned segment describes a region that is
 // not a complete tar file, but can have exactly one file read from it.
@@ -45,7 +61,7 @@ Scan:
 		case n != blockSz:
 			// Should be impossible with a well-formed archive, so raise an
 			// error.
-			return nil, fmt.Errorf("short read at offset: %d", off)
+			return nil, parseErr("short read at offset: %d", off)
 		case errors.Is(err, io.EOF) && !zeroes:
 			// This is an early EOF: in a well-formed archive, ReadAt should
 			// only return EOF on the second block of zeroes.
@@ -76,13 +92,14 @@ Scan:
 			// creator's fault if something doesn't work right because there's
 			// some incompatibility.
 		case !bytes.Equal(magic, magicPAX) && !bytes.Equal(magic, magicGNU):
-			return nil, fmt.Errorf("bad block at %d: got magic %+q", off, magic)
+			return nil, parseErr("bad block at %d: got magic %+q", off, magic)
 		case !bytes.Equal(b[versionOff:][:2], []byte("00")):
-			return nil, fmt.Errorf("bad block at %d: got version %+q", off, b[versionOff:][:2])
+			return nil, parseErr("bad block at %d: got version %+q", off, b[versionOff:][:2])
 		}
-		sz, err := parseNumber(b[sizeOff:][:12])
+		encSz := b[sizeOff:][:12]
+		sz, err := parseNumber(encSz)
 		if err != nil {
-			return nil, err
+			return nil, parseErr("invalid number: %024x: %v", encSz, err)
 		}
 		nBlk := sz / blockSz
 		if sz%blockSz != 0 {
