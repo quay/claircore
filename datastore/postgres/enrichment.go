@@ -197,7 +197,7 @@ WHERE
 
 	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/GetEnrichment")
 	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
-		getEnrichmentsDuration.WithLabelValues("query", strconv.FormatBool(errors.Is(err, nil)))
+		getEnrichmentsDuration.WithLabelValues("query", strconv.FormatBool(errors.Is(err, nil))).Observe(v)
 	}))
 	defer timer.ObserveDuration()
 	defer func() {
