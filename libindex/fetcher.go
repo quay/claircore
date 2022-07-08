@@ -23,6 +23,7 @@ import (
 	"golang.org/x/sync/singleflight"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/pkg/tarfs"
 )
 
 // Arena does coordination and global refcounting.
@@ -302,6 +303,17 @@ func (a *RemoteFetchArena) realizeLayer(ctx context.Context, l *claircore.Layer)
 		err := fmt.Errorf("fetcher: validation failed: got %q, expected %q",
 			hex.EncodeToString(got),
 			hex.EncodeToString(want))
+		return "", err
+	}
+
+	zlog.Debug(ctx).
+		Msg("checking if layer is a valid tar")
+	// TODO(hank) Need media types somewhere in here.
+	switch _, err := tarfs.New(fd); {
+	case errors.Is(err, nil):
+	case errors.Is(err, tarfs.ErrFormat):
+		fallthrough
+	default:
 		return "", err
 	}
 
