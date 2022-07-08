@@ -14,7 +14,7 @@ func Example_libvuln() {
 	ctx := context.TODO()
 
 	// ANCHOR: new
-	opts := new(libvuln.Opts)
+	opts := new(libvuln.Options)
 	// Populate with desired settings...
 	lib, err := libvuln.New(ctx, opts)
 	if err != nil {
@@ -23,7 +23,7 @@ func Example_libvuln() {
 	defer lib.Close(ctx)
 	// ANCHOR_END: new
 
-	liopts := new(libindex.Opts)
+	liopts := new(libindex.Options)
 	// Populate with desired settings...
 	indexer, err := libindex.New(ctx, liopts, http.DefaultClient)
 	if err != nil {
