@@ -192,7 +192,7 @@ func (w WFN) Valid() error {
 	return nil
 }
 
-// ErrUnset is returned from (WFN).Valid() if it is the zero value.
+// ErrUnset is returned from [WFN.Valid] if it is the zero value.
 var ErrUnset = errors.New("cpe: wfn is empty")
 
 func (w WFN) String() string {
