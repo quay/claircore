@@ -60,6 +60,7 @@ func unpackSecFixes(partial claircore.Vulnerability, secFixes map[string][]strin
 			v.Name = id
 			v.FixedInVersion = fixedIn
 			v.Links = fmt.Sprintf(nvdURLPrefix, id)
+			v.CVEs = []string{id}
 			out = append(out, &v)
 		}
 	}

@@ -131,6 +131,7 @@ func RPMDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulnsF
 						Module: module,
 						Kind:   claircore.BINARY,
 					}
+					vuln.CVEs = referencesBySource(def.References)["CVE"]
 					if state != nil {
 						vuln.FixedInVersion = state.EVR.Body
 						if state.Arch != nil {

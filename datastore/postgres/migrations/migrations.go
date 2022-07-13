@@ -80,4 +80,8 @@ var MatcherMigrations = []migrate.Migration{
 		ID: 8,
 		Up: runFile("matcher/08-updater-status.sql"),
 	},
+	{
+		ID: 9,
+		Up: runFile("matcher/09-add-cves-column.sql"),
+	},
 }

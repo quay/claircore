@@ -115,6 +115,7 @@ func DpkgDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulns
 							vuln.ArchOperation = mapArchOp(state.Arch.Operation)
 							vuln.Package.Arch = state.Arch.Body
 						}
+						vuln.CVEs = referencesBySource(def.References)["CVE"]
 					}
 					if pkg, ok := pkgcache[n]; !ok {
 						p := &claircore.Package{
