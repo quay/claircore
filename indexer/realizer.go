@@ -10,6 +10,6 @@ import (
 // if necessary, and making the uncompressed tar contents available for
 // reading.
 type Realizer interface {
-	Realize(context.Context, []*claircore.Layer) error
+	Realize(context.Context, []*claircore.Layer) ([]claircore.ReadAtCloser, error)
 	Close() error
 }

@@ -26,7 +26,7 @@ func TestScanLayers(t *testing.T) {
 				ls := indexer.NewMockLayerScanner(ctrl)
 				s := indexer.NewMockStore(ctrl)
 
-				ls.EXPECT().Scan(gomock.Any(), gomock.Any(), gomock.Any()).MaxTimes(1).MinTimes(1).Return(nil)
+				ls.EXPECT().Scan(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).MaxTimes(1).MinTimes(1).Return(nil)
 				s.EXPECT().LayerScanned(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes().Return(true, nil)
 				return ls, s
 			},

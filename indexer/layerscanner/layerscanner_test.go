@@ -3,6 +3,7 @@ package layerscanner
 import (
 	"context"
 	"crypto/sha256"
+	"io"
 	"testing"
 	"time"
 
@@ -94,7 +95,17 @@ func TestScanNoErrors(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := layerscanner.Scan(ctx, d, layers); err != nil {
+	rc := make([]claircore.ReadAtCloser, len(layers))
+	for i := range rc {
+		rc[i] = fakeReader{}
+	}
+	if err := layerscanner.Scan(ctx, d, layers, rc); err != nil {
 		t.Fatalf("failed to scan test layers: %v", err)
 	}
 }
+
+type fakeReader struct{}
+
+func (fakeReader) Close() error                          { return nil }
+func (fakeReader) Read(_ []byte) (int, error)            { return 0, io.EOF }
+func (fakeReader) ReadAt(_ []byte, _ int64) (int, error) { return 0, io.EOF }

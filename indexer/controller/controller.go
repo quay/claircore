@@ -20,6 +20,8 @@ type Controller struct {
 	*indexer.Opts
 	// the manifest this controller is working on. populated on Scan() call
 	manifest *claircore.Manifest
+	layers   []*claircore.Layer
+	files    []claircore.ReadAtCloser
 	// the result of this scan. each stateFunc manipulates this field.
 	report *claircore.IndexReport
 	// a fatal error halting the scanning process

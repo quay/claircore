@@ -11,7 +11,8 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
+	"runtime"
+	"sort"
 	"strings"
 	"sync"
 
@@ -20,6 +21,7 @@ import (
 	"github.com/quay/claircore/indexer"
 	"github.com/quay/zlog"
 	"golang.org/x/sync/errgroup"
+	"golang.org/x/sync/semaphore"
 	"golang.org/x/sync/singleflight"
 
 	"github.com/quay/claircore"
@@ -43,127 +45,154 @@ var (
 // Exported for use in cctool. If cctool goes away, this can get unexported. It is
 // remote in the sense that it pulls layers from the internet.
 type RemoteFetchArena struct {
-	wc *http.Client
-	sf *singleflight.Group
+	wc  *http.Client
+	sem *semaphore.Weighted
+	sf  singleflight.Group
 
-	mu sync.Mutex
-	// Rc is a map of digest to refcount.
-	rc map[string]int
-
-	root string
+	root  string
+	mu    sync.Mutex
+	cache map[string]*refct
 }
 
 // NewRemoteFetchArena initializes the RemoteFetchArena.
 //
-// This method is provided instead of a constructor function to make embedding
-// easier.
+// Close must be called to release disk space, or the program may panic.
 func NewRemoteFetchArena(wc *http.Client, root string) *RemoteFetchArena {
-	return &RemoteFetchArena{
-		wc:   wc,
-		root: root,
-		sf:   &singleflight.Group{},
-		rc:   make(map[string]int),
+	a := &RemoteFetchArena{
+		wc:    wc,
+		root:  root,
+		cache: make(map[string]*refct),
+		sem:   semaphore.NewWeighted(int64(runtime.GOMAXPROCS(0))),
 	}
+	_, file, line, _ := runtime.Caller(1)
+	runtime.SetFinalizer(a, func(a *RemoteFetchArena) {
+		panic(fmt.Sprintf("%s:%d: fetcher arena not closed", file, line))
+	})
+
+	return a
 }
+
+// Refct is a refcounter for the os.File.
+//
+// The first [RemoteFetchArena.forget] call that has the "ct" member drop to zero also closes
+// the File.
+type refct struct {
+	*os.File
+	ct uint64
+}
+
+var errNotExist = errors.New("asked to forget nonexistent digest")
 
 func (a *RemoteFetchArena) forget(digest string) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	ct, ok := a.rc[digest]
+	rc, ok := a.cache[digest]
 	if !ok {
+		return errNotExist
+	}
+	rc.ct--
+	if rc.ct != 0 {
 		return nil
 	}
-	ct--
-	if ct == 0 {
-		delete(a.rc, digest)
-		defer a.sf.Forget(digest)
-		return os.Remove(filepath.Join(a.root, digest))
-	}
-	a.rc[digest] = ct
-	return nil
+	delete(a.cache, digest)
+	var f *os.File
+	f, rc.File = rc.File, nil
+	return f.Close()
 }
 
-// FetchOne does a deduplicated fetch, then increments the refcount and renames
-// the file to the permanent place if applicable.
-func (a *RemoteFetchArena) fetchOne(ctx context.Context, l *claircore.Layer) (do func() error) {
-	do = func() error {
-		h := l.Hash.String()
-		tgt := filepath.Join(a.root, h)
-		var ff string
-		select {
-		case res := <-a.sf.DoChan(h, func() (interface{}, error) {
-			return a.realizeLayer(ctx, l)
-		}):
-			if err := res.Err; err != nil {
-				return err
+// FetchOne ...
+func (a *RemoteFetchArena) fetchOne(ctx context.Context, l *claircore.Layer) (*os.File, error) {
+	h := l.Hash.String()
+Again:
+	select {
+	case res := <-a.sf.DoChan(h, func() (interface{}, error) {
+		// This weird construction ensures that the slow part is not done
+		// under the big lock.
+		a.mu.Lock()
+		if _, ok := a.cache[h]; !ok {
+			a.mu.Unlock()
+			rc, err := a.realizeLayer(ctx, l)
+			if err != nil {
+				return nil, err
 			}
-			ff = res.Val.(string)
-		case <-ctx.Done():
-			return ctx.Err()
+			a.mu.Lock()
+			a.cache[h] = rc
+		}
+		a.mu.Unlock()
+
+		return nil, nil
+	}):
+		if err := res.Err; err != nil {
+			return nil, err
 		}
 		a.mu.Lock()
-		ct, ok := a.rc[h]
+		rc, ok := a.cache[h]
 		if !ok {
-			// Did the file get removed while we were waiting on the lock?
-			if _, err := os.Stat(ff); errors.Is(err, os.ErrNotExist) {
-				a.mu.Unlock()
-				return do()
-			}
-			if err := os.Rename(ff, tgt); err != nil {
-				a.mu.Unlock()
-				return err
-			}
+			// Getting to this arm means two Proxies had their calls interleaved such
+			// that one had its Close method called and completed between the time
+			// another one called DoChan and then obtained the lock.
+			//
+			// This is relatively common in tests where very little work is done after a
+			// Layer is fetched, but should be rare in actual use.
+			//
+			// One way to fix this would be to implement a graveyard and then only really
+			// delete the file once the graveyard is full.
+			a.mu.Unlock()
+			goto Again
 		}
-		defer a.mu.Unlock()
-		ct++
-		a.rc[h] = ct
-		l.SetLocal(tgt)
-		return nil
+		fd := int(rc.Fd())
+		if fd < 0 {
+			panic(fmt.Sprintf("somehow got stale *os.File for %q", h))
+		}
+		f, err := os.Open(fmt.Sprintf("/proc/self/fd/%d", fd))
+		if err != nil {
+			a.mu.Unlock()
+			return nil, err
+		}
+		rc.ct++
+		a.mu.Unlock()
+		return f, nil
+	case <-ctx.Done():
+		return nil, ctx.Err()
 	}
-	return do
 }
 
-// Close removes all files left in the arena.
-//
-// It's not an error to have active fetchers, but may cause errors to have files
-// unlinked underneath their users.
+// Close releases any held resources and reports what was still open via the error.
 func (a *RemoteFetchArena) Close(ctx context.Context) error {
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "libindex/fetchArena.Close",
 		"arena", a.root)
+	var leak []string
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	if len(a.rc) != 0 {
-		zlog.Warn(ctx).
-			Int("count", len(a.rc)).
-			Msg("seem to have active fetchers")
-		zlog.Info(ctx).
-			Msg("clearing arena")
+	runtime.SetFinalizer(a, nil)
+	for h, rc := range a.cache {
+		rc.Close()
+		delete(a.cache, h)
+		leak = append(leak, h)
 	}
-	var err error
-	for d := range a.rc {
-		delete(a.rc, d)
-		a.sf.Forget(d)
-		if e := os.Remove(filepath.Join(a.root, d)); e != nil {
-			if err == nil {
-				err = e
-				continue
-			}
-			err = fmt.Errorf("%v; %v", err, e)
-		}
-	}
-	if err != nil {
-		return err
+	if len(leak) != 0 {
+		return leakErr(leak)
 	}
 	return nil
 }
 
-// RealizeLayer is the inner function used inside the singleflight.
-//
-// The returned value is a temporary filename in the arena.
-func (a *RemoteFetchArena) realizeLayer(ctx context.Context, l *claircore.Layer) (string, error) {
+func leakErr(h []string) error {
+	sort.Strings(h)
+	var b strings.Builder
+	b.WriteString("fetcher: outstanding layers collected at close:\n")
+	for _, h := range h {
+		b.WriteByte('\t')
+		b.WriteString(h)
+		b.WriteByte('\n')
+	}
+	return errors.New(b.String())
+}
+
+// RealizeLayer fetches the layer. Meant to be called from inside the singleflight.
+func (a *RemoteFetchArena) realizeLayer(ctx context.Context, l *claircore.Layer) (*refct, error) {
 	ctx = zlog.ContextWithValues(ctx,
-		"component", "libindex/fetchArena.realizeLayer",
+		"component", "libindex/RemoteFetchArena.realizeLayer",
 		"arena", a.root,
 		"layer", l.Hash.String(),
 		"uri", l.URI)
@@ -171,35 +200,31 @@ func (a *RemoteFetchArena) realizeLayer(ctx context.Context, l *claircore.Layer)
 
 	// Validate the layer input.
 	if l.URI == "" {
-		return "", fmt.Errorf("empty uri for layer %v", l.Hash)
+		return nil, fmt.Errorf("empty uri for layer %v", l.Hash)
 	}
 	url, err := url.ParseRequestURI(l.URI)
 	if err != nil {
-		return "", fmt.Errorf("failed to parse remote path uri: %v", err)
+		return nil, fmt.Errorf("failed to parse remote path uri: %v", err)
 	}
 	if l.Hash.Checksum() == nil {
-		return "", fmt.Errorf("digest is empty")
+		return nil, fmt.Errorf("digest is empty")
 	}
 	vh := l.Hash.Hash()
 	want := l.Hash.Checksum()
+	// Have to do real work, so grab a semaphore.
+	if err := a.sem.Acquire(ctx, 1); err != nil {
+		return nil, err
+	}
+	defer a.sem.Release(1)
 
 	// Open our target file before hitting the network.
-	rm := true
 	fd, err := os.CreateTemp(a.root, "fetch.*")
 	if err != nil {
-		return "", fmt.Errorf("fetcher: unable to create file: %w", err)
+		return nil, fmt.Errorf("fetcher: unable to create file: %w", err)
 	}
-	name := fd.Name()
-	defer func() {
-		if err := fd.Close(); err != nil {
-			zlog.Warn(ctx).Err(err).Msg("unable to close layer file")
-		}
-		if rm {
-			if err := os.Remove(name); err != nil {
-				zlog.Warn(ctx).Err(err).Msg("unable to remove unsuccessful layer fetch")
-			}
-		}
-	}()
+	if err := os.Remove(fd.Name()); err != nil {
+		return nil, fmt.Errorf("fetcher: unable to remove file: %w", err)
+	}
 	// It'd be nice to be able to pre-allocate our file on disk, but we can't
 	// because of decompression.
 
@@ -213,7 +238,7 @@ func (a *RemoteFetchArena) realizeLayer(ctx context.Context, l *claircore.Layer)
 	req = req.WithContext(ctx)
 	resp, err := a.wc.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("fetcher: request failed: %w", err)
+		return nil, fmt.Errorf("fetcher: request failed: %w", err)
 	}
 	defer resp.Body.Close()
 	switch resp.StatusCode {
@@ -224,10 +249,10 @@ func (a *RemoteFetchArena) realizeLayer(ctx context.Context, l *claircore.Layer)
 		// order to not flood the log.
 		bodyStart, err := io.ReadAll(io.LimitReader(resp.Body, 256))
 		if err == nil {
-			return "", fmt.Errorf("fetcher: unexpected status code: %s (body starts: %q)",
+			return nil, fmt.Errorf("fetcher: unexpected status code: %s (body starts: %q)",
 				resp.Status, bodyStart)
 		}
-		return "", fmt.Errorf("fetcher: unexpected status code: %s", resp.Status)
+		return nil, fmt.Errorf("fetcher: unexpected status code: %s", resp.Status)
 	}
 	tr := io.TeeReader(resp.Body, vh)
 
@@ -243,7 +268,7 @@ func (a *RemoteFetchArena) realizeLayer(ctx context.Context, l *claircore.Layer)
 			Msg("guessing compression")
 		b, err := br.Peek(4)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 		switch detectCompression(b) {
 		case cmpGzip:
@@ -269,7 +294,7 @@ func (a *RemoteFetchArena) realizeLayer(ctx context.Context, l *claircore.Layer)
 	case strings.HasSuffix(ct, ".tar+gzip"):
 		g, err := gzip.NewReader(br)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 		defer g.Close()
 		r = g
@@ -278,7 +303,7 @@ func (a *RemoteFetchArena) realizeLayer(ctx context.Context, l *claircore.Layer)
 	case strings.HasSuffix(ct, ".tar+zstd"):
 		s, err := zstd.NewReader(br)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 		defer s.Close()
 		r = s
@@ -287,23 +312,23 @@ func (a *RemoteFetchArena) realizeLayer(ctx context.Context, l *claircore.Layer)
 	case strings.HasSuffix(ct, ".tar"):
 		r = br
 	default:
-		return "", fmt.Errorf("fetcher: unknown content-type %q", ct)
+		return nil, fmt.Errorf("fetcher: unknown content-type %q", ct)
 	}
 
 	buf := bufio.NewWriter(fd)
 	n, err := io.Copy(buf, r)
 	zlog.Debug(ctx).Int64("size", n).Msg("wrote file")
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	if err := buf.Flush(); err != nil {
-		return "", err
+		return nil, err
 	}
 	if got := vh.Sum(nil); !bytes.Equal(got, want) {
 		err := fmt.Errorf("fetcher: validation failed: got %q, expected %q",
 			hex.EncodeToString(got),
 			hex.EncodeToString(want))
-		return "", err
+		return nil, err
 	}
 
 	zlog.Debug(ctx).
@@ -314,17 +339,21 @@ func (a *RemoteFetchArena) realizeLayer(ctx context.Context, l *claircore.Layer)
 	case errors.Is(err, tarfs.ErrFormat):
 		fallthrough
 	default:
-		return "", err
+		return nil, err
 	}
 
 	zlog.Debug(ctx).Msg("layer fetch ok")
-	rm = false
-	return name, nil
+	return &refct{File: fd}, nil
 }
 
 // Fetcher returns an indexer.Fetcher.
 func (a *RemoteFetchArena) Realizer(_ context.Context) indexer.Realizer {
-	return &FetchProxy{a: a}
+	p := &FetchProxy{a: a}
+	_, file, line, _ := runtime.Caller(1)
+	runtime.SetFinalizer(p, func(p *FetchProxy) {
+		panic(fmt.Sprintf("%s:%d: fetcher proxy not closed", file, line))
+	})
+	return p
 }
 
 // FetchProxy tracks the files fetched for layers.
@@ -336,27 +365,39 @@ type FetchProxy struct {
 }
 
 // Realize populates all the layers locally.
-func (p *FetchProxy) Realize(ctx context.Context, ls []*claircore.Layer) error {
+func (p *FetchProxy) Realize(ctx context.Context, ls []*claircore.Layer) ([]claircore.ReadAtCloser, error) {
 	g, ctx := errgroup.WithContext(ctx)
 	p.clean = make([]string, len(ls))
-	for i, l := range ls {
-		p.clean[i] = l.Hash.String()
-		g.Go(p.a.fetchOne(ctx, l))
+	fs := make([]claircore.ReadAtCloser, len(ls))
+	one := func(i int) func() error {
+		return func() (err error) {
+			p.clean[i] = ls[i].Hash.String()
+			fs[i], err = p.a.fetchOne(ctx, ls[i])
+			if err != nil {
+				return fmt.Errorf("%v: %w", ls[i].Hash.String(), err)
+			}
+			return nil
+		}
+	}
+	for i := range ls {
+		g.Go(one(i))
 	}
 	if err := g.Wait(); err != nil {
-		return fmt.Errorf("encountered error while fetching a layer: %v", err)
+		return nil, fmt.Errorf("encountered error while fetching layers: %w", err)
 	}
-	return nil
+	return fs, nil
 }
 
 // Close marks all the layers' backing files as unused.
 //
 // This method may actually delete the backing files.
 func (p *FetchProxy) Close() error {
+	runtime.SetFinalizer(p, nil)
 	var err error
 	for _, digest := range p.clean {
 		e := p.a.forget(digest)
 		if e != nil {
+			e := fmt.Errorf("forget %q: %w", digest, e)
 			if err == nil {
 				err = e
 			} else {
