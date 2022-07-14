@@ -27,6 +27,7 @@ require (
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
 	github.com/rs/zerolog v1.26.0
 	github.com/ulikunitz/xz v0.5.8
+	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/text v0.3.7
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba
@@ -58,7 +59,6 @@ require (
 	github.com/quay/claircore/toolkit v1.0.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0 // indirect
 	go.opentelemetry.io/otel v1.3.0 // indirect
-	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97 // indirect
 	golang.org/x/mod v0.5.1 // indirect
 	golang.org/x/sys v0.0.0-20220209214540-3681064d5158 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
