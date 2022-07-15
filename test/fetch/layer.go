@@ -30,17 +30,25 @@ var registry = map[string]*client{
 	"gcr.io":    &client{Root: "https://gcr.io/"},
 }
 
-func Layer(ctx context.Context, t *testing.T, c *http.Client, from, repo string, blob claircore.Digest) (*os.File, error) {
+func Layer(ctx context.Context, t *testing.T, c *http.Client, from, repo string, blob claircore.Digest, opt ...Option) (*os.File, error) {
+	t.Helper()
+	opts := make(map[Option]bool)
+	for _, o := range opt {
+		opts[o] = true
+	}
 	cachefile := filepath.Join("testdata", blob.String()+".layer")
 	switch _, err := os.Stat(cachefile); {
 	case err == nil:
+		t.Logf("layer cached: %s", cachefile)
 		return os.Open(cachefile)
+	case errors.Is(err, os.ErrNotExist) && opts[IgnoreIntegration]:
 	case errors.Is(err, os.ErrNotExist):
 		// need to do work
 		integration.Skip(t)
 	default:
 		return nil, err
 	}
+	t.Logf("fetching layer into: %s", cachefile)
 
 	if c == nil {
 		c = http.DefaultClient
@@ -54,44 +62,55 @@ func Layer(ctx context.Context, t *testing.T, c *http.Client, from, repo string,
 		return nil, err
 	}
 	defer rc.Close()
+	cf := copyTo(t, cachefile, rc)
+	if t.Failed() {
+		os.Remove(cachefile)
+		return nil, errors.New("unable to open cachefile")
+	}
+	return cf, nil
+}
 
-	err = func() error {
-		var err error
-		defer func() {
-			if err != nil {
-				os.Remove(cachefile)
-			}
-		}()
+type Option uint
 
-		var cf *os.File
-		cf, err = os.Create(cachefile)
-		if err != nil {
-			return err
-		}
-		defer cf.Close()
+const (
+	_Option = iota
+	IgnoreIntegration
+)
 
-		var gr *gzip.Reader
-		gr, err = gzip.NewReader(rc)
-		if err != nil {
-			return err
-		}
-		defer gr.Close()
-
-		if _, err = io.Copy(cf, gr); err != nil {
-			return err
-		}
-		if err = cf.Sync(); err != nil {
-			return err
-		}
-
+func copyTo(t *testing.T, name string, rc io.Reader) *os.File {
+	cf, err := os.Create(name)
+	if err != nil {
+		t.Error(err)
 		return nil
+	}
+	defer func() {
+		if err != nil {
+			cf.Close()
+		}
 	}()
 
+	var gr *gzip.Reader
+	gr, err = gzip.NewReader(rc)
 	if err != nil {
-		return nil, err
+		t.Error(err)
+		return nil
+	}
+	defer gr.Close()
+
+	if _, err = io.Copy(cf, gr); err != nil {
+		t.Error(err)
+		return nil
+	}
+	if err = cf.Sync(); err != nil {
+		t.Error(err)
+		return nil
+	}
+	if _, err = cf.Seek(0, io.SeekStart); err != nil {
+		t.Error(err)
+		return nil
 	}
 
-	return os.Open(cachefile)
+	return cf
 }
 
 type tokenResponse struct {
