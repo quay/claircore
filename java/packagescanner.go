@@ -1,5 +1,3 @@
-// Package java contains components for interrogating java packages in
-// container layers.
 package java
 
 import (
@@ -31,6 +29,11 @@ var (
 	_ indexer.RPCScanner       = (*Scanner)(nil)
 )
 
+// DefaultSearchAPI is the API consulted for archives that do no have sufficient
+// embedded metadata to guess the package name and version. The expected
+// API is documented [here].
+//
+// [here]: https://central.sonatype.org/search/rest-api-guide/
 const DefaultSearchAPI = `https://search.maven.org/solrsearch/select`
 
 // ScannerConfig is the struct used to configure a Scanner.
@@ -244,7 +247,7 @@ func (s *Scanner) search(ctx context.Context, i *jar.Info, ck []byte) error {
 		return errRPC
 	}
 	v := req.URL.Query()
-	// 40 == 2 * sha1.Size. I don't there's a good way to keep it as
+	// 40 == 2 * sha1.Size. I don't think there's a good way to keep it as
 	// a constant.
 	v.Set("q", fmt.Sprintf(`1:"%40x"`, ck))
 	v.Set("wt", "json")

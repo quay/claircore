@@ -1,5 +1,3 @@
-// Package java contains components for interrogating java maven packages in
-// container layers.
 package java
 
 import (
