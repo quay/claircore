@@ -82,7 +82,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Cache Go dependencies
-        uses: actions/cache@v3.0.4
+        uses: actions/cache@v3.0.5
         with:
           path: |
             ~/.cache/go-build
@@ -91,7 +91,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go${{ matrix.go }}-
       - name: Cache misc testdata
-        uses: actions/cache@v3.0.4
+        uses: actions/cache@v3.0.5
         with:
           key: testdata-${{ hashFiles('**/*_test.go') }}
           restore-keys: |
