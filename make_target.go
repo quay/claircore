@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
@@ -17,7 +18,12 @@ import (
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lmsgprefix)
-	log.SetPrefix("godoc: ")
+	log.SetPrefix("make_target: ")
+	defer func() {
+		if errored {
+			os.Exit(1)
+		}
+	}()
 
 	// Handle when called with "supports $renderer".
 	if len(os.Args) == 3 {
@@ -61,6 +67,12 @@ func main() {
 		panic(err)
 	}
 }
+
+var (
+	open     sync.Once
+	makefile []byte
+	errored  bool
+)
 
 // in: {"root":"/var/home/hank/work/clair/clair","config":{"book":{"authors":["Clair Authors"],"description":"Documentation for Clair.","language":"en","multilingual":false,"src":"Documentation","title":"Clair Documentation"},"output":{"html":{"git-repository-url":"https://github.com/quay/clair","preferred-dark-theme":"coal"}},"preprocessor":{"history":{"command":"go run Documentation/history.go"}}},"renderer":"html","mdbook_version":"0.4.13"}
 type Config struct {
@@ -106,34 +118,38 @@ type Chapter struct {
 
 func (c *Chapter) Process(b *strings.Builder, cfg *Config) error {
 	if c.Path != nil {
-		var print sync.Once
 		c.Content = marker.ReplaceAllStringFunc(c.Content, func(sub string) string {
-			print.Do(func() { log.Println("inserting docs into:", *c.Path) })
 			ms := marker.FindStringSubmatch(sub)
 			if ct := len(ms); ct != 2 {
 				err := fmt.Errorf("unexpected number of arguments: %d", ct)
-				fmt.Fprintln(os.Stderr, err)
-				panic(err)
+				log.Panic(err)
 			}
-			args := []string{"doc"}
-			fs := strings.Fields(ms[1])
-
-			cmd := exec.Command(`go`, append(args, fs...)...)
-			cmd.Dir = cfg.Root
-			out, err := cmd.Output()
+			target := strings.TrimSpace(ms[1])
+			re, err := regexp.Compile("\n" + target + `:`)
 			if err != nil {
-				fmt.Fprintln(os.Stderr, err)
-				panic(err)
+				log.Panic(err)
 			}
-			b.Reset()
-			out = bytes.TrimSpace(out)
-			b.WriteString("```\n")
-			if _, err := b.Write(out); err != nil {
-				fmt.Fprintln(os.Stderr, err)
-				panic(err)
+
+			open.Do(func() {
+				cmd := exec.Command(`git`, `rev-parse`, `--show-toplevel`)
+				out, err := cmd.Output()
+				if err != nil {
+					log.Panic(err)
+				}
+				n := filepath.Join(string(bytes.TrimSpace(out)), `Makefile`)
+				log.Printf("opening %q", n)
+				makefile, err = os.ReadFile(n)
+				if err != nil {
+					log.Panic(err)
+				}
+				log.Print("OK")
+			})
+
+			if !re.Match(makefile) {
+				log.Printf("unable to find target %q", target)
+				errored = true
 			}
-			b.WriteString("\n```")
-			return b.String()
+			return target
 		})
 	}
 	for _, s := range c.SubItems {
@@ -144,4 +160,4 @@ func (c *Chapter) Process(b *strings.Builder, cfg *Config) error {
 	return nil
 }
 
-var marker = regexp.MustCompile(`\{\{#\s*godoc\s(.+)\}\}`)
+var marker = regexp.MustCompile(`\{\{#\s*make_target\s(.+)\}\}`)
