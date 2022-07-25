@@ -8,6 +8,7 @@ on:
 jobs:
   test_schedule:
     runs-on: ubuntu-latest
+    container: quay.io/projectquay/golang:1.18
     steps:
       - uses: actions/setup-go@v3
         with:
