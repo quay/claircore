@@ -1,7 +1,6 @@
 package libvuln
 
 import (
-	"compress/gzip"
 	"context"
 	"io"
 
@@ -15,17 +14,14 @@ import (
 
 // OfflineImport takes the format written into the io.Writer provided to
 // NewOfflineUpdater and imports the contents into the provided pgxpool.Pool.
+//
+// The format provided on "in" should be the same output from [jsonblob.Store], with
+// any compression undone.
 func OfflineImport(ctx context.Context, pool *pgxpool.Pool, in io.Reader) error {
 	// BUG(hank) The OfflineImport function is a wart, needed to work around
 	// some package namespacing issues. It should get refactored if claircore
 	// gets merged into clair.
 	ctx = zlog.ContextWithValues(ctx, "component", "libvuln/OfflineImporter")
-
-	gz, err := gzip.NewReader(in)
-	if err != nil {
-		return err
-	}
-	defer gz.Close()
 
 	s := postgres.NewMatcherStore(pool)
 	l, err := jsonblob.Load(ctx, gz)
