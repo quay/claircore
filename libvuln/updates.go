@@ -24,7 +24,7 @@ func OfflineImport(ctx context.Context, pool *pgxpool.Pool, in io.Reader) error 
 	ctx = zlog.ContextWithValues(ctx, "component", "libvuln/OfflineImporter")
 
 	s := postgres.NewMatcherStore(pool)
-	l, err := jsonblob.Load(ctx, gz)
+	l, err := jsonblob.Load(ctx, in)
 	if err != nil {
 		return err
 	}
