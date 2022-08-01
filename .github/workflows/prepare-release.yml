@@ -26,7 +26,7 @@ jobs:
         shell: bash
         run: |
           curl -o /tmp/git-chglog.tar.gz -fsSL\
-            https://github.com/git-chglog/git-chglog/releases/download/v0.14.0/git-chglog_0.14.0_linux_amd64.tar.gz
+            https://github.com/git-chglog/git-chglog/releases/download/v0.15.1/git-chglog_0.15.1_linux_amd64.tar.gz
           tar xvf /tmp/git-chglog.tar.gz --directory /tmp
           chmod u+x /tmp/git-chglog
           echo "creating change log for tag: ${{ github.event.inputs.tag }}"
@@ -35,6 +35,7 @@ jobs:
           # log to only include logs with the same minor
           # versions
           branch=${{ github.event.inputs.branch }}
+          filter_tag="--tag-filter-pattern ^v"
           echo "discovered branch $branch"
           if [[ ${branch%-*} == "release" ]]; then 
             filter_tag="--tag-filter-pattern v${branch#release-}"
