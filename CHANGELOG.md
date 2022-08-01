@@ -2,8 +2,78 @@
 ## [Unreleased]
 
 
+<a name="v1.4.5"></a>
+## [v1.4.5] - 2022-08-01
+### All
+- [3591883](https://github.com/quay/claircore/commit/3591883e16d41abc7348ed0059b02b1a3337a960): Rewrite libvuln instantiation ([#614](https://github.com/quay/claircore/issues/614))
+  - [#614](https://github.com/quay/claircore/issues/614)
+- [454830e](https://github.com/quay/claircore/commit/454830ef34fe1c1ce110ee5b2d89e85d7f6d0cc0): new exportable indexer and datastore packages ([#587](https://github.com/quay/claircore/issues/587))
+  - [#587](https://github.com/quay/claircore/issues/587)
+### Aws
+- [d7edab9](https://github.com/quay/claircore/commit/d7edab9206bb9b6b09470d5e49f3cb458ed55ef4): remove updater integration tests
+### Bisect
+- [e3a85e5](https://github.com/quay/claircore/commit/e3a85e5420230793bee496e5e4857e2660098cd0): port to this weird test setup
+### Build(Deps)
+- [8f0d7d9](https://github.com/quay/claircore/commit/8f0d7d98bd27be60746be9aaf54d43e53e1826c1): bump actions/cache from 3.0.4 to 3.0.5
+### Chore
+- [24dd7e9](https://github.com/quay/claircore/commit/24dd7e9b6ea1aae099fb9e2b70a381527ae4c7ef): Add tag pattern to chg-log Changelog generator
+### Cicd
+- [49616bd](https://github.com/quay/claircore/commit/49616bd60d0cbfee50c255e53ca5ecdffd212794): ensure rpm is installed for periodic tests
+### Cmd
+- [c55fcd6](https://github.com/quay/claircore/commit/c55fcd60fcc9c4e79bd8b17d03d509b06127c09b): remove obsolete commands
+### Debian
+- [d44da96](https://github.com/quay/claircore/commit/d44da969047aa4fa4fc3cccb1c84db0b6c96acea): create distributions dynamically
+### Defaults
+- [d3f595d](https://github.com/quay/claircore/commit/d3f595d2b807c09c57ea237abf0bae17213b881a): update debian
+### Docs
+- [b4e2243](https://github.com/quay/claircore/commit/b4e22432b623263a7029bc043d4b4c3340704bd7): remove mentions of `cctool`
+### Events
+- [bd0c417](https://github.com/quay/claircore/commit/bd0c4170d385c43ead7d301d5632a56d6573999d): facade for diagnostic events
+### Fetch
+- [a91e041](https://github.com/quay/claircore/commit/a91e041b6a7905331c8922de478468cdf6acd3da): add support for registry.access.redhat.com
+- [846553c](https://github.com/quay/claircore/commit/846553c9f1ade09e9b92ebcae7a13840c4e9f402): add options to Layer function
+### Integration
+- [448c827](https://github.com/quay/claircore/commit/448c827a519a2892f011b95b8bce71231130da5c): add Persistent variant
+### Libindex
+- [8cf4455](https://github.com/quay/claircore/commit/8cf44553d1b1069298a65bfd9761e6b08a4b2c1f): use new String method
+- [f84baf4](https://github.com/quay/claircore/commit/f84baf44f8c1c5c3195b7a56d078dbeff0a1fe7f): attempt to validate tar during fetch
+### Libvuln
+- [dadef07](https://github.com/quay/claircore/commit/dadef07751ff23bcd33c06863cd1ac30574316e0): fix compilation error
+- [b2e2753](https://github.com/quay/claircore/commit/b2e2753640cc53441dd239b8ac8f50ec67855234): don't attempt to decompress within OfflineImport
+### Makefile
+- [f51477c](https://github.com/quay/claircore/commit/f51477cc26d641dcb776a9a26ac5b9626234c779): remove command targets
+### Ovaldebug
+- [e59f862](https://github.com/quay/claircore/commit/e59f8628f87f78e280bd189f851ad754f554c2ed): remove debian support
+### Ovalutil
+- [6ec6ce7](https://github.com/quay/claircore/commit/6ec6ce7d7dc8bbdc4994dbbfe545f5cc606bbe9d): additional dpkg fixes
+### Periodic
+- [db14afa](https://github.com/quay/claircore/commit/db14afa456a38986979c2c46509874da0157c848): update debian
+- [b8f712f](https://github.com/quay/claircore/commit/b8f712f2951d5fd33ac7da5da1e0cd64a92b9ae0): add automated RPM acceptance tests
+### Photon
+- [34595f2](https://github.com/quay/claircore/commit/34595f2cfa39f879ee68ea8820741e2037bc2ba4): remove updater integration tests
+### Postgres
+- [e452f64](https://github.com/quay/claircore/commit/e452f646c6d92b3a0737e92f434d7552960f1eec): use bisect tool to generate test fixtures
+- [9d7d063](https://github.com/quay/claircore/commit/9d7d0639d39555d74cd6c8e219fe1458662aecf2): Observe metric
+### Rpm
+- [87ab3e3](https://github.com/quay/claircore/commit/87ab3e3f8acff40f63f6a1bde84fca2fbb576de4): add sqlite db support
+### Rpmtest
+- [018e872](https://github.com/quay/claircore/commit/018e8727f2c56814a1e47e7023bd7c6243d5cae7): helpers and data structures for testing RPM indexing
+### Sqlite
+- [e16880f](https://github.com/quay/claircore/commit/e16880f337f4687c51b16781953d7d3cfe6cf0cd): add sqlite RPM database parser
+### Suse
+- [6e16f47](https://github.com/quay/claircore/commit/6e16f470d3708ab2f2802b4bdcbadfd9991e9ef7): remove updater integration tests
+### Tarfs
+- [5695866](https://github.com/quay/claircore/commit/5695866612bb5e1cf41555e44a5f99bd56a4a0dd): add dedicated format error
+### Ubuntu
+- [3ac9b52](https://github.com/quay/claircore/commit/3ac9b52e1045783edbe350d17137e9095239a652): dynamic distributions
+- [9998715](https://github.com/quay/claircore/commit/999871516c332feeadb0e53dab66374d5a53b5ae): remove unused file
+### Updater
+- [97420ed](https://github.com/quay/claircore/commit/97420ed658eeefdc18f18b0a5f6d6f0cdfd01485): dedicated Updater subsystem
+
 <a name="v1.4.4"></a>
 ## [v1.4.4] - 2022-07-05
+### Chore
+- [1542105](https://github.com/quay/claircore/commit/1542105dcfbb2c1600af08b1daf8c4039fc03a0c): v1.4.4 changelog bump
 ### Updates
 - [df37f2a](https://github.com/quay/claircore/commit/df37f2a8102995800f6bdc3fc2238f8d9a744bf3): Use the tx's methods to record updater's status ([#647](https://github.com/quay/claircore/issues/647))
   - [#647](https://github.com/quay/claircore/issues/647)
@@ -1510,7 +1580,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v1.4.4...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v1.4.5...HEAD
+[v1.4.5]: https://github.com/quay/claircore/compare/v1.4.4...v1.4.5
 [v1.4.4]: https://github.com/quay/claircore/compare/v1.4.3...v1.4.4
 [v1.4.3]: https://github.com/quay/claircore/compare/v1.4.2...v1.4.3
 [v1.4.2]: https://github.com/quay/claircore/compare/v1.4.1...v1.4.2
