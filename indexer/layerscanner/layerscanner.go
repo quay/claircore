@@ -2,8 +2,11 @@ package layerscanner
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"runtime"
+	"strings"
 
 	"github.com/quay/zlog"
 	"golang.org/x/sync/errgroup"
@@ -143,7 +146,7 @@ func configAndFilter(ctx context.Context, opts *indexer.Opts, s indexer.Versione
 //
 // The provided Context controls cancellation for all scanners. The first error
 // reported halts all work and is returned from Scan.
-func (ls *layerScanner) Scan(ctx context.Context, manifest claircore.Digest, layers []*claircore.Layer) error {
+func (ls *layerScanner) Scan(ctx context.Context, manifest claircore.Digest, layers []*claircore.Layer, contents []claircore.ReadAtCloser) error {
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "datastore/layerscannner/layerScanner.Scan",
 		"manifest", manifest.String())
@@ -152,38 +155,94 @@ func (ls *layerScanner) Scan(ctx context.Context, manifest claircore.Digest, lay
 	g, ctx := errgroup.WithContext(ctx)
 	// Launch is a closure to capture the loop variables and then call the
 	// scanLayer method.
-	launch := func(l *claircore.Layer, s indexer.VersionedScanner) func() error {
+	launch := func(l *claircore.Layer, s indexer.VersionedScanner, c io.ReaderAt) func() error {
 		return func() error {
 			if err := sem.Acquire(ctx, 1); err != nil {
 				return err
 			}
 			defer sem.Release(1)
-			return ls.scanLayer(ctx, l, s)
+			return ls.scanLayer(ctx, l, c, s)
 		}
 	}
 	dedupe := make(map[string]struct{})
-	for _, l := range layers {
+	for i, l := range layers {
 		if _, ok := dedupe[l.Hash.String()]; ok {
 			continue
 		}
 		dedupe[l.Hash.String()] = struct{}{}
+		c := contents[i]
 		for _, s := range ls.ps {
-			g.Go(launch(l, s))
+			g.Go(launch(l, s, c))
 		}
 		for _, s := range ls.ds {
-			g.Go(launch(l, s))
+			g.Go(launch(l, s, c))
 		}
 		for _, s := range ls.rs {
-			g.Go(launch(l, s))
+			g.Go(launch(l, s, c))
 		}
 	}
 
-	return g.Wait()
+	var ie indexError
+	ie.Inner = g.Wait()
+	for i, c := range contents {
+		if err := c.Close(); err != nil {
+			ie.Close = append(ie.Close, closeError{
+				Err:   err,
+				Which: layers[i].Hash.String(),
+			})
+		}
+	}
+	if !ie.empty() {
+		return &ie
+	}
+	return nil
+}
+
+type indexError struct {
+	Inner error
+	Close []closeError
+}
+
+type closeError struct {
+	Which string
+	Err   error
+}
+
+func (e *indexError) empty() bool {
+	return errors.Is(e.Inner, nil) && len(e.Close) == 0
+}
+
+func (e *indexError) Error() string {
+	var b strings.Builder
+	orig, close := !errors.Is(e.Inner, nil), len(e.Close) != 0
+	if orig {
+		b.WriteString(e.Inner.Error())
+	}
+	if orig && close {
+		b.WriteString(" (while closing layer contents:")
+	}
+	for i, cl := range e.Close {
+		if i != 0 {
+			b.WriteByte(';')
+		}
+		b.WriteByte(' ')
+		b.WriteString(cl.Which)
+		b.WriteString(": ")
+		b.WriteString(cl.Err.Error())
+	}
+	if orig && close {
+		b.WriteByte(')')
+	}
+	return b.String()
+}
+
+func (e *indexError) Unwrap() error {
+	return e.Inner
 }
 
 // ScanLayer (along with the result type) handles an individual (scanner, layer)
 // pair.
-func (ls *layerScanner) scanLayer(ctx context.Context, l *claircore.Layer, s indexer.VersionedScanner) error {
+func (ls *layerScanner) scanLayer(ctx context.Context, l *claircore.Layer, c io.ReaderAt, s indexer.VersionedScanner) error {
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "indexer/layerscannner/layerScanner.scan",
 		"scanner", s.Name(),
@@ -202,7 +261,7 @@ func (ls *layerScanner) scanLayer(ctx context.Context, l *claircore.Layer, s ind
 	}
 
 	var result result
-	if err := result.Do(ctx, s, l); err != nil {
+	if err := result.Do(ctx, s, l, c); err != nil {
 		return err
 	}
 
@@ -223,7 +282,7 @@ type result struct {
 // Do asserts the Scanner back to having a Scan method, and then calls it.
 //
 // The success value is captured and the error value is returned by Do.
-func (r *result) Do(ctx context.Context, s indexer.VersionedScanner, l *claircore.Layer) error {
+func (r *result) Do(ctx context.Context, s indexer.VersionedScanner, l *claircore.Layer, c io.ReaderAt) error {
 	var err error
 	switch s := s.(type) {
 	case indexer.PackageScanner:

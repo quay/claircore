@@ -326,17 +326,17 @@ func (m *MockLayerScanner) EXPECT() *MockLayerScannerMockRecorder {
 }
 
 // Scan mocks base method.
-func (m *MockLayerScanner) Scan(arg0 context.Context, arg1 claircore.Digest, arg2 []*claircore.Layer) error {
+func (m *MockLayerScanner) Scan(arg0 context.Context, arg1 claircore.Digest, arg2 []*claircore.Layer, arg3 []claircore.ReadAtCloser) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Scan", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "Scan", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // Scan indicates an expected call of Scan.
-func (mr *MockLayerScannerMockRecorder) Scan(arg0, arg1, arg2 interface{}) *gomock.Call {
+func (mr *MockLayerScannerMockRecorder) Scan(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Scan", reflect.TypeOf((*MockLayerScanner)(nil).Scan), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Scan", reflect.TypeOf((*MockLayerScanner)(nil).Scan), arg0, arg1, arg2, arg3)
 }
 
 // MockPackageScanner is a mock of PackageScanner interface.
@@ -720,11 +720,12 @@ func (mr *MockRealizerMockRecorder) Close() *gomock.Call {
 }
 
 // Realize mocks base method.
-func (m *MockRealizer) Realize(arg0 context.Context, arg1 []*claircore.Layer) error {
+func (m *MockRealizer) Realize(arg0 context.Context, arg1 []*claircore.Layer) ([]claircore.ReadAtCloser, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Realize", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].([]claircore.ReadAtCloser)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // Realize indicates an expected call of Realize.

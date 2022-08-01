@@ -37,16 +37,32 @@ func (tc fetchTestcase) Run(ctx context.Context) func(*testing.T) {
 		}
 
 		a := NewRemoteFetchArena(c, p)
+		defer func() {
+			if err := a.Close(ctx); err != nil {
+				t.Error(err)
+			}
+		}()
 
 		fetcher := a.Realizer(ctx)
-		if err := fetcher.Realize(ctx, layers); err != nil {
+		fs, err := fetcher.Realize(ctx, layers)
+		if err != nil {
 			t.Error(err)
 		}
-		for _, l := range layers {
+		for i, l := range layers {
 			t.Logf("%+v", l)
+			fi, err := fs[i].(*os.File).Stat()
+			if err != nil {
+				t.Error(err)
+			}
+			t.Logf("%+v", fi)
 		}
 		if err := fetcher.Close(); err != nil {
 			t.Error(err)
+		}
+		for _, f := range fs {
+			if err := f.Close(); err != nil {
+				t.Error(err)
+			}
 		}
 	}
 }
@@ -99,9 +115,25 @@ func TestFetchInvalid(t *testing.T) {
 				t.Error(err)
 			}
 			a := NewRemoteFetchArena(http.DefaultClient, p)
+			defer func() {
+				if err := a.Close(ctx); err != nil {
+					t.Error(err)
+				}
+			}()
 			fetcher := a.Realizer(ctx)
-			if err := fetcher.Realize(ctx, table.layer); err == nil {
+			defer func() {
+				if err := fetcher.Close(); err != nil {
+					t.Log(err)
+				}
+			}()
+			fs, err := fetcher.Realize(ctx, table.layer)
+			if err == nil {
 				t.Fatal("expected error, got nil")
+			}
+			for _, f := range fs {
+				if err := f.Close(); err != nil {
+					t.Error(err)
+				}
 			}
 		})
 	}
@@ -119,6 +151,11 @@ func TestFetchConcurrent(t *testing.T) {
 	}
 	defer srv.Close()
 	a := NewRemoteFetchArena(srv.Client(), t.TempDir())
+	defer func() {
+		if err := a.Close(ctx); err != nil {
+			t.Error(err)
+		}
+	}()
 
 	subtest := func(a *RemoteFetchArena, ls []claircore.Layer) func(*testing.T) {
 		// Need to make a copy of all our layers.
@@ -133,17 +170,23 @@ func TestFetchConcurrent(t *testing.T) {
 		for i := range ps[:len(ps)/2] {
 			ps[i] = &l[i]
 		}
-		f := a.Realizer(ctx)
 		return func(t *testing.T) {
 			t.Parallel()
+			ctx := zlog.Test(ctx, t)
+			f := a.Realizer(ctx)
 			t.Cleanup(func() {
 				if err := f.Close(); err != nil {
 					t.Error(err)
 				}
 			})
-			ctx := zlog.Test(ctx, t)
-			if err := f.Realize(ctx, ps); err != nil {
+			fs, err := f.Realize(ctx, ps)
+			if err != nil {
 				t.Error(err)
+			}
+			for _, f := range fs {
+				if err := f.Close(); err != nil {
+					t.Error(err)
+				}
 			}
 		}
 	}
@@ -152,10 +195,6 @@ func TestFetchConcurrent(t *testing.T) {
 			t.Run(strconv.Itoa(i), subtest(a, ls))
 		}
 	})
-
-	if err := a.Close(ctx); err != nil {
-		t.Error(err)
-	}
 }
 
 func commonLayerServer(t testing.TB, ct int) ([]claircore.Layer, http.Handler) {
