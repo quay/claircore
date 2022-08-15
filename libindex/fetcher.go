@@ -344,7 +344,7 @@ func (p *FetchProxy) Realize(ctx context.Context, ls []*claircore.Layer) error {
 		g.Go(p.a.fetchOne(ctx, l))
 	}
 	if err := g.Wait(); err != nil {
-		return fmt.Errorf("encountered error while fetching a layer: %v", err)
+		return fmt.Errorf("encountered error while fetching a layer: %w", err)
 	}
 	return nil
 }
