@@ -2,6 +2,13 @@
 ## [Unreleased]
 
 
+<a name="v1.4.6"></a>
+## [v1.4.6] - 2022-08-15
+### Build(Deps)
+- [b38dc01](https://github.com/quay/claircore/commit/b38dc0155fd12d8303404742a977adbf914cb74a): bump actions/cache from 3.0.5 to 3.0.7
+### Fetcher
+- [f11ec59](https://github.com/quay/claircore/commit/f11ec5940966dc717d1f455ab733ca1fc3d2332c): Wrap error to surface type to external caller
+
 <a name="v1.4.5"></a>
 ## [v1.4.5] - 2022-08-01
 ### All
@@ -16,6 +23,8 @@
 ### Build(Deps)
 - [8f0d7d9](https://github.com/quay/claircore/commit/8f0d7d98bd27be60746be9aaf54d43e53e1826c1): bump actions/cache from 3.0.4 to 3.0.5
 ### Chore
+- [8e1cd78](https://github.com/quay/claircore/commit/8e1cd78fb38013efb64e9248174f1a3398ef870f): Add filter version flag to release workflow
+- [d69b464](https://github.com/quay/claircore/commit/d69b46436f72865e95342e62895c8ec121696c1a): v1.4.5 changelog bump
 - [24dd7e9](https://github.com/quay/claircore/commit/24dd7e9b6ea1aae099fb9e2b70a381527ae4c7ef): Add tag pattern to chg-log Changelog generator
 ### Cicd
 - [49616bd](https://github.com/quay/claircore/commit/49616bd60d0cbfee50c255e53ca5ecdffd212794): ensure rpm is installed for periodic tests
@@ -1580,7 +1589,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v1.4.5...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v1.4.6...HEAD
+[v1.4.6]: https://github.com/quay/claircore/compare/v1.4.5...v1.4.6
 [v1.4.5]: https://github.com/quay/claircore/compare/v1.4.4...v1.4.5
 [v1.4.4]: https://github.com/quay/claircore/compare/v1.4.3...v1.4.4
 [v1.4.3]: https://github.com/quay/claircore/compare/v1.4.2...v1.4.3
