@@ -27,8 +27,9 @@ const (
 
 var registry = map[string]*client{
 	"docker.io":                  {Root: "https://registry-1.docker.io/"},
-	"quay.io":                    {Root: "https://quay.io/"},
 	"gcr.io":                     {Root: "https://gcr.io/"},
+	"ghcr.io":                    {Root: "https://ghcr.io/"},
+	"quay.io":                    {Root: "https://quay.io/"},
 	"registry.access.redhat.com": {Root: "https://registry.access.redhat.com/"},
 }
 
@@ -71,6 +72,16 @@ func Layer(ctx context.Context, t *testing.T, c *http.Client, from, repo string,
 		return nil, err
 	}
 	defer rc.Close()
+	// BUG(hank) Any compression scheme that isn't gzip isn't handled correctly.
+	if !opts[NoDecompression] {
+		var gr *gzip.Reader
+		gr, err = gzip.NewReader(rc)
+		if err != nil {
+			return nil, err
+		}
+		defer gr.Close()
+		rc = gr
+	}
 	cf := copyTo(t, cachefile, rc)
 	if t.Failed() {
 		os.Remove(cachefile)
@@ -84,6 +95,7 @@ type Option uint
 const (
 	_Option = iota
 	IgnoreIntegration
+	NoDecompression
 )
 
 // Checkpath guards against making the same directory over and over.
@@ -101,15 +113,7 @@ func copyTo(t *testing.T, name string, rc io.Reader) *os.File {
 		}
 	}()
 
-	var gr *gzip.Reader
-	gr, err = gzip.NewReader(rc)
-	if err != nil {
-		t.Error(err)
-		return nil
-	}
-	defer gr.Close()
-
-	if _, err = io.Copy(cf, gr); err != nil {
+	if _, err = io.Copy(cf, rc); err != nil {
 		t.Error(err)
 		return nil
 	}
@@ -131,8 +135,8 @@ type tokenResponse struct {
 
 // Client is a more generic registry client.
 type client struct {
-	Root     string
 	tokCache sync.Map
+	Root     string
 }
 
 func (d *client) getToken(repo string) string {
@@ -141,9 +145,11 @@ func (d *client) getToken(repo string) string {
 	}
 	return ""
 }
+
 func (d *client) putToken(repo, tok string) {
 	d.tokCache.Store(repo, tok)
 }
+
 func (d *client) doAuth(ctx context.Context, c *http.Client, name, h string) error {
 	if !strings.HasPrefix(h, `Bearer `) {
 		return errors.New("weird header")
