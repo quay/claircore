@@ -126,6 +126,8 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 		done[db.Path] = struct{}{}
 
 		switch db.Kind {
+		case kindNDB:
+			fallthrough
 		case kindBDB:
 			extractOnce.Do(func() { extractRoot, extractErr = extractTar(ctx, rd) })
 			if err := extractErr; err != nil {
@@ -207,6 +209,9 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 					return err
 				}
 				rpm, err := sqlite.Open(f.Name())
+				if err != nil {
+					return err
+				}
 				defer rpm.Close()
 				infos, err := rpm.Packages(ctx)
 				if err != nil {
@@ -241,6 +246,8 @@ func findDBs(ctx context.Context, out *[]foundDB, sys fs.FS) fs.WalkDirFunc {
 		dir, n := path.Split(p)
 		dir = path.Clean(dir)
 		switch {
+		case n == "Packages.db": // ndb specfic
+			fallthrough
 		case n == `Packages`:
 			f, err := sys.Open(p)
 			if err != nil {
@@ -281,6 +288,7 @@ const (
 
 	kindBDB    //bdb
 	kindSQLite //sqlite
+	kindNDB    //ndb
 )
 
 type foundDB struct {

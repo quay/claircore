@@ -1669,6 +1669,41 @@ func TestScan(t *testing.T) {
 			t.Fatal(cmp.Diff(got, want, rpmtest.Options))
 		}
 	})
+
+	t.Run("NDB", func(t *testing.T) {
+		hash := claircore.MustParseDigest("sha256:c731ab41e18b7cd46db9c97fceda6e4281b60c68d998ecb6ab36b235e342fee1")
+		// Check for the bits the package needs.
+		for _, exe := range []string{
+			"tar", "rpm",
+		} {
+			if _, err := exec.LookPath(exe); err != nil {
+				t.Skipf("skipping test: missing needed utility %q (%v)", exe, err)
+			}
+		}
+		ctx := zlog.Test(context.Background(), t)
+		l := &claircore.Layer{
+			Hash: hash,
+		}
+
+		tctx, done := context.WithTimeout(ctx, 2*time.Minute)
+		defer done()
+		n, err := fetch.Layer(tctx, t, http.DefaultClient, "quay.io", "crozzy/suse", hash)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		defer n.Close()
+		l.SetLocal(n.Name())
+
+		s := &Scanner{}
+		got, err := s.Scan(ctx, l)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !cmp.Equal(len(got), 109) {
+			t.Fatalf("Wanted 109 packages got %d", len(got))
+		}
+	})
 }
 
 func TestRelPath(t *testing.T) {

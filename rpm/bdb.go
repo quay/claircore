@@ -137,6 +137,9 @@ func checkMagic(ctx context.Context, r io.Reader) bool {
 		BTree = 0x00053162
 		Queue = 0x00042253
 		Log   = 0x00040988
+		// https://github.com/rpm-software-management/rpm/blob/be64821b908fdb1ff3c12530430d1cf046839e60/lib/backend/ndb/rpmpkg.c#L98
+		// fmt.Printf("%08x", 'R'|'p'<<8|'m'<<16|'P'<<24)
+		Ndb = 0x506d7052
 	)
 	// Most hosts are still x86, try LE first.
 	be := []binary.ByteOrder{binary.LittleEndian, binary.BigEndian}
@@ -154,7 +157,7 @@ func checkMagic(ctx context.Context, r io.Reader) bool {
 		}
 		for _, o := range be {
 			n := o.Uint32(b)
-			if n == Hash || n == BTree || n == Queue || n == Log {
+			if n == Hash || n == BTree || n == Queue || n == Log || n == Ndb {
 				return true
 			}
 		}
