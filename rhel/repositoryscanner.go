@@ -245,6 +245,11 @@ func (r *RepositoryScanner) getCPEsUsingEmbeddedContentSets(ctx context.Context,
 	if err := json.Unmarshal(b, &m); err != nil {
 		return nil, err
 	}
+	// If the JSON file is malformed and has a 0-length list of content sets,
+	// report nil so that the API can be consulted.
+	if len(m.ContentSets) == 0 {
+		return nil, nil
+	}
 	return r.mapper.Get(ctx, m.ContentSets)
 }
 
