@@ -379,3 +379,88 @@ func TestKnownLayers(t *testing.T) {
 		})
 	}
 }
+
+// TestTarConcatenate tests the situation where a tar file is created (most
+// likely with --concatenate or some variant) with symlink members in the path.
+// The tar layout can be ostensibly "valid" but the fs it describes can be
+// difficult to reason about.
+//
+// For example:
+// ├── tar_1
+// │   ├── run
+// │   │   └── logs
+// │   │       └── log.txt
+// │   └── var
+// │       └── run -> ../run
+// ├── tar_2
+// │   └── var
+// │       └── run
+// │           └── console
+// │               └── algo.txt
+//
+// In both tars, `var/run` is defined, but once as a normal dir and once
+// as a symlink to `../run`. For our sakes, we allow access through either
+// the symlink path (`var/ru`n in this case) or the original dir path (`run/` in
+// this case) for all files created under either path.
+//
+// For example, `algo.txt` can be accessed via `run/console/algo.txt` or
+// `var/run/console/algo.txt` and `log.txt` can be accessed via `run/logs/log.txt`
+// or `var/run/logs/log.txt`.
+func TestTarConcatenate(t *testing.T) {
+	tests := []struct {
+		expectedFS map[string]bool
+		testFile   string
+	}{
+		{
+			expectedFS: map[string]bool{
+				".":                        false,
+				"run/console":              false,
+				"run":                      false,
+				"run/console/algo.txt":     false,
+				"run/logs":                 false,
+				"run/logs/log.txt":         false,
+				"var":                      false,
+				"var/run":                  false,
+				"var/run/logs":             false,
+				"var/run/console":          false,
+				"var/run/console/algo.txt": false,
+				"var/run/logs/log.txt":     false,
+			},
+			testFile: "testdata/concat.tar",
+		},
+	}
+
+	for _, test := range tests {
+		f, err := os.Open(test.testFile)
+		if err != nil {
+			t.Fatalf("failed to open test tar: %v", err)
+		}
+		sys, err := New(f)
+		if err != nil {
+			t.Fatalf("failed to create tarfs: %v", err)
+		}
+		if err := fs.WalkDir(sys, ".", func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			t.Logf("path: %q", path)
+			seen, ok := test.expectedFS[path]
+			if !ok {
+				t.Fatalf("didn't expect path %s", path)
+			}
+			if seen {
+				t.Fatalf("we already saw this path: %s", path)
+			}
+			test.expectedFS[path] = true
+			return nil
+		}); err != nil {
+			t.Errorf("error walking fs: %v\n", err)
+			return
+		}
+		for fi := range test.expectedFS {
+			if _, err := sys.Open(fi); err != nil {
+				t.Errorf("could not open %s: %v", fi, err)
+			}
+		}
+	}
+}
