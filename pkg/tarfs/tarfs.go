@@ -74,7 +74,8 @@ func New(r io.ReaderAt) (*FS, error) {
 		if err != nil {
 			return nil, fmt.Errorf("tarfs: error reading header @%d(%d): %w", seg.start, seg.size, err)
 		}
-		n := normPath(i.h.Name)
+		i.h.Name = normPath(i.h.Name)
+		n := i.h.Name
 		switch i.h.Typeflag {
 		case tar.TypeDir:
 			// Has this been created this already?
@@ -83,8 +84,11 @@ func New(r io.ReaderAt) (*FS, error) {
 			}
 			i.children = make(map[int]struct{})
 		case tar.TypeSymlink:
-			// Fixup the linkname.
-			i.h.Linkname = path.Join(path.Dir(n), i.h.Linkname)
+			// Fixup the linkname. Can't tell from the spec if relative paths are allowed.
+			if strings.HasPrefix(i.h.Linkname, ".") {
+				i.h.Linkname = path.Join(path.Dir(n), i.h.Linkname)
+			}
+			i.h.Linkname = normPath(i.h.Linkname)
 		case tar.TypeReg:
 		}
 		if err := s.add(n, i); err != nil {
@@ -136,54 +140,48 @@ Again:
 	f.inode = append(f.inode, ino)
 	f.lookup[name] = i
 
-	n := name
-	for n != "." {
-		n = filepath.Dir(n)
-		ti := f.lookupOrMkdir(n)
-		// Now we need to resolve "ti" to an index of TypeDir.
-		// This handles the cases encoded in the "Symlinks" test.
-		cycle := make(map[int]struct{})
-	Resolve:
-		for {
-			if _, ok := cycle[ti]; ok {
-				return &fs.PathError{
-					Op:   op,
-					Path: n,
-					Err:  fmt.Errorf("found cycle when resolving member: %w", fs.ErrInvalid),
-				}
-			}
-			cycle[ti] = struct{}{}
-			i := &f.inode[ti]
-			switch i.h.Typeflag {
-			case tar.TypeDir:
-				break Resolve
-			case tar.TypeSymlink:
-				ti = f.lookupOrMkdir(i.h.Linkname)
-			case tar.TypeReg:
-				return &fs.PathError{
-					Op:   op,
-					Path: n,
-					Err:  fmt.Errorf("found symlink to regular file while connecting child %q: %w", name, fs.ErrExist),
-				}
+	cycle := make(map[*inode]struct{})
+	dir := filepath.Dir(name)
+AddEnt:
+	switch dir {
+	case name:
+		// Skip
+	case ".":
+		// Add was called with a root entry, like "a" -- make sure to link this to the root directory.
+		root := &f.inode[f.lookup["."]]
+		root.children[i] = struct{}{}
+	default:
+		parent, err := f.getInode(op, dir)
+		if err != nil {
+			parent, err = f.walkTo(dir, true)
+		}
+		if err != nil {
+			return err
+		}
+		if _, ok := cycle[parent]; ok {
+			return &fs.PathError{
+				Op:   op,
+				Path: dir,
+				Err:  fmt.Errorf("found cycle when resolving member: %w", fs.ErrInvalid),
 			}
 		}
-		f.inode[ti].children[i] = struct{}{}
-		i = ti
+		cycle[parent] = struct{}{}
+		switch parent.h.Typeflag {
+		case tar.TypeDir:
+			// OK
+		case tar.TypeSymlink:
+			dir = parent.h.Linkname
+			goto AddEnt
+		default:
+			return &fs.PathError{
+				Op:   op,
+				Path: parent.h.Name,
+				Err:  fmt.Errorf("error while connecting child %q: %w", name, fs.ErrExist),
+			}
+		}
+		parent.children[i] = struct{}{}
 	}
 	return nil
-}
-
-// LookupOrMkdir looks up or creates a dir with the provided name.
-//
-// The inode index of the dir is reported.
-func (f *FS) lookupOrMkdir(n string) int {
-	i, ok := f.lookup[n]
-	if !ok {
-		i = len(f.inode)
-		f.inode = append(f.inode, newDir(n))
-		f.lookup[n] = i
-	}
-	return i
 }
 
 // GetInode returns the inode backing "name".
@@ -197,15 +195,102 @@ func (f *FS) getInode(op, name string) (*inode, error) {
 			Err:  fs.ErrInvalid,
 		}
 	}
-	i, ok := f.lookup[name]
-	if !ok {
+	name = path.Clean(name)
+	if i, ok := f.lookup[name]; ok {
+		return &f.inode[i], nil
+	}
+
+	i, err := f.walkTo(name, false)
+	if err != nil {
 		return nil, &fs.PathError{
 			Op:   op,
 			Path: name,
 			Err:  fs.ErrNotExist,
 		}
 	}
-	return &f.inode[i], nil
+	return i, nil
+}
+
+// WalkTo does a walk from the root as far along the provided path as possible,
+// resolving symlinks as necesarry. If any segments are missing (including the final
+// segments), they are created as directories if the "create" bool is passed.
+func (f *FS) walkTo(p string, create bool) (*inode, error) {
+	w := strings.Split(p, "/")
+	var cur *inode
+	var b strings.Builder
+
+	cur = &f.inode[f.lookup["."]]
+	i := 0
+	for lim := len(w); i < lim; i++ {
+		n := w[i]
+		if i != 0 {
+			b.WriteByte('/')
+		}
+		b.WriteString(n)
+		var child *inode
+		var found bool
+		for ci := range cur.children {
+			child = &f.inode[ci]
+			cn := path.Base(child.h.Name)
+			if cn != n {
+				continue
+			}
+			cycle := make(map[int]struct{})
+		Resolve:
+			for {
+				if _, ok := cycle[ci]; ok {
+					return nil, &fs.PathError{
+						Op:   `walk`,
+						Path: b.String(),
+						Err:  fmt.Errorf("found cycle when resolving member: %w", fs.ErrInvalid),
+					}
+				}
+				cycle[ci] = struct{}{}
+				switch child.h.Typeflag {
+				case tar.TypeDir:
+					break Resolve
+				case tar.TypeSymlink:
+					tgt := child.h.Linkname
+					var ok bool
+					ci, ok = f.lookup[tgt]
+					switch {
+					case ok && create, ok && !create:
+						child = &f.inode[ci]
+						break Resolve
+					case !ok && create:
+						f.add(tgt, newDir(tgt))
+						ci = f.lookup[tgt]
+						child = &f.inode[ci]
+					case !ok && !create:
+						return nil, fmt.Errorf("tarfs: walk to %q, but missing segment %q", p, n)
+					}
+				case tar.TypeReg:
+					if i == (lim - 1) {
+						break Resolve
+					}
+					return nil, &fs.PathError{
+						Op:   `walk`,
+						Path: p,
+						Err:  fmt.Errorf("found symlink to regular file while connecting child %q: %w", b.String(), fs.ErrExist),
+					}
+				}
+			}
+			found = true
+			break
+		}
+		switch {
+		case found && create, found && !create:
+			// OK
+		case !found && create:
+			f.add(n, newDir(n))
+			ci := f.lookup[n]
+			child = &f.inode[ci]
+		case !found && !create:
+			return nil, fmt.Errorf("tarfs: walk to %q, but missing segment %q", p, n)
+		}
+		cur = child
+	}
+	return cur, nil
 }
 
 // Open implements fs.FS.
@@ -348,7 +433,7 @@ func (f *FS) Sub(dir string) (fs.FS, error) {
 	if err != nil {
 		return nil, err
 	}
-	bp := normPath(n.h.Name)
+	bp := n.h.Name
 	ret := FS{
 		r:      f.r,
 		inode:  f.inode,
