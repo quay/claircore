@@ -45,6 +45,10 @@ var IndexerMigrations = []migrate.Migration{
 		ID: 4,
 		Up: runFile("indexer/04-foreign-key-cascades.sql"),
 	},
+	{
+		ID: 5,
+		Up: runFile("indexer/05-delete-manifest-index-index.sql"),
+	},
 }
 
 var MatcherMigrations = []migrate.Migration{
