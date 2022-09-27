@@ -10,11 +10,12 @@ func _() {
 	var x [1]struct{}
 	_ = x[kindBDB-1]
 	_ = x[kindSQLite-2]
+	_ = x[kindNDB-3]
 }
 
-const _dbKind_name = "bdbsqlite"
+const _dbKind_name = "bdbsqlitendb"
 
-var _dbKind_index = [...]uint8{0, 3, 9}
+var _dbKind_index = [...]uint8{0, 3, 9, 12}
 
 func (i dbKind) String() string {
 	i -= 1

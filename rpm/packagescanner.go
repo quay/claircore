@@ -20,13 +20,14 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/pkg/tarfs"
+	"github.com/quay/claircore/rpm/ndb"
 	"github.com/quay/claircore/rpm/sqlite"
 )
 
 const (
 	pkgName    = "rpm"
 	pkgKind    = "package"
-	pkgVersion = "5"
+	pkgVersion = "6"
 )
 
 var (
@@ -176,11 +177,13 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 			if err := cmd.Wait(); err != nil {
 				return nil, err
 			}
-		case kindSQLite:
-			if err := func() error {
+		case kindSQLite, kindNDB:
+			var nat nativeDB // see native_db.go:/nativeDB
+			switch db.Kind {
+			case kindSQLite:
 				r, err := sys.Open(path.Join(db.Path, `rpmdb.sqlite`))
 				if err != nil {
-					return err
+					return nil, fmt.Errorf("rpm: error reading sqlite db: %w", err)
 				}
 				defer func() {
 					if err := r.Close(); err != nil {
@@ -189,7 +192,7 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 				}()
 				f, err := os.CreateTemp(os.TempDir(), `rpmdb.sqlite.*`)
 				if err != nil {
-					return err
+					return nil, fmt.Errorf("rpm: error reading sqlite db: %w", err)
 				}
 				defer func() {
 					if err := os.Remove(f.Name()); err != nil {
@@ -201,26 +204,56 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 				}()
 				zlog.Debug(ctx).Str("file", f.Name()).Msg("copying sqlite db out of tar")
 				if _, err := io.Copy(f, r); err != nil {
-					return err
+					return nil, fmt.Errorf("rpm: error reading sqlite db: %w", err)
 				}
 				if err := f.Sync(); err != nil {
-					return err
+					return nil, fmt.Errorf("rpm: error reading sqlite db: %w", err)
 				}
-				rpm, err := sqlite.Open(f.Name())
-				defer rpm.Close()
-				infos, err := rpm.Packages(ctx)
+				sdb, err := sqlite.Open(f.Name())
 				if err != nil {
-					return err
+					return nil, fmt.Errorf("rpm: error reading sqlite db: %w", err)
 				}
-				ps, err := packagesFromInfos(ctx, db.String(), infos)
+				defer sdb.Close()
+				nat = sdb
+			case kindNDB:
+				f, err := sys.Open(path.Join(db.Path, `Packages.db`))
 				if err != nil {
-					return err
+					return nil, fmt.Errorf("rpm: error reading ndb db: %w", err)
 				}
-				pkgs = append(pkgs, ps...)
-				return nil
-			}(); err != nil {
-				return nil, fmt.Errorf("rpm: error reading sqlite db: %w", err)
+				defer f.Close()
+				r, ok := f.(io.ReaderAt)
+				if !ok {
+					spool, err := os.CreateTemp(os.TempDir(), `Packages.db.*`)
+					if err != nil {
+						return nil, fmt.Errorf("rpm: error reading ndb db: %w", err)
+					}
+					if err := os.Remove(spool.Name()); err != nil {
+						zlog.Error(ctx).Err(err).Msg("unable to unlink ndb spool")
+					}
+					defer func() {
+						if err := spool.Close(); err != nil {
+							zlog.Warn(ctx).Err(err).Msg("unable to close ndb spool")
+						}
+					}()
+					zlog.Debug(ctx).Str("file", spool.Name()).Msg("copying ndb db out of tar")
+					if _, err := io.Copy(spool, f); err != nil {
+						return nil, fmt.Errorf("rpm: error spooling ndb db: %w", err)
+					}
+					r = spool
+				}
+				var pdb ndb.PackageDB
+				if err := pdb.Parse(r); err != nil {
+					return nil, fmt.Errorf("rpm: error parsing ndb db: %w", err)
+				}
+				nat = &pdb
+			default:
+				panic("programmer error")
 			}
+			ps, err := packagesFromDB(ctx, db.String(), nat)
+			if err != nil {
+				return nil, fmt.Errorf("rpm: error reading native db: %w", err)
+			}
+			pkgs = append(pkgs, ps...)
 		default:
 			panic("programmer error")
 		}
@@ -240,24 +273,39 @@ func findDBs(ctx context.Context, out *[]foundDB, sys fs.FS) fs.WalkDirFunc {
 
 		dir, n := path.Split(p)
 		dir = path.Clean(dir)
-		switch {
-		case n == `Packages`:
+		switch n {
+		case `Packages`:
 			f, err := sys.Open(p)
 			if err != nil {
 				return err
 			}
-			defer f.Close()
-			if !checkMagic(ctx, f) {
+			ok := checkMagic(ctx, f)
+			f.Close()
+			if !ok {
 				return nil
 			}
 			*out = append(*out, foundDB{
 				Path: dir,
 				Kind: kindBDB,
 			})
-		case n == `rpmdb.sqlite`:
+		case `rpmdb.sqlite`:
 			*out = append(*out, foundDB{
 				Path: dir,
 				Kind: kindSQLite,
+			})
+		case `Packages.db`:
+			f, err := sys.Open(p)
+			if err != nil {
+				return err
+			}
+			ok := ndb.CheckMagic(ctx, f)
+			f.Close()
+			if !ok {
+				return nil
+			}
+			*out = append(*out, foundDB{
+				Path: dir,
+				Kind: kindNDB,
 			})
 		}
 		return nil
@@ -279,8 +327,9 @@ type dbKind uint
 const (
 	_ dbKind = iota
 
-	kindBDB    //bdb
-	kindSQLite //sqlite
+	kindBDB    // bdb
+	kindSQLite // sqlite
+	kindNDB    // ndb
 )
 
 type foundDB struct {
