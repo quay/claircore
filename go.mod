@@ -23,7 +23,7 @@ require (
 	github.com/prometheus/procfs v0.6.0 // indirect
 	github.com/quay/alas v1.0.1
 	github.com/quay/claircore/updater/driver v1.0.0
-	github.com/quay/goval-parser v0.8.6
+	github.com/quay/goval-parser v0.8.8
 	github.com/quay/zlog v1.1.3
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
 	github.com/rs/zerolog v1.26.0
