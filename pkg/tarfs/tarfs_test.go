@@ -359,3 +359,23 @@ func TestSymlinks(t *testing.T) {
 		}
 	}))
 }
+
+func TestKnownLayers(t *testing.T) {
+	ents, err := os.ReadDir(`testdata/known`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, ent := range ents {
+		n := ent.Name()
+		t.Run(n, func(t *testing.T) {
+			f, err := os.Open(filepath.Join(`testdata/known`, n))
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer f.Close()
+			if _, err := New(f); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}

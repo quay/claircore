@@ -58,14 +58,18 @@ Scan:
 		off := blk * blockSz
 		n, err := r.ReadAt(b, off)
 		switch {
-		case n != blockSz:
+		case errors.Is(err, nil) && n != blockSz:
 			// Should be impossible with a well-formed archive, so raise an
-			// error.
-			return nil, parseErr("short read at offset: %d", off)
-		case errors.Is(err, io.EOF) && !zeroes:
+			// error. Should also be impossible with a conforming [io.ReaderAt].
+			return nil, parseErr("short read at offset: %d (got: %d, want: %d)", off, n, blockSz)
+		case errors.Is(err, nil): // OK
+		case errors.Is(err, io.EOF) && n == 0:
 			// This is an early EOF: in a well-formed archive, ReadAt should
 			// only return EOF on the second block of zeroes.
-		case errors.Is(err, nil): // OK
+			//
+			// Handle this case because some layers in the wild are a single
+			// directory block, with no trailer.
+			break Scan
 		case errors.Is(err, io.EOF) && zeroes:
 			break Scan
 		default:
