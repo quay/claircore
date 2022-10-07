@@ -2,10 +2,25 @@
 ## [Unreleased]
 
 
+<a name="v1.4.7"></a>
+## [v1.4.7] - 2022-10-03
+### Build(Deps)
+- [d4e524e](https://github.com/quay/claircore/commit/d4e524eb3309d798f40efbefc1fa68c464b2a30c): bump actions/cache from 3.0.7 to 3.0.8
+- [de1fa2f](https://github.com/quay/claircore/commit/de1fa2fdacd3ba57f8eeb9d60fbcad0d03a774b0): bump peter-evans/create-pull-request from 4.1.1 to 4.1.2
+- [85562c9](https://github.com/quay/claircore/commit/85562c99e8764a8c7b1f5c15fb46323997296c74): bump peter-evans/create-pull-request from 4.0.4 to 4.1.1
+### Chore
+- [ffb3960](https://github.com/quay/claircore/commit/ffb39601f6d80e525f06d9cbd3d8e7b2b25fd7a2): Bump goval-parser to v0.8.8
+### Rhel
+- [0f2066a](https://github.com/quay/claircore/commit/0f2066afef947f1d222c4b9ccc21a55d3f0739b1): handle malformed build metadata
+### Tarfs
+- [6fb6ef5](https://github.com/quay/claircore/commit/6fb6ef5ecdd1b9398054c9138709abbcf1cc53d2): handle tars without trailer
+
 <a name="v1.4.6"></a>
-## [v1.4.6] - 2022-08-15
+## [v1.4.6] - 2022-08-17
 ### Build(Deps)
 - [b38dc01](https://github.com/quay/claircore/commit/b38dc0155fd12d8303404742a977adbf914cb74a): bump actions/cache from 3.0.5 to 3.0.7
+### Chore
+- [407aa7d](https://github.com/quay/claircore/commit/407aa7db202085f82f1bf28a1746743142160f8e): v1.4.6 changelog bump
 ### Fetcher
 - [f11ec59](https://github.com/quay/claircore/commit/f11ec5940966dc717d1f455ab733ca1fc3d2332c): Wrap error to surface type to external caller
 
@@ -1589,7 +1604,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v1.4.6...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v1.4.7...HEAD
+[v1.4.7]: https://github.com/quay/claircore/compare/v1.4.6...v1.4.7
 [v1.4.6]: https://github.com/quay/claircore/compare/v1.4.5...v1.4.6
 [v1.4.5]: https://github.com/quay/claircore/compare/v1.4.4...v1.4.5
 [v1.4.4]: https://github.com/quay/claircore/compare/v1.4.3...v1.4.4
