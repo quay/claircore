@@ -2,12 +2,19 @@
 ## [Unreleased]
 
 
+<a name="v1.4.8"></a>
+## [v1.4.8] - 2022-09-21
+### Tarfs
+- [ca4a13d](https://github.com/quay/claircore/commit/ca4a13d07f4990978bae575a4418e6bf1de09e79): symlink changes
+
 <a name="v1.4.7"></a>
-## [v1.4.7] - 2022-10-03
+## [v1.4.7] - 2022-10-07
 ### Build(Deps)
 - [d4e524e](https://github.com/quay/claircore/commit/d4e524eb3309d798f40efbefc1fa68c464b2a30c): bump actions/cache from 3.0.7 to 3.0.8
 - [de1fa2f](https://github.com/quay/claircore/commit/de1fa2fdacd3ba57f8eeb9d60fbcad0d03a774b0): bump peter-evans/create-pull-request from 4.1.1 to 4.1.2
 - [85562c9](https://github.com/quay/claircore/commit/85562c99e8764a8c7b1f5c15fb46323997296c74): bump peter-evans/create-pull-request from 4.0.4 to 4.1.1
+### Chore
+- [3d36cd0](https://github.com/quay/claircore/commit/3d36cd0745c83369735e09113a15df4328464e7a): v1.4.7 changelog bump
 ### Chore
 - [ffb3960](https://github.com/quay/claircore/commit/ffb39601f6d80e525f06d9cbd3d8e7b2b25fd7a2): Bump goval-parser to v0.8.8
 ### Rhel
@@ -1604,7 +1611,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v1.4.7...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v1.4.8...HEAD
+[v1.4.8]: https://github.com/quay/claircore/compare/v1.4.7...v1.4.8
 [v1.4.7]: https://github.com/quay/claircore/compare/v1.4.6...v1.4.7
 [v1.4.6]: https://github.com/quay/claircore/compare/v1.4.5...v1.4.6
 [v1.4.5]: https://github.com/quay/claircore/compare/v1.4.4...v1.4.5
