@@ -1,6 +1,7 @@
 package bodhi
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -10,11 +11,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/quay/claircore/test/integration"
 	"github.com/quay/zlog"
 )
 
 func TestUpdate(t *testing.T) {
-	t.SkipNow()
+	t.Parallel() // Use the parallel annotation to run this at the end of the tests.
+	integration.Skip(t)
+	defer func() {
+		if t.Failed() {
+			t.SkipNow()
+		}
+	}()
 	ctx := zlog.Test(context.Background(), t)
 	c := client{
 		Client: http.DefaultClient,
@@ -30,18 +38,21 @@ func TestUpdate(t *testing.T) {
 	rd, wr := io.Pipe()
 	go func() {
 		defer wr.Close()
-		if err := c.Fetch(ctx, &release{Name: "F33"}, wr); err != nil {
+		if err := c.Fetch(ctx, &release{Name: "F35"}, wr); err != nil && !errors.Is(err, io.EOF) {
 			t.Error(err)
 		}
 	}()
 	var u update
-	dec := json.NewDecoder(rd)
+	var buf bytes.Buffer
+	dec := json.NewDecoder(io.TeeReader(rd, &buf))
 	err = dec.Decode(&u)
-	for i := 0; err == nil; err = dec.Decode(&u) {
+	for i := 0; err == nil && i < 50; err = dec.Decode(&u) {
 		t.Logf("%d\t%s", i, u.Title)
 		i++
 	}
-	if !errors.Is(err, io.EOF) {
+	rd.CloseWithError(io.EOF)
+	t.Logf("fetch output:\n%s", buf.String())
+	if err != nil && !errors.Is(err, io.EOF) {
 		t.Error(err)
 	}
 }

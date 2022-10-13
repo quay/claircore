@@ -9,25 +9,27 @@ import (
 	driver "github.com/quay/claircore/updater/driver/v1"
 )
 
-var (
-	_ driver.UpdaterFactory = (*Factory)(nil)
-)
+var _ driver.UpdaterFactory = (*Factory)(nil)
 
-// Factory ...
-type Factory struct{}
+// Factory creates [driver.Updater]s talking to a configured API URL.
+type Factory struct {
+	_ struct{} // Hide that there's nothing here from the documentation.
+}
 
+// NewFactory returns a Factory.
 func NewFactory(ctx context.Context) (*Factory, error) {
 	return (*Factory)(nil), nil
 }
 
-// FactoryConfig ...
+// FactoryConfig is the configuration of a Factory.
 type FactoryConfig struct {
 	API *string `json:"api" yaml:"api"`
 }
 
+// Name implements [driver.UpdaterFactory].
 func (*Factory) Name() string { return "bodhi" }
 
-// UpdaterSet implements driver.UpdaterSetFactory.
+// UpdaterSet implements [driver.UpdaterFactory].
 func (f *Factory) Create(ctx context.Context, cf driver.ConfigUnmarshaler) ([]driver.Updater, error) {
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "updater/bodhi/Factory.Configure",

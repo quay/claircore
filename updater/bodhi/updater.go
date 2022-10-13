@@ -3,8 +3,12 @@ package bodhi
 import (
 	"archive/zip"
 	"context"
+	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"hash/maphash"
+	"io"
 	"io/fs"
 	"net/http"
 	"net/url"
@@ -29,6 +33,10 @@ type Updater struct {
 
 // Name implements driver.Updater.
 func (u *Updater) Name() string { return fmt.Sprintf("bodhi/%s", u.root.Host) }
+
+// Fingerprints are implemented with a type ending up as a JSON array for forward
+// compatability. We currently just need a map[string]Time, but a dedicated entry
+// type makes it possible to change this in the future.
 
 type fingerprint map[string]time.Time
 
@@ -64,11 +72,11 @@ func (fp fingerprint) MarshalJSON() ([]byte, error) {
 }
 
 type fpEntry struct {
-	Name  string    `json:"name"`
 	Since time.Time `json:"since"`
+	Name  string    `json:"name"`
 }
 
-// Fetch implements driver.Updater.
+// Fetch implements [driver.Updater].
 func (u *Updater) Fetch(ctx context.Context, w *zip.Writer, prev driver.Fingerprint, c *http.Client) (driver.Fingerprint, error) {
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "updater/bodhi/Updater.Fetch",
@@ -189,22 +197,25 @@ func (u *Updater) ParseVulnerability(ctx context.Context, sys fs.FS) (*driver.Pa
 }
 
 type ecs struct {
-	Vulnerability map[string]int
-	Package       map[string]int
-	Distribution  map[string]int
-	Repository    map[string]int
+	Vulnerability map[uint64]int
+	Package       map[uint64]int
+	Distribution  map[uint64]int
+	Repository    map[uint64]int
 
+	mh maphash.Hash
 	pv *driver.ParsedVulnerabilities
 }
 
 func newecs() *ecs {
-	return &ecs{
-		Vulnerability: make(map[string]int),
-		Package:       make(map[string]int),
-		Distribution:  make(map[string]int),
-		Repository:    make(map[string]int),
+	r := ecs{
+		Vulnerability: make(map[uint64]int),
+		Package:       make(map[uint64]int),
+		Distribution:  make(map[uint64]int),
+		Repository:    make(map[uint64]int),
 		pv:            &driver.ParsedVulnerabilities{},
 	}
+	r.mh.Seed()
+	return &r
 }
 
 func (e *ecs) LoadRelease(sys fs.FS, dir string) error {
@@ -218,12 +229,8 @@ func (e *ecs) LoadRelease(sys fs.FS, dir string) error {
 	if err := json.NewDecoder(f).Decode(&r); err != nil {
 		return fmt.Errorf("bodhi: error unmarshaling %q: %w", n, err)
 	}
-	i := len(e.pv.Distribution)
-	e.pv.Distribution = append(e.pv.Distribution, driver.Distribution{
-		ID:        r.LongName,
-		VersionID: r.Version,
-	})
-	e.Distribution[r.Name] = i
+	dist := e.loadDistribution(&r)
+	_ = dist
 
 	n = path.Join(dir, `bodhi.json`)
 	f, err = sys.Open(n)
@@ -231,6 +238,49 @@ func (e *ecs) LoadRelease(sys fs.FS, dir string) error {
 		return fmt.Errorf("bodhi: error opening %q: %w", n, err)
 	}
 	defer f.Close()
+	dec := json.NewDecoder(f)
+	var u update
+	for err = dec.Decode(&u); err == nil; err = dec.Decode(&u) {
+		for _, b := range u.Builds {
+			println(b.NVR, b.NEVR())
+		}
+	}
+	if !errors.Is(err, io.EOF) {
+		return fmt.Errorf("bodhi: error unmarshaling %q: %w", n, err)
+	}
 
 	return nil
+}
+
+func (e *ecs) loadDistribution(r *release) int {
+	e.mh.Reset()
+	e.mh.WriteString(r.LongName)
+	e.mh.WriteByte(0x00)
+	e.mh.WriteString(r.Version)
+	key := e.mh.Sum64()
+	id, ok := e.Distribution[key]
+	if !ok {
+		id = len(e.pv.Distribution)
+		e.pv.Distribution = append(e.pv.Distribution, driver.Distribution{
+			ID:        r.LongName,
+			VersionID: r.Version,
+		})
+		e.Distribution[key] = id
+	}
+	return id
+}
+
+func (e *ecs) loadPackage(b *build) int {
+	e.mh.Reset()
+	binary.Write(&e.mh, binary.LittleEndian, b.Epoch)
+	e.mh.WriteByte(0x00)
+	e.mh.WriteString(b.NVR)
+	key := e.mh.Sum64()
+	id, ok := e.Package[key]
+	if !ok {
+		id = len(e.pv.Package)
+		e.pv.Package = append(e.pv.Package, driver.Package{})
+		e.Package[key] = id
+	}
+	return id
 }

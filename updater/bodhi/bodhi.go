@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/quay/zlog"
@@ -72,8 +73,8 @@ func (f *client) GetReleases(ctx context.Context) ([]release, error) {
 }
 
 type releases struct {
-	pagination
 	Releases []release `json:"releases"`
+	pagination
 }
 
 type pagination struct {
@@ -91,12 +92,15 @@ type release struct {
 func (r release) Archived() bool {
 	return r.State == "archived"
 }
+
 func (r release) Pending() bool {
 	return r.State == "pending"
 }
+
 func (r release) Current() bool {
 	return r.State == "current"
 }
+
 func (r release) String() string {
 	return r.Name
 }
@@ -138,7 +142,7 @@ func (c *client) AnySince(ctx context.Context, rls *release, t time.Time) (bool,
 // into JSON using the supplied Writer.
 func (c *client) Fetch(ctx context.Context, rls *release, to io.Writer) error {
 	// pagination state
-	var pg updates
+	var page updates
 	var total int
 	var retry bool
 	// setup
@@ -156,8 +160,8 @@ func (c *client) Fetch(ctx context.Context, rls *release, to io.Writer) error {
 
 	// This could be done quicker in parallel, but remember that updaters are
 	// run in parallel, also.
-	for i := 0; pg.more(); i++ {
-		v.Set("page", strconv.Itoa(pg.Page+1))
+	for i := 0; page.more(); i++ {
+		v.Set("page", strconv.Itoa(page.Page+1))
 		u.RawQuery = v.Encode()
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 		if err != nil {
@@ -171,28 +175,28 @@ func (c *client) Fetch(ctx context.Context, rls *release, to io.Writer) error {
 			res.Body.Close()
 			return unexpectedResponse(res)
 		}
-		err = json.NewDecoder(res.Body).Decode(&pg)
+		err = json.NewDecoder(res.Body).Decode(&page)
 		res.Body.Close()
 		if err != nil {
 			return err
 		}
 		if i == 0 { // initial set up
-			total = pg.Total
+			total = page.Total
 		}
-		if total != pg.Total {
+		if total != page.Total {
 			if retry {
 				retry = false
 				zlog.Info(ctx).
 					Msg("updates pushed while paginating updates, retrying")
-				pg = updates{}
+				page = updates{}
 				i = -1
 				continue
 			}
 			return errors.New("bodhi: updates pushed while paginating updates")
 		}
 
-		for i := range pg.Updates {
-			if err := enc.Encode(&pg.Updates[i]); err != nil {
+		for i := range page.Updates {
+			if err := enc.Encode(&page.Updates[i]); err != nil {
 				return err
 			}
 		}
@@ -201,8 +205,8 @@ func (c *client) Fetch(ctx context.Context, rls *release, to io.Writer) error {
 }
 
 type updates struct {
-	pagination
 	Updates []update `json:"updates"`
+	pagination
 }
 
 func (u *updates) more() bool {
@@ -216,14 +220,25 @@ type update struct {
 	Hash     string  `json:"version_hash"`
 	URL      string  `json:"url"`
 	Severity string  `json:"severity"`
-	Builds   []build `json:"builds"`
 	Release  release `json:"release"`
+	Builds   []build `json:"builds"`
 }
 
 type build struct {
 	NVR       string `json:"nvr"`
-	Signed    bool   `json:"signed"`
-	ReleaseID int    `json:"release_id"`
 	Kind      string `json:"type"`
+	ReleaseID int    `json:"release_id"`
 	Epoch     int    `json:"epoch"`
+	Signed    bool   `json:"signed"`
+}
+
+func (b *build) NEVR() string {
+	if b.Epoch == 0 {
+		return b.NVR
+	}
+	i := strings.LastIndexByte(b.NVR, '-')
+	nv, r := b.NVR[:i], b.NVR[i+1:]
+	i = strings.LastIndexByte(nv, '-')
+	n, v := nv[:i], nv[i+1:]
+	return fmt.Sprintf("%s-%d:%s-%s", n, b.Epoch, v, r)
 }
