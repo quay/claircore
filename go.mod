@@ -13,7 +13,7 @@ require (
 	github.com/jackc/pgconn v1.10.0
 	github.com/jackc/pgtype v1.8.1
 	github.com/jackc/pgx/v4 v4.13.0
-	github.com/klauspost/compress v1.13.6
+	github.com/klauspost/compress v1.15.11
 	github.com/knqyf263/go-apk-version v0.0.0-20200609155635-041fdbb8563f
 	github.com/knqyf263/go-deb-version v0.0.0-20190517075300-09fca494f03d
 	github.com/knqyf263/go-rpm-version v0.0.0-20170716094938-74609b86c936
