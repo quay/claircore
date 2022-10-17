@@ -11,7 +11,7 @@ require (
 	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.3.0
 	github.com/jackc/pgconn v1.13.0
-	github.com/jackc/pgtype v1.8.1
+	github.com/jackc/pgtype v1.12.0
 	github.com/jackc/pgx/v4 v4.13.0
 	github.com/klauspost/compress v1.15.11
 	github.com/knqyf263/go-apk-version v0.0.0-20200609155635-041fdbb8563f
