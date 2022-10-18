@@ -1,19 +1,36 @@
 package osv
 
 import (
+	"context"
 	"fmt"
 	"math"
+	"strconv"
 	"strings"
+
+	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 )
 
 // FromCVSS is an attempt at an implementation of the scale and formulas
 // described here: https://www.first.org/cvss/v3.1/specification-document#Qualitative-Severity-Rating-Scale
-func fromCVSS(s string) (sev claircore.Severity, err error) {
+func fromCVSS3(ctx context.Context, s string) (sev claircore.Severity, err error) {
 	ms := strings.Split(strings.TrimRight(s, "/"), "/") // "m" as in "metric"
 	if !strings.HasPrefix(ms[0], "CVSS:3") {
 		return 0, fmt.Errorf("unknown label: %q", ms[0])
+	}
+	ver, err := strconv.ParseInt(ms[0][7:], 10, 32)
+	if err != nil {
+		return 0, fmt.Errorf("unknown label: %q", ms[0])
+	}
+	switch ver {
+	case 0, 1:
+		// As far as I can tell, the equations for calculating v3.0 and v3.1
+		// "base" scores are the same.
+	default:
+		zlog.Warn(ctx).
+			Str("version", ms[0]).
+			Msg("unknown version, interpreting as CVSSv3.1")
 	}
 	if len(ms) < 9 {
 		return 0, fmt.Errorf("bad vector: %q", s)
@@ -160,6 +177,139 @@ func fromCVSS(s string) (sev claircore.Severity, err error) {
 			score = ((float64(i) / 10_000) + 1) / 10.0
 		}
 	}
+
+	switch {
+	case score == 0:
+		sev = claircore.Negligible
+	case score < 4:
+		sev = claircore.Low
+	case score < 7:
+		sev = claircore.Medium
+	case score < 9:
+		sev = claircore.High
+	case score <= 10:
+		sev = claircore.Critical
+	default:
+		return sev, fmt.Errorf("bogus score: %02f", score)
+	}
+	return sev, nil
+}
+
+// FromCVSS2 is an attempt at an implementation of the formulas
+// described here: https://www.first.org/cvss/v2/guide
+func fromCVSS2(s string) (sev claircore.Severity, err error) {
+	ms := strings.Split(s, "/") // "m" as in "metric"
+	if len(ms) < 6 {
+		return 0, fmt.Errorf("bad vector: %q", s)
+	}
+	// Giant switch ahoy
+	var ns [6]float64
+	for _, m := range ms {
+		n, v, ok := strings.Cut(m, ":")
+		if !ok {
+			return 0, fmt.Errorf("bad metric: %q", m)
+		}
+		switch n {
+		// Base metrics:
+		case `AV`:
+			const i = 0
+			switch v {
+			case `N`:
+				ns[i] = 1
+			case `A`:
+				ns[i] = 0.646
+			case `L`:
+				ns[i] = 0.395
+			default:
+				return 0, fmt.Errorf("bad metric value: %q", m)
+			}
+		case `AC`:
+			const i = 1
+			switch v {
+			case `L`:
+				ns[i] = 0.71
+			case `M`:
+				ns[i] = 0.61
+			case `H`:
+				ns[i] = 0.35
+			default:
+				return 0, fmt.Errorf("bad metric value: %q", m)
+			}
+		case `Au`:
+			const i = 2
+			switch v {
+			case `M`:
+				ns[i] = 0.45
+			case `S`:
+				ns[i] = 0.56
+			case `N`:
+				ns[i] = 0.704
+			default:
+				return 0, fmt.Errorf("bad metric value: %q", m)
+			}
+		case `C`:
+			const i = 3
+			switch v {
+			case `C`:
+				ns[i] = 0.660
+			case `P`:
+				ns[i] = 0.275
+			case `N`:
+				ns[i] = 0
+			default:
+				return 0, fmt.Errorf("bad metric value: %q", m)
+			}
+		case `I`:
+			const i = 4
+			switch v {
+			case `C`:
+				ns[i] = 0.660
+			case `P`:
+				ns[i] = 0.275
+			case `N`:
+				ns[i] = 0
+			default:
+				return 0, fmt.Errorf("bad metric value: %q", m)
+			}
+		case `A`:
+			const i = 5
+			switch v {
+			case `C`:
+				ns[i] = 0.660
+			case `P`:
+				ns[i] = 0.275
+			case `N`:
+				ns[i] = 0
+			default:
+				return 0, fmt.Errorf("bad metric value: %q", m)
+			}
+		case `E`, `RL`, `RC`, `CDP`, `TD`, `CR`, `IR`, `AR`:
+			// Ignore temporal and environmental metrics.
+		default:
+			return 0, fmt.Errorf("bad metric: %q", m)
+		}
+	}
+
+	var score float64
+	exploitability := 20 * ns[ /*AV*/ 0] * ns[ /*AC*/ 1] * ns[ /*Au*/ 2]
+	impact := 10.41 * (1 - (1-ns[ /*C*/ 3])*(1-ns[ /*I*/ 4])*(1-ns[ /*A*/ 5]))
+	var fImpact float64
+	if impact != 0 {
+		fImpact = 1.176
+	}
+	score = ((0.6 * impact) + (0.4 * exploitability) - 1.5) * fImpact
+	// Reuse the CVSSv3 roundup function.
+	//
+	// The "real" score is truncated to one decimal position, but since we're
+	// only using it to calculate the normalized severity, I'm not going to worry
+	// about the precision.
+	i := int(score * 100_000)
+	if (i % 10_000) == 0 {
+		score = float64(i) / 100_000.0
+	} else {
+		score = ((float64(i) / 10_000) + 1) / 10.0
+	}
+	score = math.Min(score, 10)
 
 	switch {
 	case score == 0:
