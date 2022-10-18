@@ -481,11 +481,17 @@ func (e *ecs) Insert(ctx context.Context, name string, a *advisory) (err error) 
 	proto.Updater = e.Updater
 	proto.NormalizedSeverity = claircore.Unknown
 	for _, s := range a.Severity {
-		if s.Type != `CVSS_V3` { // Only defined type.
+		var err error
+		switch s.Type {
+		case `CVSS_V3`:
+			proto.Severity = s.Score
+			proto.NormalizedSeverity, err = fromCVSS3(ctx, s.Score)
+		case `CVSS_V2`:
+			proto.Severity = s.Score
+			proto.NormalizedSeverity, err = fromCVSS2(s.Score)
+		default:
 			continue
 		}
-		proto.Severity = s.Score
-		proto.NormalizedSeverity, err = fromCVSS(s.Score)
 		if err != nil {
 			zlog.Info(ctx).
 				Err(err).
