@@ -3,6 +3,7 @@ package osv
 
 import (
 	"archive/zip"
+	"bytes"
 	"context"
 	"encoding/json"
 	"encoding/xml"
@@ -11,6 +12,7 @@ import (
 	"io"
 	"io/fs"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"path"
 	"runtime"
@@ -35,6 +37,7 @@ var Factory driver.UpdaterSetFactory = &factory{}
 type factory struct{}
 
 func (factory) UpdaterSet(context.Context) (s driver.UpdaterSet, err error) {
+	s = driver.NewUpdaterSet()
 	s.Add(&updater{})
 	return s, nil
 }
@@ -114,6 +117,8 @@ var ignore = map[string]struct{}{
 	"linux":    {}, // Containers have no say in the kernel.
 	"android":  {}, // AFAIK, there's no Android container runtime.
 	"oss-fuzz": {}, // Seems to only record git revisions.
+	"debian":   {}, // Have a dedicated debian updater.
+	"alpine":   {}, // Have a dedicated alpine updater.
 }
 
 // Fetcher implements driver.Updater.
@@ -182,20 +187,25 @@ func (u *updater) Fetch(ctx context.Context, fp driver.Fingerprint) (io.ReadClos
 			list.Contents = make([]contents, 0, 1000) // Space for one full page.
 			req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri.String(), nil)
 			if err != nil {
-				return err
+				return fmt.Errorf("osv: martian request: %w", err)
 			}
+			req.Header.Set(`accept`, `application/xml`)
 			stats.reqCt++
 			res, err := u.c.Do(req)
 			if err != nil {
 				return err
 			}
 			if res.StatusCode != 200 {
-				err = fmt.Errorf("osv: unexpected response from %q: %v", res.Request.URL.String(), res.Status)
+				var buf bytes.Buffer
+				buf.ReadFrom(io.LimitReader(res.Body, 256))
+				b, _ := httputil.DumpRequest(req, false)
+				err = fmt.Errorf("osv: unexpected response from %q: %v (request: %q) (body: %q)", res.Request.URL.String(), res.Status, string(b), buf.String())
 			} else {
 				dec := xml.NewDecoder(res.Body)
 				dec.CharsetReader = xmlutil.CharsetReader
 				err = dec.Decode(&list)
 			}
+			res.Body.Close()
 			if err != nil {
 				return err
 			}
@@ -206,9 +216,19 @@ func (u *updater) Fetch(ctx context.Context, fp driver.Fingerprint) (io.ReadClos
 				if k != `all.zip` {
 					continue
 				}
+			Check:
 				d = strings.ToLower(path.Clean(d))
 				if _, ok := ignore[d]; ok {
+					zlog.Debug(ctx).
+						Str("key", c.Key).
+						Str("ecosystem", d).
+						Msg("skipping ecosystem")
 					continue
+				}
+				// Currently, there's some versioned ecosystems. This branch removes the versioning.
+				if idx := strings.Index(d, ":"); idx != -1 {
+					d = d[:idx]
+					goto Check
 				}
 				stats.ecosystems = append(stats.ecosystems, d)
 				if u.allow != nil && !u.allow[d] {
@@ -245,13 +265,10 @@ func (u *updater) Fetch(ctx context.Context, fp driver.Fingerprint) (io.ReadClos
 				newtags[t.Key] = t.Etag
 				continue
 			}
-			uri, err := api.Parse(t.Key)
-			if err != nil {
-				return err
-			}
+			uri := api.ResolveReference(&url.URL{Path: t.Key})
 			req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri.String(), nil)
 			if err != nil {
-				return err
+				return fmt.Errorf("osv: martian request: %w", err)
 			}
 			res, err := u.c.Do(req)
 			if err != nil {
@@ -262,7 +279,10 @@ func (u *updater) Fetch(ctx context.Context, fp driver.Fingerprint) (io.ReadClos
 				return fmt.Errorf("osv: unexpected response from %q: %v", res.Request.URL.String(), res.Status)
 			}
 			n := strings.ToLower(path.Dir(t.Key)) + ".zip"
-			f, err := w.Create(n)
+			f, err := w.CreateHeader(&zip.FileHeader{
+				Name:   n,
+				Method: zip.Store,
+			})
 			if err == nil {
 				_, err = io.Copy(f, res.Body)
 			}
@@ -515,10 +535,12 @@ func (e *ecs) Insert(ctx context.Context, name string, a *advisory) (err error) 
 						if err == nil {
 							v.Range.Upper = fromSemver(ver)
 						}
-					case ev.LastAffected != "": // less than equal to
+					case ev.LastAffected != "" && len(af.Versions) != 0: // less than equal to
+						// TODO(hank) Should be able to convert this to a "less than."
 						zlog.Info(ctx).
 							Str("which", "last_affected").
 							Str("event", ev.LastAffected).
+							Strs("versions", af.Versions).
 							Msg("unsure how to interpret event")
 					case ev.Limit == "*": // +Inf
 					case ev.Limit != "": // Something arbitrary
