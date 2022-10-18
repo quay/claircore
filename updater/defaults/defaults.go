@@ -21,6 +21,7 @@ import (
 	"github.com/quay/claircore/suse"
 	"github.com/quay/claircore/ubuntu"
 	"github.com/quay/claircore/updater"
+	"github.com/quay/claircore/updater/osv"
 )
 
 var (
@@ -62,6 +63,7 @@ func inner(ctx context.Context) error {
 	}
 	updater.Register("debian", df)
 
+	updater.Register("osv", osv.Factory)
 	updater.Register("aws", driver.UpdaterSetFactoryFunc(aws.UpdaterSet))
 	updater.Register("oracle", driver.UpdaterSetFactoryFunc(oracle.UpdaterSet))
 	updater.Register("photon", driver.UpdaterSetFactoryFunc(photon.UpdaterSet))

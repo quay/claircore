@@ -15,7 +15,7 @@ func fromCVSS(s string) (sev claircore.Severity, err error) {
 	if !strings.HasPrefix(ms[0], "CVSS:3") {
 		return 0, fmt.Errorf("unknown label: %q", ms[0])
 	}
-	if len(ms) != 9 {
+	if len(ms) < 9 {
 		return 0, fmt.Errorf("bad vector: %q", s)
 	}
 	// Giant switch ahoy
