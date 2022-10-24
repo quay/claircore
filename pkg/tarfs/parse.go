@@ -63,30 +63,42 @@ Scan:
 			// error. Should also be impossible with a conforming [io.ReaderAt].
 			return nil, parseErr("short read at offset: %d (got: %d, want: %d)", off, n, blockSz)
 		case errors.Is(err, nil): // OK
-		case errors.Is(err, io.EOF) && n == 0:
-			// This is an early EOF: in a well-formed archive, ReadAt should
-			// only return EOF on the second block of zeroes.
-			//
-			// Handle this case because some layers in the wild are a single
-			// directory block, with no trailer.
-			break Scan
-		case errors.Is(err, io.EOF) && zeroes:
-			break Scan
+		case errors.Is(err, io.EOF):
+			switch {
+			case n == 0:
+				// Early EOF on a block boundary. Let it slide.
+				//
+				// Handle this case because some layers in the wild are a single
+				// directory block, with no trailer.
+				break Scan
+			case n == blockSz:
+				// Make sure to process the read, even if EOF was returned.
+			default:
+				return nil, parseErr("unexpected EOF at %d: %v", off, err)
+			}
 		default:
 			return nil, err
 		}
 
 		magic := b[magicOff:][:6]
+		zeroBlock := true
+		for _, b := range b {
+			if b != 0x00 {
+				zeroBlock = false
+				break
+			}
+		}
 		switch {
 		// Tar files end with two blocks of zeroes. These two arms track that.
-		case !zeroes && bytes.Count(b, []byte{0x00}) == blockSz:
+		case !zeroes && zeroBlock:
 			zeroes = true
 			continue
-		case zeroes && bytes.Count(b, []byte{0x00}) == blockSz:
-			// Check for the second zeroes block here, because ReadAt is
-			// documented to return either EOF or nil. If the last read returned
-			// nil, this arm catches it.
+		case zeroes && zeroBlock:
+			// Check for a valid second zeroes block.
 			break Scan
+		case zeroes && !zeroBlock:
+			// Found the first trailer block, but not the second.
+			return nil, parseErr("bad block at %d: expected second trailer block", off)
 		// These arms are belt-and-suspenders to make sure we're reading a
 		// header block and not a contents block, somehow.
 		case bytes.Equal(b[magicOff:][:8], magicOldGNU):
