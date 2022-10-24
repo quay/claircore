@@ -2,8 +2,47 @@
 ## [Unreleased]
 
 
+<a name="v1.4.9"></a>
+## [v1.4.9] - 2022-10-24
+### Build(Deps)
+- [401b227](https://github.com/quay/claircore/commit/401b227102a2ed1b6e40a43b185d8b7fdf82a88f): bump golang.org/x/text from 0.3.8 to 0.4.0
+- [e63deae](https://github.com/quay/claircore/commit/e63deaee3817cd23330b12bcc99b486d25309d34): bump peter-evans/create-pull-request from 4.1.2 to 4.1.3
+- [e7ecd78](https://github.com/quay/claircore/commit/e7ecd784d0de167ea7da6cd263890099ca65bad7): bump actions/cache from 3.0.8 to 3.0.11
+### Chore
+- [f89847c](https://github.com/quay/claircore/commit/f89847ceba69fc858eccaaa1022633f6729d5b3d): update `set-output` usage
+- [078d7cf](https://github.com/quay/claircore/commit/078d7cff806cdd727b4431ff72a10f5af1403971): enable go1.19 building and testing
+- [6ede351](https://github.com/quay/claircore/commit/6ede3517a1278280e22802ca0a4d9f8cafb714d5): update go dependencies
+  - [#695](https://github.com/quay/claircore/issues/695)
+  - [#696](https://github.com/quay/claircore/issues/696)
+  - [#697](https://github.com/quay/claircore/issues/697)
+  - [#698](https://github.com/quay/claircore/issues/698)
+  - [#699](https://github.com/quay/claircore/issues/699)
+- [38698fa](https://github.com/quay/claircore/commit/38698fa07f63c266283c3917029d5790fde47eed): update go dependencies
+  - [#688](https://github.com/quay/claircore/issues/688)
+  - [#689](https://github.com/quay/claircore/issues/689)
+  - [#690](https://github.com/quay/claircore/issues/690)
+  - [#691](https://github.com/quay/claircore/issues/691)
+  - [#692](https://github.com/quay/claircore/issues/692)
+  - [#693](https://github.com/quay/claircore/issues/693)
+### Cicd
+- [0dfcd3c](https://github.com/quay/claircore/commit/0dfcd3ce0ca85d46b5b2ed0d04c89bd61cf2c340): move to redhat-actions actions for golang image
+- [9a3ab55](https://github.com/quay/claircore/commit/9a3ab55dc106631be7119296e398a856b651ddfd): enable dependabot for go modules
+### Ndb
+- [5f049d5](https://github.com/quay/claircore/commit/5f049d5584f69d0a56ab2f6833b958454eada7b2): add package to read RPM ndb databases
+### Notifier
+- [d9abe3d](https://github.com/quay/claircore/commit/d9abe3db42bb533962ff163b3521587fc4b3f0cc): delete manifest_index_manifest_id_package_id_dist_id_repo_id_idx
+### Rpm
+- [7e5d7d6](https://github.com/quay/claircore/commit/7e5d7d62e1465a9f729c14e7424377560404cbf2): add ndb support
+- [a54ea6f](https://github.com/quay/claircore/commit/a54ea6fb386bf301f2495654a3e4740c6f8b298e): split RPM header parsing into dedicated package
+### Sqlite
+- [c160060](https://github.com/quay/claircore/commit/c1600600ab0133e07ef5461b9792685adf70afbd): remove header parser, port to common API
+### Tarfs
+- [8a0cb12](https://github.com/quay/claircore/commit/8a0cb12e384fb46dc00d0c09527a0256fd3b47f9): handle data and EOF return
+
 <a name="v1.4.8"></a>
-## [v1.4.8] - 2022-09-21
+## [v1.4.8] - 2022-10-11
+### Chore
+- [c9fa148](https://github.com/quay/claircore/commit/c9fa148928dbf4da8c0a90efc7b7e354b36761a6): v1.4.8 changelog bump
 ### Tarfs
 - [ca4a13d](https://github.com/quay/claircore/commit/ca4a13d07f4990978bae575a4418e6bf1de09e79): symlink changes
 
@@ -1611,7 +1650,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v1.4.8...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v1.4.9...HEAD
+[v1.4.9]: https://github.com/quay/claircore/compare/v1.4.8...v1.4.9
 [v1.4.8]: https://github.com/quay/claircore/compare/v1.4.7...v1.4.8
 [v1.4.7]: https://github.com/quay/claircore/compare/v1.4.6...v1.4.7
 [v1.4.6]: https://github.com/quay/claircore/compare/v1.4.5...v1.4.6
