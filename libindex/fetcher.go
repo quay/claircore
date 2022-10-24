@@ -95,7 +95,7 @@ func (a *RemoteFetchArena) fetchOne(ctx context.Context, l *claircore.Layer) (do
 			return a.realizeLayer(ctx, l)
 		}):
 			if err := res.Err; err != nil {
-				return err
+				return fmt.Errorf("error realizing layer %s: %w", h, err)
 			}
 			ff = res.Val.(string)
 		case <-ctx.Done():
