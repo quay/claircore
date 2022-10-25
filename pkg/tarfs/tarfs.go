@@ -63,6 +63,7 @@ func New(r io.ReaderAt) (*FS, error) {
 	if err != nil {
 		return nil, fmt.Errorf("tarfs: error finding segments: %w", err)
 	}
+	hardlink := make(map[string][]string)
 	for _, seg := range segs {
 		r := io.NewSectionReader(r, seg.start, seg.size)
 		rd := tar.NewReader(r)
@@ -89,10 +90,26 @@ func New(r io.ReaderAt) (*FS, error) {
 				i.h.Linkname = path.Join(path.Dir(n), i.h.Linkname)
 			}
 			i.h.Linkname = normPath(i.h.Linkname)
+		case tar.TypeLink:
+			tgt := normPath(i.h.Linkname)
+			// If the target exist, short-circuit the add:
+			if ino, ok := s.lookup[tgt]; ok {
+				s.lookup[n] = ino
+				continue
+			}
+			// Otherwise, defer the hardlink:
+			hardlink[tgt] = append(hardlink[tgt], n)
 		case tar.TypeReg:
 		}
 		if err := s.add(n, i); err != nil {
 			return nil, err
+		}
+		if revs, ok := hardlink[n]; ok {
+			ino := s.lookup[n]
+			for _, rev := range revs {
+				s.lookup[rev] = ino
+			}
+			delete(hardlink, n)
 		}
 	}
 	return &s, nil
