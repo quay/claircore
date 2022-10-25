@@ -2,6 +2,16 @@
 ## [Unreleased]
 
 
+<a name="v1.4.10"></a>
+## [v1.4.10] - 2022-10-24
+### Build(Deps)
+- [713df2f](https://github.com/quay/claircore/commit/713df2f2a75f28b8cb38fa674080abfce7430ffa): bump golang.org/x/tools from 0.1.12 to 0.2.0
+- [11e9a0f](https://github.com/quay/claircore/commit/11e9a0fcc22e9e4f59d735b44185ec9dcd9b74bd): bump peaceiris/actions-gh-pages from 3.8.0 to 3.9.0
+- [d94e1e7](https://github.com/quay/claircore/commit/d94e1e7f8ef7413bb346610aa9508dfb24b2c6a1): bump gsactions/commit-message-checker from 1 to 2
+- [786ba1e](https://github.com/quay/claircore/commit/786ba1e63f77a8a362e686c99d47b77a2338836f): bump peter-evans/create-pull-request from 4.1.3 to 4.2.0
+### Fetcher
+- [4d50715](https://github.com/quay/claircore/commit/4d507152ec295d2a0e85de72136a17807b2a9112): Add layer hash to error message
+
 <a name="v1.4.9"></a>
 ## [v1.4.9] - 2022-10-24
 ### Build(Deps)
@@ -9,6 +19,7 @@
 - [e63deae](https://github.com/quay/claircore/commit/e63deaee3817cd23330b12bcc99b486d25309d34): bump peter-evans/create-pull-request from 4.1.2 to 4.1.3
 - [e7ecd78](https://github.com/quay/claircore/commit/e7ecd784d0de167ea7da6cd263890099ca65bad7): bump actions/cache from 3.0.8 to 3.0.11
 ### Chore
+- [65e62a0](https://github.com/quay/claircore/commit/65e62a09c9934e8ebd2930f45ed746e1711854a9): v1.4.9 changelog bump
 - [f89847c](https://github.com/quay/claircore/commit/f89847ceba69fc858eccaaa1022633f6729d5b3d): update `set-output` usage
 - [078d7cf](https://github.com/quay/claircore/commit/078d7cff806cdd727b4431ff72a10f5af1403971): enable go1.19 building and testing
 - [6ede351](https://github.com/quay/claircore/commit/6ede3517a1278280e22802ca0a4d9f8cafb714d5): update go dependencies
@@ -1650,7 +1661,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v1.4.9...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v1.4.10...HEAD
+[v1.4.10]: https://github.com/quay/claircore/compare/v1.4.9...v1.4.10
 [v1.4.9]: https://github.com/quay/claircore/compare/v1.4.8...v1.4.9
 [v1.4.8]: https://github.com/quay/claircore/compare/v1.4.7...v1.4.8
 [v1.4.7]: https://github.com/quay/claircore/compare/v1.4.6...v1.4.7
