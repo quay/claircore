@@ -6,23 +6,23 @@
 // Throughout the code and comments, "jar" should be understood to mean "any
 // kind of JVM archive." A brief primer on the different kinds:
 //
-// * jar:
-//   Java Archive. It's a zip with a manifest file, some compiled class files,
-//   and other assets.
+//   - jar:
+//     Java Archive. It's a zip with a manifest file, some compiled class files,
+//     and other assets.
 //
-// * fatjar/onejar:
-//   Some jars unpacked, merged, then repacked. I gather this isn't in favor in
-//   the java scene.
+//   - fatjar/onejar:
+//     Some jars unpacked, merged, then repacked. I gather this isn't in favor in
+//     the java scene.
 //
-// * war:
-//   Webapp Archive. These are consumed by application servers like Tomcat, and
-//   are an all-in-one of code, dependencies, and metadata for configuring the
-//   server.
+//   - war:
+//     Webapp Archive. These are consumed by application servers like Tomcat, and
+//     are an all-in-one of code, dependencies, and metadata for configuring the
+//     server.
 //
-// * ear:
-//   Enterprise Archive. These are bundles of wars, with hook points for
-//   configuration. They're only used on JEE servers, so they're comparatively
-//   rare in the real world.
+//   - ear:
+//     Enterprise Archive. These are bundles of wars, with hook points for
+//     configuration. They're only used on JEE servers, so they're comparatively
+//     rare in the real world.
 package jar
 
 import (
@@ -91,7 +91,7 @@ func Parse(ctx context.Context, name string, z *zip.Reader) ([]Info, error) {
 	case errors.Is(err, errUnpopulated):
 	case strings.HasPrefix(base, "javax") && errors.Is(err, ErrNotAJar):
 	default:
-		return nil, err
+		return nil, mkErr(name, err)
 	}
 	// Look at the jar manifest if that fails.
 	i, err = extractManifest(ctx, base, z)
@@ -104,7 +104,7 @@ func Parse(ctx context.Context, name string, z *zip.Reader) ([]Info, error) {
 	case errors.Is(err, errUnpopulated) || errors.Is(err, errInsaneManifest):
 	case strings.HasPrefix(base, "javax") && errors.Is(err, ErrNotAJar):
 	default:
-		return nil, err
+		return nil, mkErr(name, err)
 	}
 	// As a last resort, just look at the name of the jar.
 	i, err = checkName(ctx, name)
@@ -116,7 +116,7 @@ func Parse(ctx context.Context, name string, z *zip.Reader) ([]Info, error) {
 		goto Finish
 	case errors.Is(err, errUnpopulated):
 	default:
-		return nil, err
+		return nil, mkErr(name, err)
 	}
 	// If we haven't jumped past this point, this is almost certainly not a jar,
 	// so return an error.
@@ -126,7 +126,7 @@ Finish:
 	// Now, we need to examine any jars bundled in this jar.
 	inner, err := extractInner(ctx, name, z)
 	if err != nil {
-		return nil, err
+		return nil, mkErr(name, err)
 	}
 	if ct := len(inner); ct != 0 {
 		zlog.Debug(ctx).
@@ -380,7 +380,10 @@ func (i *Info) parseManifest(ctx context.Context, r io.Reader) error {
 	tp := textproto.NewReader(bufio.NewReader(newMainSectionReader(r)))
 	hdr, err := tp.ReadMIMEHeader()
 	if err != nil {
-		return fmt.Errorf("unable to read manifest: %w", err)
+		zlog.Debug(ctx).
+			Err(err).
+			Msg("unable to read manifest")
+		return errInsaneManifest
 	}
 	// Sanity checks:
 	switch {
