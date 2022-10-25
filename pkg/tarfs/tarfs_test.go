@@ -200,6 +200,8 @@ func mktar(t *testing.T, in fs.FS, tw *tar.Writer) fs.WalkDirFunc {
 			return nil
 		case d.Name() == "." && d.IsDir():
 			return nil
+		case d.Name() == "known" && d.IsDir():
+			return fs.SkipDir
 		default:
 		}
 		t.Logf("adding %q", p)
