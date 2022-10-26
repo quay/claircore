@@ -55,7 +55,8 @@ func New(r io.ReaderAt) (*FS, error) {
 		r:      r,
 		lookup: make(map[string]int),
 	}
-	if err := s.add(".", newDir(".")); err != nil {
+	hardlink := make(map[string][]string)
+	if err := s.add(".", newDir("."), hardlink); err != nil {
 		return nil, err
 	}
 
@@ -63,7 +64,6 @@ func New(r io.ReaderAt) (*FS, error) {
 	if err != nil {
 		return nil, fmt.Errorf("tarfs: error finding segments: %w", err)
 	}
-	hardlink := make(map[string][]string)
 	for _, seg := range segs {
 		r := io.NewSectionReader(r, seg.start, seg.size)
 		rd := tar.NewReader(r)
@@ -84,32 +84,22 @@ func New(r io.ReaderAt) (*FS, error) {
 				continue
 			}
 			i.children = make(map[int]struct{})
-		case tar.TypeSymlink:
+		case tar.TypeSymlink, tar.TypeLink:
 			// Fixup the linkname. Can't tell from the spec if relative paths are allowed.
 			if strings.HasPrefix(i.h.Linkname, ".") {
 				i.h.Linkname = path.Join(path.Dir(n), i.h.Linkname)
 			}
 			i.h.Linkname = normPath(i.h.Linkname)
-		case tar.TypeLink:
-			tgt := normPath(i.h.Linkname)
-			// If the target exist, short-circuit the add:
-			if ino, ok := s.lookup[tgt]; ok {
-				s.lookup[n] = ino
-				continue
-			}
-			// Otherwise, defer the hardlink:
-			hardlink[tgt] = append(hardlink[tgt], n)
 		case tar.TypeReg:
 		}
-		if err := s.add(n, i); err != nil {
+		if err := s.add(n, i, hardlink); err != nil {
 			return nil, err
 		}
-		if revs, ok := hardlink[n]; ok {
-			ino := s.lookup[n]
-			for _, rev := range revs {
-				s.lookup[rev] = ino
-			}
-			delete(hardlink, n)
+	}
+	// Cleanup any dangling hardlinks.
+	for _, rms := range hardlink {
+		for _, rm := range rms {
+			delete(s.lookup, rm)
 		}
 	}
 	return &s, nil
@@ -122,7 +112,9 @@ func New(r io.ReaderAt) (*FS, error) {
 // function attempts to follow the POSIX spec on actions when "creating" a file
 // that already exists:
 // https://pubs.opengroup.org/onlinepubs/9699919799/utilities/V3_chap01.html#tagtcjh_14
-func (f *FS) add(name string, ino inode) error {
+//
+// The "hardlink" map is used for deferring hardlink creation.
+func (f *FS) add(name string, ino inode, hardlink map[string][]string) error {
 	const op = `create`
 Again:
 	if i, ok := f.lookup[name]; ok {
@@ -152,6 +144,17 @@ Again:
 		// have to renumber everything.
 		f.inode[i] = ino
 		return nil
+	}
+
+	// Hardlink handling: if the target doesn't exist yet, make a note in passed-in map.
+	if ino.h.Typeflag == tar.TypeLink {
+		tgt := ino.h.Linkname
+		if _, ok := f.lookup[tgt]; !ok {
+			hardlink[tgt] = append(hardlink[tgt], name)
+		}
+	}
+	if _, ok := hardlink[name]; ok {
+		delete(hardlink, name)
 	}
 	i := len(f.inode)
 	f.inode = append(f.inode, ino)
@@ -275,7 +278,7 @@ func (f *FS) walkTo(p string, create bool) (*inode, error) {
 						child = &f.inode[ci]
 						break Resolve
 					case !ok && create:
-						f.add(tgt, newDir(tgt))
+						f.add(tgt, newDir(tgt), nil)
 						ci = f.lookup[tgt]
 						child = &f.inode[ci]
 					case !ok && !create:
@@ -299,7 +302,7 @@ func (f *FS) walkTo(p string, create bool) (*inode, error) {
 		case found && create, found && !create:
 			// OK
 		case !found && create:
-			f.add(n, newDir(n))
+			f.add(n, newDir(n), nil)
 			ci := f.lookup[n]
 			child = &f.inode[ci]
 		case !found && !create:
@@ -318,8 +321,16 @@ func (f *FS) Open(name string) (fs.File, error) {
 		return nil, err
 	}
 	typ := i.h.FileInfo().Mode().Type()
+	var r *tar.Reader
 	switch {
-	case typ.IsRegular():
+	case typ.IsRegular() && i.h.Typeflag != tar.TypeLink:
+		r = tar.NewReader(io.NewSectionReader(f.r, i.off, i.sz))
+	case typ.IsRegular() && i.h.Typeflag == tar.TypeLink:
+		tgt, err := f.getInode(op, i.h.Linkname)
+		if err != nil {
+			return nil, err
+		}
+		r = tar.NewReader(io.NewSectionReader(f.r, tgt.off, tgt.sz))
 	case typ.IsDir():
 		d := dir{
 			h:  i.h,
@@ -343,7 +354,6 @@ func (f *FS) Open(name string) (fs.File, error) {
 			Err:  fs.ErrExist,
 		}
 	}
-	r := tar.NewReader(io.NewSectionReader(f.r, i.off, i.sz))
 	if _, err := r.Next(); err != nil {
 		return nil, &fs.PathError{
 			Op:   op,
