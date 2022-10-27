@@ -2,13 +2,27 @@
 ## [Unreleased]
 
 
+<a name="v1.4.11"></a>
+## [v1.4.11] - 2022-10-26
+### Build(Deps)
+- [9fdb583](https://github.com/quay/claircore/commit/9fdb58349c715b0d1f22f84f88dc07c4b55d10af): bump github.com/prometheus/client_model from 0.2.0 to 0.3.0
+### Jar
+- [d52a304](https://github.com/quay/claircore/commit/d52a3042e930faa1101e022665a60fbca30919eb): handle manifest with invalid header keys
+### Tarfs
+- [48317f8](https://github.com/quay/claircore/commit/48317f8b4266d1e0f1478bcadef470d9865c61c2): implement hard links correctly
+  - [#714](https://github.com/quay/claircore/issues/714)
+- [6511863](https://github.com/quay/claircore/commit/65118639d2955cb5201a98bd0b1c25c1cd4556a0): implement hard links
+- [070737a](https://github.com/quay/claircore/commit/070737ac9ab82f2486a034b207cc19fdf246743a): skip "known" directory
+
 <a name="v1.4.10"></a>
-## [v1.4.10] - 2022-10-24
+## [v1.4.10] - 2022-10-25
 ### Build(Deps)
 - [713df2f](https://github.com/quay/claircore/commit/713df2f2a75f28b8cb38fa674080abfce7430ffa): bump golang.org/x/tools from 0.1.12 to 0.2.0
 - [11e9a0f](https://github.com/quay/claircore/commit/11e9a0fcc22e9e4f59d735b44185ec9dcd9b74bd): bump peaceiris/actions-gh-pages from 3.8.0 to 3.9.0
 - [d94e1e7](https://github.com/quay/claircore/commit/d94e1e7f8ef7413bb346610aa9508dfb24b2c6a1): bump gsactions/commit-message-checker from 1 to 2
 - [786ba1e](https://github.com/quay/claircore/commit/786ba1e63f77a8a362e686c99d47b77a2338836f): bump peter-evans/create-pull-request from 4.1.3 to 4.2.0
+### Chore
+- [80708e0](https://github.com/quay/claircore/commit/80708e0e770adaeb9c86eee58d8ea39e773fc7bc): v1.4.10 changelog bump
 ### Fetcher
 - [4d50715](https://github.com/quay/claircore/commit/4d507152ec295d2a0e85de72136a17807b2a9112): Add layer hash to error message
 
@@ -1661,7 +1675,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v1.4.10...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v1.4.11...HEAD
+[v1.4.11]: https://github.com/quay/claircore/compare/v1.4.10...v1.4.11
 [v1.4.10]: https://github.com/quay/claircore/compare/v1.4.9...v1.4.10
 [v1.4.9]: https://github.com/quay/claircore/compare/v1.4.8...v1.4.9
 [v1.4.8]: https://github.com/quay/claircore/compare/v1.4.7...v1.4.8
