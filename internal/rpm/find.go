@@ -1,6 +1,7 @@
 package rpm
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -160,89 +161,45 @@ func OpenDB(ctx context.Context, sys fs.FS, found FoundDB) (*Database, error) {
 	// TODO(hank) Cook up some test against passing the wrong [fs.FS]. Don't use
 	// the unique package.
 
-	f, err := sys.Open(found.filename())
-	if err != nil {
-		return nil, fmt.Errorf("internal/rpm: unable to open %s db: %w", found.kind.String(), err)
-	}
-	defer func() {
-		if err := f.Close(); err != nil {
-			slog.WarnContext(ctx, "unable to close db", "kind", found, "reason", err)
-		}
-	}()
-
 	cleanup := &databaseCleanup{}
 	db := Database{
 		pkgdb:   found.String(),
 		cleanup: cleanup,
 	}
 
-	spool, err := os.CreateTemp(os.TempDir(), fmt.Sprintf(`rpm.package.%v.`, found.kind))
-	if err != nil {
-		return nil, fmt.Errorf("internal/rpm: error spooling db: %w", err)
-	}
-	log := slog.With("file", spool.Name())
-	cleanup.spool = spool
-	log.DebugContext(ctx, "copying db out of fs.FS")
-
-	// Need to have the file linked into the filesystem for the sqlite package.
-	//
-	// See [this post] for an idea on working around it:
-	//
-	//	int sqlite_fdopen(
-	//		int fd,
-	//		sqlite3 **connection)
-	//	{
-	//		char uri[48];
-	//
-	//		snprintf(uri, sizeof uri, "file:///dev/fd/%d?immutable=1", fd);
-	//		return sqlite3_open_v2(
-	//			uri,
-	//			connection,
-	//			SQLITE_OPEN_READONLY | SQLITE_OPEN_URI,
-	//			NULL);
-	//	}
-	//
-	// [this post]: https://sqlite.org/forum/info/57aaaf20cf703d301fed5aeaef59e70723f1d9454fb3a4e6383b2bfac6897e5a
-	if _, err := io.Copy(spool, f); err != nil {
-		if err := spool.Close(); err != nil {
-			log.WarnContext(ctx, "unable to close spool", "reason", err)
-		}
-		return nil, fmt.Errorf("internal/rpm: error spooling db: %w", err)
-	}
-	if err := spool.Sync(); err != nil {
-		log.WarnContext(ctx, "unable to sync spool; results may be Weird", "reason", err)
-	}
-
 	switch found.kind {
 	case kindSQLite:
-		sdb, err := sqlite.Open(spool.Name())
+		sdb, err := sqlite.OpenFS(sys, found.filename())
 		if err != nil {
-			if err := spool.Close(); err != nil {
-				log.WarnContext(ctx, "unable to close spool", "reason", err)
-			}
-			if err := os.Remove(spool.Name()); err != nil {
-				log.WarnContext(ctx, "unable to remove spool", "reason", err)
-			}
 			return nil, fmt.Errorf("internal/rpm: unable to open sqlite db: %w", err)
 		}
 		db.headers = sdb
 		cleanup.close = sdb.Close
-	case kindBDB:
-		var bpdb bdb.PackageDB
-		if err := bpdb.Parse(spool); err != nil {
-			return nil, fmt.Errorf("internal/rpm: error parsing bdb db: %w", err)
+	case kindBDB, kindNDB:
+		r, err := db.openOrBuffer(ctx, sys, found)
+		if err != nil {
+			return nil, fmt.Errorf("internal/rpm: unable to open %s db: %w", found.kind.String(), err)
 		}
-		db.headers = &bpdb
-	case kindNDB:
-		var npdb ndb.PackageDB
-		if err := npdb.Parse(spool); err != nil {
-			return nil, fmt.Errorf("internal/rpm: error parsing ndb db: %w", err)
+		switch found.kind {
+		case kindBDB:
+			var bpdb bdb.PackageDB
+			if err := bpdb.Parse(r); err != nil {
+				return nil, fmt.Errorf("internal/rpm: error parsing bdb db: %w", err)
+			}
+			db.headers = &bpdb
+		case kindNDB:
+			var npdb ndb.PackageDB
+			if err := npdb.Parse(r); err != nil {
+				return nil, fmt.Errorf("internal/rpm: error parsing ndb db: %w", err)
+			}
+			db.headers = &npdb
+		default:
+			panic("unreachable")
 		}
-		db.headers = &npdb
 	default:
 		panic("unreachable")
 	}
-	log.DebugContext(ctx, "opened database", "db", found)
+	slog.DebugContext(ctx, "opened database", "db", found)
 
 	if v, ok := db.headers.(validator); ok {
 		if err := v.Validate(ctx); err != nil {
@@ -251,6 +208,28 @@ func OpenDB(ctx context.Context, sys fs.FS, found FoundDB) (*Database, error) {
 	}
 
 	return &db, nil
+}
+
+func (db *Database) openOrBuffer(_ context.Context, sys fs.FS, found FoundDB) (io.ReaderAt, error) {
+	f, err := sys.Open(found.filename())
+	if err != nil {
+		return nil, err
+	}
+	r, ok := f.(io.ReaderAt)
+	if ok {
+		db.cleanup = f
+		return r, nil
+	}
+	defer f.Close()
+
+	var buf bytes.Buffer
+	if fi, err := f.Stat(); err == nil {
+		buf.Grow(int(fi.Size()))
+	}
+	if _, err := io.Copy(&buf, f); err != nil {
+		return nil, err
+	}
+	return bytes.NewReader(buf.Bytes()), nil
 }
 
 type databaseCleanup struct {
