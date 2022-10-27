@@ -9,16 +9,19 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"iter"
 	"net/url"
 	"runtime"
 
 	_ "modernc.org/sqlite" // register the sqlite driver
+	"modernc.org/sqlite/vfs"
 )
 
 // RPMDB is a handle to a SQLite RPM database.
 type RPMDB struct {
-	db *sql.DB
+	db  *sql.DB
+	vfs *vfs.FS
 }
 
 // Open opens the named SQLite database and interprets it as an RPM
@@ -56,13 +59,68 @@ func Open(f string) (*RPMDB, error) {
 	return &rdb, nil
 }
 
+// OpenFS opens the named SQLite database in the context of "sys" and interprets
+// it as an RPM database.
+//
+// The returned RPMDB struct must have its Close method called, or the process
+// may panic.
+func OpenFS(sys fs.FS, f string) (*RPMDB, error) {
+	name, vfs, err := vfs.New(sys)
+	if err != nil {
+		return nil, fmt.Errorf("sqlite: vfs creation failed: %w", err)
+	}
+	ok := false
+	defer func() {
+		if !ok {
+			vfs.Close()
+		}
+	}()
+	u := url.URL{
+		Scheme: `file`,
+		Opaque: f,
+		RawQuery: url.Values{
+			"vfs":       {name},
+			"immutable": {"1"},
+			"_pragma": {
+				"foreign_keys(1)",
+				"query_only(1)",
+			},
+		}.Encode(),
+	}
+	db, err := sql.Open(`sqlite`, u.String())
+	if err != nil {
+		return nil, fmt.Errorf("sqlite: unable to open db: %w", err)
+	}
+	if err := db.Ping(); err != nil {
+		return nil, fmt.Errorf("sqlite: unable to ping db: %w", err)
+	}
+	rdb := RPMDB{
+		db:  db,
+		vfs: vfs,
+	}
+	ok = true
+	_, file, line, _ := runtime.Caller(1)
+	runtime.SetFinalizer(&rdb, func(rdb *RPMDB) {
+		panic(fmt.Sprintf("%s:%d: RPM db not closed", file, line))
+	})
+	return &rdb, nil
+}
+
 // Close releases held resources.
 //
 // This must be called when the RPMDB is no longer needed, or the
 // process may panic.
 func (db *RPMDB) Close() error {
 	runtime.SetFinalizer(db, nil)
-	return db.db.Close()
+	return errors.Join(
+		db.db.Close(),
+		func() error {
+			if db.vfs != nil {
+				return db.vfs.Close()
+			}
+			return nil
+		}(),
+	)
 }
 
 // Headers returns an iterator over all RPM headers in the database.
