@@ -11,8 +11,6 @@ import (
 	"net/url"
 	"path"
 
-	"github.com/klauspost/compress/gzip"
-	"github.com/klauspost/compress/zstd"
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/libvuln/driver"
@@ -210,20 +208,20 @@ Compression:
 	case CompressionNone:
 		r = res.Body
 	case CompressionGzip:
-		gz, err := gzip.NewReader(res.Body)
+		gz, err := getGzip(res.Body)
 		if err != nil {
 			return nil, hint, err
 		}
-		defer gz.Close()
+		defer putGzip(gz)
 		r = gz
 	case CompressionBzip2:
 		r = bzip2.NewReader(res.Body)
 	case CompressionZstd:
-		zz, err := zstd.NewReader(res.Body)
+		zz, err := getZstd(res.Body)
 		if err != nil {
 			return nil, hint, err
 		}
-		defer zz.Close()
+		defer putZstd(zz)
 		r = zz
 	default:
 		panic(fmt.Sprintf("ovalutil: programmer error: unknown compression scheme: %v", f.Compression))
