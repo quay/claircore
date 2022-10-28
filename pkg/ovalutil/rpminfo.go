@@ -229,10 +229,10 @@ func (r *RPMInfo) populate(ctx context.Context, v *claircore.Vulnerability, crit
 		if k != "rpminfo_object" {
 			continue
 		}
-		obj = &r.root.Objects.RPMInfoObjects[objidx]
-		if obj == nil {
+		if objidx < 0 || objidx >= len(r.root.Objects.RPMInfoObjects) {
 			return nil, fmt.Errorf("unable to lookup ref %q (probably programmer error)", objRef)
 		}
+		obj = &r.root.Objects.RPMInfoObjects[objidx]
 
 		// Otherwise, resolve the states referenced in the tests and populate
 		// the package struct in this vulnerability
