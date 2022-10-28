@@ -2,14 +2,17 @@ package ovalutil
 
 import (
 	"compress/bzip2"
-	"compress/gzip"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
 	"net/url"
+	"path"
 
+	"github.com/klauspost/compress/gzip"
+	"github.com/klauspost/compress/zstd"
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/libvuln/driver"
@@ -23,9 +26,11 @@ type Compressor uint
 
 // These are the kinds of Compession a Fetcher can deal with.
 const (
-	CompressionNone  Compressor = iota // none
+	CompressionAuto  Compressor = iota // auto
+	CompressionNone                    // none
 	CompressionGzip                    // gzip
 	CompressionBzip2                   // bzip2
+	CompressionZstd                    // zstd
 )
 
 // ParseCompressor reports the Compressor indicated by the passed in string.
@@ -35,8 +40,12 @@ func ParseCompressor(s string) (c Compressor, err error) {
 		c = CompressionGzip
 	case "bz2", "bzip2":
 		c = CompressionBzip2
-	case "", "none":
+	case "zstd":
+		c = CompressionZstd
+	case "none":
 		c = CompressionNone
+	case "", "auto":
+		c = CompressionAuto
 	default:
 		return c, fmt.Errorf("ovalutil: unknown compression scheme %q", s)
 	}
@@ -48,9 +57,9 @@ func ParseCompressor(s string) (c Compressor, err error) {
 // Fetcher expects all of its exported members to be filled out appropriately,
 // and may panic if not.
 type Fetcher struct {
-	Compression Compressor
 	URL         *url.URL
 	Client      *http.Client
+	Compression Compressor
 }
 
 // Configure implements driver.Configurable.
@@ -145,21 +154,82 @@ func (f *Fetcher) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 	zlog.Debug(ctx).Msg("request ok")
 
 	var r io.Reader
-	switch f.Compression {
+	cmp := f.Compression
+Compression:
+	switch cmp {
+	case CompressionAuto:
+		var kind string
+		for _, h := range []string{`content-type`, `content-disposition`} {
+			v := res.Header.Get(h)
+			if v == "" {
+				continue
+			}
+			switch h {
+			case `content-type`:
+				kind, _, err = mime.ParseMediaType(v)
+				if err == nil {
+					goto Found
+				}
+			case `content-disposition`:
+				var params map[string]string
+				_, params, err = mime.ParseMediaType(v)
+				if err != nil {
+					break
+				}
+				fn, ok := params["filename"]
+				if !ok {
+					break
+				}
+				kind = mime.TypeByExtension(path.Ext(fn))
+				if kind != "" {
+					goto Found
+				}
+			default:
+				panic("programmer error")
+			}
+			zlog.Debug(ctx).
+				Err(err).
+				Str("header", h).
+				Str("value", v).
+				Msg("failed to parse incoming HTTP header")
+		}
+		kind = mime.TypeByExtension(path.Ext(res.Request.URL.Path))
+	Found:
+		switch kind {
+		case `application/x-bzip2`:
+			cmp = CompressionBzip2
+		case `application/gzip`, `application/x-gzip`:
+			cmp = CompressionGzip
+		case `application/zstd`:
+			cmp = CompressionZstd
+		default:
+			// unknown type
+			cmp = CompressionNone
+		}
+		goto Compression
 	case CompressionNone:
 		r = res.Body
 	case CompressionGzip:
-		r, err = gzip.NewReader(res.Body)
+		gz, err := gzip.NewReader(res.Body)
 		if err != nil {
 			return nil, hint, err
 		}
+		defer gz.Close()
+		r = gz
 	case CompressionBzip2:
 		r = bzip2.NewReader(res.Body)
+	case CompressionZstd:
+		zz, err := zstd.NewReader(res.Body)
+		if err != nil {
+			return nil, hint, err
+		}
+		defer zz.Close()
+		r = zz
 	default:
 		panic(fmt.Sprintf("ovalutil: programmer error: unknown compression scheme: %v", f.Compression))
 	}
 	zlog.Debug(ctx).
-		Str("compression", f.Compression.String()).
+		Stringer("compression", cmp).
 		Msg("found compression scheme")
 
 	tf, err := tmp.NewFile("", "fetcher.")

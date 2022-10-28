@@ -8,14 +8,16 @@ func _() {
 	// An "invalid array index" compiler error signifies that the constant values have changed.
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
-	_ = x[CompressionNone-0]
-	_ = x[CompressionGzip-1]
-	_ = x[CompressionBzip2-2]
+	_ = x[CompressionAuto-0]
+	_ = x[CompressionNone-1]
+	_ = x[CompressionGzip-2]
+	_ = x[CompressionBzip2-3]
+	_ = x[CompressionZstd-4]
 }
 
-const _Compressor_name = "nonegzipbzip2"
+const _Compressor_name = "autononegzipbzip2zstd"
 
-var _Compressor_index = [...]uint8{0, 4, 8, 13}
+var _Compressor_index = [...]uint8{0, 4, 8, 12, 17, 21}
 
 func (i Compressor) String() string {
 	if i >= Compressor(len(_Compressor_index)-1) {
