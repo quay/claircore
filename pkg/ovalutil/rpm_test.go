@@ -7,8 +7,8 @@ import (
 )
 
 type definitionTypeTestCase struct {
-	def        oval.Definition
 	want, name string
+	def        oval.Definition
 	err        bool
 }
 

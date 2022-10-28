@@ -16,8 +16,8 @@ func TestWalk(t *testing.T) {
 
 	type testcase struct {
 		File  string
-		Index int
 		Want  []string
+		Index int
 	}
 	testcases := []testcase{
 		{

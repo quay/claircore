@@ -4,8 +4,8 @@ import "testing"
 
 func TestValidVersion(t *testing.T) {
 	tt := []struct {
-		Match bool
 		In    string
+		Match bool
 	}{
 		{
 			Match: false,
