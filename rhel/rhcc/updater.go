@@ -17,7 +17,7 @@ import (
 	"github.com/quay/claircore/pkg/cpe"
 	"github.com/quay/claircore/pkg/rhctag"
 	"github.com/quay/claircore/pkg/tmp"
-	"github.com/quay/claircore/rhel"
+	"github.com/quay/claircore/rhel/internal/common"
 )
 
 const (
@@ -240,7 +240,7 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 					Description:        description,
 					Issued:             releasesByMinor[minor].Issued,
 					Severity:           releasesByMinor[minor].Severity,
-					NormalizedSeverity: rhel.NormalizeSeverity(releasesByMinor[minor].Severity),
+					NormalizedSeverity: common.NormalizeSeverity(releasesByMinor[minor].Severity),
 					Package:            p,
 					Repo:               &goldRepo,
 					Links:              links,
