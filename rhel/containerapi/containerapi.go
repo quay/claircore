@@ -1,3 +1,4 @@
+// Package containerapi is a minimal client around the Red Hat Container API.
 package containerapi
 
 import (
@@ -13,18 +14,18 @@ import (
 	"github.com/quay/zlog"
 )
 
-type ContainerImages struct {
-	Images []ContainerImage `json:"data"`
+type containerImages struct {
+	Images []containerImage `json:"data"`
 }
-type ContainerImage struct {
+type containerImage struct {
 	CPEs       []string   `json:"cpe_ids"`
-	ParsedData ParsedData `json:"parsed_data"`
+	ParsedData parsedData `json:"parsed_data"`
 }
-type ParsedData struct {
+type parsedData struct {
 	Architecture string  `json:"architecture"`
-	Labels       []Label `json:"labels"`
+	Labels       []label `json:"labels"`
 }
-type Label struct {
+type label struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
 }
@@ -64,7 +65,7 @@ func (c *ContainerAPI) GetCPEs(ctx context.Context, nvr, arch string) ([]string,
 		return nil, fmt.Errorf("rhel: unexpected response: %d %s", res.StatusCode, res.Status)
 	}
 
-	var ci ContainerImages
+	var ci containerImages
 	if err := json.NewDecoder(res.Body).Decode(&ci); err != nil {
 		return nil, err
 	}
