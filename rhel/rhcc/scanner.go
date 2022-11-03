@@ -17,6 +17,7 @@ import (
 	"github.com/quay/claircore/pkg/rhctag"
 	"github.com/quay/claircore/pkg/tarfs"
 	"github.com/quay/claircore/rhel/dockerfile"
+	"github.com/quay/claircore/rhel/internal/common"
 )
 
 var (
@@ -24,12 +25,8 @@ var (
 	_ indexer.RPCScanner     = (*scanner)(nil)
 )
 
-type nameReposMapper interface {
-	Get(context.Context, *http.Client, string) []string
-}
-
 type scanner struct {
-	mapper nameReposMapper
+	upd    *common.Updater
 	client *http.Client
 	cfg    ScannerConfig
 }
@@ -46,9 +43,12 @@ type ScannerConfig struct {
 	// See also [DefaultName2ReposMappingURL]
 	Name2ReposMappingURL string `json:"name2repos_mapping_url" yaml:"name2repos_mapping_url"`
 	// Name2ReposMappingFile is a path to a local mapping file.
-	Name2ReposMappingFile string        `json:"name2repos_mapping_file" yaml:"name2repos_mapping_file"`
-	Timeout               time.Duration `json:"timeout" yaml:"timeout"`
-	// BUG(hank) The ScannerConfig's "Timeout" member seems unused.
+	Name2ReposMappingFile string `json:"name2repos_mapping_file" yaml:"name2repos_mapping_file"`
+	// Timeout is a timeout for all network calls made to update the mapping
+	// file.
+	//
+	// The default is 10 seconds.
+	Timeout time.Duration `json:"timeout" yaml:"timeout"`
 }
 
 // DefaultName2ReposMappingURL is the default URL with a mapping file provided by Red
@@ -62,47 +62,34 @@ func (s *scanner) Configure(ctx context.Context, f indexer.ConfigDeserializer, c
 	if err := f(&s.cfg); err != nil {
 		return err
 	}
-	// Set defaults if not set via passed function.
+
+	if s.cfg.Timeout == 0 {
+		s.cfg.Timeout = 10 * time.Second
+	}
+	var mf *mappingFile
 	switch {
 	case s.cfg.Name2ReposMappingURL == "" && s.cfg.Name2ReposMappingFile == "":
 		// defaults
 		s.cfg.Name2ReposMappingURL = DefaultName2ReposMappingURL
-		fallthrough
 	case s.cfg.Name2ReposMappingURL != "" && s.cfg.Name2ReposMappingFile == "":
 		// remote only
-		u := newUpdatingMapper(s.cfg.Name2ReposMappingURL, nil)
-		if err := u.Fetch(ctx, s.client); err != nil {
-			return err
-		}
-		s.mapper = u
-	case s.cfg.Name2ReposMappingURL == "" && s.cfg.Name2ReposMappingFile != "":
+	case s.cfg.Name2ReposMappingFile != "":
 		// local only
 		f, err := os.Open(s.cfg.Name2ReposMappingFile)
 		if err != nil {
 			return err
 		}
 		defer f.Close()
-		var mf mappingFile
-		if err := json.NewDecoder(f).Decode(&mf); err != nil {
+		mf = &mappingFile{}
+		if err := json.NewDecoder(f).Decode(mf); err != nil {
 			return err
 		}
-		s.mapper = &mf
-	case s.cfg.Name2ReposMappingURL != "" && s.cfg.Name2ReposMappingFile != "":
-		// load, then fetch later
-		f, err := os.Open(s.cfg.Name2ReposMappingFile)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-		var mf mappingFile
-		if err := json.NewDecoder(f).Decode(&mf); err != nil {
-			return err
-		}
-		s.mapper = newUpdatingMapper(s.cfg.Name2ReposMappingURL, &mf)
 	}
-	if s.cfg.Timeout == 0 {
-		s.cfg.Timeout = 30 * time.Second
-	}
+	s.upd = common.NewUpdater(s.cfg.Name2ReposMappingURL, mf)
+	tctx, done := context.WithTimeout(ctx, s.cfg.Timeout)
+	defer done()
+	s.upd.Get(tctx, c)
+
 	return nil
 }
 
@@ -176,8 +163,17 @@ func (s *scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Pa
 	}
 	pkgs := []*claircore.Package{&src}
 
-	repos := s.mapper.Get(ctx, s.client, name)
-	if len(repos) == 0 {
+	tctx, done := context.WithTimeout(ctx, s.cfg.Timeout)
+	defer done()
+	v, err := s.upd.Get(tctx, s.client)
+	if err != nil && v == nil {
+		return nil, err
+	}
+	repos, ok := v.(*mappingFile).Data[name]
+	if ok {
+		zlog.Debug(ctx).Str("name", name).
+			Msg("name present in mapping file")
+	} else {
 		// Didn't find external_repos in mapping, use name label as package
 		// name.
 		repos = []string{name}
@@ -199,6 +195,12 @@ func (s *scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Pa
 		})
 	}
 	return pkgs, nil
+}
+
+// MappingFile is a struct for mapping file between container NAME label and
+// container registry repository location.
+type mappingFile struct {
+	Data map[string][]string `json:"data"`
 }
 
 func findLabels(ctx context.Context, layer *claircore.Layer) (map[string]string, string, error) {

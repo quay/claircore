@@ -23,14 +23,8 @@ import (
 	"github.com/quay/claircore/pkg/tarfs"
 	"github.com/quay/claircore/rhel/containerapi"
 	"github.com/quay/claircore/rhel/dockerfile"
-	"github.com/quay/claircore/rhel/repo2cpe"
+	"github.com/quay/claircore/rhel/internal/common"
 )
-
-// RepoCPEUpdater provides interface for providing a mapping
-// between repositories and CPEs.
-type repoCPEMapper interface {
-	Get(context.Context, []string) ([]string, error)
-}
 
 /*
 RepositoryScanner implements repository detection logic for RHEL.
@@ -53,7 +47,7 @@ layer reports that it is both the "cpe:/a:redhat:enterprise_linux:8" and
 */
 type RepositoryScanner struct {
 	// These members are created after the Configure call.
-	mapper     repoCPEMapper
+	upd        *common.Updater
 	apiFetcher *containerapi.ContainerAPI
 	client     *http.Client
 
@@ -92,9 +86,9 @@ type RepositoryScannerConfig struct {
 	// This should be provided to avoid any network traffic.
 	Repo2CPEMappingFile string `json:"repo2cpe_mapping_file" yaml:"repo2cpe_mapping_file"`
 	// Timeout controls the timeout for any remote calls this package makes.
+	//
+	// The default is 10 seconds.
 	Timeout time.Duration `json:"timeout" yaml:"timeout"`
-	// BUG(hank) The RepositoryScannerConfig's "Timeout" member is ignored for
-	// any initial network calls.
 }
 
 const (
@@ -132,43 +126,29 @@ func (r *RepositoryScanner) Configure(ctx context.Context, f indexer.ConfigDeser
 		r.cfg.Timeout = 10 * time.Second
 	}
 
+	var mf *mappingFile
 	switch {
 	case r.cfg.Repo2CPEMappingURL == "" && r.cfg.Repo2CPEMappingFile == "":
 		// defaults
 		r.cfg.Repo2CPEMappingURL = DefaultRepo2CPEMappingURL
-		fallthrough
 	case r.cfg.Repo2CPEMappingURL != "" && r.cfg.Repo2CPEMappingFile == "":
 		// remote only
-		u := repo2cpe.NewUpdatingMapper(r.client, r.cfg.Repo2CPEMappingURL, nil)
-		if err := u.Fetch(ctx); err != nil {
-			return err
-		}
-		r.mapper = u
-	case r.cfg.Repo2CPEMappingURL == "" && r.cfg.Repo2CPEMappingFile != "":
-		// local only
+	case r.cfg.Repo2CPEMappingFile != "":
+		// seed from file
 		f, err := os.Open(r.cfg.Repo2CPEMappingFile)
 		if err != nil {
 			return err
 		}
 		defer f.Close()
-		var mf repo2cpe.MappingFile
-		if err := json.NewDecoder(f).Decode(&mf); err != nil {
+		mf = &mappingFile{}
+		if err := json.NewDecoder(f).Decode(mf); err != nil {
 			return err
 		}
-		r.mapper = &mf
-	case r.cfg.Repo2CPEMappingURL != "" && r.cfg.Repo2CPEMappingFile != "":
-		// load, then fetch later
-		f, err := os.Open(r.cfg.Repo2CPEMappingFile)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-		var mf repo2cpe.MappingFile
-		if err := json.NewDecoder(f).Decode(&mf); err != nil {
-			return err
-		}
-		r.mapper = repo2cpe.NewUpdatingMapper(r.client, r.cfg.Repo2CPEMappingURL, &mf)
 	}
+	r.upd = common.NewUpdater(r.cfg.Repo2CPEMappingURL, mf)
+	tctx, done := context.WithTimeout(ctx, r.cfg.Timeout)
+	defer done()
+	r.upd.Get(tctx, c)
 
 	// Additional setup
 	root, err := url.Parse(r.cfg.API)
@@ -204,7 +184,13 @@ func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) (repos
 		return nil, fmt.Errorf("rhel: unable to open layer: %w", err)
 	}
 
-	CPEs, err := mapContentSets(ctx, sys, r.mapper)
+	tctx, done := context.WithTimeout(ctx, r.cfg.Timeout)
+	defer done()
+	cm, err := r.upd.Get(tctx, r.client)
+	if err != nil && cm == nil {
+		return []*claircore.Repository{}, err
+	}
+	CPEs, err := mapContentSets(ctx, sys, cm.(*mappingFile))
 	if err != nil {
 		return []*claircore.Repository{}, err
 	}
@@ -242,7 +228,7 @@ func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) (repos
 
 // MapContentSets returns a slice of CPEs bound into strings, as discovered by
 // examining information contained within the container.
-func mapContentSets(ctx context.Context, sys fs.FS, cm repoCPEMapper) ([]string, error) {
+func mapContentSets(ctx context.Context, sys fs.FS, cm *mappingFile) ([]string, error) {
 	// Get CPEs using embedded content-set files.
 	// The files is be stored in /root/buildinfo/content_manifests/ and will need to
 	// be translated using mapping file provided by Red Hat's PST team.
@@ -271,6 +257,39 @@ func mapContentSets(ctx context.Context, sys fs.FS, cm repoCPEMapper) ([]string,
 		return nil, nil
 	}
 	return cm.Get(ctx, m.ContentSets)
+}
+
+// MappingFile is a data struct for mapping file between repositories and CPEs
+type mappingFile struct {
+	Data map[string]repo `json:"data"`
+}
+
+// Repo structure holds information about CPEs for given repo
+type repo struct {
+	CPEs []string `json:"cpes"`
+}
+
+func (m *mappingFile) Get(ctx context.Context, rs []string) ([]string, error) {
+	s := map[string]struct{}{}
+	for _, r := range rs {
+		cpes, ok := m.Data[r]
+		if !ok {
+			zlog.Debug(ctx).
+				Str("repository", r).
+				Msg("repository not present in a mapping file")
+			continue
+		}
+		for _, cpe := range cpes.CPEs {
+			s[cpe] = struct{}{}
+		}
+	}
+
+	i, r := 0, make([]string, len(s))
+	for k := range s {
+		r[i] = k
+		i++
+	}
+	return r, nil
 }
 
 // ContentManifest structure is the data provided by OSBS.
