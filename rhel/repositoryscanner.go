@@ -22,7 +22,6 @@ import (
 	"github.com/quay/claircore/pkg/cpe"
 	"github.com/quay/claircore/pkg/tarfs"
 	"github.com/quay/claircore/rhel/containerapi"
-	"github.com/quay/claircore/rhel/contentmanifest"
 	"github.com/quay/claircore/rhel/dockerfile"
 	"github.com/quay/claircore/rhel/repo2cpe"
 )
@@ -241,7 +240,7 @@ func (r *RepositoryScanner) getCPEsUsingEmbeddedContentSets(ctx context.Context,
 	if err != nil {
 		return nil, fmt.Errorf("rhel: unable to read %q: %w", p, err)
 	}
-	var m contentmanifest.ContentManifest
+	var m contentManifest
 	if err := json.Unmarshal(b, &m); err != nil {
 		return nil, err
 	}
@@ -251,6 +250,17 @@ func (r *RepositoryScanner) getCPEsUsingEmbeddedContentSets(ctx context.Context,
 		return nil, nil
 	}
 	return r.mapper.Get(ctx, m.ContentSets)
+}
+
+// ContentManifest structure is the data provided by OSBS.
+type contentManifest struct {
+	ContentSets []string         `json:"content_sets"`
+	Metadata    manifestMetadata `json:"metadata"`
+}
+
+// ManifestMetadata struct holds additional metadata about the build.
+type manifestMetadata struct {
+	ImageLayerIndex int `json:"image_layer_index"`
 }
 
 func (r *RepositoryScanner) getCPEsUsingContainerAPI(ctx context.Context, sys fs.FS) ([]string, error) {
