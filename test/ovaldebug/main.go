@@ -1,6 +1,4 @@
 // Ovaldebug is a helper for debugging the ovalutil package.
-//
-//
 package main
 
 import (
@@ -18,6 +16,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/ovalutil"
 	"github.com/quay/claircore/rhel"
 )
@@ -63,7 +62,8 @@ func main() {
 		var vs []*claircore.Vulnerability
 		switch *flavor {
 		case "rpm":
-			u, err := rhel.NewUpdater(rhel.RHEL8)
+			var u driver.Updater
+			u, err = rhel.NewUpdater("rhel-test", 8, "file:///dev/null")
 			if err != nil {
 				log.Fatal().Err(err).Send()
 			}
