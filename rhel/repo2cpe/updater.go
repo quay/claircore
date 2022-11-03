@@ -49,7 +49,8 @@ func NewUpdatingMapper(client *http.Client, url string, init *MappingFile) *Upda
 	return lu
 }
 
-// Get translates repositories into CPEs using a mapping file.
+// Get translates repositories into CPEs using a mapping file. The first caller
+// every 10 minutes attempts to update the mapping file.
 //
 // Get is safe for concurrent usage.
 func (u *UpdatingMapper) Get(ctx context.Context, rs []string) ([]string, error) {
@@ -60,7 +61,7 @@ func (u *UpdatingMapper) Get(ctx context.Context, rs []string) ([]string, error)
 	}
 	if u.reqRate.Allow() {
 		zlog.Debug(ctx).Msg("got unlucky, updating mapping file")
-		if err := u.do(ctx); err != nil {
+		if err := u.Fetch(ctx); err != nil {
 			zlog.Error(ctx).
 				Err(err).
 				Msg("error updating mapping file")
@@ -76,17 +77,12 @@ func (u *UpdatingMapper) Get(ctx context.Context, rs []string) ([]string, error)
 	return m.Get(ctx, rs)
 }
 
-func (u *UpdatingMapper) Fetch(ctx context.Context) error {
-	return u.do(ctx)
-}
-
-// do is an internal method called to perform an atomic update
-// of the mapping file.
+// Fetch attempts to peform an atomic update of the mapping file.
 //
-// this method may be ran concurrently.
-func (u *UpdatingMapper) do(ctx context.Context) error {
+// Fetch is safe to call concurrently.
+func (u *UpdatingMapper) Fetch(ctx context.Context) error {
 	ctx = zlog.ContextWithValues(ctx,
-		"component", "rhel/repo2cpe/UpdatingMapper.do",
+		"component", "rhel/repo2cpe/UpdatingMapper.Fetch",
 		"url", u.URL)
 	zlog.Debug(ctx).Msg("attempting fetch of repo2cpe mapping file")
 

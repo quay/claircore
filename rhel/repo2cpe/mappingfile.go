@@ -1,3 +1,5 @@
+// Package repo2cpe provides an interface over a mapping file that may
+// be periodically refreshed over the network.
 package repo2cpe
 
 import (
@@ -8,14 +10,17 @@ import (
 
 // MappingFile is a data struct for mapping file between repositories and CPEs
 type MappingFile struct {
-	Data map[string]Repo `json:"data"`
+	Data map[string]repo `json:"data"`
 }
 
 // Repo structure holds information about CPEs for given repo
-type Repo struct {
+type repo struct {
 	CPEs []string `json:"cpes"`
 }
 
+// Get translates repositories into CPEs using a static mapping.
+//
+// Get is safe for concurrent usage.
 func (m *MappingFile) Get(ctx context.Context, rs []string) ([]string, error) {
 	s := map[string]struct{}{}
 	for _, r := range rs {
