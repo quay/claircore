@@ -10,25 +10,31 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 )
 
+// Matcher is an instance of the rhcc matcher. It's exported so it can be used
+// in the "defaults" package.
+//
+// This instance is safe for concurrent use.
 var Matcher driver.Matcher = &matcher{}
 
 type matcher struct{}
 
 var _ driver.Matcher = (*matcher)(nil)
 
-func (*matcher) Name() string {
-	return "rhel-container-matcher"
-}
+// Name implements [driver.Matcher].
+func (*matcher) Name() string { return "rhel-container-matcher" }
 
+// Filter implements [driver.Matcher].
 func (*matcher) Filter(r *claircore.IndexRecord) bool {
 	return r.Repository != nil &&
 		r.Repository.Name == goldRepo.Name
 }
 
+// Query implements [driver.Matcher].
 func (*matcher) Query() []driver.MatchConstraint {
 	return []driver.MatchConstraint{driver.RepositoryName}
 }
 
+// Vulnerable implements [driver.Matcher].
 func (*matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
 	pkgVer, fixedInVer := rpmVersion.NewVersion(record.Package.Version), rpmVersion.NewVersion(vuln.FixedInVersion)
 	zlog.Debug(ctx).

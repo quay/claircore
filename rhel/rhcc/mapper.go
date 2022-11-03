@@ -13,6 +13,9 @@ import (
 	"golang.org/x/time/rate"
 )
 
+// This is a port of the repo2cpe package, because it needs to work
+// ever-so-slightly differently.
+
 // MappingFile is a struct for mapping file between container NAME label and
 // container registry repository location.
 type mappingFile struct {

@@ -6,6 +6,7 @@ import (
 	"github.com/quay/claircore/indexer"
 )
 
+// NewEcosystem returns an rhcc ecosystem.
 func NewEcosystem(_ context.Context) *indexer.Ecosystem {
 	return &indexer.Ecosystem{
 		PackageScanners: func(_ context.Context) ([]indexer.PackageScanner, error) {

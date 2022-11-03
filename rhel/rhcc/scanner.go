@@ -19,7 +19,10 @@ import (
 	"github.com/quay/claircore/rhel/dockerfile"
 )
 
-var _ indexer.PackageScanner = (*scanner)(nil)
+var (
+	_ indexer.PackageScanner = (*scanner)(nil)
+	_ indexer.RPCScanner     = (*scanner)(nil)
+)
 
 type nameReposMapper interface {
 	Get(context.Context, *http.Client, string) []string
@@ -31,17 +34,28 @@ type scanner struct {
 	cfg    ScannerConfig
 }
 
+// ScannerConfig is the configuration for the package scanner.
+//
+// The interaction between the "URL" and "File" members is the same as described
+// in the [github.com/quay/claircore/rhel.RepositoryScannerConfig] documentation.
+//
+// By convention, it's in a "rhel_containerscanner" key.
 type ScannerConfig struct {
-	Name2ReposMappingURL  string        `json:"name2repos_mapping_url" yaml:"name2repos_mapping_url"`
+	// Name2ReposMappingURL is a URL where a mapping file can be fetched.
+	//
+	// See also [DefaultName2ReposMappingURL]
+	Name2ReposMappingURL string `json:"name2repos_mapping_url" yaml:"name2repos_mapping_url"`
+	// Name2ReposMappingFile is a path to a local mapping file.
 	Name2ReposMappingFile string        `json:"name2repos_mapping_file" yaml:"name2repos_mapping_file"`
 	Timeout               time.Duration `json:"timeout" yaml:"timeout"`
+	// BUG(hank) The ScannerConfig's "Timeout" member seems unused.
 }
 
-// DefaultRepo2CPEMappingURL is default URL with a mapping file provided by Red
+// DefaultName2ReposMappingURL is the default URL with a mapping file provided by Red
 // Hat.
 const DefaultName2ReposMappingURL = "https://access.redhat.com/security/data/metrics/container-name-repos-map.json"
 
-// Configure implements the RPCScanner interface.
+// Configure implements [indexer.RPCScanner].
 func (s *scanner) Configure(ctx context.Context, f indexer.ConfigDeserializer, c *http.Client) error {
 	ctx = zlog.ContextWithValues(ctx, "component", "rhel/rhcc/scanner.Configure")
 	s.client = c
@@ -92,14 +106,19 @@ func (s *scanner) Configure(ctx context.Context, f indexer.ConfigDeserializer, c
 	return nil
 }
 
+// Name implements [indexer.VersionedScanner].
 func (s *scanner) Name() string { return "rhel_containerscanner" }
 
+// Version implements [indexer.VersionedScanner].
 func (s *scanner) Version() string { return "1" }
 
+// Kind implements [indexer.VersionedScanner].
 func (s *scanner) Kind() string { return "package" }
 
 // Scan performs a package scan on the given layer and returns all
 // the RHEL container identifying metadata
+
+// Scan implements [indexer.PackageScanner].
 func (s *scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Package, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "rhel/rhcc/scanner.Scan")
 	const (
@@ -231,12 +250,16 @@ type reposcanner struct{}
 
 var _ indexer.RepositoryScanner = (*reposcanner)(nil)
 
+// Name implements [indexer.VersionedScanner].
 func (s *reposcanner) Name() string { return "rhel_containerscanner" }
 
+// Version implements [indexer.VersionedScanner].
 func (s *reposcanner) Version() string { return "1" }
 
+// Kind implements [indexer.VersionedScanner].
 func (s *reposcanner) Kind() string { return "repository" }
 
+// Scan implements [indexer.RepositoryScanner].
 func (s *reposcanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Repository, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "rhel/rhcc/reposcanner.Scan")
 	r, err := l.Reader()

@@ -37,7 +37,11 @@ type updater struct {
 	url    string
 }
 
+// UpdaterConfig is the configuration for the container catalog's updater.
+//
+// By convention, this is in a "rhel-container-updater" key.
 type UpdaterConfig struct {
+	// URL is the URL to a "cvemap.xml" file.
 	URL string `json:"url" yaml:"url"`
 }
 
@@ -47,6 +51,7 @@ func (*updater) Name() string {
 	return updaterName
 }
 
+// UpdaterSet returns the rhcc UpdaterSet.
 func UpdaterSet(_ context.Context) (driver.UpdaterSet, error) {
 	us := driver.NewUpdaterSet()
 	if err := us.Add(&updater{}); err != nil {
@@ -55,6 +60,7 @@ func UpdaterSet(_ context.Context) (driver.UpdaterSet, error) {
 	return us, nil
 }
 
+// Configure implements [driver.Configurable].
 func (u *updater) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *http.Client) error {
 	u.url = dbURL
 	u.client = c
@@ -68,6 +74,7 @@ func (u *updater) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *
 	return nil
 }
 
+// Fetch implements [driver.Updater].
 func (u *updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "rhel/rhcc/Updater.Fetch")
 
@@ -131,6 +138,7 @@ func (u *updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 	return tf, hint, nil
 }
 
+// Parse implements [driver.Updater].
 func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "rhel/rhcc/Updater.Parse")
 	zlog.Info(ctx).Msg("parse start")

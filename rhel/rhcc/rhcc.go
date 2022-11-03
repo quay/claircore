@@ -1,3 +1,7 @@
+// Package rhcc implements an ecosystem for the Red Hat Container Catalog.
+//
+// This ecosystem treats an entire container as a package and matches advisories
+// against it.
 package rhcc
 
 import (
