@@ -1,3 +1,4 @@
+// Package pulp is for reading a Pulp manifest.
 package pulp
 
 import (
