@@ -6,7 +6,7 @@ import (
 	"github.com/quay/claircore"
 )
 
-// NormalizeServerity maps Red Hat severity strings to claircore's normalized
+// NormalizeSeverity maps Red Hat severity strings to claircore's normalized
 // serverity levels.
 func NormalizeSeverity(severity string) claircore.Severity {
 	switch strings.ToLower(severity) {
