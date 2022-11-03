@@ -7,52 +7,73 @@ import (
 	"github.com/quay/claircore/indexer"
 )
 
-// Coalescer takes individual layer artifacts and coalesces them to form the final image's
-// package results
-type Coalescer struct {
-	// the IndexReport this Coalescer is working on
-	ir *claircore.IndexReport
-}
+/*
+Coalescer takes individual layer artifacts and coalesces them into a full report
+on the manifest's contents.
 
-// NewCoalescer is a constructor for a Coalescer
-func NewCoalescer() *Coalescer {
-	return &Coalescer{
-		ir: &claircore.IndexReport{
-			// we will only fill these fields
-			Environments:  map[string][]*claircore.Environment{},
-			Packages:      map[string]*claircore.Package{},
-			Distributions: map[string]*claircore.Distribution{},
-			Repositories:  map[string]*claircore.Repository{},
-		},
-	}
-}
+Due to the specifics of the RHEL build system, some information needs to be
+back-propagated. That is to say, some information discovered in later layers is
+also attributed to earlier layers. Both the product and distribution information
+work this way.
 
-// Coalesce coalesces artifacts found in layers and creates a final IndexReport with
-// the final package details found in the image. This method blocks and when its finished
-// the c.ir field will hold the final IndexReport
-func (c *Coalescer) Coalesce(ctx context.Context, artifacts []*indexer.LayerArtifacts) (*claircore.IndexReport, error) {
+A Coalescer is safe for concurrent use.
+*/
+type Coalescer struct{}
+
+var _ indexer.Coalescer = (*Coalescer)(nil)
+
+// Coalesce implements [indexer.Coalescer].
+func (*Coalescer) Coalesce(ctx context.Context, artifacts []*indexer.LayerArtifacts) (*claircore.IndexReport, error) {
+	// The comments in here have been largely audited to have consistent language, but
+	// "CPE," "repository," and "product" may be used interchangably here.
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
-	// Share repositories with layers where definition is missing
-	c.shareRepos(ctx, artifacts)
+	ir := claircore.IndexReport{
+		Environments:  map[string][]*claircore.Environment{},
+		Packages:      map[string]*claircore.Package{},
+		Distributions: map[string]*claircore.Distribution{},
+		Repositories:  map[string]*claircore.Repository{},
+	}
+
+	// User layers built on top of Red Hat images don't have product CPEs associated with them.
+	// We need to share the product information forward to all layers where it's missing.
+	// This only applies to Red Hat images, obivously.
+	var prev []*claircore.Repository
+	for i := range artifacts {
+		lr := filterRedHatRepos(artifacts[i].Repos)
+		if len(lr) != 0 {
+			prev = lr
+			continue
+		}
+		artifacts[i].Repos = append(artifacts[i].Repos, prev...)
+	}
+	// The same thing has to be done in reverse, because the first layer(s) are missing
+	// the relevant information.
+	for i := len(artifacts) - 1; i >= 0; i-- {
+		lr := filterRedHatRepos(artifacts[i].Repos)
+		if len(lr) != 0 {
+			prev = lr
+			continue
+		}
+		artifacts[i].Repos = append(artifacts[i].Repos, prev...)
+	}
+	// This dance with copying the product information in both directions means
+	// that if Red Hat product information is found, it "taints" all the layers.
+
 	for _, a := range artifacts {
 		for _, repo := range a.Repos {
-			c.ir.Repositories[repo.ID] = repo
+			ir.Repositories[repo.ID] = repo
 		}
 	}
-	// In our coalescing logic if a Distribution is found in layer (n) all packages found
-	// in layers 0-(n) will be associated with this layer. This is a heuristic.
-	// Let's do a search for the first Distribution we find and use a variable
-	// to keep reference of the current Distribution in scope
-	// As further Distributions are found we will inventory them and update our currDist pointer,
-	// thus tagging all subsequetly found packages with this Distribution.
-	// This is a requirement for handling dist upgrades where a layer may have it's operating system updated
-	var currDist *claircore.Distribution
+	// In our coalescing logic if a Distribution is found in layer "n" all packages found
+	// in layers [0-n] will be associated with this layer. This is for the same reasons
+	// for the repository tainting, above.
+	var curDist *claircore.Distribution
 	for _, a := range artifacts {
 		if len(a.Dist) != 0 {
-			currDist = a.Dist[0]
-			c.ir.Distributions[currDist.ID] = currDist
+			curDist = a.Dist[0]
+			ir.Distributions[curDist.ID] = curDist
 			break
 		}
 	}
@@ -64,41 +85,44 @@ func (c *Coalescer) Coalesce(ctx context.Context, artifacts []*indexer.LayerArti
 		packages     map[string]*claircore.Package
 		environments map[string]*claircore.Environment
 	}
-	var dbs = map[string]*packageDatabase{}
+	dbs := map[string]*packageDatabase{}
+
 	// lets walk each layer forward looking for packages, new distributions, and
 	// creating the environments we discover packages in.
 	for _, layerArtifacts := range artifacts {
 		// check if we need to update our currDist
 		if len(layerArtifacts.Dist) != 0 {
-			currDist = layerArtifacts.Dist[0]
-			c.ir.Distributions[currDist.ID] = currDist
+			curDist = layerArtifacts.Dist[0]
+			ir.Distributions[curDist.ID] = curDist
 		}
 		// associate packages with their environments
-		if len(layerArtifacts.Pkgs) != 0 {
-			for _, pkg := range layerArtifacts.Pkgs {
-				// if we encounter a package where we haven't recorded a package database,
-				// initialize the package database
-				var distID string
-				if currDist != nil {
-					distID = currDist.ID
+		for _, pkg := range layerArtifacts.Pkgs {
+			// if we encounter a package where we haven't recorded a package database,
+			// initialize the package database
+			var distID string
+			if curDist != nil {
+				distID = curDist.ID
+			}
+			db, ok := dbs[pkg.PackageDB]
+			if !ok {
+				db = &packageDatabase{
+					packages:     make(map[string]*claircore.Package),
+					environments: make(map[string]*claircore.Environment),
 				}
-				if _, ok := dbs[pkg.PackageDB]; !ok {
-					packages := map[string]*claircore.Package{}
-					environments := map[string]*claircore.Environment{}
-					dbs[pkg.PackageDB] = &packageDatabase{packages, environments}
+				dbs[pkg.PackageDB] = db
+			}
+			if _, ok := db.packages[pkg.ID]; !ok {
+				environment := &claircore.Environment{
+					PackageDB:      pkg.PackageDB,
+					IntroducedIn:   layerArtifacts.Hash,
+					DistributionID: distID,
+					RepositoryIDs:  make([]string, len(layerArtifacts.Repos)),
 				}
-				if _, ok := dbs[pkg.PackageDB].packages[pkg.ID]; !ok {
-					environment := &claircore.Environment{
-						PackageDB:      pkg.PackageDB,
-						IntroducedIn:   layerArtifacts.Hash,
-						DistributionID: distID,
-					}
-					for _, repo := range layerArtifacts.Repos {
-						environment.RepositoryIDs = append(environment.RepositoryIDs, repo.ID)
-					}
-					dbs[pkg.PackageDB].packages[pkg.ID] = pkg
-					dbs[pkg.PackageDB].environments[pkg.ID] = environment
+				for i := range layerArtifacts.Repos {
+					environment.RepositoryIDs[i] = layerArtifacts.Repos[i].ID
 				}
+				db.packages[pkg.ID] = pkg
+				db.environments[pkg.ID] = environment
 			}
 		}
 	}
@@ -113,13 +137,13 @@ func (c *Coalescer) Coalesce(ctx context.Context, artifacts []*indexer.LayerArti
 	// from list of packages
 	// If a package is available in all layers it means that it should be added
 	// to list of packages and associate an environment for it.
-	for i := 0; i < len(artifacts); i++ {
+	for i := range artifacts {
 		currentLayerArtifacts := artifacts[i]
 		if len(currentLayerArtifacts.Pkgs) == 0 {
 			continue
 		}
 		for _, currentPkg := range currentLayerArtifacts.Pkgs {
-			if _, ok := c.ir.Packages[currentPkg.ID]; ok {
+			if _, ok := ir.Packages[currentPkg.ID]; ok {
 				// the package was already processed in previous layers
 				continue
 			}
@@ -139,51 +163,21 @@ func (c *Coalescer) Coalesce(ctx context.Context, artifacts []*indexer.LayerArti
 				}
 			}
 			if found {
-				c.ir.Packages[currentPkg.ID] = currentPkg
-				c.ir.Environments[currentPkg.ID] = append(c.ir.Environments[currentPkg.ID], dbs[currentPkg.PackageDB].environments[currentPkg.ID])
+				ir.Packages[currentPkg.ID] = currentPkg
+				ir.Environments[currentPkg.ID] = append(ir.Environments[currentPkg.ID], dbs[currentPkg.PackageDB].environments[currentPkg.ID])
 			}
 		}
 	}
-	return c.ir, nil
+	return &ir, nil
 }
 
-// shareRepos takes repository definition and share it with other layers
-// where repositories are missing
-func (c *Coalescer) shareRepos(ctx context.Context, artifacts []*indexer.LayerArtifacts) {
-	// User's layers build on top of Red Hat images doesn't have a repository definition.
-	// We need to share CPE repo definition to all layer where CPEs are missing
-	// This only applies to Red Hat images
-	var previousredHatCpeRepos []*claircore.Repository
-	for i := 0; i < len(artifacts); i++ {
-		redHatCpeRepos := getRedHatCPERepos(artifacts[i].Repos)
-		if len(redHatCpeRepos) != 0 {
-			previousredHatCpeRepos = redHatCpeRepos
-		} else {
-			artifacts[i].Repos = append(artifacts[i].Repos, previousredHatCpeRepos...)
+// FilterRedHatRepos finds and reports Red Hat's CPE based repositories.
+func filterRedHatRepos(in []*claircore.Repository) []*claircore.Repository {
+	out := make([]*claircore.Repository, 0, len(in))
+	for _, r := range in {
+		if r.Key == repositoryKey {
+			out = append(out, r)
 		}
 	}
-	// Tha same thing has to be done in reverse
-	// example:
-	//   Red Hat's base images doesn't have repository definition
-	//   We need to get them from layer[i+1]
-	for i := len(artifacts) - 1; i >= 0; i-- {
-		redHatCpeRepos := getRedHatCPERepos(artifacts[i].Repos)
-		if len(redHatCpeRepos) != 0 {
-			previousredHatCpeRepos = redHatCpeRepos
-		} else {
-			artifacts[i].Repos = append(artifacts[i].Repos, previousredHatCpeRepos...)
-		}
-	}
-
-}
-
-// getRedHatCPERepos finds Red Hat's CPE based repositories and return them
-func getRedHatCPERepos(repos []*claircore.Repository) []*claircore.Repository {
-	redHatCPERepos := []*claircore.Repository{}
-	for _, repo := range repos {
-		if repo.Key == RedHatRepositoryKey {
-			redHatCPERepos = append(redHatCPERepos, repo)
-		}
-	}
-	return redHatCPERepos
+	return out
 }

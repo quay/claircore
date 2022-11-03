@@ -5,10 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"path"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -16,49 +18,34 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/cpe"
-	"github.com/quay/claircore/rhel/containerapi"
-	"github.com/quay/claircore/rhel/repo2cpe"
 )
 
 func TestRepositoryScanner(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
 
 	// Set up a response map and test server to mock the Container API.
-	apiData := map[string]*containerapi.ContainerImages{
-		"rh-pkg-1-1": {Images: []containerapi.ContainerImage{
-			{
-				CPEs: []string{
-					"cpe:/o:redhat:enterprise_linux:8::computenode",
-					"cpe:/o:redhat:enterprise_linux:8::baseos",
-				},
-				ParsedData: containerapi.ParsedData{
-					Architecture: "x86_64",
-					Labels: []containerapi.Label{
-						{Name: "architecture", Value: "x86_64"},
-					},
-				},
-			},
-		}},
+	apiData := map[string]*strings.Reader{
+		"rh-pkg-1-1": strings.NewReader(`{"data":[{"cpe_ids":["cpe:/o:redhat:enterprise_linux:8::computenode","cpe:/o:redhat:enterprise_linux:8::baseos"],"parsed_data":{"architecture":"x86_64","labels":[{"name":"architecture","value":"x86_64"}]}}]}`),
 	}
-	mappingData := repo2cpe.MappingFile{Data: map[string]repo2cpe.Repo{
-		"content-set-1": {
-			CPEs: []string{"cpe:/o:redhat:enterprise_linux:6::server", "cpe:/o:redhat:enterprise_linux:7::server"},
-		},
-		"content-set-2": {
-			CPEs: []string{"cpe:/o:redhat:enterprise_linux:7::server", "cpe:/o:redhat:enterprise_linux:8::server"},
-		},
-	}}
+	mappingData := strings.NewReader(`{"data":{"content-set-1":{"cpes":["cpe:/o:redhat:enterprise_linux:6::server","cpe:/o:redhat:enterprise_linux:7::server"]},"content-set-2":{"cpes":["cpe:/o:redhat:enterprise_linux:7::server","cpe:/o:redhat:enterprise_linux:8::server"]}}}`)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/repository-2-cpe.json", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("last-modified", "Mon, 02 Jan 2006 15:04:05 MST")
-		if err := json.NewEncoder(w).Encode(mappingData); err != nil {
+		if _, err := mappingData.Seek(0, io.SeekStart); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := io.Copy(w, mappingData); err != nil {
 			t.Fatal(err)
 		}
 	})
 	mux.HandleFunc("/v1/images/nvr/", func(w http.ResponseWriter, r *http.Request) {
 		path := path.Base(r.URL.Path)
-		if err := json.NewEncoder(w).Encode(apiData[path]); err != nil {
+		d := apiData[path]
+		if _, err := d.Seek(0, io.SeekStart); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := io.Copy(w, d); err != nil {
 			t.Fatal(err)
 		}
 	})
@@ -66,26 +53,26 @@ func TestRepositoryScanner(t *testing.T) {
 	defer srv.Close()
 
 	table := []struct {
+		cfg       *RepositoryScannerConfig
 		name      string
-		cfg       *RepoScannerConfig
-		want      []*claircore.Repository
 		layerPath string
+		want      []*claircore.Repository
 	}{
 		{
 			name: "FromAPI",
 			want: []*claircore.Repository{
 				{
 					Name: "cpe:/o:redhat:enterprise_linux:8::baseos",
-					Key:  RedHatRepositoryKey,
+					Key:  repositoryKey,
 					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8::baseos"),
 				},
 				{
 					Name: "cpe:/o:redhat:enterprise_linux:8::computenode",
-					Key:  RedHatRepositoryKey,
+					Key:  repositoryKey,
 					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8::computenode"),
 				},
 			},
-			cfg:       &RepoScannerConfig{API: srv.URL, Repo2CPEMappingURL: srv.URL + "/repository-2-cpe.json"},
+			cfg:       &RepositoryScannerConfig{API: srv.URL, Repo2CPEMappingURL: srv.URL + "/repository-2-cpe.json"},
 			layerPath: "testdata/layer-with-cpe.tar",
 		},
 		{
@@ -93,34 +80,34 @@ func TestRepositoryScanner(t *testing.T) {
 			want: []*claircore.Repository{
 				{
 					Name: "cpe:/o:redhat:enterprise_linux:6::server",
-					Key:  RedHatRepositoryKey,
+					Key:  repositoryKey,
 					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:6::server"),
 				},
 				{
 					Name: "cpe:/o:redhat:enterprise_linux:7::server",
-					Key:  RedHatRepositoryKey,
+					Key:  repositoryKey,
 					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:7::server"),
 				},
 				{
 					Name: "cpe:/o:redhat:enterprise_linux:8::server",
-					Key:  RedHatRepositoryKey,
+					Key:  repositoryKey,
 					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8::server"),
 				},
 			},
-			cfg:       &RepoScannerConfig{API: srv.URL, Repo2CPEMappingURL: srv.URL + "/repository-2-cpe.json"},
+			cfg:       &RepositoryScannerConfig{API: srv.URL, Repo2CPEMappingURL: srv.URL + "/repository-2-cpe.json"},
 			layerPath: "testdata/layer-with-embedded-cs.tar",
 		},
 		{
 			name:      "No-cpe-info",
 			want:      nil,
-			cfg:       &RepoScannerConfig{},
+			cfg:       &RepositoryScannerConfig{},
 			layerPath: "testdata/layer-with-no-cpe-info.tar",
 		},
 	}
 	for _, tt := range table {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := zlog.Test(ctx, t)
-			scanner := NewRepositoryScanner(ctx, nil, tt.cfg.Repo2CPEMappingURL)
+			scanner := new(RepositoryScanner)
 			l := &claircore.Layer{}
 			l.SetLocal(tt.layerPath)
 

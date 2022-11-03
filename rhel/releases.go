@@ -8,26 +8,6 @@ import (
 	"github.com/quay/claircore/pkg/cpe"
 )
 
-// RHEL has minor releases however their security database files are bundled together
-// by major version. for example `com.redhat.rhsa-RHEL7.xml`
-// we choose to normalize detected distributions into major releases and parse vulnerabilities by major release versions.
-
-type Release int
-
-const (
-	RHEL3 Release = 3
-	RHEL4 Release = 4
-	RHEL5 Release = 5
-	RHEL6 Release = 6
-	RHEL7 Release = 7
-	RHEL8 Release = 8
-	RHEL9 Release = 9
-)
-
-func (r Release) Distribution() *claircore.Distribution {
-	return mkRelease(int64(r))
-}
-
 // RelMap memoizes the Distributions handed out by this package.
 //
 // Doing this is a cop-out to the previous approach of having a hard-coded set of structs.

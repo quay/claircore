@@ -10,8 +10,7 @@ import (
 )
 
 // Matcher implements driver.Matcher.
-type Matcher struct {
-}
+type Matcher struct{}
 
 var _ driver.Matcher = (*Matcher)(nil)
 
@@ -22,7 +21,7 @@ func (*Matcher) Name() string {
 
 // Filter implements driver.Matcher.
 func (*Matcher) Filter(record *claircore.IndexRecord) bool {
-	return record.Repository != nil && record.Repository.Key == RedHatRepositoryKey
+	return record.Repository != nil && record.Repository.Key == repositoryKey
 }
 
 // Query implements driver.Matcher.

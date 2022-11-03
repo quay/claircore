@@ -1,16 +1,23 @@
+// Package rhel implements the machinery for processing layers and security data
+// from the Red Hat ecosystem.
+//
+// See the various exported types for details on the heuristics employed.
+//
+// In addition, containers themselves are recognized via the
+// [github.com/quay/claircore/rhel/rhcc] package.
 package rhel // import "github.com/quay/claircore/rhel"
 
 import (
-	"fmt"
+	"context"
 	"net/http"
 	"net/url"
 
+	"github.com/quay/zlog"
+
+	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/ovalutil"
 )
-
-// We currently grab the oval databases db distro-wise.
-const dbURL = `https://access.redhat.com/security/data/oval/com.redhat.rhsa-RHEL%d.xml`
 
 var (
 	_ driver.Updater      = (*Updater)(nil)
@@ -20,71 +27,44 @@ var (
 // Updater fetches and parses RHEL-flavored OVAL databases.
 type Updater struct {
 	ovalutil.Fetcher // fetch method promoted via embed
+	dist             *claircore.Distribution
 	name             string
-	release          Release
+}
+
+// UpdaterConfig is the configuration expected for any given updater.
+//
+// See also [ovalutil.FetcherConfig].
+type UpdaterConfig struct {
+	ovalutil.FetcherConfig
+	Release int64 `json:"release" yaml:"release"`
 }
 
 // NewUpdater returns an Updater.
-func NewUpdater(v Release, opt ...Option) (*Updater, error) {
+func NewUpdater(name string, release int, uri string) (*Updater, error) {
 	u := &Updater{
-		name:    fmt.Sprintf("rhel-%d-updater", v),
-		release: v,
+		name: name,
+		dist: mkRelease(int64(release)),
 	}
 	var err error
-	u.Fetcher.URL, err = url.Parse(fmt.Sprintf(dbURL, v))
+	u.Fetcher.URL, err = url.Parse(uri)
 	if err != nil {
 		return nil, err
-	}
-	for _, f := range opt {
-		if err := f(u); err != nil {
-			return nil, err
-		}
-	}
-	if u.Fetcher.Client == nil {
-		u.Fetcher.Client = http.DefaultClient // TODO(hank) Remove DefaultClient
 	}
 	return u, nil
 }
 
-// Option is a type to configure an Updater.
-type Option func(*Updater) error
-
-// WithURL overrides the default URL to fetch an OVAL database.
-func WithURL(uri, compression string) Option {
-	c, cerr := ovalutil.ParseCompressor(compression)
-	u, uerr := url.Parse(uri)
-	return func(up *Updater) error {
-		// Return any errors from the outer function.
-		switch {
-		case cerr != nil:
-			return cerr
-		case uerr != nil:
-			return uerr
-		}
-		up.Fetcher.Compression = c
-		up.Fetcher.URL = u
-		return nil
+// Configure implements [driver.Configurable].
+func (u *Updater) Configure(ctx context.Context, cf driver.ConfigUnmarshaler, c *http.Client) error {
+	ctx = zlog.ContextWithValues(ctx, "component", "rhel/Updater.Configure")
+	var cfg UpdaterConfig
+	if err := cf(&cfg); err != nil {
+		return err
 	}
-}
-
-// WithClient sets an http.Client for use with an Updater.
-//
-// If this Option is not supplied, http.DefaultClient will be used.
-func WithClient(c *http.Client) Option {
-	return func(u *Updater) error {
-		u.Fetcher.Client = c
-		return nil
+	if cfg.Release != 0 {
+		u.dist = mkRelease(cfg.Release)
 	}
+	return u.Fetcher.Configure(ctx, cf, c)
 }
 
-func WithName(n string) Option {
-	return func(u *Updater) error {
-		u.name = n
-		return nil
-	}
-}
-
-// Name satisifies the driver.Updater interface.
-func (u *Updater) Name() string {
-	return u.name
-}
+// Name implements [driver.Updater].
+func (u *Updater) Name() string { return u.name }

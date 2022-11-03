@@ -24,8 +24,11 @@ func TestFetch(t *testing.T) {
 
 	t.Run("FetchContext", func(t *testing.T) {
 		ctx := zlog.Test(ctx, t)
-		u, err := NewUpdater(3, WithClient(srv.Client()), WithURL(srv.URL, ""))
+		u, err := NewUpdater(`rhel-3-updater`, 3, srv.URL)
 		if err != nil {
+			t.Fatal(err)
+		}
+		if err := u.Configure(ctx, func(_ interface{}) error { return nil }, srv.Client()); err != nil {
 			t.Fatal(err)
 		}
 		rd, hint, err := u.Fetch(ctx, driver.Fingerprint(""))
@@ -54,8 +57,11 @@ func TestFetch(t *testing.T) {
 
 	t.Run("Fetch", func(t *testing.T) {
 		ctx := zlog.Test(ctx, t)
-		u, err := NewUpdater(3, WithClient(srv.Client()), WithURL(srv.URL, ""))
+		u, err := NewUpdater(`rhel-3-updater`, 3, srv.URL)
 		if err != nil {
+			t.Fatal(err)
+		}
+		if err := u.Configure(ctx, func(_ interface{}) error { return nil }, srv.Client()); err != nil {
 			t.Fatal(err)
 		}
 		rd, hint, err := u.Fetch(ctx, "")

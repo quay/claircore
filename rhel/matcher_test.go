@@ -89,8 +89,8 @@ func TestMatcherIntegration(t *testing.T) {
 type vulnerableTestCase struct {
 	ir   *claircore.IndexRecord
 	v    *claircore.Vulnerability
-	want bool
 	name string
+	want bool
 }
 
 func TestVulnerable(t *testing.T) {

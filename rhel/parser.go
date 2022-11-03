@@ -13,8 +13,15 @@ import (
 	"github.com/quay/claircore/internal/xmlutil"
 	"github.com/quay/claircore/pkg/cpe"
 	"github.com/quay/claircore/pkg/ovalutil"
+	"github.com/quay/claircore/rhel/internal/common"
 )
 
+// Parse implements [driver.Updater].
+//
+// Parse treats the data inside the provided io.ReadCloser as Red Hat
+// flavored OVAL XML. The distribution associated with vulnerabilities
+// is configured via the Updater. The repository associated with
+// vulnerabilies is based on the affected CPE list.
 func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "rhel/Updater.Parse")
 	zlog.Info(ctx).Msg("starting parse")
@@ -61,16 +68,13 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 				Issued:             def.Advisory.Issued.Date,
 				Links:              ovalutil.Links(def),
 				Severity:           def.Advisory.Severity,
-				NormalizedSeverity: NormalizeSeverity(def.Advisory.Severity),
+				NormalizedSeverity: common.NormalizeSeverity(def.Advisory.Severity),
 				Repo: &claircore.Repository{
 					Name: affected,
 					CPE:  wfn,
-					Key:  RedHatRepositoryKey,
+					Key:  repositoryKey,
 				},
-				// each updater is configured to parse a rhel release
-				// specific xml database. we'll use the updater's release
-				// to map the parsed vulnerabilities
-				Dist: u.release.Distribution(),
+				Dist: u.dist,
 			}
 			vs = append(vs, v)
 		}

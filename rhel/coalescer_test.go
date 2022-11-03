@@ -18,7 +18,7 @@ import (
 // and instead test private methods.
 func TestCoalescer(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
-	coalescer := NewCoalescer()
+	coalescer := new(Coalescer)
 	// we will test
 	// 1) packages before a distribution was discovered are tagged with
 	//    the first distribution found
@@ -86,21 +86,21 @@ func TestCoalescer(t *testing.T) {
 
 func TestCoalescerCPERepos(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
-	coalescer := NewCoalescer()
+	coalescer := new(Coalescer)
 	repo1 := &claircore.Repository{
 		ID:   "1",
 		Name: "rhel-8-for-x86_64-baseos-rpms",
-		Key:  RedHatRepositoryKey,
+		Key:  repositoryKey,
 	}
 	repo2 := &claircore.Repository{
 		ID:   "2",
 		Name: "rhel-8-for-x86_64-appstream-rpms",
-		Key:  RedHatRepositoryKey,
+		Key:  repositoryKey,
 	}
 	repo3 := &claircore.Repository{
 		ID:   "3",
 		Name: "rhel-8-for-x86_64-appstream-rpms",
-		Key:  RedHatRepositoryKey,
+		Key:  repositoryKey,
 	}
 
 	pkgs := test.GenUniquePackages(5)
@@ -159,7 +159,7 @@ func TestCoalescerCPERepos(t *testing.T) {
 
 func TestCoalescerUpdatedPackage(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
-	coalescer := NewCoalescer()
+	coalescer := new(Coalescer)
 	repo1 := &claircore.Repository{
 		ID:   "1",
 		Name: "cpe:/o:redhat:enterprise_linux:8::baseos",
@@ -222,7 +222,7 @@ func TestCoalescerUpdatedPackage(t *testing.T) {
 
 func TestCoalescerDowngradedPackage(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
-	coalescer := NewCoalescer()
+	coalescer := new(Coalescer)
 	repo1 := &claircore.Repository{
 		ID:   "1",
 		Name: "cpe:/o:redhat:enterprise_linux:8::baseos",
@@ -285,7 +285,7 @@ func TestCoalescerDowngradedPackage(t *testing.T) {
 
 func TestCoalescerRemovedPackage(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
-	coalescer := NewCoalescer()
+	coalescer := new(Coalescer)
 	repo1 := &claircore.Repository{
 		ID:   "1",
 		Name: "cpe:/o:redhat:enterprise_linux:8::baseos",

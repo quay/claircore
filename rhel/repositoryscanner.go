@@ -27,60 +27,95 @@ import (
 )
 
 // RepoCPEUpdater provides interface for providing a mapping
-// between repositories and CPEs
+// between repositories and CPEs.
 type repoCPEMapper interface {
 	Get(context.Context, []string) ([]string, error)
 }
 
-// RepositoryScanner implements Red Hat repositories
+/*
+RepositoryScanner implements repository detection logic for RHEL.
+
+The RHEL detection logic needs outside information because the Red Hat build
+system does not (and did not, in the past) store the relevant information in the
+layer itself. In addition, dnf and yum do not persist provenance information
+outside of a cache and rpm considers such information outside its baliwick.
+
+In the case of the RHEL ecosystem, "repository" is a bit of a misnomer, as
+advisories are tracked on the Product level, and so Clair's "repository" data is
+used instead to indicate a Product. This mismatch can lead to apparent
+duplications in reporting. For example, if an advisory is marked as affecting
+"cpe:/a:redhat:enterprise_linux:8" and
+"cpe:/a:redhat:enterprise_linux:8::appstream", this results in two advisories
+being recorded. (CPEs do not namespace the way this example may imply; that is
+to say, the latter is not "contained in" or a "member of" the former.) If a
+layer reports that it is both the "cpe:/a:redhat:enterprise_linux:8" and
+"cpe:/a:redhat:enterprise_linux:8::appstream" layer, then both advisories match.
+*/
 type RepositoryScanner struct {
-	cfg RepoScannerConfig
-
 	// These members are created after the Configure call.
-	apiFetcher *containerapi.ContainerAPI
 	mapper     repoCPEMapper
+	apiFetcher *containerapi.ContainerAPI
 	client     *http.Client
+
+	cfg RepositoryScannerConfig
 }
 
-// RepoScannerConfig is the struct that will be passed to
-// (*RepositoryScanner).Configure's ConfigDeserializer argument.
-type RepoScannerConfig struct {
-	Timeout             time.Duration `json:"timeout" yaml:"timeout"`
-	API                 string        `json:"api" yaml:"api"`
-	Repo2CPEMappingURL  string        `json:"repo2cpe_mapping_url" yaml:"repo2cpe_mapping_url"`
-	Repo2CPEMappingFile string        `json:"repo2cpe_mapping_file" yaml:"repo2cpe_mapping_file"`
+var (
+	_ indexer.RepositoryScanner = (*RepositoryScanner)(nil)
+	_ indexer.RPCScanner        = (*RepositoryScanner)(nil)
+	_ indexer.VersionedScanner  = (*RepositoryScanner)(nil)
+)
+
+// RepositoryScannerConfig is the configuration expected for a
+// [RepositoryScanner].
+//
+// Providing the "URL" and "File" members controls how the RepositoryScanner
+// handles updating its mapping file:
+//
+//   - If the "URL" is provided or no configuration is provided, the mapping file
+//     is fetched at construction time and then updated periodically.
+//   - If only the "File" is provided, it will be consulted exclusively.
+//   - If both the "URL" and "File" are provided, the file will be loaded
+//     initially and then updated periodically from the URL.
+type RepositoryScannerConfig struct {
+	// API is the URL to talk to the Red Hat Container API.
+	//
+	// See [DefaultContainerAPI] and [containerapi.ContainerAPI].
+	API string `json:"api" yaml:"api"`
+	// Repo2CPEMappingURL can be used to fetch the repo mapping file.
+	// Consulting the mapping file is preferred over the Container API.
+	//
+	// See [DefaultRepo2CPEMappingURL] and [repo2cpe].
+	Repo2CPEMappingURL string `json:"repo2cpe_mapping_url" yaml:"repo2cpe_mapping_url"`
+	// Repo2CPEMappingFile, if specified, is consulted instead of the [Repo2CPEMappingURL].
+	//
+	// This should be provided to avoid any network traffic.
+	Repo2CPEMappingFile string `json:"repo2cpe_mapping_file" yaml:"repo2cpe_mapping_file"`
+	// Timeout controls the timeout for any remote calls this package makes.
+	Timeout time.Duration `json:"timeout" yaml:"timeout"`
+	// BUG(hank) The RepositoryScannerConfig's "Timeout" member is ignored for
+	// any initial network calls.
 }
 
-// RedHatRepositoryKey is a key of Red Hat's CPE based repository
-const RedHatRepositoryKey = "rhel-cpe-repository"
+const (
+	// RepositoryKey marks a repository as being based on a Red Hat CPE.
+	repositoryKey = "rhel-cpe-repository"
+	// DefaultContainerAPI is the default Red Hat Container API URL.
+	DefaultContainerAPI = "https://catalog.redhat.com/api/containers/"
+	// DefaultRepo2CPEMappingURL is default URL with a mapping file provided by Red Hat.
+	DefaultRepo2CPEMappingURL = "https://access.redhat.com/security/data/metrics/repository-to-cpe.json"
+)
 
-// Name implements scanner.Name.
+// Name implements [indexer.VersionedScanner].
 func (*RepositoryScanner) Name() string { return "rhel-repository-scanner" }
 
-// Version implements scanner.VersionedScanner.
+// Version implements [indexer.VersionedScanner].
 func (*RepositoryScanner) Version() string { return "1.1" }
 
-// Kind implements scanner.VersionedScanner.
+// Kind implements [indexer.VersionedScanner].
 func (*RepositoryScanner) Kind() string { return "repository" }
 
-// DefaultContainerAPI is a default Red Hat's container API URL
-const DefaultContainerAPI = "https://catalog.redhat.com/api/containers/"
-
-// DefaultRepo2CPEMappingURL is default URL with a mapping file provided by Red Hat
-const DefaultRepo2CPEMappingURL = "https://access.redhat.com/security/data/metrics/repository-to-cpe.json"
-
-// NewRepositoryScanner create new Repo scanner struct and initialize mapping updater
-func NewRepositoryScanner(ctx context.Context, c *http.Client, cs2cpeURL string) *RepositoryScanner {
-	scanner := &RepositoryScanner{}
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "rhel/NewRepositoryScanner",
-		"version", scanner.Version())
-
-	scanner.client = c
-	return scanner
-}
-
-// Configure implements the RPCScanner interface.
+// Configure implements [indexer.RPCScanner].
 func (r *RepositoryScanner) Configure(ctx context.Context, f indexer.ConfigDeserializer, c *http.Client) error {
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "rhel/RepositoryScanner.Configure",
@@ -91,30 +126,16 @@ func (r *RepositoryScanner) Configure(ctx context.Context, f indexer.ConfigDeser
 	}
 	// Set defaults if not set via passed function.
 	if r.cfg.API == "" {
-		const name = `CONTAINER_API_URL`
 		r.cfg.API = DefaultContainerAPI
-		if env := os.Getenv(name); env != "" {
-			zlog.Warn(ctx).
-				Str("name", name).
-				Msg("this environment variable will be ignored in the future, use the configuration")
-			r.cfg.API = env
-		}
 	}
 	if r.cfg.Timeout == 0 {
-		r.cfg.Timeout = 30 * time.Second
+		r.cfg.Timeout = 10 * time.Second
 	}
 
 	switch {
 	case r.cfg.Repo2CPEMappingURL == "" && r.cfg.Repo2CPEMappingFile == "":
 		// defaults
-		const name = `REPO_TO_CPE_URL`
 		r.cfg.Repo2CPEMappingURL = DefaultRepo2CPEMappingURL
-		if env := os.Getenv(name); env != "" {
-			zlog.Warn(ctx).
-				Str("name", name).
-				Msg("this environment variable will be ignored in the future, use the configuration")
-			r.cfg.Repo2CPEMappingURL = env
-		}
 		fallthrough
 	case r.cfg.Repo2CPEMappingURL != "" && r.cfg.Repo2CPEMappingFile == "":
 		// remote only
@@ -163,7 +184,7 @@ func (r *RepositoryScanner) Configure(ctx context.Context, f indexer.ConfigDeser
 	return nil
 }
 
-// Scan gets Red Hat repositories information.
+// Scan implements [indexer.RepositoryScanner].
 func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) (repositories []*claircore.Repository, err error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	ctx = zlog.ContextWithValues(ctx,
@@ -183,7 +204,7 @@ func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) (repos
 		return nil, fmt.Errorf("rhel: unable to open layer: %w", err)
 	}
 
-	CPEs, err := r.getCPEsUsingEmbeddedContentSets(ctx, sys)
+	CPEs, err := mapContentSets(ctx, sys, r.mapper)
 	if err != nil {
 		return []*claircore.Repository{}, err
 	}
@@ -192,7 +213,7 @@ func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) (repos
 		// For old images, use fallback option and query Red Hat Container API.
 		ctx, done := context.WithTimeout(ctx, r.cfg.Timeout)
 		defer done()
-		CPEs, err = r.getCPEsUsingContainerAPI(ctx, sys)
+		CPEs, err = mapContainerAPI(ctx, sys, r.apiFetcher)
 		if err != nil {
 			return []*claircore.Repository{}, err
 		}
@@ -201,7 +222,7 @@ func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) (repos
 	for _, cpeID := range CPEs {
 		r := &claircore.Repository{
 			Name: cpeID,
-			Key:  RedHatRepositoryKey,
+			Key:  repositoryKey,
 		}
 		r.CPE, err = cpe.Unbind(cpeID)
 		if err != nil {
@@ -219,9 +240,9 @@ func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) (repos
 	return repositories, nil
 }
 
-// getCPEsUsingEmbeddedContentSets returns a slice of CPEs bound into strings, as discovered by
+// MapContentSets returns a slice of CPEs bound into strings, as discovered by
 // examining information contained within the container.
-func (r *RepositoryScanner) getCPEsUsingEmbeddedContentSets(ctx context.Context, sys fs.FS) ([]string, error) {
+func mapContentSets(ctx context.Context, sys fs.FS, cm repoCPEMapper) ([]string, error) {
 	// Get CPEs using embedded content-set files.
 	// The files is be stored in /root/buildinfo/content_manifests/ and will need to
 	// be translated using mapping file provided by Red Hat's PST team.
@@ -249,7 +270,7 @@ func (r *RepositoryScanner) getCPEsUsingEmbeddedContentSets(ctx context.Context,
 	if len(m.ContentSets) == 0 {
 		return nil, nil
 	}
-	return r.mapper.Get(ctx, m.ContentSets)
+	return cm.Get(ctx, m.ContentSets)
 }
 
 // ContentManifest structure is the data provided by OSBS.
@@ -263,7 +284,10 @@ type manifestMetadata struct {
 	ImageLayerIndex int `json:"image_layer_index"`
 }
 
-func (r *RepositoryScanner) getCPEsUsingContainerAPI(ctx context.Context, sys fs.FS) ([]string, error) {
+// MapContainerAPI returns a slice of CPEs bound into strings, as discovered by
+// pulling labels from the Dockerfile contained in the layer and submitted to the
+// Container API.
+func mapContainerAPI(ctx context.Context, sys fs.FS, api *containerapi.ContainerAPI) ([]string, error) {
 	ms, err := fs.Glob(sys, "root/buildinfo/Dockerfile-*")
 	if err != nil {
 		panic(fmt.Errorf("programmer error: %w", err))
@@ -289,7 +313,7 @@ func (r *RepositoryScanner) getCPEsUsingContainerAPI(ctx context.Context, sys fs
 		return nil, err
 	}
 
-	cpes, err := r.apiFetcher.GetCPEs(ctx, nvr, arch)
+	cpes, err := api.GetCPEs(ctx, nvr, arch)
 	if err != nil {
 		return nil, err
 	}
@@ -297,15 +321,15 @@ func (r *RepositoryScanner) getCPEsUsingContainerAPI(ctx context.Context, sys fs
 		Str("nvr", nvr).
 		Str("arch", arch).
 		Strs("cpes", cpes).
-		Msg("Got CPEs from container API")
+		Msg("got CPEs from container API")
 	return cpes, nil
 }
 
-// extractBuildNVR - extract build NVR (name-version-release) from Dockerfile
-// stored in filesystem
-// The redhat.com.component LABEL is extracted from dockerfile and it is used as name
-// Version and release is extracted from Dockerfile name
-// Arch is extracted from 'architecture' LABEL
+// ExtractBuildNVR extracts the build's NVR and arch from the named Dockerfile and its contents.
+//
+// The `redhat.com.component` label is extracted from the contents and used as the "name."
+// "Version" and "release" are extracted from the Dockerfile path.
+// "Arch" is extracted from the `architecture` label.
 func extractBuildNVR(ctx context.Context, dockerfilePath string, b []byte) (string, string, error) {
 	const (
 		comp = `com.redhat.component`
@@ -329,6 +353,8 @@ func extractBuildNVR(ctx context.Context, dockerfilePath string, b []byte) (stri
 
 var errBadDockerfile = errors.New("bad dockerfile")
 
+// MissingLabel is an error that provides information on which label was missing
+// and "Is" errBadDockerfile.
 type missingLabel string
 
 func (e missingLabel) Error() string {
@@ -342,7 +368,7 @@ func (e missingLabel) Is(tgt error) bool {
 	return errors.Is(tgt, errBadDockerfile)
 }
 
-// parseVersionRelease - parse release and version from NVR
+// ParseVersionRelease reports the version and release from an NVR string.
 func parseVersionRelease(nvr string) (version, release string) {
 	releaseIndex := strings.LastIndex(nvr, "-")
 	release = nvr[releaseIndex+1:]

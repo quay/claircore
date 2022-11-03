@@ -16,17 +16,6 @@ import (
 	"github.com/quay/claircore/pkg/tarfs"
 )
 
-const (
-	osReleasePath = `etc/os-release`
-	rhReleasePath = `etc/redhat-release`
-)
-
-const (
-	scannerName    = "rhel"
-	scannerVersion = "2"
-	scannerKind    = "distribution"
-)
-
 var (
 	_ indexer.DistributionScanner = (*DistributionScanner)(nil)
 	_ indexer.VersionedScanner    = (*DistributionScanner)(nil)
@@ -34,24 +23,22 @@ var (
 	releaseRegexp = regexp.MustCompile(`Red Hat Enterprise Linux (?:Server)?\s*(?:release)?\s*(\d+)(?:\.\d)?`)
 )
 
-// DistributionScanner attempts to discover if a layer
-// displays characteristics of a RHEL distribution
+// DistributionScanner implements distribution detection logic for RHEL by looking for
+// an `etc/os-release` file in the layer and failing that, an `etc/redhat-release` file.
+//
+// The DistributionScanner can be used concurrently.
 type DistributionScanner struct{}
 
-// Name implements scanner.VersionedScanner.
-func (*DistributionScanner) Name() string { return scannerName }
+// Name implements [indexer.VersionedScanner].
+func (*DistributionScanner) Name() string { return "rhel" }
 
-// Version implements scanner.VersionedScanner.
-func (*DistributionScanner) Version() string { return scannerVersion }
+// Version implements [indexer.VersionedScanner].
+func (*DistributionScanner) Version() string { return "2" }
 
-// Kind implements scanner.VersionedScanner.
-func (*DistributionScanner) Kind() string { return scannerKind }
+// Kind implements [indexer.VersionedScanner].
+func (*DistributionScanner) Kind() string { return "distribution" }
 
-// Scan will inspect the layer for an os-release or redhat-release file
-// and perform a regex match for keywords indicating the associated RHEL release
-//
-// If neither file is found a (nil,nil) is returned.
-// If the files are found but all regexp fail to match an empty slice is returned.
+// Scan implements [indexer.DistributionScanner].
 func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Distribution, error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	ctx = zlog.ContextWithValues(ctx,
@@ -81,6 +68,10 @@ func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]
 }
 
 func findDistribution(sys fs.FS) (*claircore.Distribution, error) {
+	const (
+		osReleasePath = `etc/os-release`
+		rhReleasePath = `etc/redhat-release`
+	)
 	for _, n := range []string{rhReleasePath, osReleasePath} {
 		b, err := fs.ReadFile(sys, n)
 		switch {
