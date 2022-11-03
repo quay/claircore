@@ -50,12 +50,10 @@ func (c *ContainerAPI) GetCPEs(ctx context.Context, nvr, arch string) ([]string,
 		Str("uri", uri.String()).
 		Msg("making container API request")
 	res, err := c.Client.Do(req)
-	if res != nil {
-		defer res.Body.Close()
-	}
 	if err != nil {
 		return nil, err
 	}
+	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
 		var b strings.Builder
 		if _, err := io.Copy(&b, res.Body); err != nil {
