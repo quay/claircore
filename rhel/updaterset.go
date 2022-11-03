@@ -12,7 +12,7 @@ import (
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/libvuln/driver"
-	"github.com/quay/claircore/rhel/pulp"
+	"github.com/quay/claircore/rhel/internal/pulp"
 )
 
 // DefaultManifest is the url for the Red Hat OVAL pulp repository.
