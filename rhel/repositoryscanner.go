@@ -21,9 +21,9 @@ import (
 	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/pkg/cpe"
 	"github.com/quay/claircore/pkg/tarfs"
-	"github.com/quay/claircore/rhel/containerapi"
 	"github.com/quay/claircore/rhel/dockerfile"
 	"github.com/quay/claircore/rhel/internal/common"
+	"github.com/quay/claircore/rhel/internal/containerapi"
 )
 
 /*
