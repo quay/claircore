@@ -13,6 +13,7 @@ import (
 	"golang.org/x/text/language"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/xmlutil"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/cpe"
 	"github.com/quay/claircore/pkg/rhctag"
@@ -137,7 +138,9 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 	defer zlog.Info(ctx).Msg("parse done")
 
 	var cvemap cveMap
-	if err := xml.NewDecoder(r).Decode(&cvemap); err != nil {
+	dec := xml.NewDecoder(r)
+	dec.CharsetReader = xmlutil.CharsetReader
+	if err := dec.Decode(&cvemap); err != nil {
 		return nil, fmt.Errorf("rhel: unable to decode cvemap: %w", err)
 	}
 	zlog.Debug(ctx).Msg("xml decoded")
