@@ -165,12 +165,14 @@ func extractManifest(ctx context.Context, name string, z *zip.Reader) (Info, err
 // of the provided zip.
 func extractProperties(ctx context.Context, name string, z *zip.Reader) ([]Info, error) {
 	const filename = "pom.properties"
-	if _, err := z.Open(`META-INF`); err != nil {
+	mf, err := z.Open(`META-INF`)
+	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
 			return nil, mkErr("properties", notAJar(name, err))
 		}
 		return nil, mkErr("properties", err)
 	}
+	mf.Close()
 	var pf []string
 	// Go through the zip looking for properties files.
 	// We should end up with one info for every properties file.
