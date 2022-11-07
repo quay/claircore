@@ -9,6 +9,7 @@ RUN dnf install -q -y \
 ARG GO_VERSION
 ARG GO_CHECKSUM
 RUN arch=$(case "$(uname -m)" in\
+                ppc64le) echo ppc64le ;;\
 		aarch64) echo arm64 ;;\
 		x86_64) echo amd64 ;;\
 		*) exit 99 ;; esac);\
