@@ -2,10 +2,54 @@
 ## [Unreleased]
 
 
+<a name="v1.4.12"></a>
+## [v1.4.12] - 2022-11-09
+### Build(Deps)
+- [e72e55f](https://github.com/quay/claircore/commit/e72e55f5bb6f74b855a818b63f125954d2a5d0ec): bump github.com/prometheus/client_golang
+- [555124b](https://github.com/quay/claircore/commit/555124ba5daec6487886e33d93c7d44d075436f9): bump github.com/klauspost/compress from 1.15.11 to 1.15.12
+- [2783da7](https://github.com/quay/claircore/commit/2783da7a0127eb4dc05be13d92bc6857fc8c9455): bump modernc.org/sqlite from 1.19.2 to 1.19.4
+### Common
+- [b6b450f](https://github.com/quay/claircore/commit/b6b450f44ebc537b3896c75c1cf98bbaeb5505ee): rhel common package
+- [40d49b4](https://github.com/quay/claircore/commit/40d49b4458fc9f1c442bb308a50f2dfec7787eb6): add package for common RHEL functions
+### Containerapi
+- [f540261](https://github.com/quay/claircore/commit/f540261253c658e2c0fae1d5318b53f829c3df20): move to internal
+- [f10377a](https://github.com/quay/claircore/commit/f10377ab07efcf75a08563d81f995b1cdb167b4f): documentation
+- [f5eca78](https://github.com/quay/claircore/commit/f5eca78ec4c3ba4e25a0d588affaf3b5b6863d9d): unconditional defer
+### Contentmanifest
+- [a047772](https://github.com/quay/claircore/commit/a047772bd864e06c4c819bdd84d6df66e047ab41): remove package
+### Jar
+- [7a02af2](https://github.com/quay/claircore/commit/7a02af224a84587dc2e1ebaefca87576eccd08b4): Close META-INF
+### Ndb
+- [f8f7163](https://github.com/quay/claircore/commit/f8f71636057b07c5349b4e6f640a2c396428490e): handle noncontiguous package slots
+  - [#1645](https://github.com/quay/claircore/issues/1645)
+### Ovaldebug
+- [0588dff](https://github.com/quay/claircore/commit/0588dffbec5ce639dd7e21819c50f74c703aedac): update for rhel re-org
+### Ovalutil
+- [eca22d1](https://github.com/quay/claircore/commit/eca22d1d440eda1aa714510f6f89cf070a83d470): pool decompressors
+- [4d67086](https://github.com/quay/claircore/commit/4d67086546cb98a711594876bab5a51c46ecb1ea): implement 'auto' and 'zstd' compression
+- [d8529ba](https://github.com/quay/claircore/commit/d8529ba961a38ad036dc86a0b2fc7d849d88aef7): fix useless branch
+- [ce3735f](https://github.com/quay/claircore/commit/ce3735fecbb5baef3be80ebd557748525874db14): minimize some test types
+### Periodic
+- [e8f1277](https://github.com/quay/claircore/commit/e8f12777ba858c80e8517c391512b25c0bf1fcfe): attempt to follow API-created links
+### Pulp
+- [b2b6413](https://github.com/quay/claircore/commit/b2b64133a7da4eb3edbf179132223558e691af8e): move to internal
+- [7c83936](https://github.com/quay/claircore/commit/7c839360e27c10ad2902f21a48c19b98347c4319): documentation
+### Repo2cpe
+- [4a461a7](https://github.com/quay/claircore/commit/4a461a747c9ddf948fd98f0f54259e13affec6dd): documentation
+### Rhcc
+- [4bb0bae](https://github.com/quay/claircore/commit/4bb0bae172d82e8d012f3287898fcedb684f483f): documentation
+- [1ecd8ef](https://github.com/quay/claircore/commit/1ecd8ef256d16be2e94380a8d94973d8d79849e3): use xml CharsetReader
+- [189aa6f](https://github.com/quay/claircore/commit/189aa6f6f8f65accfea4b0fe97789bc3c6f5d612): move to common normalize severity
+### Rhel
+- [75dd9b7](https://github.com/quay/claircore/commit/75dd9b7163c115d1472da5ee8d54faf45722f4aa): refactor mapping+update to common package
+- [c0f5ca9](https://github.com/quay/claircore/commit/c0f5ca926a286ee7477301ee44bebd69f5874a81): documentation and re-org
+
 <a name="v1.4.11"></a>
-## [v1.4.11] - 2022-10-26
+## [v1.4.11] - 2022-10-27
 ### Build(Deps)
 - [9fdb583](https://github.com/quay/claircore/commit/9fdb58349c715b0d1f22f84f88dc07c4b55d10af): bump github.com/prometheus/client_model from 0.2.0 to 0.3.0
+### Chore
+- [4eb4e41](https://github.com/quay/claircore/commit/4eb4e4109155bcb62c7de8eaa2c9664326a496c6): v1.4.11 changelog bump
 ### Jar
 - [d52a304](https://github.com/quay/claircore/commit/d52a3042e930faa1101e022665a60fbca30919eb): handle manifest with invalid header keys
 ### Tarfs
@@ -1675,7 +1719,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v1.4.11...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v1.4.12...HEAD
+[v1.4.12]: https://github.com/quay/claircore/compare/v1.4.11...v1.4.12
 [v1.4.11]: https://github.com/quay/claircore/compare/v1.4.10...v1.4.11
 [v1.4.10]: https://github.com/quay/claircore/compare/v1.4.9...v1.4.10
 [v1.4.9]: https://github.com/quay/claircore/compare/v1.4.8...v1.4.9
