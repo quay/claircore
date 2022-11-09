@@ -37,21 +37,30 @@ func (db *PackageDB) Parse(r io.ReaderAt) error {
 	}
 
 	// Package count should be contiguous.
-	ct := int(db.NextPkgIdx - 1)
-	db.lookup = make(map[uint32]*pkgSlot, ct)
-	db.slot = make([]pkgSlot, 0, ct)
+	lastIndex := db.NextPkgIdx - 1
+	db.lookup = make(map[uint32]*pkgSlot, lastIndex)
+	db.slot = make([]pkgSlot, 0, lastIndex)
 	b = b[:slotSize]
 	// Read every populated slot (these should be contiguous) and populate the lookup table.
-	for i, off := 0, int64(slotStart*slotSize); i < ct; i, off = i+1, off+slotSize {
+	for off := int64(slotStart * slotSize); ; off += slotSize {
 		if _, err := r.ReadAt(b, off); err != nil {
-			return fmt.Errorf("ndb: package: unable to read slot %d: %w", i, err)
+			return fmt.Errorf("ndb: package: unable to read slot @%d: %w", off, err)
 		}
-		db.slot = append(db.slot, pkgSlot{})
-		x := &db.slot[i]
-		if err := x.UnmarshalBinary(b); err != nil {
-			return fmt.Errorf("ndb: package: slot %d: unexpected error: %w", i, err)
+		var s pkgSlot
+		err := s.UnmarshalBinary(b)
+		switch {
+		case errors.Is(err, nil):
+		case errors.Is(err, errSkipSlot):
+			continue
+		default:
+			return fmt.Errorf("ndb: package: slot @%d: unexpected error: %w", off, err)
 		}
-		db.lookup[x.Index] = x
+		i := len(db.slot)
+		db.slot = append(db.slot, s)
+		db.lookup[s.Index] = &db.slot[i]
+		if s.Index == lastIndex {
+			break
+		}
 	}
 	db.r = r
 
@@ -60,13 +69,13 @@ func (db *PackageDB) Parse(r io.ReaderAt) error {
 
 // AllHeaders returns ReaderAts for all RPM headers in the PackageDB.
 func (db *PackageDB) AllHeaders(_ context.Context) ([]io.ReaderAt, error) {
-	r := make([]io.ReaderAt, int(db.NextPkgIdx)-1)
+	r := make([]io.ReaderAt, len(db.slot))
 	var err error
-	for i := uint32(1); i < db.NextPkgIdx && err == nil; i++ {
-		r[int(i-1)], err = db.GetHeader(i)
-	}
-	if err != nil {
-		return nil, err
+	for i, s := range db.slot {
+		r[i], err = db.GetHeader(s.Index)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return r, nil
 }
@@ -169,6 +178,9 @@ type pkgSlot struct {
 // Blobs are denominated and allocated in blocks.
 const blockSize = 16
 
+// ErrSkipSlot is returned by pkgSlot.UnmarshalBinary when the slot is empty.
+var errSkipSlot = errors.New("skip slot")
+
 func (s *pkgSlot) GoString() string {
 	return fmt.Sprintf("blob@%08x[%08x]", s.blkOffset*blockSize, s.blkCount*blockSize)
 }
@@ -198,8 +210,11 @@ func (s *pkgSlot) UnmarshalBinary(b []byte) error {
 	if le.Uint32(b[magicOffset:]) != magic {
 		return fmt.Errorf("slot: bad magic")
 	}
-	s.Index = le.Uint32(b[slotIdxOffset:])
 	s.blkOffset = le.Uint32(b[slotOffsetOffset:])
+	if s.blkOffset == 0 {
+		return errSkipSlot
+	}
+	s.Index = le.Uint32(b[slotIdxOffset:])
 	s.blkCount = le.Uint32(b[slotCountOffset:])
 	// Double-check the blob size.
 	if s.blkCount < ((headerSize + trailerSize + blockSize - 1) / blockSize) {
