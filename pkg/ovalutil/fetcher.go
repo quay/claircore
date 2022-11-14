@@ -183,7 +183,7 @@ Compression:
 					goto Found
 				}
 			default:
-				panic("programmer error")
+				panic("unreachable")
 			}
 			zlog.Debug(ctx).
 				Err(err).
