@@ -220,7 +220,22 @@ func findLabels(ctx context.Context, layer *claircore.Layer) (map[string]string,
 	if len(ms) == 0 {
 		return nil, "", errNotFound
 	}
-	p := ms[0]
+	zlog.Debug(ctx).
+		Strs("paths", ms).
+		Msg("found possible buildinfo Dockerfile(s)")
+	var p string
+	for _, m := range ms {
+		if strings.Count(m, "-") > 1 {
+			p = m
+			break
+		}
+	}
+	if p == "" {
+		return nil, "", errNotFound
+	}
+	zlog.Info(ctx).
+		Str("path", p).
+		Msg("found buildinfo Dockerfile")
 	f, err := sys.Open(p)
 	if err != nil {
 		return nil, "", err
