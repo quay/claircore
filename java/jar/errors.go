@@ -20,7 +20,7 @@ var (
 func (e *localError) Error() string {
 	switch {
 	case e.inner == nil && e.msg == "":
-		panic("programmer error")
+		panic("programmer error: no error or message")
 	case e.inner == nil && e.msg != "":
 		return "jar: " + e.msg
 	case e.inner != nil && e.msg == "":
