@@ -75,7 +75,7 @@ func (f *Factory) Configure(ctx context.Context, cf driver.ConfigUnmarshaler, c 
 
 	u, err := url.Parse(defaultAPI)
 	if err != nil {
-		panic("programmer error")
+		panic("programmer error: " + err.Error())
 	}
 	if cfg.URL != "" {
 		u, err = url.Parse(cfg.URL)
@@ -195,7 +195,7 @@ func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
 		return nil
 	})
 	eg.Go(func() error {
-		//Construct the set
+		// Construct the set
 		for u := range us {
 			if err := set.Add(u); err != nil {
 				return err
@@ -257,7 +257,7 @@ func mkDist(ver, name string) *claircore.Distribution {
 func lookupDist(id string) *claircore.Distribution {
 	v, ok := releases.Load(id)
 	if !ok {
-		panic(fmt.Sprintf("ubuntu: programmer error: unknown key %q", id))
+		panic(fmt.Sprintf("programmer error: unknown key %q", id))
 	}
 	return v.(*claircore.Distribution)
 }
