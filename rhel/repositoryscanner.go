@@ -234,7 +234,7 @@ func mapContentSets(ctx context.Context, sys fs.FS, cm *mappingFile) ([]string, 
 	// be translated using mapping file provided by Red Hat's PST team.
 	ms, err := fs.Glob(sys, `root/buildinfo/content_manifests/*.json`)
 	if err != nil {
-		panic(fmt.Errorf("programmer error: %w", err))
+		panic("programmer error: " + err.Error())
 	}
 	if ms == nil {
 		return nil, nil
@@ -309,7 +309,7 @@ type manifestMetadata struct {
 func mapContainerAPI(ctx context.Context, sys fs.FS, api *containerapi.ContainerAPI) ([]string, error) {
 	ms, err := fs.Glob(sys, "root/buildinfo/Dockerfile-*")
 	if err != nil {
-		panic(fmt.Errorf("programmer error: %w", err))
+		panic("programmer error: " + err.Error())
 	}
 	if ms == nil {
 		return nil, nil
