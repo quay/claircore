@@ -424,7 +424,7 @@ func (t Kind) alignment() int32 {
 		return 8
 	default:
 	}
-	panic("programmer error")
+	panic("programmer error: unaligned type?: " + t.String())
 }
 
 func (t Kind) class() (c class) {
@@ -438,7 +438,7 @@ func (t Kind) class() (c class) {
 	case TypeBin:
 		c = classBinary
 	default:
-		panic("programmer error")
+		panic("programmer error: classless type?: " + t.String())
 	}
 	return c
 }

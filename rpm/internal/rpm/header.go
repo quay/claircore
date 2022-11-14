@@ -26,7 +26,7 @@ type Header struct {
 The header blob is _almost_ what's described in sec. 2.4 of the File Format doc,
 with some caveats:
 
-* There's no magic header, version, and reserved block. It starts at the
+- There's no magic header, version, and reserved block. It starts at the
   "INDEXCOUNT" entry.
 */
 
@@ -144,7 +144,7 @@ func (h *Header) ReadData(ctx context.Context, e *EntryInfo) (interface{}, error
 			if _, err := io.ReadFull(sr, b); err != nil {
 				return nil, fmt.Errorf("rpm: header: error reading int8: %w", err)
 			}
-			// Despite byte == uint8 and uint8 being convertable to int8, this is
+			// Despite byte == uint8 and uint8 being convertible to int8, this is
 			// the only way I can figure out to avoid an extra copy or using a
 			// ByteReader, which would just have an internal buffer and be slower.
 			r := unsafe.Slice((*int8)(unsafe.Pointer(&b[0])), len(b))
@@ -156,7 +156,7 @@ func (h *Header) ReadData(ctx context.Context, e *EntryInfo) (interface{}, error
 			}
 			return r, nil
 		}
-		panic("programmer error")
+		panic("unreachable")
 	default:
 	}
 	return nil, fmt.Errorf("unknown type: %v", e.Type)
