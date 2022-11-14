@@ -247,7 +247,7 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 				}
 				nat = &pdb
 			default:
-				panic("programmer error")
+				panic("programmer error: bad kind: " + db.Kind.String())
 			}
 			ps, err := packagesFromDB(ctx, db.String(), nat)
 			if err != nil {
@@ -255,7 +255,7 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 			}
 			pkgs = append(pkgs, ps...)
 		default:
-			panic("programmer error")
+			panic("programmer error: bad kind: " + db.Kind.String())
 		}
 	}
 
