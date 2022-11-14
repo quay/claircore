@@ -89,7 +89,7 @@ func (e *Enricher) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c 
 		var err error
 		e.feed, err = defaultFeed.Parse(".")
 		if err != nil {
-			panic(fmt.Errorf("programmer error: %w", err))
+			panic("programmer error: " + err.Error())
 		}
 	}
 	return nil
