@@ -215,7 +215,7 @@ func findLabels(ctx context.Context, layer *claircore.Layer) (map[string]string,
 	}
 	ms, err := fs.Glob(sys, "root/buildinfo/Dockerfile-*")
 	if err != nil { // Can only return ErrBadPattern.
-		panic("progammer error")
+		panic("progammer error: " + err.Error())
 	}
 	if len(ms) == 0 {
 		return nil, "", errNotFound
@@ -241,7 +241,7 @@ var errNotFound = errors.New("not found")
 // Panics if passed malformed input.
 func getVR(nvr string) string {
 	if strings.Count(nvr, "-") < 2 {
-		panic("programmer error")
+		panic("programmer error: not an nvr string: " + nvr)
 	}
 	i := strings.LastIndexByte(nvr, '-')
 	i = strings.LastIndexByte(nvr[:i], '-')
