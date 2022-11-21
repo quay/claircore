@@ -187,6 +187,9 @@ AddEnt:
 		switch parent.h.Typeflag {
 		case tar.TypeDir:
 			// OK
+		case tar.TypeLink:
+			// This is annoying -- hard linking to directories is weird
+			fallthrough
 		case tar.TypeSymlink:
 			dir = parent.h.Linkname
 			goto AddEnt
