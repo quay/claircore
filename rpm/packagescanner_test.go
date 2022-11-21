@@ -1706,3 +1706,29 @@ func TestRelPath(t *testing.T) {
 		}
 	}
 }
+
+func TestLayer(t *testing.T) {
+	ctx := context.Background()
+	ents, err := os.ReadDir(`testdata/layers`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, e := range ents {
+		ctx := zlog.Test(ctx, t)
+		n := e.Name()
+		if n == ".gitignore" {
+			continue
+		}
+		t.Run(n, func(t *testing.T) {
+			var l claircore.Layer
+			l.SetLocal(filepath.Join(`testdata/layers`, n))
+			var s Scanner
+			got, err := s.Scan(ctx, &l)
+			if err != nil {
+				t.Error(err)
+			}
+			t.Logf("found %d packages", len(got))
+		})
+	}
+}
