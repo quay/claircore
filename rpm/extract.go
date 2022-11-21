@@ -83,6 +83,9 @@ func extractTar(ctx context.Context, rd io.ReadSeeker) (string, error) {
 				break
 			}
 			err = os.Mkdir(tgt, m)
+			if errors.Is(err, os.ErrExist) {
+				err = nil
+			}
 			// Make sure to preempt the MkdirAll call if the entries were
 			// ordered nicely.
 			made[d] = struct{}{}
@@ -90,13 +93,16 @@ func extractTar(ctx context.Context, rd io.ReadSeeker) (string, error) {
 		case tar.TypeReg:
 			m := h.FileInfo().Mode() | fileMode
 			var f *os.File
-			f, err = os.OpenFile(tgt, os.O_CREATE|os.O_WRONLY, m)
+			f, err = os.OpenFile(tgt, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, m)
 			if err != nil {
 				break // Handle after the switch.
 			}
 			_, err = io.Copy(f, tr)
 			if err := f.Close(); err != nil {
-				zlog.Warn(ctx).Err(err).Msg("error closing new file")
+				zlog.Warn(ctx).
+					Err(err).
+					Str("path", tgt).
+					Msg("error closing new file")
 			}
 			stats.Reg++
 		case tar.TypeSymlink:
