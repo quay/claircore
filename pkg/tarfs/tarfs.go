@@ -153,9 +153,7 @@ Again:
 			hardlink[tgt] = append(hardlink[tgt], name)
 		}
 	}
-	if _, ok := hardlink[name]; ok {
-		delete(hardlink, name)
-	}
+	delete(hardlink, name)
 	i := len(f.inode)
 	f.inode = append(f.inode, ino)
 	f.lookup[name] = i
@@ -302,11 +300,12 @@ func (f *FS) walkTo(p string, create bool) (*inode, error) {
 		case found && create, found && !create:
 			// OK
 		case !found && create:
-			f.add(n, newDir(n), nil)
-			ci := f.lookup[n]
+			fp := b.String() // Make sure to use the full path and not just the member name.
+			f.add(fp, newDir(n), nil)
+			ci := f.lookup[fp]
 			child = &f.inode[ci]
 		case !found && !create:
-			return nil, fmt.Errorf("tarfs: walk to %q, but missing segment %q", p, n)
+			return nil, fmt.Errorf("tarfs: walk to %q, but missing segment %q", p, b.String())
 		}
 		cur = child
 	}
