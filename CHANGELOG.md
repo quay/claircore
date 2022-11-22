@@ -2,12 +2,44 @@
 ## [Unreleased]
 
 
+<a name="v1.4.13"></a>
+## [v1.4.13] - 2022-11-21
+### Build(Deps)
+- [4ace2c4](https://github.com/quay/claircore/commit/4ace2c4512ff26c955e81babc39f7e54c26f2055): bump golang.org/x/tools from 0.2.0 to 0.3.0
+- [0ce69dd](https://github.com/quay/claircore/commit/0ce69dddc5239ed5258e4e8ec21c8e4d3bacd821): bump golang.org/x/crypto from 0.1.0 to 0.3.0
+### Cvss
+- [c092ad4](https://github.com/quay/claircore/commit/c092ad46c4c3aaae0399937ab2280fa7ae6640f9): panic message improvements
+### Jar
+- [72bbe1e](https://github.com/quay/claircore/commit/72bbe1e023ea5de60c9aca2926317fffc07da18b): panic message improvements
+### Ovalutil
+- [87e930c](https://github.com/quay/claircore/commit/87e930c2c74b4f1f5957cd0b5433f01db03bb955): panic message improvements
+### Rhcc
+- [203726f](https://github.com/quay/claircore/commit/203726f94abf89eb59975ca4af5b003422b16425): add log lines around buildinfo files
+- [42970c7](https://github.com/quay/claircore/commit/42970c7281e2c0483fcbca5f554f64122a0c595e): panic message improvements
+### Rhel
+- [8ad57e8](https://github.com/quay/claircore/commit/8ad57e82ed4f83f08e1ac93a0acee646bda93346): panic message improvements
+### Rpm
+- [751ff9f](https://github.com/quay/claircore/commit/751ff9f12eaecb98088a9f395e0eb9b271bcf570): add arbitrary layer test
+- [45b774d](https://github.com/quay/claircore/commit/45b774dd63d7f403a5642d0c73cd9795479f005a): handle existing files better
+  - [#735](https://github.com/quay/claircore/issues/735)
+- [0065ca0](https://github.com/quay/claircore/commit/0065ca06824c94580fc842e8ffbc05b9d2121662): panic message improvements
+- [099f4e7](https://github.com/quay/claircore/commit/099f4e7c3425af6d738198061ae713cf3a6feb90): panic message improvements
+### Tarfs
+- [c36e87a](https://github.com/quay/claircore/commit/c36e87a02347913d879eaa06a6146a6d478735c6): support traversing intermediate hard links
+  - [#737](https://github.com/quay/claircore/issues/737)
+- [6c57b72](https://github.com/quay/claircore/commit/6c57b72e640590145d668ed53ad5e4207b6e1f71): use full path when synthesizing out-of-order directories
+  - [#736](https://github.com/quay/claircore/issues/736)
+### Ubuntu
+- [fb7acb8](https://github.com/quay/claircore/commit/fb7acb88ced7751aa3a79bfdfd9f95f55465486d): panic message improvements
+
 <a name="v1.4.12"></a>
 ## [v1.4.12] - 2022-11-09
 ### Build(Deps)
 - [e72e55f](https://github.com/quay/claircore/commit/e72e55f5bb6f74b855a818b63f125954d2a5d0ec): bump github.com/prometheus/client_golang
 - [555124b](https://github.com/quay/claircore/commit/555124ba5daec6487886e33d93c7d44d075436f9): bump github.com/klauspost/compress from 1.15.11 to 1.15.12
 - [2783da7](https://github.com/quay/claircore/commit/2783da7a0127eb4dc05be13d92bc6857fc8c9455): bump modernc.org/sqlite from 1.19.2 to 1.19.4
+### Chore
+- [caff746](https://github.com/quay/claircore/commit/caff746ac245148517938d7c6fa08a2fdfbd1e0b): v1.4.12 changelog bump
 ### Common
 - [b6b450f](https://github.com/quay/claircore/commit/b6b450f44ebc537b3896c75c1cf98bbaeb5505ee): rhel common package
 - [40d49b4](https://github.com/quay/claircore/commit/40d49b4458fc9f1c442bb308a50f2dfec7787eb6): add package for common RHEL functions
@@ -1719,7 +1751,8 @@
 - Merge pull request [#3](https://github.com/quay/claircore/issues/3) from quay/documentation
 
 
-[Unreleased]: https://github.com/quay/claircore/compare/v1.4.12...HEAD
+[Unreleased]: https://github.com/quay/claircore/compare/v1.4.13...HEAD
+[v1.4.13]: https://github.com/quay/claircore/compare/v1.4.12...v1.4.13
 [v1.4.12]: https://github.com/quay/claircore/compare/v1.4.11...v1.4.12
 [v1.4.11]: https://github.com/quay/claircore/compare/v1.4.10...v1.4.11
 [v1.4.10]: https://github.com/quay/claircore/compare/v1.4.9...v1.4.10
