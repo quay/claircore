@@ -1,0 +1,5 @@
+`Rpm` indexer robustness fixes
+
+Some container build systems do not seem to follow OCI image best
+practices and produce layers that are out-of-order. This change handles
+that better when a layer needs to be extracted for the `rpm` indexer.
