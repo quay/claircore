@@ -1,5 +1,6 @@
-`Rpm` indexer robustness fixes
+`Tarfs` robustness fixes
 
-Some container build systems do not seem to follow OCI image best
-practices and produce layers that are out-of-order. This change handles
-that better when a layer needs to be extracted for the `rpm` indexer.
+There are changes regarding internal behavior when needing to create
+implied directories (previously, the code mistakenly used the file name
+instead of the file path) and hard links (the code did not handle hard
+links to directories and did not traverse them).
