@@ -1,0 +1,5 @@
+The `rhcc` indexer now tolerates misnamed Dockerfiles.
+
+Prior to this change, the indexer assumed that the name was well-formed
+in such a way that could cause a `panic`; this case is now checked for
+and noted in the log.
