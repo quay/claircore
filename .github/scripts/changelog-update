@@ -1,0 +1,28 @@
+#!/bin/sh
+set -e
+while getopts hf: flag; do
+	case "$flag" in
+		f) prevtag="$OPTARG" ;;
+		h|?) printf 'Usage: %s [-f prevtag] [next]\n' "$0" >&2
+			printf '  -f prev\tforce previous tag (instead of guessing)\n' >&2
+			exit 2 ;;
+	esac
+done
+shift $((OPTIND - 1))
+
+[ -z "$prevtag" ] && prevtag="$(git tag --sort=-taggerdate --merged | grep '^v' | sed 1q)"
+nexttag="${1:-$(echo "$prevtag" | cut -d. -f-2).$(($(echo "$prevtag" | cut -d. -f3)+1))}"
+if echo "${nexttag}" | grep -vq '^v[0-9]\+\.[0-9]\+\.[0-9]\+'; then
+	printf 'bad tag format: %s\n' "${nexttag}" >&2
+	exit 1
+fi
+: previous tag: "${prevtag}"
+: guessed next tag: "${nexttag}"
+
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+newlog="${work}/CHANGELOG.md"
+
+"$(git rev-parse --show-toplevel)/.github/scripts/changelog-render" -f "${prevtag}" "${nexttag}" >"${newlog}"
+cat "$(git rev-parse --show-toplevel)/CHANGELOG.md" >>"${newlog}"
+cp "${newlog}" "$(git rev-parse --show-toplevel)/CHANGELOG.md"

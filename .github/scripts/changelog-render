@@ -1,0 +1,96 @@
+#!/bin/sh
+set -e
+# This script has some colon-commands to help in debugging -- they're shown in
+# "-x" output, whereas comments are not.
+: "${GIT_NOTES_REF:=refs/notes/changelog}"
+GIT_NOTES_DISPLAY_REF=$GIT_NOTES_REF
+export GIT_NOTES_REF GIT_NOTES_DISPLAY_REF
+while getopts hf:m flag; do
+	case "$flag" in
+		f) prevtag="$OPTARG" ;;
+		m)
+			: no markup
+			nomarkup=1
+			;;
+		h|?) printf 'Usage: %s [-f prevtag] [next]\n' "$0" >&2
+			printf '  -f prev\tforce previous tag (instead of guessing)\n' >&2
+			exit 2 ;;
+	esac
+done
+shift $((OPTIND - 1))
+
+needcmds() {
+	if [ "$#" -eq 0 ]; then
+		echo programmer error: missing argument to "'needcmds'"
+		exit 1
+	fi
+	for cmd in "$@"; do
+		command -v "$cmd" >/dev/null || {
+			echo Need "$cmd" >&2
+			exit 1
+		}
+	done
+}
+needcmds git grep sed wc fold
+[ -z "$prevtag" ] && prevtag="$(git tag --sort=-taggerdate --merged | grep '^v' | sed 1q)"
+nexttag="${1:-$(echo "$prevtag" | cut -d. -f-2).$(($(echo "$prevtag" | cut -d. -f3)+1))}"
+if echo "${nexttag}" | grep -vq '^v[0-9]\+\.[0-9]\+\.[0-9]\+'; then
+	printf 'bad tag format: %s\n' "${nexttag}" >&2
+	exit 1
+fi
+: previous tag: "${prevtag}"
+: guessed next tag: "${nexttag}"
+
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+newnotes="${work}/nn"
+notebody="${work}/body"
+sedf="${work}/sed"
+
+# Write out the sed script and header based on whether explicit markup was asked
+# for or not.
+if [ -n "$nomarkup" ]; then
+	cat <<'.' >"${sedf}"
+1s/^/- /
+2,$s/^/  /
+$a\
+.
+	cat <<. >"${newnotes}"
+## ${nexttag} - $(date +%F)
+
+.
+else
+	cat <<'.' >"${sedf}"
+s/PROJQUAY-[0-9]\+/[\1](https:\/\/issues.redhat.com\/browse\/\1)/
+1s/^/- /
+2c\
+  <details>
+3,$s/^/  /
+$a\
+  </details>\
+.
+	cat <<. >"${newnotes}"
+<a name="${nexttag}"></a>
+## [${nexttag}] - $(date +%F)
+[${nexttag}]: https://github.com/quay/claircore/compare/${prevtag}...${nexttag}
+
+.
+fi
+
+git rev-list "${prevtag}..." |
+	while read -r commit; do
+		git notes show "$commit" 2>/dev/null >"${notebody}" || continue
+		if grep -q '^$' <"${notebody}"; then
+			: list item
+			fold <"${notebody}" |
+				sed -f "$sedf" >> "${newnotes}"
+		else
+			: graf
+			fold <"${notebody}" >> "${newnotes}"
+			printf '\n' >> "${newnotes}"
+		fi
+	done
+test "$(wc -l < "${newnotes}")" -eq 4 &&
+	printf 'Nothing interesting happened this release.\n\n' >> "${newnotes}"
+
+cat "${newnotes}"

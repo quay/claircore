@@ -1,0 +1,49 @@
+#!/bin/sh
+set -e
+: "${GIT_NOTES_REF:=refs/notes/changelog}"
+GIT_NOTES_DISPLAY_REF=$GIT_NOTES_REF
+export GIT_NOTES_REF GIT_NOTES_DISPLAY_REF FILTER_BRANCH_SQUELCH_WARNING=1
+: "${remote:=$(git remote | grep -q upstream && echo upstream || echo origin)}"
+: "${remoteref:=$(dirname "${GIT_NOTES_REF}")/${remote}/$(basename "${GIT_NOTES_REF}")}"
+while getopts smh flag; do
+	case "$flag" in
+		s)
+			: sync only
+			synconly=1
+			;;
+		m)
+			: menu only
+			menuonly=1
+			;;
+		h|?) printf 'Usage: %s [-s] [-m]\n' "$0" >&2
+			printf '  -s\tsync only\n' >&2
+			printf '  -m\tmenu only\n' >&2
+			exit 2 ;;
+	esac
+done
+
+if [ -n "$menuonly" ] && [ -n "$synconly" ]; then
+	printf 'mutually exclusive flags\n' >&2
+	exit 1
+fi
+
+if [ -z "$menuonly" ]; then
+	: fetching and merging from "${remote}"
+	git fetch "${remote}" "${GIT_NOTES_REF}:${remoteref}"
+	git notes merge -s theirs "${remoteref}"
+	git update-ref -d "${remoteref}"
+fi
+if [ -z "$synconly" ]; then
+	: prompting
+	prevtag="$(git tag --sort=-taggerdate --merged | grep '^v' | sed 1q)"
+	git log '--format=format:%s' "${prevtag}..." | awk '{print(NR,"\t",$0)}'
+	printf '? '
+	read -r n
+	commit="$(git log '--format=format:%H' "${prevtag}..." | sed -n "${n}p")"
+	git notes edit "${commit}"
+	git filter-branch --prune-empty "${GIT_NOTES_REF}"
+fi
+if [ -z "$menuonly" ]; then
+	: pushing back to "${remote}"
+	git push "${remote}" "${GIT_NOTES_REF}"
+fi
