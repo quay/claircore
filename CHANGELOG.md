@@ -1,7 +1,3 @@
-<a name="unreleased"></a>
-## [Unreleased]
-
-
 <a name="v1.4.13"></a>
 ## [v1.4.13] - 2022-11-21
 ### Build(Deps)

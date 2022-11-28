@@ -17,17 +17,10 @@ jobs:
           echo "VERSION=${tag}" >> $GITHUB_ENV
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - name: ChangeLog
+      - name: Changelog
         run: |
-          curl -o /tmp/git-chglog.tar.gz -fsSL\
-            https://github.com/git-chglog/git-chglog/releases/download/v0.15.1/git-chglog_0.15.1_linux_amd64.tar.gz
-          tar xvf /tmp/git-chglog.tar.gz --directory /tmp
-          chmod u+x /tmp/git-chglog
-          echo "creating change log for tag: $VERSION"
-          filter_tag="--tag-filter-pattern=^v"
-          /tmp/git-chglog $filter_tag "${VERSION}" > "${{github.workspace}}/changelog"
+          .github/scripts/changelog-edit -s
+          .github/scripts/changelog-render "${VERSION}" > "${{github.workspace}}/changelog"
       - name: Create Release
         uses: actions/create-release@latest
         env:
