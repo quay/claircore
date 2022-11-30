@@ -21,11 +21,11 @@ func fromCVSS(s string) (sev claircore.Severity, err error) {
 	// Giant switch ahoy
 	var ns [8]float64
 	for _, m := range ms[1:] {
-		vec := strings.SplitN(m, ":", 2) // TODO(hank) go1.18: use strings.Cut
-		if len(vec) != 2 {
+		n, v, ok := strings.Cut(m, ":")
+		if !ok {
 			return 0, fmt.Errorf("bad metric: %q", m)
 		}
-		switch n, v := vec[0], vec[1]; n {
+		switch n {
 		// Base metrics:
 		case `AV`:
 			const i = 0
