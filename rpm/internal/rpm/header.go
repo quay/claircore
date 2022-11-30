@@ -74,7 +74,6 @@ func (h *Header) Parse(ctx context.Context, r io.ReaderAt) error {
 // NB The TypeChar, TypeInt8, TypeInt16, TypeInt32, TypeInt64, and TypeI18nString
 // all return slices.
 func (h *Header) ReadData(ctx context.Context, e *EntryInfo) (interface{}, error) {
-	const eof int64 = 1<<31 - 1 // MaxInt32, just a very big number. Needed for go1.17's SectionReader.
 	// TODO(hank) Provide a generic function like `func[T any](*Header, *EntryInfo) T` to do this.
 	switch e.Type {
 	case TypeBin:
@@ -87,7 +86,7 @@ func (h *Header) ReadData(ctx context.Context, e *EntryInfo) (interface{}, error
 		}
 		return b, nil
 	case TypeI18nString, TypeStringArray:
-		sc := bufio.NewScanner(io.NewSectionReader(h.data, int64(e.offset), eof))
+		sc := bufio.NewScanner(io.NewSectionReader(h.data, int64(e.offset), -1))
 		sc.Split(splitCString)
 		s := make([]string, int(e.count))
 		for i, lim := 0, int(e.count); i < lim && sc.Scan(); i++ {
@@ -99,7 +98,7 @@ func (h *Header) ReadData(ctx context.Context, e *EntryInfo) (interface{}, error
 		return s, nil
 	case TypeString:
 		// C-terminated string.
-		r := bufio.NewReader(io.NewSectionReader(h.data, int64(e.offset), eof))
+		r := bufio.NewReader(io.NewSectionReader(h.data, int64(e.offset), -1))
 		s, err := r.ReadString(0x00)
 		if err != nil {
 			return nil, fmt.Errorf("rpm: header: error reading string: %w", err)
@@ -107,7 +106,7 @@ func (h *Header) ReadData(ctx context.Context, e *EntryInfo) (interface{}, error
 		// ReadString includes the delimiter, be sure to remove it.
 		return s[:len(s)-1], nil
 	case TypeChar, TypeInt8, TypeInt16, TypeInt32, TypeInt64:
-		sr := io.NewSectionReader(h.data, int64(e.offset), eof)
+		sr := io.NewSectionReader(h.data, int64(e.offset), -1)
 		switch e.Type {
 		case TypeInt64:
 			r := make([]uint64, int(e.count))
