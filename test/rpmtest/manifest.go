@@ -84,19 +84,22 @@ var HintCompare = cmp.FilterPath(
 			if s == "" {
 				continue
 			}
-			kv := strings.SplitN(s, ":", 2)
-			if len(kv) != 2 {
-				println(s)
+			k, v, ok := strings.Cut(s, ":")
+			if !ok {
+				panic("odd format: " + s)
 			}
-			am[kv[0]] = kv[1]
+			am[k] = v
 		}
 		delete(am, "hash")
 		for _, s := range strings.Split(b, "|") {
 			if s == "" {
 				continue
 			}
-			kv := strings.SplitN(s, ":", 2)
-			bm[kv[0]] = kv[1]
+			k, v, ok := strings.Cut(s, ":")
+			if !ok {
+				panic("odd format: " + s)
+			}
+			bm[k] = v
 		}
 		delete(bm, "hash")
 		return cmp.Equal(am, bm)
