@@ -2,6 +2,7 @@ package cvss
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"strconv"
 	"strings"
@@ -12,28 +13,31 @@ import (
 //
 // This is used to detect changes and only fetch new data when necessary.
 type metafile struct {
+	SHA256       string
 	LastModified time.Time
 	Size         int64
 	ZipSize      int64
 	GZSize       int64
-	SHA256       string
 }
 
 func (m *metafile) Parse(buf *bytes.Buffer) (err error) {
 	var l string
-	for l, err = buf.ReadString('\n'); l != "" || err == nil; l, err = buf.ReadString('\n') {
-		sl := strings.SplitN(strings.TrimSpace(l), ":", 2)
-		switch sl[0] {
+	for l, err = buf.ReadString('\n'); err == nil; l, err = buf.ReadString('\n') {
+		k, v, ok := strings.Cut(strings.TrimSpace(l), ":")
+		if !ok {
+			continue
+		}
+		switch k {
 		case "lastModifiedDate":
-			m.LastModified, err = time.Parse(time.RFC3339, sl[1])
+			m.LastModified, err = time.Parse(time.RFC3339, v)
 		case "size":
-			m.Size, err = strconv.ParseInt(sl[1], 10, 64)
+			m.Size, err = strconv.ParseInt(v, 10, 64)
 		case "zipSize":
-			m.ZipSize, err = strconv.ParseInt(sl[1], 10, 64)
+			m.ZipSize, err = strconv.ParseInt(v, 10, 64)
 		case "gzSize":
-			m.GZSize, err = strconv.ParseInt(sl[1], 10, 64)
+			m.GZSize, err = strconv.ParseInt(v, 10, 64)
 		case "sha256":
-			m.SHA256 = sl[1]
+			m.SHA256 = v
 		default:
 			// ignore
 		}
@@ -41,7 +45,7 @@ func (m *metafile) Parse(buf *bytes.Buffer) (err error) {
 			return err
 		}
 	}
-	if err != nil && err != io.EOF {
+	if !errors.Is(err, io.EOF) {
 		return err
 	}
 	return nil
