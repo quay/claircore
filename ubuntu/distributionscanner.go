@@ -100,17 +100,16 @@ Found:
 		default:
 			return nil, fmt.Errorf("unexpected error looking for %q: %w", verKey, err)
 		}
-		// TODO(hank) Use Cut in 1.18
-		s := strings.SplitN(l, "=", 2)
-		if len(s) != 2 {
+		k, v, ok := strings.Cut(l, "=")
+		if !ok {
 			continue
 		}
-		val := strings.Trim(s[1], "\"\r\n")
-		switch s[0] {
+		v = strings.Trim(v, "\"\r\n")
+		switch k {
 		case nameKey:
-			name = val
+			name = v
 		case verKey:
-			ver = val
+			ver = v
 		}
 	}
 	if name != "" && ver != "" {
