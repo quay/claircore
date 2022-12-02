@@ -94,8 +94,8 @@ func (s *IndexerStore) DistributionsByLayer(ctx context.Context, hash claircore.
 	default:
 		return nil, fmt.Errorf("store:distributionsByLayer failed to retrieve package rows for hash %v and scanners %v: %w", hash, scnrs, err)
 	}
-	protoRecordCounter.WithLabelValues("query").Add(1)
-	protoRecordDuration.WithLabelValues("query").Observe(time.Since(start).Seconds())
+	distributionByLayerCounter.WithLabelValues("query").Add(1)
+	distributionByLayerDuration.WithLabelValues("query").Observe(time.Since(start).Seconds())
 	defer rows.Close()
 
 	res := []*claircore.Distribution{}
