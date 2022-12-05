@@ -3,13 +3,12 @@ package claircore
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"io"
 	"io/fs"
-	"os"
 	"path/filepath"
 
 	"github.com/quay/claircore/pkg/tarfs"
+	"github.com/quay/claircore/toolkit/spool"
 )
 
 // Layer is a container image filesystem layer. Layers are stacked
@@ -21,32 +20,33 @@ type Layer struct {
 	URI     string              `json:"uri"`
 	Headers map[string][]string `json:"headers"`
 
-	// path to local file containing uncompressed tar archive of the layer's content
-	localPath string
+	// File containing uncompressed tar archive of the layer's content.
+	file *spool.File
 }
 
 func (l *Layer) SetLocal(f string) error {
-	l.localPath = f
+	return errors.New("claircore: SetLocal unused")
+}
+
+// SetLayerFile associates a file with a layer.
+//
+// HACK(hank) This function exists to get used in the fetcher via linker tricks.
+// This state of affairs should only exist until we get the chance to rework the
+// Layer usages.
+func setLayerFile(l *Layer, f *spool.File) error {
+	l.file = f
 	return nil
 }
 
 func (l *Layer) Fetched() bool {
-	_, err := os.Stat(l.localPath)
-	return err == nil
+	return l.file != nil
 }
 
 // Reader returns a ReadAtCloser of the layer.
 //
 // It should also implement io.Seeker, and should be a tar stream.
 func (l *Layer) Reader() (ReadAtCloser, error) {
-	if l.localPath == "" {
-		return nil, fmt.Errorf("claircore: Layer not fetched")
-	}
-	f, err := os.Open(l.localPath)
-	if err != nil {
-		return nil, fmt.Errorf("claircore: unable to open tar: %w", err)
-	}
-	return f, nil
+	return l.file.Reopen()
 }
 
 // ReadAtCloser is an io.ReadCloser and also an io.ReaderAt
@@ -88,7 +88,7 @@ func (l *Layer) Files(paths ...string) (map[string]*bytes.Buffer, error) {
 		return nil, err
 	}
 	defer r.Close()
-	sys, err := tarfs.New(r.(*os.File))
+	sys, err := tarfs.New(r)
 	if err != nil {
 		return nil, err
 	}
