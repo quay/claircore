@@ -19,6 +19,7 @@ import (
 	"github.com/quay/zlog"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/quay/claircore/toolkit/spool"
 	driver "github.com/quay/claircore/updater/driver/v1"
 )
 
@@ -169,23 +170,20 @@ func (u *Updater) Run(ctx context.Context, strict bool) error {
 	for i := 0; i < lim; i++ {
 		eg.Go(func() error {
 			defer wg.Done()
-			spool, err := os.CreateTemp(tmpDir, tmpPattern)
+			sf, err := spool.NewSpool(ctx, tmpPattern)
 			if err != nil {
 				zlog.Warn(ctx).Err(err).Msg("unable to create spool file")
 				return err
 			}
-			spoolname := spool.Name()
+			spoolname := sf.Name()
 			defer func() {
-				if err := os.Remove(spoolname); err != nil {
-					zlog.Warn(ctx).Str("filename", spoolname).Err(err).Msg("unable to remove spool file")
-				}
-				if err := spool.Close(); err != nil {
+				if err := sf.Close(); err != nil {
 					zlog.Warn(ctx).Str("filename", spoolname).Err(err).Msg("error closing spool file")
 				}
 			}()
 			var updErr *updaterError
 			for upd := range feed {
-				err := u.fetchAndParse(ctx, spool, pfps, upd)
+				err := u.fetchAndParse(ctx, sf.File, pfps, upd)
 				switch {
 				case errors.Is(err, nil):
 				case errors.As(err, &updErr):
@@ -445,7 +443,4 @@ func (e errSlice) Error() string {
 	return b.String()
 }
 
-const (
-	tmpDir     = ``
-	tmpPattern = `updater.spool.*`
-)
+const tmpPattern = `updater.spool.`

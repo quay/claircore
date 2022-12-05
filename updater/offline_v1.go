@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"os"
 	"path"
 	"runtime"
 	"sync"
@@ -18,6 +17,7 @@ import (
 	"github.com/quay/zlog"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/quay/claircore/toolkit/spool"
 	"github.com/quay/claircore/updater/driver/v1"
 )
 
@@ -56,16 +56,13 @@ func (u *Updater) importV1(ctx context.Context, sys fs.FS) error {
 		Int("ct", len(us)).
 		Msg("got updaters")
 
-	spool, err := os.CreateTemp(tmpDir, tmpPattern)
+	sf, err := spool.NewSpool(ctx, tmpPattern)
 	if err != nil {
 		return err
 	}
 	defer func() {
-		spoolname := spool.Name()
-		if err := os.Remove(spoolname); err != nil {
-			zlog.Warn(ctx).Str("filename", spoolname).Err(err).Msg("unable to remove spool file")
-		}
-		if err := spool.Close(); err != nil {
+		spoolname := sf.Name()
+		if err := sf.Close(); err != nil {
 			zlog.Warn(ctx).Str("filename", spoolname).Err(err).Msg("error closing spool file")
 		}
 	}()
@@ -86,19 +83,19 @@ func (u *Updater) importV1(ctx context.Context, sys fs.FS) error {
 		if !fi.IsDir() {
 			return errors.New("malformed input")
 		}
-		if _, err := spool.Seek(0, io.SeekStart); err != nil {
+		if _, err := sf.Seek(0, io.SeekStart); err != nil {
 			return err
 		}
 		f, err := sys.Open(path.Join(name, `data`))
 		if err != nil {
 			return err
 		}
-		sz, err := io.Copy(spool, f)
+		sz, err := io.Copy(sf, f)
 		f.Close()
 		if err != nil {
 			return err
 		}
-		z, err := zip.NewReader(spool, sz)
+		z, err := zip.NewReader(sf, sz)
 		if err != nil {
 			return err
 		}
@@ -219,7 +216,7 @@ func (u *Updater) exportV1(ctx context.Context, z *zip.Writer, prev fs.FS) error
 			for upd := range feed {
 				name := upd.Name
 				ctx := zlog.ContextWithValues(ctx, "updater", name)
-				// Zips have to be written serially, so we spool the fetcher
+				// Zips have to be written serially, so we sf the fetcher
 				// output to disk, then seek back to the start so it's ready to
 				// read.
 				//
@@ -227,28 +224,22 @@ func (u *Updater) exportV1(ctx context.Context, z *zip.Writer, prev fs.FS) error
 				// prints here use "info" for the application errors and "warn"
 				// for the OS errors that really shouldn't be happening but we
 				// can't do much to recover from.
-				spool, err := os.CreateTemp(tmpDir, tmpPattern)
+				sf, err := spool.NewSpool(ctx, tmpPattern)
 				if err != nil {
 					zlog.Warn(ctx).Err(err).Msg("unable to create spool file")
 					continue
 				}
-				spoolname := spool.Name()
-				fp, err := u.fetchOne(ctx, upd, pfps[name], spool)
+				spoolname := sf.Name()
+				fp, err := u.fetchOne(ctx, upd, pfps[name], sf)
 				if err != nil {
-					if err := os.Remove(spoolname); err != nil {
-						zlog.Warn(ctx).Str("filename", spoolname).Err(err).Msg("unable to remove spool file")
-					}
-					if err := spool.Close(); err != nil {
+					if err := sf.Close(); err != nil {
 						zlog.Warn(ctx).Str("filename", spoolname).Err(err).Msg("error closing spool file")
 					}
 					zlog.Info(ctx).Err(err).Msg("updater error")
 					continue
 				}
-				if _, err := spool.Seek(0, io.SeekStart); err != nil {
-					if err := os.Remove(spoolname); err != nil {
-						zlog.Warn(ctx).Str("filename", spoolname).Err(err).Msg("unable to remove spool file")
-					}
-					if err := spool.Close(); err != nil {
+				if _, err := sf.Seek(0, io.SeekStart); err != nil {
+					if err := sf.Close(); err != nil {
 						zlog.Warn(ctx).Str("filename", spoolname).Err(err).Msg("error closing spool file")
 					}
 					zlog.Warn(ctx).Str("filename", spoolname).Err(err).Msg("unable to seek to start")
@@ -256,7 +247,7 @@ func (u *Updater) exportV1(ctx context.Context, z *zip.Writer, prev fs.FS) error
 				}
 				res <- &result{
 					fp:    fp,
-					spool: spool,
+					spool: sf,
 					name:  name,
 				}
 			}
@@ -272,12 +263,8 @@ func (u *Updater) exportV1(ctx context.Context, z *zip.Writer, prev fs.FS) error
 // This function assumes the result isn't in an error state.
 func addUpdater(ctx context.Context, z *zip.Writer, now time.Time, r *result) error {
 	defer func() {
-		fn := r.spool.Name()
-		if err := os.Remove(fn); err != nil {
-			zlog.Warn(ctx).Err(err).Str("file", fn).Msg("unable to remove fetch spool")
-		}
 		if err := r.spool.Close(); err != nil {
-			zlog.Warn(ctx).Err(err).Str("file", fn).Msg("unable to close fetch spool")
+			zlog.Warn(ctx).Err(err).Msg("unable to close fetch spool")
 		}
 	}()
 	n := r.name
@@ -335,7 +322,7 @@ func addUpdater(ctx context.Context, z *zip.Writer, now time.Time, r *result) er
 }
 
 type result struct {
-	spool *os.File
+	spool io.ReadCloser
 	fp    driver.Fingerprint
 	name  string
 }
