@@ -32,6 +32,8 @@ require (
 	modernc.org/sqlite v1.21.0
 )
 
+require github.com/quay/claircore/toolkit v1.0.0
+
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
