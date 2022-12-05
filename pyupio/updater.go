@@ -19,7 +19,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/pep440"
-	"github.com/quay/claircore/pkg/tmp"
+	"github.com/quay/claircore/toolkit/spool"
 )
 
 //doc:url updater
@@ -192,7 +192,7 @@ func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 		return nil, hint, err
 	}
 
-	tf, err := tmp.NewFile("", "pyupio.")
+	tf, err := spool.NewSpool(ctx, "fetcher.pyupio.")
 	if err != nil {
 		return nil, hint, err
 	}
