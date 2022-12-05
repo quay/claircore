@@ -14,7 +14,7 @@ import (
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/libvuln/driver"
-	"github.com/quay/claircore/pkg/tmp"
+	"github.com/quay/claircore/toolkit/spool"
 )
 
 // Compressor is used by Fetcher to decompress data it fetches.
@@ -231,7 +231,7 @@ Compression:
 		Stringer("compression", cmp).
 		Msg("found compression scheme")
 
-	tf, err := tmp.NewFile("", "fetcher.")
+	tf, err := spool.NewSpool(ctx, "fetcher.ovalutil.")
 	if err != nil {
 		return nil, hint, err
 	}
