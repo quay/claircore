@@ -30,7 +30,7 @@ require (
 	github.com/ulikunitz/xz v0.5.10
 	golang.org/x/crypto v0.3.0
 	golang.org/x/sync v0.1.0
-	golang.org/x/text v0.4.0
+	golang.org/x/text v0.5.0
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba
 	golang.org/x/tools v0.3.0
 	google.golang.org/protobuf v1.28.1 // indirect
