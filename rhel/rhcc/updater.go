@@ -18,8 +18,8 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/cpe"
 	"github.com/quay/claircore/pkg/rhctag"
-	"github.com/quay/claircore/pkg/tmp"
 	"github.com/quay/claircore/rhel/internal/common"
+	"github.com/quay/claircore/toolkit/spool"
 )
 
 //doc:url updater
@@ -135,7 +135,7 @@ func (u *updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 	}
 	zlog.Debug(ctx).Msg("successfully requested database")
 
-	tf, err := tmp.NewFile("", updaterName+".")
+	tf, err := spool.NewSpool(ctx, "fetcher.rhcc.")
 	if err != nil {
 		return nil, hint, fmt.Errorf("rhcc: unable to open tempfile: %w", err)
 	}
