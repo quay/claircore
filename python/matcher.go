@@ -3,14 +3,14 @@ package python
 import (
 	"context"
 
-	pep440 "github.com/aquasecurity/go-pep440-version"
+	"github.com/quay/zlog"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/pkg/pep440"
 )
 
-var (
-	_ driver.Matcher = (*Matcher)(nil)
-)
+var _ driver.Matcher = (*Matcher)(nil)
 
 // Matcher attempts to correlate discovered python packages with reported
 // vulnerabilities.
@@ -39,16 +39,20 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 
 	v, err := pep440.Parse(record.Package.Version)
 	if err != nil {
+		zlog.Warn(ctx).
+			Str("package", record.Package.Name).
+			Stringer("version", &v).
+			Msg("unable to parse python package version")
 		return false, nil
 	}
-
-	spec, err := pep440.NewSpecifiers(vuln.Package.Version)
+	spec, err := pep440.ParseRange(vuln.Package.Version)
 	if err != nil {
+		zlog.Warn(ctx).
+			Str("advisory", vuln.Name).
+			Stringer("range", spec).
+			Msg("unable to parse python vulnerability range")
 		return false, nil
 	}
 
-	if spec.Check(v) {
-		return true, nil
-	}
-	return false, nil
+	return spec.Match(&v), nil
 }

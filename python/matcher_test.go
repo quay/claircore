@@ -4,23 +4,29 @@ import (
 	"context"
 	"testing"
 
+	"github.com/quay/zlog"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/python"
 )
 
 type matcherTestcase struct {
+	Matcher driver.Matcher
 	Name    string
 	R       claircore.IndexRecord
 	V       claircore.Vulnerability
 	Want    bool
-	Matcher driver.Matcher
 }
 
 func (tc matcherTestcase) Run(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	got, _ := tc.Matcher.Vulnerable(ctx, &tc.R, &tc.V)
+	ctx = zlog.Test(ctx, t)
+	got, err := tc.Matcher.Vulnerable(ctx, &tc.R, &tc.V)
+	if err != nil {
+		t.Error(err)
+	}
 	want := tc.Want
 	if got != want {
 		t.Errorf("got: %v, want: %v", got, want)
