@@ -6,39 +6,43 @@ import (
 	"unicode"
 )
 
+//go:generate stringer -linecomment -type op
 type op int
 
 const (
 	_ op = iota
-	opMatch
-	opExclusion
-	opLTE
-	opGTE
-	opLT
-	opGT
+
+	opMatch     // ==
+	opExclusion // !=
+	opLTE       // <=
+	opGTE       // >=
+	opLT        // <
+	opGT        // >
 )
 
 type criterion struct {
-	Op op
 	V  Version
+	Op op
 }
 
 func (c *criterion) Match(v *Version) bool {
+	cmp := v.Compare(&c.V)
 	switch c.Op {
 	case opMatch:
-		return c.V.Compare(v) == 0
+		return cmp == 0
 	case opExclusion:
-		return c.V.Compare(v) != 0
-	case opLT:
-		return c.V.Compare(v) == -1
+		return cmp != 0
 	case opLTE:
-		return c.V.Compare(v) != +1
-	case opGT:
-		return c.V.Compare(v) == +1
+		return cmp != +1
 	case opGTE:
-		return c.V.Compare(v) != -1
+		return cmp != -1
+	case opLT:
+		return cmp == -1
+	case opGT:
+		return cmp == +1
+	default:
+		panic("programmer error")
 	}
-	return false
 }
 
 // Range is a set of criteria corresponding to a range of versions.
@@ -50,20 +54,7 @@ func (r Range) String() string {
 		if i != 0 {
 			b.WriteString(", ")
 		}
-		switch c.Op {
-		case opMatch:
-			b.WriteString("==")
-		case opExclusion:
-			b.WriteString("!=")
-		case opLTE:
-			b.WriteString("<=")
-		case opGTE:
-			b.WriteString(">=")
-		case opLT:
-			b.WriteString("<")
-		case opGT:
-			b.WriteString(">")
-		}
+		b.WriteString(c.Op.String())
 		b.WriteString(c.V.String())
 	}
 	return b.String()
