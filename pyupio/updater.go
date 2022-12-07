@@ -14,11 +14,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	pep440 "github.com/aquasecurity/go-pep440-version"
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/pkg/pep440"
 	"github.com/quay/claircore/pkg/tmp"
 )
 
@@ -269,24 +269,14 @@ type entry struct {
 	Advisory string   `json:"advisory"`
 	CVE      *string  `json:"cve"`
 	ID       string   `json:"id"`
-	Specs    []string `json:"specs"`
 	V        string   `json:"v"`
-}
-
-var vZero pep440.Version
-
-func init() {
-	var err error
-	vZero, err = pep440.Parse("0")
-	if err != nil {
-		panic(err)
-	}
+	Specs    []string `json:"specs"`
 }
 
 func (db db) Vulnerabilites(ctx context.Context, repo *claircore.Repository, updater string) ([]*claircore.Vulnerability, error) {
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "pyupio/db.Vulnerabilities")
-	var mungeCt int
+	var skipCt int
 	var ret []*claircore.Vulnerability
 	for k, m := range db {
 		if k == "$meta" {
@@ -298,12 +288,12 @@ func (db db) Vulnerabilites(ctx context.Context, repo *claircore.Repository, upd
 		}
 		for _, e := range es {
 			// is specifier valid
-			_, err := pep440.NewSpecifiers(e.V)
+			_, err := pep440.ParseRange(e.V)
 			if err != nil {
 				zlog.Warn(ctx).
 					Str("spec", e.V).
 					Msg("malformed database entry")
-				mungeCt++
+				skipCt++
 				continue
 			}
 			v := &claircore.Vulnerability{
@@ -328,10 +318,10 @@ func (db db) Vulnerabilites(ctx context.Context, repo *claircore.Repository, upd
 			ret = append(ret, v)
 		}
 	}
-	if mungeCt > 0 {
+	if skipCt > 0 {
 		zlog.Debug(ctx).
-			Int("count", mungeCt).
-			Msg("munged bounds on some vulnerabilities 😬")
+			Int("count", skipCt).
+			Msg("skipped some vulnerabilities 😬")
 	}
 	return ret, nil
 }
