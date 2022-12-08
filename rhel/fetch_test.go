@@ -3,7 +3,6 @@ package rhel
 import (
 	"context"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -37,7 +36,7 @@ func TestFetch(t *testing.T) {
 		}
 		t.Logf("got fingerprint: %+v", hint)
 		defer rd.Close()
-		n, err := io.Copy(ioutil.Discard, rd)
+		n, err := io.Copy(io.Discard, rd)
 		switch {
 		case err != nil:
 			t.Fatalf("unable to read returned data: %v", err)
@@ -70,7 +69,7 @@ func TestFetch(t *testing.T) {
 		}
 		t.Logf("got fingerprint: %+v", hint)
 		defer rd.Close()
-		n, err := io.Copy(ioutil.Discard, rd)
+		n, err := io.Copy(io.Discard, rd)
 		switch {
 		case err != nil:
 			t.Fatalf("unable to read returned data: %v", err)

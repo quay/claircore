@@ -3,7 +3,6 @@ package jsonblob
 import (
 	"context"
 	"io"
-	"io/ioutil"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -27,7 +26,7 @@ func TestStore(t *testing.T) {
 	}
 	t.Logf("ref: %v", ref)
 
-	if err := s.Store(ioutil.Discard); err != nil {
+	if err := s.Store(io.Discard); err != nil {
 		t.Error(err)
 	}
 }

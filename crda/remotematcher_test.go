@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -93,7 +93,7 @@ func TestRemoteMatcher(t *testing.T) {
 			}
 			testLocalPath := fmt.Sprintf("testdata/%s/%s/%s.json", vulnRequest.Ecosystem, p.Name, p.Version)
 			t.Logf("serving request for %v", testLocalPath)
-			jsonOut, err := ioutil.ReadFile(testLocalPath)
+			jsonOut, err := os.ReadFile(testLocalPath)
 			if err != nil {
 				t.Log(err)
 				continue

@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,7 +14,7 @@ import (
 )
 
 func extractTar(ctx context.Context, rd io.ReadSeeker) (string, error) {
-	root, err := ioutil.TempDir("", "rpmscanner.")
+	root, err := os.MkdirTemp("", "rpmscanner.")
 	if err != nil {
 		return "", err
 	}

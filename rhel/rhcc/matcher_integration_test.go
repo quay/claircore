@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -128,7 +128,7 @@ func TestMatcherIntegration(t *testing.T) {
 			if found != tt.match {
 				t.Fatalf("Expected to find %s in vulnerability report", tt.cveID)
 			}
-			if err := json.NewEncoder(ioutil.Discard).Encode(&vr); err != nil {
+			if err := json.NewEncoder(io.Discard).Encode(&vr); err != nil {
 				t.Fatalf("failed to marshal VR: %v", err)
 			}
 		})

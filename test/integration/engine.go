@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -53,10 +52,10 @@ func (e *Engine) init(t testing.TB) {
 	}
 	t.Logf("using data directory %q", e.dataDir)
 	pwfile := filepath.Join(t.TempDir(), "passwd")
-	if err := ioutil.WriteFile(pwfile, []byte(`securepassword`), 0644); err != nil {
+	if err := os.WriteFile(pwfile, []byte(`securepassword`), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	os.MkdirAll("testdata", 0755)
+	os.MkdirAll("testdata", 0o755)
 	log, err := os.Create(filepath.Join("testdata", "pg"+dbVersion+".initdb"))
 	if err != nil {
 		t.Fatal(err)
@@ -112,7 +111,7 @@ func (e *Engine) Stop() error {
 func fetchArchive(t testing.TB) {
 	p, err := cachedDir()
 	if errors.Is(err, os.ErrNotExist) {
-		os.MkdirAll(p, 0755)
+		os.MkdirAll(p, 0o755)
 	}
 	if !lockDir(t, p) {
 		return
@@ -130,7 +129,7 @@ func fetchArchive(t testing.TB) {
 		t.Fatalf("unexpected response: %v", res.Status)
 	}
 	t.Log("fetch OK")
-	jf, err := ioutil.TempFile(t.TempDir(), "embedded-postgres.")
+	jf, err := os.CreateTemp(t.TempDir(), "embedded-postgres.")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -163,7 +162,7 @@ func fetchArchive(t testing.TB) {
 
 	// Extract the tarball to the target directory.
 	t.Logf("extracting %q to %q", zf.Name, p)
-	if err := os.MkdirAll(p, 0755); err != nil {
+	if err := os.MkdirAll(p, 0o755); err != nil {
 		t.Error(err)
 	}
 	rd, err := zf.Open()
@@ -188,14 +187,14 @@ func fetchArchive(t testing.TB) {
 		// This also plays fast and loose with permissions around directories.
 		switch h.Typeflag {
 		case tar.TypeDir:
-			if err := os.MkdirAll(outName, 0755); err != nil {
+			if err := os.MkdirAll(outName, 0o755); err != nil {
 				t.Error(err)
 			}
 			if err := os.Chmod(outName, h.FileInfo().Mode()); err != nil {
 				t.Error(err)
 			}
 		case tar.TypeReg:
-			if err := os.MkdirAll(filepath.Dir(outName), 0755); err != nil {
+			if err := os.MkdirAll(filepath.Dir(outName), 0o755); err != nil {
 				t.Error(err)
 			}
 			f, err := os.Create(outName)
@@ -214,7 +213,7 @@ func fetchArchive(t testing.TB) {
 				t.Error(err)
 			}
 		case tar.TypeSymlink:
-			if err := os.MkdirAll(filepath.Dir(outName), 0755); err != nil {
+			if err := os.MkdirAll(filepath.Dir(outName), 0o755); err != nil {
 				t.Error(err)
 			}
 			if err := os.Symlink(h.Linkname, outName); err != nil {

@@ -1,7 +1,6 @@
 package tmp
 
 import (
-	"io/ioutil"
 	"os"
 )
 
@@ -12,7 +11,7 @@ type File struct {
 }
 
 func NewFile(dir, pattern string) (*File, error) {
-	f, err := ioutil.TempFile(dir, pattern)
+	f, err := os.CreateTemp(dir, pattern)
 	if err != nil {
 		return nil, err
 	}

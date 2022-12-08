@@ -3,7 +3,7 @@ package rhel
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -81,7 +81,7 @@ func TestMatcherIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := json.NewEncoder(ioutil.Discard).Encode(&vr); err != nil {
+	if err := json.NewEncoder(io.Discard).Encode(&vr); err != nil {
 		t.Fatalf("failed to marshal VR: %v", err)
 	}
 }
