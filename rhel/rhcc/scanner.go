@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/fs"
 	"net/http"
 	"os"
@@ -165,11 +166,15 @@ func (s *scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Pa
 
 	tctx, done := context.WithTimeout(ctx, s.cfg.Timeout)
 	defer done()
-	v, err := s.upd.Get(tctx, s.client)
-	if err != nil && v == nil {
+	vi, err := s.upd.Get(tctx, s.client)
+	if err != nil && vi == nil {
 		return nil, err
 	}
-	repos, ok := v.(*mappingFile).Data[name]
+	v, ok := vi.(*mappingFile)
+	if !ok || v == nil {
+		return nil, fmt.Errorf("rhcc: unable to create a mappingFile object")
+	}
+	repos, ok := v.Data[name]
 	if ok {
 		zlog.Debug(ctx).Str("name", name).
 			Msg("name present in mapping file")

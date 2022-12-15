@@ -186,11 +186,15 @@ func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) (repos
 
 	tctx, done := context.WithTimeout(ctx, r.cfg.Timeout)
 	defer done()
-	cm, err := r.upd.Get(tctx, r.client)
-	if err != nil && cm == nil {
+	cmi, err := r.upd.Get(tctx, r.client)
+	if err != nil && cmi == nil {
 		return []*claircore.Repository{}, err
 	}
-	CPEs, err := mapContentSets(ctx, sys, cm.(*mappingFile))
+	cm, ok := cmi.(*mappingFile)
+	if !ok || cm == nil {
+		return []*claircore.Repository{}, fmt.Errorf("rhel: unable to create a mappingFile object")
+	}
+	CPEs, err := mapContentSets(ctx, sys, cm)
 	if err != nil {
 		return []*claircore.Repository{}, err
 	}
