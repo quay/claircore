@@ -16,6 +16,55 @@ import (
 	"github.com/quay/claircore"
 )
 
+func TestEmptyFile(t *testing.T) {
+	ctx := zlog.Test(context.Background(), t)
+
+	tmpdir := t.TempDir()
+	f, err := os.Create(filepath.Join(tmpdir, "nothing"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	fi, err := f.Stat()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Create the tar stuff
+	tarname := filepath.Join(tmpdir, "tar")
+	tf, err := os.Create(tarname)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer tf.Close()
+	tw := tar.NewWriter(tf)
+	hdr, err := tar.FileInfoHeader(fi, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	hdr.Name = "./bin/nothing"
+	if err := tw.WriteHeader(hdr); err != nil {
+		t.Error(err)
+	}
+	if _, err := io.Copy(tw, f); err != nil {
+		t.Error(err)
+	}
+	if err := tw.Close(); err != nil {
+		t.Error(err)
+	}
+	t.Logf("wrote tar to: %s", tf.Name())
+	l := claircore.Layer{
+		Hash: claircore.MustParseDigest(`sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`),
+		URI:  `file:///dev/null`,
+	}
+	l.SetLocal(tf.Name())
+	var s Detector
+	_, err = s.Scan(ctx, &l)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestScanner(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
 	tmpdir := t.TempDir()
