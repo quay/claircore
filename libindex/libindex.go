@@ -18,7 +18,6 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/alpine"
 	"github.com/quay/claircore/dpkg"
-	"github.com/quay/claircore/gobin"
 	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/java"
 	"github.com/quay/claircore/pkg/omnimatcher"
@@ -96,7 +95,7 @@ func New(ctx context.Context, opts *Options, cl *http.Client) (*Libindex, error)
 			python.NewEcosystem(ctx),
 			java.NewEcosystem(ctx),
 			rhcc.NewEcosystem(ctx),
-			gobin.NewEcosystem(ctx),
+			//gobin.NewEcosystem(ctx),
 		}
 	}
 
