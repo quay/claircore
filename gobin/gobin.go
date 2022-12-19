@@ -5,6 +5,7 @@ package gobin
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -97,9 +98,16 @@ func (Detector) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Pack
 		}
 		defer f.Close()
 
-		if _, err := io.ReadFull(f, peek); err != nil {
+		_, err = io.ReadFull(f, peek)
+		switch {
+		case errors.Is(err, nil):
+		case errors.Is(err, io.EOF), errors.Is(err, io.ErrUnexpectedEOF):
+			// Valid error with empty, or tiny files.
+			return nil
+		default:
 			return fmt.Errorf("gobin: unable to read %q: %w", p, err)
 		}
+
 		if !bytes.HasPrefix(peek, []byte("\x7fELF")) && !bytes.HasPrefix(peek, []byte("MZ")) {
 			// not an ELF or PE binary
 			return nil
