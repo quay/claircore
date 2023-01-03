@@ -24,7 +24,7 @@ type Ecosystem struct {
 
 // EcosystemsToScanners extracts and dedupes multiple ecosystems and returns
 // their discrete scanners.
-func EcosystemsToScanners(ctx context.Context, ecosystems []*Ecosystem, disallowRemote bool) ([]PackageScanner, []DistributionScanner, []RepositoryScanner, error) {
+func EcosystemsToScanners(ctx context.Context, ecosystems []*Ecosystem) ([]PackageScanner, []DistributionScanner, []RepositoryScanner, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "indexer/EcosystemsToScanners")
 	ps := []PackageScanner{}
 	ds := []DistributionScanner{}
@@ -46,12 +46,6 @@ func EcosystemsToScanners(ctx context.Context, ecosystems []*Ecosystem, disallow
 				continue
 			}
 			seen.pkg[n] = struct{}{}
-			if _, ok := s.(RPCScanner); ok && disallowRemote {
-				zlog.Info(ctx).
-					Str("scanner", n).
-					Msg("disallowed by configuration")
-				continue
-			}
 			ps = append(ps, s)
 		}
 
@@ -65,12 +59,6 @@ func EcosystemsToScanners(ctx context.Context, ecosystems []*Ecosystem, disallow
 				continue
 			}
 			seen.dist[n] = struct{}{}
-			if _, ok := s.(RPCScanner); ok && disallowRemote {
-				zlog.Info(ctx).
-					Str("scanner", n).
-					Msg("disallowed by configuration")
-				continue
-			}
 			ds = append(ds, s)
 		}
 
@@ -84,12 +72,6 @@ func EcosystemsToScanners(ctx context.Context, ecosystems []*Ecosystem, disallow
 				continue
 			}
 			seen.repo[n] = struct{}{}
-			if _, ok := s.(RPCScanner); ok && disallowRemote {
-				zlog.Info(ctx).
-					Str("scanner", n).
-					Msg("disallowed by configuration")
-				continue
-			}
 			rs = append(rs, s)
 		}
 	}
