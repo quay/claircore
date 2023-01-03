@@ -2,7 +2,9 @@ package layerscanner
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net"
 	"runtime"
 
 	"github.com/quay/zlog"
@@ -42,7 +44,7 @@ func New(ctx context.Context, concurrent int, opts *indexer.Opts) (indexer.Layer
 		concurrent = runtime.GOMAXPROCS(0)
 	}
 
-	ps, ds, rs, err := indexer.EcosystemsToScanners(ctx, opts.Ecosystems, opts.Airgap)
+	ps, ds, rs, err := indexer.EcosystemsToScanners(ctx, opts.Ecosystems)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract scanners from ecosystems: %v", err)
 	}
@@ -235,9 +237,16 @@ func (r *result) Do(ctx context.Context, s indexer.VersionedScanner, l *claircor
 	default:
 		panic(fmt.Sprintf("programmer error: unknown type %T used as scanner", s))
 	}
-	if err != nil {
+	addrErr := &net.AddrError{}
+	switch {
+	case errors.Is(err, nil):
+	case errors.As(err, &addrErr):
+		zlog.Warn(ctx).Str("scanner", s.Name()).Err(err).Msg("scanner not able to access resources")
+		return nil
+	default:
 		zlog.Info(ctx).Err(err).Send()
 	}
+
 	return err
 }
 

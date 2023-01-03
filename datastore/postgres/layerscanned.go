@@ -73,7 +73,7 @@ SELECT
 	switch {
 	case errors.Is(err, nil):
 	case errors.Is(err, pgx.ErrNoRows):
-		return false, fmt.Errorf("scanner %q not found", scnr)
+		return false, fmt.Errorf("scanner %s not found", scnr.Name())
 	default:
 		return false, err
 	}

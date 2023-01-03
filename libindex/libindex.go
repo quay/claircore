@@ -100,9 +100,6 @@ func New(ctx context.Context, opts *Options, cl *http.Client) (*Libindex, error)
 		}
 	}
 
-	// TODO(hank) If "airgap" is set, we should wrap the client and return
-	// errors on non-RFC1918 and non-RFC4193 addresses. As of go1.17, the net.IP
-	// type has a method for this purpose.
 	if cl == nil {
 		return nil, errors.New("invalid *http.Client")
 	}
@@ -116,7 +113,7 @@ func New(ctx context.Context, opts *Options, cl *http.Client) (*Libindex, error)
 	}
 
 	// register any new scanners.
-	pscnrs, dscnrs, rscnrs, err := indexer.EcosystemsToScanners(ctx, opts.Ecosystems, opts.Airgap)
+	pscnrs, dscnrs, rscnrs, err := indexer.EcosystemsToScanners(ctx, opts.Ecosystems)
 	if err != nil {
 		return nil, err
 	}
