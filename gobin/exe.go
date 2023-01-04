@@ -13,7 +13,7 @@ import (
 func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.ReaderAt) error {
 	bi, err := buildinfo.Read(r)
 	if err != nil {
-		zlog.Info(ctx).
+		zlog.Debug(ctx).
 			Err(err).
 			Msg("unable to open executable")
 		return nil
