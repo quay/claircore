@@ -14,7 +14,6 @@ func NewEcosystem(ctx context.Context) *indexer.Ecosystem {
 		},
 		DistributionScanners: func(context.Context) ([]indexer.DistributionScanner, error) { return nil, nil },
 		RepositoryScanners:   func(context.Context) ([]indexer.RepositoryScanner, error) { return nil, nil },
-		// BUG(hank) The Ecosystem needs a coalescer that understands whiteouts.
-		Coalescer: func(context.Context) (indexer.Coalescer, error) { return nil, nil },
+		Coalescer:            func(context.Context) (indexer.Coalescer, error) { return &coalescer{}, nil },
 	}
 }
