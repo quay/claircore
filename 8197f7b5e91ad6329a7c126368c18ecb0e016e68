@@ -1,0 +1,5 @@
+Fixed some database metrics.
+
+The metrics `distributionbylayer_total` and
+`distributionbylayer_duration_seconds` were previously counted under
+different metrics. They're now counted under the correct metrics.
