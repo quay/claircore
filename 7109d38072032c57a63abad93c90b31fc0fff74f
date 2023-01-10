@@ -1,0 +1,4 @@
+The sqlite dependency is now supported on `ppc64le`.
+
+This means that claircore should build and behave correctly on
+`ppc64le`. Please open issues if this is not the case.
