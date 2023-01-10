@@ -61,7 +61,7 @@ $a\
 .
 else
 	cat <<'.' >"${sedf}"
-s/PROJQUAY-[0-9]\+/[\1](https:\/\/issues.redhat.com\/browse\/\1)/
+s/PROJQUAY-[0-9]\+/[&](https:\/\/issues.redhat.com\/browse\/&)/
 1s/^/- /
 2c\
   <details>
