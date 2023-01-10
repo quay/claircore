@@ -1,5 +1,6 @@
-airgapped: Remove airgapped logic from the core in lieu of the client being passed being airgap aware
+Remove airgapped logic from the core
 
 This change removes the code that disables RPC scanners when airgap
-is true allowing hybrid implementations to be configured with local
-resources. It assumes that the client passed will be airgap aware.
+is true in the config allowing hybrid implementations to be configured
+with local resources. It assumes that the client passed will be airgap
+aware and will restrict network access if requested.
