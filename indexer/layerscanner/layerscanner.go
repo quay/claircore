@@ -209,7 +209,7 @@ func (ls *layerScanner) scanLayer(ctx context.Context, l *claircore.Layer, s ind
 	}
 
 	if err = ls.store.SetLayerScanned(ctx, l.Hash, s); err != nil {
-		return fmt.Errorf("could not set layer scanned: %v", l)
+		return fmt.Errorf("could not set layer scanned: %w", err)
 	}
 
 	return result.Store(ctx, ls.store, s, l)
