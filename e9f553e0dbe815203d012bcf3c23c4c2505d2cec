@@ -1,0 +1,8 @@
+Check that after casting to mappingFile we have a usable mapper
+
+Previously it was possible that if the repo2cpe_mapping_url or the
+repo2cpe_mapping_file (or indeed if the endpoint is down) that we would
+panic as the mappingFile will cast to a nil. Now we check for a nil
+mapper before it gets accessed and error out. This was also an issue
+for name2repos_mapping_url and name2repos_mapping_file used by RHCC
+scanner.
