@@ -1,0 +1,21 @@
+#!/bin/sh
+set -e
+: "${remote:=$(git remote | grep -q upstream && echo upstream || echo origin)}"
+cat <<'.'
+This sets up the local repo for the changelog notes.
+
+To do so, it modifies the local git config. Please make sure you
+understand what this script is modifing and why.
+
+.
+sleep 5
+PS4=""
+set -x
+git config --local --type=bool notes.rewrite.rebase true
+git config --local --type=bool notes.rewrite.amend true 
+git config --local --get --fixed-value notes.rewriteRef refs/notes/changelog >/dev/null ||
+	git config --local --add --type=path notes.rewriteRef refs/notes/changelog
+git config --local --get --fixed-value notes.displayRef refs/notes/changelog >/dev/null ||
+	git config --local --add --type=path notes.displayRef refs/notes/changelog
+git config --local --get "remote.${remote}.fetch" "\\+refs/notes/changelog:refs/notes/${remote}/changelog" >/dev/null ||
+	git config --local --add "remote.${remote}.fetch" "+refs/notes/changelog:refs/notes/${remote}/changelog"

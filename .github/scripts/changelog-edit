@@ -29,9 +29,14 @@ fi
 
 if [ -z "$menuonly" ]; then
 	: fetching and merging from "${remote}"
-	git fetch "${remote}" "${GIT_NOTES_REF}:${remoteref}"
+	git fetch "${remote}"
+	: if the next command fails, run the setup script
 	git notes merge -s theirs "${remoteref}"
-	git update-ref -d "${remoteref}"
+	git update-ref -d "refs/original/${remoteref}" ||:
+	(
+	cd $(git rev-parse --show-toplevel) &&
+	git filter-branch --prune-empty "${GIT_NOTES_REF}"
+	)
 fi
 if [ -z "$synconly" ]; then
 	: prompting
@@ -41,7 +46,11 @@ if [ -z "$synconly" ]; then
 	read -r n
 	commit="$(git log '--format=format:%H' "${prevtag}..." | sed -n "${n}p")"
 	git notes edit "${commit}"
+	git update-ref -d "refs/original/${remoteref}" ||:
+	(
+	cd $(git rev-parse --show-toplevel) &&
 	git filter-branch --prune-empty "${GIT_NOTES_REF}"
+	)
 fi
 if [ -z "$menuonly" ]; then
 	: pushing back to "${remote}"
