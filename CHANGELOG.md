@@ -1,3 +1,9 @@
+<a name="v1.4.14"></a>
+## [v1.4.14] - 2023-01-13
+[v1.4.14]: https://github.com/quay/claircore/compare/...v1.4.14
+
+Nothing interesting happened this release.
+
 <a name="v1.4.13"></a>
 ## [v1.4.13] - 2022-11-21
 ### Build(Deps)
