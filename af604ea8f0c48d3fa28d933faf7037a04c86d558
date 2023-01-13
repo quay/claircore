@@ -1,0 +1,5 @@
+Add golang binary indexer.
+
+There's now a component for recognizing and pulling the dependencies out
+of arbitrary go binaries. Binaries built without modules are not
+supported. The plan is to use OSV data in the matcher component.
