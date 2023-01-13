@@ -1,3 +1,45 @@
+<a name="v1.4.14"></a>
+## [v1.4.14] - 2023-01-13
+[v1.4.14]: https://github.com/quay/claircore/compare/v1.4.13...v1.4.14
+
+- Add golang binary indexer.
+  <details>
+  There's now a component for recognizing and pulling the dependencies out
+  of arbitrary go binaries. Binaries built without modules are not
+  supported. The plan is to use OSV data in the matcher component.
+  </details>
+
+- Remove airgapped logic from the core
+  <details>
+  This change removes the code that disables RPC scanners when airgap
+  is true in the config allowing hybrid implementations to be configured
+  with local resources. It assumes that the client passed will be airgap
+  aware and will restrict network access if requested.
+  </details>
+
+- Check that after casting to mappingFile we have a usable mapper
+  <details>
+  Previously it was possible that if the repo2cpe_mapping_url or the
+  repo2cpe_mapping_file (or indeed if the endpoint is down) that we would
+  panic as the mappingFile will cast to a nil. Now we check for a nil
+  mapper before it gets accessed and error out. This was also an issue
+  for name2repos_mapping_url and name2repos_mapping_file used by RHCC
+  scanner.
+  </details>
+
+- The sqlite dependency is now supported on `ppc64le`.
+  <details>
+  This means that claircore should build and behave correctly on
+  `ppc64le`. Please open issues if this is not the case.
+  </details>
+
+- Fixed some database metrics.
+  <details>
+  The metrics `distributionbylayer_total` and
+  `distributionbylayer_duration_seconds` were previously counted under
+  different metrics. They're now counted under the correct metrics.
+  </details>
+
 <a name="v1.4.13"></a>
 ## [v1.4.13] - 2022-11-21
 ### Build(Deps)
