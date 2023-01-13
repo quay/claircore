@@ -17,9 +17,11 @@ jobs:
           echo "VERSION=${tag}" >> $GITHUB_ENV
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       - name: Changelog
         run: |
-          .github/scripts/changelog-edit -s
+          git fetch --tags origin refs/notes/changelog:refs/notes/changelog
           .github/scripts/changelog-render "${VERSION}" > "${{github.workspace}}/changelog"
       - name: Create Release
         uses: actions/create-release@latest

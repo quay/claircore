@@ -4,11 +4,11 @@ command -v gh >/dev/null 2>&1 || {
 	printf 'need "gh" tool: https://github.com/cli/cli\n'>&2
 	exit 1
 }
-: ${GH_REPO:=quay/claircore}
+: "${GH_REPO:=quay/claircore}"
 export GH_REPO
-: ${BRANCH:=$(git branch --show-current)}
+: "${BRANCH:=$(git branch --show-current)}"
 # Autodetect weirdos that use upsteam+origin instead of origin+fork.
-: ${REMOTE:=$(git remote | grep -q '^upstream$' && echo upstream || echo origin)}
+: "${REMOTE:=$(git remote | grep -q '^upstream$' && echo upstream || echo origin)}"
 while getopts hb:r: arg; do
 	case "$arg" in
 		b) BRANCH="$OPTARG";;
@@ -17,8 +17,9 @@ while getopts hb:r: arg; do
 			exit 2;;
 	esac
 done
-shift $(($OPTIND - 1))
+shift $((OPTIND - 1))
 VERSION="${1:?need a version argument}"
+VERSION="v${VERSION#v}"
 
 printf 'operating on branch: %s\n' "$BRANCH" >&2
 gh workflow run prepare-release.yml -F "branch=$BRANCH" -F "tag=$VERSION"

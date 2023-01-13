@@ -21,9 +21,10 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: ${{ github.event.inputs.branch }}
+          fetch-depth: 0
       - name: Changelog
         run: |
-          .github/scripts/changelog-edit -s
+          git fetch --tags origin refs/notes/changelog:refs/notes/changelog
           .github/scripts/changelog-update "${{ github.event.inputs.tag }}"
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v4.2.3
