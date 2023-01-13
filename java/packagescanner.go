@@ -15,7 +15,9 @@ import (
 	"net/url"
 	"runtime/trace"
 	"sort"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/quay/zlog"
 
@@ -236,7 +238,13 @@ func (s *Scanner) search(ctx context.Context, i *jar.Info, ck []byte) error {
 	if i.SHA != nil {
 		ck = i.SHA
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.root.String(), nil)
+	fail := true
+	defer func() {
+		searchCounter.WithLabelValues(strconv.FormatBool(fail)).Inc()
+	}()
+	tctx, done := context.WithTimeout(ctx, 10*time.Second)
+	defer done()
+	req, err := http.NewRequestWithContext(tctx, http.MethodGet, s.root.String(), nil)
 	if err != nil {
 		zlog.Warn(ctx).
 			Err(err).
@@ -260,7 +268,7 @@ func (s *Scanner) search(ctx context.Context, i *jar.Info, ck []byte) error {
 		res.Body.Close()
 		zlog.Warn(ctx).
 			Str("status", res.Status).
-			Msg("unexpected reponse status")
+			Msg("unexpected response status")
 		return errRPC
 	}
 	var sr searchResponse
@@ -272,6 +280,7 @@ func (s *Scanner) search(ctx context.Context, i *jar.Info, ck []byte) error {
 			Msg("error decoding json")
 		return errRPC
 	}
+	fail = false
 	if len(sr.Response.Doc) == 0 {
 		zlog.Debug(ctx).Msg("no matching artifacts found")
 		return nil
