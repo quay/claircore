@@ -94,6 +94,9 @@ func (Detector) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Pack
 		}
 		f, err := sys.Open(p)
 		if err != nil {
+			// TODO(crozzy): Remove log line once controller is in a
+			// position to log all the context when receiving an error.
+			zlog.Warn(ctx).Msg("unable to open file")
 			return fmt.Errorf("gobin: unable to open %q: %w", p, err)
 		}
 		defer f.Close()
@@ -105,6 +108,9 @@ func (Detector) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Pack
 			// Valid error with empty, or tiny files.
 			return nil
 		default:
+			// TODO(crozzy): Remove log line once controller is in a
+			// position to log all the context when receiving an error.
+			zlog.Warn(ctx).Msg("unable to read file")
 			return fmt.Errorf("gobin: unable to read %q: %w", p, err)
 		}
 
