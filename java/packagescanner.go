@@ -34,12 +34,14 @@ var (
 )
 
 const DefaultSearchAPI = `https://search.maven.org/solrsearch/select`
+const DefaultRequestTimeout = 2
 
 // ScannerConfig is the struct used to configure a Scanner.
 type ScannerConfig struct {
 	// API is a URL endpoint to a maven-like REST API.
 	// The default is DefaultSearchAPI.
-	API string `yaml:"api" json:"api"`
+	API               string `yaml:"api" json:"api"`
+	APIRequestTimeout int    `yaml:"api_request_timeout" json:"api_request_timeout"`
 }
 
 // Scanner implements the scanner.PackageScanner interface.
@@ -49,8 +51,9 @@ type ScannerConfig struct {
 //
 // The zero value is ready to use.
 type Scanner struct {
-	client *http.Client
-	root   *url.URL
+	client             *http.Client
+	root               *url.URL
+	rootRequestTimeout int
 }
 
 // Name implements scanner.VersionedScanner.
@@ -76,8 +79,14 @@ func (s *Scanner) Configure(ctx context.Context, f indexer.ConfigDeserializer, c
 	if cfg.API != "" {
 		api = cfg.API
 	}
+	requestTimeout := DefaultRequestTimeout
+	if cfg.APIRequestTimeout != 0 {
+		requestTimeout  = cfg.APIRequestTimeout
+	}
+	s.rootRequestTimeout = requestTimeout
 	zlog.Debug(ctx).
 		Str("api", api).
+		Int("requestTimeout", requestTimeout).
 		Msg("configured search API URL")
 	u, err := url.Parse(api)
 	if err != nil {
@@ -242,7 +251,7 @@ func (s *Scanner) search(ctx context.Context, i *jar.Info, ck []byte) error {
 	defer func() {
 		searchCounter.WithLabelValues(strconv.FormatBool(fail)).Inc()
 	}()
-	tctx, done := context.WithTimeout(ctx, 10*time.Second)
+	tctx, done := context.WithTimeout(ctx, time.Duration(s.rootRequestTimeout) * time.Second)
 	defer done()
 	req, err := http.NewRequestWithContext(tctx, http.MethodGet, s.root.String(), nil)
 	if err != nil {
