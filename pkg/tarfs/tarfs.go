@@ -85,11 +85,19 @@ func New(r io.ReaderAt) (*FS, error) {
 			}
 			i.children = make(map[int]struct{})
 		case tar.TypeSymlink, tar.TypeLink:
-			// Fixup the linkname. Can't tell from the spec if relative paths are allowed.
-			if strings.HasPrefix(i.h.Linkname, ".") {
+			// If an absolute path, norm the path and it should be fine.
+			// A symlink could dangle, but that's really weird.
+			if path.IsAbs(i.h.Linkname) {
+				i.h.Linkname = normPath(i.h.Linkname)
+				break
+			}
+			if i.h.Typeflag == tar.TypeSymlink {
+				// Assume that symlinks are relative to the directory they're
+				// present in.
 				i.h.Linkname = path.Join(path.Dir(n), i.h.Linkname)
 			}
 			i.h.Linkname = normPath(i.h.Linkname)
+			// Linkname should now be a full path from the root of the tar.
 		case tar.TypeReg:
 		}
 		if err := s.add(n, i, hardlink); err != nil {
@@ -97,9 +105,14 @@ func New(r io.ReaderAt) (*FS, error) {
 		}
 	}
 	// Cleanup any dangling hardlinks.
+	// This leaves them in the inode slice, but removes them from the observable
+	// tree.
 	for _, rms := range hardlink {
 		for _, rm := range rms {
+			idx := s.lookup[rm]
 			delete(s.lookup, rm)
+			p := s.inode[s.lookup[path.Dir(rm)]]
+			delete(p.children, idx)
 		}
 	}
 	return &s, nil

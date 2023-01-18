@@ -402,7 +402,7 @@ func TestKnownLayers(t *testing.T) {
 //
 // In both tars, `var/run` is defined, but once as a normal dir and once
 // as a symlink to `../run`. For our sakes, we allow access through either
-// the symlink path (`var/ru`n in this case) or the original dir path (`run/` in
+// the symlink path (`var/run` in this case) or the original dir path (`run/` in
 // this case) for all files created under either path.
 //
 // For example, `algo.txt` can be accessed via `run/console/algo.txt` or
