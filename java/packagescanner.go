@@ -238,9 +238,9 @@ func (s *Scanner) search(ctx context.Context, i *jar.Info, ck []byte) error {
 	if i.SHA != nil {
 		ck = i.SHA
 	}
-	fail := true
+	success := false
 	defer func() {
-		searchCounter.WithLabelValues(strconv.FormatBool(fail)).Inc()
+		searchCounter.WithLabelValues(strconv.FormatBool(success)).Inc()
 	}()
 	tctx, done := context.WithTimeout(ctx, 10*time.Second)
 	defer done()
@@ -280,7 +280,7 @@ func (s *Scanner) search(ctx context.Context, i *jar.Info, ck []byte) error {
 			Msg("error decoding json")
 		return errRPC
 	}
-	fail = false
+	success = true
 	if len(sr.Response.Doc) == 0 {
 		zlog.Debug(ctx).Msg("no matching artifacts found")
 		return nil
