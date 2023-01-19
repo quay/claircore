@@ -375,7 +375,31 @@ func TestKnownLayers(t *testing.T) {
 				t.Fatal(err)
 			}
 			defer f.Close()
-			if _, err := New(f); err != nil {
+			sys, err := New(f)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := fs.WalkDir(sys, ".", func(p string, d fs.DirEntry, err error) error {
+				if err != nil {
+					t.Error(err)
+				}
+				fi, err := d.Info()
+				if err != nil {
+					t.Error(err)
+				}
+				if fi.Mode().Type()&fs.ModeSymlink != 0 {
+					// Skip symlinks, because some layers just have them dangle.
+					return nil
+				}
+				f, err := sys.Open(p)
+				if err != nil {
+					t.Error(err)
+				}
+				if f != nil {
+					f.Close()
+				}
+				return nil
+			}); err != nil {
 				t.Fatal(err)
 			}
 		})
