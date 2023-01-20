@@ -1,3 +1,9 @@
+<a name="v1.4.17"></a>
+## [v1.4.17] - 2023-01-20
+[v1.4.17]: https://github.com/quay/claircore/compare/v1.4.16...v1.4.17
+
+Nothing interesting happened this release.
+
 <a name="v1.4.16"></a>
 ## [v1.4.16] - 2023-01-18
 [v1.4.16]: https://github.com/quay/claircore/compare/v1.4.15...v1.4.16
