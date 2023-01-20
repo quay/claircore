@@ -35,7 +35,7 @@ var (
 			Namespace: "claircore",
 			Subsystem: "indexer",
 			Name:      "affectedmanifests_duration_seconds",
-			Help:      "The duration of all queries issued in the AffectedManifests method",
+			Help:      "The duration of all queries issued in the AffectedManifests method.",
 		},
 		[]string{"query"},
 	)
@@ -44,7 +44,7 @@ var (
 			Namespace: "claircore",
 			Subsystem: "indexer",
 			Name:      "protorecord_total",
-			Help:      "Total number of database queries issued in the protoRecord  method.",
+			Help:      "Total number of database queries issued in the protoRecord method.",
 		},
 		[]string{"query"},
 	)
@@ -106,8 +106,9 @@ WHERE
 			END
 		);
 `
+		op = `datastore/postgres/IndexerStore.AffectedManifests`
 	)
-	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/affectedManifests")
+	ctx = zlog.ContextWithValues(ctx, "component", op)
 
 	// confirm the incoming vuln can be
 	// resolved into a prototype index record
@@ -136,7 +137,12 @@ WHERE
 	case errors.Is(err, pgx.ErrNoRows):
 		return []claircore.Digest{}, nil
 	default:
-		return nil, fmt.Errorf("failed to query packages associated with vulnerability %q: %w", v.ID, err)
+		return nil, &claircore.Error{
+			Op:      op,
+			Kind:    claircore.ErrInternal,
+			Message: fmt.Sprintf("failed to query packages associated with vulnerability %q", v.ID),
+			Inner:   err,
+		}
 	}
 	defer rows.Close()
 	affectedManifestsCounter.WithLabelValues("selectPackages").Add(1)
@@ -158,7 +164,12 @@ WHERE
 			&pkg.Arch,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan package: %w", err)
+			return nil, &claircore.Error{
+				Op:      op,
+				Kind:    claircore.ErrInternal,
+				Message: "failed to deserialize package",
+				Inner:   err,
+			}
 		}
 		idStr := strconv.FormatInt(id, 10)
 		pkg.ID = idStr
@@ -172,7 +183,12 @@ WHERE
 	}
 	zlog.Debug(ctx).Int("count", len(pkgsToFilter)).Msg("packages to filter")
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error scanning packages: %w", err)
+		return nil, &claircore.Error{
+			Op:      op,
+			Kind:    claircore.ErrInternal,
+			Message: "error querying packages",
+			Inner:   err,
+		}
 	}
 
 	// for each package discovered create an index record
@@ -202,7 +218,12 @@ WHERE
 	for _, record := range filteredRecords {
 		v, err := toValues(record)
 		if err != nil {
-			return nil, fmt.Errorf("failed to resolve record %+v to sql values for query: %w", record, err)
+			return nil, &claircore.Error{
+				Op:      op,
+				Kind:    claircore.ErrInternal,
+				Message: fmt.Sprintf("failed to parse IDs associated with package %q", record.Package.ID),
+				Inner:   err,
+			}
 		}
 
 		err = func() error {
@@ -218,10 +239,19 @@ WHERE
 			switch {
 			case errors.Is(err, nil):
 			case errors.Is(err, pgx.ErrNoRows):
-				err = fmt.Errorf("failed to query the manifest index: %w", err)
-				fallthrough
+				return &claircore.Error{
+					Op:      op,
+					Kind:    claircore.ErrPrecondition,
+					Message: "failed to query the manifest index",
+					Inner:   err,
+				}
 			default:
-				return err
+				return &claircore.Error{
+					Op:      op,
+					Kind:    claircore.ErrInternal,
+					Message: fmt.Sprintf("failed to query packages associated with package %q", record.Package.ID),
+					Inner:   err,
+				}
 			}
 			defer rows.Close()
 			affectedManifestsCounter.WithLabelValues("selectAffected").Add(1)
@@ -231,16 +261,35 @@ WHERE
 				var hash claircore.Digest
 				err := rows.Scan(&hash)
 				if err != nil {
-					return fmt.Errorf("failed scanning manifest hash into digest: %w", err)
+					return &claircore.Error{
+						Op:      op,
+						Kind:    claircore.ErrInternal,
+						Message: "error deserializing manifest digest",
+						Inner: &claircore.Error{
+							Kind:  claircore.ErrPermanent,
+							Inner: err,
+						},
+					}
 				}
 				if _, ok := set[hash.String()]; !ok {
 					set[hash.String()] = struct{}{}
 					out = append(out, hash)
 				}
 			}
-			return rows.Err()
+			if err := rows.Err(); err != nil {
+				return &claircore.Error{
+					Op:      op,
+					Kind:    claircore.ErrInternal,
+					Message: "error querying affected packages",
+					Inner:   err,
+				}
+			}
+			return nil
 		}()
 		if err != nil {
+			// All error returns from the previous function are wrapped in our
+			// error type.
+			_ = err.(*claircore.Error)
 			return nil, err
 		}
 	}
