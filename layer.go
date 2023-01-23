@@ -24,10 +24,6 @@ type Layer struct {
 	file *spool.File
 }
 
-func (l *Layer) SetLocal(f string) error {
-	return errors.New("claircore: SetLocal unused")
-}
-
 // SetLayerFile associates a file with a layer.
 //
 // HACK(hank) This function exists to get used in the fetcher via linker tricks.

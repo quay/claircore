@@ -3,6 +3,8 @@ package spool
 import (
 	"context"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 // NewDir returns a new [Dir] allocated in the [Default] arena.
@@ -18,7 +20,8 @@ func NewDir(ctx context.Context, name string) (*Dir, error) {
 
 // NewDir returns a Dir allocated inside the Arena.
 //
-// The passed "name" has the same patten rules as [os.MkdirTemp].
+// The passed "name" has the same pattern rules as [os.MkdirTemp] if it contains
+// an "*".
 func (a *Arena) NewDir(ctx context.Context, name string) (*Dir, error) {
 	return a.newDir(ctx, name)
 }
@@ -28,7 +31,12 @@ func (a *Arena) NewDir(ctx context.Context, name string) (*Dir, error) {
 func (a *Arena) newDir(ctx context.Context, name string) (*Dir, error) {
 	d := &Dir{arena: a}
 	var err error
-	d.name, err = os.MkdirTemp(a.root, name)
+	if strings.Contains(name, "*") {
+		d.name, err = os.MkdirTemp(a.root, name)
+	} else {
+		d.name = filepath.Join(a.root, name)
+		err = os.Mkdir(d.name, 0o700)
+	}
 	if err != nil {
 		return nil, err
 	}

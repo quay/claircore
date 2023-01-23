@@ -31,6 +31,50 @@ var registry = map[string]*client{
 	"registry.access.redhat.com": {Root: "https://registry.access.redhat.com/"},
 }
 
+type Descriptor struct {
+	Registry string
+	Repo     string
+	Blob     claircore.Digest
+}
+
+func LayerInto(ctx context.Context, t *testing.T, c *http.Client, d Descriptor, f *os.File, opt ...Option) error {
+	t.Helper()
+	if c == nil {
+		t.Fatal("nil *http.Client")
+	}
+	opts := make(map[Option]bool)
+	for _, o := range opt {
+		opts[o] = true
+	}
+	t.Logf("fetching layer into: %s", f.Name())
+
+	client, ok := registry[d.Registry]
+	if !ok {
+		t.Fatal(fmt.Errorf("unknown registry: %q", d.Registry))
+	}
+	rc, err := client.Blob(ctx, c, d.Repo, d.Blob)
+	if err != nil {
+		t.Error(err)
+		return err
+	}
+	defer rc.Close()
+	var rd io.Reader
+	if true { // some additional option is in flight, here
+		z, err := gzip.NewReader(rc)
+		if err != nil {
+			t.Error(err)
+			return err
+		}
+		defer z.Close()
+		rd = z
+	}
+	if _, err := io.Copy(f, rd); err != nil {
+		t.Error(err)
+		return err
+	}
+	return nil
+}
+
 func Layer(ctx context.Context, t *testing.T, c *http.Client, from, repo string, blob claircore.Digest, opt ...Option) (*os.File, error) {
 	t.Helper()
 	opts := make(map[Option]bool)
@@ -130,9 +174,11 @@ func (d *client) getToken(repo string) string {
 	}
 	return ""
 }
+
 func (d *client) putToken(repo, tok string) {
 	d.tokCache.Store(repo, tok)
 }
+
 func (d *client) doAuth(ctx context.Context, c *http.Client, name, h string) error {
 	if !strings.HasPrefix(h, `Bearer `) {
 		return errors.New("weird header")

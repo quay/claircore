@@ -18,6 +18,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test/fetch"
+	"github.com/quay/claircore/toolkit/spool"
 )
 
 type layerserver struct {
@@ -72,7 +73,7 @@ func ServeLayers(t *testing.T, n int) (*http.Client, []*claircore.Layer) {
 			Typeflag: tar.TypeReg,
 			Name:     "./randomfile",
 			Size:     filesize,
-			Mode:     0755,
+			Mode:     0o755,
 			Uid:      1000,
 			Gid:      1000,
 			ModTime:  lsrv.now,
@@ -136,3 +137,18 @@ func RealizeLayers(ctx context.Context, t *testing.T, spec ...LayerSpec) []clair
 	wg.Wait()
 	return ret
 }
+
+func BackingFile(ctx context.Context, l *claircore.Layer) (*spool.File, error) {
+	f, err := spool.NewSpool(ctx, l.Hash.String()+".")
+	if err != nil {
+		return nil, err
+	}
+	if err := setLayerFile(l, f); err != nil {
+		f.Close()
+		return nil, err
+	}
+	return f.Reopen()
+}
+
+//go:linkname setLayerFile github.com/quay/claircore.setLayerFile
+func setLayerFile(l *claircore.Layer, f *spool.File) error

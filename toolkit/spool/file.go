@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 )
 
 // NewFile returns a new [File] allocated in the [Default] arena.
@@ -39,7 +40,8 @@ func NewSpool(ctx context.Context, name string) (*File, error) {
 
 // NewFile opens a File inside the Arena.
 //
-// The passed "name" has the same patten rules as [os.CreateTemp].
+// The passed "name" has the same pattern rules as [os.CreateTemp] if it
+// contains an "*".
 func (a *Arena) NewFile(ctx context.Context, name string) (*File, error) {
 	return a.newFile(ctx, name)
 }
@@ -69,7 +71,11 @@ func (a *Arena) newFile(ctx context.Context, name string) (*File, error) {
 	f := &File{
 		arena: a,
 	}
-	f.File, err = os.CreateTemp(a.root, name)
+	if strings.Contains(name, "*") {
+		f.File, err = os.CreateTemp(a.root, name)
+	} else {
+		f.File, err = os.OpenFile(filepath.Join(a.root, name), os.O_RDWR|os.O_CREATE|os.O_EXCL, 0o600)
+	}
 	if err != nil {
 		return nil, err
 	}
