@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -50,19 +51,21 @@ type RemoteFetchArena struct {
 	// Rc is a map of digest to refcount.
 	rc map[string]int
 
-	root string
+	root     string
+	maxBytes int64
 }
 
 // NewRemoteFetchArena initializes the RemoteFetchArena.
 //
 // This method is provided instead of a constructor function to make embedding
 // easier.
-func NewRemoteFetchArena(wc *http.Client, root string) *RemoteFetchArena {
+func NewRemoteFetchArena(wc *http.Client, root string, maxBytes int64) *RemoteFetchArena {
 	return &RemoteFetchArena{
-		wc:   wc,
-		root: root,
-		sf:   &singleflight.Group{},
-		rc:   make(map[string]int),
+		wc:       wc,
+		root:     root,
+		sf:       &singleflight.Group{},
+		rc:       make(map[string]int),
+		maxBytes: maxBytes,
 	}
 }
 
@@ -210,14 +213,27 @@ func (a *RemoteFetchArena) realizeLayer(ctx context.Context, l *claircore.Layer)
 		URL:        url,
 		Header:     l.Headers,
 	}
+
 	req = req.WithContext(ctx)
 	resp, err := a.wc.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("fetcher: request failed: %w", err)
+		return "", fmt.Errorf("fetcher: GET request failed: %w", err)
 	}
 	defer resp.Body.Close()
+
 	switch resp.StatusCode {
 	case http.StatusOK:
+		if cl := resp.Header.Get("content-length"); cl != "" {
+			size, err := strconv.ParseInt(cl, 10, 64)
+			switch {
+			case err == nil:
+				if a.maxBytes > 0 && size > a.maxBytes {
+					return "", fmt.Errorf("fetcher: layer size (%d) larger than maximum layer size (%d)", size, a.maxBytes)
+				}
+			default:
+				zlog.Warn(ctx).Msg("unable to convert content-length header to bytes")
+			}
+		}
 	default:
 		// Especially for 4xx errors, the response body may indicate what's going
 		// on, so include some of it in the error message. Capped at 256 bytes in
