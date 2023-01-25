@@ -3,18 +3,21 @@ package postgres
 import (
 	"context"
 	"errors"
-	"fmt"
 	"runtime"
+	"strconv"
 	"strings"
-	"time"
+	"sync"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgtype"
+	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/zlog"
 	"golang.org/x/sync/semaphore"
+
+	"github.com/quay/claircore"
 )
 
 var (
@@ -54,106 +57,15 @@ const (
 // If a full GC is required run this method until the returned int64 value
 // is 0.
 func (s *MatcherStore) GC(ctx context.Context, keep int) (int64, error) {
-	// obtain update operations which need deletin'
-	ops, totalOps, err := eligibleUpdateOpts(ctx, s.pool, keep)
-	if err != nil {
-		return 0, err
-	}
-
-	// delete em', but not too many...
-	if totalOps >= GCThrottle {
-		ops = ops[:GCThrottle]
-	}
-
-	deletedOps, err := s.DeleteUpdateOperations(ctx, ops...)
-	if err != nil {
-		return totalOps - deletedOps, err
-	}
-
-	// get all updaters we know about.
-	updaters, err := distinctUpdaters(ctx, s.pool)
-	if err != nil {
-		return totalOps - deletedOps, err
-	}
-
-	// issue concurrent updater-based deletion for known updaters
-	// limit concurrency by available goroutines.
-	cpus := int64(runtime.GOMAXPROCS(0))
-	sem := semaphore.NewWeighted(cpus)
-
-	errC := make(chan error, len(updaters))
-
-	for _, updater := range updaters {
-		err = sem.Acquire(ctx, 1)
-		if err != nil {
-			break
-		}
-		go func(u string) {
-			defer sem.Release(1)
-			err := vulnCleanup(ctx, s.pool, u)
-			if err != nil {
-				errC <- err
-			}
-		}(updater)
-	}
-
-	// unconditionally wait for all in-flight go routines to return.
-	// the use of context.Background and lack of error checking is intentional.
-	// all in-flight go routines are guarantee to release their sems.
-	sem.Acquire(context.Background(), cpus)
-
-	close(errC)
-	if len(errC) > 0 {
-		b := strings.Builder{}
-		b.WriteString("encountered the following errors during gc: \n")
-		for e := range errC {
-			b.WriteString(e.Error() + "\n")
-		}
-		return totalOps - deletedOps, errors.New(b.String())
-	}
-	return totalOps - deletedOps, nil
-}
-
-// distinctUpdaters returns all updaters which have registered an update
-// operation.
-func distinctUpdaters(ctx context.Context, pool *pgxpool.Pool) ([]string, error) {
-	const (
-		// will always contain at least two update operations
-		selectUpdaters = `
-SELECT DISTINCT(updater) FROM update_operation;
-`
-	)
-	rows, err := pool.Query(ctx, selectUpdaters)
-	if err != nil {
-		return nil, fmt.Errorf("error selecting distinct updaters: %v", err)
-	}
-	defer rows.Close()
-
-	var updaters []string
-	for rows.Next() {
-		var updater string
-		err := rows.Scan(&updater)
-		switch err {
-		case nil:
-			// hop out
-		default:
-			return nil, fmt.Errorf("error scanning updater: %v", err)
-		}
-		updaters = append(updaters, updater)
-	}
-	if rows.Err() != nil {
-		return nil, rows.Err()
-	}
-	return updaters, nil
-}
-
-// eligibleUpdateOpts returns a list of update operation refs which exceed the specified
-// keep value.
-func eligibleUpdateOpts(ctx context.Context, pool *pgxpool.Pool, keep int) ([]uuid.UUID, int64, error) {
-	const (
-		// this query will return rows of UUID arrays.
-		// each returned array are the UUIDs which exceed the provided keep value
-		updateOps = `
+	const op = `datastore/postgres/MatcherStore.GC`
+	ctx = zlog.ContextWithValues(ctx, "component", op)
+	// Obtain update operations which need deleting.
+	var ops []uuid.UUID
+	err := s.pool.AcquireFunc(ctx, func(c *pgxpool.Conn) (err error) {
+		const (
+			// this query will return rows of UUID arrays.
+			// each returned array are the UUIDs which exceed the provided keep value
+			updateOps = `
 WITH ordered_ops AS (
     SELECT array_agg(ref ORDER BY date DESC) AS refs FROM update_operation GROUP BY updater
 )
@@ -161,46 +73,127 @@ SELECT ordered_ops.refs[$1:]
 FROM ordered_ops
 WHERE array_length(ordered_ops.refs, 1) > $2;
 `
-	)
+		)
+		defer prometheus.NewTimer(gcDuration.WithLabelValues("updateOps")).ObserveDuration()
+		defer func() {
+			gcCounter.WithLabelValues("updateOps", strconv.FormatBool(errors.Is(err, nil))).Inc()
+		}()
 
-	// gather any update operations exceeding our keep value.
-	// keep+1 is used because PG's array slicing is inclusive,
-	// we want to grab all items once after our keep value.
-	m := []uuid.UUID{}
-
-	start := time.Now()
-	rows, err := pool.Query(ctx, updateOps, keep+1, keep)
-	switch err {
-	case nil:
-	default:
-		gcCounter.WithLabelValues("updateOps", "false").Inc()
-		return nil, 0, fmt.Errorf("error querying for update operations: %v", err)
+		// Gather any update operations exceeding our keep value.
+		// "Keep+1" is used because PG's array slicing is inclusive, we want to grab
+		// all items once after our keep value.
+		rows, err := c.Query(ctx, updateOps, keep+1, keep)
+		switch {
+		case errors.Is(err, nil):
+		case errors.Is(err, pgx.ErrNoRows):
+			return nil
+		default:
+			return &claircore.Error{
+				Op:      op,
+				Kind:    claircore.ErrInternal,
+				Message: "error querying for update operations",
+				Inner:   err,
+			}
+		}
+		defer rows.Close()
+		for rows.Next() {
+			// pgx will not scan directly into a []uuid.UUID
+			tmp := pgtype.UUIDArray{}
+			err = rows.Scan(&tmp)
+			if err != nil {
+				return &claircore.Error{
+					Op:      op,
+					Kind:    claircore.ErrInternal,
+					Message: "error deserializing UUIDs",
+					Inner:   err,
+				}
+			}
+			for _, u := range tmp.Elements {
+				ops = append(ops, u.Bytes) // this works since [16]byte value is assignable to uuid.UUID
+			}
+		}
+		if err = rows.Err(); err != nil {
+			return &claircore.Error{
+				Op:      op,
+				Kind:    claircore.ErrInternal,
+				Message: "error processing update operation rows",
+				Inner:   err,
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return 0, err
+	}
+	if len(ops) == 0 {
+		return 0, nil
 	}
 
-	gcCounter.WithLabelValues("updateOps", "true").Inc()
-	gcDuration.WithLabelValues("updateOps").Observe(time.Since(start).Seconds())
+	// Delete em', but not too many...
+	if len(ops) >= GCThrottle {
+		ops = ops[:GCThrottle]
+	}
+	deletedOps, err := s.DeleteUpdateOperations(ctx, ops...)
+	rem := int64(len(ops)) - deletedOps
+	if err != nil {
+		return rem, err
+	}
 
-	defer rows.Close()
-	for rows.Next() {
-		// pgx will not scan directly into a []uuid.UUID
-		tmp := pgtype.UUIDArray{}
-		err := rows.Scan(&tmp)
+	// Get all updaters we know about.
+	var updaters []string
+	err = s.pool.AcquireFunc(ctx, func(c *pgxpool.Conn) (err error) {
+		// will always contain at least two update operations
+		const selectUpdaters = `SELECT DISTINCT(updater) FROM update_operation;`
+		defer prometheus.NewTimer(gcDuration.WithLabelValues("selectUpdaters")).ObserveDuration()
+		defer func() {
+			gcCounter.WithLabelValues("selectUpdaters", strconv.FormatBool(errors.Is(err, nil))).Inc()
+		}()
+		rows, err := c.Query(ctx, selectUpdaters)
 		if err != nil {
-			return nil, 0, fmt.Errorf("error scanning update operations: %w", err)
+			return &claircore.Error{
+				Op:      op,
+				Kind:    claircore.ErrInternal,
+				Message: "error selecting distinct updaters",
+				Inner:   err,
+			}
 		}
-		for _, u := range tmp.Elements {
-			m = append(m, u.Bytes) // this works since [16]byte value is assignable to uuid.UUID
-		}
-	}
-	if rows.Err() != nil {
-		return nil, 0, rows.Err()
-	}
-	return m, int64(len(m)), nil
-}
+		defer rows.Close()
 
-func vulnCleanup(ctx context.Context, pool *pgxpool.Pool, updater string) error {
-	const (
-		deleteOrphanedVulns = `
+		for rows.Next() {
+			var updater string
+			err = rows.Scan(&updater)
+			if err != nil {
+				return &claircore.Error{
+					Op:      op,
+					Kind:    claircore.ErrInternal,
+					Message: "error deserializing updater",
+					Inner:   err,
+				}
+			}
+			updaters = append(updaters, updater)
+		}
+		if err = rows.Err(); err != nil {
+			return &claircore.Error{
+				Op:      op,
+				Kind:    claircore.ErrInternal,
+				Message: "error processing updater rows",
+				Inner:   err,
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return rem, err
+	}
+
+	// Issue concurrent updater-based deletion for known updaters.
+	// Limit concurrency by available goroutines.
+	sem := semaphore.NewWeighted(int64(runtime.GOMAXPROCS(0)))
+	errC := make(chan error, len(updaters))
+	var wg sync.WaitGroup
+	cleanup := func(updater string) {
+		const (
+			deleteOrphanedVulns = `
 DELETE FROM vuln v1 USING
 	vuln v2
 	LEFT JOIN uo_vuln uvl
@@ -209,20 +202,55 @@ DELETE FROM vuln v1 USING
 	AND v2.updater = $1
 AND v1.id = v2.id;
 `
-	)
+		)
+		ctx = zlog.ContextWithValues(ctx, "updater", updater)
+		defer wg.Done()
+		err := sem.Acquire(ctx, 1)
+		if err != nil {
+			// Documented to only return ctx.Err() (Context is done) or nil.
+			return
+		}
+		defer sem.Release(1)
+		defer prometheus.NewTimer(gcDuration.WithLabelValues("deleteOrphanedVulns")).ObserveDuration()
+		defer func() {
+			gcCounter.WithLabelValues("deleteOrphanedVulns", strconv.FormatBool(errors.Is(err, nil))).Inc()
+		}()
 
-	start := time.Now()
-	ctx = zlog.ContextWithValues(ctx, "updater", updater)
-	zlog.Debug(ctx).
-		Msg("starting clean up")
-	res, err := pool.Exec(ctx, deleteOrphanedVulns, updater)
-	if err != nil {
-		gcCounter.WithLabelValues("deleteVulns", "false").Inc()
-		return fmt.Errorf("failed while exec'ing vuln delete: %w", err)
+		zlog.Debug(ctx).
+			Msg("starting clean up")
+		res, err := s.pool.Exec(ctx, deleteOrphanedVulns, updater)
+		if err != nil {
+			errC <- err
+		}
+		zlog.Debug(ctx).
+			Int64("rows affected", res.RowsAffected()).
+			Bool("success", errors.Is(err, nil)).
+			Msg("vulns deleted")
 	}
-	zlog.Debug(ctx).Int64("rows affected", res.RowsAffected()).Msg("vulns deleted")
-	gcCounter.WithLabelValues("deleteVulns", "true").Inc()
-	gcDuration.WithLabelValues("deleteVulns").Observe(time.Since(start).Seconds())
 
-	return nil
+	wg.Add(len(updaters))
+	for _, updater := range updaters {
+		go cleanup(updater)
+	}
+	wg.Wait()
+	close(errC)
+
+	if len(errC) > 0 {
+		join := false
+		b := strings.Builder{}
+		for e := range errC {
+			if join {
+				b.WriteString("; ")
+			}
+			b.WriteString(e.Error())
+			join = true
+		}
+		return rem, &claircore.Error{
+			Op:      op,
+			Kind:    claircore.ErrInternal,
+			Message: "errors during gc:",
+			Inner:   errors.New(b.String()),
+		}
+	}
+	return rem, nil
 }
