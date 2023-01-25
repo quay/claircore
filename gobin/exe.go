@@ -3,16 +3,30 @@ package gobin
 import (
 	"context"
 	"debug/buildinfo"
+	"errors"
 	"io"
+	_ "unsafe" // for error linkname tricks
 
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 )
 
+//go:linkname errNotGoExe debug/buildinfo.errNotGoExe
+var errNotGoExe error
+
+// It's frustrating that there's no good way to check the error returned from
+// [buildinfo.Read]. It's either doing a string compare, which will break
+// silently if the error's contents are changed, or the linker tricks done here,
+// which will break loudly if the error is renamed or built differently.
+
 func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.ReaderAt) error {
 	bi, err := buildinfo.Read(r)
-	if err != nil {
+	switch {
+	case errors.Is(err, nil):
+	case errors.Is(err, errNotGoExe):
+		return nil
+	default:
 		zlog.Debug(ctx).
 			Err(err).
 			Msg("unable to open executable")
