@@ -79,6 +79,8 @@ func (Detector) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Pack
 			return err
 		case d.IsDir():
 			return nil
+		case ctx.Err() != nil:
+			return ctx.Err()
 		}
 		fi, err := d.Info()
 		if err != nil {
