@@ -26,7 +26,7 @@ require (
 	github.com/quay/goval-parser v0.8.8
 	github.com/quay/zlog v1.1.4
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
-	github.com/rs/zerolog v1.28.0
+	github.com/rs/zerolog v1.29.0
 	github.com/ulikunitz/xz v0.5.11
 	golang.org/x/crypto v0.5.0
 	golang.org/x/sync v0.1.0
