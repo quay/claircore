@@ -8,12 +8,36 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/quay/zlog"
 )
 
-func extractTar(ctx context.Context, rd io.ReadSeeker) (string, error) {
+func extractTar(ctx context.Context, rd io.ReadSeeker, prefixes []string) (string, error) {
+	var allow *regexp.Regexp
+	if len(prefixes) != 0 {
+		var b strings.Builder
+		b.WriteByte('^')
+		for i, p := range prefixes {
+			if i != 0 {
+				b.WriteByte('|')
+			}
+			b.WriteByte('(')
+			b.WriteString(regexp.QuoteMeta(p))
+			b.WriteByte(')')
+		}
+		var err error
+		allow, err = regexp.Compile(b.String())
+		if err != nil {
+			return "", err
+		}
+		zlog.Debug(ctx).
+			Strs("prefixes", prefixes).
+			Stringer("regexp", &b).
+			Msg("created allow pattern")
+	}
+
 	root, err := os.MkdirTemp("", "rpmscanner.")
 	if err != nil {
 		return "", err
@@ -52,13 +76,18 @@ func extractTar(ctx context.Context, rd io.ReadSeeker) (string, error) {
 	var deferLn [][2]string
 	var h *tar.Header
 	for h, err = tr.Next(); err == nil; h, err = tr.Next() {
+		// Build the path on the filesystem.
+		tgt := relPath(root, h.Name)
+		// If we've built an allow pattern, check it.
+		if allow != nil && !allow.MatchString(tgt) {
+			continue
+		}
+		// Skip any whiteouts.
 		if strings.HasPrefix(filepath.Base(h.Name), ".wh.") {
 			// Whiteout, skip.
 			stats.Whiteout++
 			continue
 		}
-		// Build the path on the filesystem.
-		tgt := relPath(root, h.Name)
 		// Since tar, as a format, doesn't impose ordering requirements, make
 		// sure to create all parent directories of the current entry.
 		d := filepath.Dir(tgt)

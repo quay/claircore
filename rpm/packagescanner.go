@@ -13,7 +13,6 @@ import (
 	"path"
 	"path/filepath"
 	"runtime/trace"
-	"sync"
 
 	"github.com/quay/zlog"
 
@@ -98,11 +97,7 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 
 	zlog.Debug(ctx).Int("count", len(found)).Msg("found possible databases")
 
-	var (
-		extractRoot string
-		extractErr  error
-		extractOnce sync.Once
-	)
+	var extractRoot string
 	defer func() {
 		if extractRoot == "" {
 			return
@@ -117,6 +112,29 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 
 	var pkgs []*claircore.Package
 	done := map[string]struct{}{}
+	// Figure out the subset of the layer we'll need to handle any rpm bdb
+	// databases. In the far future, we could handle this all in-process if we
+	// can figure out a way to bind to BerkeleyDB directly. I think wasm is
+	// promising, if we could figure out how to build it.
+	var toExtract []string
+	for _, db := range found {
+		if db.Kind != kindBDB {
+			continue
+		}
+		// Always attempt to extract `etc/rpm`, although relevant contents may
+		// not be in the layer.
+		if len(toExtract) == 0 {
+			toExtract = append(toExtract, `etc/rpm`)
+		}
+		toExtract = append(toExtract, db.Path)
+	}
+	if len(toExtract) != 0 {
+		var err error
+		extractRoot, err = extractTar(ctx, rd, toExtract)
+		if err != nil {
+			return nil, err
+		}
+	}
 	for _, db := range found {
 		ctx := zlog.ContextWithValues(ctx, "db", db.String())
 		zlog.Debug(ctx).Msg("examining database")
@@ -128,10 +146,6 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 
 		switch db.Kind {
 		case kindBDB:
-			extractOnce.Do(func() { extractRoot, extractErr = extractTar(ctx, rd) })
-			if err := extractErr; err != nil {
-				return nil, err
-			}
 			// Using --root and --dbpath, run rpm query on every suspected database.
 			// RPM interprets the absolute path passed to "dbpath" as underneath "root".
 			cmd := exec.CommandContext(ctx, "rpm",
