@@ -1,0 +1,5 @@
+rpm: extract a minimal file set for bdb-based databases
+
+This should reduce runtime and disk resources when the `rpm` indexer
+decides that it needs to invoke `rpm` to analyze packages installed in a
+layer.
