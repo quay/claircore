@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io/fs"
 	"net/textproto"
+	"path"
 	"path/filepath"
 	"runtime/trace"
 	"strings"
@@ -29,16 +30,19 @@ var (
 // Scanner implements the scanner.PackageScanner interface.
 //
 // It looks for directories that seem like wheels or eggs, and looks at the
-// metadata recorded there.
+// metadata recorded there. This type attempts to follow the specs documented by
+// the [PyPA], with the newer PEPs being preferred.
 //
 // The zero value is ready to use.
+//
+// [PyPA]: https://packaging.python.org/en/latest/specifications/recording-installed-packages/
 type Scanner struct{}
 
 // Name implements scanner.VersionedScanner.
 func (*Scanner) Name() string { return "python" }
 
 // Version implements scanner.VersionedScanner.
-func (*Scanner) Version() string { return "0.1.0" }
+func (*Scanner) Version() string { return "2" }
 
 // Kind implements scanner.VersionedScanner.
 func (*Scanner) Kind() string { return "package" }
@@ -116,20 +120,47 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 // FindDeliciousEgg finds eggs and wheels.
 func findDeliciousEgg(ctx context.Context, sys fs.FS) (out []string, err error) {
 	return out, fs.WalkDir(sys, ".", func(p string, d fs.DirEntry, err error) error {
+		ev := zlog.Debug(ctx).
+			Str("file", p)
 		switch {
 		case err != nil:
+			ev.Discard().Send()
 			return err
 		case !d.Type().IsRegular():
+			ev.Discard().Send()
 			// Should we chase symlinks with the correct name?
 			return nil
 		case strings.HasSuffix(p, `.egg-info/PKG-INFO`):
-			zlog.Debug(ctx).Str("file", p).Msg("found egg")
+			ev = ev.Str("kind", "egg")
 		case strings.HasSuffix(p, `.dist-info/METADATA`):
-			zlog.Debug(ctx).Str("file", p).Msg("found wheel")
+			ev = ev.Str("kind", "wheel")
+			// See if we can discern the installer.
+			var installer string
+			ip := path.Join(path.Dir(p), `INSTALLER`)
+			if ic, err := fs.ReadFile(sys, ip); err == nil {
+				installer = string(bytes.TrimSpace(ic))
+				ev = ev.Str("installer", installer)
+			}
+			if _, ok := blocklist[installer]; ok {
+				ev.Msg("skipping package")
+				return nil
+			}
 		default:
+			ev.Discard().Send()
 			return nil
 		}
+		ev.Msg("found package")
 		out = append(out, p)
 		return nil
 	})
+}
+
+// Blocklist of installers to ignore.
+//
+// Currently, rpm is the only known package manager that actually populates this
+// information.
+var blocklist = map[string]struct{}{
+	"rpm":  {},
+	"dpkg": {},
+	"apk":  {},
 }
