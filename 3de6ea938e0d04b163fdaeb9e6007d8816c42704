@@ -1,0 +1,4 @@
+The python indexer consults INSTALLER metadata
+
+The indexer now ignores installers that it knows beforehand is handled
+elsewhere.
