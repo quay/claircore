@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	nvdURLPrefix = "https://cve.mitre.org/cgi-bin/cvename.cgi?name=%s"
+	cveURLPrefix = "https://www.cve.org/CVERecord?id=%s"
 )
 
 var _ driver.Parser = (*updater)(nil)
@@ -59,7 +59,7 @@ func unpackSecFixes(partial claircore.Vulnerability, secFixes map[string][]strin
 			v := partial
 			v.Name = id
 			v.FixedInVersion = fixedIn
-			v.Links = fmt.Sprintf(nvdURLPrefix, id)
+			v.Links = fmt.Sprintf(cveURLPrefix, id)
 			out = append(out, &v)
 		}
 	}

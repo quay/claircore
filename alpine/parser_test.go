@@ -18,7 +18,7 @@ var dist310 = release{3, 10}.Distribution()
 var v3_10CommunityTruncatedVulns = []*claircore.Vulnerability{
 	{
 		Name:               "CVE-2018-20187",
-		Links:              "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2018-20187",
+		Links:              "https://www.cve.org/CVERecord?id=CVE-2018-20187",
 		Updater:            "alpine-community-v3.10-updater",
 		FixedInVersion:     "2.9.0-r0",
 		NormalizedSeverity: claircore.Unknown,
@@ -30,7 +30,7 @@ var v3_10CommunityTruncatedVulns = []*claircore.Vulnerability{
 	},
 	{
 		Name:               "CVE-2018-12435",
-		Links:              "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2018-12435",
+		Links:              "https://www.cve.org/CVERecord?id=CVE-2018-12435",
 		Updater:            "alpine-community-v3.10-updater",
 		FixedInVersion:     "2.7.0-r0",
 		NormalizedSeverity: claircore.Unknown,
@@ -42,7 +42,7 @@ var v3_10CommunityTruncatedVulns = []*claircore.Vulnerability{
 	},
 	{
 		Name:               "CVE-2018-9860",
-		Links:              "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2018-9860",
+		Links:              "https://www.cve.org/CVERecord?id=CVE-2018-9860",
 		Updater:            "alpine-community-v3.10-updater",
 		FixedInVersion:     "2.6.0-r0",
 		NormalizedSeverity: claircore.Unknown,
@@ -54,7 +54,7 @@ var v3_10CommunityTruncatedVulns = []*claircore.Vulnerability{
 	},
 	{
 		Name:               "CVE-2018-9127",
-		Links:              "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2018-9127",
+		Links:              "https://www.cve.org/CVERecord?id=CVE-2018-9127",
 		Updater:            "alpine-community-v3.10-updater",
 		FixedInVersion:     "2.5.0-r0",
 		NormalizedSeverity: claircore.Unknown,
@@ -66,7 +66,7 @@ var v3_10CommunityTruncatedVulns = []*claircore.Vulnerability{
 	},
 	{
 		Name:               "CVE-2019-9929",
-		Links:              "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-9929",
+		Links:              "https://www.cve.org/CVERecord?id=CVE-2019-9929",
 		Updater:            "alpine-community-v3.10-updater",
 		FixedInVersion:     "3.12.2-r0",
 		NormalizedSeverity: claircore.Unknown,
@@ -78,7 +78,7 @@ var v3_10CommunityTruncatedVulns = []*claircore.Vulnerability{
 	},
 	{
 		Name:               "CVE-2017-6949",
-		Links:              "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2017-6949",
+		Links:              "https://www.cve.org/CVERecord?id=CVE-2017-6949",
 		Updater:            "alpine-community-v3.10-updater",
 		FixedInVersion:     "4.12.0-r3",
 		NormalizedSeverity: claircore.Unknown,
@@ -90,7 +90,7 @@ var v3_10CommunityTruncatedVulns = []*claircore.Vulnerability{
 	},
 	{
 		Name:               "CVE-2017-9334",
-		Links:              "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2017-9334",
+		Links:              "https://www.cve.org/CVERecord?id=CVE-2017-9334",
 		Updater:            "alpine-community-v3.10-updater",
 		FixedInVersion:     "4.12.0-r2",
 		NormalizedSeverity: claircore.Unknown,
@@ -102,7 +102,7 @@ var v3_10CommunityTruncatedVulns = []*claircore.Vulnerability{
 	},
 	{
 		Name:               "CVE-2016-6830",
-		Links:              "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2016-6830",
+		Links:              "https://www.cve.org/CVERecord?id=CVE-2016-6830",
 		Updater:            "alpine-community-v3.10-updater",
 		FixedInVersion:     "4.11.1-r0",
 		NormalizedSeverity: claircore.Unknown,
@@ -114,7 +114,7 @@ var v3_10CommunityTruncatedVulns = []*claircore.Vulnerability{
 	},
 	{
 		Name:               "CVE-2016-6831",
-		Links:              "https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2016-6831",
+		Links:              "https://www.cve.org/CVERecord?id=CVE-2016-6831",
 		Updater:            "alpine-community-v3.10-updater",
 		FixedInVersion:     "4.11.1-r0",
 		NormalizedSeverity: claircore.Unknown,
