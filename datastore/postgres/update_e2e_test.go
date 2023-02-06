@@ -31,17 +31,17 @@ func TestUpdateE2E(t *testing.T) {
 
 	cases := []updateE2e{
 		{
-			Name:    "10+2",
+			Name:    "10Add2",
 			Insert:  10,
 			Updates: 2,
 		},
 		{
-			Name:    "100+2",
+			Name:    "100Add2",
 			Insert:  100,
 			Updates: 2,
 		},
 		{
-			Name:    "10+20",
+			Name:    "10Add20",
 			Insert:  10,
 			Updates: 20,
 		},
@@ -70,14 +70,13 @@ type updateE2e struct {
 func (e *updateE2e) Run(ctx context.Context) func(*testing.T) {
 	h := fnv.New64a()
 	h.Write([]byte(e.Name))
-	binary.Write(h, binary.BigEndian, e.Insert)
-	binary.Write(h, binary.BigEndian, e.Updates)
+	binary.Write(h, binary.BigEndian, int64(e.Insert))
+	binary.Write(h, binary.BigEndian, int64(e.Updates))
 	e.updater = strconv.FormatUint(h.Sum64(), 36)
 	order := []struct {
 		Name string
 		Test func(context.Context) func(*testing.T)
 	}{
-
 		{"Update", e.Update},
 		{"GetUpdateOperations", e.GetUpdateOperations},
 		{"recordUpdaterStatus", e.recordUpdaterStatus},
@@ -85,6 +84,7 @@ func (e *updateE2e) Run(ctx context.Context) func(*testing.T) {
 		{"DeleteUpdateOperations", e.DeleteUpdateOperations},
 	}
 	return func(t *testing.T) {
+		ctx := zlog.Test(ctx, t)
 		pool := pgtest.TestMatcherDB(ctx, t)
 		ctx, done := context.WithCancel(ctx)
 		defer done()
