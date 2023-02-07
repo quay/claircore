@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"runtime/trace"
-	"strconv"
 	"strings"
 
 	"github.com/quay/zlog"
@@ -81,9 +80,6 @@ func packagesFromDB(ctx context.Context, pkgdb string, db nativeDB) ([]*claircor
 			pkg := &srcs[idx]
 			src[info.SourceNEVR] = pkg
 			p.Source = pkg
-			if info.Epoch != 0 {
-				pkg.Version = strconv.Itoa(info.Epoch) + ":" + pkg.Version
-			}
 			if strings.Contains(info.Module, ":") {
 				pkg.Module = info.Module
 			}
@@ -149,16 +145,16 @@ func (i *Info) Load(ctx context.Context, h *rpm.Header) error {
 }
 
 var wantTags = map[rpm.Tag]struct{}{
-	rpm.TagName:              {},
-	rpm.TagEpoch:             {},
-	rpm.TagVersion:           {},
-	rpm.TagRelease:           {},
-	rpm.TagSourceRPM:         {},
-	rpm.TagModularityLabel:   {},
 	rpm.TagArch:              {},
-	rpm.TagPayloadDigestAlgo: {},
+	rpm.TagEpoch:             {},
+	rpm.TagModularityLabel:   {},
+	rpm.TagName:              {},
 	rpm.TagPayloadDigest:     {},
+	rpm.TagPayloadDigestAlgo: {},
+	rpm.TagRelease:           {},
 	rpm.TagSigPGP:            {},
+	rpm.TagSourceRPM:         {},
+	rpm.TagVersion:           {},
 }
 
 func constructEVR(b *strings.Builder, info *Info) string {
@@ -194,7 +190,7 @@ func constructHint(b *strings.Builder, info *Info) string {
 				if b.Len() != 0 {
 					b.WriteByte('|')
 				}
-				fmt.Fprintf(b, "key:%x", p.IssuerKeyId)
+				fmt.Fprintf(b, "key:%016x", p.IssuerKeyId)
 			}
 		}
 	}
