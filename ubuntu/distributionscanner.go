@@ -76,13 +76,13 @@ func findDist(sys fs.FS) (*claircore.Distribution, error) {
 	var b []byte
 	var verKey, nameKey string
 
-	b, err = fs.ReadFile(sys, `etc/lsb-release`)
+	b, err = fs.ReadFile(sys, lsbReleasePath)
 	if errors.Is(err, nil) {
 		verKey = `DISTRIB_RELEASE`
 		nameKey = `DISTRIB_CODENAME`
 		goto Found
 	}
-	b, err = fs.ReadFile(sys, `etc/os-release`)
+	b, err = fs.ReadFile(sys, osReleasePath)
 	if errors.Is(err, nil) {
 		verKey = `VERSION_ID`
 		nameKey = `VERSION_CODENAME`
