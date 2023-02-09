@@ -2,10 +2,12 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
 
+	"github.com/jackc/pgx/v4"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/zlog"
@@ -30,7 +32,7 @@ var (
 			Namespace: "claircore",
 			Subsystem: "indexer",
 			Name:      "indexmanifest_duration_seconds",
-			Help:      "The duration of all queries issued in the IndexManifest method",
+			Help:      "The duration of all queries issued in the IndexManifest method.",
 		},
 		[]string{"query"},
 	)
@@ -38,6 +40,7 @@ var (
 
 func (s *IndexerStore) IndexManifest(ctx context.Context, ir *claircore.IndexReport) error {
 	const (
+		op    = `datastore/postgres/IndexerStore.IndexManifest`
 		query = `
 		WITH manifests AS (
 			SELECT id AS manifest_id
@@ -50,12 +53,16 @@ func (s *IndexerStore) IndexManifest(ctx context.Context, ir *claircore.IndexRep
 		ON CONFLICT DO NOTHING;
 		`
 	)
-	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/indexManifest")
+	ctx = zlog.ContextWithValues(ctx, "component", op)
 
-	if ir.Hash.String() == "" {
-		return fmt.Errorf("received empty hash. cannot associate contents with a manifest hash")
-	}
 	hash := ir.Hash.String()
+	if hash == "" {
+		return &claircore.Error{
+			Op:      op,
+			Kind:    claircore.ErrPrecondition,
+			Message: "empty digest",
+		}
+	}
 
 	records := ir.IndexRecords()
 	if len(records) == 0 {
@@ -63,123 +70,122 @@ func (s *IndexerStore) IndexManifest(ctx context.Context, ir *claircore.IndexRep
 		return nil
 	}
 
-	// obtain a transaction scoped batch
-	tctx, done := context.WithTimeout(ctx, 5*time.Second)
-	tx, err := s.pool.Begin(tctx)
-	done()
-	if err != nil {
-		return fmt.Errorf("postgres: indexManifest failed to create transaction: %w", err)
-	}
-	defer tx.Rollback(ctx)
-
-	tctx, done = context.WithTimeout(ctx, 5*time.Second)
-	queryStmt, err := tx.Prepare(tctx, "queryStmt", query)
-	done()
-	if err != nil {
-		return fmt.Errorf("failed to create statement: %w", err)
-	}
-
-	start := time.Now()
-	mBatcher := microbatch.NewInsert(tx, 500, time.Minute)
-	for _, record := range records {
-		// ignore nil packages
-		if record.Package == nil {
-			continue
-		}
-
-		v, err := toValues(*record)
+	err := s.pool.BeginTxFunc(ctx, pgx.TxOptions{}, func(tx pgx.Tx) error {
+		defer prometheus.NewTimer(indexManifestDuration.WithLabelValues("query_batch")).ObserveDuration()
+		defer indexManifestCounter.WithLabelValues("query_batch").Inc()
+		stmt, err := tx.Prepare(ctx, "queryStmt", query)
 		if err != nil {
-			return fmt.Errorf("received a record with an invalid id: %v", err)
-		}
-
-		// if source package exists create record
-		if v[0] != nil {
-			err = mBatcher.Queue(
-				ctx,
-				queryStmt.SQL,
-				v[0],
-				v[2],
-				v[3],
-				hash,
-			)
-			if err != nil {
-				return fmt.Errorf("batch insert failed for source package record %v: %w", record, err)
+			return &claircore.Error{
+				Op:      op,
+				Kind:    claircore.ErrInternal,
+				Message: "failed to create statement",
+				Inner:   err,
 			}
 		}
 
-		err = mBatcher.Queue(
-			ctx,
-			queryStmt.SQL,
-			v[1],
-			v[2],
-			v[3],
-			hash,
-		)
-		if err != nil {
-			return fmt.Errorf("batch insert failed for package record %v: %w", record, err)
+		batch := microbatch.NewInsert(tx, 500, time.Minute)
+		for _, record := range records {
+			// ignore nil packages
+			if record.Package == nil {
+				continue
+			}
+
+			v, err := toValues(*record)
+			if err != nil {
+				return &claircore.Error{
+					Op:      op,
+					Kind:    claircore.ErrPrecondition,
+					Message: "record has an invalid id",
+					Inner:   err,
+				}
+			}
+
+			// if source package exists create record
+			if v[0] != nil {
+				if err := batch.Queue(ctx, stmt.SQL,
+					v[0], v[2], v[3], hash,
+				); err != nil {
+					return &claircore.Error{
+						Op:      op,
+						Kind:    claircore.ErrPrecondition,
+						Message: "batch insert failed for source package",
+						Inner:   err,
+					}
+				}
+			}
+			if err := batch.Queue(ctx, stmt.SQL,
+				v[1], v[2], v[3], hash,
+			); err != nil {
+				return &claircore.Error{
+					Op:      op,
+					Kind:    claircore.ErrPrecondition,
+					Message: "batch insert failed for package",
+					Inner:   err,
+				}
+			}
 		}
-
-	}
-	err = mBatcher.Done(ctx)
+		if err := batch.Done(ctx); err != nil {
+			return &claircore.Error{
+				Op:      op,
+				Kind:    claircore.ErrInternal,
+				Message: "final batch insert failed for package",
+				Inner:   err,
+			}
+		}
+		return nil
+	})
 	if err != nil {
-		return fmt.Errorf("final batch insert failed: %w", err)
-	}
-	indexManifestCounter.WithLabelValues("query_batch").Add(1)
-	indexManifestDuration.WithLabelValues("query_batch").Observe(time.Since(start).Seconds())
-
-	tctx, done = context.WithTimeout(ctx, 15*time.Second)
-	err = tx.Commit(tctx)
-	done()
-	if err != nil {
-		return fmt.Errorf("failed to commit tx: %w", err)
+		var domErr *claircore.Error
+		if !errors.As(err, &domErr) {
+			domErr = &claircore.Error{
+				Op:      op,
+				Kind:    claircore.ErrInternal,
+				Message: "unexpected database error",
+				Inner:   err,
+			}
+		}
+		return domErr
 	}
 	return nil
 }
 
-// toValues is a helper method which checks for
-// nil pointers inside an IndexRecord before
-// returning an associated pointer to the artifact
-// in question.
+// ToValues is a helper method which checks for nil pointers inside an
+// IndexRecord before returning an associated pointer to the artifact in
+// question.
 //
 // v[0] source package id or nil
 // v[1] package id or nil
 // v[2] distribution id or nil
 // v[3] repository id or nil
-func toValues(r claircore.IndexRecord) ([4]*uint64, error) {
-	res := [4]*uint64{}
-
-	if r.Package.Source != nil {
-		id, err := strconv.ParseUint(r.Package.Source.ID, 10, 64)
-		if err != nil {
-			return res, fmt.Errorf("source package id %v: %v", r.Package.ID, err)
-		}
-		res[0] = &id
-	}
-
+func toValues(r claircore.IndexRecord) (res [4]*uint64, err error) {
+	var backing [4]uint64
 	if r.Package != nil {
-		id, err := strconv.ParseUint(r.Package.ID, 10, 64)
-		if err != nil {
-			return res, fmt.Errorf("package id %v: %v", r.Package.ID, err)
+		if r.Package.Source != nil {
+			backing[0], err = strconv.ParseUint(r.Package.Source.ID, 10, 64)
+			if err != nil {
+				return res, fmt.Errorf("source package id %v: %w", r.Package.ID, err)
+			}
+			res[0] = &backing[0]
 		}
-		res[1] = &id
-
+		backing[1], err = strconv.ParseUint(r.Package.ID, 10, 64)
+		if err != nil {
+			return res, fmt.Errorf("package id %v: %w", r.Package.ID, err)
+		}
+		res[1] = &backing[1]
 	}
-
 	if r.Distribution != nil {
-		id, err := strconv.ParseUint(r.Distribution.ID, 10, 64)
+		backing[2], err = strconv.ParseUint(r.Distribution.ID, 10, 64)
 		if err != nil {
-			return res, fmt.Errorf("distribution id %v: %v", r.Distribution.ID, err)
+			return res, fmt.Errorf("distribution id %v: %w", r.Distribution.ID, err)
 		}
-		res[2] = &id
+		res[2] = &backing[2]
 	}
-
 	if r.Repository != nil {
-		id, err := strconv.ParseUint(r.Repository.ID, 10, 64)
+		backing[3], err = strconv.ParseUint(r.Repository.ID, 10, 64)
 		if err != nil {
-			// return res, fmt.Errorf("repository id %v: %v", r.Package.ID, err)
-			return res, nil
+			return res, fmt.Errorf("repository id %v: %w", r.Package.ID, err)
 		}
-		res[3] = &id
+		res[3] = &backing[3]
 	}
 
 	return res, nil
