@@ -2,11 +2,12 @@ package postgres
 
 import (
 	"context"
-	"fmt"
-	"time"
+	"errors"
 
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -38,6 +39,7 @@ var (
 // scanners.
 func (s *IndexerStore) ManifestScanned(ctx context.Context, hash claircore.Digest, vs indexer.VersionedScanners) (bool, error) {
 	const (
+		op            = `datastore/postgres/IndexerStore.ManifestScanned`
 		selectScanned = `
 		SELECT scanner_id
 		FROM scanned_manifest
@@ -45,35 +47,71 @@ func (s *IndexerStore) ManifestScanned(ctx context.Context, hash claircore.Diges
 		WHERE manifest.hash = $1;
 		`
 	)
+	ctx = zlog.ContextWithValues(ctx, "component", op)
 
 	// get the ids of the scanners we are testing for.
 	expectedIDs, err := s.selectScanners(ctx, vs)
 	if err != nil {
-		return false, err
+		var domErr *claircore.Error
+		if !errors.As(err, &domErr) {
+			domErr = &claircore.Error{
+				Op:      op,
+				Kind:    claircore.ErrInternal,
+				Message: "unexpected database error",
+				Inner:   err,
+			}
+		}
+		return false, domErr
 	}
 
 	// get a map of the found ids which have scanned this package
 	foundIDs := map[int64]struct{}{}
-
-	ctx, done := context.WithTimeout(ctx, 10*time.Second)
-	defer done()
-	start := time.Now()
-	rows, err := s.pool.Query(ctx, selectScanned, hash)
-	if err != nil {
-		return false, fmt.Errorf("failed to select scanner IDs for manifest: %w", err)
-	}
-	manifestScannedCounter.WithLabelValues("selectScanned").Add(1)
-	manifestScannedDuration.WithLabelValues("selectScanned").Observe(time.Since(start).Seconds())
-	defer rows.Close()
-	var t int64
-	for rows.Next() {
-		if err := rows.Scan(&t); err != nil {
-			return false, fmt.Errorf("failed to select scanner IDs for manifest: %w", err)
+	err = s.pool.AcquireFunc(ctx, func(c *pgxpool.Conn) error {
+		defer prometheus.NewTimer(manifestScannedDuration.WithLabelValues("selectScanned")).ObserveDuration()
+		defer manifestScannedCounter.WithLabelValues("selectScanned").Inc()
+		rows, err := c.Query(ctx, selectScanned, hash)
+		if err != nil {
+			return &claircore.Error{
+				Op:      op,
+				Kind:    claircore.ErrInternal,
+				Message: "error querying scanned state",
+				Inner:   err,
+			}
 		}
-		foundIDs[t] = struct{}{}
-	}
-	if err := rows.Err(); err != nil {
-		return false, fmt.Errorf("failed to select scanner IDs for manifest: %w", err)
+		defer rows.Close()
+		var t int64
+		for rows.Next() {
+			if err := rows.Scan(&t); err != nil {
+				return &claircore.Error{
+					Op:      op,
+					Kind:    claircore.ErrInternal,
+					Message: "error deserializing scanner id",
+					Inner:   err,
+				}
+			}
+			foundIDs[t] = struct{}{}
+		}
+		if err := rows.Err(); err != nil {
+			return &claircore.Error{
+				Op:      op,
+				Kind:    claircore.ErrInternal,
+				Message: "error deserializing scanner ids",
+				Inner:   err,
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		var domErr *claircore.Error
+		if !errors.As(err, &domErr) {
+			domErr = &claircore.Error{
+				Op:      op,
+				Kind:    claircore.ErrInternal,
+				Message: "unexpected database error",
+				Inner:   err,
+			}
+		}
+		return false, domErr
 	}
 
 	// compare the expectedIDs array with our foundIDs. if we get a lookup
@@ -83,6 +121,5 @@ func (s *IndexerStore) ManifestScanned(ctx context.Context, hash claircore.Diges
 			return false, nil
 		}
 	}
-
 	return true, nil
 }
