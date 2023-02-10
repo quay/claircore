@@ -89,20 +89,26 @@ func TestOffline(t *testing.T) {
 		ep := mock_driver.NewMockEnrichmentParser(ctl)
 		ep.EXPECT().
 			ParseEnrichment(matchCtx, matchFS).DoAndReturn(parseEnrich)
+		imp := mock_driver.NewMockIndexerMetadataParser(ctl)
+		imp.EXPECT().
+			ParseIndexerMetadata(matchCtx, matchFS).DoAndReturn(parseIndexerMetadata)
 		fac := mock_driver.NewMockUpdaterFactory(ctl)
 		fac.EXPECT().
 			Name().MinTimes(1).Return(n)
 		fac.EXPECT().
 			Create(matchCtx, gomock.Nil()).Times(1).Return([]driver.Updater{&mockparser{
-			Updater:             upd,
-			VulnerabilityParser: vp,
-			EnrichmentParser:    ep,
+			Updater:               upd,
+			VulnerabilityParser:   vp,
+			EnrichmentParser:      ep,
+			IndexerMetadataParser: imp,
 		}}, nil)
 		store := mock_updater.NewMockStore(ctl)
 		store.EXPECT().
 			UpdateVulnerabilities(matchCtx, matchUUID, gomock.Eq(n), matchFp, gomock.Eq(vs)).Return(nil)
 		store.EXPECT().
 			UpdateEnrichments(matchCtx, matchUUID, gomock.Eq(n), matchFp, gomock.Eq(es)).Return(nil)
+		store.EXPECT().
+			UpdateIndexerMetadata(matchCtx, matchUUID, gomock.Eq(n), matchFp, matchFS).Return(nil)
 
 		u, err := New(ctx, &Options{
 			Store:     store,

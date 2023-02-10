@@ -326,6 +326,31 @@ func (u *Updater) parseOne(ctx context.Context, tu taggedUpdater, in fs.FS) (*pa
 				Int("ct", len(res.Enrichments)).
 				Msg("found enrichments")
 		}
+		if p, ok := upd.(driver.IndexerMetadataParser); ok {
+			zlog.Debug(ctx).Msg("implements IndexerMetadataParser")
+			any = true
+			res.IndexerMetadata, err = p.ParseIndexerMetadata(ctx, in)
+			if err != nil {
+				return
+			}
+			ev := zlog.Debug(ctx).
+				Err(err)
+			if ev.Enabled() {
+				// Don't count unless it's going somewhere.
+				var ct int
+				ents, err := fs.ReadDir(res.IndexerMetadata, ".")
+				if err != nil {
+					ev = ev.AnErr("readdir_error", err)
+				}
+				for _, ent := range ents {
+					if ent.Type().IsRegular() {
+						ct++
+					}
+				}
+				ev = ev.Int("ct", ct)
+			}
+			ev.Msg("found indexer metadata")
+		}
 	})
 	if !any {
 		return nil, errors.New("did nothing")
@@ -336,6 +361,7 @@ func (u *Updater) parseOne(ctx context.Context, tu taggedUpdater, in fs.FS) (*pa
 type parseResult struct {
 	Vulnerabilities *driver.ParsedVulnerabilities
 	Enrichments     []driver.EnrichmentRecord
+	IndexerMetadata fs.FS
 }
 
 func (u *Updater) fetchAndParse(ctx context.Context, spool *os.File, pfps map[string]driver.Fingerprint, tu taggedUpdater) error {
@@ -385,6 +411,13 @@ func (u *Updater) fetchAndParse(ctx context.Context, spool *os.File, pfps map[st
 				return
 			}
 			zlog.Info(ctx).Stringer("ref", ref).Msg("updated enrichments")
+		}
+		if res.IndexerMetadata != nil {
+			err = u.store.UpdateIndexerMetadata(ctx, ref, name, fp, res.IndexerMetadata)
+			if err != nil {
+				return
+			}
+			zlog.Info(ctx).Stringer("ref", ref).Msg("updated indexer-metadata")
 		}
 	})
 	if err != nil {

@@ -6,6 +6,7 @@ package mock_updater
 
 import (
 	context "context"
+	fs "io/fs"
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
@@ -63,6 +64,20 @@ func (m *MockStore) UpdateEnrichments(arg0 context.Context, arg1 uuid.UUID, arg2
 func (mr *MockStoreMockRecorder) UpdateEnrichments(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEnrichments", reflect.TypeOf((*MockStore)(nil).UpdateEnrichments), arg0, arg1, arg2, arg3, arg4)
+}
+
+// UpdateIndexerMetadata mocks base method.
+func (m *MockStore) UpdateIndexerMetadata(arg0 context.Context, arg1 uuid.UUID, arg2 string, arg3 driver.Fingerprint, arg4 fs.FS) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateIndexerMetadata", arg0, arg1, arg2, arg3, arg4)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateIndexerMetadata indicates an expected call of UpdateIndexerMetadata.
+func (mr *MockStoreMockRecorder) UpdateIndexerMetadata(arg0, arg1, arg2, arg3, arg4 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateIndexerMetadata", reflect.TypeOf((*MockStore)(nil).UpdateIndexerMetadata), arg0, arg1, arg2, arg3, arg4)
 }
 
 // UpdateVulnerabilities mocks base method.

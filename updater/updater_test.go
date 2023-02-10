@@ -57,6 +57,7 @@ type mockparser struct {
 	driver.Updater
 	driver.VulnerabilityParser
 	driver.EnrichmentParser
+	driver.IndexerMetadataParser
 }
 
 const (
@@ -131,6 +132,10 @@ func parseEnrich(_ context.Context, in fs.FS) (r []driver.EnrichmentRecord, err 
 	return r, f.Close()
 }
 
+func parseIndexerMetadata(_ context.Context, in fs.FS) (fs.FS, error) {
+	return in, nil
+}
+
 func TestRun(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
 	ctl := gomock.NewController(t)
@@ -158,6 +163,10 @@ func TestRun(t *testing.T) {
 	ep.EXPECT().ParseEnrichment(matchCtx, matchFS).
 		Times(1).
 		DoAndReturn(parseEnrich)
+	imp := mock_driver.NewMockIndexerMetadataParser(ctl)
+	imp.EXPECT().ParseIndexerMetadata(matchCtx, matchFS).
+		Times(1).
+		DoAndReturn(parseIndexerMetadata)
 	fac := mock_driver.NewMockUpdaterFactory(ctl)
 	fac.EXPECT().Name().
 		MinTimes(2).
@@ -165,9 +174,10 @@ func TestRun(t *testing.T) {
 	fac.EXPECT().Create(matchCtx, gomock.Nil()).
 		Times(2).
 		Return([]driver.Updater{&mockparser{
-			Updater:             upd,
-			VulnerabilityParser: vp,
-			EnrichmentParser:    ep,
+			Updater:               upd,
+			VulnerabilityParser:   vp,
+			EnrichmentParser:      ep,
+			IndexerMetadataParser: imp,
 		}}, nil)
 	store := mock_updater.NewMockStore(ctl)
 	var ops []driver.UpdateOperation
@@ -195,6 +205,9 @@ func TestRun(t *testing.T) {
 			})
 			return nil
 		})
+	store.EXPECT().UpdateIndexerMetadata(matchCtx, matchUUID, gomock.Eq(n), matchFp, matchFS).
+		Times(1).
+		Return(nil)
 	store.EXPECT().GetLatestUpdateOperations(matchCtx).
 		Times(2).
 		DoAndReturn(func(context.Context) ([]driver.UpdateOperation, error) {

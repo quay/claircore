@@ -136,6 +136,12 @@ func (u *Updater) importV1(ctx context.Context, sys fs.FS) error {
 			}
 			zlog.Info(ctx).Stringer("ref", ref).Msg("updated enrichments")
 		}
+		if res.IndexerMetadata != nil {
+			if err := u.store.UpdateIndexerMetadata(ctx, ref, name, fp, res.IndexerMetadata); err != nil {
+				return err
+			}
+			zlog.Info(ctx).Stringer("ref", ref).Msg("updated indexer-metadata")
+		}
 	}
 
 	return nil
