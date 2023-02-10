@@ -6,8 +6,9 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/zlog"
+
+	"github.com/quay/claircore/libvuln/driver"
 )
 
 // recordUpdaterStatus records that an updater is up to date with vulnerabilities at this time

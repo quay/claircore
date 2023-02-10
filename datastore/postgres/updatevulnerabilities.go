@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/zlog"
@@ -49,8 +48,11 @@ var (
 // UpdateVulnerabilities creates a new UpdateOperation for this update call,
 // inserts the provided vulnerabilities and computes a diff comprising the
 // removed and added vulnerabilities for this UpdateOperation.
-func updateVulnerabilites(ctx context.Context, pool *pgxpool.Pool, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability) (uuid.UUID, error) {
+//
+// UpdateVulnerabilities implements vulnstore.Updater.
+func (s *MatcherStore) UpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability) (uuid.UUID, error) {
 	const (
+		op = `datastore/postgres/MatcherStore.UpdateVulnerabilities`
 		// Create makes a new update operation and returns the reference and ID.
 		create = `INSERT INTO update_operation (updater, fingerprint, kind) VALUES ($1, $2, 'vulnerability') RETURNING id, ref;`
 		// Insert attempts to create a new vulnerability. It fails silently.
@@ -79,21 +81,21 @@ func updateVulnerabilites(ctx context.Context, pool *pgxpool.Pool, updater strin
 			(SELECT id FROM vuln WHERE hash_kind = $1 AND hash = $2))
 		ON CONFLICT DO NOTHING;`
 	)
-	ctx = zlog.ContextWithValues(ctx, "component", "internal/vulnstore/postgres/updateVulnerabilities")
+	ctx = zlog.ContextWithValues(ctx, "component", op)
 
 	var id uint64
 	var ref uuid.UUID
 
 	start := time.Now()
 
-	if err := pool.QueryRow(ctx, create, updater, string(fingerprint)).Scan(&id, &ref); err != nil {
+	if err := s.pool.QueryRow(ctx, create, updater, string(fingerprint)).Scan(&id, &ref); err != nil {
 		return uuid.Nil, fmt.Errorf("failed to create update_operation: %w", err)
 	}
 
 	updateVulnerabilitiesCounter.WithLabelValues("create").Add(1)
 	updateVulnerabilitiesDuration.WithLabelValues("create").Observe(time.Since(start).Seconds())
 
-	tx, err := pool.Begin(ctx)
+	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("unable to start transaction: %w", err)
 	}

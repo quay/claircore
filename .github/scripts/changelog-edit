@@ -1,4 +1,5 @@
 #!/bin/sh
+# vim: set ft=sh:
 set -e
 : "${GIT_NOTES_REF:=refs/notes/changelog}"
 GIT_NOTES_DISPLAY_REF=$GIT_NOTES_REF
