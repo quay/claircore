@@ -2,9 +2,11 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v4"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/zlog"
@@ -48,6 +50,7 @@ var (
 // particular scanner. See the LayerScanned method for more details.
 func (s *IndexerStore) IndexPackages(ctx context.Context, pkgs []*claircore.Package, layer *claircore.Layer, scnr indexer.VersionedScanner) error {
 	const (
+		op     = `datastore/postgres/IndexerStore.IndexPackages`
 		insert = ` 
 		INSERT INTO package (name, kind, version, norm_kind, norm_version, module, arch)
 		VALUES ($1, $2, $3, $4, $5::int[], $6, $7)
@@ -96,111 +99,143 @@ func (s *IndexerStore) IndexPackages(ctx context.Context, pkgs []*claircore.Pack
 		ON CONFLICT DO NOTHING;
 		`
 	)
+	ctx = zlog.ContextWithValues(ctx, "component", op)
 
-	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/indexPackages")
-	// obtain a transaction scoped batch
-	tctx, done := context.WithTimeout(ctx, 5*time.Second)
-	tx, err := s.pool.Begin(tctx)
-	done()
-	if err != nil {
-		return fmt.Errorf("store:indexPackage failed to create transaction: %w", err)
-	}
-	defer tx.Rollback(ctx)
+	err := s.pool.BeginTxFunc(ctx, pgx.TxOptions{}, func(tx pgx.Tx) error {
+		if err := func() error {
+			defer prometheus.NewTimer(indexPackageDuration.WithLabelValues("insert_batch")).ObserveDuration()
+			defer indexPackageCounter.WithLabelValues("insert_batch").Inc()
+			skipCt := 0
+			stmt, err := tx.Prepare(ctx, "insertPackageStmt", insert)
+			if err != nil {
+				return &claircore.Error{
+					Op:      op,
+					Kind:    claircore.ErrInternal,
+					Message: "failed to create statement",
+					Inner:   err,
+				}
+			}
+			batch := microbatch.NewInsert(tx, 500, time.Minute)
+			for _, pkg := range pkgs {
+				if pkg.Name == "" {
+					skipCt++
+				}
+				if pkg.Source == nil {
+					pkg.Source = &zeroPackage
+				}
 
-	tctx, done = context.WithTimeout(ctx, 5*time.Second)
-	insertPackageStmt, err := tx.Prepare(tctx, "insertPackageStmt", insert)
-	done()
-	if err != nil {
-		return fmt.Errorf("failed to create statement: %w", err)
-	}
-	tctx, done = context.WithTimeout(ctx, 5*time.Second)
-	insertPackageScanArtifactWithStmt, err := tx.Prepare(tctx, "insertPackageScanArtifactWith", insertWith)
-	done()
-	if err != nil {
-		return fmt.Errorf("failed to create statement: %w", err)
-	}
-
-	skipCt := 0
-
-	start := time.Now()
-	mBatcher := microbatch.NewInsert(tx, 500, time.Minute)
-	for _, pkg := range pkgs {
-		if pkg.Name == "" {
-			skipCt++
-		}
-		if pkg.Source == nil {
-			pkg.Source = &zeroPackage
-		}
-
-		if err := queueInsert(ctx, mBatcher, insertPackageStmt.Name, pkg.Source); err != nil {
+				if err := queueInsert(ctx, batch, stmt.Name, pkg.Source); err != nil {
+					return &claircore.Error{
+						Op:      op,
+						Kind:    claircore.ErrInternal,
+						Message: fmt.Sprintf("failed to queue insert for package %q", pkg.Source.Name),
+						Inner:   err,
+					}
+				}
+				if err := queueInsert(ctx, batch, stmt.Name, pkg); err != nil {
+					return &claircore.Error{
+						Op:      op,
+						Kind:    claircore.ErrInternal,
+						Message: fmt.Sprintf("failed to queue insert for package %q", pkg.Name),
+						Inner:   err,
+					}
+				}
+			}
+			if err := batch.Done(ctx); err != nil {
+				return &claircore.Error{
+					Op:      op,
+					Kind:    claircore.ErrInternal,
+					Message: "final batch insert failed for package",
+					Inner:   err,
+				}
+			}
+			zlog.Debug(ctx).
+				Int("skipped", skipCt).
+				Int("inserted", len(pkgs)-skipCt).
+				Msg("packages inserted")
+			return nil
+		}(); err != nil {
 			return err
 		}
-		if err := queueInsert(ctx, mBatcher, insertPackageStmt.Name, pkg); err != nil {
+
+		if err := func() error {
+			defer prometheus.NewTimer(indexPackageDuration.WithLabelValues("insertWith_batch")).ObserveDuration()
+			defer indexPackageCounter.WithLabelValues("insertWith_batch").Inc()
+			skipCt := 0
+			stmt, err := tx.Prepare(ctx, "insertPackageScanArtifactWith", insertWith)
+			if err != nil {
+				return &claircore.Error{
+					Op:      op,
+					Kind:    claircore.ErrInternal,
+					Message: "failed to create statement",
+					Inner:   err,
+				}
+			}
+			// make package scan artifacts
+			batch := microbatch.NewInsert(tx, 500, time.Minute)
+			for _, pkg := range pkgs {
+				if pkg.Name == "" {
+					skipCt++
+					continue
+				}
+				err := batch.Queue(
+					ctx,
+					stmt.SQL,
+					pkg.Source.Name,
+					pkg.Source.Kind,
+					pkg.Source.Version,
+					pkg.Source.Module,
+					pkg.Source.Arch,
+					pkg.Name,
+					pkg.Kind,
+					pkg.Version,
+					pkg.Module,
+					pkg.Arch,
+					scnr.Name(),
+					scnr.Version(),
+					scnr.Kind(),
+					layer.Hash,
+					pkg.PackageDB,
+					pkg.RepositoryHint,
+				)
+				if err != nil {
+					return &claircore.Error{
+						Op:      op,
+						Kind:    claircore.ErrInternal,
+						Message: fmt.Sprintf("failed to queue insert for package_scanartifact %q", pkg.Name),
+						Inner:   err,
+					}
+				}
+			}
+			if err := batch.Done(ctx); err != nil {
+				return &claircore.Error{
+					Op:      op,
+					Kind:    claircore.ErrInternal,
+					Message: "final batch insert failed for package_scanartifact",
+					Inner:   err,
+				}
+			}
+			zlog.Debug(ctx).
+				Int("skipped", skipCt).
+				Int("inserted", len(pkgs)-skipCt).
+				Msg("scanartifacts inserted")
+			return nil
+		}(); err != nil {
 			return err
 		}
-	}
-	err = mBatcher.Done(ctx)
+		return nil
+	})
 	if err != nil {
-		return fmt.Errorf("final batch insert failed for pkg: %w", err)
-	}
-	indexPackageCounter.WithLabelValues("insert_batch").Add(1)
-	indexPackageDuration.WithLabelValues("insert_batch").Observe(time.Since(start).Seconds())
-
-	zlog.Debug(ctx).
-		Int("skipped", skipCt).
-		Int("inserted", len(pkgs)-skipCt).
-		Msg("packages inserted")
-
-	skipCt = 0
-	// make package scan artifacts
-	mBatcher = microbatch.NewInsert(tx, 500, time.Minute)
-
-	start = time.Now()
-	for _, pkg := range pkgs {
-		if pkg.Name == "" {
-			skipCt++
-			continue
+		var domErr *claircore.Error
+		if !errors.As(err, &domErr) {
+			domErr = &claircore.Error{
+				Op:      op,
+				Kind:    claircore.ErrInternal,
+				Message: "unexpected database error",
+				Inner:   err,
+			}
 		}
-		err := mBatcher.Queue(
-			ctx,
-			insertPackageScanArtifactWithStmt.SQL,
-			pkg.Source.Name,
-			pkg.Source.Kind,
-			pkg.Source.Version,
-			pkg.Source.Module,
-			pkg.Source.Arch,
-			pkg.Name,
-			pkg.Kind,
-			pkg.Version,
-			pkg.Module,
-			pkg.Arch,
-			scnr.Name(),
-			scnr.Version(),
-			scnr.Kind(),
-			layer.Hash,
-			pkg.PackageDB,
-			pkg.RepositoryHint,
-		)
-		if err != nil {
-			return fmt.Errorf("batch insert failed for package_scanartifact %v: %w", pkg, err)
-		}
-	}
-	err = mBatcher.Done(ctx)
-	if err != nil {
-		return fmt.Errorf("final batch insert failed for package_scanartifact: %w", err)
-	}
-	indexPackageCounter.WithLabelValues("insertWith_batch").Add(1)
-	indexPackageDuration.WithLabelValues("insertWith_batch").Observe(time.Since(start).Seconds())
-	zlog.Debug(ctx).
-		Int("skipped", skipCt).
-		Int("inserted", len(pkgs)-skipCt).
-		Msg("scanartifacts inserted")
-
-	tctx, done = context.WithTimeout(ctx, 5*time.Second)
-	err = tx.Commit(tctx)
-	done()
-	if err != nil {
-		return fmt.Errorf("store:indexPackages failed to commit tx: %w", err)
+		return domErr
 	}
 	return nil
 }
@@ -212,11 +247,7 @@ func queueInsert(ctx context.Context, b *microbatch.Insert, stmt string, pkg *cl
 		vKind = &pkg.NormalizedVersion.Kind
 		vNorm = pkg.NormalizedVersion.V[:]
 	}
-	err := b.Queue(ctx, stmt,
+	return b.Queue(ctx, stmt,
 		pkg.Name, pkg.Kind, pkg.Version, vKind, vNorm, pkg.Module, pkg.Arch,
 	)
-	if err != nil {
-		return fmt.Errorf("failed to queue insert for package %q: %w", pkg.Name, err)
-	}
-	return nil
 }
