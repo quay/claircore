@@ -108,7 +108,7 @@ func (s *IndexerStore) IndexManifest(ctx context.Context, ir *claircore.IndexRep
 					return &claircore.Error{
 						Op:      op,
 						Kind:    claircore.ErrPrecondition,
-						Message: "batch insert failed for source package",
+						Message: "batch insert failed for source record",
 						Inner:   err,
 					}
 				}
@@ -119,7 +119,7 @@ func (s *IndexerStore) IndexManifest(ctx context.Context, ir *claircore.IndexRep
 				return &claircore.Error{
 					Op:      op,
 					Kind:    claircore.ErrPrecondition,
-					Message: "batch insert failed for package",
+					Message: "batch insert failed for record",
 					Inner:   err,
 				}
 			}
@@ -128,7 +128,7 @@ func (s *IndexerStore) IndexManifest(ctx context.Context, ir *claircore.IndexRep
 			return &claircore.Error{
 				Op:      op,
 				Kind:    claircore.ErrInternal,
-				Message: "final batch insert failed for package",
+				Message: "final batch insert failed for record",
 				Inner:   err,
 			}
 		}
