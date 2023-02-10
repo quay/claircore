@@ -14,8 +14,9 @@ type UpdateKind string
 
 // Known update kinds.
 const (
-	VulnerabilityKind UpdateKind = "vulnerability"
-	EnrichmentKind    UpdateKind = "enrichment"
+	VulnerabilityKind   UpdateKind = "vulnerability"
+	EnrichmentKind      UpdateKind = "enrichment"
+	IndexerMetadataKind UpdateKind = "indexer-metadata"
 )
 
 // UpdateOperation is a unique update to the Store by an Updater.
