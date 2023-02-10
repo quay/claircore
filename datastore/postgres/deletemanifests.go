@@ -32,12 +32,26 @@ var (
 )
 
 func (s *IndexerStore) DeleteManifests(ctx context.Context, d ...claircore.Digest) ([]claircore.Digest, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/DeleteManifests")
+	const op = "datastore/postgres/IndexStore.DeleteManifests"
+	ctx = zlog.ContextWithValues(ctx, "component", op)
 	rm, err := s.deleteManifests(ctx, d)
 	if err != nil {
-		return nil, err
+		return nil, &claircore.Error{
+			Op:      op,
+			Message: "error deleting manifests",
+			Kind:    claircore.ErrInternal,
+			Inner:   err,
+		}
 	}
-	return rm, s.layerCleanup(ctx)
+	if c := s.layerCleanup(ctx); c != nil {
+		err = &claircore.Error{
+			Op:      op,
+			Message: "error deleting layers",
+			Kind:    claircore.ErrInternal,
+			Inner:   c,
+		}
+	}
+	return rm, err
 }
 
 func (s *IndexerStore) deleteManifests(ctx context.Context, d []claircore.Digest) ([]claircore.Digest, error) {

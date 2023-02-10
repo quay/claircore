@@ -3,6 +3,8 @@ package postgres
 import (
 	"context"
 	"sync/atomic"
+
+	"github.com/quay/claircore"
 )
 
 func (s *MatcherStore) Initialized(ctx context.Context) (bool, error) {
@@ -15,7 +17,12 @@ SELECT EXISTS(SELECT 1 FROM vuln LIMIT 1);
 	}
 
 	if err := s.pool.QueryRow(ctx, query).Scan(&ok); err != nil {
-		return false, err
+		return false, &claircore.Error{
+			Op:      `datastore/postgres/MatcherStore.Initialized`,
+			Kind:    claircore.ErrInternal,
+			Message: "error checking initialization",
+			Inner:   err,
+		}
 	}
 	// There were no rows when we looked, so report that. Don't update the bool,
 	// because it's in the 'false' state.

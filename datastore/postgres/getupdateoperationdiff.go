@@ -3,7 +3,6 @@ package postgres
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -11,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
@@ -22,7 +22,7 @@ var (
 			Namespace: "claircore",
 			Subsystem: "vulnstore",
 			Name:      "getupdatediff_total",
-			Help:      "Total number of database queries issued in the getUpdateDiff  method.",
+			Help:      "Total number of database queries issued in the GetUpdateDiff method.",
 		},
 		[]string{"query"},
 	)
@@ -31,7 +31,7 @@ var (
 			Namespace: "claircore",
 			Subsystem: "vulnstore",
 			Name:      "getupdatediff_duration_seconds",
-			Help:      "The duration of all queries issued in the getUpdateDiff method",
+			Help:      "The duration of all queries issued in the GetUpdateDiff method",
 		},
 		[]string{"query"},
 	)
@@ -40,7 +40,7 @@ var (
 			Namespace: "claircore",
 			Subsystem: "vulnstore",
 			Name:      "populaterefs_total",
-			Help:      "Total number of database queries issued in the populateRefs  method.",
+			Help:      "Total number of database queries issued in the populateRefs method.",
 		},
 		[]string{"query"},
 	)
@@ -56,16 +56,18 @@ var (
 )
 
 func (s *MatcherStore) GetUpdateDiff(ctx context.Context, prev, cur uuid.UUID) (*driver.UpdateDiff, error) {
-	// confirmRefs will return a row only if both refs are kind = 'vulnerability'
-	// therefore, if a pgx.ErrNoRows is returned from this query, at least one
-	// of the incoming refs is not of kind = 'vulnerability'.
-	const confirmRefs = `
+	const (
+		op = `datastore/postgres/MatcherStore.GetUpdateDiff`
+		// confirmRefs will return a row only if both refs are kind = 'vulnerability'
+		// therefore, if a pgx.ErrNoRows is returned from this query, at least one
+		// of the incoming refs is not of kind = 'vulnerability'.
+		confirmRefs = `
 SELECT 1
 WHERE ROW ('vulnerability') = ALL (SELECT kind FROM update_operation WHERE ref = $1 OR ref = $2);
 `
-	// Query takes two update IDs and returns rows that only exist in first
-	// argument's set of vulnerabilities.
-	const query = `WITH
+		// Query takes two update IDs and returns rows that only exist in first
+		// argument's set of vulnerabilities.
+		query = `WITH
 		lhs AS (SELECT id, updater FROM update_operation WHERE ref = $1),
 		rhs AS (SELECT id, updater  FROM update_operation WHERE ref = $2)
 	SELECT
@@ -107,128 +109,181 @@ WHERE ROW ('vulnerability') = ALL (SELECT kind FROM update_operation WHERE ref =
 			OR  vuln.updater = (SELECT updater FROM lhs)
 		);
 `
+	)
 
 	if cur == uuid.Nil {
-		return nil, errors.New("nil uuid is invalid as \"current\" endpoint")
+		return nil, &claircore.Error{
+			Op:      op,
+			Kind:    claircore.ErrPrecondition,
+			Message: `nil uuid is invalid as "current" endpoint`,
+		}
 	}
 
 	// confirm both refs are of type == 'vulnerability'
-	start := time.Now()
-	rows, err := s.pool.Query(ctx, confirmRefs, cur, prev)
-	switch err {
-	case nil:
-		rows.Close()
-	case pgx.ErrNoRows:
-		return nil, fmt.Errorf("provided ref was not of kind 'vulnerability'")
-	default:
-		return nil, fmt.Errorf("failed to confirm update op ref types: %w", err)
+	if err := s.pool.AcquireFunc(ctx, func(c *pgxpool.Conn) (err error) {
+		defer prometheus.NewTimer(getUpdateDiffDuration.WithLabelValues("confirmRefs")).ObserveDuration()
+		defer getUpdateDiffCounter.WithLabelValues("confirmRefs").Add(1)
+		var x int64
+		err = c.QueryRow(ctx, confirmRefs, cur, prev).Scan(&x)
+		switch {
+		case errors.Is(err, nil):
+		case errors.Is(err, pgx.ErrNoRows):
+			return &claircore.Error{
+				Op:      op,
+				Kind:    claircore.ErrPrecondition,
+				Message: "provided ref was not of kind 'vulnerability'",
+				Inner:   err,
+			}
+		default:
+			return &claircore.Error{
+				Op:      op,
+				Kind:    claircore.ErrInternal,
+				Message: "failed to confirm update op ref types",
+				Inner:   err,
+			}
+		}
+		return nil
+	}); err != nil {
+		return nil, err
 	}
-	getUpdateDiffCounter.WithLabelValues("confirmrefs").Add(1)
-	getUpdateDiffDuration.WithLabelValues("confirmrefs").Observe(time.Since(start).Seconds())
+
+	var err error
 
 	// Retrieve added first.
 	var diff driver.UpdateDiff
-	if err := populateRefs(ctx, &diff, s.pool, prev, cur); err != nil {
-		return nil, err
-	}
+	err = s.pool.AcquireFunc(ctx, func(c *pgxpool.Conn) (err error) {
+		const query = `SELECT updater, fingerprint, date FROM update_operation WHERE ref = $1;`
 
-	rows, err = s.pool.Query(ctx, query, cur, prev)
-	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve added vulnerabilities: %w", err)
-	}
-
-	getUpdateDiffCounter.WithLabelValues("query").Add(1)
-	getUpdateDiffDuration.WithLabelValues("query").Observe(time.Since(start).Seconds())
-
-	defer rows.Close()
-
-	for rows.Next() {
-		v := claircore.Vulnerability{
-			Package: &claircore.Package{},
-			Dist:    &claircore.Distribution{},
-			Repo:    &claircore.Repository{},
+		diff.Cur.Ref = cur
+		start := time.Now()
+		err = c.QueryRow(ctx, query, cur).Scan(
+			&diff.Cur.Updater,
+			&diff.Cur.Fingerprint,
+			&diff.Cur.Date,
+		)
+		switch {
+		case err == nil:
+		case errors.Is(err, pgx.ErrNoRows):
+			return &claircore.Error{
+				Op:      op,
+				Kind:    claircore.ErrPrecondition,
+				Message: "operation does not exist",
+				Inner:   err,
+			}
+		default:
+			return &claircore.Error{
+				Op:      op,
+				Kind:    claircore.ErrInternal,
+				Message: "failed to deserialize current UpdateOperation",
+				Inner:   err,
+			}
 		}
-		if err := scanVulnerability(&v, rows); err != nil {
-			return nil, fmt.Errorf("failed to scan added vulnerability: %v", err)
+		populateRefsCounter.WithLabelValues("query").Add(1)
+		populateRefsDuration.WithLabelValues("query").Observe(time.Since(start).Seconds())
+
+		if prev == uuid.Nil {
+			return nil
 		}
-		diff.Added = append(diff.Added, v)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	rows.Close() // OK according to the docs.
+		diff.Prev.Ref = prev
 
-	// If we're starting at the beginning of time, nothing is going to
-	// be removed.
-	if prev == uuid.Nil {
-		return &diff, nil
-	}
-	rows, err = s.pool.Query(ctx, query, prev, cur)
-	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve removed vulnerabilities: %w", err)
-	}
-	defer rows.Close()
-	for rows.Next() {
-		v := claircore.Vulnerability{
-			Package: &claircore.Package{},
-			Dist:    &claircore.Distribution{},
-			Repo:    &claircore.Repository{},
+		start = time.Now()
+		err = c.QueryRow(ctx, query, prev).Scan(
+			&diff.Prev.Updater,
+			&diff.Prev.Fingerprint,
+			&diff.Prev.Date,
+		)
+		switch {
+		case err == nil:
+		case errors.Is(err, pgx.ErrNoRows):
+			return &claircore.Error{
+				Op:      op,
+				Kind:    claircore.ErrPrecondition,
+				Message: "operation does not exist",
+				Inner:   err,
+			}
+		default:
+			return &claircore.Error{
+				Op:      op,
+				Kind:    claircore.ErrInternal,
+				Message: "failed to deserialize previous UpdateOperation",
+				Inner:   err,
+			}
 		}
-		if err := scanVulnerability(&v, rows); err != nil {
-			return nil, fmt.Errorf("failed to scan removed vulnerability: %v", err)
-		}
-		diff.Removed = append(diff.Removed, v)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
+		populateRefsCounter.WithLabelValues("query").Add(1)
+		populateRefsDuration.WithLabelValues("query").Observe(time.Since(start).Seconds())
 
-	return &diff, nil
-}
-
-// PopulateRefs fills in the provided UpdateDiff with the details of the
-// operations indicated by the two refs.
-func populateRefs(ctx context.Context, diff *driver.UpdateDiff, pool *pgxpool.Pool, prev, cur uuid.UUID) error {
-	const query = `SELECT updater, fingerprint, date FROM update_operation WHERE ref = $1;`
-	var err error
-
-	diff.Cur.Ref = cur
-	start := time.Now()
-	err = pool.QueryRow(ctx, query, cur).Scan(
-		&diff.Cur.Updater,
-		&diff.Cur.Fingerprint,
-		&diff.Cur.Date,
-	)
-	switch {
-	case err == nil:
-	case errors.Is(err, pgx.ErrNoRows):
-		return fmt.Errorf("operation %v does not exist", cur)
-	default:
-		return fmt.Errorf("failed to scan current UpdateOperation: %w", err)
-	}
-	populateRefsCounter.WithLabelValues("query").Add(1)
-	populateRefsDuration.WithLabelValues("query").Observe(time.Since(start).Seconds())
-
-	if prev == uuid.Nil {
 		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
-	diff.Prev.Ref = prev
 
-	start = time.Now()
-	err = pool.QueryRow(ctx, query, prev).Scan(
-		&diff.Prev.Updater,
-		&diff.Prev.Fingerprint,
-		&diff.Prev.Date,
-	)
-	switch {
-	case err == nil:
-	case errors.Is(err, pgx.ErrNoRows):
-		return fmt.Errorf("operation %v does not exist", prev)
-	default:
-		return fmt.Errorf("failed to scan previous UpdateOperation: %w", err)
+	eg, ctx := errgroup.WithContext(ctx)
+	populate := func(a, b uuid.UUID, into *[]claircore.Vulnerability) func() error {
+		return func() (err error) {
+			// If we're starting at the beginning of time, nothing is going to
+			// be removed.
+			if a == uuid.Nil {
+				return nil
+			}
+			err = s.pool.AcquireFunc(ctx, func(c *pgxpool.Conn) (err error) {
+				defer getUpdateDiffCounter.WithLabelValues("query").Inc()
+				defer prometheus.NewTimer(getUpdateDiffDuration.WithLabelValues("query")).ObserveDuration()
+				rows, err := c.Query(ctx, query, a, b)
+				if err != nil {
+					return &claircore.Error{
+						Op:      op,
+						Kind:    claircore.ErrInternal,
+						Message: "error querying operation diff",
+						Inner:   err,
+					}
+				}
+				defer rows.Close()
+				for rows.Next() {
+					i := len(*into)
+					*into = append(*into, claircore.Vulnerability{
+						Package: &claircore.Package{},
+						Dist:    &claircore.Distribution{},
+						Repo:    &claircore.Repository{},
+					})
+					if err := scanVulnerability(&(*into)[i], rows); err != nil {
+						return &claircore.Error{
+							Op:      op,
+							Kind:    claircore.ErrInternal,
+							Message: "failed to deserialize vulnerability",
+							Inner:   err,
+						}
+					}
+				}
+				if err := rows.Err(); err != nil {
+					return &claircore.Error{
+						Op:      op,
+						Kind:    claircore.ErrInternal,
+						Message: "error while reading",
+						Inner:   err,
+					}
+				}
+				return nil
+			})
+			if err != nil {
+				var domErr *claircore.Error
+				if !errors.As(err, &domErr) {
+					domErr = &claircore.Error{
+						Op:      op,
+						Kind:    claircore.ErrInternal,
+						Message: "unexpected database error",
+						Inner:   err,
+					}
+				}
+				return domErr
+			}
+			return nil
+		}
 	}
-	populateRefsCounter.WithLabelValues("query").Add(1)
-	populateRefsDuration.WithLabelValues("query").Observe(time.Since(start).Seconds())
-
-	return nil
+	eg.Go(populate(cur, prev, &diff.Added))
+	eg.Go(populate(prev, cur, &diff.Removed))
+	if err := eg.Wait(); err != nil {
+		return nil, err
+	}
+	return &diff, nil
 }

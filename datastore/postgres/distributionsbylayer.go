@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -62,11 +63,13 @@ func (s *IndexerStore) DistributionsByLayer(ctx context.Context, hash claircore.
 		WHERE dist_scanartifact.layer_id = layer.id
 		  AND dist_scanartifact.scanner_id = ANY($2);
 		`
+		op = `datastore/postgres/IndexerStore.DistributionsByLayer`
 	)
 
 	if len(scnrs) == 0 {
 		return []*claircore.Distribution{}, nil
 	}
+	ctx = zlog.ContextWithValues(ctx, "component", op)
 
 	// get scanner ids
 	scannerIDs := make([]int64, len(scnrs))
@@ -77,7 +80,12 @@ func (s *IndexerStore) DistributionsByLayer(ctx context.Context, hash claircore.
 			Scan(&scannerIDs[i])
 		done()
 		if err != nil {
-			return nil, fmt.Errorf("failed to retrieve distribution ids for scanner %q: %w", scnr, err)
+			return nil, &claircore.Error{
+				Op:      op,
+				Kind:    claircore.ErrInternal,
+				Message: fmt.Sprintf("failed to retrieve distribution ids for scanner %q", scnr),
+				Inner:   err,
+			}
 		}
 		distributionByLayerCounter.WithLabelValues("selectScanner").Add(1)
 		distributionByLayerDuration.WithLabelValues("selectScanner").Observe(time.Since(start).Seconds())
@@ -90,9 +98,19 @@ func (s *IndexerStore) DistributionsByLayer(ctx context.Context, hash claircore.
 	switch {
 	case errors.Is(err, nil):
 	case errors.Is(err, pgx.ErrNoRows):
-		return nil, fmt.Errorf("store:distributionsByLayer no distribution found for hash %v and scanners %v", hash, scnrs)
+		return nil, &claircore.Error{
+			Op:      op,
+			Kind:    claircore.ErrPrecondition,
+			Message: fmt.Sprintf("no distribution found for layer (%v) and scanners (%v)", hash, scnrs),
+			Inner:   err,
+		}
 	default:
-		return nil, fmt.Errorf("store:distributionsByLayer failed to retrieve package rows for hash %v and scanners %v: %w", hash, scnrs, err)
+		return nil, &claircore.Error{
+			Op:      op,
+			Kind:    claircore.ErrInternal,
+			Message: fmt.Sprintf("error for layer (%v) and scanners (%v)", hash, scnrs),
+			Inner:   err,
+		}
 	}
 	distributionByLayerCounter.WithLabelValues("query").Add(1)
 	distributionByLayerDuration.WithLabelValues("query").Observe(time.Since(start).Seconds())
@@ -116,13 +134,23 @@ func (s *IndexerStore) DistributionsByLayer(ctx context.Context, hash claircore.
 		)
 		dist.ID = strconv.FormatInt(id, 10)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan distribution: %w", err)
+			return nil, &claircore.Error{
+				Op:      op,
+				Kind:    claircore.ErrInternal,
+				Message: "failed to deserialize distribution",
+				Inner:   err,
+			}
 		}
 
 		res = append(res, &dist)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, &claircore.Error{
+			Op:      op,
+			Kind:    claircore.ErrInternal,
+			Message: "error deserializing distributions",
+			Inner:   err,
+		}
 	}
 
 	return res, nil

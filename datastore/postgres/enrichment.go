@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/md5"
 	"errors"
-	"fmt"
 	"io"
 	"sort"
 	"strconv"
@@ -17,6 +16,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/zlog"
 
+	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/microbatch"
 )
@@ -106,8 +106,9 @@ VALUES
 ON CONFLICT
 DO
 	NOTHING;`
+		op = `datastore/postgres/MatcherStore.UpdateEnrichments`
 	)
-	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/UpdateEnrichments")
+	ctx = zlog.ContextWithValues(ctx, "component", op)
 
 	var id uint64
 	var ref uuid.UUID
@@ -115,7 +116,12 @@ DO
 	start := time.Now()
 
 	if err := s.pool.QueryRow(ctx, create, name, string(fp)).Scan(&id, &ref); err != nil {
-		return uuid.Nil, fmt.Errorf("failed to create update_operation: %w", err)
+		return uuid.Nil, &claircore.Error{
+			Op:      op,
+			Kind:    claircore.ErrInternal,
+			Message: "failed to create update_operation",
+			Inner:   err,
+		}
 	}
 
 	updateEnrichmentsCounter.WithLabelValues("create").Add(1)
@@ -123,7 +129,15 @@ DO
 
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("unable to start transaction: %w", err)
+		return uuid.Nil, &claircore.Error{
+			Op:      op,
+			Kind:    claircore.ErrInternal,
+			Message: "unable to start transaction",
+			Inner: &claircore.Error{
+				Kind:  claircore.ErrTransient,
+				Inner: err,
+			},
+		}
 	}
 	defer tx.Rollback(ctx)
 
@@ -139,20 +153,43 @@ DO
 			hashKind, hash, name, es[i].Tags, es[i].Enrichment,
 		)
 		if err != nil {
-			return uuid.Nil, fmt.Errorf("failed to queue enrichment: %w", err)
+			return uuid.Nil, &claircore.Error{
+				Op:      op,
+				Kind:    claircore.ErrInternal,
+				Message: "failed to queue enrichment",
+				Inner:   err,
+			}
 		}
 		if err := batch.Queue(ctx, assoc, hashKind, hash, name, id); err != nil {
-			return uuid.Nil, fmt.Errorf("failed to queue association: %w", err)
+			return uuid.Nil, &claircore.Error{
+				Op:      op,
+				Kind:    claircore.ErrInternal,
+				Message: "failed to queue association",
+				Inner:   err,
+			}
 		}
 	}
 	if err := batch.Done(ctx); err != nil {
-		return uuid.Nil, fmt.Errorf("failed to finish batch enrichment insert: %w", err)
+		return uuid.Nil, &claircore.Error{
+			Op:      op,
+			Kind:    claircore.ErrInternal,
+			Message: "failed to finish batch enrichment insert",
+			Inner:   err,
+		}
 	}
 	updateEnrichmentsCounter.WithLabelValues("insert_batch").Add(1)
 	updateEnrichmentsDuration.WithLabelValues("insert_batch").Observe(time.Since(start).Seconds())
 
 	if err := tx.Commit(ctx); err != nil {
-		return uuid.Nil, fmt.Errorf("failed to commit transaction: %w", err)
+		return uuid.Nil, &claircore.Error{
+			Op:      op,
+			Kind:    claircore.ErrInternal,
+			Message: "unable to commit transaction",
+			Inner: &claircore.Error{
+				Kind:  claircore.ErrTransient,
+				Inner: err,
+			},
+		}
 	}
 	zlog.Debug(ctx).
 		Stringer("ref", ref).
@@ -173,7 +210,8 @@ func hashEnrichment(r *driver.EnrichmentRecord) (k string, d []byte) {
 }
 
 func (s *MatcherStore) GetEnrichment(ctx context.Context, name string, tags []string) (res []driver.EnrichmentRecord, err error) {
-	const query = `
+	const (
+		query = `
 WITH
 	latest
 		AS (
@@ -194,8 +232,10 @@ WHERE
 	uo.uo = latest.id
 	AND uo.enrich = e.id
 	AND e.tags && $2::text[];`
+		op = `datastore/postgres/MatcherStore.GetEnrichment`
+	)
 
-	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/GetEnrichment")
+	ctx = zlog.ContextWithValues(ctx, "component", op)
 	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
 		getEnrichmentsDuration.WithLabelValues("query", strconv.FormatBool(errors.Is(err, nil))).Observe(v)
 	}))
@@ -209,13 +249,26 @@ WHERE
 	)
 	c, err = s.pool.Acquire(ctx)
 	if err != nil {
-		return nil, err
+		return nil, &claircore.Error{
+			Op:      op,
+			Kind:    claircore.ErrInternal,
+			Message: "database pool exhausted",
+			Inner: &claircore.Error{
+				Kind:  claircore.ErrTransient,
+				Inner: err,
+			},
+		}
 	}
 	defer c.Release()
 	res = make([]driver.EnrichmentRecord, 0, 8) // Guess at capacity.
 	rows, err = c.Query(ctx, query, name, tags)
 	if err != nil {
-		return nil, err
+		return nil, &claircore.Error{
+			Op:      op,
+			Kind:    claircore.ErrInternal,
+			Message: "error querying enrichments",
+			Inner:   err,
+		}
 	}
 	defer rows.Close()
 	for rows.Next() {
@@ -224,9 +277,22 @@ WHERE
 		r := &res[i]
 		err = rows.Scan(&r.Tags, &r.Enrichment)
 		if err != nil {
-			return nil, err
+			return nil, &claircore.Error{
+				Op:      op,
+				Kind:    claircore.ErrInternal,
+				Message: "error deserializing enrichments",
+				Inner:   err,
+			}
 		}
 	}
 	err = rows.Err()
+	if err != nil {
+		return nil, &claircore.Error{
+			Op:      op,
+			Kind:    claircore.ErrInternal,
+			Message: "error reading rows",
+			Inner:   err,
+		}
+	}
 	return res, err
 }

@@ -11,7 +11,6 @@ import (
 	"github.com/quay/zlog"
 	"github.com/remind101/migrate"
 
-	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore"
 	"github.com/quay/claircore/datastore/postgres/migrations"
 	"github.com/quay/claircore/libvuln/driver"
@@ -53,11 +52,6 @@ var (
 	_ datastore.Updater       = (*MatcherStore)(nil)
 	_ datastore.Vulnerability = (*MatcherStore)(nil)
 )
-
-// UpdateVulnerabilities implements vulnstore.Updater.
-func (s *MatcherStore) UpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability) (uuid.UUID, error) {
-	return updateVulnerabilites(ctx, s.pool, updater, fingerprint, vulns)
-}
 
 // DeleteUpdateOperations implements vulnstore.Updater.
 func (s *MatcherStore) DeleteUpdateOperations(ctx context.Context, id ...uuid.UUID) (int64, error) {
