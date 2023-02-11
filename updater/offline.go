@@ -18,7 +18,7 @@ import (
 // If "prev" is populated with the output of a previous run of this method, only
 // changes since what was recorded in "prev" are written out.
 func (u *Updater) Fetch(ctx context.Context, prev io.ReaderAt, out io.Writer) error {
-	z := zip.NewWriter(out)
+	z := newZipWriter(out)
 	var prevFS fs.FS
 	if prev != nil {
 		pz, h, err := openZip(prev)
@@ -97,7 +97,7 @@ func openZip(in io.ReaderAt) (*zip.Reader, string, error) {
 	default:
 		return nil, "", errors.New("updater: unable to determine size of zip file")
 	}
-	z, err := zip.NewReader(in, sz)
+	z, err := newZipReader(in, sz)
 	if err != nil {
 		return nil, "", err
 	}
@@ -110,37 +110,26 @@ type (
 	sizer    interface{ Size() int64 }
 )
 
-const (
-	exportHeader    = `ClaircoreUpdaterExport`
-	zstdCompression = 93 // zstd, according to PKWARE spec
+const exportHeader = `ClaircoreUpdaterExport`
+
+var (
+	zstdCompr  = zstd.ZipCompressor(zstd.WithEncoderCRC(false) /* zip format has CRC */)
+	zstdDecomp = zstd.ZipDecompressor(zstd.WithDecoderMaxMemory(512 * (1 << 20)) /* 512 MiB */)
 )
 
-func init() {
-	zip.RegisterCompressor(zstdCompression, newZstdCompressor)
-	zip.RegisterDecompressor(zstdCompression, newZstdDecompressor)
+// NewZipWriter returns a zip.Writer configured with the zstd compressor.
+func newZipWriter(w io.Writer) *zip.Writer {
+	z := zip.NewWriter(w)
+	z.RegisterCompressor(zstd.ZipMethodWinZip, zstdCompr)
+	return z
 }
 
-func newZstdCompressor(w io.Writer) (io.WriteCloser, error) {
-	c, err := zstd.NewWriter(w)
+// NewZipReader returns a zip.Reader configured with the zstd decompressor.
+func newZipReader(r io.ReaderAt, sz int64) (*zip.Reader, error) {
+	z, err := zip.NewReader(r, sz)
 	if err != nil {
 		return nil, err
 	}
-	return c, nil
-}
-
-func newZstdDecompressor(r io.Reader) io.ReadCloser {
-	c, err := zstd.NewReader(r)
-	if err != nil {
-		panic(err)
-	}
-	return &cmpWrapper{c}
-}
-
-type cmpWrapper struct {
-	*zstd.Decoder
-}
-
-func (w *cmpWrapper) Close() error {
-	w.Decoder.Close()
-	return nil
+	z.RegisterDecompressor(zstd.ZipMethodWinZip, zstdDecomp)
+	return z, nil
 }

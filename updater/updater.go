@@ -1,7 +1,6 @@
 package updater
 
 import (
-	"archive/zip"
 	"context"
 	"errors"
 	"fmt"
@@ -273,7 +272,7 @@ func (u *Updater) fetchOne(ctx context.Context, tu taggedUpdater, pfp driver.Fin
 	}
 	ctx = lctx
 
-	zw := zip.NewWriter(out)
+	zw := newZipWriter(out)
 	defer func() {
 		if err := zw.Close(); err != nil {
 			zlog.Warn(ctx).Err(err).Msg("unable to close zip writer")
@@ -386,7 +385,7 @@ func (u *Updater) fetchAndParse(ctx context.Context, spool *os.File, pfps map[st
 		zlog.Error(ctx).Str("filename", spoolname).Err(err).Msg("unable to seek spoolfile")
 		return err
 	}
-	z, err := zip.NewReader(spool, sz)
+	z, err := newZipReader(spool, sz)
 	if err != nil {
 		zlog.Error(ctx).Str("filename", spoolname).Err(err).Msg("unable to create zip reader")
 		return err

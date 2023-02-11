@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/klauspost/compress/zstd"
 	"github.com/quay/zlog"
 	"golang.org/x/sync/errgroup"
 
@@ -98,7 +99,7 @@ func (u *Updater) importV1(ctx context.Context, sys fs.FS) error {
 		if err != nil {
 			return err
 		}
-		z, err := zip.NewReader(spool, sz)
+		z, err := newZipReader(spool, sz)
 		if err != nil {
 			return err
 		}
@@ -154,7 +155,7 @@ func (u *Updater) exportV1(ctx context.Context, z *zip.Writer, prev fs.FS) error
 		Name:     "config.json",
 		Comment:  "updater configuration from the producer",
 		Modified: now,
-		Method:   zstdCompression,
+		Method:   zstd.ZipMethodWinZip,
 	})
 	if err != nil {
 		return err
@@ -325,7 +326,7 @@ func addUpdater(ctx context.Context, z *zip.Writer, now time.Time, r *result) er
 	w, err = z.CreateHeader(&zip.FileHeader{
 		Name:     path.Join(n, `data`),
 		Modified: now,
-		Method:   zstdCompression,
+		Method:   zstd.ZipMethodWinZip,
 	})
 	if err != nil {
 		return err
