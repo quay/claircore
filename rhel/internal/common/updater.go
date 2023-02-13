@@ -15,7 +15,7 @@ import (
 )
 
 // Interval is how often we attempt to update the mapping file.
-var interval = rate.Every(10 * time.Minute)
+var interval = rate.Every(24 * time.Hour)
 
 // Updater returns a value that's periodically updated.
 type Updater struct {
