@@ -1,0 +1,4 @@
+Update required go version to 1.20
+
+This is needed to fix [go issue 33121](https://go.dev/issue/33121),
+which was indirectly triggered by the `gobin` indexer.
