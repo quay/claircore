@@ -1,6 +1,7 @@
 package rhcc
 
 import (
+	"compress/bzip2"
 	"context"
 	"encoding/xml"
 	"fmt"
@@ -33,8 +34,9 @@ var (
 
 // updater fetches and parses cvemap.xml
 type updater struct {
-	client *http.Client
-	url    string
+	client  *http.Client
+	url     string
+	bzipped bool
 }
 
 // UpdaterConfig is the configuration for the container catalog's updater.
@@ -42,6 +44,9 @@ type updater struct {
 // By convention, this is in a "rhel-container-updater" key.
 type UpdaterConfig struct {
 	// URL is the URL to a "cvemap.xml" file.
+	//
+	// The Updater's configuration hook will check for a version with an
+	// additional ".bz2" extension.
 	URL string `json:"url" yaml:"url"`
 }
 
@@ -70,6 +75,24 @@ func (u *updater) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *
 	}
 	if cfg.URL != "" {
 		u.url = cfg.URL
+	}
+
+	// This could check the reported content type perhaps, but just relying on
+	// the extension is quicker and we have inside information that it's
+	// correct.
+	tryURL := cfg.URL + ".bz2"
+	req, err := http.NewRequestWithContext(ctx, http.MethodHead, tryURL, nil)
+	if err != nil {
+		// WTF?
+		return err
+	}
+	res, err := u.client.Do(req)
+	if err == nil { // NB swapped conditional
+		res.Body.Close()
+		if res.StatusCode == http.StatusOK {
+			u.url = tryURL
+			u.bzipped = true
+		}
 	}
 	return nil
 }
@@ -120,6 +143,10 @@ func (u *updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 		Msg("created tempfile")
 
 	var r io.Reader = res.Body
+	if u.bzipped {
+		// No cleanup/pooling.
+		r = bzip2.NewReader(res.Body)
+	}
 	if _, err := io.Copy(tf, r); err != nil {
 		tf.Close()
 		return nil, hint, fmt.Errorf("rhcc: unable to copy resp body to tempfile: %w", err)
