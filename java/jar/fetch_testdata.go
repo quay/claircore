@@ -1,4 +1,4 @@
-// +build tools
+//go:build tools
 
 // Fetch is the script used to populate the stuff in testdir. This extracts a
 // Cassandra distribution to do so, so unfortunately the URL hard-coded here

@@ -1,4 +1,4 @@
-// +build safe
+//go:build safe
 
 package ctxlock
 
