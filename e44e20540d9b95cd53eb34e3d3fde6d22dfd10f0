@@ -1,0 +1,7 @@
+Handling of "pep440" versions has changed
+
+Previously, versions of type "pep440" were inadvertently handled by two
+different packages -- one was used for validation, another for
+comparisons. Claircore now uses a single package. There should be no
+noticeable change in the behavior of python indexing or matching, so
+please file bugs if there are regressions.
