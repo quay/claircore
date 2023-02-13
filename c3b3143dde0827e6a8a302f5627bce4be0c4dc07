@@ -1,0 +1,10 @@
+RPM is removed as a dependency
+
+Claircore no longer requires `rpm`. Previously, `rpm` was executed as a
+subprocess to examine rpm's BerkeleyDB-based databases. This required
+extra disk space, extra dependencies, and had the potential to leak
+resources. Now, claircore implements just enough knowledge of the
+BerkeleyDB hash database format to be able to extract headers that it
+already had the means to interpret. Users of claircore should also be
+able run without zombie handling, as claircore no longer spawns
+subprocesses.
