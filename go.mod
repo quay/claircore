@@ -34,7 +34,7 @@ require (
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba
 	golang.org/x/tools v0.5.0
 	google.golang.org/protobuf v1.28.1 // indirect
-	modernc.org/sqlite v1.20.3
+	modernc.org/sqlite v1.20.4
 )
 
 require (
