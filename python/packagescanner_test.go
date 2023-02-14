@@ -11,10 +11,11 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/python"
 	"github.com/quay/claircore/test"
+
+	"github.com/google/go-cmp/cmp"
 	"github.com/quay/zlog"
 )
 

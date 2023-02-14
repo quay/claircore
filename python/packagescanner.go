@@ -42,7 +42,7 @@ type Scanner struct{}
 func (*Scanner) Name() string { return "python" }
 
 // Version implements scanner.VersionedScanner.
-func (*Scanner) Version() string { return "2" }
+func (*Scanner) Version() string { return "3" }
 
 // Kind implements scanner.VersionedScanner.
 func (*Scanner) Kind() string { return "package" }
@@ -119,6 +119,26 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 
 // FindDeliciousEgg finds eggs and wheels.
 func findDeliciousEgg(ctx context.Context, sys fs.FS) (out []string, err error) {
+	// Is this layer an rpm layer?
+	//
+	// If so, files in the disto-managed directory can be skipped.
+	var rpm bool
+	for _, p := range []string{
+		"var/lib/rpm/Packages",
+		"var/lib/rpm/rpmdb.sqlite",
+		"var/lib/rpm/Packages.db",
+	} {
+		if fi, err := fs.Stat(sys, p); err == nil && fi.Mode().IsRegular() {
+			rpm = true
+			break
+		}
+	}
+	// Is this layer a dpkg layer?
+	var dpkg bool
+	if fi, err := fs.Stat(sys, `var/lib/dpkg/status`); err == nil && fi.Mode().IsRegular() {
+		dpkg = true
+	}
+
 	return out, fs.WalkDir(sys, ".", func(p string, d fs.DirEntry, err error) error {
 		ev := zlog.Debug(ctx).
 			Str("file", p)
@@ -126,6 +146,25 @@ func findDeliciousEgg(ctx context.Context, sys fs.FS) (out []string, err error) 
 		case err != nil:
 			ev.Discard().Send()
 			return err
+		case (rpm || dpkg) && d.Type().IsDir():
+			// Skip one level up from the "packages" directory so the walk also
+			// skips the standard library.
+			var pat string
+			switch {
+			case rpm:
+				pat = `usr/lib*/python[23].*`
+				ev = ev.Bool("rpm_dir", true)
+			case dpkg:
+				pat = `usr/lib*/python[23]`
+				ev = ev.Bool("dpkg_dir", true)
+			default:
+				panic("programmer error: unreachable")
+			}
+			if m, _ := path.Match(pat, p); m {
+				ev.Msg("skipping directory")
+				return fs.SkipDir
+			}
+			fallthrough
 		case !d.Type().IsRegular():
 			ev.Discard().Send()
 			// Should we chase symlinks with the correct name?
