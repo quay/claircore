@@ -2,6 +2,7 @@ package updater
 
 import (
 	"context"
+	"io/fs"
 
 	"github.com/google/uuid"
 
@@ -20,6 +21,14 @@ type Store interface {
 	// not queried by clients.
 	UpdateVulnerabilities(ctx context.Context, ref uuid.UUID, updater string, fp driver.Fingerprint, vs *driver.ParsedVulnerabilities) error
 
+	// UpdateIndexerMetadata creates a new UpdateOperation with the provided
+	// blobs and removes visibility of any previous UpdateOperations for the
+	// noted indexer.
+	//
+	// Only regular files found at the root of the passed FS are added as part
+	// of the update.
+	UpdateIndexerMetadata(ctx context.Context, ref uuid.UUID, indexer string, fp driver.Fingerprint, blobs fs.FS) error
+
 	// GetLatestUpdateOperations reports the latest update operations. It must
 	// report at least one per updater, if it exists.
 	GetLatestUpdateOperations(ctx context.Context) ([]driver.UpdateOperation, error)
@@ -27,7 +36,7 @@ type Store interface {
 
 // Locker is the Context-based locking Updater expects.
 type Locker interface {
-	// TryLock returns a cancelled Context if it would need to wait to acquire
+	// TryLock returns a canceled Context if it would need to wait to acquire
 	// the named lock.
 	TryLock(context.Context, string) (context.Context, context.CancelFunc)
 	// Lock waits to acquire the named lock. The returned Context may be

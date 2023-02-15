@@ -67,3 +67,12 @@ type VulnerabilityParser interface {
 type EnrichmentParser interface {
 	ParseEnrichment(context.Context, fs.FS) ([]EnrichmentRecord, error)
 }
+
+// IndexerMetadataParser takes a provided fs and provides a hook to filter or
+// transform the data before it's stored for indexer use.
+//
+// This should almost always be an identity function, or return a subdirectory
+// of the passed FS.
+type IndexerMetadataParser interface {
+	ParseIndexerMetadata(context.Context, fs.FS) (fs.FS, error)
+}
