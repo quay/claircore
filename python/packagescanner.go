@@ -117,7 +117,16 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	return ret, nil
 }
 
-// FindDeliciousEgg finds eggs and wheels.
+// findDeliciousEgg finds eggs and wheels.
+//
+// Three formats are supported at this time:
+//
+// * .egg      - only when .egg is a directory. .egg as a zipfile is not supported at this time.
+// * .egg-info - both as a standalone file and a directory which contains PKG-INFO.
+// * wheel     - only .dist-info/METADATA is supported.
+//
+// See https://setuptools.pypa.io/en/latest/deprecated/python_eggs.html for more information about Python Eggs
+// and https://peps.python.org/pep-0427/ for more information about Wheel.
 func findDeliciousEgg(ctx context.Context, sys fs.FS) (out []string, err error) {
 	// Is this layer an rpm layer?
 	//
@@ -169,8 +178,12 @@ func findDeliciousEgg(ctx context.Context, sys fs.FS) (out []string, err error) 
 			ev.Discard().Send()
 			// Should we chase symlinks with the correct name?
 			return nil
+		case strings.HasSuffix(p, `.egg/EGG-INFO/PKG-INFO`):
+			ev = ev.Str("kind", ".egg")
+		case strings.HasSuffix(p, `.egg-info`):
+			fallthrough
 		case strings.HasSuffix(p, `.egg-info/PKG-INFO`):
-			ev = ev.Str("kind", "egg")
+			ev = ev.Str("kind", ".egg-info")
 		case strings.HasSuffix(p, `.dist-info/METADATA`):
 			ev = ev.Str("kind", "wheel")
 			// See if we can discern the installer.
