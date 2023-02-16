@@ -35,6 +35,9 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 	ctx = zlog.ContextWithValues(ctx, "exe", p)
 	pkgdb := "go:" + p
 
+	// TODO(hank) This package could use canonical versions, but the
+	// [claircore.Version] type is lossy for pre-release versions (I'm sorry).
+
 	*out = append(*out, &claircore.Package{
 		Kind:      claircore.BINARY,
 		Name:      "runtime",

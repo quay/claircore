@@ -9,6 +9,7 @@ import (
 // NewEcosystem provides the ecosystem for handling go binaries.
 func NewEcosystem(ctx context.Context) *indexer.Ecosystem {
 	return &indexer.Ecosystem{
+		Name: "gobin",
 		PackageScanners: func(context.Context) ([]indexer.PackageScanner, error) {
 			return []indexer.PackageScanner{Detector{}}, nil
 		},
