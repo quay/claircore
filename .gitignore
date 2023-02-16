@@ -2,3 +2,4 @@ vendor
 *.swp
 book
 **/testdata/pg*
+.idea/
