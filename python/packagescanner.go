@@ -103,10 +103,17 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 				Msg("couldn't parse the version, skipping")
 			continue
 		}
+		pkgDB := filepath.Join(n, "..", "..")
+		// If the package is .egg-info format
+		// with just the .egg-info file,
+		// only go up one level.
+		if strings.HasSuffix(n, `.egg-info`) {
+			pkgDB = filepath.Join(n, "..")
+		}
 		ret = append(ret, &claircore.Package{
 			Name:              strings.ToLower(hdr.Get("Name")),
 			Version:           v.String(),
-			PackageDB:         "python:" + filepath.Join(n, "..", ".."),
+			PackageDB:         "python:" + pkgDB,
 			Kind:              claircore.BINARY,
 			NormalizedVersion: v.Version(),
 			// TODO Is there some way to pick up on where a wheel or egg was
