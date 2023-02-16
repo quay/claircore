@@ -35,11 +35,15 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 	ctx = zlog.ContextWithValues(ctx, "exe", p)
 	pkgdb := "go:" + p
 
+	// TODO(hank) This package could use canonical versions, but the
+	// [claircore.Version] type is lossy for pre-release versions (I'm sorry).
+
 	*out = append(*out, &claircore.Package{
 		Kind:      claircore.BINARY,
 		Name:      "runtime",
 		Version:   bi.GoVersion,
 		PackageDB: pkgdb,
+		Filepath:  p,
 	})
 	ev := zlog.Debug(ctx)
 	vs := map[string]string{
@@ -50,6 +54,7 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 		PackageDB: pkgdb,
 		Name:      bi.Main.Path,
 		Version:   bi.Main.Version,
+		Filepath:  p,
 	})
 	if ev.Enabled() {
 		vs[bi.Main.Path] = bi.Main.Version
@@ -60,6 +65,7 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 			PackageDB: pkgdb,
 			Name:      d.Path,
 			Version:   d.Version,
+			Filepath:  p,
 		})
 		if ev.Enabled() {
 			vs[d.Path] = d.Version
