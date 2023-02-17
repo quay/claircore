@@ -113,6 +113,8 @@ func (u *Updater) Parse(ctx context.Context, contents io.ReadCloser) ([]*clairco
 // provided alas.Package
 func (u *Updater) unpack(partial *claircore.Vulnerability, packages []alas.Package) []*claircore.Vulnerability {
 	out := []*claircore.Vulnerability{}
+
+	var b strings.Builder
 	for _, alasPKG := range packages {
 		// make copy
 		v := *partial
@@ -121,12 +123,27 @@ func (u *Updater) unpack(partial *claircore.Vulnerability, packages []alas.Packa
 			Name: alasPKG.Name,
 			Kind: claircore.BINARY,
 		}
-		v.FixedInVersion = fmt.Sprintf("%s-%s", alasPKG.Version, alasPKG.Release)
+		v.FixedInVersion = versionString(&b, alasPKG)
 
 		out = append(out, &v)
 	}
 
+	b.Reset()
 	return out
+}
+
+func versionString(b *strings.Builder, p alas.Package) string {
+	b.Reset()
+
+	if p.Epoch != "" && p.Epoch != "0" {
+		b.WriteString(p.Epoch)
+		b.WriteByte(':')
+	}
+	b.WriteString(p.Version)
+	b.WriteByte('-')
+	b.WriteString(p.Release)
+
+	return b.String()
 }
 
 // refsToLinks takes an alas.Update and creates a string with all the href links
