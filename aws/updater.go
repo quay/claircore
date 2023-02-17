@@ -102,6 +102,7 @@ func (u *Updater) Parse(ctx context.Context, contents io.ReadCloser) ([]*clairco
 			Severity:           update.Severity,
 			NormalizedSeverity: NormalizeSeverity(update.Severity),
 			Dist:               dist,
+			ArchOperation:      claircore.OpEquals,
 		}
 		vulns = append(vulns, u.unpack(partial, update.Packages)...)
 	}
@@ -122,6 +123,7 @@ func (u *Updater) unpack(partial *claircore.Vulnerability, packages []alas.Packa
 		v.Package = &claircore.Package{
 			Name: alasPKG.Name,
 			Kind: claircore.BINARY,
+			Arch: alasPKG.Arch,
 		}
 		v.FixedInVersion = versionString(&b, alasPKG)
 

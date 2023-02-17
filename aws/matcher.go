@@ -39,21 +39,21 @@ func (*Matcher) Query() []driver.MatchConstraint {
 	}
 }
 
-func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
-	v1 := version.NewVersion(record.Package.Version)
-	v2 := version.NewVersion(vuln.FixedInVersion)
-
-	if vuln.FixedInVersion == "" {
-		return true, nil
+func (*Matcher) Vulnerable(_ context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
+	pkgVer := version.NewVersion(record.Package.Version)
+	var vulnVer version.Version
+	// Assume the vulnerability record we have is for the last known vulnerable
+	// version, so greater versions aren't vulnerable.
+	cmp := func(i int) bool { return i != version.GREATER }
+	// But if it's explicitly marked as a fixed-in version, it's only vulnerable
+	// if less than that version.
+	if vuln.FixedInVersion != "" {
+		vulnVer = version.NewVersion(vuln.FixedInVersion)
+		cmp = func(i int) bool { return i == version.LESS }
+	} else {
+		// If a vulnerability doesn't have FixedInVersion, assume it is unfixed.
+		vulnVer = version.NewVersion("65535:0")
 	}
-
-	if v2.String() == "0" {
-		return true, nil
-	}
-
-	if v1.LessThan(v2) {
-		return true, nil
-	}
-
-	return false, nil
+	// compare version and architecture
+	return cmp(pkgVer.Compare(vulnVer)) && vuln.ArchOperation.Cmp(record.Package.Arch, vuln.Package.Arch), nil
 }
