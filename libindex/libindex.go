@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/quay/claircore/ruby"
 	"io"
 	"net/http"
 	"sort"
@@ -101,6 +102,7 @@ func New(ctx context.Context, opts *Options, cl *http.Client) (*Libindex, error)
 			java.NewEcosystem(ctx),
 			rhcc.NewEcosystem(ctx),
 			gobin.NewEcosystem(ctx),
+			ruby.NewEcosystem(ctx),
 		}
 	}
 
