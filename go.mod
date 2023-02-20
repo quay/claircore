@@ -28,7 +28,7 @@ require (
 	golang.org/x/sync v0.1.0
 	golang.org/x/text v0.7.0
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba
-	golang.org/x/tools v0.5.0
+	golang.org/x/tools v0.6.0
 	modernc.org/sqlite v1.20.4
 )
 
@@ -53,7 +53,7 @@ require (
 	github.com/quay/claircore/toolkit v1.0.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0 // indirect
 	go.opentelemetry.io/otel v1.11.0 // indirect
-	golang.org/x/mod v0.7.0 // indirect
+	golang.org/x/mod v0.8.0 // indirect
 	golang.org/x/sys v0.5.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	lukechampine.com/uint128 v1.2.0 // indirect
