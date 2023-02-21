@@ -736,7 +736,7 @@ var scanTable = []test.ScannerTestcase{
 				RepositoryHint: "sha1:01e55d2a0253ea37745d33062852fd2c90027432",
 			},
 			{
-				Name:           "groovy-all",
+				Name:           "groovy-all:groovy",
 				Version:        "2.4.12",
 				Kind:           "binary",
 				PackageDB:      "jar:usr/share/jenkins/jenkins.war",

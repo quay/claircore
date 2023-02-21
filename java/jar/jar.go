@@ -161,8 +161,7 @@ func extractManifest(ctx context.Context, name string, z *zip.Reader) (Info, err
 	return i, nil
 }
 
-// ExtractProperties pulls pom.properties files out of the META-INF directory
-// of the provided zip.
+// ExtractProperties pulls pom.properties files out of the provided zip.
 func extractProperties(ctx context.Context, name string, z *zip.Reader) ([]Info, error) {
 	const filename = "pom.properties"
 	mf, err := z.Open(`META-INF`)
@@ -407,48 +406,52 @@ func (i *Info) parseManifest(ctx context.Context, r io.Reader) error {
 	}
 
 	var name, version string
-	var groupId, artifactId string
-	switch {
-	case hdr.Get("Bundle-SymbolicName") != "":
-		n := hdr.Get("Bundle-SymbolicName")
-		if i := strings.IndexByte(n, ';'); i != -1 {
-			n = n[:i]
+	var groupID, artifactID string
+
+	for _, key := range []string{
+		"Group-Id",
+		"Bundle-SymbolicName",
+		"Implementation-Vendor-Id",
+		"Implementation-Vendor",
+		"Specification-Vendor",
+	} {
+		value := hdr.Get(key)
+		if key == "Bundle-SymbolicName" {
+			if i := strings.IndexByte(value, ';'); i != -1 {
+				value = value[:i]
+			}
 		}
-		groupId = n
-	case hdr.Get("Implementation-Vendor-Id") != "":
-		// This attribute is marked as "Deprecated," but there's nothing that
-		// provides the same information.
-		groupId = hdr.Get("Implementation-Vendor-Id")
-	case hdr.Get("Implementation-Vendor") != "":
-		groupId = hdr.Get("Implementation-Vendor")
-	case hdr.Get("Specification-Vendor") != "":
-		groupId = hdr.Get("Specification-Vendor")
+		if value != "" && !strings.Contains(value, " ") {
+			groupID = value
+			break
+		}
 	}
+
 	for _, key := range []string{
 		"Implementation-Title",
 		"Specification-Title",
 		"Bundle-Name",
+		"Extension-Name",
+		"Short-Name",
 	} {
-		if value := hdr.Get(key); value != "" {
-			artifactId = value
+		value := hdr.Get(key)
+		if value != "" && !strings.Contains(value, " ") {
+			artifactID = value
 			break
 		}
 	}
-	if strings.Contains(groupId, " ") {
-		groupId = ""
+
+	if artifactID == groupID {
+		artifactID = ""
 	}
-	if strings.Contains(artifactId, " ") {
-		artifactId = ""
-	}
-	if artifactId == groupId {
-		artifactId = ""
-	}
+
 	// Trim to account for empty components.
-	name = strings.Trim(groupId + ":" + artifactId, ":")
+	name = strings.Trim(groupID+":"+artifactID, ":")
 
 	for _, key := range []string{
 		"Bundle-Version",
 		"Implementation-Version",
+		"Plugin-Version",
 		"Specification-Version",
 	} {
 		if v := hdr.Get(key); v != "" {

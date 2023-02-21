@@ -25,14 +25,19 @@ func archives(ctx context.Context, sys fs.FS) (out []string, err error) {
 			return err
 		}
 
-		// Name checks:
-		switch ext := path.Ext(fi.Name()); {
-		case ext == ".jar", ext == ".war", ext == ".ear": // OK
-		case strings.HasPrefix(fi.Name(), ".wh."):
+		// Prefix check:
+		if strings.HasPrefix(fi.Name(), ".wh.") {
 			return nil
+		}
+
+		// Extension checks:
+		switch path.Ext(fi.Name()) {
+		case ".jar", ".war", ".ear": // OK
+		case ".jpi", ".hpi": // Jenkins plugins
 		default:
 			return nil
 		}
+
 		// Size check:
 		if fi.Size() < jar.MinSize {
 			return nil
