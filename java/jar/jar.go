@@ -559,18 +559,18 @@ func (i *Info) parseProperties(ctx context.Context, r io.Reader) error {
 	var group, artifact, version string
 	s := bufio.NewScanner(r)
 	for s.Scan() && (group == "" || artifact == "" || version == "") {
-		b := bytes.TrimSpace(s.Bytes())
-		ls := bytes.SplitN(b, []byte("="), 2)
-		if len(ls) != 2 {
+		line := strings.TrimSpace(s.Text())
+		key, value, found := strings.Cut(line, "=")
+		if !found {
 			continue
 		}
-		switch {
-		case bytes.Equal(ls[0], []byte("groupId")):
-			group = string(ls[1])
-		case bytes.Equal(ls[0], []byte("artifactId")):
-			artifact = string(ls[1])
-		case bytes.Equal(ls[0], []byte("version")):
-			version = string(ls[1])
+		switch key {
+		case "groupId":
+			group = value
+		case "artifactId":
+			artifact = value
+		case "version":
+			version = value
 		}
 	}
 	if err := s.Err(); err != nil {
