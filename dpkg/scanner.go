@@ -25,7 +25,7 @@ import (
 const (
 	name    = "dpkg"
 	kind    = "package"
-	version = "4"
+	version = "5"
 )
 
 var (
@@ -134,6 +134,18 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	Restart:
 		hdr, err := tp.ReadMIMEHeader()
 		for ; err == nil && len(hdr) > 0; hdr, err = tp.ReadMIMEHeader() {
+			var ok, installed bool
+			for _, s := range strings.Fields(hdr.Get("Status")) {
+				switch s {
+				case "installed":
+					installed = true
+				case "ok":
+					ok = true
+				}
+			}
+			if !ok || !installed {
+				continue
+			}
 			name := hdr.Get("Package")
 			v := hdr.Get("Version")
 			p := &claircore.Package{

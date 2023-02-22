@@ -101,6 +101,8 @@ func (ps *DistrolessScanner) Scan(ctx context.Context, layer *claircore.Layer) (
 			Restart:
 				hdr, err := tp.ReadMIMEHeader()
 				for ; (err == nil || errors.Is(err, io.EOF)) && len(hdr) > 0; hdr, err = tp.ReadMIMEHeader() {
+					// NB The "Status" header is not considered here. It seems
+					// to not be populated in the "distroless" scheme.
 					name := hdr.Get("Package")
 					v := hdr.Get("Version")
 					p := &claircore.Package{
