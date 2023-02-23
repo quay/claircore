@@ -49,6 +49,18 @@ var suseRegexes = []suseRegex{
 		regexp:  regexp.MustCompile(`(?i)SUSE Linux Enterprise Server 11`),
 	},
 	{
+		release: Leap154,
+		regexp:  regexp.MustCompile(`(?i)openSUSE Leap 15.4`),
+	},
+	{
+		release: Leap153,
+		regexp:  regexp.MustCompile(`(?i)openSUSE Leap 15.3`),
+	},
+	{
+		release: Leap152,
+		regexp:  regexp.MustCompile(`(?i)openSUSE Leap 15.2`),
+	},
+	{
 		release: Leap151,
 		regexp:  regexp.MustCompile(`(?i)openSUSE Leap 15.1`),
 	},

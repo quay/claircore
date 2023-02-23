@@ -14,6 +14,9 @@ const (
 	EnterpriseServer15 Release = `suse.linux.enterprise.server.15`
 	EnterpriseServer12 Release = `suse.linux.enterprise.server.12`
 	EnterpriseServer11 Release = `suse.linux.enterprise.server.11`
+	Leap154            Release = `opensuse.leap.15.4`
+	Leap153            Release = `opensuse.leap.15.3`
+	Leap152            Release = `opensuse.leap.15.2`
 	Leap151            Release = `opensuse.leap.15.1`
 	Leap150            Release = `opensuse.leap.15.0`
 	Leap423            Release = `opensuse.leap.42.3`
@@ -43,6 +46,30 @@ var enterpriseServer11Dist = &claircore.Distribution{
 	DID:        "sles",
 }
 
+var leap154Dist = &claircore.Distribution{
+    Name:       "openSUSE Leap",
+    Version:    "15.4",
+    DID:        "opensuse-leap",
+    VersionID:  "15.4",
+    PrettyName: "openSUSE Leap 15.4",
+}
+
+var leap153Dist = &claircore.Distribution{
+    Name:       "openSUSE Leap",
+    Version:    "15.3",
+    DID:        "opensuse-leap",
+    VersionID:  "15.3",
+    PrettyName: "openSUSE Leap 15.3",
+}
+
+var leap152Dist = &claircore.Distribution{
+    Name:       "openSUSE Leap",
+    Version:    "15.2",
+    DID:        "opensuse-leap",
+    VersionID:  "15.2",
+    PrettyName: "openSUSE Leap 15.2",
+}
+
 var leap151Dist = &claircore.Distribution{
 	Name:       "openSUSE Leap",
 	Version:    "15.1",
@@ -51,7 +78,7 @@ var leap151Dist = &claircore.Distribution{
 	PrettyName: "openSUSE Leap 15.1",
 }
 
-var leap15Dist = &claircore.Distribution{
+var leap150Dist = &claircore.Distribution{
 	Name:       "openSUSE Leap",
 	Version:    "15.0",
 	DID:        "opensuse-leap",
@@ -75,10 +102,16 @@ func releaseToDist(r Release) *claircore.Distribution {
 		return enterpriseServer12Dist
 	case EnterpriseServer11:
 		return enterpriseServer11Dist
-	case Leap150:
-		return leap15Dist
+	case Leap154:
+		return leap154Dist
+	case Leap153:
+		return leap153Dist
+	case Leap152:
+		return leap152Dist
 	case Leap151:
 		return leap151Dist
+	case Leap150:
+		return leap150Dist
 	case Leap423:
 		return leap423Dist
 	default:

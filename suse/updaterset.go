@@ -11,8 +11,11 @@ var suseReleases = []Release{
 	EnterpriseServer15,
 	EnterpriseServer12,
 	EnterpriseServer11,
-	Leap150,
+	Leap154,
+	Leap153,
+	Leap152,
 	Leap151,
+	Leap150,
 }
 
 func UpdaterSet(_ context.Context) (driver.UpdaterSet, error) {
