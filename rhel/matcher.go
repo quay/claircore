@@ -34,7 +34,8 @@ func (*Matcher) Query() []driver.MatchConstraint {
 
 // Vulnerable implements driver.Matcher.
 func (m *Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
-	pkgVer, vulnVer := version.NewVersion(record.Package.Version), version.NewVersion(vuln.Package.Version)
+	pkgVer := version.NewVersion(record.Package.Version)
+	var vulnVer version.Version
 	// Assume the vulnerability record we have is for the last known vulnerable
 	// version, so greater versions aren't vulnerable.
 	cmp := func(i int) bool { return i != version.GREATER }
