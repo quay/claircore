@@ -22,7 +22,7 @@ import (
 const (
 	pkgName    = "rpm"
 	pkgKind    = "package"
-	pkgVersion = "7"
+	pkgVersion = "8"
 )
 
 var (

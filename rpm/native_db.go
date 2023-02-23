@@ -45,6 +45,12 @@ func packagesFromDB(ctx context.Context, pkgdb string, db nativeDB) ([]*claircor
 		if err := info.Load(ctx, &h); err != nil {
 			return nil, err
 		}
+		if info.Name == "gpg-pubkey" {
+			// This is *not* an rpm package. It is just a public key stored in the rpm database.
+			// Ignore this "package".
+			continue
+		}
+
 		idx := len(ps)
 		ps = append(ps, claircore.Package{
 			Kind:      claircore.BINARY,
