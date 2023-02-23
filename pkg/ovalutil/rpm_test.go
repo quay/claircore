@@ -7,9 +7,10 @@ import (
 )
 
 type definitionTypeTestCase struct {
-	want, name string
-	def        oval.Definition
-	err        bool
+	name string
+	want DefinitionType
+	def  oval.Definition
+	err  bool
 }
 
 func TestGetDefinitionType(t *testing.T) {
