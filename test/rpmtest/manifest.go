@@ -70,7 +70,6 @@ var Options = cmp.Options{
 	HintCompare,
 	EpochCompare,
 	IgnorePackageDB,
-	IgnoreGPGPubkey,
 	SortPackages,
 }
 
@@ -122,9 +121,6 @@ var EpochCompare = cmp.FilterPath(
 
 // Does what it says on the tin.
 var (
-	IgnoreGPGPubkey = cmpopts.IgnoreSliceElements(func(p *claircore.Package) bool {
-		return p.Name == `gpg-pubkey`
-	})
 	SortPackages = cmpopts.SortSlices(func(a, b *claircore.Package) bool {
 		return a.Name < b.Name
 	})
