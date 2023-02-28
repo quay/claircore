@@ -6,6 +6,7 @@ import (
 	"unicode"
 )
 
+//go:generate -command stringer go run golang.org/x/tools/cmd/stringer
 //go:generate stringer -linecomment -type op
 type op int
 

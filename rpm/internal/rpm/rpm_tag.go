@@ -5,6 +5,7 @@ package rpm
 
 import "bytes"
 
+//go:generate -command stringer go run golang.org/x/tools/cmd/stringer
 //go:generate stringer -type Tag,Kind
 
 // Tag is the term for the key in the key-value pairs in a Header.

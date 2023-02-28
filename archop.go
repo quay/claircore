@@ -41,8 +41,6 @@ func (o ArchOp) Cmp(a, b string) bool {
 	return false
 }
 
-//go:generate stringer -type=ArchOp -linecomment
-
 func (o ArchOp) MarshalText() (text []byte, err error) {
 	return []byte(o.String()), nil
 }

@@ -260,6 +260,7 @@ func closeSpool(ctx context.Context, f *os.File) func() {
 
 type dbKind uint
 
+//go:generate -command stringer go run golang.org/x/tools/cmd/stringer
 //go:generate stringer -linecomment -type dbKind
 
 const (

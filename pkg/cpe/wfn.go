@@ -8,10 +8,12 @@ import (
 	"unicode/utf8"
 )
 
+//go:generate -command stringer go run golang.org/x/tools/cmd/stringer
+//go:generate stringer -type Attribute -linecomment
+//go:generate stringer -type ValueKind
+
 // Attribute is a type for enumerating the valid CPE attributes.
 type Attribute int
-
-//go:generate stringer -type Attribute -linecomment
 
 // These are the valid Attributes, in CPE 2.3 binding order.
 const (
@@ -136,8 +138,6 @@ func NewValue(v string) (Value, error) {
 
 // ValueKind indicates what "kind" a value is.
 type ValueKind uint
-
-//go:generate stringer -type ValueKind
 
 // These are the valid states for a wfn attribute's value.
 const (

@@ -8,8 +8,6 @@ import (
 
 type Severity uint
 
-//go:generate stringer -type=Severity
-
 const (
 	Unknown Severity = iota
 	Negligible
