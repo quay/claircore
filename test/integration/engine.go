@@ -82,14 +82,32 @@ func (e *Engine) init(t testing.TB) {
 // This should not be called multiple times.
 func (e *Engine) Start(t testing.TB) error {
 	e.init(t)
-	cmd := exec.Command(filepath.Join(e.binroot, "pg_ctl"),
+	logfile := filepath.Join(e.dataDir, "log")
+	if err := os.Truncate(logfile, 0); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	opts := []string{
 		"-w",
 		"-s",
 		"-D", e.dataDir,
-		"-l", filepath.Join(e.dataDir, "log"),
-		"-o", "-F -p "+e.port,
-		"start",
-	)
+		"-l", logfile,
+		"-o", fmt.Sprintf("-F -p %s", e.port),
+	}
+	if testing.Verbose() {
+		t.Logf("enabling EXPLAIN output to: %s", logfile)
+		opts = append(opts,
+			"-o", "-c session_preload_libraries=auto_explain",
+			"-o", "-c auto_explain.log_min_duration=0",
+			"-o", "-c auto_explain.log_analyze=true",
+			"-o", "-c auto_explain.log_buffers=true",
+			"-o", "-c auto_explain.log_wal=true",
+		)
+		if f := os.Getenv("PGEXPLAIN_FORMAT"); f != "" {
+			opts = append(opts, "-o", fmt.Sprintf("-c auto_explain.log_format=%s", f))
+		}
+	}
+	opts = append(opts, "start")
+	cmd := exec.Command(filepath.Join(e.binroot, "pg_ctl"), opts...)
 	t.Logf("starting database engine: %v", cmd.Args)
 	return cmd.Run()
 }

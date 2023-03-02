@@ -169,6 +169,13 @@ func configureDatabase(ctx context.Context, t testing.TB, root *pgxpool.Config, 
 }
 
 // DB is a handle for connecting to and cleaning up a test database.
+//
+// If [testing.Verbose] reports true, the database engine will be run with the
+// "auto_explain" module enabled. See the [auto_explain documentation] for more
+// information. Setting the environment variable "PGEXPLAIN_FORMAT" will control
+// the output format.
+//
+// [auto_explain documentation]: https://www.postgresql.org/docs/current/auto-explain.html
 type DB struct {
 	cfg    *pgxpool.Config
 	noDrop bool
