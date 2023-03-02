@@ -407,18 +407,45 @@ func (i *Info) parseManifest(ctx context.Context, r io.Reader) error {
 	}
 
 	var name, version string
+	var groupId, artifactId string
 	switch {
 	case hdr.Get("Bundle-SymbolicName") != "":
 		n := hdr.Get("Bundle-SymbolicName")
 		if i := strings.IndexByte(n, ';'); i != -1 {
 			n = n[:i]
 		}
-		name = n
+		groupId = n
 	case hdr.Get("Implementation-Vendor-Id") != "":
 		// This attribute is marked as "Deprecated," but there's nothing that
 		// provides the same information.
-		name = hdr.Get("Implementation-Vendor-Id")
+		groupId = hdr.Get("Implementation-Vendor-Id")
+	case hdr.Get("Implementation-Vendor") != "":
+		groupId = hdr.Get("Implementation-Vendor")
+	case hdr.Get("Specification-Vendor") != "":
+		groupId = hdr.Get("Specification-Vendor")
 	}
+	for _, key := range []string{
+		"Implementation-Title",
+		"Specification-Title",
+		"Bundle-Name",
+	} {
+		if value := hdr.Get(key); value != "" {
+			artifactId = value
+			break
+		}
+	}
+	if strings.Contains(groupId, " ") {
+		groupId = ""
+	}
+	if strings.Contains(artifactId, " ") {
+		artifactId = ""
+	}
+	if artifactId == groupId {
+		artifactId = ""
+	}
+	// Trim to account for empty components.
+	name = strings.Trim(groupId + ":" + artifactId, ":")
+
 	for _, key := range []string{
 		"Bundle-Version",
 		"Implementation-Version",
