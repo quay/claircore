@@ -12,12 +12,15 @@ import (
 	"github.com/quay/claircore"
 )
 
+type DefinitionType string
+
 const (
-	CVEDefinition        = "cve"
-	RHBADefinition       = "rhba"
-	RHEADefinition       = "rhea"
-	RHSADefinition       = "rhsa"
-	UnaffectedDefinition = "unaffected"
+	CVEDefinition        DefinitionType = "cve"
+	RHBADefinition       DefinitionType = "rhba"
+	RHEADefinition       DefinitionType = "rhea"
+	RHSADefinition       DefinitionType = "rhsa"
+	UnaffectedDefinition DefinitionType = "unaffected"
+	NoneDefinition       DefinitionType = "none"
 )
 
 var moduleCommentRegex, definitionTypeRegex *regexp.Regexp
@@ -211,10 +214,10 @@ func rpmStateLookup(root *oval.Root, ref string) (*oval.RPMInfoState, error) {
 }
 
 // GetDefinitionType parses an OVAL definition and extracts its type from ID.
-func GetDefinitionType(def oval.Definition) (string, error) {
+func GetDefinitionType(def oval.Definition) (DefinitionType, error) {
 	match := definitionTypeRegex.FindStringSubmatch(def.ID)
 	if len(match) != 2 { // we should have match of the whole string and one submatch
 		return "", errors.New("cannot parse definition ID for its type")
 	}
-	return match[1], nil
+	return DefinitionType(match[1]), nil
 }
