@@ -448,6 +448,7 @@ type ecs struct {
 const (
 	ecosystemMaven = `Maven`
 	ecosystemPyPI  = `PyPI`
+	ecosystemGo    = `Go`
 )
 
 func newECS(u string) ecs {
@@ -538,7 +539,17 @@ func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *adviso
 							Str("event", ev.LastAffected).
 							Strs("versions", af.Versions).
 							Msg("unsure how to interpret event")
+					case ev.LastAffected != "": // less than equal to
+						// This is semver, so we should be able to calculate the
+						// "next" version:
+						ver, err = semver.NewVersion(ev.LastAffected)
+						if err == nil {
+							nv := ver.IncPatch()
+							v.Range.Upper = FromSemver(&nv)
+						}
 					case ev.Limit == "*": // +Inf
+						v.Range.Upper.Kind = `semver`
+						v.Range.Upper.V[0] = 65535
 					case ev.Limit != "": // Something arbitrary
 						zlog.Info(ctx).
 							Str("which", "limit").
@@ -557,6 +568,8 @@ func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *adviso
 						case ev.LastAffected != "":
 							ranges.Add("lastAffected", ev.LastAffected)
 						}
+					case ecosystemGo:
+						return fmt.Errorf(`unexpected "ECOSYSTEM" entry for %q ecosystem: %s`, af.Package.Ecosystem, a.ID)
 					default:
 						switch {
 						case ev.Introduced == "0": // -Inf
