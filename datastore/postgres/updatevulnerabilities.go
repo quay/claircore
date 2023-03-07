@@ -79,6 +79,7 @@ func (s *MatcherStore) UpdateVulnerabilities(ctx context.Context, updater string
 			$3,
 			(SELECT id FROM vuln WHERE hash_kind = $1 AND hash = $2))
 		ON CONFLICT DO NOTHING;`
+		undo = `DELETE FROM update_operation WHERE id = $1;`
 	)
 	ctx = zlog.ContextWithValues(ctx, "component", "internal/vulnstore/postgres/updateVulnerabilities")
 
@@ -90,6 +91,17 @@ func (s *MatcherStore) UpdateVulnerabilities(ctx context.Context, updater string
 	if err := s.pool.QueryRow(ctx, create, updater, string(fingerprint)).Scan(&id, &ref); err != nil {
 		return uuid.Nil, fmt.Errorf("failed to create update_operation: %w", err)
 	}
+	var success bool
+	defer func() {
+		if !success {
+			if _, err := pool.Exec(ctx, undo, id); err != nil {
+				zlog.Error(ctx).
+					Err(err).
+					Stringer("ref", ref).
+					Msg("unable to remove update operation")
+			}
+		}
+	}()
 
 	updateVulnerabilitiesCounter.WithLabelValues("create").Add(1)
 	updateVulnerabilitiesDuration.WithLabelValues("create").Observe(time.Since(start).Seconds())
@@ -154,6 +166,7 @@ func (s *MatcherStore) UpdateVulnerabilities(ctx context.Context, updater string
 	if err := tx.Commit(ctx); err != nil {
 		return uuid.Nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
+	success = true
 	zlog.Debug(ctx).
 		Str("ref", ref.String()).
 		Int("skipped", skipCt).
