@@ -32,6 +32,7 @@
   - [Versioned Scanner](./reference/versioned_scanner.md)
   - [Vulnerability Report](./reference/vulnerability_report.md)
 - [Contributors](./contributor.md)
+  - [Guidelines](./CONTRIBUTING.md)
   - [Changelog](./contributor/changelog.md)
   - [Local Development](./contributor/local-dev.md)
   - [Logging](./contributor/logging.md)
