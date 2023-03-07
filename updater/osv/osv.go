@@ -437,6 +437,10 @@ type ecs struct {
 	Repository    []claircore.Repository
 }
 
+const (
+	ecosystemGo = `Go`
+)
+
 func newECS(u string) ecs {
 	return ecs{
 		Updater:   u,
@@ -524,7 +528,17 @@ func (e *ecs) Insert(ctx context.Context, name string, a *advisory) (err error) 
 							Str("event", ev.LastAffected).
 							Strs("versions", af.Versions).
 							Msg("unsure how to interpret event")
+					case ev.LastAffected != "": // less than equal to
+						// This is semver, so we should be able to calculate the
+						// "next" version:
+						ver, err = semver.NewVersion(ev.LastAffected)
+						if err == nil {
+							nv := ver.IncPatch()
+							v.Range.Upper = FromSemver(&nv)
+						}
 					case ev.Limit == "*": // +Inf
+						v.Range.Upper.Kind = `semver`
+						v.Range.Upper.V[0] = 65535
 					case ev.Limit != "": // Something arbitrary
 						zlog.Info(ctx).
 							Str("which", "limit").
@@ -532,18 +546,39 @@ func (e *ecs) Insert(ctx context.Context, name string, a *advisory) (err error) 
 							Msg("unsure how to interpret event")
 					}
 				case `ECOSYSTEM`:
-					switch {
-					case ev.Introduced == "0": // -Inf
-					case ev.Introduced != "":
-					case ev.Fixed != "":
-						v.FixedInVersion = ev.Fixed
-					case ev.LastAffected != "":
-					case ev.Limit == "*": // +Inf
-					case ev.Limit != "":
+					switch af.Package.Ecosystem {
+					case ecosystemGo:
+						panic("ecosystem: go")
+					default:
+						switch {
+						case ev.Introduced == "0": // -Inf
+						case ev.Introduced != "":
+						case ev.Fixed != "":
+							v.FixedInVersion = ev.Fixed
+						case ev.LastAffected != "":
+						case ev.Limit == "*": // +Inf
+						case ev.Limit != "":
+						}
 					}
 				}
 				if err != nil {
 					zlog.Warn(ctx).Err(err).Msg("event version error")
+				}
+			}
+			if r := v.Range; r != nil {
+				// We have an implicit +Inf range if there's a single event,
+				// this should catch it?
+				if r.Upper.Kind == "" {
+					r.Upper.Kind = r.Lower.Kind
+					r.Upper.V[0] = 65535
+				}
+				if r.Lower.Compare(&r.Upper) == 1 {
+					zlog.Info(ctx).
+						Strs("range", []string{
+							r.Lower.String(), r.Upper.String(),
+						}).
+						Msg("weird range")
+					continue
 				}
 			}
 			var vs string
@@ -559,7 +594,6 @@ func (e *ecs) Insert(ctx context.Context, name string, a *advisory) (err error) 
 			if repo := e.LookupRepository(name); repo != nil {
 				v.Repo = repo
 			}
-
 		}
 	}
 	return nil

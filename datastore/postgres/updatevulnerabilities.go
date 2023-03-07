@@ -121,7 +121,7 @@ func (s *MatcherStore) UpdateVulnerabilities(ctx context.Context, updater string
 
 	start = time.Now()
 
-	mBatcher := microbatch.NewInsert(tx, 2000, time.Minute)
+	mBatcher := microbatch.NewInsert(tx, 1, time.Minute)
 	for _, vuln := range vulns {
 		if vuln.Package == nil || vuln.Package.Name == "" {
 			skipCt++
