@@ -2,11 +2,14 @@ package osv
 
 import (
 	"archive/zip"
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -15,8 +18,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/zlog"
+
+	"github.com/quay/claircore/libvuln/driver"
 )
 
 func TestFetch(t *testing.T) {
@@ -54,21 +58,16 @@ func (a *apiStub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	sys := os.DirFS(filepath.Join("testdata", a.path))
 	p := r.URL.Path
 	switch {
-	case p == "/":
-		p = "list.xml." + r.URL.Query().Get(`continuation-token`)
-		if p == "list.xml." {
-			p = "list.xml"
-		}
-		f, err := sys.Open(p)
+	case p == "/ecosystems.txt":
+		out := bufio.NewWriter(w)
+		defer out.Flush()
+		fmt.Fprintln(out, "testing_ecosystem")
+		ms, err := fs.Glob(sys, "*.zip")
 		if err != nil {
-			a.Error(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+			panic(err) // can only ever be ErrBadPatern
 		}
-		defer f.Close()
-		w.WriteHeader(http.StatusOK)
-		if _, err := io.Copy(w, f); err != nil {
-			a.Error(err)
+		for _, m := range ms {
+			fmt.Fprintln(out, strings.TrimSuffix(m, ".zip"))
 		}
 	case strings.HasSuffix(p, "all.zip"):
 		w.WriteHeader(http.StatusOK)
