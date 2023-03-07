@@ -12,7 +12,7 @@ import (
 var upstreamBase *url.URL
 
 func init() {
-	const base = `https://support.novell.com/security/oval/`
+	const base = `https://ftp.suse.com/pub/projects/security/oval/`
 	var err error
 	upstreamBase, err = url.Parse(base)
 	if err != nil {
