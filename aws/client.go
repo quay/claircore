@@ -117,6 +117,14 @@ func (c *Client) Updates(ctx context.Context) (io.ReadCloser, error) {
 			zlog.Error(ctx).Err(err).Msg("failed to open temp file")
 			continue
 		}
+		var success bool
+		defer func() {
+			if !success {
+				if err := tf.Close(); err != nil {
+					zlog.Warn(ctx).Err(err).Msg("unable to close spool")
+				}
+			}
+		}()
 
 		resp, err := c.c.Do(req)
 		if err != nil {
@@ -133,16 +141,13 @@ func (c *Client) Updates(ctx context.Context) (io.ReadCloser, error) {
 				Int("code", resp.StatusCode).
 				Str("status", resp.Status).
 				Msg("unexpected HTTP response")
-			tf.Close()
 			continue
 		}
 
 		if _, err := io.Copy(tf, resp.Body); err != nil {
-			tf.Close()
 			return nil, err
 		}
 		if o, err := tf.Seek(0, io.SeekStart); err != nil || o != 0 {
-			tf.Close()
 			return nil, err
 		}
 		gz, err := gzip.NewReader(tf)
@@ -151,6 +156,7 @@ func (c *Client) Updates(ctx context.Context) (io.ReadCloser, error) {
 		}
 
 		zlog.Debug(ctx).Msg("success")
+		success = true
 		return &gzippedFile{
 			Reader: gz,
 			Closer: tf,

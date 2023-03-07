@@ -172,6 +172,14 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 	if err != nil {
 		return nil, hint, err
 	}
+	var success bool
+	defer func() {
+		if !success {
+			if err := out.Close(); err != nil {
+				zlog.Warn(ctx).Err(err).Msg("unable to close spool")
+			}
+		}
+	}()
 	// Doing this serially is slower, but much less complicated than using an
 	// ErrGroup or the like.
 	//
@@ -211,6 +219,7 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 	if _, err := out.Seek(0, io.SeekStart); err != nil {
 		return nil, hint, fmt.Errorf("unable to reset item feed: %w", err)
 	}
+	success = true
 
 	nh, err := json.Marshal(cur)
 	if err != nil {

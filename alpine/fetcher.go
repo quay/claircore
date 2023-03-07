@@ -55,18 +55,25 @@ func (u *updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 	zlog.Debug(ctx).
 		Str("name", tf.Name()).
 		Msg("created tempfile")
+	var success bool
+	defer func() {
+		if !success {
+			if err := tf.Close(); err != nil {
+				zlog.Warn(ctx).Err(err).Msg("unable to close spool")
+			}
+		}
+	}()
 
 	var r io.Reader = res.Body
 	if _, err := io.Copy(tf, r); err != nil {
-		tf.Close()
 		return nil, hint, fmt.Errorf("alpine: unable to copy resp body to tempfile: %w", err)
 	}
 	if n, err := tf.Seek(0, io.SeekStart); err != nil || n != 0 {
-		tf.Close()
 		return nil, hint, fmt.Errorf("alpine: unable to seek database to start: at %d, %v", n, err)
 	}
 	zlog.Debug(ctx).Msg("decompressed and buffered database")
 
+	success = true
 	hint = driver.Fingerprint(res.Header.Get("etag"))
 	zlog.Debug(ctx).
 		Str("hint", string(hint)).

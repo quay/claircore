@@ -389,21 +389,27 @@ func (u *updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io
 	if err != nil {
 		return nil, "", err
 	}
+	var success bool
+	defer func() {
+		if !success {
+			if err := f.Close(); err != nil {
+				zlog.Warn(ctx).Err(err).Msg("unable to close spool")
+			}
+		}
+	}()
 	if _, err := io.Copy(f, resp.Body); err != nil {
-		f.Close()
 		return nil, "", fmt.Errorf("failed to read http body: %v", err)
 	}
 	if _, err := f.Seek(0, io.SeekStart); err != nil {
-		f.Close()
 		return nil, "", fmt.Errorf("failed to seek body: %v", err)
 	}
 	zlog.Info(ctx).Msg("fetched latest oval database successfully")
 
-	err = u.sm.Update(ctx)
-	if err != nil {
+	if err := u.sm.Update(ctx); err != nil {
 		return nil, "", fmt.Errorf("could not update source to binary map: %w", err)
 	}
 	zlog.Info(ctx).Msg("updated the debian source to binary map successfully")
+	success = true
 
 	return f, driver.Fingerprint(fp), err
 }

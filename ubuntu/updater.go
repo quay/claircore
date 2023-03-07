@@ -116,19 +116,26 @@ func (u *updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io
 	if err != nil {
 		return nil, "", err
 	}
+	var success bool
+	defer func() {
+		if !success {
+			if err := f.Close(); err != nil {
+				zlog.Warn(ctx).Err(err).Msg("unable to close spool")
+			}
+		}
+	}()
 	var r io.Reader = resp.Body
 	if u.useBzip2 {
 		r = bzip2.NewReader(r)
 	}
 	if _, err := io.Copy(f, r); err != nil {
-		f.Close()
 		return nil, "", fmt.Errorf("ubuntu: failed to read http body: %w", err)
 	}
 	if _, err := f.Seek(0, io.SeekStart); err != nil {
-		f.Close()
 		return nil, "", fmt.Errorf("ubuntu: failed to seek body: %w", err)
 	}
 
+	success = true
 	zlog.Info(ctx).Msg("fetched latest oval database successfully")
 	return f, driver.Fingerprint(fp), err
 }
