@@ -1,0 +1,6 @@
+URLs are now included in the prose documentation
+
+Previous, changes to URLs needed to be copied into the prose documentation;
+this means the documentation was almost always out of sync.
+There's now a tool to process comment directives and slipstream the URLs into the documentation in the build step.
+Contributors should see the `docs/injecturls.go` file for information on how to use the system in code.
