@@ -46,93 +46,71 @@ func NewLayerScanner(ctx context.Context, concurrent int, opts *Opts) (*LayerSca
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract scanners from ecosystems: %v", err)
 	}
-	// Configure and filter the scanners
-	var i int
-	i = 0
-	for _, s := range ps {
-		if !configAndFilter(ctx, opts, s) {
-			ps[i] = s
-			i++
-		}
-	}
-	ps = ps[:i]
-	i = 0
-	for _, s := range rs {
-		if !configAndFilter(ctx, opts, s) {
-			rs[i] = s
-			i++
-		}
-	}
-	rs = rs[:i]
-	i = 0
-	for _, s := range ds {
-		if !configAndFilter(ctx, opts, s) {
-			ds[i] = s
-			i++
-		}
-	}
-	ds = ds[:i]
 
 	return &LayerScanner{
 		store:    opts.Store,
 		inflight: int64(concurrent),
-		ps:       ps,
-		ds:       ds,
-		rs:       rs,
+		ps:       configAndFilter(ctx, opts, ps),
+		ds:       configAndFilter(ctx, opts, ds),
+		rs:       configAndFilter(ctx, opts, rs),
 	}, nil
 }
 
-// ConfigAndFilter configures the provided scanner and reports if it should be
-// filtered out of the slice or not.
-func configAndFilter(ctx context.Context, opts *Opts, s VersionedScanner) bool {
-	n := s.Name()
-	var cfgMap map[string]func(interface{}) error
-	switch k := s.Kind(); k {
-	case "package":
-		cfgMap = opts.ScannerConfig.Package
-	case "repository":
-		cfgMap = opts.ScannerConfig.Repo
-	case "distribution":
-		cfgMap = opts.ScannerConfig.Dist
-	default:
-		zlog.Warn(ctx).
-			Str("kind", k).
-			Str("scanner", n).
-			Msg("unknown scanner kind")
-		return true
-	}
+func configAndFilter[S VersionedScanner](ctx context.Context, opts *Opts, ss []S) []S {
+	i := 0
+	for _, s := range ss {
+		n := s.Name()
+		var cfgMap map[string]func(interface{}) error
+		switch k := s.Kind(); k {
+		case "package":
+			cfgMap = opts.ScannerConfig.Package
+		case "repository":
+			cfgMap = opts.ScannerConfig.Repo
+		case "distribution":
+			cfgMap = opts.ScannerConfig.Dist
+		default:
+			zlog.Warn(ctx).
+				Str("kind", k).
+				Str("scanner", n).
+				Msg("unknown scanner kind")
+			continue
+		}
 
-	f, haveCfg := cfgMap[n]
-	if !haveCfg {
-		f = func(interface{}) error { return nil }
-	}
-	cs, csOK := s.(ConfigurableScanner)
-	rs, rsOK := s.(RPCScanner)
-	switch {
-	case haveCfg && !csOK && !rsOK:
-		zlog.Warn(ctx).
-			Str("scanner", n).
-			Msg("configuration present for an unconfigurable scanner, skipping")
-	case csOK && rsOK:
-		fallthrough
-	case !csOK && rsOK:
-		if err := rs.Configure(ctx, f, opts.Client); err != nil {
-			zlog.Error(ctx).
-				Str("scanner", n).
-				Err(err).
-				Msg("configuration failed")
-			return true
+		f, haveCfg := cfgMap[n]
+		if !haveCfg {
+			f = func(interface{}) error { return nil }
 		}
-	case csOK && !rsOK:
-		if err := cs.Configure(ctx, f); err != nil {
-			zlog.Error(ctx).
+		cs, csOK := interface{}(s).(ConfigurableScanner)
+		rs, rsOK := interface{}(s).(RPCScanner)
+		switch {
+		case haveCfg && !csOK && !rsOK:
+			zlog.Warn(ctx).
 				Str("scanner", n).
-				Err(err).
-				Msg("configuration failed")
-			return true
+				Msg("configuration present for an unconfigurable scanner, skipping")
+		case csOK && rsOK:
+			fallthrough
+		case !csOK && rsOK:
+			if err := rs.Configure(ctx, f, opts.Client); err != nil {
+				zlog.Error(ctx).
+					Str("scanner", n).
+					Err(err).
+					Msg("configuration failed")
+				continue
+			}
+		case csOK && !rsOK:
+			if err := cs.Configure(ctx, f); err != nil {
+				zlog.Error(ctx).
+					Str("scanner", n).
+					Err(err).
+					Msg("configuration failed")
+				continue
+			}
 		}
+		ss[i] = s
+		i++
 	}
-	return false
+	ss = ss[:i]
+	return ss
 }
 
 // Scan performs a concurrency controlled scan of each layer by each configured
