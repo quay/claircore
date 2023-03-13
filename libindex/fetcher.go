@@ -26,15 +26,9 @@ import (
 	"github.com/quay/claircore/pkg/tarfs"
 )
 
-// Arena does coordination and global refcounting.
-type Arena interface {
-	Realizer(context.Context) indexer.Realizer
-	Close(context.Context) error
-}
-
 var (
-	_ Arena            = (*RemoteFetchArena)(nil)
-	_ indexer.Realizer = (*FetchProxy)(nil)
+	_ indexer.FetchArena = (*RemoteFetchArena)(nil)
+	_ indexer.Realizer   = (*FetchProxy)(nil)
 )
 
 // RemoteFetchArena is a struct that keeps track of all the layers fetched into it,

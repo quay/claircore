@@ -26,6 +26,8 @@ type Controller struct {
 	err error
 	// the current state of the controller
 	currentState State
+	// Realizer is scoped to a single request
+	Realizer indexer.Realizer
 }
 
 // New constructs a controller given an Opts struct
@@ -60,6 +62,7 @@ func (s *Controller) Index(ctx context.Context, manifest *claircore.Manifest) (*
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "indexer/controller/Controller.Index",
 		"manifest", s.manifest.Hash.String())
+	s.Realizer = s.FetchArena.Realizer(ctx)
 	defer s.Realizer.Close()
 	zlog.Info(ctx).Msg("starting scan")
 	return s.report, s.run(ctx)

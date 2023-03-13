@@ -24,17 +24,18 @@ func TestControllerIndexerError(t *testing.T) {
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
 	tt := []struct {
-		mock func(t *testing.T) (indexer.Store, indexer.Realizer)
+		mock func(t *testing.T) (indexer.Store, indexer.FetchArena)
 		name string
 	}{
 		{
 			name: "CheckManifest",
-			mock: func(t *testing.T) (indexer.Store, indexer.Realizer) {
+			mock: func(t *testing.T) (indexer.Store, indexer.FetchArena) {
 				ctrl := gomock.NewController(t)
 				store := indexer.NewMockStore(ctrl)
+				fa := indexer.NewMockFetchArena(ctrl)
 				realizer := indexer.NewMockRealizer(ctrl)
-
 				realizer.EXPECT().Close()
+				fa.EXPECT().Realizer(gomock.Any()).Return(realizer)
 
 				// let call to SetIndexReport in checkManifest pass
 				store.EXPECT().SetIndexReport(gomock.Any(), gomock.Any()).Return(nil)
@@ -43,7 +44,7 @@ func TestControllerIndexerError(t *testing.T) {
 				// if all is well scanner should hijack SFM flow into entering scanError state
 				store.EXPECT().ManifestScanned(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, fmt.Errorf("expected failure for test"))
 
-				return store, realizer
+				return store, fa
 			},
 		},
 	}
@@ -51,10 +52,10 @@ func TestControllerIndexerError(t *testing.T) {
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
 			ctx := zlog.Test(ctx, t)
-			store, realizer := table.mock(t)
+			store, fa := table.mock(t)
 			c := New(&indexer.Opts{
-				Store:    store,
-				Realizer: realizer,
+				Store:      store,
+				FetchArena: fa,
 			})
 
 			_, err := c.Index(ctx, &claircore.Manifest{})
@@ -80,7 +81,7 @@ func TestControllerIndexFinished(t *testing.T) {
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
 	tt := []struct {
-		mock                  func(t *testing.T) (indexer.Store, indexer.Realizer)
+		mock                  func(t *testing.T) (indexer.Store, indexer.FetchArena)
 		name                  string
 		expectedState         State
 		expectedResultSuccess bool
@@ -89,18 +90,19 @@ func TestControllerIndexFinished(t *testing.T) {
 			name:                  "Success",
 			expectedState:         IndexFinished,
 			expectedResultSuccess: true,
-			mock: func(t *testing.T) (indexer.Store, indexer.Realizer) {
+			mock: func(t *testing.T) (indexer.Store, indexer.FetchArena) {
 				ctrl := gomock.NewController(t)
 				store := indexer.NewMockStore(ctrl)
-
+				fa := indexer.NewMockFetchArena(ctrl)
 				realizer := indexer.NewMockRealizer(ctrl)
 
 				realizer.EXPECT().Close()
+				fa.EXPECT().Realizer(gomock.Any()).Return(realizer)
 
 				store.EXPECT().SetIndexFinished(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 				store.EXPECT().SetIndexReport(gomock.Any(), gomock.Any()).Return(nil)
 
-				return store, realizer
+				return store, fa
 			},
 		},
 	}
@@ -108,10 +110,10 @@ func TestControllerIndexFinished(t *testing.T) {
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
 			ctx := zlog.Test(ctx, t)
-			store, realizer := table.mock(t)
+			store, fa := table.mock(t)
 			c := New(&indexer.Opts{
-				Store:    store,
-				Realizer: realizer,
+				Store:      store,
+				FetchArena: fa,
 			})
 			c.setState(IndexFinished)
 
