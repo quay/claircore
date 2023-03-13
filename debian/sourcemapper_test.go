@@ -18,7 +18,7 @@ func (f TestClientFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return f(req), nil
 }
 
-func NewTestClient() (*http.Client, error) {
+func newTestClient() (*http.Client, error) {
 	f, err := os.Open("testdata/Bullseye-Sources.gz")
 	if err != nil {
 		return nil, err
@@ -46,7 +46,7 @@ func NewTestClient() (*http.Client, error) {
 
 func TestCreateSourcesMap(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
-	client, err := NewTestClient()
+	client, err := newTestClient()
 	if err != nil {
 		t.Fatalf("got the error %v", err)
 	}
@@ -54,19 +54,19 @@ func TestCreateSourcesMap(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	mapper := newSourcesMap(u, client)
+	mapper := newSourcesMap(client, []sourceURL{{distro: "bullseye", url: u}})
 
 	err = mapper.Update(ctx)
 	if err != nil {
 		t.Fatalf("unexpected error %v", err)
 	}
-	opensshBinaries := mapper.Get("aalib")
+	opensshBinaries := mapper.Get("bullseye", "aalib")
 	if len(opensshBinaries) != 3 {
-		t.Fatalf("expected 3 binaries related to aalib found %d found %v", len(opensshBinaries), opensshBinaries)
+		t.Fatalf("expected 3 binaries related to aalib found %d - %v", len(opensshBinaries), opensshBinaries)
 	}
 
-	tarBinaries := mapper.Get("389-ds-base")
+	tarBinaries := mapper.Get("bullseye", "389-ds-base")
 	if len(tarBinaries) != 6 {
-		t.Fatalf("expected 6 binaries related to 389-ds-base found %d found %v", len(tarBinaries), tarBinaries)
+		t.Fatalf("expected 6 binaries related to 389-ds-base found %d - %v", len(tarBinaries), tarBinaries)
 	}
 }

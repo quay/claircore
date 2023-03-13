@@ -34,7 +34,7 @@ func TestMain(m *testing.M) {
 
 // TestMatcherIntegration confirms packages are matched
 // with vulnerabilities correctly. the returned
-// store from postgres.NewTestStore must have Ubuntu
+// store from postgres.NewTestStore must have Debian
 // CVE data
 func TestMatcherIntegration(t *testing.T) {
 	integration.NeedDB(t)
@@ -51,20 +51,14 @@ func TestMatcherIntegration(t *testing.T) {
 			fmt.Fprintln(w, `Suite: oldstable`)
 			fmt.Fprintln(w, `Version: 10.12`)
 			fmt.Fprintln(w, `Codename: buster`)
-		case `/oval-definitions-buster.xml`:
-			tgt, err := url.Parse(defaultOVAL)
+		case `/`:
+			tgt, err := url.Parse(defaultJSON)
 			if err != nil {
 				t.Error(err)
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-			loc, err := tgt.Parse(path.Join(tgt.Path, r.URL.Path))
-			if err != nil {
-				t.Error(err)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-			w.Header().Set("Location", loc.String())
+			w.Header().Set("Location", tgt.String())
 			w.WriteHeader(http.StatusMovedPermanently)
 		case `/debian/dists/buster/main/source/Sources.gz`,
 			`/debian/dists/buster/contrib/source/Sources.gz`,
@@ -107,9 +101,8 @@ func TestMatcherIntegration(t *testing.T) {
 	cfg := map[string]driver.ConfigUnmarshaler{
 		"debian": func(v interface{}) error {
 			cfg := v.(*FactoryConfig)
-			cfg.ArchiveURL = srv.URL
 			cfg.MirrorURL = srv.URL
-			cfg.OVALURL = srv.URL
+			cfg.JSONURL = srv.URL
 			return nil
 		},
 	}

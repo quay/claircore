@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"encoding/xml"
 	"fmt"
 	"io"
 	"net/http"
@@ -16,20 +15,16 @@ import (
 	"strings"
 
 	"github.com/quay/claircore"
-	"github.com/quay/goval-parser/oval"
 	"github.com/quay/zlog"
 
-	"github.com/quay/claircore/internal/xmlutil"
 	"github.com/quay/claircore/libvuln/driver"
-	"github.com/quay/claircore/pkg/ovalutil"
 	"github.com/quay/claircore/pkg/tmp"
 )
 
 //doc:url updater
 const (
-	defaultMirror  = `https://deb.debian.org/`
-	defaultArchive = `http://archive.debian.org/`
-	defaultOVAL    = `https://www.debian.org/security/oval/`
+	defaultMirror = `https://deb.debian.org/`
+	defaultJSON   = `https://security-tracker.debian.org/tracker/data/json`
 )
 
 var (
@@ -39,31 +34,34 @@ var (
 	_ driver.Configurable      = (*updater)(nil)
 )
 
-// Factory creates Updaters for all Debian distributions that exist on either
-// the archive or mirror, and have an OVAL database.
+// Factory creates Updaters for all Debian distributions that exist
+// in the mirror, and have entries in the JSON security tracker.
 //
 // [Configure] must be called before [UpdaterSet].
 type Factory struct {
-	c       *http.Client
-	mirror  *url.URL
-	archive *url.URL
-	oval    *url.URL
+	c      *http.Client
+	mirror *url.URL
+	json   *url.URL
 }
 
 // NewFactory constructs a Factory.
 //
 // [Configure] must be called before [UpdaterSet].
-func NewFactory(ctx context.Context) (*Factory, error) {
+func NewFactory(_ context.Context) (*Factory, error) {
 	f := &Factory{}
 	return f, nil
 }
 
 // Configure implements [driver.Configurable].
-func (f *Factory) Configure(ctx context.Context, cf driver.ConfigUnmarshaler, c *http.Client) error {
+func (f *Factory) Configure(_ context.Context, cf driver.ConfigUnmarshaler, c *http.Client) error {
 	f.c = c
 	var cfg FactoryConfig
 	if err := cf(&cfg); err != nil {
 		return fmt.Errorf("debian: factory configuration error: %w", err)
+	}
+
+	if cfg.ArchiveURL != "" || cfg.OVALURL != "" {
+		return fmt.Errorf("debian: neither archive_url nor oval_url should be populated anymore; use json_url and mirror_url instead")
 	}
 
 	u, err := url.Parse(defaultMirror)
@@ -78,24 +76,12 @@ func (f *Factory) Configure(ctx context.Context, cf driver.ConfigUnmarshaler, c 
 		return fmt.Errorf("debian: bad mirror URL: %w", err)
 	}
 
-	u, err = url.Parse(defaultArchive)
-	if cfg.ArchiveURL != "" {
-		u, err = url.Parse(cfg.ArchiveURL)
+	f.json, err = url.Parse(defaultJSON)
+	if cfg.JSONURL != "" {
+		f.json, err = url.Parse(cfg.JSONURL)
 	}
 	if err != nil {
-		return fmt.Errorf("debian: bad archive URL: %w", err)
-	}
-	f.archive, err = u.Parse("debian/")
-	if err != nil {
-		return fmt.Errorf("debian: bad archive URL: %w", err)
-	}
-
-	f.oval, err = url.Parse(defaultOVAL)
-	if cfg.OVALURL != "" {
-		f.oval, err = url.Parse(cfg.OVALURL)
-	}
-	if err != nil {
-		return fmt.Errorf("debian: bad OVAL URL: %w", err)
+		return fmt.Errorf("debian: bad JSON URL: %w", err)
 	}
 
 	return nil
@@ -103,21 +89,25 @@ func (f *Factory) Configure(ctx context.Context, cf driver.ConfigUnmarshaler, c 
 
 // FactoryConfig is the configuration honored by the Factory.
 //
-// All URLs need trailing slashes.
-//
-// The "archive" and "mirror" URLs expect to find HTML at "dists/" formatted like
+// The "mirror" URLs expect to find HTML at "dists/" formatted like
 // the HTML from the Debian project (that is to say, HTML containing relative links
 // to distribution directories).
 //
-// The "OVAL" URL expects to have OVAL XML documents named "oval-definitions-${name}.xml",
-// where "name" is the release's code name (e.g. "wheezy", "buster").
+// The "mirror" URL needs a trailing slash.
+//
+// The "JSON" URL expects to find a JSON array of packages mapped to related vulnerabilities.
 type FactoryConfig struct {
 	// ArchiveURL is a URL to a Debian archive.
+	//
+	// Deprecated: Only MirrorURL should be used.
 	ArchiveURL string `json:"archive_url" yaml:"archive_url"`
-	// MirrorURL is a URL to an active Debian mirror.
-	MirrorURL string `json:"mirror_url" yaml:"mirror_url"`
+	MirrorURL  string `json:"mirror_url" yaml:"mirror_url"`
 	// OVALURL is a URL to a collection of OVAL XML documents.
+	//
+	// Deprecated: Use JSONURL instead.
 	OVALURL string `json:"oval_url" yaml:"oval_url"`
+	// JSONURL is a URL to a JSON vulnerability feed.
+	JSONURL string `json:"json_url" yaml:"json_url"`
 }
 
 var (
@@ -135,50 +125,29 @@ var (
 func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
 	s := driver.NewUpdaterSet()
 
-	// Collect updaters via a map, so that any release that's partially archived
-	// gets used via the mirror URLs. When this was written, "jessie" was in this state.
-	us := make(map[string]*updater)
-	for _, u := range []*url.URL{f.archive, f.mirror} {
-
-		ds, err := f.findReleases(ctx, u)
-		if err != nil {
-			return s, fmt.Errorf("debian: examining remote: %w", err)
-		}
-		for _, d := range ds {
-			ovalURL, err := f.oval.Parse(fmt.Sprintf("oval-definitions-%s.xml", d.VersionCodeName))
-			if err != nil {
-				return s, fmt.Errorf("debian: unable to construct OVAL URL: %w", err)
-			}
-			req, err := http.NewRequestWithContext(ctx, http.MethodHead, ovalURL.String(), nil)
-			if err != nil {
-				return s, fmt.Errorf("debian: unable to construct OVAL HEAD request: %w", err)
-			}
-			res, err := f.c.Do(req)
-			if err != nil {
-				return s, fmt.Errorf("debian: unable to do OVAL HEAD request: %w", err)
-			}
-			res.Body.Close()
-			switch res.StatusCode {
-			case http.StatusOK:
-			default:
-				continue
-			}
-			src, err := u.Parse(path.Join("dists", d.VersionCodeName) + "/")
-			if err != nil {
-				return s, fmt.Errorf("debian: unable to construct source URL: %w", err)
-			}
-
-			us[d.VersionCodeName] = &updater{
-				url:   ovalURL.String(),
-				dists: src.String(),
-				name:  d.VersionCodeName,
-			}
-		}
+	ds, err := f.findReleases(ctx, f.mirror)
+	if err != nil {
+		return s, fmt.Errorf("debian: examining remote: %w", err)
 	}
-	for _, u := range us {
-		if err := s.Add(u); err != nil {
-			return s, fmt.Errorf("debian: unable to add updater: %w", err)
+
+	// TODO: Consider returning stub if Last-Modified has not updated.
+	u := &updater{
+		jsonURL: f.json.String(),
+	}
+	for _, d := range ds {
+		src, err := f.mirror.Parse(path.Join("dists", d.VersionCodeName) + "/")
+		if err != nil {
+			return s, fmt.Errorf("debian: unable to construct source URL: %w", err)
 		}
+
+		u.dists = append(u.dists, sourceURL{
+			distro: d.VersionCodeName,
+			url:    src,
+		})
+	}
+
+	if err := s.Add(u); err != nil {
+		return s, fmt.Errorf("debian: unable to add updater: %w", err)
 	}
 
 	return s, nil
@@ -296,28 +265,27 @@ Listing:
 
 // Updater implements [driver.updater].
 type updater struct {
-	// the url to fetch the OVAL db from
-	url   string
-	dists string
-	// the release name as described by os-release "VERSION_CODENAME"
-	name string
+	// jsonURL is the URL from which to fetch JSON vulnerability data
+	jsonURL string
+	dists   []sourceURL
 
 	c  *http.Client
 	sm *sourcesMap
 }
 
 // UpdaterConfig is the configuration for the updater.
-//
-// By convention, this is in a map called "debian/updater/${RELEASE}", e.g.
-// "debian/updater/buster".
 type UpdaterConfig struct {
-	OVALURL  string `json:"url" yaml:"url"`
-	DistsURL string `json:"dists_url" yaml:"dists_url"`
+	// Deprecated: Use JSONURL instead.
+	OVALURL string `json:"url" yaml:"url"`
+	JSONURL string `json:"json_url" yaml:"json_url"`
+	// Deprecated: Use DistsURLs instead.
+	DistsURL  string      `json:"dists_url" yaml:"dists_url"`
+	DistsURLs []sourceURL `json:"dists_urls" yaml:"dists_urls"`
 }
 
 // Name implements [driver.Updater].
 func (u *updater) Name() string {
-	return path.Join(`debian`, `updater`, u.name)
+	return "debian/updater"
 }
 
 // Configure implements [driver.Configurable].
@@ -326,24 +294,34 @@ func (u *updater) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *
 	u.c = c
 	var cfg UpdaterConfig
 	if err := f(&cfg); err != nil {
-		return nil
-	}
-	if cfg.OVALURL != "" {
-		u.url = cfg.OVALURL
-		zlog.Info(ctx).
-			Msg("configured database URL")
-	}
-	if cfg.DistsURL != "" {
-		u.dists = cfg.DistsURL
-		zlog.Info(ctx).
-			Msg("configured dists URL")
+		return err
 	}
 
-	src, err := url.Parse(u.dists)
-	if err != nil {
-		return fmt.Errorf("debian: unable to parse dists URL: %w", err)
+	if cfg.DistsURL != "" || cfg.OVALURL != "" {
+		zlog.Error(ctx).Msg("configured with deprecated URLs")
+		return fmt.Errorf("debian: neither url nor dists_url should be used anymore; use json_url and dists_urls instead")
 	}
-	u.sm = newSourcesMap(src, u.c)
+
+	if cfg.JSONURL != "" {
+		u.jsonURL = cfg.JSONURL
+		zlog.Info(ctx).
+			Msg("configured JSON database URL")
+	}
+	if len(cfg.DistsURLs) != 0 {
+		u.dists = cfg.DistsURLs
+		zlog.Info(ctx).
+			Msg("configured dists URLs")
+	}
+
+	var srcs []sourceURL
+	for _, dist := range u.dists {
+		src, err := url.Parse(dist.url.String())
+		if err != nil {
+			return fmt.Errorf("debian: unable to parse dist URL: %w", err)
+		}
+		srcs = append(srcs, sourceURL{distro: dist.distro, url: src})
+	}
+	u.sm = newSourcesMap(u.c, srcs)
 
 	return nil
 }
@@ -352,30 +330,31 @@ func (u *updater) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *
 func (u *updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "debian/Updater.Fetch",
-		"release", u.name,
-		"database", u.url)
+		"database", u.jsonURL)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.jsonURL, nil)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to create request")
 	}
 	if fingerprint != "" {
-		req.Header.Set("if-none-match", string(fingerprint))
+		req.Header.Set("If-Modified-Since", string(fingerprint))
 	}
 
-	// fetch OVAL xml database
+	// fetch JSON database
 	resp, err := u.c.Do(req)
 	if resp != nil {
 		defer resp.Body.Close()
 	}
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to retrieve OVAL database: %v", err)
+		return nil, "", fmt.Errorf("failed to retrieve JSON database: %v", err)
 	}
+
+	fp := resp.Header.Get("Last-Modified")
 
 	switch resp.StatusCode {
 	case http.StatusOK:
-		if fingerprint == "" || string(fingerprint) != resp.Header.Get("etag") {
-			zlog.Info(ctx).Msg("fetching latest oval database")
+		if fingerprint == "" || fp != string(fingerprint) {
+			zlog.Info(ctx).Msg("fetching latest JSON database")
 			break
 		}
 		fallthrough
@@ -385,11 +364,11 @@ func (u *updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io
 		return nil, "", fmt.Errorf("unexpected response: %v", resp.Status)
 	}
 
-	fp := resp.Header.Get("etag")
 	f, err := tmp.NewFile("", "debian.")
 	if err != nil {
 		return nil, "", err
 	}
+
 	var success bool
 	defer func() {
 		if !success {
@@ -399,12 +378,12 @@ func (u *updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io
 		}
 	}()
 	if _, err := io.Copy(f, resp.Body); err != nil {
-		return nil, "", fmt.Errorf("failed to read http body: %v", err)
+		return nil, "", fmt.Errorf("failed to read http body: %w", err)
 	}
 	if _, err := f.Seek(0, io.SeekStart); err != nil {
-		return nil, "", fmt.Errorf("failed to seek body: %v", err)
+		return nil, "", fmt.Errorf("failed to seek body: %w", err)
 	}
-	zlog.Info(ctx).Msg("fetched latest oval database successfully")
+	zlog.Info(ctx).Msg("fetched latest json database successfully")
 
 	if err := u.sm.Update(ctx); err != nil {
 		return nil, "", fmt.Errorf("could not update source to binary map: %w", err)
@@ -413,49 +392,4 @@ func (u *updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io
 	success = true
 
 	return f, driver.Fingerprint(fp), err
-}
-
-// Parse implements [driver.Parser].
-func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "debian/Updater.Parse",
-		"release", u.name,
-	)
-	zlog.Info(ctx).Msg("starting parse")
-	defer r.Close()
-	root := oval.Root{}
-	dec := xml.NewDecoder(r)
-	dec.CharsetReader = xmlutil.CharsetReader
-	if err := dec.Decode(&root); err != nil {
-		return nil, fmt.Errorf("debian: unable to decode OVAL document: %w", err)
-	}
-	zlog.Debug(ctx).Msg("xml decoded")
-
-	sourcesMapFunc := func(_ oval.Definition, name *oval.DpkgName) []string {
-		return u.sm.Get(name.Body)
-	}
-
-	protoVulns := func(def oval.Definition) ([]*claircore.Vulnerability, error) {
-		vs := []*claircore.Vulnerability{}
-		d, err := getDist(u.name)
-		if err != nil {
-			return nil, err
-		}
-		v := &claircore.Vulnerability{
-			Updater:            u.Name(),
-			Name:               def.Title,
-			Description:        def.Description,
-			Issued:             def.Advisory.Issued.Date,
-			Links:              ovalutil.Links(def),
-			NormalizedSeverity: claircore.Unknown,
-			Dist:               d,
-		}
-		vs = append(vs, v)
-		return vs, nil
-	}
-	vulns, err := ovalutil.DpkgDefsToVulns(ctx, &root, protoVulns, sourcesMapFunc)
-	if err != nil {
-		return nil, err
-	}
-	return vulns, nil
 }
