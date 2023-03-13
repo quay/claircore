@@ -1,0 +1,34 @@
+#!/bin/sh
+if [ "$#" -lt 2 ]; then
+	printf 'missing "image name" and "tar pattern(s)" arguments\n' >&2
+	exit 99
+fi
+for cmd in jq skopeo; do
+	command -v "$cmd" >/dev/null 2>/dev/null || {
+		printf 'missing "%s"\n' "$cmd" >&2
+		exit 99
+	}
+done
+
+src=$1; shift
+local=$(basename "$src" | sed 's/:.\+$//')
+set -e
+
+skopeo copy --remove-signatures "${src}" "oci:${local}"
+(
+	cd "${local}"
+	n=0
+	jq -r '.manifests|.[]|.digest' index.json |
+		sed 's,:,/,' |
+	while read -r m; do
+		jq -r '.layers|.[]|.digest' "blobs/$m" |
+			sed 's,:,/,'
+	done |
+	while read -r l; do
+		d=$((n++))
+		mkdir -p "layer/$d"
+		echo ": $l"
+		tar --no-same-permissions -x -z -f "blobs/$l" -C "layer/$d" "$@" ||:
+	done
+)
+command -v tree >/dev/null 2>/dev/null && tree -a "${local}/layer"
