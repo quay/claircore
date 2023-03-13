@@ -15,4 +15,5 @@ type (
 	Coalescer           = indexer.Coalescer
 	Ecosystem           = indexer.Ecosystem
 	Realizer            = indexer.Realizer
+	FetchArena          = indexer.FetchArena
 )

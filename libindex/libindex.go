@@ -20,6 +20,7 @@ import (
 	"github.com/quay/claircore/dpkg"
 	"github.com/quay/claircore/gobin"
 	"github.com/quay/claircore/indexer"
+	"github.com/quay/claircore/indexer/controller"
 	"github.com/quay/claircore/java"
 	"github.com/quay/claircore/pkg/omnimatcher"
 	"github.com/quay/claircore/python"
@@ -55,9 +56,12 @@ type Libindex struct {
 	state string
 	// FetchArena is an arena to fetch layers into. It ensures layers are
 	// fetched once and not removed while in use.
-	fa Arena
+	fa indexer.FetchArena
 	// vscnrs is a convenience object for holding a list of versioned scanners
 	vscnrs indexer.VersionedScanners
+	// indexerOptions hold construction context for the layerScanner and the
+	// controller factory.
+	indexerOptions *indexer.Opts
 }
 
 // New creates a new instance of libindex.
@@ -85,7 +89,7 @@ func New(ctx context.Context, opts *Options, cl *http.Client) (*Libindex, error)
 		opts.LayerScanConcurrency = DefaultLayerScanConcurrency
 	}
 	if opts.ControllerFactory == nil {
-		opts.ControllerFactory = controllerFactory
+		opts.ControllerFactory = controller.New
 	}
 	if opts.Ecosystems == nil {
 		opts.Ecosystems = []*indexer.Ecosystem{
@@ -132,6 +136,21 @@ func New(ctx context.Context, opts *Options, cl *http.Client) (*Libindex, error)
 
 	zlog.Info(ctx).Msg("registered configured scanners")
 	l.vscnrs = vscnrs
+
+	// create indexer.Options
+	l.indexerOptions = &indexer.Opts{
+		Store:         l.store,
+		FetchArena:    l.fa,
+		Ecosystems:    opts.Ecosystems,
+		Vscnrs:        l.vscnrs,
+		Client:        l.client,
+		ScannerConfig: opts.ScannerConfig,
+	}
+	l.indexerOptions.LayerScanner, err = indexer.NewLayerScanner(ctx, opts.LayerScanConcurrency, l.indexerOptions)
+	if err != nil {
+		return nil, err
+	}
+
 	return l, nil
 }
 
@@ -153,10 +172,6 @@ func (l *Libindex) Index(ctx context.Context, manifest *claircore.Manifest) (*cl
 		"manifest", manifest.Hash.String())
 	zlog.Info(ctx).Msg("index request start")
 	defer zlog.Info(ctx).Msg("index request done")
-	c, err := l.ControllerFactory(ctx, l, l.Options)
-	if err != nil {
-		return nil, fmt.Errorf("scanner factory failed to construct a scanner: %v", err)
-	}
 
 	zlog.Debug(ctx).Msg("locking attempt")
 	lc, done := l.locker.Lock(ctx, manifest.Hash.String())
@@ -167,7 +182,7 @@ func (l *Libindex) Index(ctx context.Context, manifest *claircore.Manifest) (*cl
 		return nil, err
 	}
 	zlog.Debug(ctx).Msg("locking OK")
-
+	c := l.ControllerFactory(l.indexerOptions)
 	return c.Index(lc, manifest)
 }
 
