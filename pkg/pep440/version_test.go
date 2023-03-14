@@ -58,6 +58,12 @@ func TestSimple(t *testing.T) {
 			Err:  false,
 			Want: Version{Release: []int{2019, 3}},
 		},
+		{
+			Name: "Date Leading Zero",
+			In:   "2022.12.07",
+			Err:  false,
+			Want: Version{Release: []int{2022, 12, 7}},
+		},
 	}
 
 	for _, tc := range tt {

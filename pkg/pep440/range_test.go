@@ -70,6 +70,32 @@ var rangeCases = []rangeTestcase{
 		},
 	},
 	{
+		Name: "SimpleLT",
+		In:   "<2022.12.07",
+		Want: Range{
+			criterion{Op: opLT, V: Version{Release: []int{2022, 12, 7}}},
+		},
+		Match: []matchTestcase{
+			{In: "2022.12.07", Match: false},
+			{In: "2022.12.7", Match: false},
+			{In: "2022.12.08", Match: false},
+			{In: "2022.12.06", Match: true},
+		},
+	},
+	{
+		Name: "SimpleLTE",
+		In:   "<=2022.12.07",
+		Want: Range{
+			criterion{Op: opLTE, V: Version{Release: []int{2022, 12, 7}}},
+		},
+		Match: []matchTestcase{
+			{In: "2022.12.07", Match: true},
+			{In: "2022.12.7", Match: true},
+			{In: "2022.12.08", Match: false},
+			{In: "2022.12.8", Match: false},
+		},
+	},
+	{
 		Name: "Compatible",
 		In:   "~=1.1",
 		Want: Range{
