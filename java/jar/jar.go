@@ -216,7 +216,7 @@ func extractInner(ctx context.Context, outer string, z *zip.Reader) ([]Info, err
 	checkFile := func(ctx context.Context, f *zip.File) error {
 		name := normName(f.Name)
 		// Check name.
-		if !checkExt(name) {
+		if !ValidExt(name) {
 			return nil
 		}
 		fi := f.FileInfo()
@@ -316,15 +316,6 @@ func checkName(ctx context.Context, name string) (Info, error) {
 		Version: m[2],
 		Source:  ".",
 	}, nil
-}
-
-// CheckExt reports whether the string is an archive-like.
-func checkExt(name string) bool {
-	switch filepath.Ext(name) {
-	case ".jar", ".ear", ".war":
-		return true
-	}
-	return false
 }
 
 // Info reports the discovered information for a jar file.

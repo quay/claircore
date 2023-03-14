@@ -3,7 +3,6 @@ package java
 import (
 	"context"
 	"io/fs"
-	"path"
 	"strings"
 
 	"github.com/quay/claircore/java/jar"
@@ -11,7 +10,7 @@ import (
 
 // Archives returns a slice of names that are probably archives, based on name
 // and size. Callers should still check that the named file is valid.
-func archives(ctx context.Context, sys fs.FS) (out []string, err error) {
+func archives(_ context.Context, sys fs.FS) (out []string, err error) {
 	return out, fs.WalkDir(sys, ".", func(p string, d fs.DirEntry, err error) error {
 		// Incoming checks:
 		switch {
@@ -30,11 +29,8 @@ func archives(ctx context.Context, sys fs.FS) (out []string, err error) {
 			return nil
 		}
 
-		// Extension checks:
-		switch path.Ext(fi.Name()) {
-		case ".jar", ".war", ".ear": // OK
-		case ".jpi", ".hpi": // Jenkins plugins
-		default:
+		// Extension check:
+		if !jar.ValidExt(fi.Name()) {
 			return nil
 		}
 
