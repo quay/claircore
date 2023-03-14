@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/quay/claircore/indexer"
-	"github.com/quay/claircore/indexer/linux"
+	"github.com/quay/claircore/linux"
 )
 
 // NewEcosystem provides the set of scanners and coalescers for the alpine ecosystem

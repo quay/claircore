@@ -22,7 +22,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore/postgres"
 	"github.com/quay/claircore/datastore/postgres/migrations"
-	"github.com/quay/claircore/indexer/linux"
+	"github.com/quay/claircore/linux"
 	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
