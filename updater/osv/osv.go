@@ -335,7 +335,6 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 	default:
 		return nil, errors.New("osv: unable to determine size of zip file")
 	}
-
 	z, err := zip.NewReader(ra, sz)
 	if err != nil {
 		return nil, err
@@ -348,10 +347,11 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 	defer tf.Close()
 	now := time.Now()
 	ecs := newECS(u.Name())
+
 	for _, zf := range z.File {
 		ctx := zlog.ContextWithValues(ctx, "dumpfile", zf.Name)
-		zlog.Debug(ctx).
-			Msg("found file")
+		zlog.Info(ctx).
+			Msg("found file" + zf.Name)
 		r, err := zf.Open()
 		if err != nil {
 			return nil, err
@@ -368,14 +368,18 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 			return nil, err
 		}
 		name := strings.TrimSuffix(path.Base(zf.Name), ".zip")
-
+		zlog.Info(ctx).
+			Msg(">>>>> found file2:" + name)
 		var skipped struct {
 			Withdrawn  []string
 			Unaffected []string
 		}
+
 		var ct int
 		for _, zf := range z.File {
 			ctx := zlog.ContextWithValues(ctx, "advisory", strings.TrimSuffix(path.Base(zf.Name), ".json"))
+			zlog.Info(ctx).
+				Msg(">>>>> found unzipped inner file:" + zf.Name)
 			ct++
 			var a advisory
 			rc, err := zf.Open()
