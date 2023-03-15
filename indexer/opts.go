@@ -15,6 +15,4 @@ type Opts struct {
 	Realizer     Realizer
 	Ecosystems   []*Ecosystem
 	Vscnrs       VersionedScanners
-	// Deprecated: the airgap functionality should be encapsulated in the client passed to libindex.New()
-	Airgap bool
 }
