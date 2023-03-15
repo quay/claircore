@@ -190,11 +190,6 @@ type Options struct {
 	ControllerFactory ControllerFactory
 	// Ecosystems a list of ecosystems to use which define which package databases and coalescing methods we use
 	Ecosystems []*indexer.Ecosystem
-	// Airgap should be set to disallow any scanners that mark themselves as
-	// making network calls.
-	//
-	// Deprecated: the airgap functionality should be encapsulated in the client passed to libindex.New()
-	Airgap bool
 	// ScannerConfig holds functions that can be passed into configurable
 	// scanners. They're broken out by kind, and only used if a scanner
 	// implements the appropriate interface.
