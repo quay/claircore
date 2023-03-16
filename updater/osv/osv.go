@@ -370,8 +370,6 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 			return nil, err
 		}
 		name := strings.TrimSuffix(path.Base(zf.Name), ".zip")
-		zlog.Info(ctx).
-			Msg(">>>>> found file2:" + name)
 		var skipped struct {
 			Withdrawn  []string
 			Unaffected []string
@@ -380,8 +378,6 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 		var ct int
 		for _, zf := range z.File {
 			ctx := zlog.ContextWithValues(ctx, "advisory", strings.TrimSuffix(path.Base(zf.Name), ".json"))
-			zlog.Info(ctx).
-				Msg(">>>>> found unzipped inner file:" + zf.Name)
 			ct++
 			var a advisory
 			rc, err := zf.Open()
@@ -444,7 +440,8 @@ type ecs struct {
 }
 
 const (
-	ecosystemGo = `Go`
+	ecosystemGo    = `Go`
+	ecosystemMaven = `Maven`
 )
 
 func newECS(u string) ecs {
@@ -555,6 +552,16 @@ func (e *ecs) Insert(ctx context.Context, name string, a *advisory) (err error) 
 					switch af.Package.Ecosystem {
 					case ecosystemGo:
 						panic("ecosystem: go")
+					case ecosystemMaven:
+						switch {
+						case ev.Introduced == "0":
+						case ev.Introduced != "":
+							v.FixedInVersion = ev.Introduced + "+"
+						case ev.Fixed != "":
+							v.FixedInVersion += ev.Fixed
+						case ev.LastAffected != "":
+							v.FixedInVersion += "LastAffected:" + ev.LastAffected
+						}
 					default:
 						switch {
 						case ev.Introduced == "0": // -Inf
@@ -592,7 +599,11 @@ func (e *ecs) Insert(ctx context.Context, name string, a *advisory) (err error) 
 			case `ECOSYSTEM`:
 				vs = b.String()
 			}
-			pkg, novel := e.LookupPackage(af.Package.PURL, vs)
+			pkgName := af.Package.PURL
+			if af.Package.Ecosystem == "Maven" {
+				pkgName = af.Package.Name
+			}
+			pkg, novel := e.LookupPackage(pkgName, vs)
 			v.Package = pkg
 			if novel {
 				pkg.RepositoryHint = af.Package.Ecosystem
@@ -620,6 +631,7 @@ func (e *ecs) NewVulnerability() *claircore.Vulnerability {
 
 func (e *ecs) LookupPackage(name string, ver string) (*claircore.Package, bool) {
 	key := fmt.Sprintf("%s\x00%s", name, ver)
+	fmt.Print(">>>>> current pkg index key>>" + key)
 	i, ok := e.pkgindex[key]
 	if !ok {
 		i = len(e.Package)
@@ -664,7 +676,7 @@ func (e *ecs) LookupRepository(name string) (r *claircore.Repository) {
 		case "rubygems":
 			e.Repository[i].URI = `https://rubygems.org/gems/`
 		case "maven":
-			e.Repository[i].URI = `https://maven.apache.org/repository/`
+			e.Repository[i].URI = `https://repo1.maven.apache.org/maven2`
 		}
 		e.repoindex[key] = i
 	}

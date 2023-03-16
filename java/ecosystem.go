@@ -11,6 +11,7 @@ var reposcanners = []indexer.RepositoryScanner{&RepoScanner{}}
 // NewEcosystem provides the set of scanners for the java ecosystem.
 func NewEcosystem(ctx context.Context) *indexer.Ecosystem {
 	return &indexer.Ecosystem{
+		Name: "maven",
 		PackageScanners: func(_ context.Context) ([]indexer.PackageScanner, error) {
 			return []indexer.PackageScanner{&Scanner{}}, nil
 		},
