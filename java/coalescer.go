@@ -7,14 +7,9 @@ import (
 	"github.com/quay/claircore/indexer"
 )
 
-func NewCoalescer(_ context.Context) (indexer.Coalescer, error) {
-	return &coalescer{}, nil
-}
+type coalescer struct{}
 
-type coalescer struct {
-}
-
-func (c *coalescer) Coalesce(ctx context.Context, ls []*indexer.LayerArtifacts) (*claircore.IndexReport, error) {
+func (*coalescer) Coalesce(ctx context.Context, ls []*indexer.LayerArtifacts) (*claircore.IndexReport, error) {
 	ir := &claircore.IndexReport{
 		Environments: map[string][]*claircore.Environment{},
 		Packages:     map[string]*claircore.Package{},
@@ -35,7 +30,7 @@ func (c *coalescer) Coalesce(ctx context.Context, ls []*indexer.LayerArtifacts) 
 		for _, pkg := range l.Pkgs {
 			ir.Packages[pkg.ID] = pkg
 			ir.Environments[pkg.ID] = []*claircore.Environment{
-				&claircore.Environment{
+				{
 					PackageDB:     pkg.PackageDB,
 					IntroducedIn:  l.Hash,
 					RepositoryIDs: rs,
