@@ -24,7 +24,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/xmlutil"
 	"github.com/quay/claircore/libvuln/driver"
-	"github.com/quay/claircore/pkg/tmp"
+	"github.com/quay/claircore/toolkit/spool"
 )
 
 // Factory is the UpdaterSetFactory exposed by this package.
@@ -131,17 +131,10 @@ func (u *updater) Fetch(ctx context.Context, fp driver.Fingerprint) (io.ReadClos
 	var ct int
 	newtags := make(map[string]string, len(prevtags))
 
-	out, err := tmp.NewFile("", "osv.fetch.*")
+	out, err := spool.NewSpool(ctx, "fetcher.osv.")
 	if err != nil {
 		return nil, fp, err
 	}
-	defer func() {
-		if _, err := out.Seek(0, io.SeekStart); err != nil {
-			zlog.Warn(ctx).
-				Err(err).
-				Msg("unable to seek file back to start")
-		}
-	}()
 	zlog.Debug(ctx).
 		Str("filename", out.Name()).
 		Msg("opened temporary file for output")
@@ -280,18 +273,29 @@ func (u *updater) Fetch(ctx context.Context, fp driver.Fingerprint) (io.ReadClos
 	})
 
 	if err := eg.Wait(); err != nil {
+		out.Close()
 		return nil, fp, err
 	}
 	zlog.Info(ctx).
 		Int("count", ct).
 		Msg("found updates")
 	if ct == 0 {
+		out.Close()
 		return nil, fp, driver.Unchanged
+	}
+	if _, err := out.Seek(0, io.SeekStart); err != nil {
+		out.Close()
+		return nil, fp, err
+	}
+	if err := out.Sync(); err != nil {
+		out.Close()
+		return nil, fp, err
 	}
 
 	b, err := json.Marshal(newtags)
 	if err != nil {
 		// Log
+		out.Close()
 		return nil, fp, err
 	}
 	return out, driver.Fingerprint(b), nil
@@ -304,7 +308,7 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 	if !ok {
 		zlog.Info(ctx).
 			Msg("spooling to disk")
-		tf, err := tmp.NewFile("", `osv.parse.*`)
+		tf, err := spool.NewSpool(ctx, `osv.parse.`)
 		if err != nil {
 			return nil, err
 		}
@@ -346,7 +350,7 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 		return nil, err
 	}
 
-	tf, err := tmp.NewFile("", `osv.parse.*`)
+	tf, err := spool.NewSpool(ctx, `osv.parse.`)
 	if err != nil {
 		return nil, err
 	}

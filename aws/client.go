@@ -17,7 +17,7 @@ import (
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/internal/xmlutil"
-	"github.com/quay/claircore/pkg/tmp"
+	"github.com/quay/claircore/toolkit/spool"
 )
 
 const (
@@ -112,7 +112,7 @@ func (c *Client) Updates(ctx context.Context) (io.ReadCloser, error) {
 			continue
 		}
 
-		tf, err := tmp.NewFile("", "")
+		tf, err := spool.NewSpool(ctx, "fetcher.aws.")
 		if err != nil {
 			zlog.Error(ctx).Err(err).Msg("failed to open temp file")
 			continue
@@ -129,6 +129,7 @@ func (c *Client) Updates(ctx context.Context) (io.ReadCloser, error) {
 		resp, err := c.c.Do(req)
 		if err != nil {
 			zlog.Error(ctx).Err(err).Msg("failed to retrieve updates")
+			tf.Close()
 			continue
 		}
 		defer resp.Body.Close()
@@ -152,6 +153,7 @@ func (c *Client) Updates(ctx context.Context) (io.ReadCloser, error) {
 		}
 		gz, err := gzip.NewReader(tf)
 		if err != nil {
+			tf.Close()
 			return nil, fmt.Errorf("failed to create gzip reader: %v", err)
 		}
 
@@ -159,7 +161,7 @@ func (c *Client) Updates(ctx context.Context) (io.ReadCloser, error) {
 		success = true
 		return &gzippedFile{
 			Reader: gz,
-			Closer: tf,
+			File:   tf,
 		}, nil
 	}
 
@@ -171,8 +173,19 @@ func (c *Client) Updates(ctx context.Context) (io.ReadCloser, error) {
 // underlying implementations. This is used to make sure the file that backs the
 // downloaded security database has Close called on it.
 type gzippedFile struct {
-	io.Reader
-	io.Closer
+	*gzip.Reader
+	*spool.File
+}
+
+func (g *gzippedFile) Read(p []byte) (int, error) {
+	return g.Reader.Read(p)
+}
+
+func (g *gzippedFile) Close() error {
+	// TODO(hank) Use the go1.20 multierr feature.
+	g.Reader.Close()
+	g.File.Close()
+	return nil
 }
 
 func (c *Client) getMirrors(ctx context.Context, list string) error {

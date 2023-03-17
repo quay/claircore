@@ -20,7 +20,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
-	"github.com/quay/claircore/pkg/tmp"
+	"github.com/quay/claircore/toolkit/spool"
 )
 
 var (
@@ -170,7 +170,7 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 		return nil, hint, driver.Unchanged
 	}
 
-	out, err := tmp.NewFile("", "cvss.")
+	out, err := spool.NewSpool(ctx, "fetcher.cvss.")
 	if err != nil {
 		return nil, hint, err
 	}
@@ -189,10 +189,12 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 	for _, y := range yrs {
 		u, err := gzURL(e.feed, y)
 		if err != nil {
+			out.Close()
 			return nil, hint, fmt.Errorf("bad URL: %w", err)
 		}
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 		if err != nil {
+			out.Close()
 			return nil, hint, fmt.Errorf("unable to create request: %w", err)
 		}
 		zlog.Debug(ctx).
@@ -201,10 +203,12 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 			Msg("requesting json")
 		res, err := e.c.Do(req)
 		if err != nil {
+			out.Close()
 			return nil, hint, fmt.Errorf("unable to do request: %w", err)
 		}
 		gz, err := gzip.NewReader(res.Body)
 		if err != nil {
+			out.Close()
 			res.Body.Close()
 			return nil, hint, fmt.Errorf("unable to create gzip reader: %w", err)
 		}
@@ -212,19 +216,23 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 		gz.Close()
 		res.Body.Close()
 		if err != nil {
+			out.Close()
 			return nil, hint, fmt.Errorf("unable to process item feed: %w", err)
 		}
 		if err := f.WriteCVSS(ctx, out); err != nil {
+			out.Close()
 			return nil, hint, fmt.Errorf("unable to write item feed: %w", err)
 		}
 	}
 	if _, err := out.Seek(0, io.SeekStart); err != nil {
+		out.Close()
 		return nil, hint, fmt.Errorf("unable to reset item feed: %w", err)
 	}
 	success = true
 
 	nh, err := json.Marshal(cur)
 	if err != nil {
+		out.Close()
 		panic(fmt.Errorf("unable to serialize new hint: %w", err))
 	}
 	return out, driver.Fingerprint(nh), nil

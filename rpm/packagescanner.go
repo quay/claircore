@@ -17,6 +17,7 @@ import (
 	"github.com/quay/claircore/rpm/bdb"
 	"github.com/quay/claircore/rpm/ndb"
 	"github.com/quay/claircore/rpm/sqlite"
+	"github.com/quay/claircore/toolkit/spool"
 )
 
 const (

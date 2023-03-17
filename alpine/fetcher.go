@@ -9,7 +9,7 @@ import (
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/libvuln/driver"
-	"github.com/quay/claircore/pkg/tmp"
+	"github.com/quay/claircore/toolkit/spool"
 )
 
 func (u *updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
@@ -48,7 +48,7 @@ func (u *updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 	}
 	zlog.Debug(ctx).Msg("successfully requested database")
 
-	tf, err := tmp.NewFile("", u.Name()+".")
+	tf, err := spool.NewSpool(ctx, `fetcher.alpine.`)
 	if err != nil {
 		return nil, hint, fmt.Errorf("alpine: unable to open tempfile: %w", err)
 	}

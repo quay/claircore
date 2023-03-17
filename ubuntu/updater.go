@@ -16,7 +16,7 @@ import (
 	"github.com/quay/claircore/internal/xmlutil"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/ovalutil"
-	"github.com/quay/claircore/pkg/tmp"
+	"github.com/quay/claircore/toolkit/spool"
 )
 
 var (
@@ -112,7 +112,7 @@ func (u *updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io
 	}
 
 	fp := resp.Header.Get("etag")
-	f, err := tmp.NewFile("", "ubuntu.")
+	f, err := spool.NewSpool(ctx, "fetcher.ubuntu.")
 	if err != nil {
 		return nil, "", err
 	}

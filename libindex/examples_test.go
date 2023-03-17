@@ -28,10 +28,15 @@ func ExampleLibindex() {
 		panic(err)
 	}
 
+	a, err := libindex.NewRemoteFetchArena(ctx, http.DefaultClient, os.TempDir())
+	if err != nil {
+		panic(err)
+	}
+
 	opts := &libindex.Options{
 		Store:      store,
 		Locker:     ctxLocker,
-		FetchArena: libindex.NewRemoteFetchArena(http.DefaultClient, os.TempDir()),
+		FetchArena: a,
 		// see definition for more configuration options
 	}
 	lib, err := libindex.New(ctx, opts, http.DefaultClient)

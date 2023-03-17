@@ -31,12 +31,11 @@ func (tc fetchTestcase) Run(ctx context.Context) func(*testing.T) {
 		for _, l := range layers {
 			t.Logf("%+v", l)
 		}
-		p, err := filepath.Abs("testdata")
-		if err != nil {
-			t.Error(err)
-		}
 
-		a := NewRemoteFetchArena(c, p)
+		a, err := NewRemoteFetchArena(ctx, c, t.TempDir())
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		fetcher := a.Realizer(ctx)
 		if err := fetcher.Realize(ctx, layers); err != nil {
@@ -94,11 +93,10 @@ func TestFetchInvalid(t *testing.T) {
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
 			ctx := zlog.Test(ctx, t)
-			p, err := filepath.Abs("testdata")
+			a, err := NewRemoteFetchArena(ctx, http.DefaultClient, t.TempDir())
 			if err != nil {
-				t.Error(err)
+				t.Fatal(err)
 			}
-			a := NewRemoteFetchArena(http.DefaultClient, p)
 			fetcher := a.Realizer(ctx)
 			if err := fetcher.Realize(ctx, table.layer); err == nil {
 				t.Fatal("expected error, got nil")
@@ -118,7 +116,10 @@ func TestFetchConcurrent(t *testing.T) {
 		ls[i].URI = srv.URL + ls[i].URI
 	}
 	defer srv.Close()
-	a := NewRemoteFetchArena(srv.Client(), t.TempDir())
+	a, err := NewRemoteFetchArena(ctx, srv.Client(), t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	subtest := func(a *RemoteFetchArena, ls []claircore.Layer) func(*testing.T) {
 		// Need to make a copy of all our layers.

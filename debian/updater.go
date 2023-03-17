@@ -15,14 +15,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/quay/claircore"
 	"github.com/quay/goval-parser/oval"
 	"github.com/quay/zlog"
 
+	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/xmlutil"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/ovalutil"
-	"github.com/quay/claircore/pkg/tmp"
+	"github.com/quay/claircore/toolkit/spool"
 )
 
 //doc:url updater
@@ -386,7 +386,7 @@ func (u *updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io
 	}
 
 	fp := resp.Header.Get("etag")
-	f, err := tmp.NewFile("", "debian.")
+	f, err := spool.NewSpool(ctx, "fetcher.debian.")
 	if err != nil {
 		return nil, "", err
 	}

@@ -111,11 +111,15 @@ func (tc testcase) RunInner(ctx context.Context, t *testing.T, dsn string, next 
 		t.Fatalf("failed to create context locker: %v", err)
 	}
 
+	a, err := NewRemoteFetchArena(ctx, c, os.TempDir())
+	if err != nil {
+		t.Fatalf("failed to create arena: %v", err)
+	}
 	// create libindex instance
 	opts := &Options{
 		Store:                store,
 		Locker:               ctxLocker,
-		FetchArena:           NewRemoteFetchArena(c, os.TempDir()),
+		FetchArena:           a,
 		ScanLockRetry:        2 * time.Second,
 		LayerScanConcurrency: 1,
 		Ecosystems: []*indexer.Ecosystem{
