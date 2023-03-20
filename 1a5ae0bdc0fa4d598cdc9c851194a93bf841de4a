@@ -1,0 +1,5 @@
+Improved indexing of python packages
+
+The python package indexer now detects some package managers and omits
+indexing the parts of the filesystem that those package managers would
+place python packages.
