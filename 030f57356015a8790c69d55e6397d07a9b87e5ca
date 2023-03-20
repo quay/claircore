@@ -1,0 +1,4 @@
+Dpkg indexing honors the "Status" field
+
+Previously, a dpkg-installed package that kept around dpkg-tracked files
+after removal would be reported as installed.
