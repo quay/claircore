@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/quay/claircore/ruby"
 	"io"
 	"net/http"
 	"sort"
@@ -28,6 +27,7 @@ import (
 	"github.com/quay/claircore/rhel"
 	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/quay/claircore/rpm"
+	"github.com/quay/claircore/ruby"
 )
 
 const versionMagic = "libindex number: 2\n"

@@ -3,6 +3,7 @@ package ruby_test
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -10,21 +11,25 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/ruby"
+	"github.com/quay/claircore/test/fetch"
 )
 
-func TestScanLocal(t *testing.T) {
+func TestScanRemote(t *testing.T) {
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
 
 	table := []struct {
-		name      string
-		total     int
-		samples   []*claircore.Package
-		layerPath string
+		registry, repo, tag string
+		layer               string
+		total               int
+		samples             []*claircore.Package
 	}{
 		{
-			name:  "simple Ruby layer",
-			total: 6,
+			registry: "quay.io",
+			repo:     "projectquay/clair-fixtures",
+			tag:      "ruby-3.2.1-rake",
+			layer:    "sha256:f5da3e7f188aa027cf5c8111497d2abda6339d44eb0e7bff04647198ddfd87c1",
+			total:    6,
 			samples: []*claircore.Package{
 				{
 					Name:           "bar",
@@ -69,11 +74,13 @@ func TestScanLocal(t *testing.T) {
 					RepositoryHint: "rubygems",
 				},
 			},
-			layerPath: "testdata/simple-ruby.tar",
 		},
 		{
-			name:  "Ruby on Rails",
-			total: 35,
+			registry: "quay.io",
+			repo:     "projectquay/clair-fixtures",
+			tag:      "ruby-3.2.1-rails",
+			layer:    "sha256:8cf469d41e77c8c4aaa2191f42f55b9758f77c640f2f7015b799b26458903f9b",
+			total:    35,
 			samples: []*claircore.Package{
 				{
 					Name:           "actioncable",
@@ -111,22 +118,31 @@ func TestScanLocal(t *testing.T) {
 					RepositoryHint: "rubygems",
 				},
 			},
-			layerPath: "testdata/rails.tar",
 		},
 	}
-	for _, tt := range table {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, tc := range table {
+		t.Run(tc.tag, func(t *testing.T) {
+			d, err := claircore.ParseDigest(tc.layer)
+			if err != nil {
+				panic(err)
+			}
+			f, err := fetch.Layer(ctx, t, http.DefaultClient, tc.registry, tc.repo, d)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer f.Close()
+
 			ctx := zlog.Test(ctx, t)
 			scanner := &ruby.Scanner{}
 			l := &claircore.Layer{}
-			l.SetLocal(tt.layerPath)
+			l.SetLocal(f.Name())
 
 			got, err := scanner.Scan(ctx, l)
 			if err != nil {
 				t.Error(err)
 			}
-			if !cmp.Equal(len(got), tt.total) {
-				t.Error(cmp.Diff(len(got), tt.total))
+			if !cmp.Equal(len(got), tc.total) {
+				t.Error(cmp.Diff(len(got), tc.total))
 			}
 
 			gotMap := make(map[string]*claircore.Package, len(got))
@@ -134,7 +150,7 @@ func TestScanLocal(t *testing.T) {
 				gotMap[pkg.Name] = pkg
 			}
 
-			for _, pkg := range tt.samples {
+			for _, pkg := range tc.samples {
 				gotPkg, exists := gotMap[pkg.Name]
 				if !exists {
 					t.Error(fmt.Sprintf("did not find %s", pkg.Name))
