@@ -1,0 +1,4 @@
+Better jar names
+
+The heuristic for extracting package names from jars has been improved
+and may yield different results.
