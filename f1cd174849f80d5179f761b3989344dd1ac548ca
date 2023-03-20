@@ -1,0 +1,4 @@
+Distroless container support
+
+Claircore's `dpkg` indexer now supports the "distroless" scheme, where
+the `dpkg` status database is split across multiple files.
