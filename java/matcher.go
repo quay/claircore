@@ -3,6 +3,7 @@ package java
 import (
 	"context"
 	"fmt"
+	"github.com/quay/zlog"
 	"strings"
 
 	version "github.com/masahiro331/go-mvn-version"
@@ -10,26 +11,35 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 )
 
-var _ driver.Matcher = (*Matcher)(nil)
-
 // Matcher ...
-type Matcher struct{}
+type matcher struct{}
+
+var (
+	// Matcher implements driver.Matcher for java packages using a maven version comparison.
+	Matcher *matcher
+
+	_ driver.Matcher = (*matcher)(nil)
+)
 
 // Name implements driver.Matcher.
-func (m *Matcher) Name() string { return "java-maven" }
+func (m *matcher) Name() string { return "java-maven" }
 
-// Filter implements driver.Matcher.
-func (matcher *Matcher) Filter(record *claircore.IndexRecord) bool {
-	return record.Repository.URI == "https://mvnrepository.com"
+func (*matcher) Filter(r *claircore.IndexRecord) bool {
+	return r.Repository != nil &&
+		r.Repository.Name == Repository.Name
 }
 
 // Query implements driver.Matcher.
-func (matcher *Matcher) Query() []driver.MatchConstraint {
+func (matcher *matcher) Query() []driver.MatchConstraint {
 	return []driver.MatchConstraint{driver.RepositoryName, driver.PackageName}
 }
 
 // Vulnerable implements driver.Matcher.
-func (matcher *Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
+func (matcher *matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
+	zlog.Debug(ctx).
+		Str("record", record.Package.Version).
+		Str("vulnerability", vuln.FixedInVersion).
+		Msg("comparing versions")
 	if vuln.FixedInVersion == "" {
 		return true, nil
 	}
