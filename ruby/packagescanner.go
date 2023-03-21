@@ -155,24 +155,27 @@ func gems(ctx context.Context, sys fs.FS) (out []string, err error) {
 	return out, fs.WalkDir(sys, ".", func(p string, d fs.DirEntry, err error) error {
 		ev := zlog.Debug(ctx).
 			Str("file", p)
+		var success bool
+		defer func() {
+			if !success {
+				ev.Discard().Send()
+			}
+		}()
 		switch {
 		case err != nil:
-			ev.Discard().Send()
 			return err
 		case !d.Type().IsRegular():
-			ev.Discard().Send()
 			// Should we chase symlinks with the correct name?
 			return nil
 		case strings.HasPrefix(filepath.Base(p), ".wh."):
-			ev.Discard().Send()
 			return nil
 		case gemspecPath.MatchString(p):
 			ev = ev.Str("kind", "gem")
 		default:
-			ev.Discard().Send()
 			return nil
 		}
 		ev.Msg("found package")
+		success = true
 		out = append(out, p)
 		return nil
 	})
