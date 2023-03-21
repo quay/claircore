@@ -93,22 +93,6 @@ func (a *apiStub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func TestParse2(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
-	u := updater{}
-
-	rc, err := os.Open("./testdata/maven.zip")
-	if err != nil {
-		t.Error(err)
-	}
-
-	vs, err := u.Parse(ctx, rc)
-	if err != nil {
-		t.Error(err)
-	}
-	t.Logf("parsed %d vulnerabilities", len(vs))
-}
-
 func TestParse(t *testing.T) {
 	srv := httptest.NewServer(&apiStub{t, ""})
 	defer srv.Close()

@@ -289,6 +289,7 @@ func (u *updater) Fetch(ctx context.Context, fp driver.Fingerprint) (io.ReadClos
 		// Log
 		return nil, fp, err
 	}
+
 	return out, driver.Fingerprint(b), nil
 }
 
@@ -350,8 +351,6 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 
 	for _, zf := range z.File {
 		ctx := zlog.ContextWithValues(ctx, "dumpfile", zf.Name)
-		zlog.Info(ctx).
-			Msg("found file" + zf.Name)
 		r, err := zf.Open()
 		if err != nil {
 			return nil, err
@@ -375,6 +374,7 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 
 		var ct int
 		for _, zf := range z.File {
+
 			ctx := zlog.ContextWithValues(ctx, "advisory", strings.TrimSuffix(path.Base(zf.Name), ".json"))
 			ct++
 			var a advisory
@@ -397,7 +397,6 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 				continue
 			default:
 			}
-
 			if err := ecs.Insert(ctx, name, &a); err != nil {
 				return nil, err
 			}
@@ -603,6 +602,9 @@ func (e *ecs) Insert(ctx context.Context, name string, a *advisory) (err error) 
 			}
 			pkg, novel := e.LookupPackage(pkgName, vs)
 			v.Package = pkg
+			if af.Package.Ecosystem == "Maven" {
+				v.Package.Kind = claircore.BINARY
+			}
 			if novel {
 				pkg.RepositoryHint = af.Package.Ecosystem
 			}
@@ -629,7 +631,6 @@ func (e *ecs) NewVulnerability() *claircore.Vulnerability {
 
 func (e *ecs) LookupPackage(name string, ver string) (*claircore.Package, bool) {
 	key := fmt.Sprintf("%s\x00%s", name, ver)
-	fmt.Print(">>>>> current pkg index key>>" + key)
 	i, ok := e.pkgindex[key]
 	if !ok {
 		i = len(e.Package)

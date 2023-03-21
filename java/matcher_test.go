@@ -8,8 +8,15 @@ import (
 	"github.com/quay/claircore"
 )
 
+func TestMatcher(t *testing.T) {
+	m := &matcher{}
+	t.Skip("todo")
+
+	_ = m
+}
+
 func TestVulnerable(t *testing.T) {
-	matcher := &Matcher{}
+	matcher := &matcher{}
 
 	testcases := []struct {
 		name   string

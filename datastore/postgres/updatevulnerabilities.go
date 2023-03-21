@@ -94,7 +94,7 @@ func (s *MatcherStore) UpdateVulnerabilities(ctx context.Context, updater string
 	var success bool
 	defer func() {
 		if !success {
-			if _, err := pool.Exec(ctx, undo, id); err != nil {
+			if _, err := s.pool.Exec(ctx, undo, id); err != nil {
 				zlog.Error(ctx).
 					Err(err).
 					Stringer("ref", ref).
