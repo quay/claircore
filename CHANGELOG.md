@@ -1,3 +1,82 @@
+<a name="v1.4.19"></a>
+## [v1.4.19] - 2023-03-20
+[v1.4.19]: https://github.com/quay/claircore/compare/v1.4.18...v1.4.19
+
+- Better jar names
+  <details>
+  The heuristic for extracting package names from jars has been improved
+  and may yield different results.
+  </details>
+
+- URLs are now included in the prose documentation
+  <details>
+  Previous, changes to URLs needed to be copied into the prose documentation;
+  this means the documentation was almost always out of sync.
+  There's now a tool to process comment directives and slipstream the URLs into th
+  e documentation in the build step.
+  Contributors should see the `docs/injecturls.go` file for information on how to 
+  use the system in code.
+  </details>
+
+- Dpkg indexing honors the "Status" field
+  <details>
+  Previously, a dpkg-installed package that kept around dpkg-tracked files
+  after removal would be reported as installed.
+  </details>
+
+- Improved indexing of python packages
+  <details>
+  The python package indexer now detects some package managers and omits
+  indexing the parts of the filesystem that those package managers would
+  place python packages.
+  </details>
+
+- Handling of "pep440" versions has changed
+  <details>
+  Previously, versions of type "pep440" were inadvertently handled by two
+  different packages -- one was used for validation, another for
+  comparisons. Claircore now uses a single package. There should be no
+  noticeable change in the behavior of python indexing or matching, so
+  please file bugs if there are regressions.
+  </details>
+
+- Update required go version to 1.20
+  <details>
+  This is needed to fix [go issue 33121](https://go.dev/issue/33121),
+  which was indirectly triggered by the `gobin` indexer.
+  </details>
+
+- Distroless container support
+  <details>
+  Claircore's `dpkg` indexer now supports the "distroless" scheme, where
+  the `dpkg` status database is split across multiple files.
+  </details>
+
+- RPM is removed as a dependency
+  <details>
+  Claircore no longer requires `rpm`. Previously, `rpm` was executed as a
+  subprocess to examine rpm's BerkeleyDB-based databases. This required
+  extra disk space, extra dependencies, and had the potential to leak
+  resources. Now, claircore implements just enough knowledge of the
+  BerkeleyDB hash database format to be able to extract headers that it
+  already had the means to interpret. Users of claircore should also be
+  able run without zombie handling, as claircore no longer spawns
+  subprocesses.
+  </details>
+
+- The python indexer consults INSTALLER metadata
+  <details>
+  The indexer now ignores installers that it knows beforehand is handled
+  elsewhere.
+  </details>
+
+- rpm: extract a minimal file set for bdb-based databases
+  <details>
+  This should reduce runtime and disk resources when the `rpm` indexer
+  decides that it needs to invoke `rpm` to analyze packages installed in a
+  layer.
+  </details>
+
 <a name="v1.4.18"></a>
 ## [v1.4.18] - 2023-01-27
 [v1.4.18]: https://github.com/quay/claircore/compare/v1.4.17...v1.4.18

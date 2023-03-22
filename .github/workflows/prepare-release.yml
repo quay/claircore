@@ -27,7 +27,7 @@ jobs:
           git fetch --tags origin refs/notes/changelog:refs/notes/changelog
           .github/scripts/changelog-update "${{ github.event.inputs.tag }}"
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v4.2.3
+        uses: peter-evans/create-pull-request@v4.2.4
         with:
           title: "${{ github.event.inputs.tag }} Changelog Bump"
           body: "This is an automated changelog commit."
