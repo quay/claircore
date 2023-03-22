@@ -176,12 +176,12 @@ func (u *Updater) Run(ctx context.Context, strict bool) error {
 			}
 			spoolname := spool.Name()
 			defer func() {
-				if err := os.Remove(spoolname); err != nil {
+				if err := os.RemoveAll(spoolname); err != nil {
 					zlog.Warn(ctx).Str("filename", spoolname).Err(err).Msg("unable to remove spool file")
 				}
-				if err := spool.Close(); err != nil {
-					zlog.Warn(ctx).Str("filename", spoolname).Err(err).Msg("error closing spool file")
-				}
+				//if err := spool.Close(); err != nil {
+				//	zlog.Warn(ctx).Str("filename", spoolname).Err(err).Msg("error closing spool file")
+				//}
 			}()
 			var updErr *updaterError
 			for upd := range feed {

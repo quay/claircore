@@ -631,7 +631,6 @@ func (e *ecs) NewVulnerability() *claircore.Vulnerability {
 
 func (e *ecs) LookupPackage(name string, ver string) (*claircore.Package, bool) {
 	key := fmt.Sprintf("%s\x00%s", name, ver)
-	fmt.Print(">>>>> current pkg index key>>" + key)
 	i, ok := e.pkgindex[key]
 	if !ok {
 		i = len(e.Package)
