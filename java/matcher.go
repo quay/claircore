@@ -11,18 +11,18 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 )
 
-// Matcher ...
+// Matcher is an instance of the java maven matcher. It's exported so it can be used
+// in the "defaults" package.
+//
+// This instance is safe for concurrent use.
+var Matcher driver.Matcher = &matcher{}
+
 type matcher struct{}
 
-var (
-	// Matcher implements driver.Matcher for java packages using a maven version comparison.
-	Matcher *matcher
-
-	_ driver.Matcher = (*matcher)(nil)
-)
+var _ driver.Matcher = (*matcher)(nil)
 
 // Name implements driver.Matcher.
-func (m *matcher) Name() string { return "java-maven" }
+func (*matcher) Name() string { return "java-maven" }
 
 func (*matcher) Filter(r *claircore.IndexRecord) bool {
 	return r.Repository != nil &&
@@ -30,16 +30,18 @@ func (*matcher) Filter(r *claircore.IndexRecord) bool {
 }
 
 // Query implements driver.Matcher.
-func (matcher *matcher) Query() []driver.MatchConstraint {
-	return []driver.MatchConstraint{driver.RepositoryName, driver.PackageName}
+func (*matcher) Query() []driver.MatchConstraint {
+	return []driver.MatchConstraint{driver.RepositoryName}
 }
 
 // Vulnerable implements driver.Matcher.
-func (matcher *matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
+func (*matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
 	zlog.Debug(ctx).
 		Str("record", record.Package.Version).
 		Str("vulnerability", vuln.FixedInVersion).
 		Msg("comparing versions")
+	zlog.Info(ctx).
+		Msg(">>>> comparing versions")
 	if vuln.FixedInVersion == "" {
 		return true, nil
 	}
@@ -75,3 +77,7 @@ func (matcher *matcher) Vulnerable(ctx context.Context, record *claircore.IndexR
 	}
 	return true, nil
 }
+
+func (*matcher) VersionFilter() {}
+
+func (*matcher) VersionAuthoritative() bool { return false }

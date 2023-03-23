@@ -3,26 +3,26 @@ package osv
 
 import (
 	"archive/zip"
-	"bufio"
-	"bytes"
 	"context"
 	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"io"
 	"io/fs"
 	"net/http"
-	"net/http/httputil"
 	"net/url"
 	"path"
-	"sort"
+	"runtime"
 	"strings"
 	"time"
 
 	"github.com/Masterminds/semver"
 	"github.com/quay/zlog"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/xmlutil"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/tmp"
 )
@@ -35,7 +35,6 @@ var Factory driver.UpdaterSetFactory = &factory{}
 type factory struct{}
 
 func (factory) UpdaterSet(context.Context) (s driver.UpdaterSet, err error) {
-	s = driver.NewUpdaterSet()
 	s.Add(&updater{})
 	return s, nil
 }
@@ -63,8 +62,7 @@ type Config struct {
 	// allowed.
 	//
 	// Extant ecosystems are discovered at runtime, see the OSV Schema
-	// (https://ossf.github.io/osv-schema/) or the "ecosystems.txt" file in the
-	// OSV data for the current list.
+	// (https://ossf.github.io/osv-schema/) for the current list.
 	Allowlist []string `json:"allowlist" yaml:"allowlist"`
 }
 
@@ -75,7 +73,9 @@ const DefaultURL = `https://osv-vulnerabilities.storage.googleapis.com/`
 
 var _ driver.Updater = (*updater)(nil)
 
-func (u *updater) Name() string { return `osv` }
+func (u *updater) Name() string {
+	return `osv`
+}
 
 // Configure implements driver.Configurable.
 func (u *updater) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *http.Client) error {
@@ -111,109 +111,25 @@ func (u *updater) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *
 
 // Ignore is a set of incoming ecosystems that we can throw out immediately.
 var ignore = map[string]struct{}{
-	"alpine":         {}, // Have a dedicated alpine updater.
-	"android":        {}, // AFAIK, there's no Android container runtime.
-	"debian":         {}, // Have a dedicated debian updater.
-	"github actions": {}, // Shouldn't be in containers?
-	"linux":          {}, // Containers have no say in the kernel.
-	"oss-fuzz":       {}, // Seems to only record git revisions.
-}
-
-type fingerprint struct {
-	Etag       string
-	Ecosystems []ecoFP
-}
-
-type ecoFP struct {
-	Ecosystem string
-	Key       string
-	Etag      string
+	"linux":    {}, // Containers have no say in the kernel.
+	"android":  {}, // AFAIK, there's no Android container runtime.
+	"oss-fuzz": {}, // Seems to only record git revisions.
 }
 
 // Fetcher implements driver.Updater.
 func (u *updater) Fetch(ctx context.Context, fp driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "updater/osv/updater.Fetch")
-	var prevFP fingerprint
 	// Tags is a map of key → Etag. The bucket list API response contains
 	// Etags, so conditional requests are not even needed.
-	if err := json.Unmarshal([]byte(fp), &prevFP); err != nil && fp != "" {
+	prevtags := make(map[string]string)
+	if err := json.Unmarshal([]byte(fp), &prevtags); err != nil && fp != "" {
 		zlog.Info(ctx).
 			AnErr("unmarshal", err).
 			Msg("disregarding previous fingerprint")
+		prevtags = make(map[string]string)
 	}
 	var ct int
-	var newFP fingerprint
-
-	var todo []ecoFP
-	var stats struct {
-		ecosystems []string
-		skipped    []string
-	}
-	defer func() {
-		// This is an info print so operators can compare their allow list,
-		// if need be.
-		zlog.Info(ctx).
-			Strs("ecosystems", stats.ecosystems).
-			Strs("skipped", stats.skipped).
-			Msg("ecosystems stats")
-	}()
-
-	uri := *u.root
-	uri.Path = "/ecosystems.txt"
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri.String(), nil)
-	if err != nil {
-		return nil, fp, fmt.Errorf("osv: martian request: %w", err)
-	}
-	req.Header.Set(`accept`, `text/plain`)
-	if etag := prevFP.Etag; etag != "" {
-		req.Header.Set(`if-none-match`, etag)
-	}
-	res, err := u.c.Do(req)
-	if err != nil {
-		return nil, fp, err
-	}
-	defer res.Body.Close()
-	switch res.StatusCode {
-	case http.StatusOK:
-		s := bufio.NewScanner(res.Body)
-		for s.Scan() {
-			k := s.Text()
-			e := strings.ToLower(k)
-			// Currently, there's some versioned ecosystems. This branch removes the versioning.
-			if idx := strings.Index(e, ":"); idx != -1 {
-				e = e[:idx]
-			}
-			if _, ok := ignore[e]; ok {
-				zlog.Debug(ctx).
-					Str("ecosystem", e).
-					Msg("ignoring ecosystem")
-				continue
-			}
-			stats.ecosystems = append(stats.ecosystems, e)
-			if u.allow != nil && !u.allow[e] {
-				stats.skipped = append(stats.skipped, e)
-				continue
-			}
-			todo = append(todo, ecoFP{Ecosystem: e, Key: k})
-		}
-		err = s.Err()
-		newFP.Etag = res.Header.Get(`etag`)
-	case http.StatusNotModified:
-		todo = prevFP.Ecosystems
-	default:
-		var buf bytes.Buffer
-		buf.ReadFrom(io.LimitReader(res.Body, 256))
-		b, _ := httputil.DumpRequest(req, false)
-		err = fmt.Errorf("osv: unexpected response from %q: %v (request: %q) (body: %q)", res.Request.URL.String(), res.Status, string(b), buf.String())
-	}
-	if err := res.Body.Close(); err != nil {
-		zlog.Info(ctx).
-			Err(err).
-			Msg("error closing response body")
-	}
-	if err != nil {
-		return nil, fp, err
-	}
+	newtags := make(map[string]string, len(prevtags))
 
 	out, err := tmp.NewFile("", "osv.fetch.*")
 	if err != nil {
@@ -229,52 +145,142 @@ func (u *updater) Fetch(ctx context.Context, fp driver.Fingerprint) (io.ReadClos
 	zlog.Debug(ctx).
 		Str("filename", out.Name()).
 		Msg("opened temporary file for output")
-	w := zip.NewWriter(out)
-	defer w.Close()
-	for _, e := range todo {
-		// Copy the root URI, then append the ecosystem key and file name.
-		uri := (*u.root).JoinPath(e.Key, "all.zip")
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri.String(), nil)
-		if err != nil {
-			return nil, fp, fmt.Errorf("osv: martian request: %w", err)
+
+	eg, ctx := errgroup.WithContext(ctx)
+	type todo struct {
+		Key, Etag string
+		Fetch     bool
+	}
+	todoCh := make(chan todo, runtime.GOMAXPROCS(0))
+	// API walk
+	eg.Go(func() error {
+		defer close(todoCh)
+		var stats struct {
+			ecosystems []string
+			skipped    []string
+			reqCt      int
 		}
-		req.Header.Set(`accept`, `application/zip`)
-		if etag := e.Etag; etag != "" {
-			req.Header.Set(`if-none-match`, etag)
-		}
-		res, err := u.c.Do(req)
-		if err != nil {
-			return nil, fp, err
-		}
-		// This switch is straight-line code to ensure that the response body is always closed.
-		switch res.StatusCode {
-		case http.StatusOK:
-			n := e.Ecosystem + ".zip"
-			var dst io.Writer
-			dst, err = w.CreateHeader(&zip.FileHeader{Name: n, Method: zip.Store})
-			if err == nil {
-				_, err = io.Copy(dst, res.Body)
+		defer func() {
+			// This is an info print so operators can compare their allow list,
+			// if need be.
+			zlog.Info(ctx).
+				Strs("ecosystems", stats.ecosystems).
+				Strs("skipped", stats.skipped).
+				Msg("ecosystems stats")
+			zlog.Debug(ctx).
+				Int("count", stats.reqCt).
+				Msg("made API requests")
+		}()
+
+		api := *u.root
+		v := api.Query()
+		v.Set(`list-type`, `2`)
+		api.RawQuery = v.Encode()
+		api.Path = "/"
+		for uri := &api; uri != nil; {
+			var list listBucketResult
+			list.Contents = make([]contents, 0, 1000) // Space for one full page.
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri.String(), nil)
+			if err != nil {
+				return err
+			}
+			stats.reqCt++
+			res, err := u.c.Do(req)
+			if err != nil {
+				return err
+			}
+			if res.StatusCode != 200 {
+				err = fmt.Errorf("osv: unexpected response from %q: %v", res.Request.URL.String(), res.Status)
+			} else {
+				dec := xml.NewDecoder(res.Body)
+				dec.CharsetReader = xmlutil.CharsetReader
+				err = dec.Decode(&list)
 			}
 			if err != nil {
-				break
+				return err
+			}
+
+			for i := range list.Contents {
+				c := &list.Contents[i]
+				d, k := path.Split(c.Key)
+				if k != `all.zip` {
+					continue
+				}
+				d = strings.ToLower(path.Clean(d))
+				if _, ok := ignore[d]; ok {
+					continue
+				}
+				stats.ecosystems = append(stats.ecosystems, d)
+				if u.allow != nil && !u.allow[d] {
+					stats.skipped = append(stats.skipped, d)
+					continue
+				}
+
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case todoCh <- todo{
+					Key:   c.Key,
+					Etag:  c.Etag,
+					Fetch: c.Etag != prevtags[c.Key],
+				}:
+				}
+			}
+			if list.IsTruncated {
+				v.Set(`continuation-token`, list.NextContinuationToken)
+				api.RawQuery = v.Encode()
+			} else {
+				uri = nil
+			}
+		}
+		return nil
+	})
+	// Fetch
+	eg.Go(func() error {
+		w := zip.NewWriter(out)
+		defer w.Close()
+		api := *u.root
+		for t := range todoCh {
+			if !t.Fetch {
+				newtags[t.Key] = t.Etag
+				continue
+			}
+			uri, err := api.Parse(t.Key)
+			if err != nil {
+				return err
+			}
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri.String(), nil)
+			if err != nil {
+				return err
+			}
+			res, err := u.c.Do(req)
+			if err != nil {
+				return err
+			}
+			if res.StatusCode != 200 {
+				res.Body.Close()
+				return fmt.Errorf("osv: unexpected response from %q: %v", res.Request.URL.String(), res.Status)
+			}
+			n := strings.ToLower(path.Dir(t.Key)) + ".zip"
+			f, err := w.Create(n)
+			if err == nil {
+				_, err = io.Copy(f, res.Body)
+			}
+			res.Body.Close()
+			if err != nil {
+				return err
 			}
 			zlog.Debug(ctx).
 				Str("name", n).
 				Msg("wrote zip")
+			newtags[t.Key] = res.Header.Get(`etag`)
 			ct++
-		case http.StatusNotModified:
-		default:
-			err = fmt.Errorf("osv: unexpected response from %q: %v", res.Request.URL.String(), res.Status)
 		}
-		res.Body.Close()
-		if err != nil {
-			return nil, fp, err
-		}
-		newFP.Ecosystems = append(newFP.Ecosystems, ecoFP{
-			Ecosystem: e.Ecosystem,
-			Key:       e.Key,
-			Etag:      res.Header.Get(`etag`),
-		})
+		return nil
+	})
+
+	if err := eg.Wait(); err != nil {
+		return nil, fp, err
 	}
 	zlog.Info(ctx).
 		Int("count", ct).
@@ -283,10 +289,7 @@ func (u *updater) Fetch(ctx context.Context, fp driver.Fingerprint) (io.ReadClos
 		return nil, fp, driver.Unchanged
 	}
 
-	sort.Slice(newFP.Ecosystems, func(i, j int) bool {
-		return newFP.Ecosystems[i].Ecosystem < newFP.Ecosystems[j].Ecosystem
-	})
-	b, err := json.Marshal(newFP)
+	b, err := json.Marshal(newtags)
 	if err != nil {
 		// Log
 		return nil, fp, err
@@ -301,7 +304,7 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 	if !ok {
 		zlog.Info(ctx).
 			Msg("spooling to disk")
-		tf, err := tmp.NewFile("", `osv.parse.spool.*`)
+		tf, err := tmp.NewFile("", `osv.parse.*`)
 		if err != nil {
 			return nil, err
 		}
@@ -337,6 +340,7 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 	default:
 		return nil, errors.New("osv: unable to determine size of zip file")
 	}
+
 	z, err := zip.NewReader(ra, sz)
 	if err != nil {
 		return nil, err
@@ -349,11 +353,10 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 	defer tf.Close()
 	now := time.Now()
 	ecs := newECS(u.Name())
-
 	for _, zf := range z.File {
 		ctx := zlog.ContextWithValues(ctx, "dumpfile", zf.Name)
-		zlog.Info(ctx).
-			Msg("found file" + zf.Name)
+		zlog.Debug(ctx).
+			Msg("found file")
 		r, err := zf.Open()
 		if err != nil {
 			return nil, err
@@ -370,10 +373,6 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 			return nil, err
 		}
 		name := strings.TrimSuffix(path.Base(zf.Name), ".zip")
-		var skipped struct {
-			Withdrawn  []string
-			Unaffected []string
-		}
 
 		var ct int
 		for _, zf := range z.File {
@@ -390,14 +389,21 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 				return nil, err
 			}
 
+			var skip bool
+			ev := zlog.Info(ctx)
 			switch {
 			case !a.Withdrawn.IsZero() && now.After(a.Withdrawn):
-				skipped.Withdrawn = append(skipped.Withdrawn, a.ID)
-				continue
+				ev = ev.Str("reason", "withdrawn").Time("withdrawn", a.Withdrawn)
+				skip = true
 			case len(a.Affected) == 0:
-				skipped.Unaffected = append(skipped.Unaffected, a.ID)
-				continue
+				ev = ev.Str("reason", "no affected entries")
+				skip = true
 			default:
+				ev = ev.Discard()
+			}
+			ev.Msg("skipping advisory")
+			if skip {
+				continue
 			}
 
 			if err := ecs.Insert(ctx, name, &a); err != nil {
@@ -407,10 +413,6 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 		zlog.Debug(ctx).
 			Int("count", ct).
 			Msg("processed advisories")
-		zlog.Debug(ctx).
-			Strs("withdrawn", skipped.Withdrawn).
-			Strs("unaffected", skipped.Unaffected).
-			Msg("skipped advisories")
 	}
 	zlog.Info(ctx).
 		Int("count", ecs.Len()).
@@ -439,11 +441,6 @@ type ecs struct {
 	Repository    []claircore.Repository
 }
 
-const (
-	ecosystemGo    = `Go`
-	ecosystemMaven = `Maven`
-)
-
 func newECS(u string) ecs {
 	return ecs{
 		Updater:   u,
@@ -464,17 +461,11 @@ func (e *ecs) Insert(ctx context.Context, name string, a *advisory) (err error) 
 	proto.Updater = e.Updater
 	proto.NormalizedSeverity = claircore.Unknown
 	for _, s := range a.Severity {
-		var err error
-		switch s.Type {
-		case `CVSS_V3`:
-			proto.Severity = s.Score
-			proto.NormalizedSeverity, err = fromCVSS3(ctx, s.Score)
-		case `CVSS_V2`:
-			proto.Severity = s.Score
-			proto.NormalizedSeverity, err = fromCVSS2(s.Score)
-		default:
+		if s.Type != `CVSS_V3` { // Only defined type.
 			continue
 		}
+		proto.Severity = s.Score
+		proto.NormalizedSeverity, err = fromCVSS(s.Score)
 		if err != nil {
 			zlog.Info(ctx).
 				Err(err).
@@ -517,31 +508,19 @@ func (e *ecs) Insert(ctx context.Context, name string, a *advisory) (err error) 
 					case ev.Introduced != "":
 						ver, err = semver.NewVersion(ev.Introduced)
 						if err == nil {
-							v.Range.Lower = FromSemver(ver)
+							v.Range.Lower = fromSemver(ver)
 						}
 					case ev.Fixed != "": // less than
 						ver, err = semver.NewVersion(ev.Fixed)
 						if err == nil {
-							v.Range.Upper = FromSemver(ver)
+							v.Range.Upper = fromSemver(ver)
 						}
-					case ev.LastAffected != "" && len(af.Versions) != 0: // less than equal to
-						// TODO(hank) Should be able to convert this to a "less than."
+					case ev.LastAffected != "": // less than equal to
 						zlog.Info(ctx).
 							Str("which", "last_affected").
 							Str("event", ev.LastAffected).
-							Strs("versions", af.Versions).
 							Msg("unsure how to interpret event")
-					case ev.LastAffected != "": // less than equal to
-						// This is semver, so we should be able to calculate the
-						// "next" version:
-						ver, err = semver.NewVersion(ev.LastAffected)
-						if err == nil {
-							nv := ver.IncPatch()
-							v.Range.Upper = FromSemver(&nv)
-						}
 					case ev.Limit == "*": // +Inf
-						v.Range.Upper.Kind = `semver`
-						v.Range.Upper.V[0] = 65535
 					case ev.Limit != "": // Something arbitrary
 						zlog.Info(ctx).
 							Str("which", "limit").
@@ -549,49 +528,18 @@ func (e *ecs) Insert(ctx context.Context, name string, a *advisory) (err error) 
 							Msg("unsure how to interpret event")
 					}
 				case `ECOSYSTEM`:
-					switch af.Package.Ecosystem {
-					case ecosystemGo:
-						panic("ecosystem: go")
-					case ecosystemMaven:
-						switch {
-						case ev.Introduced == "0":
-						case ev.Introduced != "":
-							v.FixedInVersion = ev.Introduced + "+"
-						case ev.Fixed != "":
-							v.FixedInVersion += ev.Fixed
-						case ev.LastAffected != "":
-							v.FixedInVersion += "LastAffected:" + ev.LastAffected
-						}
-					default:
-						switch {
-						case ev.Introduced == "0": // -Inf
-						case ev.Introduced != "":
-						case ev.Fixed != "":
-							v.FixedInVersion = ev.Fixed
-						case ev.LastAffected != "":
-						case ev.Limit == "*": // +Inf
-						case ev.Limit != "":
-						}
+					switch {
+					case ev.Introduced == "0": // -Inf
+					case ev.Introduced != "":
+					case ev.Fixed != "":
+						v.FixedInVersion = ev.Fixed
+					case ev.LastAffected != "":
+					case ev.Limit == "*": // +Inf
+					case ev.Limit != "":
 					}
 				}
 				if err != nil {
 					zlog.Warn(ctx).Err(err).Msg("event version error")
-				}
-			}
-			if r := v.Range; r != nil {
-				// We have an implicit +Inf range if there's a single event,
-				// this should catch it?
-				if r.Upper.Kind == "" {
-					r.Upper.Kind = r.Lower.Kind
-					r.Upper.V[0] = 65535
-				}
-				if r.Lower.Compare(&r.Upper) == 1 {
-					zlog.Info(ctx).
-						Strs("range", []string{
-							r.Lower.String(), r.Upper.String(),
-						}).
-						Msg("weird range")
-					continue
 				}
 			}
 			var vs string
@@ -599,11 +547,7 @@ func (e *ecs) Insert(ctx context.Context, name string, a *advisory) (err error) 
 			case `ECOSYSTEM`:
 				vs = b.String()
 			}
-			pkgName := af.Package.PURL
-			if af.Package.Ecosystem == "Maven" {
-				pkgName = af.Package.Name
-			}
-			pkg, novel := e.LookupPackage(pkgName, vs)
+			pkg, novel := e.LookupPackage(af.Package.PURL, vs)
 			v.Package = pkg
 			if novel {
 				pkg.RepositoryHint = af.Package.Ecosystem
@@ -611,6 +555,7 @@ func (e *ecs) Insert(ctx context.Context, name string, a *advisory) (err error) 
 			if repo := e.LookupRepository(name); repo != nil {
 				v.Repo = repo
 			}
+
 		}
 	}
 	return nil
@@ -675,7 +620,7 @@ func (e *ecs) LookupRepository(name string) (r *claircore.Repository) {
 		case "rubygems":
 			e.Repository[i].URI = `https://rubygems.org/gems/`
 		case "maven":
-			e.Repository[i].URI = `https://repo1.maven.apache.org/maven2`
+			e.Repository[i].URI = `https://maven.apache.org/repository/`
 		}
 		e.repoindex[key] = i
 	}
@@ -694,8 +639,7 @@ func (e *ecs) Finalize() []*claircore.Vulnerability {
 	return r
 }
 
-// FromSemver is the SemVer to claircore.Version mapping used by this package.
-func FromSemver(v *semver.Version) (out claircore.Version) {
+func fromSemver(v *semver.Version) (out claircore.Version) {
 	out.Kind = `semver`
 	// Leave a leading epoch, for good measure.
 	out.V[1] = int32(v.Major())

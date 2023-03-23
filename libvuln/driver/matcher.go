@@ -55,7 +55,7 @@ type Matcher interface {
 	Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error)
 }
 
-// VersionFilter is an additional interface that a Matcher can implment to
+// VersionFilter is an additional interface that a Matcher can implement to
 // opt-in to using normalized version information in database queries.
 type VersionFilter interface {
 	VersionFilter()

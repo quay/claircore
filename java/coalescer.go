@@ -2,7 +2,6 @@ package java
 
 import (
 	"context"
-
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
 )
