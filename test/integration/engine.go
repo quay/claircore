@@ -64,6 +64,7 @@ func (e *Engine) init(t testing.TB) {
 	t.Logf("log at %q", log.Name())
 
 	cmd := exec.Command(filepath.Join(e.binroot, "initdb"),
+		"--encoding=UTF8",
 		"--auth=password",
 		"--username=postgres",
 		"--pgdata="+e.dataDir,
