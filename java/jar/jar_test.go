@@ -47,7 +47,7 @@ func TestParse(t *testing.T) {
 	var h *tar.Header
 	var buf bytes.Buffer
 	for h, err = tr.Next(); err == nil; h, err = tr.Next() {
-		if !checkExt(h.Name) {
+		if !ValidExt(h.Name) {
 			continue
 		}
 		t.Log("found jar:", h.Name)
