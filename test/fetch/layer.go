@@ -154,10 +154,6 @@ func (d *client) doAuth(ctx context.Context, c *http.Client, name, h string) err
 	if err != nil {
 		return err
 	}
-	u, err = u.Parse("token")
-	if err != nil {
-		return err
-	}
 	v := url.Values{
 		"service": {attrs["service"]},
 		"scope":   {attrs["scope"]},
