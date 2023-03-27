@@ -13,13 +13,13 @@ import (
 func TestDistributionScanner(t *testing.T) {
 	ver := regexp.MustCompile(`^\d+ \(\w+\)$`)
 	ctx := zlog.Test(context.Background(), t)
-	ents, err := os.ReadDir(`testdata/dist`)
+	ents, err := os.ReadDir(`.testdata/dist`)
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, e := range ents {
 		t.Run(e.Name(), func(t *testing.T) {
-			sys := os.DirFS(filepath.Join(`testdata/dist`, e.Name()))
+			sys := os.DirFS(filepath.Join(`.testdata/dist`, e.Name()))
 			d, err := findDist(ctx, sys)
 			if err != nil {
 				t.Error(err)

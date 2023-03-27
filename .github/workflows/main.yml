@@ -103,8 +103,8 @@ jobs:
           restore-keys: |
             testdata-
           path: |
-            **/testdata/*.layer
-            **/testdata/*.tar
-            **/testdata/*.tar.gz
+            **/.testdata/*.layer
+            **/.testdata/*.tar
+            **/.testdata/*.tar.gz
       - name: Tests
         run: make integration

@@ -37,7 +37,7 @@ func Layer(ctx context.Context, t *testing.T, c *http.Client, from, repo string,
 	for _, o := range opt {
 		opts[o] = true
 	}
-	cachefile := filepath.Join("testdata", blob.String()+".layer")
+	cachefile := filepath.Join(".testdata", blob.String()+".layer")
 	switch _, err := os.Stat(cachefile); {
 	case err == nil:
 		t.Logf("layer cached: %s", cachefile)

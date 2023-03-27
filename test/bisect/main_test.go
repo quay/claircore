@@ -66,7 +66,7 @@ func TestRun(t *testing.T) {
 	}
 	integration.NeedDB(t)
 	ctx := context.Background()
-	layersDir, err := filepath.Abs(`testdata/layers`)
+	layersDir, err := filepath.Abs(`.testdata/layers`)
 	if err != nil {
 		t.Fatal(err)
 	}

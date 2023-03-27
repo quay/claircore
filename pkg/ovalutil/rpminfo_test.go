@@ -21,7 +21,7 @@ func TestWalk(t *testing.T) {
 	}
 	testcases := []testcase{
 		{
-			File:  "../../oracle/testdata/com.oracle.elsa-2018.xml",
+			File:  "../../oracle/.testdata/com.oracle.elsa-2018.xml",
 			Index: 199,
 			Want: []string{
 				`Oracle Linux 7 is installed AND ghostscript is earlier than 0:9.07-31.el7_6.3 AND ghostscript is signed with the Oracle Linux 7 key`,
@@ -32,7 +32,7 @@ func TestWalk(t *testing.T) {
 			},
 		},
 		{
-			File:  "../../rhel/testdata/Red_Hat_Enterprise_Linux_3.xml",
+			File:  "../../rhel/.testdata/Red_Hat_Enterprise_Linux_3.xml",
 			Index: 42,
 			Want: []string{
 				`Red Hat Enterprise Linux 3 is installed AND samba-common is earlier than 0:3.0.9-1.3E.10 AND samba-common is signed with Red Hat master key`,
@@ -46,7 +46,7 @@ func TestWalk(t *testing.T) {
 			},
 		},
 		{
-			File:  "../../suse/testdata/suse.linux.enterprise.desktop.10.xml",
+			File:  "../../suse/.testdata/suse.linux.enterprise.desktop.10.xml",
 			Index: 6,
 			Want: []string{
 				`sled10-sp1-online is installed AND NetworkManager-devel less than 0.6.4-60.26`,

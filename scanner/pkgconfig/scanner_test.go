@@ -33,7 +33,7 @@ func (tc scannerTestcase) Run(t *testing.T) {
 func TestScanner(t *testing.T) {
 	tt := []scannerTestcase{
 		scannerTestcase{
-			File: "testdata/bash-completion.pc",
+			File: ".testdata/bash-completion.pc",
 			Want: pc{
 				Name:    "bash-completion",
 				Version: "2.8",
@@ -41,22 +41,22 @@ func TestScanner(t *testing.T) {
 			},
 		},
 		scannerTestcase{
-			File: "testdata/dracut.pc",
+			File: ".testdata/dracut.pc",
 			Want: pc{
 				Name:    "dracut",
 				Version: "64fefc221cf13e858d4921be7f0b1eea86c364d2",
 			},
 		},
 		scannerTestcase{
-			File: "testdata/libpng.pc",
+			File: ".testdata/libpng.pc",
 			Want: pc{Name: "libpng", Version: "1.6.37"},
 		},
 		scannerTestcase{
-			File: "testdata/shared-mime-info.pc",
+			File: ".testdata/shared-mime-info.pc",
 			Want: pc{Name: "shared-mime-info", Version: "1.15"},
 		},
 		scannerTestcase{
-			File: "testdata/systemd.pc",
+			File: ".testdata/systemd.pc",
 			Want: pc{
 				Name:    "systemd",
 				Version: "243",
@@ -64,7 +64,7 @@ func TestScanner(t *testing.T) {
 			},
 		},
 		scannerTestcase{
-			File: "testdata/udev.pc",
+			File: ".testdata/udev.pc",
 			Want: pc{Name: "udev", Version: "243"},
 		},
 	}

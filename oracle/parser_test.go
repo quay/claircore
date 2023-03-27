@@ -18,7 +18,7 @@ func TestParse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	f, err := os.Open("testdata/com.oracle.elsa-2018.xml")
+	f, err := os.Open(".testdata/com.oracle.elsa-2018.xml")
 	if err != nil {
 		t.Fatal(err)
 	}

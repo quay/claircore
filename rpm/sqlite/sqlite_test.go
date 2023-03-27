@@ -16,7 +16,7 @@ func TestPackages(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
 	h := crc64.New(crc64.MakeTable(crc64.ISO))
 
-	db, err := Open(`testdata/rpmdb.sqlite`)
+	db, err := Open(`.testdata/rpmdb.sqlite`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -26,7 +26,7 @@ func TestPackages(t *testing.T) {
 		}
 	}()
 	var want []uint64
-	f, err := os.Open(`testdata/rpmdb.sqlite.checksums`)
+	f, err := os.Open(`.testdata/rpmdb.sqlite.checksums`)
 	if err != nil {
 		t.Fatal(err)
 	}

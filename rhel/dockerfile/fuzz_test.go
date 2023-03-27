@@ -22,4 +22,4 @@ func FuzzLex(f *testing.F) {
 	})
 }
 
-//go:generate sh -c "go run golang.org/x/tools/cmd/file2fuzz -o testdata/fuzz/FuzzLex $(ls -1 testdata/Dockerfile* | grep -v [.]want)"
+//go:generate sh -c "go run golang.org/x/tools/cmd/file2fuzz -o .testdata/fuzz/FuzzLex $(ls -1 .testdata/Dockerfile* | grep -v [.]want)"

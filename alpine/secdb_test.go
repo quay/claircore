@@ -62,7 +62,7 @@ func TestSecDBParse(t *testing.T) {
 		t.Run(test.testFile, func(t *testing.T) {
 			t.Parallel()
 
-			path := fmt.Sprintf("testdata/%s", test.testFile)
+			path := fmt.Sprintf(".testdata/%s", test.testFile)
 			f, err := os.Open(path)
 			if err != nil {
 				t.Fatalf("failed to open test data: %v", path)

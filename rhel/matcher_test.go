@@ -35,7 +35,7 @@ func TestMatcherIntegration(t *testing.T) {
 	pool := pgtest.TestMatcherDB(ctx, t)
 	store := postgres.NewMatcherStore(pool)
 	m := &Matcher{}
-	fs, err := filepath.Glob("testdata/*.xml")
+	fs, err := filepath.Glob(".testdata/*.xml")
 	if err != nil {
 		t.Error(err)
 	}
@@ -68,7 +68,7 @@ func TestMatcherIntegration(t *testing.T) {
 		t.Error(err)
 	}
 
-	f, err := os.Open(filepath.Join("testdata", "rhel-report.json"))
+	f, err := os.Open(filepath.Join(".testdata", "rhel-report.json"))
 	if err != nil {
 		t.Fatalf("%v", err)
 	}

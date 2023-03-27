@@ -10,7 +10,7 @@ import (
 
 func TestParseHeader(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
-	f, err := os.Open(`testdata/package.header`)
+	f, err := os.Open(`.testdata/package.header`)
 	if err != nil {
 		t.Fatal(err)
 	}

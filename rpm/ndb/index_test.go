@@ -8,7 +8,7 @@ import (
 )
 
 func TestLoadIndex(t *testing.T) {
-	idxf, err := os.Open("testdata/Index.db")
+	idxf, err := os.Open(".testdata/Index.db")
 	if err != nil {
 		t.Fatal(err)
 	}

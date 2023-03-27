@@ -18,7 +18,7 @@ func TestParseManifest(t *testing.T) {
 	t.Parallel()
 	ctx := zlog.Test(context.Background(), t)
 
-	md := os.DirFS("testdata/manifest")
+	md := os.DirFS(".testdata/manifest")
 	fs, err := fs.ReadDir(md, ".")
 	if err != nil {
 		t.Fatal(err)

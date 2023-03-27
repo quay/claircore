@@ -14,7 +14,7 @@ import (
 )
 
 func TestFetcher(t *testing.T) {
-	const serveFile = "testdata/cve-2021-3762.xml"
+	const serveFile = ".testdata/cve-2021-3762.xml"
 	ctx := zlog.Test(context.Background(), t)
 
 	fi, err := os.Stat(serveFile)

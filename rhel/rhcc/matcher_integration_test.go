@@ -65,7 +65,7 @@ func TestMatcherIntegration(t *testing.T) {
 			store := postgres.NewMatcherStore(pool)
 			m := &matcher{}
 
-			serveFile := fmt.Sprintf("testdata/%s.xml", tt.cvemap)
+			serveFile := fmt.Sprintf(".testdata/%s.xml", tt.cvemap)
 
 			fi, err := os.Stat(serveFile)
 			if err != nil {
@@ -104,7 +104,7 @@ func TestMatcherIntegration(t *testing.T) {
 				t.Error(err)
 			}
 
-			f, err := os.Open(filepath.Join("testdata", fmt.Sprintf("%s-indexreport.json", tt.indexReport)))
+			f, err := os.Open(filepath.Join(".testdata", fmt.Sprintf("%s-indexreport.json", tt.indexReport)))
 			if err != nil {
 				t.Fatalf("%v", err)
 			}

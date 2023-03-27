@@ -54,7 +54,7 @@ func TestManifestLoad(t *testing.T) {
 		},
 	}
 	t.Parallel()
-	f, err := os.Open("testdata/PULP_MANIFEST")
+	f, err := os.Open(".testdata/PULP_MANIFEST")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -450,7 +450,7 @@ func TestDistributionScanner(t *testing.T) {
 		},
 	}
 	todo := make(map[string]struct{})
-	ents, err := os.ReadDir("testdata/dist")
+	ents, err := os.ReadDir(".testdata/dist")
 	if err != nil {
 		t.Error(err)
 	}
@@ -462,7 +462,7 @@ func TestDistributionScanner(t *testing.T) {
 	}
 	for _, tc := range table {
 		t.Run(tc.Name, func(t *testing.T) {
-			sys := os.DirFS(filepath.Join("testdata", "dist", tc.Name))
+			sys := os.DirFS(filepath.Join(".testdata", "dist", tc.Name))
 			got, err := findDist(sys)
 			if err != nil {
 				t.Fatal(err)

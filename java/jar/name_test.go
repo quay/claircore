@@ -14,7 +14,7 @@ func TestCheckName(t *testing.T) {
 	t.Parallel()
 	ctx := zlog.Test(context.Background(), t)
 
-	ms, err := fs.Glob(os.DirFS("testdata"), "*/*.jar")
+	ms, err := fs.Glob(os.DirFS(".testdata"), "*/*.jar")
 	if err != nil {
 		t.Error(err)
 	}

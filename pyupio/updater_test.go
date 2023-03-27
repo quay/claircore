@@ -91,7 +91,7 @@ type dbTestcase struct {
 }
 
 func (tc dbTestcase) filename() string {
-	return filepath.Join("testdata", fmt.Sprintf("db_%s.json", tc.Name))
+	return filepath.Join(".testdata", fmt.Sprintf("db_%s.json", tc.Name))
 }
 
 func (tc dbTestcase) Run(t *testing.T) {

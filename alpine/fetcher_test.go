@@ -11,7 +11,7 @@ import (
 )
 
 func serveSecDB(t *testing.T) (string, *http.Client) {
-	srv := httptest.NewServer(http.FileServer(http.Dir("testdata/fetch")))
+	srv := httptest.NewServer(http.FileServer(http.Dir(".testdata/fetch")))
 	t.Cleanup(srv.Close)
 	return srv.URL, srv.Client()
 }

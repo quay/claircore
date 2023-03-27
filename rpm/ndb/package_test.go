@@ -15,7 +15,7 @@ import (
 func TestLoadPackage(t *testing.T) {
 	ctx := context.Background()
 
-	dir := os.DirFS("testdata")
+	dir := os.DirFS(".testdata")
 	ms, err := fs.Glob(dir, "Packages*.db")
 	if err != nil || len(ms) == 0 {
 		t.Fatalf("error or not enough matches: %v/%d", err, len(ms))

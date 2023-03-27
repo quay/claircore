@@ -70,14 +70,14 @@ func TestClientGetMirrors(t *testing.T) {
 				"http://packages.sa-east-1.amazonaws.com/2018.03/updates/c539f2128d87/x86_64",
 				"http://packages.ap-southeast-2.amazonaws.com/2018.03/updates/c539f2128d87/x86_64",
 			},
-			Serve: "testdata/mirrors_linux1.txt",
+			Serve: ".testdata/mirrors_linux1.txt",
 		},
 		{
 			Release: Linux2,
 			Expected: []string{
 				"https://cdn.amazonlinux.com/2/core/2.0/x86_64/221a4af09d96ac4e34202cc7bdfa252410419542548cc685dc86ed1c17ca4204",
 			},
-			Serve: "testdata/mirrors_linux2.txt",
+			Serve: ".testdata/mirrors_linux2.txt",
 		},
 	}
 

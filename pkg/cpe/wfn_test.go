@@ -374,7 +374,7 @@ func TestURIUnbinding(t *testing.T) {
 
 func TestDictionary(t *testing.T) {
 	const fmt = "in: %+q\ngot:\t%q\nwant:\t%q"
-	f, err := os.Open("testdata/official-cpe-dictionary_v2.3.xml.gz")
+	f, err := os.Open(".testdata/official-cpe-dictionary_v2.3.xml.gz")
 	if err != nil {
 		t.Fatal(err)
 	}

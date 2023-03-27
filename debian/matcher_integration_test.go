@@ -125,7 +125,7 @@ func TestMatcherIntegration(t *testing.T) {
 		t.Error(err)
 	}
 
-	path := filepath.Join("testdata", "indexreport-buster-jackson-databind.json")
+	path := filepath.Join(".testdata", "indexreport-buster-jackson-databind.json")
 	f, err := os.Open(path)
 	if err != nil {
 		t.Fatalf("%v", err)

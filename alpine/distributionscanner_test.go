@@ -17,7 +17,7 @@ func TestScanFs(t *testing.T) {
 	ctx := context.Background()
 	ctx = zlog.Test(ctx, t)
 
-	td := os.DirFS("testdata")
+	td := os.DirFS(".testdata")
 	ms, err := fs.Glob(td, "3.*")
 	if err != nil {
 		t.Fatal(err)

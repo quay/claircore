@@ -239,7 +239,7 @@ type dbTestcase struct {
 }
 
 func (tc dbTestcase) filename() string {
-	return filepath.Join("testdata", fmt.Sprintf("%s.xml", tc.Name))
+	return filepath.Join(".testdata", fmt.Sprintf("%s.xml", tc.Name))
 }
 
 func cpeUnbind(cpeValue string) cpe.WFN {

@@ -28,7 +28,7 @@ func TestScanRemote(t *testing.T) {
 	for _, tc := range scanTable {
 		// To generate a test fixture, populate the entry in the table below and
 		// then run the tests twice.
-		f, err := os.Open(filepath.Join(`testdata`, tc.Hash+".gob"))
+		f, err := os.Open(filepath.Join(`.testdata`, tc.Hash+".gob"))
 		if err != nil {
 			t.Error(err)
 		}
@@ -38,7 +38,7 @@ func TestScanRemote(t *testing.T) {
 		}
 		t.Run(path.Base(tc.Name), tc.Run(ctx))
 		if t.Failed() && errors.Is(err, fs.ErrNotExist) && tc.Want != nil {
-			f, err := os.Create(filepath.Join(`testdata`, tc.Hash+".gob"))
+			f, err := os.Create(filepath.Join(`.testdata`, tc.Hash+".gob"))
 			if err != nil {
 				t.Error(err)
 			}
@@ -89,7 +89,7 @@ func TestScanLocal(t *testing.T) {
 		{
 			name:      "bad version",
 			want:      nil,
-			layerPath: "testdata/layer-with-bad-version.tar",
+			layerPath: ".testdata/layer-with-bad-version.tar",
 		},
 	}
 	for _, tt := range table {

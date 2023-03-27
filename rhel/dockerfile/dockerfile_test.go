@@ -14,7 +14,7 @@ import (
 
 func TestGetLabels(t *testing.T) {
 	ctx := context.Background()
-	td := os.DirFS("testdata")
+	td := os.DirFS(".testdata")
 	de, err := fs.ReadDir(td, ".")
 	if err != nil {
 		t.Fatal(err)

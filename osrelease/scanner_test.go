@@ -27,7 +27,7 @@ func (c parsecase) Test(t *testing.T) {
 	defer task.End()
 	trace.Log(ctx, "parse test:file", c.File)
 
-	f, err := os.Open(filepath.Join("testdata", c.File))
+	f, err := os.Open(filepath.Join(".testdata", c.File))
 	if err != nil {
 		t.Errorf("unable to open file: %v", err)
 	}

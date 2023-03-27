@@ -8,7 +8,7 @@ import (
 )
 
 func TestDistributionScanner(t *testing.T) {
-	sys := os.DirFS(`testdata/releasefiles`)
+	sys := os.DirFS(`.testdata/releasefiles`)
 	ents, err := fs.ReadDir(sys, ".")
 	if err != nil {
 		t.Fatal(err)

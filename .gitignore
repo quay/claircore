@@ -1,4 +1,4 @@
 vendor
 *.swp
 book
-**/testdata/pg*
+**/.testdata/pg*

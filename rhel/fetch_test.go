@@ -17,7 +17,7 @@ func TestFetch(t *testing.T) {
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "testdata/Red_Hat_Enterprise_Linux_3.xml")
+		http.ServeFile(w, r, ".testdata/Red_Hat_Enterprise_Linux_3.xml")
 	}))
 	defer srv.Close()
 

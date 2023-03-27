@@ -148,7 +148,7 @@ func TestParser(t *testing.T) {
 		t.Run(test.testFile, func(t *testing.T) {
 			ctx := zlog.Test(ctx, t)
 
-			path := fmt.Sprintf("testdata/%s", test.testFile)
+			path := fmt.Sprintf(".testdata/%s", test.testFile)
 			f, err := os.Open(path)
 			if err != nil {
 				t.Fatalf("failed to open test data: %v", path)

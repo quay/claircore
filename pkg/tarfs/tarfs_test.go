@@ -21,14 +21,14 @@ import (
 // file in this package *will* cause tests to fail once. Make sure to run tests
 // twice if the Checksum tests fail.
 func TestFS(t *testing.T) {
-	const name = `testdata/fstest.tar`
+	const name = `.testdata/fstest.tar`
 	checktar(t, name)
 	fileset := []string{
 		"file.go",
 		"parse.go",
 		"tarfs.go",
 		"tarfs_test.go",
-		"testdata/.gitignore",
+		".testdata/.gitignore",
 	}
 
 	t.Run("Single", func(t *testing.T) {
@@ -96,7 +96,7 @@ func TestFS(t *testing.T) {
 			t.Error(err)
 		}
 
-		sub, err := fs.Sub(sys, "testdata")
+		sub, err := fs.Sub(sys, ".testdata")
 		if err != nil {
 			t.Error(err)
 		}
@@ -363,14 +363,14 @@ func TestSymlinks(t *testing.T) {
 }
 
 func TestKnownLayers(t *testing.T) {
-	ents, err := os.ReadDir(`testdata/known`)
+	ents, err := os.ReadDir(`.testdata/known`)
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, ent := range ents {
 		n := ent.Name()
 		t.Run(n, func(t *testing.T) {
-			f, err := os.Open(filepath.Join(`testdata/known`, n))
+			f, err := os.Open(filepath.Join(`.testdata/known`, n))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -452,7 +452,7 @@ func TestTarConcatenate(t *testing.T) {
 				"var/run/console/algo.txt": false,
 				"var/run/logs/log.txt":     false,
 			},
-			testFile: "testdata/concat.tar",
+			testFile: ".testdata/concat.tar",
 		},
 	}
 

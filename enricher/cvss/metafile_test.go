@@ -10,7 +10,7 @@ import (
 )
 
 func TestMetafile(t *testing.T) {
-	in, err := os.Open("testdata/feed.meta")
+	in, err := os.Open(".testdata/feed.meta")
 	if err != nil {
 		t.Fatal(err)
 	}

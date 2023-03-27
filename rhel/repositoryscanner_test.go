@@ -73,7 +73,7 @@ func TestRepositoryScanner(t *testing.T) {
 				},
 			},
 			cfg:       &RepositoryScannerConfig{API: srv.URL, Repo2CPEMappingURL: srv.URL + "/repository-2-cpe.json"},
-			layerPath: "testdata/layer-with-cpe.tar",
+			layerPath: ".testdata/layer-with-cpe.tar",
 		},
 		{
 			name: "From mapping file",
@@ -95,13 +95,13 @@ func TestRepositoryScanner(t *testing.T) {
 				},
 			},
 			cfg:       &RepositoryScannerConfig{API: srv.URL, Repo2CPEMappingURL: srv.URL + "/repository-2-cpe.json"},
-			layerPath: "testdata/layer-with-embedded-cs.tar",
+			layerPath: ".testdata/layer-with-embedded-cs.tar",
 		},
 		{
 			name:      "No-cpe-info",
 			want:      nil,
 			cfg:       &RepositoryScannerConfig{},
-			layerPath: "testdata/layer-with-no-cpe-info.tar",
+			layerPath: ".testdata/layer-with-no-cpe-info.tar",
 		},
 	}
 	for _, tt := range table {

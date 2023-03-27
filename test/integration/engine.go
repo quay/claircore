@@ -44,7 +44,7 @@ func (e *Engine) init(t testing.TB) {
 	e.DSN = dsn.String()
 	t.Logf("using port %q", e.port)
 
-	e.dataDir = filepath.Join("testdata", "pg"+dbVersion)
+	e.dataDir = filepath.Join(".testdata", "pg"+dbVersion)
 	if _, err := os.Stat(e.dataDir); err == nil {
 		t.Log("data directory exists, skipping initdb")
 		// Should be set up already.
@@ -55,8 +55,8 @@ func (e *Engine) init(t testing.TB) {
 	if err := os.WriteFile(pwfile, []byte(`securepassword`), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	os.MkdirAll("testdata", 0o755)
-	log, err := os.Create(filepath.Join("testdata", "pg"+dbVersion+".initdb"))
+	os.MkdirAll(".testdata", 0o755)
+	log, err := os.Create(filepath.Join(".testdata", "pg"+dbVersion+".initdb"))
 	if err != nil {
 		t.Fatal(err)
 	}

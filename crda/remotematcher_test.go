@@ -91,7 +91,7 @@ func TestRemoteMatcher(t *testing.T) {
 				Name:    p.Name,
 				Version: p.Version,
 			}
-			testLocalPath := fmt.Sprintf("testdata/%s/%s/%s.json", vulnRequest.Ecosystem, p.Name, p.Version)
+			testLocalPath := fmt.Sprintf(".testdata/%s/%s/%s.json", vulnRequest.Ecosystem, p.Name, p.Version)
 			t.Logf("serving request for %v", testLocalPath)
 			jsonOut, err := os.ReadFile(testLocalPath)
 			if err != nil {

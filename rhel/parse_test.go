@@ -19,7 +19,7 @@ func TestParse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	f, err := os.Open("testdata/com.redhat.rhsa-20201980.xml")
+	f, err := os.Open(".testdata/com.redhat.rhsa-20201980.xml")
 	if err != nil {
 		t.Fatal(err)
 	}

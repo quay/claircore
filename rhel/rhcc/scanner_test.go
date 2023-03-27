@@ -66,7 +66,7 @@ func TestContainerScanner(t *testing.T) {
 		want       []*claircore.Package
 	}{
 		{
-			dockerfile: "testdata/Dockerfile-quay-quay-rhel8-v3.5.6-4",
+			dockerfile: ".testdata/Dockerfile-quay-quay-rhel8-v3.5.6-4",
 			want: []*claircore.Package{
 				quaySourceContainer,
 				{
@@ -85,7 +85,7 @@ func TestContainerScanner(t *testing.T) {
 			},
 		},
 		{
-			dockerfile: "testdata/Dockerfile-quay-clair-rhel8-v3.5.5-4",
+			dockerfile: ".testdata/Dockerfile-quay-clair-rhel8-v3.5.5-4",
 			want: []*claircore.Package{
 				clairSourceContainer,
 				{
@@ -104,7 +104,7 @@ func TestContainerScanner(t *testing.T) {
 			},
 		},
 		{
-			dockerfile: "testdata/Dockerfile-openshift-ose-logging-elasticsearch6-v4.6.0-202112132021.p0.g2a13a81.assembly.stream",
+			dockerfile: ".testdata/Dockerfile-openshift-ose-logging-elasticsearch6-v4.6.0-202112132021.p0.g2a13a81.assembly.stream",
 			want: []*claircore.Package{
 				loggingSourceContainer,
 				{

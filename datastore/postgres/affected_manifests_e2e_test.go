@@ -35,9 +35,9 @@ func TestAffectedE2E(t *testing.T) {
 	table := []struct {
 		// name of the defined affectedE2E test
 		name string
-		// file name of index report in ./testdata
+		// file name of index report in ./.testdata
 		irFName string
-		// file name of vuln report in ./testdata
+		// file name of vuln report in ./.testdata
 		vrFName string
 	}{
 		// these fixtures
@@ -101,8 +101,8 @@ func TestAffectedE2E(t *testing.T) {
 
 	for _, tt := range table {
 		// grab and deserialize test data
-		irPath := filepath.Join("testdata", tt.irFName)
-		vrPath := filepath.Join("testdata", tt.vrFName)
+		irPath := filepath.Join(".testdata", tt.irFName)
+		vrPath := filepath.Join(".testdata", tt.vrFName)
 		irFD, err := os.Open(irPath)
 		if err != nil {
 			t.Fatalf("fd open for ir failed: %v", err)

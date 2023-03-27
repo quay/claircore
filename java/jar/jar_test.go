@@ -122,7 +122,7 @@ func fetch(t testing.TB, u string, ck string) (name string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	name = filepath.Join("testdata", path.Base(uri.Path))
+	name = filepath.Join(".testdata", path.Base(uri.Path))
 	ckb, err := hex.DecodeString(ck)
 	if err != nil {
 		t.Fatal(err)
@@ -173,13 +173,13 @@ func fetch(t testing.TB, u string, ck string) (name string) {
 
 func TestJAR(t *testing.T) {
 	ctx := context.Background()
-	td := os.DirFS("testdata/jar")
+	td := os.DirFS(".testdata/jar")
 	ls, err := fs.ReadDir(td, ".")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(ls) == 0 {
-		t.Skip(`no jars found in "testdata" directory`)
+		t.Skip(`no jars found in ".testdata" directory`)
 	}
 
 	var buf bytes.Buffer
@@ -231,14 +231,14 @@ func TestJAR(t *testing.T) {
 
 func TestJARBadManifest(t *testing.T) {
 	ctx := context.Background()
-	path := "testdata/malformed-manifests"
+	path := ".testdata/malformed-manifests"
 	d := os.DirFS(path)
 	ls, err := fs.ReadDir(d, ".")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(ls) == 0 {
-		t.Skip(`no jars found in "testdata" directory`)
+		t.Skip(`no jars found in ".testdata" directory`)
 	}
 
 	for _, n := range ls {
@@ -261,7 +261,7 @@ func TestJARBadManifest(t *testing.T) {
 
 func TestManifestSectionReader(t *testing.T) {
 	var ms []string
-	d := os.DirFS("testdata")
+	d := os.DirFS(".testdata")
 	for _, p := range []string{"manifest", "manifestSection"} {
 		ents, err := fs.ReadDir(d, p)
 		if err != nil {
@@ -272,7 +272,7 @@ func TestManifestSectionReader(t *testing.T) {
 			if filepath.Ext(e.Name()) == ".want" {
 				continue
 			}
-			ms = append(ms, filepath.Join("testdata", p, e.Name()))
+			ms = append(ms, filepath.Join(".testdata", p, e.Name()))
 		}
 	}
 

@@ -10,7 +10,7 @@ import (
 
 func TestFeedIngest(t *testing.T) {
 	ctx := zlog.Test(nil, t)
-	in, err := os.Open("testdata/feed.json")
+	in, err := os.Open(".testdata/feed.json")
 	if err != nil {
 		t.Fatal(err)
 	}

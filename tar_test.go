@@ -19,7 +19,7 @@ type tarTestCase struct {
 }
 
 func (tc tarTestCase) filename() string {
-	return filepath.Join("testdata", "TestTar_"+tc.Name+".tar")
+	return filepath.Join(".testdata", "TestTar_"+tc.Name+".tar")
 }
 
 func (tc tarTestCase) Generate(t *testing.T) {
@@ -252,7 +252,7 @@ func TestTar(t *testing.T) {
 	defer func() {
 		if t.Failed() {
 			t.Log("a subtest failed, cleaning cached tarballs")
-			fs, _ := filepath.Glob("testdata/TestTar_*.tar")
+			fs, _ := filepath.Glob(".testdata/TestTar_*.tar")
 			for _, f := range fs {
 				os.Remove(f)
 			}

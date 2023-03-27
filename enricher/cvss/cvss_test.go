@@ -136,7 +136,7 @@ func TestFetch(t *testing.T) {
 		{
 			Name: "Unchanged",
 			Hint: func() string {
-				// This is copied out of the metafile in testdata:
+				// This is copied out of the metafile in .testdata:
 				const h = `708083B92E47F0B25C7DD68B89ECD9EF3F2EF91403F511AE13195A596F02E02E`
 				var b strings.Builder
 				b.WriteByte('{')
@@ -203,7 +203,7 @@ func (tc fetchTestcase) Run(ctx context.Context, srv *httptest.Server) func(*tes
 }
 
 func mockServer(t *testing.T) *httptest.Server {
-	const root = `testdata/`
+	const root = `.testdata/`
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch path.Ext(r.URL.Path) {
 		case ".gz": // return the gzipped feed
@@ -286,7 +286,7 @@ func (tc parseTestcase) Run(ctx context.Context, srv *httptest.Server) func(*tes
 func TestEnrich(t *testing.T) {
 	t.Parallel()
 	ctx := zlog.Test(context.Background(), t)
-	feedIn, err := os.Open("testdata/feed.json")
+	feedIn, err := os.Open(".testdata/feed.json")
 	if err != nil {
 		t.Fatal(err)
 	}

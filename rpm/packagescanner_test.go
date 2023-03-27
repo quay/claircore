@@ -1651,7 +1651,7 @@ func TestScan(t *testing.T) {
 		}
 		defer n.Close()
 		l.SetLocal(n.Name())
-		wf, err := os.Open("testdata/sqlite.rpm-manifest.json")
+		wf, err := os.Open(".testdata/sqlite.rpm-manifest.json")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1672,7 +1672,7 @@ func TestScan(t *testing.T) {
 
 func TestLayer(t *testing.T) {
 	ctx := context.Background()
-	ents, err := os.ReadDir(`testdata/layers`)
+	ents, err := os.ReadDir(`.testdata/layers`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1685,7 +1685,7 @@ func TestLayer(t *testing.T) {
 		}
 		t.Run(n, func(t *testing.T) {
 			var l claircore.Layer
-			l.SetLocal(filepath.Join(`testdata/layers`, n))
+			l.SetLocal(filepath.Join(`.testdata/layers`, n))
 			var s Scanner
 			got, err := s.Scan(ctx, &l)
 			if err != nil {

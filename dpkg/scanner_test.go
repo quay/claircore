@@ -864,7 +864,7 @@ func TestAbsolutePaths(t *testing.T) {
 
 func TestExtraMetadata(t *testing.T) {
 	t.Parallel()
-	const layerfile = `testdata/extrametadata.layer`
+	const layerfile = `.testdata/extrametadata.layer`
 	l := claircore.Layer{
 		Hash: claircore.MustParseDigest(`sha256:25fd87072f39aaebd1ee24dca825e61d9f5a0f87966c01551d31a4d8d79d37d8`),
 		URI:  "file:///dev/null",
@@ -913,7 +913,7 @@ func extraMetadataSetup(t *testing.T, layer string) {
 		}
 		return
 	case errors.Is(err, os.ErrNotExist): // OK
-		os.Mkdir(`testdata`, 0o755)
+		os.Mkdir(`.testdata`, 0o755)
 	default:
 		t.Error(err)
 		return
@@ -975,7 +975,7 @@ Version: 1
 func TestGiantStatus(t *testing.T) {
 	t.Parallel()
 	zlog.Test(context.Background(), t)
-	db, err := os.Open(`testdata/texlive.status`)
+	db, err := os.Open(`.testdata/texlive.status`)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -997,7 +997,7 @@ func TestGiantStatus(t *testing.T) {
 
 // See quay/claircore#297 for more context.
 func TestKeyringPackage(t *testing.T) {
-	db, err := os.Open(`testdata/debian-only.status`)
+	db, err := os.Open(`.testdata/debian-only.status`)
 	if err != nil {
 		t.Fatal(err)
 	}

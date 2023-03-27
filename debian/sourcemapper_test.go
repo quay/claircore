@@ -19,7 +19,7 @@ func (f TestClientFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 func NewTestClient() (*http.Client, error) {
-	f, err := os.Open("testdata/Bullseye-Sources.gz")
+	f, err := os.Open(".testdata/Bullseye-Sources.gz")
 	if err != nil {
 		return nil, err
 	}

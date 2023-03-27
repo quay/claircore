@@ -14,7 +14,7 @@ import (
 func TestFetch(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "testdata/com.oracle.elsa-2018.xml")
+		http.ServeFile(w, r, ".testdata/com.oracle.elsa-2018.xml")
 	}))
 	u, err := NewUpdater(-1, WithURL(srv.URL, ""))
 	if err != nil {

@@ -32,10 +32,10 @@ func main() {
 	if res.StatusCode != http.StatusOK {
 		log.Fatalf("unexpected HTTP status: %v", res.Status)
 	}
-	if err := os.MkdirAll("testdata/manifest", 0755); err != nil {
+	if err := os.MkdirAll(".testdata/manifest", 0755); err != nil {
 		log.Fatal(err)
 	}
-	if err := os.MkdirAll("testdata/properties", 0755); err != nil {
+	if err := os.MkdirAll(".testdata/properties", 0755); err != nil {
 		log.Fatal(err)
 	}
 
@@ -57,10 +57,10 @@ func main() {
 			log.Fatal(err)
 		}
 		rd := bytes.NewReader(buf.Bytes())
-		if err := extractManifest("testdata/manifest", rd, h); err != nil {
+		if err := extractManifest(".testdata/manifest", rd, h); err != nil {
 			log.Fatal(err)
 		}
-		if err := extractProperties("testdata/properties", rd, h); err != nil {
+		if err := extractProperties(".testdata/properties", rd, h); err != nil {
 			log.Fatal(err)
 		}
 		buf.Reset()

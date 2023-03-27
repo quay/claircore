@@ -51,7 +51,7 @@ type apiStub struct {
 
 func (a *apiStub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	a.Logf("req: %s", r.RequestURI)
-	sys := os.DirFS(filepath.Join("testdata", a.path))
+	sys := os.DirFS(filepath.Join(".testdata", a.path))
 	p := r.URL.Path
 	switch {
 	case p == "/":

@@ -569,7 +569,7 @@ var nameHeader = []byte("\nName:")
 // Our code doesn't need or prefer a certain manifest version, but every example
 // seems to be "1.0"?
 //
-//	% find testdata/manifest -type f -exec awk '/Manifest-Version/{print}' '{}' +|sort|uniq
+//	% find .testdata/manifest -type f -exec awk '/Manifest-Version/{print}' '{}' +|sort|uniq
 //	Manifest-Version: 1.0
 var manifestVer = regexp.MustCompile(`[[:digit:]]+(\.[[:digit:]]+)*`)
 

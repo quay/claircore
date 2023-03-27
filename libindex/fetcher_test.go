@@ -31,7 +31,7 @@ func (tc fetchTestcase) Run(ctx context.Context) func(*testing.T) {
 		for _, l := range layers {
 			t.Logf("%+v", l)
 		}
-		p, err := filepath.Abs("testdata")
+		p, err := filepath.Abs(".testdata")
 		if err != nil {
 			t.Error(err)
 		}
@@ -94,7 +94,7 @@ func TestFetchInvalid(t *testing.T) {
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
 			ctx := zlog.Test(ctx, t)
-			p, err := filepath.Abs("testdata")
+			p, err := filepath.Abs(".testdata")
 			if err != nil {
 				t.Error(err)
 			}

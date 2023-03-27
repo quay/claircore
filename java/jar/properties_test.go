@@ -15,7 +15,7 @@ func TestParseProperties(t *testing.T) {
 	t.Parallel()
 	ctx := zlog.Test(context.Background(), t)
 
-	md := os.DirFS("testdata/properties")
+	md := os.DirFS(".testdata/properties")
 	fs, err := fs.ReadDir(md, ".")
 	if err != nil {
 		t.Fatal(err)
