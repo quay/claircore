@@ -4,14 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/quay/claircore"
-	internalMatcher "github.com/quay/claircore/internal/matcher"
-	"github.com/quay/zlog"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/quay/claircore"
+	internalMatcher "github.com/quay/claircore/internal/matcher"
+	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/datastore/postgres"
 	"github.com/quay/claircore/libvuln/driver"

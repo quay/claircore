@@ -3,23 +3,23 @@ package java
 import (
 	"context"
 	"fmt"
-	"github.com/quay/zlog"
 	"strings"
+
+	"github.com/quay/zlog"
 
 	version "github.com/masahiro331/go-mvn-version"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 )
 
-// Matcher is an instance of the java maven matcher. It's exported so it can be used
-// in the "defaults" package.
-//
-// This instance is safe for concurrent use.
-var Matcher driver.Matcher = &matcher{}
-
 type matcher struct{}
 
-var _ driver.Matcher = (*matcher)(nil)
+var (
+	// Matcher implements driver.Matcher for java packages using a maven version comparison.
+	Matcher *matcher
+
+	_ driver.Matcher = (*matcher)(nil)
+)
 
 // Name implements driver.Matcher.
 func (*matcher) Name() string { return "java-maven" }
@@ -40,8 +40,6 @@ func (*matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 		Str("record", record.Package.Version).
 		Str("vulnerability", vuln.FixedInVersion).
 		Msg("comparing versions")
-	zlog.Info(ctx).
-		Msg(">>>> comparing versions")
 	if vuln.FixedInVersion == "" {
 		return true, nil
 	}
@@ -78,6 +76,6 @@ func (*matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 	return true, nil
 }
 
-func (*matcher) VersionFilter() {}
+//func (*matcher) VersionFilter() {}
 
-func (*matcher) VersionAuthoritative() bool { return false }
+//func (*matcher) VersionAuthoritative() bool { return true }

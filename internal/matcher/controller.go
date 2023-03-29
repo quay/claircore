@@ -2,6 +2,7 @@ package matcher
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/quay/zlog"
@@ -136,6 +137,7 @@ func (mc *Controller) query(ctx context.Context, interested []*claircore.IndexRe
 // and the value is a Vulnerability. if not it is not added to the result.
 func (mc *Controller) filter(ctx context.Context, interested []*claircore.IndexRecord, vulns map[string][]*claircore.Vulnerability) (map[string][]*claircore.Vulnerability, error) {
 	filtered := map[string][]*claircore.Vulnerability{}
+	fmt.Printf(">>>> I am here: %d", len(vulns))
 	for _, record := range interested {
 		match, err := filterVulns(ctx, mc.m, record, vulns[record.Package.ID])
 		if err != nil {
