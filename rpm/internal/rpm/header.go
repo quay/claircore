@@ -57,10 +57,15 @@ func (h *Header) Parse(ctx context.Context, r io.ReaderAt) error {
 	if err := h.loadArenas(ctx, r); err != nil {
 		return fmt.Errorf("rpm: failed to parse header: %w", err)
 	}
-	if err := h.verifyRegion(ctx); err != nil {
+	var isBDB bool
+	switch err := h.verifyRegion(ctx); {
+	case errors.Is(err, nil):
+	case errors.Is(err, errNoRegion):
+		isBDB = true
+	default:
 		return fmt.Errorf("rpm: failed to parse header: %w", err)
 	}
-	if err := h.verifyInfo(ctx); err != nil {
+	if err := h.verifyInfo(ctx, isBDB); err != nil {
 		return fmt.Errorf("rpm: failed to parse header: %w", err)
 	}
 	return nil
@@ -231,6 +236,13 @@ func (h *Header) loadArenas(ctx context.Context, r io.ReaderAt) error {
 	return nil
 }
 
+// ErrNoRegion is a signal back from verifyRegion that the first tag is not one
+// of the expected ones.
+//
+// This being reported means that the region verification has been
+// short-circuited.
+var errNoRegion = errors.New("no initial region tag, this is probably a bdb database")
+
 func (h *Header) verifyRegion(ctx context.Context) error {
 	const regionTagCount = 16
 	region, err := h.loadTag(ctx, 0)
@@ -242,7 +254,7 @@ func (h *Header) verifyRegion(ctx context.Context) error {
 	case TagHeaderImmutable:
 	case TagHeaderImage:
 	default:
-		return fmt.Errorf("region tag not found")
+		return fmt.Errorf("region tag not found, got %v: %w", region.Tag, errNoRegion)
 	}
 	if region.Type != TypeBin || region.count != regionTagCount {
 		return fmt.Errorf("nonsense region tag: %v, count: %d", region.Type, region.count)
@@ -280,12 +292,20 @@ func (h *Header) verifyRegion(ctx context.Context) error {
 	return nil
 }
 
-func (h *Header) verifyInfo(ctx context.Context) error {
+// VerifyInfo verifies the "info" segments in the header.
+//
+// Experimentally, bdb database aren't always sorted the expected way. The
+// passed boolean controls whether this method uses lax verification or not.
+func (h *Header) verifyInfo(ctx context.Context, isBDB bool) error {
 	lim := len(h.Infos)
 	typecheck := h.region == TagHeaderImmutable || h.region == TagHeaderImage
 	var prev int32
+	start := 1
+	if isBDB {
+		start--
+	}
 
-	for i := 1; i < lim; i++ {
+	for i := start; i < lim; i++ {
 		e, err := h.loadTag(ctx, i)
 		if err != nil {
 			return err
@@ -293,7 +313,7 @@ func (h *Header) verifyInfo(ctx context.Context) error {
 		switch {
 		case prev > e.offset:
 			return fmt.Errorf("botched entry: prev > offset (%d > %d)", prev, e.offset)
-		case e.Tag < TagHeaderI18nTable:
+		case e.Tag < TagHeaderI18nTable && !isBDB:
 			return fmt.Errorf("botched entry: bad tag %v (%[1]d < %d)", e.Tag, TagHeaderI18nTable)
 		case e.Type < TypeMin || e.Type > TypeMax:
 			return fmt.Errorf("botched entry: bad type %v", e.Type)
