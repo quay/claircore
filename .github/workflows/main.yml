@@ -17,7 +17,7 @@ jobs:
     steps:
       - id: config
         run: |
-          echo 'go_versions=["1.20","1.19","1.18"]' >> $GITHUB_OUTPUT
+          echo 'go_versions=["1.20","1.19"]' >> $GITHUB_OUTPUT
 
   commit-check:
     name: Commit Check
