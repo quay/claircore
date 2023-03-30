@@ -33,6 +33,10 @@ var (
 	_ indexer.RPCScanner       = (*Scanner)(nil)
 )
 
+// DefaultSearchAPI is a maven-like REST API that may be used to do
+// reverse lookups based on an archive's sha1 sum.
+//
+//doc:url indexer
 const DefaultSearchAPI = `https://search.maven.org/solrsearch/select`
 const DefaultRequestTimeout = 2 * time.Second
 
@@ -60,7 +64,7 @@ type Scanner struct {
 func (*Scanner) Name() string { return "java" }
 
 // Version implements scanner.VersionedScanner.
-func (*Scanner) Version() string { return "3" }
+func (*Scanner) Version() string { return "4" }
 
 // Kind implements scanner.VersionedScanner.
 func (*Scanner) Kind() string { return "package" }

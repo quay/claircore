@@ -161,8 +161,7 @@ func extractManifest(ctx context.Context, name string, z *zip.Reader) (Info, err
 	return i, nil
 }
 
-// ExtractProperties pulls pom.properties files out of the META-INF directory
-// of the provided zip.
+// ExtractProperties pulls pom.properties files out of the provided zip.
 func extractProperties(ctx context.Context, name string, z *zip.Reader) ([]Info, error) {
 	const filename = "pom.properties"
 	mf, err := z.Open(`META-INF`)
@@ -217,7 +216,7 @@ func extractInner(ctx context.Context, outer string, z *zip.Reader) ([]Info, err
 	checkFile := func(ctx context.Context, f *zip.File) error {
 		name := normName(f.Name)
 		// Check name.
-		if !checkExt(name) {
+		if !ValidExt(name) {
 			return nil
 		}
 		fi := f.FileInfo()
@@ -319,15 +318,6 @@ func checkName(ctx context.Context, name string) (Info, error) {
 	}, nil
 }
 
-// CheckExt reports whether the string is an archive-like.
-func checkExt(name string) bool {
-	switch filepath.Ext(name) {
-	case ".jar", ".ear", ".war":
-		return true
-	}
-	return false
-}
-
 // Info reports the discovered information for a jar file.
 //
 // Any given jar may actually contain multiple jars or recombined classes.
@@ -407,21 +397,52 @@ func (i *Info) parseManifest(ctx context.Context, r io.Reader) error {
 	}
 
 	var name, version string
-	switch {
-	case hdr.Get("Bundle-SymbolicName") != "":
-		n := hdr.Get("Bundle-SymbolicName")
-		if i := strings.IndexByte(n, ';'); i != -1 {
-			n = n[:i]
+	var groupID, artifactID string
+
+	for _, key := range []string{
+		"Group-Id",
+		"Bundle-SymbolicName",
+		"Implementation-Vendor-Id",
+		"Implementation-Vendor",
+		"Specification-Vendor",
+	} {
+		value := hdr.Get(key)
+		if key == "Bundle-SymbolicName" {
+			if i := strings.IndexByte(value, ';'); i != -1 {
+				value = value[:i]
+			}
 		}
-		name = n
-	case hdr.Get("Implementation-Vendor-Id") != "":
-		// This attribute is marked as "Deprecated," but there's nothing that
-		// provides the same information.
-		name = hdr.Get("Implementation-Vendor-Id")
+		if value != "" && !strings.Contains(value, " ") {
+			groupID = value
+			break
+		}
 	}
+
+	for _, key := range []string{
+		"Implementation-Title",
+		"Specification-Title",
+		"Bundle-Name",
+		"Extension-Name",
+		"Short-Name",
+	} {
+		value := hdr.Get(key)
+		if value != "" && !strings.Contains(value, " ") {
+			artifactID = value
+			break
+		}
+	}
+
+	if artifactID == groupID {
+		artifactID = ""
+	}
+
+	// Trim to account for empty components.
+	name = strings.Trim(groupID+":"+artifactID, ":")
+
 	for _, key := range []string{
 		"Bundle-Version",
 		"Implementation-Version",
+		"Plugin-Version",
 		"Specification-Version",
 	} {
 		if v := hdr.Get(key); v != "" {
