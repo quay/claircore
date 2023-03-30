@@ -7,7 +7,7 @@ import (
 
 // See https://ossf.github.io/osv-schema/ for the spec.
 //
-// This package implements v1.3.0
+// This package implements v1.3.1
 type (
 	advisory struct {
 		SchemaVersion string          `json:"schema_version"`
@@ -28,6 +28,7 @@ type (
 
 	severity struct {
 		// Valid types:
+		// - CVSS_V2
 		// - CVSS_V3
 		Type  string `json:"type"`
 		Score string `json:"score"`
