@@ -172,7 +172,7 @@ type Options struct {
 	// FetchArena is an interface tied to the lifecycle of LibIndex to enable management
 	// of the filesystem while separate processes are dealing with layers, for example:
 	// you can reference count downloaded layer files to avoid racing.
-	FetchArena Arena
+	FetchArena indexer.FetchArena
 	// ScanLockRetry specifies how often we should try to acquire a lock for scanning a
 	// given manifest if lock is taken.
 	ScanLockRetry time.Duration
