@@ -27,6 +27,7 @@ import (
 	"github.com/quay/claircore/rhel"
 	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/quay/claircore/rpm"
+	"github.com/quay/claircore/ruby"
 )
 
 const versionMagic = "libindex number: 2\n"
@@ -101,6 +102,7 @@ func New(ctx context.Context, opts *Options, cl *http.Client) (*Libindex, error)
 			java.NewEcosystem(ctx),
 			rhcc.NewEcosystem(ctx),
 			gobin.NewEcosystem(ctx),
+			ruby.NewEcosystem(ctx),
 		}
 	}
 
