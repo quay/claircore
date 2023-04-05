@@ -20,7 +20,7 @@ const (
 
 // CheckMagic reports whether the Reader starts with a magic header for
 // a file format supported by this package.
-func CheckMagic(ctx context.Context, r io.Reader) bool {
+func CheckMagic(_ context.Context, r io.Reader) bool {
 	const (
 		xdb = 'R' | 'p'<<8 | 'm'<<16 | 'X'<<24
 		pkg = 'R' | 'p'<<8 | 'm'<<16 | 'P'<<24
