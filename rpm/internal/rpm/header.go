@@ -78,7 +78,7 @@ func (h *Header) Parse(ctx context.Context, r io.ReaderAt) error {
 //
 // NB The TypeChar, TypeInt8, TypeInt16, TypeInt32, TypeInt64, and TypeI18nString
 // all return slices.
-func (h *Header) ReadData(ctx context.Context, e *EntryInfo) (interface{}, error) {
+func (h *Header) ReadData(_ context.Context, e *EntryInfo) (interface{}, error) {
 	// TODO(hank) Provide a generic function like `func[T any](*Header, *EntryInfo) T` to do this.
 	switch e.Type {
 	case TypeBin:
@@ -180,7 +180,7 @@ func splitCString(data []byte, atEOF bool) (advance int, token []byte, err error
 	return 0, nil, nil
 }
 
-func (h *Header) loadArenas(ctx context.Context, r io.ReaderAt) error {
+func (h *Header) loadArenas(_ context.Context, r io.ReaderAt) error {
 	const (
 		headerSz = 8
 		tagsMax  = 0x0000ffff
@@ -341,7 +341,7 @@ func checkTagType(key Tag, typ Kind) bool {
 	return true
 }
 
-func (h *Header) loadTag(ctx context.Context, i int) (*EntryInfo, error) {
+func (h *Header) loadTag(_ context.Context, i int) (*EntryInfo, error) {
 	e := &h.Infos[i]
 	if e.Tag == Tag(0) {
 		b := make([]byte, entryInfoSize)
