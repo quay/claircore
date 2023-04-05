@@ -33,7 +33,7 @@ func (*Matcher) Query() []driver.MatchConstraint {
 }
 
 // Vulnerable implements driver.Matcher.
-func (m *Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
+func (m *Matcher) Vulnerable(_ context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
 	pkgVer := version.NewVersion(record.Package.Version)
 	var vulnVer version.Version
 	// Assume the vulnerability record we have is for the last known vulnerable

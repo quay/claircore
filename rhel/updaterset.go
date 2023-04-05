@@ -22,7 +22,7 @@ const DefaultManifest = `https://access.redhat.com/security/data/oval/v2/PULP_MA
 
 // NewFactory creates a Factory making updaters based on the contents of the
 // provided pulp manifest.
-func NewFactory(ctx context.Context, manifest string) (*Factory, error) {
+func NewFactory(_ context.Context, manifest string) (*Factory, error) {
 	var err error
 	var f Factory
 	f.url, err = url.Parse(manifest)

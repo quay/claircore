@@ -8,18 +8,18 @@ import (
 )
 
 // NewEcosystem provides the set of scanners and coalescer for the rhel ecosystem.
-func NewEcosystem(ctx context.Context) *indexer.Ecosystem {
+func NewEcosystem(_ context.Context) *indexer.Ecosystem {
 	return &indexer.Ecosystem{
-		PackageScanners: func(ctx context.Context) ([]indexer.PackageScanner, error) {
+		PackageScanners: func(_ context.Context) ([]indexer.PackageScanner, error) {
 			return []indexer.PackageScanner{new(rpm.Scanner)}, nil
 		},
-		DistributionScanners: func(ctx context.Context) ([]indexer.DistributionScanner, error) {
+		DistributionScanners: func(_ context.Context) ([]indexer.DistributionScanner, error) {
 			return []indexer.DistributionScanner{new(DistributionScanner)}, nil
 		},
-		RepositoryScanners: func(ctx context.Context) ([]indexer.RepositoryScanner, error) {
+		RepositoryScanners: func(_ context.Context) ([]indexer.RepositoryScanner, error) {
 			return []indexer.RepositoryScanner{new(RepositoryScanner)}, nil
 		},
-		Coalescer: func(ctx context.Context) (indexer.Coalescer, error) {
+		Coalescer: func(_ context.Context) (indexer.Coalescer, error) {
 			return new(Coalescer), nil
 		},
 	}
