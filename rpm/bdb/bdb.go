@@ -167,7 +167,7 @@ type hashoffpage struct {
 }
 
 // AllHeaders returns ReaderAts for all RPM headers in the PackageDB.
-func (db *PackageDB) AllHeaders(ctx context.Context) ([]io.ReaderAt, error) {
+func (db *PackageDB) AllHeaders(_ context.Context) ([]io.ReaderAt, error) {
 	var ret []io.ReaderAt
 	pageSz := int64(db.m.PageSize)
 	for n, lim := int64(0), int64(db.m.LastPageNo)+1; n < lim; n++ {
