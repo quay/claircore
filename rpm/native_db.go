@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/url"
 	"runtime/trace"
 	"strings"
 
@@ -76,7 +77,7 @@ func packagesFromDB(ctx context.Context, pkgdb string, db nativeDB) ([]*claircor
 		}
 		p.Module = modStream
 		p.Version = constructEVR(&b, &info)
-		p.RepositoryHint = constructHint(&b, &info)
+		p.RepositoryHint = constructHint(&info)
 
 		if s, ok := src[info.SourceNEVR]; ok {
 			p.Source = s
@@ -187,14 +188,12 @@ func constructEVR(b *strings.Builder, info *Info) string {
 	return b.String()
 }
 
-func constructHint(b *strings.Builder, info *Info) string {
-	b.Reset()
+func constructHint(info *Info) string {
+	v := url.Values{}
 	if info.Digest != "" {
-		b.WriteString("hash:")
 		switch info.DigestAlgo {
 		case 8:
-			b.WriteString("sha256:")
-			b.WriteString(info.Digest)
+			v.Add("hash", fmt.Sprintf("sha256:%s", info.Digest))
 		}
 	}
 	if len(info.Signature) != 0 {
@@ -206,20 +205,11 @@ func constructHint(b *strings.Builder, info *Info) string {
 				if p.SigType != 0 {
 					continue
 				}
-				if b.Len() != 0 {
-					b.WriteByte('|')
-				}
-				fmt.Fprintf(b, "key:%016x", p.IssuerKeyId)
+				v.Add("key", fmt.Sprintf("%016x", p.IssuerKeyId))
 			case *packet.Signature:
-				if p.SigType != 0 || p.IssuerKeyId == nil {
-					continue
-				}
-				if b.Len() != 0 {
-					b.WriteByte('|')
-				}
-				fmt.Fprintf(b, "key:%016x", *p.IssuerKeyId)
+				v.Add("key", fmt.Sprintf("%016x", p.IssuerKeyId))
 			}
 		}
 	}
-	return b.String()
+	return v.Encode()
 }

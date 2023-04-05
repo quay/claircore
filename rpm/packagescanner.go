@@ -3,9 +3,11 @@ package rpm
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
+	"net/url"
 	"os"
 	"path"
 	"runtime/trace"
@@ -167,6 +169,35 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 			return nil, fmt.Errorf("rpm: error reading native db: %w", err)
 		}
 		pkgs = append(pkgs, ps...)
+	}
+	rm, err := repoMap(ctx, sys)
+	switch {
+	case errors.Is(err, nil) && len(rm) != 0: // OK
+		for _, pkg := range pkgs {
+			nerva := fmt.Sprintf("%s-%s.%s", pkg.Name, pkg.Version, pkg.Arch)
+			repoid, ok := rm[nerva]
+			if !ok {
+				// Packages not installed via dnf, which may happen during
+				// bootstrapping, aren't present in the dnf history database.
+				// This means the process shouldn't bail if the package is
+				// missing.
+				continue
+			}
+			v, err := url.ParseQuery(pkg.RepositoryHint)
+			if err != nil { // Shouldn't happen:
+				zlog.Warn(ctx).
+					AnErr("url.ParseQuery", err).
+					Msg("malformed RepositoryHint")
+				continue
+			}
+			v.Add("repoid", repoid)
+			pkg.RepositoryHint = v.Encode()
+		}
+	case errors.Is(err, nil) && len(rm) == 0: // nothing found
+	default: // some error
+		zlog.Warn(ctx).
+			AnErr("repoMap", err).
+			Msg("unable to open dnf history database")
 	}
 
 	return pkgs, nil
