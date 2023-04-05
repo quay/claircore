@@ -125,6 +125,8 @@ type Info struct {
 	Epoch      int
 }
 
+// Load populates the receiver with information extracted from the provided
+// [rpm.Header].
 func (i *Info) Load(ctx context.Context, h *rpm.Header) error {
 	for idx := range h.Infos {
 		e := &h.Infos[idx]

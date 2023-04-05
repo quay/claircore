@@ -1,3 +1,4 @@
+// Package rpm provides an [indexer.PackageScanner] for the rpm package manager.
 package rpm
 
 import (

@@ -12,7 +12,7 @@ import (
 )
 
 // NewEcosystem provides the set of scanners and coalescers for the rpm ecosystem
-func NewEcosystem(ctx context.Context) *indexer.Ecosystem {
+func NewEcosystem(_ context.Context) *indexer.Ecosystem {
 	return &indexer.Ecosystem{
 		PackageScanners: func(ctx context.Context) ([]indexer.PackageScanner, error) {
 			return []indexer.PackageScanner{&Scanner{}}, nil
