@@ -12,6 +12,8 @@ import (
 	"errors"
 	"fmt"
 	"runtime"
+	"runtime/pprof"
+	"runtime/trace"
 	"strconv"
 	"sync"
 	"time"
@@ -37,11 +39,12 @@ func New(ctx context.Context, p *pgxpool.Pool) (*Locker, error) {
 		panic(fmt.Sprintf("%s:%d: db lock pool not closed", file, line))
 	})
 	go l.run(ctx)
-	go l.ping()
+	go l.ping(ctx)
 
 	// Wait until a connection is established or the passed context times out.
 	ready := make(chan struct{})
 	go func() {
+		pprof.SetGoroutineLabels(pprof.WithLabels(ctx, pprof.Labels(tracelabel, `ready`)))
 		l.rc.L.Lock()
 		defer l.rc.L.Unlock()
 		for l.conn == nil && l.gen != -1 {
@@ -89,6 +92,8 @@ var (
 
 // Run pulls a connection out of the pool and runs the reconnect loop.
 func (l *Locker) run(ctx context.Context) {
+	ctx = pprof.WithLabels(ctx, pprof.Labels(tracelabel, `run`))
+	pprof.SetGoroutineLabels(ctx)
 	ctx = zlog.ContextWithValues(ctx, "component", "internal/ctxlock/Locker.run")
 	for {
 		tctx, done := context.WithTimeout(ctx, 5*time.Second)
@@ -165,7 +170,8 @@ func (l *Locker) reconnect(ctx context.Context) func(*pgxpool.Conn) error {
 }
 
 // Ping wakes up the reconnect loop periodically.
-func (l *Locker) ping() {
+func (l *Locker) ping(ctx context.Context) {
+	pprof.SetGoroutineLabels(pprof.WithLabels(ctx, pprof.Labels(tracelabel, `ping`)))
 	t := time.NewTicker(5 * time.Second)
 	defer t.Stop()
 	leave := false
@@ -189,12 +195,13 @@ for tests. Currently, the logs always happen and throw off benchmarks.
 
 // TryLock attempts to lock on the provided key.
 //
-// If unsuccessful, an already-cancelled Context will be returned.
+// If unsuccessful, an already-canceled Context will be returned.
 //
 // If successful, the returned Context will be parented to the passed-in Context
 // and also to the underlying connection used for the lock.
 func (l *Locker) TryLock(parent context.Context, key string) (context.Context, context.CancelFunc) {
 	// zlog.Debug(parent).Str("key", key).Msg("trying lock")
+	defer trace.StartRegion(parent, pkgname+".TryLock").End()
 	child, done := context.WithCancel(parent)
 	w, err := l.try(parent, key, done)
 	switch {
@@ -218,9 +225,10 @@ func (l *Locker) TryLock(parent context.Context, key string) (context.Context, c
 }
 
 // Lock attempts to obtain the named lock until it succeeds or the passed
-// Context is cancelled.
+// Context is canceled.
 func (l *Locker) Lock(parent context.Context, key string) (context.Context, context.CancelFunc) {
 	// zlog.Debug(parent).Str("key", key).Msg("locking")
+	defer trace.StartRegion(parent, pkgname+".Lock").End()
 	child, done := context.WithCancel(parent)
 	for wait := time.Duration(500 * time.Millisecond); ; backoff(&wait) {
 		w, err := l.try(parent, key, done)
@@ -271,6 +279,9 @@ func backoff(w *time.Duration) {
 func (l *Locker) try(ctx context.Context, key string, cf context.CancelFunc) (*watcher, error) {
 	const query = `SELECT lock FROM pg_try_advisory_lock($1) lock WHERE lock = true;`
 	kb := keyify(key)
+	// Ideally we'd set a profiling label for the key, but labels are not
+	// recorded for user profiles.
+	trace.Logf(ctx, pkgname+".try", "trying lock for %q (%016x)", key, kb)
 	l.rc.L.Lock()
 	defer l.rc.L.Unlock()
 	var err error
@@ -297,7 +308,7 @@ func (l *Locker) try(ctx context.Context, key string, cf context.CancelFunc) (*w
 	}
 	l.cur[key] = struct{}{}
 	w := newWatcher(l.unlock(ctx, key, kb, l.gen, cf))
-	go w.Watch(l.gone)
+	go w.Watch(ctx, l.gone)
 	return w, nil
 }
 
