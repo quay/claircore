@@ -927,8 +927,8 @@ type Ecosystem struct {
     Ecosystems group together scanners and a Coalescer which are commonly used
     together.
 
-    A typical ecosystem is &quot;dpkg&quot; which will use the &quot;dpkg&quot; package indexer, the
-    &quot;os-release&quot; distribution scanner and the &quot;apt&quot; repository scanner.
+    A typical ecosystem is &quot;dpkg&quot; which will use the &quot;dpkg&quot; package indexer,
+    the &quot;os-release&quot; distribution scanner and the &quot;apt&quot; repository scanner.
 
     A Controller will scan layers with all scanners present in its configured
     ecosystems.
@@ -1026,8 +1026,8 @@ type Setter interface {
 	// in finished state.
 	SetIndexFinished(ctx context.Context, sr *claircore.IndexReport, scnrs VersionedScanners) error
 }
-    Setter interface provides the method set for required marking events, or
-    registering components, associated with an Index operation.
+    Setter interface provides the method set for required marking events,
+    or registering components, associated with an Index operation.
 </code></pre>
 <pre><code>package indexer // import &quot;github.com/quay/claircore/indexer&quot;
 
@@ -1288,8 +1288,8 @@ type Fetcher interface {
 }
     Fetcher is an interface which is embedded into the Updater interface.
 
-    When called the interface should determine if new security advisory data is
-    available. Fingerprint may be passed into in order for the Fetcher to
+    When called the interface should determine if new security advisory data
+    is available. Fingerprint may be passed into in order for the Fetcher to
     determine if the contents has changed
 
     If there is new content Fetcher should return a io.ReadCloser where the new
@@ -1308,8 +1308,8 @@ type Parser interface {
 }
     Parser is an interface which is embedded into the Updater interface.
 
-    Parse should be called with an io.ReadCloser struct where the contents of a
-    security advisory database can be read and parsed into an array of
+    Parse should be called with an io.ReadCloser struct where the contents
+    of a security advisory database can be read and parsed into an array of
     *claircore.Vulnerability
 </code></pre>
 <pre><code>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;

@@ -172,8 +172,8 @@ type Fetcher interface {
 }
     Fetcher is an interface which is embedded into the Updater interface.
 
-    When called the interface should determine if new security advisory data is
-    available. Fingerprint may be passed into in order for the Fetcher to
+    When called the interface should determine if new security advisory data
+    is available. Fingerprint may be passed into in order for the Fetcher to
     determine if the contents has changed
 
     If there is new content Fetcher should return a io.ReadCloser where the new
@@ -192,8 +192,8 @@ type Parser interface {
 }
     Parser is an interface which is embedded into the Updater interface.
 
-    Parse should be called with an io.ReadCloser struct where the contents of a
-    security advisory database can be read and parsed into an array of
+    Parse should be called with an io.ReadCloser struct where the contents
+    of a security advisory database can be read and parsed into an array of
     *claircore.Vulnerability
 </code></pre>
 <pre><code>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;
