@@ -29,6 +29,7 @@ import (
 	"github.com/quay/claircore/datastore/postgres"
 	"github.com/quay/claircore/libindex"
 	"github.com/quay/claircore/libvuln"
+	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/claircore/test/integration"
 	_ "github.com/quay/claircore/updater/defaults"
 )
@@ -273,8 +274,15 @@ func mkIndexer(ctx context.Context, t *testing.T, c *http.Client) *libindex.Libi
 	if err != nil {
 		t.Fatal(err)
 	}
+	locker, err := ctxlock.New(ctx, pool)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fetcher := libindex.NewRemoteFetchArena(c, t.TempDir())
 	opts := libindex.Options{
-		Store: store,
+		Store:      store,
+		Locker:     locker,
+		FetchArena: fetcher,
 	}
 	i, err := libindex.New(ctx, &opts, c)
 	if err != nil {
@@ -301,8 +309,13 @@ func mkMatcher(ctx context.Context, t *testing.T, c *http.Client) *libvuln.Libvu
 	if err != nil {
 		t.Fatal(err)
 	}
+	locker, err := ctxlock.New(ctx, pool)
+	if err != nil {
+		t.Fatal(err)
+	}
 	opts := libvuln.Options{
 		Store:  store,
+		Locker: locker,
 		Client: c,
 	}
 	m, err := libvuln.New(ctx, &opts)
