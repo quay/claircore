@@ -74,6 +74,7 @@ var Options = cmp.Options{
 	EpochCompare,
 	IgnorePackageDB,
 	SortPackages,
+	ModuleCompare,
 }
 
 // RPM Manifest doesn't have checksum information. It does have keyid information,
@@ -120,6 +121,18 @@ var EpochCompare = cmp.FilterPath(
 		}
 		return strings.Contains(evr, vr)
 	}),
+)
+
+// ModuleCompare allows one of the reported modules to be the empty string.
+// This is needed because of [STONEBLD-1472].
+//
+// [STONEBLD-1472]: https://issues.redhat.com/browse/STONEBLD-1472
+var ModuleCompare = cmp.FilterPath(
+	func(p cmp.Path) bool { return p.Last().String() == ".Module" },
+	cmp.FilterValues(
+		func(a, b string) bool { return a != "" && b == "" || a == "" && b != "" },
+		cmp.Ignore(),
+	),
 )
 
 // Does what it says on the tin.

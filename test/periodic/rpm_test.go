@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"path"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/quay/zlog"
@@ -19,47 +20,69 @@ import (
 	"github.com/quay/claircore/test/rpmtest"
 )
 
+// TestRPMSpotCheck searches against the production Hydra API to find published
+// container images, then fetches and indexes the manifest and compares it to
+// the published RPM manifest for the image.
 func TestRPMSpotCheck(t *testing.T) {
 	ctx := context.Background()
+	// This is the URL for our search query. Needs to get Solr search parameters
+	// added to the RawQuery member.
 	query := url.URL{
 		Scheme: "https",
 		Host:   "access.redhat.com",
 		Path:   "/hydra/rest/search/kcs",
-		RawQuery: url.Values{
+	}
+	for _, pair := range [][2]string{
+		{"ubi", "repository:ubi?/ubi*"},
+		{"s2i", "repository:ubi?/s2i-*"},
+		{"nodejs", "repository:ubi?/nodejs*"},
+	} {
+		query := query
+		// This is Solr search values. Need to add an `fq` and `q` parameter to use.
+		qv := url.Values{
 			"redhat_client": {"claircore-tests"},
 			"fq": {
 				`documentKind:"ContainerRepository"`,
 				`-release_catagories:"Deprecated"`,
-				"repository:ubi?/ubi*",
 			},
 			"fl":   {"id,repository,registry,parsed_data_layers"},
 			"rows": {"500"},
-			"q":    {"ubi"},
-		}.Encode(),
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, query.String(), nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	req.Header.Set("accept", "application/json")
-	res, err := pkgClient.Do(req)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer res.Body.Close()
-	if res.StatusCode != http.StatusOK {
-		t.Fatalf("unexpect response to %q: %s", query.String(), res.Status)
-	}
-	t.Logf("%s: %s", query.String(), res.Status)
-	var searchRes hydraResponse
-	var buf bytes.Buffer
-	if err := json.NewDecoder(io.TeeReader(res.Body, &buf)).Decode(&searchRes); err != nil {
-		t.Error(err)
-	}
-	t.Logf("search response:\t%q", buf.String())
-	dir := t.TempDir()
-	for _, d := range searchRes.Response.Docs {
-		t.Run(d.Repository, d.Run(dir))
+		}
+		qv.Set("q", pair[0])
+		qv.Add("fq", pair[1])
+		query.RawQuery = qv.Encode()
+		t.Run(pair[0], func(t *testing.T) {
+			t.Parallel()
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, query.String(), nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			req.Header.Set("accept", "application/json")
+			res, err := pkgClient.Do(req)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer res.Body.Close()
+			if res.StatusCode != http.StatusOK {
+				t.Fatalf("unexpect response to %q: %s", query.String(), res.Status)
+			}
+			t.Logf("%s: %s", query.String(), res.Status)
+			var searchRes hydraResponse
+			var buf bytes.Buffer
+			if err := json.NewDecoder(io.TeeReader(res.Body, &buf)).Decode(&searchRes); err != nil {
+				t.Error(err)
+			}
+			defer func() {
+				if !t.Failed() {
+					return
+				}
+				t.Logf("search response:\t%q", buf.String())
+			}()
+			dir := t.TempDir()
+			for _, d := range searchRes.Response.Docs {
+				t.Run(d.Repository, d.Run(dir))
+			}
+		})
 	}
 }
 
@@ -105,10 +128,12 @@ func (doc hydraDoc) Run(dir string) func(*testing.T) {
 		Host:   "catalog.redhat.com",
 		Path:   "/api/containers/",
 	}
-	var buf bytes.Buffer
 	return func(t *testing.T) {
+		t.Parallel()
 		ctx := zlog.Test(context.Background(), t)
+		try := 1
 
+	Retry:
 		fetchURL, err := root.Parse(path.Join("/api/containers/", "v1/repositories/id/", doc.ID))
 		if err != nil {
 			t.Fatal(err)
@@ -123,15 +148,24 @@ func (doc hydraDoc) Run(dir string) func(*testing.T) {
 			t.Fatal(err)
 		}
 		defer res.Body.Close()
-		if res.StatusCode != http.StatusOK {
+		switch res.StatusCode {
+		case http.StatusOK:
+		case http.StatusServiceUnavailable:
+			if try == 10 {
+				t.Fatal("too many retries")
+			}
+			time.Sleep(time.Duration(try*2) * time.Second)
+			try++
+			goto Retry
+		default:
 			t.Fatalf("unexpected response to %q: %s", fetchURL.String(), res.Status)
 		}
-		buf.Reset()
+		buf := &bytes.Buffer{}
 		var info imageInfo
-		if err := json.NewDecoder(io.TeeReader(res.Body, &buf)).Decode(&info); err != nil {
+		if err := json.NewDecoder(io.TeeReader(res.Body, buf)).Decode(&info); err != nil {
 			t.Fatalf("%s: %v", fetchURL.String(), err)
 		}
-		t.Logf("%s response:\t%q", res.Request.URL.Path, buf.String())
+		defer logResponse(t, res.Request.URL.Path, buf)()
 
 		imageURL, err := root.Parse(path.Join("/api/containers/", info.Links.Images.Href))
 		if err != nil {
@@ -156,14 +190,13 @@ func (doc hydraDoc) Run(dir string) func(*testing.T) {
 		if res.StatusCode != http.StatusOK {
 			t.Fatalf("unexpected response to %q: %s", imageURL.String(), res.Status)
 		}
-		buf.Reset()
+		buf = &bytes.Buffer{}
 		var image imagesResponse
-		if err := json.NewDecoder(io.TeeReader(res.Body, &buf)).Decode(&image); err != nil {
+		if err := json.NewDecoder(io.TeeReader(res.Body, buf)).Decode(&image); err != nil {
 			t.Fatalf("%s: %v", imageURL.String(), err)
 		}
-		t.Logf("%s response:\t%q", res.Request.URL.Path, buf.String())
+		defer logResponse(t, res.Request.URL.Path, buf)()
 
-		t.Log(image.Data[0])
 		manifestURL, err := fetchURL.Parse(path.Join("/api/containers/", image.Data[0].Links.RpmManifest.Href))
 		if err != nil {
 			t.Fatal(err)
@@ -182,9 +215,9 @@ func (doc hydraDoc) Run(dir string) func(*testing.T) {
 			t.Fatalf("unexpected response to %q: %s", manifestURL.String(), res.Status)
 		}
 
-		buf.Reset()
-		want := rpmtest.PackagesFromRPMManifest(t, io.TeeReader(res.Body, &buf))
-		t.Logf("%s response:\t%q", res.Request.URL.Path, buf.String())
+		buf = &bytes.Buffer{}
+		want := rpmtest.PackagesFromRPMManifest(t, io.TeeReader(res.Body, buf))
+		defer logResponse(t, res.Request.URL.Path, buf)()
 
 		s := &rpm.Scanner{}
 		var got []*claircore.Package
@@ -214,5 +247,14 @@ func (doc hydraDoc) Run(dir string) func(*testing.T) {
 		if !cmp.Equal(got, want, rpmtest.Options) {
 			t.Error(cmp.Diff(got, want, rpmtest.Options))
 		}
+	}
+}
+
+func logResponse(t *testing.T, u string, b *bytes.Buffer) func() {
+	return func() {
+		if !t.Failed() {
+			return
+		}
+		t.Logf("%s response:\t%q", u, b.String())
 	}
 }
