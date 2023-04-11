@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/quay/zlog"
 	"github.com/rs/zerolog"
 
@@ -29,7 +28,6 @@ import (
 type Libvuln struct {
 	store           datastore.MatcherStore
 	locker          LockSource
-	pool            *pgxpool.Pool
 	matchers        []driver.Matcher
 	enrichers       []driver.Enricher
 	updateRetention int
@@ -130,7 +128,6 @@ func New(ctx context.Context, opts *Options) (*Libvuln, error) {
 
 func (l *Libvuln) Close(ctx context.Context) error {
 	l.locker.Close(ctx)
-	l.pool.Close()
 	return nil
 }
 
