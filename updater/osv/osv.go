@@ -441,6 +441,10 @@ type ecs struct {
 	Repository    []claircore.Repository
 }
 
+const (
+	ecosystemMaven = `Maven`
+)
+
 func newECS(u string) ecs {
 	return ecs{
 		Updater:   u,
@@ -536,18 +540,47 @@ func (e *ecs) Insert(ctx context.Context, name string, a *advisory) (err error) 
 							Msg("unsure how to interpret event")
 					}
 				case `ECOSYSTEM`:
-					switch {
-					case ev.Introduced == "0": // -Inf
-					case ev.Introduced != "":
-					case ev.Fixed != "":
-						v.FixedInVersion = ev.Fixed
-					case ev.LastAffected != "":
-					case ev.Limit == "*": // +Inf
-					case ev.Limit != "":
+					switch af.Package.Ecosystem {
+					case ecosystemMaven:
+						switch {
+						case ev.Introduced == "0":
+						case ev.Introduced != "":
+							v.FixedInVersion = ev.Introduced + "+"
+						case ev.Fixed != "":
+							v.FixedInVersion += ev.Fixed
+						case ev.LastAffected != "":
+							v.FixedInVersion += "LastAffected:" + ev.LastAffected
+						}
+					default:
+						switch {
+						case ev.Introduced == "0": // -Inf
+						case ev.Introduced != "":
+						case ev.Fixed != "":
+							v.FixedInVersion = ev.Fixed
+						case ev.LastAffected != "":
+						case ev.Limit == "*": // +Inf
+						case ev.Limit != "":
+						}
 					}
 				}
 				if err != nil {
 					zlog.Warn(ctx).Err(err).Msg("event version error")
+				}
+			}
+			if r := v.Range; r != nil {
+				// We have an implicit +Inf range if there's a single event,
+				// this should catch it?
+				if r.Upper.Kind == "" {
+					r.Upper.Kind = r.Lower.Kind
+					r.Upper.V[0] = 65535
+				}
+				if r.Lower.Compare(&r.Upper) == 1 {
+					zlog.Info(ctx).
+						Strs("range", []string{
+							r.Lower.String(), r.Upper.String(),
+						}).
+						Msg("weird range")
+					continue
 				}
 			}
 			var vs string
@@ -555,15 +588,21 @@ func (e *ecs) Insert(ctx context.Context, name string, a *advisory) (err error) 
 			case `ECOSYSTEM`:
 				vs = b.String()
 			}
-			pkg, novel := e.LookupPackage(af.Package.PURL, vs)
+			pkgName := af.Package.PURL
+			if af.Package.Ecosystem == "Maven" {
+				pkgName = af.Package.Name
+			}
+			pkg, novel := e.LookupPackage(pkgName, vs)
 			v.Package = pkg
+			if af.Package.Ecosystem == "Maven" {
+				v.Package.Kind = claircore.BINARY
+			}
 			if novel {
 				pkg.RepositoryHint = af.Package.Ecosystem
 			}
 			if repo := e.LookupRepository(name); repo != nil {
 				v.Repo = repo
 			}
-
 		}
 	}
 	return nil
@@ -628,7 +667,7 @@ func (e *ecs) LookupRepository(name string) (r *claircore.Repository) {
 		case "rubygems":
 			e.Repository[i].URI = `https://rubygems.org/gems/`
 		case "maven":
-			e.Repository[i].URI = `https://maven.apache.org/repository/`
+			e.Repository[i].URI = `https://repo1.maven.apache.org/maven2`
 		}
 		e.repoindex[key] = i
 	}
