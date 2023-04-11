@@ -1,7 +1,4 @@
 // Bisect is a git bisect helper.
-//
-// It relies on some makefile targets to spin up and down all services and wraps
-// calls to cctool.
 package main
 
 import (
@@ -15,6 +12,11 @@ import (
 	"os/signal"
 	"path/filepath"
 )
+
+/*
+This tool is significantly weird in that it makes heavy use of test harnesses for automatic setup,
+so the "normal" binary here is mostly setup around correctly building and invoking the test binary.
+*/
 
 func main() {
 	var exit int
