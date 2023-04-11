@@ -69,8 +69,6 @@ type Config struct {
 }
 
 // DefaultURL is the S3 bucket provided by the OSV project.
-//
-//doc:url updater
 const DefaultURL = `https://osv-vulnerabilities.storage.googleapis.com/`
 
 var _ driver.Updater = (*updater)(nil)
@@ -134,11 +132,17 @@ type ecoFP struct {
 func (u *updater) Fetch(ctx context.Context, fp driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "updater/osv/updater.Fetch")
 	var prevFP fingerprint
+	// Tags is a map of key → Etag. The bucket list API response contains
+	// Etags, so conditional requests are not even needed.
 	if err := json.Unmarshal([]byte(fp), &prevFP); err != nil && fp != "" {
 		zlog.Info(ctx).
 			AnErr("unmarshal", err).
 			Msg("disregarding previous fingerprint")
 	}
+	var ct int
+	var newFP fingerprint
+
+	var todo []ecoFP
 	var stats struct {
 		ecosystems []string
 		skipped    []string
@@ -166,10 +170,7 @@ func (u *updater) Fetch(ctx context.Context, fp driver.Fingerprint) (io.ReadClos
 	if err != nil {
 		return nil, fp, err
 	}
-	// This is straight-line through the switch to make sure the Body is closed
-	// there.
-	var newFP fingerprint
-	var todo []ecoFP
+	defer res.Body.Close()
 	switch res.StatusCode {
 	case http.StatusOK:
 		s := bufio.NewScanner(res.Body)
@@ -201,12 +202,12 @@ func (u *updater) Fetch(ctx context.Context, fp driver.Fingerprint) (io.ReadClos
 		var buf bytes.Buffer
 		buf.ReadFrom(io.LimitReader(res.Body, 256))
 		b, _ := httputil.DumpRequest(req, false)
-		err = fmt.Errorf("osv: unexpected response from %q: %v (request: %q) (body: %q)", res.Request.URL, res.Status, b, buf)
+		err = fmt.Errorf("osv: unexpected response from %q: %v (request: %q) (body: %q)", res.Request.URL.String(), res.Status, string(b), buf.String())
 	}
 	if err := res.Body.Close(); err != nil {
 		zlog.Info(ctx).
 			Err(err).
-			Msg("error closing ecosystems.txt response body")
+			Msg("error closing response body")
 	}
 	if err != nil {
 		return nil, fp, err
@@ -228,7 +229,6 @@ func (u *updater) Fetch(ctx context.Context, fp driver.Fingerprint) (io.ReadClos
 		Msg("opened temporary file for output")
 	w := zip.NewWriter(out)
 	defer w.Close()
-	var ct int
 	for _, e := range todo {
 		// Copy the root URI, then append the ecosystem key and file name.
 		uri := (*u.root).JoinPath(e.Key, "all.zip")
@@ -264,11 +264,7 @@ func (u *updater) Fetch(ctx context.Context, fp driver.Fingerprint) (io.ReadClos
 		default:
 			err = fmt.Errorf("osv: unexpected response from %q: %v", res.Request.URL.String(), res.Status)
 		}
-		if err := res.Body.Close(); err != nil {
-			zlog.Info(ctx).
-				Err(err).
-				Msg("error closing advisory zip response body")
-		}
+		res.Body.Close()
 		if err != nil {
 			return nil, fp, err
 		}
@@ -293,6 +289,7 @@ func (u *updater) Fetch(ctx context.Context, fp driver.Fingerprint) (io.ReadClos
 		// Log
 		return nil, fp, err
 	}
+
 	return out, driver.Fingerprint(b), nil
 }
 
@@ -339,7 +336,6 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 	default:
 		return nil, errors.New("osv: unable to determine size of zip file")
 	}
-
 	z, err := zip.NewReader(ra, sz)
 	if err != nil {
 		return nil, err
@@ -352,10 +348,9 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 	defer tf.Close()
 	now := time.Now()
 	ecs := newECS(u.Name())
+
 	for _, zf := range z.File {
 		ctx := zlog.ContextWithValues(ctx, "dumpfile", zf.Name)
-		zlog.Debug(ctx).
-			Msg("found file")
 		r, err := zf.Open()
 		if err != nil {
 			return nil, err
@@ -372,13 +367,14 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 			return nil, err
 		}
 		name := strings.TrimSuffix(path.Base(zf.Name), ".zip")
-
 		var skipped struct {
 			Withdrawn  []string
 			Unaffected []string
 		}
+
 		var ct int
 		for _, zf := range z.File {
+
 			ctx := zlog.ContextWithValues(ctx, "advisory", strings.TrimSuffix(path.Base(zf.Name), ".json"))
 			ct++
 			var a advisory
@@ -401,7 +397,6 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 				continue
 			default:
 			}
-
 			if err := ecs.Insert(ctx, name, &a); err != nil {
 				return nil, err
 			}
@@ -440,6 +435,12 @@ type ecs struct {
 	Distribution  []claircore.Distribution
 	Repository    []claircore.Repository
 }
+
+const (
+	ecosystemGo     = `Go`
+	ecosystemMaven  = `Maven`
+	ecosystemPython = `PyPI`
+)
 
 func newECS(u string) ecs {
 	return ecs{
@@ -514,12 +515,12 @@ func (e *ecs) Insert(ctx context.Context, name string, a *advisory) (err error) 
 					case ev.Introduced != "":
 						ver, err = semver.NewVersion(ev.Introduced)
 						if err == nil {
-							v.Range.Lower = fromSemver(ver)
+							v.Range.Lower = FromSemver(ver)
 						}
 					case ev.Fixed != "": // less than
 						ver, err = semver.NewVersion(ev.Fixed)
 						if err == nil {
-							v.Range.Upper = fromSemver(ver)
+							v.Range.Upper = FromSemver(ver)
 						}
 					case ev.LastAffected != "" && len(af.Versions) != 0: // less than equal to
 						// TODO(hank) Should be able to convert this to a "less than."
@@ -528,7 +529,17 @@ func (e *ecs) Insert(ctx context.Context, name string, a *advisory) (err error) 
 							Str("event", ev.LastAffected).
 							Strs("versions", af.Versions).
 							Msg("unsure how to interpret event")
+					case ev.LastAffected != "": // less than equal to
+						// This is semver, so we should be able to calculate the
+						// "next" version:
+						ver, err = semver.NewVersion(ev.LastAffected)
+						if err == nil {
+							nv := ver.IncPatch()
+							v.Range.Upper = FromSemver(&nv)
+						}
 					case ev.Limit == "*": // +Inf
+						v.Range.Upper.Kind = `semver`
+						v.Range.Upper.V[0] = 65535
 					case ev.Limit != "": // Something arbitrary
 						zlog.Info(ctx).
 							Str("which", "limit").
@@ -536,18 +547,51 @@ func (e *ecs) Insert(ctx context.Context, name string, a *advisory) (err error) 
 							Msg("unsure how to interpret event")
 					}
 				case `ECOSYSTEM`:
-					switch {
-					case ev.Introduced == "0": // -Inf
-					case ev.Introduced != "":
-					case ev.Fixed != "":
-						v.FixedInVersion = ev.Fixed
-					case ev.LastAffected != "":
-					case ev.Limit == "*": // +Inf
-					case ev.Limit != "":
+					switch af.Package.Ecosystem {
+					case ecosystemGo:
+						panic("ecosystem: go")
+					case ecosystemMaven:
+						switch {
+						case ev.Introduced == "0":
+						case ev.Introduced != "":
+							v.FixedInVersion = ev.Introduced + "+"
+						case ev.Fixed != "":
+							v.FixedInVersion += ev.Fixed
+						case ev.LastAffected != "":
+							v.FixedInVersion += "LastAffected:" + ev.LastAffected
+						}
+					case ecosystemPython:
+						panic("ecosystem: python")
+					default:
+						switch {
+						case ev.Introduced == "0": // -Inf
+						case ev.Introduced != "":
+						case ev.Fixed != "":
+							v.FixedInVersion = ev.Fixed
+						case ev.LastAffected != "":
+						case ev.Limit == "*": // +Inf
+						case ev.Limit != "":
+						}
 					}
 				}
 				if err != nil {
 					zlog.Warn(ctx).Err(err).Msg("event version error")
+				}
+			}
+			if r := v.Range; r != nil {
+				// We have an implicit +Inf range if there's a single event,
+				// this should catch it?
+				if r.Upper.Kind == "" {
+					r.Upper.Kind = r.Lower.Kind
+					r.Upper.V[0] = 65535
+				}
+				if r.Lower.Compare(&r.Upper) == 1 {
+					zlog.Info(ctx).
+						Strs("range", []string{
+							r.Lower.String(), r.Upper.String(),
+						}).
+						Msg("weird range")
+					continue
 				}
 			}
 			var vs string
@@ -555,15 +599,21 @@ func (e *ecs) Insert(ctx context.Context, name string, a *advisory) (err error) 
 			case `ECOSYSTEM`:
 				vs = b.String()
 			}
-			pkg, novel := e.LookupPackage(af.Package.PURL, vs)
+			pkgName := af.Package.PURL
+			if af.Package.Ecosystem == "Maven" {
+				pkgName = af.Package.Name
+			}
+			pkg, novel := e.LookupPackage(pkgName, vs)
 			v.Package = pkg
+			if af.Package.Ecosystem == "Maven" {
+				v.Package.Kind = claircore.BINARY
+			}
 			if novel {
 				pkg.RepositoryHint = af.Package.Ecosystem
 			}
 			if repo := e.LookupRepository(name); repo != nil {
 				v.Repo = repo
 			}
-
 		}
 	}
 	return nil
@@ -628,7 +678,7 @@ func (e *ecs) LookupRepository(name string) (r *claircore.Repository) {
 		case "rubygems":
 			e.Repository[i].URI = `https://rubygems.org/gems/`
 		case "maven":
-			e.Repository[i].URI = `https://maven.apache.org/repository/`
+			e.Repository[i].URI = `https://repo1.maven.apache.org/maven2`
 		}
 		e.repoindex[key] = i
 	}
@@ -647,7 +697,8 @@ func (e *ecs) Finalize() []*claircore.Vulnerability {
 	return r
 }
 
-func fromSemver(v *semver.Version) (out claircore.Version) {
+// FromSemver is the SemVer to claircore.Version mapping used by this package.
+func FromSemver(v *semver.Version) (out claircore.Version) {
 	out.Kind = `semver`
 	// Leave a leading epoch, for good measure.
 	out.V[1] = int32(v.Major())
