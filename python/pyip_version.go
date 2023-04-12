@@ -60,10 +60,6 @@ type letterNumber struct {
 	number int64
 }
 
-func (ln letterNumber) isNull() bool {
-	return ln.letter.IsNull() && ln.number.IsNull()
-}
-
 func init() {
 	versionRegex = regexp.MustCompile(`(?i)^\s*` + regex + `\s*$`)
 }
@@ -160,12 +156,11 @@ func Parse(v string) (Version, error) {
 // or larger than the other version, respectively.
 func (v Version) Compare(other Version) int {
 	// Compare epochs first
-	if v.epoch != other.epoch {
-		if v.epoch > other.epoch {
-			return 1
-		} else {
-			return -1
-		}
+	switch {
+	case v.epoch > other.epoch:
+		return 1
+	case v.epoch < other.epoch:
+		return -1
 	}
 
 	//Compare release digits
@@ -212,18 +207,20 @@ func (v Version) Compare(other Version) int {
 		}
 	}
 
-	if strings.Compare(v.dev.letter, other.dev.letter) == 0 {
-		return int(v.dev.number - other.dev.number)
-	} else {
-		if len(v.dev.letter) == 0 {
-			return 1
-		} else if len(other.dev.letter) == 0 {
-			return -1
+	if len(v.dev.letter)+len(other.dev.letter) > 0 {
+		if strings.Compare(v.dev.letter, other.dev.letter) == 0 {
+			return int(v.dev.number - other.dev.number)
+		} else {
+			if len(v.dev.letter) == 0 {
+				return 1
+			} else if len(other.dev.letter) == 0 {
+				return -1
+			}
 		}
-		return int(v.dev.number - other.dev.number)
 	}
 
-	return nil
+	//No need to compare local version
+	return 0
 }
 
 // Equal tests if two versions are equal.
@@ -249,45 +246,6 @@ func (v Version) LessThan(o Version) bool {
 // LessThanOrEqual tests if this version is less than or equal to another version.
 func (v Version) LessThanOrEqual(o Version) bool {
 	return v.Compare(o) <= 0
-}
-
-// String returns the full version string included pre-release
-// and metadata information.
-func (v Version) String() string {
-	var buf bytes.Buffer
-
-	// Epoch
-	if v.epoch != 0 {
-		fmt.Fprintf(&buf, "%d!", v.epoch)
-	}
-
-	// Release segment
-	fmt.Fprintf(&buf, "%d", v.release[0])
-	for _, r := range v.release[1:len(v.release)] {
-		fmt.Fprintf(&buf, ".%d", r)
-	}
-
-	// Pre-release
-	if !v.pre.isNull() {
-		fmt.Fprintf(&buf, "%s%d", v.pre.letter, v.pre.number)
-	}
-
-	// Post-release
-	if !v.post.isNull() {
-		fmt.Fprintf(&buf, ".post%d", v.post.number)
-	}
-
-	// Development release
-	if !v.dev.isNull() {
-		fmt.Fprintf(&buf, ".dev%d", v.dev.number)
-	}
-
-	// Local version segment
-	if v.local != "" {
-		fmt.Fprintf(&buf, "+%s", v.local)
-	}
-
-	return buf.String()
 }
 
 // BaseVersion returns the base version
