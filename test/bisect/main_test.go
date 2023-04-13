@@ -118,7 +118,10 @@ func runOne(ctx context.Context, indexer *libindex.Libindex, matcher *libvuln.Li
 		var err error
 		_, stat := os.Stat(workdir)
 		if errors.Is(stat, os.ErrNotExist) {
-			cmd := exec.CommandContext(ctx, `skopeo`, `copy`, `docker://`+n, `dir:`+workdir)
+			args := []string{
+				`copy`, `--override-os`, `linux`, `--override-arch`, `amd64`, `docker://` + n, `dir:` + workdir,
+			}
+			cmd := exec.CommandContext(ctx, `skopeo`, args...)
 			err = cmd.Run()
 		}
 		if err != nil {
