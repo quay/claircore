@@ -2,8 +2,8 @@ package alpine
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -59,23 +59,23 @@ func TestSecDBParse(t *testing.T) {
 	}
 
 	for _, test := range table {
+		path := filepath.Join("testdata", test.testFile)
+		want := test.expected
 		t.Run(test.testFile, func(t *testing.T) {
 			t.Parallel()
 
-			path := fmt.Sprintf("testdata/%s", test.testFile)
 			f, err := os.Open(path)
 			if err != nil {
 				t.Fatalf("failed to open test data: %v", path)
 			}
 
-			var db SecurityDB
-			if err := json.NewDecoder(f).Decode(&db); err != nil {
+			var got SecurityDB
+			if err := json.NewDecoder(f).Decode(&got); err != nil {
 				t.Fatalf("failed to parse file contents into sec db: %v", err)
 			}
-
-			if !cmp.Equal(db, test.expected) {
-				diff := cmp.Diff(db, test.expected)
-				t.Fatalf("security databases were not equal: \n%v", diff)
+			if !cmp.Equal(got, want) {
+				t.Log("security databases were not equal:")
+				t.Error(cmp.Diff(got, want))
 			}
 		})
 	}
