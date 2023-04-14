@@ -99,7 +99,7 @@ func TestSplit(t *testing.T) {
 			Want: []string{`k=' v '`, `k="   "`},
 		},
 		{
-			In: "k=' v '	\v k=\"   \"",
+			In:   "k=' v '	\v k=\"   \"",
 			Want: []string{`k=' v '`, `k="   "`},
 		},
 		{
