@@ -1,3 +1,14 @@
+<a name="v1.4.22"></a>
+## [v1.4.22] - 2023-04-14
+[v1.4.22]: https://github.com/quay/claircore/compare/v1.4.21...v1.4.22
+
+- libindex: Change location of layerScanner construction
+  <details>
+  Change the construction of layerScanner to be during libindex
+  instantiation so the lifespan of the objects it creates are tied
+  to the process as opposed to the request.
+  </details>
+
 <a name="v1.4.21"></a>
 ## [v1.4.21] - 2023-03-29
 [v1.4.21]: https://github.com/quay/claircore/compare/v1.4.20...v1.4.21
