@@ -1,0 +1,5 @@
+libindex: Change location of layerScanner construction
+
+Change the construction of layerScanner to be during libindex
+instantiation so the lifespan of the objects it creates are tied
+to the process as opposed to the request.
