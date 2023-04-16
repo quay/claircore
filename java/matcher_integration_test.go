@@ -3,7 +3,6 @@ package java
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -85,9 +84,9 @@ func TestMatcherIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected error to be nil but got %v", err)
 	}
-	//found := false
+	
 	vulns := vr.Vulnerabilities
-	fmt.Printf("Number of Vulnerabilities found: %d", len(vulns))
+	t.Logf("Number of Vulnerabilities found: %d", len(vulns))
 
 	if len(vulns) < 1 {
 		t.Fatalf("failed to match vulns: %v", err)

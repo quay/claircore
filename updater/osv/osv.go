@@ -508,6 +508,7 @@ func (e *ecs) Insert(ctx context.Context, name string, a *advisory) (err error) 
 					Msg("odd range type")
 			}
 			// This does some heavy assumptions about valid inputs.
+			ranges := make(url.Values)
 			for _, ev := range r.Events {
 				var err error
 				switch r.Type {
@@ -545,11 +546,11 @@ func (e *ecs) Insert(ctx context.Context, name string, a *advisory) (err error) 
 						switch {
 						case ev.Introduced == "0":
 						case ev.Introduced != "":
-							v.FixedInVersion = ev.Introduced + "+"
+							ranges.Add("introduced", ev.Introduced)
 						case ev.Fixed != "":
-							v.FixedInVersion += ev.Fixed
+							ranges.Add("fixed", ev.Fixed)
 						case ev.LastAffected != "":
-							v.FixedInVersion += "LastAffected:" + ev.LastAffected
+							ranges.Add("lastAffected", ev.LastAffected)
 						}
 					default:
 						switch {
@@ -567,6 +568,10 @@ func (e *ecs) Insert(ctx context.Context, name string, a *advisory) (err error) 
 					zlog.Warn(ctx).Err(err).Msg("event version error")
 				}
 			}
+			if len(ranges) > 0 && af.Package.Ecosystem == ecosystemMaven {
+				v.FixedInVersion = ranges.Encode()
+			}
+
 			if r := v.Range; r != nil {
 				// We have an implicit +Inf range if there's a single event,
 				// this should catch it?
@@ -589,12 +594,12 @@ func (e *ecs) Insert(ctx context.Context, name string, a *advisory) (err error) 
 				vs = b.String()
 			}
 			pkgName := af.Package.PURL
-			if af.Package.Ecosystem == "Maven" {
+			if af.Package.Ecosystem == ecosystemMaven {
 				pkgName = af.Package.Name
 			}
 			pkg, novel := e.LookupPackage(pkgName, vs)
 			v.Package = pkg
-			if af.Package.Ecosystem == "Maven" {
+			if af.Package.Ecosystem == ecosystemMaven {
 				v.Package.Kind = claircore.BINARY
 			}
 			if novel {

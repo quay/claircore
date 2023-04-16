@@ -3,10 +3,9 @@ package java
 import (
 	"context"
 	"fmt"
-	"strings"
-
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
+	"net/url"
 )
 
 type matcher struct{}
@@ -28,33 +27,44 @@ func (*matcher) Query() []driver.MatchConstraint {
 	return []driver.MatchConstraint{driver.RepositoryName}
 }
 
-// Vulnerable implements driver.Matcher.
 func (*matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
 	if vuln.FixedInVersion == "" {
 		return true, nil
 	}
 
+	decodedVersions, err := url.ParseQuery(vuln.FixedInVersion)
+	if err != nil {
+		return false, err
+	}
+
+	// Check for missing upper version
+	if !decodedVersions.Has("fixed") && !decodedVersions.Has("lastAffected") {
+		return false, fmt.Errorf("maven: missing upper version")
+	}
+
+	upperVersion := decodedVersions.Get("fixed")
+	if upperVersion == "" {
+		upperVersion = decodedVersions.Get("lastAffected")
+	}
+
+	// Check if vulnerable
 	rv, err := parseMavenVersion(record.Package.Version)
 	if err != nil {
 		return false, err
 	}
-	a := strings.Split(vuln.FixedInVersion, "+")
-	if len(a) > 2 {
-		return false, fmt.Errorf("unexpected number of maven versions: %d", len(a))
-	}
 
-	v2, err := parseMavenVersion(strings.TrimPrefix(a[len(a)-1], "LastAffected:"))
+	v2, err := parseMavenVersion(upperVersion)
 	if err != nil {
 		return false, err
 	}
-	if strings.HasPrefix(a[len(a)-1], "LastAffected:") && rv.Compare(v2) > 0 {
-		return false, nil
-	} else if !strings.HasPrefix(a[len(a)-1], "LastAffected:") && rv.Compare(v2) >= 0 {
-		return false, nil
-	}
 
-	if len(a)-1 > 0 {
-		v1, err := parseMavenVersion(a[0])
+	switch {
+	case decodedVersions.Has("lastAffected") && rv.Compare(v2) > 0:
+		return false, nil
+	case decodedVersions.Has("fixed") && rv.Compare(v2) >= 0:
+		return false, nil
+	case decodedVersions.Has("introduced"):
+		v1, err := parseMavenVersion(decodedVersions.Get("introduced"))
 		if err != nil {
 			return false, err
 		}
@@ -62,5 +72,6 @@ func (*matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 			return false, nil
 		}
 	}
+
 	return true, nil
 }

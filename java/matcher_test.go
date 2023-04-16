@@ -18,11 +18,11 @@ func TestVulnerable(t *testing.T) {
 		want   bool
 	}{
 		{
-			name: "pkg1",
+			name: "pkg0",
 			record: &claircore.IndexRecord{
 				Package: &claircore.Package{
 					Name:    "org.apache.openmeetings:openmeetings-parent",
-					Version: "3.2.3",
+					Version: "3.2.9",
 					Kind:    "binary",
 				},
 			},
@@ -34,9 +34,30 @@ func TestVulnerable(t *testing.T) {
 					Name:           "org.apache.openmeetings:openmeetings-parent",
 					RepositoryHint: "Maven",
 				},
-				FixedInVersion: "3.2.0+3.3.0",
+				FixedInVersion: "fixed=3.3.0&introduced=3.2.0",
 			},
 			want: true,
+		},
+		{
+			name: "pkg1",
+			record: &claircore.IndexRecord{
+				Package: &claircore.Package{
+					Name:    "org.apache.openmeetings:openmeetings-parent",
+					Version: "3.3.0",
+					Kind:    "binary",
+				},
+			},
+			vuln: &claircore.Vulnerability{
+				Updater:     "osv",
+				Name:        "GHSA-2965-xxg6-3qh5",
+				Description: "Apache OpenMeetings vulnerable to parameter manipulation attacks",
+				Package: &claircore.Package{
+					Name:           "org.apache.openmeetings:openmeetings-parent",
+					RepositoryHint: "Maven",
+				},
+				FixedInVersion: "fixed=3.3.0&introduced=3.2.0",
+			},
+			want: false,
 		},
 		{
 			name: "pkg2",
@@ -55,7 +76,7 @@ func TestVulnerable(t *testing.T) {
 					Name:           "com.jfinal:jfinal",
 					RepositoryHint: "Maven",
 				},
-				FixedInVersion: "4.9.11",
+				FixedInVersion: "fixed=4.9.11",
 			},
 			want: true,
 		},
@@ -76,7 +97,7 @@ func TestVulnerable(t *testing.T) {
 					Name:           "com.gitblit:gitblit",
 					RepositoryHint: "Maven",
 				},
-				FixedInVersion: "LastAffected:1.9.3",
+				FixedInVersion: "lastAffected=1.9.3",
 			},
 			want: true,
 		},
@@ -97,7 +118,49 @@ func TestVulnerable(t *testing.T) {
 					Name:           "com.gitblit:gitblit",
 					RepositoryHint: "Maven",
 				},
-				FixedInVersion: "LastAffected:1.9.3",
+				FixedInVersion: "lastAffected=1.9.3",
+			},
+			want: false,
+		},
+		{
+			name: "pkg5",
+			record: &claircore.IndexRecord{
+				Package: &claircore.Package{
+					Name:    "org.apache.openmeetings:openmeetings-parent",
+					Version: "3.3.0",
+					Kind:    "binary",
+				},
+			},
+			vuln: &claircore.Vulnerability{
+				Updater:     "osv",
+				Name:        "GHSA-2965-xxg6-3qh5",
+				Description: "Apache OpenMeetings vulnerable to parameter manipulation attacks",
+				Package: &claircore.Package{
+					Name:           "org.apache.openmeetings:openmeetings-parent",
+					RepositoryHint: "Maven",
+				},
+				FixedInVersion: "lastAffected=3.3.0&introduced=3.2.0",
+			},
+			want: true,
+		},
+		{
+			name: "pkg6",
+			record: &claircore.IndexRecord{
+				Package: &claircore.Package{
+					Name:    "org.apache.openmeetings:openmeetings-parent",
+					Version: "3.1.9",
+					Kind:    "binary",
+				},
+			},
+			vuln: &claircore.Vulnerability{
+				Updater:     "osv",
+				Name:        "GHSA-2965-xxg6-3qh5",
+				Description: "Apache OpenMeetings vulnerable to parameter manipulation attacks",
+				Package: &claircore.Package{
+					Name:           "org.apache.openmeetings:openmeetings-parent",
+					RepositoryHint: "Maven",
+				},
+				FixedInVersion: "lastAffected=3.3.0&introduced=3.2.0",
 			},
 			want: false,
 		},
