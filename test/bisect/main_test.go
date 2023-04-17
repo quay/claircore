@@ -212,7 +212,9 @@ type regLayer struct {
 
 // EscapeImage makes a name safer for filesystem use.
 func escapeImage(i string) string {
-	return strings.ReplaceAll(i, string(filepath.Separator), "-")
+	i = strings.ReplaceAll(i, "/", "-")
+	i = strings.ReplaceAll(i, ":", "-")
+	return i
 }
 
 // Setup does a grip of test setup work, returning a context that will cancel on
