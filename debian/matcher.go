@@ -46,22 +46,22 @@ func (*Matcher) Query() []driver.MatchConstraint {
 
 // Vulnerable implements [driver.Matcher].
 func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
+	if vuln.FixedInVersion == "" {
+		return true, nil
+	}
+	// If Debian reports fixed_version is 0,
+	// the package is unaffected.
+	if vuln.FixedInVersion == "0" {
+		return false, nil
+	}
+
 	v1, err := version.NewVersion(record.Package.Version)
 	if err != nil {
 		return false, nil
 	}
-
 	v2, err := version.NewVersion(vuln.FixedInVersion)
 	if err != nil {
 		return false, err
-	}
-
-	if vuln.FixedInVersion == "" {
-		return true, nil
-	}
-
-	if v2.String() == "0" {
-		return true, nil
 	}
 
 	if v1.LessThan(v2) {

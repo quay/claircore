@@ -47,55 +47,57 @@ func TestAffectedE2E(t *testing.T) {
 		// if fixtures are added you must generate
 		// this current set *and* your new fixtures against the same database
 		// to ensure there are no ID overlaps
+		//
+		// generate them via go generate github.com/quay/claircore/datastore/postgres
 		{
 			name:    "amazonlinux 1",
-			irFName: "amazonlinux-1.index.json",
-			vrFName: "amazonlinux-1.report.json",
+			irFName: "docker.io-library-amazonlinux-1.index.json",
+			vrFName: "docker.io-library-amazonlinux-1.report.json",
 		},
 		{
 			name:    "debian 8",
-			irFName: "debian-8.index.json",
-			vrFName: "debian-8.report.json",
+			irFName: "docker.io-library-debian-8.index.json",
+			vrFName: "docker.io-library-debian-8.report.json",
 		},
 		{
 			name:    "debian 9",
-			irFName: "debian-9.index.json",
-			vrFName: "debian-9.report.json",
+			irFName: "docker.io-library-debian-9.index.json",
+			vrFName: "docker.io-library-debian-9.report.json",
 		},
 		{
 			name:    "debian 10",
-			irFName: "debian-10.index.json",
-			vrFName: "debian-10.report.json",
+			irFName: "docker.io-library-debian-10.index.json",
+			vrFName: "docker.io-library-debian-10.report.json",
 		},
 		{
 			name:    "ubi 8",
-			irFName: "ubi.index.json",
-			vrFName: "ubi.report.json",
+			irFName: "registry.access.redhat.com-ubi8-ubi.index.json",
+			vrFName: "registry.access.redhat.com-ubi8-ubi.report.json",
 		},
 		{
 			name:    "ubuntu 16.04",
-			irFName: "ubuntu-16.04.index.json",
-			vrFName: "ubuntu-16.04.report.json",
+			irFName: "docker.io-library-ubuntu-16.04.index.json",
+			vrFName: "docker.io-library-ubuntu-16.04.report.json",
 		},
 		{
 			name:    "ubuntu 18.04",
-			irFName: "ubuntu-18.04.index.json",
-			vrFName: "ubuntu-18.04.report.json",
+			irFName: "docker.io-library-ubuntu-18.04.index.json",
+			vrFName: "docker.io-library-ubuntu-18.04.report.json",
 		},
 		{
 			name:    "ubuntu 19.10",
-			irFName: "ubuntu-19.10.index.json",
-			vrFName: "ubuntu-19.10.report.json",
+			irFName: "docker.io-library-ubuntu-19.10.index.json",
+			vrFName: "docker.io-library-ubuntu-19.10.report.json",
 		},
 		{
 			name:    "ubuntu 20.04",
-			irFName: "ubuntu-20.04.index.json",
-			vrFName: "ubuntu-20.04.report.json",
+			irFName: "docker.io-library-ubuntu-20.04.index.json",
+			vrFName: "docker.io-library-ubuntu-20.04.report.json",
 		},
 		{
 			name:    "mitmproxy 4.0.1",
-			irFName: "mitmproxy-4.0.1.index.json",
-			vrFName: "mitmproxy-4.0.1.report.json",
+			irFName: "docker.io-mitmproxy-mitmproxy-4.0.1.index.json",
+			vrFName: "docker.io-mitmproxy-mitmproxy-4.0.1.report.json",
 		},
 	}
 
