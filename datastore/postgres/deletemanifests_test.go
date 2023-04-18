@@ -8,6 +8,7 @@ import (
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 	pgtest "github.com/quay/claircore/test/postgres"
@@ -154,6 +155,84 @@ INSERT INTO manifest_layer (i, manifest_id, layer_id)
 		}
 		if got, want := rem, 0; got != want {
 			t.Errorf("left overlayers: got: %d, want %d", got, want)
+		}
+	})
+
+	t.Run("Manifest index", func(t *testing.T) {
+		const (
+			layersN    = 4
+			manifestsN = 100
+			packageN   = 10
+		)
+		s := NewIndexerStore(pool)
+		ctx := zlog.Test(ctx, t)
+		toDelete := make([]claircore.Digest, manifestsN)
+		for i := 0; i < manifestsN; i++ {
+			ir := &claircore.IndexReport{}
+			ir.Hash = test.RandomSHA256Digest(t)
+			toDelete[i] = ir.Hash
+			ls := make([]claircore.Digest, layersN)
+			for i := range ls {
+				ls[i] = test.RandomSHA256Digest(t)
+			}
+
+			if _, err := pool.Exec(ctx, insertManifest, []claircore.Digest{ir.Hash}); err != nil {
+				t.Error(err)
+			}
+			if _, err := pool.Exec(ctx, insertLayers, digestSlice(ls)); err != nil {
+				t.Error(err)
+			}
+			var nLayers int
+			if err := pool.QueryRow(ctx, `SELECT COUNT(*) FROM layer;`).Scan(&nLayers); err != nil {
+				t.Error(err)
+			}
+			tag, err := pool.Exec(ctx, assoc, digestSlice(ls), ir.Hash)
+			t.Logf("affected: %d", tag.RowsAffected())
+			if err != nil {
+				t.Error(err)
+			}
+
+			scnr := indexer.NewPackageScannerMock("mock", "1", "vulnerability")
+			if err := s.RegisterScanners(ctx, indexer.VersionedScanners{scnr}); err != nil {
+				t.Error(err)
+			}
+
+			pkgs := test.GenUniquePackages(packageN)
+			layer := &claircore.Layer{Hash: ls[0]}
+			if err := s.IndexPackages(ctx, pkgs, layer, scnr); err != nil {
+				t.Error(err)
+			}
+			// Retrieve packages from DB so they are all correctly ID'd
+			if pkgs, err = s.PackagesByLayer(ctx, layer.Hash, []indexer.VersionedScanner{scnr}); err != nil {
+				t.Error(err)
+			}
+
+			pkgMap := make(map[string]*claircore.Package, packageN)
+			envs := make(map[string][]*claircore.Environment, packageN)
+			for _, p := range pkgs {
+				pkgMap[p.ID] = p
+				envs[p.ID] = []*claircore.Environment{
+					{
+						PackageDB:      "pdb",
+						IntroducedIn:   ls[0],
+						DistributionID: "d",
+						RepositoryIDs:  []string{},
+					},
+				}
+			}
+			ir.Packages = pkgMap
+			ir.Environments = envs
+
+			if err := s.IndexManifest(ctx, ir); err != nil {
+				t.Error(err)
+			}
+		}
+		got, err := store.DeleteManifests(ctx, toDelete...)
+		if err != nil {
+			t.Error(err)
+		}
+		if len(got) != manifestsN {
+			t.Error(cmp.Diff(got, toDelete, cmpOpts))
 		}
 	})
 }
