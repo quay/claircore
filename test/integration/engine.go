@@ -102,6 +102,8 @@ func (e *Engine) Start(t testing.TB) error {
 			"-o", "-c auto_explain.log_analyze=true",
 			"-o", "-c auto_explain.log_buffers=true",
 			"-o", "-c auto_explain.log_wal=true",
+			"-o", "-c auto_explain.log_verbose=true",
+			"-o", "-c auto_explain.log_nested_statements=true",
 		)
 		if f := os.Getenv("PGEXPLAIN_FORMAT"); f != "" {
 			opts = append(opts, "-o", fmt.Sprintf("-c auto_explain.log_format=%s", f))
