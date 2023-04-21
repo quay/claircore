@@ -1,0 +1,169 @@
+{
+  "manifest_hash": "sha256:b5f7035fdee6d7bdc9180bc2d5d959802df4f85359d557aaba58b7f4e7755827",
+  "packages": {
+    "645": {
+      "id": "645",
+      "name": "pyyaml",
+      "version": "5.1",
+      "kind": "binary",
+      "source": {
+        "id": "2",
+        "name": "",
+        "version": ""
+      },
+      "normalized_version": "pep440:0.5.1.0.0.0.0.0.0.0"
+    },
+    "748": {
+      "id": "748",
+      "name": "python3-setuptools",
+      "version": "39.2.0-6.el8_7.1",
+      "kind": "binary",
+      "source": {
+        "id": "101",
+        "name": "python-setuptools",
+        "version": "39.2.0-6.el8_7.1",
+        "kind": "source"
+      },
+      "arch": "noarch"
+    },
+    "750": {
+      "id": "750",
+      "name": "python36",
+      "version": "3.6.8-38.module+el8.5.0+12207+5c5719bc",
+      "kind": "binary",
+      "source": {
+        "id": "749",
+        "name": "python36",
+        "version": "3.6.8-38.module+el8.5.0+12207+5c5719bc",
+        "kind": "source",
+        "module": "python36:3.6:8050020210811103506:982725ab"
+      },
+      "module": "python36:3.6:8050020210811103506:982725ab",
+      "arch": "x86_64"
+    },
+    "752": {
+      "id": "752",
+      "name": "protobuf",
+      "version": "3.14.0",
+      "kind": "binary",
+      "source": {
+        "id": "2",
+        "name": "",
+        "version": ""
+      },
+      "normalized_version": "pep440:0.3.14.0.0.0.0.0.0.0"
+    }
+  },
+  "distributions":{
+    "1":{
+      "id":"1",
+      "did":"rhel",
+      "name":"Red Hat Enterprise Linux Server",
+      "version":"8",
+      "version_code_name":"",
+      "version_id":"8",
+      "arch":"",
+      "cpe":"cpe:2.3:o:redhat:enterprise_linux:8:*:*:*:*:*:*:*",
+      "pretty_name":"Red Hat Enterprise Linux Server 8"
+    }
+  },
+  "environments": {
+    "645": [
+      {
+        "package_db": "python:root/.local/lib/python3.6/site-packages",
+        "introduced_in": "sha256:ccd9806acfea1bda00f871aa431ce15f0c3e005086b841e2ff745dac1cb0a43b",
+        "distribution_id": "",
+        "repository_ids": [
+          "6"
+        ]
+      }
+    ],
+    "748": [
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:4b14b9ed20ce1c182d1511a515e34f2f677aeeba730f23fa63c3aa55bc87f6cc",
+        "distribution_id": "1",
+        "repository_ids": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:4b14b9ed20ce1c182d1511a515e34f2f677aeeba730f23fa63c3aa55bc87f6cc",
+        "distribution_id": "",
+        "repository_ids": null
+      }
+    ],
+    "750": [
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:4b14b9ed20ce1c182d1511a515e34f2f677aeeba730f23fa63c3aa55bc87f6cc",
+        "distribution_id": "1",
+        "repository_ids": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:4b14b9ed20ce1c182d1511a515e34f2f677aeeba730f23fa63c3aa55bc87f6cc",
+        "distribution_id": "",
+        "repository_ids": null
+      }
+    ],
+    "752": [
+      {
+        "package_db": "python:root/.local/lib/python3.6/site-packages",
+        "introduced_in": "sha256:8cc83216fd11f4327c57027e11441342af6cdd131948c6917ea5cd153f57ec6a",
+        "distribution_id": "",
+        "repository_ids": [
+          "6"
+        ]
+      }
+    ]
+  },
+  "package_vulnerabilities": {},
+
+  "repository": {
+    "1": {
+      "id": "1",
+      "name": "cpe:/o:redhat:enterprise_linux:8::baseos",
+      "key": "rhel-cpe-repository",
+      "cpe": "cpe:2.3:o:redhat:enterprise_linux:8:*:baseos:*:*:*:*:*"
+    },
+    "2": {
+      "id": "2",
+      "name": "cpe:/o:redhat:rhel:8.3::baseos",
+      "key": "rhel-cpe-repository",
+      "cpe": "cpe:2.3:o:redhat:rhel:8.3:*:baseos:*:*:*:*:*"
+    },
+    "3": {
+      "id": "3",
+      "name": "cpe:/a:redhat:enterprise_linux:8::appstream",
+      "key": "rhel-cpe-repository",
+      "cpe": "cpe:2.3:a:redhat:enterprise_linux:8:*:appstream:*:*:*:*:*"
+    },
+    "4": {
+      "id": "4",
+      "name": "cpe:/a:redhat:rhel:8.3::appstream",
+      "key": "rhel-cpe-repository",
+      "cpe": "cpe:2.3:a:redhat:rhel:8.3:*:appstream:*:*:*:*:*"
+    },
+    "5": {
+      "id": "5",
+      "name": "Red Hat Container Catalog",
+      "uri": "https://catalog.redhat.com/software/containers/explore"
+    },
+    "6": {
+      "id": "6",
+      "name": "pypi",
+      "uri": "https://pypi.org/simple"
+    }
+  },
+  "vulnerabilities": {}
+}
