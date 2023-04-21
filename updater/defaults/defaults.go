@@ -15,7 +15,6 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/oracle"
 	"github.com/quay/claircore/photon"
-	"github.com/quay/claircore/pyupio"
 	"github.com/quay/claircore/rhel"
 	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/quay/claircore/suse"
@@ -67,7 +66,6 @@ func inner(ctx context.Context) error {
 	updater.Register("aws", driver.UpdaterSetFactoryFunc(aws.UpdaterSet))
 	updater.Register("oracle", driver.UpdaterSetFactoryFunc(oracle.UpdaterSet))
 	updater.Register("photon", driver.UpdaterSetFactoryFunc(photon.UpdaterSet))
-	updater.Register("pyupio", driver.UpdaterSetFactoryFunc(pyupio.UpdaterSet))
 	updater.Register("suse", driver.UpdaterSetFactoryFunc(suse.UpdaterSet))
 	updater.Register("rhcc", driver.UpdaterSetFactoryFunc(rhcc.UpdaterSet))
 

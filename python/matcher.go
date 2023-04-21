@@ -49,21 +49,21 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 		return false, err
 	}
 
-	v2, err := pep440.Parse(upperVersion)
+	uv, err := pep440.Parse(upperVersion)
 	if err != nil {
 		return false, err
 	}
 
-	if rv.Compare(&v2) >= 0 {
+	if rv.Compare(&uv) >= 0 {
 		return false, nil
 	}
 
 	if decodedVersions.Has("introduced") {
-		v1, err := pep440.Parse(decodedVersions.Get("introduced"))
+		lv, err := pep440.Parse(decodedVersions.Get("introduced"))
 		if err != nil {
 			return false, err
 		}
-		if rv.Compare(&v1) < 0 {
+		if rv.Compare(&lv) < 0 {
 			return false, nil
 		}
 	}

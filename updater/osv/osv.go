@@ -599,7 +599,8 @@ func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *adviso
 				vs = b.String()
 			}
 			pkgName := af.Package.PURL
-			if af.Package.Ecosystem == ecosystemMaven || af.Package.Ecosystem == ecosystemPyPI {
+			switch af.Package.Ecosystem {
+			case ecosystemMaven, ecosystemPyPI:
 				pkgName = af.Package.Name
 			}
 			pkg, novel := e.LookupPackage(pkgName, vs)

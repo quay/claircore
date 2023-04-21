@@ -14,7 +14,6 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/oracle"
 	"github.com/quay/claircore/photon"
-	"github.com/quay/claircore/pyupio"
 	"github.com/quay/claircore/rhel"
 	"github.com/quay/claircore/suse"
 	"github.com/quay/claircore/ubuntu"
@@ -78,15 +77,6 @@ func TestPhoton(t *testing.T) {
 	set, err := photon.UpdaterSet(ctx)
 	if err != nil {
 		t.Fatal(err)
-	}
-	runUpdaterSet(ctx, t, set)
-}
-
-func TestPyupio(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
-	set, err := pyupio.UpdaterSet(ctx)
-	if err != nil {
-		t.Fatal()
 	}
 	runUpdaterSet(ctx, t, set)
 }
