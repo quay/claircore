@@ -2,8 +2,7 @@
 name: Build and publish golang image
 
 on:
-  push:
-  
+
   workflow_dispatch:
     inputs:
       force:
@@ -48,21 +47,21 @@ jobs:
           TAG_LAST_MODIFIED=$t
           GO_LAST_MODIFIED=$g
           .
-#       - name: Decide whether we need to build new golang image
-#         run: |
-#           TAG=$(date -d "${TAG_LAST_MODIFIED}" +%s)
-#           GO=$(date -d "${GO_LAST_MODIFIED}" +%s)
-#           if test "${{ inputs.force }}" = 'true' -o "$GO" -gt "$TAG"; then
-#             echo "BUILD_IMAGE=1" >> "$GITHUB_ENV"
-#           fi
+      - name: Decide whether we need to build new golang image
+        run: |
+          TAG=$(date -d "${TAG_LAST_MODIFIED}" +%s)
+          GO=$(date -d "${GO_LAST_MODIFIED}" +%s)
+          if test "${{ inputs.force }}" = 'true' -o "$GO" -gt "$TAG"; then
+            echo "BUILD_IMAGE=1" >> "$GITHUB_ENV"
+          fi
       - name: Set up QEMU
-#         if: env.BUILD_IMAGE == 1
+        if: env.BUILD_IMAGE == 1
         run: |
           sudo apt-get update
           sudo apt-get install -y qemu-user-static
       - name: Build
         uses: redhat-actions/buildah-build@v2
-#         if: env.BUILD_IMAGE == 1
+        if: env.BUILD_IMAGE == 1
         with:
           platforms: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x
           build-args: |
@@ -71,17 +70,17 @@ jobs:
           context: etc
           tags: |
             quay.io/${{ env.QUAY_ORG }}/${{ env.QUAY_REPO }}:${{ matrix.go }}
-#       - uses: redhat-actions/podman-login@v1
-#         if: env.BUILD_IMAGE == 1
-#         with:
-#           registry: quay.io
-#           username: ${{ env.QUAY_USER }}
-#           password: ${{ secrets.QUAY_TOKEN }}
-#       - name: Publish
-#         uses: redhat-actions/push-to-registry@v2
-#         if: env.BUILD_IMAGE == 1
-#         with:
-#           #extra-args: |
-#           #  --compression-format=zstd:chunked
-#           tags: |
-#             quay.io/${{ env.QUAY_ORG }}/${{ env.QUAY_REPO }}:${{ matrix.go }}
+      - uses: redhat-actions/podman-login@v1
+        if: env.BUILD_IMAGE == 1
+        with:
+          registry: quay.io
+          username: ${{ env.QUAY_USER }}
+          password: ${{ secrets.QUAY_TOKEN }}
+      - name: Publish
+        uses: redhat-actions/push-to-registry@v2
+        if: env.BUILD_IMAGE == 1
+        with:
+          #extra-args: |
+          #  --compression-format=zstd:chunked
+          tags: |
+            quay.io/${{ env.QUAY_ORG }}/${{ env.QUAY_REPO }}:${{ matrix.go }}
