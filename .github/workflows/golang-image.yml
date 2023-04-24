@@ -56,13 +56,13 @@ jobs:
 #             echo "BUILD_IMAGE=1" >> "$GITHUB_ENV"
 #           fi
       - name: Set up QEMU
-        if: env.BUILD_IMAGE == 1
+#         if: env.BUILD_IMAGE == 1
         run: |
           sudo apt-get update
           sudo apt-get install -y qemu-user-static
       - name: Build
         uses: redhat-actions/buildah-build@v2
-        if: env.BUILD_IMAGE == 1
+#         if: env.BUILD_IMAGE == 1
         with:
           platforms: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x
           build-args: |
