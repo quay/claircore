@@ -71,17 +71,17 @@ jobs:
           context: etc
           tags: |
             quay.io/${{ env.QUAY_ORG }}/${{ env.QUAY_REPO }}:${{ matrix.go }}
-      - uses: redhat-actions/podman-login@v1
-        if: env.BUILD_IMAGE == 1
-        with:
-          registry: quay.io
-          username: ${{ env.QUAY_USER }}
-          password: ${{ secrets.QUAY_TOKEN }}
-      - name: Publish
-        uses: redhat-actions/push-to-registry@v2
-        if: env.BUILD_IMAGE == 1
-        with:
-          #extra-args: |
-          #  --compression-format=zstd:chunked
-          tags: |
-            quay.io/${{ env.QUAY_ORG }}/${{ env.QUAY_REPO }}:${{ matrix.go }}
+#       - uses: redhat-actions/podman-login@v1
+#         if: env.BUILD_IMAGE == 1
+#         with:
+#           registry: quay.io
+#           username: ${{ env.QUAY_USER }}
+#           password: ${{ secrets.QUAY_TOKEN }}
+#       - name: Publish
+#         uses: redhat-actions/push-to-registry@v2
+#         if: env.BUILD_IMAGE == 1
+#         with:
+#           #extra-args: |
+#           #  --compression-format=zstd:chunked
+#           tags: |
+#             quay.io/${{ env.QUAY_ORG }}/${{ env.QUAY_REPO }}:${{ matrix.go }}
