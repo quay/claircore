@@ -50,7 +50,13 @@ claircore-db-restart:
 	make claircore-db-up
 
 GO_VERSION ?= 1.18
+arch := $(shell uname -m)
+ifeq ($(arch),s390x)
+GO_CHECKSUM ?= ea265f5e62fcaf941d53f0cdb81222d9668e1672a0d39d992f16ff0e87c0ee6b
+else
 GO_CHECKSUM ?= e85278e98f57cdb150fe8409e6e5df5343ecb13cebf03a5d5ff12bd55a80264f
+endif
+
 .PHONY: baseimage
 baseimage:
 	podman build -f etc/Dockerfile -t quay.io/projectquay/golang:$(GO_VERSION) \
