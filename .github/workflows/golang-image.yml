@@ -62,7 +62,7 @@ jobs:
         uses: redhat-actions/buildah-build@v2
         if: env.BUILD_IMAGE == 1
         with:
-          platforms: linux/amd64,linux/arm64,linux/ppc64le
+          platforms: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x
           build-args: |
             GO_VERSION=${{ env.GO_VERSION }}
           containerfiles: etc/Dockerfile
