@@ -70,7 +70,7 @@ jobs:
       POSTGRES_CONNECTION_STRING: "host=claircore-db port=5432 user=claircore dbname=claircore sslmode=disable"
     services:
       claircore-db:
-        image: postgres:11.5
+        image: postgres:12.1
         env:
           POSTGRES_USER: "claircore"
           POSTGRES_DB: "claircore"

@@ -11,7 +11,7 @@ networks:
 
 services:
   claircore-db:
-    image: postgres:11.5
+    image: postgres:12.1
     container_name: claircore-db
     environment:
       POSTGRES_USER: "claircore"
