@@ -2,6 +2,8 @@
 name: Build and publish golang image
 
 on:
+  push:
+  
   workflow_dispatch:
     inputs:
       force:
