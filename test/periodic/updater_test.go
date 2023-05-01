@@ -18,6 +18,7 @@ import (
 	"github.com/quay/claircore/rhel"
 	"github.com/quay/claircore/suse"
 	"github.com/quay/claircore/ubuntu"
+	"github.com/quay/claircore/updater/osv"
 )
 
 func TestAWS(t *testing.T) {
@@ -131,6 +132,15 @@ func TestUbuntu(t *testing.T) {
 		t.Fatal(err)
 	}
 	runUpdaterSet(ctx, t, set)
+}
+
+func TestOSV(t *testing.T) {
+	ctx := zlog.Test(context.Background(), t)
+	us, err := osv.Factory.UpdaterSet(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	runUpdaterSet(ctx, t, us)
 }
 
 func runUpdaterSet(ctx context.Context, t *testing.T, set driver.UpdaterSet) {
