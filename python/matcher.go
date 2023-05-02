@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/quay/zlog"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/pep440"
@@ -19,9 +21,9 @@ type Matcher struct{}
 // Name implements driver.Matcher.
 func (*Matcher) Name() string { return "python" }
 
-func (*Matcher) Filter(r *claircore.IndexRecord) bool {
-	return r.Repository != nil &&
-		r.Repository.Name == Repository.Name
+// Filter implements driver.Matcher.
+func (*Matcher) Filter(record *claircore.IndexRecord) bool {
+	return record.Package.NormalizedVersion.Kind == "pep440"
 }
 
 // Query implements driver.Matcher.
@@ -41,16 +43,24 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 	}
 	upperVersion := decodedVersions.Get("fixed")
 	if upperVersion == "" {
-		return false, fmt.Errorf("pypi: missing upper version")
+		return false, fmt.Errorf("python: missing upper version")
 	}
 
 	rv, err := pep440.Parse(record.Package.Version)
 	if err != nil {
+		zlog.Warn(ctx).
+			Str("package", record.Package.Name).
+			Stringer("version", &rv).
+			Msg("unable to parse python package version")
 		return false, err
 	}
 
 	uv, err := pep440.Parse(upperVersion)
 	if err != nil {
+		zlog.Warn(ctx).
+			Str("package", vuln.Package.Name).
+			Str("version", upperVersion).
+			Msg("unable to parse python package version")
 		return false, err
 	}
 
@@ -61,6 +71,10 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 	if decodedVersions.Has("introduced") {
 		lv, err := pep440.Parse(decodedVersions.Get("introduced"))
 		if err != nil {
+			zlog.Warn(ctx).
+				Str("package", vuln.Package.Name).
+				Str("version", decodedVersions.Get("introduced")).
+				Msg("unable to parse python package version")
 			return false, err
 		}
 		if rv.Compare(&lv) < 0 {

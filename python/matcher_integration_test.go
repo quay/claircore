@@ -69,7 +69,7 @@ func TestMatcherIntegration(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 
-	path := filepath.Join("testdata", "indexreport-buster-rhel8-databind.json")
+	path := filepath.Join("testdata", "indexreport-rhel8-data.json")
 	f, err := os.Open(path)
 	if err != nil {
 		t.Fatalf("%v", err)
