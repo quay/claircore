@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
@@ -39,7 +40,7 @@ func (tc matcherTestcase) Run(t *testing.T) {
 
 // TestMatcher tests the python matcher.
 func TestMatcher(t *testing.T) {
-	tt := []matcherTestcase{
+	testcases := []matcherTestcase{
 		{
 			Name: "simple",
 			R: claircore.IndexRecord{
@@ -49,8 +50,9 @@ func TestMatcher(t *testing.T) {
 			},
 			V: claircore.Vulnerability{
 				Package: &claircore.Package{
-					Version: "==0.9.8",
+					Name: "test2",
 				},
+				FixedInVersion: "fixed=1.0.0&introduced=0.7.0",
 			},
 			Want:    true,
 			Matcher: &python.Matcher{},
@@ -64,8 +66,9 @@ func TestMatcher(t *testing.T) {
 			},
 			V: claircore.Vulnerability{
 				Package: &claircore.Package{
-					Version: "<1.5.0,>1.4.1",
+					Name: "test3",
 				},
+				FixedInVersion: "fixed=1.4.4&introduced=0",
 			},
 			Want:    true,
 			Matcher: &python.Matcher{},
@@ -79,14 +82,24 @@ func TestMatcher(t *testing.T) {
 			},
 			V: claircore.Vulnerability{
 				Package: &claircore.Package{
-					Version: "==1.4.1",
+					Name: "test4",
 				},
+				FixedInVersion: "fixed=1.4.3&introduced=0",
 			},
+			Want:    false,
 			Matcher: &python.Matcher{},
 		},
 	}
 
-	for _, tc := range tt {
-		t.Run(tc.Name, tc.Run)
+	for _, testcase := range testcases {
+		t.Run(testcase.Name, func(t *testing.T) {
+			got, err := testcase.Matcher.Vulnerable(context.Background(), &testcase.R, &testcase.V)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !cmp.Equal(got, testcase.Want) {
+				t.Error(cmp.Diff(got, testcase.Want))
+			}
+		})
 	}
 }

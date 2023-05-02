@@ -2,8 +2,8 @@ package python
 
 import (
 	"context"
-
-	"github.com/quay/zlog"
+	"fmt"
+	"net/url"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
@@ -19,40 +19,54 @@ type Matcher struct{}
 // Name implements driver.Matcher.
 func (*Matcher) Name() string { return "python" }
 
-// Filter implements driver.Matcher.
-func (*Matcher) Filter(record *claircore.IndexRecord) bool {
-	return record.Package.NormalizedVersion.Kind == "pep440"
+func (*Matcher) Filter(r *claircore.IndexRecord) bool {
+	return r.Repository != nil &&
+		r.Repository.Name == Repository.Name
 }
 
 // Query implements driver.Matcher.
 func (*Matcher) Query() []driver.MatchConstraint {
-	return []driver.MatchConstraint{}
+	return []driver.MatchConstraint{driver.RepositoryName}
 }
 
 // Vulnerable implements driver.Matcher.
 func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
-	// if the vuln is not associated with any package,
-	// return not vulnerable.
-	if vuln.Package == nil {
+	if vuln.FixedInVersion == "" {
+		return true, nil
+	}
+
+	decodedVersions, err := url.ParseQuery(vuln.FixedInVersion)
+	if err != nil {
+		return false, err
+	}
+	upperVersion := decodedVersions.Get("fixed")
+	if upperVersion == "" {
+		return false, fmt.Errorf("pypi: missing upper version")
+	}
+
+	rv, err := pep440.Parse(record.Package.Version)
+	if err != nil {
+		return false, err
+	}
+
+	v2, err := pep440.Parse(upperVersion)
+	if err != nil {
+		return false, err
+	}
+
+	if rv.Compare(&v2) >= 0 {
 		return false, nil
 	}
 
-	v, err := pep440.Parse(record.Package.Version)
-	if err != nil {
-		zlog.Warn(ctx).
-			Str("package", record.Package.Name).
-			Stringer("version", &v).
-			Msg("unable to parse python package version")
-		return false, nil
-	}
-	spec, err := pep440.ParseRange(vuln.Package.Version)
-	if err != nil {
-		zlog.Warn(ctx).
-			Str("advisory", vuln.Name).
-			Stringer("range", spec).
-			Msg("unable to parse python vulnerability range")
-		return false, nil
+	if decodedVersions.Has("introduced") {
+		v1, err := pep440.Parse(decodedVersions.Get("introduced"))
+		if err != nil {
+			return false, err
+		}
+		if rv.Compare(&v1) < 0 {
+			return false, nil
+		}
 	}
 
-	return spec.Match(&v), nil
+	return true, nil
 }
