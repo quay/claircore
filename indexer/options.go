@@ -4,11 +4,11 @@ import (
 	"net/http"
 )
 
-// Opts are options to instantiate a indexer
-type Opts struct {
+// Options are options to instantiate a indexer
+type Options struct {
 	Client        *http.Client
 	ScannerConfig struct {
-		Package, Dist, Repo map[string]func(interface{}) error
+		Package, Dist, Repo, File map[string]func(interface{}) error
 	}
 	Store        Store
 	LayerScanner *LayerScanner

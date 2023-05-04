@@ -5,7 +5,7 @@ import (
 )
 
 type (
-	Opts                = indexer.Opts
+	Options             = indexer.Options
 	Store               = indexer.Store
 	LayerScanner        = indexer.LayerScanner
 	PackageScanner      = indexer.PackageScanner

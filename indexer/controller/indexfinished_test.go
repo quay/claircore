@@ -38,7 +38,7 @@ func TestIndexFinished(t *testing.T) {
 			defer done()
 			ctx = zlog.Test(ctx, t)
 			store := table.mock(t)
-			scnr := New(&indexer.Opts{
+			scnr := New(&indexer.Options{
 				Store: store,
 			})
 
