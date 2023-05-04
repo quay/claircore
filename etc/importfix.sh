@@ -9,9 +9,9 @@ set -e
 cd "$(git rev-parse --show-toplevel)"
 mod="$(go list -m)"
 goimports=$(command -v goimports || echo go run golang.org/x/tools/cmd/goimports@latest)
-git show --pretty=format: --name-only "${1:-HEAD}" -- ':*\.go' | (
+git show --pretty=format: --diff-filter=d --name-only "${1:-HEAD}" -- ':*\.go' | (
 	while read -r f; do
-		sed -i'' '/import (/,/)/{ /^$/d }' "$f"
+		sed -i '' '/import (/,/)/{ /^$/d; }' "$f"
 		$goimports -local "$mod" -w "$f"
 	done
 )
