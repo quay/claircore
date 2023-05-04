@@ -12,6 +12,7 @@ type LayerArtifacts struct {
 	Pkgs  []*claircore.Package
 	Dist  []*claircore.Distribution // each layer can only have a single distribution
 	Repos []*claircore.Repository
+	Files []claircore.File
 }
 
 // Coalescer takes a set of layers and creates coalesced IndexReport.

@@ -28,6 +28,7 @@ import (
 	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/quay/claircore/rpm"
 	"github.com/quay/claircore/ruby"
+	"github.com/quay/claircore/whiteout"
 )
 
 const versionMagic = "libindex number: 2\n"
@@ -105,6 +106,12 @@ func New(ctx context.Context, opts *Options, cl *http.Client) (*Libindex, error)
 			ruby.NewEcosystem(ctx),
 		}
 	}
+	// Add whiteout objects
+	// Always add the whiteout ecosystem
+	opts.Ecosystems = append(opts.Ecosystems, whiteout.NewEcosystem(ctx))
+	opts.Resolvers = []indexer.Resolver{
+		&whiteout.Resolver{},
+	}
 
 	if cl == nil {
 		return nil, errors.New("invalid *http.Client")
@@ -119,11 +126,11 @@ func New(ctx context.Context, opts *Options, cl *http.Client) (*Libindex, error)
 	}
 
 	// register any new scanners.
-	pscnrs, dscnrs, rscnrs, err := indexer.EcosystemsToScanners(ctx, opts.Ecosystems)
+	pscnrs, dscnrs, rscnrs, fscnrs, err := indexer.EcosystemsToScanners(ctx, opts.Ecosystems)
 	if err != nil {
 		return nil, err
 	}
-	vscnrs := indexer.MergeVS(pscnrs, dscnrs, rscnrs)
+	vscnrs := indexer.MergeVS(pscnrs, dscnrs, rscnrs, fscnrs)
 
 	err = l.store.RegisterScanners(ctx, vscnrs)
 	if err != nil {

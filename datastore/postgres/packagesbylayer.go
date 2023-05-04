@@ -65,7 +65,8 @@ SELECT
 	source_package.module,
 	source_package.arch,
 	package_scanartifact.package_db,
-	package_scanartifact.repository_hint
+	package_scanartifact.repository_hint,
+	package_scanartifact.filepath
 FROM
 	package_scanartifact
 	LEFT JOIN package ON
@@ -140,6 +141,7 @@ WHERE
 
 			&pkg.PackageDB,
 			&pkg.RepositoryHint,
+			&pkg.Filepath,
 		)
 		pkg.ID = strconv.FormatInt(id, 10)
 		spkg.ID = strconv.FormatInt(srcID, 10)

@@ -110,8 +110,22 @@ func (vs VersionedScanners) VStoRS() []RepositoryScanner {
 	return out
 }
 
+// FStoVS takes an array of FileScanners and appends VersionedScanners with
+// VersionScanner types.
+func (vs *VersionedScanners) FStoVS(scnrs []FileScanner) {
+	n := len(scnrs)
+	if cap(*vs) < n {
+		*vs = make([]VersionedScanner, n)
+	} else {
+		*vs = (*vs)[:n]
+	}
+	for i := 0; i < n; i++ {
+		(*vs)[i] = scnrs[i]
+	}
+}
+
 // MergeVS merges lists of scanners into a single list of VersionedScanner types
-func MergeVS(pscnr []PackageScanner, dscnr []DistributionScanner, rscnr []RepositoryScanner) VersionedScanners {
+func MergeVS(pscnr []PackageScanner, dscnr []DistributionScanner, rscnr []RepositoryScanner, fscnr []FileScanner) VersionedScanners {
 	out := make([]VersionedScanner, 0)
 	for _, ps := range pscnr {
 		out = append(out, VersionedScanner(ps))
@@ -121,6 +135,9 @@ func MergeVS(pscnr []PackageScanner, dscnr []DistributionScanner, rscnr []Reposi
 	}
 	for _, rs := range rscnr {
 		out = append(out, VersionedScanner(rs))
+	}
+	for _, fs := range fscnr {
+		out = append(out, VersionedScanner(fs))
 	}
 	return out
 }

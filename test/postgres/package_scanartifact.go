@@ -27,7 +27,8 @@ INTO
 			source_id,
 			scanner_id,
 			package_db,
-			repository_hint
+			repository_hint,
+			filepath
 		)
 VALUES
 	(
@@ -36,7 +37,8 @@ VALUES
 		$3,
 		$4,
 		$5,
-		$6
+		$6,
+		$7
 	);
 `
 	insertLayer := `
@@ -51,7 +53,7 @@ INSERT INTO layer (hash) VALUES ($1);
 	n := len(scnrs)
 	for i, pkg := range pkgs {
 		nn := i % n
-		_, err := pool.Exec(ctx, query, &layerHash, &pkg.ID, &pkg.Source.ID, &nn, &pkg.PackageDB, &pkg.RepositoryHint)
+		_, err := pool.Exec(ctx, query, &layerHash, &pkg.ID, &pkg.Source.ID, &nn, &pkg.PackageDB, &pkg.RepositoryHint, &pkg.Filepath)
 		if err != nil {
 			return fmt.Errorf("failed to insert scan artifact %v", err)
 		}

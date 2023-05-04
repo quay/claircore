@@ -46,6 +46,7 @@ type Options struct {
 	// Providing a function for a scanner that's not expecting it is not a fatal
 	// error.
 	ScannerConfig struct {
-		Package, Dist, Repo map[string]func(interface{}) error
+		Package, Dist, Repo, File map[string]func(interface{}) error
 	}
+	Resolvers []indexer.Resolver
 }

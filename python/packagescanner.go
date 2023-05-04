@@ -114,6 +114,7 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 			Name:              strings.ToLower(hdr.Get("Name")),
 			Version:           v.String(),
 			PackageDB:         "python:" + pkgDB,
+			Filepath:          n,
 			Kind:              claircore.BINARY,
 			NormalizedVersion: v.Version(),
 			// TODO Is there some way to pick up on where a wheel or egg was

@@ -18,18 +18,21 @@ type Ecosystem struct {
 	PackageScanners      func(ctx context.Context) ([]PackageScanner, error)
 	DistributionScanners func(ctx context.Context) ([]DistributionScanner, error)
 	RepositoryScanners   func(ctx context.Context) ([]RepositoryScanner, error)
+	FileScanners         func(ctx context.Context) ([]FileScanner, error)
 	Coalescer            func(ctx context.Context) (Coalescer, error)
 	Name                 string
 }
 
 // EcosystemsToScanners extracts and dedupes multiple ecosystems and returns
 // their discrete scanners.
-func EcosystemsToScanners(ctx context.Context, ecosystems []*Ecosystem) ([]PackageScanner, []DistributionScanner, []RepositoryScanner, error) {
+func EcosystemsToScanners(ctx context.Context, ecosystems []*Ecosystem) ([]PackageScanner, []DistributionScanner, []RepositoryScanner, []FileScanner, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "indexer/EcosystemsToScanners")
 	ps := []PackageScanner{}
 	ds := []DistributionScanner{}
 	rs := []RepositoryScanner{}
-	seen := struct{ pkg, dist, repo map[string]struct{} }{
+	fis := []FileScanner{}
+	seen := struct{ pkg, dist, repo, file map[string]struct{} }{
+		make(map[string]struct{}),
 		make(map[string]struct{}),
 		make(map[string]struct{}),
 		make(map[string]struct{}),
@@ -38,7 +41,7 @@ func EcosystemsToScanners(ctx context.Context, ecosystems []*Ecosystem) ([]Packa
 	for _, ecosystem := range ecosystems {
 		pscanners, err := ecosystem.PackageScanners(ctx)
 		if err != nil {
-			return nil, nil, nil, err
+			return nil, nil, nil, nil, err
 		}
 		for _, s := range pscanners {
 			n := s.Name()
@@ -51,7 +54,7 @@ func EcosystemsToScanners(ctx context.Context, ecosystems []*Ecosystem) ([]Packa
 
 		dscanners, err := ecosystem.DistributionScanners(ctx)
 		if err != nil {
-			return nil, nil, nil, err
+			return nil, nil, nil, nil, err
 		}
 		for _, s := range dscanners {
 			n := s.Name()
@@ -64,7 +67,7 @@ func EcosystemsToScanners(ctx context.Context, ecosystems []*Ecosystem) ([]Packa
 
 		rscanners, err := ecosystem.RepositoryScanners(ctx)
 		if err != nil {
-			return nil, nil, nil, err
+			return nil, nil, nil, nil, err
 		}
 		for _, s := range rscanners {
 			n := s.Name()
@@ -74,6 +77,21 @@ func EcosystemsToScanners(ctx context.Context, ecosystems []*Ecosystem) ([]Packa
 			seen.repo[n] = struct{}{}
 			rs = append(rs, s)
 		}
+
+		if ecosystem.FileScanners != nil {
+			fscanners, err := ecosystem.FileScanners(ctx)
+			if err != nil {
+				return nil, nil, nil, nil, err
+			}
+			for _, s := range fscanners {
+				n := s.Name()
+				if _, ok := seen.file[n]; ok {
+					continue
+				}
+				seen.file[n] = struct{}{}
+				fis = append(fis, s)
+			}
+		}
 	}
-	return ps, ds, rs, nil
+	return ps, ds, rs, fis, nil
 }

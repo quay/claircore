@@ -24,6 +24,10 @@ func coalesce(ctx context.Context, s *Controller) (State, error) {
 		pkgScanners, _ := ecosystem.PackageScanners(cctx)
 		distScanners, _ := ecosystem.DistributionScanners(cctx)
 		repoScanners, _ := ecosystem.RepositoryScanners(cctx)
+		fileScanners := []indexer.FileScanner{}
+		if ecosystem.FileScanners != nil {
+			fileScanners, _ = ecosystem.FileScanners(cctx)
+		}
 		// pack artifacts var
 		for _, layer := range s.manifest.Layers {
 			la := &indexer.LayerArtifacts{
@@ -52,6 +56,13 @@ func coalesce(ctx context.Context, s *Controller) (State, error) {
 				return Terminal, fmt.Errorf("failed to retrieve repositories for %v: %w", layer.Hash, err)
 			}
 			la.Repos = append(la.Repos, repos...)
+			// get files from layer
+			vscnrs.FStoVS(fileScanners)
+			files, err := s.Store.FilesByLayer(cctx, layer.Hash, vscnrs)
+			if err != nil {
+				return Terminal, fmt.Errorf("failed to retrieve files for %v: %w", layer.Hash, err)
+			}
+			la.Files = append(la.Files, files...)
 			// pack artifacts array in layer order
 			artifacts = append(artifacts, la)
 		}
@@ -76,6 +87,9 @@ func coalesce(ctx context.Context, s *Controller) (State, error) {
 		return Terminal, err
 	}
 	s.report = MergeSR(s.report, reports)
+	for _, r := range s.Resolvers {
+		s.report = r.Resolve(ctx, s.report, s.manifest.Layers)
+	}
 	return IndexManifest, nil
 }
 
@@ -98,6 +112,10 @@ func MergeSR(source *claircore.IndexReport, merge []*claircore.IndexReport) *cla
 
 		for k, v := range ir.Repositories {
 			source.Repositories[k] = v
+		}
+
+		for k, v := range ir.Files {
+			source.Files[k] = v
 		}
 	}
 	return source

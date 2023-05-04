@@ -14,5 +14,6 @@ type Options struct {
 	LayerScanner *LayerScanner
 	FetchArena   FetchArena
 	Ecosystems   []*Ecosystem
+	Resolvers    []Resolver
 	Vscnrs       VersionedScanners
 }

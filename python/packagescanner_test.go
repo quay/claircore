@@ -34,8 +34,8 @@ func TestScanRemote(t *testing.T) {
 			t.Error(err)
 		}
 		defer f.Close()
-		if err := gob.NewDecoder(f).Decode(&tc.Want); err != nil {
-			t.Error(err)
+		if decErr := gob.NewDecoder(f).Decode(&tc.Want); decErr != nil {
+			t.Error(decErr)
 		}
 		t.Run(path.Base(tc.Name), tc.Run(ctx))
 		if t.Failed() && errors.Is(err, fs.ErrNotExist) && tc.Want != nil {

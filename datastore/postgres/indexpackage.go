@@ -86,10 +86,11 @@ func (s *IndexerStore) IndexPackages(ctx context.Context, pkgs []*claircore.Pack
 				 WHERE layer.hash = $14
 			 )
 		INSERT
-		INTO package_scanartifact (layer_id, package_db, repository_hint, package_id, source_id, scanner_id)
+		INTO package_scanartifact (layer_id, package_db, repository_hint, filepath, package_id, source_id, scanner_id)
 		VALUES ((SELECT layer_id FROM layer),
 				$15,
 				$16,
+				$17,
 				(SELECT package_id FROM binary_package),
 				(SELECT source_id FROM source_package),
 				(SELECT scanner_id FROM scanner))
@@ -180,6 +181,7 @@ func (s *IndexerStore) IndexPackages(ctx context.Context, pkgs []*claircore.Pack
 			layer.Hash,
 			pkg.PackageDB,
 			pkg.RepositoryHint,
+			pkg.Filepath,
 		)
 		if err != nil {
 			return fmt.Errorf("batch insert failed for package_scanartifact %v: %w", pkg, err)
