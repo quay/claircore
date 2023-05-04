@@ -42,7 +42,7 @@ func TestScanLayers(t *testing.T) {
 			defer done()
 			ctx = zlog.Test(ctx, t)
 			s := table.mock(t)
-			opts := &indexer.Opts{
+			opts := &indexer.Options{
 				Store: s,
 			}
 			scnr := New(opts)
@@ -125,7 +125,7 @@ func TestScanNoErrors(t *testing.T) {
 		},
 	}
 
-	sOpts := &indexer.Opts{
+	sOpts := &indexer.Options{
 		Store:      mock_store,
 		Ecosystems: []*indexer.Ecosystem{ecosystem},
 	}

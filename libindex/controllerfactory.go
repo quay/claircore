@@ -6,4 +6,4 @@ import (
 )
 
 // ControllerFactory is a factory method to return a Controller during libindex runtime.
-type ControllerFactory func(opts *indexer.Opts) *controller.Controller
+type ControllerFactory func(opts *indexer.Options) *controller.Controller

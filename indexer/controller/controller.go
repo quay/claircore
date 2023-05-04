@@ -17,7 +17,7 @@ import (
 // Controller is implemented as an FSM.
 type Controller struct {
 	// holds dependencies for a indexer.controller
-	*indexer.Opts
+	*indexer.Options
 	// the manifest this controller is working on. populated on Scan() call
 	manifest *claircore.Manifest
 	// the result of this scan. each stateFunc manipulates this field.
@@ -31,7 +31,7 @@ type Controller struct {
 }
 
 // New constructs a controller given an Opts struct
-func New(opts *indexer.Opts) *Controller {
+func New(options *indexer.Options) *Controller {
 	// fully init any maps and arrays
 	scanRes := &claircore.IndexReport{
 		Packages:      map[string]*claircore.Package{},
@@ -41,7 +41,7 @@ func New(opts *indexer.Opts) *Controller {
 	}
 
 	s := &Controller{
-		Opts:         opts,
+		Options:      options,
 		currentState: CheckManifest,
 		report:       scanRes,
 		manifest:     &claircore.Manifest{},

@@ -58,7 +58,7 @@ func TestCheckManifest(t *testing.T) {
 			m := table.mock(t)
 
 			// create indexer
-			opts := &indexer.Opts{
+			opts := &indexer.Options{
 				Store: m,
 			}
 			s := New(opts)

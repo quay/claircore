@@ -49,7 +49,7 @@ func TestIndexManifest(t *testing.T) {
 			defer done()
 			ctx = zlog.Test(ctx, t)
 			s := table.mock(t)
-			indexer := New(&indexer.Opts{
+			indexer := New(&indexer.Options{
 				Store: s,
 			})
 

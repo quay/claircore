@@ -30,7 +30,7 @@ func TestCoalesce(t *testing.T) {
 		t.Run(table.name, func(t *testing.T) {
 			ctx, done := context.WithCancel(ctx)
 			defer done()
-			indexer := New(&indexer.Opts{})
+			indexer := New(&indexer.Options{})
 
 			state, err := coalesce(ctx, indexer)
 			if err != nil {

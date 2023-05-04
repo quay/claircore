@@ -53,7 +53,7 @@ func TestControllerIndexerError(t *testing.T) {
 		t.Run(table.name, func(t *testing.T) {
 			ctx := zlog.Test(ctx, t)
 			store, fa := table.mock(t)
-			c := New(&indexer.Opts{
+			c := New(&indexer.Options{
 				Store:      store,
 				FetchArena: fa,
 			})
@@ -111,7 +111,7 @@ func TestControllerIndexFinished(t *testing.T) {
 		t.Run(table.name, func(t *testing.T) {
 			ctx := zlog.Test(ctx, t)
 			store, fa := table.mock(t)
-			c := New(&indexer.Opts{
+			c := New(&indexer.Options{
 				Store:      store,
 				FetchArena: fa,
 			})

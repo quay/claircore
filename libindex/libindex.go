@@ -62,7 +62,7 @@ type Libindex struct {
 	vscnrs indexer.VersionedScanners
 	// indexerOptions hold construction context for the layerScanner and the
 	// controller factory.
-	indexerOptions *indexer.Opts
+	indexerOptions *indexer.Options
 }
 
 // New creates a new instance of libindex.
@@ -140,7 +140,7 @@ func New(ctx context.Context, opts *Options, cl *http.Client) (*Libindex, error)
 	l.vscnrs = vscnrs
 
 	// create indexer.Options
-	l.indexerOptions = &indexer.Opts{
+	l.indexerOptions = &indexer.Options{
 		Store:         l.store,
 		FetchArena:    l.fa,
 		Ecosystems:    opts.Ecosystems,
