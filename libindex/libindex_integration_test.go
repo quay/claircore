@@ -27,6 +27,7 @@ import (
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 	indexer "github.com/quay/claircore/test/mock/indexer"
+	"github.com/quay/claircore/whiteout"
 )
 
 // Testcase is a test case for calling libindex.
@@ -133,6 +134,9 @@ func (tc testcase) RunInner(ctx context.Context, t *testing.T, dsn string, next 
 				RepositoryScanners: func(_ context.Context) ([]indexer.RepositoryScanner, error) {
 					return nil, nil
 				},
+				FileScanners: func(ctx context.Context) ([]indexer.FileScanner, error) {
+					return []indexer.FileScanner{&whiteout.Scanner{}}, nil
+				},
 				Coalescer: func(_ context.Context) (indexer.Coalescer, error) {
 					return linux.NewCoalescer(), nil
 				},
@@ -202,8 +206,8 @@ func checkEqual(ctx context.Context, t *testing.T, tc testcase, lib *Libindex, i
 		cmp.FilterPath(func(p cmp.Path) bool {
 			s := p.Index(-3)
 			m := p.Last().String()
-			return s.Type() == reflect.TypeOf((*claircore.Package)(nil)) &&
-				(m == ".RepositoryHint" || m == ".PackageDB")
+			return m == ".Files" || (s.Type() == reflect.TypeOf((*claircore.Package)(nil)) &&
+				(m == ".RepositoryHint" || m == ".PackageDB"))
 		}, cmp.Ignore()),
 	}
 	hash := tc.Digest()
@@ -217,14 +221,14 @@ func checkEqual(ctx context.Context, t *testing.T, tc testcase, lib *Libindex, i
 	// confirm scan report retrieved from libindex matches the one
 	// the Scan() method returned
 	want := ir
-	ir, ok, err := lib.IndexReport(ctx, hash)
+	got, ok, err := lib.IndexReport(ctx, hash)
 	if err != nil {
 		t.Error(err)
 	}
 	if !ok {
 		t.Error("expected ok return from IndexReport")
 	}
-	if got := ir; !cmp.Equal(got, want, cmpopts) {
+	if !cmp.Equal(got, want, cmpopts) {
 		t.Error(cmp.Diff(got, want, cmpopts))
 	}
 }

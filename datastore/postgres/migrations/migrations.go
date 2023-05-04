@@ -49,6 +49,10 @@ var IndexerMigrations = []migrate.Migration{
 		ID: 5,
 		Up: runFile("indexer/05-delete-manifest-index-index.sql"),
 	},
+	{
+		ID: 6,
+		Up: runFile("indexer/06-file-artifacts.sql"),
+	},
 }
 
 var MatcherMigrations = []migrate.Migration{

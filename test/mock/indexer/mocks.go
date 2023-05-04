@@ -100,6 +100,21 @@ func (mr *MockStoreMockRecorder) DistributionsByLayer(arg0, arg1, arg2 interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DistributionsByLayer", reflect.TypeOf((*MockStore)(nil).DistributionsByLayer), arg0, arg1, arg2)
 }
 
+// FilesByLayer mocks base method.
+func (m *MockStore) FilesByLayer(arg0 context.Context, arg1 claircore.Digest, arg2 indexer.VersionedScanners) ([]claircore.File, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FilesByLayer", arg0, arg1, arg2)
+	ret0, _ := ret[0].([]claircore.File)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FilesByLayer indicates an expected call of FilesByLayer.
+func (mr *MockStoreMockRecorder) FilesByLayer(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FilesByLayer", reflect.TypeOf((*MockStore)(nil).FilesByLayer), arg0, arg1, arg2)
+}
+
 // IndexDistributions mocks base method.
 func (m *MockStore) IndexDistributions(arg0 context.Context, arg1 []*claircore.Distribution, arg2 *claircore.Layer, arg3 indexer.VersionedScanner) error {
 	m.ctrl.T.Helper()
@@ -112,6 +127,20 @@ func (m *MockStore) IndexDistributions(arg0 context.Context, arg1 []*claircore.D
 func (mr *MockStoreMockRecorder) IndexDistributions(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexDistributions", reflect.TypeOf((*MockStore)(nil).IndexDistributions), arg0, arg1, arg2, arg3)
+}
+
+// IndexFiles mocks base method.
+func (m *MockStore) IndexFiles(arg0 context.Context, arg1 []claircore.File, arg2 *claircore.Layer, arg3 indexer.VersionedScanner) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IndexFiles", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IndexFiles indicates an expected call of IndexFiles.
+func (mr *MockStoreMockRecorder) IndexFiles(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IndexFiles", reflect.TypeOf((*MockStore)(nil).IndexFiles), arg0, arg1, arg2, arg3)
 }
 
 // IndexManifest mocks base method.

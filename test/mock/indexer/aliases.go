@@ -12,6 +12,7 @@ type (
 	VersionedScanner    = indexer.VersionedScanner
 	DistributionScanner = indexer.DistributionScanner
 	RepositoryScanner   = indexer.RepositoryScanner
+	FileScanner         = indexer.FileScanner
 	Coalescer           = indexer.Coalescer
 	Ecosystem           = indexer.Ecosystem
 	Realizer            = indexer.Realizer

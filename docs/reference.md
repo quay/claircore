@@ -15,3 +15,4 @@ Important interfaces and structs are outlined.
 - [Updater Set Factory](./reference/updatersetfactory.md)
 - [Version Filter](./reference/version_filter.md)
 - [Versioned Scanner](./reference/versioned_scanner.md)
+- [Resolver](./reference/resolver.md)

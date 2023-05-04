@@ -21,15 +21,16 @@ type LayerScanner struct {
 	inflight int64
 
 	// Pre-constructed and configured scanners.
-	ps []PackageScanner
-	ds []DistributionScanner
-	rs []RepositoryScanner
+	ps  []PackageScanner
+	ds  []DistributionScanner
+	rs  []RepositoryScanner
+	fis []FileScanner
 }
 
 // NewLayerScanner is the constructor for a LayerScanner.
 //
 // The provided Context is only used for the duration of the call.
-func NewLayerScanner(ctx context.Context, concurrent int, opts *Opts) (*LayerScanner, error) {
+func NewLayerScanner(ctx context.Context, concurrent int, opts *Options) (*LayerScanner, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "indexer.NewLayerScanner")
 	zlog.Info(ctx).Msg("NewLayerScanner: constructing a new layer-scanner")
 	switch {
@@ -42,7 +43,7 @@ func NewLayerScanner(ctx context.Context, concurrent int, opts *Opts) (*LayerSca
 		concurrent = runtime.GOMAXPROCS(0)
 	}
 
-	ps, ds, rs, err := EcosystemsToScanners(ctx, opts.Ecosystems)
+	ps, ds, rs, fs, err := EcosystemsToScanners(ctx, opts.Ecosystems)
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract scanners from ecosystems: %v", err)
 	}
@@ -53,10 +54,11 @@ func NewLayerScanner(ctx context.Context, concurrent int, opts *Opts) (*LayerSca
 		ps:       configAndFilter(ctx, opts, ps),
 		ds:       configAndFilter(ctx, opts, ds),
 		rs:       configAndFilter(ctx, opts, rs),
+		fis:      configAndFilter(ctx, opts, fs),
 	}, nil
 }
 
-func configAndFilter[S VersionedScanner](ctx context.Context, opts *Opts, ss []S) []S {
+func configAndFilter[S VersionedScanner](ctx context.Context, opts *Options, ss []S) []S {
 	i := 0
 	for _, s := range ss {
 		n := s.Name()
@@ -68,6 +70,8 @@ func configAndFilter[S VersionedScanner](ctx context.Context, opts *Opts, ss []S
 			cfgMap = opts.ScannerConfig.Repo
 		case "distribution":
 			cfgMap = opts.ScannerConfig.Dist
+		case "file":
+			cfgMap = opts.ScannerConfig.File
 		default:
 			zlog.Warn(ctx).
 				Str("kind", k).
@@ -154,6 +158,10 @@ func (ls *LayerScanner) Scan(ctx context.Context, manifest claircore.Digest, lay
 		for _, s := range ls.rs {
 			g.Go(launch(l, s))
 		}
+		for _, s := range ls.fis {
+			g.Go(launch(l, s))
+		}
+
 	}
 
 	return g.Wait()
@@ -196,6 +204,7 @@ type result struct {
 	pkgs  []*claircore.Package
 	dists []*claircore.Distribution
 	repos []*claircore.Repository
+	files []claircore.File
 }
 
 // Do asserts the Scanner back to having a Scan method, and then calls it.
@@ -210,6 +219,8 @@ func (r *result) Do(ctx context.Context, s VersionedScanner, l *claircore.Layer)
 		r.dists, err = s.Scan(ctx, l)
 	case RepositoryScanner:
 		r.repos, err = s.Scan(ctx, l)
+	case FileScanner:
+		r.files, err = s.Scan(ctx, l)
 	default:
 		panic(fmt.Sprintf("programmer error: unknown type %T used as scanner", s))
 	}
@@ -239,6 +250,9 @@ func (r *result) Store(ctx context.Context, store Store, s VersionedScanner, l *
 	case r.repos != nil:
 		zlog.Debug(ctx).Int("count", len(r.repos)).Msg("scan returned repos")
 		return store.IndexRepositories(ctx, r.repos, l, s)
+	case r.files != nil:
+		zlog.Debug(ctx).Int("count", len(r.files)).Msg("scan returned files")
+		return store.IndexFiles(ctx, r.files, l, s)
 	}
 	zlog.Debug(ctx).Msg("scan returned a nil")
 	return nil

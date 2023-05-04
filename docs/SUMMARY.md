@@ -25,6 +25,7 @@
   - [Package Scanner](./reference/package_scanner.md)
   - [Remote Scanner](./reference/remote_matcher.md)
   - [Repository Scanner](./reference/repository_scanner.md)
+  - [Resolver](./reference/resolver.md)
   - [RPC Scanner](./reference/rpcscanner.md)
   - [Updater](./reference/updater.md)
   - [Updater Set Factory](./reference/updatersetfactory.md)

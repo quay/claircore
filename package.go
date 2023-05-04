@@ -17,6 +17,8 @@ type Package struct {
 	Source *Package `json:"source,omitempty"`
 	// the file system path or prefix where this package resides
 	PackageDB string `json:"-"`
+	// a location in the layer where the package is located, this is useful for language packages.
+	Filepath string `json:"-"`
 	// a hint on which repository this package was downloaded from
 	RepositoryHint string `json:"-"`
 	// NormalizedVersion is a representation of a version string that's

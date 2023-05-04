@@ -63,6 +63,8 @@ type Querier interface {
 	DistributionsByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]*claircore.Distribution, error)
 	// RepositoriesByLayer gets all the repositories found in a layer limited by the provided scanners.
 	RepositoriesByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]*claircore.Repository, error)
+	// FilesByLayer gets all the interesting files found in a layer limited by the provided scanners.
+	FilesByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]claircore.File, error)
 	// IndexReport attempts to retrieve a persisted IndexReport.
 	IndexReport(ctx context.Context, hash claircore.Digest) (*claircore.IndexReport, bool, error)
 	// AffectedManifests returns a list of manifest digests which the target vulnerability
@@ -79,6 +81,8 @@ type Indexer interface {
 	IndexDistributions(ctx context.Context, dists []*claircore.Distribution, layer *claircore.Layer, scnr VersionedScanner) error
 	// IndexRepositories indexes repositories into the persistence layer.
 	IndexRepositories(ctx context.Context, repos []*claircore.Repository, layer *claircore.Layer, scnr VersionedScanner) error
+	// IndexFiles indexes the interesting files into the persistence layer.
+	IndexFiles(ctx context.Context, files []claircore.File, layer *claircore.Layer, scnr VersionedScanner) error
 	// IndexManifest should index the coalesced manifest's content given an IndexReport.
 	IndexManifest(ctx context.Context, ir *claircore.IndexReport) error
 }
