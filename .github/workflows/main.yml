@@ -39,10 +39,12 @@ jobs:
     needs: ['config']
     name: Tidy
     runs-on: ubuntu-latest
-    container: quay.io/projectquay/golang:${{ fromJSON(needs.config.outputs.go_versions)[0] }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version: ${{ fromJSON(needs.config.outputs.go_versions)[0] }}
       - name: Go Tidy
         run: go mod tidy
       - name: Git Diff
@@ -65,39 +67,28 @@ jobs:
     needs: ['config']
     name: Tests
     runs-on: ubuntu-latest
-    container: quay.io/projectquay/golang:${{ matrix.go }}
     env:
-      POSTGRES_CONNECTION_STRING: "host=claircore-db port=5432 user=claircore dbname=claircore sslmode=disable"
-    services:
-      claircore-db:
-        image: postgres:11.5
-        env:
-          POSTGRES_USER: "claircore"
-          POSTGRES_DB: "claircore"
-          POSTGRES_INITDB_ARGS: "--no-sync"
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+      POSTGRES_CONNECTION_STRING: "host=localhost port=5432 user=claircore dbname=claircore password=password sslmode=disable"
     strategy:
       fail-fast: false
       matrix:
         go: ${{ fromJSON(needs.config.outputs.go_versions) }}
     steps:
+      - name: Database setup
+        run: |
+          set -e
+          sudo systemctl start postgresql.service
+          sudo -u postgres createuser -d -r -s claircore
+          sudo -u postgres psql -c "ALTER ROLE claircore WITH PASSWORD 'password';"
+          sudo -u postgres createdb -O claircore claircore
+          psql -c 'SELECT version();' "$POSTGRES_CONNECTION_STRING" 
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Cache Go dependencies
-        uses: actions/cache@v3.3.1
+      - uses: actions/setup-go@v4
         with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go${{ matrix.go }}-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go${{ matrix.go }}-
+          go-version: ${{ matrix.go }}
       - name: Cache misc testdata
-        uses: actions/cache@v3.3.1
+        uses: actions/cache@v3
         with:
           key: testdata-${{ hashFiles('**/*_test.go') }}
           restore-keys: |
@@ -107,4 +98,8 @@ jobs:
             **/testdata/*.tar
             **/testdata/*.tar.gz
       - name: Tests
-        run: make integration
+        run: >
+          find .
+          -name .git -prune -o
+          -name testdata -prune -o
+          -name go.mod -execdir go test -race -tags integration ./... \;
