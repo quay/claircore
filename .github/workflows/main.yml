@@ -98,8 +98,17 @@ jobs:
             **/testdata/*.tar
             **/testdata/*.tar.gz
       - name: Tests
-        run: >
-          find .
-          -name .git -prune -o
-          -name testdata -prune -o
-          -name go.mod -execdir go test -race -tags integration ./... \;
+        run: |
+          find . -name .git -prune -o -name testdata -prune -o -name go.mod -printf '%h\n' |
+          while read -r dir; do (
+            cd "$dir";
+            go list -m;
+            go mod download;
+            go test -race -tags integration ./...;
+          ); done
+      - name: Database Logs
+        if: failure()
+        run: |
+          sudo journalctl --unit postgresql.service --boot -0
+          ls /var/log/postgresql/postgresql-*.log
+          sudo cat /var/log/postgresql/postgresql-*.log
