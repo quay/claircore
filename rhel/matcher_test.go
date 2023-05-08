@@ -3,8 +3,10 @@ package rhel
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
@@ -17,7 +19,6 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/updates"
 	"github.com/quay/claircore/pkg/ctxlock"
-	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 	pgtest "github.com/quay/claircore/test/postgres"
 )
@@ -27,6 +28,12 @@ func TestMain(m *testing.M) {
 	defer func() { os.Exit(c) }()
 	defer integration.DBSetup()()
 	c = m.Run()
+}
+
+func serveOVAL(t *testing.T) (string, *http.Client) {
+	srv := httptest.NewServer(http.FileServer(http.Dir("testdata")))
+	t.Cleanup(srv.Close)
+	return srv.URL, srv.Client()
 }
 
 func TestMatcherIntegration(t *testing.T) {
@@ -39,15 +46,26 @@ func TestMatcherIntegration(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	root, c := serveOVAL(t)
 	locks, err := ctxlock.New(ctx, pool)
 	if err != nil {
 		t.Error(err)
+		return
 	}
 	defer locks.Close(ctx)
 
 	facs := make(map[string]driver.UpdaterSetFactory, len(fs))
-	for _, f := range fs {
-		u, err := test.Updater(f)
+	for _, fn := range fs {
+		u, err := NewUpdater(
+			fmt.Sprintf("test-updater-%s", filepath.Base(fn)),
+			1,
+			root+"/"+filepath.Base(fn),
+		)
+		if err != nil {
+			t.Error(err)
+			continue
+		}
+		u.Configure(ctx, func(v interface{}) error { return nil }, c)
 		if err != nil {
 			t.Error(err)
 			continue
