@@ -30,7 +30,7 @@ func (e *Engine) init(t testing.TB) {
 	if binUncached(t) {
 		fetchArchive(t)
 	}
-	d, err := cachedDir()
+	d, err := cachedDir(t)
 	if err != nil {
 		t.Error(err)
 	}
@@ -44,7 +44,7 @@ func (e *Engine) init(t testing.TB) {
 	e.DSN = dsn.String()
 	t.Logf("using port %q", e.port)
 
-	e.dataDir = filepath.Join("testdata", "pg"+dbVersion)
+	e.dataDir = filepath.Join(PackageCacheDir(t), "pg"+dbVersion)
 	if _, err := os.Stat(e.dataDir); err == nil {
 		t.Log("data directory exists, skipping initdb")
 		// Should be set up already.
@@ -55,8 +55,10 @@ func (e *Engine) init(t testing.TB) {
 	if err := os.WriteFile(pwfile, []byte(`securepassword`), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	os.MkdirAll("testdata", 0o755)
-	log, err := os.Create(filepath.Join("testdata", "pg"+dbVersion+".initdb"))
+	if err := os.MkdirAll(filepath.Dir(e.dataDir), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	log, err := os.Create(e.dataDir + ".initdb")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -130,7 +132,7 @@ func (e *Engine) Stop() error {
 }
 
 func fetchArchive(t testing.TB) {
-	p, err := cachedDir()
+	p, err := cachedDir(t)
 	if errors.Is(err, os.ErrNotExist) {
 		os.MkdirAll(p, 0o755)
 	}
@@ -254,7 +256,7 @@ func fetchArchive(t testing.TB) {
 func binUncached(t testing.TB) bool {
 	t.Helper()
 	// If the directory doesn't exist, report that it's uncached.
-	p, err := cachedDir()
+	p, err := cachedDir(t)
 	if errors.Is(err, os.ErrNotExist) {
 		return true
 	}
@@ -265,14 +267,10 @@ func binUncached(t testing.TB) bool {
 	return false
 }
 
-func cachedDir() (string, error) {
-	c, err := os.UserCacheDir()
-	if err != nil {
-		return "", err
-	}
-	p := filepath.Join(c, "clair-testing", fmt.Sprintf("postgres-%s-%s-%s", dbOS, dbArch, dbVersion))
-	_, err = os.Stat(p)
-	if err != nil {
+func cachedDir(t testing.TB) (string, error) {
+	p := CacheDir(t)
+	p = filepath.Join(p, fmt.Sprintf("postgres-%s-%s-%s", dbOS, dbArch, dbVersion))
+	if _, err := os.Stat(p); err != nil {
 		return p, err
 	}
 	return p, nil
