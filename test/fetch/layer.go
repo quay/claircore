@@ -3,6 +3,7 @@ package fetch
 import (
 	"compress/gzip"
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -37,7 +38,9 @@ func Layer(ctx context.Context, t *testing.T, c *http.Client, from, repo string,
 	for _, o := range opt {
 		opts[o] = true
 	}
-	cachefile := filepath.Join("testdata", blob.String()+".layer")
+	// Splitting the digest like this future-proofs things against some weirdo
+	// running this on Windows.
+	cachefile := filepath.Join(integration.CacheDir(t), "layer", blob.Algorithm(), hex.EncodeToString(blob.Checksum()))
 	switch _, err := os.Stat(cachefile); {
 	case err == nil:
 		t.Logf("layer cached: %s", cachefile)
@@ -49,6 +52,11 @@ func Layer(ctx context.Context, t *testing.T, c *http.Client, from, repo string,
 	default:
 		return nil, err
 	}
+	checkpath.Do(func() {
+		if err := os.MkdirAll(filepath.Dir(cachefile), 0o755); err != nil {
+			t.Errorf("unable to create needed directories: %v", err)
+		}
+	})
 	t.Logf("fetching layer into: %s", cachefile)
 
 	if c == nil {
@@ -77,6 +85,9 @@ const (
 	_Option = iota
 	IgnoreIntegration
 )
+
+// Checkpath guards against making the same directory over and over.
+var checkpath sync.Once
 
 func copyTo(t *testing.T, name string, rc io.Reader) *os.File {
 	cf, err := os.Create(name)
