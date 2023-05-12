@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/textproto"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test/fetch"
+	"github.com/quay/claircore/test/integration"
 )
 
 func TestScanner(t *testing.T) {
@@ -864,7 +866,7 @@ func TestAbsolutePaths(t *testing.T) {
 
 func TestExtraMetadata(t *testing.T) {
 	t.Parallel()
-	const layerfile = `testdata/extrametadata.layer`
+	layerfile := filepath.Join(integration.PackageCacheDir(t), `extrametadata.layer`)
 	l := claircore.Layer{
 		Hash: claircore.MustParseDigest(`sha256:25fd87072f39aaebd1ee24dca825e61d9f5a0f87966c01551d31a4d8d79d37d8`),
 		URI:  "file:///dev/null",
