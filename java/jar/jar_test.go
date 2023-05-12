@@ -122,7 +122,7 @@ func fetch(t testing.TB, u string, ck string) (name string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	name = filepath.Join("testdata", path.Base(uri.Path))
+	name = filepath.Join(integration.PackageCacheDir(t), path.Base(uri.Path))
 	ckb, err := hex.DecodeString(ck)
 	if err != nil {
 		t.Fatal(err)
