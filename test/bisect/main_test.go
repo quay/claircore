@@ -67,10 +67,7 @@ func TestRun(t *testing.T) {
 	}
 	integration.NeedDB(t)
 	ctx := context.Background()
-	layersDir, err := filepath.Abs(`testdata/layers`)
-	if err != nil {
-		t.Fatal(err)
-	}
+	layersDir := integration.PackageCacheDir(t)
 	ctx, srv := setup(ctx, t, layersDir)
 
 	indexer := mkIndexer(ctx, t, srv.Client())
