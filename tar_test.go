@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/quay/claircore/test/integration"
 )
 
 type tarTestCase struct {
@@ -18,23 +20,24 @@ type tarTestCase struct {
 	Check   func(*testing.T, *Layer)
 }
 
-func (tc tarTestCase) filename() string {
-	return filepath.Join("testdata", "TestTar_"+tc.Name+".tar")
+func (tc tarTestCase) filename(t testing.TB) string {
+	return filepath.Join(integration.PackageCacheDir(t), "TestTar_"+tc.Name+".tar")
 }
 
 func (tc tarTestCase) Generate(t *testing.T) {
-	if _, err := os.Stat(tc.filename()); err == nil {
+	name := tc.filename(t)
+	if _, err := os.Stat(name); err == nil {
 		// already exists
 		return
 	}
-	t.Logf("generating %q", tc.filename())
+	t.Logf("generating %q", name)
 	defer func() {
 		if t.Failed() {
-			os.Remove(tc.filename())
+			os.Remove(name)
 		}
 	}()
 
-	f, err := os.Create(tc.filename())
+	f, err := os.Create(name)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,7 +97,7 @@ func (tc tarTestCase) Layer(t *testing.T) *Layer {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := l.SetLocal(tc.filename()); err != nil {
+	if err := l.SetLocal(tc.filename(t)); err != nil {
 		t.Fatal(err)
 	}
 	return &l
@@ -252,7 +255,7 @@ func TestTar(t *testing.T) {
 	defer func() {
 		if t.Failed() {
 			t.Log("a subtest failed, cleaning cached tarballs")
-			fs, _ := filepath.Glob("testdata/TestTar_*.tar")
+			fs, _ := filepath.Glob(filepath.Join(integration.PackageCacheDir(t), "TestTar_*.tar"))
 			for _, f := range fs {
 				os.Remove(f)
 			}
