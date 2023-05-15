@@ -1,3 +1,25 @@
+<a name="v1.5.0"></a>
+## [v1.5.0] - 2023-05-15
+[v1.5.0]: https://github.com/quay/claircore/compare/v1.4.22...v1.5.0
+
+- updater: Extend default updater period to 6 hours
+  <details>
+  Given the expense of updating and the lack of value to such a high
+  frequency this change extends the default update period from 30 mins to
+  6 hours.
+  </details>
+
+- whiteout: Add the ability to reason about whiteout files in layers
+  <details>
+  This change give the indexing process a mechanism to discover whiteout
+  files and use them to inform the final index report. A Resolver step
+  is added to the end of the indexing process to allow for logic to be
+  injected after the various indexers' results have been compiled.
+  Indexers are expected to add a filepath to the packages they discover
+  to denote that the deletion of the filepath signifies the package is
+  delete.
+  </details>
+
 <a name="v1.4.22"></a>
 ## [v1.4.22] - 2023-04-14
 [v1.4.22]: https://github.com/quay/claircore/compare/v1.4.21...v1.4.22
