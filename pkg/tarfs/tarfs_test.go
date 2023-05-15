@@ -12,6 +12,8 @@ import (
 	"sync"
 	"testing"
 	"testing/fstest"
+
+	"github.com/quay/claircore/test/integration"
 )
 
 // TestFS runs some sanity checks on a tar generated from this package's
@@ -21,14 +23,14 @@ import (
 // file in this package *will* cause tests to fail once. Make sure to run tests
 // twice if the Checksum tests fail.
 func TestFS(t *testing.T) {
-	const name = `testdata/fstest.tar`
+	var name = filepath.Join(integration.PackageCacheDir(t), `fstest.tar`)
 	checktar(t, name)
 	fileset := []string{
 		"file.go",
 		"parse.go",
 		"tarfs.go",
 		"tarfs_test.go",
-		"testdata/.gitignore",
+		"testdata/atroot",
 	}
 
 	t.Run("Single", func(t *testing.T) {
@@ -100,7 +102,7 @@ func TestFS(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		if err := fstest.TestFS(sub, ".gitignore"); err != nil {
+		if err := fstest.TestFS(sub, "atroot"); err != nil {
 			t.Error(err)
 		}
 	})
@@ -196,7 +198,7 @@ func mktar(t *testing.T, in fs.FS, tw *tar.Writer) fs.WalkDirFunc {
 			return err
 		}
 		switch {
-		case d.Name() == "fstest.tar":
+		case filepath.Ext(d.Name()) == ".tar":
 			return nil
 		case d.Name() == "." && d.IsDir():
 			return nil
@@ -369,6 +371,9 @@ func TestKnownLayers(t *testing.T) {
 	}
 	for _, ent := range ents {
 		n := ent.Name()
+		if ext := filepath.Ext(n); ext != ".tar" && ext != ".layer" {
+			continue
+		}
 		t.Run(n, func(t *testing.T) {
 			f, err := os.Open(filepath.Join(`testdata/known`, n))
 			if err != nil {
