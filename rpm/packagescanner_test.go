@@ -1680,7 +1680,7 @@ func TestLayer(t *testing.T) {
 	for _, e := range ents {
 		ctx := zlog.Test(ctx, t)
 		n := e.Name()
-		if n == ".gitignore" {
+		if n == ".gitignore" || n == "README.md" {
 			continue
 		}
 		t.Run(n, func(t *testing.T) {
