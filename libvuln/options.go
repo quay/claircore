@@ -9,7 +9,6 @@ import (
 )
 
 const (
-	DefaultUpdateInterval  = 30 * time.Minute
 	DefaultUpdateWorkers   = 10
 	DefaultMaxConnPool     = 50
 	DefaultUpdateRetention = 2
