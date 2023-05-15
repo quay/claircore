@@ -373,10 +373,7 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 		}
 		name := strings.TrimSuffix(path.Base(zf.Name), ".zip")
 
-		var skipped struct {
-			Withdrawn  []string
-			Unaffected []string
-		}
+		var skipped stats
 		var ct int
 		for _, zf := range z.File {
 			ctx := zlog.ContextWithValues(ctx, "advisory", strings.TrimSuffix(path.Base(zf.Name), ".json"))
@@ -402,7 +399,7 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 			default:
 			}
 
-			if err := ecs.Insert(ctx, name, &a); err != nil {
+			if err := ecs.Insert(ctx, &skipped, name, &a); err != nil {
 				return nil, err
 			}
 		}
@@ -412,6 +409,7 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 		zlog.Debug(ctx).
 			Strs("withdrawn", skipped.Withdrawn).
 			Strs("unaffected", skipped.Unaffected).
+			Strs("ignored", skipped.Ignored).
 			Msg("skipped advisories")
 	}
 	zlog.Info(ctx).
@@ -424,6 +422,12 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 type (
 	fileStat interface{ Stat() (fs.FileInfo, error) }
 	sizer    interface{ Size() int64 }
+
+	stats struct {
+		Withdrawn  []string
+		Unaffected []string
+		Ignored    []string
+	}
 )
 
 // Ecs is an entity-component system for vulnerabilities.
@@ -453,7 +457,7 @@ func newECS(u string) ecs {
 	}
 }
 
-func (e *ecs) Insert(ctx context.Context, name string, a *advisory) (err error) {
+func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *advisory) (err error) {
 	if a.GitOnly() {
 		return nil
 	}
@@ -580,11 +584,8 @@ func (e *ecs) Insert(ctx context.Context, name string, a *advisory) (err error) 
 					r.Upper.V[0] = 65535
 				}
 				if r.Lower.Compare(&r.Upper) == 1 {
-					zlog.Info(ctx).
-						Strs("range", []string{
-							r.Lower.String(), r.Upper.String(),
-						}).
-						Msg("weird range")
+					e.RemoveVulnerability(v)
+					skipped.Ignored = append(skipped.Ignored, fmt.Sprintf("%s(%s,%s)", a.ID, r.Lower.String(), r.Upper.String()))
 					continue
 				}
 			}
@@ -624,6 +625,34 @@ func (e *ecs) NewVulnerability() *claircore.Vulnerability {
 		e.Vulnerability = append(e.Vulnerability, claircore.Vulnerability{})
 	}
 	return &e.Vulnerability[i]
+}
+
+// RemoveVulnerability does what it says on the tin.
+//
+// Will cause copying if the vulnerability is not the most recent returned from
+// NewVulnerability.
+func (e *ecs) RemoveVulnerability(v *claircore.Vulnerability) {
+	// NOTE(hank) This could use a bitset to track occupancy, but I don't know
+	// if that's worth the hassle.
+
+	// This is a weird construction, but it's testing for pointer equality
+	// backwards through the slice. It's allow to go to a negative index to
+	// trigger a panic if the element isn't found. That shouldn't happen.
+	//
+	// If there's some reason that should be allowed to happen, a defer with a
+	// recover can be added here.
+	i := len(e.Vulnerability) - 1
+	for ; i >= -1 && v != &e.Vulnerability[i]; i-- {
+	}
+	if i != len(e.Vulnerability)-1 {
+		// If this isn't the last element, copy all elements after the
+		// discovered position to the memory starting at the discovered
+		// position.
+		copy(e.Vulnerability[i:], e.Vulnerability[i+1:])
+	}
+	// Reset the now unused element at the end. Not doing this can leak memory.
+	e.Vulnerability[len(e.Vulnerability)-1] = claircore.Vulnerability{}
+	e.Vulnerability = e.Vulnerability[:len(e.Vulnerability)-1]
 }
 
 func (e *ecs) LookupPackage(name string, ver string) (*claircore.Package, bool) {
