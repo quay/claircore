@@ -91,17 +91,15 @@ jobs:
         if: steps.previous.outputs.cache-hit != 'true'
         with:
           go-version: ${{ matrix.go }}
-      - name: Cache misc testdata
+      - name: Cache Integration Assets
         if: steps.previous.outputs.cache-hit != 'true'
         uses: actions/cache@v3
         with:
-          key: testdata-${{ hashFiles('**/*_test.go') }}
+          key: integration-assets-${{ hashFiles('**/*_test.go') }}
           restore-keys: |
-            testdata-
+            integration-assets-
           path: |
-            **/testdata/*.layer
-            **/testdata/*.tar
-            **/testdata/*.tar.gz
+            ~/.cache/clair-testing
       - name: Tests
         run: |
           if test -f ~/ok-by-run; then
