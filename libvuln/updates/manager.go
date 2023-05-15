@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	DefaultInterval = time.Duration(30 * time.Minute)
+	DefaultInterval = time.Duration(6 * time.Hour)
 )
 
 var DefaultBatchSize = runtime.GOMAXPROCS(0)

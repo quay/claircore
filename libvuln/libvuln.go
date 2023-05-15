@@ -59,7 +59,7 @@ func New(ctx context.Context, opts *Options) (*Libvuln, error) {
 
 	// optional
 	if opts.UpdateInterval == 0 || opts.UpdateInterval < time.Minute {
-		opts.UpdateInterval = DefaultUpdateInterval
+		opts.UpdateInterval = updates.DefaultInterval
 	}
 	// This gives us a ±60 second range, rounded to the nearest tenth of a
 	// second.
