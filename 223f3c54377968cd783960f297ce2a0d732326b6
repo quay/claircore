@@ -1,0 +1,9 @@
+whiteout: Add the ability to reason about whiteout files in layers
+
+This change give the indexing process a mechanism to discover whiteout
+files and use them to inform the final index report. A Resolver step
+is added to the end of the indexing process to allow for logic to be
+injected after the various indexers' results have been compiled.
+Indexers are expected to add a filepath to the packages they discover
+to denote that the deletion of the filepath signifies the package is
+delete.
