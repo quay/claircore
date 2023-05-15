@@ -1,0 +1,5 @@
+updater: Extend default updater period to 6 hours
+
+Given the expense of updating and the lack of value to such a high
+frequency this change extends the default update period from 30 mins to
+6 hours.
