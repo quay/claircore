@@ -8,26 +8,27 @@ import (
 	"net/url"
 )
 
-type matcher struct{}
+// Matcher matches discovered Java Maven packages against advisories provided via OSV.
+type Matcher struct{}
 
 var (
-	_ driver.Matcher = (*matcher)(nil)
+	_ driver.Matcher = (*Matcher)(nil)
 )
 
 // Name implements driver.Matcher.
-func (*matcher) Name() string { return "java-maven" }
+func (*Matcher) Name() string { return "java-maven" }
 
-func (*matcher) Filter(r *claircore.IndexRecord) bool {
+func (*Matcher) Filter(r *claircore.IndexRecord) bool {
 	return r.Repository != nil &&
 		r.Repository.Name == Repository.Name
 }
 
 // Query implements driver.Matcher.
-func (*matcher) Query() []driver.MatchConstraint {
+func (*Matcher) Query() []driver.MatchConstraint {
 	return []driver.MatchConstraint{driver.RepositoryName}
 }
 
-func (*matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
+func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
 	if vuln.FixedInVersion == "" {
 		return true, nil
 	}
