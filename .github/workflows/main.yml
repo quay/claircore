@@ -19,11 +19,12 @@ jobs:
         run: |
           echo 'go_versions=["1.20","1.19"]' >> $GITHUB_OUTPUT
 
-  commit-check:
-    name: Commit Check
+  gating-lints:
+    needs: ['config']
+    name: Gating Lints
     runs-on: ubuntu-latest
     steps:
-      - name: commit check
+      - name: Commit Check
         uses: gsactions/commit-message-checker@v2
         with:
           pattern: |
@@ -34,21 +35,26 @@ jobs:
           excludeDescription: true
           checkAllCommitMessages: true
           accessToken: ${{ secrets.GITHUB_TOKEN }}
-
-  tidy:
-    needs: ['config']
-    name: Tidy
-    runs-on: ubuntu-latest
-    steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - uses: actions/setup-go@v4
+      - name: Check Filenames
+        if: success() || failure()
+        run: | # Check for all the characters Windows hates.
+          git ls-files -- ':/:*[<>:"|?*]*' | while read -r file; do
+            printf '::error file=%s,title=Bad Filename::Disallowed character in file name\n' "$file"
+          done
+          exit $(git ls-files -- ':/:*[<>:"|?*]*' | wc -l)
+      - name: Setup Go
+        if: success() || failure()
+        uses: actions/setup-go@v4
         with:
           go-version: ${{ fromJSON(needs.config.outputs.go_versions)[0] }}
       - name: Go Tidy
-        run: go mod tidy
-      - name: Git Diff
-        run: git diff --exit-code
+        if: success() || failure()
+        run: |
+          trap 'echo "::error file=go.mod,title=Tidy Check::Commit would leave go.mod untidy"' ERR
+          go mod tidy
+          git diff --exit-code
 
   build-documentation:
     name: Build Docs
