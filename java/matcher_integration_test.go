@@ -40,7 +40,7 @@ func TestMatcherIntegration(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	m := &matcher{}
+	m := &Matcher{}
 	locks, err := ctxlock.New(ctx, pool)
 	if err != nil {
 		t.Fatalf("%v", err)
@@ -84,7 +84,7 @@ func TestMatcherIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected error to be nil but got %v", err)
 	}
-	
+
 	vulns := vr.Vulnerabilities
 	t.Logf("Number of Vulnerabilities found: %d", len(vulns))
 

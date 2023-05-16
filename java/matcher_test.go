@@ -9,7 +9,7 @@ import (
 )
 
 func TestVulnerable(t *testing.T) {
-	matcher := &matcher{}
+	matcher := &Matcher{}
 
 	testcases := []struct {
 		name   string
