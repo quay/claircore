@@ -73,8 +73,6 @@ jobs:
     needs: ['config']
     name: Tests
     runs-on: ubuntu-latest
-    env:
-      POSTGRES_CONNECTION_STRING: "host=localhost port=5432 user=claircore dbname=claircore password=password sslmode=disable"
     strategy:
       fail-fast: false
       matrix:
@@ -86,15 +84,6 @@ jobs:
         with:
           path: ~/ok-by-run
           key: commit-ok-${{ matrix.go }}-${{ github.sha }}
-      - name: Database setup
-        if: steps.previous.outputs.cache-hit != 'true'
-        run: |
-          set -e
-          sudo systemctl start postgresql.service
-          sudo -u postgres createuser -d -r -s claircore
-          sudo -u postgres psql -c "ALTER ROLE claircore WITH PASSWORD 'password';"
-          sudo -u postgres createdb -O claircore claircore
-          psql -c 'SELECT version();' "$POSTGRES_CONNECTION_STRING" 
       - name: Checkout
         if: steps.previous.outputs.cache-hit != 'true'
         uses: actions/checkout@v3
@@ -127,11 +116,12 @@ jobs:
             cd "$dir"
             go list -m
             go mod download
-            go test -race -tags integration ./...
+            go test -race ${RUNNER_DEBUG:+-v} ./...
           ); done
       - name: Database Logs
-        if: failure()
+        if: failure() || env.RUNNER_DEBUG == 1
         run: |
+          sudo -u postgres psql -c 'SELECT version();'
           sudo journalctl --unit postgresql.service --boot -0
           ls /var/log/postgresql/postgresql-*.log
           sudo cat /var/log/postgresql/postgresql-*.log
