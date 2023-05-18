@@ -11,7 +11,6 @@ import (
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/pkg/omnimatcher"
 	indexer "github.com/quay/claircore/test/mock/indexer"
 )
 
@@ -118,13 +117,13 @@ func TestAffectedManifests(t *testing.T) {
 
 func BenchmarkAffectedManifests(b *testing.B) {
 	ctx, done := context.WithCancel(context.Background())
-	om := omnimatcher.New(nil)
 	defer done()
 
 	// create store
 	ctrl := gomock.NewController(b)
 	s := indexer.NewMockStore(ctrl)
-	s.EXPECT().AffectedManifests(gomock.Any(), gomock.Any(), om.Vulnerable).Return(
+	var check claircore.CheckVulnernableFunc
+	s.EXPECT().AffectedManifests(gomock.Any(), gomock.Any(), gomock.AssignableToTypeOf(check)).Return(
 		[]claircore.Digest{
 			digest("first digest"),
 			digest("second digest"),
@@ -135,6 +134,7 @@ func BenchmarkAffectedManifests(b *testing.B) {
 	ctx = zlog.Test(ctx, b)
 	li := &Libindex{store: s}
 
+	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		_, err := li.AffectedManifests(ctx, createTestVulns(100))
 		if err != nil {
