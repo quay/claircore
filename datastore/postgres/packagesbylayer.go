@@ -120,7 +120,7 @@ WHERE
 		var spkg claircore.Package
 
 		var id, srcID int64
-		var nKind *string
+		var nKind, fPath *string
 		var nVer pgtype.Int4Array
 		err := rows.Scan(
 			&id,
@@ -141,7 +141,7 @@ WHERE
 
 			&pkg.PackageDB,
 			&pkg.RepositoryHint,
-			&pkg.Filepath,
+			&fPath,
 		)
 		pkg.ID = strconv.FormatInt(id, 10)
 		spkg.ID = strconv.FormatInt(srcID, 10)
@@ -153,6 +153,9 @@ WHERE
 			for i, n := range nVer.Elements {
 				pkg.NormalizedVersion.V[i] = n.Int
 			}
+		}
+		if fPath != nil {
+			pkg.Filepath = *fPath
 		}
 		// nest source package
 		pkg.Source = &spkg
