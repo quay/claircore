@@ -1,0 +1,69 @@
+{
+  "manifest_hash": "sha256:a69611773e59734e43c2c6a892ee477bbbb3c7fe450c67621f466424215c9d1e",
+  "packages": {
+    "2590": {
+      "id": "2590",
+      "name": "secure_headers",
+      "version": "6.0.0",
+      "kind": "binary",
+      "source": {
+        "id": "1",
+        "name": "",
+        "version": ""
+      }
+    },
+    "2578": {
+      "id": "2578",
+      "name": "rake",
+      "version": "13.0.6",
+      "kind": "binary",
+      "source": {
+        "id": "1",
+        "name": "",
+        "version": ""
+      }
+    }
+  },
+  "distributions": {
+    "1": {
+      "id": "1",
+      "did": "debian",
+      "name": "Debian GNU/Linux",
+      "version": "11 (bullseye)",
+      "version_code_name": "bullseye",
+      "version_id": "11",
+      "arch": "",
+      "cpe": "",
+      "pretty_name": "Debian GNU/Linux 11 (bullseye)"
+    }
+  },
+  "repository": {
+    "1": {
+      "id": "1",
+      "name": "rubygems",
+      "uri": "https://rubygems.org/gems/"
+    }
+  },
+  "environments": {
+    "2590": [
+      {
+        "package_db": "usr/local/bundle/specifications/secure_headers-6.0.0.gemspec",
+        "introduced_in": "sha256:efc0c4e55a1d12c7228db037bab3d4022487ec971a85b29b6131a33138360b12",
+        "distribution_id": "",
+        "repository_ids": [
+          "1"
+        ]
+      }
+    ],
+    "2578": [
+      {
+        "package_db": "usr/local/bundle/specifications/rake-13.0.6.gemspec",
+        "introduced_in": "sha256:2deda8efde35fbfe5a4372dee905669e687558e590ee858a368e25c4bcc20afb",
+        "distribution_id": "",
+        "repository_ids": [
+          "1"
+        ]
+      }
+    ]
+  }
+}
