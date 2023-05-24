@@ -15,8 +15,8 @@ import (
 )
 
 var (
-	_ indexer.VersionedScanner = (*Scanner)(nil)
-	_ indexer.PackageScanner   = (*Scanner)(nil)
+	_ indexer.VersionedScanner  = (*RepoScanner)(nil)
+	_ indexer.RepositoryScanner = (*RepoScanner)(nil)
 
 	Repository = claircore.Repository{
 		Name: "pypi",
