@@ -446,9 +446,10 @@ type ecs struct {
 }
 
 const (
-	ecosystemMaven = `Maven`
-	ecosystemPyPI  = `PyPI`
-	ecosystemGo    = `Go`
+	ecosystemGo       = `Go`
+	ecosystemMaven    = `Maven`
+	ecosystemPyPI     = `PyPI`
+	ecosystemRubyGems = `RubyGems`
 )
 
 func newECS(u string) ecs {
@@ -558,7 +559,7 @@ func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *adviso
 					}
 				case `ECOSYSTEM`:
 					switch af.Package.Ecosystem {
-					case ecosystemMaven, ecosystemPyPI:
+					case ecosystemMaven, ecosystemPyPI, ecosystemRubyGems:
 						switch {
 						case ev.Introduced == "0":
 						case ev.Introduced != "":
@@ -588,7 +589,7 @@ func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *adviso
 			}
 			if len(ranges) > 0 {
 				switch af.Package.Ecosystem {
-				case ecosystemMaven, ecosystemPyPI:
+				case ecosystemMaven, ecosystemPyPI, ecosystemRubyGems:
 					v.FixedInVersion = ranges.Encode()
 				}
 			}
@@ -613,13 +614,13 @@ func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *adviso
 			}
 			pkgName := af.Package.PURL
 			switch af.Package.Ecosystem {
-			case ecosystemMaven, ecosystemPyPI, ecosystemGo:
+			case ecosystemGo, ecosystemMaven, ecosystemPyPI, ecosystemRubyGems:
 				pkgName = af.Package.Name
 			}
 			pkg, novel := e.LookupPackage(pkgName, vs)
 			v.Package = pkg
 			switch af.Package.Ecosystem {
-			case ecosystemMaven, ecosystemPyPI, ecosystemGo:
+			case ecosystemGo, ecosystemMaven, ecosystemPyPI, ecosystemRubyGems:
 				v.Package.Kind = claircore.BINARY
 			}
 			if novel {
