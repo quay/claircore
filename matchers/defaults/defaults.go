@@ -11,6 +11,7 @@ import (
 	"github.com/quay/claircore/crda"
 	"github.com/quay/claircore/debian"
 	"github.com/quay/claircore/gobin"
+	"github.com/quay/claircore/java"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/matchers/registry"
 	"github.com/quay/claircore/oracle"
@@ -47,6 +48,7 @@ var defaultMatchers = []driver.Matcher{
 	&aws.Matcher{},
 	&debian.Matcher{},
 	&gobin.Matcher{},
+	&java.Matcher{},
 	&oracle.Matcher{},
 	&photon.Matcher{},
 	&python.Matcher{},

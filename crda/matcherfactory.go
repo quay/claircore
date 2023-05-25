@@ -106,6 +106,8 @@ func (f *Factory) Configure(ctx context.Context, cfg driver.MatcherConfigUnmarsh
 		zlog.Info(ctx).
 			Str("key", f.key).
 			Msg("configured API key")
+		zlog.Warn(ctx).
+			Msg("CRDA remote matcher is deprecated and will be removed in upcoming versions")
 	}
 
 	f.ecosystems = fc.Ecosystems
