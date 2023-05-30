@@ -29,7 +29,15 @@ const (
 	detectorKind    = `package`
 )
 
-var _ indexer.PackageScanner = Detector{}
+var (
+	_ indexer.PackageScanner     = Detector{}
+	_ indexer.DefaultRepoScanner = Detector{}
+
+	Repository = claircore.Repository{
+		Name: "go",
+		URI:  "https://pkg.go.dev/",
+	}
+)
 
 // Name implements [indexer.PackageScanner].
 func (Detector) Name() string { return detectorName }
@@ -142,6 +150,11 @@ func (Detector) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Pack
 	}
 
 	return out, nil
+}
+
+// Scan implements [indexer.DefaultRepoScanner].
+func (Detector) DefaultRepository(ctx context.Context) *claircore.Repository {
+	return &Repository
 }
 
 type spoolfile struct {

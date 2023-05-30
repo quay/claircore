@@ -44,3 +44,12 @@ func NewPackageScannerMock(name, version, kind string) PackageScanner {
 		kind:    kind,
 	}
 }
+
+// DefaultRepoScanner provides a DefaultRepository method to allow Package Scanners
+// to define what the default repository should be if the Scanner returned packages.
+// This is useful to avoid having a dedicated RepositoryScanner for an ecosystem that
+// largely duplicates the work of the PackageScanner and would always return the same
+// pre-defined repository.
+type DefaultRepoScanner interface {
+	DefaultRepository(context.Context) *claircore.Repository
+}

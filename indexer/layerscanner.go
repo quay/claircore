@@ -215,6 +215,11 @@ func (r *result) Do(ctx context.Context, s VersionedScanner, l *claircore.Layer)
 	switch s := s.(type) {
 	case PackageScanner:
 		r.pkgs, err = s.Scan(ctx, l)
+		if sc, ok := s.(DefaultRepoScanner); ok {
+			if len(r.pkgs) > 0 {
+				r.repos = append(r.repos, sc.DefaultRepository(ctx))
+			}
+		}
 	case DistributionScanner:
 		r.dists, err = s.Scan(ctx, l)
 	case RepositoryScanner:
@@ -224,6 +229,7 @@ func (r *result) Do(ctx context.Context, s VersionedScanner, l *claircore.Layer)
 	default:
 		panic(fmt.Sprintf("programmer error: unknown type %T used as scanner", s))
 	}
+
 	addrErr := &net.AddrError{}
 	switch {
 	case errors.Is(err, nil):
@@ -240,20 +246,29 @@ func (r *result) Do(ctx context.Context, s VersionedScanner, l *claircore.Layer)
 // Store calls the properly typed store method on whatever value was captured in
 // the result.
 func (r *result) Store(ctx context.Context, store Store, s VersionedScanner, l *claircore.Layer) error {
-	switch {
-	case r.pkgs != nil:
+	if r.pkgs != nil {
 		zlog.Debug(ctx).Int("count", len(r.pkgs)).Msg("scan returned packages")
-		return store.IndexPackages(ctx, r.pkgs, l, s)
-	case r.dists != nil:
-		zlog.Debug(ctx).Int("count", len(r.dists)).Msg("scan returned dists")
-		return store.IndexDistributions(ctx, r.dists, l, s)
-	case r.repos != nil:
-		zlog.Debug(ctx).Int("count", len(r.repos)).Msg("scan returned repos")
-		return store.IndexRepositories(ctx, r.repos, l, s)
-	case r.files != nil:
-		zlog.Debug(ctx).Int("count", len(r.files)).Msg("scan returned files")
-		return store.IndexFiles(ctx, r.files, l, s)
+		if err := store.IndexPackages(ctx, r.pkgs, l, s); err != nil {
+			return err
+		}
 	}
-	zlog.Debug(ctx).Msg("scan returned a nil")
+	if r.dists != nil {
+		zlog.Debug(ctx).Int("count", len(r.dists)).Msg("scan returned dists")
+		if err := store.IndexDistributions(ctx, r.dists, l, s); err != nil {
+			return err
+		}
+	}
+	if r.repos != nil {
+		zlog.Debug(ctx).Int("count", len(r.repos)).Msg("scan returned repos")
+		if err := store.IndexRepositories(ctx, r.repos, l, s); err != nil {
+			return err
+		}
+	}
+	if r.files != nil {
+		zlog.Debug(ctx).Int("count", len(r.files)).Msg("scan returned files")
+		if err := store.IndexFiles(ctx, r.files, l, s); err != nil {
+			return err
+		}
+	}
 	return nil
 }
