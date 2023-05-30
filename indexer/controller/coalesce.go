@@ -42,6 +42,13 @@ func coalesce(ctx context.Context, s *Controller) (State, error) {
 				return Terminal, fmt.Errorf("failed to retrieve packages for %v: %w", layer.Hash, err)
 			}
 			la.Pkgs = append(la.Pkgs, pkgs...)
+			// Get repos that have been created via the package scanners
+			pkgRepos, err := s.Store.RepositoriesByLayer(cctx, layer.Hash, vscnrs)
+			if err != nil {
+				return Terminal, fmt.Errorf("failed to retrieve repositories for %v: %w", layer.Hash, err)
+			}
+			la.Repos = append(la.Repos, pkgRepos...)
+
 			// get distributions from layer
 			vscnrs.DStoVS(distScanners) // method allocates new vscnr underlying array, clearing old contents
 			dists, err := s.Store.DistributionsByLayer(cctx, layer.Hash, vscnrs)
