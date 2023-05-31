@@ -613,13 +613,13 @@ func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *adviso
 			}
 			pkgName := af.Package.PURL
 			switch af.Package.Ecosystem {
-			case ecosystemMaven, ecosystemPyPI:
+			case ecosystemMaven, ecosystemPyPI, ecosystemGo:
 				pkgName = af.Package.Name
 			}
 			pkg, novel := e.LookupPackage(pkgName, vs)
 			v.Package = pkg
 			switch af.Package.Ecosystem {
-			case ecosystemMaven, ecosystemPyPI:
+			case ecosystemMaven, ecosystemPyPI, ecosystemGo:
 				v.Package.Kind = claircore.BINARY
 			}
 			if novel {
