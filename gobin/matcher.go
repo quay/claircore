@@ -3,14 +3,14 @@ package gobin
 import (
 	"context"
 
-	"github.com/Masterminds/semver"
-
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
-	"github.com/quay/claircore/updater/osv"
 )
 
-var _ driver.Matcher = (*Matcher)(nil)
+var (
+	_ driver.Matcher       = (*Matcher)(nil)
+	_ driver.VersionFilter = (*Matcher)(nil)
+)
 
 // Matcher matches discovered go packages against advisories provided via OSV.
 type Matcher struct{}
@@ -26,15 +26,14 @@ func (matcher *Matcher) Filter(record *claircore.IndexRecord) bool {
 
 // Query implements driver.Matcher.
 func (matcher *Matcher) Query() []driver.MatchConstraint {
-	return []driver.MatchConstraint{driver.RepositoryName, driver.PackageName}
+	return []driver.MatchConstraint{driver.RepositoryName}
 }
 
 // Vulnerable implements driver.Matcher.
 func (matcher *Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
-	sv, err := semver.NewVersion(record.Package.Version)
-	if err != nil {
-		return false, err
-	}
-	v := osv.FromSemver(sv)
-	return vuln.Range.Contains(&v), nil
+	// no-op
+	return false, nil
 }
+
+func (matcher *Matcher) VersionFilter()             {}
+func (matcher *Matcher) VersionAuthoritative() bool { return true }
