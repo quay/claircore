@@ -7,7 +7,27 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-var eightOSRelease []byte = []byte(`NAME="Oracle Linux Server"
+var (
+	nineOSRelease = []byte(`NAME="Oracle Linux Server"
+VERSION="9.2"
+ID="ol"
+ID_LIKE="fedora"
+VARIANT="Server"
+VARIANT_ID="server"
+VERSION_ID="9.2"
+PLATFORM_ID="platform:el9"
+PRETTY_NAME="Oracle Linux Server 9.2"
+ANSI_COLOR="0;31"
+CPE_NAME="cpe:/o:oracle:linux:9:2:server"
+HOME_URL="https://linux.oracle.com/"
+BUG_REPORT_URL="https://github.com/oracle/oracle-linux"
+
+ORACLE_BUGZILLA_PRODUCT="Oracle Linux 9"
+ORACLE_BUGZILLA_PRODUCT_VERSION=9.2
+ORACLE_SUPPORT_PRODUCT="Oracle Linux"
+ORACLE_SUPPORT_PRODUCT_VERSION=9.2`)
+
+	eightOSRelease = []byte(`NAME="Oracle Linux Server"
 VERSION="8.0"
 ID="ol"
 ID_LIKE="fedora"
@@ -26,7 +46,7 @@ ORACLE_BUGZILLA_PRODUCT_VERSION=8.0
 ORACLE_SUPPORT_PRODUCT="Oracle Linux"
 ORACLE_SUPPORT_PRODUCT_VERSION=8.0`)
 
-var sevenOSRelease []byte = []byte(`NAME="Oracle Linux Server"
+	sevenOSRelease = []byte(`NAME="Oracle Linux Server"
 VERSION="7.7"
 ID="ol"
 ID_LIKE="fedora"
@@ -44,7 +64,7 @@ ORACLE_BUGZILLA_PRODUCT_VERSION=7.7
 ORACLE_SUPPORT_PRODUCT="Oracle Linux"
 ORACLE_SUPPORT_PRODUCT_VERSION=7.7`)
 
-var sixOSRelease []byte = []byte(`NAME="Oracle Linux Server"
+	sixOSRelease = []byte(`NAME="Oracle Linux Server"
 VERSION="6.10"
 ID="ol"
 VERSION_ID="6.10"
@@ -59,11 +79,12 @@ ORACLE_BUGZILLA_PRODUCT_VERSION=6.10
 ORACLE_SUPPORT_PRODUCT="Oracle Linux"
 ORACLE_SUPPORT_PRODUCT_VERSION=6.10`)
 
-// Oracle Five versions do not have os-release file and only have /etc/issue file
-var fiveIssue []byte = []byte(`
+	// Oracle Five versions do not have os-release file and only have /etc/issue file
+	fiveIssue = []byte(`
 Oracle Linux Server release 5.11
 Kernel \r on an \m
 `)
+)
 
 func TestDistributionScanner(t *testing.T) {
 	table := []struct {
@@ -71,6 +92,11 @@ func TestDistributionScanner(t *testing.T) {
 		release Release
 		file    []byte
 	}{
+		{
+			name:    "9.2",
+			release: Nine,
+			file:    nineOSRelease,
+		},
 		{
 			name:    "8.0",
 			release: Eight,

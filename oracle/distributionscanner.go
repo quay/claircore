@@ -20,7 +20,7 @@ import (
 
 const (
 	scannerName    = "oracle"
-	scannerVersion = "v0.0.1"
+	scannerVersion = "1"
 	scannerKind    = "distribution"
 )
 
@@ -51,6 +51,10 @@ var oracleRegexes = []oracleRegex{
 	{
 		release: Eight,
 		regexp:  regexp.MustCompile(`(?is)Oracle Linux Server 8(\.\d*)?`),
+	},
+	{
+		release: Nine,
+		regexp:  regexp.MustCompile(`(?is)Oracle Linux Server 9(\.\d*)?`),
 	},
 }
 

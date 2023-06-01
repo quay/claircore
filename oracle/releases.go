@@ -11,11 +11,21 @@ import "github.com/quay/claircore"
 type Release string
 
 const (
+	Nine  Release = "9"
 	Eight Release = "8"
 	Seven Release = "7"
 	Six   Release = "6"
 	Five  Release = "5"
 )
+
+var nineDist = &claircore.Distribution{
+	Name:            "Oracle Linux Server",
+	Version:         "9",
+	DID:             "ol",
+	PrettyName:      "Oracle Linux Server 9",
+	VersionID:       "9",
+	VersionCodeName: "Oracle Linux 9",
+}
 
 var eightDist = &claircore.Distribution{
 	Name:            "Oracle Linux Server",
@@ -55,6 +65,8 @@ var fiveDist = &claircore.Distribution{
 
 func releaseToDist(r Release) *claircore.Distribution {
 	switch r {
+	case Nine:
+		return nineDist
 	case Eight:
 		return eightDist
 	case Seven:
