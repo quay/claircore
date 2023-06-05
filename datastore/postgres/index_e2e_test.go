@@ -215,20 +215,13 @@ func (e *indexE2e) Run(t *testing.T) {
 	}
 }
 
-// PersistManifest confirms we create the necessary
-// Manifest and Layer identifies so layer code
-// foreign key references do not fail.
-func (e *indexE2e) PersistManifest(t *testing.T) {
-	ctx := zlog.Test(e.ctx, t)
-	err := e.store.PersistManifest(ctx, e.manifest)
-	if err != nil {
-		t.Fatalf("failed to persist manifest: %v", err)
-	}
+func (e *indexE2e) RegisterScanner(t *testing.T) {
+	e.registerScanner(t)
 }
 
 // RegisterScanner confirms a scanner can be registered
 // and provides this scanner for other subtests to use
-func (e *indexE2e) RegisterScanner(t *testing.T) {
+func (e *indexE2e) registerScanner(t testing.TB) {
 	ctx := zlog.Test(e.ctx, t)
 	err := e.store.RegisterScanners(ctx, e.scnrs)
 	if err != nil {
@@ -236,10 +229,29 @@ func (e *indexE2e) RegisterScanner(t *testing.T) {
 	}
 }
 
+func (e *indexE2e) PersistManifest(t *testing.T) {
+	e.persistManifest(t)
+}
+
+// PersistManifest confirms we create the necessary
+// Manifest and Layer identifies so layer code
+// foreign key references do not fail.
+func (e *indexE2e) persistManifest(t testing.TB) {
+	ctx := zlog.Test(e.ctx, t)
+	err := e.store.PersistManifest(ctx, e.manifest)
+	if err != nil {
+		t.Fatalf("failed to persist manifest: %v", err)
+	}
+}
+
+func (e *indexE2e) IndexAndRetrievePackages(t *testing.T) {
+	e.indexAndRetrievePackages(t)
+}
+
 // IndexAndRetreivePackages confirms inserting and
 // selecting packages associated with a layer works
 // correctly.
-func (e *indexE2e) IndexAndRetrievePackages(t *testing.T) {
+func (e *indexE2e) indexAndRetrievePackages(t testing.TB) {
 	ctx := zlog.Test(e.ctx, t)
 	A := test.GenUniquePackages(e.packageGen)
 
@@ -260,10 +272,14 @@ func (e *indexE2e) IndexAndRetrievePackages(t *testing.T) {
 	}
 }
 
+func (e *indexE2e) IndexAndRetrieveDistributions(t *testing.T) {
+	e.indexAndRetrieveDistributions(t)
+}
+
 // IndexAndRetreiveDistributions confirms inserting and
 // selecting distributions associated with a layer works
 // correctly.
-func (e *indexE2e) IndexAndRetrieveDistributions(t *testing.T) {
+func (e *indexE2e) indexAndRetrieveDistributions(t testing.TB) {
 	ctx := zlog.Test(e.ctx, t)
 	A := test.GenUniqueDistributions(e.distGen)
 
@@ -284,10 +300,14 @@ func (e *indexE2e) IndexAndRetrieveDistributions(t *testing.T) {
 	}
 }
 
+func (e *indexE2e) IndexAndRetrieveRepos(t *testing.T) {
+	e.indexAndRetrieveRepos(t)
+}
+
 // IndexAndRetreiveRepos confirms inserting and
 // selecting repositories associated with a layer works
 // correctly.
-func (e *indexE2e) IndexAndRetrieveRepos(t *testing.T) {
+func (e *indexE2e) indexAndRetrieveRepos(t testing.TB) {
 	ctx := zlog.Test(e.ctx, t)
 	A := test.GenUniqueRepositories(e.repoGen)
 
@@ -308,9 +328,13 @@ func (e *indexE2e) IndexAndRetrieveRepos(t *testing.T) {
 	}
 }
 
+func (e *indexE2e) LayerScanned(t *testing.T) {
+	e.layerScanned(t)
+}
+
 // LayerScanned confirms the book keeping involved in marking a layer
 // scanned works correctly.
-func (e *indexE2e) LayerScanned(t *testing.T) {
+func (e *indexE2e) layerScanned(t testing.TB) {
 	ctx := zlog.Test(e.ctx, t)
 	for _, scnr := range e.scnrs {
 		err := e.store.SetLayerScanned(ctx, e.manifest.Layers[0].Hash, scnr)
@@ -328,9 +352,13 @@ func (e *indexE2e) LayerScanned(t *testing.T) {
 	}
 }
 
+func (e *indexE2e) LayerScannedNotExists(t *testing.T) {
+	e.layerScannedFalse(t)
+}
+
 // LayerScannedNotExists confirms an error is returned when attempting
 // to obtain if a layer was scanned by a non-existent scanner.
-func (e *indexE2e) LayerScannedNotExists(t *testing.T) {
+func (e *indexE2e) layerScannedNotExists(t testing.TB) {
 	ctx := zlog.Test(e.ctx, t)
 	scnr := mockScnr{
 		name:    "invalid",
@@ -344,9 +372,13 @@ func (e *indexE2e) LayerScannedNotExists(t *testing.T) {
 	}
 }
 
+func (e *indexE2e) LayerScannedFalse(t *testing.T) {
+	e.layerScannedFalse(t)
+}
+
 // LayerScannedFalse confirms a false boolean is returned when attempting
 // to obtain if a non-exitent layer was scanned by a valid scanner
-func (e *indexE2e) LayerScannedFalse(t *testing.T) {
+func (e *indexE2e) layerScannedFalse(t testing.TB) {
 	ctx := zlog.Test(e.ctx, t)
 
 	// create a layer that has not been persisted to the store
@@ -366,6 +398,10 @@ func (e *indexE2e) LayerScannedFalse(t *testing.T) {
 // IndexReport confirms the book keeping around index reports works
 // correctly.
 func (e *indexE2e) IndexReport(t *testing.T) {
+	e.indexReport(t)
+}
+
+func (e *indexE2e) indexReport(t testing.TB) {
 	ctx := zlog.Test(e.ctx, t)
 
 	A := &claircore.IndexReport{
@@ -417,5 +453,175 @@ func (e *indexE2e) IndexReport(t *testing.T) {
 	}
 	if !cmp.Equal(A.State, B.State) {
 		t.Fatalf("%v", cmp.Diff(A.Hash.String(), B.Hash.String()))
+	}
+}
+
+func BenchmarkIndexE2E(b *testing.B) {
+	integration.NeedDB(b)
+	ctx := context.Background()
+
+	e2es := []indexE2e{
+		{
+			name: "3 scanners gen small",
+			scnrs: indexer.VersionedScanners{
+				mockScnr{
+					name:    "test-scanner",
+					kind:    "test",
+					version: "v0.0.1",
+				},
+				mockScnr{
+					name:    "test-scanner1",
+					kind:    "test",
+					version: "v0.0.11",
+				},
+				mockScnr{
+					name:    "test-scanner2",
+					kind:    "test",
+					version: "v0.0.8",
+				},
+			},
+			packageGen: 100,
+			distGen:    150,
+			repoGen:    50,
+		},
+		{
+			name: "6 scanners gen small",
+			scnrs: indexer.VersionedScanners{
+				mockScnr{
+					name:    "test-scanner",
+					kind:    "test",
+					version: "v0.0.1",
+				},
+				mockScnr{
+					name:    "test-scanner1",
+					kind:    "test",
+					version: "v0.0.11",
+				},
+				mockScnr{
+					name:    "test-scanner2",
+					kind:    "test",
+					version: "v0.0.8",
+				},
+				mockScnr{
+					name:    "test-scanner3",
+					kind:    "test",
+					version: "v0.0.8",
+				},
+				mockScnr{
+					name:    "test-scanner4",
+					kind:    "test",
+					version: "v0.0.8",
+				},
+				mockScnr{
+					name:    "test-scanner5",
+					kind:    "test",
+					version: "v0.0.8",
+				},
+			},
+			packageGen: 100,
+			distGen:    150,
+			repoGen:    50,
+		},
+		{
+			name: "3 scanners gen large",
+			scnrs: indexer.VersionedScanners{
+				mockScnr{
+					name:    "test-scanner",
+					kind:    "test",
+					version: "v0.0.1",
+				},
+				mockScnr{
+					name:    "test-scanner1",
+					kind:    "test",
+					version: "v0.0.11",
+				},
+				mockScnr{
+					name:    "test-scanner2",
+					kind:    "test",
+					version: "v0.0.8",
+				},
+			},
+			packageGen: 1000,
+			distGen:    1500,
+			repoGen:    500,
+		},
+		{
+			name: "6 scanners gen large",
+			scnrs: indexer.VersionedScanners{
+				mockScnr{
+					name:    "test-scanner",
+					kind:    "test",
+					version: "v0.0.1",
+				},
+				mockScnr{
+					name:    "test-scanner1",
+					kind:    "test",
+					version: "v0.0.11",
+				},
+				mockScnr{
+					name:    "test-scanner2",
+					kind:    "test",
+					version: "v0.0.8",
+				},
+				mockScnr{
+					name:    "test-scanner3",
+					kind:    "test",
+					version: "v0.0.8",
+				},
+				mockScnr{
+					name:    "test-scanner4",
+					kind:    "test",
+					version: "v0.0.8",
+				},
+				mockScnr{
+					name:    "test-scanner5",
+					kind:    "test",
+					version: "v0.0.8",
+				},
+			},
+			packageGen: 1000,
+			distGen:    1500,
+			repoGen:    500,
+		},
+	}
+
+	for _, e := range e2es {
+		b.StopTimer()
+		pool := pgtest.TestIndexerDB(ctx, b)
+		store := NewIndexerStore(pool)
+		e.store = store
+		b.StartTimer()
+		b.Run(e.name, func(b *testing.B) {
+			e.RunBenchmark(ctx, b)
+		})
+		pool.Close()
+	}
+}
+
+func (e *indexE2e) RunBenchmark(ctx context.Context, b *testing.B) {
+	testAll := func(b *testing.B) {
+		layer := &claircore.Layer{
+			Hash: test.RandomSHA256Digest(b),
+		}
+		manifest := claircore.Manifest{
+			Hash:   test.RandomSHA256Digest(b),
+			Layers: []*claircore.Layer{layer},
+		}
+
+		e.ctx = ctx
+		e.manifest = manifest
+
+		e.registerScanner(b)
+		e.persistManifest(b)
+		e.indexAndRetrievePackages(b)
+		e.indexAndRetrieveDistributions(b)
+		e.indexAndRetrieveRepos(b)
+		e.layerScanned(b)
+		e.layerScannedNotExists(b)
+		e.layerScannedFalse(b)
+		e.indexReport(b)
+	}
+	if !b.Run("testAll", testAll) {
+		b.FailNow()
 	}
 }
