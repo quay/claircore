@@ -78,7 +78,7 @@ DO
 
 	scannerIDs, err := s.selectScanners(ctx, scnrs)
 	if err != nil {
-		return fmt.Errorf("failed to select package scanner id: %w", err)
+		return err
 	}
 
 	tx, err := s.pool.Begin(ctx)

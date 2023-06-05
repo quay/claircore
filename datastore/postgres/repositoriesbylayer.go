@@ -55,7 +55,7 @@ WHERE
 	}
 	scannerIDs, err := s.selectScanners(ctx, scnrs)
 	if err != nil {
-		return nil, fmt.Errorf("unable to select scanners: %w", err)
+		return nil, err
 	}
 
 	start := time.Now()
