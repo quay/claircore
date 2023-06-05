@@ -29,8 +29,7 @@ func InitPostgresIndexerStore(_ context.Context, pool *pgxpool.Pool, doMigration
 		}
 	}
 
-	store := NewIndexerStore(pool)
-	return store, nil
+	return NewIndexerStore(pool), nil
 }
 
 var _ indexer.Store = (*IndexerStore)(nil)
@@ -39,40 +38,20 @@ var _ indexer.Store = (*IndexerStore)(nil)
 //
 // All the other exported methods live in their own files.
 type IndexerStore struct {
-	pool *pgxpool.Pool
+	pool     *pgxpool.Pool
+	scanners map[string]int64
 }
 
 func NewIndexerStore(pool *pgxpool.Pool) *IndexerStore {
 	return &IndexerStore{
-		pool: pool,
+		pool:     pool,
+		scanners: make(map[string]int64),
 	}
 }
 
 func (s *IndexerStore) Close(_ context.Context) error {
 	s.pool.Close()
 	return nil
-}
-
-const selectScanner = `
-SELECT
-	id
-FROM
-	scanner
-WHERE
-	name = $1 AND version = $2 AND kind = $3;
-`
-
-func (s *IndexerStore) selectScanners(ctx context.Context, vs indexer.VersionedScanners) ([]int64, error) {
-	ids := make([]int64, len(vs))
-	for i, v := range vs {
-		err := s.pool.QueryRow(ctx, selectScanner, v.Name(), v.Version(), v.Kind()).
-			Scan(&ids[i])
-		if err != nil {
-			return nil, fmt.Errorf("failed to retrieve id for scanner %q: %w", v.Name(), err)
-		}
-	}
-
-	return ids, nil
 }
 
 func promTimer(h *prometheus.HistogramVec, name string, err *error) func() time.Duration {
