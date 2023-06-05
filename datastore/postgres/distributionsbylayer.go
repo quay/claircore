@@ -39,13 +39,6 @@ var (
 
 func (s *IndexerStore) DistributionsByLayer(ctx context.Context, hash claircore.Digest, scnrs indexer.VersionedScanners) ([]*claircore.Distribution, error) {
 	const (
-		selectScanner = `
-		SELECT id
-		FROM scanner
-		WHERE name = $1
-		  AND version = $2
-		  AND kind = $3;
-		`
 		query = `
 		SELECT dist.id,
 			   dist.name,
@@ -68,17 +61,9 @@ func (s *IndexerStore) DistributionsByLayer(ctx context.Context, hash claircore.
 		return []*claircore.Distribution{}, nil
 	}
 
-	// get scanner ids
-	scannerIDs := make([]int64, len(scnrs))
-	for i, scnr := range scnrs {
-		start := time.Now()
-		err := s.pool.QueryRow(ctx, selectScanner, scnr.Name(), scnr.Version(), scnr.Kind()).
-			Scan(&scannerIDs[i])
-		if err != nil {
-			return nil, fmt.Errorf("failed to retrieve distribution ids for scanner %q: %w", scnr, err)
-		}
-		distributionByLayerCounter.WithLabelValues("selectScanner").Add(1)
-		distributionByLayerDuration.WithLabelValues("selectScanner").Observe(time.Since(start).Seconds())
+	scannerIDs, err := s.selectScanners(scnrs)
+	if err != nil {
+		return nil, err
 	}
 
 	start := time.Now()

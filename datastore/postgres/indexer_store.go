@@ -2,7 +2,7 @@ package postgres
 
 import (
 	"context"
-	"fmt"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -23,8 +23,7 @@ func InitPostgresIndexerStore(ctx context.Context, pool *pgxpool.Pool, doMigrati
 		pool.Reset()
 	}
 
-	store := NewIndexerStore(pool)
-	return store, nil
+	return NewIndexerStore(pool), nil
 }
 
 var _ indexer.Store = (*IndexerStore)(nil)
@@ -33,7 +32,8 @@ var _ indexer.Store = (*IndexerStore)(nil)
 //
 // All the other exported methods live in their own files.
 type IndexerStore struct {
-	pool *pgxpool.Pool
+	pool     *pgxpool.Pool
+	scanners sync.Map
 }
 
 func NewIndexerStore(pool *pgxpool.Pool) *IndexerStore {
@@ -45,28 +45,6 @@ func NewIndexerStore(pool *pgxpool.Pool) *IndexerStore {
 func (s *IndexerStore) Close(_ context.Context) error {
 	s.pool.Close()
 	return nil
-}
-
-const selectScanner = `
-SELECT
-	id
-FROM
-	scanner
-WHERE
-	name = $1 AND version = $2 AND kind = $3;
-`
-
-func (s *IndexerStore) selectScanners(ctx context.Context, vs indexer.VersionedScanners) ([]int64, error) {
-	ids := make([]int64, len(vs))
-	for i, v := range vs {
-		err := s.pool.QueryRow(ctx, selectScanner, v.Name(), v.Version(), v.Kind()).
-			Scan(&ids[i])
-		if err != nil {
-			return nil, fmt.Errorf("failed to retrieve id for scanner %q: %w", v.Name(), err)
-		}
-	}
-
-	return ids, nil
 }
 
 func promTimer(h *prometheus.HistogramVec, name string, err *error) func() time.Duration {
