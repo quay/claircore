@@ -58,8 +58,6 @@ SELECT
 		return false, err
 	}
 
-	ctx, done := context.WithTimeout(ctx, 10*time.Second)
-	defer done()
 	var ok bool
 
 	start := time.Now()
