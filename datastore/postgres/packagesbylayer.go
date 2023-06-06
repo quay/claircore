@@ -82,8 +82,6 @@ WHERE
 		return nil, err
 	}
 
-	ctx, done := context.WithTimeout(ctx, 15*time.Second)
-	defer done()
 	start := time.Now()
 	rows, err := s.pool.Query(ctx, query, hash, scannerIDs)
 	switch {
