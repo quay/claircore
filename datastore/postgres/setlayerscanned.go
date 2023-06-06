@@ -39,15 +39,6 @@ func (s *IndexerStore) SetLayerScanned(ctx context.Context, hash claircore.Diges
 	ctx = zlog.ContextWithValues(ctx, "scanner", vs.Name())
 	const query = `
 WITH
-	scanner
-		AS (
-			SELECT
-				id
-			FROM
-				scanner
-			WHERE
-				name = $2 AND version = $3 AND kind = $4
-		),
 	layer AS (SELECT id FROM layer WHERE hash = $1)
 INSERT
 INTO
@@ -55,7 +46,7 @@ INTO
 VALUES
 	(
 		(SELECT id AS layer_id FROM layer),
-		(SELECT id AS scanner_id FROM scanner)
+		$2
 	)
 ON CONFLICT
 	(layer_id, scanner_id)
@@ -63,8 +54,12 @@ DO
 	NOTHING;
 `
 
+	scannerID, err := s.selectScanner(ctx, vs)
+	if err != nil {
+		return fmt.Errorf("error getting the scanner ID: %w", err)
+	}
 	start := time.Now()
-	_, err := s.pool.Exec(ctx, query, hash, vs.Name(), vs.Version(), vs.Kind())
+	_, err = s.pool.Exec(ctx, query, hash, scannerID)
 	if err != nil {
 		return fmt.Errorf("error setting layer scanned: %w", err)
 	}
