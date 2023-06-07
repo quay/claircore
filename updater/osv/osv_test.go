@@ -28,23 +28,35 @@ func TestFetch(t *testing.T) {
 	defer srv.Close()
 	ctx := zlog.Test(context.Background(), t)
 
-	u := updater{}
+	f := factory{}
 	cfgFunc := func(v interface{}) error {
-		cfg := v.(*Config)
+		cfg := v.(*FactoryConfig)
 		cfg.URL = srv.URL
 		return nil
 	}
-	if err := u.Configure(ctx, cfgFunc, srv.Client()); err != nil {
+	if err := f.Configure(ctx, cfgFunc, srv.Client()); err != nil {
 		t.Error(err)
 	}
 
-	rc, fp, err := u.Fetch(ctx, driver.Fingerprint(""))
+	s, err := f.UpdaterSet(ctx)
 	if err != nil {
 		t.Error(err)
 	}
-	_ = fp
-	if rc != nil {
-		rc.Close()
+	if len(s.Updaters()) == 0 {
+		t.Errorf("expected more than 0 updaters")
+	}
+
+	for _, u := range s.Updaters() {
+		fmt.Println(u.Name())
+		rc, fp, err := u.Fetch(ctx, driver.Fingerprint(""))
+		if err != nil {
+			t.Error(err)
+		}
+		_ = fp
+		if rc != nil {
+			rc.Close()
+		}
+
 	}
 }
 
@@ -97,34 +109,43 @@ func TestParse(t *testing.T) {
 	defer srv.Close()
 	ctx := zlog.Test(context.Background(), t)
 
-	u := updater{}
+	f := factory{}
 	cfgFunc := func(v interface{}) error {
-		cfg := v.(*Config)
+		cfg := v.(*FactoryConfig)
 		cfg.URL = srv.URL
 		return nil
 	}
-	if err := u.Configure(ctx, cfgFunc, srv.Client()); err != nil {
+	if err := f.Configure(ctx, cfgFunc, srv.Client()); err != nil {
 		t.Error(err)
+	}
+	s, err := f.UpdaterSet(ctx)
+	if err != nil {
+		t.Error(err)
+	}
+	if len(s.Updaters()) == 0 {
+		t.Errorf("expected more than 0 updaters")
 	}
 
-	rc, _, err := u.Fetch(ctx, driver.Fingerprint(""))
-	if err != nil {
-		t.Error(err)
-	}
-	defer rc.Close()
-	vs, err := u.Parse(ctx, rc)
-	if err != nil {
-		t.Error(err)
-	}
-	t.Logf("parsed %d vulnerabilities", len(vs))
-	if len(vs) != 0 {
-		t.Log("first one:")
-		var buf bytes.Buffer
-		enc := json.NewEncoder(&buf)
-		enc.SetIndent("", "\t")
-		if err := enc.Encode(vs[0]); err != nil {
+	for _, u := range s.Updaters() {
+		rc, _, err := u.Fetch(ctx, driver.Fingerprint(""))
+		if err != nil {
 			t.Error(err)
 		}
-		t.Log(buf.String())
+		defer rc.Close()
+		vs, err := u.Parse(ctx, rc)
+		if err != nil {
+			t.Error(err)
+		}
+		t.Logf("parsed %d vulnerabilities", len(vs))
+		if len(vs) != 0 {
+			t.Log("first one:")
+			var buf bytes.Buffer
+			enc := json.NewEncoder(&buf)
+			enc.SetIndent("", "\t")
+			if err := enc.Encode(vs[0]); err != nil {
+				t.Error(err)
+			}
+			t.Log(buf.String())
+		}
 	}
 }

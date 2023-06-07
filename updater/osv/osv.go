@@ -15,7 +15,6 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"path"
-	"sort"
 	"strings"
 	"time"
 
@@ -27,33 +26,38 @@ import (
 	"github.com/quay/claircore/pkg/tmp"
 )
 
+var (
+	_ driver.Updater           = (*updater)(nil)
+	_ driver.Configurable      = (*updater)(nil)
+	_ driver.UpdaterSetFactory = (*factory)(nil)
+	_ driver.Configurable      = (*factory)(nil)
+)
+
 // Factory is the UpdaterSetFactory exposed by this package.
 //
-// All configuration is done on the returned updaters. See the [Config] type.
+// All configuration is done on the returned updaters. See the [FactoryConfig] type.
 var Factory driver.UpdaterSetFactory = &factory{}
 
-type factory struct{}
+// DefaultURL is the S3 bucket provided by the OSV project.
+//
+//doc:url updater
+const DefaultURL = `https://osv-vulnerabilities.storage.googleapis.com/`
 
-func (factory) UpdaterSet(context.Context) (s driver.UpdaterSet, err error) {
-	s = driver.NewUpdaterSet()
-	s.Add(&updater{})
-	return s, nil
-}
-
-type updater struct {
-	c    *http.Client
+type factory struct {
 	root *url.URL
+	c    *http.Client
 	// Allow is a bool-and-map-of-bool.
 	//
 	// If populated, only extant entries are allowed. If not populated,
 	// everything is allowed. It uses a bool to make a conditional simpler later.
 	allow map[string]bool
+	etag  string
 }
 
-// Config is the configuration that this updater accepts.
+// FactoryConfig is the configuration that this updater accepts.
 //
 // By convention, it's at a key called "osv".
-type Config struct {
+type FactoryConfig struct {
 	// The URL serving data dumps behind an S3 API.
 	//
 	// Authentication is unconfigurable, the ListObjectsV2 API must be publicly
@@ -68,18 +72,9 @@ type Config struct {
 	Allowlist []string `json:"allowlist" yaml:"allowlist"`
 }
 
-// DefaultURL is the S3 bucket provided by the OSV project.
-//
-//doc:url updater
-const DefaultURL = `https://osv-vulnerabilities.storage.googleapis.com/`
-
-var _ driver.Updater = (*updater)(nil)
-
-func (u *updater) Name() string { return `osv` }
-
 // Configure implements driver.Configurable.
-func (u *updater) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *http.Client) error {
-	ctx = zlog.ContextWithValues(ctx, "component", "updater/osv/updater.Configure")
+func (u *factory) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *http.Client) error {
+	ctx = zlog.ContextWithValues(ctx, "component", "updater/osv/factory.Configure")
 	var err error
 
 	u.c = c
@@ -88,7 +83,7 @@ func (u *updater) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *
 		panic(fmt.Sprintf("programmer error: %v", err))
 	}
 
-	var cfg Config
+	var cfg FactoryConfig
 	if err := f(&cfg); err != nil {
 		return err
 	}
@@ -109,36 +104,9 @@ func (u *updater) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *
 	return nil
 }
 
-// Ignore is a set of incoming ecosystems that we can throw out immediately.
-var ignore = map[string]struct{}{
-	"alpine":         {}, // Have a dedicated alpine updater.
-	"android":        {}, // AFAIK, there's no Android container runtime.
-	"debian":         {}, // Have a dedicated debian updater.
-	"github actions": {}, // Shouldn't be in containers?
-	"linux":          {}, // Containers have no say in the kernel.
-	"oss-fuzz":       {}, // Seems to only record git revisions.
-}
-
-type fingerprint struct {
-	Etag       string
-	Ecosystems []ecoFP
-}
-
-type ecoFP struct {
-	Ecosystem string
-	Key       string
-	Etag      string
-}
-
-// Fetcher implements driver.Updater.
-func (u *updater) Fetch(ctx context.Context, fp driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "updater/osv/updater.Fetch")
-	var prevFP fingerprint
-	if err := json.Unmarshal([]byte(fp), &prevFP); err != nil && fp != "" {
-		zlog.Info(ctx).
-			AnErr("unmarshal", err).
-			Msg("disregarding previous fingerprint")
-	}
+func (f *factory) UpdaterSet(ctx context.Context) (s driver.UpdaterSet, err error) {
+	ctx = zlog.ContextWithValues(ctx, "component", "updater/osv/factory.UpdaterSet")
+	s = driver.NewUpdaterSet()
 	var stats struct {
 		ecosystems []string
 		skipped    []string
@@ -152,29 +120,27 @@ func (u *updater) Fetch(ctx context.Context, fp driver.Fingerprint) (io.ReadClos
 			Msg("ecosystems stats")
 	}()
 
-	uri := *u.root
+	uri := *f.root
 	uri.Path = "/ecosystems.txt"
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri.String(), nil)
 	if err != nil {
-		return nil, fp, fmt.Errorf("osv: martian request: %w", err)
+		return s, fmt.Errorf("osv: martian request: %w", err)
 	}
 	req.Header.Set(`accept`, `text/plain`)
-	if etag := prevFP.Etag; etag != "" {
-		req.Header.Set(`if-none-match`, etag)
+	if f.etag != "" {
+		req.Header.Set(`if-none-match`, f.etag)
 	}
-	res, err := u.c.Do(req)
+	res, err := f.c.Do(req)
 	if err != nil {
-		return nil, fp, err
+		return s, err
 	}
 	// This is straight-line through the switch to make sure the Body is closed
 	// there.
-	var newFP fingerprint
-	var todo []ecoFP
 	switch res.StatusCode {
 	case http.StatusOK:
-		s := bufio.NewScanner(res.Body)
-		for s.Scan() {
-			k := s.Text()
+		scr := bufio.NewScanner(res.Body)
+		for scr.Scan() {
+			k := scr.Text()
 			e := strings.ToLower(k)
 			// Currently, there's some versioned ecosystems. This branch removes the versioning.
 			if idx := strings.Index(e, ":"); idx != -1 {
@@ -187,16 +153,19 @@ func (u *updater) Fetch(ctx context.Context, fp driver.Fingerprint) (io.ReadClos
 				continue
 			}
 			stats.ecosystems = append(stats.ecosystems, e)
-			if u.allow != nil && !u.allow[e] {
+			if f.allow != nil && !f.allow[e] {
 				stats.skipped = append(stats.skipped, e)
 				continue
 			}
-			todo = append(todo, ecoFP{Ecosystem: e, Key: k})
+			name := "osv/" + e
+			uri := (*f.root).JoinPath(k, "all.zip")
+			up := &updater{name: name, ecosystem: e, c: f.c, uri: uri}
+			_ = s.Add(up)
 		}
-		err = s.Err()
-		newFP.Etag = res.Header.Get(`etag`)
+		err = scr.Err()
+		f.etag = res.Header.Get("etag")
 	case http.StatusNotModified:
-		todo = prevFP.Ecosystems
+		return s, nil
 	default:
 		var buf bytes.Buffer
 		buf.ReadFrom(io.LimitReader(res.Body, 256))
@@ -209,8 +178,62 @@ func (u *updater) Fetch(ctx context.Context, fp driver.Fingerprint) (io.ReadClos
 			Msg("error closing ecosystems.txt response body")
 	}
 	if err != nil {
-		return nil, fp, err
+		return s, err
 	}
+
+	return s, nil
+}
+
+// Ignore is a set of incoming ecosystems that we can throw out immediately.
+var ignore = map[string]struct{}{
+	"alpine":         {}, // Have a dedicated alpine updater.
+	"android":        {}, // AFAIK, there's no Android container runtime.
+	"debian":         {}, // Have a dedicated debian updater.
+	"github actions": {}, // Shouldn't be in containers?
+	"linux":          {}, // Containers have no say in the kernel.
+	"oss-fuzz":       {}, // Seems to only record git revisions.
+}
+
+type updater struct {
+	name      string
+	ecosystem string
+	c         *http.Client
+	uri       *url.URL
+}
+
+func (u *updater) Name() string { return u.name }
+
+type UpdaterConfig struct {
+	// The URL serving data dumps behind an S3 API.
+	//
+	// Authentication is unconfigurable, the ListObjectsV2 API must be publicly
+	// accessible.
+	URL string `json:"url" yaml:"url"`
+}
+
+// Configure implements driver.Configurable.
+func (u *updater) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *http.Client) error {
+	ctx = zlog.ContextWithValues(ctx, "component", "updater/osv/updater.Configure")
+	var err error
+
+	u.c = c
+	var cfg UpdaterConfig
+	if err := f(&cfg); err != nil {
+		return err
+	}
+	if cfg.URL != "" {
+		u.uri, err = url.Parse(cfg.URL)
+		if err != nil {
+			return err
+		}
+	}
+	zlog.Debug(ctx).Msg("loaded incoming config")
+	return nil
+}
+
+// Fetcher implements driver.Updater.
+func (u *updater) Fetch(ctx context.Context, fp driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
+	ctx = zlog.ContextWithValues(ctx, "component", "updater/osv/updater.Fetch")
 
 	out, err := tmp.NewFile("", "osv.fetch.*")
 	if err != nil {
@@ -229,55 +252,52 @@ func (u *updater) Fetch(ctx context.Context, fp driver.Fingerprint) (io.ReadClos
 	w := zip.NewWriter(out)
 	defer w.Close()
 	var ct int
-	for _, e := range todo {
-		// Copy the root URI, then append the ecosystem key and file name.
-		uri := (*u.root).JoinPath(e.Key, "all.zip")
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri.String(), nil)
-		if err != nil {
-			return nil, fp, fmt.Errorf("osv: martian request: %w", err)
-		}
-		req.Header.Set(`accept`, `application/zip`)
-		if etag := e.Etag; etag != "" {
-			req.Header.Set(`if-none-match`, etag)
-		}
-		res, err := u.c.Do(req)
-		if err != nil {
-			return nil, fp, err
-		}
-		// This switch is straight-line code to ensure that the response body is always closed.
-		switch res.StatusCode {
-		case http.StatusOK:
-			n := e.Ecosystem + ".zip"
-			var dst io.Writer
-			dst, err = w.CreateHeader(&zip.FileHeader{Name: n, Method: zip.Store})
-			if err == nil {
-				_, err = io.Copy(dst, res.Body)
-			}
-			if err != nil {
-				break
-			}
-			zlog.Debug(ctx).
-				Str("name", n).
-				Msg("wrote zip")
-			ct++
-		case http.StatusNotModified:
-		default:
-			err = fmt.Errorf("osv: unexpected response from %q: %v", res.Request.URL.String(), res.Status)
-		}
-		if err := res.Body.Close(); err != nil {
-			zlog.Info(ctx).
-				Err(err).
-				Msg("error closing advisory zip response body")
-		}
-		if err != nil {
-			return nil, fp, err
-		}
-		newFP.Ecosystems = append(newFP.Ecosystems, ecoFP{
-			Ecosystem: e.Ecosystem,
-			Key:       e.Key,
-			Etag:      res.Header.Get(`etag`),
-		})
+	// Copy the root URI, then append the ecosystem key and file name.
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.uri.String(), nil)
+	if err != nil {
+		return nil, fp, fmt.Errorf("osv: martian request: %w", err)
 	}
+	req.Header.Set(`accept`, `application/zip`)
+	if fp != "" {
+		zlog.Debug(ctx).
+			Str("hint", string(fp)).
+			Msg("using hint")
+		req.Header.Set("if-none-match", string(fp))
+	}
+
+	res, err := u.c.Do(req)
+	if err != nil {
+		return nil, fp, err
+	}
+	// This switch is straight-line code to ensure that the response body is always closed.
+	switch res.StatusCode {
+	case http.StatusOK:
+		n := u.ecosystem + ".zip"
+		var dst io.Writer
+		dst, err = w.CreateHeader(&zip.FileHeader{Name: n, Method: zip.Store})
+		if err == nil {
+			_, err = io.Copy(dst, res.Body)
+		}
+		if err != nil {
+			break
+		}
+		zlog.Debug(ctx).
+			Str("name", n).
+			Msg("wrote zip")
+		ct++
+	case http.StatusNotModified:
+	default:
+		err = fmt.Errorf("osv: unexpected response from %q: %v", res.Request.URL.String(), res.Status)
+	}
+	if err := res.Body.Close(); err != nil {
+		zlog.Info(ctx).
+			Err(err).
+			Msg("error closing advisory zip response body")
+	}
+	if err != nil {
+		return nil, fp, err
+	}
+	newEtag := res.Header.Get(`etag`)
 	zlog.Info(ctx).
 		Int("count", ct).
 		Msg("found updates")
@@ -285,15 +305,7 @@ func (u *updater) Fetch(ctx context.Context, fp driver.Fingerprint) (io.ReadClos
 		return nil, fp, driver.Unchanged
 	}
 
-	sort.Slice(newFP.Ecosystems, func(i, j int) bool {
-		return newFP.Ecosystems[i].Ecosystem < newFP.Ecosystems[j].Ecosystem
-	})
-	b, err := json.Marshal(newFP)
-	if err != nil {
-		// Log
-		return nil, fp, err
-	}
-	return out, driver.Fingerprint(b), nil
+	return out, driver.Fingerprint(newEtag), nil
 }
 
 // Fetcher implements driver.Updater.
