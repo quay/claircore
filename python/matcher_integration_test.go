@@ -49,7 +49,7 @@ func TestMatcherIntegration(t *testing.T) {
 
 	cfg := map[string]driver.ConfigUnmarshaler{
 		"osv": func(v interface{}) error {
-			cfg := v.(*osv.Config)
+			cfg := v.(*osv.FactoryConfig)
 			cfg.URL = osv.DefaultURL
 			return nil
 		},
