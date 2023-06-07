@@ -96,4 +96,8 @@ var MatcherMigrations = []migrate.Migration{
 		ID: 9,
 		Up: runFile("matcher/09-delete-pyupio.sql"),
 	},
+	{
+		ID: 10,
+		Up: runFile("matcher/10-delete-osv.sql"),
+	},
 }
