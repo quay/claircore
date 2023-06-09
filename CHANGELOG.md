@@ -1,3 +1,9 @@
+<a name="v1.5.7"></a>
+## [v1.5.7] - 2023-06-09
+[v1.5.7]: https://github.com/quay/claircore/compare/v1.5.6...v1.5.7
+
+Nothing interesting happened this release.
+
 <a name="v1.5.6"></a>
 ## [v1.5.6] - 2023-06-06
 [v1.5.6]: https://github.com/quay/claircore/compare/v1.5.5...v1.5.6
