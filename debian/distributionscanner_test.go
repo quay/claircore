@@ -24,6 +24,9 @@ func TestDistributionScanner(t *testing.T) {
 			if err != nil {
 				t.Error(err)
 			}
+			if d == nil {
+				t.Fatalf("%s does not represent a Debian dist", e.Name())
+			}
 			got, want := d.VersionID, e.Name()
 			t.Logf("got: %q, want: %q", got, want)
 			if got != want {
