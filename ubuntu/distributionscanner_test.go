@@ -10,194 +10,19 @@ import (
 	"github.com/quay/claircore"
 )
 
-// impish test data
-var impishOSRelease []byte = []byte(`PRETTY_NAME="Ubuntu 21.10"
-NAME="Ubuntu"
-VERSION_ID="21.10"
-VERSION="21.10 (Impish Indri)"
-VERSION_CODENAME=impish
-ID=ubuntu
-ID_LIKE=debian
-HOME_URL="https://www.ubuntu.com/"
-SUPPORT_URL="https://help.ubuntu.com/"
-BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
-PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
-UBUNTU_CODENAME=impish`)
-
-var impishLSBRelease []byte = []byte(`DISTRIB_ID=Ubuntu
-DISTRIB_RELEASE=21.10
-DISTRIB_CODENAME=impish
-DISTRIB_DESCRIPTION="Ubuntu 21.10"`)
-
-// eoan test data
-var eoanOSRelease []byte = []byte(`NAME="Ubuntu"
-VERSION="19.10 (Eoan Ermine)"
-ID=ubuntu
-ID_LIKE=debian
-PRETTY_NAME="Ubuntu 19.10"
-VERSION_ID="19.10"
-HOME_URL="https://www.ubuntu.com/"
-SUPPORT_URL="https://help.ubuntu.com/"
-BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
-PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
-VERSION_CODENAME=eoan
-UBUNTU_CODENAME=eoan`)
-
-var eoanLSBRelease []byte = []byte(`DISTRIB_ID=Ubuntu
-DISTRIB_RELEASE=19.10
-DISTRIB_CODENAME=eoan
-DISTRIB_DESCRIPTION="Ubuntu 19.10"`)
-
-// focal test data
-var focalOSRelease []byte = []byte(`NAME="Ubuntu"
-VERSION="20.04 LTS (Focal Fossa)"
-ID=ubuntu
-ID_LIKE=debian
-PRETTY_NAME="Ubuntu 20.04 LTS"
-VERSION_ID="20.04"
-HOME_URL="https://www.ubuntu.com/"
-SUPPORT_URL="https://help.ubuntu.com/"
-BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
-PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
-VERSION_CODENAME=focal
-UBUNTU_CODENAME=focal`)
-
-var focalLSBRelease []byte = []byte(`DISTRIB_ID=Ubuntu
-DISTRIB_RELEASE=20.04
-DISTRIB_CODENAME=focal
-DISTRIB_DESCRIPTION="Ubuntu 20.04 LTS"`)
-
-// artful test data
-var artfulOSRelease []byte = []byte(`NAME="Ubuntu"
-VERSION="17.10 (Artful Aardvark)"
-ID=ubuntu
-ID_LIKE=debian
-PRETTY_NAME="Ubuntu 17.10"
-VERSION_ID="17.10"
-HOME_URL="https://www.ubuntu.com/"
-SUPPORT_URL="https://help.ubuntu.com/"
-BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
-PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
-VERSION_CODENAME=artful
-UBUNTU_CODENAME=artful`)
-
-var artfulLSBRelease []byte = []byte(`DISTRIB_ID=Ubuntu
-DISTRIB_RELEASE=17.10
-DISTRIB_CODENAME=artful
-DISTRIB_DESCRIPTION="Ubuntu 17.10"`)
-
-// bionic test data
-var bionicOSRelease []byte = []byte(`NAME="Ubuntu"
-VERSION="18.04.3 LTS (Bionic Beaver)"
-ID=ubuntu
-ID_LIKE=debian
-PRETTY_NAME="Ubuntu 18.04.3 LTS"
-VERSION_ID="18.04"
-HOME_URL="https://www.ubuntu.com/"
-SUPPORT_URL="https://help.ubuntu.com/"
-BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
-PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
-VERSION_CODENAME=bionic
-UBUNTU_CODENAME=bionic`)
-
-var bionicLSBRelease []byte = []byte(`DISTRIB_ID=Ubuntu
-DISTRIB_RELEASE=18.04
-DISTRIB_CODENAME=bionic
-DISTRIB_DESCRIPTION="Ubuntu 18.04.3 LTS"`)
-
-// cosmic test data
-var cosmicOSRelease []byte = []byte(`NAME="Ubuntu"
-VERSION="18.10 (Cosmic Cuttlefish)"
-ID=ubuntu
-ID_LIKE=debian
-PRETTY_NAME="Ubuntu 18.10"
-VERSION_ID="18.10"
-HOME_URL="https://www.ubuntu.com/"
-SUPPORT_URL="https://help.ubuntu.com/"
-BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
-PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
-VERSION_CODENAME=cosmic
-UBUNTU_CODENAME=cosmic`)
-
-var cosmicLSBRelease []byte = []byte(`DISTRIB_ID=Ubuntu
-DISTRIB_RELEASE=18.10
-DISTRIB_CODENAME=cosmic
-DISTRIB_DESCRIPTION="Ubuntu 18.10"`)
-
-// disco test data
-var discoOSRelease []byte = []byte(`NAME="Ubuntu"
-VERSION="19.04 (Disco Dingo)"
-ID=ubuntu
-ID_LIKE=debian
-PRETTY_NAME="Ubuntu 19.04"
-VERSION_ID="19.04"
-HOME_URL="https://www.ubuntu.com/"
-SUPPORT_URL="https://help.ubuntu.com/"
-BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
-PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
-VERSION_CODENAME=disco
-UBUNTU_CODENAME=disco`)
-
-var discoLSBRelease []byte = []byte(`DISTRIB_ID=Ubuntu
-DISTRIB_RELEASE=19.04
-DISTRIB_CODENAME=disco
-DISTRIB_DESCRIPTION="Ubuntu 19.04"`)
-
-// precise test data
-var preciseOSRelease []byte = []byte(`NAME="Ubuntu"
-VERSION="12.04.5 LTS, Precise Pangolin"
-ID=ubuntu
-ID_LIKE=debian
-PRETTY_NAME="Ubuntu precise (12.04.5 LTS)"
-VERSION_ID="12.04"`)
-
-var preciseLSBRelease []byte = []byte(`DISTRIB_ID=Ubuntu
-DISTRIB_RELEASE=12.04
-DISTRIB_CODENAME=precise
-DISTRIB_DESCRIPTION="Ubuntu 12.04.5 LTS"`)
-
-// trusty test data
-var trustyOSRelease []byte = []byte(`NAME="Ubuntu"
-VERSION="14.04.6 LTS, Trusty Tahr"
-ID=ubuntu
-ID_LIKE=debian
-PRETTY_NAME="Ubuntu 14.04.6 LTS"
-VERSION_ID="14.04"
-HOME_URL="http://www.ubuntu.com/"
-SUPPORT_URL="http://help.ubuntu.com/"
-BUG_REPORT_URL="http://bugs.launchpad.net/ubuntu/"`)
-
-var trustyLSBRelease []byte = []byte(`DISTRIB_ID=Ubuntu
-DISTRIB_RELEASE=14.04
-DISTRIB_CODENAME=trusty
-DISTRIB_DESCRIPTION="Ubuntu 14.04.6 LTS"`)
-
-// xenial test data
-var xenialOSRelease []byte = []byte(`NAME="Ubuntu"
-VERSION="16.04.6 LTS (Xenial Xerus)"
-ID=ubuntu
-ID_LIKE=debian
-PRETTY_NAME="Ubuntu 16.04.6 LTS"
-VERSION_ID="16.04"
-HOME_URL="http://www.ubuntu.com/"
-SUPPORT_URL="http://help.ubuntu.com/"
-BUG_REPORT_URL="http://bugs.launchpad.net/ubuntu/"
-VERSION_CODENAME=xenial
-UBUNTU_CODENAME=xenial`)
-
-var xenialLSBRelease []byte = []byte(`DISTRIB_ID=Ubuntu
-DISTRIB_RELEASE=16.04
-DISTRIB_CODENAME=xenial
-DISTRIB_DESCRIPTION="Ubuntu 16.04.6 LTS"`)
-
 func TestDistributionScanner(t *testing.T) {
 	table := []struct {
 		Name string
-		Want claircore.Distribution
+		Want *claircore.Distribution
 	}{
 		{
+			// This is a Debian distribution.
+			Name: "11",
+			Want: nil,
+		},
+		{
 			Name: "10.04",
-			Want: claircore.Distribution{
+			Want: &claircore.Distribution{
 				Name:            "Ubuntu",
 				DID:             "ubuntu",
 				VersionID:       "10.04",
@@ -208,7 +33,7 @@ func TestDistributionScanner(t *testing.T) {
 		},
 		{
 			Name: "12.04",
-			Want: claircore.Distribution{
+			Want: &claircore.Distribution{
 				Name:            "Ubuntu",
 				DID:             "ubuntu",
 				VersionID:       "12.04",
@@ -219,7 +44,7 @@ func TestDistributionScanner(t *testing.T) {
 		},
 		{
 			Name: "12.10",
-			Want: claircore.Distribution{
+			Want: &claircore.Distribution{
 				Name:            "Ubuntu",
 				DID:             "ubuntu",
 				VersionID:       "12.10",
@@ -230,7 +55,7 @@ func TestDistributionScanner(t *testing.T) {
 		},
 		{
 			Name: "13.04",
-			Want: claircore.Distribution{
+			Want: &claircore.Distribution{
 				Name:            "Ubuntu",
 				DID:             "ubuntu",
 				VersionID:       "13.04",
@@ -241,7 +66,7 @@ func TestDistributionScanner(t *testing.T) {
 		},
 		{
 			Name: "13.10",
-			Want: claircore.Distribution{
+			Want: &claircore.Distribution{
 				Name:            "Ubuntu",
 				DID:             "ubuntu",
 				VersionID:       "13.10",
@@ -252,7 +77,7 @@ func TestDistributionScanner(t *testing.T) {
 		},
 		{
 			Name: "14.04",
-			Want: claircore.Distribution{
+			Want: &claircore.Distribution{
 				Name:            "Ubuntu",
 				DID:             "ubuntu",
 				VersionID:       "14.04",
@@ -263,7 +88,7 @@ func TestDistributionScanner(t *testing.T) {
 		},
 		{
 			Name: "14.10",
-			Want: claircore.Distribution{
+			Want: &claircore.Distribution{
 				Name:            "Ubuntu",
 				DID:             "ubuntu",
 				VersionID:       "14.10",
@@ -274,7 +99,7 @@ func TestDistributionScanner(t *testing.T) {
 		},
 		{
 			Name: "15.04",
-			Want: claircore.Distribution{
+			Want: &claircore.Distribution{
 				Name:            "Ubuntu",
 				DID:             "ubuntu",
 				VersionID:       "15.04",
@@ -285,7 +110,7 @@ func TestDistributionScanner(t *testing.T) {
 		},
 		{
 			Name: "15.10",
-			Want: claircore.Distribution{
+			Want: &claircore.Distribution{
 				Name:            "Ubuntu",
 				DID:             "ubuntu",
 				VersionID:       "15.10",
@@ -296,7 +121,7 @@ func TestDistributionScanner(t *testing.T) {
 		},
 		{
 			Name: "16.04",
-			Want: claircore.Distribution{
+			Want: &claircore.Distribution{
 				Name:            "Ubuntu",
 				DID:             "ubuntu",
 				VersionID:       "16.04",
@@ -307,7 +132,7 @@ func TestDistributionScanner(t *testing.T) {
 		},
 		{
 			Name: "16.10",
-			Want: claircore.Distribution{
+			Want: &claircore.Distribution{
 				Name:            "Ubuntu",
 				DID:             "ubuntu",
 				VersionID:       "16.10",
@@ -318,7 +143,7 @@ func TestDistributionScanner(t *testing.T) {
 		},
 		{
 			Name: "17.04",
-			Want: claircore.Distribution{
+			Want: &claircore.Distribution{
 				Name:            "Ubuntu",
 				DID:             "ubuntu",
 				VersionID:       "17.04",
@@ -329,7 +154,7 @@ func TestDistributionScanner(t *testing.T) {
 		},
 		{
 			Name: "17.10",
-			Want: claircore.Distribution{
+			Want: &claircore.Distribution{
 				Name:            "Ubuntu",
 				DID:             "ubuntu",
 				VersionID:       "17.10",
@@ -340,7 +165,7 @@ func TestDistributionScanner(t *testing.T) {
 		},
 		{
 			Name: "18.04",
-			Want: claircore.Distribution{
+			Want: &claircore.Distribution{
 				Name:            "Ubuntu",
 				DID:             "ubuntu",
 				VersionID:       "18.04",
@@ -351,7 +176,7 @@ func TestDistributionScanner(t *testing.T) {
 		},
 		{
 			Name: "18.10",
-			Want: claircore.Distribution{
+			Want: &claircore.Distribution{
 				Name:            "Ubuntu",
 				DID:             "ubuntu",
 				VersionID:       "18.10",
@@ -362,7 +187,7 @@ func TestDistributionScanner(t *testing.T) {
 		},
 		{
 			Name: "19.04",
-			Want: claircore.Distribution{
+			Want: &claircore.Distribution{
 				Name:            "Ubuntu",
 				DID:             "ubuntu",
 				VersionID:       "19.04",
@@ -373,7 +198,7 @@ func TestDistributionScanner(t *testing.T) {
 		},
 		{
 			Name: "19.10",
-			Want: claircore.Distribution{
+			Want: &claircore.Distribution{
 				Name:            "Ubuntu",
 				DID:             "ubuntu",
 				VersionID:       "19.10",
@@ -384,7 +209,7 @@ func TestDistributionScanner(t *testing.T) {
 		},
 		{
 			Name: "20.04",
-			Want: claircore.Distribution{
+			Want: &claircore.Distribution{
 				Name:            "Ubuntu",
 				DID:             "ubuntu",
 				VersionID:       "20.04",
@@ -395,7 +220,7 @@ func TestDistributionScanner(t *testing.T) {
 		},
 		{
 			Name: "20.10",
-			Want: claircore.Distribution{
+			Want: &claircore.Distribution{
 				Name:            "Ubuntu",
 				DID:             "ubuntu",
 				VersionID:       "20.10",
@@ -406,7 +231,7 @@ func TestDistributionScanner(t *testing.T) {
 		},
 		{
 			Name: "21.04",
-			Want: claircore.Distribution{
+			Want: &claircore.Distribution{
 				Name:            "Ubuntu",
 				DID:             "ubuntu",
 				VersionID:       "21.04",
@@ -417,7 +242,7 @@ func TestDistributionScanner(t *testing.T) {
 		},
 		{
 			Name: "21.10",
-			Want: claircore.Distribution{
+			Want: &claircore.Distribution{
 				Name:            "Ubuntu",
 				DID:             "ubuntu",
 				VersionID:       "21.10",
@@ -428,7 +253,7 @@ func TestDistributionScanner(t *testing.T) {
 		},
 		{
 			Name: "22.04",
-			Want: claircore.Distribution{
+			Want: &claircore.Distribution{
 				Name:            "Ubuntu",
 				DID:             "ubuntu",
 				VersionID:       "22.04",
@@ -439,13 +264,35 @@ func TestDistributionScanner(t *testing.T) {
 		},
 		{
 			Name: "22.10",
-			Want: claircore.Distribution{
+			Want: &claircore.Distribution{
 				Name:            "Ubuntu",
 				DID:             "ubuntu",
 				VersionID:       "22.10",
 				PrettyName:      "Ubuntu 22.10",
 				VersionCodeName: "kinetic",
 				Version:         "22.10 (Kinetic)",
+			},
+		},
+		{
+			Name: "23.04",
+			Want: &claircore.Distribution{
+				Name:            "Ubuntu",
+				DID:             "ubuntu",
+				VersionID:       "23.04",
+				PrettyName:      "Ubuntu 23.04",
+				VersionCodeName: "lunar",
+				Version:         "23.04 (Lunar)",
+			},
+		},
+		{
+			Name: "23.10",
+			Want: &claircore.Distribution{
+				Name:            "Ubuntu",
+				DID:             "ubuntu",
+				VersionID:       "23.10",
+				PrettyName:      "Ubuntu 23.10",
+				VersionCodeName: "mantic",
+				Version:         "23.10 (Mantic)",
 			},
 		},
 	}
@@ -467,7 +314,7 @@ func TestDistributionScanner(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if want := &tc.Want; !cmp.Equal(got, want) {
+			if want := tc.Want; !cmp.Equal(got, want) {
 				t.Error(cmp.Diff(got, want))
 			}
 		})
