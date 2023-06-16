@@ -19,7 +19,7 @@ import (
 
 const (
 	scannerName    = "ubuntu"
-	scannerVersion = "2"
+	scannerVersion = "3"
 	scannerKind    = "distribution"
 
 	osReleasePath  = `etc/os-release`
@@ -74,16 +74,18 @@ func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]
 func findDist(sys fs.FS) (*claircore.Distribution, error) {
 	var err error
 	var b []byte
-	var verKey, nameKey string
+	var idKey, verKey, nameKey string
 
 	b, err = fs.ReadFile(sys, lsbReleasePath)
 	if errors.Is(err, nil) {
+		idKey = `DISTRIB_ID`
 		verKey = `DISTRIB_RELEASE`
 		nameKey = `DISTRIB_CODENAME`
 		goto Found
 	}
 	b, err = fs.ReadFile(sys, osReleasePath)
 	if errors.Is(err, nil) {
+		idKey = `ID`
 		verKey = `VERSION_ID`
 		nameKey = `VERSION_CODENAME`
 		goto Found
@@ -91,6 +93,7 @@ func findDist(sys fs.FS) (*claircore.Distribution, error) {
 	return nil, nil
 
 Found:
+	var hasID bool
 	var ver, name string
 	buf := bytes.NewBuffer(b)
 	for l, err := buf.ReadString('\n'); len(l) != 0; l, err = buf.ReadString('\n') {
@@ -106,11 +109,21 @@ Found:
 		}
 		v = strings.Trim(v, "\"\r\n")
 		switch k {
+		case idKey:
+			if !strings.EqualFold(v, "ubuntu") {
+				// This is not Ubuntu, so skip it.
+				return nil, nil
+			}
+			hasID = true
 		case nameKey:
 			name = v
 		case verKey:
 			ver = v
 		}
+	}
+	if !hasID {
+		// If ID or DISTRIB_ID is missing, just say this is not Ubuntu.
+		return nil, nil
 	}
 	if name != "" && ver != "" {
 		return mkDist(ver, name), nil
