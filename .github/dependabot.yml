@@ -5,15 +5,35 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    reviewers:
+      - "quay/babysitters"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
   - package-ecosystem: "gomod"
     directory: "/"
     schedule:
       interval: "weekly"
+    reviewers:
+      - "quay/babysitters"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
   - package-ecosystem: "gomod"
     directory: "/toolkit"
     schedule:
       interval: "weekly"
+    reviewers:
+      - "quay/babysitters"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
   - package-ecosystem: "gomod"
     directory: "/updater/driver"
     schedule:
       interval: "weekly"
+    reviewers:
+      - "quay/babysitters"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
