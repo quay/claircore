@@ -28,6 +28,8 @@ type Controller struct {
 	currentState State
 	// Realizer is scoped to a single request
 	Realizer indexer.Realizer
+	// Vscnrs are the scanners that are used during indexing
+	Vscnrs indexer.VersionedScanners
 }
 
 // New constructs a controller given an Opts struct
@@ -46,6 +48,7 @@ func New(options *indexer.Options) *Controller {
 		currentState: CheckManifest,
 		report:       scanRes,
 		manifest:     &claircore.Manifest{},
+		Vscnrs:       options.Vscnrs,
 	}
 
 	return s
