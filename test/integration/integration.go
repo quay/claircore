@@ -92,17 +92,36 @@ const cachedirtag = `Signature: 8a477f597d28d172789f06886806bc55
 // creates it if necessary.
 func PackageCacheDir(t testing.TB) string {
 	pkgCacheOnce.Do(func() {
-		ctx, done := context.WithTimeout(context.Background(), 5*time.Second) // Absurdly high timeout.
+		ctx := context.Background()
+		done := func() {}
+		if d, ok := t.(deadliner); ok {
+			if dl, ok := d.Deadline(); ok {
+				ctx, done = context.WithDeadline(ctx, dl)
+			}
+			// If the above is false, then the test explicitly asked for no
+			// timeout.
+		} else {
+			// Absurdly high timeout. Even higher than the previous 5 seconds.
+			ctx, done = context.WithTimeout(ctx, 60*time.Second)
+		}
 		defer done()
 		// This exec'ing is needed be cause test binaries are not built with
 		// full debug.BuildInfo filled out.
 		out, err := exec.CommandContext(ctx, `go`, `list`, `-m`).Output()
 		if err != nil {
+			if exit := new(exec.ExitError); errors.As(err, &exit) {
+				t.Logf("exit code: %d", exit.ExitCode())
+				t.Logf("stderr:\n%s", string(exit.Stderr))
+			}
 			t.Fatal(err)
 		}
 		skip := len(out) - 1
 		out, err = exec.CommandContext(ctx, `go`, `list`, `.`).Output()
 		if err != nil {
+			if exit := new(exec.ExitError); errors.As(err, &exit) {
+				t.Logf("exit code: %d", exit.ExitCode())
+				t.Logf("stderr:\n%s", string(exit.Stderr))
+			}
 			t.Fatal(err)
 		}
 		// Swap separators, except for the one at the module/package boundary.
@@ -124,6 +143,11 @@ func PackageCacheDir(t testing.TB) string {
 		t.Fatal("test cache dir error, check previous tests")
 	}
 	return pkgCacheDir
+}
+
+// Deadliner is implemented by [testing.T] to report the test deadline.
+type deadliner interface {
+	Deadline() (deadline time.Time, ok bool)
 }
 
 var pkgCacheOnce sync.Once
