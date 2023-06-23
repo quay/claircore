@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"testing/fstest"
@@ -492,6 +493,33 @@ func TestTarConcatenate(t *testing.T) {
 			if _, err := sys.Open(fi); err != nil {
 				t.Errorf("could not open %s: %v", fi, err)
 			}
+		}
+	}
+}
+
+func TestInvalidName(t *testing.T) {
+	f, err := os.Open(`testdata/bad_name.tar`)
+	if err != nil {
+		t.Fatalf("failed to open test tar: %v", err)
+	}
+	defer f.Close()
+	sys, err := New(f)
+	if err != nil {
+		t.Fatalf("failed to create tarfs: %v", err)
+	}
+	ms, err := fs.Glob(sys, "*")
+	if err != nil {
+		t.Fatalf("unexpected glob failure: %v", err)
+	}
+	if got, want := len(ms), 2; got != want {
+		t.Fatalf("bad number of matches: got: %d, want: %d", got, want)
+	}
+	for _, n := range ms {
+		if n == "." {
+			continue // Expect the root.
+		}
+		if got, want := n, strings.Repeat("_", 100)+`bad\xfdname`; got != want {
+			t.Fatalf("unexpected name: got: %q, want: %q", got, want)
 		}
 	}
 }
