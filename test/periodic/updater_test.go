@@ -20,6 +20,11 @@ import (
 	"github.com/quay/claircore/updater/osv"
 )
 
+// Helper for keeping the default configuration.
+func noopConfigure(_ interface{}) error {
+	return nil
+}
+
 func TestAWS(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
 	set, err := aws.UpdaterSet(ctx)
@@ -35,7 +40,7 @@ func TestAlpine(t *testing.T) {
 	if err != nil {
 		t.Fatal()
 	}
-	err = fac.Configure(ctx, func(interface{}) error { return nil }, pkgClient)
+	err = fac.Configure(ctx, noopConfigure, pkgClient)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,7 +57,7 @@ func TestDebian(t *testing.T) {
 	if err != nil {
 		t.Fatal()
 	}
-	err = fac.Configure(ctx, func(interface{}) error { return nil }, pkgClient)
+	err = fac.Configure(ctx, noopConfigure, pkgClient)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -87,7 +92,7 @@ func TestRHEL(t *testing.T) {
 	if err != nil {
 		t.Fatal()
 	}
-	err = fac.Configure(ctx, func(interface{}) error { return nil }, pkgClient)
+	err = fac.Configure(ctx, noopConfigure, pkgClient)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -113,7 +118,7 @@ func TestUbuntu(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = fac.Configure(ctx, func(interface{}) error { return nil }, pkgClient)
+	err = fac.Configure(ctx, noopConfigure, pkgClient)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,7 +144,7 @@ func runUpdaterSet(ctx context.Context, t *testing.T, set driver.UpdaterSet) {
 		t.Run(u.Name(), func(t *testing.T) {
 			ctx := zlog.Test(ctx, t)
 			if cfg, ok := u.(driver.Configurable); ok {
-				err := cfg.Configure(ctx, func(interface{}) error { return nil }, pkgClient)
+				err := cfg.Configure(ctx, noopConfigure, pkgClient)
 				if err != nil {
 					t.Fatal(err)
 				}
