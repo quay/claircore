@@ -56,7 +56,7 @@ func TestMatcherIntegration(t *testing.T) {
 	}
 
 	facs := map[string]driver.UpdaterSetFactory{
-		"osv": osv.Factory,
+		"osv": new(osv.Factory),
 	}
 	mgr, err := updates.NewManager(ctx, store, locks, srv.Client(),
 		updates.WithFactories(facs), updates.WithConfigs(cfg))

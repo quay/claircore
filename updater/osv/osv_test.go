@@ -28,7 +28,7 @@ func TestFetch(t *testing.T) {
 	defer srv.Close()
 	ctx := zlog.Test(context.Background(), t)
 
-	f := factory{}
+	f := Factory{}
 	cfgFunc := func(v interface{}) error {
 		cfg := v.(*FactoryConfig)
 		cfg.URL = srv.URL
@@ -109,7 +109,7 @@ func TestParse(t *testing.T) {
 	defer srv.Close()
 	ctx := zlog.Test(context.Background(), t)
 
-	f := factory{}
+	f := Factory{}
 	cfgFunc := func(v interface{}) error {
 		cfg := v.(*FactoryConfig)
 		cfg.URL = srv.URL

@@ -29,21 +29,19 @@ import (
 var (
 	_ driver.Updater           = (*updater)(nil)
 	_ driver.Configurable      = (*updater)(nil)
-	_ driver.UpdaterSetFactory = (*factory)(nil)
-	_ driver.Configurable      = (*factory)(nil)
+	_ driver.UpdaterSetFactory = (*Factory)(nil)
+	_ driver.Configurable      = (*Factory)(nil)
 )
-
-// Factory is the UpdaterSetFactory exposed by this package.
-//
-// All configuration is done on the returned updaters. See the [FactoryConfig] type.
-var Factory driver.UpdaterSetFactory = &factory{}
 
 // DefaultURL is the S3 bucket provided by the OSV project.
 //
 //doc:url updater
 const DefaultURL = `https://osv-vulnerabilities.storage.googleapis.com/`
 
-type factory struct {
+// Factory is the UpdaterSetFactory exposed by this package.
+//
+// [Configure] must be called before [UpdaterSet]. See the [FactoryConfig] type.
+type Factory struct {
 	root *url.URL
 	c    *http.Client
 	// Allow is a bool-and-map-of-bool.
@@ -58,10 +56,8 @@ type factory struct {
 //
 // By convention, it's at a key called "osv".
 type FactoryConfig struct {
-	// The URL serving data dumps behind an S3 API.
-	//
-	// Authentication is unconfigurable, the ListObjectsV2 API must be publicly
-	// accessible.
+	// The URL serving data in the same layout as the OSV project's public S3
+	// bucket.
 	URL string `json:"url" yaml:"url"`
 	// Allowlist is a list of ecosystems to allow. When this is unset, all are
 	// allowed.
@@ -73,7 +69,7 @@ type FactoryConfig struct {
 }
 
 // Configure implements driver.Configurable.
-func (u *factory) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *http.Client) error {
+func (u *Factory) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *http.Client) error {
 	ctx = zlog.ContextWithValues(ctx, "component", "updater/osv/factory.Configure")
 	var err error
 
@@ -104,9 +100,12 @@ func (u *factory) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *
 	return nil
 }
 
-func (f *factory) UpdaterSet(ctx context.Context) (s driver.UpdaterSet, err error) {
+func (f *Factory) UpdaterSet(ctx context.Context) (s driver.UpdaterSet, err error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "updater/osv/factory.UpdaterSet")
 	s = driver.NewUpdaterSet()
+	if f.root == nil || f.c == nil {
+		return s, errors.New("osv: factory not configured") // Purposely return an unhandleable error.
+	}
 	var stats struct {
 		ecosystems []string
 		skipped    []string

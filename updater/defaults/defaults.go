@@ -62,7 +62,7 @@ func inner(ctx context.Context) error {
 	}
 	updater.Register("debian", df)
 
-	updater.Register("osv", osv.Factory)
+	updater.Register("osv", new(osv.Factory))
 	updater.Register("aws", driver.UpdaterSetFactoryFunc(aws.UpdaterSet))
 	updater.Register("oracle", driver.UpdaterSetFactoryFunc(oracle.UpdaterSet))
 	updater.Register("photon", driver.UpdaterSetFactoryFunc(photon.UpdaterSet))

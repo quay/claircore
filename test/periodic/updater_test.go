@@ -131,7 +131,11 @@ func TestUbuntu(t *testing.T) {
 
 func TestOSV(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
-	us, err := osv.Factory.UpdaterSet(ctx)
+	fac := &osv.Factory{}
+	if err := fac.Configure(ctx, noopConfigure, pkgClient); err != nil {
+		t.Fatal(err)
+	}
+	us, err := fac.UpdaterSet(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
