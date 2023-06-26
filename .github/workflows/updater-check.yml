@@ -1,4 +1,5 @@
 ---
+name: Updater Check
 on:
   workflow_dispatch: {}
   schedule:
@@ -8,11 +9,10 @@ on:
 jobs:
   test_schedule:
     runs-on: ubuntu-latest
-    container: quay.io/projectquay/golang:1.20
     steps:
+      - uses: actions/checkout@v3
       - uses: actions/setup-go@v4
         with:
           check-latest: true
           go-version: '>=1.20'
-      - uses: actions/checkout@v3
       - run: go test ./test/periodic -enable
