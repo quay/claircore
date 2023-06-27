@@ -100,23 +100,17 @@ func (s *IndexerStore) IndexPackages(ctx context.Context, pkgs []*claircore.Pack
 
 	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/indexPackages")
 	// obtain a transaction scoped batch
-	tctx, done := context.WithTimeout(ctx, 5*time.Second)
-	tx, err := s.pool.Begin(tctx)
-	done()
+	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("store:indexPackage failed to create transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
-	tctx, done = context.WithTimeout(ctx, 5*time.Second)
-	insertPackageStmt, err := tx.Prepare(tctx, "insertPackageStmt", insert)
-	done()
+	insertPackageStmt, err := tx.Prepare(ctx, "insertPackageStmt", insert)
 	if err != nil {
 		return fmt.Errorf("failed to create statement: %w", err)
 	}
-	tctx, done = context.WithTimeout(ctx, 5*time.Second)
-	insertPackageScanArtifactWithStmt, err := tx.Prepare(tctx, "insertPackageScanArtifactWith", insertWith)
-	done()
+	insertPackageScanArtifactWithStmt, err := tx.Prepare(ctx, "insertPackageScanArtifactWith", insertWith)
 	if err != nil {
 		return fmt.Errorf("failed to create statement: %w", err)
 	}
@@ -198,9 +192,7 @@ func (s *IndexerStore) IndexPackages(ctx context.Context, pkgs []*claircore.Pack
 		Int("inserted", len(pkgs)-skipCt).
 		Msg("scanartifacts inserted")
 
-	tctx, done = context.WithTimeout(ctx, 5*time.Second)
-	err = tx.Commit(tctx)
-	done()
+	err = tx.Commit(ctx)
 	if err != nil {
 		return fmt.Errorf("store:indexPackages failed to commit tx: %w", err)
 	}

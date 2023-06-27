@@ -81,9 +81,7 @@ DO
 		return fmt.Errorf("failed to select package scanner id: %w", err)
 	}
 
-	tctx, done := context.WithTimeout(ctx, 5*time.Second)
-	tx, err := s.pool.Begin(tctx)
-	done()
+	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to create transaction: %w", err)
 	}
@@ -91,10 +89,8 @@ DO
 
 	// link extracted scanner IDs with incoming manifest
 	for _, id := range scannerIDs {
-		tctx, done := context.WithTimeout(ctx, 5*time.Second)
 		start := time.Now()
-		_, err := tx.Exec(tctx, insertManifestScanned, ir.Hash, id)
-		done()
+		_, err := tx.Exec(ctx, insertManifestScanned, ir.Hash, id)
 		if err != nil {
 			return fmt.Errorf("failed to link manifest with scanner list: %w", err)
 		}
@@ -106,19 +102,15 @@ DO
 	// we cast claircore.IndexReport to jsonbIndexReport in order to obtain the value/scan
 	// implementations
 
-	tctx, done = context.WithTimeout(ctx, 5*time.Second)
 	start := time.Now()
-	_, err = tx.Exec(tctx, upsertIndexReport, ir.Hash, jsonbIndexReport(*ir))
-	done()
+	_, err = tx.Exec(ctx, upsertIndexReport, ir.Hash, jsonbIndexReport(*ir))
 	if err != nil {
 		return fmt.Errorf("failed to upsert scan result: %w", err)
 	}
 	setIndexedFinishedCounter.WithLabelValues("upsertIndexReport").Add(1)
 	setIndexedFinishedDuration.WithLabelValues("upsertIndexReport").Observe(time.Since(start).Seconds())
 
-	tctx, done = context.WithTimeout(ctx, 15*time.Second)
-	err = tx.Commit(tctx)
-	done()
+	err = tx.Commit(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
