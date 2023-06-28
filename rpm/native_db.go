@@ -59,9 +59,22 @@ func packagesFromDB(ctx context.Context, pkgdb string, db nativeDB) ([]*claircor
 			PackageDB: pkgdb,
 		})
 		p := &ps[idx]
-		if strings.Contains(info.Module, ":") {
-			p.Module = info.Module
+		var modStream string
+		if strings.Count(info.Module, ":") > 1 {
+			first := true
+			idx := strings.IndexFunc(info.Module, func(r rune) bool {
+				if r != ':' {
+					return false
+				}
+				if first {
+					first = false
+					return false
+				}
+				return true
+			})
+			modStream = info.Module[:idx]
 		}
+		p.Module = modStream
 		p.Version = constructEVR(&b, &info)
 		p.RepositoryHint = constructHint(&b, &info)
 
@@ -86,9 +99,7 @@ func packagesFromDB(ctx context.Context, pkgdb string, db nativeDB) ([]*claircor
 			pkg := &srcs[idx]
 			src[info.SourceNEVR] = pkg
 			p.Source = pkg
-			if strings.Contains(info.Module, ":") {
-				pkg.Module = info.Module
-			}
+			pkg.Module = modStream
 		}
 
 		pkgs = append(pkgs, p)

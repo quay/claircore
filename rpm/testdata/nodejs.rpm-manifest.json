@@ -1,0 +1,2718 @@
+{
+	"rpms": [
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libgcc",
+			"release": "4.3.el9",
+			"srpm_name": "gcc",
+			"srpm_nevra": "gcc-0:11.3.1-4.3.el9.src",
+			"version": "11.3.1"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "crypto-policies",
+			"release": "1.git9a18988.el9",
+			"srpm_name": "crypto-policies",
+			"srpm_nevra": "crypto-policies-0:20221215-1.git9a18988.el9.src",
+			"version": "20221215"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "tzdata",
+			"release": "1.el9",
+			"srpm_name": "tzdata",
+			"srpm_nevra": "tzdata-0:2023c-1.el9.src",
+			"version": "2023c"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "subscription-manager-rhsm-certificates",
+			"release": "1.el9",
+			"srpm_name": "subscription-manager-rhsm-certificates",
+			"srpm_nevra": "subscription-manager-rhsm-certificates-0:20220623-1.el9.src",
+			"version": "20220623"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "redhat-release",
+			"release": "0.13.el9",
+			"srpm_name": "redhat-release",
+			"srpm_nevra": "redhat-release-0:9.2-0.13.el9.src",
+			"version": "9.2"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "setup",
+			"release": "9.el9",
+			"srpm_name": "setup",
+			"srpm_nevra": "setup-0:2.13.7-9.el9.src",
+			"version": "2.13.7"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "filesystem",
+			"release": "2.el9",
+			"srpm_name": "filesystem",
+			"srpm_nevra": "filesystem-0:3.16-2.el9.src",
+			"version": "3.16"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "basesystem",
+			"release": "13.el9",
+			"srpm_name": "basesystem",
+			"srpm_nevra": "basesystem-0:11-13.el9.src",
+			"version": "11"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "python3-setuptools-wheel",
+			"release": "12.el9",
+			"srpm_name": "python-setuptools",
+			"srpm_nevra": "python-setuptools-0:53.0.0-12.el9.src",
+			"version": "53.0.0"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "pcre2-syntax",
+			"release": "2.el9",
+			"srpm_name": "pcre2",
+			"srpm_nevra": "pcre2-0:10.40-2.el9.src",
+			"version": "10.40"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "ncurses-base",
+			"release": "8.20210508.el9",
+			"srpm_name": "ncurses",
+			"srpm_nevra": "ncurses-0:6.2-8.20210508.el9.src",
+			"version": "6.2"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "glibc-minimal-langpack",
+			"release": "60.el9",
+			"srpm_name": "glibc",
+			"srpm_nevra": "glibc-0:2.34-60.el9.src",
+			"version": "2.34"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "glibc-common",
+			"release": "60.el9",
+			"srpm_name": "glibc",
+			"srpm_nevra": "glibc-0:2.34-60.el9.src",
+			"version": "2.34"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "glibc",
+			"release": "60.el9",
+			"srpm_name": "glibc",
+			"srpm_nevra": "glibc-0:2.34-60.el9.src",
+			"version": "2.34"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "ncurses-libs",
+			"release": "8.20210508.el9",
+			"srpm_name": "ncurses",
+			"srpm_nevra": "ncurses-0:6.2-8.20210508.el9.src",
+			"version": "6.2"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "bash",
+			"release": "6.el9",
+			"srpm_name": "bash",
+			"srpm_nevra": "bash-0:5.1.8-6.el9.src",
+			"version": "5.1.8"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "zlib",
+			"release": "39.el9",
+			"srpm_name": "zlib",
+			"srpm_nevra": "zlib-0:1.2.11-39.el9.src",
+			"version": "1.2.11"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "xz-libs",
+			"release": "8.el9_0",
+			"srpm_name": "xz",
+			"srpm_nevra": "xz-0:5.2.5-8.el9_0.src",
+			"version": "5.2.5"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "bzip2-libs",
+			"release": "8.el9",
+			"srpm_name": "bzip2",
+			"srpm_nevra": "bzip2-0:1.0.8-8.el9.src",
+			"version": "1.0.8"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libzstd",
+			"release": "2.el9",
+			"srpm_name": "zstd",
+			"srpm_nevra": "zstd-0:1.5.1-2.el9.src",
+			"version": "1.5.1"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libxcrypt",
+			"release": "3.el9",
+			"srpm_name": "libxcrypt",
+			"srpm_nevra": "libxcrypt-0:4.4.18-3.el9.src",
+			"version": "4.4.18"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libcap",
+			"release": "8.el9",
+			"srpm_name": "libcap",
+			"srpm_nevra": "libcap-0:2.48-8.el9.src",
+			"version": "2.48"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "sqlite-libs",
+			"release": "6.el9_1",
+			"srpm_name": "sqlite",
+			"srpm_nevra": "sqlite-0:3.34.1-6.el9_1.src",
+			"version": "3.34.1"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libuuid",
+			"release": "11.el9_2",
+			"srpm_name": "util-linux",
+			"srpm_nevra": "util-linux-0:2.37.4-11.el9_2.src",
+			"version": "2.37.4"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "popt",
+			"release": "8.el9",
+			"srpm_name": "popt",
+			"srpm_nevra": "popt-0:1.18-8.el9.src",
+			"version": "1.18"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libffi",
+			"release": "7.el9",
+			"srpm_name": "libffi",
+			"srpm_nevra": "libffi-0:3.4.2-7.el9.src",
+			"version": "3.4.2"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "p11-kit",
+			"release": "2.el9",
+			"srpm_name": "p11-kit",
+			"srpm_nevra": "p11-kit-0:0.24.1-2.el9.src",
+			"version": "0.24.1"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libgpg-error",
+			"release": "5.el9",
+			"srpm_name": "libgpg-error",
+			"srpm_nevra": "libgpg-error-0:1.42-5.el9.src",
+			"version": "1.42"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libxml2",
+			"release": "3.el9_1",
+			"srpm_name": "libxml2",
+			"srpm_nevra": "libxml2-0:2.9.13-3.el9_1.src",
+			"version": "2.9.13"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "readline",
+			"release": "4.el9",
+			"srpm_name": "readline",
+			"srpm_nevra": "readline-0:8.1-4.el9.src",
+			"version": "8.1"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "json-c",
+			"release": "11.el9",
+			"srpm_name": "json-c",
+			"srpm_nevra": "json-c-0:0.14-11.el9.src",
+			"version": "0.14"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libsmartcols",
+			"release": "11.el9",
+			"srpm_name": "util-linux",
+			"srpm_nevra": "util-linux-0:2.37.4-11.el9.src",
+			"version": "2.37.4"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libstdc++",
+			"release": "4.3.el9",
+			"srpm_name": "gcc",
+			"srpm_nevra": "gcc-0:11.3.1-4.3.el9.src",
+			"version": "11.3.1"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "lua-libs",
+			"release": "3.el9",
+			"srpm_name": "lua",
+			"srpm_nevra": "lua-0:5.4.4-3.el9.src",
+			"version": "5.4.4"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libgcrypt",
+			"release": "10.el9_2",
+			"srpm_name": "libgcrypt",
+			"srpm_nevra": "libgcrypt-0:1.10.0-10.el9_2.src",
+			"version": "1.10.0"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "elfutils-libelf",
+			"release": "3.el9",
+			"srpm_name": "elfutils",
+			"srpm_nevra": "elfutils-0:0.188-3.el9.src",
+			"version": "0.188"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "file-libs",
+			"release": "12.el9",
+			"srpm_name": "file",
+			"srpm_nevra": "file-0:5.39-12.el9.src",
+			"version": "5.39"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "dmidecode",
+			"release": "7.el9",
+			"srpm_name": "dmidecode",
+			"srpm_nevra": "dmidecode-1:3.3-7.el9.src",
+			"version": "3.3"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "expat",
+			"release": "1.el9",
+			"srpm_name": "expat",
+			"srpm_nevra": "expat-0:2.5.0-1.el9.src",
+			"version": "2.5.0"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libattr",
+			"release": "3.el9",
+			"srpm_name": "attr",
+			"srpm_nevra": "attr-0:2.5.1-3.el9.src",
+			"version": "2.5.1"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libacl",
+			"release": "3.el9",
+			"srpm_name": "acl",
+			"srpm_nevra": "acl-0:2.3.1-3.el9.src",
+			"version": "2.3.1"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libcap-ng",
+			"release": "7.el9",
+			"srpm_name": "libcap-ng",
+			"srpm_nevra": "libcap-ng-0:0.8.2-7.el9.src",
+			"version": "0.8.2"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "audit-libs",
+			"release": "103.el9",
+			"srpm_name": "audit",
+			"srpm_nevra": "audit-0:3.0.7-103.el9.src",
+			"version": "3.0.7"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libcom_err",
+			"release": "3.el9",
+			"srpm_name": "e2fsprogs",
+			"srpm_nevra": "e2fsprogs-0:1.46.5-3.el9.src",
+			"version": "1.46.5"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "lz4-libs",
+			"release": "5.el9",
+			"srpm_name": "lz4",
+			"srpm_nevra": "lz4-0:1.9.3-5.el9.src",
+			"version": "1.9.3"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libassuan",
+			"release": "3.el9",
+			"srpm_name": "libassuan",
+			"srpm_nevra": "libassuan-0:2.5.5-3.el9.src",
+			"version": "2.5.5"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "gdbm-libs",
+			"release": "4.el9",
+			"srpm_name": "gdbm",
+			"srpm_nevra": "gdbm-1:1.19-4.el9.src",
+			"version": "1.19"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "gmp",
+			"release": "10.el9",
+			"srpm_name": "gmp",
+			"srpm_nevra": "gmp-1:6.2.0-10.el9.src",
+			"version": "6.2.0"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "keyutils-libs",
+			"release": "1.el9",
+			"srpm_name": "keyutils",
+			"srpm_nevra": "keyutils-0:1.6.3-1.el9.src",
+			"version": "1.6.3"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libsepol",
+			"release": "1.el9",
+			"srpm_name": "libsepol",
+			"srpm_nevra": "libsepol-0:3.5-1.el9.src",
+			"version": "3.5"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libsigsegv",
+			"release": "4.el9",
+			"srpm_name": "libsigsegv",
+			"srpm_nevra": "libsigsegv-0:2.13-4.el9.src",
+			"version": "2.13"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libtasn1",
+			"release": "8.el9_1",
+			"srpm_name": "libtasn1",
+			"srpm_nevra": "libtasn1-0:4.16.0-8.el9_1.src",
+			"version": "4.16.0"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libunistring",
+			"release": "15.el9",
+			"srpm_name": "libunistring",
+			"srpm_nevra": "libunistring-0:0.9.10-15.el9.src",
+			"version": "0.9.10"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "pcre",
+			"release": "3.el9.3",
+			"srpm_name": "pcre",
+			"srpm_nevra": "pcre-0:8.44-3.el9.3.src",
+			"version": "8.44"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "grep",
+			"release": "5.el9",
+			"srpm_name": "grep",
+			"srpm_nevra": "grep-0:3.6-5.el9.src",
+			"version": "3.6"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "pcre2",
+			"release": "2.el9",
+			"srpm_name": "pcre2",
+			"srpm_nevra": "pcre2-0:10.40-2.el9.src",
+			"version": "10.40"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libselinux",
+			"release": "1.el9",
+			"srpm_name": "libselinux",
+			"srpm_nevra": "libselinux-0:3.5-1.el9.src",
+			"version": "3.5"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "coreutils-single",
+			"release": "34.el9",
+			"srpm_name": "coreutils",
+			"srpm_nevra": "coreutils-0:8.32-34.el9.src",
+			"version": "8.32"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libblkid",
+			"release": "11.el9_2",
+			"srpm_name": "util-linux",
+			"srpm_nevra": "util-linux-0:2.37.4-11.el9_2.src",
+			"version": "2.37.4"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libmount",
+			"release": "11.el9_2",
+			"srpm_name": "util-linux",
+			"srpm_nevra": "util-linux-0:2.37.4-11.el9_2.src",
+			"version": "2.37.4"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "sed",
+			"release": "9.el9",
+			"srpm_name": "sed",
+			"srpm_nevra": "sed-0:4.8-9.el9.src",
+			"version": "4.8"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libfdisk",
+			"release": "11.el9_2",
+			"srpm_name": "util-linux",
+			"srpm_nevra": "util-linux-0:2.37.4-11.el9_2.src",
+			"version": "2.37.4"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "gzip",
+			"release": "1.el9",
+			"srpm_name": "gzip",
+			"srpm_nevra": "gzip-0:1.12-1.el9.src",
+			"version": "1.12"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "cracklib",
+			"release": "27.el9",
+			"srpm_name": "cracklib",
+			"srpm_nevra": "cracklib-0:2.9.6-27.el9.src",
+			"version": "2.9.6"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "cracklib-dicts",
+			"release": "27.el9",
+			"srpm_name": "cracklib",
+			"srpm_nevra": "cracklib-0:2.9.6-27.el9.src",
+			"version": "2.9.6"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libsemanage",
+			"release": "1.el9",
+			"srpm_name": "libsemanage",
+			"srpm_nevra": "libsemanage-0:3.5-1.el9.src",
+			"version": "3.5"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "shadow-utils",
+			"release": "6.el9",
+			"srpm_name": "shadow-utils",
+			"srpm_nevra": "shadow-utils-2:4.9-6.el9.src",
+			"version": "4.9"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libutempter",
+			"release": "6.el9",
+			"srpm_name": "libutempter",
+			"srpm_nevra": "libutempter-0:1.2.1-6.el9.src",
+			"version": "1.2.1"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libidn2",
+			"release": "7.el9",
+			"srpm_name": "libidn2",
+			"srpm_nevra": "libidn2-0:2.3.0-7.el9.src",
+			"version": "2.3.0"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "mpfr",
+			"release": "7.el9",
+			"srpm_name": "mpfr",
+			"srpm_nevra": "mpfr-0:4.1.0-7.el9.src",
+			"version": "4.1.0"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "gawk",
+			"release": "6.el9",
+			"srpm_name": "gawk",
+			"srpm_nevra": "gawk-0:5.1.0-6.el9.src",
+			"version": "5.1.0"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "acl",
+			"release": "3.el9",
+			"srpm_name": "acl",
+			"srpm_nevra": "acl-0:2.3.1-3.el9.src",
+			"version": "2.3.1"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libcomps",
+			"release": "1.el9",
+			"srpm_name": "libcomps",
+			"srpm_nevra": "libcomps-0:0.1.18-1.el9.src",
+			"version": "0.1.18"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libksba",
+			"release": "6.el9_1",
+			"srpm_name": "libksba",
+			"srpm_nevra": "libksba-0:1.5.1-6.el9_1.src",
+			"version": "1.5.1"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "systemd-rpm-macros",
+			"release": "14.el9_2.1",
+			"srpm_name": "systemd",
+			"srpm_nevra": "systemd-0:252-14.el9_2.1.src",
+			"version": "252"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "alternatives",
+			"release": "2.el9",
+			"srpm_name": "chkconfig",
+			"srpm_nevra": "chkconfig-0:1.20-2.el9.src",
+			"version": "1.20"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "p11-kit-trust",
+			"release": "2.el9",
+			"srpm_name": "p11-kit",
+			"srpm_nevra": "p11-kit-0:0.24.1-2.el9.src",
+			"version": "0.24.1"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "ca-certificates",
+			"release": "90.2.el9_0",
+			"srpm_name": "ca-certificates",
+			"srpm_nevra": "ca-certificates-0:2022.2.54-90.2.el9_0.src",
+			"version": "2022.2.54"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "openssl-libs",
+			"release": "16.el9_2",
+			"srpm_name": "openssl",
+			"srpm_nevra": "openssl-3.0.7-16.el9_2.src",
+			"version": "3.0.7"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "systemd-libs",
+			"release": "14.el9_2.1",
+			"srpm_name": "systemd",
+			"srpm_nevra": "systemd-0:252-14.el9_2.1.src",
+			"version": "252"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "dbus-libs",
+			"release": "7.el9_1",
+			"srpm_name": "dbus",
+			"srpm_nevra": "dbus-1:1.12.20-7.el9_1.src",
+			"version": "1.12.20"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "util-linux-core",
+			"release": "11.el9_2",
+			"srpm_name": "util-linux",
+			"srpm_nevra": "util-linux-0:2.37.4-11.el9_2.src",
+			"version": "2.37.4"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "kmod-libs",
+			"release": "7.el9",
+			"srpm_name": "kmod",
+			"srpm_nevra": "kmod-0:28-7.el9.src",
+			"version": "28"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libarchive",
+			"release": "4.el9",
+			"srpm_name": "libarchive",
+			"srpm_nevra": "libarchive-0:3.5.3-4.el9.src",
+			"version": "3.5.3"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libevent",
+			"release": "6.el9",
+			"srpm_name": "libevent",
+			"srpm_nevra": "libevent-0:2.1.12-6.el9.src",
+			"version": "2.1.12"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "openssl",
+			"release": "16.el9_2",
+			"srpm_name": "openssl",
+			"srpm_nevra": "openssl-3.0.7-16.el9_2.src",
+			"version": "3.0.7"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "python3-pip-wheel",
+			"release": "6.el9",
+			"srpm_name": "python-pip",
+			"srpm_nevra": "python-pip-0:21.2.3-6.el9.src",
+			"version": "21.2.3"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "python3",
+			"release": "1.el9_2.1",
+			"srpm_name": "python3.9",
+			"srpm_nevra": "python3.9-0:3.9.16-1.el9_2.1.src",
+			"version": "3.9.16"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "python3-libs",
+			"release": "1.el9_2.1",
+			"srpm_name": "python3.9",
+			"srpm_nevra": "python3.9-0:3.9.16-1.el9_2.1.src",
+			"version": "3.9.16"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "python3-six",
+			"release": "9.el9",
+			"srpm_name": "python-six",
+			"srpm_nevra": "python-six-0:1.15.0-9.el9.src",
+			"version": "1.15.0"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "python3-systemd",
+			"release": "18.el9",
+			"srpm_name": "python-systemd",
+			"srpm_nevra": "python-systemd-234-18.el9.src",
+			"version": "234"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "python3-dateutil",
+			"release": "6.el9",
+			"srpm_name": "python-dateutil",
+			"srpm_nevra": "python-dateutil-1:2.8.1-6.el9.src",
+			"version": "2.8.1"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "python3-iniparse",
+			"release": "45.el9",
+			"srpm_name": "python-iniparse",
+			"srpm_nevra": "python-iniparse-0:0.4-45.el9.src",
+			"version": "0.4"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "python3-idna",
+			"release": "7.el9",
+			"srpm_name": "python-idna",
+			"srpm_nevra": "python-idna-0:2.10-7.el9.src",
+			"version": "2.10"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "python3-setuptools",
+			"release": "12.el9",
+			"srpm_name": "python-setuptools",
+			"srpm_nevra": "python-setuptools-0:53.0.0-12.el9.src",
+			"version": "53.0.0"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "python3-inotify",
+			"release": "25.el9",
+			"srpm_name": "python-inotify",
+			"srpm_nevra": "python-inotify-0:0.9.6-25.el9.src",
+			"version": "0.9.6"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "python3-libcomps",
+			"release": "1.el9",
+			"srpm_name": "libcomps",
+			"srpm_nevra": "libcomps-0:0.1.18-1.el9.src",
+			"version": "0.1.18"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "python3-chardet",
+			"release": "5.el9",
+			"srpm_name": "python-chardet",
+			"srpm_nevra": "python-chardet-0:4.0.0-5.el9.src",
+			"version": "4.0.0"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "python3-decorator",
+			"release": "6.el9",
+			"srpm_name": "python-decorator",
+			"srpm_nevra": "python-decorator-0:4.4.2-6.el9.src",
+			"version": "4.4.2"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "python3-pysocks",
+			"release": "12.el9",
+			"srpm_name": "python-pysocks",
+			"srpm_nevra": "python-pysocks-0:1.7.1-12.el9.src",
+			"version": "1.7.1"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "python3-urllib3",
+			"release": "3.el9",
+			"srpm_name": "python-urllib3",
+			"srpm_nevra": "python-urllib3-0:1.26.5-3.el9.src",
+			"version": "1.26.5"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "python3-requests",
+			"release": "6.el9",
+			"srpm_name": "python-requests",
+			"srpm_nevra": "python-requests-0:2.25.1-6.el9.src",
+			"version": "2.25.1"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "python3-cloud-what",
+			"release": "1.el9_2",
+			"srpm_name": "subscription-manager",
+			"srpm_nevra": "subscription-manager-0:1.29.33.1-1.el9_2.src",
+			"version": "1.29.33.1"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libdb",
+			"release": "53.el9",
+			"srpm_name": "libdb",
+			"srpm_nevra": "libdb-0:5.3.28-53.el9.src",
+			"version": "5.3.28"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libeconf",
+			"release": "2.el9",
+			"srpm_name": "libeconf",
+			"srpm_nevra": "libeconf-0:0.4.1-2.el9.src",
+			"version": "0.4.1"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libpwquality",
+			"release": "8.el9",
+			"srpm_name": "libpwquality",
+			"srpm_nevra": "libpwquality-0:1.4.4-8.el9.src",
+			"version": "1.4.4"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "pam",
+			"release": "14.el9",
+			"srpm_name": "pam",
+			"srpm_nevra": "pam-0:1.5.1-14.el9.src",
+			"version": "1.5.1"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "util-linux",
+			"release": "11.el9_2",
+			"srpm_name": "util-linux",
+			"srpm_nevra": "util-linux-0:2.37.4-11.el9_2.src",
+			"version": "2.37.4"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libgomp",
+			"release": "4.3.el9",
+			"srpm_name": "gcc",
+			"srpm_nevra": "gcc-0:11.3.1-4.3.el9.src",
+			"version": "11.3.1"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libnghttp2",
+			"release": "5.el9",
+			"srpm_name": "nghttp2",
+			"srpm_nevra": "nghttp2-0:1.43.0-5.el9.src",
+			"version": "1.43.0"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libnl3",
+			"release": "1.el9",
+			"srpm_name": "libnl3",
+			"srpm_nevra": "libnl3-0:3.7.0-1.el9.src",
+			"version": "3.7.0"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "python3-ethtool",
+			"release": "2.el9",
+			"srpm_name": "python-ethtool",
+			"srpm_nevra": "python-ethtool-0:0.15-2.el9.src",
+			"version": "0.15"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libseccomp",
+			"release": "2.el9",
+			"srpm_name": "libseccomp",
+			"srpm_nevra": "libseccomp-0:2.5.2-2.el9.src",
+			"version": "2.5.2"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "dbus",
+			"release": "7.el9_1",
+			"srpm_name": "dbus",
+			"srpm_nevra": "dbus-1:1.12.20-7.el9_1.src",
+			"version": "1.12.20"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "systemd-pam",
+			"release": "14.el9_2.1",
+			"srpm_name": "systemd",
+			"srpm_nevra": "systemd-0:252-14.el9_2.1.src",
+			"version": "252"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "systemd",
+			"release": "14.el9_2.1",
+			"srpm_name": "systemd",
+			"srpm_nevra": "systemd-0:252-14.el9_2.1.src",
+			"version": "252"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "dbus-common",
+			"release": "7.el9_1",
+			"srpm_name": "dbus",
+			"srpm_nevra": "dbus-1:1.12.20-7.el9_1.src",
+			"version": "1.12.20"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "dbus-broker",
+			"release": "7.el9",
+			"srpm_name": "dbus-broker",
+			"srpm_nevra": "dbus-broker-0:28-7.el9.src",
+			"version": "28"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "elfutils-default-yama-scope",
+			"release": "3.el9",
+			"srpm_name": "elfutils",
+			"srpm_nevra": "elfutils-0:0.188-3.el9.src",
+			"version": "0.188"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "elfutils-libs",
+			"release": "3.el9",
+			"srpm_name": "elfutils",
+			"srpm_nevra": "elfutils-0:0.188-3.el9.src",
+			"version": "0.188"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libverto",
+			"release": "3.el9",
+			"srpm_name": "libverto",
+			"srpm_nevra": "libverto-0:0.3.2-3.el9.src",
+			"version": "0.3.2"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "krb5-libs",
+			"release": "9.el9_2",
+			"srpm_name": "krb5",
+			"srpm_nevra": "krb5-0:1.20.1-9.el9_2.src",
+			"version": "1.20.1"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libcurl-minimal",
+			"release": "23.el9_2.1",
+			"srpm_name": "curl",
+			"srpm_nevra": "curl-0:7.76.1-23.el9_2.1.src",
+			"version": "7.76.1"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "curl-minimal",
+			"release": "23.el9_2.1",
+			"srpm_name": "curl",
+			"srpm_nevra": "curl-0:7.76.1-23.el9_2.1.src",
+			"version": "7.76.1"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "rpm",
+			"release": "22.el9",
+			"srpm_name": "rpm",
+			"srpm_nevra": "rpm-0:4.16.1.3-22.el9.src",
+			"version": "4.16.1.3"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "rpm-libs",
+			"release": "22.el9",
+			"srpm_name": "rpm",
+			"srpm_nevra": "rpm-0:4.16.1.3-22.el9.src",
+			"version": "4.16.1.3"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libsolv",
+			"release": "4.el9",
+			"srpm_name": "libsolv",
+			"srpm_nevra": "libsolv-0:0.7.22-4.el9.src",
+			"version": "0.7.22"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "rpm-build-libs",
+			"release": "22.el9",
+			"srpm_name": "rpm",
+			"srpm_nevra": "rpm-0:4.16.1.3-22.el9.src",
+			"version": "4.16.1.3"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "tpm2-tss",
+			"release": "8.el9",
+			"srpm_name": "tpm2-tss",
+			"srpm_nevra": "tpm2-tss-0:3.0.3-8.el9.src",
+			"version": "3.0.3"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "ima-evm-utils",
+			"release": "4.el9",
+			"srpm_name": "ima-evm-utils",
+			"srpm_nevra": "ima-evm-utils-0:1.4-4.el9.src",
+			"version": "1.4"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "cyrus-sasl-lib",
+			"release": "21.el9",
+			"srpm_name": "cyrus-sasl",
+			"srpm_nevra": "cyrus-sasl-0:2.1.27-21.el9.src",
+			"version": "2.1.27"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "openldap",
+			"release": "3.el9",
+			"srpm_name": "openldap",
+			"srpm_nevra": "openldap-0:2.6.2-3.el9.src",
+			"version": "2.6.2"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "openldap-compat",
+			"release": "3.el9",
+			"srpm_name": "openldap",
+			"srpm_nevra": "openldap-0:2.6.2-3.el9.src",
+			"version": "2.6.2"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libyaml",
+			"release": "7.el9",
+			"srpm_name": "libyaml",
+			"srpm_nevra": "libyaml-0:0.2.5-7.el9.src",
+			"version": "0.2.5"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "nettle",
+			"release": "3.el9_0",
+			"srpm_name": "nettle",
+			"srpm_nevra": "nettle-0:3.8-3.el9_0.src",
+			"version": "3.8"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "gnutls",
+			"release": "20.el9_2",
+			"srpm_name": "gnutls",
+			"srpm_nevra": "gnutls-0:3.7.6-20.el9_2.src",
+			"version": "3.7.6"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "glib2",
+			"release": "6.el9",
+			"srpm_name": "glib2",
+			"srpm_nevra": "glib2-0:2.68.4-6.el9.src",
+			"version": "2.68.4"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "python3-dbus",
+			"release": "2.el9",
+			"srpm_name": "dbus-python",
+			"srpm_nevra": "dbus-python-0:1.2.18-2.el9.src",
+			"version": "1.2.18"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libmodulemd",
+			"release": "2.el9",
+			"srpm_name": "libmodulemd",
+			"srpm_nevra": "libmodulemd-0:2.13.0-2.el9.src",
+			"version": "2.13.0"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libuser",
+			"release": "12.el9",
+			"srpm_name": "libuser",
+			"srpm_nevra": "libuser-0:0.63-12.el9.src",
+			"version": "0.63"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "passwd",
+			"release": "12.el9",
+			"srpm_name": "passwd",
+			"srpm_nevra": "passwd-0:0.80-12.el9.src",
+			"version": "0.80"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "usermode",
+			"release": "4.el9",
+			"srpm_name": "usermode",
+			"srpm_nevra": "usermode-0:1.114-4.el9.src",
+			"version": "1.114"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "gobject-introspection",
+			"release": "11.el9",
+			"srpm_name": "gobject-introspection",
+			"srpm_nevra": "gobject-introspection-0:1.68.0-11.el9.src",
+			"version": "1.68.0"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "python3-gobject-base-noarch",
+			"release": "6.el9",
+			"srpm_name": "pygobject3",
+			"srpm_nevra": "pygobject3-0:3.40.1-6.el9.src",
+			"version": "3.40.1"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "python3-gobject-base",
+			"release": "6.el9",
+			"srpm_name": "pygobject3",
+			"srpm_nevra": "pygobject3-0:3.40.1-6.el9.src",
+			"version": "3.40.1"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "json-glib",
+			"release": "1.el9",
+			"srpm_name": "json-glib",
+			"srpm_nevra": "json-glib-0:1.6.6-1.el9.src",
+			"version": "1.6.6"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "librhsm",
+			"release": "7.el9",
+			"srpm_name": "librhsm",
+			"srpm_nevra": "librhsm-0:0.0.3-7.el9.src",
+			"version": "0.0.3"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "npth",
+			"release": "8.el9",
+			"srpm_name": "npth",
+			"srpm_nevra": "npth-0:1.6-8.el9.src",
+			"version": "1.6"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "gnupg2",
+			"release": "2.el9_0",
+			"srpm_name": "gnupg2",
+			"srpm_nevra": "gnupg2-0:2.3.3-2.el9_0.src",
+			"version": "2.3.3"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "gpgme",
+			"release": "6.el9",
+			"srpm_name": "gpgme",
+			"srpm_nevra": "gpgme-0:1.15.1-6.el9.src",
+			"version": "1.15.1"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "librepo",
+			"release": "1.el9",
+			"srpm_name": "librepo",
+			"srpm_nevra": "librepo-0:1.14.5-1.el9.src",
+			"version": "1.14.5"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libdnf",
+			"release": "3.el9_2",
+			"srpm_name": "libdnf",
+			"srpm_nevra": "libdnf-0:0.69.0-3.el9_2.src",
+			"version": "0.69.0"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "python3-libdnf",
+			"release": "3.el9_2",
+			"srpm_name": "libdnf",
+			"srpm_nevra": "libdnf-0:0.69.0-3.el9_2.src",
+			"version": "0.69.0"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "python3-hawkey",
+			"release": "3.el9_2",
+			"srpm_name": "libdnf",
+			"srpm_nevra": "libdnf-0:0.69.0-3.el9_2.src",
+			"version": "0.69.0"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "python3-librepo",
+			"release": "1.el9",
+			"srpm_name": "librepo",
+			"srpm_nevra": "librepo-0:1.14.5-1.el9.src",
+			"version": "1.14.5"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "python3-gpg",
+			"release": "6.el9",
+			"srpm_name": "gpgme",
+			"srpm_nevra": "gpgme-0:1.15.1-6.el9.src",
+			"version": "1.15.1"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "rpm-sign-libs",
+			"release": "22.el9",
+			"srpm_name": "rpm",
+			"srpm_nevra": "rpm-0:4.16.1.3-22.el9.src",
+			"version": "4.16.1.3"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "python3-rpm",
+			"release": "22.el9",
+			"srpm_name": "rpm",
+			"srpm_nevra": "rpm-0:4.16.1.3-22.el9.src",
+			"version": "4.16.1.3"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "python3-subscription-manager-rhsm",
+			"release": "1.el9_2",
+			"srpm_name": "subscription-manager",
+			"srpm_nevra": "subscription-manager-0:1.29.33.1-1.el9_2.src",
+			"version": "1.29.33.1"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "which",
+			"release": "28.el9",
+			"srpm_name": "which",
+			"srpm_nevra": "which-0:2.21-28.el9.src",
+			"version": "2.21"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "virt-what",
+			"release": "3.el9",
+			"srpm_name": "virt-what",
+			"srpm_nevra": "virt-what-0:1.25-3.el9.src",
+			"version": "1.25"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "libreport-filesystem",
+			"release": "6.el9",
+			"srpm_name": "libreport",
+			"srpm_nevra": "libreport-0:2.15.2-6.el9.src",
+			"version": "2.15.2"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "dnf-data",
+			"release": "5.el9_2",
+			"srpm_name": "dnf",
+			"srpm_nevra": "dnf-0:4.14.0-5.el9_2.src",
+			"version": "4.14.0"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "python3-dnf",
+			"release": "5.el9_2",
+			"srpm_name": "dnf",
+			"srpm_nevra": "dnf-0:4.14.0-5.el9_2.src",
+			"version": "4.14.0"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "dnf",
+			"release": "5.el9_2",
+			"srpm_name": "dnf",
+			"srpm_nevra": "dnf-0:4.14.0-5.el9_2.src",
+			"version": "4.14.0"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libdnf-plugin-subscription-manager",
+			"release": "1.el9_2",
+			"srpm_name": "subscription-manager",
+			"srpm_nevra": "subscription-manager-0:1.29.33.1-1.el9_2.src",
+			"version": "1.29.33.1"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "python3-dnf-plugins-core",
+			"release": "5.el9_2",
+			"srpm_name": "dnf-plugins-core",
+			"srpm_nevra": "dnf-plugins-core-0:4.3.0-5.el9_2.src",
+			"version": "4.3.0"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "fonts-filesystem",
+			"release": "7.el9.1",
+			"srpm_name": "fonts-rpm-macros",
+			"srpm_nevra": "fonts-rpm-macros-1:2.0.5-7.el9.1.src",
+			"version": "2.0.5"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "dejavu-sans-fonts",
+			"release": "18.el9",
+			"srpm_name": "dejavu-fonts",
+			"srpm_nevra": "dejavu-fonts-0:2.37-18.el9.src",
+			"version": "2.37"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "langpacks-core-font-en",
+			"release": "16.el9",
+			"srpm_name": "langpacks",
+			"srpm_nevra": "langpacks-0:3.0-16.el9.src",
+			"version": "3.0"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "langpacks-core-en",
+			"release": "16.el9",
+			"srpm_name": "langpacks",
+			"srpm_nevra": "langpacks-0:3.0-16.el9.src",
+			"version": "3.0"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "langpacks-en",
+			"release": "16.el9",
+			"srpm_name": "langpacks",
+			"srpm_nevra": "langpacks-0:3.0-16.el9.src",
+			"version": "3.0"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "subscription-manager",
+			"release": "1.el9_2",
+			"srpm_name": "subscription-manager",
+			"srpm_nevra": "subscription-manager-0:1.29.33.1-1.el9_2.src",
+			"version": "1.29.33.1"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "yum",
+			"release": "5.el9_2",
+			"srpm_name": "dnf",
+			"srpm_nevra": "dnf-0:4.14.0-5.el9.src",
+			"version": "4.14.0"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "crypto-policies-scripts",
+			"release": "1.git9a18988.el9",
+			"srpm_name": "crypto-policies",
+			"srpm_nevra": "crypto-policies-0:20221215-1.git9a18988.el9.src",
+			"version": "20221215"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "findutils",
+			"release": "5.el9",
+			"srpm_name": "findutils",
+			"srpm_nevra": "findutils-1:4.8.0-5.el9.src",
+			"version": "4.8.0"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "tar",
+			"release": "6.el9_1",
+			"srpm_name": "tar",
+			"srpm_nevra": "tar-2:1.34-6.el9_1.src",
+			"version": "1.34"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "vim-minimal",
+			"release": "20.el9_1",
+			"srpm_name": "vim",
+			"srpm_nevra": "vim-2:8.2.2637-20.el9_1.src",
+			"version": "8.2.2637"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "gdb-gdbserver",
+			"release": "10.el9",
+			"srpm_name": "gdb",
+			"srpm_nevra": "gdb-0:10.2-10.el9.src",
+			"version": "10.2"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "rootfiles",
+			"release": "31.el9",
+			"srpm_name": "rootfiles",
+			"srpm_nevra": "rootfiles-0:8.1-31.el9.src",
+			"version": "8.1"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "less",
+			"release": "2.el9_2",
+			"srpm_name": "less",
+			"srpm_nevra": "less-0:590-2.el9_2.src",
+			"version": "590"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "tcl",
+			"release": "7.el9",
+			"srpm_name": "tcl",
+			"srpm_nevra": "tcl-1:8.6.10-7.el9.src",
+			"version": "8.6.10"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "procps-ng",
+			"release": "11.el9",
+			"srpm_name": "procps-ng",
+			"srpm_nevra": "procps-ng-0:3.3.17-11.el9.src",
+			"version": "3.3.17"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "vim-filesystem",
+			"release": "20.el9_1",
+			"srpm_name": "vim",
+			"srpm_nevra": "vim-2:8.2.2637-20.el9_1.src",
+			"version": "8.2.2637"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libpipeline",
+			"release": "4.el9",
+			"srpm_name": "libpipeline",
+			"srpm_nevra": "libpipeline-0:1.5.3-4.el9.src",
+			"version": "1.5.3"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "gettext-libs",
+			"release": "7.el9",
+			"srpm_name": "gettext",
+			"srpm_nevra": "gettext-0:0.21-7.el9.src",
+			"version": "0.21"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "groff-base",
+			"release": "10.el9",
+			"srpm_name": "groff",
+			"srpm_nevra": "groff-0:1.22.4-10.el9.src",
+			"version": "1.22.4"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "man-db",
+			"release": "7.el9",
+			"srpm_name": "man-db",
+			"srpm_nevra": "man-db-0:2.9.3-7.el9.src",
+			"version": "2.9.3"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "environment-modules",
+			"release": "2.el9",
+			"srpm_name": "environment-modules",
+			"srpm_nevra": "environment-modules-0:5.0.1-2.el9.src",
+			"version": "5.0.1"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "scl-utils",
+			"release": "4.el9",
+			"srpm_name": "scl-utils",
+			"srpm_nevra": "scl-utils-1:2.0.3-4.el9.src",
+			"version": "2.0.3"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "gettext",
+			"release": "7.el9",
+			"srpm_name": "gettext",
+			"srpm_nevra": "gettext-0:0.21-7.el9.src",
+			"version": "0.21"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "glibc-locale-source",
+			"release": "60.el9",
+			"srpm_name": "glibc",
+			"srpm_nevra": "glibc-0:2.34-60.el9.src",
+			"version": "2.34"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "bsdtar",
+			"release": "4.el9",
+			"srpm_name": "libarchive",
+			"srpm_nevra": "libarchive-0:3.5.3-4.el9.src",
+			"version": "3.5.3"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "rsync",
+			"release": "19.el9",
+			"srpm_name": "rsync",
+			"srpm_nevra": "rsync-0:3.2.3-19.el9.src",
+			"version": "3.2.3"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "glibc-langpack-en",
+			"release": "60.el9",
+			"srpm_name": "glibc",
+			"srpm_nevra": "glibc-0:2.34-60.el9.src",
+			"version": "2.34"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "xz",
+			"release": "8.el9_0",
+			"srpm_name": "xz",
+			"srpm_nevra": "xz-0:5.2.5-8.el9_0.src",
+			"version": "5.2.5"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "unzip",
+			"release": "56.el9",
+			"srpm_name": "unzip",
+			"srpm_nevra": "unzip-0:6.0-56.el9.src",
+			"version": "6.0"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "cmake-filesystem",
+			"release": "8.el9",
+			"srpm_name": "cmake",
+			"srpm_nevra": "cmake-0:3.20.2-8.el9.src",
+			"version": "3.20.2"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libmpc",
+			"release": "4.el9",
+			"srpm_name": "libmpc",
+			"srpm_nevra": "libmpc-0:1.2.1-4.el9.src",
+			"version": "1.2.1"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "elfutils-debuginfod-client",
+			"release": "3.el9",
+			"srpm_name": "elfutils",
+			"srpm_nevra": "elfutils-0:0.188-3.el9.src",
+			"version": "0.188"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "binutils-gold",
+			"release": "37.el9",
+			"srpm_name": "binutils",
+			"srpm_nevra": "binutils-0:2.35.2-37.el9.src",
+			"version": "2.35.2"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "binutils",
+			"release": "37.el9",
+			"srpm_name": "binutils",
+			"srpm_nevra": "binutils-0:2.35.2-37.el9.src",
+			"version": "2.35.2"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "make",
+			"release": "7.el9",
+			"srpm_name": "make",
+			"srpm_nevra": "make-1:4.3-7.el9.src",
+			"version": "4.3"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "cmake-rpm-macros",
+			"release": "8.el9",
+			"srpm_name": "cmake",
+			"srpm_nevra": "cmake-0:3.20.2-8.el9.src",
+			"version": "3.20.2"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "emacs-filesystem",
+			"release": "8.el9",
+			"srpm_name": "emacs",
+			"srpm_nevra": "emacs-27.2-8.el9_2.1.src",
+			"version": "27.2"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "cpp",
+			"release": "4.3.el9",
+			"srpm_name": "gcc",
+			"srpm_nevra": "gcc-0:11.3.1-4.3.el9.src",
+			"version": "11.3.1"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "nss_wrapper-libs",
+			"release": "1.el9",
+			"srpm_name": "nss_wrapper",
+			"srpm_nevra": "nss_wrapper-0:1.1.13-1.el9.src",
+			"version": "1.1.13"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "nodejs-docs",
+			"release": "3.module+el9.2.0.z+18964+42696395",
+			"srpm_name": "nodejs",
+			"srpm_nevra": "nodejs-18.14.2-3.module+el9.2.0.z+18964+42696395.src",
+			"module": "nodejs:18",
+			"version": "18.14.2"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libstdc++-devel",
+			"release": "4.3.el9",
+			"srpm_name": "gcc",
+			"srpm_nevra": "gcc-0:11.3.1-4.3.el9.src",
+			"version": "11.3.1"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "kernel-headers",
+			"release": "284.18.1.el9_2",
+			"srpm_name": "kernel",
+			"srpm_nevra": "kernel-0:5.14.0-284.18.1.el9_2.src",
+			"version": "5.14.0"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "glibc-headers",
+			"release": "60.el9",
+			"srpm_name": "glibc",
+			"srpm_nevra": "glibc-0:2.34-60.el9.src",
+			"version": "2.34"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "openssh",
+			"release": "29.el9_2",
+			"srpm_name": "openssh",
+			"srpm_nevra": "openssh-0:8.7p1-29.el9_2.src",
+			"version": "8.7p1"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libcbor",
+			"release": "5.el9",
+			"srpm_name": "libcbor",
+			"srpm_nevra": "libcbor-0:0.7.0-5.el9.src",
+			"version": "0.7.0"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libfido2",
+			"release": "7.el9",
+			"srpm_name": "libfido2",
+			"srpm_nevra": "libfido2-0:1.6.0-7.el9.src",
+			"version": "1.6.0"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libpkgconf",
+			"release": "10.el9",
+			"srpm_name": "pkgconf",
+			"srpm_nevra": "pkgconf-0:1.7.3-10.el9.src",
+			"version": "1.7.3"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "pkgconf",
+			"release": "10.el9",
+			"srpm_name": "pkgconf",
+			"srpm_nevra": "pkgconf-0:1.7.3-10.el9.src",
+			"version": "1.7.3"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libedit",
+			"release": "37.20210216cvs.el9",
+			"srpm_name": "libedit",
+			"srpm_nevra": "libedit-0:3.1-37.20210216cvs.el9.src",
+			"version": "3.1"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "openssh-clients",
+			"release": "29.el9_2",
+			"srpm_name": "openssh",
+			"srpm_nevra": "openssh-0:8.7p1-29.el9_2.src",
+			"version": "8.7p1"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "git-core",
+			"release": "1.el9_2",
+			"srpm_name": "git",
+			"srpm_nevra": "git-0:2.39.3-1.el9_2.src",
+			"version": "2.39.3"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "git-core-doc",
+			"release": "1.el9_2",
+			"srpm_name": "git",
+			"srpm_nevra": "git-0:2.39.3-1.el9_2.src",
+			"version": "2.39.3"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libbrotli",
+			"release": "6.el9",
+			"srpm_name": "brotli",
+			"srpm_nevra": "brotli-0:1.0.9-6.el9.src",
+			"version": "1.0.9"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "nodejs-full-i18n",
+			"release": "3.module+el9.2.0.z+18964+42696395",
+			"srpm_name": "nodejs",
+			"srpm_nevra": "nodejs-18.14.2-3.module+el9.2.0.z+18964+42696395.src",
+			"module": "nodejs:18",
+			"version": "18.14.2"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "npm",
+			"release": "1.18.14.2.3.module+el9.2.0.z+18964+42696395",
+			"srpm_name": "nodejs",
+			"srpm_nevra": "nodejs-18.14.2-3.module+el9.2.0.z+18964+42696395.src",
+			"module": "nodejs:18",
+			"version": "1:9.5.0"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "nodejs",
+			"release": "3.module+el9.2.0.z+18964+42696395",
+			"srpm_name": "nodejs",
+			"srpm_nevra": "nodejs-18.14.2-3.module+el9.2.0.z+18964+42696395.src",
+			"module": "nodejs:18",
+			"version": "18.14.2"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "ncurses",
+			"release": "8.20210508.el9",
+			"srpm_name": "ncurses",
+			"srpm_nevra": "ncurses-0:6.2-8.20210508.el9.src",
+			"version": "6.2"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-Digest",
+			"release": "4.el9",
+			"srpm_name": "perl-Digest",
+			"srpm_nevra": "perl-Digest-0:1.19-4.el9.src",
+			"version": "1.19"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-FileHandle",
+			"release": "480.el9",
+			"srpm_name": "perl",
+			"srpm_nevra": "perl-4:5.32.1-480.el9.src",
+			"version": "2.03"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-Digest-MD5",
+			"release": "4.el9",
+			"srpm_name": "perl-Digest-MD5",
+			"srpm_nevra": "perl-Digest-MD5-0:2.58-4.el9.src",
+			"version": "2.58"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-B",
+			"release": "480.el9",
+			"srpm_name": "perl",
+			"srpm_nevra": "perl-4:5.32.1-480.el9.src",
+			"version": "1.80"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-AutoLoader",
+			"release": "480.el9",
+			"srpm_name": "perl",
+			"srpm_nevra": "perl-4:5.32.1-480.el9.src",
+			"version": "5.74"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-Data-Dumper",
+			"release": "462.el9",
+			"srpm_name": "perl-Data-Dumper",
+			"srpm_nevra": "perl-Data-Dumper-0:2.174-462.el9.src",
+			"version": "2.174"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-libnet",
+			"release": "4.el9",
+			"srpm_name": "perl-libnet",
+			"srpm_nevra": "perl-libnet-0:3.13-4.el9.src",
+			"version": "3.13"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-base",
+			"release": "480.el9",
+			"srpm_name": "perl",
+			"srpm_nevra": "perl-4:5.32.1-480.el9.src",
+			"version": "2.27"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-Net-SSLeay",
+			"release": "2.el9",
+			"srpm_name": "perl-Net-SSLeay",
+			"srpm_nevra": "perl-Net-SSLeay-0:1.92-2.el9.src",
+			"version": "1.92"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-URI",
+			"release": "3.el9",
+			"srpm_name": "perl-URI",
+			"srpm_nevra": "perl-URI-0:5.09-3.el9.src",
+			"version": "5.09"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-if",
+			"release": "480.el9",
+			"srpm_name": "perl",
+			"srpm_nevra": "perl-4:5.32.1-480.el9.src",
+			"version": "0.60.800"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-Pod-Escapes",
+			"release": "460.el9",
+			"srpm_name": "perl-Pod-Escapes",
+			"srpm_nevra": "perl-Pod-Escapes-1:1.07-460.el9.src",
+			"version": "1.07"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-Text-Tabs+Wrap",
+			"release": "460.el9",
+			"srpm_name": "perl-Text-Tabs+Wrap",
+			"srpm_nevra": "perl-Text-Tabs+Wrap-0:2013.0523-460.el9.src",
+			"version": "2013.0523"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-Time-Local",
+			"release": "7.el9",
+			"srpm_name": "perl-Time-Local",
+			"srpm_nevra": "perl-Time-Local-2:1.300-7.el9.src",
+			"version": "1.300"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-IO-Socket-IP",
+			"release": "5.el9",
+			"srpm_name": "perl-IO-Socket-IP",
+			"srpm_nevra": "perl-IO-Socket-IP-0:0.41-5.el9.src",
+			"version": "0.41"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-Mozilla-CA",
+			"release": "6.el9",
+			"srpm_name": "perl-Mozilla-CA",
+			"srpm_nevra": "perl-Mozilla-CA-0:20200520-6.el9.src",
+			"version": "20200520"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-File-Path",
+			"release": "4.el9",
+			"srpm_name": "perl-File-Path",
+			"srpm_nevra": "perl-File-Path-0:2.18-4.el9.src",
+			"version": "2.18"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-IO-Socket-SSL",
+			"release": "1.el9",
+			"srpm_name": "perl-IO-Socket-SSL",
+			"srpm_nevra": "perl-IO-Socket-SSL-0:2.073-1.el9.src",
+			"version": "2.073"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-subs",
+			"release": "480.el9",
+			"srpm_name": "perl",
+			"srpm_nevra": "perl-4:5.32.1-480.el9.src",
+			"version": "1.03"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-Term-Cap",
+			"release": "460.el9",
+			"srpm_name": "perl-Term-Cap",
+			"srpm_nevra": "perl-Term-Cap-0:1.17-460.el9.src",
+			"version": "1.17"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-Term-ANSIColor",
+			"release": "461.el9",
+			"srpm_name": "perl-Term-ANSIColor",
+			"srpm_nevra": "perl-Term-ANSIColor-0:5.01-461.el9.src",
+			"version": "5.01"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-POSIX",
+			"release": "480.el9",
+			"srpm_name": "perl",
+			"srpm_nevra": "perl-4:5.32.1-480.el9.src",
+			"version": "1.94"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-IPC-Open3",
+			"release": "480.el9",
+			"srpm_name": "perl",
+			"srpm_nevra": "perl-4:5.32.1-480.el9.src",
+			"version": "1.21"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-Class-Struct",
+			"release": "480.el9",
+			"srpm_name": "perl",
+			"srpm_nevra": "perl-4:5.32.1-480.el9.src",
+			"version": "0.66"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-Pod-Simple",
+			"release": "4.el9",
+			"srpm_name": "perl-Pod-Simple",
+			"srpm_nevra": "perl-Pod-Simple-1:3.42-4.el9.src",
+			"version": "3.42"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-File-Temp",
+			"release": "4.el9",
+			"srpm_name": "perl-File-Temp",
+			"srpm_nevra": "perl-File-Temp-1:0.231.100-4.el9.src",
+			"version": "0.231.100"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-HTTP-Tiny",
+			"release": "460.el9",
+			"srpm_name": "perl-HTTP-Tiny",
+			"srpm_nevra": "perl-HTTP-Tiny-0:0.076-460.el9.src",
+			"version": "0.076"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-Symbol",
+			"release": "480.el9",
+			"srpm_name": "perl",
+			"srpm_nevra": "perl-4:5.32.1-480.el9.src",
+			"version": "1.08"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-Socket",
+			"release": "4.el9",
+			"srpm_name": "perl-Socket",
+			"srpm_nevra": "perl-Socket-4:2.031-4.el9.src",
+			"version": "2.031"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-File-stat",
+			"release": "480.el9",
+			"srpm_name": "perl",
+			"srpm_nevra": "perl-4:5.32.1-480.el9.src",
+			"version": "1.09"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-podlators",
+			"release": "460.el9",
+			"srpm_name": "perl-podlators",
+			"srpm_nevra": "perl-podlators-1:4.14-460.el9.src",
+			"version": "4.14"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-Pod-Perldoc",
+			"release": "461.el9",
+			"srpm_name": "perl-Pod-Perldoc",
+			"srpm_nevra": "perl-Pod-Perldoc-0:3.28.01-461.el9.src",
+			"version": "3.28.01"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-SelectSaver",
+			"release": "480.el9",
+			"srpm_name": "perl",
+			"srpm_nevra": "perl-4:5.32.1-480.el9.src",
+			"version": "1.02"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-mro",
+			"release": "480.el9",
+			"srpm_name": "perl",
+			"srpm_nevra": "perl-4:5.32.1-480.el9.src",
+			"version": "1.23"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-Fcntl",
+			"release": "480.el9",
+			"srpm_name": "perl",
+			"srpm_nevra": "perl-4:5.32.1-480.el9.src",
+			"version": "1.13"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-Text-ParseWords",
+			"release": "460.el9",
+			"srpm_name": "perl-Text-ParseWords",
+			"srpm_nevra": "perl-Text-ParseWords-0:3.30-460.el9.src",
+			"version": "3.30"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-overloading",
+			"release": "480.el9",
+			"srpm_name": "perl",
+			"srpm_nevra": "perl-4:5.32.1-480.el9.src",
+			"version": "0.02"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-Pod-Usage",
+			"release": "4.el9",
+			"srpm_name": "perl-Pod-Usage",
+			"srpm_nevra": "perl-Pod-Usage-4:2.01-4.el9.src",
+			"version": "2.01"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-IO",
+			"release": "480.el9",
+			"srpm_name": "perl",
+			"srpm_nevra": "perl-4:5.32.1-480.el9.src",
+			"version": "1.43"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-parent",
+			"release": "460.el9",
+			"srpm_name": "perl-parent",
+			"srpm_nevra": "perl-parent-1:0.238-460.el9.src",
+			"version": "0.238"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-vars",
+			"release": "480.el9",
+			"srpm_name": "perl",
+			"srpm_nevra": "perl-4:5.32.1-480.el9.src",
+			"version": "1.05"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-File-Basename",
+			"release": "480.el9",
+			"srpm_name": "perl",
+			"srpm_nevra": "perl-4:5.32.1-480.el9.src",
+			"version": "2.85"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-MIME-Base64",
+			"release": "4.el9",
+			"srpm_name": "perl-MIME-Base64",
+			"srpm_nevra": "perl-MIME-Base64-0:3.16-4.el9.src",
+			"version": "3.16"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-Getopt-Std",
+			"release": "480.el9",
+			"srpm_name": "perl",
+			"srpm_nevra": "perl-4:5.32.1-480.el9.src",
+			"version": "1.12"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-Storable",
+			"release": "460.el9",
+			"srpm_name": "perl-Storable",
+			"srpm_nevra": "perl-Storable-1:3.21-460.el9.src",
+			"version": "3.21"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-Scalar-List-Utils",
+			"release": "461.el9",
+			"srpm_name": "perl-Scalar-List-Utils",
+			"srpm_nevra": "perl-Scalar-List-Utils-4:1.56-461.el9.src",
+			"version": "1.56"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-constant",
+			"release": "461.el9",
+			"srpm_name": "perl-constant",
+			"srpm_nevra": "perl-constant-0:1.33-461.el9.src",
+			"version": "1.33"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-overload",
+			"release": "480.el9",
+			"srpm_name": "perl",
+			"srpm_nevra": "perl-4:5.32.1-480.el9.src",
+			"version": "1.31"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-Errno",
+			"release": "480.el9",
+			"srpm_name": "perl",
+			"srpm_nevra": "perl-4:5.32.1-480.el9.src",
+			"version": "1.30"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-Getopt-Long",
+			"release": "4.el9",
+			"srpm_name": "perl-Getopt-Long",
+			"srpm_nevra": "perl-Getopt-Long-1:2.52-4.el9.src",
+			"version": "2.52"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-NDBM_File",
+			"release": "480.el9",
+			"srpm_name": "perl",
+			"srpm_nevra": "perl-4:5.32.1-480.el9.src",
+			"version": "1.15"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-Exporter",
+			"release": "461.el9",
+			"srpm_name": "perl-Exporter",
+			"srpm_nevra": "perl-Exporter-0:5.74-461.el9.src",
+			"version": "5.74"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-Carp",
+			"release": "460.el9",
+			"srpm_name": "perl-Carp",
+			"srpm_nevra": "perl-Carp-0:1.50-460.el9.src",
+			"version": "1.50"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-PathTools",
+			"release": "461.el9",
+			"srpm_name": "perl-PathTools",
+			"srpm_nevra": "perl-PathTools-0:3.78-461.el9.src",
+			"version": "3.78"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-Encode",
+			"release": "462.el9",
+			"srpm_name": "perl-Encode",
+			"srpm_nevra": "perl-Encode-4:3.08-462.el9.src",
+			"version": "3.08"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-libs",
+			"release": "480.el9",
+			"srpm_name": "perl",
+			"srpm_nevra": "perl-4:5.32.1-480.el9.src",
+			"version": "5.32.1"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-interpreter",
+			"release": "480.el9",
+			"srpm_name": "perl",
+			"srpm_nevra": "perl-4:5.32.1-480.el9.src",
+			"version": "5.32.1"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-Error",
+			"release": "7.el9",
+			"srpm_name": "perl-Error",
+			"srpm_nevra": "perl-Error-1:0.17029-7.el9.src",
+			"version": "0.17029"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-DynaLoader",
+			"release": "480.el9",
+			"srpm_name": "perl",
+			"srpm_nevra": "perl-4:5.32.1-480.el9.src",
+			"version": "1.47"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-TermReadKey",
+			"release": "11.el9",
+			"srpm_name": "perl-TermReadKey",
+			"srpm_nevra": "perl-TermReadKey-0:2.38-11.el9.src",
+			"version": "2.38"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-File-Find",
+			"release": "480.el9",
+			"srpm_name": "perl",
+			"srpm_nevra": "perl-4:5.32.1-480.el9.src",
+			"version": "1.37"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-lib",
+			"release": "480.el9",
+			"srpm_name": "perl",
+			"srpm_nevra": "perl-4:5.32.1-480.el9.src",
+			"version": "0.65"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "perl-Git",
+			"release": "1.el9_2",
+			"srpm_name": "git",
+			"srpm_nevra": "git-0:2.39.3-1.el9_2.src",
+			"version": "2.39.3"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "git",
+			"release": "1.el9_2",
+			"srpm_name": "git",
+			"srpm_nevra": "git-0:2.39.3-1.el9_2.src",
+			"version": "2.39.3"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "pkgconf-m4",
+			"release": "10.el9",
+			"srpm_name": "pkgconf",
+			"srpm_nevra": "pkgconf-0:1.7.3-10.el9.src",
+			"version": "1.7.3"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "pkgconf-pkg-config",
+			"release": "10.el9",
+			"srpm_name": "pkgconf",
+			"srpm_nevra": "pkgconf-0:1.7.3-10.el9.src",
+			"version": "1.7.3"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "glibc-devel",
+			"release": "60.el9",
+			"srpm_name": "glibc",
+			"srpm_nevra": "glibc-0:2.34-60.el9.src",
+			"version": "2.34"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libxcrypt-devel",
+			"release": "3.el9",
+			"srpm_name": "libxcrypt",
+			"srpm_nevra": "libxcrypt-0:4.4.18-3.el9.src",
+			"version": "4.4.18"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "gcc",
+			"release": "4.3.el9",
+			"srpm_name": "gcc",
+			"srpm_nevra": "gcc-0:11.3.1-4.3.el9.src",
+			"version": "11.3.1"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "libuv",
+			"release": "1.el9",
+			"srpm_name": "libuv",
+			"srpm_nevra": "libuv-1:1.42.0-1.el9.src",
+			"version": "1.42.0"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "cmake-data",
+			"release": "8.el9",
+			"srpm_name": "cmake",
+			"srpm_nevra": "cmake-0:3.20.2-8.el9.src",
+			"version": "3.20.2"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "cmake",
+			"release": "8.el9",
+			"srpm_name": "cmake",
+			"srpm_nevra": "cmake-0:3.20.2-8.el9.src",
+			"version": "3.20.2"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "nss_wrapper",
+			"release": "1.el9",
+			"srpm_name": "nss_wrapper",
+			"srpm_nevra": "nss_wrapper-0:1.1.13-1.el9.src",
+			"version": "1.1.13"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "gcc-c++",
+			"release": "4.3.el9",
+			"srpm_name": "gcc",
+			"srpm_nevra": "gcc-0:11.3.1-4.3.el9.src",
+			"version": "11.3.1"
+		},
+		{
+			"architecture": "x86_64",
+			"gpg": "199e2f91fd431d51",
+			"name": "openssl-devel",
+			"release": "16.el9_2",
+			"srpm_name": "openssl",
+			"srpm_nevra": "openssl-3.0.7-16.el9_2.src",
+			"version": "3.0.7"
+		},
+		{
+			"architecture": "noarch",
+			"gpg": "199e2f91fd431d51",
+			"name": "nodejs-nodemon",
+			"release": "2.module+el9.2.0.z+18497+a402347c",
+			"srpm_name": "nodejs-nodemon",
+			"srpm_nevra": "nodejs-nodemon-0:2.0.20-2.module+el9.2.0.z+18497+a402347c.src",
+			"module": "nodejs:18",
+			"version": "2.0.20"
+		}
+	]
+}

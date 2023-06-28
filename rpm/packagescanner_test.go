@@ -1665,7 +1665,37 @@ func TestScan(t *testing.T) {
 		}
 		t.Logf("found %d packages", len(got))
 		if !cmp.Equal(got, want, rpmtest.Options) {
-			t.Fatal(cmp.Diff(got, want, rpmtest.Options))
+			t.Error(cmp.Diff(got, want, rpmtest.Options))
+		}
+	})
+
+	t.Run("NodeJS", func(t *testing.T) {
+		// Looking at a layer from
+		// registry.access.redhat.com/ubi9/nodejs-18@sha256:1ff5080686736cbab820ec560873c59bd80659a2b2f8d8f4e379301a910e5d54
+		hash := claircore.MustParseDigest(`sha256:1ae06b64755052cef4c32979aded82a18f664c66fa7b50a6d2924afac2849c6e`)
+		l := claircore.Layer{Hash: hash}
+		ctx := zlog.Test(context.Background(), t)
+		n, err := fetch.Layer(ctx, t, http.DefaultClient, "registry.access.redhat.com", "ubi9/nodejs-18", hash)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer n.Close()
+		l.SetLocal(n.Name())
+		wf, err := os.Open("testdata/nodejs.rpm-manifest.json")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer wf.Close()
+		want := rpmtest.PackagesFromRPMManifest(t, wf)
+
+		s := &Scanner{}
+		got, err := s.Scan(ctx, &l)
+		if err != nil {
+			t.Error(err)
+		}
+		t.Logf("found %d packages", len(got))
+		if !cmp.Equal(got, want, rpmtest.Options) {
+			t.Error(cmp.Diff(got, want, rpmtest.Options))
 		}
 	})
 }
