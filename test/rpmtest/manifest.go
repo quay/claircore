@@ -22,6 +22,7 @@ type ManifestRPM struct {
 	Arch    string `json:"architecture"`
 	Source  string `json:"srpm_nevra"`
 	GPG     string `json:"gpg"`
+	Module  string `json:"module"`
 }
 
 func PackagesFromRPMManifest(t *testing.T, r io.Reader) []*claircore.Package {
@@ -40,6 +41,7 @@ func PackagesFromRPMManifest(t *testing.T, r io.Reader) []*claircore.Package {
 			Kind:           "binary",
 			Arch:           rpm.Arch,
 			RepositoryHint: "key:" + rpm.GPG,
+			Module:         rpm.Module,
 		}
 		if s, ok := src[rpm.Source]; ok {
 			p.Source = s
@@ -57,6 +59,7 @@ func PackagesFromRPMManifest(t *testing.T, r io.Reader) []*claircore.Package {
 				Kind:    "source",
 				Name:    s[:pos],
 				Version: strings.TrimPrefix(s[pos+1:], "0:"),
+				Module:  rpm.Module,
 			})
 			src[rpm.Source] = &srcs[idx]
 			p.Source = &srcs[idx]
