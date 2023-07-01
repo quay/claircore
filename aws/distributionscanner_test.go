@@ -7,7 +7,37 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-var linux1OSRelease []byte = []byte(`NAME="Amazon Linux AMI"
+var AL1v201609OSRelease []byte = []byte(`NAME="Amazon Linux AMI"
+VERSION="2016.09"
+ID="amzn"
+ID_LIKE="rhel fedora"
+VERSION_ID="2016.09"
+PRETTY_NAME="Amazon Linux AMI 2016.09"
+ANSI_COLOR="0;33"
+CPE_NAME="cpe:/o:amazon:linux:2016.09:ga"
+HOME_URL="http://aws.amazon.com/amazon-linux-ami/"`)
+
+var AL1v201703OSRelease []byte = []byte(`NAME="Amazon Linux AMI"
+VERSION="2017.03"
+ID="amzn"
+ID_LIKE="rhel fedora"
+VERSION_ID="2017.03"
+PRETTY_NAME="Amazon Linux AMI 2017.03"
+ANSI_COLOR="0;33"
+CPE_NAME="cpe:/o:amazon:linux:2017.03:ga"
+HOME_URL="http://aws.amazon.com/amazon-linux-ami/"`)
+
+var AL1v201709OSRelease []byte = []byte(`NAME="Amazon Linux AMI"
+VERSION="2017.09"
+ID="amzn"
+ID_LIKE="rhel fedora"
+VERSION_ID="2017.09"
+PRETTY_NAME="Amazon Linux AMI 2017.09"
+ANSI_COLOR="0;33"
+CPE_NAME="cpe:/o:amazon:linux:2017.09:ga"
+HOME_URL="http://aws.amazon.com/amazon-linux-ami/"`)
+
+var AL1v201803OSRelease []byte = []byte(`NAME="Amazon Linux AMI"
 VERSION="2018.03"
 ID="amzn"
 ID_LIKE="rhel fedora"
@@ -49,7 +79,22 @@ func TestDistributionScanner(t *testing.T) {
 		{
 			name:      "linux1",
 			release:   Linux1,
-			osRelease: linux1OSRelease,
+			osRelease: AL1v201609OSRelease,
+		},
+		{
+			name:      "linux1",
+			release:   Linux1,
+			osRelease: AL1v201703OSRelease,
+		},
+		{
+			name:      "linux1",
+			release:   Linux1,
+			osRelease: AL1v201709OSRelease,
+		},
+		{
+			name:      "linux1",
+			release:   Linux1,
+			osRelease: AL1v201803OSRelease,
 		},
 		{
 			name:      "linux2",

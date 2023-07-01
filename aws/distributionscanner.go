@@ -32,7 +32,7 @@ type awsRegex struct {
 var awsRegexes = []awsRegex{
 	{
 		release: Linux1,
-		regexp:  regexp.MustCompile(`Amazon Linux AMI 2018.03`),
+		regexp:  regexp.MustCompile(`CPE_NAME="cpe:/o:amazon:linux:201.\.0[39]:ga"`),
 	},
 	{
 		release: Linux2,
