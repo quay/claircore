@@ -27,6 +27,19 @@ ANSI_COLOR="0;33"
 CPE_NAME="cpe:2.3:o:amazon:amazon_linux:2"
 HOME_URL="https://amazonlinux.com/"`)
 
+var linux2023OSRelease []byte = []byte(`NAME="Amazon Linux"
+VERSION="2023"
+ID="amzn"
+ID_LIKE="fedora"
+VERSION_ID="2023"
+PLATFORM_ID="platform:al2023"
+PRETTY_NAME="Amazon Linux 2023"
+ANSI_COLOR="0;33"
+CPE_NAME="cpe:2.3:o:amazon:amazon_linux:2023"
+HOME_URL="https://aws.amazon.com/linux/"
+BUG_REPORT_URL="https://github.com/amazonlinux/amazon-linux-2023"
+SUPPORT_END="2028-03-01"`)
+
 func TestDistributionScanner(t *testing.T) {
 	table := []struct {
 		name      string
@@ -42,6 +55,11 @@ func TestDistributionScanner(t *testing.T) {
 			name:      "linux2",
 			release:   Linux2,
 			osRelease: linux2OSRelease,
+		},
+		{
+			name:      "linux2023",
+			release:   Linux2023,
+			osRelease: linux2023OSRelease,
 		},
 	}
 	for _, tt := range table {
