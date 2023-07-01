@@ -9,7 +9,7 @@ const (
 )
 
 var ReleaseToRepo = map[Release]Repo{
-	Linux1: amzn1,
-	Linux2: amzn2,
-	Linux2023: amzn2023,
+	AmazonLinux1: amzn1,
+	AmazonLinux2: amzn2,
+	AmazonLinux2023: amzn2023,
 }

@@ -12,7 +12,7 @@ import (
 	"github.com/quay/claircore/indexer"
 )
 
-// AWS Linux keeps a consistent os-release file between
+// Amazon Linux keeps a consistent os-release file between
 // major releases.
 // All tested images on docker hub contained os-release file
 //
@@ -31,15 +31,15 @@ type awsRegex struct {
 
 var awsRegexes = []awsRegex{
 	{
-		release: Linux1,
+		release: AmazonLinux1,
 		regexp:  regexp.MustCompile(`CPE_NAME="cpe:/o:amazon:linux:201.\.0[39]:ga"`),
 	},
 	{
-		release: Linux2,
+		release: AmazonLinux2,
 		regexp:  regexp.MustCompile(`CPE_NAME="cpe:2.3:o:amazon:amazon_linux:2"`),
 	},
 	{
-		release: Linux2023,
+		release: AmazonLinux2023,
 		regexp:  regexp.MustCompile(`CPE_NAME="cpe:2.3:o:amazon:amazon_linux:2023"`),
 	},
 }

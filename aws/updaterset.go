@@ -8,9 +8,9 @@ import (
 )
 
 var amazonReleases = []Release{
-	Linux1,
-	Linux2,
-	Linux2023,
+	AmazonLinux1,
+	AmazonLinux2,
+	AmazonLinux2023,
 }
 
 func UpdaterSet(_ context.Context) (driver.UpdaterSet, error) {
