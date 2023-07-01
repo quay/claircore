@@ -15,10 +15,12 @@ import (
 // AWS Linux keeps a consistent os-release file between
 // major releases.
 // All tested images on docker hub contained os-release file
+//
+// ScannerVersion increased to 2 when adding AL2023
 
 const (
 	scannerName    = "aws"
-	scannerVersion = "v0.0.1"
+	scannerVersion = "2"
 	scannerKind    = "distribution"
 )
 
@@ -34,7 +36,11 @@ var awsRegexes = []awsRegex{
 	},
 	{
 		release: Linux2,
-		regexp:  regexp.MustCompile(`Amazon Linux 2`),
+		regexp:  regexp.MustCompile(`CPE_NAME="cpe:2.3:o:amazon:amazon_linux:2"`),
+	},
+	{
+		release: Linux2023,
+		regexp:  regexp.MustCompile(`CPE_NAME="cpe:2.3:o:amazon:amazon_linux:2023"`),
 	},
 }
 

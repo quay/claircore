@@ -79,6 +79,13 @@ func TestClientGetMirrors(t *testing.T) {
 			},
 			Serve: "testdata/mirrors_linux2.txt",
 		},
+		{
+			Release: Linux2023,
+			Expected: []string{
+				"https://cdn.amazonlinux.com/al2023/core/guids/46ff4933b89b948580f3b223b826fee3c1830b85885db3f7f90502c0ac99698c/x86_64/",
+			},
+			Serve: "testdata/mirrors_linux2023.txt",
+		},
 	}
 
 	for _, tc := range tests {
