@@ -23,7 +23,11 @@ func (*Matcher) Filter(record *claircore.IndexRecord) bool {
 	}
 
 	switch {
-	case (record.Distribution.Name == linux1Dist.Name) || (record.Distribution.Name == linux2Dist.Name):
+	case (record.Distribution.Name == AL1Dist.Name):
+		return true
+	case (record.Distribution.Name == AL2Dist.Name):
+		return true
+	case (record.Distribution.Name == AL2023Dist.Name):
 		return true
 	case (record.Distribution.DID == ID):
 		return true

@@ -47,7 +47,7 @@ ANSI_COLOR="0;33"
 CPE_NAME="cpe:/o:amazon:linux:2018.03:ga"
 HOME_URL="http://aws.amazon.com/amazon-linux-ami/"`)
 
-var linux2OSRelease []byte = []byte(`NAME="Amazon Linux"
+var AL2OSRelease []byte = []byte(`NAME="Amazon Linux"
 VERSION="2"
 ID="amzn"
 ID_LIKE="centos rhel fedora"
@@ -57,7 +57,7 @@ ANSI_COLOR="0;33"
 CPE_NAME="cpe:2.3:o:amazon:amazon_linux:2"
 HOME_URL="https://amazonlinux.com/"`)
 
-var linux2023OSRelease []byte = []byte(`NAME="Amazon Linux"
+var AL2023OSRelease []byte = []byte(`NAME="Amazon Linux"
 VERSION="2023"
 ID="amzn"
 ID_LIKE="fedora"
@@ -77,34 +77,34 @@ func TestDistributionScanner(t *testing.T) {
 		osRelease []byte
 	}{
 		{
-			name:      "linux1",
-			release:   Linux1,
+			name:      "AL1",
+			release:   AmazonLinux1,
 			osRelease: AL1v201609OSRelease,
 		},
 		{
-			name:      "linux1",
-			release:   Linux1,
+			name:      "AL1",
+			release:   AmazonLinux1,
 			osRelease: AL1v201703OSRelease,
 		},
 		{
-			name:      "linux1",
-			release:   Linux1,
+			name:      "AL1",
+			release:   AmazonLinux1,
 			osRelease: AL1v201709OSRelease,
 		},
 		{
-			name:      "linux1",
-			release:   Linux1,
+			name:      "AL1",
+			release:   AmazonLinux1,
 			osRelease: AL1v201803OSRelease,
 		},
 		{
-			name:      "linux2",
-			release:   Linux2,
-			osRelease: linux2OSRelease,
+			name:      "AL2",
+			release:   AmazonLinux2,
+			osRelease: AL2OSRelease,
 		},
 		{
-			name:      "linux2023",
-			release:   Linux2023,
-			osRelease: linux2023OSRelease,
+			name:      "AL2023",
+			release:   AmazonLinux2023,
+			osRelease: AL2023OSRelease,
 		},
 	}
 	for _, tt := range table {

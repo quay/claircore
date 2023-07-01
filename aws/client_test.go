@@ -56,7 +56,7 @@ func TestClientGetMirrors(t *testing.T) {
 	defer done()
 	tests := []clientTestcase{
 		{
-			Release: Linux1,
+			Release: AmazonLinux1,
 			Expected: []string{
 				"http://packages.us-west-2.amazonaws.com/2018.03/updates/c539f2128d87/x86_64",
 				"http://packages.us-west-1.amazonaws.com/2018.03/updates/c539f2128d87/x86_64",
@@ -73,14 +73,14 @@ func TestClientGetMirrors(t *testing.T) {
 			Serve: "testdata/mirrors_linux1.txt",
 		},
 		{
-			Release: Linux2,
+			Release: AmazonLinux2,
 			Expected: []string{
 				"https://cdn.amazonlinux.com/2/core/2.0/x86_64/221a4af09d96ac4e34202cc7bdfa252410419542548cc685dc86ed1c17ca4204",
 			},
 			Serve: "testdata/mirrors_linux2.txt",
 		},
 		{
-			Release: Linux2023,
+			Release: AmazonLinux2023,
 			Expected: []string{
 				"https://cdn.amazonlinux.com/al2023/core/guids/46ff4933b89b948580f3b223b826fee3c1830b85885db3f7f90502c0ac99698c/x86_64/",
 			},
