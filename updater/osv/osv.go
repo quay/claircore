@@ -133,6 +133,7 @@ func (f *Factory) UpdaterSet(ctx context.Context) (s driver.UpdaterSet, err erro
 	if err != nil {
 		return s, err
 	}
+	seen := make(map[string]struct{})
 	// This is straight-line through the switch to make sure the Body is closed
 	// there.
 	switch res.StatusCode {
@@ -145,6 +146,11 @@ func (f *Factory) UpdaterSet(ctx context.Context) (s driver.UpdaterSet, err erro
 			if idx := strings.Index(e, ":"); idx != -1 {
 				e = e[:idx]
 			}
+			// Check for duplicates, removing the version will create some.
+			if _, ok := seen[e]; ok {
+				continue
+			}
+			seen[e] = struct{}{}
 			if _, ok := ignore[e]; ok {
 				zlog.Debug(ctx).
 					Str("ecosystem", e).
@@ -159,7 +165,13 @@ func (f *Factory) UpdaterSet(ctx context.Context) (s driver.UpdaterSet, err erro
 			name := "osv/" + e
 			uri := (*f.root).JoinPath(k, "all.zip")
 			up := &updater{name: name, ecosystem: e, c: f.c, uri: uri}
-			_ = s.Add(up)
+			if err = s.Add(up); err != nil {
+				zlog.Error(ctx).
+					Str("ecosystem", e).
+					Err(err).
+					Msg("Failed to add updater to updaterset")
+				continue
+			}
 		}
 		err = scr.Err()
 		f.etag = res.Header.Get("etag")
