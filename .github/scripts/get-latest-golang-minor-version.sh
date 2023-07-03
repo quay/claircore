@@ -1,5 +1,5 @@
 #!/bin/sh
-MAJOR_VERSION=$1
+MAJOR_VERSION=${1?missing required argument: language version}
 CHECK_VERSION=$MAJOR_VERSION
 CHECK_MINOR_VERSION=0
 
@@ -13,6 +13,11 @@ while true; do
 		CHECK_VERSION=${MAJOR_VERSION}.$((CHECK_MINOR_VERSION+=1))
 		;;
 	*)
+		# Account for version scheme change. See issue #991.
+		if test -z "$(echo "${CHECK_VERSION}" | cut -d . -f 3 2>/dev/null)"; then
+			CHECK_VERSION=${MAJOR_VERSION}.${CHECK_MINOR_VERSION}
+			continue
+		fi
 		test -z "$OK" && exit 99
 		echo "$OK"
 		exit 0
