@@ -38,3 +38,4 @@
   - [Local Development](./contributor/local-dev.md)
   - [Logging](./contributor/logging.md)
   - [Misc](./contributor/misc.md)
+  - [Tests](./contributor/tests.md)
