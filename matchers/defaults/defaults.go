@@ -8,7 +8,6 @@ import (
 
 	"github.com/quay/claircore/alpine"
 	"github.com/quay/claircore/aws"
-	"github.com/quay/claircore/crda"
 	"github.com/quay/claircore/debian"
 	"github.com/quay/claircore/gobin"
 	"github.com/quay/claircore/java"
@@ -59,8 +58,6 @@ var defaultMatchers = []driver.Matcher{
 }
 
 func inner(ctx context.Context) error {
-	registry.Register("crda", &crda.Factory{})
-
 	for _, m := range defaultMatchers {
 		mf := driver.MatcherStatic(m)
 		registry.Register(m.Name(), mf)
