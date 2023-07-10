@@ -26,8 +26,9 @@ func TestGetQueryBuilderDeterministicArgs(t *testing.T) {
 		"package_module", "package_arch", "package_kind", "dist_id", "dist_name", "dist_version", "dist_version_code_name",
 		"dist_version_id", "dist_arch", "dist_cpe", "dist_pretty_name", "arch_operation", "repo_name", "repo_key",
 		"repo_uri", "fixed_in_version", "updater"
-		FROM "latest_vuln"
+		FROM "vuln" INNER JOIN "uo_vuln" ON ("vuln"."id" = "uo_vuln"."vuln")
 		WHERE `
+		epilogue = ` AND ("uo" IN (1, 2, 3, 4)))`
 		both     = `(((("package_name" = 'package-0') AND ("package_kind" = 'binary')) OR (("package_name" = 'source-package-0') AND ("package_kind" = 'source'))) AND `
 		noSource = `((("package_name" = 'package-0') AND  ("package_kind" = 'binary')) AND `
 	)
@@ -45,7 +46,7 @@ func TestGetQueryBuilderDeterministicArgs(t *testing.T) {
 		{
 			name: "NoSource,id",
 			expectedQuery: preamble + noSource +
-				`("dist_id" = 'did-0'))`,
+				`("dist_id" = 'did-0')` + epilogue,
 			matchExps: []driver.MatchConstraint{driver.DistributionDID},
 			indexRecord: func() *claircore.IndexRecord {
 				pkgs := test.GenUniquePackages(1)
@@ -60,7 +61,7 @@ func TestGetQueryBuilderDeterministicArgs(t *testing.T) {
 		{
 			name: "id",
 			expectedQuery: preamble + both +
-				`("dist_id" = 'did-0'))`,
+				`("dist_id" = 'did-0')` + epilogue,
 			matchExps: []driver.MatchConstraint{driver.DistributionDID},
 			indexRecord: func() *claircore.IndexRecord {
 				pkgs := test.GenUniquePackages(1)
@@ -75,7 +76,7 @@ func TestGetQueryBuilderDeterministicArgs(t *testing.T) {
 			name: "id,version",
 			expectedQuery: preamble + both +
 				`("dist_id" = 'did-0') AND
-				("dist_version" = 'version-0'))`,
+				("dist_version" = 'version-0')` + epilogue,
 			matchExps: []driver.MatchConstraint{
 				driver.DistributionDID,
 				driver.DistributionVersion,
@@ -94,7 +95,7 @@ func TestGetQueryBuilderDeterministicArgs(t *testing.T) {
 			expectedQuery: preamble + both +
 				`("dist_id" = 'did-0') AND
 				("dist_version" = 'version-0') AND
-				("dist_version_id" = 'version-id-0'))`,
+				("dist_version_id" = 'version-id-0')` + epilogue,
 			matchExps: []driver.MatchConstraint{
 				driver.DistributionDID,
 				driver.DistributionVersion,
@@ -115,7 +116,7 @@ func TestGetQueryBuilderDeterministicArgs(t *testing.T) {
 				`("dist_id" = 'did-0') AND
 				("dist_version" = 'version-0') AND
 				("dist_version_id" = 'version-id-0') AND
-				("dist_version_code_name" = 'version-code-name-0'))`,
+				("dist_version_code_name" = 'version-code-name-0')` + epilogue,
 			matchExps: []driver.MatchConstraint{
 				driver.DistributionDID,
 				driver.DistributionVersion,
@@ -135,7 +136,7 @@ func TestGetQueryBuilderDeterministicArgs(t *testing.T) {
 			name: "DatabaseFilter",
 			expectedQuery: preamble + both +
 				`(("version_kind" = '') AND
-				vulnerable_range @> '{0,0,0,0,0,0,0,0,0,0}'::int[]))`,
+				vulnerable_range @> '{0,0,0,0,0,0,0,0,0,0}'::int[])` + epilogue,
 			matchExps: []driver.MatchConstraint{},
 			dbFilter:  true,
 			indexRecord: func() *claircore.IndexRecord {
@@ -151,7 +152,7 @@ func TestGetQueryBuilderDeterministicArgs(t *testing.T) {
 			name: "DatabaseFilterPython",
 			expectedQuery: preamble + both +
 				`(("version_kind" = 'pep440') AND
-				vulnerable_range @> '{0,1,20,3,0,0,0,0,0,0}'::int[]))`,
+				vulnerable_range @> '{0,1,20,3,0,0,0,0,0,0}'::int[])` + epilogue,
 			matchExps: []driver.MatchConstraint{},
 			dbFilter:  true,
 			indexRecord: func() *claircore.IndexRecord {
@@ -171,7 +172,7 @@ func TestGetQueryBuilderDeterministicArgs(t *testing.T) {
 		{
 			name: "module-filter",
 			expectedQuery: preamble + noSource +
-				`("package_module" = 'module:0'))`,
+				`("package_module" = 'module:0')` + epilogue,
 			matchExps: []driver.MatchConstraint{driver.PackageModule},
 			indexRecord: func() *claircore.IndexRecord {
 				pkgs := test.GenUniquePackages(1)
@@ -186,7 +187,7 @@ func TestGetQueryBuilderDeterministicArgs(t *testing.T) {
 		{
 			name: "repo_name",
 			expectedQuery: preamble + noSource +
-				`("repo_name" = 'repository-0'))`,
+				`("repo_name" = 'repository-0')` + epilogue,
 			matchExps: []driver.MatchConstraint{driver.RepositoryName},
 			indexRecord: func() *claircore.IndexRecord {
 				pkgs := test.GenUniquePackages(1)
@@ -215,7 +216,7 @@ func TestGetQueryBuilderDeterministicArgs(t *testing.T) {
 				Matchers:         tt.matchExps,
 				VersionFiltering: tt.dbFilter,
 			}
-			query, err := buildGetQuery(ir, &opts)
+			query, err := buildGetQuery(ir, &opts, []uint64{1, 2, 3, 4})
 			if err != nil {
 				t.Fatalf("failed to create query: %v", err)
 			}
