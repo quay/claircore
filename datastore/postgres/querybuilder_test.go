@@ -1,22 +1,17 @@
 package postgres
 
 import (
-	"context"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/google/uuid"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/pep440"
 	"github.com/quay/claircore/test"
-	"github.com/quay/claircore/test/integration"
-	pgtest "github.com/quay/claircore/test/postgres"
 )
 
 func TestGetQueryBuilderDeterministicArgs(t *testing.T) {
@@ -26,7 +21,7 @@ func TestGetQueryBuilderDeterministicArgs(t *testing.T) {
 		"package_module", "package_arch", "package_kind", "dist_id", "dist_name", "dist_version", "dist_version_code_name",
 		"dist_version_id", "dist_arch", "dist_cpe", "dist_pretty_name", "arch_operation", "repo_name", "repo_key",
 		"repo_uri", "fixed_in_version", "updater"
-		FROM "latest_vuln"
+		FROM "vuln"
 		WHERE `
 		both     = `(((("package_name" = 'package-0') AND ("package_kind" = 'binary')) OR (("package_name" = 'source-package-0') AND ("package_kind" = 'source'))) AND `
 		noSource = `((("package_name" = 'package-0') AND  ("package_kind" = 'binary')) AND `
@@ -224,89 +219,5 @@ func TestGetQueryBuilderDeterministicArgs(t *testing.T) {
 				t.Fatalf("%v", cmp.Diff(tt.expectedQuery, query, normalizeWhitespace))
 			}
 		})
-	}
-}
-
-type testCase struct {
-	Vulnerable int
-	Ops        [][]*claircore.Vulnerability
-	Records    []*claircore.IndexRecord
-}
-
-// TestLatestVulns checks that only the lastest update operations are
-// considered when querying for vulns
-func TestLatestVulns(t *testing.T) {
-	integration.NeedDB(t)
-	ctx := zlog.Test(context.Background(), t)
-
-	cases := []testCase{
-		{
-			Vulnerable: 2,
-			Ops: [][]*claircore.Vulnerability{
-				{
-					{
-						Updater: "test-updater",
-						Package: &claircore.Package{
-							Name:    "vi",
-							Version: "v2.0.0",
-						},
-					},
-				},
-				{
-					{
-						Updater: "test-updater2",
-						Package: &claircore.Package{
-							Name:    "vi",
-							Version: "v3.0.0",
-						},
-					},
-					{
-						Updater: "test-updater2",
-						Package: &claircore.Package{
-							Name:    "vi",
-							Version: "v3.1.0",
-						},
-					},
-				},
-			},
-			Records: []*claircore.IndexRecord{
-				{
-					Package: &claircore.Package{
-						ID:   "1",
-						Name: "vi",
-						Source: &claircore.Package{
-							Name:    "vi",
-							Version: "v1.0.0",
-						},
-					},
-				},
-			},
-		},
-	}
-
-	pool := pgtest.TestMatcherDB(ctx, t)
-	ctx, done := context.WithCancel(ctx)
-	defer done()
-	store := NewMatcherStore(pool)
-
-	for _, tc := range cases {
-		for _, op := range tc.Ops {
-			_, err := store.UpdateVulnerabilities(ctx, updater, driver.Fingerprint(uuid.New().String()), op)
-			if err != nil {
-				t.Fatalf("failed to perform update for first op: %v", err)
-			}
-		}
-
-		res, err := store.Get(ctx, tc.Records, datastore.GetOpts{})
-		if err != nil {
-			t.Fatalf("failed to get vulnerabilities: %v", err)
-		}
-		vulns := []*claircore.Vulnerability{}
-		for _, vs := range res {
-			vulns = append(vulns, vs...)
-		}
-		if len(vulns) != tc.Vulnerable {
-			t.Fatalf("wrong number of vulns, got %d want %d", len(vulns), tc.Vulnerable)
-		}
 	}
 }

@@ -121,7 +121,7 @@ func buildGetQuery(record *claircore.IndexRecord, opts *datastore.GetOpts) (stri
 		"repo_uri",
 		"fixed_in_version",
 		"updater",
-	).From("latest_vuln").Where(exps...)
+	).From("vuln").Where(exps...)
 
 	sql, _, err := query.ToSQL()
 	if err != nil {
