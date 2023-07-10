@@ -26,7 +26,7 @@ require (
 	github.com/ulikunitz/xz v0.5.11
 	golang.org/x/crypto v0.10.0
 	golang.org/x/sync v0.3.0
-	golang.org/x/text v0.10.0
+	golang.org/x/text v0.11.0
 	golang.org/x/time v0.3.0
 	golang.org/x/tools v0.10.0
 	modernc.org/sqlite v1.23.1
