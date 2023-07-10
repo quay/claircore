@@ -14,7 +14,7 @@ import (
 )
 
 // getQueryBuilder validates a IndexRecord and creates a query string for vulnerability matching
-func buildGetQuery(record *claircore.IndexRecord, opts *datastore.GetOpts) (string, error) {
+func buildGetQuery(record *claircore.IndexRecord, opts *datastore.GetOpts, uos []uint64) (string, error) {
 	matchers := opts.Matchers
 	psql := goqu.Dialect("postgres")
 	exps := []goqu.Expression{}
@@ -93,6 +93,7 @@ func buildGetQuery(record *claircore.IndexRecord, opts *datastore.GetOpts) (stri
 			goqu.L("vulnerable_range @> "+lit.String()),
 		))
 	}
+	exps = append(exps, goqu.C("uo").In(uos))
 
 	query := psql.Select(
 		"id",
@@ -121,7 +122,9 @@ func buildGetQuery(record *claircore.IndexRecord, opts *datastore.GetOpts) (stri
 		"repo_uri",
 		"fixed_in_version",
 		"updater",
-	).From("latest_vuln").Where(exps...)
+	).From("vuln").
+		Join(goqu.I("uo_vuln"), goqu.On(goqu.Ex{"vuln.id": goqu.I("uo_vuln.vuln")})).
+		Where(exps...)
 
 	sql, _, err := query.ToSQL()
 	if err != nil {
