@@ -19,6 +19,11 @@ func buildGetQuery(record *claircore.IndexRecord, opts *datastore.GetOpts, uos [
 	psql := goqu.Dialect("postgres")
 	exps := []goqu.Expression{}
 
+	// Check that uos isn't empty, if it is it will result in a query error
+	if len(uos) == 0 {
+		return "", fmt.Errorf("cannot query without update_operation IDs")
+	}
+
 	// Add package name as first condition in query.
 	if record.Package.Name == "" {
 		return "", fmt.Errorf("IndexRecord must provide a Package.Name")

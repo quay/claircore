@@ -44,7 +44,7 @@ func (s *MatcherStore) Get(ctx context.Context, records []*claircore.IndexRecord
 		return nil, err
 	}
 	defer tx.Rollback(ctx)
-	latestUpdatesQuery := "SELECT DISTINCT ON (updater) id FROM update_operation ORDER BY updater, id DESC"
+	latestUpdatesQuery := "SELECT id FROM latest_update_operations WHERE kind = 'vulnerability';"
 	rows, err := tx.Query(ctx, latestUpdatesQuery)
 	if err != nil {
 		return nil, err
