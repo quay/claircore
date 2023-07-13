@@ -106,6 +106,7 @@ VALUES
 ON CONFLICT
 DO
 	NOTHING;`
+		refreshView = `REFRESH MATERIALIZED VIEW latest_update_operations;`
 	)
 	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/UpdateEnrichments")
 
@@ -154,6 +155,9 @@ DO
 	if err := tx.Commit(ctx); err != nil {
 		return uuid.Nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
+	if _, err = s.pool.Exec(ctx, refreshView); err != nil {
+		return uuid.Nil, fmt.Errorf("could not refresh latest_update_operations: %w", err)
+	}
 	zlog.Debug(ctx).
 		Stringer("ref", ref).
 		Int("inserted", len(es)).
@@ -178,11 +182,14 @@ WITH
 	latest
 		AS (
 			SELECT
-				max(id) AS id
+				id
 			FROM
-				update_operation
+				latest_update_operations
 			WHERE
 				updater = $1
+			AND
+				kind = 'enrichment'
+			LIMIT 1
 		)
 SELECT
 	e.tags, e.data

@@ -100,4 +100,8 @@ var MatcherMigrations = []migrate.Migration{
 		ID: 10,
 		Up: runFile("matcher/10-delete-osv.sql"),
 	},
+	{
+		ID: 11,
+		Up: runFile("matcher/11-add-update_operation-mv.sql"),
+	},
 }

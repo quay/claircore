@@ -79,7 +79,8 @@ func (s *MatcherStore) UpdateVulnerabilities(ctx context.Context, updater string
 			$3,
 			(SELECT id FROM vuln WHERE hash_kind = $1 AND hash = $2))
 		ON CONFLICT DO NOTHING;`
-		undo = `DELETE FROM update_operation WHERE id = $1;`
+		undo        = `DELETE FROM update_operation WHERE id = $1;`
+		refreshView = `REFRESH MATERIALIZED VIEW latest_update_operations;`
 	)
 	ctx = zlog.ContextWithValues(ctx, "component", "internal/vulnstore/postgres/updateVulnerabilities")
 
@@ -166,6 +167,10 @@ func (s *MatcherStore) UpdateVulnerabilities(ctx context.Context, updater string
 	if err := tx.Commit(ctx); err != nil {
 		return uuid.Nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
+	if _, err = s.pool.Exec(ctx, refreshView); err != nil {
+		return uuid.Nil, fmt.Errorf("could not refresh latest_update_operations: %w", err)
+	}
+
 	success = true
 	zlog.Debug(ctx).
 		Str("ref", ref.String()).
