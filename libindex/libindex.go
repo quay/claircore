@@ -154,6 +154,7 @@ func New(ctx context.Context, opts *Options, cl *http.Client) (*Libindex, error)
 		Vscnrs:        l.vscnrs,
 		Client:        l.client,
 		ScannerConfig: opts.ScannerConfig,
+		Resolvers:     opts.Resolvers,
 	}
 	l.indexerOptions.LayerScanner, err = indexer.NewLayerScanner(ctx, opts.LayerScanConcurrency, l.indexerOptions)
 	if err != nil {
