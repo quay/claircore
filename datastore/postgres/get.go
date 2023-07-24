@@ -44,24 +44,10 @@ func (s *MatcherStore) Get(ctx context.Context, records []*claircore.IndexRecord
 		return nil, err
 	}
 	defer tx.Rollback(ctx)
-	latestUpdatesQuery := "SELECT id FROM latest_update_operations WHERE kind = 'vulnerability';"
-	rows, err := tx.Query(ctx, latestUpdatesQuery)
-	if err != nil {
-		return nil, err
-	}
-	uos := []uint64{}
-	for rows.Next() {
-		var id uint64
-		err := rows.Scan(&id)
-		if err != nil {
-			return nil, err
-		}
-		uos = append(uos, id)
-	}
 	// start a batch
 	batch := &pgx.Batch{}
 	for _, record := range records {
-		query, err := buildGetQuery(record, &opts, uos)
+		query, err := buildGetQuery(record, &opts)
 		if err != nil {
 			// if we cannot build a query for an individual record continue to the next
 			zlog.Debug(ctx).

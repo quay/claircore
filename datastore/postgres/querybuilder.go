@@ -14,15 +14,10 @@ import (
 )
 
 // getQueryBuilder validates a IndexRecord and creates a query string for vulnerability matching
-func buildGetQuery(record *claircore.IndexRecord, opts *datastore.GetOpts, uos []uint64) (string, error) {
+func buildGetQuery(record *claircore.IndexRecord, opts *datastore.GetOpts) (string, error) {
 	matchers := opts.Matchers
 	psql := goqu.Dialect("postgres")
 	exps := []goqu.Expression{}
-
-	// Check that uos isn't empty, if it is it will result in a query error
-	if len(uos) == 0 {
-		return "", fmt.Errorf("cannot query without update_operation IDs")
-	}
 
 	// Add package name as first condition in query.
 	if record.Package.Name == "" {
@@ -98,10 +93,10 @@ func buildGetQuery(record *claircore.IndexRecord, opts *datastore.GetOpts, uos [
 			goqu.L("vulnerable_range @> "+lit.String()),
 		))
 	}
-	exps = append(exps, goqu.C("uo").In(uos))
+	exps = append(exps, goqu.I("latest_update_operations.kind").Eq("vulnerability"))
 
 	query := psql.Select(
-		"id",
+		"vuln.id",
 		"name",
 		"description",
 		"issued",
@@ -126,9 +121,10 @@ func buildGetQuery(record *claircore.IndexRecord, opts *datastore.GetOpts, uos [
 		"repo_key",
 		"repo_uri",
 		"fixed_in_version",
-		"updater",
+		"vuln.updater",
 	).From("vuln").
 		Join(goqu.I("uo_vuln"), goqu.On(goqu.Ex{"vuln.id": goqu.I("uo_vuln.vuln")})).
+		Join(goqu.I("latest_update_operations"), goqu.On(goqu.Ex{"latest_update_operations.id": goqu.I("uo_vuln.uo")})).
 		Where(exps...)
 
 	sql, _, err := query.ToSQL()
