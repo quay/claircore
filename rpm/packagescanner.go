@@ -98,35 +98,8 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 		var nat nativeDB // see native_db.go:/nativeDB
 		switch db.Kind {
 		case kindSQLite:
-			r, err := sys.Open(path.Join(db.Path, `rpmdb.sqlite`))
-			if err != nil {
-				return nil, fmt.Errorf("rpm: error reading sqlite db: %w", err)
-			}
-			defer func() {
-				if err := r.Close(); err != nil {
-					zlog.Warn(ctx).Err(err).Msg("unable to close tarfs sqlite db")
-				}
-			}()
-			f, err := os.CreateTemp(os.TempDir(), `rpmdb.sqlite.*`)
-			if err != nil {
-				return nil, fmt.Errorf("rpm: error reading sqlite db: %w", err)
-			}
-			defer func() {
-				if err := os.Remove(f.Name()); err != nil {
-					zlog.Error(ctx).Err(err).Msg("unable to unlink sqlite db")
-				}
-				if err := f.Close(); err != nil {
-					zlog.Warn(ctx).Err(err).Msg("unable to close sqlite db")
-				}
-			}()
-			zlog.Debug(ctx).Str("file", f.Name()).Msg("copying sqlite db out of tar")
-			if _, err := io.Copy(f, r); err != nil {
-				return nil, fmt.Errorf("rpm: error reading sqlite db: %w", err)
-			}
-			if err := f.Sync(); err != nil {
-				return nil, fmt.Errorf("rpm: error reading sqlite db: %w", err)
-			}
-			sdb, err := sqlite.Open(f.Name())
+			p := path.Join(db.Path, `rpmdb.sqlite`)
+			sdb, err := sqlite.OpenFS(sys, p)
 			if err != nil {
 				return nil, fmt.Errorf("rpm: error reading sqlite db: %w", err)
 			}
