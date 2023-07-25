@@ -5,6 +5,7 @@ import (
 	"debug/buildinfo"
 	"errors"
 	"io"
+	"strings"
 	_ "unsafe" // for error linkname tricks
 
 	"github.com/Masterminds/semver"
@@ -35,19 +36,27 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 	}
 	ctx = zlog.ContextWithValues(ctx, "exe", p)
 	pkgdb := "go:" + p
+	badVers := make(map[string]string)
+	defer func() {
+		if len(badVers) == 0 {
+			return
+		}
+		zlog.Warn(ctx).
+			Interface("module_versions", badVers).
+			Msg("invalid semantic versions found in binary")
+	}()
 
 	// TODO(hank) This package could use canonical versions, but the
 	// [claircore.Version] type is lossy for pre-release versions (I'm sorry).
 	var runtimeVer claircore.Version
-	rtv, err := semver.NewVersion(bi.GoVersion)
-	if err != nil {
-		zlog.Warn(ctx).
-			Err(err).
-			Str("package", "runtime").
-			Str("version", bi.GoVersion).
-			Msg("unable to create semver")
-	} else {
+	rtv, err := semver.NewVersion(strings.TrimPrefix(bi.GoVersion, "go"))
+	switch {
+	case errors.Is(err, nil):
 		runtimeVer = fromSemver(rtv)
+	case errors.Is(err, semver.ErrInvalidSemVer):
+		badVers["runtime"] = bi.GoVersion
+	default:
+		return err
 	}
 
 	*out = append(*out, &claircore.Package{
@@ -65,14 +74,13 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 	}
 	var mainVer claircore.Version
 	mpv, err := semver.NewVersion(bi.Main.Version)
-	if err != nil {
-		zlog.Warn(ctx).
-			Err(err).
-			Str("package", bi.Main.Path).
-			Str("version", bi.Main.Version).
-			Msg("unable to create semver")
-	} else {
+	switch {
+	case errors.Is(err, nil):
 		mainVer = fromSemver(mpv)
+	case errors.Is(err, semver.ErrInvalidSemVer):
+		badVers[bi.Main.Path] = bi.Main.Version
+	default:
+		return err
 	}
 
 	*out = append(*out, &claircore.Package{
@@ -90,14 +98,13 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 	for _, d := range bi.Deps {
 		var nv claircore.Version
 		ver, err := semver.NewVersion(d.Version)
-		if err != nil {
-			zlog.Warn(ctx).
-				Err(err).
-				Str("package", d.Path).
-				Str("version", d.Version).
-				Msg("unable to create semver")
-		} else {
+		switch {
+		case errors.Is(err, nil):
 			nv = fromSemver(ver)
+		case errors.Is(err, semver.ErrInvalidSemVer):
+			badVers[d.Path] = d.Version
+		default:
+			return err
 		}
 
 		*out = append(*out, &claircore.Package{
