@@ -180,7 +180,7 @@ func extractProperties(ctx context.Context, name string, z *zip.Reader) ([]Info,
 		// encoded in the file names.
 		p := normName(f.Name)
 		if path.Base(p) == filename {
-			zlog.Info(ctx).
+			zlog.Debug(ctx).
 				Str("path", p).
 				Msg("found properties file")
 			pf = append(pf, p)
