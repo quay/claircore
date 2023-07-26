@@ -37,15 +37,6 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 		return true, nil
 	}
 
-	decodedVersions, err := url.ParseQuery(vuln.FixedInVersion)
-	if err != nil {
-		return false, err
-	}
-	upperVersion := decodedVersions.Get("fixed")
-	if upperVersion == "" {
-		return false, fmt.Errorf("python: missing upper version")
-	}
-
 	rv, err := pep440.Parse(record.Package.Version)
 	if err != nil {
 		zlog.Warn(ctx).
@@ -55,17 +46,41 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 		return false, err
 	}
 
-	uv, err := pep440.Parse(upperVersion)
+	decodedVersions, err := url.ParseQuery(vuln.FixedInVersion)
 	if err != nil {
-		zlog.Warn(ctx).
-			Str("package", vuln.Package.Name).
-			Str("version", upperVersion).
-			Msg("unable to parse python package version")
 		return false, err
 	}
+	upperVersion := decodedVersions.Get("fixed")
+	lastAffected := decodedVersions.Get("lastAffected")
+	switch {
+	case upperVersion != "":
+		uv, err := pep440.Parse(upperVersion)
+		if err != nil {
+			zlog.Warn(ctx).
+				Str("package", vuln.Package.Name).
+				Str("version", upperVersion).
+				Msg("unable to parse python fixed version")
+			return false, err
+		}
 
-	if rv.Compare(&uv) >= 0 {
-		return false, nil
+		if rv.Compare(&uv) >= 0 {
+			return false, nil
+		}
+	case lastAffected != "":
+		la, err := pep440.Parse(lastAffected)
+		if err != nil {
+			zlog.Warn(ctx).
+				Str("package", vuln.Package.Name).
+				Str("version", lastAffected).
+				Msg("unable to parse python last_affected version")
+			return false, err
+		}
+		// It must be less 0 to be good, if the versions are equal, it's potentially vulnerable.
+		if rv.Compare(&la) > 0 {
+			return false, nil
+		}
+	default:
+		return false, fmt.Errorf("could not find fixed or last_affected: %s", vuln.FixedInVersion)
 	}
 
 	if decodedVersions.Has("introduced") {

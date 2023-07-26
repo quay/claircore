@@ -153,6 +153,54 @@ func TestMatcher(t *testing.T) {
 			Want:    false,
 			Matcher: &python.Matcher{},
 		},
+		{
+			Name: "test4",
+			R: claircore.IndexRecord{
+				Package: &claircore.Package{
+					Version: "1.0.0",
+				},
+			},
+			V: claircore.Vulnerability{
+				Package: &claircore.Package{
+					Name: "testPkg4",
+				},
+				FixedInVersion: "introduced=2.2.0&lastAffected=3.0.1",
+			},
+			Want:    false,
+			Matcher: &python.Matcher{},
+		},
+		{
+			Name: "test5",
+			R: claircore.IndexRecord{
+				Package: &claircore.Package{
+					Version: "3.0.1",
+				},
+			},
+			V: claircore.Vulnerability{
+				Package: &claircore.Package{
+					Name: "testPkg5",
+				},
+				FixedInVersion: "introduced=2.2.0&lastAffected=3.0.1",
+			},
+			Want:    true,
+			Matcher: &python.Matcher{},
+		},
+		{
+			Name: "test6",
+			R: claircore.IndexRecord{
+				Package: &claircore.Package{
+					Version: "3.0.2",
+				},
+			},
+			V: claircore.Vulnerability{
+				Package: &claircore.Package{
+					Name: "testPkg6",
+				},
+				FixedInVersion: "introduced=2.2.0&lastAffected=3.0.1",
+			},
+			Want:    false,
+			Matcher: &python.Matcher{},
+		},
 	}
 
 	for _, testcase := range testcases {
