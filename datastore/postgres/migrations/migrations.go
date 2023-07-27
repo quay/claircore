@@ -104,4 +104,8 @@ var MatcherMigrations = []migrate.Migration{
 		ID: 11,
 		Up: runFile("matcher/11-add-update_operation-mv.sql"),
 	},
+	{
+		ID: 12,
+		Up: runFile("matcher/12-add-latest_update_operation-index.sql"),
+	},
 }

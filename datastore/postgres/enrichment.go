@@ -106,7 +106,7 @@ VALUES
 ON CONFLICT
 DO
 	NOTHING;`
-		refreshView = `REFRESH MATERIALIZED VIEW latest_update_operations;`
+		refreshView = `REFRESH MATERIALIZED VIEW CONCURRENTLY latest_update_operations;`
 	)
 	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/UpdateEnrichments")
 
