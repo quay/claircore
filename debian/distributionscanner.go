@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"regexp"
 	"runtime/trace"
 	"strconv"
 	"strings"
@@ -31,7 +32,7 @@ type DistributionScanner struct{}
 func (*DistributionScanner) Name() string { return "debian" }
 
 // Version implements [indexer.VersionedScanner].
-func (*DistributionScanner) Version() string { return "2" }
+func (*DistributionScanner) Version() string { return "3" }
 
 // Kind implements [indexer.VersionedScanner].
 func (*DistributionScanner) Kind() string { return "distribution" }
@@ -85,10 +86,13 @@ func findDist(ctx context.Context, sys fs.FS) (*claircore.Distribution, error) {
 		return nil, nil
 	}
 
+	// Regex pattern matches item within string that appear as so: (bookworm), (buster), (bullseye)
+	ver := regexp.MustCompile(`\(\w+\)$`)
+
 	name, nameok := kv[`VERSION_CODENAME`]
 	idstr := kv[`VERSION_ID`]
 	if !nameok {
-		name = strings.TrimFunc(kv[`VERSION`], func(r rune) bool { return !unicode.IsLetter(r) })
+		name = strings.TrimFunc(ver.FindString(kv[`VERSION`]), func(r rune) bool { return !unicode.IsLetter(r) })
 	}
 	if name == "" || idstr == "" {
 		zlog.Info(ctx).
