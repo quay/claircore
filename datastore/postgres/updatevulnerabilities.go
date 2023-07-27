@@ -80,7 +80,7 @@ func (s *MatcherStore) UpdateVulnerabilities(ctx context.Context, updater string
 			(SELECT id FROM vuln WHERE hash_kind = $1 AND hash = $2))
 		ON CONFLICT DO NOTHING;`
 		undo        = `DELETE FROM update_operation WHERE id = $1;`
-		refreshView = `REFRESH MATERIALIZED VIEW latest_update_operations;`
+		refreshView = `REFRESH MATERIALIZED VIEW CONCURRENTLY latest_update_operations;`
 	)
 	ctx = zlog.ContextWithValues(ctx, "component", "internal/vulnstore/postgres/updateVulnerabilities")
 
