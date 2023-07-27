@@ -122,6 +122,28 @@ func TestParse(t *testing.T) {
 				PrettyName: "Red Hat Enterprise Linux 8",
 			},
 		},
+		{
+			File: "distroless_corrupt_layer",
+			Want: claircore.Distribution{
+				DID:             "debian",
+				Name:            "Debian GNU/Linux",
+				Version:         "Debian GNU/Linux 12 (bookworm)",
+				VersionCodeName: "",
+				VersionID:       "12",
+				PrettyName:      "Distroless",
+			},
+		},
+		{
+			File: "distroless_valid_layer",
+			Want: claircore.Distribution{
+				DID:             "debian",
+				Name:            "Debian GNU/Linux",
+				Version:         "12 (bookworm)",
+				VersionCodeName: "bookworm",
+				VersionID:       "12",
+				PrettyName:      "Debian GNU/Linux 12 (bookworm)",
+			},
+		},
 	}
 	for _, tc := range tt {
 		t.Run(tc.File, tc.Test)
