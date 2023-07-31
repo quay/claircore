@@ -1,6 +1,7 @@
 ignore:
 - "test"  # Our test helpers largely do not have tests themselves.
 - "**/*_string.go"  # Ignore generated string implementations.
+- "toolkit/urn/parser.go"  # Generated file
 
 coverage:
   status:
