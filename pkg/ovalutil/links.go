@@ -21,6 +21,25 @@ func Links(def oval.Definition) string {
 		links = append(links, bug.URL)
 	}
 
+	for _, cve := range def.Advisory.Cves {
+		links = append(links, cve.Href)
+	}
+
+	links = deduplicate(links)
 	s := strings.Join(links, " ")
 	return s
+}
+
+func deduplicate(links []string) []string {
+	inResult := make(map[string]bool)
+	de := []string{}
+	for _, l := range links {
+		if _, ok := inResult[l]; !ok {
+			if l != "" {
+				inResult[l] = true
+				de = append(de, l)
+			}
+		}
+	}
+	return de
 }
