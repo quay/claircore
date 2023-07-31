@@ -21,6 +21,10 @@ func Links(def oval.Definition) string {
 		links = append(links, bug.URL)
 	}
 
+	for _, cve := range def.Advisory.Cves {
+		links = append(links, cve.Href)
+	}
+
 	s := strings.Join(links, " ")
 	return s
 }
