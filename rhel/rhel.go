@@ -37,15 +37,15 @@ type Updater struct {
 // See also [ovalutil.FetcherConfig].
 type UpdaterConfig struct {
 	ovalutil.FetcherConfig
-	Release         int64 `json:"release" yaml:"release"`
-	IgnoreUnpatched bool  `json:"ignore_unpatched" yaml:"ignore_unpatched"`
+	Release int64 `json:"release" yaml:"release"`
 }
 
 // NewUpdater returns an Updater.
-func NewUpdater(name string, release int, uri string) (*Updater, error) {
+func NewUpdater(name string, release int, uri string, ignoreUnpatched bool) (*Updater, error) {
 	u := &Updater{
-		name: name,
-		dist: mkRelease(int64(release)),
+		name:            name,
+		dist:            mkRelease(int64(release)),
+		ignoreUnpatched: ignoreUnpatched,
 	}
 	var err error
 	u.Fetcher.URL, err = url.Parse(uri)
@@ -65,7 +65,7 @@ func (u *Updater) Configure(ctx context.Context, cf driver.ConfigUnmarshaler, c 
 	if cfg.Release != 0 {
 		u.dist = mkRelease(cfg.Release)
 	}
-	u.ignoreUnpatched = cfg.IgnoreUnpatched
+
 	return u.Fetcher.Configure(ctx, cf, c)
 }
 

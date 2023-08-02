@@ -60,6 +60,7 @@ func TestMatcherIntegration(t *testing.T) {
 			fmt.Sprintf("test-updater-%s", filepath.Base(fn)),
 			1,
 			root+"/"+filepath.Base(fn),
+			false,
 		)
 		if err != nil {
 			t.Error(err)

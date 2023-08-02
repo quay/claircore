@@ -21,6 +21,7 @@ func TestCVEDefFromUnpatched(t *testing.T) {
 		fileName          string
 		configFunc        driver.ConfigUnmarshaler
 		expectedVulnCount int
+		ignoreUnpatched   bool
 	}{
 		{
 			name:              "default path",
@@ -29,15 +30,10 @@ func TestCVEDefFromUnpatched(t *testing.T) {
 			expectedVulnCount: 192,
 		},
 		{
-			name:     "ignore unpatched path",
-			fileName: "testdata/rhel-8-rpm-unpatched.xml",
-			configFunc: func(c interface{}) error {
-				cfg, ok := c.(*UpdaterConfig)
-				if ok {
-					cfg.IgnoreUnpatched = true
-				}
-				return nil
-			},
+			name:              "ignore unpatched path",
+			fileName:          "testdata/rhel-8-rpm-unpatched.xml",
+			configFunc:        func(c interface{}) error { return nil },
+			ignoreUnpatched:   true,
 			expectedVulnCount: 0,
 		},
 	}
@@ -51,7 +47,7 @@ func TestCVEDefFromUnpatched(t *testing.T) {
 				t.Fatal(err)
 			}
 			defer f.Close()
-			u, err := NewUpdater("rhel-8-unpatched-updater", 8, "file:///dev/null")
+			u, err := NewUpdater("rhel-8-unpatched-updater", 8, "file:///dev/null", test.ignoreUnpatched)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -73,7 +69,7 @@ func TestParse(t *testing.T) {
 	t.Parallel()
 	ctx := zlog.Test(context.Background(), t)
 
-	u, err := NewUpdater(`rhel-3-updater`, 3, "file:///dev/null")
+	u, err := NewUpdater(`rhel-3-updater`, 3, "file:///dev/null", false)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -35,9 +35,10 @@ func NewFactory(ctx context.Context, manifest string) (*Factory, error) {
 
 // Factory contains the configuration for fetching and parsing a Pulp manifest.
 type Factory struct {
-	url          *url.URL
-	client       *http.Client
-	manifestEtag string
+	url             *url.URL
+	client          *http.Client
+	manifestEtag    string
+	ignoreUnpatched bool
 }
 
 // FactoryConfig is the configuration accepted by the rhel updaters.
@@ -45,6 +46,9 @@ type Factory struct {
 // By convention, this should be in a map called "rhel".
 type FactoryConfig struct {
 	URL string `json:"url" yaml:"url"`
+	// IgnoreUnpatched dictates whether to ingest unpatched advisory data
+	// from the RHEL security feeds.
+	IgnoreUnpatched bool `json:"ignore_unpatched" yaml:"ignore_unpatched"`
 }
 
 var _ driver.Configurable = (*Factory)(nil)
@@ -75,7 +79,7 @@ func (f *Factory) Configure(ctx context.Context, cfg driver.ConfigUnmarshaler, c
 			Msg("configured HTTP client")
 		f.client = c
 	}
-
+	f.ignoreUnpatched = fc.IgnoreUnpatched
 	return nil
 }
 
@@ -148,7 +152,7 @@ func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
 				Msg("unable to parse pattern into int")
 			continue
 		}
-		up, err := NewUpdater(name, r, uri.String())
+		up, err := NewUpdater(name, r, uri.String(), f.ignoreUnpatched)
 		if err != nil {
 			return s, err
 		}
