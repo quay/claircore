@@ -63,7 +63,7 @@ func main() {
 		switch *flavor {
 		case "rpm":
 			var u driver.Updater
-			u, err = rhel.NewUpdater("rhel-test", 8, "file:///dev/null")
+			u, err = rhel.NewUpdater("rhel-test", 8, "file:///dev/null", false)
 			if err != nil {
 				log.Fatal().Err(err).Send()
 			}

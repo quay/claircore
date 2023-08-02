@@ -23,7 +23,7 @@ func TestFetch(t *testing.T) {
 
 	t.Run("FetchContext", func(t *testing.T) {
 		ctx := zlog.Test(ctx, t)
-		u, err := NewUpdater(`rhel-3-updater`, 3, srv.URL)
+		u, err := NewUpdater(`rhel-3-updater`, 3, srv.URL, false)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -56,7 +56,7 @@ func TestFetch(t *testing.T) {
 
 	t.Run("Fetch", func(t *testing.T) {
 		ctx := zlog.Test(ctx, t)
-		u, err := NewUpdater(`rhel-3-updater`, 3, srv.URL)
+		u, err := NewUpdater(`rhel-3-updater`, 3, srv.URL, false)
 		if err != nil {
 			t.Fatal(err)
 		}
