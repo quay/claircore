@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/doug-martin/goqu/v8 v8.6.0
+	github.com/evanphx/json-patch/v5 v5.6.0
 	github.com/golang/mock v1.6.0
 	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.3.0
@@ -21,6 +22,7 @@ require (
 	github.com/quay/claircore/updater/driver v1.0.0
 	github.com/quay/goval-parser v0.8.8
 	github.com/quay/zlog v1.1.5
+	github.com/regclient/regclient v0.5.0
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
 	github.com/rs/zerolog v1.29.0
 	github.com/ulikunitz/xz v0.5.11
@@ -36,6 +38,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
@@ -48,10 +51,13 @@ require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.16 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
+	github.com/opencontainers/go-digest v1.0.0 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/common v0.42.0 // indirect
 	github.com/prometheus/procfs v0.10.1 // indirect
 	github.com/quay/claircore/toolkit v1.0.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
+	github.com/sirupsen/logrus v1.9.3 // indirect
 	go.opentelemetry.io/otel v1.11.0 // indirect
 	golang.org/x/mod v0.12.0 // indirect
 	golang.org/x/sys v0.10.0 // indirect
@@ -70,3 +76,5 @@ require (
 replace github.com/quay/claircore/toolkit => ./toolkit
 
 replace github.com/quay/claircore/updater/driver => ./updater/driver
+
+replace github.com/regclient/regclient => github.com/hdonnay/regclient v0.0.0-20230802204448-895786ac70b4
