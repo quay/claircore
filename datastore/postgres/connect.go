@@ -6,8 +6,9 @@ import (
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/quay/claircore/pkg/poolstats"
 	"github.com/quay/zlog"
+
+	"github.com/quay/claircore/pkg/poolstats"
 )
 
 // Connect initialize a postgres pgxpool.Pool based on the connection string
@@ -18,7 +19,6 @@ func Connect(ctx context.Context, connString string, applicationName string) (*p
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse ConnString: %v", err)
 	}
-	cfg.MaxConns = 30
 	const appnameKey = `application_name`
 	params := cfg.ConnConfig.RuntimeParams
 	if _, ok := params[appnameKey]; !ok {
