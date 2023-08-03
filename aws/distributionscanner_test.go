@@ -75,36 +75,43 @@ func TestDistributionScanner(t *testing.T) {
 		name      string
 		release   Release
 		osRelease []byte
+		prettyDistName string
 	}{
 		{
 			name:      "AL1",
 			release:   AmazonLinux1,
 			osRelease: AL1v201609OSRelease,
+			prettyDistName: "Amazon Linux AMI 2018.03",
 		},
 		{
 			name:      "AL1",
 			release:   AmazonLinux1,
 			osRelease: AL1v201703OSRelease,
+			prettyDistName: "Amazon Linux AMI 2018.03",
 		},
 		{
 			name:      "AL1",
 			release:   AmazonLinux1,
 			osRelease: AL1v201709OSRelease,
+			prettyDistName: "Amazon Linux AMI 2018.03",
 		},
 		{
 			name:      "AL1",
 			release:   AmazonLinux1,
 			osRelease: AL1v201803OSRelease,
+			prettyDistName: "Amazon Linux AMI 2018.03",
 		},
 		{
 			name:      "AL2",
 			release:   AmazonLinux2,
 			osRelease: AL2OSRelease,
+			prettyDistName: "Amazon Linux 2",
 		},
 		{
 			name:      "AL2023",
 			release:   AmazonLinux2023,
 			osRelease: AL2023OSRelease,
+			prettyDistName: "Amazon Linux 2023",
 		},
 	}
 	for _, tt := range table {
@@ -114,6 +121,9 @@ func TestDistributionScanner(t *testing.T) {
 			cmpDist := releaseToDist(tt.release)
 			if !cmp.Equal(dist, cmpDist) {
 				t.Fatalf("%v", cmp.Diff(dist, cmpDist))
+			}
+			if !cmp.Equal(cmpDist.PrettyName, tt.prettyDistName) {
+				t.Fatalf("%v", cmp.Diff(tt.prettyDistName, cmpDist.PrettyName))
 			}
 		})
 	}
