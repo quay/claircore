@@ -1,3 +1,19 @@
+<a name="v1.5.14"></a>
+## [v1.5.14] - 2023-08-07
+[v1.5.14]: https://github.com/quay/claircore/compare/v1.5.13...v1.5.14
+
+- rhel: Include cve defs when parsing through rhel oval feeds
+  <details>
+  There was condition that excluded cve definition types when converting
+  OVAL definitions to vulns, currently for rhel8 unpatched feeds
+  the definitions are either oval:com.redhat.cve:def:... or
+  oval:com.redhat.unaffected:def:.... This change adds a condition
+  to only continue to ignore these cve definitions if the config explicitly
+  says to do so. Note: Once these vulns are in the DB they will be
+  surfaced and updating the config won't delete them, they will be
+  queried until the next update cycle.
+  </details>
+
 <a name="v1.5.13"></a>
 ## [v1.5.13] - 2023-07-26
 [v1.5.13]: https://github.com/quay/claircore/compare/v1.5.12...v1.5.13
