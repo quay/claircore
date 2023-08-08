@@ -2,7 +2,6 @@ package python
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 
 	"github.com/quay/zlog"
@@ -79,8 +78,6 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 		if rv.Compare(&la) > 0 {
 			return false, nil
 		}
-	default:
-		return false, fmt.Errorf("could not find fixed or last_affected: %s", vuln.FixedInVersion)
 	}
 
 	if decodedVersions.Has("introduced") {
