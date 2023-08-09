@@ -49,4 +49,7 @@ type Options struct {
 		Package, Dist, Repo, File map[string]func(interface{}) error
 	}
 	Resolvers []indexer.Resolver
+
+	EcosystemNames   []string
+	EcosystemConfigs map[string]any
 }

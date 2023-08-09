@@ -63,6 +63,8 @@ type Libindex struct {
 	// indexerOptions hold construction context for the layerScanner and the
 	// controller factory.
 	indexerOptions *indexer.Options
+
+	ecosystems []indexer.EcosystemSpec
 }
 
 // New creates a new instance of libindex.
