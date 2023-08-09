@@ -2,20 +2,39 @@ package whiteout
 
 import (
 	"context"
+	"fmt"
 	"path/filepath"
 	"strings"
 
+	"github.com/quay/claircore/toolkit/registry"
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
 )
 
-var (
-	_ indexer.Resolver = (*Resolver)(nil)
-)
+func init() {
+	const name = `urn:claircore:indexer:resolver:whiteout`
+	desc := registry.Description[indexer.Resolver]{
+		New:     newResolver,
+		Default: true,
+	}
+	if err := registry.Register(name, &desc); err != nil {
+		panic(fmt.Errorf("whiteout: unable to register Resolver: %w", err))
+	}
+}
+
+var _ indexer.Resolver = (*Resolver)(nil)
 
 type Resolver struct{}
+
+func newResolver(_ context.Context, f func(_ any) error) (indexer.Resolver, error) {
+	var discard struct{}
+	if err := f(&discard); err != nil {
+		return nil, err
+	}
+	return &Resolver{}, nil
+}
 
 func (r *Resolver) Resolve(ctx context.Context, ir *claircore.IndexReport, layers []*claircore.Layer) *claircore.IndexReport {
 	// Here we need to check if any of the packages
