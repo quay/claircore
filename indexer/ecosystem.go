@@ -23,6 +23,19 @@ type Ecosystem struct {
 	Name                 string
 }
 
+// TODO(hank) Add struct tags?
+
+type EcosystemSpec struct {
+	Name string
+
+	Coalescer    []string
+	Distribution []string
+	File         []string
+	Package      []string
+	Repository   []string
+	Resolver     []string
+}
+
 // EcosystemsToScanners extracts and dedupes multiple ecosystems and returns
 // their discrete scanners.
 func EcosystemsToScanners(ctx context.Context, ecosystems []*Ecosystem) ([]PackageScanner, []DistributionScanner, []RepositoryScanner, []FileScanner, error) {
