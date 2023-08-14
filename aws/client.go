@@ -204,8 +204,8 @@ func (c *Client) getMirrors(ctx context.Context, list string) error {
 		return fmt.Errorf("failed to read http body: %v", err)
 	}
 
-	urls := strings.Split(string(body), "\n")
-	urls = urls[:len(urls)-1]
+	b := strings.TrimSuffix(string(body), "\n")
+	urls := strings.Split(b, "\n")
 
 	for _, u := range urls {
 		uu, err := url.Parse(u)
