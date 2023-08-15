@@ -117,7 +117,10 @@ jobs:
             go test -race ${RUNNER_DEBUG:+-v} "-coverprofile=${{ runner.temp }}/$(go list -m | tr / _).codecov.out" -covermode=atomic ./...
           ); done
       - name: Codecov
-        if: steps.previous.outputs.cache-hit != 'true' && success()
+        if: >-
+          steps.previous.outputs.cache-hit != 'true' &&
+          success() &&
+          fromJSON(needs.config.outputs.go_versions)[0] == matrix.go
         uses: codecov/codecov-action@v3
         with:
           directory: ${{ runner.temp }}

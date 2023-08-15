@@ -1,0 +1,15 @@
+ignore:
+- "test"  # Our test helpers largely do not have tests themselves.
+- "**/*_string.go"  # Ignore generated string implementations.
+
+component_management:
+  default_rules: {}
+  individual_components:
+  - component_id: datastore_packages
+    name: datastore
+    paths:
+    - datastore/**
+  - component_id: toolkit_module
+    name: toolkit
+    paths:
+    - toolkit/**
