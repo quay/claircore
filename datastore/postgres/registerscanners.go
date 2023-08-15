@@ -63,7 +63,7 @@ SELECT
 	var tctx context.Context
 	var done context.CancelFunc
 	for _, v := range vs {
-		tctx, done = context.WithTimeout(ctx, time.Second)
+		tctx, done = context.WithTimeout(ctx, 5*time.Second)
 		start := time.Now()
 		err = s.pool.QueryRow(tctx, exists, v.Name(), v.Version(), v.Kind()).
 			Scan(&ok)
