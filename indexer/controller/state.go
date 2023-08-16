@@ -19,10 +19,10 @@ const (
 	CheckManifest
 	// FetchLayers retrieves all the layers in a manifest and stacks them the same obtain the file image contents.
 	// creates the "image" layer
-	// Transitions: LayerScan
+	// Transitions: ScanLayers
 	FetchLayers
 	// ScanLayers scans each image including the image layer and indexes the contents
-	// Transitions: BuildLayerResult
+	// Transitions: Coalesce
 	ScanLayers
 	// Coalesce runs each provided ecosystem's coalescer and merges their scan results
 	// Transitions: IndexManifest
