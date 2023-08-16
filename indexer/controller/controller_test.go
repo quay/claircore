@@ -14,7 +14,7 @@ import (
 	indexer "github.com/quay/claircore/test/mock/indexer"
 )
 
-// TestControllerIndexError confirms the state machines does the correct thing
+// TestControllerIndexError confirms the state machine does the correct thing
 // when a stateFunc returns an error.
 //
 // The controller starts in checkManifest state. We will have the mock fail the
@@ -41,8 +41,27 @@ func TestControllerIndexerError(t *testing.T) {
 				store.EXPECT().SetIndexReport(gomock.Any(), gomock.Any()).Return(nil)
 
 				// lets fail call to s.Store.ManifestScanned in check manifest - checkManifest will now return an error and
-				// if all is well scanner should hijack SFM flow into entering scanError state
+				// if all is well scanner should hijack FSM flow into entering scanError state
 				store.EXPECT().ManifestScanned(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, fmt.Errorf("expected failure for test"))
+
+				return store, fa
+			},
+		},
+		{
+			name: "SetIndexReport",
+			mock: func(t *testing.T) (indexer.Store, indexer.FetchArena) {
+				ctrl := gomock.NewController(t)
+				store := indexer.NewMockStore(ctrl)
+				fa := indexer.NewMockFetchArena(ctrl)
+				realizer := indexer.NewMockRealizer(ctrl)
+				realizer.EXPECT().Close()
+				fa.EXPECT().Realizer(gomock.Any()).Return(realizer)
+
+				store.EXPECT().PersistManifest(gomock.Any(), gomock.Any()).Return(nil)
+				store.EXPECT().ManifestScanned(gomock.Any(), gomock.Any(), gomock.Any()).Return(false, nil)
+
+				// fail the call to s.Store.SetIndexReport after processing for state CheckManifest
+				store.EXPECT().SetIndexReport(gomock.Any(), gomock.Any()).Return(fmt.Errorf("expected failure in SetIndexReport"))
 
 				return store, fa
 			},
@@ -60,7 +79,7 @@ func TestControllerIndexerError(t *testing.T) {
 
 			_, err := c.Index(ctx, &claircore.Manifest{})
 			if errors.Is(err, nil) {
-				t.Error("expected nil error")
+				t.Error("expected non-nil error")
 			}
 			if !cmp.Equal(false, c.report.Success) {
 				t.Fatal(cmp.Diff(false, c.report.Success))
@@ -75,7 +94,7 @@ func TestControllerIndexerError(t *testing.T) {
 	}
 }
 
-// TestControllerIndexFinished tests that out state machine does the correct
+// TestControllerIndexFinished tests that our state machine does the correct
 // thing when it reaches ScanFinished terminal state.
 func TestControllerIndexFinished(t *testing.T) {
 	ctx, done := context.WithCancel(context.Background())

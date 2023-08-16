@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math/rand"
 	"time"
 
@@ -112,10 +113,14 @@ func (s *Controller) run(ctx context.Context) (err error) {
 			s.report.Success = false
 			s.report.Err = err.Error()
 		}
-		if err := s.Store.SetIndexReport(ctx, s.report); !errors.Is(err, nil) {
+		if setReportErr := s.Store.SetIndexReport(ctx, s.report); !errors.Is(setReportErr, nil) {
 			zlog.Info(ctx).
-				Err(err).
+				Err(setReportErr).
 				Msg("failed persisting index report")
+			s.setState(IndexError)
+			s.report.Err = fmt.Sprintf("failed persisting index report: %s", setReportErr.Error())
+			err = setReportErr
+			break
 		}
 		if retry {
 			t := time.NewTimer(w)
