@@ -1,0 +1,59 @@
+on:
+  push:
+    tags:
+      - v*.*.*
+
+name: pr-for-clair
+
+jobs:
+  send-pull-requests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup
+        run: |
+          tag=`basename ${{ github.ref }}`
+          branch="chore-update-claircore-to-${tag}"
+          echo "VERSION=${tag}" >> $GITHUB_ENV
+          echo "BRANCH=${branch}" >> $GITHUB_ENV
+
+      - name: Generate token
+        id: generate_token
+        uses: tibdex/github-app-token@v1
+        with:
+            app_id: ${{ secrets.CLAIR_APP_ID }}
+            private_key: ${{ secrets.CLAIR_APP_PRIVATE_KEY }}
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          ref: main
+          repository: quay/clair
+
+      - name: Update claircore
+        run: |
+          # Update the script files to the latest version.
+          go get github.com/quay/claircore@${{ env.VERSION }}
+          go mod tidy
+
+      - name: Create Pull Request
+        id: cpr
+        uses: peter-evans/create-pull-request@v5
+        with:
+          add-paths: go.mod,go.sum
+          token: ${{ steps.generate_token.outputs.token }}
+          base: main
+          commit-message: |
+            'chore: update claircore to ${{ env.VERSION }}
+            
+            Update claircore to latest release.
+            '
+          committer: Claircore-CI <${{ github.actor }}@users.noreply.github.com>
+          author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
+          signoff: true
+          branch: ${{ env.BRANCH }}
+          delete-branch: true
+          title: 'chore: update claircore to ${{ env.VERSION }}'
+          body: |
+            Update claircore to latest release.
+          labels: |
+            automated
