@@ -74,10 +74,6 @@ func UnbindURI(s string) (WFN, error) {
 }
 
 func (v *Value) unbindURI(b *strings.Builder, s string) {
-	if b == nil {
-		b = &strings.Builder{}
-		b.Grow(len(s))
-	}
 	b.Reset()
 	switch s {
 	case ``:
@@ -147,10 +143,6 @@ func UnbindFS(s string) (WFN, error) {
 
 // UnbindFS undoes the FS binding and assigns it to v.
 func (v *Value) unbindFS(b *strings.Builder, s string) {
-	if b == nil {
-		b = &strings.Builder{}
-		b.Grow(len(s))
-	}
 	switch s {
 	case ``:
 		v.Kind = ValueUnset

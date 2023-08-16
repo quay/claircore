@@ -4,14 +4,13 @@ import (
 	"compress/gzip"
 	"encoding/xml"
 	"os"
-	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 )
 
 func TestValidate(t *testing.T) {
+	t.Parallel()
 	tt := []struct {
 		In  string
 		Err bool
@@ -61,7 +60,25 @@ func TestValidate(t *testing.T) {
 	}
 }
 
+func TestValue(t *testing.T) {
+	t.Run("OK", func(t *testing.T) {
+		v, err := NewValue("test")
+		if err != nil {
+			t.Error(err)
+		}
+		t.Logf("%v", &v)
+	})
+	t.Run("Invalid", func(t *testing.T) {
+		v, err := NewValue(" ")
+		if err == nil {
+			t.Error("error unexpectedly not-nil")
+		}
+		t.Logf("%v", &v)
+	})
+}
+
 func TestBinding(t *testing.T) {
+	t.Parallel()
 	// BindTable is a table of WFN to string mappings copied out of the standards
 	// document: https://nvlpubs.nist.gov/nistpubs/Legacy/IR/nistir7695.pdf
 	//
@@ -162,6 +179,7 @@ func TestBinding(t *testing.T) {
 }
 
 func TestUnbinding(t *testing.T) {
+	t.Parallel()
 	// UnbindTable is a table of string to WFN mappings copied out of the standards
 	// document: https://nvlpubs.nist.gov/nistpubs/Legacy/IR/nistir7695.pdf
 	//
@@ -249,7 +267,8 @@ func TestUnbinding(t *testing.T) {
 }
 
 func TestURIUnbinding(t *testing.T) {
-	// This table is made the URI unbinding examples in the standards document.
+	t.Parallel()
+	// This table is made from the URI unbinding examples in the standards document.
 	tt := []struct {
 		Bound string
 		WFN   WFN
@@ -353,7 +372,7 @@ func TestURIUnbinding(t *testing.T) {
 		},
 	}
 	for _, tc := range tt {
-		t.Logf("%q", tc.Bound)
+		t.Logf("bound: %q", tc.Bound)
 		got, err := UnbindURI(tc.Bound)
 		if tc.Error {
 			t.Log(err)
@@ -365,14 +384,16 @@ func TestURIUnbinding(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		if want := tc.WFN; !cmp.Equal(got, want) {
-			t.Logf("\ngot:\t%v\nwant:\t%v", got.Debug(), want.Debug())
+		want := tc.WFN
+		t.Logf("\ngot:\t%#v\nwant:\t%#v", got, want)
+		if !cmp.Equal(got, want) {
 			t.Error(cmp.Diff(got, want))
 		}
 	}
 }
 
 func TestDictionary(t *testing.T) {
+	t.Parallel()
 	const fmt = "in: %+q\ngot:\t%q\nwant:\t%q"
 	f, err := os.Open("testdata/official-cpe-dictionary_v2.3.xml.gz")
 	if err != nil {
@@ -398,7 +419,7 @@ func TestDictionary(t *testing.T) {
 		got, want := wfn.BindFS(), i.Item.Name
 		if got != want {
 			t.Logf(fmt, n, got, want)
-			t.Logf("wfn: %s", wfn.Debug())
+			t.Logf("wfn: %#v", wfn)
 			t.FailNow()
 		}
 
@@ -410,7 +431,7 @@ func TestDictionary(t *testing.T) {
 		got, want = wfn.BindFS(), n
 		if got != want {
 			t.Logf(fmt, n, got, want)
-			t.Logf("wfn: %s", wfn.Debug())
+			t.Logf("wfn: %#v", wfn)
 			t.FailNow()
 		}
 	}
@@ -430,30 +451,4 @@ type xmlCPEItem struct {
 type xmlCPE23Item struct {
 	XMLName xml.Name `xml:"cpe23-item"`
 	Name    string   `xml:"name,attr"`
-}
-
-func (w *WFN) Debug() string {
-	var b strings.Builder
-
-	b.WriteString(`wfn:[`)
-	for i := 0; i < NumAttr; i++ {
-		if w.Attr[i].Kind == ValueUnset || w.Attr[i].Kind == ValueNA {
-			continue
-		}
-		if i != 0 {
-			b.WriteByte(',')
-		}
-		b.WriteString(Attribute(i).String())
-		b.WriteByte('=')
-		switch w.Attr[i].Kind {
-		case ValueAny:
-			b.WriteString(`ANY`)
-		case ValueSet:
-			b.WriteString(strconv.Quote(w.Attr[i].V))
-		default:
-			panic("unknown kind")
-		}
-	}
-	b.WriteByte(']')
-	return b.String()
 }

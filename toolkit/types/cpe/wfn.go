@@ -147,10 +147,16 @@ const (
 	ValueSet
 )
 
+// String implements [fmt.Stringer].
 func (v *Value) String() string {
 	var b strings.Builder
 	v.bind(&b)
 	return b.String()
+}
+
+// GoString implements [fmt.GoStringer].
+func (v *Value) GoString() string {
+	return fmt.Sprintf(`Value{Kind: %s, V: %#q}`, v.Kind, v.V)
 }
 
 // WFN is a well-formed name as defined by the Common Platform Enumeration (CPE)
@@ -169,7 +175,7 @@ func (w WFN) Valid() error {
 	unset := 0
 	for i := 0; i < NumAttr; i++ {
 		if err := validate(w.Attr[i].V); err != nil {
-			return fmt.Errorf("cpe: wfn attr %v is invalid: %w", Attribute(i), err)
+			return fmt.Errorf("cpe: wfn attribute %q is invalid: %w", Attribute(i), err)
 		}
 		if v := &w.Attr[i]; v.Kind == ValueUnset {
 			unset++
@@ -186,7 +192,7 @@ func (w WFN) Valid() error {
 	if p := w.Attr[int(Part)]; p.Kind == ValueSet {
 		if len(p.V) != 1 ||
 			(p.V != app && p.V != os && p.V != hw) {
-			return fmt.Errorf("cpe: wfn attr %v is invalid: %q is a disallowed value", Part, p.V)
+			return fmt.Errorf("cpe: wfn attribute %q is invalid: %q is a disallowed value", Part, p.V)
 		}
 	}
 	return nil
@@ -195,8 +201,23 @@ func (w WFN) Valid() error {
 // ErrUnset is returned from (WFN).Valid() if it is the zero value.
 var ErrUnset = errors.New("cpe: wfn is empty")
 
+// String implements [fmt.Stringer].
 func (w WFN) String() string {
 	return w.BindFS()
+}
+
+// GoString implements [fmt.GoStringer].
+func (w WFN) GoString() string {
+	var b strings.Builder
+	b.WriteString(`WFN{Attr:[NumAttr]Value{`)
+	for i := 0; i < NumAttr; i++ {
+		if i != 0 {
+			b.WriteString(", ")
+		}
+		b.WriteString(w.Attr[i].GoString())
+	}
+	b.WriteString(`}}`)
+	return b.String()
 }
 
 // These functions are defined in the spec to aid in implementation of other
