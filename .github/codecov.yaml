@@ -2,6 +2,12 @@ ignore:
 - "test"  # Our test helpers largely do not have tests themselves.
 - "**/*_string.go"  # Ignore generated string implementations.
 
+coverage:
+  status:
+    project:
+      default:
+        threshold: 0.5%
+
 component_management:
   default_rules: {}
   individual_components:

@@ -124,6 +124,7 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           directory: ${{ runner.temp }}
+          override_branch: ${{ github.ref_name }}
       - name: Database Logs
         if: failure() || env.RUNNER_DEBUG == 1
         run: |
