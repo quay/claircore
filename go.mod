@@ -18,7 +18,7 @@ require (
 	github.com/prometheus/client_golang v1.16.0
 	github.com/prometheus/client_model v0.4.0
 	github.com/quay/alas v1.0.1
-	github.com/quay/claircore/toolkit v1.0.0
+	github.com/quay/claircore/toolkit v1.1.0
 	github.com/quay/claircore/updater/driver v1.0.0
 	github.com/quay/goval-parser v0.8.8
 	github.com/quay/zlog v1.1.5
@@ -66,7 +66,5 @@ require (
 	modernc.org/strutil v1.1.3 // indirect
 	modernc.org/token v1.0.1 // indirect
 )
-
-replace github.com/quay/claircore/toolkit => ./toolkit
 
 replace github.com/quay/claircore/updater/driver => ./updater/driver
