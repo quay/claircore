@@ -2,7 +2,6 @@ package whiteout
 
 import (
 	"context"
-	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -13,15 +12,10 @@ import (
 	"github.com/quay/claircore/indexer"
 )
 
-func init() {
-	const name = `urn:claircore:indexer:resolver:whiteout`
-	desc := registry.Description[indexer.Resolver]{
-		New:     newResolver,
-		Default: true,
-	}
-	if err := registry.Register(name, &desc); err != nil {
-		panic(fmt.Errorf("whiteout: unable to register Resolver: %w", err))
-	}
+//plugin:register indexer urn:claircore:indexer:resolver:whiteout
+var desc = registry.Description[indexer.Resolver]{
+	New:     newResolver,
+	Default: true,
 }
 
 var _ indexer.Resolver = (*Resolver)(nil)

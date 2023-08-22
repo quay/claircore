@@ -23,17 +23,20 @@ type Ecosystem struct {
 	Name                 string
 }
 
-// TODO(hank) Add struct tags?
-
+// EcosystemSpec ties together a set of plugins.
 type EcosystemSpec struct {
-	Name string
+	Name string `json:"name"`
 
-	Coalescer    []string
-	Distribution []string
-	File         []string
-	Package      []string
-	Repository   []string
-	Resolver     []string
+	// Feature plugins.
+	Distribution []string `json:"distribution"`
+	File         []string `json:"file"`
+	Package      []string `json:"package"`
+	Repository   []string `json:"repository"`
+	// Sees all the plugins above at the manifest level.
+	Coalescer []string `json:"coalescer"`
+
+	// Sees the output of all Coalescers across all ecosystems.
+	Resolver []string `json:"resolver"`
 }
 
 // EcosystemsToScanners extracts and dedupes multiple ecosystems and returns
