@@ -23,17 +23,15 @@ type Ecosystem struct {
 	Name                 string
 }
 
-// TODO(hank) Add struct tags?
-
 type EcosystemSpec struct {
-	Name string
+	Name string `json:"name"`
 
-	Coalescer    []string
-	Distribution []string
-	File         []string
-	Package      []string
-	Repository   []string
-	Resolver     []string
+	Coalescer    []string `json:"coalescer"`
+	Distribution []string `json:"distribution"`
+	File         []string `json:"file"`
+	Package      []string `json:"package"`
+	Repository   []string `json:"repository"`
+	Resolver     []string `json:"resolver"`
 }
 
 // EcosystemsToScanners extracts and dedupes multiple ecosystems and returns
