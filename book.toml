@@ -13,7 +13,7 @@ create-missing = true
 git-repository-url= "https://github.com/quay/claircore"
 
 [preprocessor.godoc]
-command = "go run docs/godoc.go"
+command = "go run github.com/quay/claircore/internal/cmd/mdbook-godoc"
 
 [preprocessor.make_target]
 command = "go run docs/make_target.go"

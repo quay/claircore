@@ -1,6 +1,4 @@
-//go:build ignore
-
-// Godoc is a helper meant to inline `go doc` output.
+// Mdbook-godoc is a helper meant to inline `go doc` output.
 //
 // Any preprocessor directive like
 //
@@ -15,12 +13,9 @@ package main
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
-	"os"
 	"os/exec"
-	"os/signal"
 	"regexp"
 	"strings"
 	"sync"
@@ -28,20 +23,13 @@ import (
 	"github.com/quay/claircore/internal/mdbook"
 )
 
+var marker = regexp.MustCompile(`\{\{#\s*godoc\s(.+)\}\}`)
+
 func main() {
-	log.SetFlags(log.LstdFlags | log.Lmsgprefix)
-	log.SetPrefix("godoc: ")
-	mdbook.Args(os.Args)
+	mdbook.Main("godoc", newProc)
+}
 
-	cfg, book, err := mdbook.Decode(os.Stdin)
-	if err != nil {
-		panic(err)
-	}
-	marker := regexp.MustCompile(`\{\{#\s*godoc\s(.+)\}\}`)
-	ctx := context.Background()
-	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt, os.Kill)
-	defer cancel()
-
+func newProc(ctx context.Context, cfg *mdbook.Context) (*mdbook.Proc, error) {
 	proc := mdbook.Proc{
 		Chapter: func(ctx context.Context, b *strings.Builder, c *mdbook.Chapter) error {
 			if c.Path == nil {
@@ -75,11 +63,5 @@ func main() {
 			return ret
 		},
 	}
-	if err := proc.Walk(ctx, book); err != nil {
-		panic(err)
-	}
-
-	if err := json.NewEncoder(os.Stdout).Encode(&book); err != nil {
-		panic(err)
-	}
+	return &proc, nil
 }
