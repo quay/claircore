@@ -19,4 +19,4 @@ command = "go run github.com/quay/claircore/internal/cmd/mdbook-godoc"
 command = "go run docs/make_target.go"
 
 [preprocessor.injecturls]
-command = "go run docs/injecturls.go"
+command = "go run github.com/quay/claircore/internal/cmd/mdbook-injecturls"

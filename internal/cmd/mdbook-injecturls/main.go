@@ -1,6 +1,4 @@
-//go:build ignore
-
-// Injecturls is a helper meant to collect urls via a comment directive.
+// Mdbook-injecturls is a helper meant to collect urls via a comment directive.
 //
 // Any string declaration with a directive like
 //
@@ -17,15 +15,12 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
 	"io/fs"
 	"log"
-	"os"
-	"os/signal"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -40,18 +35,10 @@ var (
 )
 
 func main() {
-	log.SetFlags(log.LstdFlags | log.Lmsgprefix)
-	log.SetPrefix("injecturls: ")
-	mdbook.Args(os.Args)
+	mdbook.Main("injecturls", newProc)
+}
 
-	cfg, book, err := mdbook.Decode(os.Stdin)
-	if err != nil {
-		panic(err)
-	}
-	ctx := context.Background()
-	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt, os.Kill)
-	defer cancel()
-
+func newProc(ctx context.Context, cfg *mdbook.Context) (*mdbook.Proc, error) {
 	proc := mdbook.Proc{
 		Chapter: func(ctx context.Context, b *strings.Builder, c *mdbook.Chapter) error {
 			if c.Path == nil {
@@ -165,11 +152,5 @@ func main() {
 			return nil
 		},
 	}
-	if err := proc.Walk(ctx, book); err != nil {
-		panic(err)
-	}
-
-	if err := json.NewEncoder(os.Stdout).Encode(&book); err != nil {
-		panic(err)
-	}
+	return &proc, nil
 }
