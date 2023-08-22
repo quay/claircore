@@ -16,7 +16,7 @@ git-repository-url= "https://github.com/quay/claircore"
 command = "go run github.com/quay/claircore/internal/cmd/mdbook-godoc"
 
 [preprocessor.make_target]
-command = "go run docs/make_target.go"
+command = "go run github.com/quay/claircore/internal/cmd/mdbook-make_target"
 
 [preprocessor.injecturls]
 command = "go run github.com/quay/claircore/internal/cmd/mdbook-injecturls"

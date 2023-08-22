@@ -1,17 +1,13 @@
-//go:build ignore
-
-// Make_target is a helper to check that documented Makefile targets exist.
+// Mdbook-make_target is a helper to check that documented Makefile targets exist.
 package main
 
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"os/exec"
-	"os/signal"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -41,18 +37,10 @@ func readMakefile(ctx context.Context) {
 var marker = regexp.MustCompile(`\{\{#\s*make_target\s(.+)\}\}`)
 
 func main() {
-	log.SetFlags(log.LstdFlags | log.Lmsgprefix)
-	log.SetPrefix("make_target: ")
-	mdbook.Args(os.Args)
+	mdbook.Main("make_target", newProc)
+}
 
-	_, book, err := mdbook.Decode(os.Stdin)
-	if err != nil {
-		panic(err)
-	}
-	ctx := context.Background()
-	ctx, cancel := signal.NotifyContext(ctx, os.Interrupt, os.Kill)
-	defer cancel()
-
+func newProc(_ context.Context, _ *mdbook.Context) (*mdbook.Proc, error) {
 	proc := mdbook.Proc{
 		Chapter: func(ctx context.Context, b *strings.Builder, c *mdbook.Chapter) error {
 			if c.Path == nil {
@@ -81,11 +69,5 @@ func main() {
 			return ret
 		},
 	}
-	if err := proc.Walk(ctx, book); err != nil {
-		panic(err)
-	}
-
-	if err := json.NewEncoder(os.Stdout).Encode(&book); err != nil {
-		panic(err)
-	}
+	return &proc, nil
 }
