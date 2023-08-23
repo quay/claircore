@@ -12,7 +12,12 @@ import (
 	"github.com/quay/claircore/indexer"
 )
 
-//plugin:register indexer urn:claircore:indexer:resolver:whiteout
+// Whiteout is the [indexer.Resolver] implementation that handles [whiteout]
+// entries in container layers.
+//
+// [whiteout]: https://github.com/opencontainers/image-spec/blob/main/layer.md#whiteouts
+//
+//plugintool:register indexer urn:claircore:indexer:resolver:whiteout
 var desc = registry.Description[indexer.Resolver]{
 	New:     newResolver,
 	Default: true,
