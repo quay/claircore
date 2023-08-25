@@ -90,6 +90,8 @@ func Parse(ctx context.Context, name string, z *zip.Reader) ([]Info, error) {
 		goto Finish
 	case errors.Is(err, errUnpopulated):
 	case strings.HasPrefix(base, "javax") && errors.Is(err, ErrNotAJar):
+	case errors.Is(err, ErrNotAJar):
+		return nil, err
 	default:
 		return nil, mkErr(name, err)
 	}
@@ -103,6 +105,8 @@ func Parse(ctx context.Context, name string, z *zip.Reader) ([]Info, error) {
 		goto Finish
 	case errors.Is(err, errUnpopulated) || errors.Is(err, errInsaneManifest):
 	case strings.HasPrefix(base, "javax") && errors.Is(err, ErrNotAJar):
+	case errors.Is(err, ErrNotAJar):
+		return nil, err
 	default:
 		return nil, mkErr(name, err)
 	}
@@ -146,7 +150,7 @@ func extractManifest(ctx context.Context, name string, z *zip.Reader) (Info, err
 	mf, err := z.Open(manifestPath)
 	switch {
 	case errors.Is(err, nil):
-	case errors.Is(err, fs.ErrNotExist):
+	case errors.Is(err, fs.ErrNotExist), errors.Is(err, zip.ErrFormat):
 		return Info{}, mkErr("manifest", notAJar(name, err))
 	default:
 		return Info{}, err
@@ -165,10 +169,13 @@ func extractManifest(ctx context.Context, name string, z *zip.Reader) (Info, err
 func extractProperties(ctx context.Context, name string, z *zip.Reader) ([]Info, error) {
 	const filename = "pom.properties"
 	mf, err := z.Open(`META-INF`)
-	if err != nil {
-		if errors.Is(err, fs.ErrNotExist) {
-			return nil, mkErr("properties", notAJar(name, err))
-		}
+	switch {
+	case errors.Is(err, nil):
+	case errors.Is(err, fs.ErrNotExist),
+		errors.Is(err, zip.ErrFormat),
+		errors.Is(err, zip.ErrChecksum):
+		return nil, mkErr("properties", notAJar(name, err))
+	default:
 		return nil, mkErr("properties", err)
 	}
 	mf.Close()
@@ -193,7 +200,11 @@ func extractProperties(ctx context.Context, name string, z *zip.Reader) ([]Info,
 	ret := make([]Info, len(pf))
 	for i, p := range pf {
 		f, err := z.Open(p)
-		if err != nil {
+		switch {
+		case errors.Is(err, nil):
+		case errors.Is(err, zip.ErrFormat), errors.Is(err, zip.ErrChecksum):
+			return nil, mkErr("properties", notAJar(name, err))
+		default:
 			return nil, err
 		}
 		err = ret[i].parseProperties(ctx, f)

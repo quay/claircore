@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Created-By: 666 (claircore testing)
+
+Name: foo
+Other-Key: blah
