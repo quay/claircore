@@ -60,14 +60,10 @@ SELECT
 
 	var ok bool
 	var err error
-	var tctx context.Context
-	var done context.CancelFunc
 	for _, v := range vs {
-		tctx, done = context.WithTimeout(ctx, 5*time.Second)
 		start := time.Now()
-		err = s.pool.QueryRow(tctx, exists, v.Name(), v.Version(), v.Kind()).
+		err = s.pool.QueryRow(ctx, exists, v.Name(), v.Version(), v.Kind()).
 			Scan(&ok)
-		done()
 		if err != nil {
 			return fmt.Errorf("failed getting id for scanner %q: %w", v.Name(), err)
 		}
@@ -77,10 +73,8 @@ SELECT
 			continue
 		}
 
-		tctx, done = context.WithTimeout(ctx, time.Second)
 		start = time.Now()
-		_, err = s.pool.Exec(tctx, insert, v.Name(), v.Version(), v.Kind())
-		done()
+		_, err = s.pool.Exec(ctx, insert, v.Name(), v.Version(), v.Kind())
 		if err != nil {
 			return fmt.Errorf("failed to insert scanner %q: %w", v.Name(), err)
 		}
