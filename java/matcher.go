@@ -3,9 +3,11 @@ package java
 import (
 	"context"
 	"fmt"
+	"net/url"
+	"strings"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
-	"net/url"
 )
 
 // Matcher matches discovered Java Maven packages against advisories provided via OSV.
@@ -31,6 +33,13 @@ func (*Matcher) Query() []driver.MatchConstraint {
 func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
 	if vuln.FixedInVersion == "" {
 		return true, nil
+	}
+
+	if strings.Contains(record.Package.Version, "redhat") {
+		// This is a Red Hat patched jar, it's version can
+		// no longer be relied on. Deferring any vuln matching
+		// to the native RH components (rhel, rhcc).
+		return false, nil
 	}
 
 	decodedVersions, err := url.ParseQuery(vuln.FixedInVersion)

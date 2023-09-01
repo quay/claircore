@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/quay/claircore"
 )
 
@@ -161,6 +162,27 @@ func TestVulnerable(t *testing.T) {
 					RepositoryHint: "Maven",
 				},
 				FixedInVersion: "lastAffected=3.3.0&introduced=3.2.0",
+			},
+			want: false,
+		},
+		{
+			name: "pkg7",
+			record: &claircore.IndexRecord{
+				Package: &claircore.Package{
+					Name:    "org.apache.logging.log4j:log4j-core",
+					Version: "2.11.1.redhat-00001",
+					Kind:    "binary",
+				},
+			},
+			vuln: &claircore.Vulnerability{
+				Updater:     "osv",
+				Name:        "GHSA-7rjr-3q55-vv33",
+				Description: "Incomplete fix for Apache Log4j vulnerability",
+				Package: &claircore.Package{
+					Name:           "org.apache.logging.log4j:log4j-core",
+					RepositoryHint: "Maven",
+				},
+				FixedInVersion: "fixed=2.12.2",
 			},
 			want: false,
 		},
