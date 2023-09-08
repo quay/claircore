@@ -14,7 +14,7 @@ import (
 	"github.com/quay/claircore/toolkit/types/cpe"
 )
 
-var goldRepo = claircore.Repository{
+var GoldRepo = claircore.Repository{
 	Name: "Red Hat Container Catalog",
 	URI:  `https://catalog.redhat.com/software/containers/explore`,
 }
