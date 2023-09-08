@@ -39,7 +39,7 @@ func TestDB(t *testing.T) {
 					Links:              "https://access.redhat.com/errata/RHSA-2021:3665 https://access.redhat.com/security/cve/CVE-2021-3762",
 					NormalizedSeverity: claircore.High,
 					FixedInVersion:     "v3.5.7-8",
-					Repo:               &goldRepo,
+					Repo:               &GoldRepo,
 					Range: &claircore.Range{
 						Lower: claircore.Version{
 							Kind: "rhctag",
@@ -81,7 +81,7 @@ func TestDB(t *testing.T) {
 						},
 					},
 					FixedInVersion: "v4.6.0-202112140546.p0.g8b9da97.assembly.stream",
-					Repo:           &goldRepo,
+					Repo:           &GoldRepo,
 				},
 				{
 					Name:               "RHSA-2021:5107",
@@ -103,7 +103,7 @@ func TestDB(t *testing.T) {
 						},
 					},
 					FixedInVersion: "v4.7.0-202112140553.p0.g091bb99.assembly.stream",
-					Repo:           &goldRepo,
+					Repo:           &GoldRepo,
 				},
 				{
 					Name:               "RHSA-2021:5108",
@@ -125,7 +125,7 @@ func TestDB(t *testing.T) {
 						},
 					},
 					FixedInVersion: "v4.8.0-202112132154.p0.g57dd03a.assembly.stream",
-					Repo:           &goldRepo,
+					Repo:           &GoldRepo,
 				},
 			},
 		},
@@ -153,7 +153,7 @@ func TestDB(t *testing.T) {
 						},
 					},
 					FixedInVersion: "v6.8.1-65",
-					Repo:           &goldRepo,
+					Repo:           &GoldRepo,
 				},
 				{
 					Name:               "RHSA-2021:5137",
@@ -175,7 +175,7 @@ func TestDB(t *testing.T) {
 						},
 					},
 					FixedInVersion: "v5.0.10-1",
-					Repo:           &goldRepo,
+					Repo:           &GoldRepo,
 				},
 			},
 		},
@@ -203,7 +203,7 @@ func TestDB(t *testing.T) {
 						},
 					},
 					FixedInVersion: "4.8-167.9a9db5f.release_4.8",
-					Repo:           &goldRepo,
+					Repo:           &GoldRepo,
 				},
 				{
 					Name:               "RHSA-2021:2041",
@@ -225,7 +225,7 @@ func TestDB(t *testing.T) {
 						},
 					},
 					FixedInVersion: "4.7-140.49a6fcf.release_4.7",
-					Repo:           &goldRepo,
+					Repo:           &GoldRepo,
 				},
 			},
 		},
