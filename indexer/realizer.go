@@ -14,6 +14,14 @@ type Realizer interface {
 	Close() error
 }
 
+// DescriptionRealizer is similar to a [Realizer], but accepts a slice of
+// [claircore.LayerDescription] and returns a slice of populated
+// [claircore.Layer] instead of mutating arguments in-place.
+type DescriptionRealizer interface {
+	RealizeDescriptions(context.Context, []claircore.LayerDescription) ([]claircore.Layer, error)
+	Close() error
+}
+
 // FetchArena does coordination and global refcounting.
 type FetchArena interface {
 	Realizer(context.Context) Realizer
