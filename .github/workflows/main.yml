@@ -36,7 +36,7 @@ jobs:
           checkAllCommitMessages: true
           accessToken: ${{ secrets.GITHUB_TOKEN }}
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Check Filenames
         if: success() || failure()
         run: | # Check for all the characters Windows hates.
@@ -61,7 +61,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Setup mdBook
         uses: peaceiris/actions-mdbook@v1
         with:
@@ -86,7 +86,7 @@ jobs:
           key: commit-ok-${{ matrix.go }}-${{ github.sha }}
       - name: Checkout
         if: steps.previous.outputs.cache-hit != 'true'
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - uses: actions/setup-go@v4
         if: steps.previous.outputs.cache-hit != 'true'
         with:
