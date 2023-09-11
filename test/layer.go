@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"path"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -19,6 +20,15 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test/fetch"
 )
+
+// AnyDescription is pre-made [LayerDescription] for cases where the actual
+// contents of the description *shouldn't* matter.
+var AnyDescription = claircore.LayerDescription{
+	Digest:    `sha256:` + strings.Repeat(`deadbeef`, 8),
+	URI:       `example:test.AnyDescription`,
+	MediaType: MediaType,
+	Headers:   make(map[string][]string),
+}
 
 type layerserver struct {
 	now   time.Time
