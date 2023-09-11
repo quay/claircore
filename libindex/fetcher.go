@@ -11,205 +11,269 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 
-	"github.com/klauspost/compress/gzip"
-	"github.com/klauspost/compress/zstd"
-	"github.com/quay/claircore/indexer"
 	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/singleflight"
+	"golang.org/x/sys/unix"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/pkg/tarfs"
+	"github.com/quay/claircore/indexer"
+	"github.com/quay/claircore/internal/wart"
+	"github.com/quay/claircore/internal/zreader"
 )
 
 var (
-	_ indexer.FetchArena = (*RemoteFetchArena)(nil)
-	_ indexer.Realizer   = (*FetchProxy)(nil)
+	_ indexer.FetchArena          = (*RemoteFetchArena)(nil)
+	_ indexer.Realizer            = (*FetchProxy)(nil)
+	_ indexer.DescriptionRealizer = (*FetchProxy)(nil)
 )
 
-// RemoteFetchArena is a struct that keeps track of all the layers fetched into it,
-// and only removes them once all the users have gone away.
+// BUG(hank) On Linux, the [RemoteFetchArena] makes use of the O_TMPFILE flag to
+// [open(2)], which requires version 3.11 or newer. There is no fallback for
+// older kernels.
 //
-// Exported for use in cctool. If cctool goes away, this can get unexported. It is
-// remote in the sense that it pulls layers from the internet.
+// [open(2)]: https://man7.org/linux/man-pages/man2/open.2.html
+
+// RemoteFetchArena uses disk space to track fetched layers, removing them once
+// all users are done with the layers.
 type RemoteFetchArena struct {
 	wc *http.Client
 	sf *singleflight.Group
 
-	mu sync.Mutex
-	// Rc is a map of digest to refcount.
-	rc map[string]int
-
+	// Rc holds (string, *rc).
+	//
+	// The string is a layer digest.
+	rc   sync.Map
 	root string
 }
 
-// NewRemoteFetchArena initializes the RemoteFetchArena.
-//
-// This method is provided instead of a constructor function to make embedding
-// easier.
+// NewRemoteFetchArena returns an initialized RemoteFetchArena.
 func NewRemoteFetchArena(wc *http.Client, root string) *RemoteFetchArena {
 	return &RemoteFetchArena{
 		wc:   wc,
-		root: root,
 		sf:   &singleflight.Group{},
-		rc:   make(map[string]int),
+		root: root,
 	}
 }
 
-func (a *RemoteFetchArena) forget(digest string) error {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	ct, ok := a.rc[digest]
-	if !ok {
-		return nil
-	}
-	ct--
-	if ct == 0 {
-		delete(a.rc, digest)
-		defer a.sf.Forget(digest)
-		return os.Remove(filepath.Join(a.root, digest))
-	}
-	a.rc[digest] = ct
-	return nil
+// Rc is a reference counter.
+type rc struct {
+	sync.Mutex
+	val   *os.File
+	count int
+	done  func()
 }
 
-// FetchOne does a deduplicated fetch, then increments the refcount and renames
-// the file to the permanent place if applicable.
-func (a *RemoteFetchArena) fetchOne(ctx context.Context, l *claircore.Layer) (do func() error) {
+// NewRc makes an rc.
+func newRc(v *os.File, done func()) *rc {
+	return &rc{
+		val:  v,
+		done: done,
+	}
+}
+
+// Dec decrements the reference count, closing the inner file and calling the
+// cleanup hook if necessary.
+func (r *rc) dec() (err error) {
+	r.Lock()
+	defer r.Unlock()
+	if r.count == 0 {
+		return errors.New("close botch: count already 0")
+	}
+	r.count--
+	if r.count == 0 {
+		r.done()
+		err = r.val.Close()
+	}
+	return err
+}
+
+// Ref increments the reference count.
+func (r *rc) Ref() *ref {
+	r.Lock()
+	r.count++
+	r.Unlock()
+	n := &ref{rc: r}
+	runtime.SetFinalizer(n, (*ref).Close)
+	return n
+}
+
+// Ref is a reference handle, RAII-style.
+type ref struct {
+	once sync.Once
+	rc   *rc
+}
+
+// Val clones the inner File.
+func (r *ref) Val() (*os.File, error) {
+	r.rc.Lock()
+	defer r.rc.Unlock()
+	fd := int(r.rc.val.Fd())
+	if fd == -1 {
+		return nil, errStale
+	}
+	p := fmt.Sprintf(`/proc/self/fd/%d`, fd)
+	// Need to use OpenFile so that the symlink is not dereferenced.
+	// There's some proc magic so that opening that symlink itself copies the
+	// description.
+	return os.OpenFile(p, os.O_RDONLY, 0644)
+}
+
+// Close decrements the refcount.
+func (r *ref) Close() (err error) {
+	did := false
+	r.once.Do(func() {
+		err = r.rc.dec()
+		did = true
+	})
+	if !did {
+		return errClosed
+	}
+	return err
+}
+
+// Errors out of the rc/ref types.
+var (
+	errClosed = errors.New("Ref already Closed")
+	errStale  = errors.New("stale file reference")
+)
+
+// FetchInto populates "l" and "cl" via a [singleflight.Group].
+//
+// It returns a closure to be used with an [errgroup.Group]
+func (a *RemoteFetchArena) fetchInto(ctx context.Context, l *claircore.Layer, cl *io.Closer, desc *claircore.LayerDescription) (do func() error) {
+	key := desc.Digest
+	// All the refcounting needs to happen _outside_ the singleflight, because
+	// the result of a singleflight call can be shared. Without doing it this
+	// way, the refcount would be incorrect.
 	do = func() error {
-		h := l.Hash.String()
-		tgt := filepath.Join(a.root, h)
-		var ff string
-		select {
-		case res := <-a.sf.DoChan(h, func() (interface{}, error) {
-			return a.realizeLayer(ctx, l)
-		}):
-			if err := res.Err; err != nil {
-				return fmt.Errorf("error realizing layer %s: %w", h, err)
+		ctx, span := tracer.Start(ctx, "RemoteFetchArena.fetchInto", trace.WithAttributes(attribute.String("key", key)))
+		defer span.End()
+		var c *rc
+		var err error
+		defer func() {
+			span.RecordError(err)
+			if err == nil {
+				span.SetStatus(codes.Ok, "")
+			} else {
+				span.SetStatus(codes.Error, "fetchInto error")
 			}
-			ff = res.Val.(string)
-		case <-ctx.Done():
-			return ctx.Err()
+			return
+		}()
+
+		try := func() (any, error) {
+			return a.fetchUnlinkedFile(ctx, key, desc)
 		}
-		a.mu.Lock()
-		ct, ok := a.rc[h]
-		if !ok {
-			// Did the file get removed while we were waiting on the lock?
-			if _, err := os.Stat(ff); errors.Is(err, os.ErrNotExist) {
-				a.mu.Unlock()
-				return do()
-			}
-			if err := os.Rename(ff, tgt); err != nil {
-				a.mu.Unlock()
+		select {
+		case res := <-a.sf.DoChan(key, try):
+			if e := res.Err; e != nil {
+				err = fmt.Errorf("error realizing layer %s: %w", key, e)
 				return err
 			}
+			c = res.Val.(*rc)
+			span.AddEvent("got value from singleflight")
+			span.SetAttributes(attribute.Bool("shared", res.Shared))
+		case <-ctx.Done():
+			err = context.Cause(ctx)
+			return err
 		}
-		defer a.mu.Unlock()
-		ct++
-		a.rc[h] = ct
-		l.SetLocal(tgt)
+
+		r := c.Ref()
+		f, err := r.Val()
+		switch {
+		case errors.Is(err, nil):
+		case errors.Is(err, errStale):
+			zlog.Debug(ctx).Str("key", key).Msg("managed to get stale ref, retrying")
+			return do()
+		default:
+			r.Close()
+			return err
+		}
+		if err := l.Init(ctx, desc, f); err != nil {
+			f.Close()
+			r.Close()
+			return err
+		}
+		*cl = closeFunc(func() error {
+			return errors.Join(f.Close(), r.Close())
+		})
 		return nil
 	}
 	return do
 }
 
-// Close removes all files left in the arena.
-//
-// It's not an error to have active fetchers, but may cause errors to have files
-// unlinked underneath their users.
-func (a *RemoteFetchArena) Close(ctx context.Context) error {
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "libindex/fetchArena.Close",
-		"arena", a.root)
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	if len(a.rc) != 0 {
-		zlog.Warn(ctx).
-			Int("count", len(a.rc)).
-			Msg("seem to have active fetchers")
-		zlog.Info(ctx).
-			Msg("clearing arena")
-	}
-	var err error
-	for d := range a.rc {
-		delete(a.rc, d)
-		a.sf.Forget(d)
-		if e := os.Remove(filepath.Join(a.root, d)); e != nil {
-			if err == nil {
-				err = e
-				continue
-			}
-			err = fmt.Errorf("%v; %v", err, e)
-		}
-	}
-	if err != nil {
-		return err
-	}
-	return nil
+// CloseFunc is an adapter in the vein of [http.HandlerFunc].
+type closeFunc func() error
+
+// Close implements [io.Closer].
+func (f closeFunc) Close() error {
+	return f()
 }
 
-// RealizeLayer is the inner function used inside the singleflight.
+// FetchUnlinkedFile is the inner function used inside the singleflight.
 //
-// The returned value is a temporary filename in the arena.
-func (a *RemoteFetchArena) realizeLayer(ctx context.Context, l *claircore.Layer) (string, error) {
+// Because we know we're the only concurrent call that's dealing with this key,
+// we can be a bit more lax.
+func (a *RemoteFetchArena) fetchUnlinkedFile(ctx context.Context, key string, desc *claircore.LayerDescription) (*rc, error) {
 	ctx = zlog.ContextWithValues(ctx,
-		"component", "libindex/fetchArena.realizeLayer",
+		"component", "libindex/fetchArena.fetchUnlinkedFile",
 		"arena", a.root,
-		"layer", l.Hash.String(),
-		"uri", l.URI)
+		"layer", desc.Digest,
+		"uri", desc.URI)
+	ctx, span := tracer.Start(ctx, "RemoteFetchArena.fetchUnlinkedFile")
+	defer span.End()
+	span.SetStatus(codes.Error, "")
 	zlog.Debug(ctx).Msg("layer fetch start")
 
 	// Validate the layer input.
-	if l.URI == "" {
-		return "", fmt.Errorf("empty uri for layer %v", l.Hash)
+	if desc.URI == "" {
+		return nil, fmt.Errorf("empty uri for layer %v", desc.Digest)
 	}
-	url, err := url.ParseRequestURI(l.URI)
+	digest, err := claircore.ParseDigest(desc.Digest)
 	if err != nil {
-		return "", fmt.Errorf("failed to parse remote path uri: %v", err)
+		return nil, err
 	}
-	if l.Hash.Checksum() == nil {
-		return "", fmt.Errorf("digest is empty")
+	url, err := url.ParseRequestURI(desc.URI)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse remote path uri: %v", err)
 	}
-	vh := l.Hash.Hash()
-	want := l.Hash.Checksum()
+	v, ok := a.rc.Load(key)
+	if ok {
+		span.SetStatus(codes.Ok, "")
+		return v.(*rc), nil
+	}
+	// Otherwise, it needs to be populated.
+	f, err := os.OpenFile(a.root, os.O_WRONLY|unix.O_TMPFILE, 0644)
+	if err != nil {
+		return nil, err
+	}
+	vh, want := digest.Hash(), digest.Checksum()
 
-	// Open our target file before hitting the network.
-	rm := true
-	fd, err := os.CreateTemp(a.root, "fetch.*")
-	if err != nil {
-		return "", fmt.Errorf("fetcher: unable to create file: %w", err)
-	}
-	name := fd.Name()
-	defer func() {
-		if err := fd.Close(); err != nil {
-			zlog.Warn(ctx).Err(err).Msg("unable to close layer file")
-		}
-		if rm {
-			if err := os.Remove(name); err != nil {
-				zlog.Warn(ctx).Err(err).Msg("unable to remove unsuccessful layer fetch")
-			}
-		}
-	}()
 	// It'd be nice to be able to pre-allocate our file on disk, but we can't
 	// because of decompression.
 
-	req := &http.Request{
+	req := (&http.Request{
 		ProtoMajor: 1,
 		ProtoMinor: 1,
+		Proto:      "HTTP/1.1",
+		Host:       url.Host,
 		Method:     http.MethodGet,
 		URL:        url,
-		Header:     l.Headers,
-	}
-	req = req.WithContext(ctx)
+		Header:     http.Header(desc.Headers).Clone(),
+	}).WithContext(ctx)
 	resp, err := a.wc.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("fetcher: request failed: %w", err)
+		return nil, fmt.Errorf("fetcher: request failed: %w", err)
 	}
 	defer resp.Body.Close()
+	span.SetAttributes(attribute.Int("http.code", resp.StatusCode))
 	switch resp.StatusCode {
 	case http.StatusOK:
 	default:
@@ -218,41 +282,48 @@ func (a *RemoteFetchArena) realizeLayer(ctx context.Context, l *claircore.Layer)
 		// order to not flood the log.
 		bodyStart, err := io.ReadAll(io.LimitReader(resp.Body, 256))
 		if err == nil {
-			return "", fmt.Errorf("fetcher: unexpected status code: %s (body starts: %q)",
+			return nil, fmt.Errorf("fetcher: unexpected status code: %s (body starts: %q)",
 				resp.Status, bodyStart)
 		}
-		return "", fmt.Errorf("fetcher: unexpected status code: %s", resp.Status)
+		return nil, fmt.Errorf("fetcher: unexpected status code: %s", resp.Status)
 	}
 	tr := io.TeeReader(resp.Body, vh)
 
-	br := bufio.NewReader(tr)
+	// TODO(hank) All this decompression code could go away, but that would mean
+	// that a buffer file would have to be allocated later, adding additional
+	// disk usage.
+	//
+	// The ultimate solution is to move to a fetcher that proxies to HTTP range
+	// requests.
+	zr, kind, err := zreader.Detect(tr)
+	if err != nil {
+		return nil, fmt.Errorf("fetcher: error determining compression: %w", err)
+	}
+	defer zr.Close()
 	// Look at the content-type and optionally fix it up.
 	ct := resp.Header.Get("content-type")
 	zlog.Debug(ctx).
 		Str("content-type", ct).
 		Msg("reported content-type")
+	span.SetAttributes(attribute.String("payload.content-type", ct), attribute.Stringer("payload.compression.detected", kind))
 	if ct == "" || ct == "text/plain" || ct == "binary/octet-stream" || ct == "application/octet-stream" {
+		switch kind {
+		case zreader.KindGzip:
+			ct = "application/gzip"
+		case zreader.KindZstd:
+			ct = "application/zstd"
+		case zreader.KindNone:
+			ct = "application/x-tar"
+		default:
+			return nil, fmt.Errorf("fetcher: disallowed compression kind: %q", kind.String())
+		}
 		zlog.Debug(ctx).
 			Str("content-type", ct).
-			Msg("guessing compression")
-		b, err := br.Peek(4)
-		if err != nil {
-			return "", err
-		}
-		switch detectCompression(b) {
-		case cmpGzip:
-			ct = "application/gzip"
-		case cmpZstd:
-			ct = "application/zstd"
-		case cmpNone:
-			ct = "application/x-tar"
-		}
-		zlog.Debug(ctx).
-			Str("format", ct).
-			Msg("guessed compression")
+			Msg("fixed content-type")
+		span.SetAttributes(attribute.String("payload.content-type.detected", ct))
 	}
 
-	var r io.Reader
+	var wantZ zreader.Compression
 	switch {
 	case ct == "application/vnd.docker.image.rootfs.diff.tar.gzip":
 		// Catch the old docker media type.
@@ -261,130 +332,140 @@ func (a *RemoteFetchArena) realizeLayer(ctx context.Context, l *claircore.Layer)
 		// GHCR reports gzipped layers as the latter.
 		fallthrough
 	case strings.HasSuffix(ct, ".tar+gzip"):
-		g, err := gzip.NewReader(br)
-		if err != nil {
-			return "", err
-		}
-		defer g.Close()
-		r = g
+		wantZ = zreader.KindGzip
 	case ct == "application/zstd":
 		fallthrough
 	case strings.HasSuffix(ct, ".tar+zstd"):
-		s, err := zstd.NewReader(br)
-		if err != nil {
-			return "", err
-		}
-		defer s.Close()
-		r = s
+		wantZ = zreader.KindZstd
 	case ct == "application/x-tar":
 		fallthrough
 	case strings.HasSuffix(ct, ".tar"):
-		r = br
+		wantZ = zreader.KindNone
 	default:
-		return "", fmt.Errorf("fetcher: unknown content-type %q", ct)
+		return nil, fmt.Errorf("fetcher: unknown content-type %q", ct)
+	}
+	if kind != wantZ {
+		return nil, fmt.Errorf("fetcher: mismatched compression (%q) and content-type (%q)", kind.String(), ct)
 	}
 
-	buf := bufio.NewWriter(fd)
-	n, err := io.Copy(buf, r)
+	buf := bufio.NewWriter(f)
+	n, err := io.Copy(buf, zr)
 	zlog.Debug(ctx).Int64("size", n).Msg("wrote file")
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	if err := buf.Flush(); err != nil {
-		return "", err
+		return nil, err
 	}
 	if got := vh.Sum(nil); !bytes.Equal(got, want) {
 		err := fmt.Errorf("fetcher: validation failed: got %q, expected %q",
 			hex.EncodeToString(got),
 			hex.EncodeToString(want))
-		return "", err
+		return nil, err
 	}
 
-	zlog.Debug(ctx).
-		Msg("checking if layer is a valid tar")
-	// TODO(hank) Need media types somewhere in here.
-	switch _, err := tarfs.New(fd); {
-	case errors.Is(err, nil):
-	case errors.Is(err, tarfs.ErrFormat):
-		fallthrough
-	default:
-		return "", err
+	rc := newRc(f, func() {
+		a.rc.Delete(key)
+	})
+	if _, ok := a.rc.Swap(key, rc); ok {
+		rc.Ref().Close()
+		return nil, fmt.Errorf("fetcher: double-store for key %q", key)
 	}
 
 	zlog.Debug(ctx).Msg("layer fetch ok")
-	rm = false
-	return name, nil
+	span.SetStatus(codes.Ok, "")
+	return rc, nil
 }
 
-// Fetcher returns an indexer.Fetcher.
+// Close forgets all references in the arena.
+//
+// Any outstanding Layers may cause keys to be forgotten at unpredictable times.
+func (a *RemoteFetchArena) Close(ctx context.Context) error {
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "libindex/fetchArena.Close",
+		"arena", a.root)
+	a.rc.Range(func(k, _ any) bool {
+		a.rc.Delete(k)
+		return true
+	})
+	return nil
+}
+
+// Realizer returns an indexer.Realizer.
+//
+// The concrete return type is [*FetchProxy].
 func (a *RemoteFetchArena) Realizer(_ context.Context) indexer.Realizer {
 	return &FetchProxy{a: a}
 }
 
 // FetchProxy tracks the files fetched for layers.
-//
-// This can be unexported if FetchArena gets unexported.
 type FetchProxy struct {
-	a     *RemoteFetchArena
-	clean []string
+	a       *RemoteFetchArena
+	cleanup []io.Closer
 }
 
 // Realize populates all the layers locally.
-func (p *FetchProxy) Realize(ctx context.Context, ls []*claircore.Layer) error {
-	g, ctx := errgroup.WithContext(ctx)
-	p.clean = make([]string, len(ls))
-	for i, l := range ls {
-		p.clean[i] = l.Hash.String()
-		g.Go(p.a.fetchOne(ctx, l))
-	}
-	if err := g.Wait(); err != nil {
-		return fmt.Errorf("encountered error while fetching a layer: %w", err)
-	}
-	return nil
-}
-
-// Close marks all the layers' backing files as unused.
 //
-// This method may actually delete the backing files.
-func (p *FetchProxy) Close() error {
-	var err error
-	for _, digest := range p.clean {
-		e := p.a.forget(digest)
-		if e != nil {
-			if err == nil {
-				err = e
-			} else {
-				err = fmt.Errorf("%v; %v", err, e)
-			}
-		}
-	}
+// Deprecated: This method proxies to [FetchProxy.RealizeDescriptions] via
+// copies and a (potentially expensive) comparison operation. Callers should use
+// [FetchProxy.RealizeDescriptions] if they already have the
+// [claircore.LayerDescription] constructed.
+func (p *FetchProxy) Realize(ctx context.Context, ls []*claircore.Layer) error {
+	ds := wart.LayersToDescriptions(ls)
+	ret, err := p.RealizeDescriptions(ctx, ds)
 	if err != nil {
 		return err
 	}
+	wart.CopyLayerPointers(ls, ret)
 	return nil
 }
 
-type compression int
+// RealizeDesciptions returns [claircore.Layer] structs populated according to
+// the passed slice of [claircore.LayerDescription].
+func (p *FetchProxy) RealizeDescriptions(ctx context.Context, descs []claircore.LayerDescription) ([]claircore.Layer, error) {
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "libindex/FetchProxy.RealizeDescriptions")
+	ctx, span := tracer.Start(ctx, "RealizeDescriptions")
+	defer span.End()
+	g, ctx := errgroup.WithContext(ctx)
+	g.SetLimit(runtime.GOMAXPROCS(0))
+	ls := make([]claircore.Layer, len(descs))
+	cleanup := make([]io.Closer, len(descs))
 
-const (
-	cmpGzip compression = iota
-	cmpZstd
-	cmpNone
-)
+	for i := range descs {
+		g.Go(p.a.fetchInto(ctx, &ls[i], &cleanup[i], &descs[i]))
+	}
 
-var cmpHeaders = [...][]byte{
-	{0x1F, 0x8B, 0x08},       // cmpGzip
-	{0x28, 0xB5, 0x2F, 0xFD}, // cmpZstd
+	if e := g.Wait(); e != nil {
+		err := fmt.Errorf("fetcher: encountered errors: %w", e)
+		cl := make([]error, 0, len(p.cleanup))
+		for _, c := range cleanup {
+			if c != nil {
+				cl = append(cl, c.Close())
+			}
+		}
+		if cl := errors.Join(cl...); cl != nil {
+			err = fmt.Errorf("%w; while cleaning up: %w", err, cl)
+		}
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "RealizeDescriptions errored")
+		return nil, err
+	}
+	p.cleanup = cleanup
+	span.SetStatus(codes.Ok, "")
+	return ls, nil
 }
 
-func detectCompression(b []byte) compression {
-	for c, h := range cmpHeaders {
-		if len(b) < len(h) {
-			continue
-		}
-		if bytes.Equal(h, b[:len(h)]) {
-			return compression(c)
+// Close marks all the files backing any returned [claircore.Layer] as unused.
+//
+// This method may delete the backing files, necessitating them being fetched by
+// a subsequent call to [FetchProxy.RealizeDescriptions].
+func (p *FetchProxy) Close() error {
+	errs := make([]error, len(p.cleanup))
+	for i, c := range p.cleanup {
+		if c != nil {
+			errs[i] = c.Close()
 		}
 	}
-	return cmpNone
+	return errors.Join(errs...)
 }

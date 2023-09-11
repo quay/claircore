@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io"
-	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -18,6 +17,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore/postgres"
+	"github.com/quay/claircore/internal/wart"
 	"github.com/quay/claircore/linux"
 	"github.com/quay/claircore/pkg/ctxlock"
 	"github.com/quay/claircore/test"
@@ -86,12 +86,12 @@ func (tc testcase) RunInner(ctx context.Context, t *testing.T, pool *pgxpool.Poo
 			m.EXPECT().Scan(gomock.Any(), gomock.Any()).Return(pkgs, nil)
 		}
 	}
-	c, ls := test.ServeLayers(t, tc.Layers)
+	c, descs := test.ServeLayers(t, tc.Layers)
 
 	// create manifest
 	m := &claircore.Manifest{
 		Hash:   tc.Digest(),
-		Layers: ls,
+		Layers: wart.DescriptionsToLayers(descs),
 	}
 
 	store, err := postgres.InitPostgresIndexerStore(ctx, pool, false)
@@ -108,7 +108,7 @@ func (tc testcase) RunInner(ctx context.Context, t *testing.T, pool *pgxpool.Poo
 	opts := &Options{
 		Store:                store,
 		Locker:               ctxLocker,
-		FetchArena:           NewRemoteFetchArena(c, os.TempDir()),
+		FetchArena:           NewRemoteFetchArena(c, t.TempDir()),
 		ScanLockRetry:        2 * time.Second,
 		LayerScanConcurrency: 1,
 		Ecosystems: []*indexer.Ecosystem{

@@ -11,12 +11,15 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
+	"sync/atomic"
 	"testing"
 
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/wart"
 	"github.com/quay/claircore/test"
 )
 
@@ -27,13 +30,14 @@ type fetchTestcase struct {
 func (tc fetchTestcase) Run(ctx context.Context) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx := zlog.Test(ctx, t)
-		c, layers := test.ServeLayers(t, tc.N)
-		for _, l := range layers {
+		c, descs := test.ServeLayers(t, tc.N)
+		for _, l := range descs {
 			t.Logf("%+v", l)
 		}
 		a := NewRemoteFetchArena(c, t.TempDir())
 
 		fetcher := a.Realizer(ctx)
+		layers := wart.DescriptionsToLayers(descs)
 		if err := fetcher.Realize(ctx, layers); err != nil {
 			t.Error(err)
 		}
@@ -98,58 +102,95 @@ func TestFetchInvalid(t *testing.T) {
 }
 
 func TestFetchConcurrent(t *testing.T) {
+	t.Parallel()
 	ctx := zlog.Test(context.Background(), t)
-	ls, h := commonLayerServer(t, 100)
+	descs, h := commonLayerServer(t, 25)
 	srv := httptest.NewUnstartedServer(h)
 	srv.Start()
-	for i := range ls {
-		ls[i].URI = srv.URL + ls[i].URI
+	for i := range descs {
+		descs[i].URI = srv.URL + descs[i].URI
 	}
-	defer srv.Close()
+	t.Cleanup(srv.Close)
 	a := NewRemoteFetchArena(srv.Client(), t.TempDir())
-
-	subtest := func(a *RemoteFetchArena, ls []claircore.Layer) func(*testing.T) {
-		// Need to make a copy of all our layers.
-		l := make([]claircore.Layer, len(ls))
-		copy(l, ls)
-		// And then turn into pointers for reasons.
-		ps := make([]*claircore.Layer, len(l))
-		// Leave the bottom half the same, shuffle the top half.
-		rand.Shuffle(len(ps), func(i, j int) {
-			ps[i], ps[j] = &l[j], &l[i]
-		})
-		for i := range ps[:len(ps)/2] {
-			ps[i] = &l[i]
-		}
-		f := a.Realizer(ctx)
-		return func(t *testing.T) {
-			t.Parallel()
-			t.Cleanup(func() {
-				if err := f.Close(); err != nil {
-					t.Error(err)
-				}
-			})
-			ctx := zlog.Test(ctx, t)
-			if err := f.Realize(ctx, ps); err != nil {
-				t.Error(err)
-			}
-		}
-	}
-	t.Run("group", func(t *testing.T) {
-		for i := 0; i < 2; i++ {
-			t.Run(strconv.Itoa(i), subtest(a, ls))
+	t.Cleanup(func() {
+		if err := a.Close(ctx); err != nil {
+			t.Error(err)
 		}
 	})
 
-	if err := a.Close(ctx); err != nil {
-		t.Error(err)
-	}
+	t.Run("OldInterface", func(t *testing.T) {
+		ctx := zlog.Test(ctx, t)
+
+		t.Run("Thread", func(t *testing.T) {
+			run := func(a *RemoteFetchArena, ls []claircore.LayerDescription) func(*testing.T) {
+				ps := wart.DescriptionsToLayers(ls)
+				// Leave the bottom half the same, shuffle the top half.
+				off := len(ps) / 2
+				rand.Shuffle(off, func(i, j int) {
+					i, j = i+off, j+off
+					ps[i], ps[j] = ps[j], ps[i]
+				})
+				return func(t *testing.T) {
+					t.Parallel()
+					ctx := zlog.Test(ctx, t)
+					f := a.Realizer(ctx)
+					t.Cleanup(func() {
+						if err := f.Close(); err != nil {
+							t.Error(err)
+						}
+					})
+					if err := f.Realize(ctx, ps); err != nil {
+						t.Error(err)
+					}
+				}
+			}
+			for i := 0; i < runtime.GOMAXPROCS(0); i++ {
+				t.Run(strconv.Itoa(i), run(a, descs))
+			}
+		})
+	})
+
+	t.Run("NewInterface", func(t *testing.T) {
+		ctx := zlog.Test(ctx, t)
+		t.Run("Thread", func(t *testing.T) {
+			run := func(a *RemoteFetchArena, descs []claircore.LayerDescription) func(*testing.T) {
+				ds := make([]claircore.LayerDescription, len(descs))
+				copy(ds, descs)
+				// Leave the bottom half the same, shuffle the top half.
+				off := len(ds) / 2
+				rand.Shuffle(off, func(i, j int) {
+					i, j = i+off, j+off
+					ds[i], ds[j] = ds[j], ds[i]
+				})
+				return func(t *testing.T) {
+					t.Parallel()
+					ctx := zlog.Test(ctx, t)
+					f := a.Realizer(ctx).(*FetchProxy)
+					defer func() {
+						if err := f.Close(); err != nil {
+							t.Error(err)
+						}
+					}()
+					ls, err := f.RealizeDescriptions(ctx, ds)
+					if err != nil {
+						t.Errorf("RealizeDescriptions error: %v", err)
+					}
+					t.Logf("layers: %v", ls)
+				}
+			}
+			for i := 0; i < runtime.GOMAXPROCS(0); i++ {
+				t.Run(strconv.Itoa(i), run(a, descs))
+			}
+		})
+	})
 }
 
-func commonLayerServer(t testing.TB, ct int) ([]claircore.Layer, http.Handler) {
+func commonLayerServer(t testing.TB, ct int) ([]claircore.LayerDescription, http.Handler) {
+	// TODO(hank) Cache all this? The contents are basically static.
 	t.Helper()
 	dir := t.TempDir()
-	ls := make([]claircore.Layer, ct)
+	descs := make([]claircore.LayerDescription, ct)
+	fetch := make(map[string]*uint64, ct)
 	for i := 0; i < ct; i++ {
 		n := strconv.Itoa(i)
 		f, err := os.Create(filepath.Join(dir, strconv.Itoa(i)))
@@ -172,13 +213,38 @@ func commonLayerServer(t testing.TB, ct int) ([]claircore.Layer, http.Handler) {
 		if err := f.Close(); err != nil {
 			t.Fatal(err)
 		}
-		l := &ls[i]
+		l := &descs[i]
 		l.URI = "/" + strconv.Itoa(i)
-		l.Hash, err = claircore.NewDigest("sha256", h.Sum(nil))
+		fetch[l.URI] = new(uint64)
+		l.Digest = fmt.Sprintf("sha256:%x", h.Sum(nil))
 		l.Headers = make(http.Header)
+		l.MediaType = `application/vnd.oci.image.layer.nondistributable.v1.tar`
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
-	return ls, http.FileServer(http.Dir(dir))
+
+	t.Cleanup(func() {
+		// We know we're doing 2 sets of fetches.
+		max := ct * 2 * runtime.GOMAXPROCS(0)
+		var total int
+		for _, v := range fetch {
+			total += int(*v)
+		}
+		switch {
+		case total > max:
+			t.Errorf("more fetches than should be possible: %d > %d", total, max)
+		case total == max:
+			t.Errorf("prevented no fetches: %d == %d", total, max)
+		case total < max:
+			t.Logf("prevented %[3]d fetches: %[1]d < %d", total, max, max-total)
+		}
+
+	})
+	inner := http.FileServer(http.Dir(dir))
+	return descs, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ct := fetch[r.URL.Path]
+		atomic.AddUint64(ct, 1)
+		inner.ServeHTTP(w, r)
+	})
 }
