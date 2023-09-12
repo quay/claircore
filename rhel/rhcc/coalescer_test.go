@@ -13,6 +13,7 @@ import (
 )
 
 func TestCoalescer(t *testing.T) {
+	t.Parallel()
 	ctx := zlog.Test(context.Background(), t)
 	coalescer := &coalescer{}
 	pkgs := test.GenUniquePackages(6)

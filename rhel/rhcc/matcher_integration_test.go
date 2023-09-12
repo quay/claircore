@@ -31,25 +31,32 @@ func TestMain(m *testing.M) {
 }
 
 func TestMatcherIntegration(t *testing.T) {
-	table := []struct {
+	t.Parallel()
+
+	type testcase struct {
+		Name        string
 		cvemap      string
 		indexReport string
 		cveID       string
 		match       bool
-	}{
+	}
+	table := []testcase{
 		{
+			Name:        "Clair",
 			cvemap:      "cve-2021-3762",
 			indexReport: "clair-rhel8-v3.5.5-4",
 			cveID:       "RHSA-2021:3665",
 			match:       true,
 		},
 		{
+			Name:        "Rook4.6",
 			cvemap:      "cve-2020-8565",
 			indexReport: "rook-ceph-operator-container-4.6-115.d1788e1.release_4.6",
 			cveID:       "RHSA-2021:2041",
 			match:       true,
 		},
 		{
+			Name:        "Rook4.7",
 			cvemap:      "cve-2020-8565",
 			indexReport: "rook-ceph-operator-container-4.7-159.76b9b11.release_4.7",
 			cveID:       "RHSA-2021:2041",
@@ -57,8 +64,10 @@ func TestMatcherIntegration(t *testing.T) {
 		},
 	}
 
-	for _, tt := range table {
-		t.Run(tt.indexReport, func(t *testing.T) {
+	for i := range table {
+		tt := &table[i]
+		t.Run(tt.Name, func(t *testing.T) {
+			t.Parallel()
 			integration.NeedDB(t)
 			ctx := zlog.Test(context.Background(), t)
 			pool := testpostgres.TestMatcherDB(ctx, t)

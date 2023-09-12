@@ -2,10 +2,8 @@ package rhcc
 
 import (
 	"context"
-	"fmt"
 	"math"
 	"os"
-	"path/filepath"
 	"sort"
 	"testing"
 	"time"
@@ -14,10 +12,11 @@ import (
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/pkg/cpe"
+	"github.com/quay/claircore/toolkit/types/cpe"
 )
 
 func TestDB(t *testing.T) {
+	t.Parallel()
 	cve20213762issued, _ := time.Parse(time.RFC3339, "2021-09-28T00:00:00Z")
 
 	date_2021_12_14, _ := time.Parse(time.RFC3339, "2021-12-14T00:00:00Z")
@@ -27,7 +26,8 @@ func TestDB(t *testing.T) {
 
 	tt := []dbTestcase{
 		{
-			Name: "cve-2021-3762",
+			Name: "Clair",
+			File: "testdata/cve-2021-3762.xml",
 			Want: []*claircore.Vulnerability{
 				{
 					Name:               "RHSA-2021:3665",
@@ -58,7 +58,8 @@ func TestDB(t *testing.T) {
 			},
 		},
 		{
-			Name: "cve-2021-44228-ose-metering-hive",
+			Name: "Hive",
+			File: "testdata/cve-2021-44228-ose-metering-hive.xml",
 			Want: []*claircore.Vulnerability{
 				{
 					Name:               "RHSA-2021:5106",
@@ -129,7 +130,8 @@ func TestDB(t *testing.T) {
 			},
 		},
 		{
-			Name: "cve-2021-44228-openshift-logging",
+			Name: "Logging",
+			File: "testdata/cve-2021-44228-openshift-logging.xml",
 			Want: []*claircore.Vulnerability{
 				{
 					Name:               "RHSA-2021:5129",
@@ -178,7 +180,8 @@ func TestDB(t *testing.T) {
 			},
 		},
 		{
-			Name: "cve-2020-8565",
+			Name: "Kubernetes",
+			File: "testdata/cve-2020-8565.xml",
 			Want: []*claircore.Vulnerability{
 				{
 					Name:               "RHBA-2021:3003",
@@ -235,11 +238,8 @@ func TestDB(t *testing.T) {
 
 type dbTestcase struct {
 	Name string
+	File string
 	Want []*claircore.Vulnerability
-}
-
-func (tc dbTestcase) filename() string {
-	return filepath.Join("testdata", fmt.Sprintf("%s.xml", tc.Name))
 }
 
 func cpeUnbind(cpeValue string) cpe.WFN {
@@ -250,7 +250,7 @@ func cpeUnbind(cpeValue string) cpe.WFN {
 func (tc dbTestcase) Run(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
 
-	f, err := os.Open(tc.filename())
+	f, err := os.Open(tc.File)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -261,7 +261,7 @@ func (tc dbTestcase) Run(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("found %d vulnerabilties", len(got))
+	t.Logf("found %d vulnerabilities", len(got))
 	if len(got) != len(tc.Want) {
 		t.Fatalf("got: %d vulnerabilities, want %d vulnerabilities", len(got), len(tc.Want))
 	}

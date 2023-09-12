@@ -9,16 +9,19 @@ import (
 	"net/http/httptest"
 	"os"
 	"path"
-	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/test"
 )
 
 func TestContainerScanner(t *testing.T) {
+	t.Parallel()
+	ctx := zlog.Test(context.Background(), t)
 	clairSourceContainer := &claircore.Package{
 		Name:    "quay-clair-container",
 		Version: "v3.5.5-4",
@@ -61,13 +64,16 @@ func TestContainerScanner(t *testing.T) {
 		"data": {"openshift/ose-logging-elasticsearch6": {"openshift4/ose-logging-elasticsearch6"}},
 	}
 
-	table := []struct {
-		dockerfile string
-		want       []*claircore.Package
-	}{
+	type testcase struct {
+		Name       string
+		Dockerfile string
+		Want       []*claircore.Package
+	}
+	table := []testcase{
 		{
-			dockerfile: "testdata/Dockerfile-quay-quay-rhel8-v3.5.6-4",
-			want: []*claircore.Package{
+			Name:       "Quay",
+			Dockerfile: "testdata/Dockerfile-quay-quay-rhel8-v3.5.6-4",
+			Want: []*claircore.Package{
 				quaySourceContainer,
 				{
 					Name:    "quay/quay-rhel8",
@@ -85,8 +91,9 @@ func TestContainerScanner(t *testing.T) {
 			},
 		},
 		{
-			dockerfile: "testdata/Dockerfile-quay-clair-rhel8-v3.5.5-4",
-			want: []*claircore.Package{
+			Name:       "Clair",
+			Dockerfile: "testdata/Dockerfile-quay-clair-rhel8-v3.5.5-4",
+			Want: []*claircore.Package{
 				clairSourceContainer,
 				{
 					Name:    "quay/clair-rhel8",
@@ -104,8 +111,9 @@ func TestContainerScanner(t *testing.T) {
 			},
 		},
 		{
-			dockerfile: "testdata/Dockerfile-openshift-ose-logging-elasticsearch6-v4.6.0-202112132021.p0.g2a13a81.assembly.stream",
-			want: []*claircore.Package{
+			Name:       "Elasticsearch",
+			Dockerfile: "testdata/Dockerfile-openshift-ose-logging-elasticsearch6-v4.6.0-202112132021.p0.g2a13a81.assembly.stream",
+			Want: []*claircore.Package{
 				loggingSourceContainer,
 				{
 					Name:    "openshift4/ose-logging-elasticsearch6",
@@ -123,7 +131,6 @@ func TestContainerScanner(t *testing.T) {
 			},
 		},
 	}
-	ctx := zlog.Test(context.Background(), t)
 	mux := http.NewServeMux()
 	mux.HandleFunc("/container-name-repos-map.json", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("last-modified", "Mon, 02 Jan 2006 15:04:05 MST")
@@ -143,53 +150,67 @@ func TestContainerScanner(t *testing.T) {
 		t.Error(err)
 	}
 
+	a := test.NewCachedArena(t)
+	t.Cleanup(func() {
+		if err := a.Close(ctx); err != nil {
+			t.Error(err)
+		}
+	})
 	for _, tt := range table {
-		t.Run(tt.dockerfile, func(t *testing.T) {
-			dockerfile, err := os.Open(tt.dockerfile)
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer dockerfile.Close()
-			fi, err := dockerfile.Stat()
-			if err != nil {
-				t.Fatal(err)
-			}
-			tmpdir := t.TempDir()
-			// Write a tarball with the binary.
-			tarname := filepath.Join(tmpdir, "tar")
-			tf, err := os.Create(tarname)
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer tf.Close()
-			tw := tar.NewWriter(tf)
-			hdr, err := tar.FileInfoHeader(fi, "")
-			if err != nil {
-				t.Fatal(err)
-			}
-			hdr.Name = path.Join("root/buildinfo", path.Base(tt.dockerfile))
-			if err := tw.WriteHeader(hdr); err != nil {
-				t.Error(err)
-			}
-			if _, err := io.Copy(tw, dockerfile); err != nil {
-				t.Error(err)
-			}
-			if err := tw.Close(); err != nil {
-				t.Error(err)
-			}
-			t.Logf("wrote tar to: %s", tf.Name())
+		t.Run(tt.Name, func(t *testing.T) {
+			ctx := zlog.Test(ctx, t)
+			mod := test.Modtime(t, tt.Dockerfile)
+			a.GenerateLayer(t, tt.Name, mod, func(t testing.TB, w *os.File) {
+				dockerfile, err := os.Open(tt.Dockerfile)
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer dockerfile.Close()
+				fi, err := dockerfile.Stat()
+				if err != nil {
+					t.Fatal(err)
+				}
+				tw := tar.NewWriter(w)
+				hdr, err := tar.FileInfoHeader(fi, "")
+				if err != nil {
+					t.Fatal(err)
+				}
+				hdr.Name = path.Join("root/buildinfo", path.Base(tt.Dockerfile))
+				if err := tw.WriteHeader(hdr); err != nil {
+					t.Error(err)
+				}
+				if _, err := io.Copy(tw, dockerfile); err != nil {
+					t.Error(err)
+				}
+				if err := tw.Close(); err != nil {
+					t.Error(err)
+				}
+				t.Logf("wrote tar to: %s", w.Name())
+			})
 
-			// Make a fake layer with the tarball.
-			l := claircore.Layer{}
-			l.SetLocal(tf.Name())
+			r := a.Realizer(ctx).(*test.CachedRealizer)
+			defer func() {
+				if err := r.Close(); err != nil {
+					t.Error(err)
+				}
+			}()
+			ls, err := r.RealizeDescriptions(ctx, []claircore.LayerDescription{{
+				Digest:    "sha256:" + strings.Repeat("beef", 16),
+				URI:       "file:" + tt.Name,
+				MediaType: test.MediaType,
+				Headers:   make(map[string][]string),
+			}})
+			if err != nil {
+				t.Error(err)
+			}
 
-			got, err := cs.Scan(ctx, &l)
+			got, err := cs.Scan(ctx, &ls[0])
 			if err != nil {
 				t.Error(err)
 			}
 			t.Logf("found %d packages", len(got))
-			if !cmp.Equal(got, tt.want) {
-				t.Error(cmp.Diff(got, tt.want))
+			if !cmp.Equal(got, tt.Want) {
+				t.Error(cmp.Diff(got, tt.Want))
 			}
 		})
 	}

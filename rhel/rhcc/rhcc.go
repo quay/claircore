@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/pkg/cpe"
 	"github.com/quay/claircore/pkg/rhctag"
+	"github.com/quay/claircore/toolkit/types/cpe"
 )
 
 var goldRepo = claircore.Repository{
