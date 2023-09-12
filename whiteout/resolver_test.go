@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"github.com/quay/claircore"
+
+	"github.com/quay/zlog"
 )
 
 func Digest(name string) claircore.Digest {
@@ -23,15 +25,18 @@ func TestResolver(t *testing.T) {
 	firstLayerHash := Digest("first layer")
 	secondLayerHash := Digest("second layer")
 	thirdLayerHash := Digest("third layer")
-	tests := []struct {
-		name                string
-		ir                  *claircore.IndexReport
-		layers              []*claircore.Layer
-		lenPackage, lenEnvs int
-	}{
+
+	type testcase struct {
+		Name                string
+		Report              *claircore.IndexReport
+		Layers              []*claircore.Layer
+		LenPackage, LenEnvs int
+	}
+
+	tests := []testcase{
 		{
-			name: "simple",
-			ir: &claircore.IndexReport{
+			Name: "Simple",
+			Report: &claircore.IndexReport{
 				Packages: map[string]*claircore.Package{
 					"1": {
 						Name:     "something interesting",
@@ -53,16 +58,16 @@ func TestResolver(t *testing.T) {
 					},
 				},
 			},
-			layers: []*claircore.Layer{
+			Layers: []*claircore.Layer{
 				{Hash: firstLayerHash},
 				{Hash: secondLayerHash},
 			},
-			lenPackage: 1,
-			lenEnvs:    1,
+			LenPackage: 1,
+			LenEnvs:    1,
 		},
 		{
-			name: "simple no deletes",
-			ir: &claircore.IndexReport{
+			Name: "SimpleNoDelete",
+			Report: &claircore.IndexReport{
 				Packages: map[string]*claircore.Package{
 					"1": {
 						Name:     "something interesting",
@@ -92,16 +97,16 @@ func TestResolver(t *testing.T) {
 					},
 				},
 			},
-			layers: []*claircore.Layer{
+			Layers: []*claircore.Layer{
 				{Hash: firstLayerHash},
 				{Hash: secondLayerHash},
 			},
-			lenPackage: 2,
-			lenEnvs:    2,
+			LenPackage: 2,
+			LenEnvs:    2,
 		},
 		{
-			name: "fat finger delete",
-			ir: &claircore.IndexReport{
+			Name: "FatFinger",
+			Report: &claircore.IndexReport{
 				Packages: map[string]*claircore.Package{
 					"1": {
 						Name:     "something interesting",
@@ -123,16 +128,16 @@ func TestResolver(t *testing.T) {
 					},
 				},
 			},
-			layers: []*claircore.Layer{
+			Layers: []*claircore.Layer{
 				{Hash: firstLayerHash},
 				{Hash: secondLayerHash},
 			},
-			lenPackage: 0,
-			lenEnvs:    0,
+			LenPackage: 0,
+			LenEnvs:    0,
 		},
 		{
-			name: "deleted but not a later layer",
-			ir: &claircore.IndexReport{
+			Name: "MaskedDirectory",
+			Report: &claircore.IndexReport{
 				Packages: map[string]*claircore.Package{
 					"1": {
 						Name:     "something interesting",
@@ -154,16 +159,16 @@ func TestResolver(t *testing.T) {
 					},
 				},
 			},
-			layers: []*claircore.Layer{
+			Layers: []*claircore.Layer{
 				{Hash: firstLayerHash},
 				{Hash: secondLayerHash},
 			},
-			lenPackage: 2,
-			lenEnvs:    2,
+			LenPackage: 2,
+			LenEnvs:    2,
 		},
 		{
-			name: "common prefix, distinct dirs test",
-			ir: &claircore.IndexReport{
+			Name: "CommonPrefixDistinctDirs",
+			Report: &claircore.IndexReport{
 				Packages: map[string]*claircore.Package{
 					"1": {
 						Name:     "something interesting",
@@ -185,16 +190,16 @@ func TestResolver(t *testing.T) {
 					},
 				},
 			},
-			layers: []*claircore.Layer{
+			Layers: []*claircore.Layer{
 				{Hash: firstLayerHash},
 				{Hash: secondLayerHash},
 			},
-			lenPackage: 2,
-			lenEnvs:    2,
+			LenPackage: 2,
+			LenEnvs:    2,
 		},
 		{
-			name: "opaque test",
-			ir: &claircore.IndexReport{
+			Name: "Opaque",
+			Report: &claircore.IndexReport{
 				Packages: map[string]*claircore.Package{
 					"1": {
 						Name:     "something interesting",
@@ -216,16 +221,16 @@ func TestResolver(t *testing.T) {
 					},
 				},
 			},
-			layers: []*claircore.Layer{
+			Layers: []*claircore.Layer{
 				{Hash: firstLayerHash},
 				{Hash: secondLayerHash},
 			},
-			lenPackage: 0,
-			lenEnvs:    0,
+			LenPackage: 0,
+			LenEnvs:    0,
 		},
 		{
-			name: "added, deleted and added again",
-			ir: &claircore.IndexReport{
+			Name: "AddDeleteAdd",
+			Report: &claircore.IndexReport{
 				Packages: map[string]*claircore.Package{
 					"1": {
 						Name:     "something interesting",
@@ -242,25 +247,26 @@ func TestResolver(t *testing.T) {
 					},
 				},
 			},
-			layers: []*claircore.Layer{
+			Layers: []*claircore.Layer{
 				{Hash: firstLayerHash},
 				{Hash: secondLayerHash},
 				{Hash: thirdLayerHash},
 			},
-			lenPackage: 1,
-			lenEnvs:    1,
+			LenPackage: 1,
+			LenEnvs:    1,
 		},
 	}
 
 	r := &Resolver{}
 	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			report := r.Resolve(context.Background(), tc.ir, tc.layers)
-			if tc.lenPackage != len(report.Packages) {
-				t.Fatalf("wrong number of packages: expected: %d got: %d", tc.lenPackage, len(report.Packages))
+		t.Run(tc.Name, func(t *testing.T) {
+			ctx := zlog.Test(context.Background(), t)
+			report := r.Resolve(ctx, tc.Report, tc.Layers)
+			if tc.LenPackage != len(report.Packages) {
+				t.Fatalf("wrong number of packages: expected: %d got: %d", tc.LenPackage, len(report.Packages))
 			}
-			if tc.lenEnvs != len(report.Environments) {
-				t.Fatalf("wrong number of environments: expected: %d got: %d", tc.lenEnvs, len(report.Environments))
+			if tc.LenEnvs != len(report.Environments) {
+				t.Fatalf("wrong number of environments: expected: %d got: %d", tc.LenEnvs, len(report.Environments))
 			}
 		})
 
