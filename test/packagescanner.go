@@ -48,16 +48,7 @@ func (tc ScannerTestcase) Run(ctx context.Context) func(*testing.T) {
 	sort.Slice(tc.Want, pkgSort(tc.Want))
 	return func(t *testing.T) {
 		ctx := zlog.Test(ctx, t)
-		d := tc.Digest()
-		n, err := fetch.Layer(ctx, t, http.DefaultClient, tc.Domain, tc.Name, d)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer n.Close()
-		l := &claircore.Layer{
-			Hash: d,
-		}
-		l.SetLocal(n.Name())
+		l := tc.getLayer(ctx, t)
 
 		got, err := tc.Scanner.Scan(ctx, l)
 		if err != nil {
@@ -80,16 +71,7 @@ func (tc ScannerTestcase) RunSubset(ctx context.Context, n int) func(*testing.T)
 	sort.Slice(tc.Want, pkgSort(tc.Want))
 	return func(t *testing.T) {
 		ctx := zlog.Test(ctx, t)
-		d := tc.Digest()
-		f, err := fetch.Layer(ctx, t, http.DefaultClient, tc.Domain, tc.Name, d)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer f.Close()
-		l := &claircore.Layer{
-			Hash: d,
-		}
-		l.SetLocal(f.Name())
+		l := tc.getLayer(ctx, t)
 
 		got, err := tc.Scanner.Scan(ctx, l)
 		if err != nil {
@@ -127,6 +109,38 @@ func (tc ScannerTestcase) RunSubset(ctx context.Context, n int) func(*testing.T)
 			}
 		}
 	}
+}
+
+func (tc *ScannerTestcase) getLayer(ctx context.Context, t *testing.T) *claircore.Layer {
+	d := tc.Digest()
+	n, err := fetch.Layer(ctx, t, http.DefaultClient, tc.Domain, tc.Name, d)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := n.Close(); err != nil {
+			t.Errorf("closing %q: %v", n.Name(), err)
+		}
+	})
+	desc := claircore.LayerDescription{
+		URI:    "file:///dev/null",
+		Digest: d.String(),
+		// Bit of bad coupling seeping in here: all tar-based layers
+		// are handled the same, so this doesn't matter as long as
+		// it's a tar.
+		MediaType: MediaType,
+	}
+	var l claircore.Layer
+	if err := l.Init(ctx, &desc, n); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := l.Close(); err != nil {
+			t.Errorf("closing Layer %q: %v", l.Hash, err)
+		}
+	})
+
+	return &l
 }
 
 func pkgSort(s []*claircore.Package) func(i, j int) bool {

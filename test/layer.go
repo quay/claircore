@@ -6,6 +6,7 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -51,14 +52,14 @@ func (l *layerserver) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // ServeLayers constructs "n" random layers, arranges to serve them, and returns
-// a slice of filled Layer structs.
-func ServeLayers(t *testing.T, n int) (*http.Client, []*claircore.Layer) {
+// corresponding LayerDescriptions.
+func ServeLayers(t *testing.T, n int) (*http.Client, []claircore.LayerDescription) {
 	const filesize = 32
 	lsrv := &layerserver{
 		now:   time.Now(),
 		blobs: make([]*bytes.Reader, n),
 	}
-	ls := make([]*claircore.Layer, n)
+	descs := make([]claircore.LayerDescription, n)
 	srv := httptest.NewServer(lsrv)
 	t.Cleanup(func() {
 		srv.CloseClientConnections()
@@ -97,26 +98,21 @@ func ServeLayers(t *testing.T, n int) (*http.Client, []*claircore.Layer) {
 		}
 
 		lsrv.blobs[i] = bytes.NewReader(buf.Bytes())
-		ls[i] = &claircore.Layer{
-			URI: u.String(),
-		}
-		ls[i].Hash, err = claircore.NewDigest("sha256", h.Sum(nil))
-		if err != nil {
-			t.Fatal(err)
-		}
+		d := &descs[i]
+		d.MediaType = "application/vnd.oci.image.layer.v1.tar"
+		d.Headers = make(http.Header)
+		d.URI = u.String()
+		d.Digest = fmt.Sprintf("sha256:%x", h.Sum(nil))
 	}
 
-	return srv.Client(), ls
-}
-
-type LayerSpec struct {
-	Domain, Repo string
-	ID           claircore.Digest
+	return srv.Client(), descs
 }
 
 // RealizeLayers uses fetch.Layer to populate a directory and returns a slice of Layers describing them.
-func RealizeLayers(ctx context.Context, t *testing.T, spec ...LayerSpec) []claircore.Layer {
-	ret := make([]claircore.Layer, len(spec))
+//
+// Any needed cleanup is handled via the passed [testing.T].
+func RealizeLayers(ctx context.Context, t *testing.T, refs ...LayerRef) []claircore.Layer {
+	ret := make([]claircore.Layer, len(refs))
 	fetchCh := make(chan int)
 	var wg sync.WaitGroup
 	for i := 0; i < 3; i++ {
@@ -124,25 +120,54 @@ func RealizeLayers(ctx context.Context, t *testing.T, spec ...LayerSpec) []clair
 		go func() {
 			defer wg.Done()
 			for n := range fetchCh {
-				id := spec[n].ID
-				f, err := fetch.Layer(ctx, t, nil, spec[n].Domain, spec[n].Repo, id)
+				id, err := claircore.ParseDigest(refs[n].Digest)
 				if err != nil {
 					t.Error(err)
 					continue
 				}
-				ret[n].URI = "file:///dev/null"
-				ret[n].Hash = id
-				ret[n].SetLocal(f.Name())
-				if err := f.Close(); err != nil {
+				f, err := fetch.Layer(ctx, t, nil, refs[n].Registry, refs[n].Name, id)
+				if err != nil {
+					t.Error(err)
+					continue
+				}
+				t.Cleanup(func() {
+					if err := f.Close(); err != nil {
+						t.Errorf("closing %q: %v", f.Name(), err)
+					}
+				})
+				desc := claircore.LayerDescription{
+					URI:    "file:///dev/null",
+					Digest: id.String(),
+					// Bit of bad coupling seeping in here: all tar-based layers
+					// are handled the same, so this doesn't matter as long as
+					// it's a tar.
+					MediaType: MediaType,
+				}
+				if err := ret[n].Init(ctx, &desc, f); err != nil {
 					t.Error(err)
 				}
+				t.Cleanup(func() {
+					l := &ret[n]
+					if err := l.Close(); err != nil {
+						t.Errorf("closing %q: %v", l.Hash, err)
+					}
+				})
 			}
 		}()
 	}
-	for n := 0; n < len(spec); n++ {
+	for n := 0; n < len(refs); n++ {
 		fetchCh <- n
 	}
 	close(fetchCh)
 	wg.Wait()
 	return ret
+}
+
+// RealizeLayer is a helper around [RealizeLayers] for a single layer.
+//
+// This is useful for testing a Scanner implementation.
+func RealizeLayer(ctx context.Context, t *testing.T, ref LayerRef) *claircore.Layer {
+	t.Helper()
+	ls := RealizeLayers(ctx, t, ref)
+	return &ls[0]
 }
