@@ -3,13 +3,15 @@ package controller
 import (
 	"context"
 	"crypto/sha256"
+	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/quay/claircore"
 	"github.com/quay/zlog"
 
+	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
+	"github.com/quay/claircore/internal/wart"
 	"github.com/quay/claircore/test"
 	indexer_mock "github.com/quay/claircore/test/mock/indexer"
 )
@@ -63,84 +65,56 @@ func TestScanNoErrors(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
 	ctrl := gomock.NewController(t)
 
-	mock_ps := indexer_mock.NewMockPackageScanner(ctrl)
-	mock_ds := indexer_mock.NewMockDistributionScanner(ctrl)
-	mock_rs := indexer_mock.NewMockRepositoryScanner(ctrl)
-	mock_store := indexer_mock.NewMockStore(ctrl)
+	store := indexer_mock.NewMockStore(ctrl)
+	pkg := indexer_mock.NewMockPackageScanner(ctrl)
+	dist := indexer_mock.NewMockDistributionScanner(ctrl)
+	repo := indexer_mock.NewMockRepositoryScanner(ctrl)
+	_, descs := test.ServeLayers(t, 2)
+	descMatch := make([]*test.LayerMatcher, len(descs))
+	for i := range descs {
+		descMatch[i] = test.NewLayerMatcher(&descs[i])
+	}
 
-	_, layers := test.ServeLayers(t, 2)
-
-	mock_ps.EXPECT().Scan(gomock.Any(), layers[0]).Return([]*claircore.Package{}, nil)
-	mock_ps.EXPECT().Scan(gomock.Any(), layers[1]).Return([]*claircore.Package{}, nil)
-	mock_ps.EXPECT().Kind().MinTimes(1).Return("package")
-	mock_ps.EXPECT().Name().AnyTimes().Return("package")
-	mock_ps.EXPECT().Version().AnyTimes().Return("1")
-	mock_store.EXPECT().LayerScanned(gomock.Any(), layers[0].Hash, mock_ps).Return(false, nil)
-	mock_store.EXPECT().LayerScanned(gomock.Any(), layers[1].Hash, mock_ps).Return(false, nil)
-	mock_store.EXPECT().SetLayerScanned(gomock.Any(), layers[0].Hash, mock_ps).Return(nil)
-	mock_store.EXPECT().SetLayerScanned(gomock.Any(), layers[1].Hash, mock_ps).Return(nil)
-	mock_store.EXPECT().IndexPackages(gomock.Any(), gomock.Any(), layers[0], mock_ps).Return(nil)
-	mock_store.EXPECT().IndexPackages(gomock.Any(), gomock.Any(), layers[1], mock_ps).Return(nil)
-
-	mock_ds.EXPECT().Scan(gomock.Any(), layers[0]).Return([]*claircore.Distribution{}, nil)
-	mock_ds.EXPECT().Scan(gomock.Any(), layers[1]).Return([]*claircore.Distribution{}, nil)
-	mock_ds.EXPECT().Kind().MinTimes(1).Return("distribution")
-	mock_ds.EXPECT().Name().AnyTimes().Return("distribution")
-	mock_ds.EXPECT().Version().AnyTimes().Return("1")
-	mock_store.EXPECT().LayerScanned(gomock.Any(), layers[0].Hash, mock_ds).Return(false, nil)
-	mock_store.EXPECT().LayerScanned(gomock.Any(), layers[1].Hash, mock_ds).Return(false, nil)
-	mock_store.EXPECT().SetLayerScanned(gomock.Any(), layers[0].Hash, mock_ds).Return(nil)
-	mock_store.EXPECT().SetLayerScanned(gomock.Any(), layers[1].Hash, mock_ds).Return(nil)
-	mock_store.EXPECT().IndexDistributions(gomock.Any(), gomock.Any(), layers[0], mock_ds).Return(nil)
-	mock_store.EXPECT().IndexDistributions(gomock.Any(), gomock.Any(), layers[1], mock_ds).Return(nil)
-
-	mock_rs.EXPECT().Scan(gomock.Any(), layers[0]).Return([]*claircore.Repository{}, nil)
-	mock_rs.EXPECT().Scan(gomock.Any(), layers[1]).Return([]*claircore.Repository{}, nil)
-	mock_rs.EXPECT().Kind().MinTimes(1).Return("repository")
-	mock_rs.EXPECT().Name().AnyTimes().Return("repository")
-	mock_rs.EXPECT().Version().AnyTimes().Return("1")
-	mock_store.EXPECT().LayerScanned(gomock.Any(), layers[0].Hash, mock_rs).Return(false, nil)
-	mock_store.EXPECT().LayerScanned(gomock.Any(), layers[1].Hash, mock_rs).Return(false, nil)
-	mock_store.EXPECT().SetLayerScanned(gomock.Any(), layers[0].Hash, mock_rs).Return(nil)
-	mock_store.EXPECT().SetLayerScanned(gomock.Any(), layers[1].Hash, mock_rs).Return(nil)
-	mock_store.EXPECT().IndexRepositories(gomock.Any(), gomock.Any(), layers[0], mock_rs).Return(nil)
-	mock_store.EXPECT().IndexRepositories(gomock.Any(), gomock.Any(), layers[1], mock_rs).Return(nil)
+	// These type parameters are needed for go1.20.
+	setupCalls[*indexer_mock.MockPackageScannerMockRecorder, *indexer_mock.MockStoreMockRecorder](pkg, store, descMatch)
+	setupCalls[*indexer_mock.MockDistributionScannerMockRecorder, *indexer_mock.MockStoreMockRecorder](dist, store, descMatch)
+	setupCalls[*indexer_mock.MockRepositoryScannerMockRecorder, *indexer_mock.MockStoreMockRecorder](repo, store, descMatch)
 
 	ecosystem := &indexer.Ecosystem{
 		Name: "test-ecosystem",
 		PackageScanners: func(ctx context.Context) ([]indexer.PackageScanner, error) {
-			return []indexer.PackageScanner{mock_ps}, nil
+			return []indexer.PackageScanner{pkg}, nil
 		},
 		DistributionScanners: func(ctx context.Context) ([]indexer.DistributionScanner, error) {
-			return []indexer.DistributionScanner{mock_ds}, nil
+			return []indexer.DistributionScanner{dist}, nil
 		},
 		RepositoryScanners: func(ctx context.Context) ([]indexer.RepositoryScanner, error) {
-			return []indexer.RepositoryScanner{mock_rs}, nil
+			return []indexer.RepositoryScanner{repo}, nil
 		},
 	}
 
-	sOpts := &indexer.Options{
-		Store:      mock_store,
-		Ecosystems: []*indexer.Ecosystem{ecosystem},
-	}
+	ls := wart.DescriptionsToLayers(descs)
 	d, err := claircore.NewDigest("sha256", make([]byte, sha256.Size))
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	m := &claircore.Manifest{
 		Hash:   d,
-		Layers: layers,
+		Layers: ls,
 	}
 
-	scnr := New(sOpts)
-	scnr.manifest = m
-	scnr.LayerScanner, err = indexer.NewLayerScanner(ctx, 1, sOpts)
+	opts := &indexer.Options{
+		Store:      store,
+		Ecosystems: []*indexer.Ecosystem{ecosystem},
+	}
+	c := New(opts)
+	c.manifest = m
+	c.LayerScanner, err = indexer.NewLayerScanner(ctx, 1, opts)
 	if err != nil {
 		t.Error(err)
 	}
 
-	state, err := scanLayers(ctx, scnr)
+	state, err := scanLayers(ctx, c)
 	if err != nil {
 		t.Fatalf("failed to scan test layers: %v", err)
 	}
@@ -148,4 +122,67 @@ func TestScanNoErrors(t *testing.T) {
 	if state != Coalesce {
 		t.Errorf("got: %v state, wanted: %v state", state, Coalesce)
 	}
+}
+
+type scanRecorder interface {
+	Kind() *gomock.Call
+	Name() *gomock.Call
+	Version() *gomock.Call
+	// Abuse the fact that we overloaded the "Scan" name. That's finally useful.
+	Scan(any, any) *gomock.Call
+}
+
+type storeRecorder interface {
+	LayerScanned(any, any, any) *gomock.Call
+	SetLayerScanned(any, any, any) *gomock.Call
+	IndexPackages(any, any, any, any) *gomock.Call
+	IndexDistributions(any, any, any, any) *gomock.Call
+	IndexRepositories(any, any, any, any) *gomock.Call
+}
+
+type mock[R any] interface {
+	EXPECT() R
+}
+
+// SetupCalls is a helper for doing all the setup for a VersionedScanner mock.
+func setupCalls[C scanRecorder, T storeRecorder, Mc mock[C], Mt mock[T]](m Mc, s Mt, ls []*test.LayerMatcher) Mc {
+	// In hindsight, this function gains little from being written with
+	// generics.
+	var retVal any
+	var kind string
+	scan := m.EXPECT()
+	store := s.EXPECT()
+	switch t := any(m).(type) {
+	case *indexer_mock.MockPackageScanner:
+		retVal = []*claircore.Package{}
+		kind = "package"
+	case *indexer_mock.MockDistributionScanner:
+		retVal = []*claircore.Distribution{}
+		kind = "distribution"
+	case *indexer_mock.MockRepositoryScanner:
+		retVal = []*claircore.Repository{}
+		kind = "repository"
+	default:
+		panic(fmt.Sprintf("unreachable: passed %T", t))
+	}
+	for _, l := range ls {
+		scan.Scan(gomock.Any(), l).Return(retVal, nil)
+		d := l.DigestMatcher()
+		store.LayerScanned(gomock.Any(), d, m).Return(false, nil)
+		store.SetLayerScanned(gomock.Any(), d, m).Return(nil)
+		switch t := any(m).(type) {
+		case *indexer_mock.MockPackageScanner:
+			store.IndexPackages(gomock.Any(), gomock.Any(), l, m).Return(nil)
+		case *indexer_mock.MockDistributionScanner:
+			store.IndexDistributions(gomock.Any(), gomock.Any(), l, m).Return(nil)
+		case *indexer_mock.MockRepositoryScanner:
+			store.IndexRepositories(gomock.Any(), gomock.Any(), l, m).Return(nil)
+		default:
+			panic(fmt.Sprintf("unreachable: passed %T", t))
+		}
+	}
+	scan.Kind().MinTimes(1).Return(kind)
+	scan.Name().AnyTimes().Return(kind)
+	scan.Version().AnyTimes().Return("1")
+	return m
 }
