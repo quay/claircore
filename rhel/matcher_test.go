@@ -37,6 +37,7 @@ func serveOVAL(t *testing.T) (string, *http.Client) {
 }
 
 func TestMatcherIntegration(t *testing.T) {
+	t.Parallel()
 	integration.NeedDB(t)
 	ctx := zlog.Test(context.Background(), t)
 	pool := pgtest.TestMatcherDB(ctx, t)

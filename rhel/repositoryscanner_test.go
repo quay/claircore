@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path"
 	"sort"
 	"strings"
@@ -17,10 +18,12 @@ import (
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/pkg/cpe"
+	"github.com/quay/claircore/test"
+	"github.com/quay/claircore/toolkit/types/cpe"
 )
 
 func TestRepositoryScanner(t *testing.T) {
+	t.Parallel()
 	ctx := zlog.Test(context.Background(), t)
 
 	// Set up a response map and test server to mock the Container API.
@@ -76,7 +79,7 @@ func TestRepositoryScanner(t *testing.T) {
 			layerPath: "testdata/layer-with-cpe.tar",
 		},
 		{
-			name: "From mapping file",
+			name: "FromMappingFile",
 			want: []*claircore.Repository{
 				{
 					Name: "cpe:/o:redhat:enterprise_linux:6::server",
@@ -98,18 +101,36 @@ func TestRepositoryScanner(t *testing.T) {
 			layerPath: "testdata/layer-with-embedded-cs.tar",
 		},
 		{
-			name:      "No-cpe-info",
+			name:      "NoCPE",
 			want:      nil,
 			cfg:       &RepositoryScannerConfig{},
 			layerPath: "testdata/layer-with-no-cpe-info.tar",
 		},
 	}
+
 	for _, tt := range table {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := zlog.Test(ctx, t)
+			f, err := os.Open(tt.layerPath)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer func() {
+				if err := f.Close(); err != nil {
+					t.Error(err)
+				}
+			}()
 			scanner := new(RepositoryScanner)
-			l := &claircore.Layer{}
-			l.SetLocal(tt.layerPath)
+			var l claircore.Layer
+			desc := claircore.LayerDescription{
+				Digest:    `sha256:` + strings.Repeat(`beef`, 16),
+				URI:       `file:///dev/null`,
+				MediaType: test.MediaType,
+				Headers:   make(map[string][]string),
+			}
+			if err := l.Init(ctx, &desc, f); err != nil {
+				t.Fatal(err)
+			}
 
 			if tt.cfg != nil {
 				var buf bytes.Buffer
@@ -121,7 +142,7 @@ func TestRepositoryScanner(t *testing.T) {
 				}
 			}
 
-			got, err := scanner.Scan(ctx, l)
+			got, err := scanner.Scan(ctx, &l)
 			if err != nil {
 				t.Error(err)
 			}

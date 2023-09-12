@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/pkg/cpe"
+	"github.com/quay/claircore/toolkit/types/cpe"
 )
 
 // RelMap memoizes the Distributions handed out by this package.

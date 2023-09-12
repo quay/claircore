@@ -11,9 +11,9 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/xmlutil"
-	"github.com/quay/claircore/pkg/cpe"
 	"github.com/quay/claircore/pkg/ovalutil"
 	"github.com/quay/claircore/rhel/internal/common"
+	"github.com/quay/claircore/toolkit/types/cpe"
 )
 
 // Parse implements [driver.Updater].
