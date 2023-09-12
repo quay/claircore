@@ -1,7 +1,3 @@
-// we will use the claircore_test package here to avoid import cycles when
-// importing the fetcher.fetcher. using the fetcher is an attempt to not repeat
-// a lot of layer fetching code. if this pattern continues reconsider importing anything
-// into claircore package
 package claircore_test
 
 import (
@@ -9,39 +5,33 @@ import (
 	"context"
 	"testing"
 
-	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 )
 
-var goldenLayers []test.LayerSpec
+// TODO(hank) These tests should be OK to remove, as the tarfs code now
+// encapsulates a better way to do this and exercises that in its tests.
 
-func init() {
-	id, err := claircore.ParseDigest("sha256:35c102085707f703de2d9eaad8752d6fe1b8f02b5d2149f1d8357c9cc7fb7d0a")
-	if err != nil {
-		panic(err)
-	}
-	goldenLayers = []test.LayerSpec{
-		{
-			Domain: "docker.io",
-			Repo:   "library/ubuntu",
-			ID:     id,
-		},
-	}
+var goldenLayers = []test.LayerRef{
+	{
+		Registry: "docker.io",
+		Name:     "library/ubuntu",
+		Digest:   "sha256:35c102085707f703de2d9eaad8752d6fe1b8f02b5d2149f1d8357c9cc7fb7d0a",
+	},
+}
+
+type filesTestcase struct {
+	name   string
+	layers []test.LayerRef
+	// A list of paths we know exist in the retrieved layer(s).
+	// We will test to make sure their associated buffer is full.
+	paths []string
 }
 
 func TestLayerFilesMiss(t *testing.T) {
 	integration.Skip(t)
 	ctx := context.Background()
-	var tt = []struct {
-		// name of the test
-		name string
-		// the number of layers to generate for the test
-		layers []test.LayerSpec
-		// a list of paths we know exist in the retrieved layer(s). we wil test to make sure their associated
-		// buffer is full
-		paths []string
-	}{
+	var tt = []filesTestcase{
 		{
 			name:   "ubuntu:18.04 fake path, leading slash",
 			layers: goldenLayers,
@@ -71,15 +61,7 @@ func TestLayerFilesMiss(t *testing.T) {
 func TestLayerFilesHit(t *testing.T) {
 	integration.Skip(t)
 	ctx := context.Background()
-	var tt = []struct {
-		// name of the test
-		name string
-		// the number of layers to generate for the test
-		layers []test.LayerSpec
-		// a list of paths we know exist in the retrieved layer(s). we wil test to make sure their associated
-		// buffer is full
-		paths []string
-	}{
+	var tt = []filesTestcase{
 		{
 			name:   "ubuntu:18.04 os-release (linked file), leading slash, inmem fetch",
 			layers: goldenLayers,
