@@ -1,3 +1,5 @@
+// Package fetch implements just enough of a client for the OCI Distribution
+// specification for use in tests.
 package fetch
 
 import (
@@ -33,7 +35,8 @@ var registry = map[string]*client{
 	"registry.access.redhat.com": {Root: "https://registry.access.redhat.com/"},
 }
 
-func Layer(ctx context.Context, t *testing.T, c *http.Client, from, repo string, blob claircore.Digest, opt ...Option) (*os.File, error) {
+// Layer returns the specified layer contents, cached in the global layer cache.
+func Layer(ctx context.Context, t testing.TB, c *http.Client, from, repo string, blob claircore.Digest, opt ...Option) (*os.File, error) {
 	t.Helper()
 	opts := make(map[Option]bool)
 	for _, o := range opt {
@@ -90,28 +93,31 @@ func Layer(ctx context.Context, t *testing.T, c *http.Client, from, repo string,
 	return cf, nil
 }
 
+// Option is options for [Fetch]
 type Option uint
 
 const (
-	_Option = iota
+	_ Option = iota
+	// IgnoreIntegration causes [Fetch] to use the network unconditionally.
 	IgnoreIntegration
+	// NoDecompression does no compression.
 	NoDecompression
 )
 
 // Checkpath guards against making the same directory over and over.
 var checkpath sync.Once
 
-func copyTo(t *testing.T, name string, rc io.Reader) *os.File {
+func copyTo(t testing.TB, name string, rc io.Reader) *os.File {
 	cf, err := os.Create(name)
 	if err != nil {
 		t.Error(err)
 		return nil
 	}
-	defer func() {
-		if err != nil {
-			cf.Close()
+	t.Cleanup(func() {
+		if err := cf.Close(); err != nil {
+			t.Log(err)
 		}
-	}()
+	})
 
 	if _, err = io.Copy(cf, rc); err != nil {
 		t.Error(err)
@@ -179,6 +185,7 @@ func (d *client) doAuth(ctx context.Context, c *http.Client, name, h string) err
 	req := &http.Request{
 		ProtoMajor: 1,
 		ProtoMinor: 1,
+		Proto:      "HTTP/1.1",
 		URL:        u,
 		Host:       u.Host,
 		Method:     http.MethodGet,
