@@ -5,9 +5,10 @@ import (
 	"strconv"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/pkg/cpe"
+	"github.com/quay/claircore/toolkit/types/cpe"
 )
 
+// WFN returns a [cpe.WFN] with "i" as the CPE version.
 func WFN(i int) cpe.WFN {
 	r := cpe.WFN{}
 	for i := 0; i < cpe.NumAttr; i++ {
@@ -32,8 +33,9 @@ func WFN(i int) cpe.WFN {
 	return r
 }
 
-// GenUniqueDistributions creates an array of unique distributions. the array is guaranteed not to have
-// any duplicately named dist fields.
+// GenUniqueDistributions creates an array of unique distributions.
+//
+// The array is guaranteed not to have any duplicated fields.
 func GenUniqueDistributions(n int) []*claircore.Distribution {
 	dists := []*claircore.Distribution{}
 	for i := 0; i < n; i++ {

@@ -7,15 +7,13 @@ import (
 	"github.com/quay/claircore"
 )
 
-// GenDuplicatePackages creates an array of packages with duplicates. the array
-// will will take n/2 and use this is a mod operand along with the current index in the for loop.
-// it is  an error to set n to 0 or 1
+// GenDuplicatePackages creates an array of packages with duplicates.
+//
+// The array will will take n/2 and use this as a mod operand along with the
+// current index in the for loop. It is an error to set n less than 2.
 func GenDuplicatePackages(n int) ([]*claircore.Package, error) {
-	if n == 0 {
-		return nil, fmt.Errorf("cannot create duplicate packages with n = 0. n must be > 1")
-	}
-	if n == 1 {
-		return nil, fmt.Errorf("cannot create duplicate packages with n = 1, n must be > 1")
+	if n < 2 {
+		return nil, fmt.Errorf("cannot create duplicate packages with n = %d; must be > 1", n)
 	}
 
 	pkgs := []*claircore.Package{}
@@ -28,9 +26,10 @@ func GenDuplicatePackages(n int) ([]*claircore.Package, error) {
 	return pkgs, nil
 }
 
-// GenUniquePackages creates an array of unique packages. the array is guaranteed not to have
-// any duplicately named package fields. source packages are given an n + 1 ID to avoid
-// duplicate primary key on insert.
+// GenUniquePackages creates an array of unique packages.
+//
+// The array is guaranteed not to have any duplicated fields. Source packages
+// are given an n + 1 ID to avoid duplicated primary keys on insert.
 func GenUniquePackages(n int) []*claircore.Package {
 	pkgs := []*claircore.Package{}
 	for i := 0; i < n; i++ {

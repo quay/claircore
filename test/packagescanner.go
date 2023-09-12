@@ -2,7 +2,6 @@ package test
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"sort"
 	"strings"
@@ -119,7 +118,7 @@ func (tc ScannerTestcase) RunSubset(ctx context.Context, n int) func(*testing.T)
 				hint: p.RepositoryHint,
 			}]
 			if !exists {
-				t.Error(fmt.Sprintf("got is missing package %s with hint %s", p.Name, p.RepositoryHint))
+				t.Errorf("\"got\" is missing package %s with hint %s", p.Name, p.RepositoryHint)
 				continue
 			}
 

@@ -9,7 +9,7 @@ import (
 	"github.com/quay/claircore"
 )
 
-// RandomHash returns a random Digest.
+// RandomSHA256Digest returns a random Digest.
 func RandomSHA256Digest(t testing.TB) claircore.Digest {
 	b := make([]byte, sha256.Size)
 	if _, err := io.ReadFull(rand.Reader, b); err != nil {

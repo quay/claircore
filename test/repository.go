@@ -7,8 +7,9 @@ import (
 	"github.com/quay/claircore"
 )
 
-// GenUniqueRepositories creates an array of unique repositories. the array is guaranteed not to have
-// any duplicately named repo fields.
+// GenUniqueRepositories creates an array of unique repositories.
+//
+// The array is guaranteed not to have any duplicated fields.
 func GenUniqueRepositories(n int, opts ...GenRepoOption) []*claircore.Repository {
 	repos := []*claircore.Repository{}
 	for i := 0; i < n; i++ {
@@ -26,4 +27,5 @@ func GenUniqueRepositories(n int, opts ...GenRepoOption) []*claircore.Repository
 	return repos
 }
 
+// GenRepoOption is a functional option to [GenUniqueRepositories].
 type GenRepoOption func(*claircore.Repository)
