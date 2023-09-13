@@ -2,21 +2,19 @@ package apk
 
 import (
 	"context"
-	"net/http"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/test/fetch"
+	"github.com/quay/claircore/test"
 )
 
 func TestScan(t *testing.T) {
-	hash, err := claircore.ParseDigest("sha256:89d9c30c1d48bac627e5c6cb0d1ed1eec28e7dbdfbcc04712e4c79c0f83faf17")
-	if err != nil {
-		t.Fatal(err)
-	}
+	t.Parallel()
+	ctx := zlog.Test(context.Background(), t)
+	// TODO(hank) Turn into a fixture.
 	want := []*claircore.Package{
 		{
 			Name:           "musl",
@@ -146,22 +144,13 @@ func TestScan(t *testing.T) {
 		},
 	}
 
-	ctx := zlog.Test(context.Background(), t)
-	l := &claircore.Layer{
-		Hash: hash,
-	}
+	l := test.RealizeLayer(ctx, t, test.LayerRef{
+		Registry: "docker.io",
+		Name:     "library/alpine",
+		Digest:   "sha256:89d9c30c1d48bac627e5c6cb0d1ed1eec28e7dbdfbcc04712e4c79c0f83faf17",
+	})
+	var s Scanner
 
-	n, err := fetch.Layer(ctx, t, http.DefaultClient, "docker.io", "library/alpine", hash)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer n.Close()
-
-	if err := l.SetLocal(n.Name()); err != nil {
-		t.Error(err)
-	}
-
-	s := &Scanner{}
 	got, err := s.Scan(ctx, l)
 	if err != nil {
 		t.Fatal(err)
