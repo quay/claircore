@@ -2,8 +2,6 @@ package ruby_test
 
 import (
 	"context"
-	"fmt"
-	"net/http"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -11,25 +9,29 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/ruby"
-	"github.com/quay/claircore/test/fetch"
+	"github.com/quay/claircore/test"
 )
 
 func TestScanRemote(t *testing.T) {
-	ctx := context.Background()
+	ctx := zlog.Test(context.Background(), t)
 
-	table := []struct {
-		registry, repo, tag string
-		layer               string
-		total               int
-		samples             []*claircore.Package
-	}{
+	type testcase struct {
+		Name   string
+		Ref    test.LayerRef
+		Total  int
+		Subset []*claircore.Package
+	}
+	table := []testcase{
 		{
-			registry: "quay.io",
-			repo:     "projectquay/clair-fixtures",
-			tag:      "ruby-3.2.1-rake",
-			layer:    "sha256:f5da3e7f188aa027cf5c8111497d2abda6339d44eb0e7bff04647198ddfd87c1",
-			total:    6,
-			samples: []*claircore.Package{
+			// From the ruby-3.2.1-rake tag.
+			Name: "Rake",
+			Ref: test.LayerRef{
+				Registry: "quay.io",
+				Name:     "projectquay/clair-fixtures",
+				Digest:   "sha256:f5da3e7f188aa027cf5c8111497d2abda6339d44eb0e7bff04647198ddfd87c1",
+			},
+			Total: 6,
+			Subset: []*claircore.Package{
 				{
 					Name:           "bar",
 					Version:        "0.0.2",
@@ -75,12 +77,15 @@ func TestScanRemote(t *testing.T) {
 			},
 		},
 		{
-			registry: "quay.io",
-			repo:     "projectquay/clair-fixtures",
-			tag:      "ruby-3.2.1-rails",
-			layer:    "sha256:8cf469d41e77c8c4aaa2191f42f55b9758f77c640f2f7015b799b26458903f9b",
-			total:    35,
-			samples: []*claircore.Package{
+			// From the "ruby-3.2.1-rails" tag.
+			Name: "Rails",
+			Ref: test.LayerRef{
+				Registry: "quay.io",
+				Name:     "projectquay/clair-fixtures",
+				Digest:   "sha256:8cf469d41e77c8c4aaa2191f42f55b9758f77c640f2f7015b799b26458903f9b",
+			},
+			Total: 35,
+			Subset: []*claircore.Package{
 				{
 					Name:           "actioncable",
 					Version:        "7.0.4.3",
@@ -119,29 +124,19 @@ func TestScanRemote(t *testing.T) {
 			},
 		},
 	}
-	for _, tc := range table {
-		t.Run(tc.tag, func(t *testing.T) {
-			d, err := claircore.ParseDigest(tc.layer)
-			if err != nil {
-				panic(err)
-			}
-			f, err := fetch.Layer(ctx, t, http.DefaultClient, tc.registry, tc.repo, d)
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer f.Close()
 
+	for _, tc := range table {
+		t.Run(tc.Name, func(t *testing.T) {
 			ctx := zlog.Test(ctx, t)
-			scanner := &ruby.Scanner{}
-			l := &claircore.Layer{}
-			l.SetLocal(f.Name())
+			l := test.RealizeLayer(ctx, t, tc.Ref)
+			var scanner ruby.Scanner
 
 			got, err := scanner.Scan(ctx, l)
 			if err != nil {
 				t.Error(err)
 			}
-			if !cmp.Equal(len(got), tc.total) {
-				t.Error(cmp.Diff(len(got), tc.total))
+			if !cmp.Equal(len(got), tc.Total) {
+				t.Error(cmp.Diff(len(got), tc.Total))
 			}
 
 			gotMap := make(map[string]*claircore.Package, len(got))
@@ -149,10 +144,10 @@ func TestScanRemote(t *testing.T) {
 				gotMap[pkg.Name] = pkg
 			}
 
-			for _, pkg := range tc.samples {
+			for _, pkg := range tc.Subset {
 				gotPkg, exists := gotMap[pkg.Name]
 				if !exists {
-					t.Error(fmt.Sprintf("did not find %s", pkg.Name))
+					t.Errorf("did not find %s", pkg.Name)
 				}
 
 				if !cmp.Equal(gotPkg, pkg) {
