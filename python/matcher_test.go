@@ -21,6 +21,7 @@ type matcherTestcase struct {
 }
 
 func (tc matcherTestcase) Run(t *testing.T) {
+	t.Parallel()
 	ctx := zlog.Test(context.Background(), t)
 	got, err := tc.Matcher.Vulnerable(ctx, &tc.R, &tc.V)
 	if err != nil {
@@ -38,9 +39,10 @@ func (tc matcherTestcase) Run(t *testing.T) {
 
 // TestMatcher tests the python matcher.
 func TestMatcher(t *testing.T) {
+	t.Parallel()
 	testcases := []matcherTestcase{
 		{
-			Name: "simple",
+			Name: "Simple",
 			R: claircore.IndexRecord{
 				Package: &claircore.Package{
 					Version: "0.9.8",
@@ -56,7 +58,7 @@ func TestMatcher(t *testing.T) {
 			Matcher: &python.Matcher{},
 		},
 		{
-			Name: "bounded/hit",
+			Name: "BoundedHit",
 			R: claircore.IndexRecord{
 				Package: &claircore.Package{
 					Version: "1.4.3",
@@ -72,7 +74,7 @@ func TestMatcher(t *testing.T) {
 			Matcher: &python.Matcher{},
 		},
 		{
-			Name: "bounded/miss",
+			Name: "BoundedMiss",
 			R: claircore.IndexRecord{
 				Package: &claircore.Package{
 					Version: "1.4.3",
@@ -88,7 +90,7 @@ func TestMatcher(t *testing.T) {
 			Matcher: &python.Matcher{},
 		},
 		{
-			Name: "test0",
+			Name: "Test0",
 			R: claircore.IndexRecord{
 				Package: &claircore.Package{
 					Version: "1.0a1",
@@ -104,7 +106,7 @@ func TestMatcher(t *testing.T) {
 			Matcher: &python.Matcher{},
 		},
 		{
-			Name: "test1",
+			Name: "Test1",
 			R: claircore.IndexRecord{
 				Package: &claircore.Package{
 					Version: "1.0.post1",
@@ -120,7 +122,7 @@ func TestMatcher(t *testing.T) {
 			Matcher: &python.Matcher{},
 		},
 		{
-			Name: "test2",
+			Name: "Test2",
 			R: claircore.IndexRecord{
 				Package: &claircore.Package{
 					Version: "1.0+local.1",
@@ -136,7 +138,7 @@ func TestMatcher(t *testing.T) {
 			Matcher: &python.Matcher{},
 		},
 		{
-			Name: "test3",
+			Name: "Test3",
 			R: claircore.IndexRecord{
 				Package: &claircore.Package{
 					Version: "0.5+local.1",
@@ -152,7 +154,7 @@ func TestMatcher(t *testing.T) {
 			Matcher: &python.Matcher{},
 		},
 		{
-			Name: "test4",
+			Name: "Test4",
 			R: claircore.IndexRecord{
 				Package: &claircore.Package{
 					Version: "1.0.0",
@@ -168,7 +170,7 @@ func TestMatcher(t *testing.T) {
 			Matcher: &python.Matcher{},
 		},
 		{
-			Name: "test5",
+			Name: "Test5",
 			R: claircore.IndexRecord{
 				Package: &claircore.Package{
 					Version: "3.0.1",
@@ -184,7 +186,7 @@ func TestMatcher(t *testing.T) {
 			Matcher: &python.Matcher{},
 		},
 		{
-			Name: "test6",
+			Name: "Test6",
 			R: claircore.IndexRecord{
 				Package: &claircore.Package{
 					Version: "3.0.2",
@@ -200,7 +202,7 @@ func TestMatcher(t *testing.T) {
 			Matcher: &python.Matcher{},
 		},
 		{
-			Name: "test7",
+			Name: "Test7",
 			R: claircore.IndexRecord{
 				Package: &claircore.Package{
 					Version: "3.0.2",
@@ -216,7 +218,7 @@ func TestMatcher(t *testing.T) {
 			Matcher: &python.Matcher{},
 		},
 		{
-			Name: "test8",
+			Name: "Test8",
 			R: claircore.IndexRecord{
 				Package: &claircore.Package{
 					Version: "3.0.2",
