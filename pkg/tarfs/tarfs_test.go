@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"crypto/sha256"
+	"errors"
 	"io"
 	"io/fs"
 	"os"
@@ -237,9 +238,11 @@ func mktar(t *testing.T, in fs.FS, tw *tar.Writer) fs.WalkDirFunc {
 
 func TestSymlinks(t *testing.T) {
 	tmp := t.TempDir()
-	run := func(wantErr bool, hs []tar.Header, chk func(*testing.T, fs.FS)) func(*testing.T) {
+	run := func(openErr bool, hs []tar.Header, chk func(*testing.T, fs.FS)) func(*testing.T) {
 		return func(t *testing.T) {
 			t.Helper()
+			// This is a perfect candidate for using test.GenerateFixture, but
+			// creates an import cycle.
 			f, err := os.Create(filepath.Join(tmp, path.Base(t.Name())))
 			if err != nil {
 				t.Fatal(err)
@@ -258,7 +261,7 @@ func TestSymlinks(t *testing.T) {
 
 			sys, err := New(f)
 			t.Log(err)
-			if (err != nil) != wantErr {
+			if (err != nil) != openErr {
 				t.Fail()
 			}
 
@@ -267,6 +270,7 @@ func TestSymlinks(t *testing.T) {
 			}
 		}
 	}
+
 	t.Run("Ordered", run(false, []tar.Header{
 		{Name: `a/`},
 		{
@@ -361,6 +365,97 @@ func TestSymlinks(t *testing.T) {
 		}
 		if fi.Name() != "a" || !fi.IsDir() {
 			t.Error("unexpected stat: ", fi.Name(), fi.IsDir())
+		}
+	}))
+	// The following tests are ported from the claircore package.
+	//
+	// That package used to have enough smarts to extract files on its own, but
+	// now uses [fs.FS], and the tar smarts live here.
+	t.Run("ChaseSymlink", run(false, []tar.Header{
+		{Name: "a", Mode: 0o777},
+		{
+			Typeflag: tar.TypeSymlink,
+			Name:     `1`,
+			Linkname: `/2`,
+		},
+		{
+			Typeflag: tar.TypeSymlink,
+			Name:     `2`,
+			Linkname: `./3`,
+		},
+		{
+			Typeflag: tar.TypeSymlink,
+			Name:     `3`,
+			Linkname: `a`,
+		},
+	}, func(t *testing.T, sys fs.FS) {
+		fi, err := fs.Stat(sys, "1")
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("mode for %q: %v", "1", fi.Mode())
+		if fi.Mode().Type()&fs.ModeSymlink == 0 { // If symlink bit unset.
+			t.Fatal("cannot stat symlink: transparently followed")
+		}
+		fi, err = fs.Stat(sys, "a")
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Logf("mode for %q: %v", "a", fi.Mode())
+		if fi.Mode().Type() != 0 { // If not a regular file
+			t.Fatal("not a regular file")
+		}
+		if got, want := fi.Mode().Perm(), fs.FileMode(0o777); got != want {
+			t.Fatalf("bad perms: got: %v, want: %v", got, want)
+		}
+		f, err := sys.Open("1")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer f.Close()
+		fi, err = f.Stat()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if fi.Mode().Type() != 0 { // If not a regular file
+			t.Fatal("not a regular file")
+		}
+		if got, want := fi.Mode().Perm(), fs.FileMode(0o777); got != want {
+			t.Fatalf("bad perms: got: %v, want: %v", got, want)
+		}
+	}))
+	t.Run("DanglingSymlink", run(false, []tar.Header{
+		{
+			Typeflag: tar.TypeSymlink,
+			Name:     `1`,
+			Linkname: `/2`,
+		},
+		{
+			Typeflag: tar.TypeSymlink,
+			Name:     `2`,
+			Linkname: `./3`,
+		},
+		{
+			Typeflag: tar.TypeSymlink,
+			Name:     `3`,
+			Linkname: `a`,
+		},
+	}, func(t *testing.T, sys fs.FS) {
+		_, err := sys.Open("1")
+		if !errors.Is(err, fs.ErrNotExist) {
+			t.Errorf("unexpected err return: %v", err)
+		}
+	}))
+	t.Run("EscapingSymlink", run(false, []tar.Header{
+		{
+			Typeflag: tar.TypeSymlink,
+			Name:     `1`,
+			Linkname: `../../../../target`,
+		},
+	}, func(t *testing.T, sys fs.FS) {
+		_, err := sys.Open("1")
+		if !errors.Is(err, fs.ErrNotExist) {
+			t.Errorf("unexpected err return: %v", err)
 		}
 	}))
 }
