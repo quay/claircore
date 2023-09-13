@@ -11,8 +11,8 @@ import (
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/pkg/cpe"
-	"github.com/quay/claircore/test/fetch"
+	"github.com/quay/claircore/test"
+	"github.com/quay/claircore/toolkit/types/cpe"
 )
 
 type parsecase struct {
@@ -48,7 +48,7 @@ func TestParse(t *testing.T) {
 
 	tt := []parsecase{
 		{
-			File: "alpine",
+			File: "Alpine",
 			Want: claircore.Distribution{
 				DID:        "alpine",
 				Name:       "Alpine Linux",
@@ -57,7 +57,7 @@ func TestParse(t *testing.T) {
 			},
 		},
 		{
-			File: "bionic",
+			File: "Bionic",
 			Want: claircore.Distribution{
 				DID:             "ubuntu",
 				Name:            "Ubuntu",
@@ -68,7 +68,7 @@ func TestParse(t *testing.T) {
 			},
 		},
 		{
-			File: "buster",
+			File: "Buster",
 			Want: claircore.Distribution{
 				DID:             "debian",
 				Name:            "Debian GNU/Linux",
@@ -79,7 +79,7 @@ func TestParse(t *testing.T) {
 			},
 		},
 		{
-			File: "opensuse",
+			File: "OpenSUSe",
 			Want: claircore.Distribution{
 				DID:        "opensuse-leap",
 				Name:       "openSUSE Leap",
@@ -90,7 +90,7 @@ func TestParse(t *testing.T) {
 			},
 		},
 		{
-			File: "silverblue",
+			File: "Silverblue",
 			Want: claircore.Distribution{
 				DID:        "fedora",
 				Name:       "Fedora",
@@ -101,7 +101,7 @@ func TestParse(t *testing.T) {
 			},
 		},
 		{
-			File: "toolbox",
+			File: "Toolbox",
 			Want: claircore.Distribution{
 				DID:        "fedora",
 				Name:       "Fedora",
@@ -112,7 +112,7 @@ func TestParse(t *testing.T) {
 			},
 		},
 		{
-			File: "ubi8",
+			File: "Ubi8",
 			Want: claircore.Distribution{
 				DID:        "rhel",
 				Name:       "Red Hat Enterprise Linux",
@@ -123,7 +123,7 @@ func TestParse(t *testing.T) {
 			},
 		},
 		{
-			File: "distroless_corrupt_layer",
+			File: "DistrolessCorrupt",
 			Want: claircore.Distribution{
 				DID:             "debian",
 				Name:            "Debian GNU/Linux",
@@ -134,7 +134,7 @@ func TestParse(t *testing.T) {
 			},
 		},
 		{
-			File: "distroless_valid_layer",
+			File: "DistrolessValid",
 			Want: claircore.Distribution{
 				DID:             "debian",
 				Name:            "Debian GNU/Linux",
@@ -152,7 +152,7 @@ func TestParse(t *testing.T) {
 
 type layercase struct {
 	Name  string
-	Layer layerspec
+	Layer test.LayerRef
 	Want  []*claircore.Distribution
 }
 type layerspec struct {
@@ -163,16 +163,9 @@ type layerspec struct {
 func (lc layercase) Test(t *testing.T) {
 	t.Parallel()
 	ctx := zlog.Test(context.Background(), t)
-	s := Scanner{}
-	l := &claircore.Layer{}
-	f, err := fetch.Layer(ctx, t, nil, lc.Layer.From, lc.Layer.Repo, lc.Layer.Blob)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer f.Close()
-	if err := l.SetLocal(f.Name()); err != nil {
-		t.Fatal(err)
-	}
+	l := test.RealizeLayer(ctx, t, lc.Layer)
+	var s Scanner
+
 	ds, err := s.Scan(ctx, l)
 	if err != nil {
 		t.Error(err)
@@ -184,28 +177,30 @@ func (lc layercase) Test(t *testing.T) {
 
 func TestLayer(t *testing.T) {
 	t.Parallel()
-	tt := []layercase{
-		{
-			Name: "ubuntu_18.04",
-			Layer: layerspec{
-				From: "docker.io",
-				Repo: "library/ubuntu",
-				Blob: claircore.MustParseDigest(`sha256:35c102085707f703de2d9eaad8752d6fe1b8f02b5d2149f1d8357c9cc7fb7d0a`),
-			},
-			Want: []*claircore.Distribution{
-				{
-					DID:             "ubuntu",
-					Name:            "Ubuntu",
-					Version:         "18.04.3 LTS (Bionic Beaver)",
-					VersionCodeName: "bionic",
-					VersionID:       "18.04",
-					PrettyName:      "Ubuntu 18.04.3 LTS",
+	t.Run("Ubuntu", func(t *testing.T) {
+		tt := []layercase{
+			{
+				Name: "18.04",
+				Layer: test.LayerRef{
+					Registry: "docker.io",
+					Name:     "library/ubuntu",
+					Digest:   `sha256:35c102085707f703de2d9eaad8752d6fe1b8f02b5d2149f1d8357c9cc7fb7d0a`,
+				},
+				Want: []*claircore.Distribution{
+					{
+						DID:             "ubuntu",
+						Name:            "Ubuntu",
+						Version:         "18.04.3 LTS (Bionic Beaver)",
+						VersionCodeName: "bionic",
+						VersionID:       "18.04",
+						PrettyName:      "Ubuntu 18.04.3 LTS",
+					},
 				},
 			},
-		},
-	}
+		}
 
-	for _, tc := range tt {
-		t.Run(tc.Name, tc.Test)
-	}
+		for _, tc := range tt {
+			t.Run(tc.Name, tc.Test)
+		}
+	})
 }
