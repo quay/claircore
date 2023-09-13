@@ -2,16 +2,17 @@ package dpkg
 
 import (
 	"context"
-	"net/http"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/quay/claircore"
-	"github.com/quay/claircore/test/fetch"
 	"github.com/quay/zlog"
+
+	"github.com/quay/claircore"
+	"github.com/quay/claircore/test"
 )
 
 func TestDistrolessLayer(t *testing.T) {
+	ctx := zlog.Test(context.Background(), t)
 	want := []*claircore.Package{
 		{
 			Name:           "base-files",
@@ -41,25 +42,15 @@ func TestDistrolessLayer(t *testing.T) {
 			RepositoryHint: "",
 		},
 	}
+	l := test.RealizeLayer(ctx, t, test.LayerRef{
+		Registry: "gcr.io",
+		Name:     "distroless/static-debian11",
+		Digest:   `sha256:8fdb1fc20e240e9cae976518305db9f9486caa155fd5fc53e7b3a3285fe8a990`,
+	})
+	var s DistrolessScanner
 
 	t.Parallel()
-	ctx := zlog.Test(context.Background(), t)
-	hash := claircore.MustParseDigest(`sha256:8fdb1fc20e240e9cae976518305db9f9486caa155fd5fc53e7b3a3285fe8a990`)
-	l := claircore.Layer{
-		Hash: hash,
-	}
-	n, err := fetch.Layer(ctx, t, http.DefaultClient, "gcr.io", "distroless/static-debian11", hash)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer n.Close()
-
-	if err := l.SetLocal(n.Name()); err != nil {
-		t.Error(err)
-	}
-
-	s := new(DistrolessScanner)
-	ps, err := s.Scan(ctx, &l)
+	ps, err := s.Scan(ctx, l)
 	if err != nil {
 		t.Error(err)
 	}

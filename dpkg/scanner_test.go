@@ -4,28 +4,21 @@ import (
 	"archive/tar"
 	"bufio"
 	"context"
-	"errors"
 	"io"
-	"net/http"
 	"net/textproto"
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/test/fetch"
-	"github.com/quay/claircore/test/integration"
+	"github.com/quay/claircore/test"
 )
 
 func TestScanner(t *testing.T) {
 	t.Parallel()
-	hash, err := claircore.ParseDigest("sha256:35c102085707f703de2d9eaad8752d6fe1b8f02b5d2149f1d8357c9cc7fb7d0a")
-	if err != nil {
-		t.Fatal(err)
-	}
+	// TODO(hank) Cook up a manifest format for dpkg ala `test/rpmtest.Manifest`
 	want := []*claircore.Package{
 		{
 			Name:           "fdisk",
@@ -803,21 +796,13 @@ func TestScanner(t *testing.T) {
 		},
 	}
 	ctx := zlog.Test(context.Background(), t)
-	l := &claircore.Layer{
-		Hash: hash,
-	}
+	l := test.RealizeLayer(ctx, t, test.LayerRef{
+		Registry: "docker.io",
+		Name:     "library/ubuntu",
+		Digest:   "sha256:35c102085707f703de2d9eaad8752d6fe1b8f02b5d2149f1d8357c9cc7fb7d0a",
+	})
+	var s Scanner
 
-	n, err := fetch.Layer(ctx, t, http.DefaultClient, "docker.io", "library/ubuntu", hash)
-	if err != nil {
-		t.Error(err)
-	}
-	defer n.Close()
-
-	if err := l.SetLocal(n.Name()); err != nil {
-		t.Error(err)
-	}
-
-	s := &Scanner{}
 	got, err := s.Scan(ctx, l)
 	if err != nil {
 		t.Fatal(err)
@@ -830,25 +815,12 @@ func TestScanner(t *testing.T) {
 func TestAbsolutePaths(t *testing.T) {
 	t.Parallel()
 	ctx := zlog.Test(context.Background(), t)
-	hash, err := claircore.ParseDigest("sha256:3c9020349340788076971d5ea638b71e35233fd8e149e269d8eebfa17960c03f")
-	if err != nil {
-		t.Fatal(err)
-	}
-	l := &claircore.Layer{
-		Hash: hash,
-	}
-
-	n, err := fetch.Layer(ctx, t, http.DefaultClient, "gcr.io", "vmwarecloudadvocacy/acmeshop-user", hash)
-	if err != nil {
-		t.Error(err)
-	}
-	defer n.Close()
-
-	if err := l.SetLocal(n.Name()); err != nil {
-		t.Error(err)
-	}
-
-	s := &Scanner{}
+	l := test.RealizeLayer(ctx, t, test.LayerRef{
+		Registry: "gcr.io",
+		Name:     "vmwarecloudadvocacy/acmeshop-user",
+		Digest:   "sha256:3c9020349340788076971d5ea638b71e35233fd8e149e269d8eebfa17960c03f",
+	})
+	var s Scanner
 	got, err := s.Scan(ctx, l)
 	if err != nil {
 		t.Fatal(err)
@@ -861,21 +833,21 @@ func TestAbsolutePaths(t *testing.T) {
 
 func TestExtraMetadata(t *testing.T) {
 	t.Parallel()
-	layerfile := filepath.Join(integration.PackageCacheDir(t), `extrametadata.layer`)
-	l := claircore.Layer{
-		Hash: claircore.MustParseDigest(`sha256:25fd87072f39aaebd1ee24dca825e61d9f5a0f87966c01551d31a4d8d79d37d8`),
-		URI:  "file:///dev/null",
-	}
+	mod := test.Modtime(t, "scanner_test.go")
+	layerfile := test.GenerateFixture(t, `extrametadata.layer`, mod, extraMetadataSetup)
 	ctx := zlog.Test(context.Background(), t)
+	var l claircore.Layer
+	var s Scanner
 
-	// Set up the crafted layer
-	extraMetadataSetup(t, layerfile)
-	l.SetLocal(layerfile)
-	if t.Failed() {
-		return
+	f, err := os.Open(layerfile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	if err := l.Init(ctx, &test.AnyDescription, f); err != nil {
+		t.Error(err)
 	}
 
-	s := new(Scanner)
 	ps, err := s.Scan(ctx, &l)
 	if err != nil {
 		t.Error(err)
@@ -886,47 +858,7 @@ func TestExtraMetadata(t *testing.T) {
 }
 
 // ExtraMetadataSetup is a helper to craft a layer that trips PROJQUAY-1308.
-func extraMetadataSetup(t *testing.T, layer string) {
-	t.Helper()
-
-	fi, err := os.Stat(layer)
-	if err != nil {
-		t.Log(err)
-	}
-	switch {
-	case err == nil:
-		// If everything looks okay, check if this test has been touched. If so,
-		// remove the layer and recurse, so that it's re-created.
-		tf, err := os.Stat(`scanner_test.go`)
-		if err != nil {
-			t.Log(err)
-		}
-		if !fi.ModTime().After(tf.ModTime()) {
-			t.Log("recreating layer")
-			if err := os.Remove(layer); err != nil {
-				t.Log(err)
-			}
-			extraMetadataSetup(t, layer)
-		}
-		return
-	case errors.Is(err, os.ErrNotExist): // OK
-		os.Mkdir(`testdata`, 0o755)
-	default:
-		t.Error(err)
-		return
-	}
-
-	// If we're here, time to create the layer.
-	t.Log("creating layer")
-	f, err := os.Create(layer)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		if err := f.Close(); err != nil {
-			t.Error(err)
-		}
-	}()
+func extraMetadataSetup(t testing.TB, f *os.File) {
 	w := tar.NewWriter(f)
 	defer func() {
 		if err := w.Close(); err != nil {
