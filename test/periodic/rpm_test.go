@@ -16,6 +16,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/rpm"
+	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/fetch"
 	"github.com/quay/claircore/test/rpmtest"
 )
@@ -223,13 +224,18 @@ func (doc hydraDoc) Run(dir string) func(*testing.T) {
 		var got []*claircore.Package
 		var which claircore.Digest
 		for _, ld := range image.Data[0].Parsed.Layers {
+			// TODO(hank) Need a way to use the nicer API, but pass the
+			// Integration bypass.
 			n, err := fetch.Layer(ctx, t, pkgClient, doc.Registry, doc.Repository, ld, fetch.IgnoreIntegration)
 			if err != nil {
 				t.Fatal(err)
 			}
 			defer n.Close()
-			l := claircore.Layer{Hash: ld}
-			l.SetLocal(n.Name())
+			var l claircore.Layer
+			if err := l.Init(ctx, &test.AnyDescription, n); err != nil {
+				t.Fatal(err)
+			}
+			l.Hash = ld // If you're reading this for an example of how to work with layers: don't do this.
 
 			pkgs, err := s.Scan(ctx, &l)
 			if err != nil {
