@@ -28,7 +28,7 @@ jobs:
         uses: gsactions/commit-message-checker@v2
         with:
           pattern: |
-            ^(.*):\s*(.*)\n.*$
+            ^[^:!]+: .+\n\n.*$
           error: 'Commit must begin with <scope>: <subject>'
           flags: 'gm'
           excludeTitle: true
