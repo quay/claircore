@@ -3,6 +3,7 @@ package libindex
 import (
 	"context"
 	"crypto/sha256"
+	"errors"
 	"io"
 	"strconv"
 	"testing"
@@ -54,7 +55,7 @@ func TestAffectedManifests(t *testing.T) {
 		mockStore            func(t *testing.T) indexer.Store
 	}{
 		{
-			name:                 "Simple path",
+			name:                 "SimplePath",
 			inputVulns:           createTestVulns(2),
 			numExpectedVulns:     2,
 			numExpectedManifests: 2,
@@ -72,7 +73,7 @@ func TestAffectedManifests(t *testing.T) {
 			},
 		},
 		{
-			name:                 "Many vulns",
+			name:                 "ManyVulns",
 			inputVulns:           createTestVulns(40),
 			numExpectedVulns:     40,
 			numExpectedManifests: 40,
@@ -110,6 +111,30 @@ func TestAffectedManifests(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("CancelledContext", func(t *testing.T) {
+		for _, table := range tt {
+			t.Run(table.name, func(t *testing.T) {
+				ctx := zlog.Test(ctx, t)
+				ctx, cancel := context.WithCancelCause(ctx)
+				want := errors.New("early cancel")
+				cancel(want)
+				s := table.mockStore(t)
+				li := &Libindex{store: s}
+
+				a, err := li.AffectedManifests(ctx, table.inputVulns)
+				if err == nil {
+					t.Errorf("did not expect error: %v", err)
+				}
+				if a != nil {
+					t.Errorf("did not expect result: %v", a)
+				}
+				if !errors.Is(err, want) {
+					t.Errorf("got: %v, want: %v", err, want)
+				}
+			})
+		}
+	})
 }
 
 func BenchmarkAffectedManifests(b *testing.B) {

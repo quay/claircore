@@ -13,7 +13,6 @@ import (
 
 	"github.com/quay/zlog"
 	"golang.org/x/sync/errgroup"
-	"golang.org/x/sync/semaphore"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/alpine"
@@ -243,36 +242,40 @@ func (l *Libindex) IndexReport(ctx context.Context, hash claircore.Digest) (*cla
 
 // AffectedManifests retrieves a list of affected manifests when provided a list of vulnerabilities.
 func (l *Libindex) AffectedManifests(ctx context.Context, vulns []claircore.Vulnerability) (*claircore.AffectedManifests, error) {
-	sem := semaphore.NewWeighted(20)
 	ctx = zlog.ContextWithValues(ctx, "component", "libindex/Libindex.AffectedManifests")
 	om := omnimatcher.New(nil)
 
 	affected := claircore.NewAffectedManifests()
-	errGrp, eCTX := errgroup.WithContext(ctx)
-	for i := 0; i < len(vulns); i++ {
-		ii := i
-
-		do := func() error {
-			defer sem.Release(1)
-			if eCTX.Err() != nil {
-				return eCTX.Err()
+	g, ctx := errgroup.WithContext(ctx)
+	// TODO(hank) Look in the git history and see if there's any hint where this
+	// number comes from. I suspect it's a WAG constant.
+	g.SetLimit(20)
+	do := func(i int) func() error {
+		return func() error {
+			select {
+			case <-ctx.Done():
+				return context.Cause(ctx)
+			default:
 			}
-			hashes, err := l.store.AffectedManifests(eCTX, vulns[ii], om.Vulnerable)
+			hashes, err := l.store.AffectedManifests(ctx, vulns[i], om.Vulnerable)
 			if err != nil {
 				return err
 			}
-			affected.Add(&vulns[ii], hashes...)
+			affected.Add(&vulns[i], hashes...)
 			return nil
 		}
-
-		// Try to acquire the sem before starting the goroutine for bounded parallelism.
-		if err := sem.Acquire(eCTX, 1); err != nil {
-			return nil, err
-		}
-		errGrp.Go(do)
 	}
-	if err := errGrp.Wait(); err != nil {
-		return &affected, fmt.Errorf("received error retrieving affected manifests: %v", err)
+V:
+	for i := 0; i < len(vulns); i++ {
+		g.Go(do(i))
+		select {
+		case <-ctx.Done():
+			break V
+		default:
+		}
+	}
+	if err := g.Wait(); err != nil {
+		return nil, fmt.Errorf("received error retrieving affected manifests: %w", err)
 	}
 	affected.Sort()
 	return &affected, nil
