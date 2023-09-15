@@ -9,7 +9,6 @@ import (
 
 	"github.com/quay/zlog"
 	"golang.org/x/sync/errgroup"
-	"golang.org/x/sync/semaphore"
 
 	"github.com/quay/claircore"
 )
@@ -18,7 +17,7 @@ type LayerScanner struct {
 	store Store
 
 	// Maximum allowed in-flight scanners per Scan call
-	inflight int64
+	inflight int
 
 	// Pre-constructed and configured scanners.
 	ps  []PackageScanner
@@ -50,7 +49,7 @@ func NewLayerScanner(ctx context.Context, concurrent int, opts *Options) (*Layer
 
 	return &LayerScanner{
 		store:    opts.Store,
-		inflight: int64(concurrent),
+		inflight: concurrent,
 		ps:       configAndFilter(ctx, opts, ps),
 		ds:       configAndFilter(ctx, opts, ds),
 		rs:       configAndFilter(ctx, opts, rs),
@@ -130,21 +129,33 @@ func (ls *LayerScanner) Scan(ctx context.Context, manifest claircore.Digest, lay
 		"component", "indexer/LayerScanner.Scan",
 		"manifest", manifest.String())
 
-	sem := semaphore.NewWeighted(ls.inflight)
 	g, ctx := errgroup.WithContext(ctx)
+	// Using the goroutine's built-in limit is worst-case the same as using an
+	// external semaphore (spawn N goroutines and immediately wait on M of them,
+	// waits cancelling when the first error is returned) but putting the
+	// Context check in the "Layers" loop means we only spawn max 3 extra goroutines
+	// that will immediately return.
+	g.SetLimit(ls.inflight)
 	// Launch is a closure to capture the loop variables and then call the
 	// scanLayer method.
 	launch := func(l *claircore.Layer, s VersionedScanner) func() error {
 		return func() error {
-			if err := sem.Acquire(ctx, 1); err != nil {
-				return err
+			select {
+			case <-ctx.Done():
+				return context.Cause(ctx)
+			default:
 			}
-			defer sem.Release(1)
 			return ls.scanLayer(ctx, l, s)
 		}
 	}
 	dedupe := make(map[string]struct{})
+Layers:
 	for _, l := range layers {
+		select {
+		case <-ctx.Done():
+			break Layers
+		default:
+		}
 		if _, ok := dedupe[l.Hash.String()]; ok {
 			continue
 		}
@@ -161,7 +172,6 @@ func (ls *LayerScanner) Scan(ctx context.Context, manifest claircore.Digest, lay
 		for _, s := range ls.fis {
 			g.Go(launch(l, s))
 		}
-
 	}
 
 	return g.Wait()
