@@ -230,7 +230,7 @@ func (r *result) Do(ctx context.Context, s VersionedScanner, l *claircore.Layer)
 		panic(fmt.Sprintf("programmer error: unknown type %T used as scanner", s))
 	}
 
-	addrErr := &net.AddrError{}
+	var addrErr *net.AddrError
 	switch {
 	case errors.Is(err, nil):
 	case errors.As(err, &addrErr):
