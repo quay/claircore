@@ -28,6 +28,7 @@ func NewController(m driver.Matcher, store datastore.Vulnerability) *Controller 
 	}
 }
 
+// Match is the entrypoint for [Controller].
 func (mc *Controller) Match(ctx context.Context, records []*claircore.IndexRecord) (map[string][]*claircore.Vulnerability, error) {
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "internal/matcher/Controller.Match",
