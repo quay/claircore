@@ -204,7 +204,7 @@ func (u *Updater) Run(ctx context.Context, strict bool) error {
 	// Print or return errors.
 	if len(errs) != 0 {
 		if strict {
-			return errSlice(errs)
+			return errors.Join(errs...)
 		}
 		zlog.Info(ctx).Errs("errors", errs).Msg("updater errors")
 	}
@@ -426,23 +426,6 @@ func feeder(ctx context.Context, ch chan<- taggedUpdater, us []taggedUpdater) fu
 		}
 		return nil
 	}
-}
-
-// ErrSlice implements error, for accumulating errors.
-type errSlice []error
-
-func (e errSlice) Error() string {
-	if e == nil {
-		return "<nil>"
-	}
-	var b strings.Builder
-	b.WriteString("updater errors:\n")
-	for _, err := range e {
-		b.WriteByte('\t')
-		b.WriteString(err.Error())
-		b.WriteByte('\n')
-	}
-	return b.String()
 }
 
 const (
