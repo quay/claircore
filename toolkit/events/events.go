@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"runtime"
-	"strings"
 	"sync"
 )
 
@@ -15,7 +14,7 @@ type Group struct {
 	mu   sync.Mutex // Protects errs
 	sink Sink
 	name string
-	errs errs
+	errs []error
 }
 
 // NewGroup creates a new Group "name" writing to Sink "sink".
@@ -45,8 +44,8 @@ func (g *Group) Finish(ctx context.Context) error {
 	}
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	if g.errs != nil {
-		return g.errs
+	if err := errors.Join(g.errs...); err != nil {
+		return fmt.Errorf("events: error(s) while emitting logs:\n%w", err)
 	}
 	return nil
 }
@@ -61,44 +60,6 @@ func (g *Group) pushErr(err error) {
 	g.mu.Lock()
 	g.errs = append(g.errs, err)
 	g.mu.Unlock()
-}
-
-type errs []error
-
-func (e errs) Error() string {
-	switch len(e) {
-	case 0:
-		return "<nil>" // ???
-	case 1:
-		return e[0].Error()
-	default:
-		var b strings.Builder
-		b.WriteString("errors while emitting logs:\n")
-		for _, e := range e {
-			b.WriteByte('\t')
-			b.WriteString(e.Error())
-			b.WriteByte('\n')
-		}
-		return b.String()
-	}
-}
-
-func (e errs) Is(target error) bool {
-	for _, e := range e {
-		if errors.Is(e, target) {
-			return true
-		}
-	}
-	return false
-}
-
-func (e errs) As(target interface{}) bool {
-	for _, e := range e {
-		if errors.As(e, target) {
-			return true
-		}
-	}
-	return false
 }
 
 // Log is the facade that "user" code should expect.
