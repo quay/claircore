@@ -11,75 +11,79 @@ import (
 	"github.com/quay/claircore/indexer"
 )
 
-// coalesce calls each ecosystem's coalescer and merges the returned IndexReports
+// Coalesce calls each ecosystem's Coalescer and merges the returned IndexReports.
 func coalesce(ctx context.Context, s *Controller) (State, error) {
-	cctx, cancel := context.WithCancel(ctx)
-	defer cancel()
 	mu := sync.Mutex{}
 	reports := []*claircore.IndexReport{}
-	g := errgroup.Group{}
-	// dispatch a coalescer go routine for each ecosystem
+	g, gctx := errgroup.WithContext(ctx)
+	// Dispatch a Coalescer goroutine for each ecosystem.
 	for _, ecosystem := range s.Ecosystems {
+		select {
+		case <-gctx.Done():
+			break
+		default:
+		}
 		artifacts := []*indexer.LayerArtifacts{}
-		pkgScanners, _ := ecosystem.PackageScanners(cctx)
-		distScanners, _ := ecosystem.DistributionScanners(cctx)
-		repoScanners, _ := ecosystem.RepositoryScanners(cctx)
+		pkgScanners, _ := ecosystem.PackageScanners(gctx)
+		distScanners, _ := ecosystem.DistributionScanners(gctx)
+		repoScanners, _ := ecosystem.RepositoryScanners(gctx)
 		fileScanners := []indexer.FileScanner{}
 		if ecosystem.FileScanners != nil {
-			fileScanners, _ = ecosystem.FileScanners(cctx)
+			fileScanners, _ = ecosystem.FileScanners(gctx)
 		}
-		// pack artifacts var
+		// Pack "artifacts" variable.
 		for _, layer := range s.manifest.Layers {
 			la := &indexer.LayerArtifacts{
 				Hash: layer.Hash,
 			}
 			var vscnrs indexer.VersionedScanners
 			vscnrs.PStoVS(pkgScanners)
-			// get packages from layer
-			pkgs, err := s.Store.PackagesByLayer(cctx, layer.Hash, vscnrs)
+			// Get packages from layer.
+			pkgs, err := s.Store.PackagesByLayer(gctx, layer.Hash, vscnrs)
 			if err != nil {
-				// on an early return cctx is canceled, and all inflight coalescers are canceled as well
+				// On an early return gctx is canceled, and all in-flight
+				// Coalescers are canceled as well.
 				return Terminal, fmt.Errorf("failed to retrieve packages for %v: %w", layer.Hash, err)
 			}
 			la.Pkgs = append(la.Pkgs, pkgs...)
-			// Get repos that have been created via the package scanners
-			pkgRepos, err := s.Store.RepositoriesByLayer(cctx, layer.Hash, vscnrs)
+			// Get repos that have been created via the package scanners.
+			pkgRepos, err := s.Store.RepositoriesByLayer(gctx, layer.Hash, vscnrs)
 			if err != nil {
 				return Terminal, fmt.Errorf("failed to retrieve repositories for %v: %w", layer.Hash, err)
 			}
 			la.Repos = append(la.Repos, pkgRepos...)
 
-			// get distributions from layer
-			vscnrs.DStoVS(distScanners) // method allocates new vscnr underlying array, clearing old contents
-			dists, err := s.Store.DistributionsByLayer(cctx, layer.Hash, vscnrs)
+			// Get distributions from layer.
+			vscnrs.DStoVS(distScanners) // Method allocates new "vscnr" underlying array, clearing old contents.
+			dists, err := s.Store.DistributionsByLayer(gctx, layer.Hash, vscnrs)
 			if err != nil {
 				return Terminal, fmt.Errorf("failed to retrieve distributions for %v: %w", layer.Hash, err)
 			}
 			la.Dist = append(la.Dist, dists...)
-			// get repositories from layer
+			// Get repositories from layer.
 			vscnrs.RStoVS(repoScanners)
-			repos, err := s.Store.RepositoriesByLayer(cctx, layer.Hash, vscnrs)
+			repos, err := s.Store.RepositoriesByLayer(gctx, layer.Hash, vscnrs)
 			if err != nil {
 				return Terminal, fmt.Errorf("failed to retrieve repositories for %v: %w", layer.Hash, err)
 			}
 			la.Repos = append(la.Repos, repos...)
-			// get files from layer
+			// Get files from layer.
 			vscnrs.FStoVS(fileScanners)
-			files, err := s.Store.FilesByLayer(cctx, layer.Hash, vscnrs)
+			files, err := s.Store.FilesByLayer(gctx, layer.Hash, vscnrs)
 			if err != nil {
 				return Terminal, fmt.Errorf("failed to retrieve files for %v: %w", layer.Hash, err)
 			}
 			la.Files = append(la.Files, files...)
-			// pack artifacts array in layer order
+			// Pack artifacts array in layer order.
 			artifacts = append(artifacts, la)
 		}
-		coalescer, err := ecosystem.Coalescer(cctx)
+		coalescer, err := ecosystem.Coalescer(gctx)
 		if err != nil {
 			return Terminal, fmt.Errorf("failed to get coalescer from ecosystem: %v", err)
 		}
-		// dispatch coalescer
+		// Dispatch.
 		g.Go(func() error {
-			sr, err := coalescer.Coalesce(cctx, artifacts)
+			sr, err := coalescer.Coalesce(gctx, artifacts)
 			if err != nil {
 				return err
 			}
@@ -102,8 +106,10 @@ func coalesce(ctx context.Context, s *Controller) (State, error) {
 
 // MergeSR merges IndexReports.
 //
-// source is the IndexReport that the indexer is working on.
-// merge is an array IndexReports returned from coalescers
+// "Source" is the IndexReport that the Indexer is working on.
+// "Merge" is a slice of IndexReports returned from Coalescers.
+//
+// The "SR" suffix is a historical accident.
 func MergeSR(source *claircore.IndexReport, merge []*claircore.IndexReport) *claircore.IndexReport {
 	for _, ir := range merge {
 		for k, v := range ir.Environments {
