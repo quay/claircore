@@ -1,5 +1,15 @@
 // Package gobin implements a package scanner that pulls go runtime and
 // dependency information out of a compiled executable.
+//
+// # Main module versioning
+//
+// The go toolchain currently only fills in version information for modules
+// obtained as a module. Most go executables are built from source checkouts,
+// meaning they are not in module form. See [issue 50603] for details on why and
+// what's being explored to provide this information. Accordingly, claircore
+// cannot report advisories for main modules.
+//
+// [issue 50603]: https://golang.org/issues/50603
 package gobin
 
 import (

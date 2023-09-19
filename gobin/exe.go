@@ -4,6 +4,7 @@ import (
 	"context"
 	"debug/buildinfo"
 	"errors"
+	"fmt"
 	"io"
 	"strings"
 	_ "unsafe" // for error linkname tricks
@@ -73,12 +74,47 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 		"runtime": bi.GoVersion,
 	}
 	var mainVer claircore.Version
+	var mmv string
 	mpv, err := semver.NewVersion(bi.Main.Version)
 	switch {
 	case errors.Is(err, nil):
 		mainVer = fromSemver(mpv)
+	case bi.Main.Version == `(devel)`:
+		// This is currently the state of any main module built from source; see
+		// the package documentation. Don't record it as a "bad" version and
+		// pull out any vcs metadata that's been stamped in.
+		mmv = bi.Main.Version
+		var v []string
+		for _, s := range bi.Settings {
+			switch s.Key {
+			case "vcs":
+				v = append(v, s.Value)
+			case "vcs.revision":
+				switch len(s.Value) {
+				case 40, 64:
+					v = append(v, "commit "+s.Value)
+				default:
+					v = append(v, "rev "+s.Value)
+				}
+			case "vcs.time":
+				v = append(v, "built at "+s.Value)
+			case "vcs.modified":
+				switch s.Value {
+				case "true":
+					v = append(v, "dirty")
+				case "false":
+				default:
+					panic("unreachable")
+				}
+			default:
+			}
+		}
+		if len(v) != 0 {
+			mmv = fmt.Sprintf("(devel) (%s)", strings.Join(v, ", "))
+		}
 	case errors.Is(err, semver.ErrInvalidSemVer):
 		badVers[bi.Main.Path] = bi.Main.Version
+		mmv = bi.Main.Version
 	default:
 		return err
 	}
@@ -87,7 +123,7 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 		Kind:              claircore.BINARY,
 		PackageDB:         pkgdb,
 		Name:              bi.Main.Path,
-		Version:           bi.Main.Version,
+		Version:           mmv,
 		Filepath:          p,
 		NormalizedVersion: mainVer,
 	})

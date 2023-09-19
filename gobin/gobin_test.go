@@ -72,7 +72,9 @@ func TestScanner(t *testing.T) {
 	// Build a go binary.
 	outname := filepath.Join(tmpdir, "bisect")
 	cmd := exec.CommandContext(ctx, "go", "build", "-o", outname, "github.com/quay/claircore/test/bisect")
-	cmd.Env = append(cmd.Environ(), "GOOS=linux", "GOARCH=amd64") // build a Linux amd64 ELF exe, supported by clair. Unit tests may be running on another architecture
+	// Build a Linux amd64 ELF executable, as that's what's supported by claircore.
+	// Unit tests may be running on another architecture.
+	cmd.Env = append(cmd.Environ(), "GOOS=linux", "GOARCH=amd64")
 	out, err := cmd.CombinedOutput()
 	if len(out) != 0 {
 		t.Logf("%q", string(out))
@@ -137,7 +139,7 @@ func TestScanner(t *testing.T) {
 		switch {
 		case v.Name == "runtime":
 			continue
-		case v.Version == "(devel)":
+		case strings.HasPrefix(v.Version, "(devel)"):
 			continue
 		case v.Kind != claircore.BINARY:
 		case v.PackageDB != "go:bin/bisect":
