@@ -49,20 +49,24 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 
 	// TODO(hank) This package could use canonical versions, but the
 	// [claircore.Version] type is lossy for pre-release versions (I'm sorry).
+
+	// TODO(hank) The "go version" is documented as the toolchain that produced
+	// the binary, which may be distinct from the version of the stdlib used?
+	// Need to investigate.
 	var runtimeVer claircore.Version
 	rtv, err := semver.NewVersion(strings.TrimPrefix(bi.GoVersion, "go"))
 	switch {
 	case errors.Is(err, nil):
 		runtimeVer = fromSemver(rtv)
 	case errors.Is(err, semver.ErrInvalidSemVer):
-		badVers["runtime"] = bi.GoVersion
+		badVers["stdlib"] = bi.GoVersion
 	default:
 		return err
 	}
 
 	*out = append(*out, &claircore.Package{
 		Kind:              claircore.BINARY,
-		Name:              "runtime",
+		Name:              "stdlib",
 		Version:           bi.GoVersion,
 		PackageDB:         pkgdb,
 		Filepath:          p,
@@ -71,7 +75,7 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 
 	ev := zlog.Debug(ctx)
 	vs := map[string]string{
-		"runtime": bi.GoVersion,
+		"stdlib": bi.GoVersion,
 	}
 	var mainVer claircore.Version
 	var mmv string
@@ -99,12 +103,8 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 			case "vcs.time":
 				v = append(v, "built at "+s.Value)
 			case "vcs.modified":
-				switch s.Value {
-				case "true":
+				if s.Value == "true" {
 					v = append(v, "dirty")
-				case "false":
-				default:
-					panic("unreachable")
 				}
 			default:
 			}

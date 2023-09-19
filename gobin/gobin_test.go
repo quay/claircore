@@ -92,6 +92,18 @@ func TestScanner(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Logf("wrote binary to: %s", inf.Name())
+	defer func() {
+		if !t.Failed() {
+			return
+		}
+		cmd := exec.CommandContext(ctx, "go", "version", "-m", inf.Name())
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Logf("error looking at toolchain reporting: %v", err)
+			return
+		}
+		t.Logf("version information reported by toolchain:\n%s", string(out))
+	}()
 
 	// Write a tarball with the binary.
 	tarname := filepath.Join(tmpdir, "tar")
@@ -137,7 +149,7 @@ func TestScanner(t *testing.T) {
 	// would be annoying.
 	for _, v := range vs {
 		switch {
-		case v.Name == "runtime":
+		case v.Name == "stdlib":
 			continue
 		case strings.HasPrefix(v.Version, "(devel)"):
 			continue
