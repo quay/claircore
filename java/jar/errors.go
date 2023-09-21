@@ -38,6 +38,12 @@ func (e *localError) Unwrap() error {
 func mkErr(msg string, err error) *localError {
 	return &localError{msg: msg, inner: err}
 }
+func archiveErr(m srcPath, err error) *localError {
+	return &localError{
+		msg:   fmt.Sprintf("at %q", m.String()),
+		inner: err,
+	}
+}
 
 type errUnidentified struct {
 	name string
@@ -60,8 +66,8 @@ type errNotAJar struct {
 	name  string
 }
 
-func notAJar(name string, reason error) *errNotAJar {
-	return &errNotAJar{name: name, inner: reason}
+func notAJar(p srcPath, reason error) *errNotAJar {
+	return &errNotAJar{name: p.String(), inner: reason}
 }
 
 func (e *errNotAJar) Error() string {

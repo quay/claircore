@@ -70,6 +70,36 @@ func Parse(ctx context.Context, name string, z *zip.Reader) ([]Info, error) {
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "java/jar/Parse",
 		"jar", name)
+	return parse(ctx, srcPath{name}, z)
+}
+
+// SrcPath is a helper for tracking where an archive member is.
+// The [Push] and [Pop] methods are not concurrency-safe.
+type srcPath []string
+
+func (p srcPath) String() string {
+	return strings.Join(p, ":")
+}
+
+func (p srcPath) Cur() string {
+	return p[len(p)-1]
+}
+
+func (p *srcPath) Push(n string) {
+	*p = append(*p, n)
+}
+
+func (p *srcPath) Pop() string {
+	r := (*p)[len(*p)-1]
+	*p = (*p)[:len(*p)-1]
+	return r
+}
+
+// Parse is the inner function that uses a srcPath to keep track of recursions.
+func parse(ctx context.Context, name srcPath, z *zip.Reader) ([]Info, error) {
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "java/jar/Parse",
+		"name", name.String())
 
 	// This uses an admittedly non-idiomatic, C-like goto construction. We want
 	// to attempt a few heuristics and keep the results of the first one that
@@ -79,10 +109,10 @@ func Parse(ctx context.Context, name string, z *zip.Reader) ([]Info, error) {
 	var ret []Info
 	var i Info
 	var err error
-	base := filepath.Base(name)
+	base := filepath.Base(name.Cur())
 	// Try the pom.properties files first. Fatjars hopefully have the multiple
 	// properties files preserved.
-	ret, err = extractProperties(ctx, base, z)
+	ret, err = extractProperties(ctx, name, z)
 	switch {
 	case errors.Is(err, nil):
 		zlog.Debug(ctx).
@@ -93,10 +123,10 @@ func Parse(ctx context.Context, name string, z *zip.Reader) ([]Info, error) {
 	case errors.Is(err, ErrNotAJar):
 		return nil, err
 	default:
-		return nil, mkErr(name, err)
+		return nil, archiveErr(name, err)
 	}
 	// Look at the jar manifest if that fails.
-	i, err = extractManifest(ctx, base, z)
+	i, err = extractManifest(ctx, name, z)
 	switch {
 	case errors.Is(err, nil):
 		zlog.Debug(ctx).
@@ -108,10 +138,10 @@ func Parse(ctx context.Context, name string, z *zip.Reader) ([]Info, error) {
 	case errors.Is(err, ErrNotAJar):
 		return nil, err
 	default:
-		return nil, mkErr(name, err)
+		return nil, archiveErr(name, err)
 	}
 	// As a last resort, just look at the name of the jar.
-	i, err = checkName(ctx, name)
+	i, err = checkName(ctx, name.Cur())
 	switch {
 	case errors.Is(err, nil):
 		zlog.Debug(ctx).
@@ -120,7 +150,7 @@ func Parse(ctx context.Context, name string, z *zip.Reader) ([]Info, error) {
 		goto Finish
 	case errors.Is(err, errUnpopulated):
 	default:
-		return nil, mkErr(name, err)
+		return nil, archiveErr(name, err)
 	}
 	// If we haven't jumped past this point, this is almost certainly not a jar,
 	// so return an error.
@@ -130,7 +160,7 @@ Finish:
 	// Now, we need to examine any jars bundled in this jar.
 	inner, err := extractInner(ctx, name, z)
 	if err != nil {
-		return nil, mkErr(name, err)
+		return nil, archiveErr(name, err)
 	}
 	if ct := len(inner); ct != 0 {
 		zlog.Debug(ctx).
@@ -145,7 +175,7 @@ Finish:
 // ExtractManifest attempts to open the manifest file at the well-known path.
 //
 // Reports NotAJar if the file doesn't exist.
-func extractManifest(ctx context.Context, name string, z *zip.Reader) (Info, error) {
+func extractManifest(ctx context.Context, name srcPath, z *zip.Reader) (Info, error) {
 	const manifestPath = `META-INF/MANIFEST.MF`
 	mf, err := z.Open(manifestPath)
 	switch {
@@ -161,12 +191,13 @@ func extractManifest(ctx context.Context, name string, z *zip.Reader) (Info, err
 	if err != nil {
 		return Info{}, err
 	}
-	i.Source = manifestPath
+	name.Push(manifestPath)
+	i.Source = name.String()
 	return i, nil
 }
 
 // ExtractProperties pulls pom.properties files out of the provided zip.
-func extractProperties(ctx context.Context, name string, z *zip.Reader) ([]Info, error) {
+func extractProperties(ctx context.Context, name srcPath, z *zip.Reader) ([]Info, error) {
 	const filename = "pom.properties"
 	mf, err := z.Open(`META-INF`)
 	switch {
@@ -212,14 +243,16 @@ func extractProperties(ctx context.Context, name string, z *zip.Reader) ([]Info,
 		if err != nil {
 			return nil, err
 		}
-		ret[i].Source = p
+		name.Push(p)
+		ret[i].Source = name.String()
+		name.Pop()
 	}
 	return ret, nil
 }
 
 // ExtractInner recurses into anything that looks like a jar in "z".
-func extractInner(ctx context.Context, outer string, z *zip.Reader) ([]Info, error) {
-	ctx = zlog.ContextWithValues(ctx, "parent", outer)
+func extractInner(ctx context.Context, p srcPath, z *zip.Reader) ([]Info, error) {
+	ctx = zlog.ContextWithValues(ctx, "parent", p.String())
 	var ret []Info
 	// Zips need random access, so allocate a buffer for any we find.
 	var buf bytes.Buffer
@@ -267,7 +300,9 @@ func extractInner(ctx context.Context, outer string, z *zip.Reader) ([]Info, err
 			return err
 		}
 
-		ps, err := Parse(ctx, name, zr)
+		p.Push(name)
+		defer p.Pop()
+		ps, err := parse(ctx, p, zr)
 		switch {
 		case errors.Is(err, nil):
 		case errors.Is(err, ErrNotAJar) ||
@@ -285,7 +320,6 @@ func extractInner(ctx context.Context, outer string, z *zip.Reader) ([]Info, err
 		h.Sum(c[:0])
 		for i := range ps {
 			ps[i].SHA = c
-			ps[i].Source = outer + ":" + ps[i].Source
 		}
 		ret = append(ret, ps...)
 		return nil
@@ -293,9 +327,10 @@ func extractInner(ctx context.Context, outer string, z *zip.Reader) ([]Info, err
 
 	for _, f := range z.File {
 		if err := checkFile(ctx, f); err != nil {
-			return nil, fmt.Errorf("walking %s: %w", outer, err)
+			return nil, fmt.Errorf("walking %s: %w", p, err)
 		}
 	}
+
 	if len(ret) == 0 {
 		zlog.Debug(ctx).
 			Msg("found no bundled jars")

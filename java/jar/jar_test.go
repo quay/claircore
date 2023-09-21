@@ -103,7 +103,7 @@ func TestWAR(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	ps, err := Parse(ctx, name, z)
+	ps, err := Parse(ctx, filepath.Base(name), z)
 	switch {
 	case errors.Is(err, nil):
 		for _, p := range ps {
