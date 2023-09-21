@@ -1,7 +1,7 @@
 # Indexer
 `claircore/indexer`
 
-The Indexer package performs LibIndex's heavy lifting. It is responsible for retreiving Manifest layers, parsing the contents of each layer, and computing an IndexReport.
+The Indexer package performs Libindex's heavy lifting. It is responsible for retreiving Manifest layers, parsing the contents of each layer, and computing an IndexReport.
 
 To perform this action in incremental steps the Indexer is implemented as a finite state machine. At each state transition the Indexer persists an updated IndexReport to its datastore.
 

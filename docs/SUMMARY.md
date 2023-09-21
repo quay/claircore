@@ -1,6 +1,6 @@
 # Summary
 
-- [What Is ClairCore](./what_is.md)
+- [Introduction](./introduction.md)
 - [Getting Started](./getting_started.md)
   - [Libindex Usage](./getting_started/libindex_usage.md)
   - [Libvuln Usage](./getting_started/libvuln_usage.md)

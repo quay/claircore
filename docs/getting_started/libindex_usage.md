@@ -3,7 +3,7 @@ Libindex is the Go package responsible for fetching container image layers,
 identifying packages, distributions, and repositories within these layers, and
 computing a final coalesced Index Report.
 
-An Index Report is primarily used as input to LibVuln's vulnerability matching
+An Index Report is primarily used as input to Libvuln's vulnerability matching
 process.
 
 ## Usage

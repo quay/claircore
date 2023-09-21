@@ -1,6 +1,6 @@
 # Contributors
 
-These topics cover helpful tips for contributing to ClairCore.
+These topics cover helpful tips for contributing to Claircore.
 
 - [Local Development](./contributor/local-dev.md)
 - [Logging](./contributor/logging.md)

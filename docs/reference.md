@@ -1,12 +1,12 @@
 # Reference
 
-The follow sections provide a reference for developing with ClairCore. 
+The follow sections provide a reference for developing with Claircore. 
 Important interfaces and structs are outlined.
 - [Coalescer](./reference/coalescer.md)
 - [Configurable Scanner](./reference/configurable_scanner.md)
 - [Distribution Scanner](./reference/distribution_scanner.md)
 - [Ecosystem](./reference/ecosystem.md)
-- [LibIndex Store](./reference/libindex_store.md)
+- [Libindex Store](./reference/libindex_store.md)
 - [Matcher](./reference/matcher.md)
 - [Package Scanner](./reference/package_scanner.md)
 - [Remote Scanner](./reference/remote_matcher.md)

@@ -1,5 +1,5 @@
 # Concepts
-The following sections give a conceptual overview of how ClairCore works internally.
+The following sections give a conceptual overview of how Claircore works internally.
 
 - [Vulnerability Matching](./concepts/vulnerability_matching.md)  
 - [Indexer Architecture](./concepts/indexer_architecture.md)  
