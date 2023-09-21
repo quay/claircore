@@ -57,6 +57,11 @@ func TestStyleguide(t *testing.T) {
 				Regexp:      regexp.MustCompile(`[Pp]ostgres([Qq][Ll])?`),
 				Explanation: `it's spelled "PostgreSQL"`,
 			},
+			{
+				Name:        "RespectClair",
+				Regexp:      regexp.MustCompile(`[Cc]lair[Vv]4`),
+				Explanation: `it's spelled "Clair v4"`,
+			},
 		}
 		for fn := range names {
 			b, err := os.ReadFile(fn)

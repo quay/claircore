@@ -1,6 +1,6 @@
 # Claircore
 
-Claircore is the engine behind ClairV4's container security solution.
+Claircore is the engine behind the Clair v4 container security solution.
 The Claircore package exports our domain models, interfaces necessary to plug into our business logic, and a default set of implementations.
 This default set of implementations define our support matrix and consists of the following distributions and languages:
 

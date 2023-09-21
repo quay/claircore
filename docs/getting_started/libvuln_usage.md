@@ -56,7 +56,7 @@ The `UpdateOperation` slice returned will be sorted by latest timestamp descendi
 ```
 
 #### UpdateDiff
-Mostly used by ClairV4's notification subsystem, this endpoint will provide the
+Mostly used by the Clair v4 notification subsystem, this endpoint will provide the
 caller with any removed or added vulnerabilities between two update operations.
 Typically a diff takes places against two versions of the same data source. This
 is useful to inform downstream applications what new vulnerabilities have
