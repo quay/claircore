@@ -19,7 +19,7 @@ Clients can guarantee one of these strings will be associated with a claircore.V
 
 ## Alpine Mapping
 
-Alpine SecDB database does not provide severity information.
+The Alpine SecDB database does not provide severity information.
 All vulnerability severities will be Unknown.
 
 | Alpine Severity | Claircore Severity |
@@ -28,7 +28,7 @@ All vulnerability severities will be Unknown.
 
 ## AWS Mapping
 
-AWS UpdateInfo database provides severity information.
+The AWS UpdateInfo database provides severity information.
 
 | AWS Severity | Claircore Severity |
 | -            | -                  |
@@ -39,16 +39,21 @@ AWS UpdateInfo database provides severity information.
 
 ## Debian Mapping
 
-Debian Oval database does not provide severity information.
-All vulnerability severities will be Unknown.
+The Debian [security tracker] data provides severity information.
+
+[security tracker]: https://security-tracker.debian.org/tracker/
 
 | Debian Severity | Claircore Severity |
 | -               | -                  |
+| unimportant     | Low                |
+| low             | Medium             |
+| medium          | High               |
+| high            | Critical           |
 | *               | Unknown            |
 
 ## Oracle Mapping
 
-Oracle Oval database provides severity information.
+The Oracle OVAL database provides severity information.
 
 | Oracle Severity | Claircore Severity |
 | -               | -                  |
@@ -60,7 +65,7 @@ Oracle Oval database provides severity information.
 
 ## RHEL Mapping
 
-RHEL Oval database provides severity information.
+The RHEL OVAL database provides severity information.
 
 | RHEL Severity | Claircore Severity |
 | -             | -                  |
@@ -72,7 +77,7 @@ RHEL Oval database provides severity information.
 
 ## SUSE Mapping
 
-SUSE Oval database provides severity information.
+The SUSE OVAL database provides severity information.
 
 | SUSE Severity | Claircore Severity |
 | -             | -                  |
@@ -84,7 +89,7 @@ SUSE Oval database provides severity information.
 
 ## Ubuntu Mapping
 
-Ubuntu Oval database provides severity information.
+The Ubuntu OVAL database provides severity information.
 
 | Ubuntu Severity | Claircore Severity |
 | -               | -                  |
@@ -97,7 +102,7 @@ Ubuntu Oval database provides severity information.
 
 ## Photon Mapping
 
-Photon Oval database provides severity information.
+The Photon OVAL database provides severity information.
 
 | Photon Severity | Claircore Severity |
 | -               | -                  |
