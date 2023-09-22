@@ -167,19 +167,29 @@ type Coalescer interface {
 </code></pre>
 <pre><code>package indexer // import &quot;github.com/quay/claircore/indexer&quot;
 
-type LayerArtifacts struct {
-	Hash  claircore.Digest
-	Pkgs  []*claircore.Package
-	Dist  []*claircore.Distribution // each layer can only have a single distribution
-	Repos []*claircore.Repository
-	Files []claircore.File
+type Coalescer interface {
+	Coalesce(ctx context.Context, artifacts []*LayerArtifacts) (*claircore.IndexReport, error)
 }
-    LayerArifact aggregates the artifacts found within a layer.
+    Coalescer takes a set of layers and creates coalesced IndexReport.
+
+    A coalesced IndexReport should provide only the packages present in the
+    final container image once all layers were applied.
 </code></pre>
-<p>A <code>Coalsecer</code> implementation is free to determine this computation given the
-artifacts found in a layer. A <code>Coalescer</code> is called with a slice of
-<code>LayerArtifacts</code> structs. The manifest's layer ordering is preserved in the
-provided slice.</p>
+<p>package indexer // import &quot;github.com/quay/claircore/indexer&quot;</p>
+<p>type LayerArtifacts struct {
+Hash  claircore.Digest
+Pkgs  []*claircore.Package
+Dist  []*claircore.Distribution // each layer can only have a single distribution
+Repos []*claircore.Repository
+Files []claircore.File
+}
+LayerArifact aggregates the artifacts found within a layer.</p>
+<pre><code>
+A `Coalsecer` implementation is free to determine this computation given the
+artifacts found in a layer. A `Coalescer` is called with a slice of
+`LayerArtifacts` structs. The manifest's layer ordering is preserved in the
+provided slice.
+</code></pre>
 
                     </main>
 

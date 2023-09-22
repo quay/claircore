@@ -187,18 +187,46 @@ func (report *IndexReport) IndexRecords() []*IndexRecord
 </code></pre>
 <pre><code>package claircore // import &quot;github.com/quay/claircore&quot;
 
-type IndexRecord struct {
-	Package      *Package
-	Distribution *Distribution
-	Repository   *Repository
+type IndexReport struct {
+	// the manifest hash this IndexReport is describing
+	Hash Digest `json:&quot;manifest_hash&quot;`
+	// the current state of the index operation
+	State string `json:&quot;state&quot;`
+	// all discovered packages in this manifest key'd by package id
+	Packages map[string]*Package `json:&quot;packages&quot;`
+	// all discovered distributions in this manifest key'd by distribution id
+	Distributions map[string]*Distribution `json:&quot;distributions&quot;`
+	// all discovered repositories in this manifest key'd by repository id
+	Repositories map[string]*Repository `json:&quot;repository&quot;`
+	// a list of environment details a package was discovered in key'd by package id
+	Environments map[string][]*Environment `json:&quot;environments&quot;`
+	// whether the index operation finished successfully
+	Success bool `json:&quot;success&quot;`
+	// an error string in the case the index did not succeed
+	Err string `json:&quot;err&quot;`
+	// Files doesn't end up in the json report but needs to be available at post-coalesce
+	Files map[string]File `json:&quot;-&quot;`
 }
-    IndexRecord is an entry in the IndexReport.
+    IndexReport provides a database for discovered artifacts in an image.
 
-    IndexRecords provide full access to contextual package structures such as
-    Distribution and Repository.
+    IndexReports make heavy usage of lookup maps to associate information
+    without repetition.
 
-    A list of these can be thought of as an &quot;unpacked&quot; IndexReport
+func (report *IndexReport) IndexRecords() []*IndexRecord
 </code></pre>
+<p>package claircore // import &quot;github.com/quay/claircore&quot;</p>
+<p>type IndexRecord struct {
+Package      *Package
+Distribution *Distribution
+Repository   *Repository
+}
+IndexRecord is an entry in the IndexReport.</p>
+<pre><code>IndexRecords provide full access to contextual package structures such as
+Distribution and Repository.
+
+A list of these can be thought of as an &quot;unpacked&quot; IndexReport
+</code></pre>
+<pre><code></code></pre>
 
                     </main>
 

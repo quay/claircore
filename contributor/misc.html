@@ -154,14 +154,12 @@
                     <main>
                         <p>Here's various codebase conventions that don't have dedicated pages:</p>
 <ul>
-<li>
-<p>URLs
-URLs in code should be annotated with a <code>//doc:url</code> directive comment. See the
-the <code>docs/injecturls.go</code> file for documentation on how the preprocessor works.
-The list of keywords isn't an allowlist, so an invocation like the following
-should list the ones actually used in the documentation:</p>
-<p>git grep injecturls -- :/docs/*.md</p>
-</li>
+<li>URLs
+URLs in code should be annotated with a <code>//doc:url</code> directive comment. See
+the the <code>internal/cmd/mdbook-injecturls</code> command for documentation on how the
+preprocessor works. The list of keywords isn't an allowlist, so an invocation
+like the following should list the ones actually used in the documentation
+using a command like <code>git grep injecturls -- :/docs/*.md</code>.</li>
 </ul>
 
                     </main>

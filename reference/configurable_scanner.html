@@ -167,12 +167,19 @@ type ConfigDeserializer func(interface{}) error
 </code></pre>
 <pre><code>package indexer // import &quot;github.com/quay/claircore/indexer&quot;
 
-type ConfigurableScanner interface {
-	Configure(context.Context, ConfigDeserializer) error
-}
-    ConfigurableScanner is an interface scanners can implement to receive
-    configuration.
+type ConfigDeserializer func(interface{}) error
+    ConfigDeserializer can be thought of as an Unmarshal function with the byte
+    slice provided.
+
+    This will typically be something like (*json.Decoder).Decode.
 </code></pre>
+<p>package indexer // import &quot;github.com/quay/claircore/indexer&quot;</p>
+<p>type ConfigurableScanner interface {
+Configure(context.Context, ConfigDeserializer) error
+}
+ConfigurableScanner is an interface scanners can implement to receive
+configuration.</p>
+<pre><code></code></pre>
 
                     </main>
 

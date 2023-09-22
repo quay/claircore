@@ -165,17 +165,24 @@ func StaticSet(s UpdaterSet) UpdaterSetFactory
 </code></pre>
 <pre><code>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;
 
-type UpdaterSet struct {
-	// Has unexported fields.
+type UpdaterSetFactory interface {
+	UpdaterSet(context.Context) (UpdaterSet, error)
 }
-    UpdaterSet holds a deduplicated set of updaters.
+    UpdaterSetFactory is used to construct updaters at run-time.
 
-func NewUpdaterSet() UpdaterSet
+func StaticSet(s UpdaterSet) UpdaterSetFactory
+</code></pre>
+<p>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;</p>
+<p>type UpdaterSet struct {
+// Has unexported fields.
+}
+UpdaterSet holds a deduplicated set of updaters.</p>
+<p>func NewUpdaterSet() UpdaterSet
 func (s *UpdaterSet) Add(u Updater) error
 func (s *UpdaterSet) Merge(set UpdaterSet) error
 func (s *UpdaterSet) RegexFilter(regex string) error
-func (s *UpdaterSet) Updaters() []Updater
-</code></pre>
+func (s *UpdaterSet) Updaters() []Updater</p>
+<pre><code></code></pre>
 
                     </main>
 
