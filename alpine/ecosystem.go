@@ -3,6 +3,7 @@ package alpine
 import (
 	"context"
 
+	"github.com/quay/claircore/apk"
 	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/linux"
 )
@@ -11,7 +12,7 @@ import (
 func NewEcosystem(ctx context.Context) *indexer.Ecosystem {
 	return &indexer.Ecosystem{
 		PackageScanners: func(ctx context.Context) ([]indexer.PackageScanner, error) {
-			return []indexer.PackageScanner{&Scanner{}}, nil
+			return []indexer.PackageScanner{&apk.Scanner{}}, nil
 		},
 		DistributionScanners: func(ctx context.Context) ([]indexer.DistributionScanner, error) {
 			return []indexer.DistributionScanner{&DistributionScanner{}}, nil

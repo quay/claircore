@@ -1,4 +1,4 @@
-package alpine
+package apk
 
 import (
 	"bytes"
@@ -15,9 +15,9 @@ import (
 )
 
 const (
-	pkgName    = `apk`
-	pkgVersion = `v0.0.1`
-	pkgKind    = `package`
+	name    = "apk"
+	version = "v0.0.1"
+	kind    = "package"
 )
 
 var (
@@ -31,13 +31,13 @@ var (
 type Scanner struct{}
 
 // Name implements indexer.VersionedScanner.
-func (*Scanner) Name() string { return pkgName }
+func (*Scanner) Name() string { return name }
 
 // Version implements indexer.VersionedScanner.
-func (*Scanner) Version() string { return pkgVersion }
+func (*Scanner) Version() string { return version }
 
 // Kind implements indexer.VersionedScanner.
-func (*Scanner) Kind() string { return pkgKind }
+func (*Scanner) Kind() string { return kind }
 
 const installedFile = "lib/apk/db/installed"
 
@@ -52,8 +52,8 @@ func (*Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	trace.Log(ctx, "layer", layer.Hash.String())
 	ctx = zlog.ContextWithValues(ctx,
-		"component", "alpine/Scanner.Scan",
-		"version", pkgVersion,
+		"component", "apk/Scanner.Scan",
+		"version", version,
 		"layer", layer.Hash.String())
 
 	zlog.Debug(ctx).Msg("start")
