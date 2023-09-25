@@ -158,6 +158,92 @@ INSERT INTO manifest_layer (i, manifest_id, layer_id)
 		}
 	})
 
+	const (
+		checkManifestLayers = `SELECT l.hash FROM layer l
+		JOIN manifest_layer ml ON l.id = ml.layer_id
+		JOIN manifest m ON m.id = ml.manifest_id
+		WHERE m.hash = $1`
+	)
+	t.Run("Shared base layers", func(t *testing.T) {
+		const (
+			nManifests       = 8
+			nonBaseLayersPer = 3
+		)
+		ctx := zlog.Test(ctx, t)
+		ms := make([]claircore.Digest, nManifests)
+		for i := range ms {
+			ms[i] = test.RandomSHA256Digest(t)
+		}
+		ls := make([]claircore.Digest, nManifests*nonBaseLayersPer)
+		for i := range ls {
+			ls[i] = test.RandomSHA256Digest(t)
+		}
+		baseLayer := test.RandomSHA256Digest(t)
+
+		if _, err := pool.Exec(ctx, insertManifest, digestSlice(ms)); err != nil {
+			t.Error(err)
+		}
+		if _, err := pool.Exec(ctx, insertLayers, digestSlice(append(ls, baseLayer))); err != nil {
+			t.Error(err)
+		}
+		var nLayers int
+		if err := pool.QueryRow(ctx, `SELECT COUNT(*) FROM layer;`).Scan(&nLayers); err != nil {
+			t.Error(err)
+		}
+		li := 0
+		for _, m := range ms {
+			nextLayerIdx := li + nonBaseLayersPer
+			manifestLayers := make([]claircore.Digest, nonBaseLayersPer+1)
+			copy(manifestLayers, ls[li:nextLayerIdx])
+			tag, err := pool.Exec(ctx, assoc, digestSlice(append(manifestLayers, baseLayer)), m)
+			if err != nil {
+				t.Error(err)
+			}
+			t.Logf("affected: %d", tag.RowsAffected())
+			li = nextLayerIdx
+		}
+
+		// Delete all but the last manifest
+		toDelete := ms[:len(ms)-1]
+		deleted, err := store.DeleteManifests(ctx, toDelete...)
+		if err != nil {
+			t.Error(err)
+		}
+		if !cmp.Equal(toDelete, deleted, cmpOpts) {
+			t.Error(cmp.Diff(toDelete, deleted, cmpOpts))
+		}
+
+		rows, err := pool.Query(ctx, checkManifestLayers, ms[len(ms)-1])
+		if err != nil {
+			t.Error(err)
+		}
+		remainingLayers := []claircore.Digest{}
+		defer rows.Close()
+		for rows.Next() {
+			var ld claircore.Digest
+			err := rows.Scan(&ld)
+			if err != nil {
+				t.Error(err)
+			}
+			remainingLayers = append(remainingLayers, ld)
+		}
+		// To ensure none of the delete operations stepped on the toes of
+		// the final manifest's layers ensure that we've still got 4 layers:
+		// 3 distinct layers and 1 (now un-) shared base layer.
+		if got, want := len(remainingLayers), 4; got != want {
+			t.Errorf("left over layers: got: %d, want %d", got, want)
+		}
+		var foundBaseLayer bool
+		for _, l := range remainingLayers {
+			if l.String() == baseLayer.String() {
+				foundBaseLayer = true
+			}
+		}
+		if !foundBaseLayer {
+			t.Error("accidentally deleted shared base layer")
+		}
+	})
+
 	t.Run("Manifest index", func(t *testing.T) {
 		const (
 			layersN    = 4
