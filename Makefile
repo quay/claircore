@@ -60,3 +60,6 @@ baseimage:
 
 book: $(wildcard docs/*) book.toml
 	mdbook build
+
+docs/mermaid.min.js:
+	curl -sSfL 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js' >$@

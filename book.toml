@@ -20,3 +20,7 @@ command = "go run github.com/quay/claircore/internal/cmd/mdbook-make_target"
 
 [preprocessor.injecturls]
 command = "go run github.com/quay/claircore/internal/cmd/mdbook-injecturls"
+
+[preprocessor.mermaid]
+command = "go run github.com/quay/claircore/internal/cmd/mdbook-mermaid"
+after = ["links"]
