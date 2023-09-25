@@ -22,7 +22,26 @@ Claircore relies on PostgreSQL for its persistence and the library will handle m
 
 The diagram below is a high level overview of Claircore's architecture. 
 
-![high_level_arch](./high_level_arch.png "a high level diagram of the claircore architecture")
+```mermaid
+graph LR
+subgraph Indexer
+im[Image Manifest]
+libindex[Libindex]
+iir[IndexReport]
+im --> libindex --> iir
+end
+iir -.-> db[(Database)]
+```
+```mermaid
+graph LR
+subgraph Matcher
+mir[IndexReport]
+libvuln[Libvuln]
+vr[VulnerabilityReport]
+mir --> libvuln --> vr
+end
+db[(Database)] -.-> mir
+```
 
 When a claircore.Manifest is submitted to Libindex, the library will index its constituent parts and create a report with its findings.
 
