@@ -4,7 +4,26 @@
 
 The Matcher architecture is based on a data flow application.
 
-![Matcher Architecture](./matcher_architecture.png "matching architecture diagram")
+```mermaid
+graph TD
+	start[Libvuln.Scan]
+	finish[Merge into VulnerabilityReport]
+	start ---> RemoteMatcher & Matcher ---> finish
+	subgraph RemoteMatcher
+		ra[Filter interested packages]
+		api[Make API calls]
+		rv[Decide vulnerability]
+		ra --> api --> rv
+	end
+	subgraph Matcher
+		dbv[Check versions in-database]
+		ma[Filter interested packages]
+		adv[Retrive vulnerabilty information]
+		mv[Deicide vulnerability]
+		ma --> adv --> mv
+		adv -.-> dbv -.-> mv
+	end
+```
 
 When Libvuln's Scan method is called with an IndexReport it will begin the process of matching container contents with vulnerabilities.
 
@@ -15,6 +34,8 @@ The provided IndexReport will be unpacked into a stream of IndexRecord structs. 
 Once each Matcher returns the set of vulnerabities, Libvuln will merge the results into a VulnerabilityReport and return this to the client.
 
 ## HTTP Resources
+
+***NOTE***: Remote matchers are being considered for removal.
 
 "Remote matchers" may make HTTP requests during the matcher flow.
 These requests are time-bound and errors are not reported.
