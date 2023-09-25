@@ -24,7 +24,7 @@ jobs:
             private_key: ${{ secrets.CLAIR_APP_PRIVATE_KEY }}
 
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: main
           repository: quay/clair
