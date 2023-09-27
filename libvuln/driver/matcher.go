@@ -13,6 +13,8 @@ import (
 // it should create a query similar to "SELECT * FROM vulnerabilities WHERE package_name = ? AND distribution_did = ?"
 type MatchConstraint int
 
+//go:generate go run golang.org/x/tools/cmd/stringer -type MatchConstraint
+
 const (
 	_ MatchConstraint = iota
 	// should match claircore.Package.Source.Name => claircore.Vulnerability.Package.Name
