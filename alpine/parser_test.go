@@ -128,8 +128,7 @@ var v3_10CommunityTruncatedVulns = []*claircore.Vulnerability{
 
 func TestParser(t *testing.T) {
 	t.Parallel()
-	ctx, done := context.WithCancel(context.Background())
-	defer done()
+	ctx := context.Background()
 	var table = []struct {
 		release  release
 		repo     string
