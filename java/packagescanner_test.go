@@ -13,8 +13,7 @@ import (
 // TestScan runs the java scanner over some layers known to have java
 // packages installed.
 func TestScan(t *testing.T) {
-	ctx, done := context.WithCancel(context.Background())
-	defer done()
+	ctx := context.Background()
 	t.Run(path.Base(tinkerpop.Name), tinkerpop.Run(ctx))
 	t.Run(path.Base(jenkins.Name), jenkins.RunSubset(ctx, 226))
 }
