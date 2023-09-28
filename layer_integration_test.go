@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"context"
 	"testing"
-	"time"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
@@ -58,8 +57,6 @@ func TestLayerFilesMiss(t *testing.T) {
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
 			// fetch the layer
-			ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
-			defer cancel()
 			layers := test.RealizeLayers(ctx, t, table.layers...)
 
 			// attempt to get files
@@ -98,8 +95,6 @@ func TestLayerFilesHit(t *testing.T) {
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
 			// fetch the layer
-			ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
-			defer cancel()
 			layers := test.RealizeLayers(ctx, t, table.layers...)
 
 			// attempt to get files
