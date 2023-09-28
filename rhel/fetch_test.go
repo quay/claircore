@@ -14,8 +14,7 @@ import (
 
 func TestFetch(t *testing.T) {
 	t.Parallel()
-	ctx, done := context.WithCancel(context.Background())
-	defer done()
+	ctx := context.Background()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "testdata/Red_Hat_Enterprise_Linux_3.xml")
 	}))

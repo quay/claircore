@@ -14,8 +14,7 @@ import (
 )
 
 func TestCVEDefFromUnpatched(t *testing.T) {
-	ctx, done := context.WithCancel(context.Background())
-	defer done()
+	ctx := context.Background()
 	var table = []struct {
 		name              string
 		fileName          string
