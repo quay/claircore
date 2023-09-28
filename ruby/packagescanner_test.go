@@ -15,8 +15,7 @@ import (
 )
 
 func TestScanRemote(t *testing.T) {
-	ctx, done := context.WithCancel(context.Background())
-	defer done()
+	ctx := context.Background()
 
 	table := []struct {
 		registry, repo, tag string
