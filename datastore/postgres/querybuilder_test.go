@@ -287,8 +287,6 @@ func TestLatestVulns(t *testing.T) {
 	}
 
 	pool := pgtest.TestMatcherDB(ctx, t)
-	ctx, done := context.WithCancel(ctx)
-	defer done()
 	store := NewMatcherStore(pool)
 
 	for _, tc := range cases {

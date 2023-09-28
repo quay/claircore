@@ -153,8 +153,6 @@ func TestGetUpdateDiff(t *testing.T) {
 
 	// prepare DB
 	pool := pgtest.TestMatcherDB(ctx, t)
-	ctx, done := context.WithCancel(ctx)
-	defer done()
 	store := NewMatcherStore(pool)
 
 	// run test cases

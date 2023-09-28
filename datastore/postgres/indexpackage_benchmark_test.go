@@ -14,8 +14,7 @@ import (
 
 func Benchmark_IndexPackages(b *testing.B) {
 	integration.NeedDB(b)
-	ctx, done := context.WithCancel(context.Background())
-	defer done()
+	ctx := context.Background()
 	benchmarks := []struct {
 		// the name of this benchmark
 		name string

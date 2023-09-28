@@ -86,8 +86,6 @@ func (e *updateE2e) Run(ctx context.Context) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx := zlog.Test(ctx, t)
 		pool := pgtest.TestMatcherDB(ctx, t)
-		ctx, done := context.WithCancel(ctx)
-		defer done()
 		e.pool = pool
 		e.s = NewMatcherStore(pool)
 		for _, sub := range order {
