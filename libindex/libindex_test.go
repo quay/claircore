@@ -44,8 +44,7 @@ func digest(inp string) claircore.Digest {
 }
 
 func TestAffectedManifests(t *testing.T) {
-	ctx, done := context.WithCancel(context.Background())
-	defer done()
+	ctx := context.Background()
 	tt := []struct {
 		name                 string
 		inputVulns           []claircore.Vulnerability
@@ -94,9 +93,7 @@ func TestAffectedManifests(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			ctx, done := context.WithCancel(ctx)
-			defer done()
-			ctx = zlog.Test(ctx, t)
+			ctx := zlog.Test(ctx, t)
 			s := table.mockStore(t)
 			li := &Libindex{store: s}
 
@@ -116,9 +113,7 @@ func TestAffectedManifests(t *testing.T) {
 }
 
 func BenchmarkAffectedManifests(b *testing.B) {
-	ctx, done := context.WithCancel(context.Background())
-	defer done()
-
+	ctx := context.Background()
 	// create store
 	ctrl := gomock.NewController(b)
 	s := indexer.NewMockStore(ctrl)

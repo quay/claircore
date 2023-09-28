@@ -47,8 +47,7 @@ func (tc fetchTestcase) Run(ctx context.Context) func(*testing.T) {
 }
 
 func TestFetchSimple(t *testing.T) {
-	ctx, done := context.WithCancel(context.Background())
-	defer done()
+	ctx := context.Background()
 	tt := []fetchTestcase{
 		{N: 1},
 		{N: 4},
@@ -62,8 +61,7 @@ func TestFetchSimple(t *testing.T) {
 
 func TestFetchInvalid(t *testing.T) {
 	// TODO(hank) Rewrite this into unified testcases.
-	ctx, done := context.WithCancel(context.Background())
-	defer done()
+	ctx := context.Background()
 	tt := []struct {
 		name  string
 		layer []*claircore.Layer
@@ -100,9 +98,7 @@ func TestFetchInvalid(t *testing.T) {
 }
 
 func TestFetchConcurrent(t *testing.T) {
-	ctx, done := context.WithCancel(context.Background())
-	defer done()
-	ctx = zlog.Test(ctx, t)
+	ctx := zlog.Test(context.Background(), t)
 	ls, h := commonLayerServer(t, 100)
 	srv := httptest.NewUnstartedServer(h)
 	srv.Start()
