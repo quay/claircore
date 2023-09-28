@@ -11,8 +11,7 @@ import (
 )
 
 func TestIndexFinished(t *testing.T) {
-	ctx, done := context.WithCancel(context.Background())
-	defer done()
+	ctx := context.Background()
 	tt := []struct {
 		name          string
 		expectedState State
@@ -34,9 +33,7 @@ func TestIndexFinished(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			ctx, done := context.WithCancel(ctx)
-			defer done()
-			ctx = zlog.Test(ctx, t)
+			ctx := zlog.Test(ctx, t)
 			store := table.mock(t)
 			scnr := New(&indexer.Options{
 				Store: store,

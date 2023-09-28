@@ -16,8 +16,7 @@ import (
 )
 
 func TestScanLayers(t *testing.T) {
-	ctx, done := context.WithCancel(context.Background())
-	defer done()
+	ctx := context.Background()
 	tt := []struct {
 		mock          func(t *testing.T) indexer.Store
 		name          string
@@ -38,9 +37,7 @@ func TestScanLayers(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			ctx, done := context.WithCancel(ctx)
-			defer done()
-			ctx = zlog.Test(ctx, t)
+			ctx := zlog.Test(ctx, t)
 			s := table.mock(t)
 			opts := &indexer.Options{
 				Store: s,
@@ -64,9 +61,7 @@ func TestScanLayers(t *testing.T) {
 }
 
 func TestScanNoErrors(t *testing.T) {
-	ctx, done := context.WithCancel(context.Background())
-	defer done()
-	ctx = zlog.Test(ctx, t)
+	ctx := zlog.Test(context.Background(), t)
 	ctrl := gomock.NewController(t)
 
 	mock_ps := indexer_mock.NewMockPackageScanner(ctrl)

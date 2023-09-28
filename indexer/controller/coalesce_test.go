@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/quay/zlog"
+
 	"github.com/quay/claircore/indexer"
 )
 
@@ -14,8 +16,7 @@ import (
 // This test simply provides no Ecosystems to the index
 // controller and does no work.
 func TestCoalesce(t *testing.T) {
-	ctx, done := context.WithCancel(context.Background())
-	defer done()
+	ctx := context.Background()
 	var tt = []struct {
 		name          string
 		expectedState State
@@ -28,8 +29,7 @@ func TestCoalesce(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			ctx, done := context.WithCancel(ctx)
-			defer done()
+			ctx := zlog.Test(ctx, t)
 			indexer := New(&indexer.Options{})
 
 			state, err := coalesce(ctx, indexer)

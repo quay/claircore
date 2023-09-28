@@ -14,9 +14,7 @@ import (
 // confirm checkManfest statefunc acts appropriately
 // when manifest has been seen
 func TestCheckManifest(t *testing.T) {
-	ctx, done := context.WithCancel(context.Background())
-	defer done()
-	ctx = zlog.Test(ctx, t)
+	ctx := zlog.Test(context.Background(), t)
 	tt := []struct {
 		// the name of this test
 		name string
@@ -52,8 +50,6 @@ func TestCheckManifest(t *testing.T) {
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
 			ctx := zlog.Test(ctx, t)
-			ctx, done := context.WithCancel(ctx)
-			defer done()
 			// get mock
 			m := table.mock(t)
 

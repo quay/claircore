@@ -21,8 +21,7 @@ import (
 // call to s.Store.ManifestScanned forcing checkManifest to return an error and
 // evaluate our scanner's state afterwards.
 func TestControllerIndexerError(t *testing.T) {
-	ctx, done := context.WithCancel(context.Background())
-	defer done()
+	ctx := context.Background()
 	tt := []struct {
 		mock func(t *testing.T) (indexer.Store, indexer.FetchArena)
 		name string
@@ -97,8 +96,7 @@ func TestControllerIndexerError(t *testing.T) {
 // TestControllerIndexFinished tests that our state machine does the correct
 // thing when it reaches ScanFinished terminal state.
 func TestControllerIndexFinished(t *testing.T) {
-	ctx, done := context.WithCancel(context.Background())
-	defer done()
+	ctx := context.Background()
 	tt := []struct {
 		mock                  func(t *testing.T) (indexer.Store, indexer.FetchArena)
 		name                  string
