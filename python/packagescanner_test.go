@@ -24,8 +24,7 @@ import (
 // packages installed.
 func TestScanRemote(t *testing.T) {
 	gob.Register(claircore.Package{})
-	ctx, done := context.WithCancel(context.Background())
-	defer done()
+	ctx := context.Background()
 	for _, tc := range scanTable {
 		// To generate a test fixture, populate the entry in the table below and
 		// then run the tests twice.
@@ -79,9 +78,7 @@ var scanTable = []test.ScannerTestcase{
 }
 
 func TestScanLocal(t *testing.T) {
-	ctx, done := context.WithCancel(context.Background())
-	defer done()
-
+	ctx := context.Background()
 	table := []struct {
 		name      string
 		want      []*claircore.Package
@@ -93,6 +90,7 @@ func TestScanLocal(t *testing.T) {
 			layerPath: "testdata/layer-with-bad-version.tar",
 		},
 	}
+
 	for _, tt := range table {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := zlog.Test(ctx, t)

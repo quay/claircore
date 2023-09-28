@@ -21,9 +21,7 @@ type matcherTestcase struct {
 }
 
 func (tc matcherTestcase) Run(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	ctx = zlog.Test(ctx, t)
+	ctx := zlog.Test(context.Background(), t)
 	got, err := tc.Matcher.Vulnerable(ctx, &tc.R, &tc.V)
 	if err != nil {
 		t.Error(err)
