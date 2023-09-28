@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"testing"
-	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/quay/claircore"
@@ -141,8 +140,6 @@ func TestScanNoErrors(t *testing.T) {
 		t.Error(err)
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, time.Minute)
-	defer cancel()
 	state, err := scanLayers(ctx, scnr)
 	if err != nil {
 		t.Fatalf("failed to scan test layers: %v", err)
