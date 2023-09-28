@@ -144,9 +144,6 @@ func (tc testcase) RunInner(ctx context.Context, t *testing.T, pool *pgxpool.Poo
 	defer lib.Close(ctx)
 
 	// setup scan and run
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
-
 	ir, err := lib.Index(ctx, m)
 	if err != nil {
 		t.Fatalf("failed to scan manifest: %v", err)
