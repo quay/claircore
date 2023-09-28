@@ -6,7 +6,6 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"testing"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/quay/zlog"
@@ -39,9 +38,7 @@ func (tc *clientTestcase) Run(ctx context.Context) func(*testing.T) {
 		ctx := zlog.Test(ctx, t)
 		t.Cleanup(srv.Close)
 
-		tctx, cancel := context.WithTimeout(ctx, 15*time.Second)
-		defer cancel()
-		err := client.getMirrors(tctx, srv.URL)
+		err := client.getMirrors(ctx, srv.URL)
 		if err != nil {
 			t.Error(err)
 		}
