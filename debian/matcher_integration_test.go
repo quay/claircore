@@ -11,7 +11,6 @@ import (
 	"path"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/quay/zlog"
 
@@ -112,9 +111,7 @@ func TestMatcherIntegration(t *testing.T) {
 		t.Error(err)
 	}
 	// force update
-	tctx, cancel := context.WithTimeout(ctx, 4*time.Minute)
-	defer cancel()
-	if err := mgr.Run(tctx); err != nil {
+	if err := mgr.Run(ctx); err != nil {
 		t.Error(err)
 	}
 
