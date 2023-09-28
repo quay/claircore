@@ -33,8 +33,7 @@ func init() {
 
 func TestLayerFilesMiss(t *testing.T) {
 	integration.Skip(t)
-	ctx, done := context.WithCancel(context.Background())
-	defer done()
+	ctx := context.Background()
 	var tt = []struct {
 		// name of the test
 		name string
@@ -58,8 +57,6 @@ func TestLayerFilesMiss(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			ctx, done := context.WithCancel(ctx)
-			defer done()
 			// fetch the layer
 			ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 			defer cancel()
@@ -76,8 +73,7 @@ func TestLayerFilesMiss(t *testing.T) {
 
 func TestLayerFilesHit(t *testing.T) {
 	integration.Skip(t)
-	ctx, done := context.WithCancel(context.Background())
-	defer done()
+	ctx := context.Background()
 	var tt = []struct {
 		// name of the test
 		name string
@@ -101,8 +97,6 @@ func TestLayerFilesHit(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			ctx, done := context.WithCancel(ctx)
-			defer done()
 			// fetch the layer
 			ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 			defer cancel()
