@@ -11,7 +11,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/quay/zlog"
@@ -808,9 +807,7 @@ func TestScanner(t *testing.T) {
 		Hash: hash,
 	}
 
-	tctx, done := context.WithTimeout(ctx, 30*time.Second)
-	defer done()
-	n, err := fetch.Layer(tctx, t, http.DefaultClient, "docker.io", "library/ubuntu", hash)
+	n, err := fetch.Layer(ctx, t, http.DefaultClient, "docker.io", "library/ubuntu", hash)
 	if err != nil {
 		t.Error(err)
 	}
@@ -841,9 +838,7 @@ func TestAbsolutePaths(t *testing.T) {
 		Hash: hash,
 	}
 
-	tctx, done := context.WithTimeout(ctx, 30*time.Second)
-	defer done()
-	n, err := fetch.Layer(tctx, t, http.DefaultClient, "gcr.io", "vmwarecloudadvocacy/acmeshop-user", hash)
+	n, err := fetch.Layer(ctx, t, http.DefaultClient, "gcr.io", "vmwarecloudadvocacy/acmeshop-user", hash)
 	if err != nil {
 		t.Error(err)
 	}

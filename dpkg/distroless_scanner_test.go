@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/quay/claircore"
@@ -45,13 +44,11 @@ func TestDistrolessLayer(t *testing.T) {
 
 	t.Parallel()
 	ctx := zlog.Test(context.Background(), t)
-	tctx, done := context.WithTimeout(ctx, 30*time.Second)
-	defer done()
 	hash := claircore.MustParseDigest(`sha256:8fdb1fc20e240e9cae976518305db9f9486caa155fd5fc53e7b3a3285fe8a990`)
 	l := claircore.Layer{
 		Hash: hash,
 	}
-	n, err := fetch.Layer(tctx, t, http.DefaultClient, "gcr.io", "distroless/static-debian11", hash)
+	n, err := fetch.Layer(ctx, t, http.DefaultClient, "gcr.io", "distroless/static-debian11", hash)
 	if err != nil {
 		t.Fatal(err)
 	}
