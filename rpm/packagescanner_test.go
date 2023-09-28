@@ -7,7 +7,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/quay/zlog"
@@ -1611,9 +1610,7 @@ func TestScan(t *testing.T) {
 			Hash: hash,
 		}
 
-		tctx, done := context.WithTimeout(ctx, 2*time.Minute)
-		defer done()
-		n, err := fetch.Layer(tctx, t, http.DefaultClient, "docker.io", "library/centos", hash)
+		n, err := fetch.Layer(ctx, t, http.DefaultClient, "docker.io", "library/centos", hash)
 		if err != nil {
 			t.Fatal(err)
 		}
