@@ -52,8 +52,7 @@ func (tc *clientTestcase) Run(ctx context.Context) func(*testing.T) {
 	}
 }
 func TestClientGetMirrors(t *testing.T) {
-	ctx, done := context.WithCancel(context.Background())
-	defer done()
+	ctx := context.Background()
 	tests := []clientTestcase{
 		{
 			Release: AmazonLinux1,
