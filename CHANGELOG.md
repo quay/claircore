@@ -2,7 +2,11 @@
 ## [v1.5.17] - 2023-09-28
 [v1.5.17]: https://github.com/quay/claircore/compare/v1.5.16...v1.5.17
 
-Nothing interesting happened this release.
+- crda: remove crda support
+  <details>
+  The CRDA API has been decommissioned and the functionality has been
+  superseded by OSV support.
+  </details>
 
 <a name="v1.5.16"></a>
 ## [v1.5.16] - 2023-08-14
@@ -130,6 +134,14 @@ Nothing interesting happened this release.
   Indexers are expected to add a filepath to the packages they discover
   to denote that the deletion of the filepath signifies the package is
   delete.
+  </details>
+
+- debian: use JSON security tracker data
+  <details>
+  Previously, claircore used the OVAL database provided by the Debian
+  project. However, the translation from the native format used upstream
+  lost the severity information. Now, claircore consumes the upstream
+  format and thus can report severity information.
   </details>
 
 <a name="v1.4.22"></a>
