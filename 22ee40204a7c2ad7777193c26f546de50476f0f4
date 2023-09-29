@@ -1,0 +1,4 @@
+crda: remove crda support
+
+The CRDA API has been decommissioned and the functionality has been
+superseded by OSV support.
