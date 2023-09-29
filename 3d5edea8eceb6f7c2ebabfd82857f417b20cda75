@@ -1,0 +1,6 @@
+debian: use JSON security tracker data
+
+Previously, claircore used the OVAL database provided by the Debian
+project. However, the translation from the native format used upstream
+lost the severity information. Now, claircore consumes the upstream
+format and thus can report severity information.
