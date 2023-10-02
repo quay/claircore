@@ -36,21 +36,24 @@ jobs:
           checkAllCommitMessages: true
           accessToken: ${{ secrets.GITHUB_TOKEN }}
       - name: Checkout
+        id: checkout
+        if: ${{ !cancelled() }}
         uses: actions/checkout@v4
       - name: Check Filenames
-        if: success() || failure()
+        if: ${{ !cancelled() && steps.checkout.conclusion == 'success' }}
         run: | # Check for all the characters Windows hates.
           git ls-files -- ':/:*[<>:"|?*]*' | while read -r file; do
             printf '::error file=%s,title=Bad Filename::Disallowed character in file name\n' "$file"
           done
           exit $(git ls-files -- ':/:*[<>:"|?*]*' | wc -l)
       - name: Setup Go
-        if: success() || failure()
+        id: 'setupgo'
+        if: ${{ !cancelled() && steps.checkout.conclusion == 'success' }}
         uses: actions/setup-go@v4
         with:
           go-version: ${{ fromJSON(needs.config.outputs.go_versions)[0] }}
       - name: Go Tidy
-        if: success() || failure()
+        if: ${{ !cancelled() && steps.checkout.conclusion == 'success' && steps.setupgo.conclusion == 'success' }}
         run: |
           trap 'echo "::error file=go.mod,title=Tidy Check::Commit would leave go.mod untidy"' ERR
           go mod tidy
