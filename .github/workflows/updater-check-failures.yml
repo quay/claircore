@@ -1,0 +1,27 @@
+---
+name: Create Issue on Updater Check Failure
+on:
+  workflow_run:
+    workflows: ['Updater Check']
+    types:
+      - completed
+
+jobs:
+  on-failure:
+    name: Failure
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    steps:
+      - name: 'Create Issue'
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'periodic: updater check failed',
+              body: `See [output](${context.payload.workflow_run.logs_url}) for more.`,
+              labels: ['robot'],
+            })
+

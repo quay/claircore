@@ -8,6 +8,7 @@ on:
 
 jobs:
   test_schedule:
+    name: Periodic
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
