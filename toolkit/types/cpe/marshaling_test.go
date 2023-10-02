@@ -17,6 +17,7 @@ func TestMarshal(t *testing.T) {
 		`cpe:2.3:a:microsoft:internet_explorer:8.0.6001:beta:*:*:*:*:*:*`,
 		`cpe:2.3:a:microsoft:internet_explorer:8.*:sp?:*:*:*:*:*:*`,
 		`cpe:2.3:a:microsoft:internet_explorer:8.\*:sp?:*:*:*:*:*:*`,
+		``,
 	}
 	t.Run("JSON", func(t *testing.T) {
 		for _, n := range names {
