@@ -203,6 +203,11 @@ var ErrUnset = errors.New("cpe: wfn is empty")
 
 // String implements [fmt.Stringer].
 func (w WFN) String() string {
+	switch err := w.Valid(); {
+	case err == nil:
+	case errors.Is(err, ErrUnset):
+		return ""
+	}
 	return w.BindFS()
 }
 

@@ -20,7 +20,7 @@ func Unbind(s string) (WFN, error) {
 		return UnbindFS(s)
 	default:
 	}
-	return WFN{}, fmt.Errorf("cpe: string does not appear to be a bound WFN")
+	return WFN{}, fmt.Errorf("cpe: string does not appear to be a bound WFN: %q", s)
 }
 
 // MustUnbind calls Unbind on the provided string, but panics if any errors are
