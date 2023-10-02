@@ -4,9 +4,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/quay/alas"
-
 	"github.com/google/go-cmp/cmp"
+
+	"github.com/quay/claircore/aws/internal/alas"
 )
 
 func TestVersionString(t *testing.T) {

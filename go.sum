@@ -146,8 +146,6 @@ github.com/prometheus/common v0.44.0 h1:+5BrQJwiBB9xsMygAB3TNvpQKOwlkc25LbISbrdO
 github.com/prometheus/common v0.44.0/go.mod h1:ofAIvZbQ1e/nugmZGz4/qCb9Ap1VoSTIO7x0VV9VvuY=
 github.com/prometheus/procfs v0.11.1 h1:xRC8Iq1yyca5ypa9n1EZnWZkt7dwcoRPQwX/5gwaUuI=
 github.com/prometheus/procfs v0.11.1/go.mod h1:eesXgaPo1q7lBpVMoMy0ZOFTth9hBn4W/y0/p/ScXhY=
-github.com/quay/alas v1.0.1 h1:MuFpGGXyZlDD7+F/hrnMZmzhS8P2bjRzX9DyGmyLA+0=
-github.com/quay/alas v1.0.1/go.mod h1:pseepSrG9pwry1joG7RO/RNRFJaWqiqx9qeoomeYwEk=
 github.com/quay/claircore/toolkit v1.0.0/go.mod h1:3ELtgf92x7o1JCTSKVOAqhcnCTXc4s5qiGaEDx62i20=
 github.com/quay/claircore/toolkit v1.1.0 h1:97DwHYUszafNiMXz7Wd1WexoWH55RNPas34nEBbBuPw=
 github.com/quay/claircore/toolkit v1.1.0/go.mod h1:ZZHA/b/qpfUcNHFJeYVA0bOp7aL4r3CTFhlBV/ezoFI=

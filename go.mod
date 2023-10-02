@@ -17,7 +17,6 @@ require (
 	github.com/knqyf263/go-rpm-version v0.0.0-20170716094938-74609b86c936
 	github.com/prometheus/client_golang v1.17.0
 	github.com/prometheus/client_model v0.4.1-0.20230718164431-9a2bf3000d16
-	github.com/quay/alas v1.0.1
 	github.com/quay/claircore/toolkit v1.1.0
 	github.com/quay/claircore/updater/driver v1.0.0
 	github.com/quay/goval-parser v0.8.8

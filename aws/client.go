@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/quay/alas"
 	"github.com/quay/zlog"
 
+	"github.com/quay/claircore/aws/internal/alas"
 	"github.com/quay/claircore/internal/xmlutil"
 	"github.com/quay/claircore/pkg/tmp"
 )
