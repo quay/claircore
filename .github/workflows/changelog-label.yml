@@ -1,0 +1,67 @@
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '55 20 * * *'
+
+jobs:
+  check_labels:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Switch to Changelog ref
+        run: |
+          git checkout refs/notes/changelog
+      - name: Check for unresolved changelog labels
+        # For all merged PRs with the `needs-changelog` label, check if a note exists on the merge commit.
+        # If it does, remove the label.
+        # If not, print a summary of all PRs that need a changelog entry.
+        run: |
+          summary=$(mktemp)
+          remove=$(mktemp)
+          trap 'rm -rf "$summary" "$remove"' EXIT
+          gh api graphql -f query='
+          {
+            repository(owner: "quay", name: "claircore") {
+              pullRequests(first: 100, labels: ["needs-changelog"], states: [MERGED]) {
+                nodes {
+                  id
+                  title
+                  number
+                  url
+                  mergeCommit {
+                    oid
+                  }
+                }
+              }
+            }
+          }
+          ' -q '.data.repository.pullRequests.nodes[]' |
+            jq --arg remove "$remove" --arg summary "$summary" \
+              '@sh "if test -f \(.mergeCommit.oid); then echo \(.id) >> \($remove); else echo \(@text "- [#\(.number)](\(.url)): \(.title)") >> \($summary); fi"' |
+            xargs -t -n1 sh -c
+          if test -s "$remove"; then
+            l=$(gh api graphql -f query='{repository(owner: "quay", name: "claircore") {label(name: "needs-changelog") {id}}}'|
+              jq -r '.data.repository.label.id')
+            cat "$remove" | while read id; do
+              gh api graphql -F "id=${id}" -F "l=${l}" -f query='
+              mutation rm($id: ID!, $l: ID!) {
+                removeLabelsFromLabelable(input: {
+                  labelableId: $id,
+                  labelIds: [$l],
+                }){clientMutationId}
+              }
+              '
+            done
+          fi
+          test -s "$summary" || exit 0
+          cat <<'.' >> "$GITHUB_STEP_SUMMARY"
+          ### Changlog notes missing:
+          
+          .
+          cat "$summary" >> "$GITHUB_STEP_SUMMARY"
+          cat <<'.' >> "$GITHUB_STEP_SUMMARY"
+          
+          * * *
+          If the changelog message is on another commit, the label needs to be removed manuually. 🫥
+          .
