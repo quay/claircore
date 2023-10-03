@@ -1,0 +1,5 @@
+chore: update toolkit to latest version v1.1.1
+
+v1.5.17 (toolkit/v1.1.0) introduced a bug where claircore
+could not handle empty strings when trying to Scan() a value
+into a cpe.WFN. toolkit/v1.1.1 mitigates this bug.
