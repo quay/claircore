@@ -1,3 +1,14 @@
+<a name="v1.5.19"></a>
+## [v1.5.19] - 2023-10-03
+[v1.5.19]: https://github.com/quay/claircore/compare/v1.5.18...v1.5.19
+
+- chore: update toolkit to latest version v1.1.1
+  <details>
+  v1.5.17 (toolkit/v1.1.0) introduced a bug where claircore
+  could not handle empty strings when trying to Scan() a value
+  into a cpe.WFN. toolkit/v1.1.1 mitigates this bug.
+  </details>
+
 <a name="v1.5.18"></a>
 ## [v1.5.18] - 2023-10-03
 [v1.5.18]: https://github.com/quay/claircore/compare/v1.5.17...v1.5.18
