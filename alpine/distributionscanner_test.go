@@ -22,7 +22,11 @@ func TestScanFs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, v := range ms {
+	edge, err := fs.Glob(td, "edge")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, v := range append(ms, edge...) {
 		sub, err := fs.Sub(td, v)
 		if err != nil {
 			t.Fatal(err)
