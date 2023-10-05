@@ -25,20 +25,22 @@ import (
 
 const (
 	scannerName    = "alpine"
-	scannerVersion = "2"
+	scannerVersion = "3"
 	scannerKind    = "distribution"
 )
 
 const (
-	osReleasePath = `etc/os-release`
-	issuePath     = `etc/issue`
+	issuePath = `etc/issue`
+
+	edgePrettyName = `Alpine Linux edge`
 )
 
 var (
 	_ indexer.DistributionScanner = (*DistributionScanner)(nil)
 	_ indexer.VersionedScanner    = (*DistributionScanner)(nil)
 
-	issueRegexp = regexp.MustCompile(`Alpine Linux ([[:digit:]]+\.[[:digit:]]+)`)
+	issueRegexp     = regexp.MustCompile(`Alpine Linux ([[:digit:]]+\.[[:digit:]]+)`)
+	edgeIssueRegexp = regexp.MustCompile(`Alpine Linux [[:digit:]]+\.\w+ \(edge\)`)
 )
 
 // DistributionScanner attempts to discover if a layer
@@ -54,7 +56,7 @@ func (*DistributionScanner) Version() string { return scannerVersion }
 // Kind implements scanner.VersionedScanner.
 func (*DistributionScanner) Kind() string { return scannerKind }
 
-// Scan will inspect the layer for an os-release or lsb-release file
+// Scan will inspect the layer for an os-release or issue file
 // and perform a regex match for keywords indicating the associated alpine release
 //
 // If neither file is found a (nil, nil) is returned.
@@ -80,11 +82,25 @@ func (s *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]*
 }
 
 func (*DistributionScanner) scanFs(ctx context.Context, sys fs.FS) (d []*claircore.Distribution, err error) {
-	// Use weirdo goto construction to pick the first instance.
-	var b []byte
+	for _, f := range []distFunc{readOSRelease, readIssue} {
+		dist, err := f(ctx, sys)
+		if err != nil {
+			return nil, err
+		}
+		if dist != nil {
+			return []*claircore.Distribution{dist}, nil
+		}
+	}
 
-	// Look for an os-release file.
-	b, err = fs.ReadFile(sys, osrelease.Path)
+	// Found nothing.
+	return nil, nil
+}
+
+type distFunc func(context.Context, fs.FS) (*claircore.Distribution, error)
+
+// ReadOSRelease looks for the distribution in an os-release file, if it exists.
+func readOSRelease(ctx context.Context, sys fs.FS) (*claircore.Distribution, error) {
+	b, err := fs.ReadFile(sys, osrelease.Path)
 	switch {
 	case errors.Is(err, nil):
 		// parse here
@@ -103,7 +119,10 @@ func (*DistributionScanner) scanFs(ctx context.Context, sys fs.FS) (d []*clairco
 			break
 		}
 		v := vid[:idx]
-		d = append(d, &claircore.Distribution{
+		if m[`PRETTY_NAME`] == edgePrettyName {
+			v = "edge"
+		}
+		return &claircore.Distribution{
 			Name:    m[`NAME`],
 			DID:     m[`ID`],
 			Version: v,
@@ -112,8 +131,7 @@ func (*DistributionScanner) scanFs(ctx context.Context, sys fs.FS) (d []*clairco
 			// file.
 			// VersionID:  vid,
 			PrettyName: m[`PRETTY_NAME`],
-		})
-		goto Done
+		}, nil
 	case errors.Is(err, fs.ErrNotExist):
 		zlog.Debug(ctx).
 			Str("path", osrelease.Path).
@@ -121,24 +139,37 @@ func (*DistributionScanner) scanFs(ctx context.Context, sys fs.FS) (d []*clairco
 	default:
 		return nil, err
 	}
-	// Look for the issue file.
-	b, err = fs.ReadFile(sys, issuePath)
+
+	// Found nothing.
+	return nil, nil
+}
+
+// ReadIssue looks for the distribution in an issue file, if it exists.
+func readIssue(ctx context.Context, sys fs.FS) (*claircore.Distribution, error) {
+	b, err := fs.ReadFile(sys, issuePath)
 	switch {
 	case errors.Is(err, nil):
-		// parse here
+		if isEdge := edgeIssueRegexp.Match(b); isEdge {
+			return &claircore.Distribution{
+				Name:       `Alpine Linux`,
+				DID:        `alpine`,
+				Version:    `edge`,
+				PrettyName: edgePrettyName,
+			}, nil
+		}
+
 		ms := issueRegexp.FindSubmatch(b)
 		if ms == nil {
 			zlog.Debug(ctx).Msg("seemingly not alpine")
 			break
 		}
 		v := string(ms[1])
-		d = append(d, &claircore.Distribution{
+		return &claircore.Distribution{
 			Name:       `Alpine Linux`,
 			DID:        `alpine`,
 			Version:    v,
 			PrettyName: fmt.Sprintf(`Alpine Linux v%s`, v),
-		})
-		goto Done
+		}, nil
 	case errors.Is(err, fs.ErrNotExist):
 		zlog.Debug(ctx).
 			Str("path", issuePath).
@@ -146,9 +177,7 @@ func (*DistributionScanner) scanFs(ctx context.Context, sys fs.FS) (d []*clairco
 	default:
 		return nil, err
 	}
+
 	// Found nothing.
 	return nil, nil
-
-Done:
-	return d, nil
 }
