@@ -1,0 +1,3 @@
+-- This exists just to make embed happy.
+-- Remove this when a real helper is added.
+SELECT version();

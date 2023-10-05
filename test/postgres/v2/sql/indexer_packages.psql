@@ -1,0 +1,74 @@
+-- id BIGSERIAL PRIMARY KEY,
+-- name text NOT NULL,
+-- kind text NOT NULL DEFAULT '',
+-- version text NOT NULL DEFAULT '',
+-- norm_kind text,
+-- norm_version integer[10],
+-- module text NOT NULL DEFAULT '',
+-- arch text NOT NULL DEFAULT ''
+--
+-- This is a rough port of the `test.GenUniquePackages` function.
+CREATE FUNCTION GeneratePackages (ct int DEFAULT 100)
+	RETURNS SETOF package
+	AS $$
+DECLARE
+	r package%ROWTYPE;
+BEGIN
+	FOR n IN 0..ct - 1 LOOP
+		r.id = nextval('package_id_seq');
+		r.name = 'package-' || n;
+		r.kind = 'binary';
+		r.version = 'version-' || n;
+		r.module = 'module-' || n;
+		r.arch = 'arch-' || n;
+		RETURN NEXT r;
+	END LOOP;
+	FOR n IN 0..ct - 1 LOOP
+		r.id = nextval('package_id_seq');
+		r.name = 'package-' || n;
+		r.kind = 'source';
+		r.version = 'version-' || n;
+		r.module = 'module-' || n;
+		r.arch = 'arch-' || n;
+		RETURN NEXT r;
+	END LOOP;
+	RETURN;
+END;
+$$
+LANGUAGE plpgsql;
+-- return &claircore.Package{
+-- 	ID:             strconv.Itoa(ii),
+-- 	Name:           fmt.Sprintf("package-%d", ii),
+-- 	Version:        fmt.Sprintf("version-%d", ii),
+-- 	Arch:           fmt.Sprintf("arch-%d", ii),
+-- 	Kind:           claircore.BINARY,
+-- 	PackageDB:      fmt.Sprintf("package-db-%d", i),
+-- 	RepositoryHint: fmt.Sprintf("repository-hint-%d", i),
+-- 	Module:         fmt.Sprintf("module:%d", ii),
+-- 	Source: &claircore.Package{
+-- 		ID:      strconv.Itoa(n + i),
+-- 		Name:    fmt.Sprintf("source-package-%d", ii),
+-- 		Version: fmt.Sprintf("source-version-%d", ii),
+-- 		Arch:    fmt.Sprintf("source-arch-%d", ii),
+-- 		Kind:    claircore.SOURCE,
+-- 		Module:  fmt.Sprintf("source-module:%d", ii),
+-- 	},
+-- }
+
+CREATE FUNCTION GenerateScanners (kind text, ct int DEFAULT 100)
+	RETURNS SETOF scanner
+	AS $$
+DECLARE
+	r scanner%ROWTYPE;
+BEGIN
+	FOR n IN 0..ct - 1 LOOP
+		r.id = nextval('scanner_id_seq');
+		r.name = 'test-scanner-' || n;
+		r.kind = kind;
+		r.version = 'version-' || n;
+		RETURN NEXT r;
+	END LOOP;
+	RETURN;
+END;
+$$
+LANGUAGE plpgsql;
