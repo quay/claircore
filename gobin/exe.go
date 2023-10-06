@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 	_ "unsafe" // for error linkname tricks
 
@@ -58,7 +59,7 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 	switch {
 	case errors.Is(err, nil):
 		runtimeVer = fromSemver(rtv)
-	case errors.Is(err, semver.ErrInvalidSemVer):
+	case errors.Is(err, semver.ErrInvalidSemVer), errors.Is(err, strconv.ErrRange):
 		badVers["stdlib"] = bi.GoVersion
 	default:
 		return err
@@ -112,7 +113,7 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 		if len(v) != 0 {
 			mmv = fmt.Sprintf("(devel) (%s)", strings.Join(v, ", "))
 		}
-	case errors.Is(err, semver.ErrInvalidSemVer):
+	case errors.Is(err, semver.ErrInvalidSemVer), errors.Is(err, strconv.ErrRange):
 		badVers[bi.Main.Path] = bi.Main.Version
 		mmv = bi.Main.Version
 	default:
@@ -137,7 +138,7 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 		switch {
 		case errors.Is(err, nil):
 			nv = fromSemver(ver)
-		case errors.Is(err, semver.ErrInvalidSemVer):
+		case errors.Is(err, semver.ErrInvalidSemVer), errors.Is(err, strconv.ErrRange):
 			badVers[d.Path] = d.Version
 		default:
 			return err
