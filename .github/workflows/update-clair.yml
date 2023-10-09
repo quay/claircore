@@ -3,7 +3,7 @@ on:
     tags:
       - v*.*.*
 
-name: pr-for-clair
+name: Create PR for Clair
 
 jobs:
   send-pull-requests:
@@ -43,10 +43,10 @@ jobs:
           token: ${{ steps.generate_token.outputs.token }}
           base: main
           commit-message: |
-            'chore: update claircore to ${{ env.VERSION }}
+            chore: update claircore to ${{ env.VERSION }}
             
             Update claircore to latest release.
-            '
+
           committer: Claircore-CI <${{ github.actor }}@users.noreply.github.com>
           author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
           signoff: true
