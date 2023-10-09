@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	dto "github.com/prometheus/client_model/go"
+	"github.com/prometheus/client_golang/prometheus/testutil"
 )
 
 type mockStater struct {
@@ -96,18 +96,6 @@ func TestDescribe(t *testing.T) {
 }
 
 func TestCollect(t *testing.T) {
-	expectedMetricValues := map[string]float64{
-		"pgxpool_acquire_count":                  1,
-		"pgxpool_acquire_duration_seconds_total": 2,
-		"pgxpool_acquired_conns":                 3,
-		"pgxpool_canceled_acquire_count":         4,
-		"pgxpool_constructing_conns":             5,
-		"pgxpool_empty_acquire":                  6,
-		"pgxpool_idle_conns":                     7,
-		"pgxpool_max_conns":                      8,
-		"pgxpool_total_conns":                    9,
-	}
-
 	mockStats := &pgxStatMock{
 		acquireCount:         int64(1),
 		acquireDuration:      time.Second * 2,
@@ -119,48 +107,46 @@ func TestCollect(t *testing.T) {
 		maxConns:             int32(8),
 		totalConns:           int32(9),
 	}
-	expectedMetricCount := 9
-	timeout := time.After(time.Second * 5)
 	stater := &mockStater{mockStats}
 	staterfn := func() stat { return stater.Stat() }
 	testObject := newCollector(staterfn, t.Name())
+	want := strings.NewReader(`# HELP pgxpool_acquire_count Cumulative count of successful acquires from the pool.
+# TYPE pgxpool_acquire_count counter
+pgxpool_acquire_count{application_name="TestCollect"} 1
+# HELP pgxpool_acquire_duration_seconds_total Total duration of all successful acquires from the pool in nanoseconds.
+# TYPE pgxpool_acquire_duration_seconds_total counter
+pgxpool_acquire_duration_seconds_total{application_name="TestCollect"} 2
+# HELP pgxpool_acquired_conns Number of currently acquired connections in the pool.
+# TYPE pgxpool_acquired_conns gauge
+pgxpool_acquired_conns{application_name="TestCollect"} 3
+# HELP pgxpool_canceled_acquire_count Cumulative count of acquires from the pool that were canceled by a context.
+# TYPE pgxpool_canceled_acquire_count counter
+pgxpool_canceled_acquire_count{application_name="TestCollect"} 4
+# HELP pgxpool_constructing_conns Number of conns with construction in progress in the pool.
+# TYPE pgxpool_constructing_conns gauge
+pgxpool_constructing_conns{application_name="TestCollect"} 5
+# HELP pgxpool_empty_acquire Cumulative count of successful acquires from the pool that waited for a resource to be released or constructed because the pool was empty.
+# TYPE pgxpool_empty_acquire counter
+pgxpool_empty_acquire{application_name="TestCollect"} 6
+# HELP pgxpool_idle_conns Number of currently idle conns in the pool.
+# TYPE pgxpool_idle_conns gauge
+pgxpool_idle_conns{application_name="TestCollect"} 7
+# HELP pgxpool_max_conns Maximum size of the pool.
+# TYPE pgxpool_max_conns gauge
+pgxpool_max_conns{application_name="TestCollect"} 8
+# HELP pgxpool_total_conns Total number of resources currently in the pool. The value is the sum of ConstructingConns, AcquiredConns, and IdleConns.
+# TYPE pgxpool_total_conns gauge
+pgxpool_total_conns{application_name="TestCollect"} 9
+`)
 
-	ch := make(chan prometheus.Metric)
-	go testObject.Collect(ch)
-
-	expectedMetricCountRemaining := expectedMetricCount
-	for expectedMetricCountRemaining != 0 {
-		select {
-		case metric := <-ch:
-			pb := &dto.Metric{}
-			metric.Write(pb)
-			description := metric.Desc().String()
-			metricExpected := false
-			for expectedMetricName, expectedMetricValue := range expectedMetricValues {
-				if strings.Contains(description, expectedMetricName) {
-					var value float64
-					if pb.GetCounter() != nil {
-						value = *pb.GetCounter().Value
-					}
-					if pb.GetGauge() != nil {
-						value = *pb.GetGauge().Value
-					}
-					if value != expectedMetricValue {
-						t.Errorf("Expected the '%s' metric to be %g but was %g", expectedMetricName, expectedMetricValue, value)
-					}
-					metricExpected = true
-					break
-				}
-			}
-			if !metricExpected {
-				t.Errorf("Unexpected description: %s", description)
-			}
-			expectedMetricCountRemaining--
-		case <-timeout:
-			t.Fatalf("Test timed out while there were still %d descriptors expected", expectedMetricCountRemaining)
-		}
+	ls, err := testutil.CollectAndLint(testObject)
+	if err != nil {
+		t.Error(err)
 	}
-	if expectedMetricCountRemaining != 0 {
-		t.Errorf("Expected all metrics to be found but %d was not", expectedMetricCountRemaining)
+	for _, l := range ls {
+		t.Log(l)
+	}
+	if err := testutil.CollectAndCompare(testObject, want); err != nil {
+		t.Error(err)
 	}
 }
