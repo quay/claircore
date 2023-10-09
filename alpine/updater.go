@@ -122,7 +122,7 @@ Major:
 		}
 	Minor:
 		for ; ; min++ {
-			r := release{maj, min}
+			r := stableRelease{maj, min}
 			u, err := f.base.Parse(r.String() + "/")
 			if err != nil {
 				return s, fmt.Errorf("alpine: unable to construct request: %w", err)
@@ -153,7 +153,7 @@ Major:
 			}
 		}
 	}
-	for _, r := range todo {
+	for _, r := range append(todo, edgeRelease{}) {
 		for _, n := range []string{`main`, `community`} {
 			u, err := f.base.Parse(path.Join(r.String(), n+".json"))
 			if err != nil {
@@ -182,7 +182,7 @@ Major:
 			}
 			s.Add(&updater{
 				repo:    n,
-				release: r, // NB: Safe to copy because it's an array.
+				release: r, // NB: Safe to copy because it's an array or empty struct.
 				url:     u.String(),
 			})
 		}

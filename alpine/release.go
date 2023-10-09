@@ -12,8 +12,22 @@ import (
 // to normalize detected distributions into major.minor releases and
 // parse vulnerabilities into major.minor releases
 
-// release is a particular release of the Alpine linux distribution
-type release [2]int
+// release represents a particular release of the Alpine Linux distribution
+type release interface {
+	Distribution() *claircore.Distribution
+	String() string
+}
+
+var (
+	_ release = (*edgeRelease)(nil)
+	_ release = (*stableRelease)(nil)
+)
+
+// edgeRelease is the Alpine Linux edge distribution.
+type edgeRelease struct{}
+
+// stableRelease is a particular stable release of the Alpine Linux distribution.
+type stableRelease [2]int
 
 // Common os-release fields applicable for *claircore.Distribution usage.
 const (
@@ -21,9 +35,26 @@ const (
 	distID   = "alpine"
 )
 
-var relMap sync.Map
+var (
+	relMap sync.Map
 
-func (r release) Distribution() *claircore.Distribution {
+	edgeDist = &claircore.Distribution{
+		Name:       distName,
+		DID:        distID,
+		VersionID:  edgeVersion,
+		PrettyName: edgePrettyName,
+	}
+)
+
+func (edgeRelease) Distribution() *claircore.Distribution {
+	return edgeDist
+}
+
+func (edgeRelease) String() string {
+	return edgeVersion
+}
+
+func (r stableRelease) Distribution() *claircore.Distribution {
 	// Dirty hack to keyify the release structure.
 	k := int64(r[0]<<32) | int64(r[1])
 	v, ok := relMap.Load(k)
@@ -38,4 +69,4 @@ func (r release) Distribution() *claircore.Distribution {
 	return v.(*claircore.Distribution)
 }
 
-func (r release) String() string { return fmt.Sprintf("v%d.%d", r[0], r[1]) }
+func (r stableRelease) String() string { return fmt.Sprintf("v%d.%d", r[0], r[1]) }

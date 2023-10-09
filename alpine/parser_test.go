@@ -13,7 +13,7 @@ import (
 	"github.com/quay/claircore"
 )
 
-var dist310 = release{3, 10}.Distribution()
+var dist310 = stableRelease{3, 10}.Distribution()
 
 var v3_10CommunityTruncatedVulns = []*claircore.Vulnerability{
 	{
@@ -136,7 +136,7 @@ func TestParser(t *testing.T) {
 		expected []*claircore.Vulnerability
 	}{
 		{
-			release:  release{3, 10},
+			release:  stableRelease{3, 10},
 			repo:     "community",
 			testFile: "fetch/v3.10/community.json",
 			expected: v3_10CommunityTruncatedVulns,

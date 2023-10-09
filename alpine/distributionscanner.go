@@ -26,11 +26,10 @@ const (
 	scannerName    = "alpine"
 	scannerVersion = "3"
 	scannerKind    = "distribution"
-)
 
-const (
 	issuePath = `etc/issue`
 
+	edgeVersion    = `edge`
 	edgePrettyName = `Alpine Linux edge`
 )
 
@@ -114,7 +113,7 @@ func readOSRelease(ctx context.Context, sys fs.FS) (*claircore.Distribution, err
 		}
 		v := vid[:idx]
 		if m[`PRETTY_NAME`] == edgePrettyName {
-			v = "edge"
+			v = edgeVersion
 		}
 		return &claircore.Distribution{
 			Name:    m[`NAME`],
@@ -147,7 +146,7 @@ func readIssue(ctx context.Context, sys fs.FS) (*claircore.Distribution, error) 
 			return &claircore.Distribution{
 				Name:       `Alpine Linux`,
 				DID:        `alpine`,
-				Version:    `edge`,
+				Version:    edgeVersion,
 				PrettyName: edgePrettyName,
 			}, nil
 		}
