@@ -7,6 +7,7 @@ on:
 
 jobs:
   check_labels:
+    name: Check Labels
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -19,6 +20,8 @@ jobs:
         # For all merged PRs with the `needs-changelog` label, check if a note exists on the merge commit.
         # If it does, remove the label.
         # If not, print a summary of all PRs that need a changelog entry.
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           summary=$(mktemp)
           remove=$(mktemp)
