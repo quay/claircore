@@ -1,3 +1,5 @@
+name: Check needs-changelog label freshness
+
 on:
   workflow_dispatch: {}
   schedule:
@@ -11,6 +13,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Switch to Changelog ref
         run: |
+          git fetch origin +refs/notes/changelog:refs/notes/changelog
           git checkout refs/notes/changelog
       - name: Check for unresolved changelog labels
         # For all merged PRs with the `needs-changelog` label, check if a note exists on the merge commit.
