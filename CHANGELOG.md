@@ -1,3 +1,15 @@
+<a name="v1.5.20"></a>
+## [v1.5.20] - 2023-10-12
+[v1.5.20]: https://github.com/quay/claircore/compare/v1.5.19...v1.5.20
+
+- libindex: move to O_TMPFILE fetcher
+  <details>
+  This release uses a new fetcher (the component responsible for pulling
+  layers locally) that makes use of the O_TMPFILE flag to open(2). This
+  ensures that layer files will be cleaned up even in the event of an
+  unclean shutdown, including being sent a KILL signal.
+  </details>
+
 <a name="v1.5.19"></a>
 ## [v1.5.19] - 2023-10-03
 [v1.5.19]: https://github.com/quay/claircore/compare/v1.5.18...v1.5.19
