@@ -1,0 +1,6 @@
+libindex: move to O_TMPFILE fetcher
+
+This release uses a new fetcher (the component responsible for pulling
+layers locally) that makes use of the O_TMPFILE flag to open(2). This
+ensures that layer files will be cleaned up even in the event of an
+unclean shutdown, including being sent a KILL signal.
