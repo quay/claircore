@@ -4,6 +4,11 @@ ignore:
 
 coverage:
   status:
+    # Per-patch reporting is weird: refactors can crater the patch coverage
+    # percentage while keeping the same or better project coverage percentage.
+    patch:
+      default:
+        informational: true
     project:
       default:
         threshold: 0.5%
