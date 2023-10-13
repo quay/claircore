@@ -19,7 +19,6 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
-	"github.com/quay/claircore/pkg/tarfs"
 )
 
 const (
@@ -67,17 +66,9 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	zlog.Debug(ctx).Msg("start")
 	defer zlog.Debug(ctx).Msg("done")
 
-	// Grab a handle to the tarball, make sure we can seek.
-	// If we can't, we'd need another reader for every database found.
-	// It's cleaner to just demand that it's a seeker.
-	rd, err := layer.Reader()
+	sys, err := layer.FS()
 	if err != nil {
-		return nil, fmt.Errorf("opening layer failed: %w", err)
-	}
-	defer rd.Close()
-	sys, err := tarfs.New(rd)
-	if err != nil {
-		return nil, fmt.Errorf("opening layer failed: %w", err)
+		return nil, fmt.Errorf("dpkg: opening layer failed: %w", err)
 	}
 
 	// This is a map keyed by directory. A "score" of 2 means this is almost

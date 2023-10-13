@@ -15,7 +15,6 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
-	"github.com/quay/claircore/pkg/tarfs"
 )
 
 const (
@@ -63,14 +62,9 @@ func (ps *DistrolessScanner) Scan(ctx context.Context, layer *claircore.Layer) (
 	zlog.Debug(ctx).Msg("start")
 	defer zlog.Debug(ctx).Msg("done")
 
-	rd, err := layer.Reader()
+	sys, err := layer.FS()
 	if err != nil {
-		return nil, fmt.Errorf("opening layer failed: %w", err)
-	}
-	defer rd.Close()
-	sys, err := tarfs.New(rd)
-	if err != nil {
-		return nil, fmt.Errorf("opening layer failed: %w", err)
+		return nil, fmt.Errorf("dpkg-distroless: opening layer failed: %w", err)
 	}
 
 	var pkgs []*claircore.Package
@@ -80,7 +74,7 @@ func (ps *DistrolessScanner) Scan(ctx context.Context, layer *claircore.Layer) (
 		}
 		if d.Name() == "status.d" && d.IsDir() {
 			zlog.Debug(ctx).Str("path", p).Msg("found potential distroless dpkg db directory")
-			dbFiles, err := sys.ReadDir(p)
+			dbFiles, err := fs.ReadDir(sys, p)
 			if err != nil {
 				return fmt.Errorf("error reading DB directory: %w", err)
 			}
