@@ -13,7 +13,6 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
-	"github.com/quay/claircore/pkg/tarfs"
 )
 
 var (
@@ -47,14 +46,9 @@ func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]
 		"layer", l.Hash.String())
 	zlog.Debug(ctx).Msg("start")
 	defer zlog.Debug(ctx).Msg("done")
-	rd, err := l.Reader()
+	sys, err := l.FS()
 	if err != nil {
-		return nil, fmt.Errorf("rhel: unable to create layer reader: %w", err)
-	}
-	defer rd.Close()
-	sys, err := tarfs.New(rd)
-	if err != nil {
-		return nil, fmt.Errorf("rhel: unable to open tarfs: %w", err)
+		return nil, fmt.Errorf("rhel: unable to open layer: %w", err)
 	}
 	d, err := findDistribution(sys)
 	if err != nil {

@@ -19,7 +19,6 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
-	"github.com/quay/claircore/pkg/tarfs"
 	"github.com/quay/claircore/rhel/dockerfile"
 	"github.com/quay/claircore/rhel/internal/common"
 	"github.com/quay/claircore/rhel/internal/containerapi"
@@ -178,12 +177,7 @@ func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) (repos
 	zlog.Debug(ctx).Msg("start")
 	defer zlog.Debug(ctx).Msg("done")
 
-	rd, err := l.Reader()
-	if err != nil {
-		return nil, fmt.Errorf("rhel: unable to open layer: %w", err)
-	}
-	defer rd.Close()
-	sys, err := tarfs.New(rd)
+	sys, err := l.FS()
 	if err != nil {
 		return nil, fmt.Errorf("rhel: unable to open layer: %w", err)
 	}
