@@ -16,7 +16,6 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/pkg/cpe"
-	"github.com/quay/claircore/pkg/tarfs"
 )
 
 const (
@@ -65,12 +64,7 @@ func (s *Scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Di
 	zlog.Debug(ctx).Msg("start")
 	defer zlog.Debug(ctx).Msg("done")
 
-	r, err := l.Reader()
-	if err != nil {
-		return nil, fmt.Errorf("osrelease: unable to open layer: %w", err)
-	}
-	defer r.Close()
-	sys, err := tarfs.New(r)
+	sys, err := l.FS()
 	if err != nil {
 		return nil, fmt.Errorf("osrelease: unable to open layer: %w", err)
 	}
