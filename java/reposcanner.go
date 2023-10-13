@@ -4,16 +4,13 @@ package java
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"io"
 	"runtime/trace"
 
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
-	"github.com/quay/claircore/pkg/tarfs"
 )
 
 var (
@@ -53,21 +50,11 @@ func (rs *RepoScanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*cla
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
+	sys, err := layer.FS()
+	if err != nil {
+		return nil, fmt.Errorf("java: unable to open layer: %w", err)
+	}
 
-	r, err := layer.Reader()
-	if err != nil {
-		return nil, err
-	}
-	defer r.Close()
-	ra, ok := r.(io.ReaderAt)
-	if !ok {
-		err := errors.New("unable to coerce to io.ReaderAt")
-		return nil, fmt.Errorf("opening layer failed: %w", err)
-	}
-	sys, err := tarfs.New(ra)
-	if err != nil {
-		return nil, err
-	}
 	ars, err := archives(ctx, sys)
 	if err != nil {
 		return nil, err

@@ -24,7 +24,6 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/java/jar"
-	"github.com/quay/claircore/pkg/tarfs"
 )
 
 var (
@@ -116,15 +115,9 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-
-	r, err := layer.Reader()
+	sys, err := layer.FS()
 	if err != nil {
-		return nil, err
-	}
-	defer r.Close()
-	sys, err := tarfs.New(r)
-	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("java: unable to open layer: %w", err)
 	}
 
 	ars, err := archives(ctx, sys)
