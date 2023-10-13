@@ -28,7 +28,6 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
-	"github.com/quay/claircore/pkg/tarfs"
 )
 
 // Detector detects go binaries and reports the packages used to build them.
@@ -74,14 +73,9 @@ func (Detector) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Pack
 	zlog.Debug(ctx).Msg("start")
 	defer zlog.Debug(ctx).Msg("done")
 
-	rd, err := l.Reader()
+	sys, err := l.FS()
 	if err != nil {
-		return nil, err
-	}
-	defer rd.Close()
-	sys, err := tarfs.New(rd)
-	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("gobin: unable to open layer: %w", err)
 	}
 
 	var out []*claircore.Package
