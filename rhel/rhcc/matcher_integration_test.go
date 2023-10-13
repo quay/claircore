@@ -74,25 +74,35 @@ func TestMatcherIntegration(t *testing.T) {
 			store := postgres.NewMatcherStore(pool)
 			m := &matcher{}
 
-			serveFile := fmt.Sprintf("testdata/%s.xml", tt.cvemap)
-
+			serveFile := filepath.Join("testdata", tt.cvemap+".xml")
 			fi, err := os.Stat(serveFile)
 			if err != nil {
 				t.Fatal(err)
 			}
 			tag := fmt.Sprintf(`"%d"`, fi.ModTime().UnixNano())
 			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.Header().Set("etag", tag)
-				http.ServeFile(w, r, serveFile)
+				switch r.URL.Path {
+				case "/cvemap.xml":
+					w.Header().Set("etag", tag)
+					http.ServeFile(w, r, serveFile)
+				case "/cvemap.xml.bz2":
+					http.Error(w, "no bz2", http.StatusNotFound)
+				default:
+					t.Errorf("unexpected request: %s", r.URL)
+					http.Error(w, "???", http.StatusNotImplemented)
+				}
 			}))
 			defer srv.Close()
-			u := &updater{
-				url:    srv.URL,
-				client: srv.Client(),
-			}
 			s := driver.NewUpdaterSet()
-			if err := s.Add(u); err != nil {
+			if err := s.Add(new(updater)); err != nil {
 				t.Error(err)
+			}
+			cfg := updates.Configs{
+				updaterName: func(v any) error {
+					cfg := v.(*UpdaterConfig)
+					cfg.URL = srv.URL + "/cvemap.xml"
+					return nil
+				},
 			}
 
 			locks, err := ctxlock.New(ctx, pool)
@@ -102,8 +112,8 @@ func TestMatcherIntegration(t *testing.T) {
 			defer locks.Close(ctx)
 
 			facs := make(map[string]driver.UpdaterSetFactory, 1)
-			facs[u.Name()] = driver.StaticSet(s)
-			mgr, err := updates.NewManager(ctx, store, locks, http.DefaultClient, updates.WithFactories(facs))
+			facs[updaterName] = driver.StaticSet(s)
+			mgr, err := updates.NewManager(ctx, store, locks, srv.Client(), updates.WithFactories(facs), updates.WithConfigs(cfg))
 			if err != nil {
 				t.Error(err)
 			}
