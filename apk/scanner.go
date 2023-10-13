@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io/fs"
 	"runtime/trace"
 
@@ -11,7 +12,6 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
-	"github.com/quay/claircore/pkg/tarfs"
 )
 
 const (
@@ -59,13 +59,9 @@ func (*Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.
 	zlog.Debug(ctx).Msg("start")
 	defer zlog.Debug(ctx).Msg("done")
 
-	rc, err := layer.Reader()
+	sys, err := layer.FS()
 	if err != nil {
-		return nil, err
-	}
-	sys, err := tarfs.New(rc)
-	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("apk: unable to open layer: %w", err)
 	}
 	b, err := fs.ReadFile(sys, installedFile)
 	switch {
