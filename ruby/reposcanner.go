@@ -11,7 +11,6 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
-	"github.com/quay/claircore/pkg/tarfs"
 )
 
 const repository = "rubygems"
@@ -53,14 +52,9 @@ func (rs *RepoScanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*cla
 		return nil, err
 	}
 
-	r, err := layer.Reader()
+	sys, err := layer.FS()
 	if err != nil {
-		return nil, err
-	}
-	defer r.Close()
-	sys, err := tarfs.New(r)
-	if err != nil {
-		return nil, fmt.Errorf("ruby: unable to open tar: %w", err)
+		return nil, fmt.Errorf("ruby: unable to open layer: %w", err)
 	}
 
 	gs, err := gems(ctx, sys)
