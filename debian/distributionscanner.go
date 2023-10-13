@@ -16,7 +16,6 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/osrelease"
-	"github.com/quay/claircore/pkg/tarfs"
 )
 
 var (
@@ -47,12 +46,7 @@ func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]
 	zlog.Debug(ctx).Msg("start")
 	defer zlog.Debug(ctx).Msg("done")
 
-	rd, err := l.Reader()
-	if err != nil {
-		return nil, fmt.Errorf("debian: unable to open layer: %w", err)
-	}
-	defer rd.Close()
-	sys, err := tarfs.New(rd)
+	sys, err := l.FS()
 	if err != nil {
 		return nil, fmt.Errorf("debian: unable to open layer: %w", err)
 	}
