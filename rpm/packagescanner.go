@@ -13,7 +13,6 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
-	"github.com/quay/claircore/pkg/tarfs"
 	"github.com/quay/claircore/rpm/bdb"
 	"github.com/quay/claircore/rpm/ndb"
 	"github.com/quay/claircore/rpm/sqlite"
@@ -64,17 +63,12 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	zlog.Debug(ctx).Msg("start")
 	defer zlog.Debug(ctx).Msg("done")
 
-	r, err := layer.Reader()
+	sys, err := layer.FS()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("rpm: unable to open layer: %w", err)
 	}
-	defer r.Close()
 
 	found := make([]foundDB, 0)
-	sys, err := tarfs.New(r)
-	if err != nil {
-		return nil, fmt.Errorf("rpm: unable to create tarfs: %w", err)
-	}
 	if err := fs.WalkDir(sys, ".", findDBs(ctx, &found, sys)); err != nil {
 		return nil, fmt.Errorf("rpm: error walking fs: %w", err)
 	}
@@ -104,7 +98,7 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 			}
 			defer func() {
 				if err := r.Close(); err != nil {
-					zlog.Warn(ctx).Err(err).Msg("unable to close tarfs sqlite db")
+					zlog.Warn(ctx).Err(err).Msg("unable to close sqlite db")
 				}
 			}()
 			f, err := os.CreateTemp(os.TempDir(), `rpmdb.sqlite.*`)
@@ -119,7 +113,7 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 					zlog.Warn(ctx).Err(err).Msg("unable to close sqlite db")
 				}
 			}()
-			zlog.Debug(ctx).Str("file", f.Name()).Msg("copying sqlite db out of tar")
+			zlog.Debug(ctx).Str("file", f.Name()).Msg("copying sqlite db out of FS")
 			if _, err := io.Copy(f, r); err != nil {
 				return nil, fmt.Errorf("rpm: error reading sqlite db: %w", err)
 			}
