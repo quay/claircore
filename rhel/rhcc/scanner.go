@@ -16,7 +16,6 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/pkg/rhctag"
-	"github.com/quay/claircore/pkg/tarfs"
 	"github.com/quay/claircore/rhel/dockerfile"
 	"github.com/quay/claircore/rhel/internal/common"
 )
@@ -119,9 +118,13 @@ func (s *scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Pa
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
+	sys, err := l.FS()
+	if err != nil {
+		return nil, fmt.Errorf("rhcc: unable to open layer: %w", err)
+	}
 
 	// add source package from component label
-	labels, p, err := findLabels(ctx, l)
+	labels, p, err := findLabels(ctx, sys)
 	switch {
 	case errors.Is(err, nil):
 	case errors.Is(err, errNotFound):
@@ -210,16 +213,7 @@ type mappingFile struct {
 	Data map[string][]string `json:"data"`
 }
 
-func findLabels(ctx context.Context, layer *claircore.Layer) (map[string]string, string, error) {
-	r, err := layer.Reader()
-	if err != nil {
-		return nil, "", err
-	}
-	defer r.Close()
-	sys, err := tarfs.New(r)
-	if err != nil {
-		return nil, "", err
-	}
+func findLabels(ctx context.Context, sys fs.FS) (map[string]string, string, error) {
 	ms, err := fs.Glob(sys, "root/buildinfo/Dockerfile-*")
 	if err != nil { // Can only return ErrBadPattern.
 		panic("progammer error: " + err.Error())
@@ -286,14 +280,9 @@ func (s *reposcanner) Kind() string { return "repository" }
 // Scan implements [indexer.RepositoryScanner].
 func (s *reposcanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Repository, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "rhel/rhcc/reposcanner.Scan")
-	r, err := l.Reader()
+	sys, err := l.FS()
 	if err != nil {
-		return nil, err
-	}
-	defer r.Close()
-	sys, err := tarfs.New(r)
-	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("rhcc: unable to open layer: %w", err)
 	}
 	ms, err := fs.Glob(sys, "root/buildinfo/Dockerfile-*")
 	if err != nil { // Can only return ErrBadPattern.
