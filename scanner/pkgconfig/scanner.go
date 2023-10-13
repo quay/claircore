@@ -20,7 +20,6 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
-	"github.com/quay/claircore/pkg/tarfs"
 )
 
 var _ indexer.PackageScanner = (*Scanner)(nil)
@@ -57,12 +56,7 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	zlog.Debug(ctx).Msg("start")
 	defer zlog.Debug(ctx).Msg("done")
 
-	r, err := layer.Reader()
-	if err != nil {
-		return nil, fmt.Errorf("pkgconfig: opening layer failed: %w", err)
-	}
-	defer r.Close()
-	sys, err := tarfs.New(r)
+	sys, err := layer.FS()
 	if err != nil {
 		return nil, fmt.Errorf("pkgconfig: opening layer failed: %w", err)
 	}
