@@ -15,7 +15,6 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/osrelease"
-	"github.com/quay/claircore/pkg/tarfs"
 )
 
 // Alpine linux has patch releases but their security database
@@ -69,14 +68,9 @@ func (s *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]*
 		"layer", l.Hash.String())
 	zlog.Debug(ctx).Msg("start")
 	defer zlog.Debug(ctx).Msg("done")
-	rc, err := l.Reader()
+	sys, err := l.FS()
 	if err != nil {
-		return nil, err
-	}
-	defer rc.Close()
-	sys, err := tarfs.New(rc)
-	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("alpine: unable to open layer: %w", err)
 	}
 	return s.scanFs(ctx, sys)
 }
