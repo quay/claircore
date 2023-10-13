@@ -10,7 +10,6 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
-	"github.com/quay/claircore/pkg/tarfs"
 )
 
 const (
@@ -39,12 +38,7 @@ func (s *Scanner) Scan(ctx context.Context, l *claircore.Layer) ([]claircore.Fil
 		"layer", l.Hash.String())
 	zlog.Debug(ctx).Msg("start")
 	defer zlog.Debug(ctx).Msg("done")
-	rd, err := l.Reader()
-	if err != nil {
-		return nil, fmt.Errorf("whiteout: unable to read layer: %w", err)
-	}
-	defer rd.Close()
-	sys, err := tarfs.New(rd)
+	sys, err := l.FS()
 	if err != nil {
 		return nil, fmt.Errorf("whiteout: unable to create fs: %w", err)
 	}
