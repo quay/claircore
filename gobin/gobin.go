@@ -15,6 +15,7 @@ package gobin
 import (
 	"bytes"
 	"context"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
@@ -60,7 +61,7 @@ func (Detector) Kind() string { return detectorKind }
 
 // Scan implements [indexer.PackageScanner].
 func (Detector) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Package, error) {
-	const peekSz = 4
+	const peekSz = 18
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -134,10 +135,33 @@ func (Detector) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Pack
 			return fmt.Errorf("gobin: unable to read %q: %w", p, err)
 		}
 
-		if !bytes.HasPrefix(peek, []byte("\x7fELF")) && !bytes.HasPrefix(peek, []byte("MZ")) {
+		isELF := bytes.HasPrefix(peek, []byte("\x7fELF"))
+		isPE := bytes.HasPrefix(peek, []byte("MZ"))
+		if !isELF && !isPE { // Do OSX containers exist?
 			// not an ELF or PE binary
 			return nil
 		}
+		if isELF {
+			// Using hex constants because the nice table on Wikipedia uses
+			// them.
+			var typ uint16
+			switch e := peek[0x05]; e {
+			case 1: // little-endian
+				typ = binary.LittleEndian.Uint16(peek[0x10:])
+			case 2: // big-endian
+				typ = binary.BigEndian.Uint16(peek[0x10:])
+			default:
+				zlog.Warn(ctx).
+					Uint8("endianness", e).
+					Msg("martian ELF")
+			}
+			if typ != 0x02 && typ != 0x03 {
+				// AKA [debug/elf.ET_EXEC] and [debug/elf.ET_DYN] -- not imported in this file by convention.
+				// Not an executable or shared object, skip.
+				return nil
+			}
+		}
+
 		rd, ok := f.(io.ReaderAt)
 		if !ok {
 			// Need to spool the exe.
