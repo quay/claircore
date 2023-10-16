@@ -51,7 +51,7 @@ func TestScan(t *testing.T) {
 			// Layer from registry.access.redhat.com/ubi9/nodejs-18@sha256:1ff5080686736cbab820ec560873c59bd80659a2b2f8d8f4e379301a910e5d54
 			Ref: test.LayerRef{
 				Registry: "registry.access.redhat.com",
-				Name:     "ubi9/nodejs-10",
+				Name:     "ubi9/nodejs-18",
 				Digest:   `sha256:1ae06b64755052cef4c32979aded82a18f664c66fa7b50a6d2924afac2849c6e`,
 			},
 		},
