@@ -11,6 +11,7 @@ create-missing = true
 
 [output.html]
 git-repository-url= "https://github.com/quay/claircore"
+additional-js = ["docs/mermaid.min.js"]
 
 [preprocessor.godoc]
 command = "go run github.com/quay/claircore/internal/cmd/mdbook-godoc"
