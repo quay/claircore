@@ -10,10 +10,61 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 )
 
-// Updater is an interface exporting the necessary methods
+// Type aliases from old names to the current.
+//
+// These can be removed if we're okay with breaking the API.
+type (
+	// MatcherStore is an alias from the previous name to the current.
+	//
+	// Deprecated: Callers should use the [MatcherV1] name.
+	MatcherStore = MatcherV1
+	// Updater is an alias from the previous name to the current.
+	//
+	// Deprecated: Callers should use the [MatcherV1Updater] name.
+	Updater = MatcherV1Updater
+	// Vulnerability is an alias from the previous name to the current.
+	//
+	// Deprecated: Callers should use the [MatcherV1Vulnerability] name.
+	Vulnerability = MatcherV1Vulnerability
+	// EnrichmentUpdater is an alias from the previous name to the current.
+	//
+	// Deprecated: Callers should use the [MatcherV1EnrichmentUpdater] name.
+	EnrichmentUpdater = MatcherV1EnrichmentUpdater
+	// Enrichment is an alias from the previous name to the current.
+	//
+	// Deprecated: Callers should use the [MatcherV1Enrichment] name.
+	Enrichment = MatcherV1Enrichment
+	// GetOpts is an alias from the previous name to the current.
+	//
+	// Deprecated: Callers should use the [MatcherV1VulnerabilityGetOpts] name.
+	GetOpts = MatcherV1VulnerabilityGetOpts
+)
+
+// MatcherV1 aggregates all interface types
+type MatcherV1 interface {
+	MatcherV1Updater
+	MatcherV1Vulnerability
+	MatcherV1Enrichment
+}
+
+// MatcherV1EnrichmentUpdater is an interface exporting the necessary methods
+// for storing and querying Enrichments.
+type MatcherV1EnrichmentUpdater interface {
+	// UpdateEnrichments creates a new EnrichmentUpdateOperation, inserts the provided
+	// EnrichmentRecord(s), and ensures enrichments from previous updates are not
+	// queries by clients.
+	UpdateEnrichments(ctx context.Context, kind string, fingerprint driver.Fingerprint, enrichments []driver.EnrichmentRecord) (uuid.UUID, error)
+}
+
+// MatcherV1Enrichment is an interface for querying enrichments from the store.
+type MatcherV1Enrichment interface {
+	GetEnrichment(ctx context.Context, kind string, tags []string) ([]driver.EnrichmentRecord, error)
+}
+
+// MatcherV1Updater is an interface exporting the necessary methods
 // for updating a vulnerability database.
-type Updater interface {
-	EnrichmentUpdater
+type MatcherV1Updater interface {
+	MatcherV1EnrichmentUpdater
 
 	// UpdateVulnerabilities creates a new UpdateOperation, inserts the provided
 	// vulnerabilities, and ensures vulnerabilities from previous updates are
@@ -64,4 +115,26 @@ type Updater interface {
 	RecordUpdaterStatus(ctx context.Context, updaterName string, updateTime time.Time, fingerprint driver.Fingerprint, updaterError error) error
 	// RecordUpdaterSetStatus records that all updaters from an updater set are up to date with vulnerabilities at this time
 	RecordUpdaterSetStatus(ctx context.Context, updaterSet string, updateTime time.Time) error
+}
+
+// MatcherV1VulnerabilityGetOpts provides instructions on how to match packages to vulnerabilities.
+type MatcherV1VulnerabilityGetOpts struct {
+	// Matchers tells the Get method to limit the returned vulnerabilities by
+	// the provided [driver.MatchConstraint]s.
+	Matchers []driver.MatchConstraint
+	// Debug asks the database layer to log extra information.
+	//
+	// Deprecated: This does nothing.
+	Debug bool
+	// VersionFiltering enables filtering based on the normalized versions in
+	// the database.
+	VersionFiltering bool
+}
+
+// MatcherV1Vulnerability is the interface for querying stored Vulnerabilities.
+type MatcherV1Vulnerability interface {
+	// Get finds the vulnerabilities which match each package provided in the
+	// [IndexRecord]s. This may be a one-to-many relationship. A map of Package
+	// ID to Vulnerabilities is returned.
+	Get(ctx context.Context, records []*claircore.IndexRecord, opts MatcherV1VulnerabilityGetOpts) (map[string][]*claircore.Vulnerability, error)
 }
