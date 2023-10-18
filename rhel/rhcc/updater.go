@@ -115,7 +115,7 @@ func (u *updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 		req.Header.Set("if-none-match", string(hint))
 	}
 
-	res, err := http.DefaultClient.Do(req)
+	res, err := u.client.Do(req)
 	if err != nil {
 		return nil, hint, fmt.Errorf("rhcc: error making request: %w", err)
 	}
