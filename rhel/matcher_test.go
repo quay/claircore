@@ -79,7 +79,7 @@ func TestMatcherIntegration(t *testing.T) {
 		}
 		facs[u.Name()] = driver.StaticSet(s)
 	}
-	mgr, err := updates.NewManager(ctx, store, locks, http.DefaultClient, updates.WithFactories(facs))
+	mgr, err := updates.NewManager(ctx, store, locks, c, updates.WithFactories(facs))
 	if err != nil {
 		t.Error(err)
 	}
