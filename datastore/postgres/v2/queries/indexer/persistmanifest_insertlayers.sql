@@ -1,0 +1,7 @@
+INSERT INTO layer (hash)
+SELECT
+	*
+FROM
+	UNNEST($1::text[])
+ON CONFLICT
+	DO NOTHING;
