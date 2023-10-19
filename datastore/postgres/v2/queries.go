@@ -11,6 +11,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+//go:embed queries
 var queries embed.FS
 
 //go:generate go run github.com/quay/claircore/internal/cmd/querymetadata
