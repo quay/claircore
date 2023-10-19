@@ -153,6 +153,24 @@ var (
 				"0.Plan.0.Plans.1": "usage validated to be over a trivial number of rows",
 			},
 		*/
+		"matcher/initialized_initialized.sql": {
+			"0.Plan.Plans.0": "only reads a single row",
+		},
+		"matcher/gc_distinct.sql": {
+			"0.Plan.Plans.0": "TODO",
+		},
+		"matcher/getlatestupdaterefs_any.sql": {
+			"0.Plan.Plans.0.Plans.0": "TODO",
+		},
+		"matcher/getupdateoperations_getupdaters.sql": {
+			"0.Plan.Plans.0": "TODO",
+		},
+		"matcher/getupdatediff_load.sql": {
+			"0.Plan.Plans.4": "TODO",
+		},
+		"matcher/recordupdatersetstatus_update.sql": {
+			"0.Plan.Plans.0": "TODO",
+		},
 	}
 )
 

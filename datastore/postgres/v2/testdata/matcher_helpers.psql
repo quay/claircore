@@ -1,0 +1,76 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+CREATE FUNCTION GetTestSetup (ct integer, name text, ref uuid)
+	RETURNS void
+	AS $$
+DECLARE
+	op_id bigint;
+BEGIN
+	INSERT INTO update_operation (updater, ref, fingerprint, kind)
+		VALUES (name, ref, '', 'vulnerability')
+	RETURNING
+		update_operation.id INTO op_id;
+	FOR n IN 0..ct-1 LOOP
+		DECLARE r vuln%ROWTYPE;
+		BEGIN
+			-- "Vuln.id" is NOT NULL, and passing the whole row means we don't get the default.
+			r.id = nextval('vuln_id_seq');
+			r.hash_kind = 'sha256';
+			r.hash = digest(name || n, 'sha256');
+			r.vulnerable_range = 'empty';
+			r.fixed_in_version = '5.5.5';
+			r.severity = '???';
+			r.normalized_severity = 'Unknown';
+			-- NOT NULL constraint.
+			r.name = 'TEST-' || n || ' (' || name || ')';
+			r.updater = name;
+			-- No way to do fallthrough in a case, so big batch of `IF` it is.
+			-- Unconditional parts:
+			r.package_name = 'package_' || n/10;
+			r.package_version = (random() * 10)::integer || '.' || (random() * 10)::integer || '.' || (random() * 10)::integer;
+			IF n+1 % 10 > 6 THEN
+				r.package_module = 'module_' || (n % 10) - 6;
+			END IF;
+			IF n % 10 < 3 THEN
+				r.package_arch = 'aarch64';
+			ELSE
+				r.package_arch = 'x86_64';
+			END IF;
+			if n % 10 = 0 THEN
+				r.package_kind = 'source';
+			ELSE
+				r.package_kind = 'binary';
+			END IF;
+			-- Add a Distribution:
+			IF n % 4 < 3 THEN
+				r.dist_id = 'distribution_'||n%10;
+				r.dist_name = 'Test';
+				r.dist_version = n%10;
+				r.dist_version_code_name = 'Chicago';
+				r.dist_version_id = n%10;
+				r.dist_arch = r.package_arch;
+				r.dist_cpe = 'cpe:2.3'||repeat(':*', 11);
+				r.dist_pretty_name = 'Test '|| n%10;
+			END IF;
+			-- Add a Repository:
+			IF n % 4 < 2 THEN
+				r.repo_name = 'repository_'||n%10;
+				r.repo_key = '';
+				r.repo_uri = 'TODO';
+			END IF;
+			-- Add a VersionRange:
+			IF n % 4 < 1 THEN
+				r.arch_operation = '';
+				r.version_kind = 'semver';
+				r.vulnerable_range = VersionRange('{0,0,0,0,0,0,0,0,0,1}'::int[], '{0,5,5,5,0,0,0,0,0,0}'::int[], '[)');
+			END IF;
+			INSERT INTO vuln
+				VALUES (r.*);
+			INSERT INTO uo_vuln (uo, vuln)
+				VALUES (op_id, r.id);
+		END;
+	END LOOP;
+	EXECUTE 'REFRESH MATERIALIZED VIEW latest_update_operations';
+END;
+$$
+LANGUAGE plpgsql;
