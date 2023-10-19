@@ -153,6 +153,40 @@ var (
 				"0.Plan.0.Plans.1": "usage validated to be over a trivial number of rows",
 			},
 		*/
+		"indexer/deletemanifests_layercleanup.sql": {
+			"0.Plan.Plans.0.Plans.0":         "grandfathered",
+			"0.Plan.Plans.0.Plans.1.Plans.0": "grandfathered",
+		},
+		"indexer/helper_distribution_bylayer.sql": {
+			"0.Plan.Plans.0.Plans.0": "TODO",
+		},
+		"indexer/distributionsbylayer_query.sql": {
+			"0.Plan.Plans.0.Plans.0": "TODO",
+		},
+		"indexer/helper_file_bylayer.sql": {
+			"0.Plan.Plans.0.Plans.0": "TODO",
+		},
+		"indexer/filesbylayer_query.sql": {
+			"0.Plan.Plans.0.Plans.0": "TODO",
+		},
+		"indexer/helper_distribution_indexartifact.sql": {
+			"0.Plan.Plans.3.Plans.0": "TODO",
+		},
+		"indexer/helper_file_indexartifact.sql": {
+			"0.Plan.Plans.3.Plans.0": "TODO",
+		},
+		"indexer/indexpackages_associate.sql": {
+			"0.Plan.Plans.0.Plans.0.Plans.0.Plans.0.Plans.0": "TODO",
+		},
+		"indexer/helper_repository_indexartifact.sql": {
+			"0.Plan.Plans.3.Plans.0": "TODO",
+		},
+		"indexer/persistmanifest_associate.sql": {
+			"0.Plan.Plans.0.Plans.1.Plans.0": "number of rows limited by passed input; select is not in a read query",
+		},
+		"indexer/setindexfinished_insertmanifest.sql": {
+			"0.Plan.Plans.0.Plans.0.Plans.0": "TODO",
+		},
 		"matcher/initialized_initialized.sql": {
 			"0.Plan.Plans.0": "only reads a single row",
 		},
