@@ -1,10 +1,15 @@
+// Package jsonblob implements a JSON-backed recording of update operations to
+// replay later.
 package jsonblob
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
+	"os"
 	"sort"
 	"sync"
 	"time"
@@ -28,6 +33,10 @@ func New() (*Store, error) {
 }
 
 // A Store buffers update operations.
+//
+// Store opens files in the OS-specified "temp" directories. If updates are
+// sufficiently large, this may need to be adjusted. See [os.TempDir] for how to
+// do so.
 type Store struct {
 	sync.RWMutex
 	entry  map[uuid.UUID]*Entry
@@ -35,7 +44,7 @@ type Store struct {
 	latest map[driver.UpdateKind]uuid.UUID
 }
 
-// Load reads in all the records serialized in the provided Reader.
+// Load reads in all the records serialized in the provided [io.Reader].
 func Load(ctx context.Context, r io.Reader) (*Loader, error) {
 	l := Loader{
 		dec: json.NewDecoder(r),
@@ -44,9 +53,10 @@ func Load(ctx context.Context, r io.Reader) (*Loader, error) {
 	return &l, nil
 }
 
-// Loader is an iterator struct that returns Entries.
+// Loader is an iterator that returns a series of [Entry].
 //
-// Users should call Next until it reports false, then check for errors via Err.
+// Users should call [*Loader.Next] until it reports false, then check for
+// errors via [*Loader.Err].
 type Loader struct {
 	err error
 	e   *Entry
@@ -57,12 +67,13 @@ type Loader struct {
 	cur  uuid.UUID
 }
 
-// Next reports whether there's a Entry to be processed.
+// Next reports whether there's an [Entry] to be processed.
 func (l *Loader) Next() bool {
 	if l.err != nil {
 		return false
 	}
 
+	var vs []claircore.Vulnerability
 	for l.err = l.dec.Decode(&l.de); l.err == nil; l.err = l.dec.Decode(&l.de) {
 		id := l.de.Ref
 		// If we just hit a new Entry, promote the current one.
@@ -73,8 +84,15 @@ func (l *Loader) Next() bool {
 			l.next.Fingerprint = l.de.Fingerprint
 			l.next.Date = l.de.Date
 		}
-		l.next.Vuln = append(l.next.Vuln, l.de.Vuln)
-		l.de.Vuln = nil // Needed to ensure the Decoder allocates new backing memory.
+		i := len(vs)
+		vs = append(vs, claircore.Vulnerability{})
+		if err := json.Unmarshal(l.de.Vuln.buf, &vs[i]); err != nil {
+			l.err = err
+			return false
+		}
+		l.next.Vuln = append(l.next.Vuln, &vs[i])
+
+		// BUG(hank) The [Loader] type does not handle Enrichments.
 
 		// If this was an initial diskEntry, promote the ref.
 		if id != l.cur {
@@ -89,7 +107,7 @@ func (l *Loader) Next() bool {
 	return true
 }
 
-// Entry returns the latest loaded Entry.
+// Entry returns the latest loaded [Entry].
 func (l *Loader) Entry() *Entry {
 	return l.e
 }
@@ -103,23 +121,94 @@ func (l *Loader) Err() error {
 	return l.err
 }
 
-// Store writes out the Store to the provided Writer. It's the inverse of Load.
+// Store writes out the contents of the receiver to the provided [io.Writer].
+// It's the inverse of [Load].
+//
+// Store may only be called once for a series of [Store.UpdateVulnerabilities] and
+// [Store.UpdateEnrichments] calls, as it deallocates resources as it writes them.
+//
+// It should be possible to call this as often as needed to flush resources to
+// disk.
 func (s *Store) Store(w io.Writer) error {
 	s.RLock()
 	defer s.RUnlock()
 	enc := json.NewEncoder(w)
 	enc.SetEscapeHTML(false)
-	for id, e := range s.entry {
-		for _, v := range e.Vuln {
-			if err := enc.Encode(&diskEntry{
-				CommonEntry: e.CommonEntry,
-				Ref:         id,
-				Vuln:        v,
-			}); err != nil {
-				return err
+	write := func(id uuid.UUID, e CommonEntry) func(driver.UpdateKind, *os.File, int) error {
+		return func(k driver.UpdateKind, f *os.File, ct int) error {
+			if f == nil {
+				return nil
 			}
+			defer f.Close()
+			shim := newBufShim(f)
+			defer shim.Close()
+			for i := 0; i < ct; i++ {
+				dent := diskEntry{
+					CommonEntry: e,
+					Ref:         id,
+					Kind:        k,
+				}
+				switch k {
+				case driver.EnrichmentKind:
+					dent.Enrichment = shim
+				case driver.VulnerabilityKind:
+					dent.Vuln = shim
+				default:
+					panic(fmt.Sprintf("programmer error: unknown kind: %v", k))
+				}
+				if err := enc.Encode(&dent); err != nil {
+					return err
+				}
+			}
+			return nil
 		}
 	}
+
+	for id, e := range s.entry {
+		f := write(id, e.CommonEntry)
+		verr := f(driver.VulnerabilityKind, e.vulns, e.vulnCt)
+		eerr := f(driver.EnrichmentKind, e.enrichments, e.enrichmentCt)
+		delete(s.entry, id)
+		if err := errors.Join(verr, eerr); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// BufShim treats every call to [bufShim.MarshalJSON] as a [bufio.Scanner.Scan]
+// call.
+//
+// Note this type is very weird, in that it can only be used for _either_ an
+// Unmarshal or a Marshal, not both. Doing both on the same structure will
+// silently do the wrong thing.
+type bufShim struct {
+	s   *bufio.Scanner
+	buf []byte
+}
+
+func newBufShim(r io.Reader) *bufShim {
+	s := new(bufShim)
+	s.s = bufio.NewScanner(r)
+	s.buf = getBuf()
+	s.s.Buffer(s.buf, len(s.buf))
+	return s
+}
+
+func (s *bufShim) MarshalJSON() ([]byte, error) {
+	if !s.s.Scan() {
+		return nil, s.s.Err()
+	}
+	return s.s.Bytes(), nil
+}
+
+func (s *bufShim) UnmarshalJSON(b []byte) error {
+	s.buf = append(s.buf[0:0], b...)
+	return nil
+}
+
+func (s *bufShim) Close() error {
+	putBuf(s.buf)
 	return nil
 }
 
@@ -129,10 +218,16 @@ type Entry struct {
 	CommonEntry
 	Vuln       []*claircore.Vulnerability
 	Enrichment []driver.EnrichmentRecord
+
+	// These are hacks to prevent excessive memory consumption.
+	vulns        *os.File
+	vulnCt       int
+	enrichments  *os.File
+	enrichmentCt int
 }
 
-// CommonEntry is an embedded type that's shared between the "normal" Entry type
-// and the on-disk json produced by a Store's Load method.
+// CommonEntry is an embedded type that's shared between the "normal" [Entry] type
+// and the on-disk JSON produced by the [Store.Store] method.
 type CommonEntry struct {
 	Updater     string
 	Fingerprint driver.Fingerprint
@@ -141,11 +236,14 @@ type CommonEntry struct {
 
 // DiskEntry is a single vulnerability. It's made from unpacking an Entry's
 // slice and adding a uuid for grouping back into an Entry upon read.
+//
+// "Vuln" and "Enrichment" are populated from the backing disk immediately
+// before being serialized.
 type diskEntry struct {
 	CommonEntry
 	Ref        uuid.UUID
-	Vuln       *claircore.Vulnerability
-	Enrichment *driver.EnrichmentRecord
+	Vuln       *bufShim `json:",omitempty"`
+	Enrichment *bufShim `json:",omitempty"`
 	Kind       driver.UpdateKind
 }
 
@@ -154,25 +252,50 @@ type diskEntry struct {
 //
 // It is unsafe for modification because it does not return a copy of the map.
 func (s *Store) Entries() map[uuid.UUID]*Entry {
+	// BUG(hank) [Store.Entries] reports seemingly-empty entries when populated
+	// via [Store.UpdateVulnerabilities].
 	s.RLock()
 	defer s.RUnlock()
 	return s.entry
 }
 
 // UpdateVulnerabilities records all provided vulnerabilities.
-func (s *Store) UpdateVulnerabilities(_ context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability) (uuid.UUID, error) {
+func (s *Store) UpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability) (uuid.UUID, error) {
 	now := time.Now()
+	buf, err := diskBuf(ctx)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	enc := json.NewEncoder(buf)
+	enc.SetEscapeHTML(false)
+	for _, v := range vulns {
+		if err := enc.Encode(v); err != nil {
+			return uuid.Nil, err
+		}
+	}
+	if _, err := buf.Seek(0, io.SeekStart); err != nil {
+		return uuid.Nil, err
+	}
+
 	e := Entry{
-		Vuln: vulns,
+		vulns:  buf,
+		vulnCt: len(vulns),
 	}
 	e.Date = now
 	e.Updater = updater
 	e.Fingerprint = fingerprint
-	ref := uuid.New() // God help you if this wasn't unique.
+	ref := uuid.New()
 	s.Lock()
 	defer s.Unlock()
-	s.latest[driver.VulnerabilityKind] = ref
+	for {
+		if _, exist := s.entry[ref]; !exist {
+			break
+		}
+		ref = uuid.New()
+	}
 	s.entry[ref] = &e
+	s.latest[driver.VulnerabilityKind] = ref
 	s.ops[updater] = append([]driver.UpdateOperation{{
 		Ref:         ref,
 		Date:        now,
@@ -268,15 +391,38 @@ func (s *Store) GC(_ context.Context, _ int) (int64, error) {
 // queries by clients.
 func (s *Store) UpdateEnrichments(ctx context.Context, kind string, fp driver.Fingerprint, es []driver.EnrichmentRecord) (uuid.UUID, error) {
 	now := time.Now()
+	buf, err := diskBuf(ctx)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	enc := json.NewEncoder(buf)
+	enc.SetEscapeHTML(false)
+	for _, v := range es {
+		if err := enc.Encode(v); err != nil {
+			return uuid.Nil, err
+		}
+	}
+	if _, err := buf.Seek(0, io.SeekStart); err != nil {
+		return uuid.Nil, err
+	}
+
 	e := Entry{
-		Enrichment: es,
+		enrichments:  buf,
+		enrichmentCt: len(es),
 	}
 	e.Date = now
 	e.Updater = kind
 	e.Fingerprint = fp
-	ref := uuid.New() // God help you if this wasn't unique.
+	ref := uuid.New()
 	s.Lock()
 	defer s.Unlock()
+	for {
+		if _, exist := s.entry[ref]; !exist {
+			break
+		}
+		ref = uuid.New()
+	}
 	s.latest[driver.EnrichmentKind] = ref
 	s.entry[ref] = &e
 	s.ops[kind] = append([]driver.UpdateOperation{{
@@ -289,12 +435,26 @@ func (s *Store) UpdateEnrichments(ctx context.Context, kind string, fp driver.Fi
 	return ref, nil
 }
 
-// RecordUpdaterStatus is unimplemented
+// RecordUpdaterStatus is unimplemented.
 func (s *Store) RecordUpdaterStatus(ctx context.Context, updaterName string, updateTime time.Time, fingerprint driver.Fingerprint, updaterError error) error {
 	return nil
 }
 
-// RecordUpdaterSetStatus is unimplemented
+// RecordUpdaterSetStatus is unimplemented.
 func (s *Store) RecordUpdaterSetStatus(ctx context.Context, updaterSet string, updateTime time.Time) error {
 	return nil
+}
+
+var bufPool sync.Pool
+
+func getBuf() []byte {
+	const sz = 1 << 20 // 1MiB
+	b, ok := bufPool.Get().([]byte)
+	if !ok {
+		b = make([]byte, sz)
+	}
+	return b
+}
+func putBuf(b []byte) {
+	bufPool.Put(b)
 }

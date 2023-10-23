@@ -1,6 +1,7 @@
 package jsonblob
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"testing"
@@ -26,9 +27,11 @@ func TestStore(t *testing.T) {
 	}
 	t.Logf("ref: %v", ref)
 
-	if err := s.Store(io.Discard); err != nil {
+	var buf bytes.Buffer
+	if err := s.Store(&buf); err != nil {
 		t.Error(err)
 	}
+	t.Logf("wrote:\n%s", buf.String())
 }
 
 func TestRoundtrip(t *testing.T) {
@@ -45,12 +48,16 @@ func TestRoundtrip(t *testing.T) {
 	}
 	t.Logf("ref: %v", ref)
 
+	var buf bytes.Buffer
+	defer func() {
+		t.Logf("wrote:\n%s", buf.String())
+	}()
 	var got []*claircore.Vulnerability
 	r, w := io.Pipe()
 	eg, ctx := errgroup.WithContext(ctx)
 	eg.Go(func() error { defer w.Close(); return a.Store(w) })
 	eg.Go(func() error {
-		l, err := Load(ctx, r)
+		l, err := Load(ctx, io.TeeReader(r, &buf))
 		if err != nil {
 			return err
 		}
