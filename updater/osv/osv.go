@@ -92,7 +92,7 @@ func (u *Factory) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *
 	if l := len(cfg.Allowlist); l != 0 {
 		u.allow = make(map[string]bool, l)
 		for _, a := range cfg.Allowlist {
-			u.allow[a] = true
+			u.allow[strings.ToLower(a)] = true
 		}
 	}
 
