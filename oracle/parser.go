@@ -16,18 +16,20 @@ import (
 )
 
 const (
-	OracleLinux5Platform = "Oracle Linux 5"
-	OracleLinux6Platform = "Oracle Linux 6"
-	OracleLinux7Platform = "Oracle Linux 7"
-	OracleLinux8Platform = "Oracle Linux 8"
+	oracleLinux5Platform = "Oracle Linux 5"
+	oracleLinux6Platform = "Oracle Linux 6"
+	oracleLinux7Platform = "Oracle Linux 7"
+	oracleLinux8Platform = "Oracle Linux 8"
+	oracleLinux9Platform = "Oracle Linux 9"
 )
 
 // a mapping between oval platform string to claircore distribution
 var platformToDist = map[string]*claircore.Distribution{
-	OracleLinux5Platform: fiveDist,
-	OracleLinux6Platform: sixDist,
-	OracleLinux7Platform: sevenDist,
-	OracleLinux8Platform: eightDist,
+	oracleLinux5Platform: fiveDist,
+	oracleLinux6Platform: sixDist,
+	oracleLinux7Platform: sevenDist,
+	oracleLinux8Platform: eightDist,
+	oracleLinux9Platform: nineDist,
 }
 
 var _ driver.Parser = (*Updater)(nil)
