@@ -42,11 +42,19 @@ var (
 const (
 	nameIdx    = 1
 	versionIdx = 1
+
+	repository = "rubygems"
 )
 
 var (
-	_ indexer.VersionedScanner = (*Scanner)(nil)
-	_ indexer.PackageScanner   = (*Scanner)(nil)
+	_ indexer.VersionedScanner   = (*Scanner)(nil)
+	_ indexer.PackageScanner     = (*Scanner)(nil)
+	_ indexer.DefaultRepoScanner = (*Scanner)(nil)
+
+	Repository = claircore.Repository{
+		Name: repository,
+		URI:  "https://rubygems.org/gems/",
+	}
 )
 
 // Scanner implements the scanner.PackageScanner interface.
@@ -137,6 +145,11 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	}
 
 	return ret, nil
+}
+
+// DefaultRepository implements [indexer.DefaultRepoScanner].
+func (Scanner) DefaultRepository(ctx context.Context) *claircore.Repository {
+	return &Repository
 }
 
 func trim(s string) string {
