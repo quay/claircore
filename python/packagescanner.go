@@ -24,6 +24,11 @@ import (
 var (
 	_ indexer.VersionedScanner = (*Scanner)(nil)
 	_ indexer.PackageScanner   = (*Scanner)(nil)
+
+	Repository = claircore.Repository{
+		Name: "pypi",
+		URI:  "https://pypi.org/simple",
+	}
 )
 
 // Scanner implements the scanner.PackageScanner interface.
@@ -117,6 +122,11 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 		})
 	}
 	return ret, nil
+}
+
+// DefaultRepository implements [indexer.DefaultRepoScanner]
+func (Scanner) DefaultRepository(ctx context.Context) *claircore.Repository {
+	return &Repository
 }
 
 // findDeliciousEgg finds eggs and wheels.
