@@ -2,7 +2,6 @@ package test
 
 import (
 	"context"
-	"net/http"
 	"sort"
 	"strings"
 	"testing"
@@ -113,7 +112,7 @@ func (tc ScannerTestcase) RunSubset(ctx context.Context, n int) func(*testing.T)
 
 func (tc *ScannerTestcase) getLayer(ctx context.Context, t *testing.T) *claircore.Layer {
 	d := tc.Digest()
-	n, err := fetch.Layer(ctx, t, http.DefaultClient, tc.Domain, tc.Name, d)
+	n, err := fetch.Layer(ctx, t, tc.Domain, tc.Name, d)
 	if err != nil {
 		t.Fatal(err)
 	}
