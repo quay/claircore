@@ -27,9 +27,15 @@ import (
 )
 
 var (
-	_ indexer.VersionedScanner = (*Scanner)(nil)
-	_ indexer.PackageScanner   = (*Scanner)(nil)
-	_ indexer.RPCScanner       = (*Scanner)(nil)
+	_ indexer.VersionedScanner   = (*Scanner)(nil)
+	_ indexer.PackageScanner     = (*Scanner)(nil)
+	_ indexer.RPCScanner         = (*Scanner)(nil)
+	_ indexer.DefaultRepoScanner = (*Scanner)(nil)
+
+	Repository = claircore.Repository{
+		Name: "maven",
+		URI:  "https://repo1.maven.apache.org/maven2",
+	}
 )
 
 // DefaultSearchAPI is a maven-like REST API that may be used to do
@@ -230,6 +236,11 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 		ret = append(ret, ps...)
 	}
 	return ret, nil
+}
+
+// DefaultRepository implements [indexer.DefaultRepoScanner].
+func (Scanner) DefaultRepository(ctx context.Context) *claircore.Repository {
+	return &Repository
 }
 
 // Search attempts to search with the configured client and API endpoint.
