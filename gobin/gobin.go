@@ -180,7 +180,7 @@ func (Detector) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Pack
 	return out, nil
 }
 
-// Scan implements [indexer.DefaultRepoScanner].
+// DefaultRepository implements [indexer.DefaultRepoScanner].
 func (Detector) DefaultRepository(ctx context.Context) *claircore.Repository {
 	return &Repository
 }
