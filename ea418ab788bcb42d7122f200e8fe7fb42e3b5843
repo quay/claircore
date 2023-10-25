@@ -1,0 +1,8 @@
+all: share single FS implementation
+
+Claircore components that deal with `Layer` objects now share a single
+backing File and a single `fs.FS` implementation when using the `FS`
+method. There should be no noticeable changes for users, but out-of-tree
+implementations may want to move over to using the new FS method.
+
+This change should improve memory usage.
