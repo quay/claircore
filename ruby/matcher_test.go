@@ -106,7 +106,7 @@ func TestVulnerable(t *testing.T) {
 			record: &claircore.IndexRecord{
 				Package: &claircore.Package{
 					Name:    "dependabot-omnibus",
-					Version: "0.120.0-beta2",
+					Version: "0.120.0.beta2",
 					Kind:    "binary",
 				},
 			},
@@ -118,7 +118,7 @@ func TestVulnerable(t *testing.T) {
 					Name:           "dependabot-omnibus",
 					RepositoryHint: "rubygems",
 				},
-				FixedInVersion: "fixed=0.125.1&introduced=0.119.0-beta1",
+				FixedInVersion: "fixed=0.125.1&introduced=0.119.0.beta1",
 			},
 			want: true,
 		},

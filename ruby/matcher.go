@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/Masterminds/semver"
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
@@ -52,7 +51,7 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 		upperVersion = decodedVersions.Get("lastAffected")
 	}
 
-	rv, err := semver.NewVersion(record.Package.Version)
+	rv, err := NewVersion(record.Package.Version)
 	if err != nil {
 		zlog.Warn(ctx).
 			Str("package", record.Package.Name).
@@ -61,7 +60,7 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 		return false, err
 	}
 
-	uv, err := semver.NewVersion(upperVersion)
+	uv, err := NewVersion(upperVersion)
 	if err != nil {
 		zlog.Warn(ctx).
 			Str("vulnerability", vuln.Name).
@@ -78,7 +77,7 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 		return false, nil
 	case decodedVersions.Has("introduced"):
 		introduced := decodedVersions.Get("introduced")
-		iv, err := semver.NewVersion(introduced)
+		iv, err := NewVersion(introduced)
 		if err != nil {
 			zlog.Warn(ctx).
 				Str("vulnerability", vuln.Name).
