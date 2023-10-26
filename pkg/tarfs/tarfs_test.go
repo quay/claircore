@@ -3,6 +3,7 @@ package tarfs
 import (
 	"archive/tar"
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"errors"
 	"io"
@@ -10,6 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -25,7 +27,7 @@ import (
 // file in this package *will* cause tests to fail once. Make sure to run tests
 // twice if the Checksum tests fail.
 func TestFS(t *testing.T) {
-	var name = filepath.Join(integration.PackageCacheDir(t), `fstest.tar`)
+	name := filepath.Join(integration.PackageCacheDir(t), `fstest.tar`)
 	checktar(t, name)
 	fileset := []string{
 		"file.go",
@@ -34,21 +36,10 @@ func TestFS(t *testing.T) {
 		"tarfs_test.go",
 		"testdata/atroot",
 	}
+	ctx := t.Context()
 
 	t.Run("Single", func(t *testing.T) {
-		f, err := os.Open(name)
-		if err != nil {
-			t.Error(err)
-		}
-		t.Cleanup(func() {
-			if err := f.Close(); err != nil {
-				t.Error(err)
-			}
-		})
-		sys, err := New(f)
-		if err != nil {
-			t.Error(err)
-		}
+		sys := openTar(ctx, t, name)
 
 		if err := fstest.TestFS(sys, fileset...); err != nil {
 			t.Error(err)
@@ -56,19 +47,7 @@ func TestFS(t *testing.T) {
 	})
 
 	t.Run("Concurrent", func(t *testing.T) {
-		f, err := os.Open(name)
-		if err != nil {
-			t.Error(err)
-		}
-		t.Cleanup(func() {
-			if err := f.Close(); err != nil {
-				t.Error(err)
-			}
-		})
-		sys, err := New(f)
-		if err != nil {
-			t.Error(err)
-		}
+		sys := openTar(ctx, t, name)
 
 		const lim = 8
 		var wg sync.WaitGroup
@@ -86,19 +65,7 @@ func TestFS(t *testing.T) {
 	})
 
 	t.Run("Sub", func(t *testing.T) {
-		f, err := os.Open(name)
-		if err != nil {
-			t.Error(err)
-		}
-		t.Cleanup(func() {
-			if err := f.Close(); err != nil {
-				t.Error(err)
-			}
-		})
-		sys, err := New(f)
-		if err != nil {
-			t.Error(err)
-		}
+		sys := openTar(ctx, t, name)
 
 		sub, err := fs.Sub(sys, "testdata")
 		if err != nil {
@@ -110,19 +77,8 @@ func TestFS(t *testing.T) {
 	})
 
 	t.Run("Checksum", func(t *testing.T) {
-		f, err := os.Open(name)
-		if err != nil {
-			t.Error(err)
-		}
-		t.Cleanup(func() {
-			if err := f.Close(); err != nil {
-				t.Error(err)
-			}
-		})
-		sys, err := New(f)
-		if err != nil {
-			t.Error(err)
-		}
+		sys := openTar(ctx, t, name)
+
 		for _, n := range fileset {
 			name := n
 			t.Run(name, func(t *testing.T) {
@@ -155,14 +111,55 @@ func TestFS(t *testing.T) {
 	})
 }
 
-// TestEmpty tests that a wholly empty tar still creates an empty root.
-func TestEmpty(t *testing.T) {
-	// Two zero blocks is the tar footer, so just make one up.
-	rd := bytes.NewReader(make([]byte, 2*512))
-	sys, err := New(rd)
+func openTar(ctx context.Context, t *testing.T, name string) *FS {
+	t.Helper()
+	f, err := os.Open(name)
 	if err != nil {
 		t.Error(err)
 	}
+	t.Cleanup(func() {
+		if err := f.Close(); err != nil {
+			t.Error(err)
+		}
+	})
+	fi, err := f.Stat()
+	if err != nil {
+		t.Error(err)
+	}
+	sys, err := New(ctx, f, fi.Size(), nil)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if t.Failed() {
+		runtime.Goexit()
+	}
+
+	t.Cleanup(func() {
+		if err := sys.Close(); err != nil {
+			t.Error(err)
+		}
+	})
+	return sys
+}
+
+// TestEmpty tests that a wholly empty tar still creates an empty root.
+func TestEmpty(t *testing.T) {
+	buf, err := os.CreateTemp(t.TempDir(), "buf.")
+	if err != nil {
+		t.Error(err)
+	}
+	// Two zero blocks is the tar footer, so just make one up.
+	rd := bytes.NewReader(make([]byte, 2*512))
+	sys, err := New(t.Context(), rd, rd.Size(), buf)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Cleanup(func() {
+		if err := sys.Close(); err != nil {
+			t.Error(err)
+		}
+	})
 	if _, err := fs.Stat(sys, "."); err != nil {
 		t.Error(err)
 	}
@@ -237,6 +234,7 @@ func mktar(t *testing.T, in fs.FS, tw *tar.Writer) fs.WalkDirFunc {
 }
 
 func TestSymlinks(t *testing.T) {
+	ctx := t.Context()
 	tmp := t.TempDir()
 	run := func(openErr bool, hs []tar.Header, chk func(*testing.T, fs.FS)) func(*testing.T) {
 		return func(t *testing.T) {
@@ -259,11 +257,23 @@ func TestSymlinks(t *testing.T) {
 				t.Error(err)
 			}
 
-			sys, err := New(f)
+			fi, err := f.Stat()
+			if err != nil {
+				t.Error(err)
+			}
+			sys, err := New(ctx, f, fi.Size(), nil)
 			t.Log(err)
 			if (err != nil) != openErr {
 				t.Fail()
 			}
+			t.Cleanup(func() {
+				if sys == nil {
+					return
+				}
+				if err := sys.Close(); err != nil {
+					t.Error(err)
+				}
+			})
 
 			if chk != nil {
 				chk(t, sys)
@@ -471,15 +481,8 @@ func TestKnownLayers(t *testing.T) {
 			continue
 		}
 		t.Run(n, func(t *testing.T) {
-			f, err := os.Open(filepath.Join(`testdata/known`, n))
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer f.Close()
-			sys, err := New(f)
-			if err != nil {
-				t.Fatal(err)
-			}
+			ctx := t.Context()
+			sys := openTar(ctx, t, filepath.Join(`testdata/known`, n))
 			if err := fs.WalkDir(sys, ".", func(p string, d fs.DirEntry, err error) error {
 				if err != nil {
 					t.Error(err)
@@ -557,16 +560,10 @@ func TestTarConcatenate(t *testing.T) {
 		},
 	}
 
+	ctx := t.Context()
 	for _, test := range tests {
-		f, err := os.Open(test.testFile)
-		if err != nil {
-			t.Fatalf("failed to open test tar: %v", err)
-		}
-		sys, err := New(f)
-		if err != nil {
-			t.Fatalf("failed to create tarfs: %v", err)
-		}
-		if err := fs.WalkDir(sys, ".", func(path string, d fs.DirEntry, err error) error {
+		sys := openTar(ctx, t, test.testFile)
+		if err := fs.WalkDir(sys, ".", func(path string, _ fs.DirEntry, err error) error {
 			if err != nil {
 				return err
 			}
@@ -593,15 +590,9 @@ func TestTarConcatenate(t *testing.T) {
 }
 
 func TestInvalidName(t *testing.T) {
-	f, err := os.Open(`testdata/bad_name.tar`)
-	if err != nil {
-		t.Fatalf("failed to open test tar: %v", err)
-	}
-	defer f.Close()
-	sys, err := New(f)
-	if err != nil {
-		t.Fatalf("failed to create tarfs: %v", err)
-	}
+	ctx := t.Context()
+	sys := openTar(ctx, t, `testdata/bad_name.tar`)
+
 	ms, err := fs.Glob(sys, "*")
 	if err != nil {
 		t.Fatalf("unexpected glob failure: %v", err)
