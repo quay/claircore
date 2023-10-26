@@ -145,7 +145,10 @@ func (ls *LayerScanner) Scan(ctx context.Context, manifest claircore.Digest, lay
 				return context.Cause(ctx)
 			default:
 			}
-			return ls.scanLayer(ctx, l, s)
+			if err := ls.scanLayer(ctx, l, s); err != nil {
+				return fmt.Errorf("layer %q: %w", l.Hash, err)
+			}
+			return nil
 		}
 	}
 	dedupe := make(map[string]struct{})
