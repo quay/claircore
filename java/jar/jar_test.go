@@ -134,7 +134,7 @@ func fetch(t testing.TB, u string, ck string) (name string) {
 	case errors.Is(err, os.ErrNotExist):
 		t.Logf("file %q missing", name)
 		integration.Skip(t)
-		res, err := http.Get(uri.String())
+		res, err := http.Get(uri.String()) // Use of http.DefaultClient guarded by integration.Skip call.
 		if err != nil {
 			t.Error(err)
 			break
