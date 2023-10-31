@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
-	"net/http"
 	"reflect"
 	"time"
 
@@ -51,10 +50,13 @@ func New(ctx context.Context, opts *Options) (*Libvuln, error) {
 
 	// required
 	if opts.Store == nil {
-		return nil, fmt.Errorf("field Store cannot be nil")
+		return nil, fmt.Errorf("libvuln: must provide a Store")
 	}
 	if opts.UpdateRetention == 1 || opts.UpdateRetention < 0 {
-		return nil, fmt.Errorf("update retention must be 0 or greater then 1")
+		return nil, fmt.Errorf("libvuln: must provide a valid UpdateRetention")
+	}
+	if opts.Client == nil {
+		return nil, fmt.Errorf("libvuln: must provide a *http.Client")
 	}
 
 	// optional
@@ -72,11 +74,6 @@ func New(ctx context.Context, opts *Options) (*Libvuln, error) {
 		opts.UpdateWorkers = DefaultUpdateWorkers
 	}
 
-	if opts.Client == nil {
-		zlog.Warn(ctx).
-			Msg("using default HTTP client; this will become an error in the future")
-		opts.Client = http.DefaultClient // TODO(hank) Remove DefaultClient
-	}
 	if opts.UpdaterConfigs == nil {
 		opts.UpdaterConfigs = make(map[string]driver.ConfigUnmarshaler)
 	}
