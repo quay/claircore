@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	pkgClient = &http.Client{}
+	pkgClient = &http.Client{Transport: &http.Transport{}}
 
 	fp driver.Fingerprint
 )

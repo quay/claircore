@@ -1,8 +1,10 @@
-package tarfs
+package tarfs_test
 
 import (
 	"archive/tar"
+	"bufio"
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"errors"
 	"io"
@@ -14,29 +16,70 @@ import (
 	"sync"
 	"testing"
 	"testing/fstest"
+	"time"
 
-	"github.com/quay/claircore/test/integration"
+	"github.com/klauspost/compress/gzip"
+	"github.com/klauspost/compress/zstd"
+	"github.com/quay/zlog"
+
+	"github.com/quay/claircore/pkg/tarfs"
+	"github.com/quay/claircore/test"
 )
+
+var (
+	// ModTime reports the newest modtime for files in the current directory.
+	//
+	// TODO(hank) Replace this with [sync.OnceValue] in go1.21.
+	modTime time.Time
+)
+
+func init() {
+	dent, err := os.ReadDir(".")
+	if err != nil {
+		panic(err)
+	}
+	var r time.Time
+	for _, d := range dent {
+		fi, err := d.Info()
+		if err != nil {
+			panic(err)
+		}
+		m := fi.ModTime()
+		if m.After(r) {
+			r = m
+		}
+	}
+	modTime = r
+}
 
 // TestFS runs some sanity checks on a tar generated from this package's
 // directory.
 //
 // The tar is generated on demand and removed if tests fail, so modifying any
-// file in this package *will* cause tests to fail once. Make sure to run tests
-// twice if the Checksum tests fail.
+// file in this package will cause tests slow down on the next run.
 func TestFS(t *testing.T) {
-	var name = filepath.Join(integration.PackageCacheDir(t), `fstest.tar`)
-	checktar(t, name)
+	ctx := zlog.Test(context.Background(), t)
+	t.Parallel()
+	name := test.GenerateFixture(t, `fstest.tar`, modTime, makeFixture(""))
+	test.GenerateFixture(t, `fstest.tar.gz`, modTime, makeFixture("gz"))
+	test.GenerateFixture(t, `fstest.tar.zstd`, modTime, makeFixture("zstd"))
 	fileset := []string{
 		"file.go",
+		"fs.go",
+		"metrics.go",
 		"parse.go",
+		"pool.go",
+		"randomaccess.go",
+		"seekable_test.go",
+		"srv.go",
 		"tarfs.go",
 		"tarfs_test.go",
 		"testdata/atroot",
 	}
 
-	t.Run("Single", func(t *testing.T) {
-		f, err := os.Open(name)
+	mkBuf := func(t *testing.T) *os.File {
+		t.Helper()
+		f, err := os.Create(filepath.Join(t.TempDir(), "buffer"))
 		if err != nil {
 			t.Error(err)
 		}
@@ -45,162 +88,250 @@ func TestFS(t *testing.T) {
 				t.Error(err)
 			}
 		})
-		sys, err := New(f)
-		if err != nil {
-			t.Error(err)
-		}
-
-		if err := fstest.TestFS(sys, fileset...); err != nil {
-			t.Error(err)
-		}
-	})
-
-	t.Run("Concurrent", func(t *testing.T) {
-		f, err := os.Open(name)
-		if err != nil {
-			t.Error(err)
-		}
-		t.Cleanup(func() {
-			if err := f.Close(); err != nil {
-				t.Error(err)
+		return f
+	}
+	openFile := func(name string) func(*testing.T) *os.File {
+		return func(t *testing.T) *os.File {
+			t.Helper()
+			f, err := os.Open(name)
+			if err != nil {
+				t.Fatal(err)
 			}
-		})
-		sys, err := New(f)
-		if err != nil {
-			t.Error(err)
-		}
-
-		const lim = 8
-		var wg sync.WaitGroup
-		t.Logf("running %d goroutines", lim)
-		wg.Add(lim)
-		for i := 0; i < lim; i++ {
-			go func() {
-				defer wg.Done()
-				if err := fstest.TestFS(sys, fileset...); err != nil {
+			t.Cleanup(func() {
+				if err := f.Close(); err != nil {
 					t.Error(err)
-				}
-			}()
-		}
-		wg.Wait()
-	})
-
-	t.Run("Sub", func(t *testing.T) {
-		f, err := os.Open(name)
-		if err != nil {
-			t.Error(err)
-		}
-		t.Cleanup(func() {
-			if err := f.Close(); err != nil {
-				t.Error(err)
-			}
-		})
-		sys, err := New(f)
-		if err != nil {
-			t.Error(err)
-		}
-
-		sub, err := fs.Sub(sys, "testdata")
-		if err != nil {
-			t.Error(err)
-		}
-		if err := fstest.TestFS(sub, "atroot"); err != nil {
-			t.Error(err)
-		}
-	})
-
-	t.Run("Checksum", func(t *testing.T) {
-		f, err := os.Open(name)
-		if err != nil {
-			t.Error(err)
-		}
-		t.Cleanup(func() {
-			if err := f.Close(); err != nil {
-				t.Error(err)
-			}
-		})
-		sys, err := New(f)
-		if err != nil {
-			t.Error(err)
-		}
-		for _, n := range fileset {
-			name := n
-			t.Run(name, func(t *testing.T) {
-				h := sha256.New()
-				f, err := os.Open(name)
-				if err != nil {
-					t.Fatal(err)
-				}
-				defer f.Close()
-				if _, err := io.Copy(h, f); err != nil {
-					t.Error(err)
-				}
-				want := h.Sum(nil)
-
-				h.Reset()
-				b, err := fs.ReadFile(sys, name)
-				if err != nil {
-					t.Error(err)
-				}
-				if _, err := h.Write(b); err != nil {
-					t.Error(err)
-				}
-				got := h.Sum(nil)
-
-				if !bytes.Equal(got, want) {
-					t.Errorf("got: %x, want: %x", got, want)
 				}
 			})
+			return f
+		}
+	}
+
+	tt := []fsTestcase{
+		{
+			Name: "Single",
+			Check: func(ctx context.Context, open, mkBuf func(*testing.T) *os.File) func(*testing.T) {
+				return func(t *testing.T) {
+					ctx := zlog.Test(ctx, t)
+					f := open(t)
+					sys, err := tarfs.New(ctx, f, -1, mkBuf(t))
+					if err != nil {
+						t.Fatal(err)
+					}
+					defer sys.Close()
+
+					if err := fstest.TestFS(sys, fileset...); err != nil {
+						t.Error(err)
+					}
+				}
+			},
+		},
+		{
+			Name: "NotAFile",
+			Check: func(ctx context.Context, open, mkBuf func(*testing.T) *os.File) func(*testing.T) {
+				return func(t *testing.T) {
+					ctx := zlog.Test(ctx, t)
+					f := open(t)
+					b, err := io.ReadAll(f)
+					if err != nil {
+						t.Error(err)
+					}
+					rd := bytes.NewReader(b)
+					sys, err := tarfs.New(ctx, rd, -1, mkBuf(t))
+					if err != nil {
+						t.Fatal(err)
+					}
+					defer sys.Close()
+
+					if err := fstest.TestFS(sys, fileset...); err != nil {
+						t.Error(err)
+					}
+				}
+			},
+		},
+		{
+			Name: "Concurrent",
+			Check: func(ctx context.Context, open, mkBuf func(*testing.T) *os.File) func(*testing.T) {
+				return func(t *testing.T) {
+					ctx := zlog.Test(ctx, t)
+					f := open(t)
+					fi, err := f.Stat()
+					if err != nil {
+						t.Fatal(err)
+					}
+					sys, err := tarfs.New(ctx, f, fi.Size(), mkBuf(t))
+					if err != nil {
+						t.Fatal(err)
+					}
+					defer sys.Close()
+
+					const lim = 8
+					var wg sync.WaitGroup
+					t.Logf("running %d goroutines", lim)
+					wg.Add(lim)
+					for i := 0; i < lim; i++ {
+						go func() {
+							defer wg.Done()
+							if err := fstest.TestFS(sys, fileset...); err != nil {
+								t.Error(err)
+							}
+						}()
+					}
+					wg.Wait()
+				}
+			},
+		},
+		{
+			Name: "Sub",
+			Check: func(ctx context.Context, open, mkBuf func(*testing.T) *os.File) func(*testing.T) {
+				return func(t *testing.T) {
+					ctx := zlog.Test(ctx, t)
+					f := open(t)
+					sys, err := tarfs.New(ctx, f, -1, mkBuf(t))
+					if err != nil {
+						t.Fatal(err)
+					}
+					defer sys.Close()
+
+					sub, err := fs.Sub(sys, "testdata")
+					if err != nil {
+						t.Error(err)
+					}
+					if err := fstest.TestFS(sub, "atroot"); err != nil {
+						t.Error(err)
+					}
+				}
+			},
+		},
+		{
+			Name: "Checksum",
+			Check: func(ctx context.Context, open, mkBuf func(*testing.T) *os.File) func(*testing.T) {
+				return func(t *testing.T) {
+					ctx := zlog.Test(ctx, t)
+					f := open(t)
+					sys, err := tarfs.New(ctx, f, -1, mkBuf(t))
+					if err != nil {
+						t.Fatal(err)
+					}
+					defer sys.Close()
+					for _, n := range fileset {
+						name := n
+						t.Run(name, func(t *testing.T) {
+							h := sha256.New()
+							f, err := os.Open(name)
+							if err != nil {
+								t.Fatal(err)
+							}
+							defer f.Close()
+							if _, err := io.Copy(h, f); err != nil {
+								t.Error(err)
+							}
+							want := h.Sum(nil)
+
+							h.Reset()
+							b, err := fs.ReadFile(sys, name)
+							if err != nil {
+								t.Error(err)
+							}
+							if _, err := h.Write(b); err != nil {
+								t.Error(err)
+							}
+							got := h.Sum(nil)
+
+							if !bytes.Equal(got, want) {
+								t.Errorf("got: %x, want: %x", got, want)
+							}
+						})
+					}
+				}
+			},
+		},
+	}
+
+	t.Run("Uncompressed", func(t *testing.T) {
+		t.Parallel()
+		bufHack := func(t *testing.T) *os.File {
+			t.Helper()
+			if path.Base(t.Name()) != "NotAFile" {
+				return nil
+			}
+			return mkBuf(t)
+		}
+		for _, tc := range tt {
+			t.Run(tc.Name, tc.Check(ctx, openFile(name), bufHack))
+		}
+	})
+	t.Run("Gzip", func(t *testing.T) {
+		t.Parallel()
+		for _, tc := range tt {
+			t.Run(tc.Name, tc.Check(ctx, openFile(name+".gz"), mkBuf))
+		}
+	})
+	t.Run("Zstd", func(t *testing.T) {
+		t.Parallel()
+		for _, tc := range tt {
+			t.Run(tc.Name, tc.Check(ctx, openFile(name+".zstd"), mkBuf))
 		}
 	})
 }
 
-// TestEmpty tests that a wholly empty tar still creates an empty root.
-func TestEmpty(t *testing.T) {
-	// Two zero blocks is the tar footer, so just make one up.
-	rd := bytes.NewReader(make([]byte, 2*512))
-	sys, err := New(rd)
-	if err != nil {
-		t.Error(err)
-	}
-	if _, err := fs.Stat(sys, "."); err != nil {
-		t.Error(err)
-	}
-	ent, err := fs.ReadDir(sys, ".")
-	if err != nil {
-		t.Error(err)
-	}
-	for _, e := range ent {
-		t.Log(e)
-	}
-	if len(ent) != 0 {
-		t.Errorf("got: %d, want: 0", len(ent))
+type fsTestcase struct {
+	Check func(ctx context.Context, open, mkBuf func(*testing.T) *os.File) func(*testing.T)
+	Name  string
+}
+
+// MakeFixture makes the expected tar for TestFS, with the compression "cmp".
+//
+// "Cmp" must be one of:
+//   - ""
+//   - gz
+//   - zstd
+func makeFixture(cmp string) func(testing.TB, *os.File) {
+	return func(t testing.TB, f *os.File) {
+		var w io.Writer
+		buf := bufio.NewWriter(f)
+		defer func() {
+			if err := buf.Flush(); err != nil {
+				t.Error(err)
+			}
+		}()
+		switch cmp {
+		case "":
+			w = buf
+		case "gz":
+			z := gzip.NewWriter(buf)
+			defer z.Close()
+			w = z
+		case "zstd":
+			z, err := zstd.NewWriter(buf)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer z.Close()
+			w = z
+		default:
+			t.Fatalf("unknown compression scheme: %q", cmp)
+		}
+
+		tw := tar.NewWriter(w)
+		defer tw.Close()
+		in := os.DirFS(".")
+		if err := fs.WalkDir(in, ".", mktar(t, filepath.Base(f.Name()), in, tw)); err != nil {
+			t.Fatal(err)
+		}
 	}
 }
 
-func checktar(t *testing.T, name string) {
-	t.Helper()
-	out, err := os.Create(name)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer out.Close()
-	tw := tar.NewWriter(out)
-	defer tw.Close()
-
-	in := os.DirFS(".")
-	if err := fs.WalkDir(in, ".", mktar(t, in, tw)); err != nil {
-		t.Fatal(err)
-	}
-}
-
-func mktar(t *testing.T, in fs.FS, tw *tar.Writer) fs.WalkDirFunc {
+// Mktar is a [fs.WalkDirFunc] to copy files from "in" to "tw".
+//
+// "Name" is supplied for logging only.
+func mktar(t testing.TB, name string, in fs.FS, tw *tar.Writer) fs.WalkDirFunc {
 	return func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		switch {
-		case filepath.Ext(d.Name()) == ".tar":
+		switch ext := path.Ext(d.Name()); {
+		case ext == ".tar" || ext == ".gz" || ext == ".zstd":
+			// Skip all these.
 			return nil
 		case d.Name() == "." && d.IsDir():
 			return nil
@@ -208,7 +339,7 @@ func mktar(t *testing.T, in fs.FS, tw *tar.Writer) fs.WalkDirFunc {
 			return fs.SkipDir
 		default:
 		}
-		t.Logf("adding %q", p)
+		t.Logf("%s: adding %q", name, p)
 		i, err := d.Info()
 		if err != nil {
 			return err
@@ -236,33 +367,80 @@ func mktar(t *testing.T, in fs.FS, tw *tar.Writer) fs.WalkDirFunc {
 	}
 }
 
+// TestEmpty tests that a wholly empty tar still creates an empty root.
+func TestEmpty(t *testing.T) {
+	t.Parallel()
+	ctx := zlog.Test(context.Background(), t)
+	f, err := os.Create(filepath.Join(t.TempDir(), filepath.Base(t.Name())))
+	if err != nil {
+		t.Error(err)
+	}
+	t.Cleanup(func() {
+		if err := f.Close(); err != nil {
+			t.Error(err)
+		}
+	})
+	// Two zero blocks is the tar footer, so just make one up.
+	if err := f.Truncate(2 * 512); err != nil {
+		t.Error(err)
+	}
+	sys, err := tarfs.New(ctx, f, -1, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer sys.Close()
+	if _, err := fs.Stat(sys, "."); err != nil {
+		t.Error(err)
+	}
+	ent, err := fs.ReadDir(sys, ".")
+	if err != nil {
+		t.Error(err)
+	}
+	for _, e := range ent {
+		t.Log(e)
+	}
+	if len(ent) != 0 {
+		t.Errorf("got: %d, want: 0", len(ent))
+	}
+}
+
 func TestSymlinks(t *testing.T) {
-	tmp := t.TempDir()
+	t.Parallel()
 	run := func(openErr bool, hs []tar.Header, chk func(*testing.T, fs.FS)) func(*testing.T) {
 		return func(t *testing.T) {
+			ctx := zlog.Test(context.Background(), t)
 			t.Helper()
-			// This is a perfect candidate for using test.GenerateFixture, but
-			// creates an import cycle.
-			f, err := os.Create(filepath.Join(tmp, path.Base(t.Name())))
+			name := test.GenerateFixture(t, path.Base(t.Name())+".tar", modTime, func(t testing.TB, f *os.File) {
+				tw := tar.NewWriter(f)
+				for i := range hs {
+					if err := tw.WriteHeader(&hs[i]); err != nil {
+						t.Error(err)
+					}
+				}
+				if err := tw.Close(); err != nil {
+					t.Error(err)
+				}
+			})
+			f, err := os.Open(name)
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer f.Close()
-
-			tw := tar.NewWriter(f)
-			for i := range hs {
-				if err := tw.WriteHeader(&hs[i]); err != nil {
-					t.Error(err)
-				}
-			}
-			if err := tw.Close(); err != nil {
-				t.Error(err)
+			fi, err := f.Stat()
+			if err != nil {
+				t.Fatal(err)
 			}
 
-			sys, err := New(f)
+			sys, err := tarfs.New(ctx, f, fi.Size(), nil)
 			t.Log(err)
+			t.Cleanup(func() {
+				if sys != nil {
+					if err := sys.Close(); err != nil {
+						t.Error(err)
+					}
+				}
+			})
 			if (err != nil) != openErr {
-				t.Fail()
+				t.FailNow()
 			}
 
 			if chk != nil {
@@ -461,6 +639,8 @@ func TestSymlinks(t *testing.T) {
 }
 
 func TestKnownLayers(t *testing.T) {
+	t.Parallel()
+	ctx := zlog.Test(context.Background(), t)
 	ents, err := os.ReadDir(`testdata/known`)
 	if err != nil {
 		t.Fatal(err)
@@ -471,15 +651,17 @@ func TestKnownLayers(t *testing.T) {
 			continue
 		}
 		t.Run(n, func(t *testing.T) {
+			ctx := zlog.Test(ctx, t)
 			f, err := os.Open(filepath.Join(`testdata/known`, n))
 			if err != nil {
 				t.Fatal(err)
 			}
 			defer f.Close()
-			sys, err := New(f)
+			sys, err := tarfs.New(ctx, f, -1, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
+			defer sys.Close()
 			if err := fs.WalkDir(sys, ".", func(p string, d fs.DirEntry, err error) error {
 				if err != nil {
 					t.Error(err)
@@ -534,6 +716,8 @@ func TestKnownLayers(t *testing.T) {
 // `var/run/console/algo.txt` and `log.txt` can be accessed via `run/logs/log.txt`
 // or `var/run/logs/log.txt`.
 func TestTarConcatenate(t *testing.T) {
+	t.Parallel()
+	ctx := zlog.Test(context.Background(), t)
 	tests := []struct {
 		expectedFS map[string]bool
 		testFile   string
@@ -562,10 +746,11 @@ func TestTarConcatenate(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to open test tar: %v", err)
 		}
-		sys, err := New(f)
+		sys, err := tarfs.New(ctx, f, -1, nil)
 		if err != nil {
 			t.Fatalf("failed to create tarfs: %v", err)
 		}
+		defer sys.Close()
 		if err := fs.WalkDir(sys, ".", func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
 				return err
@@ -593,12 +778,14 @@ func TestTarConcatenate(t *testing.T) {
 }
 
 func TestInvalidName(t *testing.T) {
+	t.Parallel()
+	ctx := zlog.Test(context.Background(), t)
 	f, err := os.Open(`testdata/bad_name.tar`)
 	if err != nil {
 		t.Fatalf("failed to open test tar: %v", err)
 	}
 	defer f.Close()
-	sys, err := New(f)
+	sys, err := tarfs.New(ctx, f, -1, nil)
 	if err != nil {
 		t.Fatalf("failed to create tarfs: %v", err)
 	}

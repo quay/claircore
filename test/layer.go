@@ -125,7 +125,7 @@ func RealizeLayers(ctx context.Context, t *testing.T, refs ...LayerRef) []clairc
 					t.Error(err)
 					continue
 				}
-				f, err := fetch.Layer(ctx, t, nil, refs[n].Registry, refs[n].Name, id)
+				f, err := fetch.Layer(ctx, t, refs[n].Registry, refs[n].Name, id)
 				if err != nil {
 					t.Error(err)
 					continue

@@ -110,13 +110,14 @@ func (l *Layer) Init(ctx context.Context, desc *LayerDescription, r io.ReaderAt)
 		`application/vnd.oci.image.layer.nondistributable.v1.tar`,
 		`application/vnd.oci.image.layer.nondistributable.v1.tar+gzip`,
 		`application/vnd.oci.image.layer.nondistributable.v1.tar+zstd`:
-		sys, err := tarfs.New(r)
+		sys, err := tarfs.New(ctx, r, -1, nil)
 		switch {
 		case errors.Is(err, nil):
 		default:
 			return fmt.Errorf("claircore: layer %v: unable to create fs.FS: %w", desc.Digest, err)
 		}
 		l.sys = sys
+		l.cleanup = append(l.cleanup, sys)
 	default:
 		return fmt.Errorf("claircore: layer %v: unknown MediaType %q", desc.Digest, desc.MediaType)
 	}
