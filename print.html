@@ -470,8 +470,9 @@ type Options struct {
 	// UpdaterConfigs is a map of functions for configuration of Updaters.
 	UpdaterConfigs map[string]driver.ConfigUnmarshaler
 
-	// Client is an http.Client for use by all updaters. If unset,
-	// http.DefaultClient will be used.
+	// Client is an http.Client for use by all updaters.
+	//
+	// Must be set.
 	Client *http.Client
 }
 </code></pre>
