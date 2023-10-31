@@ -3,7 +3,6 @@ package test
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -47,7 +46,7 @@ func (a *CachedArena) LoadLayerFromRegistry(ctx context.Context, t testing.TB, r
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = fetch.Layer(ctx, t, http.DefaultClient, ref.Registry, ref.Name, d)
+	_, err = fetch.Layer(ctx, t, ref.Registry, ref.Name, d)
 	if err != nil {
 		t.Fatal(err)
 	}

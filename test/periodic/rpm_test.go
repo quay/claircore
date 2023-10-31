@@ -226,7 +226,7 @@ func (doc hydraDoc) Run(dir string) func(*testing.T) {
 		for _, ld := range image.Data[0].Parsed.Layers {
 			// TODO(hank) Need a way to use the nicer API, but pass the
 			// Integration bypass.
-			n, err := fetch.Layer(ctx, t, pkgClient, doc.Registry, doc.Repository, ld, fetch.IgnoreIntegration)
+			n, err := fetch.Layer(ctx, t, doc.Registry, doc.Repository, ld, fetch.IgnoreIntegration)
 			if err != nil {
 				t.Fatal(err)
 			}

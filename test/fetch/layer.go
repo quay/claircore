@@ -35,8 +35,12 @@ var registry = map[string]*client{
 	"registry.access.redhat.com": {Root: "https://registry.access.redhat.com/"},
 }
 
+var pkgClient = &http.Client{
+	Transport: &http.Transport{},
+}
+
 // Layer returns the specified layer contents, cached in the global layer cache.
-func Layer(ctx context.Context, t testing.TB, c *http.Client, from, repo string, blob claircore.Digest, opt ...Option) (*os.File, error) {
+func Layer(ctx context.Context, t testing.TB, from, repo string, blob claircore.Digest, opt ...Option) (*os.File, error) {
 	t.Helper()
 	opts := make(map[Option]bool)
 	for _, o := range opt {
@@ -63,14 +67,11 @@ func Layer(ctx context.Context, t testing.TB, c *http.Client, from, repo string,
 	})
 	t.Logf("fetching layer into: %s", cachefile)
 
-	if c == nil {
-		c = http.DefaultClient
-	}
 	client, ok := registry[from]
 	if !ok {
 		return nil, fmt.Errorf("unknown registry: %q", from)
 	}
-	rc, err := client.Blob(ctx, c, repo, blob)
+	rc, err := client.Blob(ctx, pkgClient, repo, blob)
 	if err != nil {
 		return nil, err
 	}
