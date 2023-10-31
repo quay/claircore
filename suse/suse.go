@@ -2,7 +2,6 @@ package suse
 
 import (
 	"fmt"
-	"net/http"
 	"net/url"
 
 	"github.com/quay/claircore/libvuln/driver"
@@ -43,9 +42,6 @@ func NewUpdater(r Release, opts ...Option) (*Updater, error) {
 			return nil, err
 		}
 	}
-	if u.Fetcher.Client == nil {
-		u.Fetcher.Client = http.DefaultClient // TODO(hank) Remove DefaultClient
-	}
 	if u.Fetcher.URL == nil {
 		var err error
 		u.Fetcher.URL, err = upstreamBase.Parse(string(u.release) + ".xml")
@@ -73,16 +69,6 @@ func WithURL(uri, compression string) Option {
 		}
 		up.Fetcher.Compression = c
 		up.Fetcher.URL = u
-		return nil
-	}
-}
-
-// WithClient sets an http.Client for use with an Updater.
-//
-// If this Option is not supplied, http.DefaultClient will be used.
-func WithClient(c *http.Client) Option {
-	return func(u *Updater) error {
-		u.Fetcher.Client = c
 		return nil
 	}
 }
