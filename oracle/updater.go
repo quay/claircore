@@ -2,7 +2,6 @@ package oracle
 
 import (
 	"fmt"
-	"net/http"
 	"net/url"
 	"strconv"
 
@@ -47,20 +46,8 @@ func NewUpdater(year int, opts ...Option) (*Updater, error) {
 			return nil, err
 		}
 	}
-	if u.Fetcher.Client == nil {
-		u.Fetcher.Client = http.DefaultClient // TODO(hank) Remove DefaultClient
-	}
 
 	return &u, nil
-}
-
-// WithClient returns an Option that will make the Updater use the specified
-// http.Client, instead of http.DefaultClient.
-func WithClient(c *http.Client) Option {
-	return func(u *Updater) error {
-		u.Fetcher.Client = c
-		return nil
-	}
 }
 
 // WithURL overrides the default URL to fetch an OVAL database.

@@ -20,6 +20,9 @@ func TestFetch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if err := u.Configure(ctx, func(_ any) error { return nil }, srv.Client()); err != nil {
+		t.Fatal(err)
+	}
 	rd, hint, err := u.Fetch(ctx, "")
 	if err != nil {
 		t.Error(err)
