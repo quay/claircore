@@ -114,7 +114,7 @@ func TestGC(t *testing.T) {
 				ctx,
 				NewMatcherStore(pool),
 				locks,
-				http.DefaultClient,
+				http.DefaultClient, // Used on purpose -- shouldn't actually get called by anything.
 				updates.WithEnabled([]string{}),
 				updates.WithOutOfTree([]driver.Updater{mock}),
 			)
