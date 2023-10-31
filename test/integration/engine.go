@@ -143,7 +143,7 @@ func fetchArchive(t testing.TB) {
 	// Fetch and buffer the jar.
 	u := downloadURL()
 	t.Logf("fetching %q", u)
-	res, err := http.Get(u)
+	res, err := http.Get(u) // Use of http.DefaultClient guarded by integration.Skip call.
 	if err != nil {
 		t.Fatal(err)
 	}
