@@ -29,7 +29,6 @@ type Updater struct {
 func NewUpdater(release Release) (*Updater, error) {
 	return &Updater{
 		release: release,
-		c:       http.DefaultClient, // TODO(hank) Remove DefaultClient
 	}, nil
 }
 
@@ -45,9 +44,6 @@ func (u *Updater) Configure(ctx context.Context, _ driver.ConfigUnmarshaler, c *
 
 func (u *Updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "aws/Updater.Fetch")
-	if u.c == http.DefaultClient { // OK: checking for log purposes
-		zlog.Warn(ctx).Msg("DefaultClient used, this is almost certainly wrong")
-	}
 	client, err := NewClient(ctx, u.c, u.release)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to create client: %v", err)
