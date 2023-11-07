@@ -21,7 +21,6 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/singleflight"
-	"golang.org/x/sys/unix"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -250,7 +249,7 @@ func (a *RemoteFetchArena) fetchUnlinkedFile(ctx context.Context, key string, de
 		return v.(*rc), nil
 	}
 	// Otherwise, it needs to be populated.
-	f, err := os.OpenFile(a.root, os.O_WRONLY|unix.O_TMPFILE, 0644)
+	f, err := openTemp(a.root, 0644)
 	if err != nil {
 		return nil, err
 	}
