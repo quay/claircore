@@ -21,7 +21,6 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/singleflight"
-	"golang.org/x/sys/unix"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -66,13 +65,13 @@ func NewRemoteFetchArena(wc *http.Client, root string) *RemoteFetchArena {
 // Rc is a reference counter.
 type rc struct {
 	sync.Mutex
-	val   *os.File
+	val   *tempFile
 	count int
 	done  func()
 }
 
 // NewRc makes an rc.
-func newRc(v *os.File, done func()) *rc {
+func newRc(v *tempFile, done func()) *rc {
 	return &rc{
 		val:  v,
 		done: done,
@@ -115,15 +114,7 @@ type ref struct {
 func (r *ref) Val() (*os.File, error) {
 	r.rc.Lock()
 	defer r.rc.Unlock()
-	fd := int(r.rc.val.Fd())
-	if fd == -1 {
-		return nil, errStale
-	}
-	p := fmt.Sprintf(`/proc/self/fd/%d`, fd)
-	// Need to use OpenFile so that the symlink is not dereferenced.
-	// There's some proc magic so that opening that symlink itself copies the
-	// description.
-	return os.OpenFile(p, os.O_RDONLY, 0644)
+	return r.rc.val.Reopen()
 }
 
 // Close decrements the refcount.
@@ -250,7 +241,7 @@ func (a *RemoteFetchArena) fetchUnlinkedFile(ctx context.Context, key string, de
 		return v.(*rc), nil
 	}
 	// Otherwise, it needs to be populated.
-	f, err := os.OpenFile(a.root, os.O_WRONLY|unix.O_TMPFILE, 0644)
+	f, err := openTemp(a.root)
 	if err != nil {
 		return nil, err
 	}
