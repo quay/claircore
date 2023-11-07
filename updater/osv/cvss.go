@@ -316,3 +316,23 @@ func fromCVSS2(s string) (sev claircore.Severity, err error) {
 	}
 	return sev, nil
 }
+
+// returns severity basd on String
+func fromString(s string) (sev claircore.Severity, err error) {
+
+	switch {
+	case strings.EqualFold(s, "none"):
+		sev = claircore.Negligible
+	case strings.EqualFold(s, "low"):
+		sev = claircore.Low
+	case strings.EqualFold(s, "medium"):
+		sev = claircore.Medium
+	case strings.EqualFold(s, "high"):
+		sev = claircore.High
+	case strings.EqualFold(s, "critical"):
+		sev = claircore.Critical
+	default:
+		return sev, fmt.Errorf("bogus score: %v", s)
+	}
+	return sev, nil
+}

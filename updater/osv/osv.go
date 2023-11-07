@@ -504,6 +504,18 @@ func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *adviso
 			proto.Severity = s.Score
 			proto.NormalizedSeverity, err = fromCVSS2(s.Score)
 		default:
+			adb := a.Database // check if Severity exists if so , use it
+			var X map[string]json.RawMessage
+			if err := json.Unmarshal([]byte(adb), &X); err != nil {
+				continue
+			}
+			var str string
+			if err := json.Unmarshal(X["Severity"], &str); err != nil {
+				continue
+			} else {
+				proto.Severity = str
+				proto.NormalizedSeverity, err = fromString(str)
+			}
 			continue
 		}
 		if err != nil {
