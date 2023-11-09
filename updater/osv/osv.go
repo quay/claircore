@@ -497,12 +497,9 @@ func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *adviso
 	for _, s := range a.Severity {
 		var err error
 		switch s.Type {
-		case `CVSS_V3`:
+		case `CVSS_V2`, `CVSS_V3`:
 			proto.Severity = s.Score
-			proto.NormalizedSeverity, err = fromCVSS3(ctx, s.Score)
-		case `CVSS_V2`:
-			proto.Severity = s.Score
-			proto.NormalizedSeverity, err = fromCVSS2(s.Score)
+			proto.NormalizedSeverity, err = fromCVSS(s.Score)
 		default:
 			continue
 		}

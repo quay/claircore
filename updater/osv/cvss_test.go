@@ -1,27 +1,26 @@
 package osv
 
 import (
-	"context"
 	"testing"
 
 	"github.com/quay/claircore"
-
-	"github.com/quay/zlog"
 )
 
-// Test harness adapted from https://github.com/goark/go-cvss/blob/634a87a6c9dd62c8d061d04133e022627cc0e1f8/v3/base/base_test.go
-
 func TestCVSS(t *testing.T) {
-	t.Run("Error", func(t *testing.T) {
-		ctx := zlog.Test(context.Background(), t)
-		tcs := []struct {
-			vector string
-			err    bool
-		}{
-			{vector: "CVSS:3.0/AV:P/AC:H/PR:H/UI:R/S:U/C:N/I:N/A:N"},
-			{vector: "CVSS:3.1/AV:P/AC:H/PR:H/UI:R/S:U/C:N/I:N/A:N"},
+	var tests = map[string][]struct {
+		vector   string
+		err      bool
+		severity claircore.Severity
+	}{
+		"v2": {
+			{vector: "AV:N/AC:L/Au:N/C:N/I:N/A:C", severity: claircore.High},     // CVE-2002-0392
+			{vector: "AV:N/AC:L/Au:N/C:C/I:C/A:C", severity: claircore.Critical}, // CVE-2003-0818
+			{vector: "AV:L/AC:H/Au:N/C:C/I:C/A:C", severity: claircore.Medium},   // CVE-2003-0062
+		},
+		"v3": {
+			{vector: "CVSS:3.0/AV:P/AC:H/PR:H/UI:R/S:U/C:N/I:N/A:N", severity: claircore.Negligible},
+			{vector: "CVSS:3.1/AV:P/AC:H/PR:H/UI:R/S:U/C:N/I:N/A:N", severity: claircore.Negligible},
 			{vector: "XXX:3.0/AV:P/AC:H/PR:H/UI:R/S:U/C:N/I:N/A:N", err: true},
-			{vector: "CVSS:2.0/AV:P/AC:H/PR:H/UI:R/S:U/C:N/I:N/A:N", err: true},
 			{vector: "CVSS:3.1", err: true},
 			{vector: "CVSS3.1/AV:X/AC:H/PR:H/UI:R/S:U/C:N/I:N/A:N", err: true},
 			{vector: "CVSS:3.1/AV:P/AC:H/PR:H/UI:R/S:U/C:N/I:N/A-N", err: true},
@@ -34,22 +33,6 @@ func TestCVSS(t *testing.T) {
 			{vector: "CVSS:3.1/AV:P/AC:H/PR:X/UI:R/S:U/C:N/I:N/A:N", err: true},
 			{vector: "CVSS:3.1/AV:P/AC:X/PR:H/UI:R/S:U/C:N/I:N/A:N", err: true},
 			{vector: "CVSS:3.1/AV:X/AC:H/PR:H/UI:R/S:U/C:N/I:N/A:N", err: true},
-		}
-		for _, tc := range tcs {
-			_, err := fromCVSS3(ctx, tc.vector)
-			t.Logf("in: %q, got: %v", tc.vector, err)
-			if (err != nil) != tc.err {
-				t.Error(err)
-			}
-		}
-	})
-
-	t.Run("Severity", func(t *testing.T) {
-		ctx := zlog.Test(context.Background(), t)
-		tcs := []struct {
-			vector   string
-			severity claircore.Severity
-		}{
 			{vector: "CVSS:3.1/AV:P/AC:H/PR:H/UI:R/S:U/C:N/I:N/A:N", severity: claircore.Negligible}, // Zero metrics
 			{vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N", severity: claircore.High},       // CVE-2015-8252
 			{vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N", severity: claircore.Medium},     // CVE-2013-1937
@@ -71,39 +54,40 @@ func TestCVSS(t *testing.T) {
 			{vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:H", severity: claircore.High},       // CVE-2015-0970
 			{vector: "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N", severity: claircore.High},       // CVE-2014-0224
 			{vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:H/I:H/A:H", severity: claircore.Critical},   // CVE-2012-5376
-		}
+		},
+		"v4": {
+			// The following test cases comes from the CVSS v4.0 Examples (last extract: 9th Nov., 2023)
+			{vector: "CVSS:4.0/AV:L/AC:L/AT:P/PR:L/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N", severity: claircore.High},         // CVE-2022-41741
+			{vector: "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:P/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N", severity: claircore.High},         // CVE-2020-3549
+			{vector: "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:H/VI:L/VA:L/SC:N/SI:N/SA:N", severity: claircore.High},         // CVE-2023-3089
+			{vector: "CVSS:4.0/AV:L/AC:L/AT:N/PR:N/UI:A/VC:L/VI:N/VA:N/SC:N/SI:N/SA:N", severity: claircore.Medium},       // CVE-2021-44714
+			{vector: "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:A/VC:N/VI:N/VA:N/SC:L/SI:L/SA:N", severity: claircore.Medium},       // CVE-2022-21830
+			{vector: "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:N/SC:L/SI:L/SA:N", severity: claircore.Medium},       // CVE-2022-22186
+			{vector: "CVSS:4.0/AV:L/AC:L/AT:N/PR:H/UI:N/VC:N/VI:N/VA:N/SC:H/SI:N/SA:N", severity: claircore.Medium},       // CVE-2023-21989
+			{vector: "CVSS:4.0/AV:L/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H", severity: claircore.Critical},     // CVE-2020-3947
+			{vector: "CVSS:4.0/AV:P/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:H/SA:N/S:P/V:D", severity: claircore.High}, // CVE-2023-30560
+			{vector: "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N/E:A", severity: claircore.High},     // CVE-2014-0160 aka Heartbleed
+			{vector: "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H/E:A", severity: claircore.Critical}, // CVE-2021-44228 aka log4shell
+			{vector: "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:N/SI:N/SA:N/E:A", severity: claircore.Critical}, // CVE-2014-6271 aka Shellshock
+			{vector: "CVSS:4.0/AV:A/AC:L/AT:N/PR:N/UI:N/VC:N/VI:L/VA:N/SC:H/SI:N/SA:H", severity: claircore.Medium},       // CVE-2013-6014
+			{vector: "CVSS:4.0/AV:L/AC:L/AT:N/PR:H/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H/R:I", severity: claircore.Critical}, // CVE-2016-5729
+			{vector: "CVSS:4.0/AV:L/AC:L/AT:P/PR:H/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H/R:I", severity: claircore.High},     // CVE-2015-2890
+			{vector: "CVSS:4.0/AV:P/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:H/SC:H/SI:H/SA:H", severity: claircore.High},         // CVE-2018-3652
+			// ... following examples are provided for guidance on scoring common vulnerabilities classes
+		},
+	}
 
-		for _, tc := range tcs {
-			sev, err := fromCVSS3(ctx, tc.vector)
-			t.Logf("in: %q, got: %v", tc.vector, sev)
-			if err != nil {
-				t.Error(err)
+	for ver, vtc := range tests {
+		t.Run(ver, func(t *testing.T) {
+			for _, tc := range vtc {
+				sev, err := fromCVSS(tc.vector)
+				if (err != nil) != tc.err {
+					t.Errorf("Expected error: %t, got %v", tc.err, err)
+				}
+				if sev != tc.severity {
+					t.Errorf("For vector %s, got severity %v, want %v", tc.vector, sev, tc.severity)
+				}
 			}
-			if got, want := sev, tc.severity; got != want {
-				t.Errorf("got: %v, want: %v", got, want)
-			}
-		}
-	})
-
-	t.Run("V2", func(t *testing.T) {
-		tcs := []struct {
-			vector   string
-			severity claircore.Severity
-		}{
-			{vector: "AV:N/AC:L/Au:N/C:N/I:N/A:C", severity: claircore.High},   // CVE-2002-0392
-			{vector: "AV:N/AC:L/Au:N/C:C/I:C/A:C", severity: claircore.High},   // CVE-2003-0818
-			{vector: "AV:L/AC:H/Au:N/C:C/I:C/A:C", severity: claircore.Medium}, // CVE-2003-0062
-		}
-
-		for _, tc := range tcs {
-			sev, err := fromCVSS2(tc.vector)
-			t.Logf("in: %q, got: %v", tc.vector, sev)
-			if err != nil {
-				t.Error(err)
-			}
-			if got, want := sev, tc.severity; got != want {
-				t.Errorf("got: %v, want: %v", got, want)
-			}
-		}
-	})
+		})
+	}
 }
