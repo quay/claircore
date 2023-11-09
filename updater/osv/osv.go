@@ -504,7 +504,7 @@ func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *adviso
 			proto.Severity = s.Score
 			proto.NormalizedSeverity, err = fromCVSS2(s.Score)
 		default:
-			continue
+			proto.NormalizedSeverity = extractSeverityFromDatabase(proto.NormalizedSeverity, *a)
 		}
 		if err != nil {
 			zlog.Info(ctx).
