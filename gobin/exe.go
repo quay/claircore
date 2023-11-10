@@ -132,6 +132,11 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 		vs[bi.Main.Path] = bi.Main.Version
 	}
 	for _, d := range bi.Deps {
+		// Replacements are only evaluated for the main module and seem to only
+		// be evaluated once, so this shouldn't be recursive.
+		if r := d.Replace; r != nil {
+			d = r
+		}
 		var nv claircore.Version
 		ver, err := semver.NewVersion(d.Version)
 		switch {
