@@ -46,8 +46,6 @@ func (s *IndexerStore) IndexReport(ctx context.Context, hash claircore.Digest) (
 	// then type convert back to scanner.domain object
 	var jsr jsonbIndexReport
 
-	ctx, done := context.WithTimeout(ctx, 5*time.Second)
-	defer done()
 	start := time.Now()
 	err := s.pool.QueryRow(ctx, query, hash).Scan(&jsr)
 	switch {

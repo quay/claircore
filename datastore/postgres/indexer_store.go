@@ -65,10 +65,8 @@ WHERE
 func (s *IndexerStore) selectScanners(ctx context.Context, vs indexer.VersionedScanners) ([]int64, error) {
 	ids := make([]int64, len(vs))
 	for i, v := range vs {
-		ctx, done := context.WithTimeout(ctx, time.Second)
 		err := s.pool.QueryRow(ctx, selectScanner, v.Name(), v.Version(), v.Kind()).
 			Scan(&ids[i])
-		done()
 		if err != nil {
 			return nil, fmt.Errorf("failed to retrieve id for scanner %q: %w", v.Name(), err)
 		}

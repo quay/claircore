@@ -60,11 +60,9 @@ func (s *MatcherStore) Get(ctx context.Context, records []*claircore.IndexRecord
 		batch.Queue(query)
 	}
 	// send the batch
-	tctx, cancel := context.WithTimeout(ctx, 30*time.Second)
-	defer cancel()
 
 	start := time.Now()
-	res := tx.SendBatch(tctx, batch)
+	res := tx.SendBatch(ctx, batch)
 	// Can't just defer the close, because the batch must be fully handled
 	// before resolving the transaction. Maybe we can move this result handling
 	// into its own function to be able to just defer it.

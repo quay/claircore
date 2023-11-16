@@ -127,10 +127,8 @@ WHERE
 	// by the vulnerability in question.
 	pkgsToFilter := []claircore.Package{}
 
-	tctx, done := context.WithTimeout(ctx, 30*time.Second)
-	defer done()
 	start := time.Now()
-	rows, err := s.pool.Query(tctx, selectPackages, v.Package.Name)
+	rows, err := s.pool.Query(ctx, selectPackages, v.Package.Name)
 	switch {
 	case errors.Is(err, nil):
 	case errors.Is(err, pgx.ErrNoRows):
@@ -206,10 +204,8 @@ WHERE
 		}
 
 		err = func() error {
-			tctx, done := context.WithTimeout(ctx, 30*time.Second)
-			defer done()
 			start := time.Now()
-			rows, err := s.pool.Query(tctx,
+			rows, err := s.pool.Query(ctx,
 				selectAffected,
 				record.Package.ID,
 				v[2],
@@ -280,7 +276,6 @@ func protoRecord(ctx context.Context, pool *pgxpool.Pool, v claircore.Vulnerabil
 	// fill dist into prototype index record if exists
 	if (v.Dist != nil) && (v.Dist.Name != "") {
 		start := time.Now()
-		ctx, done := context.WithTimeout(ctx, timeout)
 		row := pool.QueryRow(ctx,
 			selectDist,
 			v.Dist.Arch,
@@ -294,7 +289,6 @@ func protoRecord(ctx context.Context, pool *pgxpool.Pool, v claircore.Vulnerabil
 		)
 		var id pgtype.Int8
 		err := row.Scan(&id)
-		done()
 		if err != nil {
 			if !errors.Is(err, pgx.ErrNoRows) {
 				return protoRecord, fmt.Errorf("failed to scan dist: %w", err)
@@ -323,7 +317,6 @@ func protoRecord(ctx context.Context, pool *pgxpool.Pool, v claircore.Vulnerabil
 	// fill repo into prototype index record if exists
 	if (v.Repo != nil) && (v.Repo.Name != "") {
 		start := time.Now()
-		ctx, done := context.WithTimeout(ctx, timeout)
 		row := pool.QueryRow(ctx, selectRepo,
 			v.Repo.Name,
 			v.Repo.Key,
@@ -331,7 +324,6 @@ func protoRecord(ctx context.Context, pool *pgxpool.Pool, v claircore.Vulnerabil
 		)
 		var id pgtype.Int8
 		err := row.Scan(&id)
-		done()
 		if err != nil {
 			if !errors.Is(err, pgx.ErrNoRows) {
 				return protoRecord, fmt.Errorf("failed to scan repo: %w", err)

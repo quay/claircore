@@ -72,23 +72,17 @@ func (s *IndexerStore) IndexRepositories(ctx context.Context, repos []*claircore
 		`
 	)
 	// obtain a transaction scoped batch
-	tctx, done := context.WithTimeout(ctx, 5*time.Second)
-	tx, err := s.pool.Begin(tctx)
-	done()
+	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("store:indexRepositories failed to create transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
-	tctx, done = context.WithTimeout(ctx, 5*time.Second)
-	insertRepoStmt, err := tx.Prepare(tctx, "insertRepoStmt", insert)
-	done()
+	insertRepoStmt, err := tx.Prepare(ctx, "insertRepoStmt", insert)
 	if err != nil {
 		return fmt.Errorf("failed to create insert repo statement: %w", err)
 	}
-	tctx, done = context.WithTimeout(ctx, 5*time.Second)
-	insertRepoScanArtifactWithStmt, err := tx.Prepare(tctx, "insertRepoScanArtifactWith", insertWith)
-	done()
+	insertRepoScanArtifactWithStmt, err := tx.Prepare(ctx, "insertRepoScanArtifactWith", insertWith)
 	if err != nil {
 		return fmt.Errorf("failed to create insert repo scanartifact statement: %w", err)
 	}
@@ -142,9 +136,7 @@ func (s *IndexerStore) IndexRepositories(ctx context.Context, repos []*claircore
 	indexRepositoriesCounter.WithLabelValues("insertWith_batch").Add(1)
 	indexRepositoriesDuration.WithLabelValues("insertWith_batch").Observe(time.Since(start).Seconds())
 
-	tctx, done = context.WithTimeout(ctx, 15*time.Second)
-	err = tx.Commit(tctx)
-	done()
+	err = tx.Commit(ctx)
 	if err != nil {
 		return fmt.Errorf("store:indexRepositories failed to commit tx: %w", err)
 	}

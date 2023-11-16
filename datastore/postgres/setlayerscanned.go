@@ -63,8 +63,6 @@ DO
 	NOTHING;
 `
 
-	ctx, done := context.WithTimeout(ctx, 15*time.Second)
-	defer done()
 	start := time.Now()
 	_, err := s.pool.Exec(ctx, query, hash, vs.Name(), vs.Version(), vs.Kind())
 	if err != nil {

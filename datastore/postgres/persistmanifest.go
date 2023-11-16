@@ -65,18 +65,14 @@ func (s *IndexerStore) PersistManifest(ctx context.Context, manifest claircore.M
 		`
 	)
 
-	tctx, done := context.WithTimeout(ctx, 5*time.Second)
-	tx, err := s.pool.Begin(tctx)
-	done()
+	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to create transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
 
-	tctx, done = context.WithTimeout(ctx, 5*time.Second)
 	start := time.Now()
-	_, err = tx.Exec(tctx, insertManifest, manifest.Hash)
-	done()
+	_, err = tx.Exec(ctx, insertManifest, manifest.Hash)
 	if err != nil {
 		return fmt.Errorf("failed to insert manifest: %w", err)
 	}
@@ -84,20 +80,16 @@ func (s *IndexerStore) PersistManifest(ctx context.Context, manifest claircore.M
 	persistManifestDuration.WithLabelValues("insertManifest").Observe(time.Since(start).Seconds())
 
 	for i, layer := range manifest.Layers {
-		tctx, done = context.WithTimeout(ctx, 5*time.Second)
 		start := time.Now()
-		_, err = tx.Exec(tctx, insertLayer, layer.Hash)
-		done()
+		_, err = tx.Exec(ctx, insertLayer, layer.Hash)
 		if err != nil {
 			return fmt.Errorf("failed to insert layer: %w", err)
 		}
 		persistManifestCounter.WithLabelValues("insertLayer").Add(1)
 		persistManifestDuration.WithLabelValues("insertLayer").Observe(time.Since(start).Seconds())
 
-		tctx, done = context.WithTimeout(ctx, 5*time.Second)
 		start = time.Now()
-		_, err = tx.Exec(tctx, insertManifestLayer, manifest.Hash, layer.Hash, i)
-		done()
+		_, err = tx.Exec(ctx, insertManifestLayer, manifest.Hash, layer.Hash, i)
 		if err != nil {
 			return fmt.Errorf("failed to insert manifest -> layer link: %w", err)
 		}
@@ -105,9 +97,7 @@ func (s *IndexerStore) PersistManifest(ctx context.Context, manifest claircore.M
 		persistManifestDuration.WithLabelValues("insertManifestLayer").Observe(time.Since(start).Seconds())
 	}
 
-	tctx, done = context.WithTimeout(ctx, 15*time.Second)
-	err = tx.Commit(tctx)
-	done()
+	err = tx.Commit(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to commit tx: %w", err)
 	}
