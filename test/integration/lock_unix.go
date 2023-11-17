@@ -19,6 +19,7 @@ Without this, tests would flake on a cold cache.
 */
 
 func lockDir(t testing.TB, dir string) (excl bool) {
+	t.Helper()
 	lf, err := os.Open(dir)
 	if err != nil {
 		t.Fatal(err)
@@ -44,6 +45,7 @@ func lockDir(t testing.TB, dir string) (excl bool) {
 }
 
 func lockDirShared(t testing.TB, dir string) {
+	t.Helper()
 	lf, err := os.Open(dir)
 	if err != nil {
 		t.Fatal(err)

@@ -1,7 +1,9 @@
 package integration
 
 import (
+	"fmt"
 	"os"
+	"runtime"
 	"strings"
 	"syscall"
 )
@@ -11,10 +13,13 @@ import (
 // 32bit: arm32v6 / arm32v7
 // 64bit (aarch64): arm64v8
 
-func fixupName(dbArch *string) {
-	switch *dbArch {
+func findArch() (arch string) {
+	arch = runtime.GOARCH
+	switch arch {
+	case "386":
+		arch = "i" + arch
 	case "arm64":
-		*dbArch += "v8"
+		arch += "v8"
 	case "arm":
 		var u syscall.Utsname
 		if err := syscall.Uname(&u); err != nil {
@@ -30,13 +35,22 @@ func fixupName(dbArch *string) {
 		mach := strings.TrimRight(string(t), "\x00")
 		switch {
 		case strings.HasPrefix(mach, "armv7"):
-			*dbArch += "32v7"
+			arch += "32v7"
 		case strings.HasPrefix(mach, "armv6"):
-			*dbArch += "32v6"
+			arch += "32v6"
 		}
+	case "ppc64le": // OK
+	case "amd64": // OK
+	default:
+		panic(fmt.Sprintf(
+			`unsupported platform "%s/%s"; see https://mvnrepository.com/artifact/io.zonky.test.postgres/embedded-postgres-binaries-bom`,
+			runtime.GOOS, runtime.GOARCH,
+		))
 	}
-	// if on alpine
+	// If on alpine:
 	if _, err := os.Stat("/etc/alpine-release"); err == nil {
-		*dbArch += "-alpine"
+		arch += "-alpine"
 	}
+
+	return arch
 }

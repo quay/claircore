@@ -10,9 +10,6 @@ import (
 )
 
 func init() {
-	if !skip {
-		return
-	}
 	http.DefaultTransport = poisonedTransport(`http.Transport`)
 	http.DefaultClient = &http.Client{
 		Transport: poisonedTransport(`http.Client`),
@@ -20,8 +17,12 @@ func init() {
 }
 
 func poisonedTransport(n string) *http.Transport {
+	var dialer net.Dialer
 	return &http.Transport{
 		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+			if !skip() {
+				return dialer.DialContext(ctx, network, addr)
+			}
 			cs := make([]uintptr, 10)
 			skip := 2 // skip == 1 starts in this function, which is less useful than one would like.
 			var pos string

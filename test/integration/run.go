@@ -2,4 +2,4 @@
 
 package integration
 
-const skip = false
+const integrationTag = false

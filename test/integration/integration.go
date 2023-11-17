@@ -26,11 +26,22 @@ func Skip(t testing.TB) {
 	switch {
 	case testing.Short():
 		t.Skip(`skipping integration test: short tests`)
-	case inCI && skip:
+	case inCI && integrationTag:
 		t.Log(`enabling integration test: environment variable "CI" is defined`)
-	case skip:
+	case integrationTag:
 		t.Skip("skipping integration test: integration tag not provided")
 	}
+}
+
+// Skip is an internal variant of [Skip] that reports the decision and
+// doesn't log.
+//
+// Because this calls [testing.Short], it cannot be used in the [package block]
+// or an init function.
+//
+// [package block]: https://go.dev/ref/spec#Declarations_and_scope
+func skip() bool {
+	return testing.Short() || integrationTag && !inCI
 }
 
 var inCI, inGHA bool
@@ -38,6 +49,8 @@ var inCI, inGHA bool
 func init() {
 	inCI, _ = strconv.ParseBool(os.Getenv("CI"))
 	inGHA, _ = strconv.ParseBool(os.Getenv("GITHUB_ACTIONS"))
+	actuallyAct, _ := strconv.ParseBool(os.Getenv("ACT"))
+	inGHA = inGHA && !actuallyAct
 }
 
 // CacheDir reports a directory for caching test data and creates it if
