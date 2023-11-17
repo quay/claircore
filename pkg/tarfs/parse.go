@@ -185,7 +185,7 @@ func parseNumber(b []byte) (int64, error) {
 	if len(b) == 0 {
 		return 0, nil
 	}
-	n, err := strconv.ParseUint(cstring(b), 8, 64)
+	n, err := strconv.ParseUint(cstring(b), 8, 63) // Only positive int64 values allowed.
 	if err != nil {
 		return 0, err
 	}
