@@ -47,6 +47,8 @@ const DefaultRequestTimeout = 2 * time.Second
 
 // ScannerConfig is the struct used to configure a Scanner.
 type ScannerConfig struct {
+	// DisableAPI disables the use of the API.
+	DisableAPI bool `yaml:"disable_api" json:"disable_api"`
 	// API is a URL endpoint to a maven-like REST API.
 	// The default is DefaultSearchAPI.
 	API               string        `yaml:"api" json:"api"`
@@ -84,24 +86,30 @@ func (s *Scanner) Configure(ctx context.Context, f indexer.ConfigDeserializer, c
 	if err := f(&cfg); err != nil {
 		return err
 	}
-	api := DefaultSearchAPI
-	if cfg.API != "" {
-		api = cfg.API
+
+	if cfg.DisableAPI {
+		zlog.Debug(ctx).Msg("search API disabled")
+	} else {
+		api := DefaultSearchAPI
+		if cfg.API != "" {
+			api = cfg.API
+		}
+		requestTimeout := DefaultRequestTimeout
+		if cfg.APIRequestTimeout != 0 {
+			requestTimeout = cfg.APIRequestTimeout
+		}
+		s.rootRequestTimeout = requestTimeout
+		zlog.Debug(ctx).
+			Str("api", api).
+			Float64("requestTimeout", requestTimeout.Seconds()).
+			Msg("configured search API URL")
+		u, err := url.Parse(api)
+		if err != nil {
+			return err
+		}
+		s.root = u
 	}
-	requestTimeout := DefaultRequestTimeout
-	if cfg.APIRequestTimeout != 0 {
-		requestTimeout = cfg.APIRequestTimeout
-	}
-	s.rootRequestTimeout = requestTimeout
-	zlog.Debug(ctx).
-		Str("api", api).
-		Float64("requestTimeout", requestTimeout.Seconds()).
-		Msg("configured search API URL")
-	u, err := url.Parse(api)
-	if err != nil {
-		return err
-	}
-	s.root = u
+
 	return nil
 }
 
