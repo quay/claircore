@@ -1,7 +1,12 @@
 package java_test
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"github.com/quay/zlog"
+	"net/http"
+	"net/http/httptest"
 	"path"
 	"testing"
 
@@ -9,6 +14,35 @@ import (
 	"github.com/quay/claircore/java"
 	"github.com/quay/claircore/test"
 )
+
+// TestDisableAPI runs the java scanner over some layers known to have java
+// packages installed.
+func TestDisableAPI(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatal("external http request invoked when none was expected")
+	}))
+
+	ctx := context.Background()
+	ctx = zlog.Test(ctx, t)
+	scanner := &java.Scanner{}
+	var buf bytes.Buffer
+	cfg := &java.ScannerConfig{
+		DisableAPI:        true,
+		API:               srv.URL,
+		APIRequestTimeout: 0,
+	}
+	if err := json.NewEncoder(&buf).Encode(&cfg); err != nil {
+		t.Error(err)
+	}
+	err := scanner.Configure(ctx, json.NewDecoder(&buf).Decode, srv.Client())
+	if err != nil {
+		t.Fatal("error while configuring scanner", err)
+	}
+
+	mtp := tinkerpop
+	mtp.Scanner = scanner
+	t.Run(path.Base(mtp.Name), mtp.Run(ctx))
+}
 
 // TestScan runs the java scanner over some layers known to have java
 // packages installed.
