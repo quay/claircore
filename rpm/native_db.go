@@ -208,6 +208,14 @@ func constructHint(b *strings.Builder, info *Info) string {
 					b.WriteByte('|')
 				}
 				fmt.Fprintf(b, "key:%016x", p.IssuerKeyId)
+			case *packet.Signature:
+				if p.SigType != 0 || p.IssuerKeyId == nil {
+					continue
+				}
+				if b.Len() != 0 {
+					b.WriteByte('|')
+				}
+				fmt.Fprintf(b, "key:%016x", *p.IssuerKeyId)
 			}
 		}
 	}
