@@ -3,6 +3,7 @@ package rpmtest
 import (
 	"encoding/json"
 	"io"
+	"sort"
 	"strings"
 	"testing"
 
@@ -81,9 +82,9 @@ var Options = cmp.Options{
 // so cook up a comparison function that understands the rpm package's packed format.
 var HintCompare = cmp.FilterPath(
 	func(p cmp.Path) bool { return p.Last().String() == ".RepositoryHint" },
-	cmp.Comparer(func(a, b string) bool {
-		am, bm := make(map[string]string), make(map[string]string)
-		for _, s := range strings.Split(a, "|") {
+	cmpopts.AcyclicTransformer("NormalizeHint", func(h string) string {
+		n := [][2]string{}
+		for _, s := range strings.Split(h, "|") {
 			if s == "" {
 				continue
 			}
@@ -91,21 +92,25 @@ var HintCompare = cmp.FilterPath(
 			if !ok {
 				panic("odd format: " + s)
 			}
-			am[k] = v
-		}
-		delete(am, "hash")
-		for _, s := range strings.Split(b, "|") {
-			if s == "" {
+			if k == "hash" {
 				continue
 			}
-			k, v, ok := strings.Cut(s, ":")
-			if !ok {
-				panic("odd format: " + s)
-			}
-			bm[k] = v
+			i := len(n)
+			n = append(n, [2]string{})
+			n[i][0] = k
+			n[i][1] = v
 		}
-		delete(bm, "hash")
-		return cmp.Equal(am, bm)
+		sort.Slice(n, func(i, j int) bool { return n[i][0] < n[i][1] })
+		var b strings.Builder
+		for i, s := range n {
+			if i != 0 {
+				b.WriteByte('|')
+			}
+			b.WriteString(s[0])
+			b.WriteByte(':')
+			b.WriteString(s[1])
+		}
+		return b.String()
 	}),
 )
 
