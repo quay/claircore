@@ -65,7 +65,7 @@ func TestRPMSpotCheck(t *testing.T) {
 			}
 			defer res.Body.Close()
 			if res.StatusCode != http.StatusOK {
-				t.Fatalf("unexpect response to %q: %s", query.String(), res.Status)
+				t.Fatalf("unexpected response to %q: %s", query.String(), res.Status)
 			}
 			t.Logf("%s: %s", query.String(), res.Status)
 			var searchRes hydraResponse
