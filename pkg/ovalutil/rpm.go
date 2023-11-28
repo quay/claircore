@@ -23,12 +23,10 @@ const (
 	NoneDefinition       DefinitionType = "none"
 )
 
-var moduleCommentRegex, definitionTypeRegex *regexp.Regexp
-
-func init() {
-	moduleCommentRegex = regexp.MustCompile(`(Module )(.*)( is enabled)`)
-	definitionTypeRegex = regexp.MustCompile(`^oval\:com\.redhat\.([a-z]+)\:def\:\d+$`)
-}
+var (
+	moduleCommentRegex  = regexp.MustCompile(`(Module )(.*)( is enabled)`)
+	definitionTypeRegex = regexp.MustCompile(`^oval:com\.redhat\.([a-z]+):def:\d+$`)
+)
 
 // ProtoVulnsFunc allows a caller to create prototype vulnerabilities that will be
 // copied and further defined for every applicable oval.Criterion discovered.
