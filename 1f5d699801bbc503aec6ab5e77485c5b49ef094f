@@ -1,0 +1,7 @@
+jsonblob: add a disk buffering step
+
+This improves "offline" operation by eagerly buffering output to disk
+instead of creating a large in-memory data structure first.
+
+This makes the API trickier but given that there's a single (known and
+intended) user, this should be fine.
