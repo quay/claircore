@@ -1,0 +1,9 @@
+tarfs: check a potential interger overflow
+
+This change fixes a potential integer overflow in tar handling code.
+
+The possibility of exploiting this is effectively 0, as it would require
+more bytes to represent a sufficiently large integer than is available
+in the tar header.
+
+See also: https://github.com/quay/claircore/security/code-scanning/5
