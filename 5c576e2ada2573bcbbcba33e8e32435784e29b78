@@ -1,0 +1,4 @@
+rpm: support PGP V4 signatures
+
+Rpm has apparently started using "current"/V4 PGP signatures, which
+claircore was not handling. This adds support for these signatures.
