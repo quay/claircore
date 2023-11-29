@@ -1,0 +1,4 @@
+gobin: take into account package replacements
+
+Previously, there was a bug where package replacements were not
+considered for go binaries.
