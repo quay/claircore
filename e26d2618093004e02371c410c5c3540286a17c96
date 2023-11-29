@@ -1,0 +1,8 @@
+all: purge `http.DefaultClient` usage
+
+Some packages with less churn (`photon`, `oracle`, `aws`) were using
+older ways of getting an `*http.Client` or using `http.DefaultClient`.
+
+This change breaks some API in exchange for unifying the `*http.Client`
+handling. The practical upshot is that it's much easier to control the
+network contact surface.
