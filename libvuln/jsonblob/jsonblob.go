@@ -85,15 +85,22 @@ func (l *Loader) Next() bool {
 			l.next.Date = l.de.Date
 		}
 		i := len(vs)
-		vs = append(vs, claircore.Vulnerability{})
-		if err := json.Unmarshal(l.de.Vuln.buf, &vs[i]); err != nil {
-			l.err = err
-			return false
+		switch l.de.Kind {
+		case driver.VulnerabilityKind:
+			vs = append(vs, claircore.Vulnerability{})
+			if err := json.Unmarshal(l.de.Vuln.buf, &vs[i]); err != nil {
+				l.err = err
+				return false
+			}
+			l.next.Vuln = append(l.next.Vuln, &vs[i])
+		case driver.EnrichmentKind:
+			en := driver.EnrichmentRecord{}
+			if err := json.Unmarshal(l.de.Enrichment.buf, &en); err != nil {
+				l.err = err
+				return false
+			}
+			l.next.Enrichment = append(l.next.Enrichment, en)
 		}
-		l.next.Vuln = append(l.next.Vuln, &vs[i])
-
-		// BUG(hank) The [Loader] type does not handle Enrichments.
-
 		// If this was an initial diskEntry, promote the ref.
 		if id != l.cur {
 			l.cur = id
@@ -234,8 +241,8 @@ type CommonEntry struct {
 	Date        time.Time
 }
 
-// DiskEntry is a single vulnerability. It's made from unpacking an Entry's
-// slice and adding a uuid for grouping back into an Entry upon read.
+// DiskEntry is a single vulnerability or enrichment. It's made from unpacking an
+// Entry's slice and adding an uuid for grouping back into an Entry upon read.
 //
 // "Vuln" and "Enrichment" are populated from the backing disk immediately
 // before being serialized.

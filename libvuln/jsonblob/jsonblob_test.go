@@ -10,6 +10,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/test"
 )
 
@@ -41,8 +42,20 @@ func TestRoundtrip(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	vs := test.GenUniqueVulnerabilities(10, "test")
-	ref, err := a.UpdateVulnerabilities(ctx, "test", "", vs)
+	var want, got struct {
+		V []*claircore.Vulnerability
+		E []driver.EnrichmentRecord
+	}
+
+	want.V = test.GenUniqueVulnerabilities(10, "test")
+	ref, err := a.UpdateVulnerabilities(ctx, "test", "", want.V)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Logf("ref: %v", ref)
+
+	want.E = test.GenEnrichments(15)
+	ref, err = a.UpdateEnrichments(ctx, "test", "", want.E)
 	if err != nil {
 		t.Error(err)
 	}
@@ -52,7 +65,6 @@ func TestRoundtrip(t *testing.T) {
 	defer func() {
 		t.Logf("wrote:\n%s", buf.String())
 	}()
-	var got []*claircore.Vulnerability
 	r, w := io.Pipe()
 	eg, ctx := errgroup.WithContext(ctx)
 	eg.Go(func() error { defer w.Close(); return a.Store(w) })
@@ -62,7 +74,16 @@ func TestRoundtrip(t *testing.T) {
 			return err
 		}
 		for l.Next() {
-			got = append(got, l.Entry().Vuln...)
+			e := l.Entry()
+			if e.Vuln != nil && e.Enrichment != nil {
+				t.Error("expecting entry to have either vulnerability or enrichment, got both")
+			}
+			if e.Vuln != nil {
+				got.V = append(got.V, l.Entry().Vuln...)
+			}
+			if e.Enrichment != nil {
+				got.E = append(got.E, l.Entry().Enrichment...)
+			}
 		}
 		if err := l.Err(); err != nil {
 			return err
@@ -72,8 +93,28 @@ func TestRoundtrip(t *testing.T) {
 	if err := eg.Wait(); err != nil {
 		t.Error(err)
 	}
-
-	if !cmp.Equal(got, vs) {
-		t.Error(cmp.Diff(got, vs))
+	if !cmp.Equal(got, want) {
+		t.Error(cmp.Diff(got, want))
 	}
+}
+
+func TestEnrichments(t *testing.T) {
+	s, err := New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+
+	en := test.GenEnrichments(5)
+	ref, err := s.UpdateEnrichments(ctx, "test", "", en)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Logf("ref: %v", ref)
+
+	var buf bytes.Buffer
+	if err := s.Store(&buf); err != nil {
+		t.Error(err)
+	}
+	t.Logf("wrote:\n%s", buf.String())
 }
