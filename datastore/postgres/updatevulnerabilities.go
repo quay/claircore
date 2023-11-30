@@ -32,7 +32,7 @@ var (
 			Name:      "updatevulnerabilities_total",
 			Help:      "Total number of database queries issued in the updateVulnerabilities method.",
 		},
-		[]string{"query"},
+		[]string{"query", "is_delta"},
 	)
 	updateVulnerabilitiesDuration = promauto.NewHistogramVec(
 		prometheus.HistogramOpts{
@@ -41,7 +41,7 @@ var (
 			Name:      "updatevulnerabilities_duration_seconds",
 			Help:      "The duration of all queries issued in the updateVulnerabilities method",
 		},
-		[]string{"query"},
+		[]string{"query", "is_delta"},
 	)
 )
 
@@ -51,9 +51,51 @@ var (
 // provided vulnerabilities and computes a diff comprising the removed
 // and added vulnerabilities for this UpdateOperation.
 func (s *MatcherStore) UpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability) (uuid.UUID, error) {
+	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/MatcherStore.UpdateVulnerabilities")
+	return s.updateVulnerabilities(ctx, updater, fingerprint, vulns, nil, false)
+}
+
+// DeltaUpdateVulnerabilities implements vulnstore.Updater.
+//
+// It is similar to UpdateVulnerabilities but support processing of
+// partial data as opposed to needing an entire vulnerability database
+// Order of operations:
+//   - Create a new UpdateOperation
+//   - Query existing vulnerabilities for the updater
+//   - Discount and vulnerabilities with newer updates and deleted vulnerabilities
+//   - Update the associated updateOperation for the remaining existing vulnerabilities
+//   - Insert the new vulnerabilities
+//   - Associate new vulnerabilities with new updateOperation
+func (s *MatcherStore) DeltaUpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability, deletedVulns []string) (uuid.UUID, error) {
+	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/MatcherStore.DeltaUpdateVulnerabilities")
+	return s.updateVulnerabilities(ctx, updater, fingerprint, vulns, deletedVulns, true)
+}
+
+func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability, deletedVulns []string, delta bool) (uuid.UUID, error) {
 	const (
 		// Create makes a new update operation and returns the reference and ID.
 		create = `INSERT INTO update_operation (updater, fingerprint, kind) VALUES ($1, $2, 'vulnerability') RETURNING id, ref;`
+		// Select existing vulnerabilities that are associated with the latest_update_operation.
+		selectExisting = `
+		SELECT
+			"name",
+			"vuln"."id"
+		FROM
+			"vuln"
+			INNER JOIN "uo_vuln" ON ("vuln"."id" = "uo_vuln"."vuln")
+			INNER JOIN "latest_update_operations" ON (
+			"latest_update_operations"."id" = "uo_vuln"."uo"
+			)
+		WHERE
+			(
+			"latest_update_operations"."kind" = 'vulnerability'
+			)
+		AND
+			(
+			"vuln"."updater" = $1
+			)`
+		// assocExisting associates existing vulnerabilities with new update operations
+		assocExisting = `INSERT INTO uo_vuln (uo, vuln) VALUES ($1, $2) ON CONFLICT DO NOTHING;`
 		// Insert attempts to create a new vulnerability. It fails silently.
 		insert = `
 		INSERT INTO vuln (
@@ -82,20 +124,19 @@ func (s *MatcherStore) UpdateVulnerabilities(ctx context.Context, updater string
 		undo        = `DELETE FROM update_operation WHERE id = $1;`
 		refreshView = `REFRESH MATERIALIZED VIEW CONCURRENTLY latest_update_operations;`
 	)
-	ctx = zlog.ContextWithValues(ctx, "component", "internal/vulnstore/postgres/updateVulnerabilities")
 
-	var id uint64
+	var uoID uint64
 	var ref uuid.UUID
 
 	start := time.Now()
 
-	if err := s.pool.QueryRow(ctx, create, updater, string(fingerprint)).Scan(&id, &ref); err != nil {
+	if err := s.pool.QueryRow(ctx, create, updater, string(fingerprint)).Scan(&uoID, &ref); err != nil {
 		return uuid.Nil, fmt.Errorf("failed to create update_operation: %w", err)
 	}
 	var success bool
 	defer func() {
 		if !success {
-			if _, err := s.pool.Exec(ctx, undo, id); err != nil {
+			if _, err := s.pool.Exec(ctx, undo, uoID); err != nil {
 				zlog.Error(ctx).
 					Err(err).
 					Stringer("ref", ref).
@@ -104,8 +145,8 @@ func (s *MatcherStore) UpdateVulnerabilities(ctx context.Context, updater string
 		}
 	}()
 
-	updateVulnerabilitiesCounter.WithLabelValues("create").Add(1)
-	updateVulnerabilitiesDuration.WithLabelValues("create").Observe(time.Since(start).Seconds())
+	updateVulnerabilitiesCounter.WithLabelValues("create", strconv.FormatBool(delta)).Add(1)
+	updateVulnerabilitiesDuration.WithLabelValues("create", strconv.FormatBool(delta)).Observe(time.Since(start).Seconds())
 
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
@@ -116,6 +157,69 @@ func (s *MatcherStore) UpdateVulnerabilities(ctx context.Context, updater string
 	zlog.Debug(ctx).
 		Str("ref", ref.String()).
 		Msg("update_operation created")
+
+	if delta {
+		ctx = zlog.ContextWithValues(ctx, "mode", "delta")
+		// Get existing vulns
+		// The reason this still works even though the new update_operation
+		// is already created is because the latest_update_operation view isn't updated until
+		// the end of this function.
+		start = time.Now()
+		rows, err := s.pool.Query(ctx, selectExisting, updater)
+		if err != nil {
+			return uuid.Nil, fmt.Errorf("failed to get existing vulns: %w", err)
+		}
+		defer rows.Close()
+		updateVulnerabilitiesCounter.WithLabelValues("selectExisting", strconv.FormatBool(delta)).Add(1)
+		updateVulnerabilitiesDuration.WithLabelValues("selectExisting", strconv.FormatBool(delta)).Observe(time.Since(start).Seconds())
+
+		oldVulns := make(map[string][]string)
+		for rows.Next() {
+			var tmpID int64
+			var ID, name string
+			err := rows.Scan(
+				&name,
+				&tmpID,
+			)
+
+			ID = strconv.FormatInt(tmpID, 10)
+			if err != nil {
+				return uuid.Nil, fmt.Errorf("failed to scan vulnerability: %w", err)
+			}
+			oldVulns[name] = append(oldVulns[name], ID)
+		}
+		if err := rows.Err(); err != nil {
+			return uuid.Nil, fmt.Errorf("error reading existing vulnerabilities: %w", err)
+		}
+
+		if len(oldVulns) > 0 {
+			for _, v := range vulns {
+				// If we have an existing vuln in the new batch
+				// delete it from the oldVulns map so it doesn't
+				// get associated with the new update_operation.
+				delete(oldVulns, v.Name)
+			}
+			for _, delName := range deletedVulns {
+				// If we have an existing vuln that has been signaled
+				// as deleted by the updater then delete it so it doesn't
+				// get associated with the new update_operation.
+				delete(oldVulns, delName)
+			}
+		}
+		start = time.Now()
+		// Associate already existing vulnerabilities with new update_operation.
+		for _, vs := range oldVulns {
+			for _, vID := range vs {
+				_, err := tx.Exec(ctx, assocExisting, uoID, vID)
+				if err != nil {
+					return uuid.Nil, fmt.Errorf("could not update old vulnerability with new UO: %w", err)
+				}
+			}
+		}
+		updateVulnerabilitiesCounter.WithLabelValues("assocExisting", strconv.FormatBool(delta)).Add(float64(len(oldVulns)))
+		updateVulnerabilitiesDuration.WithLabelValues("assocExisting", strconv.FormatBool(delta)).Observe(time.Since(start).Seconds())
+
+	}
 
 	// batch insert vulnerabilities
 	skipCt := 0
@@ -153,7 +257,7 @@ func (s *MatcherStore) UpdateVulnerabilities(ctx context.Context, updater string
 			return uuid.Nil, fmt.Errorf("failed to queue vulnerability: %w", err)
 		}
 
-		if err := mBatcher.Queue(ctx, assoc, hashKind, hash, id); err != nil {
+		if err := mBatcher.Queue(ctx, assoc, hashKind, hash, uoID); err != nil {
 			return uuid.Nil, fmt.Errorf("failed to queue association: %w", err)
 		}
 	}
@@ -161,8 +265,8 @@ func (s *MatcherStore) UpdateVulnerabilities(ctx context.Context, updater string
 		return uuid.Nil, fmt.Errorf("failed to finish batch vulnerability insert: %w", err)
 	}
 
-	updateVulnerabilitiesCounter.WithLabelValues("insert_batch").Add(1)
-	updateVulnerabilitiesDuration.WithLabelValues("insert_batch").Observe(time.Since(start).Seconds())
+	updateVulnerabilitiesCounter.WithLabelValues("insert_batch", strconv.FormatBool(delta)).Add(1)
+	updateVulnerabilitiesDuration.WithLabelValues("insert_batch", strconv.FormatBool(delta)).Observe(time.Since(start).Seconds())
 
 	if err := tx.Commit(ctx); err != nil {
 		return uuid.Nil, fmt.Errorf("failed to commit transaction: %w", err)

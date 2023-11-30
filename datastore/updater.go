@@ -19,6 +19,10 @@ type Updater interface {
 	// vulnerabilities, and ensures vulnerabilities from previous updates are
 	// not queried by clients.
 	UpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability) (uuid.UUID, error)
+	// DeltaUpdateVulnerabilities creates a new UpdateOperation consisting of existing
+	// vulnerabilities and new vulnerabilities. It also takes an array of deleted
+	// vulnerability names which should no longer be available to query.
+	DeltaUpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability, deletedVulns []string) (uuid.UUID, error)
 	// GetUpdateOperations returns a list of UpdateOperations in date descending
 	// order for the given updaters.
 	//

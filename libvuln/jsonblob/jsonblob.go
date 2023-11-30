@@ -452,6 +452,11 @@ func (s *Store) RecordUpdaterSetStatus(ctx context.Context, updaterSet string, u
 	return nil
 }
 
+// DeltaUpdateVulnerabilities is a noop
+func (s *Store) DeltaUpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability, deleted []string) (uuid.UUID, error) {
+	return uuid.Nil, nil
+}
+
 var bufPool sync.Pool
 
 func getBuf() []byte {

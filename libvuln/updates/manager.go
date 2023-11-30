@@ -305,11 +305,17 @@ func (m *Manager) driveUpdater(ctx context.Context, u driver.Updater) (err error
 	defer zlog.Info(ctx).Msg("finished update")
 	uoKind := driver.VulnerabilityKind
 
+	// Do some assertions
 	eu, euOK := u.(driver.EnrichmentUpdater)
 	if euOK {
 		zlog.Info(ctx).
 			Msg("found EnrichmentUpdater")
 		uoKind = driver.EnrichmentKind
+	}
+	du, duOK := u.(driver.DeltaUpdater)
+	if duOK {
+		zlog.Info(ctx).
+			Msg("found DeltaUpdater")
 	}
 
 	var prevFP driver.Fingerprint
@@ -355,13 +361,26 @@ func (m *Manager) driveUpdater(ctx context.Context, u driver.Updater) (err error
 		ref, err = m.store.UpdateEnrichments(ctx, name, newFP, ers)
 	default:
 		var vulns []*claircore.Vulnerability
-		vulns, err = u.Parse(ctx, vulnDB)
-		if err != nil {
-			err = fmt.Errorf("vulnerability database parse failed: %v", err)
-			return
-		}
+		switch {
+		case duOK:
+			var deletedVulns []string
+			vulns, deletedVulns, err = du.DeltaParse(ctx, vulnDB)
+			if err != nil {
+				err = fmt.Errorf("vulnerability database delta parse failed: %v", err)
+				return
+			}
 
-		ref, err = m.store.UpdateVulnerabilities(ctx, name, newFP, vulns)
+			ref, err = m.store.DeltaUpdateVulnerabilities(ctx, name, newFP, vulns, deletedVulns)
+
+		default:
+			vulns, err = u.Parse(ctx, vulnDB)
+			if err != nil {
+				err = fmt.Errorf("vulnerability database parse failed: %v", err)
+				return
+			}
+
+			ref, err = m.store.UpdateVulnerabilities(ctx, name, newFP, vulns)
+		}
 	}
 	if err != nil {
 		err = fmt.Errorf("failed to update: %v", err)

@@ -59,3 +59,11 @@ type ConfigUnmarshaler func(interface{}) error
 type Configurable interface {
 	Configure(context.Context, ConfigUnmarshaler, *http.Client) error
 }
+
+// DeltaUpdater is an interface that Updaters can implement to force the manager to call
+// DeltaParse() in lieu of Parse() with the understanding that the resulting vulnerabilities
+// represent a delta and not the entire vulnerability database. DeltaParse can also return
+// a slice of strings that represent the names of deleted vulnerabilities.
+type DeltaUpdater interface {
+	DeltaParse(ctx context.Context, contents io.ReadCloser) ([]*claircore.Vulnerability, []string, error)
+}
