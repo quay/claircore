@@ -2,8 +2,10 @@ package libvuln
 
 import (
 	"context"
+	"fmt"
 	"io"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/quay/zlog"
 
@@ -47,9 +49,16 @@ Update:
 				continue Update
 			}
 		}
-		ref, err := s.UpdateVulnerabilities(ctx, e.Updater, e.Fingerprint, e.Vuln)
-		if err != nil {
-			return err
+		var ref uuid.UUID
+		if e.Enrichment != nil {
+			if ref, err = s.UpdateEnrichments(ctx, e.Updater, e.Fingerprint, e.Enrichment); err != nil {
+				return fmt.Errorf("updating enrichements: %w", err)
+			}
+		}
+		if e.Vuln != nil {
+			if ref, err = s.UpdateVulnerabilities(ctx, e.Updater, e.Fingerprint, e.Vuln); err != nil {
+				return fmt.Errorf("updating vulnerabilities: %w", err)
+			}
 		}
 		zlog.Info(ctx).
 			Str("updater", e.Updater).
