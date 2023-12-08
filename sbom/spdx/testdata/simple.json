@@ -1,0 +1,73 @@
+{
+  "manifest_hash" : "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "state" : "",
+  "packages" : {
+    "123" : {
+      "id" : "123",
+      "name" : "package A",
+      "version" : "v1.0.0",
+      "kind" : "binary",
+      "source" : {
+        "id" : "122",
+        "name" : "package B source",
+        "version" : "v1.0.0",
+        "kind" : "source",
+        "normalized_version" : "",
+        "cpe" : ""
+      },
+      "normalized_version" : "",
+      "cpe" : ""
+    },
+    "456" : {
+      "id" : "456",
+      "name" : "package B",
+      "version" : "v2.0.0",
+      "kind" : "binary",
+      "normalized_version" : "",
+      "cpe" : ""
+    }
+  },
+  "distributions" : {
+    "13" : {
+      "id" : "13",
+      "did" : "rhel",
+      "name" : "Red Hat Enterprise Linux Server",
+      "version" : "7",
+      "version_code_name" : "",
+      "version_id" : "7",
+      "arch" : "",
+      "cpe" : "cpe:2.3:o:redhat:enterprise_linux:7:*:*:*:*:*:*:*",
+      "pretty_name" : "Red Hat Enterprise Linux Server 7"
+    }
+  },
+  "repository" : {
+    "11" : {
+      "id" : "11",
+      "name" : "cpe:/a:redhat:rhel_eus:8.6::appstream",
+      "key" : "rhel-cpe-repository",
+      "cpe" : "cpe:2.3:a:redhat:rhel_eus:8.6:*:appstream:*:*:*:*:*"
+    },
+    "12" : {
+      "id" : "12",
+      "name" : "maven",
+      "uri" : "https://repo1.maven.apache.org/maven2",
+      "cpe" : ""
+    }
+  },
+  "environments" : {
+    "123" : [ {
+      "package_db" : "bdb:var/lib/rpm",
+      "introduced_in" : "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "distribution_id" : "13",
+      "repository_ids" : [ "11" ]
+    } ],
+    "456" : [ {
+      "package_db" : "maven:opt/couchbase/lib/cbas/repo/eventstream-1.0.1.jar",
+      "introduced_in" : "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "distribution_id" : "",
+      "repository_ids" : [ "12" ]
+    } ]
+  },
+  "success" : true,
+  "err" : ""
+}

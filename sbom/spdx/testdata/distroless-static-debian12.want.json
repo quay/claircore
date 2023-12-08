@@ -1,0 +1,87 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "documentNamespace": "Test SPDX encoder namespace",
+  "comment": "Test SPDX encoder comment",
+  "creationInfo": {
+    "creators": [
+      "Tool: Claircore",
+      "Organization: Clair"
+    ],
+    "created": "2025-01-21T16:42:44Z"
+  },
+  "packages": [
+    {
+      "name": "tzdata",
+      "SPDXID": "SPDXRef-Package-874",
+      "versionInfo": "2024b-0+deb12u1",
+      "packageFileName": "var/lib/dpkg/status.d/tzdata",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "primaryPackagePurpose": "APPLICATION"
+    },
+    {
+      "name": "base-files",
+      "SPDXID": "SPDXRef-Package-1666",
+      "versionInfo": "12.4+deb12u9",
+      "packageFileName": "var/lib/dpkg/status.d/base-files",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "primaryPackagePurpose": "APPLICATION"
+    },
+    {
+      "name": "netbase",
+      "SPDXID": "SPDXRef-Package-1840",
+      "versionInfo": "6.4",
+      "packageFileName": "var/lib/dpkg/status.d/netbase",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "primaryPackagePurpose": "APPLICATION"
+    },
+    {
+      "name": "Debian GNU/Linux",
+      "SPDXID": "SPDXRef-Distribution-2",
+      "versionInfo": "12 (bookworm)",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "summary": "distribution",
+      "externalRefs": [
+        {
+          "referenceCategory": "OTHER",
+          "referenceType": "did",
+          "referenceLocator": "debian"
+        },
+        {
+          "referenceCategory": "OTHER",
+          "referenceType": "version_id",
+          "referenceLocator": "12"
+        },
+        {
+          "referenceCategory": "OTHER",
+          "referenceType": "pretty_name",
+          "referenceLocator": "Debian GNU/Linux 12 (bookworm)"
+        }
+      ],
+      "primaryPackagePurpose": "OPERATING-SYSTEM"
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-874",
+      "relatedSpdxElement": "SPDXRef-Distribution-2",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1666",
+      "relatedSpdxElement": "SPDXRef-Distribution-2",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1840",
+      "relatedSpdxElement": "SPDXRef-Distribution-2",
+      "relationshipType": "CONTAINED_BY"
+    }
+  ]
+}
