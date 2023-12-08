@@ -1,0 +1,912 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "documentNamespace": "Test SPDX encoder namespace",
+  "comment": "Test SPDX encoder comment",
+  "creationInfo": {
+    "creators": [
+      "Tool: Claircore",
+      "Organization: Clair"
+    ],
+    "created": "2025-01-21T16:57:30Z"
+  },
+  "packages": [
+    {
+      "name": "tzdata",
+      "SPDXID": "SPDXRef-Package-1843",
+      "versionInfo": "2024b-4.el8",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "primaryPackagePurpose": "SOURCE"
+    },
+    {
+      "name": "tzdata",
+      "SPDXID": "SPDXRef-Package-1844",
+      "versionInfo": "2024b-4.el8",
+      "packageFileName": "bdb:var/lib/rpm",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "primaryPackagePurpose": "APPLICATION"
+    },
+    {
+      "name": "setup",
+      "SPDXID": "SPDXRef-Package-1847",
+      "versionInfo": "2.12.2-9.el8",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "primaryPackagePurpose": "SOURCE"
+    },
+    {
+      "name": "setup",
+      "SPDXID": "SPDXRef-Package-1848",
+      "versionInfo": "2.12.2-9.el8",
+      "packageFileName": "bdb:var/lib/rpm",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "primaryPackagePurpose": "APPLICATION"
+    },
+    {
+      "name": "basesystem",
+      "SPDXID": "SPDXRef-Package-1849",
+      "versionInfo": "11-5.el8",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "primaryPackagePurpose": "SOURCE"
+    },
+    {
+      "name": "basesystem",
+      "SPDXID": "SPDXRef-Package-1850",
+      "versionInfo": "11-5.el8",
+      "packageFileName": "bdb:var/lib/rpm",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "primaryPackagePurpose": "APPLICATION"
+    },
+    {
+      "name": "pcre2",
+      "SPDXID": "SPDXRef-Package-1853",
+      "versionInfo": "10.32-3.el8_6",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "primaryPackagePurpose": "SOURCE"
+    },
+    {
+      "name": "pcre2",
+      "SPDXID": "SPDXRef-Package-1854",
+      "versionInfo": "10.32-3.el8_6",
+      "packageFileName": "bdb:var/lib/rpm",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "primaryPackagePurpose": "APPLICATION"
+    },
+    {
+      "name": "ncurses",
+      "SPDXID": "SPDXRef-Package-1855",
+      "versionInfo": "6.1-10.20180224.el8",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "primaryPackagePurpose": "SOURCE"
+    },
+    {
+      "name": "ncurses-libs",
+      "SPDXID": "SPDXRef-Package-1856",
+      "versionInfo": "6.1-10.20180224.el8",
+      "packageFileName": "bdb:var/lib/rpm",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "primaryPackagePurpose": "APPLICATION"
+    },
+    {
+      "name": "glibc",
+      "SPDXID": "SPDXRef-Package-1857",
+      "versionInfo": "2.28-251.el8_10.5",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "primaryPackagePurpose": "SOURCE"
+    },
+    {
+      "name": "glibc-common",
+      "SPDXID": "SPDXRef-Package-1858",
+      "versionInfo": "2.28-251.el8_10.5",
+      "packageFileName": "bdb:var/lib/rpm",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "primaryPackagePurpose": "APPLICATION"
+    },
+    {
+      "name": "bash",
+      "SPDXID": "SPDXRef-Package-1859",
+      "versionInfo": "4.4.20-5.el8",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "primaryPackagePurpose": "SOURCE"
+    },
+    {
+      "name": "bash",
+      "SPDXID": "SPDXRef-Package-1860",
+      "versionInfo": "4.4.20-5.el8",
+      "packageFileName": "bdb:var/lib/rpm",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "primaryPackagePurpose": "APPLICATION"
+    },
+    {
+      "name": "libcap",
+      "SPDXID": "SPDXRef-Package-1867",
+      "versionInfo": "2.48-6.el8_9",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "primaryPackagePurpose": "SOURCE"
+    },
+    {
+      "name": "libcap",
+      "SPDXID": "SPDXRef-Package-1868",
+      "versionInfo": "2.48-6.el8_9",
+      "packageFileName": "bdb:var/lib/rpm",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "primaryPackagePurpose": "APPLICATION"
+    },
+    {
+      "name": "acl",
+      "SPDXID": "SPDXRef-Package-1881",
+      "versionInfo": "2.2.53-3.el8",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "primaryPackagePurpose": "SOURCE"
+    },
+    {
+      "name": "libacl",
+      "SPDXID": "SPDXRef-Package-1882",
+      "versionInfo": "2.2.53-3.el8",
+      "packageFileName": "bdb:var/lib/rpm",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "primaryPackagePurpose": "APPLICATION"
+    },
+    {
+      "name": "gcc",
+      "SPDXID": "SPDXRef-Package-2025",
+      "versionInfo": "8.5.0-22.el8_10",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "primaryPackagePurpose": "SOURCE"
+    },
+    {
+      "name": "libgcc",
+      "SPDXID": "SPDXRef-Package-2026",
+      "versionInfo": "8.5.0-22.el8_10",
+      "packageFileName": "bdb:var/lib/rpm",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "primaryPackagePurpose": "APPLICATION"
+    },
+    {
+      "name": "redhat-release",
+      "SPDXID": "SPDXRef-Package-2029",
+      "versionInfo": "8.10-0.3.el8",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "primaryPackagePurpose": "SOURCE"
+    },
+    {
+      "name": "redhat-release",
+      "SPDXID": "SPDXRef-Package-2030",
+      "versionInfo": "8.10-0.3.el8",
+      "packageFileName": "bdb:var/lib/rpm",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "primaryPackagePurpose": "APPLICATION"
+    },
+    {
+      "name": "filesystem",
+      "SPDXID": "SPDXRef-Package-2031",
+      "versionInfo": "3.8-6.el8",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "primaryPackagePurpose": "SOURCE"
+    },
+    {
+      "name": "filesystem",
+      "SPDXID": "SPDXRef-Package-2032",
+      "versionInfo": "3.8-6.el8",
+      "packageFileName": "bdb:var/lib/rpm",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "primaryPackagePurpose": "APPLICATION"
+    },
+    {
+      "name": "ncurses-base",
+      "SPDXID": "SPDXRef-Package-2036",
+      "versionInfo": "6.1-10.20180224.el8",
+      "packageFileName": "bdb:var/lib/rpm",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "primaryPackagePurpose": "APPLICATION"
+    },
+    {
+      "name": "libselinux",
+      "SPDXID": "SPDXRef-Package-2037",
+      "versionInfo": "2.9-9.el8_10",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "primaryPackagePurpose": "SOURCE"
+    },
+    {
+      "name": "libselinux",
+      "SPDXID": "SPDXRef-Package-2038",
+      "versionInfo": "2.9-9.el8_10",
+      "packageFileName": "bdb:var/lib/rpm",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "primaryPackagePurpose": "APPLICATION"
+    },
+    {
+      "name": "glibc-minimal-langpack",
+      "SPDXID": "SPDXRef-Package-2040",
+      "versionInfo": "2.28-251.el8_10.5",
+      "packageFileName": "bdb:var/lib/rpm",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "primaryPackagePurpose": "APPLICATION"
+    },
+    {
+      "name": "glibc",
+      "SPDXID": "SPDXRef-Package-2042",
+      "versionInfo": "2.28-251.el8_10.5",
+      "packageFileName": "bdb:var/lib/rpm",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "primaryPackagePurpose": "APPLICATION"
+    },
+    {
+      "name": "libsepol",
+      "SPDXID": "SPDXRef-Package-2043",
+      "versionInfo": "2.9-3.el8",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "primaryPackagePurpose": "SOURCE"
+    },
+    {
+      "name": "libsepol",
+      "SPDXID": "SPDXRef-Package-2044",
+      "versionInfo": "2.9-3.el8",
+      "packageFileName": "bdb:var/lib/rpm",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "primaryPackagePurpose": "APPLICATION"
+    },
+    {
+      "name": "attr",
+      "SPDXID": "SPDXRef-Package-2063",
+      "versionInfo": "2.4.48-3.el8",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "primaryPackagePurpose": "SOURCE"
+    },
+    {
+      "name": "libattr",
+      "SPDXID": "SPDXRef-Package-2064",
+      "versionInfo": "2.4.48-3.el8",
+      "packageFileName": "bdb:var/lib/rpm",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "primaryPackagePurpose": "APPLICATION"
+    },
+    {
+      "name": "coreutils",
+      "SPDXID": "SPDXRef-Package-2065",
+      "versionInfo": "8.30-15.el8",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "primaryPackagePurpose": "SOURCE"
+    },
+    {
+      "name": "coreutils-single",
+      "SPDXID": "SPDXRef-Package-2066",
+      "versionInfo": "8.30-15.el8",
+      "packageFileName": "bdb:var/lib/rpm",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "primaryPackagePurpose": "APPLICATION"
+    },
+    {
+      "name": "ubi8-micro-container",
+      "SPDXID": "SPDXRef-Package-2214",
+      "versionInfo": "8.10-19",
+      "packageFileName": "root/buildinfo/Dockerfile-ubi8-ubi-micro-8.10-19",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "primaryPackagePurpose": "SOURCE"
+    },
+    {
+      "name": "ubi8/ubi-micro",
+      "SPDXID": "SPDXRef-Package-2216",
+      "versionInfo": "8.10-19",
+      "packageFileName": "root/buildinfo/Dockerfile-ubi8-ubi-micro-8.10-19",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "primaryPackagePurpose": "APPLICATION"
+    },
+    {
+      "name": "Red Hat Enterprise Linux Server",
+      "SPDXID": "SPDXRef-Distribution-6",
+      "versionInfo": "8",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "summary": "distribution",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:o:redhat:enterprise_linux:8:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "OTHER",
+          "referenceType": "did",
+          "referenceLocator": "rhel"
+        },
+        {
+          "referenceCategory": "OTHER",
+          "referenceType": "version_id",
+          "referenceLocator": "8"
+        },
+        {
+          "referenceCategory": "OTHER",
+          "referenceType": "pretty_name",
+          "referenceLocator": "Red Hat Enterprise Linux Server 8"
+        }
+      ],
+      "primaryPackagePurpose": "OPERATING-SYSTEM"
+    },
+    {
+      "name": "cpe:/o:redhat:enterprise_linux:8::baseos",
+      "SPDXID": "SPDXRef-Repository-3",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "summary": "repository",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:o:redhat:enterprise_linux:8:*:baseos:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "OTHER",
+          "referenceType": "key",
+          "referenceLocator": "rhel-cpe-repository"
+        }
+      ],
+      "primaryPackagePurpose": "OTHER"
+    },
+    {
+      "name": "cpe:/a:redhat:enterprise_linux:8::appstream",
+      "SPDXID": "SPDXRef-Repository-4",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "summary": "repository",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:redhat:enterprise_linux:8:*:appstream:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "OTHER",
+          "referenceType": "key",
+          "referenceLocator": "rhel-cpe-repository"
+        }
+      ],
+      "primaryPackagePurpose": "OTHER"
+    },
+    {
+      "name": "Red Hat Container Catalog",
+      "SPDXID": "SPDXRef-Repository-5",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "summary": "repository",
+      "externalRefs": [
+        {
+          "referenceCategory": "OTHER",
+          "referenceType": "uri",
+          "referenceLocator": "https://catalog.redhat.com/software/containers/explore"
+        }
+      ],
+      "primaryPackagePurpose": "OTHER"
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-1844",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1844",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1844",
+      "relatedSpdxElement": "SPDXRef-Package-1843",
+      "relationshipType": "GENERATED_FROM"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1844",
+      "relatedSpdxElement": "SPDXRef-Repository-3",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1844",
+      "relatedSpdxElement": "SPDXRef-Repository-4",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1848",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1848",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1848",
+      "relatedSpdxElement": "SPDXRef-Package-1847",
+      "relationshipType": "GENERATED_FROM"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1848",
+      "relatedSpdxElement": "SPDXRef-Repository-3",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1848",
+      "relatedSpdxElement": "SPDXRef-Repository-4",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1850",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1850",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1850",
+      "relatedSpdxElement": "SPDXRef-Package-1849",
+      "relationshipType": "GENERATED_FROM"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1850",
+      "relatedSpdxElement": "SPDXRef-Repository-3",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1850",
+      "relatedSpdxElement": "SPDXRef-Repository-4",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1854",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1854",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1854",
+      "relatedSpdxElement": "SPDXRef-Package-1853",
+      "relationshipType": "GENERATED_FROM"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1854",
+      "relatedSpdxElement": "SPDXRef-Repository-3",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1854",
+      "relatedSpdxElement": "SPDXRef-Repository-4",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1856",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1856",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1856",
+      "relatedSpdxElement": "SPDXRef-Package-1855",
+      "relationshipType": "GENERATED_FROM"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1856",
+      "relatedSpdxElement": "SPDXRef-Repository-3",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1856",
+      "relatedSpdxElement": "SPDXRef-Repository-4",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1858",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1858",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1858",
+      "relatedSpdxElement": "SPDXRef-Package-1857",
+      "relationshipType": "GENERATED_FROM"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1858",
+      "relatedSpdxElement": "SPDXRef-Repository-3",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1858",
+      "relatedSpdxElement": "SPDXRef-Repository-4",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1860",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1860",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1860",
+      "relatedSpdxElement": "SPDXRef-Package-1859",
+      "relationshipType": "GENERATED_FROM"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1860",
+      "relatedSpdxElement": "SPDXRef-Repository-3",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1860",
+      "relatedSpdxElement": "SPDXRef-Repository-4",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1868",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1868",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1868",
+      "relatedSpdxElement": "SPDXRef-Package-1867",
+      "relationshipType": "GENERATED_FROM"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1868",
+      "relatedSpdxElement": "SPDXRef-Repository-3",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1868",
+      "relatedSpdxElement": "SPDXRef-Repository-4",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1882",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1882",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1882",
+      "relatedSpdxElement": "SPDXRef-Package-1881",
+      "relationshipType": "GENERATED_FROM"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1882",
+      "relatedSpdxElement": "SPDXRef-Repository-3",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-1882",
+      "relatedSpdxElement": "SPDXRef-Repository-4",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2026",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2026",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2026",
+      "relatedSpdxElement": "SPDXRef-Package-2025",
+      "relationshipType": "GENERATED_FROM"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2026",
+      "relatedSpdxElement": "SPDXRef-Repository-3",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2026",
+      "relatedSpdxElement": "SPDXRef-Repository-4",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2030",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2030",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2030",
+      "relatedSpdxElement": "SPDXRef-Package-2029",
+      "relationshipType": "GENERATED_FROM"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2030",
+      "relatedSpdxElement": "SPDXRef-Repository-3",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2030",
+      "relatedSpdxElement": "SPDXRef-Repository-4",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2032",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2032",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2032",
+      "relatedSpdxElement": "SPDXRef-Package-2031",
+      "relationshipType": "GENERATED_FROM"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2032",
+      "relatedSpdxElement": "SPDXRef-Repository-3",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2032",
+      "relatedSpdxElement": "SPDXRef-Repository-4",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2036",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2036",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2036",
+      "relatedSpdxElement": "SPDXRef-Package-1855",
+      "relationshipType": "GENERATED_FROM"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2036",
+      "relatedSpdxElement": "SPDXRef-Repository-3",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2036",
+      "relatedSpdxElement": "SPDXRef-Repository-4",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2038",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2038",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2038",
+      "relatedSpdxElement": "SPDXRef-Package-2037",
+      "relationshipType": "GENERATED_FROM"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2038",
+      "relatedSpdxElement": "SPDXRef-Repository-3",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2038",
+      "relatedSpdxElement": "SPDXRef-Repository-4",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2040",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2040",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2040",
+      "relatedSpdxElement": "SPDXRef-Package-1857",
+      "relationshipType": "GENERATED_FROM"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2040",
+      "relatedSpdxElement": "SPDXRef-Repository-3",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2040",
+      "relatedSpdxElement": "SPDXRef-Repository-4",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2042",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2042",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2042",
+      "relatedSpdxElement": "SPDXRef-Package-1857",
+      "relationshipType": "GENERATED_FROM"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2042",
+      "relatedSpdxElement": "SPDXRef-Repository-3",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2042",
+      "relatedSpdxElement": "SPDXRef-Repository-4",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2044",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2044",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2044",
+      "relatedSpdxElement": "SPDXRef-Package-2043",
+      "relationshipType": "GENERATED_FROM"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2044",
+      "relatedSpdxElement": "SPDXRef-Repository-3",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2044",
+      "relatedSpdxElement": "SPDXRef-Repository-4",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2064",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2064",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2064",
+      "relatedSpdxElement": "SPDXRef-Package-2063",
+      "relationshipType": "GENERATED_FROM"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2064",
+      "relatedSpdxElement": "SPDXRef-Repository-3",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2064",
+      "relatedSpdxElement": "SPDXRef-Repository-4",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2066",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2066",
+      "relatedSpdxElement": "SPDXRef-Distribution-6",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2066",
+      "relatedSpdxElement": "SPDXRef-Package-2065",
+      "relationshipType": "GENERATED_FROM"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2066",
+      "relatedSpdxElement": "SPDXRef-Repository-3",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2066",
+      "relatedSpdxElement": "SPDXRef-Repository-4",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2214",
+      "relatedSpdxElement": "SPDXRef-Repository-5",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2216",
+      "relatedSpdxElement": "SPDXRef-Package-2214",
+      "relationshipType": "GENERATED_FROM"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-2216",
+      "relatedSpdxElement": "SPDXRef-Repository-5",
+      "relationshipType": "CONTAINED_BY"
+    }
+  ]
+}

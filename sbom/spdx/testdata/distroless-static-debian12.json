@@ -1,0 +1,96 @@
+{
+  "err": "",
+  "state": "IndexFinished",
+  "success": true,
+  "packages": {
+    "874": {
+      "id": "874",
+      "cpe": "",
+      "arch": "all",
+      "kind": "binary",
+      "name": "tzdata",
+      "source": {
+        "id": "1181",
+        "cpe": "",
+        "name": "",
+        "version": "",
+        "normalized_version": ""
+      },
+      "version": "2024b-0+deb12u1",
+      "normalized_version": ""
+    },
+    "1666": {
+      "id": "1666",
+      "cpe": "",
+      "arch": "amd64",
+      "kind": "binary",
+      "name": "base-files",
+      "source": {
+        "id": "1181",
+        "cpe": "",
+        "name": "",
+        "version": "",
+        "normalized_version": ""
+      },
+      "version": "12.4+deb12u9",
+      "normalized_version": ""
+    },
+    "1840": {
+      "id": "1840",
+      "cpe": "",
+      "arch": "all",
+      "kind": "binary",
+      "name": "netbase",
+      "source": {
+        "id": "1181",
+        "cpe": "",
+        "name": "",
+        "version": "",
+        "normalized_version": ""
+      },
+      "version": "6.4",
+      "normalized_version": ""
+    }
+  },
+  "repository": {},
+  "environments": {
+    "874": [
+      {
+        "package_db": "var/lib/dpkg/status.d/tzdata",
+        "introduced_in": "sha256:efa9d1d5d3a286c60a7261496166fdf31cec2284dafe7eef7cda89eba2f675d6",
+        "repository_ids": null,
+        "distribution_id": "2"
+      }
+    ],
+    "1666": [
+      {
+        "package_db": "var/lib/dpkg/status.d/base-files",
+        "introduced_in": "sha256:688513194d7a0f0d77e4a3692748d21c4ccd1af6a5ff9012f18f053ed9573c13",
+        "repository_ids": null,
+        "distribution_id": "2"
+      }
+    ],
+    "1840": [
+      {
+        "package_db": "var/lib/dpkg/status.d/netbase",
+        "introduced_in": "sha256:bfb59b82a9b65e47d485e53b3e815bca3b3e21a095bd0cb88ced9ac0b48062bf",
+        "repository_ids": null,
+        "distribution_id": "2"
+      }
+    ]
+  },
+  "distributions": {
+    "2": {
+      "id": "2",
+      "cpe": "",
+      "did": "debian",
+      "arch": "",
+      "name": "Debian GNU/Linux",
+      "version": "12 (bookworm)",
+      "version_id": "12",
+      "pretty_name": "Debian GNU/Linux 12 (bookworm)",
+      "version_code_name": "bookworm"
+    }
+  },
+  "manifest_hash": "sha256:fd92c3ad6367e38449ee4547ba87473d87a693d272d8670e326c585c29fa25f2"
+}
