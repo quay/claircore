@@ -1,0 +1,10 @@
+integration: make `PGVERSION` a pattern
+
+The behavior of the setup of an embedded PostgreSQL in integration tests
+has changed. The relevant environment variable (`PGVERSION`) is now a
+pattern instead of a literal version string. Note that a version string
+would be a patten that matches itself, so that format continues to work.
+
+Additionally, the version used is now read from the distributed
+manifest, rather than hard-coded versions. Other than occasional network
+calls to fetch this manifest, users shouldn't notice any difference.
