@@ -270,7 +270,7 @@ func (s *MatcherStore) GetUpdateOperations(ctx context.Context, kind driver.Upda
 	switch {
 	case err == nil:
 	case errors.Is(err, pgx.ErrNoRows):
-		return nil, nil
+		return out, nil
 	default:
 		return nil, fmt.Errorf("failed to get distinct updates: %w", err)
 	}
