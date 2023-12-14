@@ -103,6 +103,9 @@ func (l *Loader) Next() bool {
 			}
 		}
 	}
+	if l.Err() != nil {
+		return false
+	}
 	l.e = l.next
 	return true
 }
