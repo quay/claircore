@@ -11,11 +11,18 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+// Queries is an embedded filesystem containing all the SQL executed by this
+// package.
+//
+// When queries are added and removed, "go generate" must be re-run to update
+// the [queryMetadata] tables.
+//
+//go:generate go run github.com/quay/claircore/internal/cmd/querymetadata
 //go:embed queries
 var queries embed.FS
 
-//go:generate go run github.com/quay/claircore/internal/cmd/querymetadata
-
+// LoadQuery loads the named query from [queries] and adds the relevant
+// attributes from [queryMetadata] to the tracing span.
 func loadQuery(ctx context.Context, name string) string {
 	b, err := fs.ReadFile(queries, path.Join("queries", name))
 	if err != nil {

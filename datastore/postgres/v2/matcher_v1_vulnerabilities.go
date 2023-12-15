@@ -14,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/quay/zlog"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 
@@ -231,17 +232,38 @@ var (
 	zeroDist claircore.Distribution
 )
 
+func (s *MatcherV1) DeltaUpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, add []*claircore.Vulnerability, remove []string) (id uuid.UUID, err error) {
+	ctx, done := s.method(ctx, &err)
+	defer done()
+	id, err = s.makeUpdate(ctx, updater, fingerprint, add, remove, true)
+	return id, err
+}
+
 // UpdateVulnerabilities implements [vulnstore.Updater].
 //
 // It creates a new UpdateOperation for this update call, inserts the
 // provided vulnerabilities and computes a diff comprising the removed
 // and added vulnerabilities for this UpdateOperation.
-func (s *MatcherV1) UpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability) (_ uuid.UUID, err error) {
+func (s *MatcherV1) UpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability) (id uuid.UUID, err error) {
 	ctx, done := s.method(ctx, &err)
 	defer done()
+	id, err = s.makeUpdate(ctx, updater, fingerprint, vulns, nil, false)
+	return id, err
+}
 
+func (s *MatcherV1) makeUpdate(
+	ctx context.Context,
+	updater string,
+	fingerprint driver.Fingerprint,
+	vulns []*claircore.Vulnerability,
+	rm []string,
+	delta bool,
+) (ref uuid.UUID, err error) {
+	ctx, done := s.method(ctx, &err)
+	defer done()
+	span := trace.SpanFromContext(ctx)
+	span.SetAttributes(attribute.Bool("delta", delta))
 	const hashKind = `md5`
-	var ref uuid.UUID
 	type todo struct {
 		Vulnerability *claircore.Vulnerability
 		Digest        []byte
@@ -258,11 +280,17 @@ func (s *MatcherV1) UpdateVulnerabilities(ctx context.Context, updater string, f
 		})
 	}
 
-	err = pgx.BeginTxFunc(ctx, s.pool, txRW, s.tx(ctx, `UpdateVulnerabilities`, func(ctx context.Context, tx pgx.Tx) (err error) {
+	err = pgx.BeginTxFunc(ctx, s.pool, txRW, s.tx(ctx, `makeUpdate`, func(ctx context.Context, tx pgx.Tx) (err error) {
+		// Current UO.
 		var id int64
+		// Previous UO.
+		// Should only be used in the `delta == true` path.
+		// A pointer so that we get a nice big panic if that invariant is ever violated.
+		var prev *int64
 
-		err = pgx.BeginFunc(ctx, tx, s.call(ctx, `create`, func(ctx context.Context, tx pgx.Tx, query string) (err error) {
-			return s.pool.QueryRow(ctx, query, updater, string(fingerprint)).Scan(&id, &ref)
+		// TODO(hank) Should this be ignoring the transaction? This is ported from the v1 package.
+		err = s.pool.AcquireFunc(ctx, s.acquire(ctx, `create`, func(ctx context.Context, c *pgxpool.Conn, query string) (err error) {
+			return c.QueryRow(ctx, query, updater, string(fingerprint)).Scan(&id, &ref)
 		}))
 		if err != nil {
 			return err
@@ -270,6 +298,17 @@ func (s *MatcherV1) UpdateVulnerabilities(ctx context.Context, updater string, f
 		zlog.Debug(ctx).
 			Str("ref", ref.String()).
 			Msg("update_operation created")
+
+		if delta {
+			prev = new(int64)
+			// Pre-associate everything from the previous id, except the Vulnerabilities we've been told to filter.
+			err = pgx.BeginFunc(ctx, tx, s.call(ctx, `delta`, func(ctx context.Context, tx pgx.Tx, query string) error {
+				return tx.QueryRow(ctx, query, updater, id, rm).Scan(prev)
+			}))
+			if err != nil {
+				return err
+			}
+		}
 
 		err = pgx.BeginFunc(ctx, tx, s.call(ctx, `insert`, func(ctx context.Context, tx pgx.Tx, query string) (err error) {
 			var batch pgx.Batch
