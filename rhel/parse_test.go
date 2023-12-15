@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/quay/goval-parser/oval"
 	"github.com/quay/zlog"
 
@@ -97,6 +98,86 @@ func TestParse(t *testing.T) {
 	)
 	if count[base] != 15 || count[appstream] != 15 {
 		t.Fatalf("got: %v vulnerabilities with, want 15 of each", count)
+	}
+}
+
+func TestAllKnownOpenShift4CPEs(t *testing.T) {
+	table := []struct {
+		cpe      string
+		expected []string
+	}{
+		{
+			cpe: "cpe:/a:redhat:openshift:4.14",
+			expected: []string{
+				"cpe:/a:redhat:openshift:4.0",
+				"cpe:/a:redhat:openshift:4.1",
+				"cpe:/a:redhat:openshift:4.2",
+				"cpe:/a:redhat:openshift:4.3",
+				"cpe:/a:redhat:openshift:4.4",
+				"cpe:/a:redhat:openshift:4.5",
+				"cpe:/a:redhat:openshift:4.6",
+				"cpe:/a:redhat:openshift:4.7",
+				"cpe:/a:redhat:openshift:4.8",
+				"cpe:/a:redhat:openshift:4.9",
+				"cpe:/a:redhat:openshift:4.10",
+				"cpe:/a:redhat:openshift:4.11",
+				"cpe:/a:redhat:openshift:4.12",
+				"cpe:/a:redhat:openshift:4.13",
+			},
+		},
+		{
+			cpe: "cpe:/a:redhat:openshift:4.15::el8",
+			expected: []string{
+				"cpe:/a:redhat:openshift:4.0::el8",
+				"cpe:/a:redhat:openshift:4.1::el8",
+				"cpe:/a:redhat:openshift:4.2::el8",
+				"cpe:/a:redhat:openshift:4.3::el8",
+				"cpe:/a:redhat:openshift:4.4::el8",
+				"cpe:/a:redhat:openshift:4.5::el8",
+				"cpe:/a:redhat:openshift:4.6::el8",
+				"cpe:/a:redhat:openshift:4.7::el8",
+				"cpe:/a:redhat:openshift:4.8::el8",
+				"cpe:/a:redhat:openshift:4.9::el8",
+				"cpe:/a:redhat:openshift:4.10::el8",
+				"cpe:/a:redhat:openshift:4.11::el8",
+				"cpe:/a:redhat:openshift:4.12::el8",
+				"cpe:/a:redhat:openshift:4.13::el8",
+				"cpe:/a:redhat:openshift:4.14::el8",
+			},
+		},
+		{
+			cpe: "cpe:/a:redhat:openshift:4.15::el9",
+			expected: []string{
+				"cpe:/a:redhat:openshift:4.0::el9",
+				"cpe:/a:redhat:openshift:4.1::el9",
+				"cpe:/a:redhat:openshift:4.2::el9",
+				"cpe:/a:redhat:openshift:4.3::el9",
+				"cpe:/a:redhat:openshift:4.4::el9",
+				"cpe:/a:redhat:openshift:4.5::el9",
+				"cpe:/a:redhat:openshift:4.6::el9",
+				"cpe:/a:redhat:openshift:4.7::el9",
+				"cpe:/a:redhat:openshift:4.8::el9",
+				"cpe:/a:redhat:openshift:4.9::el9",
+				"cpe:/a:redhat:openshift:4.10::el9",
+				"cpe:/a:redhat:openshift:4.11::el9",
+				"cpe:/a:redhat:openshift:4.12::el9",
+				"cpe:/a:redhat:openshift:4.13::el9",
+				"cpe:/a:redhat:openshift:4.14::el9",
+			},
+		},
+	}
+
+	for _, test := range table {
+		t.Run(test.cpe, func(t *testing.T) {
+			cpes, err := allKnownOpenShift4CPEs(test.cpe)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !cmp.Equal(cpes, test.expected) {
+				t.Fatal(cmp.Diff(cpes, test.expected))
+			}
+		})
 	}
 }
 
