@@ -2,6 +2,7 @@ package test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"os"
@@ -90,6 +91,7 @@ func (a *CachedArena) Close(_ context.Context) error {
 type CachedRealizer struct {
 	remote string
 	local  string
+	layers []claircore.Layer
 }
 
 var (
@@ -147,6 +149,7 @@ func (r *CachedRealizer) RealizeDescriptions(ctx context.Context, descs []clairc
 	}
 
 	success = true
+	r.layers = out
 	return out, nil
 }
 
@@ -163,5 +166,9 @@ func (r *CachedRealizer) Realize(ctx context.Context, ls []*claircore.Layer) err
 
 // Close implements [indexer.Realizer] and [indexer.DescriptionRealizer].
 func (r *CachedRealizer) Close() error {
-	return nil
+	errs := make([]error, len(r.layers))
+	for i := range r.layers {
+		errs[i] = r.layers[i].Close()
+	}
+	return errors.Join(errs...)
 }
