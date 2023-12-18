@@ -46,18 +46,13 @@ type LayerDescription struct {
 // called on an uninitialized Layer will report errors and may panic.
 type Layer struct {
 	noCopy noCopy
-	// NoFun is used to both implement the panicing Finalizer and to track
-	// initialization.
+	// Final is used to implement the panicking Finalizer.
 	//
 	// Without a unique allocation, we cannot set a Finalizer (so, when filling
 	// in a Layer in a slice). A pointer to a zero-sized type (like a *struct{})
-	// is not unique. So this camps on a heap allocation that's
-	// self-referential.
-	//
-	// If the first pointer is nil, then the Layer has not been initialized.
-	// This is exploited in [Init] and [Close] (along with the [closed] member
-	// for the latter) to make sure these methods are not called twice.
-	noFun **Layer
+	// is not unique. So this camps on a unique heap allocation made for the
+	// purpose of tracking the Closed state of this Layer.
+	final *string
 
 	// Hash is a content addressable hash uniquely identifying this layer.
 	// Libindex will treat layers with this same hash as identical.
@@ -77,15 +72,15 @@ type Layer struct {
 	sys     fs.FS
 	rd      io.ReaderAt
 	closed  bool // Used to catch double-closes.
+	init    bool // Used to track initialization.
 }
 
 // Init initializes a Layer in-place. This is provided for flexibility when
 // constructing a slice of Layers.
 func (l *Layer) Init(ctx context.Context, desc *LayerDescription, r io.ReaderAt) error {
-	if l.noFun != nil {
+	if l.init {
 		return fmt.Errorf("claircore: Init called on already initialized Layer")
 	}
-	var success = false
 	var err error
 	l.Hash, err = ParseDigest(desc.Digest)
 	if err != nil {
@@ -95,7 +90,7 @@ func (l *Layer) Init(ctx context.Context, desc *LayerDescription, r io.ReaderAt)
 	l.Headers = desc.Headers
 	l.rd = r
 	defer func() {
-		if success {
+		if l.init {
 			return
 		}
 		for _, f := range l.cleanup {
@@ -121,12 +116,11 @@ func (l *Layer) Init(ctx context.Context, desc *LayerDescription, r io.ReaderAt)
 		return fmt.Errorf("claircore: layer %v: unknown MediaType %q", desc.Digest, desc.MediaType)
 	}
 
-	l.noFun = &l
-	_, file, line, _ := runtime.Caller(2)
-	runtime.SetFinalizer(l.noFun, func(_ **Layer) {
-		panic(fmt.Sprintf("%s:%d: Layer not closed", file, line))
-	})
-	success = true
+	_, file, line, _ := runtime.Caller(1)
+	fmsg := fmt.Sprintf("%s:%d: Layer not closed", file, line)
+	l.final = &fmsg
+	runtime.SetFinalizer(l.final, func(msg *string) { panic(*msg) })
+	l.init = true
 	return nil
 }
 
@@ -134,18 +128,14 @@ func (l *Layer) Init(ctx context.Context, desc *LayerDescription, r io.ReaderAt)
 //
 // Not calling Close may cause the program to panic.
 func (l *Layer) Close() error {
+	if !l.init {
+		return errors.New("claircore: Close: uninitialized Layer")
+	}
 	if l.closed {
 		_, file, line, _ := runtime.Caller(1)
 		panic(fmt.Sprintf("%s:%d: Layer closed twice", file, line))
 	}
-	if l.noFun == nil {
-		return errors.New("claircore: Close: uninitialized Layer")
-	}
-	if l != *l.noFun {
-		panic("programmer error: Layer's internal pointer is not self-referential")
-	}
-	runtime.SetFinalizer(l.noFun, nil)
-	l.noFun = nil
+	runtime.SetFinalizer(l.final, nil)
 	l.closed = true
 	errs := make([]error, len(l.cleanup))
 	for i, c := range l.cleanup {
@@ -188,12 +178,12 @@ func (*unsupported) Is(tgt error) bool {
 // fetching. That is, merely having a valid Layer indicates that the blob has
 // been fetched.
 func (l *Layer) Fetched() bool {
-	return l.noFun != nil
+	return l.init
 }
 
 // FS returns an [fs.FS] reading from an initialized layer.
 func (l *Layer) FS() (fs.FS, error) {
-	if l.noFun == nil {
+	if !l.init {
 		return nil, errors.New("claircore: unable to return FS: uninitialized Layer")
 	}
 	return l.sys, nil
@@ -203,7 +193,7 @@ func (l *Layer) FS() (fs.FS, error) {
 //
 // It should also implement [io.Seeker], and should be a tar stream.
 func (l *Layer) Reader() (ReadAtCloser, error) {
-	if l.noFun == nil {
+	if !l.init {
 		return nil, errors.New("claircore: unable to return Reader: uninitialized Layer")
 	}
 	// Some hacks for making the returned ReadAtCloser implements as many
