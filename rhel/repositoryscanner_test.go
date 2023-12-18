@@ -131,6 +131,11 @@ func TestRepositoryScanner(t *testing.T) {
 			if err := l.Init(ctx, &desc, f); err != nil {
 				t.Fatal(err)
 			}
+			t.Cleanup(func() {
+				if err := l.Close(); err != nil {
+					t.Error(err)
+				}
+			})
 
 			if tt.cfg != nil {
 				var buf bytes.Buffer
