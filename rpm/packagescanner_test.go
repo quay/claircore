@@ -137,15 +137,21 @@ func TestLayer(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			defer func() {
+			t.Cleanup(func() {
 				if err := f.Close(); err != nil {
 					t.Error(err)
 				}
-			}()
+			})
 			var l claircore.Layer
 			if err := l.Init(ctx, &desc, f); err != nil {
 				t.Fatal(err)
 			}
+			t.Cleanup(func() {
+				if err := l.Close(); err != nil {
+					t.Error(err)
+				}
+			})
+
 			got, err := s.Scan(ctx, &l)
 			if err != nil {
 				t.Error(err)
