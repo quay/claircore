@@ -188,12 +188,10 @@ func (a *RemoteFetchArena) fetchInto(ctx context.Context, l *claircore.Layer, cl
 			return err
 		}
 		if err := l.Init(ctx, desc, f); err != nil {
-			f.Close()
-			r.Close()
-			return err
+			return errors.Join(err, f.Close(), r.Close())
 		}
 		*cl = closeFunc(func() error {
-			return errors.Join(f.Close(), r.Close())
+			return errors.Join(l.Close(), f.Close(), r.Close())
 		})
 		return nil
 	}
