@@ -847,6 +847,11 @@ func TestExtraMetadata(t *testing.T) {
 	if err := l.Init(ctx, &test.AnyDescription, f); err != nil {
 		t.Error(err)
 	}
+	t.Cleanup(func() {
+		if err := l.Close(); err != nil {
+			t.Error(err)
+		}
+	})
 
 	ps, err := s.Scan(ctx, &l)
 	if err != nil {
