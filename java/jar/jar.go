@@ -275,6 +275,7 @@ func extractInner(ctx context.Context, p srcPath, z *zip.Reader) ([]Info, error)
 		}
 		defer rc.Close()
 		buf.Reset()
+		buf.Grow(int(fi.Size()))
 		h.Reset()
 		sz, err := buf.ReadFrom(io.TeeReader(rc, h))
 		if err != nil {

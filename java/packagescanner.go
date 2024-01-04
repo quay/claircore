@@ -147,6 +147,10 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 		if err != nil {
 			return nil, err
 		}
+		fStat, err := f.Stat()
+		if err == nil {
+			buf.Grow(int(fStat.Size()))
+		}
 		sz, err := buf.ReadFrom(io.TeeReader(f, sh))
 		f.Close()
 		if err != nil {
