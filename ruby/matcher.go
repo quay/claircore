@@ -18,7 +18,7 @@ var _ driver.Matcher = (*Matcher)(nil)
 type Matcher struct{}
 
 // Name implements driver.Matcher.
-func (*Matcher) Name() string { return "ruby" }
+func (*Matcher) Name() string { return "ruby-gem" }
 
 // Filter implements driver.Matcher.
 func (*Matcher) Filter(record *claircore.IndexRecord) bool {

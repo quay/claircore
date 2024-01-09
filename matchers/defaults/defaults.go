@@ -18,6 +18,7 @@ import (
 	"github.com/quay/claircore/python"
 	"github.com/quay/claircore/rhel"
 	"github.com/quay/claircore/rhel/rhcc"
+	"github.com/quay/claircore/ruby"
 	"github.com/quay/claircore/suse"
 	"github.com/quay/claircore/ubuntu"
 )
@@ -53,6 +54,7 @@ var defaultMatchers = []driver.Matcher{
 	&python.Matcher{},
 	rhcc.Matcher,
 	&rhel.Matcher{},
+	&ruby.Matcher{},
 	&suse.Matcher{},
 	&ubuntu.Matcher{},
 }
