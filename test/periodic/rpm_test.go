@@ -235,6 +235,7 @@ func (doc hydraDoc) Run(dir string) func(*testing.T) {
 			if err := l.Init(ctx, &test.AnyDescription, n); err != nil {
 				t.Fatal(err)
 			}
+			defer l.Close()
 			l.Hash = ld // If you're reading this for an example of how to work with layers: don't do this.
 
 			pkgs, err := s.Scan(ctx, &l)
