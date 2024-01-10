@@ -15,6 +15,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -54,7 +55,7 @@ type fetchDescriptor struct {
 	Arch        string
 	Version     string
 	RealVersion string
-	cached      *bool
+	cached      atomic.Bool
 }
 
 var embedDB = fetchDescriptor{
@@ -125,17 +126,16 @@ var versionRE = regexp.MustCompile(`^[0-9]+((\.[0-9]+){2})?$`)
 
 func (a *fetchDescriptor) DiscoverVersion(t testing.TB) {
 	skip := skip() || testing.Short()
-	if a.cached != nil && (!*a.cached && skip) {
+	if !a.cached.Load() && skip {
 		t.Skip("skipping integration test: would need to fetch bom & binaries")
 	}
 	shouldFetch := false
 	defer func() {
-		a.cached = new(bool)
 		if t.Failed() || t.Skipped() {
-			*a.cached = false
+			a.cached.Store(false)
 			return
 		}
-		*a.cached = !shouldFetch
+		a.cached.Store(!shouldFetch)
 		if !shouldFetch {
 			// If it does exist, wait until we can grab a shared lock. If this blocks,
 			// it's because another process has the exclusive (write) lock. Any error
@@ -248,7 +248,7 @@ func (a *fetchDescriptor) DiscoverVersion(t testing.TB) {
 }
 
 func (a *fetchDescriptor) FetchArchive(t testing.TB) {
-	if *a.cached {
+	if a.cached.Load() {
 		return
 	}
 	p := a.Realpath(t)
