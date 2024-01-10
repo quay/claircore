@@ -40,7 +40,7 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 
 	// Check for missing upper version
 	if !decodedVersions.Has("fixed") && !decodedVersions.Has("lastAffected") {
-		return false, fmt.Errorf("maven: missing upper version")
+		return false, fmt.Errorf("maven: %q missing upper version", vuln.Name)
 	}
 
 	upperVersion := decodedVersions.Get("fixed")
