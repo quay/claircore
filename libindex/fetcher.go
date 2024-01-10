@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
 	"os"
@@ -15,6 +16,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/HdrHistogram/hdrhistogram-go"
 	"github.com/quay/zlog"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -45,6 +47,12 @@ var (
 type RemoteFetchArena struct {
 	wc *http.Client
 	sf *singleflight.Group
+	// Use an HDR Histogram to track layer sizes for preallocation.
+	//
+	// This is used instead of hooking an OTel metric because it seems harder to
+	// calculate a mean from that.
+	sizesMu sync.Mutex
+	sizes   *hdrhistogram.Histogram
 
 	// Rc holds (string, *rc).
 	//
@@ -56,9 +64,10 @@ type RemoteFetchArena struct {
 // NewRemoteFetchArena returns an initialized RemoteFetchArena.
 func NewRemoteFetchArena(wc *http.Client, root string) *RemoteFetchArena {
 	return &RemoteFetchArena{
-		wc:   wc,
-		sf:   &singleflight.Group{},
-		root: root,
+		wc:    wc,
+		sf:    &singleflight.Group{},
+		sizes: hdrhistogram.New(int64(os.Getpagesize()), math.MaxUint32, 5),
+		root:  root,
 	}
 }
 
@@ -243,10 +252,14 @@ func (a *RemoteFetchArena) fetchUnlinkedFile(ctx context.Context, key string, de
 	if err != nil {
 		return nil, err
 	}
+	// Resize to the mean layer size this process has seen.
+	a.sizesMu.Lock()
+	szGuess := int64(a.sizes.Mean())
+	a.sizesMu.Unlock()
+	if err := f.Truncate(szGuess); err != nil {
+		return nil, err
+	}
 	vh, want := digest.Hash(), digest.Checksum()
-
-	// It'd be nice to be able to pre-allocate our file on disk, but we can't
-	// because of decompression.
 
 	req := (&http.Request{
 		ProtoMajor: 1,
@@ -339,7 +352,17 @@ func (a *RemoteFetchArena) fetchUnlinkedFile(ctx context.Context, key string, de
 
 	buf := bufio.NewWriter(f)
 	n, err := io.Copy(buf, zr)
-	zlog.Debug(ctx).Int64("size", n).Msg("wrote file")
+	ev := zlog.Debug(ctx).
+		Int64("size", n).
+		Int64("guess", szGuess)
+	if ev.Enabled() {
+		sz := float64(n)
+		ev = ev.Float64("percent_error", (math.Abs(sz-float64(szGuess))/sz)*100)
+	}
+	ev.Msg("wrote file")
+	a.sizesMu.Lock()
+	a.sizes.RecordValue(n)
+	a.sizesMu.Unlock()
 	if err != nil {
 		return nil, err
 	}
