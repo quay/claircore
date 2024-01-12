@@ -19,7 +19,7 @@ var (
 	_ indexer.DistributionScanner = (*DistributionScanner)(nil)
 	_ indexer.VersionedScanner    = (*DistributionScanner)(nil)
 
-	releaseRegexp = regexp.MustCompile(`Red Hat Enterprise Linux (?:Server)?\s*(?:release)?\s*(\d+)(?:\.\d)?`)
+	releaseRegexp = regexp.MustCompile(`Red Hat Enterprise Linux (?:Server|Atomic Host)?\s*(?:release)?\s*(\d+)(?:\.\d)?`)
 )
 
 // DistributionScanner implements distribution detection logic for RHEL by looking for

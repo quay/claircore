@@ -4,6 +4,7 @@ import (
 	"io/fs"
 	"os"
 	"path"
+	"strings"
 	"testing"
 )
 
@@ -27,7 +28,7 @@ func TestDistributionScanner(t *testing.T) {
 			if d == nil {
 				t.Fatal("missing distribution")
 			}
-			if got, want := d.Version, n; got != want {
+			if got, want := d.Version, strings.TrimPrefix(n, "atomichost-"); got != want {
 				t.Errorf("got: %q, want %q", got, want)
 			}
 		})
