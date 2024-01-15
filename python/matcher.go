@@ -32,10 +32,14 @@ func (*Matcher) Query() []driver.MatchConstraint {
 
 // Vulnerable implements driver.Matcher.
 func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
+	// TODO(ross): This is a common pattern for OSV vulnerabilities. This should be moved into
+	// a common place for all OSV vulnerability matchers.
+
 	if vuln.FixedInVersion == "" {
 		return true, nil
 	}
 
+	// Parse the package first. If it cannot be parsed, it cannot properly be analyzed for vulnerabilities.
 	rv, err := pep440.Parse(record.Package.Version)
 	if err != nil {
 		zlog.Warn(ctx).
@@ -49,22 +53,38 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 	if err != nil {
 		return false, err
 	}
-	upperVersion := decodedVersions.Get("fixed")
-	lastAffected := decodedVersions.Get("lastAffected")
-	switch {
-	case upperVersion != "":
-		uv, err := pep440.Parse(upperVersion)
+
+	introduced := decodedVersions.Get("introduced")
+	// If there is an introduced version, check if the package's version is lower.
+	if introduced != "" {
+		iv, err := pep440.Parse(introduced)
 		if err != nil {
 			zlog.Warn(ctx).
 				Str("package", vuln.Package.Name).
-				Str("version", upperVersion).
+				Str("version", introduced).
+				Msg("unable to parse python introduced version")
+			return false, err
+		}
+		// If the package's version is less than the introduced version, it's not vulnerable.
+		if rv.Compare(&iv) < 0 {
+			return false, nil
+		}
+	}
+
+	fixedVersion := decodedVersions.Get("fixed")
+	lastAffected := decodedVersions.Get("lastAffected")
+	switch {
+	case fixedVersion != "":
+		uv, err := pep440.Parse(fixedVersion)
+		if err != nil {
+			zlog.Warn(ctx).
+				Str("package", vuln.Package.Name).
+				Str("version", fixedVersion).
 				Msg("unable to parse python fixed version")
 			return false, err
 		}
-
-		if rv.Compare(&uv) >= 0 {
-			return false, nil
-		}
+		// The package is affected if its version is less than the fixed version.
+		return rv.Compare(&uv) < 0, nil
 	case lastAffected != "":
 		la, err := pep440.Parse(lastAffected)
 		if err != nil {
@@ -74,25 +94,10 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 				Msg("unable to parse python last_affected version")
 			return false, err
 		}
-		// It must be less 0 to be good, if the versions are equal, it's potentially vulnerable.
-		if rv.Compare(&la) > 0 {
-			return false, nil
-		}
+		// The package is affected if its version is less than or equal to the last affected version.
+		return rv.Compare(&la) <= 0, nil
 	}
 
-	if decodedVersions.Has("introduced") {
-		lv, err := pep440.Parse(decodedVersions.Get("introduced"))
-		if err != nil {
-			zlog.Warn(ctx).
-				Str("package", vuln.Package.Name).
-				Str("version", decodedVersions.Get("introduced")).
-				Msg("unable to parse python package version")
-			return false, err
-		}
-		if rv.Compare(&lv) < 0 {
-			return false, nil
-		}
-	}
-
+	// Just say the package is vulnerable, by default.
 	return true, nil
 }
