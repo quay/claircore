@@ -164,6 +164,27 @@ func TestVulnerable(t *testing.T) {
 			},
 			want: false,
 		},
+		{
+			name: "pkg7",
+			record: &claircore.IndexRecord{
+				Package: &claircore.Package{
+					Name:    "org.apache.tiles:tiles-core",
+					Version: "3.0.7",
+					Kind:    "binary",
+				},
+			},
+			vuln: &claircore.Vulnerability{
+				Updater:     "osv",
+				Name:        "GHSA-qw4h-3xjj-84cc",
+				Description: "Go look it up: https://osv.dev/vulnerability/GHSA-qw4h-3xjj-84cc",
+				Package: &claircore.Package{
+					Name:           "org.apache.tiles:tiles-core",
+					RepositoryHint: "Maven",
+				},
+				FixedInVersion: "introduced=2.0.0",
+			},
+			want: true,
+		},
 	}
 
 	for _, testcase := range testcases {

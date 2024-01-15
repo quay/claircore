@@ -2,9 +2,9 @@ package java
 
 import (
 	"context"
-	"fmt"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/zlog"
 	"net/url"
 )
 
@@ -29,8 +29,17 @@ func (*Matcher) Query() []driver.MatchConstraint {
 }
 
 func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
+	// TODO(ross): This is a common pattern for OSV vulnerabilities. This should be moved into
+	// a common place for all OSV vulnerability matchers.
+
 	if vuln.FixedInVersion == "" {
 		return true, nil
+	}
+
+	// Parse the package first. If it cannot be parsed, it cannot properly be analyzed for vulnerabilities.
+	rv, err := parseMavenVersion(record.Package.Version)
+	if err != nil {
+		return false, err
 	}
 
 	decodedVersions, err := url.ParseQuery(vuln.FixedInVersion)
@@ -38,41 +47,50 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 		return false, err
 	}
 
-	// Check for missing upper version
-	if !decodedVersions.Has("fixed") && !decodedVersions.Has("lastAffected") {
-		return false, fmt.Errorf("maven: %q missing upper version", vuln.Name)
-	}
-
-	upperVersion := decodedVersions.Get("fixed")
-	if upperVersion == "" {
-		upperVersion = decodedVersions.Get("lastAffected")
-	}
-
-	// Check if vulnerable
-	rv, err := parseMavenVersion(record.Package.Version)
-	if err != nil {
-		return false, err
-	}
-
-	v2, err := parseMavenVersion(upperVersion)
-	if err != nil {
-		return false, err
-	}
-
-	switch {
-	case decodedVersions.Has("lastAffected") && rv.Compare(v2) > 0:
-		return false, nil
-	case decodedVersions.Has("fixed") && rv.Compare(v2) >= 0:
-		return false, nil
-	case decodedVersions.Has("introduced"):
-		v1, err := parseMavenVersion(decodedVersions.Get("introduced"))
+	introduced := decodedVersions.Get("introduced")
+	// If there is an introduced version, check if the package's version is lower.
+	if introduced != "" {
+		iv, err := parseMavenVersion(introduced)
 		if err != nil {
+			zlog.Warn(ctx).
+				Str("package", vuln.Package.Name).
+				Str("version", introduced).
+				Msg("unable to parse maven introduced version")
 			return false, err
 		}
-		if rv.Compare(v1) < 0 {
+		// If the package's version is less than the introduced version, it's not vulnerable.
+		if rv.Compare(iv) < 0 {
 			return false, nil
 		}
 	}
 
+	fixedVersion := decodedVersions.Get("fixed")
+	lastAffected := decodedVersions.Get("lastAffected")
+	switch {
+	case fixedVersion != "":
+		fv, err := parseMavenVersion(fixedVersion)
+		if err != nil {
+			zlog.Warn(ctx).
+				Str("package", vuln.Package.Name).
+				Str("version", fixedVersion).
+				Msg("unable to parse maven fixed version")
+			return false, err
+		}
+		// The package is affected if its version is less than the fixed version.
+		return rv.Compare(fv) < 0, nil
+	case lastAffected != "":
+		la, err := parseMavenVersion(lastAffected)
+		if err != nil {
+			zlog.Warn(ctx).
+				Str("package", vuln.Package.Name).
+				Str("version", lastAffected).
+				Msg("unable to parse maven last_affected version")
+			return false, err
+		}
+		// The package is affected if its version is less than or equal to the last affected version.
+		return rv.Compare(la) <= 0, nil
+	}
+
+	// Just say the package is vulnerable, by default.
 	return true, nil
 }
