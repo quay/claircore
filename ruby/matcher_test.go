@@ -143,6 +143,27 @@ func TestVulnerable(t *testing.T) {
 			},
 			want: false,
 		},
+		{
+			name: "dependabot-omnibus no upper bound",
+			record: &claircore.IndexRecord{
+				Package: &claircore.Package{
+					Name:    "dependabot-omnibus",
+					Version: "0.119.0",
+					Kind:    "binary",
+				},
+			},
+			vuln: &claircore.Vulnerability{
+				Updater:     "osv",
+				Name:        "GHSA-23f7-99jx-m54r",
+				Description: "Remote code execution in dependabot-core branch names when cloning",
+				Package: &claircore.Package{
+					Name:           "dependabot-omnibus",
+					RepositoryHint: "rubygems",
+				},
+				FixedInVersion: "introduced=0.119.0-beta1",
+			},
+			want: true,
+		},
 	}
 
 	for _, testcase := range testcases {

@@ -2,7 +2,6 @@ package ruby
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 
 	"github.com/quay/zlog"
@@ -32,8 +31,21 @@ func (*Matcher) Query() []driver.MatchConstraint {
 
 // Vulnerable implements driver.Matcher.
 func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
+	// TODO(ross): This is a common pattern for OSV vulnerabilities. This should be moved into
+	// a common place for all OSV vulnerability matchers.
+
 	if vuln.FixedInVersion == "" {
 		return true, nil
+	}
+
+	// Parse the package first. If it cannot be parsed, it cannot properly be analyzed for vulnerabilities.
+	rv, err := NewVersion(record.Package.Version)
+	if err != nil {
+		zlog.Warn(ctx).
+			Str("package", record.Package.Name).
+			Str("version", record.Package.Version).
+			Msg("unable to parse ruby gem package version")
+		return false, err
 	}
 
 	decodedVersions, err := url.ParseQuery(vuln.FixedInVersion)
@@ -41,56 +53,50 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 		return false, err
 	}
 
-	// Check for missing upper version
-	if !decodedVersions.Has("fixed") && !decodedVersions.Has("lastAffected") {
-		return false, fmt.Errorf("ruby: missing upper version")
-	}
-
-	upperVersion := decodedVersions.Get("fixed")
-	if upperVersion == "" {
-		upperVersion = decodedVersions.Get("lastAffected")
-	}
-
-	rv, err := NewVersion(record.Package.Version)
-	if err != nil {
-		zlog.Warn(ctx).
-			Str("package", record.Package.Name).
-			Str("version", record.Package.Version).
-			Msg("unable to parse ruby package version")
-		return false, err
-	}
-
-	uv, err := NewVersion(upperVersion)
-	if err != nil {
-		zlog.Warn(ctx).
-			Str("vulnerability", vuln.Name).
-			Str("package", vuln.Package.Name).
-			Str("version", upperVersion).
-			Msg("unable to parse ruby vulnerability 'fixed version' or 'last affected'")
-		return false, err
-	}
-
-	switch {
-	case decodedVersions.Has("fixed") && rv.Compare(uv) >= 0:
-		return false, nil
-	case decodedVersions.Has("lastAffected") && rv.Compare(uv) > 0:
-		return false, nil
-	case decodedVersions.Has("introduced"):
-		introduced := decodedVersions.Get("introduced")
+	introduced := decodedVersions.Get("introduced")
+	// If there is an introduced version, check if the package's version is lower.
+	if introduced != "" {
 		iv, err := NewVersion(introduced)
 		if err != nil {
 			zlog.Warn(ctx).
-				Str("vulnerability", vuln.Name).
 				Str("package", vuln.Package.Name).
 				Str("version", introduced).
-				Msg("unable to parse ruby vulnerability 'introduced version'")
+				Msg("unable to parse ruby gem introduced version")
 			return false, err
 		}
-
+		// If the package's version is less than the introduced version, it's not vulnerable.
 		if rv.Compare(iv) < 0 {
 			return false, nil
 		}
 	}
 
+	fixedVersion := decodedVersions.Get("fixed")
+	lastAffected := decodedVersions.Get("lastAffected")
+	switch {
+	case fixedVersion != "":
+		fv, err := NewVersion(fixedVersion)
+		if err != nil {
+			zlog.Warn(ctx).
+				Str("package", vuln.Package.Name).
+				Str("version", fixedVersion).
+				Msg("unable to parse ruby gem fixed version")
+			return false, err
+		}
+		// The package is affected if its version is less than the fixed version.
+		return rv.Compare(fv) < 0, nil
+	case lastAffected != "":
+		la, err := NewVersion(lastAffected)
+		if err != nil {
+			zlog.Warn(ctx).
+				Str("package", vuln.Package.Name).
+				Str("version", lastAffected).
+				Msg("unable to parse ruby gem last_affected version")
+			return false, err
+		}
+		// The package is affected if its version is less than or equal to the last affected version.
+		return rv.Compare(la) <= 0, nil
+	}
+
+	// Just say the package is vulnerable, by default.
 	return true, nil
 }
