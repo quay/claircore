@@ -471,6 +471,7 @@ type ecs struct {
 const (
 	ecosystemGo       = `Go`
 	ecosystemMaven    = `Maven`
+	ecosystemNPM      = `npm`
 	ecosystemPyPI     = `PyPI`
 	ecosystemRubyGems = `RubyGems`
 )
@@ -592,7 +593,7 @@ func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *adviso
 						case ev.LastAffected != "":
 							ranges.Add("lastAffected", ev.LastAffected)
 						}
-					case ecosystemGo:
+					case ecosystemGo, ecosystemNPM:
 						return fmt.Errorf(`unexpected "ECOSYSTEM" entry for %q ecosystem: %s`, af.Package.Ecosystem, a.ID)
 					default:
 						switch {
@@ -637,13 +638,13 @@ func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *adviso
 			}
 			pkgName := af.Package.PURL
 			switch af.Package.Ecosystem {
-			case ecosystemGo, ecosystemMaven, ecosystemPyPI, ecosystemRubyGems:
+			case ecosystemGo, ecosystemMaven, ecosystemNPM, ecosystemPyPI, ecosystemRubyGems:
 				pkgName = af.Package.Name
 			}
 			pkg, novel := e.LookupPackage(pkgName, vs)
 			v.Package = pkg
 			switch af.Package.Ecosystem {
-			case ecosystemGo, ecosystemMaven, ecosystemPyPI, ecosystemRubyGems:
+			case ecosystemGo, ecosystemMaven, ecosystemNPM, ecosystemPyPI, ecosystemRubyGems:
 				v.Package.Kind = claircore.BINARY
 			}
 			if novel {
