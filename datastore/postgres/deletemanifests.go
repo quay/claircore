@@ -19,43 +19,54 @@ var (
 			Namespace: "claircore",
 			Subsystem: "indexer",
 			Name:      "deletemanifests_total",
-			Help:      "Total number of database queries issued in the DeleteManifests method.",
+			Help:      "Total number of calls to the DeleteManifests method.",
 		},
-		[]string{"query", "success"},
+		[]string{"action", "success"},
 	)
 	deleteManifestsDuration = promauto.NewHistogramVec(
 		prometheus.HistogramOpts{
 			Namespace: "claircore",
 			Subsystem: "indexer",
 			Name:      "deletemanifests_duration_seconds",
-			Help:      "The duration of all queries issued in the DeleteManifests method.",
+			Help:      "The duration of taken by the DeleteManifests method.",
 		},
-		[]string{"query", "success"},
+		[]string{"action", "success"},
 	)
 )
 
-func (s *IndexerStore) DeleteManifests(ctx context.Context, d ...claircore.Digest) ([]claircore.Digest, error) {
+func (s *IndexerStore) DeleteManifests(ctx context.Context, ds ...claircore.Digest) ([]claircore.Digest, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/DeleteManifests")
-	return s.deleteManifests(ctx, d)
-}
-
-func (s *IndexerStore) deleteManifests(ctx context.Context, ds []claircore.Digest) ([]claircore.Digest, error) {
 	const (
-		getManifestID      = `SELECT id FROM manifest WHERE hash = $1`
-		getLayers          = `SELECT layer_id FROM manifest_layer WHERE manifest_id = $1;`
-		getDeletableLayers = `
-SELECT l.id FROM layer l 
-LEFT JOIN manifest_layer ml 
-ON l.id = ml.layer_id 
-WHERE l.id = $1
-AND ml.layer_id IS NULL;`
+		getManifestID  = `SELECT id FROM manifest WHERE hash = $1`
+		getLayers      = `SELECT layer_id FROM manifest_layer WHERE manifest_id = $1;`
 		deleteManifest = `DELETE FROM manifest WHERE id = $1;`
-		deleteLayers   = `DELETE FROM layer WHERE id = ANY($1);`
+		deleteLayers   = `DELETE FROM
+		layer
+	  WHERE
+		id IN (
+		  SELECT
+			l.id
+		  FROM
+			layer l
+			LEFT JOIN manifest_layer ml ON l.id = ml.layer_id
+		  WHERE
+			l.id = $1
+			AND ml.layer_id IS NULL
+		);`
 	)
 
+	var err error
+	defer promTimer(deleteManifestsDuration, "deleteManifest", &err)()
+	defer func(e *error) {
+		deleteManifestsCounter.WithLabelValues("deleteManifest", success(*e)).Inc()
+	}(&err)
 	deletedManifests := make([]claircore.Digest, 0, len(ds))
 	for _, d := range ds {
 		s.pool.BeginFunc(ctx, func(tx pgx.Tx) error {
+			defer promTimer(deleteManifestsDuration, "deleteLayers", &err)()
+			defer func(e *error) {
+				deleteManifestsCounter.WithLabelValues("deleteLayers", success(*e)).Inc()
+			}(&err)
 			// Get manifest ID
 			var manifestID int64
 			err := tx.QueryRow(ctx, getManifestID, d).Scan(&manifestID)
@@ -83,36 +94,34 @@ AND ml.layer_id IS NULL;`
 				}
 				lIDs = append(lIDs, layerID)
 			}
-			lRows.Close()
-			// TODO: feedback for how things went
+			if err := lRows.Err(); err != nil {
+				return fmt.Errorf("error reading layer data: %w", err)
+			}
+
 			// Delete manifest
 			_, err = tx.Exec(ctx, deleteManifest, manifestID)
 			if err != nil {
 				return fmt.Errorf("unable to delete manifest: %w", err)
 			}
-			// Get eligible layers to delete
-			lToDelete := []int64{}
+			// Delete eligible layers
 			for _, lID := range lIDs {
-				var layerID int64
-				err := tx.QueryRow(ctx, getDeletableLayers, lID).Scan(&layerID)
-				switch {
-				case errors.Is(err, nil):
-					lToDelete = append(lToDelete, layerID)
-				case errors.Is(err, pgx.ErrNoRows):
-					// No rows, the layer still exists don't delete
-				default:
+				tag, err := tx.Exec(ctx, deleteLayers, lID)
+				if err != nil {
 					return fmt.Errorf("unable check layer usage: %w", err)
 				}
+				ra := tag.RowsAffected()
+				zlog.Debug(ctx).
+					Int64("count", ra).
+					Str("manifest", d.String()).
+					Msg("deleted layers for manifest")
 			}
-			// Delete layers
-			_, err = tx.Exec(ctx, deleteLayers, lToDelete)
-			if err != nil {
-				return fmt.Errorf("unable to delete layers: %w", err)
-			}
-			// We got here with no errors, it's gone (probably)
 			deletedManifests = append(deletedManifests, d)
 			return nil
 		})
 	}
+	zlog.Debug(ctx).
+		Int("count", len(deletedManifests)).
+		Int("nonexistant", len(ds)-len(deletedManifests)).
+		Msg("deleted manifests")
 	return deletedManifests, nil
 }
