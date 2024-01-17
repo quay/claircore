@@ -44,7 +44,7 @@ type Scanner struct{}
 func (*Scanner) Name() string { return "nodejs" }
 
 // Version implements scanner.VersionedScanner.
-func (*Scanner) Version() string { return "1" }
+func (*Scanner) Version() string { return "2" }
 
 // Kind implements scanner.VersionedScanner.
 func (*Scanner) Kind() string { return "package" }
@@ -107,6 +107,7 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 			Version:        pkgJSON.Version,
 			Kind:           claircore.BINARY,
 			PackageDB:      "nodejs:" + p,
+			Filepath:       p,
 			RepositoryHint: repository,
 		}
 		if sv, err := semver.NewVersion(pkgJSON.Version); err == nil {
