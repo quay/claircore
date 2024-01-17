@@ -549,12 +549,12 @@ func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *adviso
 					case ev.Introduced != "":
 						ver, err = semver.NewVersion(ev.Introduced)
 						if err == nil {
-							v.Range.Lower = FromSemver(ver)
+							v.Range.Lower = claircore.FromSemver(ver)
 						}
 					case ev.Fixed != "": // less than
 						ver, err = semver.NewVersion(ev.Fixed)
 						if err == nil {
-							v.Range.Upper = FromSemver(ver)
+							v.Range.Upper = claircore.FromSemver(ver)
 						}
 					case ev.LastAffected != "" && len(af.Versions) != 0: // less than equal to
 						// TODO(hank) Should be able to convert this to a "less than."
@@ -569,7 +569,7 @@ func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *adviso
 						ver, err = semver.NewVersion(ev.LastAffected)
 						if err == nil {
 							nv := ver.IncPatch()
-							v.Range.Upper = FromSemver(&nv)
+							v.Range.Upper = claircore.FromSemver(&nv)
 						}
 					case ev.Limit == "*": // +Inf
 						v.Range.Upper.Kind = `semver`
@@ -761,14 +761,4 @@ func (e *ecs) Finalize() []*claircore.Vulnerability {
 		r[i] = &e.Vulnerability[i]
 	}
 	return r
-}
-
-// FromSemver is the SemVer to claircore.Version mapping used by this package.
-func FromSemver(v *semver.Version) (out claircore.Version) {
-	out.Kind = `semver`
-	// Leave a leading epoch, for good measure.
-	out.V[1] = int32(v.Major())
-	out.V[2] = int32(v.Minor())
-	out.V[3] = int32(v.Patch())
-	return out
 }
