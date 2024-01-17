@@ -57,7 +57,7 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 	rtv, err := semver.NewVersion(strings.TrimPrefix(bi.GoVersion, "go"))
 	switch {
 	case errors.Is(err, nil):
-		runtimeVer = fromSemver(rtv)
+		runtimeVer = claircore.FromSemver(rtv)
 	case errors.Is(err, semver.ErrInvalidSemVer):
 		badVers["stdlib"] = bi.GoVersion
 	default:
@@ -82,7 +82,7 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 	mpv, err := semver.NewVersion(bi.Main.Version)
 	switch {
 	case errors.Is(err, nil):
-		mainVer = fromSemver(mpv)
+		mainVer = claircore.FromSemver(mpv)
 	case bi.Main.Version == `(devel)`:
 		// This is currently the state of any main module built from source; see
 		// the package documentation. Don't record it as a "bad" version and
@@ -141,7 +141,7 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 		ver, err := semver.NewVersion(d.Version)
 		switch {
 		case errors.Is(err, nil):
-			nv = fromSemver(ver)
+			nv = claircore.FromSemver(ver)
 		case errors.Is(err, semver.ErrInvalidSemVer):
 			badVers[d.Path] = d.Version
 		default:
@@ -165,14 +165,4 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 		Interface("versions", vs).
 		Msg("analyzed exe")
 	return nil
-}
-
-// FromSemver is the SemVer to claircore.Version mapping used by this package.
-func fromSemver(v *semver.Version) (out claircore.Version) {
-	out.Kind = `semver`
-	// Leave a leading epoch, for good measure.
-	out.V[1] = int32(v.Major())
-	out.V[2] = int32(v.Minor())
-	out.V[3] = int32(v.Patch())
-	return out
 }
