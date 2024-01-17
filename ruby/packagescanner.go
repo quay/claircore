@@ -70,7 +70,7 @@ type Scanner struct{}
 func (*Scanner) Name() string { return "ruby" }
 
 // Version implements scanner.VersionedScanner.
-func (*Scanner) Version() string { return "1" }
+func (*Scanner) Version() string { return "2" }
 
 // Kind implements scanner.VersionedScanner.
 func (*Scanner) Kind() string { return "package" }
@@ -139,7 +139,8 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 			Name:           name,
 			Version:        version,
 			Kind:           claircore.BINARY,
-			PackageDB:      g,
+			PackageDB:      "ruby:" + g,
+			Filepath:       g,
 			RepositoryHint: repository,
 		})
 	}
