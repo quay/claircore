@@ -69,7 +69,7 @@ type Scanner struct {
 func (*Scanner) Name() string { return "java" }
 
 // Version implements scanner.VersionedScanner.
-func (*Scanner) Version() string { return "5" }
+func (*Scanner) Version() string { return "6" }
 
 // Kind implements scanner.VersionedScanner.
 func (*Scanner) Kind() string { return "package" }
@@ -209,6 +209,7 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 			pkg.Name = i.Name
 			pkg.Version = i.Version
 			pkg.Kind = claircore.BINARY
+			pkg.Filepath = n
 			b := ck
 			if len(i.SHA) != 0 {
 				b = i.SHA
