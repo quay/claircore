@@ -14,6 +14,7 @@ import (
 
 	"github.com/quay/zlog"
 
+	"github.com/Masterminds/semver"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
 )
@@ -101,13 +102,23 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 			return nil, fmt.Errorf("nodejs: unable to decode package.json file: %w", err)
 		}
 
-		ret = append(ret, &claircore.Package{
+		pkg := &claircore.Package{
 			Name:           pkgJSON.Name,
 			Version:        pkgJSON.Version,
 			Kind:           claircore.BINARY,
 			PackageDB:      "nodejs:" + p,
 			RepositoryHint: repository,
-		})
+		}
+		if sv, err := semver.NewVersion(pkgJSON.Version); err == nil {
+			pkg.NormalizedVersion = claircore.FromSemver(sv)
+		} else {
+			zlog.Info(ctx).
+				Str("package", pkg.Name).
+				Str("version", pkg.Version).
+				Msg("invalid semantic version")
+		}
+
+		ret = append(ret, pkg)
 	}
 
 	return ret, nil
