@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"strconv"
 	"strings"
+
+	"github.com/Masterminds/semver"
 )
 
 // Version describes a revision of some sort that is ordered correctly within
@@ -19,6 +21,16 @@ type Version struct {
 // sort.SliceStable.
 func VersionSort(vs []Version) func(int, int) bool {
 	return func(i, j int) bool { return vs[i].Compare(&vs[j]) == -1 }
+}
+
+// FromSemver is the SemVer to claircore.Version mapping used by this package.
+func FromSemver(v *semver.Version) (out Version) {
+	out.Kind = `semver`
+	// Leave a leading epoch, for good measure.
+	out.V[1] = int32(v.Major())
+	out.V[2] = int32(v.Minor())
+	out.V[3] = int32(v.Patch())
+	return out
 }
 
 // MarshalText implments encoding.TextMarshaler.

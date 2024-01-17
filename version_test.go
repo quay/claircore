@@ -3,6 +3,7 @@ package claircore
 import (
 	"testing"
 
+	"github.com/Masterminds/semver"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -96,5 +97,39 @@ func TestVersionString(t *testing.T) {
 func TestVersionMarshal(t *testing.T) {
 	for _, tc := range versiontt {
 		t.Run(tc.Name, tc.MarshalTest)
+	}
+}
+
+func TestFromSemver(t *testing.T) {
+	testcases := []struct {
+		name   string
+		semver *semver.Version
+		want   Version
+	}{
+		{
+			name:   "0.3.0",
+			semver: semver.MustParse("0.3.0"),
+			want: Version{
+				Kind: `semver`,
+				V:    [...]int32{0, 0, 3, 0, 0, 0, 0, 0, 0, 0},
+			},
+		},
+		{
+			name:   "1.1.6",
+			semver: semver.MustParse("1.1.6"),
+			want: Version{
+				Kind: `semver`,
+				V:    [...]int32{0, 1, 1, 6, 0, 0, 0, 0, 0, 0},
+			},
+		},
+	}
+
+	for _, tt := range testcases {
+		t.Run(tt.name, func(t *testing.T) {
+			got := FromSemver(tt.semver)
+			if !cmp.Equal(tt.want, got) {
+				t.Error(cmp.Diff(tt.want, got))
+			}
+		})
 	}
 }
