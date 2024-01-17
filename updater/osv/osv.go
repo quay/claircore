@@ -547,6 +547,7 @@ func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *adviso
 					var ver *semver.Version
 					switch {
 					case ev.Introduced == "0": // -Inf
+						v.Range.Lower.Kind = `semver`
 					case ev.Introduced != "":
 						ver, err = semver.NewVersion(ev.Introduced)
 						if err == nil {
