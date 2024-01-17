@@ -46,7 +46,7 @@ type Scanner struct{}
 func (*Scanner) Name() string { return "python" }
 
 // Version implements scanner.VersionedScanner.
-func (*Scanner) Version() string { return "3" }
+func (*Scanner) Version() string { return "4" }
 
 // Kind implements scanner.VersionedScanner.
 func (*Scanner) Kind() string { return "package" }
@@ -189,6 +189,9 @@ func findDeliciousEgg(ctx context.Context, sys fs.FS) (out []string, err error) 
 		case !d.Type().IsRegular():
 			ev.Discard().Send()
 			// Should we chase symlinks with the correct name?
+			return nil
+		case strings.HasPrefix(filepath.Base(p), ".wh."):
+			ev.Discard().Send()
 			return nil
 		case strings.HasSuffix(p, `.egg/EGG-INFO/PKG-INFO`):
 			ev = ev.Str("kind", ".egg")
