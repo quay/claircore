@@ -399,11 +399,12 @@ storing and querying Enrichments.</p>
 <pre><code>package datastore // import &quot;github.com/quay/claircore/datastore&quot;
 
 type Vulnerability interface {
-	// get finds the vulnerabilities which match each package provided in the packages array
-	// this maybe a one to many relationship. each package is assumed to have an ID.
-	// a map of Package.ID =&gt; Vulnerabilities is returned.
+	// Get finds the vulnerabilities which match each package provided in the
+	// [IndexRecord]s. This may be a one-to-many relationship. A map of Package
+	// ID to Vulnerabilities is returned.
 	Get(ctx context.Context, records []*claircore.IndexRecord, opts GetOpts) (map[string][]*claircore.Vulnerability, error)
 }
+    Vulnerability is the interface for querying stored Vulnerabilities.
 ```
 ```
 package datastore // import &quot;github.com/quay/claircore/datastore&quot;
@@ -480,11 +481,12 @@ type EnrichmentUpdater interface {
 </code></pre>
 <p>package datastore // import &quot;github.com/quay/claircore/datastore&quot;</p>
 <p>type Vulnerability interface {
-// get finds the vulnerabilities which match each package provided in the packages array
-// this maybe a one to many relationship. each package is assumed to have an ID.
-// a map of Package.ID =&gt; Vulnerabilities is returned.
+// Get finds the vulnerabilities which match each package provided in the
+// [IndexRecord]s. This may be a one-to-many relationship. A map of Package
+// ID to Vulnerabilities is returned.
 Get(ctx context.Context, records []*claircore.IndexRecord, opts GetOpts) (map[string][]*claircore.Vulnerability, error)
-}</p>
+}
+Vulnerability is the interface for querying stored Vulnerabilities.</p>
 <pre><code>package datastore // import &quot;github.com/quay/claircore/datastore&quot;
 
 type Enrichment interface {
