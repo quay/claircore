@@ -96,12 +96,12 @@ func (u *Updater) Fetch(ctx context.Context, c *http.Client) error {
 			Msg("response not modified; no update necessary")
 		return nil
 	default:
-		return fmt.Errorf("received status code %q querying mapping url", resp.StatusCode)
+		return fmt.Errorf("received status code %d querying mapping url", resp.StatusCode)
 	}
 
 	v := reflect.New(u.typ).Interface()
 	if err := json.NewDecoder(resp.Body).Decode(v); err != nil {
-		return fmt.Errorf("failed to decode mapping file: %v", err)
+		return fmt.Errorf("failed to decode mapping file: %w", err)
 	}
 
 	u.mu.Lock()
