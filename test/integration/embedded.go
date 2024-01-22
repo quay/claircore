@@ -125,11 +125,12 @@ const bomURL = `https://repo1.maven.org/maven2/io/zonky/test/postgres/embedded-p
 var versionRE = regexp.MustCompile(`^[0-9]+((\.[0-9]+){2})?$`)
 
 func (a *fetchDescriptor) DiscoverVersion(t testing.TB) {
-	skip := skip() || testing.Short()
-	if !a.cached.Load() && skip {
-		t.Skip("skipping integration test: would need to fetch bom & binaries")
+	if a.cached.Load() {
+		// Should be fine.
+		return
 	}
 	shouldFetch := false
+	skip := skip()
 	defer func() {
 		if t.Failed() || t.Skipped() {
 			a.cached.Store(false)
@@ -146,6 +147,9 @@ func (a *fetchDescriptor) DiscoverVersion(t testing.TB) {
 			t.Logf("pattern %q resolved to version: %q", a.Version, a.RealVersion)
 		}
 	}()
+	if testing.Short() {
+		t.Skip("asked for short tests")
+	}
 
 	// Check if the version we've got is a pattern or a specific version:
 	ms := versionRE.FindStringSubmatch(a.Version)
