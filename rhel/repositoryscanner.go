@@ -19,6 +19,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
+	"github.com/quay/claircore/internal/zreader"
 	"github.com/quay/claircore/rhel/dockerfile"
 	"github.com/quay/claircore/rhel/internal/common"
 	"github.com/quay/claircore/rhel/internal/containerapi"
@@ -143,8 +144,13 @@ func (r *RepositoryScanner) Configure(ctx context.Context, f indexer.ConfigDeser
 			return err
 		}
 		defer f.Close()
+		z, err := zreader.Reader(f)
+		if err != nil {
+			return err
+		}
+		defer z.Close()
 		mf = &mappingFile{}
-		if err := json.NewDecoder(f).Decode(mf); err != nil {
+		if err := json.NewDecoder(z).Decode(mf); err != nil {
 			return err
 		}
 	}
