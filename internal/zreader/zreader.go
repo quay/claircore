@@ -174,9 +174,9 @@ func detect(r io.Reader) (io.ReadCloser, Compression, error) {
 	case errors.Is(err, nil):
 	case errors.Is(err, io.ErrNoProgress):
 		return io.NopCloser(br), KindNone, nil
-	case errors.Is(err, io.ErrUnexpectedEOF), errors.Is(err, io.EOF):
+	case errors.Is(err, io.EOF):
 		// Not enough bytes, just return a reader containing the bytes.
-		return io.NopCloser(bytes.NewReader(b)), KindNone, err
+		return io.NopCloser(bytes.NewReader(b)), KindNone, nil
 	default:
 		return nil, KindNone, err
 	}
