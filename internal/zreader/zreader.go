@@ -5,14 +5,11 @@ import (
 	"bufio"
 	"bytes"
 	"compress/bzip2"
-	"encoding/binary"
 	"errors"
 	"fmt"
-	"hash/adler32"
 	"io"
 
 	"github.com/klauspost/compress/gzip"
-	"github.com/klauspost/compress/zlib"
 	"github.com/klauspost/compress/zstd"
 )
 
@@ -26,7 +23,6 @@ const (
 	KindGzip Compression = iota
 	KindZstd
 	KindBzip2
-	KindZlib
 	KindNone
 )
 
@@ -70,28 +66,6 @@ var detectors = [...]detector{
 			return bytes.Equal(bzipHeader, b[:l]) && (b[l] >= '1' && b[l] <= '9')
 		},
 	},
-	// The zlib header is bit-packed, so we need to do something more complex
-	// than bytes.Equal.
-	{
-		Mask: bytes.Repeat([]byte{0xFF}, 6),
-		Check: func(b []byte) bool {
-			const (
-				magic     = 8
-				maxWindow = 7
-			)
-			x := binary.BigEndian.Uint16(b[:2])
-			if (b[0]&0x0f != magic) || (b[0]>>4 > maxWindow) || x%31 != 0 {
-				return false
-			}
-			if b[1]&0x20 != 0 {
-				ck := binary.BigEndian.Uint32(b[2:])
-				if ck != zlibChecksum {
-					return false
-				}
-			}
-			return true
-		},
-	},
 }
 
 // StaticHeader is a helper to create a [detector] for has a constant byte
@@ -111,11 +85,6 @@ var (
 	zstdHeader = []byte{0x28, 0xB5, 0x2F, 0xFD}
 	bzipHeader = []byte{'B', 'Z', 'h'}
 )
-
-// ZlibChecksum is the checksum for zlib stream that does not have a provided
-// dictionary. It's impossible to have a pre-decided dictionary without a
-// sideband.
-var zlibChecksum = adler32.Checksum(nil)
 
 // DetectCompression reports the compression type indicated based on the header
 // contained in the passed byte slice.
@@ -146,7 +115,6 @@ func detectCompression(b []byte) Compression {
 //   - gzip
 //   - zstd
 //   - bzip2
-//   - zlib
 //
 // If the data does not seem to be one of these schemes, a new [io.ReadCloser]
 // equivalent to the provided [io.Reader] is returned.
@@ -198,9 +166,6 @@ func detect(r io.Reader) (io.ReadCloser, Compression, error) {
 	case KindBzip2:
 		z := bzip2.NewReader(br)
 		return io.NopCloser(z), c, nil
-	case KindZlib:
-		z, err := zlib.NewReader(br)
-		return z, c, err
 	case KindNone:
 		// Return the reconstructed Reader.
 	default:

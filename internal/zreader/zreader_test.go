@@ -2,6 +2,7 @@ package zreader
 
 import (
 	"bytes"
+	"encoding/hex"
 	"io"
 	"math/rand"
 	"reflect"
@@ -9,7 +10,6 @@ import (
 	"testing/quick"
 
 	"github.com/klauspost/compress/gzip"
-	"github.com/klauspost/compress/zlib"
 	"github.com/klauspost/compress/zstd"
 )
 
@@ -24,25 +24,28 @@ var testcases = []struct {
 	{KindNone, blobUncompressed},
 	{KindGzip, blobGzip},
 	{KindZstd, blobZstd},
-	{KindZlib, blobZlib},
 }
 
 func TestDetect(t *testing.T) {
 	t.Parallel()
-	wantKind := func(k Compression) func(_, _ *bytes.Buffer) bool {
-		return func(_, z *bytes.Buffer) bool {
-			_, d, err := Detect(z)
-			if err != nil {
-				panic(err)
-			}
-			return d == k
-		}
-	}
 
 	for _, tc := range testcases {
 		t.Run(tc.Kind.String(), func(t *testing.T) {
+			wantKind := func(k Compression) func(_, _ *bytes.Buffer) bool {
+				return func(_, z *bytes.Buffer) bool {
+					_, d, err := Detect(bytes.NewReader(z.Bytes()))
+					if err != nil {
+						t.Fatal(err)
+					}
+					ok := d == k
+					if !ok {
+						t.Errorf("guessed detection incorrectly! got: %v, want: %v", d, k)
+					}
+					return ok
+				}
+			}
 			if err := quick.Check(wantKind(tc.Kind), &quick.Config{Values: tc.Values}); err != nil {
-				t.Error(err)
+				asCheckError(t, err)
 			}
 		})
 	}
@@ -50,28 +53,28 @@ func TestDetect(t *testing.T) {
 
 func TestRead(t *testing.T) {
 	t.Parallel()
-	check := func(k Compression) func(_, _ *bytes.Buffer) bool {
-		return func(want, z *bytes.Buffer) bool {
-			r, err := Reader(z)
-			if err != nil {
-				panic(err)
-			}
-			var got bytes.Buffer
-			got.Grow(want.Len())
-			if _, err := io.Copy(&got, r); err != nil {
-				panic(err)
-			}
-			if err := r.Close(); err != nil {
-				panic(err)
-			}
-			return bytes.Equal(got.Bytes(), want.Bytes())
-		}
-	}
 
 	for _, tc := range testcases {
 		t.Run(tc.Kind.String(), func(t *testing.T) {
+			check := func(k Compression) func(_, _ *bytes.Buffer) bool {
+				return func(want, z *bytes.Buffer) bool {
+					r, err := Reader(z)
+					if err != nil {
+						t.Fatal(err)
+					}
+					var got bytes.Buffer
+					got.Grow(want.Len())
+					if _, err := io.Copy(&got, r); err != nil {
+						t.Fatalf("copy: %v", err)
+					}
+					if err := r.Close(); err != nil {
+						t.Fatalf("close: %v", err)
+					}
+					return bytes.Equal(got.Bytes(), want.Bytes())
+				}
+			}
 			if err := quick.Check(check(tc.Kind), &quick.Config{Values: tc.Values}); err != nil {
-				t.Error(err)
+				asCheckError(t, err)
 			}
 		})
 	}
@@ -96,6 +99,12 @@ func TestShortRead(t *testing.T) {
 	}
 }
 
+func asCheckError(t *testing.T, err error) {
+	ce := err.(*quick.CheckError)
+	hdr := ce.In[1].(*bytes.Buffer).Bytes()[:maxSz]
+	t.Errorf("#%d: failed on input %v", ce.Count, hex.EncodeToString(hdr))
+}
+
 func makeBlobs[W io.WriteCloser](mk func(io.Writer) W) func([]reflect.Value, *rand.Rand) {
 	const blobSize = 4096
 	return func(vs []reflect.Value, rng *rand.Rand) {
@@ -116,7 +125,6 @@ func makeBlobs[W io.WriteCloser](mk func(io.Writer) W) func([]reflect.Value, *ra
 }
 
 var blobGzip = makeBlobs(gzip.NewWriter)
-var blobZlib = makeBlobs(zlib.NewWriter)
 var blobZstd = makeBlobs(func(w io.Writer) *zstd.Encoder {
 	z, err := zstd.NewWriter(w)
 	if err != nil {

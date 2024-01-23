@@ -11,13 +11,12 @@ func _() {
 	_ = x[KindGzip-0]
 	_ = x[KindZstd-1]
 	_ = x[KindBzip2-2]
-	_ = x[KindZlib-3]
-	_ = x[KindNone-4]
+	_ = x[KindNone-3]
 }
 
-const _Compression_name = "KindGzipKindZstdKindBzip2KindZlibKindNone"
+const _Compression_name = "KindGzipKindZstdKindBzip2KindNone"
 
-var _Compression_index = [...]uint8{0, 8, 16, 25, 33, 41}
+var _Compression_index = [...]uint8{0, 8, 16, 25, 33}
 
 func (i Compression) String() string {
 	if i < 0 || i >= Compression(len(_Compression_index)-1) {
