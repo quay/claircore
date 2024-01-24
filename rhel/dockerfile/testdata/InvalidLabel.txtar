@@ -1,0 +1,6 @@
+# Check that invalid comments cause an error.
+! GetLabels
+stderr '^invalid assignment syntax: `A=B \tC=D # Comments not allowed in this position`'
+-- Dockerfile --
+LABEL A=B \
+	C=D # Comments not allowed in this position
