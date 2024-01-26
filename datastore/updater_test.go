@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"hash/fnv"
 	"reflect"
-	"runtime"
 	"slices"
 	"strconv"
 	"strings"
@@ -23,15 +22,20 @@ import (
 	"github.com/quay/claircore/test/integration"
 )
 
-// UpdateCmpopts is the [cmp.Options] for [UpdaterV1CompareTest] tests.
-var updateCmpopts = cmp.Options{
-	// Due to the Store returning the ref ID in this API, we need to
-	// ignore the value; it will never match.
-	//
-	// Similar with "Date" -- it's a database timestamp.
-	cmpopts.IgnoreFields(driver.UpdateOperation{}, "Ref", "Date"),
-	// These IDs are also created database-side.
-	cmpopts.IgnoreFields(claircore.Vulnerability{}, "ID", "Package.ID", "Dist.ID", "Repo.ID"),
+// TestMatcherV1Updater compares outputs of [MatcherImplementations] for the "Updater" APIs.
+func TestMatcherV1Updater(t *testing.T) {
+	integration.NeedDB(t)
+	t.Parallel()
+	ctx := zlog.Test(context.Background(), t)
+
+	tt := []UpdaterV1CompareTest{
+		{Name: "10Add2", Insert: 10, Updates: 2},
+		{Name: "100Add2", Insert: 100, Updates: 2},
+		{Name: "10Add20", Insert: 10, Updates: 20},
+	}
+	for _, tc := range tt {
+		t.Run(tc.Name, tc.Run(ctx, MatcherImplementations))
+	}
 }
 
 // UpdaterV1CompareTest is a testcase for the "UpdaterV1"
@@ -68,18 +72,18 @@ func (tc *UpdaterV1CompareTest) Run(ctx context.Context, newStore []NewStoreFunc
 			if !ok {
 				t.Fatalf("wild name: %q", typ)
 			}
-			tCtx.PerStore = append(tCtx.PerStore, UpdaterV1PerStore{
-				Store: s,
-				Name:  name,
+			tCtx.perStore = append(tCtx.perStore, UpdaterV1PerStore{
+				store: s,
+				name:  name,
 			})
 		}
 
 		todo := []func(*testing.T){
-			forEachUpdater(ctx, &tCtx, tCtx.Update),
-			forEachUpdater(ctx, &tCtx, tCtx.DeltaUpdate),
-			forEachUpdater(ctx, &tCtx, tCtx.GetUpdateOperations),
-			forEachUpdater(ctx, &tCtx, tCtx.Diff),
-			forEachUpdater(ctx, &tCtx, tCtx.DeleteUpdateOperations),
+			forEachStore(ctx, &tCtx, tCtx.Update),
+			forEachStore(ctx, &tCtx, tCtx.DeltaUpdate),
+			forEachStore(ctx, &tCtx, tCtx.GetUpdateOperations),
+			forEachStore(ctx, &tCtx, tCtx.Diff),
+			forEachStore(ctx, &tCtx, tCtx.DeleteUpdateOperations),
 		}
 		for _, sub := range todo {
 			sub(t)
@@ -92,67 +96,22 @@ type UpdaterV1Compare struct {
 	Testcase    *UpdaterV1CompareTest
 	Updater     string
 	Fingerprint driver.Fingerprint
-	PerStore    []UpdaterV1PerStore
+	perStore    []UpdaterV1PerStore
 }
+
+func (cmp *UpdaterV1Compare) CmpOpts() cmp.Options          { return updateCmpopts }
+func (cmp *UpdaterV1Compare) PerStore() []UpdaterV1PerStore { return cmp.perStore }
 
 // UpdaterV1PerStore is state for every [datastore.MatcherV1Updater]
 // implementation under test.
 type UpdaterV1PerStore struct {
-	Store     datastore.MatcherV1Updater
-	Name      string
+	store     datastore.MatcherV1Updater
+	name      string
 	UpdateOps []driver.UpdateOperation
 }
 
-// ForEachUpdater is a generic function that returns a thunk to do comparison of the values returned from the "inner" function.
-//
-// This is complicated, but allows for us to write the comparison logic in one place.
-// The return of "inner" can be any value that doesn't cause problems for go-cmp.
-func forEachUpdater[T any](ctx context.Context, ucmp *UpdaterV1Compare, inner TestFunc[datastore.MatcherV1Updater, T]) func(*testing.T) {
-	// Do some runtime reflection to pick a name.
-	name := runtime.FuncForPC(reflect.ValueOf(inner).Pointer()).Name()
-	name = name[strings.LastIndexByte(name, '.')+1:]
-	name = strings.TrimSuffix(name, "-fm")
-
-	return func(t *testing.T) {
-		if len(ucmp.PerStore) == 1 {
-			t.Fatal("only one store implementation provided")
-		}
-		// Run a subtest named for the function passed in.
-		t.Run(name, func(t *testing.T) {
-			ctx := zlog.Test(ctx, t)
-			got := make([]T, len(ucmp.PerStore))
-			for i := range ucmp.PerStore {
-				per := &ucmp.PerStore[i]
-				out := &got[i]
-				// Run a subtest per store instance.
-				t.Run(per.Name, func(t *testing.T) {
-					ctx := zlog.Test(ctx, t)
-					*out = inner(ctx, t, per.Store)
-				})
-			}
-			if t.Failed() {
-				t.FailNow()
-			}
-
-			// Compare the results pairwise for every combination.
-			// This will get slower with more implementations.
-			// It may not be necessary to do every combination, but it should be more informative.
-			for i, lim := 0, len(ucmp.PerStore); i < lim-1; i++ {
-				for j := i + 1; j < lim; j++ {
-					a, b := ucmp.PerStore[i], ucmp.PerStore[j]
-					aOut, bOut := got[i], got[j]
-					ok := cmp.Equal(aOut, bOut, updateCmpopts)
-					if !ok {
-						t.Errorf("%s ≇ %s", a.Name, b.Name)
-						t.Error(cmp.Diff(aOut, bOut, updateCmpopts))
-					} else {
-						t.Logf("%s ≅ %s", a.Name, b.Name)
-					}
-				}
-			}
-		})
-	}
-}
+func (per UpdaterV1PerStore) Name() string                      { return per.name }
+func (per UpdaterV1PerStore) Store() datastore.MatcherV1Updater { return per.store }
 
 // Vulns generates Vulnerabilities according to the configuration and name.
 func (tc *UpdaterV1CompareTest) vulns(name string) [][]*claircore.Vulnerability {
@@ -259,18 +218,13 @@ func (ucmp *UpdaterV1Compare) DeleteUpdateOperations(ctx context.Context, t *tes
 	return upd[ucmp.Updater]
 }
 
-// TestMatcherV1Updater compares outputs of [MatcherImplementations] for the "Updater" APIs.
-func TestMatcherV1Updater(t *testing.T) {
-	integration.NeedDB(t)
-	t.Parallel()
-	ctx := zlog.Test(context.Background(), t)
-
-	tt := []UpdaterV1CompareTest{
-		{Name: "10Add2", Insert: 10, Updates: 2},
-		{Name: "100Add2", Insert: 100, Updates: 2},
-		{Name: "10Add20", Insert: 10, Updates: 20},
-	}
-	for _, tc := range tt {
-		t.Run(tc.Name, tc.Run(ctx, MatcherImplementations))
-	}
+// UpdateCmpopts is the [cmp.Options] for [UpdaterV1CompareTest] tests.
+var updateCmpopts = cmp.Options{
+	// Due to the Store returning the ref ID in this API, we need to
+	// ignore the value; it will never match.
+	//
+	// Similar with "Date" -- it's a database timestamp.
+	cmpopts.IgnoreFields(driver.UpdateOperation{}, "Ref", "Date"),
+	// These IDs are also created database-side.
+	cmpopts.IgnoreFields(claircore.Vulnerability{}, "ID", "Package.ID", "Dist.ID", "Repo.ID"),
 }
