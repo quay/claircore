@@ -52,7 +52,7 @@ type IndexerV1Setter interface {
 	// SetIndexFinished marks an indexing process as completed successfully.
 	//
 	// Assuming an IndexerV1Querier configured with the same backing store, when
-	// this method returning without an errror, a call to ManifestScanned with
+	// this method returning without an error, a call to ManifestScanned with
 	// the IndexReport's manifest digest will return true. Similarly, a call to
 	// IndexReport with the IndexReport's manifest digest will return the
 	// IndexReport in finished state.
