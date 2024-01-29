@@ -45,6 +45,9 @@ func (v *V3) UnmarshalText(text []byte) error {
 	if err != nil {
 		return fmt.Errorf("cvss v3: %w", err)
 	}
+	if v.ver == -1 { // If the versionHook never set the version
+		return fmt.Errorf("cvss v3: %w", ErrMalformedVector)
+	}
 	for m, b := range v.mv[:V3Availability] {
 		if b == 0 {
 			return fmt.Errorf("cvss v3: %w: missing metric: %q", ErrMalformedVector, V3Metric(m).String())
