@@ -212,6 +212,9 @@ func parseString[M Metric](v []byte, ver func(string) error, lookup map[string]M
 			if a != "CVSS" {
 				return fmt.Errorf(`%w: expected "CVSS" element`, ErrMalformedVector)
 			}
+			if err := ver(val); err != nil {
+				return fmt.Errorf("%w: %w", ErrMalformedVector, err)
+			}
 			// Append a bogus Metric to the seen list to keep everything
 			// organized.
 			seen = append(seen, -1)
