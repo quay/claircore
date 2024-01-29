@@ -90,6 +90,16 @@ func TestMatcherIntegration(t *testing.T) {
 	t.Logf("Number of Vulnerabilities found: %d", len(vulns))
 
 	if len(vulns) < 2 {
-		t.Fatalf("failed to match vulns: %v", err)
+		t.Fatal("failed to match vulns")
+	}
+
+	var hasFixed bool
+	for _, v := range vulns {
+		if v.FixedInVersion != "" {
+			hasFixed = true
+		}
+	}
+	if !hasFixed {
+		t.Fatalf("failed to find a fixed vuln")
 	}
 }
