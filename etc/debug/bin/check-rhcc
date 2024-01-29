@@ -1,0 +1,54 @@
+#!/bin/sh
+# Takes a list of identifiers as arguments and prints Vulnerability objects from cvemap.xml.
+# The "p" flag allows for specifying a substring of a package name to return objects naming it from the Vulnerability.
+set -e
+
+needcmd() {
+	for cmd in "$@"; do
+		if ! command -v "$cmd" 1>/dev/null 2>&1; then
+			printf 'need command: %s\n' "$cmd" >&2
+			exit 99
+		fi
+	done
+}
+needcmd wget xmllint zstd
+
+pkgname=''
+dofetch=0
+while getopts fp: flag; do
+	case $flag in
+	f) dofetch=1;;
+	p) pkgname="$OPTARG";;
+	?)
+		printf "Usage: %s: [-f] [-p package_name] ID...\n" "$0" >&2
+		exit 2;;
+	esac
+done
+shift $((OPTIND - 1))
+if [ "$#" -eq 0 ]; then
+	printf "Usage: %s: [-f] [-p package_name] ID...\n" "$0" >&2
+	exit 2
+fi
+: "$@"
+
+infile=/tmp/cvemap.xml.zst
+
+if test "$dofetch" -eq 1 || ! test -f "$infile"; then 
+	echo \# fetching cvemap.xml >&2
+	wget -q -O - 'https://access.redhat.com/security/data/metrics/cvemap.xml' |
+		zstd > "$infile"
+	echo \# OK >&2
+fi
+
+
+q=''
+for id in "$@"; do
+	q="${q}${q:+ or }@name=\"${id}\""
+done
+q="//Vulnerability[${q}]"
+if test -n "$pkgname"; then
+	q="${q}//*[Package[contains(@name, \"${pkgname}\")] or PackageName[contains(text(), \"${pkgname}\")]]"
+fi
+
+zstdcat "$infile" |
+	xmllint --xpath "$q" -
