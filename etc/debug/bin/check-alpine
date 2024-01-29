@@ -1,0 +1,45 @@
+#!/bin/sh
+# Takes a list of identifiers as arguments and prints where it's found in the alpine secdb.
+set -e
+
+needcmd() {
+	for cmd in "$@"; do
+		if ! command -v "$cmd" 1>/dev/null 2>&1; then
+			printf 'need command: %s\n' "$cmd" >&2
+			exit 99
+		fi
+	done
+}
+needcmd wget jq
+
+alpine_version=edge
+while getopts v: flag
+do
+	case "$flag" in
+	v) alpine_version="$OPTARG";;
+	?)
+		printf "Usage: %s: [-v version] ID...\n" "$0" >&2
+		exit 2;;
+	esac
+done
+shift $((OPTIND - 1))
+if [ "$#" -eq 0 ]; then
+	printf "Usage: %s: [-v version] ID...\n" "$0" >&2
+	exit 2
+fi
+: "$@"
+
+db_dir="/tmp/${alpine_version}/"
+(
+	mkdir -p "$db_dir"
+	cd "$db_dir" || exit 99
+	for r in main community; do
+		echo "https://secdb.alpinelinux.org/${alpine_version}/${r}.json"
+	done |
+		wget --quiet --input-file=- --continue
+)
+
+cat  "$db_dir"/*.json |
+	jq -cr -L "$(git rev-parse --show-toplevel)/etc/debug/lib/jq"\
+	'import "alpine" as alpine; alpine::find_advisories($ARGS.positional)'\
+	--args "$@"
