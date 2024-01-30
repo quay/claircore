@@ -27,6 +27,11 @@ func (v *V4) UnmarshalText(text []byte) error {
 	if err := parseString(v.mv[:], v4VerHook, v4Rev, string(text)); err != nil {
 		return fmt.Errorf("cvss v4: %w", err)
 	}
+	for m, b := range v.mv[:V4SubsequentSystemAvailability+1] { // range inclusive
+		if b == 0 {
+			return fmt.Errorf("cvss v4: %w: missing metric: %q", ErrMalformedVector, V4Metric(m).String())
+		}
+	}
 	return nil
 }
 
