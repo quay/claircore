@@ -7,6 +7,9 @@ import (
 
 // The NaNs in here are to make the string index offsets line up, because V2 has
 // long metric values.
+//
+// Note the few that have values moved around because the metric values are
+// subsets of other metric values.
 var v2Weights = [numV2Metrics][]float64{
 	{0.395, 0.646, 1.0}, // AV
 	{0.35, 0.61, 0.71},  // AC
@@ -17,9 +20,9 @@ var v2Weights = [numV2Metrics][]float64{
 	// Temporal:
 	{0.85, 0.9, math.NaN(), math.NaN(), 0.95, 1.00, 1.00},  // E
 	{0.87, math.NaN(), 0.90, math.NaN(), 0.95, 1.00, 1.00}, // RL
-	{0.90, math.NaN(), 0.95, math.NaN(), 1.00, 1.00},       // RC
+	{0.90, 1.00, 0.95, math.NaN(), math.NaN(), 1.00},       // RC -- "C" value packed earlier
 	// Environmental:
-	{0, 0.1, 0.3, math.NaN(), 0.4, math.NaN(), 0.5, 0}, // CDP
+	{0, 0.1, 0.3, math.NaN(), 0.4, 0.5, math.NaN(), 0}, // CDP -- "H" value packed earlier
 	{0, 0.25, 0.75, 1.00, 1.00},                        // TD
 	{0.5, 1.0, 1.51, 1.0},                              // CR
 	{0.5, 1.0, 1.51, 1.0},                              // IR
