@@ -9,3 +9,7 @@ An incomplete index:
 - `bin/check-rhcc`
 
     Checks ID existence in the Red Hat `cvemap.xml` file.
+
+- `bin/check-oval`
+
+    Checks ID existence in an OVAL XML file.

@@ -1,0 +1,66 @@
+#!/bin/sh
+# Takes a list of identifiers as arguments and prints OVAL definitions from the specified OVAL XML.
+# The "p" flag allows for specifying a substring of a package name to return objects naming it from the Vulnerability.
+set -e
+
+needcmd() {
+	for cmd in "$@"; do
+		if ! command -v "$cmd" 1>/dev/null 2>&1; then
+			printf 'need command: %s\n' "$cmd" >&2
+			exit 99
+		fi
+	done
+}
+needcmd wget xmllint zstd
+
+pkgname=''
+dofetch=0
+url=''
+while getopts fp:u: flag; do
+	case $flag in
+	f) dofetch=1;;
+	p) pkgname="$OPTARG";;
+	u) url="$OPTARG";;
+	?)
+		printf "Usage: %s: [-f] [-p package_name] -u URL ID...\n" "$0" >&2
+		exit 2;;
+	esac
+done
+shift $((OPTIND - 1))
+if [ "$#" -eq 0 ] || [ -z "$url" ]; then
+	printf "Usage: %s: [-f] [-p package_name] -u URL ID...\n" "$0" >&2
+	exit 2
+fi
+: "$url"
+: "$@"
+
+workdir=/tmp/OVAL
+test -d "$workdir" || mkdir -p "$workdir"
+infile="${workdir}/$(basename "$url").zst"
+
+if test "$dofetch" -eq 1 || ! test -f "$infile"; then 
+	echo \# fetching "$(basename "$url")" >&2
+	wget -q -O - "$url" |
+		xmllint --format - |
+		zstd > "$infile"
+	echo \# OK >&2
+fi
+
+# OVAL documents use namespaces, which xmllint has poor support for from the command line.
+# The query needs to end up looking something like:
+#
+#	xmllint --xpath '//*[local-name()="definition"][.//*[local-name()="criterion" and contains(@comment, "pkg")]]/
+
+q=''
+for id in "$@"; do
+	q="${q}${q:+ or }(local-name()='reference' and @ref_id='${id}')"
+done
+q="//*[local-name()='definition'][.//*[(${q})"
+if test -n "$pkgname"; then
+	q="${q} or (local-name()='criterion' and contains(@name, '${pkgname}'))"
+fi
+q="${q}]]"
+: "$q"
+
+zstdcat "$infile" |
+	xmllint --xpath "$q" -
