@@ -31,7 +31,7 @@ func (v *V2) UnmarshalText(text []byte) error {
 	if err != nil {
 		return fmt.Errorf("cvss v2: %w", err)
 	}
-	for m, b := range v.mv[:V2Availability] {
+	for m, b := range v.mv[:V2Availability+1] { // range inclusive
 		if b == 0 {
 			return fmt.Errorf("cvss v2: %w: missing metric: %q", ErrMalformedVector, V3Metric(m).String())
 		}
@@ -134,8 +134,6 @@ func (v *V2) getScore(m V2Metric) byte {
 		case V2ConfidentialityRequirement, V2IntegrityRequirement, V2AvailabilityRequirement:
 			b = 'N'
 		}
-	default:
-		panic("invalid metric: " + m.String())
 	}
 	return b
 }
