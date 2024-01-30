@@ -118,7 +118,6 @@ func (v *V4) Score() float64 {
 	// implementation's distance calculations using 0.1 as the unit instead of
 	// 1. This shouldn't affect the output because the spec lays out how and
 	// when to round the output.
-	//
 
 	var calc scorecalc
 	calc.Init()
@@ -226,12 +225,8 @@ Done:
 	})
 
 	score := value - calc.Mean()
-	switch {
-	case score < 0:
-		score = 0
-	case score > 10:
-		score = 10
-	}
+	score = math.Max(score, 0)
+	score = math.Min(score, 10)
 	return math.Round(score*10) / 10
 }
 
@@ -403,7 +398,7 @@ var scoreData = struct {
 	// MacrovectorScore is the macrovector → score mapping that's incorporated
 	// by reference into the spec.
 	//
-	// See Section 8.3 for the current fixture..
+	// See Section 8.3 for the current fixture.
 	macrovectorScore map[macrovector]float64
 	// MetricsInEQ returns a slice of the metrics in a given equivalence class.
 	//

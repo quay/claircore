@@ -48,7 +48,7 @@ func (v *V3) UnmarshalText(text []byte) error {
 	if v.ver == -1 { // If the versionHook never set the version
 		return fmt.Errorf("cvss v3: %w", ErrMalformedVector)
 	}
-	for m, b := range v.mv[:V3Availability] {
+	for m, b := range v.mv[:V3Availability+1] { // range inclusive
 		if b == 0 {
 			return fmt.Errorf("cvss v3: %w: missing metric: %q", ErrMalformedVector, V3Metric(m).String())
 		}
@@ -84,7 +84,10 @@ func (v *V3) getString(m V3Metric) (string, error) {
 // GetScore implements [Vector].
 func (v *V3) getScore(m V3Metric) byte {
 	b := v.mv[int(m)]
-	if b == 0 {
+	switch {
+	case m >= V3ModifiedAttackVector && b == 0:
+		b = v.mv[int(m-V3ModifiedAttackVector)]
+	case b == 0:
 		b = 'X'
 	}
 	return b
@@ -105,25 +108,23 @@ func (v *V3) Get(m V3Metric) Value {
 // Temporal reports if the vector has "Temporal" metrics.
 func (v *V3) Temporal() bool {
 	m := v.mv[V3ExploitMaturity : V3ReportConfidence+1]
-	var ct int
 	for _, v := range m {
 		if v != 0 {
-			ct++
+			return true
 		}
 	}
-	return ct == len(m)
+	return false
 }
 
 // Environmental reports if the vector has "Environmental" metrics.
 func (v *V3) Environmental() (ok bool) {
-	m := v.mv[V3ModifiedAttackVector:]
-	var ct int
+	m := v.mv[V3ConfidentialityRequirement:]
 	for _, v := range m {
 		if v != 0 {
-			ct++
+			return true
 		}
 	}
-	return ct == len(m)
+	return false
 }
 
 //go:generate go run golang.org/x/tools/cmd/stringer@latest -type=V3Metric,v3Valid -linecomment

@@ -86,9 +86,7 @@ func (v *V4) getScore(m V4Metric) byte {
 		default:
 			b = 'X'
 		}
-		// Do this the easy way for the above once the errata clear up the
-		// ordering issue.
-		if m >= V4ModifiedAttackVector && m < V4ModifiedVulnerableSystemConfidentiality {
+		if m >= V4ModifiedAttackVector && m <= V4ModifiedSubsequentSystemAvailability {
 			b = v.mv[m-V4ModifiedAttackVector]
 		}
 	}
