@@ -100,7 +100,9 @@ func (v *V3) Score() float64 {
 	issScale := 1.0
 	scope := v.getScore(V3Scope)
 	if env {
-		scope = v.getScore(V3ModifiedScope)
+		if mod := v.getScore(V3ModifiedScope); mod != 'X' {
+			scope = mod
+		}
 		if v.ver == 1 {
 			issScale = 0.9731
 		}
