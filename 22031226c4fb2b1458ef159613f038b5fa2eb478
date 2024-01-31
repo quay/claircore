@@ -1,0 +1,5 @@
+datastore: add "delta" update interface
+
+This change should allow for updaters to use fewer resources and consume
+API-based data sources in the future. As of this change, no in-tree
+updaters have been converted to this interface.
