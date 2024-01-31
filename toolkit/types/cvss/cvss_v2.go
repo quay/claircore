@@ -114,8 +114,11 @@ func (v *V2) String() string {
 // GetString implements [Vector].
 func (v *V2) getString(m V2Metric) (string, error) {
 	b := v.mv[int(m)]
-	if b == 0 {
+	switch {
+	case b == 0 && m <= V2Availability:
 		return "", errValueUnset
+	case b == 0:
+		return "ND", errValueUnset
 	}
 	return v2Unparse(m, b), nil
 }
