@@ -1,0 +1,3 @@
+alpine: add edge support
+
+Alpine's `edge` version should now be supported for reporting.
