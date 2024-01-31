@@ -138,6 +138,20 @@ func (v *V2) getScore(m V2Metric) byte {
 	return b
 }
 
+func (v *V2) groups(yield func([2]int) bool) {
+	var b [2]int
+	b[0], b[1] = int(V2AccessVector), int(V2Availability)+1
+	if !yield(b) {
+		return
+	}
+	b[0], b[1] = int(V2Exploitability), int(V2ReportConfidence)+1
+	if !yield(b) {
+		return
+	}
+	b[0], b[1] = int(V2CollateralDamagePotential), int(V2AvailabilityRequirement)+1
+	yield(b)
+}
+
 // Get implements [Vector].
 func (v *V2) Get(m V2Metric) Value {
 	b := v.mv[int(m)]

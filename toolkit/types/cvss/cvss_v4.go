@@ -137,6 +137,24 @@ func (v *V4) Supplemental() (ok bool) {
 	return ok
 }
 
+func (v *V4) groups(yield func([2]int) bool) {
+	var b [2]int
+	b[0], b[1] = int(V4AttackVector), int(V4SubsequentSystemAvailability)+1
+	if !yield(b) {
+		return
+	}
+	b[0], b[1] = int(V4ExploitMaturity), int(V4ExploitMaturity)+1
+	if !yield(b) {
+		return
+	}
+	b[0], b[1] = int(V4ConfidentialityRequirement), int(V4ModifiedSubsequentSystemAvailability)+1
+	if !yield(b) {
+		return
+	}
+	b[0], b[1] = int(V4Safety), int(V4ProviderUrgency)+1
+	yield(b)
+}
+
 //go:generate go run golang.org/x/tools/cmd/stringer@latest -type=V4Metric,v4Valid -linecomment
 
 // V4Metric is a metric in a v4 vector.

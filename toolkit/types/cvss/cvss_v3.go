@@ -93,6 +93,20 @@ func (v *V3) getScore(m V3Metric) byte {
 	return b
 }
 
+func (v *V3) groups(yield func([2]int) bool) {
+	var b [2]int
+	b[0], b[1] = int(V3AttackVector), int(V3Availability)+1
+	if !yield(b) {
+		return
+	}
+	b[0], b[1] = int(V3ExploitMaturity), int(V3ReportConfidence)+1
+	if !yield(b) {
+		return
+	}
+	b[0], b[1] = int(V3ReportConfidence), int(V3ModifiedAvailability)+1
+	yield(b)
+}
+
 // Get implements [Vector].
 func (v *V3) Get(m V3Metric) Value {
 	b := v.mv[int(m)]

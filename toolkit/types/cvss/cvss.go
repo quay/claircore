@@ -324,6 +324,9 @@ type Vector[M Metric] interface {
 	// GetScore returns the "packed" value representation after any default
 	// rules are applied.
 	getScore(M) byte
+	// Groups is a rangefunc-style iterator returning the bounds for groups of metrics.
+	// For a returned value "b", it represents the interval "[b[0], b[1])".
+	groups(func([2]int) bool)
 }
 
 var (
