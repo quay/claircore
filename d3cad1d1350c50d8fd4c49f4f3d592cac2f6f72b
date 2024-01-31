@@ -1,0 +1,5 @@
+postgres: remove internal timeouts
+
+Database queries now take as long as needed to execute. This shouldn't
+negatively affect any working uses, and should make some slower or
+less-optimized queries possible on larger instances.
