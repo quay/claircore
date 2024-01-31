@@ -38,6 +38,7 @@ import (
 	"encoding"
 	"errors"
 	"fmt"
+	"math/bits"
 	"strings"
 )
 
@@ -150,17 +151,25 @@ func marshalVector[M Metric, V Vector[M]](prefix string, v V) ([]byte, error) {
 // populated. The only validation this function provides is at-most-once
 // semantics.
 func parseStringLax[M Metric](v []byte, ver func(string) error, lookup map[string]M, s string) error {
-	elems := strings.Split(s, "/")
-	if len(elems) > len(v)+1 { // Extra for the prefix element
+	if ct := strings.Count(s, "/"); ct > len(v)+1 { // Extra for the prefix element
 		return fmt.Errorf("%w: too many elements", ErrMalformedVector)
 	}
-	seen := make(map[M]int, len(v))
-	for i, e := range elems {
-		a, val, ok := strings.Cut(e, ":")
-		if !ok {
-			return fmt.Errorf("%w: expected %q", ErrMalformedVector, ":")
+
+	var seen uint64
+	var pre bool
+	for len(s) != 0 {
+		var e string
+		idx := strings.IndexByte(s, '/')
+		if idx > 0 {
+			e, s = s[:idx], s[idx+1:]
+		} else {
+			e, s = s, ""
 		}
-		if val == "" || a == "" {
+		a, val, ok := strings.Cut(e, ":")
+		switch {
+		case !ok:
+			return fmt.Errorf("%w: expected %q", ErrMalformedVector, ":")
+		case val == "", a == "":
 			return fmt.Errorf("%w: invalid element: %q", ErrMalformedVector, e)
 		}
 
@@ -169,10 +178,11 @@ func parseStringLax[M Metric](v []byte, ver func(string) error, lookup map[strin
 		// be there. This is needed for v2 vectors.
 		m, ok := lookup[a]
 		if !ok {
-			if i == 0 && a == "CVSS" {
+			if (!pre && seen == 0) && a == "CVSS" {
 				if err := ver(val); err != nil {
 					return fmt.Errorf("%w: %w", ErrMalformedVector, err)
 				}
+				pre = true
 				continue
 			}
 			return fmt.Errorf("%w: unknown abbreviation %q", ErrMalformedVector, a)
@@ -180,10 +190,11 @@ func parseStringLax[M Metric](v []byte, ver func(string) error, lookup map[strin
 		if strings.Index(m.validValues(), val) == -1 {
 			return fmt.Errorf("%w: unknown value for %q: %q", ErrMalformedVector, a, val)
 		}
-		if p, ok := seen[m]; ok {
-			return fmt.Errorf("%w: duplicate metric %q: %q and %q", ErrMalformedVector, a, elems[p], val)
+		mark := uint64(1) << int(m)
+		if seen&(mark) != 0 {
+			return fmt.Errorf("%w: duplicate metric: %q", ErrMalformedVector, a)
 		}
-		seen[m] = i
+		seen |= mark
 		v[m] = m.parse(val)
 	}
 	return nil
@@ -195,63 +206,72 @@ func parseStringLax[M Metric](v []byte, ver func(string) error, lookup map[strin
 // function enforces the metrics appear in order (as dictated by the numeric
 // value of the [Metric]s), and that the vector is "complete".
 func parseString[M Metric](v []byte, ver func(string) error, lookup map[string]M, s string) error {
-	elems := strings.Split(s, "/")
-	if len(elems) > len(v)+1 { // Extra for the prefix element
+	switch ct := strings.Count(s, "/"); {
+	case ct > len(v)+1: // Extra for the prefix element
 		return fmt.Errorf("%w: too many elements", ErrMalformedVector)
-	}
-	if len(elems) < minVectorLen(len(v)) {
+	case ct < minSepCount(len(v)):
 		return fmt.Errorf("%w: too few elements", ErrMalformedVector)
 	}
-	seen := make([]M, 0, len(v))
-	for i, e := range elems {
-		a, val, ok := strings.Cut(e, ":")
-		if !ok {
-			return fmt.Errorf("%w: expected %q", ErrMalformedVector, ":")
+
+	var seen uint64
+	var pre bool
+	for len(s) != 0 {
+		var e string
+		idx := strings.IndexByte(s, '/')
+		if idx > 0 {
+			e, s = s[:idx], s[idx+1:]
+		} else {
+			e, s = s, ""
 		}
-		if i == 0 {
+		a, val, ok := strings.Cut(e, ":")
+
+		switch {
+		case !ok:
+			return fmt.Errorf("%w: expected %q", ErrMalformedVector, ":")
+		case !pre && seen == 0:
 			if a != "CVSS" {
 				return fmt.Errorf(`%w: expected "CVSS" element`, ErrMalformedVector)
 			}
 			if err := ver(val); err != nil {
 				return fmt.Errorf("%w: %w", ErrMalformedVector, err)
 			}
-			// Append a bogus Metric to the seen list to keep everything
-			// organized.
-			seen = append(seen, -1)
+			pre = true
 			continue
-		}
-		if val == "" || a == "" {
+		case val == "", a == "":
 			return fmt.Errorf("%w: invalid element: %q", ErrMalformedVector, e)
 		}
 
 		m, ok := lookup[a]
-		if !ok {
+		switch {
+		case !ok:
 			return fmt.Errorf("%w: unknown abbreviation %q", ErrMalformedVector, a)
-		}
-		if strings.Index(m.validValues(), val) == -1 {
+		case strings.Index(m.validValues(), val) == -1:
 			return fmt.Errorf("%w: unknown value for %q: %q", ErrMalformedVector, a, val)
 		}
-		seen = append(seen, m)
-		switch p := seen[i-1]; {
-		case m == p:
+
+		mark := uint64(1) << int(m)
+		switch {
+		case seen&(mark) != 0:
 			return fmt.Errorf("%w: duplicate metric: %q", ErrMalformedVector, a)
-		case m < p:
+		case bits.LeadingZeros64(seen) < bits.LeadingZeros64(mark):
+			// This exploits the fact that metrics are strictly ordered;
+			// later metrics always have fewer leading zeros.
 			return fmt.Errorf("%w: metric out of order: %q", ErrMalformedVector, a)
-		default:
 		}
+		seen |= mark
 		v[m] = m.parse(val)
 	}
 	return nil
 }
 
-// MinVectorLen reports the minimum number of metrics present in a valid vector,
-// including the "CVSS" prefix.
-func minVectorLen(n int) (l int) {
+// MinSepCount reports the minimum number of separators present in a valid
+// vector.
+func minSepCount(n int) (l int) {
 	switch n {
 	case numV4Metrics:
-		l = 12
+		l = 11
 	case numV3Metrics:
-		l = 9
+		l = 8
 	case numV2Metrics:
 		panic("programmer error: called with V2 vector")
 	default:
