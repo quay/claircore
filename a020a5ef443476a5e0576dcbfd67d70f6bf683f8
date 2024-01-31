@@ -1,0 +1,4 @@
+java: size buffers correctly before use
+
+This should reduce memory consumption for indexing layers that have
+deeply nested Java archives.
