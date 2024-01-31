@@ -121,21 +121,38 @@ func mkRevLookup[M Metric]() map[string]M {
 //
 // The [Vector.getString] method is used here.
 func marshalVector[M Metric, V Vector[M]](prefix string, v V) ([]byte, error) {
-	text := append(make([]byte, 0, 64), prefix...)
-	for i := 0; i < M(0).num(); i++ {
-		m := M(i)
-		val, err := v.getString(m)
-		switch {
-		case errors.Is(err, nil):
-		case errors.Is(err, errValueUnset):
-			continue
-		default:
-			return nil, errors.New("invalid cvss vector")
+	text := append(make([]byte, 0, 64), prefix...) // Guess at an initial capacity.
+	var err error
+	// This is a rangefunc-style iterator.
+	v.groups(func(b [2]int) bool {
+		var set bool
+		orig := len(text)
+		for i := b[0]; i < b[1]; i++ {
+			m := M(i)
+			val, err := v.getString(m)
+			switch {
+			case errors.Is(err, nil):
+				set = true
+			case errors.Is(err, errValueUnset) && val == "":
+				continue
+			case errors.Is(err, errValueUnset):
+			default:
+				err = errors.New("invalid cvss vector")
+				return false
+			}
+
+			text = append(text, '/')
+			text = append(text, m.String()...)
+			text = append(text, ':')
+			text = append(text, val...)
 		}
-		text = append(text, '/')
-		text = append(text, m.String()...)
-		text = append(text, ':')
-		text = append(text, val...)
+		if !set {
+			text = text[:orig]
+		}
+		return true
+	})
+	if err != nil {
+		return nil, err
 	}
 	// v2 hack
 	if prefix == "" {
