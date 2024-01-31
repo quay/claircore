@@ -1,0 +1,6 @@
+rhcc, rhel: support compression of sideband data
+
+If a Clair instance is using local files for the data needed for the
+`rhel` and `rhcc` indexers, this data may now be compressed. This should
+allow for the files to fit within a Kubernetes ConfigMap, making some
+deployments easier to wrangle.
