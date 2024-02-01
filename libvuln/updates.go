@@ -63,7 +63,8 @@ Update:
 		zlog.Info(ctx).
 			Str("updater", e.Updater).
 			Str("ref", ref.String()).
-			Int("count", len(e.Vuln)).
+			Int("vuln_count", len(e.Vuln)).
+			Int("enrichment_count", len(e.Enrichment)).
 			Msg("update imported")
 	}
 	if err := l.Err(); err != nil {
