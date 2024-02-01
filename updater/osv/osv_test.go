@@ -47,7 +47,6 @@ func TestFetch(t *testing.T) {
 	}
 
 	for _, u := range s.Updaters() {
-		fmt.Println(u.Name())
 		rc, fp, err := u.Fetch(ctx, driver.Fingerprint(""))
 		if err != nil {
 			t.Error(err)
