@@ -1,3 +1,104 @@
+<a name="v1.5.21"></a>
+## [v1.5.21] - 2024-02-01
+[v1.5.21]: https://github.com/quay/claircore/compare/v1.5.20...v1.5.21
+
+- rhcc, rhel: support compression of sideband data
+  <details>
+  If a Clair instance is using local files for the data needed for the
+  `rhel` and `rhcc` indexers, this data may now be compressed. This should
+  allow for the files to fit within a Kubernetes ConfigMap, making some
+  deployments easier to wrangle.
+  </details>
+
+- datastore: add "delta" update interface
+  <details>
+  This change should allow for updaters to use fewer resources and consume
+  API-based data sources in the future. As of this change, no in-tree
+  updaters have been converted to this interface.
+  </details>
+
+- java: size buffers correctly before use
+  <details>
+  This should reduce memory consumption for indexing layers that have
+  deeply nested Java archives.
+  </details>
+
+- postgres: remove internal timeouts
+  <details>
+  Database queries now take as long as needed to execute. This shouldn't
+  negatively affect any working uses, and should make some slower or
+  less-optimized queries possible on larger instances.
+  </details>
+
+- integration: make `PGVERSION` a pattern
+  <details>
+  The behavior of the setup of an embedded PostgreSQL in integration tests
+  has changed. The relevant environment variable (`PGVERSION`) is now a
+  pattern instead of a literal version string. Note that a version string
+  would be a patten that matches itself, so that format continues to work.
+  
+  Additionally, the version used is now read from the distributed
+  manifest, rather than hard-coded versions. Other than occasional network
+  calls to fetch this manifest, users shouldn't notice any difference.
+  </details>
+
+- alpine: add edge support
+  <details>
+  Alpine's `edge` version should now be supported for reporting.
+  </details>
+
+- rpm: support PGP V4 signatures
+  <details>
+  Rpm has apparently started using "current"/V4 PGP signatures, which
+  claircore was not handling. This adds support for these signatures.
+  </details>
+
+- jsonblob: add a disk buffering step
+  <details>
+  This improves "offline" operation by eagerly buffering output to disk
+  instead of creating a large in-memory data structure first.
+  
+  This makes the API trickier but given that there's a single (known and
+  intended) user, this should be fine.
+  </details>
+
+- tarfs: check a potential interger overflow
+  <details>
+  This change fixes a potential integer overflow in tar handling code.
+  
+  The possibility of exploiting this is effectively 0, as it would require
+  more bytes to represent a sufficiently large integer than is available
+  in the tar header.
+  
+  See also: https://github.com/quay/claircore/security/code-scanning/5
+  </details>
+
+- gobin: take into account package replacements
+  <details>
+  Previously, there was a bug where package replacements were not
+  considered for go binaries.
+  </details>
+
+- all: purge `http.DefaultClient` usage
+  <details>
+  Some packages with less churn (`photon`, `oracle`, `aws`) were using
+  older ways of getting an `*http.Client` or using `http.DefaultClient`.
+  
+  This change breaks some API in exchange for unifying the `*http.Client`
+  handling. The practical upshot is that it's much easier to control the
+  network contact surface.
+  </details>
+
+- all: share single FS implementation
+  <details>
+  Claircore components that deal with `Layer` objects now share a single
+  backing File and a single `fs.FS` implementation when using the `FS`
+  method. There should be no noticeable changes for users, but out-of-tree
+  implementations may want to move over to using the new FS method.
+  
+  This change should improve memory usage.
+  </details>
+
 <a name="v1.5.20"></a>
 ## [v1.5.20] - 2023-10-12
 [v1.5.20]: https://github.com/quay/claircore/compare/v1.5.19...v1.5.20
