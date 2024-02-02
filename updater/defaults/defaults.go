@@ -17,6 +17,7 @@ import (
 	"github.com/quay/claircore/photon"
 	"github.com/quay/claircore/rhel"
 	"github.com/quay/claircore/rhel/rhcc"
+	"github.com/quay/claircore/rhel/vex"
 	"github.com/quay/claircore/suse"
 	"github.com/quay/claircore/ubuntu"
 	"github.com/quay/claircore/updater"
@@ -63,6 +64,7 @@ func inner(ctx context.Context) error {
 	updater.Register("debian", df)
 
 	updater.Register("osv", new(osv.Factory))
+	updater.Register("rhel-vex", new(vex.Factory))
 	updater.Register("aws", driver.UpdaterSetFactoryFunc(aws.UpdaterSet))
 	updater.Register("oracle", driver.UpdaterSetFactoryFunc(oracle.UpdaterSet))
 	updater.Register("photon", driver.UpdaterSetFactoryFunc(photon.UpdaterSet))
