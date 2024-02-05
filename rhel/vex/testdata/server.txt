@@ -1,4 +1,4 @@
-server/csaf_vex_2023-10-31.tar.zst last-modified:Mon, 11 Dec 2023 00:00:00 UTC\nanother:header
+server/csaf_vex_2023-10-31.tar.zst last-modified:Mon, 11 Dec 2023 00:00:00 GMT\nanother:header
 -- /archive_latest.txt --
 csaf_vex_2023-10-31.tar.zst
 -- /changes.csv etag:something --

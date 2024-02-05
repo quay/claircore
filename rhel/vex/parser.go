@@ -2,17 +2,19 @@ package vex
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"io"
 	"strings"
 
+	"github.com/klauspost/compress/snappy"
 	"github.com/package-url/packageurl-go"
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/pkg/cpe"
+	"github.com/quay/claircore/toolkit/types/cpe"
 	"github.com/quay/claircore/toolkit/types/csaf"
 	"github.com/quay/claircore/toolkit/types/cvss"
 )
@@ -20,7 +22,7 @@ import (
 // Parse implements [driver.Updater].
 func (u *VEXUpdater) Parse(ctx context.Context, contents io.ReadCloser) ([]*claircore.Vulnerability, error) {
 	// NOOP
-	return nil, nil
+	return nil, errors.ErrUnsupported
 }
 
 // DeltaParse implements [driver.DeltaUpdater].
@@ -32,9 +34,9 @@ func (u *VEXUpdater) DeltaParse(ctx context.Context, contents io.ReadCloser) ([]
 
 	pc := NewProductCache()
 
-	r := bufio.NewReader(contents)
+	r := bufio.NewReader(snappy.NewReader(contents))
 	for b, err := r.ReadBytes('\n'); err == nil; b, err = r.ReadBytes('\n') {
-		c, err := csaf.Parse(b)
+		c, err := csaf.Parse(bytes.NewReader(b))
 		if err != nil {
 			return nil, nil, fmt.Errorf("error parsing CSAF: %w", err)
 		}

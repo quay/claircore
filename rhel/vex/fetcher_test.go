@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/klauspost/compress/snappy"
 	"github.com/quay/zlog"
 	"golang.org/x/tools/txtar"
 
@@ -114,9 +115,9 @@ func TestFactory(t *testing.T) {
 	// Check saved vulns
 	expectedLnCt := 7
 	lnCt := 0
-	r := bufio.NewReader(data)
+	r := bufio.NewReader(snappy.NewReader(data))
 	for b, err := r.ReadBytes('\n'); err == nil; b, err = r.ReadBytes('\n') {
-		_, err := csaf.Parse(b)
+		_, err := csaf.Parse(bytes.NewReader(b))
 		if err != nil {
 			t.Error(err)
 		}

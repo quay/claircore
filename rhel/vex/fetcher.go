@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/klauspost/compress/snappy"
 	"github.com/klauspost/compress/zstd"
 	"github.com/quay/zlog"
 
@@ -44,8 +45,13 @@ func (u *VEXUpdater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.Rea
 		return nil, hint, err
 	}
 
+	cw := snappy.NewBufferedWriter(f)
+
 	var success bool
 	defer func() {
+		if err := cw.Close(); err != nil {
+			zlog.Warn(ctx).Err(err).Msg("unable to close snappy writer")
+		}
 		if success {
 			if _, err := f.Seek(0, io.SeekStart); err != nil {
 				zlog.Warn(ctx).
@@ -115,7 +121,7 @@ func (u *VEXUpdater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.Rea
 		}
 
 		lm := res.Header.Get("last-modified")
-		fp.requestTime, err = time.Parse(time.RFC1123, lm)
+		fp.requestTime, err = time.Parse(http.TimeFormat, lm)
 		if err != nil {
 			return nil, hint, fmt.Errorf("could not parse last-modified header %s:, %w", lm, err)
 		}
@@ -126,9 +132,11 @@ func (u *VEXUpdater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.Rea
 		defer z.Close()
 		r := tar.NewReader(z)
 
-		var h *tar.Header
-		var buf bytes.Buffer
-		var entriesWritten int
+		var (
+			h              *tar.Header
+			buf, bc        bytes.Buffer
+			entriesWritten int
+		)
 		for h, err = r.Next(); err == nil; h, err = r.Next() {
 			if h.Typeflag != tar.TypeReg {
 				continue
@@ -145,13 +153,12 @@ func (u *VEXUpdater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.Rea
 				return nil, hint, err
 			}
 
-			bc := &bytes.Buffer{}
-			err = json.Compact(bc, buf.Bytes())
+			err = json.Compact(&bc, buf.Bytes())
 			if err != nil {
 				return nil, hint, fmt.Errorf("error compressing JSON %s: %w", h.Name, err)
 			}
 			bc.WriteByte('\n')
-			f.Write(bc.Bytes())
+			cw.Write(bc.Bytes())
 			buf.Reset()
 			bc.Reset()
 			entriesWritten++
@@ -204,7 +211,10 @@ func (u *VEXUpdater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.Rea
 	rd := csv.NewReader(res.Body)
 	rd.FieldsPerRecord = 2
 	rd.ReuseRecord = true
-	l := 0
+	var (
+		l       = 0
+		buf, bc bytes.Buffer
+	)
 	rec, err := rd.Read()
 	for ; err == nil; rec, err = rd.Read() {
 		if len(rec) != 2 {
@@ -249,19 +259,19 @@ func (u *VEXUpdater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.Rea
 				return nil, hint, fmt.Errorf("unexpected response from advisary URL: %s %s", res.Status, req.URL)
 			}
 
-			buf := new(bytes.Buffer)
 			_, err = buf.ReadFrom(res.Body)
 			if err != nil {
 				return nil, hint, fmt.Errorf("error reading from buffer: %w", err)
 			}
 			zlog.Debug(ctx).Str("url", advisoryURI.String()).Msg("copying body to file")
-			bc := &bytes.Buffer{}
-			err = json.Compact(bc, buf.Bytes())
+			err = json.Compact(&bc, buf.Bytes())
 			if err != nil {
 				return nil, hint, fmt.Errorf("error compressing JSON: %w", err)
 			}
 			bc.WriteByte('\n')
-			f.Write(bc.Bytes())
+			cw.Write(bc.Bytes())
+			buf.Reset()
+			bc.Reset()
 			l++
 			res.Body.Close()
 		}
@@ -272,7 +282,6 @@ func (u *VEXUpdater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.Rea
 	default:
 		return nil, hint, fmt.Errorf("error parsing the csv file: %w", err)
 	}
-
 	fp.requestTime = time.Now()
 	success = true
 	return f, driver.Fingerprint(fp.String()), nil
