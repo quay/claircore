@@ -124,7 +124,7 @@ jobs:
           steps.previous.outputs.cache-hit != 'true' &&
           success() &&
           fromJSON(needs.config.outputs.go_versions)[0] == matrix.go
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           directory: ${{ runner.temp }}
           override_branch: ${{ github.ref_name }}
