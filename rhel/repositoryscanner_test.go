@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/quay/claircore/pkg/tmp"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -31,6 +32,10 @@ func TestRepositoryScanner(t *testing.T) {
 		"rh-pkg-1-1": strings.NewReader(`{"data":[{"cpe_ids":["cpe:/o:redhat:enterprise_linux:8::computenode","cpe:/o:redhat:enterprise_linux:8::baseos"],"parsed_data":{"architecture":"x86_64","labels":[{"name":"architecture","value":"x86_64"}]}}]}`),
 	}
 	mappingData := strings.NewReader(`{"data":{"content-set-1":{"cpes":["cpe:/o:redhat:enterprise_linux:6::server","cpe:/o:redhat:enterprise_linux:7::server"]},"content-set-2":{"cpes":["cpe:/o:redhat:enterprise_linux:7::server","cpe:/o:redhat:enterprise_linux:8::server"]}}}`)
+	var mappingDataBytes bytes.Buffer
+	if _, err := io.Copy(&mappingDataBytes, mappingData); err != nil {
+		t.Fatal(err)
+	}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/repository-2-cpe.json", func(w http.ResponseWriter, r *http.Request) {
@@ -54,6 +59,21 @@ func TestRepositoryScanner(t *testing.T) {
 	})
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
+
+	esrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatal("external http request invoked when none was expected")
+	}))
+
+	td := t.TempDir()
+	f, err := tmp.NewFile(td, "repository-2-cpe.json")
+	if err != nil {
+		t.Fatal("trying to create repository-2-cpe.json for FromMappingFile test", err)
+	}
+	defer f.Close()
+
+	if _, err := f.Write(mappingDataBytes.Bytes()); err != nil {
+		t.Fatalf("trying to write %s for FromMappingFile test: %v", f.Name(), err)
+	}
 
 	table := []struct {
 		cfg       *RepositoryScannerConfig
@@ -79,7 +99,7 @@ func TestRepositoryScanner(t *testing.T) {
 			layerPath: "testdata/layer-with-cpe.tar",
 		},
 		{
-			name: "FromMappingFile",
+			name: "FromMappingUrl",
 			want: []*claircore.Repository{
 				{
 					Name: "cpe:/o:redhat:enterprise_linux:6::server",
@@ -101,10 +121,60 @@ func TestRepositoryScanner(t *testing.T) {
 			layerPath: "testdata/layer-with-embedded-cs.tar",
 		},
 		{
+			name: "FromMappingFile",
+			want: []*claircore.Repository{
+				{
+					Name: "cpe:/o:redhat:enterprise_linux:6::server",
+					Key:  repositoryKey,
+					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:6::server"),
+				},
+				{
+					Name: "cpe:/o:redhat:enterprise_linux:7::server",
+					Key:  repositoryKey,
+					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:7::server"),
+				},
+				{
+					Name: "cpe:/o:redhat:enterprise_linux:8::server",
+					Key:  repositoryKey,
+					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8::server"),
+				},
+			},
+			cfg:       &RepositoryScannerConfig{Repo2CPEMappingFile: f.Name()},
+			layerPath: "testdata/layer-with-embedded-cs.tar",
+		},
+		{
+			name: "FromMappingFileAirGap",
+			want: []*claircore.Repository{
+				{
+					Name: "cpe:/o:redhat:enterprise_linux:6::server",
+					Key:  repositoryKey,
+					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:6::server"),
+				},
+				{
+					Name: "cpe:/o:redhat:enterprise_linux:7::server",
+					Key:  repositoryKey,
+					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:7::server"),
+				},
+				{
+					Name: "cpe:/o:redhat:enterprise_linux:8::server",
+					Key:  repositoryKey,
+					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8::server"),
+				},
+			},
+			cfg:       &RepositoryScannerConfig{DisableAPI: true, API: esrv.URL, Repo2CPEMappingURL: "/", Repo2CPEMappingFile: f.Name()},
+			layerPath: "testdata/layer-with-embedded-cs.tar",
+		},
+		{
 			name:      "NoCPE",
 			want:      nil,
 			cfg:       &RepositoryScannerConfig{},
 			layerPath: "testdata/layer-with-no-cpe-info.tar",
+		},
+		{
+			name:      "NoCPEWithAirGap",
+			want:      nil,
+			cfg:       &RepositoryScannerConfig{DisableAPI: true},
+			layerPath: "testdata/layer-with-embedded-cs.tar",
 		},
 	}
 
