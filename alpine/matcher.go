@@ -45,6 +45,14 @@ func (*Matcher) Query() []driver.MatchConstraint {
 
 // Vulnerable implements driver.Matcher.
 func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
+	if vuln.FixedInVersion == "" {
+		return true, nil
+	}
+
+	if vuln.FixedInVersion == "0" {
+		return false, nil
+	}
+
 	v1, err := version.NewVersion(record.Package.Version)
 	if err != nil {
 		return false, nil
@@ -52,14 +60,6 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 
 	v2, err := version.NewVersion(vuln.FixedInVersion)
 	if err != nil {
-		return false, nil
-	}
-
-	if vuln.FixedInVersion == "" {
-		return true, nil
-	}
-
-	if vuln.FixedInVersion == "0" {
 		return false, nil
 	}
 
