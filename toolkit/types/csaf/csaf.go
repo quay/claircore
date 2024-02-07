@@ -1,35 +1,17 @@
+// Package csaf provides functionality for handling Common Security Advisory Framework Version 2.0
+// documents: https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html
 package csaf
 
 import (
 	"encoding/json"
 	"fmt"
-	"os"
+	"io"
 	"time"
 )
 
-// Open reads and parses a given file path and returns a CSAF document
-// or an error if the file could not be opened or parsed.
-func Open(path string) (*CSAF, error) {
-	fh, err := os.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("csaf: failed to open document: %w", err)
-	}
-	defer fh.Close()
-
+func Parse(r io.Reader) (*CSAF, error) {
 	csafDoc := &CSAF{}
-	err = json.NewDecoder(fh).Decode(csafDoc)
-	if err != nil {
-		return nil, fmt.Errorf("csaf: failed to decode document: %w", err)
-	}
-
-	return csafDoc, nil
-}
-
-// Parse takes data in bytes and returns a CSAF document
-// or an error if the data could not be parsed.
-func Parse(data []byte) (*CSAF, error) {
-	csafDoc := &CSAF{}
-	if err := json.Unmarshal(data, csafDoc); err != nil {
+	if err := json.NewDecoder(r).Decode(csafDoc); err != nil {
 		return nil, fmt.Errorf("csaf: failed to unmarshal document: %w", err)
 	}
 	return csafDoc, nil
@@ -64,9 +46,6 @@ type CSAF struct {
 //
 // https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html#321-document-property
 type DocumentMetadata struct {
-	// Aggregate severity is a vehicle that is provided by the document producer to convey the urgency and
-	// criticality with which the one or more vulnerabilities reported should be addressed.
-	//
 	Title      string      `json:"title"`
 	Tracking   Tracking    `json:"tracking"`
 	References []Reference `json:"references"`
@@ -149,7 +128,6 @@ type Vulnerability struct {
 
 	// Scores holds the scores associated with the Vulnerability object.
 	// https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html#32313-vulnerabilities-property---scores
-	// Currently only CVSS v3 is supported.
 	Scores []Score `json:"scores"`
 }
 
@@ -158,7 +136,6 @@ type Vulnerability struct {
 // https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html#32313-vulnerabilities-property---scores
 
 type Score struct {
-	// TODO (crozzy): Add CVSSV4 for completeness.
 	// Currently RH only supports V3.
 	CVSSV2     *CVSSV2  `json:"cvss_v2"`
 	CVSSV3     *CVSSV3  `json:"cvss_v3"`
@@ -168,35 +145,38 @@ type Score struct {
 
 // CVSSV2 describes CVSSv2.0 specification as defined here:
 //   - https://www.first.org/cvss/cvss-v2.0.json
+//
 // Only the required fields are defined.
 type CVSSV2 struct {
-	BaseScore                  float64 `json:"baseScore"`
-	VectorString               string  `json:"vectorString"`
-	Version                    string  `json:"version"`
+	BaseScore    float64 `json:"baseScore"`
+	VectorString string  `json:"vectorString"`
+	Version      string  `json:"version"`
 }
 
 // CVSSV3 describes both the CVSSv3.0 and CVSSv3.1 specifications as defined here:
 //   - https://www.first.org/cvss/cvss-v3.0.json
 //   - https://www.first.org/cvss/cvss-v3.1.json
+//
 // Only the required fields are defined.
 type CVSSV3 struct {
-	BaseScore             float64 `json:"baseScore"`
-	BaseSeverity          string  `json:"baseSeverity"`
-	VectorString          string  `json:"vectorString"`
-	Version               string  `json:"version"`
+	BaseScore    float64 `json:"baseScore"`
+	BaseSeverity string  `json:"baseSeverity"`
+	VectorString string  `json:"vectorString"`
+	Version      string  `json:"version"`
 }
 
 // CVSSV4 describes CVSSv4.0 specification as defined here:
 //   - https://www.first.org/cvss/cvss-v4.0.json
+//
 // Only the required fields are defined.
 type CVSSV4 struct {
-	BaseScore             float64 `json:"baseScore"`
-	BaseSeverity          string  `json:"baseSeverity"`
-	VectorString          string  `json:"vectorString"`
-	Version               string  `json:"version"`
+	BaseScore    float64 `json:"baseScore"`
+	BaseSeverity string  `json:"baseSeverity"`
+	VectorString string  `json:"vectorString"`
+	Version      string  `json:"version"`
 }
 
-
+// Note describes additional information that is specific to the object in which it's a member.
 type Note struct {
 	Category string `json:"category"`
 	Text     string `json:"text"`
@@ -261,7 +241,7 @@ type ProductBranch struct {
 	Category      string          `json:"category"`
 	Name          string          `json:"name"`
 	Branches      []ProductBranch `json:"branches"`
-	Product       Product         `json:"product,omitempty"`
+	Product       Product         `json:"product"`
 	Relationships Relationships   `json:"relationships"`
 }
 
@@ -286,24 +266,6 @@ type Product struct {
 }
 
 // CSAF methods
-
-// FirstProductName returns the first product name in the product tree
-// or an empty string if no product name is found.
-func (csafDoc *CSAF) FirstProductName() string {
-	return csafDoc.ProductTree.FindFirstProduct()
-}
-
-// ListProducts returns a ProductList comprising of all the ProductTree branch nodes.
-func (csafDoc *CSAF) ListProducts() ProductList {
-	prods := ProductList{}
-	for _, b := range csafDoc.ProductTree.Branches {
-		brachProds := b.ListProducts()
-		for _, sp := range brachProds {
-			prods.Add(sp)
-		}
-	}
-	return prods
-}
 
 // FindRemediation returns RemediationData (if it exists) for a given productID otherwise nil.
 func (csafDoc *CSAF) FindRemediation(productID string) *RemediationData {
@@ -341,52 +303,9 @@ func (csafDoc *CSAF) FindRelationship(productID, category string) *Relationship 
 
 // ProductBranch methods
 
-// FindFirstProduct recursively searches for the first product identifier in the tree
-// and returns it or an empty string if no product identifier is found.
-func (branch *ProductBranch) FindFirstProduct() string {
-	if branch.Product.ID != "" {
-		return branch.Product.ID
-	}
-
-	// No nested branches
-	if branch.Branches == nil {
-		return ""
-	}
-
-	// Recursively search for the first product	identifier
-	for _, b := range branch.Branches {
-		if p := b.FindFirstProduct(); p != "" {
-			return p
-		}
-	}
-
-	return ""
-}
-
-// FindFirstProductName recursively searches for the first product name in the tree
-// and returns it or an empty string if no product name is found.
-func (branch *ProductBranch) FindFirstProductName() string {
-	if branch.Product.Name != "" {
-		return branch.Product.Name
-	}
-
-	// No nested branches
-	if branch.Branches == nil {
-		return ""
-	}
-
-	// Recursively search for the first product	identifier
-	for _, b := range branch.Branches {
-		if p := b.FindFirstProductName(); p != "" {
-			return p
-		}
-	}
-
-	return ""
-}
-
 // FindProductIdentifier recursively searches for the first product identifier in the tree
-// given the helper value.
+// given the helper value. Helper types are described here:
+// https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html#3133-full-product-name-type---product-identification-helper
 func (branch *ProductBranch) FindProductIdentifier(helperType, helperValue string) *Product {
 	if len(branch.Product.IdentificationHelper) != 0 {
 		for k := range branch.Product.IdentificationHelper {
@@ -399,11 +318,6 @@ func (branch *ProductBranch) FindProductIdentifier(helperType, helperValue strin
 		}
 	}
 
-	// No nested branches
-	if branch.Branches == nil {
-		return nil
-	}
-
 	// Recursively search for the first identifier
 	for _, b := range branch.Branches {
 		if p := b.FindProductIdentifier(helperType, helperValue); p != nil {
@@ -414,16 +328,11 @@ func (branch *ProductBranch) FindProductIdentifier(helperType, helperValue strin
 	return nil
 }
 
-// FindProductIdentifier recursively searches for the first product identifier in the tree
+// FindProductByID recursively searches for the first product identifier in the tree
 // given the productID.
 func (branch *ProductBranch) FindProductByID(productID string) *Product {
 	if branch.Product.ID == productID {
 		return &branch.Product
-	}
-
-	// No nested branches
-	if branch.Branches == nil {
-		return nil
 	}
 
 	// Recursively search for the first product id
@@ -436,46 +345,7 @@ func (branch *ProductBranch) FindProductByID(productID string) *Product {
 	return nil
 }
 
-type ProductList []Product
-
-// ListProducts returns a flat list of all products in the branch
-func (branch *ProductBranch) ListProducts() ProductList {
-	list := ProductList{}
-	list.Add(branch.Product)
-	for _, b := range branch.Branches {
-		for _, p := range b.ListProducts() {
-			list.Add(p)
-		}
-	}
-	return list
-}
-
-// ProductList methods
-
-// Add adds a prodocut to the product list if its not there, matching id and
-// software identifiers.
-func (pl *ProductList) Add(p Product) {
-	if p.ID == "" && len(p.IdentificationHelper) == 0 {
-		return
-	}
-	helpers := map[string]struct{}{}
-
-	for _, ih := range p.IdentificationHelper {
-		helpers[ih] = struct{}{}
-	}
-	for _, tp := range *pl {
-		if tp.ID == p.ID {
-			return
-		}
-		for _, idhelper := range tp.IdentificationHelper {
-			if _, ok := helpers[idhelper]; ok {
-				return
-			}
-		}
-	}
-	*pl = append(ProductList{p}, *pl...)
-}
-
+// Relationships is a slice of Relationship objects
 type Relationships []Relationship
 
 // Relationships methods
@@ -483,9 +353,10 @@ type Relationships []Relationship
 // FindRelationship looks up a csaf.Relationship from the productID and category strings
 // provided.
 func (rs *Relationships) FindRelationship(productID, category string) *Relationship {
-	for _, r := range *rs {
+	for i := range *rs {
+		r := &(*rs)[i]
 		if r.Category == category && r.FullProductName.ID == productID {
-			return &r
+			return r
 		}
 	}
 	return nil
