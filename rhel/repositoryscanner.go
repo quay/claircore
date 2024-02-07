@@ -72,6 +72,8 @@ var (
 //   - If both the "URL" and "File" are provided, the file will be loaded
 //     initially and then updated periodically from the URL.
 type RepositoryScannerConfig struct {
+	// DisableAPI disables the use of the API.
+	DisableAPI bool `json:"disable_api" yaml:"disable_api"`
 	// API is the URL to talk to the Red Hat Container API.
 	//
 	// See [DefaultContainerAPI] and [containerapi.ContainerAPI].
@@ -159,15 +161,19 @@ func (r *RepositoryScanner) Configure(ctx context.Context, f indexer.ConfigDeser
 	defer done()
 	r.upd.Get(tctx, c)
 
-	// Additional setup
-	root, err := url.Parse(r.cfg.API)
-	if err != nil {
-		return err
-	}
+	if r.cfg.DisableAPI {
+		zlog.Debug(ctx).Msg("container API disabled")
+	} else {
+		// Additional setup
+		root, err := url.Parse(r.cfg.API)
+		if err != nil {
+			return err
+		}
 
-	r.apiFetcher = &containerapi.ContainerAPI{
-		Root:   root,
-		Client: r.client,
+		r.apiFetcher = &containerapi.ContainerAPI{
+			Root:   root,
+			Client: r.client,
+		}
 	}
 
 	return nil
