@@ -1,3 +1,4 @@
+-- Dockerfile --
 # This image is the base image for all s2i configurable container images.
 FROM sha256:6f683d6ef7a8199fdabf203f98cce97d628e40eefa42b7085f1f151d384a97fc
 
@@ -83,3 +84,25 @@ RUN rpm-file-permissions && \
 ADD help.1 /help.1
 ADD s2i-core-container-1-235.json /root/buildinfo/content_manifests/s2i-core-container-1-235.json
 LABEL "release"="235" "distribution-scope"="public" "vendor"="Red Hat, Inc." "build-date"="2021-10-06T13:08:17.304497" "architecture"="x86_64" "vcs-type"="git" "vcs-ref"="7fb31fe42247120f04b5e2d94f1719411f1037e8" "com.redhat.build-host"="cpt-1005.osbs.prod.upshift.rdu2.redhat.com" "url"="https://access.redhat.com/containers/#/registry.access.redhat.com/rhscl/s2i-core-rhel7/images/1-235"
+-- Want --
+{
+  "architecture": "x86_64",
+  "build-date": "2021-10-06T13:08:17.304497",
+  "com.redhat.build-host": "cpt-1005.osbs.prod.upshift.rdu2.redhat.com",
+  "com.redhat.component": "s2i-core-container",
+  "com.redhat.license_terms": "https://www.redhat.com/en/about/red-hat-end-user-license-agreements#UBI",
+  "description": "The s2i-core image provides any images layered on top of it with all the tools needed to use source-to-image functionality while keeping the image size as small as possible.",
+  "distribution-scope": "public",
+  "io.k8s.description": "The s2i-core image provides any images layered on top of it with all the tools needed to use source-to-image functionality while keeping the image size as small as possible.",
+  "io.k8s.display-name": "s2i core",
+  "io.openshift.s2i.scripts-url": "image:///usr/libexec/s2i",
+  "io.s2i.scripts-url": "image:///usr/libexec/s2i",
+  "name": "rhscl/s2i-core-rhel7",
+  "release": "235",
+  "summary": "Base image which allows using of source-to-image.",
+  "url": "https://access.redhat.com/containers/#/registry.access.redhat.com/rhscl/s2i-core-rhel7/images/1-235",
+  "vcs-ref": "7fb31fe42247120f04b5e2d94f1719411f1037e8",
+  "vcs-type": "git",
+  "vendor": "Red Hat, Inc.",
+  "version": "1"
+}
