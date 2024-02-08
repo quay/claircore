@@ -1,0 +1,15 @@
+-- Dockerfile --
+LABEL a ${unset}
+LABEL b ${unset=set}
+LABEL c ${unset}
+
+LABEL null=
+LABEL d ${null:=reset}
+-- Want --
+{
+  "a": "",
+  "b": "set",
+  "c": "set",
+  "d": "reset",
+  "null": ""
+}
