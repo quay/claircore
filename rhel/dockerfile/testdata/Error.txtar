@@ -1,0 +1,3 @@
+error: dockerfile: bad expansion of "unset": should error (error if unset or null)
+-- Dockerfile --
+LABEL a ${unset:?should error}

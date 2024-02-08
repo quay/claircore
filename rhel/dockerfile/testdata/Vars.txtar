@@ -1,0 +1,37 @@
+-- Dockerfile --
+ARG null=''
+LABEL dash_a ${unset-default}
+LABEL dash_b ${unset:-default}
+LABEL dash_c ${null-default}
+LABEL dash_d ${null:-default}
+LABEL plus_a ${unset+default}
+LABEL plus_b ${unset:+default}
+LABEL plus_c ${null+default}
+LABEL plus_d ${null:+default}
+
+ARG var=some-pattern.
+LABEL prefix ${var#*e}
+LABEL greedyprefix ${var##*e}
+LABEL suffix ${var%e*.}
+LABEL greedysuffix ${var%%e*.}
+LABEL singlechar ${var%?}
+LABEL greedysinglechar ${var%%?}
+LABEL noreplace ${var#\?}
+-- Want --
+{
+  "dash_a": "default",
+  "dash_b": "default",
+  "dash_c": "",
+  "dash_d": "default",
+  "plus_a": "",
+  "plus_b": "",
+  "plus_c": "default",
+  "plus_d": "",
+  "prefix": "-pattern.",
+  "greedyprefix": "rn.",
+  "suffix": "some-patt",
+  "greedysuffix": "som",
+  "singlechar": "some-pattern",
+  "greedysinglechar": "some-pattern",
+  "noreplace": "some-pattern."
+}
