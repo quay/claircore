@@ -184,7 +184,7 @@
                         <h1 id="matcher-store"><a class="header" href="#matcher-store">Matcher Store</a></h1>
 <p>The <code>datastore.MatcherStore</code> interface defines all necessary persistence methods for <code>Libvuln</code>
 to provide its functionality.</p>
-<pre><code>package datastore // import &quot;github.com/quay/claircore/datastore&quot;
+<pre><code>package datastore // import "github.com/quay/claircore/datastore"
 
 type MatcherStore interface {
 	Updater
@@ -193,7 +193,7 @@ type MatcherStore interface {
 }
     MatcherStore aggregates all interface types
 </code></pre>
-<pre><code>package datastore // import &quot;github.com/quay/claircore/datastore&quot;
+<pre><code>package datastore // import "github.com/quay/claircore/datastore"
 
 type MatcherStore interface {
 	Updater
@@ -202,7 +202,7 @@ type MatcherStore interface {
 }
     MatcherStore aggregates all interface types
 </code></pre>
-<p>package datastore // import &quot;github.com/quay/claircore/datastore&quot;</p>
+<p>package datastore // import "github.com/quay/claircore/datastore"</p>
 <p>type Updater interface {
 EnrichmentUpdater</p>
 <pre><code>// UpdateVulnerabilities creates a new UpdateOperation, inserts the provided
@@ -259,14 +259,14 @@ RecordUpdaterSetStatus(ctx context.Context, updaterSet string, updateTime time.T
 Updater is an interface exporting the necessary methods for updating a
 vulnerability database.</p>
 <pre><code></code></pre>
-<p>package datastore // import &quot;github.com/quay/claircore/datastore&quot;</p>
+<p>package datastore // import "github.com/quay/claircore/datastore"</p>
 <p>type MatcherStore interface {
 Updater
 Vulnerability
 Enrichment
 }
 MatcherStore aggregates all interface types</p>
-<pre><code>package datastore // import &quot;github.com/quay/claircore/datastore&quot;
+<pre><code>package datastore // import "github.com/quay/claircore/datastore"
 
 type Updater interface {
 	EnrichmentUpdater
@@ -324,7 +324,7 @@ type Updater interface {
     Updater is an interface exporting the necessary methods for updating a
     vulnerability database.
 </code></pre>
-<p>package datastore // import &quot;github.com/quay/claircore/datastore&quot;</p>
+<p>package datastore // import "github.com/quay/claircore/datastore"</p>
 <p>type EnrichmentUpdater interface {
 // UpdateEnrichments creates a new EnrichmentUpdateOperation, inserts the provided
 // EnrichmentRecord(s), and ensures enrichments from previous updates are not
@@ -334,14 +334,14 @@ UpdateEnrichments(ctx context.Context, kind string, fingerprint driver.Fingerpri
 EnrichmentUpdater is an interface exporting the necessary methods for
 storing and querying Enrichments.</p>
 <pre><code></code></pre>
-<p>package datastore // import &quot;github.com/quay/claircore/datastore&quot;</p>
+<p>package datastore // import "github.com/quay/claircore/datastore"</p>
 <p>type MatcherStore interface {
 Updater
 Vulnerability
 Enrichment
 }
 MatcherStore aggregates all interface types</p>
-<pre><code>package datastore // import &quot;github.com/quay/claircore/datastore&quot;
+<pre><code>package datastore // import "github.com/quay/claircore/datastore"
 
 type Updater interface {
 	EnrichmentUpdater
@@ -399,7 +399,7 @@ type Updater interface {
     Updater is an interface exporting the necessary methods for updating a
     vulnerability database.
 </code></pre>
-<p>package datastore // import &quot;github.com/quay/claircore/datastore&quot;</p>
+<p>package datastore // import "github.com/quay/claircore/datastore"</p>
 <p>type EnrichmentUpdater interface {
 // UpdateEnrichments creates a new EnrichmentUpdateOperation, inserts the provided
 // EnrichmentRecord(s), and ensures enrichments from previous updates are not
@@ -408,7 +408,7 @@ UpdateEnrichments(ctx context.Context, kind string, fingerprint driver.Fingerpri
 }
 EnrichmentUpdater is an interface exporting the necessary methods for
 storing and querying Enrichments.</p>
-<pre><code>package datastore // import &quot;github.com/quay/claircore/datastore&quot;
+<pre><code>package datastore // import "github.com/quay/claircore/datastore"
 
 type Vulnerability interface {
 	// Get finds the vulnerabilities which match each package provided in the
@@ -419,7 +419,7 @@ type Vulnerability interface {
     Vulnerability is the interface for querying stored Vulnerabilities.
 ```
 ```
-package datastore // import &quot;github.com/quay/claircore/datastore&quot;
+package datastore // import "github.com/quay/claircore/datastore"
 
 type MatcherStore interface {
 	Updater
@@ -428,7 +428,7 @@ type MatcherStore interface {
 }
     MatcherStore aggregates all interface types
 </code></pre>
-<p>package datastore // import &quot;github.com/quay/claircore/datastore&quot;</p>
+<p>package datastore // import "github.com/quay/claircore/datastore"</p>
 <p>type Updater interface {
 EnrichmentUpdater</p>
 <pre><code>// UpdateVulnerabilities creates a new UpdateOperation, inserts the provided
@@ -484,7 +484,7 @@ RecordUpdaterSetStatus(ctx context.Context, updaterSet string, updateTime time.T
 <p>}
 Updater is an interface exporting the necessary methods for updating a
 vulnerability database.</p>
-<pre><code>package datastore // import &quot;github.com/quay/claircore/datastore&quot;
+<pre><code>package datastore // import "github.com/quay/claircore/datastore"
 
 type EnrichmentUpdater interface {
 	// UpdateEnrichments creates a new EnrichmentUpdateOperation, inserts the provided
@@ -495,7 +495,7 @@ type EnrichmentUpdater interface {
     EnrichmentUpdater is an interface exporting the necessary methods for
     storing and querying Enrichments.
 </code></pre>
-<p>package datastore // import &quot;github.com/quay/claircore/datastore&quot;</p>
+<p>package datastore // import "github.com/quay/claircore/datastore"</p>
 <p>type Vulnerability interface {
 // Get finds the vulnerabilities which match each package provided in the
 // [IndexRecord]s. This may be a one-to-many relationship. A map of Package
@@ -503,7 +503,7 @@ type EnrichmentUpdater interface {
 Get(ctx context.Context, records []*claircore.IndexRecord, opts GetOpts) (map[string][]*claircore.Vulnerability, error)
 }
 Vulnerability is the interface for querying stored Vulnerabilities.</p>
-<pre><code>package datastore // import &quot;github.com/quay/claircore/datastore&quot;
+<pre><code>package datastore // import "github.com/quay/claircore/datastore"
 
 type Enrichment interface {
 	GetEnrichment(ctx context.Context, kind string, tags []string) ([]driver.EnrichmentRecord, error)

@@ -188,7 +188,7 @@ When implemented, the scanner's <code>Configure</code> method will be called wit
 The <code>Scanner</code> may pass its config as an argument to the <code>ConfigDeserializer</code>
 function to populate the struct and use the HTTP client for any remote access
 necessary during the scanning process.</p>
-<pre><code>package indexer // import &quot;github.com/quay/claircore/indexer&quot;
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type RPCScanner interface {
 	Configure(context.Context, ConfigDeserializer, *http.Client) error
@@ -196,7 +196,7 @@ type RPCScanner interface {
     RPCScanner is an interface scanners can implement to receive configuration
     and denote that they expect to be able to talk to the network at run time.
 </code></pre>
-<pre><code>package indexer // import &quot;github.com/quay/claircore/indexer&quot;
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type RPCScanner interface {
 	Configure(context.Context, ConfigDeserializer, *http.Client) error
@@ -204,7 +204,7 @@ type RPCScanner interface {
     RPCScanner is an interface scanners can implement to receive configuration
     and denote that they expect to be able to talk to the network at run time.
 </code></pre>
-<p>package indexer // import &quot;github.com/quay/claircore/indexer&quot;</p>
+<p>package indexer // import "github.com/quay/claircore/indexer"</p>
 <p>type ConfigDeserializer func(interface{}) error
 ConfigDeserializer can be thought of as an Unmarshal function with the byte
 slice provided.</p>

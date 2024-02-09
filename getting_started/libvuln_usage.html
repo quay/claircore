@@ -185,12 +185,12 @@
 <p>Libvuln is the Go package responsible for keeping the database of
 vulnerabilities consistent, matching container image contents with
 vulnerabilities, and reporting diffs between updates of the same security
-database. </p>
+database.</p>
 <h2 id="usage"><a class="header" href="#usage">Usage</a></h2>
 <p><code>Libvuln</code> is runtime constructed via the <code>libvuln.New</code> method. <code>New</code> requires a
 <code>libvuln.Opts</code> struct.</p>
 <h3 id="options"><a class="header" href="#options">Options</a></h3>
-<pre><code>package libvuln // import &quot;github.com/quay/claircore/libvuln&quot;
+<pre><code>package libvuln // import "github.com/quay/claircore/libvuln"
 
 type Options struct {
 	// Store is the interface used to persist and retrieve vulnerabilites
@@ -211,15 +211,15 @@ type Options struct {
 	// If nil all default UpdaterSets will be used.
 	//
 	// The following sets are supported:
-	// &quot;alpine&quot;
-	// &quot;aws&quot;
-	// &quot;debian&quot;
-	// &quot;oracle&quot;
-	// &quot;photon&quot;
-	// &quot;pyupio&quot;
-	// &quot;rhel&quot;
-	// &quot;suse&quot;
-	// &quot;ubuntu&quot;
+	// "alpine"
+	// "aws"
+	// "debian"
+	// "oracle"
+	// "photon"
+	// "pyupio"
+	// "rhel"
+	// "suse"
+	// "ubuntu"
 	UpdaterSets []string
 	// A list of out-of-tree updaters to run.
 	//
@@ -234,15 +234,15 @@ type Options struct {
 	// If nil all default Matchers will be used
 	//
 	// The following names are supported by default:
-	// &quot;alpine&quot;
-	// &quot;aws&quot;
-	// &quot;debian&quot;
-	// &quot;oracle&quot;
-	// &quot;photon&quot;
-	// &quot;python&quot;
-	// &quot;rhel&quot;
-	// &quot;suse&quot;
-	// &quot;ubuntu&quot;
+	// "alpine"
+	// "aws"
+	// "debian"
+	// "oracle"
+	// "photon"
+	// "python"
+	// "rhel"
+	// "suse"
+	// "ubuntu"
 	MatcherNames []string
 
 	// Config holds configuration blocks for MatcherFactories and Matchers,
@@ -323,14 +323,14 @@ operations that updaters perform.</p>
 <p>In this getting started guide, we will only cover the two methods most
 interesting to new users.</p>
 <h4 id="updateoperations"><a class="header" href="#updateoperations">UpdateOperations</a></h4>
-<p>This API provides a list of recent update operations performed by implemented updaters. 
-The <code>UpdateOperation</code> slice returned will be sorted by latest timestamp descending. </p>
+<p>This API provides a list of recent update operations performed by implemented updaters.
+The <code>UpdateOperation</code> slice returned will be sorted by latest timestamp descending.</p>
 <pre><code class="language-go">	ops, err := lib.UpdateOperations(ctx, `updater`)
 	if err != nil {
 		panic(err)
 	}
 	for updater, ops := range ops {
-		fmt.Printf(&quot;ops for updater %s, %+v&quot;, updater, ops)
+		fmt.Printf("ops for updater %s, %+v", updater, ops)
 	}
 </code></pre>
 <h4 id="updatediff"><a class="header" href="#updatediff">UpdateDiff</a></h4>
@@ -344,13 +344,13 @@ entered the system.</p>
 		panic(err)
 	}
 	for upd, ops := range ops {
-		fmt.Printf(&quot;updater: %v&quot;, upd)
+		fmt.Printf("updater: %v", upd)
 		diff, err := lib.UpdateDiff(ctx, ops[1].Ref, ops[0].Ref)
 		if err != nil {
 			panic(err)
 		}
 		for _, vuln := range diff.Added {
-			fmt.Printf(&quot;vuln %+v added in %v&quot;, vuln, diff.Cur.Ref)
+			fmt.Printf("vuln %+v added in %v", vuln, diff.Cur.Ref)
 		}
 	}
 </code></pre>

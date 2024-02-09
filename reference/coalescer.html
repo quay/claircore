@@ -184,7 +184,7 @@
                         <h1 id="coalescer"><a class="header" href="#coalescer">Coalescer</a></h1>
 <p>A coalescer must compute the final contents of a manifest given the artifacts
 found at each layer.</p>
-<pre><code>package indexer // import &quot;github.com/quay/claircore/indexer&quot;
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type Coalescer interface {
 	Coalesce(ctx context.Context, artifacts []*LayerArtifacts) (*claircore.IndexReport, error)
@@ -194,7 +194,7 @@ type Coalescer interface {
     A coalesced IndexReport should provide only the packages present in the
     final container image once all layers were applied.
 </code></pre>
-<pre><code>package indexer // import &quot;github.com/quay/claircore/indexer&quot;
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type Coalescer interface {
 	Coalesce(ctx context.Context, artifacts []*LayerArtifacts) (*claircore.IndexReport, error)
@@ -204,7 +204,7 @@ type Coalescer interface {
     A coalesced IndexReport should provide only the packages present in the
     final container image once all layers were applied.
 </code></pre>
-<p>package indexer // import &quot;github.com/quay/claircore/indexer&quot;</p>
+<p>package indexer // import "github.com/quay/claircore/indexer"</p>
 <p>type LayerArtifacts struct {
 Hash  claircore.Digest
 Pkgs  []*claircore.Package

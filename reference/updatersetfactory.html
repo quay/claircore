@@ -183,7 +183,7 @@
                     <main>
                         <h1 id="updatersetfactory"><a class="header" href="#updatersetfactory">UpdaterSetFactory</a></h1>
 <p>An UpdaterSetFactory is a factory for runtime construction and configuration for Updaters.</p>
-<pre><code>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type UpdaterSetFactory interface {
 	UpdaterSet(context.Context) (UpdaterSet, error)
@@ -192,7 +192,7 @@ type UpdaterSetFactory interface {
 
 func StaticSet(s UpdaterSet) UpdaterSetFactory
 </code></pre>
-<pre><code>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type UpdaterSetFactory interface {
 	UpdaterSet(context.Context) (UpdaterSet, error)
@@ -201,7 +201,7 @@ type UpdaterSetFactory interface {
 
 func StaticSet(s UpdaterSet) UpdaterSetFactory
 </code></pre>
-<p>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;</p>
+<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
 <p>type UpdaterSet struct {
 // Has unexported fields.
 }

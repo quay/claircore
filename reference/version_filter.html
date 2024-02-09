@@ -184,10 +184,10 @@
                         <h1 id="versionfilter"><a class="header" href="#versionfilter">VersionFilter</a></h1>
 <p><code>VersionFilter</code> is an additional interface a <code>Matcher</code> may implement.
 If implemented, <code>Libvuln</code> will attempt to use the database and the normalized
-version field of a package to filter vulnerabilities in the database. 
+version field of a package to filter vulnerabilities in the database.
 This is an opt-in optimization for when a package manager's version scheme can
-be normalized into a <code>claircore.Version</code>. </p>
-<pre><code>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;
+be normalized into a <code>claircore.Version</code>.</p>
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type VersionFilter interface {
 	VersionFilter()

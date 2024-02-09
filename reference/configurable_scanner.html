@@ -186,7 +186,7 @@
 implement.  When implemented, the scanner's <code>Configure</code> method will be called
 with a <code>ConfigDeserializer</code> function. The <code>Scanner</code> may pass its config as an
 argument to the <code>ConfigDeserializer</code> function to populate the struct.</p>
-<pre><code>package indexer // import &quot;github.com/quay/claircore/indexer&quot;
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type ConfigDeserializer func(interface{}) error
     ConfigDeserializer can be thought of as an Unmarshal function with the byte
@@ -194,7 +194,7 @@ type ConfigDeserializer func(interface{}) error
 
     This will typically be something like (*json.Decoder).Decode.
 </code></pre>
-<pre><code>package indexer // import &quot;github.com/quay/claircore/indexer&quot;
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type ConfigDeserializer func(interface{}) error
     ConfigDeserializer can be thought of as an Unmarshal function with the byte
@@ -202,7 +202,7 @@ type ConfigDeserializer func(interface{}) error
 
     This will typically be something like (*json.Decoder).Decode.
 </code></pre>
-<p>package indexer // import &quot;github.com/quay/claircore/indexer&quot;</p>
+<p>package indexer // import "github.com/quay/claircore/indexer"</p>
 <p>type ConfigurableScanner interface {
 Configure(context.Context, ConfigDeserializer) error
 }

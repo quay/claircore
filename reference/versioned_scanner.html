@@ -187,8 +187,8 @@ It drives claircore's ability to register and understand when updaters have been
 Functions that want to work with a generic scanner type should use a <code>VersionedScanner</code>.</p>
 <p>Implementers of this interface <em>must</em> provide a unique name.
 Making changes to a scanner's implementation <em>must</em> return a new value from <code>Version</code>.
-Implementers <em>must</em> return the correct kind: one of &quot;package&quot;, &quot;distribution&quot;, or &quot;repository&quot;</p>
-<pre><code>package indexer // import &quot;github.com/quay/claircore/indexer&quot;
+Implementers <em>must</em> return the correct kind: one of "package", "distribution", or "repository"</p>
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type VersionedScanner interface {
 	// unique name of the distribution scanner.

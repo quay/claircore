@@ -184,7 +184,7 @@
                         <h1 id="remotematcher"><a class="header" href="#remotematcher">RemoteMatcher</a></h1>
 <p>RemoteMatcher is an additional interface a Matcher may implement to skip the
 database for matching results and use an external API.</p>
-<pre><code>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type RemoteMatcher interface {
 	QueryRemoteMatcher(ctx context.Context, records []*claircore.IndexRecord) (map[string][]*claircore.Vulnerability, error)

@@ -202,7 +202,7 @@ This default set of implementations define our support matrix and consists of th
 <li>Ruby</li>
 </ul>
 <p>Claircore relies on PostgreSQL for its persistence and the library will handle migrations if configured to do so.</p>
-<p>The diagram below is a high level overview of Claircore's architecture. </p>
+<p>The diagram below is a high level overview of Claircore's architecture.</p>
 <pre class="mermaid">
 graph LR
 subgraph Indexer
@@ -240,7 +240,7 @@ process.</p>
 <h2 id="usage"><a class="header" href="#usage">Usage</a></h2>
 <p>Libindex is runtime constructed via the <code>libindex.New</code> method. New requires an <code>libindex.Opts</code> struct.</p>
 <h3 id="options"><a class="header" href="#options">Options</a></h3>
-<pre><code>package libindex // import &quot;github.com/quay/claircore/libindex&quot;
+<pre><code>package libindex // import "github.com/quay/claircore/libindex"
 
 type Options struct {
 	// Store is the interface used to persist and retrieve results of indexing.
@@ -287,7 +287,7 @@ type Options struct {
 <p>Store is required needs to be an object that satisfies the indexer.Store interface.</p>
 <p>Locker is required and needs to satisfy the LockSource interface.</p>
 <p>FetchArena is required and needs to satify the FetchArena interface.</p>
-<p>Providing a nil &quot;Ecosystems&quot; slice will supply the default set, instructing
+<p>Providing a nil "Ecosystems" slice will supply the default set, instructing
 Libindex to index for all supported content in a layer, and is typically
 desired.</p>
 <h3 id="construction"><a class="header" href="#construction">Construction</a></h3>
@@ -319,10 +319,10 @@ and where they can be fetched from.</p>
 	}
 </code></pre>
 <p>The Index method will block until an claircore.IndexReport is returned.  The
-context should be bound to some valid lifetime such as a request. </p>
+context should be bound to some valid lifetime such as a request.</p>
 <p>As the Indexer works on the manifest it will update its database throughout the
-process.  You may view the status of an index report via the &quot;IndexReport&quot;
-method. </p>
+process.  You may view the status of an index report via the "IndexReport"
+method.</p>
 <pre><code class="language-go">	ir, ok, err := lib.IndexReport(ctx, m.Hash)
 	if err != nil {
 		panic(err)
@@ -331,7 +331,7 @@ method. </p>
 <p>Libindex performs its work incrementally and saves state as it goes along. If
 Libindex encounters an intermittent error during the index (for example, due to
 network failure while fetching a layer), when the manifest is resubmitted only
-the layers not yet indexed will be fetched and processed. </p>
+the layers not yet indexed will be fetched and processed.</p>
 <h3 id="state"><a class="header" href="#state">State</a></h3>
 <p>Libindex treats layers as content addressable. Once a layer identified by a
 particular hash is indexed its contents are definitively known. A request to
@@ -370,22 +370,22 @@ mechanism.</p>
 	}
 	for manifest, vulns := range affected.VulnerableManifests {
 		for _, vuln := range vulns {
-			fmt.Printf(&quot;vuln affecting manifest %s: %+v&quot;, manifest, vuln)
+			fmt.Printf("vuln affecting manifest %s: %+v", manifest, vuln)
 		}
 	}
 </code></pre>
 <p>The slice of vulnerabilities returned for each manifest hash will be sorted by
-<code>claircore.NormalizedSeverity</code> in &quot;most severe&quot; descending order.</p>
+<code>claircore.NormalizedSeverity</code> in "most severe" descending order.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="libvuln-usage"><a class="header" href="#libvuln-usage">Libvuln Usage</a></h1>
 <p>Libvuln is the Go package responsible for keeping the database of
 vulnerabilities consistent, matching container image contents with
 vulnerabilities, and reporting diffs between updates of the same security
-database. </p>
+database.</p>
 <h2 id="usage-1"><a class="header" href="#usage-1">Usage</a></h2>
 <p><code>Libvuln</code> is runtime constructed via the <code>libvuln.New</code> method. <code>New</code> requires a
 <code>libvuln.Opts</code> struct.</p>
 <h3 id="options-1"><a class="header" href="#options-1">Options</a></h3>
-<pre><code>package libvuln // import &quot;github.com/quay/claircore/libvuln&quot;
+<pre><code>package libvuln // import "github.com/quay/claircore/libvuln"
 
 type Options struct {
 	// Store is the interface used to persist and retrieve vulnerabilites
@@ -406,15 +406,15 @@ type Options struct {
 	// If nil all default UpdaterSets will be used.
 	//
 	// The following sets are supported:
-	// &quot;alpine&quot;
-	// &quot;aws&quot;
-	// &quot;debian&quot;
-	// &quot;oracle&quot;
-	// &quot;photon&quot;
-	// &quot;pyupio&quot;
-	// &quot;rhel&quot;
-	// &quot;suse&quot;
-	// &quot;ubuntu&quot;
+	// "alpine"
+	// "aws"
+	// "debian"
+	// "oracle"
+	// "photon"
+	// "pyupio"
+	// "rhel"
+	// "suse"
+	// "ubuntu"
 	UpdaterSets []string
 	// A list of out-of-tree updaters to run.
 	//
@@ -429,15 +429,15 @@ type Options struct {
 	// If nil all default Matchers will be used
 	//
 	// The following names are supported by default:
-	// &quot;alpine&quot;
-	// &quot;aws&quot;
-	// &quot;debian&quot;
-	// &quot;oracle&quot;
-	// &quot;photon&quot;
-	// &quot;python&quot;
-	// &quot;rhel&quot;
-	// &quot;suse&quot;
-	// &quot;ubuntu&quot;
+	// "alpine"
+	// "aws"
+	// "debian"
+	// "oracle"
+	// "photon"
+	// "python"
+	// "rhel"
+	// "suse"
+	// "ubuntu"
 	MatcherNames []string
 
 	// Config holds configuration blocks for MatcherFactories and Matchers,
@@ -518,14 +518,14 @@ operations that updaters perform.</p>
 <p>In this getting started guide, we will only cover the two methods most
 interesting to new users.</p>
 <h4 id="updateoperations"><a class="header" href="#updateoperations">UpdateOperations</a></h4>
-<p>This API provides a list of recent update operations performed by implemented updaters. 
-The <code>UpdateOperation</code> slice returned will be sorted by latest timestamp descending. </p>
+<p>This API provides a list of recent update operations performed by implemented updaters.
+The <code>UpdateOperation</code> slice returned will be sorted by latest timestamp descending.</p>
 <pre><code class="language-go">	ops, err := lib.UpdateOperations(ctx, `updater`)
 	if err != nil {
 		panic(err)
 	}
 	for updater, ops := range ops {
-		fmt.Printf(&quot;ops for updater %s, %+v&quot;, updater, ops)
+		fmt.Printf("ops for updater %s, %+v", updater, ops)
 	}
 </code></pre>
 <h4 id="updatediff"><a class="header" href="#updatediff">UpdateDiff</a></h4>
@@ -539,13 +539,13 @@ entered the system.</p>
 		panic(err)
 	}
 	for upd, ops := range ops {
-		fmt.Printf(&quot;updater: %v&quot;, upd)
+		fmt.Printf("updater: %v", upd)
 		diff, err := lib.UpdateDiff(ctx, ops[1].Ref, ops[0].Ref)
 		if err != nil {
 			panic(err)
 		}
 		for _, vuln := range diff.Added {
-			fmt.Printf(&quot;vuln %+v added in %v&quot;, vuln, diff.Cur.Ref)
+			fmt.Printf("vuln %+v added in %v", vuln, diff.Cur.Ref)
 		}
 	}
 </code></pre>
@@ -657,7 +657,7 @@ graph TD
 <p>Once each Matcher returns the set of vulnerabities, Libvuln will merge the results into a VulnerabilityReport and return this to the client.</p>
 <h2 id="http-resources-1"><a class="header" href="#http-resources-1">HTTP Resources</a></h2>
 <p><em><strong>NOTE</strong></em>: Remote matchers are being considered for removal.</p>
-<p>&quot;Remote matchers&quot; may make HTTP requests during the matcher flow.
+<p>"Remote matchers" may make HTTP requests during the matcher flow.
 These requests are time-bound and errors are not reported.
 The following are the URLs used.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="severity-mapping"><a class="header" href="#severity-mapping">Severity Mapping</a></h1>
@@ -802,26 +802,26 @@ dynamically.</p>
 <li><a href="./howto/add_dist.html">Adding Distribution Or Language Support</a></li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="adding-distribution-and-language-support"><a class="header" href="#adding-distribution-and-language-support">Adding Distribution And Language Support</a></h1>
-<p><em>Note: If terms in this document sound foreign check out <a href="howto/../getting_started.html">Getting Started</a> to acquaint yourself with &quot;indexing&quot;, &quot;scanning&quot;, and &quot;matching&quot;</em></p>
+<p><em>Note: If terms in this document sound foreign check out <a href="howto/../getting_started.html">Getting Started</a> to acquaint yourself with "indexing", "scanning", and "matching"</em></p>
 <p>The claircore team is always open to adding more distributions and languages to the library.</p>
-<p>Generally, distributions or languages must provide a security tracker. </p>
-<p>All officially supported distributions and languages provide a database of security vulnerabilities. </p>
+<p>Generally, distributions or languages must provide a security tracker.</p>
+<p>All officially supported distributions and languages provide a database of security vulnerabilities.</p>
 <p>These databases are maintained by the distribution or language developers and reflect up-to-date CVE and advisory data for their packages.</p>
 <p>If your distribution or language does not provide a security tracker or piggy-backs off another distribution's start an issue in our Github issue tracker to discuss further.</p>
 <h2 id="implementing-an-updater"><a class="header" href="#implementing-an-updater">Implementing an Updater</a></h2>
-<p>The first step to adding your distribution or language to claircore is getting your security tracker's data ingested by Libvuln. </p>
+<p>The first step to adding your distribution or language to claircore is getting your security tracker's data ingested by Libvuln.</p>
 <p>The Updater interfaces are responsible for this task.</p>
 <p>An implementer must consider several design points:</p>
 <ul>
 <li>Does the security database provide enough information to parse each entry into a claircore.Vulnerability?
 <ul>
-<li>Each entry must parse into a claircore.Vulnerability. </li>
-<li>Each Vulnerability <strong>must</strong> contain a package <strong>and</strong> a repository <strong>or</strong> distribution field. </li>
+<li>Each entry must parse into a claircore.Vulnerability.</li>
+<li>Each Vulnerability <strong>must</strong> contain a package <strong>and</strong> a repository <strong>or</strong> distribution field.</li>
 </ul>
 </li>
 <li>Will the Updater need to be configured at runtime?
 <ul>
-<li>Your updater may implement the Configurable interface. Your matcher will have its &quot;Configuration&quot; method called before use, giving you an opportunity for run time configuration.</li>
+<li>Your updater may implement the Configurable interface. Your matcher will have its "Configuration" method called before use, giving you an opportunity for run time configuration.</li>
 </ul>
 </li>
 <li>What fields in a parsed claircore.Vulnerability will be present when indexing layer artifacts.
@@ -831,34 +831,34 @@ When indexing a layer a common data model <strong>must</strong> exist between th
 </ul>
 </li>
 </ul>
-<p>If you are having trouble figuring out these requirements do not hesitate to reach out to us for help. </p>
+<p>If you are having trouble figuring out these requirements do not hesitate to reach out to us for help.</p>
 <p>After you have taken the design points into consideration, you are ready to implement your updater.</p>
-<p>Typically you will create a new package named after the source you are adding support for. </p>
+<p>Typically you will create a new package named after the source you are adding support for.</p>
 <p>Inside this package you can begin implementing the <a href="howto/../reference/updater.html">Updater</a> and <a href="howto/../reference/updatersetfactory.html">Updater Set Factory</a> interfaces.</p>
 <p>Optionally you may implement the <a href="howto/../reference/updater.html">Configurable</a> interface if you need runtime configuration.</p>
-<p>It will undoubtly be helpful to look at the examples in the &quot;ubuntu&quot;, &quot;rhel&quot;, and &quot;debian&quot; packages to get yourself started.</p>
+<p>It will undoubtly be helpful to look at the examples in the "ubuntu", "rhel", and "debian" packages to get yourself started.</p>
 <h2 id="implementing-a-package-scanner"><a class="header" href="#implementing-a-package-scanner">Implementing a Package Scanner</a></h2>
-<p>At this point you hopefully have your Updater working, writing vulnerability data into Libvuln's database. </p>
+<p>At this point you hopefully have your Updater working, writing vulnerability data into Libvuln's database.</p>
 <p>We can now move our attention to package scanning.</p>
 <p>A package scanner is responsible for taking a claircore.Layer and parsing the contents for a particular package database or set of files inside the provided tar archive.
-Once the target files are located the package scanner should parse these files into claircore.Packages and return a slice of these data structures. </p>
+Once the target files are located the package scanner should parse these files into claircore.Packages and return a slice of these data structures.</p>
 <p>Package scanning is context free, meaning no distribution classification has happened yet.
 This is because manifests are made up of layers, and a layer which holds a package database may not hold distribution information such as an os-release file.
 A package scanner need only parse a target package database and return claircore.Packages.</p>
 <p>You need to implement the <a href="howto/../reference/packagescanner.html">Package Scanner</a> interface to achieve this.</p>
 <p>Optionally, you may implement the <a href="howto/../reference/configurable_scanner.html">Configurable Scanner</a> if the scanner needs to perform runtime configuration before use.</p>
-<p>Keep in mind that its very common for distributions to utilize an existing package manager such as RPM. </p>
-<p>If this is the case there's a high likelihood that you can utilize the existing &quot;rpm&quot; or &quot;dpkg&quot; package scanner implementations.</p>
+<p>Keep in mind that its very common for distributions to utilize an existing package manager such as RPM.</p>
+<p>If this is the case there's a high likelihood that you can utilize the existing "rpm" or "dpkg" package scanner implementations.</p>
 <h2 id="implementing-a-distribution-scanner"><a class="header" href="#implementing-a-distribution-scanner">Implementing a Distribution Scanner</a></h2>
 <p>Once the package scanner is implemented, tested, and working you can begin implementing a Distribution Scanner.</p>
 <p>Implementing a distribution scanner is a design choice.
-Distributions and repositories are the way claircore matches packages to vulnerabilities. </p>
+Distributions and repositories are the way claircore matches packages to vulnerabilities.</p>
 <p>If your implemented Updater parses vulnerabilities with distribution information you will likely need to implement a distribution scanner.
 Likewise, if your Updater parses vulnerabilities with repository information (typical with language vulnerabilities) you will likely need to implement a repository scanner.</p>
-<p>A distribution scanner, like a package scanner, is provided a claircore.Layer. </p>
+<p>A distribution scanner, like a package scanner, is provided a claircore.Layer.</p>
 <p>The distribution scanner will parse the provided tar archive exhaustively searching for any clue that this layer was derived from your distribution.
 If you identify that it is, you should return a common distribution used by your Updater implementation.
-This ensures that claircore can match the output of your distribution scanner with your parsed vulnerabilities. </p>
+This ensures that claircore can match the output of your distribution scanner with your parsed vulnerabilities.</p>
 <p>Optionally, you may implement the <a href="howto/../reference/configurable_scanner.html">Configurable Scanner</a> if the scanner needs to perform runtime configuration before use.</p>
 <h2 id="implementing-a-repository-scanner"><a class="header" href="#implementing-a-repository-scanner">Implementing a Repository Scanner</a></h2>
 <p>As mentioned above, implementing a repository scanner is a design choice, often times applicable for language package managers.</p>
@@ -868,19 +868,19 @@ This ensures that claircore can match the output of your distribution scanner wi
 <h2 id="implementing-a-coalescer"><a class="header" href="#implementing-a-coalescer">Implementing a Coalescer</a></h2>
 <p>As you may have noticed, the process of scanning a layer for packages, distribution, and repository information is distinct and separate.</p>
 <p>At some point, claircore will need to take all the context-free information returned from layer scanners and create a complete view of the manifest.
-A coalescer performs this computation. </p>
+A coalescer performs this computation.</p>
 <p>It's unlikely you will need to implement your own coalescer.
-Claircore provides a default &quot;linux&quot; coalescer which will work if your package database is rewritten when modified.
+Claircore provides a default "linux" coalescer which will work if your package database is rewritten when modified.
 For example, if a Dockerfile's <code>RUN</code> command causes a change to to dpkg's <code>/var/lib/dpkg/status</code> database, the resulting manifest will have a copy placed in the associated layer.</p>
 <p>However, if your package database does not fit into this model, implementing a coalescer may be necessary.</p>
 <p>To implement a coalescer, several details must be understood:</p>
 <ul>
-<li>Each layer only provides a &quot;piece&quot; of the final manifest.
+<li>Each layer only provides a "piece" of the final manifest.
 <ul>
 <li>Because manifests are comprised of multiple copy-on-write layers, some layers may contain package information, distribution information, repository information, any combination of those, or no information at all.</li>
 </ul>
 </li>
-<li>An OS may have a &quot;dist-upgrade&quot; performed and the implications of this on the package management system is distribution or language dependent.
+<li>An OS may have a "dist-upgrade" performed and the implications of this on the package management system is distribution or language dependent.
 <ul>
 <li>The coalescer must deal with distribution upgrades in a sane way.
 If your distribution or language does a dist-upgrade, are all packages bumped?
@@ -902,7 +902,7 @@ We will address this in upcoming releases.</li>
 <p>An Ecosystem provides a set of coalescers, package scanners, distribution scanners, and repository scanners to Libindex at the time of indexing.</p>
 <p>Libindex will take the <a href="howto/../reference/ecosystem.html">Ecosystem</a> and scan each layer with all provided scanners.
 When Libindex is ready to coalesce the results of each scanner into an <a href="howto/../reference/index_report.html">IndexReport</a> the provided coalescer is given the output of the configured scanners.</p>
-<p>This allows Libindex to segment the input to the coalescing step to particular scanners that a coalescer understands. </p>
+<p>This allows Libindex to segment the input to the coalescing step to particular scanners that a coalescer understands.</p>
 <p>For instance, if we only wanted a (fictitious) Haskell coalescer to evaluate artifacts returned from a (fictitious) Haskell package and repository scanner we would create an ecosystem similar to:</p>
 <pre><code class="language-go">// HaskellScanner returns a configured PackageScanner.
 func haskellScanner() indexer.PackageScanner { return nil }
@@ -931,9 +931,9 @@ func NewEcosystem(ctx context.Context) *indexer.Ecosystem {
 
 </code></pre>
 <p>This ensures that Libindex will only provide Haskell artifacts to the Haskell coalescer and avoid calling the coalescer with rpm packages for example.</p>
-<p>If your distribution uses an already implemented package manager such as &quot;rpm&quot; or &quot;dpkg&quot;, it's likely you will simply add your scanners to the existing ecosystem in one of those packages.</p>
+<p>If your distribution uses an already implemented package manager such as "rpm" or "dpkg", it's likely you will simply add your scanners to the existing ecosystem in one of those packages.</p>
 <h2 id="alternative-implementations"><a class="header" href="#alternative-implementations">Alternative Implementations</a></h2>
-<p>This how-to guide is a &quot;perfect world&quot; scenario.</p>
+<p>This how-to guide is a "perfect world" scenario.</p>
 <p>Working on claircore has made us realize that this domain is a bit messy.
 Security trackers are not developed with package managers in mind, security databases do not follow correct specs, distribution maintainers spin their own tools, etc.</p>
 <p>We understand that supporting your distribution or language may take some bending of claircore's architecture and business logic.
@@ -949,7 +949,7 @@ Here are some links:</p>
 <li><a href="https://issues.redhat.com/projects/PROJQUAY">RedHat Issues</a></li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="reference"><a class="header" href="#reference">Reference</a></h1>
-<p>The follow sections provide a reference for developing with Claircore. 
+<p>The follow sections provide a reference for developing with Claircore.
 Important interfaces and structs are outlined.</p>
 <ul>
 <li><a href="./reference/coalescer.html">Coalescer</a></li>
@@ -970,7 +970,7 @@ Important interfaces and structs are outlined.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="coalescer"><a class="header" href="#coalescer">Coalescer</a></h1>
 <p>A coalescer must compute the final contents of a manifest given the artifacts
 found at each layer.</p>
-<pre><code>package indexer // import &quot;github.com/quay/claircore/indexer&quot;
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type Coalescer interface {
 	Coalesce(ctx context.Context, artifacts []*LayerArtifacts) (*claircore.IndexReport, error)
@@ -980,7 +980,7 @@ type Coalescer interface {
     A coalesced IndexReport should provide only the packages present in the
     final container image once all layers were applied.
 </code></pre>
-<pre><code>package indexer // import &quot;github.com/quay/claircore/indexer&quot;
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type Coalescer interface {
 	Coalesce(ctx context.Context, artifacts []*LayerArtifacts) (*claircore.IndexReport, error)
@@ -990,7 +990,7 @@ type Coalescer interface {
     A coalesced IndexReport should provide only the packages present in the
     final container image once all layers were applied.
 </code></pre>
-<p>package indexer // import &quot;github.com/quay/claircore/indexer&quot;</p>
+<p>package indexer // import "github.com/quay/claircore/indexer"</p>
 <p>type LayerArtifacts struct {
 Hash  claircore.Digest
 Pkgs  []*claircore.Package
@@ -1010,7 +1010,7 @@ provided slice.
 implement.  When implemented, the scanner's <code>Configure</code> method will be called
 with a <code>ConfigDeserializer</code> function. The <code>Scanner</code> may pass its config as an
 argument to the <code>ConfigDeserializer</code> function to populate the struct.</p>
-<pre><code>package indexer // import &quot;github.com/quay/claircore/indexer&quot;
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type ConfigDeserializer func(interface{}) error
     ConfigDeserializer can be thought of as an Unmarshal function with the byte
@@ -1018,7 +1018,7 @@ type ConfigDeserializer func(interface{}) error
 
     This will typically be something like (*json.Decoder).Decode.
 </code></pre>
-<pre><code>package indexer // import &quot;github.com/quay/claircore/indexer&quot;
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type ConfigDeserializer func(interface{}) error
     ConfigDeserializer can be thought of as an Unmarshal function with the byte
@@ -1026,7 +1026,7 @@ type ConfigDeserializer func(interface{}) error
 
     This will typically be something like (*json.Decoder).Decode.
 </code></pre>
-<p>package indexer // import &quot;github.com/quay/claircore/indexer&quot;</p>
+<p>package indexer // import "github.com/quay/claircore/indexer"</p>
 <p>type ConfigurableScanner interface {
 Configure(context.Context, ConfigDeserializer) error
 }
@@ -1037,7 +1037,7 @@ configuration.</p>
 <p>A Distribution Scanner should identify any operating system distribution
 associated with the provided layer. It is OK for no distribution information to
 be discovered.</p>
-<pre><code>package indexer // import &quot;github.com/quay/claircore/indexer&quot;
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type DistributionScanner interface {
 	VersionedScanner
@@ -1051,7 +1051,7 @@ together.  Ecosystems are usually defined in a go package that corresponds to a
 package manager, such as <code>dpkg</code>.  See <code>dpkg/ecosystem.go</code> for an example.</p>
 <p>The Indexer will retrieve artifacts from the provided scanners and provide these
 scan artifacts to the coalescer in the Ecosystem.</p>
-<pre><code>package indexer // import &quot;github.com/quay/claircore/indexer&quot;
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type Ecosystem struct {
 	PackageScanners      func(ctx context.Context) ([]PackageScanner, error)
@@ -1064,8 +1064,8 @@ type Ecosystem struct {
     Ecosystems group together scanners and a Coalescer which are commonly used
     together.
 
-    A typical ecosystem is &quot;dpkg&quot; which will use the &quot;dpkg&quot; package indexer,
-    the &quot;os-release&quot; distribution scanner and the &quot;apt&quot; repository scanner.
+    A typical ecosystem is "dpkg" which will use the "dpkg" package indexer,
+    the "os-release" distribution scanner and the "apt" repository scanner.
 
     A Controller will scan layers with all scanners present in its configured
     ecosystems.
@@ -1074,27 +1074,27 @@ type Ecosystem struct {
 <p>An Index Report defines the contents of a manifest.  An Index Report can be
 unpacked into a slice of Index Records, each of which defines a package,
 distribution, repository tuple.</p>
-<pre><code>package claircore // import &quot;github.com/quay/claircore&quot;
+<pre><code>package claircore // import "github.com/quay/claircore"
 
 type IndexReport struct {
 	// the manifest hash this IndexReport is describing
-	Hash Digest `json:&quot;manifest_hash&quot;`
+	Hash Digest `json:"manifest_hash"`
 	// the current state of the index operation
-	State string `json:&quot;state&quot;`
+	State string `json:"state"`
 	// all discovered packages in this manifest key'd by package id
-	Packages map[string]*Package `json:&quot;packages&quot;`
+	Packages map[string]*Package `json:"packages"`
 	// all discovered distributions in this manifest key'd by distribution id
-	Distributions map[string]*Distribution `json:&quot;distributions&quot;`
+	Distributions map[string]*Distribution `json:"distributions"`
 	// all discovered repositories in this manifest key'd by repository id
-	Repositories map[string]*Repository `json:&quot;repository&quot;`
+	Repositories map[string]*Repository `json:"repository"`
 	// a list of environment details a package was discovered in key'd by package id
-	Environments map[string][]*Environment `json:&quot;environments&quot;`
+	Environments map[string][]*Environment `json:"environments"`
 	// whether the index operation finished successfully
-	Success bool `json:&quot;success&quot;`
+	Success bool `json:"success"`
 	// an error string in the case the index did not succeed
-	Err string `json:&quot;err&quot;`
+	Err string `json:"err"`
 	// Files doesn't end up in the json report but needs to be available at post-coalesce
-	Files map[string]File `json:&quot;-&quot;`
+	Files map[string]File `json:"-"`
 }
     IndexReport provides a database for discovered artifacts in an image.
 
@@ -1103,27 +1103,27 @@ type IndexReport struct {
 
 func (report *IndexReport) IndexRecords() []*IndexRecord
 </code></pre>
-<pre><code>package claircore // import &quot;github.com/quay/claircore&quot;
+<pre><code>package claircore // import "github.com/quay/claircore"
 
 type IndexReport struct {
 	// the manifest hash this IndexReport is describing
-	Hash Digest `json:&quot;manifest_hash&quot;`
+	Hash Digest `json:"manifest_hash"`
 	// the current state of the index operation
-	State string `json:&quot;state&quot;`
+	State string `json:"state"`
 	// all discovered packages in this manifest key'd by package id
-	Packages map[string]*Package `json:&quot;packages&quot;`
+	Packages map[string]*Package `json:"packages"`
 	// all discovered distributions in this manifest key'd by distribution id
-	Distributions map[string]*Distribution `json:&quot;distributions&quot;`
+	Distributions map[string]*Distribution `json:"distributions"`
 	// all discovered repositories in this manifest key'd by repository id
-	Repositories map[string]*Repository `json:&quot;repository&quot;`
+	Repositories map[string]*Repository `json:"repository"`
 	// a list of environment details a package was discovered in key'd by package id
-	Environments map[string][]*Environment `json:&quot;environments&quot;`
+	Environments map[string][]*Environment `json:"environments"`
 	// whether the index operation finished successfully
-	Success bool `json:&quot;success&quot;`
+	Success bool `json:"success"`
 	// an error string in the case the index did not succeed
-	Err string `json:&quot;err&quot;`
+	Err string `json:"err"`
 	// Files doesn't end up in the json report but needs to be available at post-coalesce
-	Files map[string]File `json:&quot;-&quot;`
+	Files map[string]File `json:"-"`
 }
     IndexReport provides a database for discovered artifacts in an image.
 
@@ -1132,7 +1132,7 @@ type IndexReport struct {
 
 func (report *IndexReport) IndexRecords() []*IndexRecord
 </code></pre>
-<p>package claircore // import &quot;github.com/quay/claircore&quot;</p>
+<p>package claircore // import "github.com/quay/claircore"</p>
 <p>type IndexRecord struct {
 Package      *Package
 Distribution *Distribution
@@ -1142,13 +1142,13 @@ IndexRecord is an entry in the IndexReport.</p>
 <pre><code>IndexRecords provide full access to contextual package structures such as
 Distribution and Repository.
 
-A list of these can be thought of as an &quot;unpacked&quot; IndexReport
+A list of these can be thought of as an "unpacked" IndexReport
 </code></pre>
 <pre><code></code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="indexer-store"><a class="header" href="#indexer-store">Indexer Store</a></h1>
 <p>The <code>indexer.Store</code> interface defines all necessary persistence methods for
 <code>Libindex</code> to provide its functionality.</p>
-<pre><code>package indexer // import &quot;github.com/quay/claircore/indexer&quot;
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type Store interface {
 	Setter
@@ -1160,7 +1160,7 @@ type Store interface {
     Store is an interface for dealing with objects libindex needs to persist.
     Stores may be implemented per storage backend.
 </code></pre>
-<pre><code>package indexer // import &quot;github.com/quay/claircore/indexer&quot;
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type Store interface {
 	Setter
@@ -1172,7 +1172,7 @@ type Store interface {
     Store is an interface for dealing with objects libindex needs to persist.
     Stores may be implemented per storage backend.
 </code></pre>
-<p>package indexer // import &quot;github.com/quay/claircore/indexer&quot;</p>
+<p>package indexer // import "github.com/quay/claircore/indexer"</p>
 <p>type Setter interface {
 // PersistManifest must store the presence of a manifest and it's layers into the system.
 //
@@ -1207,7 +1207,7 @@ SetIndexFinished(ctx context.Context, sr *claircore.IndexReport, scnrs Versioned
 Setter interface provides the method set for required marking events,
 or registering components, associated with an Index operation.</p>
 <pre><code></code></pre>
-<p>package indexer // import &quot;github.com/quay/claircore/indexer&quot;</p>
+<p>package indexer // import "github.com/quay/claircore/indexer"</p>
 <p>type Store interface {
 Setter
 Querier
@@ -1217,7 +1217,7 @@ Close(context.Context) error
 }
 Store is an interface for dealing with objects libindex needs to persist.
 Stores may be implemented per storage backend.</p>
-<pre><code>package indexer // import &quot;github.com/quay/claircore/indexer&quot;
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type Setter interface {
 	// PersistManifest must store the presence of a manifest and it's layers into the system.
@@ -1253,7 +1253,7 @@ type Setter interface {
     Setter interface provides the method set for required marking events,
     or registering components, associated with an Index operation.
 </code></pre>
-<p>package indexer // import &quot;github.com/quay/claircore/indexer&quot;</p>
+<p>package indexer // import "github.com/quay/claircore/indexer"</p>
 <p>type Querier interface {
 // ManifestScanned returns whether the given manifest was scanned by the provided scanners.
 ManifestScanned(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) (bool, error)
@@ -1276,7 +1276,7 @@ AffectedManifests(ctx context.Context, v claircore.Vulnerability, f claircore.Ch
 Querier interface provides the method set to ascertain indexed artifacts and
 query whether a layer or manifest has been scanned.</p>
 <pre><code></code></pre>
-<p>package indexer // import &quot;github.com/quay/claircore/indexer&quot;</p>
+<p>package indexer // import "github.com/quay/claircore/indexer"</p>
 <p>type Store interface {
 Setter
 Querier
@@ -1286,7 +1286,7 @@ Close(context.Context) error
 }
 Store is an interface for dealing with objects libindex needs to persist.
 Stores may be implemented per storage backend.</p>
-<pre><code>package indexer // import &quot;github.com/quay/claircore/indexer&quot;
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type Setter interface {
 	// PersistManifest must store the presence of a manifest and it's layers into the system.
@@ -1322,7 +1322,7 @@ type Setter interface {
     Setter interface provides the method set for required marking events,
     or registering components, associated with an Index operation.
 </code></pre>
-<p>package indexer // import &quot;github.com/quay/claircore/indexer&quot;</p>
+<p>package indexer // import "github.com/quay/claircore/indexer"</p>
 <p>type Querier interface {
 // ManifestScanned returns whether the given manifest was scanned by the provided scanners.
 ManifestScanned(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) (bool, error)
@@ -1344,7 +1344,7 @@ AffectedManifests(ctx context.Context, v claircore.Vulnerability, f claircore.Ch
 }
 Querier interface provides the method set to ascertain indexed artifacts and
 query whether a layer or manifest has been scanned.</p>
-<pre><code>package indexer // import &quot;github.com/quay/claircore/indexer&quot;
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type Indexer interface {
 	// IndexPackages indexes a package into the persistence layer.
@@ -1365,7 +1365,7 @@ type Indexer interface {
 <div style="break-before: page; page-break-before: always;"></div><h1 id="matcher-store"><a class="header" href="#matcher-store">Matcher Store</a></h1>
 <p>The <code>datastore.MatcherStore</code> interface defines all necessary persistence methods for <code>Libvuln</code>
 to provide its functionality.</p>
-<pre><code>package datastore // import &quot;github.com/quay/claircore/datastore&quot;
+<pre><code>package datastore // import "github.com/quay/claircore/datastore"
 
 type MatcherStore interface {
 	Updater
@@ -1374,7 +1374,7 @@ type MatcherStore interface {
 }
     MatcherStore aggregates all interface types
 </code></pre>
-<pre><code>package datastore // import &quot;github.com/quay/claircore/datastore&quot;
+<pre><code>package datastore // import "github.com/quay/claircore/datastore"
 
 type MatcherStore interface {
 	Updater
@@ -1383,7 +1383,7 @@ type MatcherStore interface {
 }
     MatcherStore aggregates all interface types
 </code></pre>
-<p>package datastore // import &quot;github.com/quay/claircore/datastore&quot;</p>
+<p>package datastore // import "github.com/quay/claircore/datastore"</p>
 <p>type Updater interface {
 EnrichmentUpdater</p>
 <pre><code>// UpdateVulnerabilities creates a new UpdateOperation, inserts the provided
@@ -1440,14 +1440,14 @@ RecordUpdaterSetStatus(ctx context.Context, updaterSet string, updateTime time.T
 Updater is an interface exporting the necessary methods for updating a
 vulnerability database.</p>
 <pre><code></code></pre>
-<p>package datastore // import &quot;github.com/quay/claircore/datastore&quot;</p>
+<p>package datastore // import "github.com/quay/claircore/datastore"</p>
 <p>type MatcherStore interface {
 Updater
 Vulnerability
 Enrichment
 }
 MatcherStore aggregates all interface types</p>
-<pre><code>package datastore // import &quot;github.com/quay/claircore/datastore&quot;
+<pre><code>package datastore // import "github.com/quay/claircore/datastore"
 
 type Updater interface {
 	EnrichmentUpdater
@@ -1505,7 +1505,7 @@ type Updater interface {
     Updater is an interface exporting the necessary methods for updating a
     vulnerability database.
 </code></pre>
-<p>package datastore // import &quot;github.com/quay/claircore/datastore&quot;</p>
+<p>package datastore // import "github.com/quay/claircore/datastore"</p>
 <p>type EnrichmentUpdater interface {
 // UpdateEnrichments creates a new EnrichmentUpdateOperation, inserts the provided
 // EnrichmentRecord(s), and ensures enrichments from previous updates are not
@@ -1515,14 +1515,14 @@ UpdateEnrichments(ctx context.Context, kind string, fingerprint driver.Fingerpri
 EnrichmentUpdater is an interface exporting the necessary methods for
 storing and querying Enrichments.</p>
 <pre><code></code></pre>
-<p>package datastore // import &quot;github.com/quay/claircore/datastore&quot;</p>
+<p>package datastore // import "github.com/quay/claircore/datastore"</p>
 <p>type MatcherStore interface {
 Updater
 Vulnerability
 Enrichment
 }
 MatcherStore aggregates all interface types</p>
-<pre><code>package datastore // import &quot;github.com/quay/claircore/datastore&quot;
+<pre><code>package datastore // import "github.com/quay/claircore/datastore"
 
 type Updater interface {
 	EnrichmentUpdater
@@ -1580,7 +1580,7 @@ type Updater interface {
     Updater is an interface exporting the necessary methods for updating a
     vulnerability database.
 </code></pre>
-<p>package datastore // import &quot;github.com/quay/claircore/datastore&quot;</p>
+<p>package datastore // import "github.com/quay/claircore/datastore"</p>
 <p>type EnrichmentUpdater interface {
 // UpdateEnrichments creates a new EnrichmentUpdateOperation, inserts the provided
 // EnrichmentRecord(s), and ensures enrichments from previous updates are not
@@ -1589,7 +1589,7 @@ UpdateEnrichments(ctx context.Context, kind string, fingerprint driver.Fingerpri
 }
 EnrichmentUpdater is an interface exporting the necessary methods for
 storing and querying Enrichments.</p>
-<pre><code>package datastore // import &quot;github.com/quay/claircore/datastore&quot;
+<pre><code>package datastore // import "github.com/quay/claircore/datastore"
 
 type Vulnerability interface {
 	// Get finds the vulnerabilities which match each package provided in the
@@ -1600,7 +1600,7 @@ type Vulnerability interface {
     Vulnerability is the interface for querying stored Vulnerabilities.
 ```
 ```
-package datastore // import &quot;github.com/quay/claircore/datastore&quot;
+package datastore // import "github.com/quay/claircore/datastore"
 
 type MatcherStore interface {
 	Updater
@@ -1609,7 +1609,7 @@ type MatcherStore interface {
 }
     MatcherStore aggregates all interface types
 </code></pre>
-<p>package datastore // import &quot;github.com/quay/claircore/datastore&quot;</p>
+<p>package datastore // import "github.com/quay/claircore/datastore"</p>
 <p>type Updater interface {
 EnrichmentUpdater</p>
 <pre><code>// UpdateVulnerabilities creates a new UpdateOperation, inserts the provided
@@ -1665,7 +1665,7 @@ RecordUpdaterSetStatus(ctx context.Context, updaterSet string, updateTime time.T
 <p>}
 Updater is an interface exporting the necessary methods for updating a
 vulnerability database.</p>
-<pre><code>package datastore // import &quot;github.com/quay/claircore/datastore&quot;
+<pre><code>package datastore // import "github.com/quay/claircore/datastore"
 
 type EnrichmentUpdater interface {
 	// UpdateEnrichments creates a new EnrichmentUpdateOperation, inserts the provided
@@ -1676,7 +1676,7 @@ type EnrichmentUpdater interface {
     EnrichmentUpdater is an interface exporting the necessary methods for
     storing and querying Enrichments.
 </code></pre>
-<p>package datastore // import &quot;github.com/quay/claircore/datastore&quot;</p>
+<p>package datastore // import "github.com/quay/claircore/datastore"</p>
 <p>type Vulnerability interface {
 // Get finds the vulnerabilities which match each package provided in the
 // [IndexRecord]s. This may be a one-to-many relationship. A map of Package
@@ -1684,7 +1684,7 @@ type EnrichmentUpdater interface {
 Get(ctx context.Context, records []*claircore.IndexRecord, opts GetOpts) (map[string][]*claircore.Vulnerability, error)
 }
 Vulnerability is the interface for querying stored Vulnerabilities.</p>
-<pre><code>package datastore // import &quot;github.com/quay/claircore/datastore&quot;
+<pre><code>package datastore // import "github.com/quay/claircore/datastore"
 
 type Enrichment interface {
 	GetEnrichment(ctx context.Context, kind string, tags []string) ([]driver.EnrichmentRecord, error)
@@ -1695,14 +1695,14 @@ type Enrichment interface {
 <div style="break-before: page; page-break-before: always;"></div><h1 id="manifest"><a class="header" href="#manifest">Manifest</a></h1>
 <p>A Manifest is analogous to an <a href="https://github.com/opencontainers/image-spec/blob/master/manifest.md">OCI Image Manifest</a>:
 it defines the order of layers and how to retrieve the them.</p>
-<pre><code>package claircore // import &quot;github.com/quay/claircore&quot;
+<pre><code>package claircore // import "github.com/quay/claircore"
 
 type Manifest struct {
 	// content addressable hash. should be able to be computed via
 	// the hashes of all included layers
-	Hash Digest `json:&quot;hash&quot;`
+	Hash Digest `json:"hash"`
 	// an array of filesystem layers indexed in the same order as the cooresponding image
-	Layers []*Layer `json:&quot;layers&quot;`
+	Layers []*Layer `json:"layers"`
 }
     Manifest represents a docker image. Layers array MUST be indexed in the
     order that image layers are stacked.
@@ -1712,7 +1712,7 @@ type Manifest struct {
 vulnerabilities. These implementations provide the smarts for understanding if a
 particular artifact in a layer is vulnerable to a particular advisory in the
 database.</p>
-<pre><code>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Matcher interface {
 	// a unique name for the matcher
@@ -1723,7 +1723,7 @@ type Matcher interface {
 	// All conditions are logical AND'd together.
 	Query() []MatchConstraint
 	// Vulnerable informs the Controller if the given package is affected by the given vulnerability.
-	// for example checking the &quot;FixedInVersion&quot; field.
+	// for example checking the "FixedInVersion" field.
 	Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error)
 }
     Matcher is an interface which a Controller uses to query the vulnstore for
@@ -1738,7 +1738,7 @@ between the artifact and the vulnerability in question.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="package-scanner"><a class="header" href="#package-scanner">Package Scanner</a></h1>
 <p>A Package Scanner should discover any packages found within the given layer.
 It is OK for to discover no packages within a layer.</p>
-<pre><code>package indexer // import &quot;github.com/quay/claircore/indexer&quot;
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type PackageScanner interface {
 	VersionedScanner
@@ -1755,7 +1755,7 @@ func NewPackageScannerMock(name, version, kind string) PackageScanner
 <div style="break-before: page; page-break-before: always;"></div><h1 id="remotematcher"><a class="header" href="#remotematcher">RemoteMatcher</a></h1>
 <p>RemoteMatcher is an additional interface a Matcher may implement to skip the
 database for matching results and use an external API.</p>
-<pre><code>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type RemoteMatcher interface {
 	QueryRemoteMatcher(ctx context.Context, records []*claircore.IndexRecord) (map[string][]*claircore.Vulnerability, error)
@@ -1770,8 +1770,8 @@ type RemoteMatcher interface {
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="repository-scanner"><a class="header" href="#repository-scanner">Repository Scanner</a></h1>
 <p>A RepositoryScanner should identify any repositories discovered in the provided layer.
-It is OK for the scanner to identify no repositories. </p>
-<pre><code>package indexer // import &quot;github.com/quay/claircore/indexer&quot;
+It is OK for the scanner to identify no repositories.</p>
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type RepositoryScanner interface {
 	VersionedScanner
@@ -1780,7 +1780,7 @@ type RepositoryScanner interface {
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="resolver"><a class="header" href="#resolver">Resolver</a></h1>
 <p>A Resolver is used to analyze and modify the post-coalesced index report. This is useful for operations that need all context from an index report.</p>
-<pre><code>package indexer // import &quot;github.com/quay/claircore/indexer&quot;
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type Resolver interface {
 	Resolve(context.Context, *claircore.IndexReport, []*claircore.Layer) *claircore.IndexReport
@@ -1799,7 +1799,7 @@ When implemented, the scanner's <code>Configure</code> method will be called wit
 The <code>Scanner</code> may pass its config as an argument to the <code>ConfigDeserializer</code>
 function to populate the struct and use the HTTP client for any remote access
 necessary during the scanning process.</p>
-<pre><code>package indexer // import &quot;github.com/quay/claircore/indexer&quot;
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type RPCScanner interface {
 	Configure(context.Context, ConfigDeserializer, *http.Client) error
@@ -1807,7 +1807,7 @@ type RPCScanner interface {
     RPCScanner is an interface scanners can implement to receive configuration
     and denote that they expect to be able to talk to the network at run time.
 </code></pre>
-<pre><code>package indexer // import &quot;github.com/quay/claircore/indexer&quot;
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type RPCScanner interface {
 	Configure(context.Context, ConfigDeserializer, *http.Client) error
@@ -1815,7 +1815,7 @@ type RPCScanner interface {
     RPCScanner is an interface scanners can implement to receive configuration
     and denote that they expect to be able to talk to the network at run time.
 </code></pre>
-<p>package indexer // import &quot;github.com/quay/claircore/indexer&quot;</p>
+<p>package indexer // import "github.com/quay/claircore/indexer"</p>
 <p>type ConfigDeserializer func(interface{}) error
 ConfigDeserializer can be thought of as an Unmarshal function with the byte
 slice provided.</p>
@@ -1825,7 +1825,7 @@ slice provided.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="updater"><a class="header" href="#updater">Updater</a></h1>
 <p>An Updater is responsible for performing run-time fetching and parsing of a security database.
 The returned vulnerabilities will be written to claircore's database and used in vulnerability matching.</p>
-<pre><code>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Updater interface {
 	Name() string
@@ -1835,7 +1835,7 @@ type Updater interface {
     Updater is an aggregate interface combining the method set of a Fetcher and
     a Parser and forces a Name() to be provided
 </code></pre>
-<pre><code>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Updater interface {
 	Name() string
@@ -1845,7 +1845,7 @@ type Updater interface {
     Updater is an aggregate interface combining the method set of a Fetcher and
     a Parser and forces a Name() to be provided
 </code></pre>
-<p>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;</p>
+<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
 <p>type Fetcher interface {
 Fetch(context.Context, Fingerprint) (io.ReadCloser, Fingerprint, error)
 }
@@ -1861,7 +1861,7 @@ identifies the new content.
 If the conent has not change an Unchanged error should be returned.
 </code></pre>
 <pre><code></code></pre>
-<p>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;</p>
+<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
 <p>type Updater interface {
 Name() string
 Fetcher
@@ -1869,7 +1869,7 @@ Parser
 }
 Updater is an aggregate interface combining the method set of a Fetcher and
 a Parser and forces a Name() to be provided</p>
-<pre><code>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Fetcher interface {
 	Fetch(context.Context, Fingerprint) (io.ReadCloser, Fingerprint, error)
@@ -1886,7 +1886,7 @@ type Fetcher interface {
 
     If the conent has not change an Unchanged error should be returned.
 </code></pre>
-<p>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;</p>
+<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
 <p>type Parser interface {
 // Parse should take an io.ReadCloser, read the contents, parse the contents
 // into a list of claircore.Vulnerability structs and then return
@@ -1899,7 +1899,7 @@ of a security advisory database can be read and parsed into an array of
 *claircore.Vulnerability
 </code></pre>
 <pre><code></code></pre>
-<p>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;</p>
+<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
 <p>type Updater interface {
 Name() string
 Fetcher
@@ -1907,7 +1907,7 @@ Parser
 }
 Updater is an aggregate interface combining the method set of a Fetcher and
 a Parser and forces a Name() to be provided</p>
-<pre><code>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Fetcher interface {
 	Fetch(context.Context, Fingerprint) (io.ReadCloser, Fingerprint, error)
@@ -1924,7 +1924,7 @@ type Fetcher interface {
 
     If the conent has not change an Unchanged error should be returned.
 </code></pre>
-<p>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;</p>
+<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
 <p>type Parser interface {
 // Parse should take an io.ReadCloser, read the contents, parse the contents
 // into a list of claircore.Vulnerability structs and then return
@@ -1936,13 +1936,13 @@ Parser is an interface which is embedded into the Updater interface.</p>
 of a security advisory database can be read and parsed into an array of
 *claircore.Vulnerability
 </code></pre>
-<pre><code>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Fingerprint string
     Fingerprint is some identifying information about a vulnerability database.
 ```
 ```
-package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;
+package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Updater interface {
 	Name() string
@@ -1952,7 +1952,7 @@ type Updater interface {
     Updater is an aggregate interface combining the method set of a Fetcher and
     a Parser and forces a Name() to be provided
 </code></pre>
-<p>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;</p>
+<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
 <p>type Fetcher interface {
 Fetch(context.Context, Fingerprint) (io.ReadCloser, Fingerprint, error)
 }
@@ -1967,7 +1967,7 @@ identifies the new content.
 
 If the conent has not change an Unchanged error should be returned.
 </code></pre>
-<pre><code>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Parser interface {
 	// Parse should take an io.ReadCloser, read the contents, parse the contents
@@ -1981,10 +1981,10 @@ type Parser interface {
     of a security advisory database can be read and parsed into an array of
     *claircore.Vulnerability
 </code></pre>
-<p>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;</p>
+<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
 <p>type Fingerprint string
 Fingerprint is some identifying information about a vulnerability database.</p>
-<pre><code>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Configurable interface {
 	Configure(context.Context, ConfigUnmarshaler, *http.Client) error
@@ -1993,7 +1993,7 @@ type Configurable interface {
     their configuration provided dynamically.
 ```
 ```
-package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;
+package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Updater interface {
 	Name() string
@@ -2003,7 +2003,7 @@ type Updater interface {
     Updater is an aggregate interface combining the method set of a Fetcher and
     a Parser and forces a Name() to be provided
 </code></pre>
-<p>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;</p>
+<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
 <p>type Fetcher interface {
 Fetch(context.Context, Fingerprint) (io.ReadCloser, Fingerprint, error)
 }
@@ -2018,7 +2018,7 @@ identifies the new content.
 
 If the conent has not change an Unchanged error should be returned.
 </code></pre>
-<pre><code>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Parser interface {
 	// Parse should take an io.ReadCloser, read the contents, parse the contents
@@ -2032,10 +2032,10 @@ type Parser interface {
     of a security advisory database can be read and parsed into an array of
     *claircore.Vulnerability
 </code></pre>
-<p>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;</p>
+<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
 <p>type Fingerprint string
 Fingerprint is some identifying information about a vulnerability database.</p>
-<pre><code>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Configurable interface {
 	Configure(context.Context, ConfigUnmarshaler, *http.Client) error
@@ -2043,7 +2043,7 @@ type Configurable interface {
     Configurable is an interface that Updaters can implement to opt-in to having
     their configuration provided dynamically.
 </code></pre>
-<p>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;</p>
+<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
 <p>type ConfigUnmarshaler func(interface{}) error
 ConfigUnmarshaler can be thought of as an Unmarshal function with the byte
 slice provided, or a Decode function.</p>
@@ -2053,7 +2053,7 @@ information.
 <pre><code></code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="updatersetfactory"><a class="header" href="#updatersetfactory">UpdaterSetFactory</a></h1>
 <p>An UpdaterSetFactory is a factory for runtime construction and configuration for Updaters.</p>
-<pre><code>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type UpdaterSetFactory interface {
 	UpdaterSet(context.Context) (UpdaterSet, error)
@@ -2062,7 +2062,7 @@ type UpdaterSetFactory interface {
 
 func StaticSet(s UpdaterSet) UpdaterSetFactory
 </code></pre>
-<pre><code>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type UpdaterSetFactory interface {
 	UpdaterSet(context.Context) (UpdaterSet, error)
@@ -2071,7 +2071,7 @@ type UpdaterSetFactory interface {
 
 func StaticSet(s UpdaterSet) UpdaterSetFactory
 </code></pre>
-<p>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;</p>
+<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
 <p>type UpdaterSet struct {
 // Has unexported fields.
 }
@@ -2085,10 +2085,10 @@ func (s *UpdaterSet) Updaters() []Updater</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="versionfilter"><a class="header" href="#versionfilter">VersionFilter</a></h1>
 <p><code>VersionFilter</code> is an additional interface a <code>Matcher</code> may implement.
 If implemented, <code>Libvuln</code> will attempt to use the database and the normalized
-version field of a package to filter vulnerabilities in the database. 
+version field of a package to filter vulnerabilities in the database.
 This is an opt-in optimization for when a package manager's version scheme can
-be normalized into a <code>claircore.Version</code>. </p>
-<pre><code>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;
+be normalized into a <code>claircore.Version</code>.</p>
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type VersionFilter interface {
 	VersionFilter()
@@ -2108,8 +2108,8 @@ It drives claircore's ability to register and understand when updaters have been
 Functions that want to work with a generic scanner type should use a <code>VersionedScanner</code>.</p>
 <p>Implementers of this interface <em>must</em> provide a unique name.
 Making changes to a scanner's implementation <em>must</em> return a new value from <code>Version</code>.
-Implementers <em>must</em> return the correct kind: one of &quot;package&quot;, &quot;distribution&quot;, or &quot;repository&quot;</p>
-<pre><code>package indexer // import &quot;github.com/quay/claircore/indexer&quot;
+Implementers <em>must</em> return the correct kind: one of "package", "distribution", or "repository"</p>
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type VersionedScanner interface {
 	// unique name of the distribution scanner.
@@ -2126,25 +2126,25 @@ type VersionedScanner interface {
 <div style="break-before: page; page-break-before: always;"></div><h1 id="vulnerability-report"><a class="header" href="#vulnerability-report">Vulnerability Report</a></h1>
 <p>A Vulnerability Report is a structure describing a specific manifest, its
 contents, and the vulnerabilities affecting its contents.</p>
-<pre><code>package claircore // import &quot;github.com/quay/claircore&quot;
+<pre><code>package claircore // import "github.com/quay/claircore"
 
 type VulnerabilityReport struct {
 	// the manifest hash this vulnerability report is describing
-	Hash Digest `json:&quot;manifest_hash&quot;`
+	Hash Digest `json:"manifest_hash"`
 	// all discovered packages in this manifest keyed by package id
-	Packages map[string]*Package `json:&quot;packages&quot;`
+	Packages map[string]*Package `json:"packages"`
 	// all discovered distributions in this manifest keyed by distribution id
-	Distributions map[string]*Distribution `json:&quot;distributions&quot;`
+	Distributions map[string]*Distribution `json:"distributions"`
 	// all discovered repositories in this manifest keyed by repository id
-	Repositories map[string]*Repository `json:&quot;repository&quot;`
+	Repositories map[string]*Repository `json:"repository"`
 	// a list of environment details a package was discovered in keyed by package id
-	Environments map[string][]*Environment `json:&quot;environments&quot;`
+	Environments map[string][]*Environment `json:"environments"`
 	// all discovered vulnerabilities affecting this manifest
-	Vulnerabilities map[string]*Vulnerability `json:&quot;vulnerabilities&quot;`
+	Vulnerabilities map[string]*Vulnerability `json:"vulnerabilities"`
 	// a lookup table associating package ids with 1 or more vulnerability ids. keyed by package id
-	PackageVulnerabilities map[string][]string `json:&quot;package_vulnerabilities&quot;`
+	PackageVulnerabilities map[string][]string `json:"package_vulnerabilities"`
 	// a map of enrichments keyed by a type.
-	Enrichments map[string][]json.RawMessage `json:&quot;enrichments&quot;`
+	Enrichments map[string][]json.RawMessage `json:"enrichments"`
 }
     VulnerabilityReport provides a report of packages and their associated
     vulnerabilities.
@@ -2159,7 +2159,7 @@ field to the data structures in other lookup maps.</p>
 
 		for _, vulnID := range vulnIDS {
 			vuln := report.Vulnerabilities[vulnID]
-			fmt.Printf(&quot;package %+v affected by vuln %+v&quot;, pkg, vuln)
+			fmt.Printf("package %+v affected by vuln %+v", pkg, vuln)
 		}
 	}
 </code></pre>
@@ -2176,8 +2176,8 @@ field to the data structures in other lookup maps.</p>
 All pull requests should be targeted to the <code>main</code> branch outside of exceptional circumstances.</p>
 <h2 id="testing"><a class="header" href="#testing">Testing</a></h2>
 <p>As many tests as possible should run with the standard <code>go test</code> invocations.
-Adding the special tag <code>integration</code> (e.g. <code>go test -tags integration ./...</code>) will also run &quot;integration&quot; tests.
-The project interprets &quot;integration&quot; tests to mean any test that would need external resources, such as:</p>
+Adding the special tag <code>integration</code> (e.g. <code>go test -tags integration ./...</code>) will also run "integration" tests.
+The project interprets "integration" tests to mean any test that would need external resources, such as:</p>
 <ul>
 <li>External web servers</li>
 <li>External network access</li>
@@ -2198,14 +2198,14 @@ As many requirements as possible are enforced by CI, like:</p>
 <li>Commit messages having a properly formed subject</li>
 <li>Go modules being tidied</li>
 </ul>
-<p>Please use the &quot;draft&quot; option if the branch is not ready.
-Please enable the &quot;allow edits by maintainers&quot; option.</p>
+<p>Please use the "draft" option if the branch is not ready.
+Please enable the "allow edits by maintainers" option.</p>
 <p>The maintainers may rebase, push, and merge contributors' branches.
 This may necessitate doing a <code>git reset &lt;remote&gt;/&lt;branch&gt;</code> to update a local branch.</p>
 <h2 id="conventions"><a class="header" href="#conventions">Conventions</a></h2>
-<p>Git commits should be formatted like &quot;subject: summary&quot; and avoid going over 80 characters per line.
-The &quot;subject&quot; is usually the package affected by the commit (like <code>jar</code> or <code>rhel</code> -- the relative path isn't needed) but sometimes a broader category (like <code>docs</code>, <code>all</code>, or <code>cicd</code>) is OK.</p>
-<p>All the helper scripts should handle the &quot;normal&quot; convention (<code>origin</code> is <code>quay/claircore</code> and <code>fork</code> is one's personal fork) and the &quot;British&quot; convention (<code>origin</code> is one's personal fork and <code>upstream</code> is <code>quay/claircore</code>).</p>
+<p>Git commits should be formatted like "subject: summary" and avoid going over 80 characters per line.
+The "subject" is usually the package affected by the commit (like <code>jar</code> or <code>rhel</code> -- the relative path isn't needed) but sometimes a broader category (like <code>docs</code>, <code>all</code>, or <code>cicd</code>) is OK.</p>
+<p>All the helper scripts should handle the "normal" convention (<code>origin</code> is <code>quay/claircore</code> and <code>fork</code> is one's personal fork) and the "British" convention (<code>origin</code> is one's personal fork and <code>upstream</code> is <code>quay/claircore</code>).</p>
 <p>More detailed contributor documentation can be found in <a href="https://quay.github.io/claircore/contributor.html">the project documentation</a>.</p>
 <div style="break-before: page; page-break-before: always;"></div><p>The claircore project has switched from a <a href="https://git-scm.com/docs/git-log"><code>git log</code></a> based changelog to a
 <a href="https://git-scm.com/docs/git-notes"><code>git notes</code></a> based changelog.</p>
@@ -2233,7 +2233,7 @@ locally.</p>
 <h3 id="formatting"><a class="header" href="#formatting">Formatting</a></h3>
 <p>Broadly, changelog entries should be formatted like commit messages without any
 trailers. Entries are turned into list items, with the subject being the bullet
-point and the body of the entry being the &quot;body&quot; of the item, or hidden behind
+point and the body of the entry being the "body" of the item, or hidden behind
 <code>details</code> elements when using HTML-enabled output.</p>
 <p>The entries are almost always rendered as markdown, so using minimal markdown is
 OK. Anything requiring excessive markdown is probably better served as
@@ -2263,7 +2263,7 @@ packages without having unintended prints to stderr.</p>
 <h3 id="adding-context"><a class="header" href="#adding-context">Adding Context</a></h3>
 <p>In a function, use <code>zlog</code> to add key-value pairs of any relevant context:</p>
 <pre><code class="language-go">	ctx = zlog.ContextWithValues(ctx,
-		&quot;component&quot;, &quot;Example.Logger&quot;)
+		"component", "Example.Logger")
 </code></pre>
 <p>Alternatively, the <code>go.opentelemetry.io/otel/baggage</code> package can be used for
 more explicit control around the baggage values.</p>
@@ -2273,17 +2273,17 @@ more explicit control around the baggage values.</p>
 is to <em>not</em> use <code>Msgf</code>. Any variable data should be set as key-value pairs on
 the Event object.</p>
 <p>For example, don't do this:</p>
-<pre><code class="language-go">	zlog.Info(ctx).Msgf(&quot;done at: %v&quot;, time.Now())
+<pre><code class="language-go">	zlog.Info(ctx).Msgf("done at: %v", time.Now())
 </code></pre>
 <p>Do this instead:</p>
 <pre><code class="language-go">	zlog.Info(ctx).
-		Time(&quot;time&quot;, time.Now()).
-		Msgf(&quot;done&quot;)
+		Time("time", time.Now()).
+		Msgf("done")
 </code></pre>
 <h4 id="grammar"><a class="header" href="#grammar">Grammar</a></h4>
 <p>When noting the change during a chunk of work, make sure that the
 log messages scan as visually similar. Usually, this means formatting messages
-into &quot;${process} ${event}&quot;. For example:</p>
+into "${process} ${event}". For example:</p>
 <pre><code>frob start
 frob initialized
 frob ready

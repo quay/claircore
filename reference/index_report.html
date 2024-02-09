@@ -185,27 +185,27 @@
 <p>An Index Report defines the contents of a manifest.  An Index Report can be
 unpacked into a slice of Index Records, each of which defines a package,
 distribution, repository tuple.</p>
-<pre><code>package claircore // import &quot;github.com/quay/claircore&quot;
+<pre><code>package claircore // import "github.com/quay/claircore"
 
 type IndexReport struct {
 	// the manifest hash this IndexReport is describing
-	Hash Digest `json:&quot;manifest_hash&quot;`
+	Hash Digest `json:"manifest_hash"`
 	// the current state of the index operation
-	State string `json:&quot;state&quot;`
+	State string `json:"state"`
 	// all discovered packages in this manifest key'd by package id
-	Packages map[string]*Package `json:&quot;packages&quot;`
+	Packages map[string]*Package `json:"packages"`
 	// all discovered distributions in this manifest key'd by distribution id
-	Distributions map[string]*Distribution `json:&quot;distributions&quot;`
+	Distributions map[string]*Distribution `json:"distributions"`
 	// all discovered repositories in this manifest key'd by repository id
-	Repositories map[string]*Repository `json:&quot;repository&quot;`
+	Repositories map[string]*Repository `json:"repository"`
 	// a list of environment details a package was discovered in key'd by package id
-	Environments map[string][]*Environment `json:&quot;environments&quot;`
+	Environments map[string][]*Environment `json:"environments"`
 	// whether the index operation finished successfully
-	Success bool `json:&quot;success&quot;`
+	Success bool `json:"success"`
 	// an error string in the case the index did not succeed
-	Err string `json:&quot;err&quot;`
+	Err string `json:"err"`
 	// Files doesn't end up in the json report but needs to be available at post-coalesce
-	Files map[string]File `json:&quot;-&quot;`
+	Files map[string]File `json:"-"`
 }
     IndexReport provides a database for discovered artifacts in an image.
 
@@ -214,27 +214,27 @@ type IndexReport struct {
 
 func (report *IndexReport) IndexRecords() []*IndexRecord
 </code></pre>
-<pre><code>package claircore // import &quot;github.com/quay/claircore&quot;
+<pre><code>package claircore // import "github.com/quay/claircore"
 
 type IndexReport struct {
 	// the manifest hash this IndexReport is describing
-	Hash Digest `json:&quot;manifest_hash&quot;`
+	Hash Digest `json:"manifest_hash"`
 	// the current state of the index operation
-	State string `json:&quot;state&quot;`
+	State string `json:"state"`
 	// all discovered packages in this manifest key'd by package id
-	Packages map[string]*Package `json:&quot;packages&quot;`
+	Packages map[string]*Package `json:"packages"`
 	// all discovered distributions in this manifest key'd by distribution id
-	Distributions map[string]*Distribution `json:&quot;distributions&quot;`
+	Distributions map[string]*Distribution `json:"distributions"`
 	// all discovered repositories in this manifest key'd by repository id
-	Repositories map[string]*Repository `json:&quot;repository&quot;`
+	Repositories map[string]*Repository `json:"repository"`
 	// a list of environment details a package was discovered in key'd by package id
-	Environments map[string][]*Environment `json:&quot;environments&quot;`
+	Environments map[string][]*Environment `json:"environments"`
 	// whether the index operation finished successfully
-	Success bool `json:&quot;success&quot;`
+	Success bool `json:"success"`
 	// an error string in the case the index did not succeed
-	Err string `json:&quot;err&quot;`
+	Err string `json:"err"`
 	// Files doesn't end up in the json report but needs to be available at post-coalesce
-	Files map[string]File `json:&quot;-&quot;`
+	Files map[string]File `json:"-"`
 }
     IndexReport provides a database for discovered artifacts in an image.
 
@@ -243,7 +243,7 @@ type IndexReport struct {
 
 func (report *IndexReport) IndexRecords() []*IndexRecord
 </code></pre>
-<p>package claircore // import &quot;github.com/quay/claircore&quot;</p>
+<p>package claircore // import "github.com/quay/claircore"</p>
 <p>type IndexRecord struct {
 Package      *Package
 Distribution *Distribution
@@ -253,7 +253,7 @@ IndexRecord is an entry in the IndexReport.</p>
 <pre><code>IndexRecords provide full access to contextual package structures such as
 Distribution and Repository.
 
-A list of these can be thought of as an &quot;unpacked&quot; IndexReport
+A list of these can be thought of as an "unpacked" IndexReport
 </code></pre>
 <pre><code></code></pre>
 

@@ -184,7 +184,7 @@
                         <h1 id="indexer-store"><a class="header" href="#indexer-store">Indexer Store</a></h1>
 <p>The <code>indexer.Store</code> interface defines all necessary persistence methods for
 <code>Libindex</code> to provide its functionality.</p>
-<pre><code>package indexer // import &quot;github.com/quay/claircore/indexer&quot;
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type Store interface {
 	Setter
@@ -196,7 +196,7 @@ type Store interface {
     Store is an interface for dealing with objects libindex needs to persist.
     Stores may be implemented per storage backend.
 </code></pre>
-<pre><code>package indexer // import &quot;github.com/quay/claircore/indexer&quot;
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type Store interface {
 	Setter
@@ -208,7 +208,7 @@ type Store interface {
     Store is an interface for dealing with objects libindex needs to persist.
     Stores may be implemented per storage backend.
 </code></pre>
-<p>package indexer // import &quot;github.com/quay/claircore/indexer&quot;</p>
+<p>package indexer // import "github.com/quay/claircore/indexer"</p>
 <p>type Setter interface {
 // PersistManifest must store the presence of a manifest and it's layers into the system.
 //
@@ -243,7 +243,7 @@ SetIndexFinished(ctx context.Context, sr *claircore.IndexReport, scnrs Versioned
 Setter interface provides the method set for required marking events,
 or registering components, associated with an Index operation.</p>
 <pre><code></code></pre>
-<p>package indexer // import &quot;github.com/quay/claircore/indexer&quot;</p>
+<p>package indexer // import "github.com/quay/claircore/indexer"</p>
 <p>type Store interface {
 Setter
 Querier
@@ -253,7 +253,7 @@ Close(context.Context) error
 }
 Store is an interface for dealing with objects libindex needs to persist.
 Stores may be implemented per storage backend.</p>
-<pre><code>package indexer // import &quot;github.com/quay/claircore/indexer&quot;
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type Setter interface {
 	// PersistManifest must store the presence of a manifest and it's layers into the system.
@@ -289,7 +289,7 @@ type Setter interface {
     Setter interface provides the method set for required marking events,
     or registering components, associated with an Index operation.
 </code></pre>
-<p>package indexer // import &quot;github.com/quay/claircore/indexer&quot;</p>
+<p>package indexer // import "github.com/quay/claircore/indexer"</p>
 <p>type Querier interface {
 // ManifestScanned returns whether the given manifest was scanned by the provided scanners.
 ManifestScanned(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) (bool, error)
@@ -312,7 +312,7 @@ AffectedManifests(ctx context.Context, v claircore.Vulnerability, f claircore.Ch
 Querier interface provides the method set to ascertain indexed artifacts and
 query whether a layer or manifest has been scanned.</p>
 <pre><code></code></pre>
-<p>package indexer // import &quot;github.com/quay/claircore/indexer&quot;</p>
+<p>package indexer // import "github.com/quay/claircore/indexer"</p>
 <p>type Store interface {
 Setter
 Querier
@@ -322,7 +322,7 @@ Close(context.Context) error
 }
 Store is an interface for dealing with objects libindex needs to persist.
 Stores may be implemented per storage backend.</p>
-<pre><code>package indexer // import &quot;github.com/quay/claircore/indexer&quot;
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type Setter interface {
 	// PersistManifest must store the presence of a manifest and it's layers into the system.
@@ -358,7 +358,7 @@ type Setter interface {
     Setter interface provides the method set for required marking events,
     or registering components, associated with an Index operation.
 </code></pre>
-<p>package indexer // import &quot;github.com/quay/claircore/indexer&quot;</p>
+<p>package indexer // import "github.com/quay/claircore/indexer"</p>
 <p>type Querier interface {
 // ManifestScanned returns whether the given manifest was scanned by the provided scanners.
 ManifestScanned(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) (bool, error)
@@ -380,7 +380,7 @@ AffectedManifests(ctx context.Context, v claircore.Vulnerability, f claircore.Ch
 }
 Querier interface provides the method set to ascertain indexed artifacts and
 query whether a layer or manifest has been scanned.</p>
-<pre><code>package indexer // import &quot;github.com/quay/claircore/indexer&quot;
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type Indexer interface {
 	// IndexPackages indexes a package into the persistence layer.

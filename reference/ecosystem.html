@@ -187,7 +187,7 @@ together.  Ecosystems are usually defined in a go package that corresponds to a
 package manager, such as <code>dpkg</code>.  See <code>dpkg/ecosystem.go</code> for an example.</p>
 <p>The Indexer will retrieve artifacts from the provided scanners and provide these
 scan artifacts to the coalescer in the Ecosystem.</p>
-<pre><code>package indexer // import &quot;github.com/quay/claircore/indexer&quot;
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type Ecosystem struct {
 	PackageScanners      func(ctx context.Context) ([]PackageScanner, error)
@@ -200,8 +200,8 @@ type Ecosystem struct {
     Ecosystems group together scanners and a Coalescer which are commonly used
     together.
 
-    A typical ecosystem is &quot;dpkg&quot; which will use the &quot;dpkg&quot; package indexer,
-    the &quot;os-release&quot; distribution scanner and the &quot;apt&quot; repository scanner.
+    A typical ecosystem is "dpkg" which will use the "dpkg" package indexer,
+    the "os-release" distribution scanner and the "apt" repository scanner.
 
     A Controller will scan layers with all scanners present in its configured
     ecosystems.

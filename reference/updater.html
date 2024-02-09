@@ -184,7 +184,7 @@
                         <h1 id="updater"><a class="header" href="#updater">Updater</a></h1>
 <p>An Updater is responsible for performing run-time fetching and parsing of a security database.
 The returned vulnerabilities will be written to claircore's database and used in vulnerability matching.</p>
-<pre><code>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Updater interface {
 	Name() string
@@ -194,7 +194,7 @@ type Updater interface {
     Updater is an aggregate interface combining the method set of a Fetcher and
     a Parser and forces a Name() to be provided
 </code></pre>
-<pre><code>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Updater interface {
 	Name() string
@@ -204,7 +204,7 @@ type Updater interface {
     Updater is an aggregate interface combining the method set of a Fetcher and
     a Parser and forces a Name() to be provided
 </code></pre>
-<p>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;</p>
+<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
 <p>type Fetcher interface {
 Fetch(context.Context, Fingerprint) (io.ReadCloser, Fingerprint, error)
 }
@@ -220,7 +220,7 @@ identifies the new content.
 If the conent has not change an Unchanged error should be returned.
 </code></pre>
 <pre><code></code></pre>
-<p>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;</p>
+<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
 <p>type Updater interface {
 Name() string
 Fetcher
@@ -228,7 +228,7 @@ Parser
 }
 Updater is an aggregate interface combining the method set of a Fetcher and
 a Parser and forces a Name() to be provided</p>
-<pre><code>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Fetcher interface {
 	Fetch(context.Context, Fingerprint) (io.ReadCloser, Fingerprint, error)
@@ -245,7 +245,7 @@ type Fetcher interface {
 
     If the conent has not change an Unchanged error should be returned.
 </code></pre>
-<p>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;</p>
+<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
 <p>type Parser interface {
 // Parse should take an io.ReadCloser, read the contents, parse the contents
 // into a list of claircore.Vulnerability structs and then return
@@ -258,7 +258,7 @@ of a security advisory database can be read and parsed into an array of
 *claircore.Vulnerability
 </code></pre>
 <pre><code></code></pre>
-<p>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;</p>
+<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
 <p>type Updater interface {
 Name() string
 Fetcher
@@ -266,7 +266,7 @@ Parser
 }
 Updater is an aggregate interface combining the method set of a Fetcher and
 a Parser and forces a Name() to be provided</p>
-<pre><code>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Fetcher interface {
 	Fetch(context.Context, Fingerprint) (io.ReadCloser, Fingerprint, error)
@@ -283,7 +283,7 @@ type Fetcher interface {
 
     If the conent has not change an Unchanged error should be returned.
 </code></pre>
-<p>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;</p>
+<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
 <p>type Parser interface {
 // Parse should take an io.ReadCloser, read the contents, parse the contents
 // into a list of claircore.Vulnerability structs and then return
@@ -295,13 +295,13 @@ Parser is an interface which is embedded into the Updater interface.</p>
 of a security advisory database can be read and parsed into an array of
 *claircore.Vulnerability
 </code></pre>
-<pre><code>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Fingerprint string
     Fingerprint is some identifying information about a vulnerability database.
 ```
 ```
-package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;
+package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Updater interface {
 	Name() string
@@ -311,7 +311,7 @@ type Updater interface {
     Updater is an aggregate interface combining the method set of a Fetcher and
     a Parser and forces a Name() to be provided
 </code></pre>
-<p>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;</p>
+<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
 <p>type Fetcher interface {
 Fetch(context.Context, Fingerprint) (io.ReadCloser, Fingerprint, error)
 }
@@ -326,7 +326,7 @@ identifies the new content.
 
 If the conent has not change an Unchanged error should be returned.
 </code></pre>
-<pre><code>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Parser interface {
 	// Parse should take an io.ReadCloser, read the contents, parse the contents
@@ -340,10 +340,10 @@ type Parser interface {
     of a security advisory database can be read and parsed into an array of
     *claircore.Vulnerability
 </code></pre>
-<p>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;</p>
+<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
 <p>type Fingerprint string
 Fingerprint is some identifying information about a vulnerability database.</p>
-<pre><code>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Configurable interface {
 	Configure(context.Context, ConfigUnmarshaler, *http.Client) error
@@ -352,7 +352,7 @@ type Configurable interface {
     their configuration provided dynamically.
 ```
 ```
-package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;
+package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Updater interface {
 	Name() string
@@ -362,7 +362,7 @@ type Updater interface {
     Updater is an aggregate interface combining the method set of a Fetcher and
     a Parser and forces a Name() to be provided
 </code></pre>
-<p>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;</p>
+<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
 <p>type Fetcher interface {
 Fetch(context.Context, Fingerprint) (io.ReadCloser, Fingerprint, error)
 }
@@ -377,7 +377,7 @@ identifies the new content.
 
 If the conent has not change an Unchanged error should be returned.
 </code></pre>
-<pre><code>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Parser interface {
 	// Parse should take an io.ReadCloser, read the contents, parse the contents
@@ -391,10 +391,10 @@ type Parser interface {
     of a security advisory database can be read and parsed into an array of
     *claircore.Vulnerability
 </code></pre>
-<p>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;</p>
+<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
 <p>type Fingerprint string
 Fingerprint is some identifying information about a vulnerability database.</p>
-<pre><code>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Configurable interface {
 	Configure(context.Context, ConfigUnmarshaler, *http.Client) error
@@ -402,7 +402,7 @@ type Configurable interface {
     Configurable is an interface that Updaters can implement to opt-in to having
     their configuration provided dynamically.
 </code></pre>
-<p>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;</p>
+<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
 <p>type ConfigUnmarshaler func(interface{}) error
 ConfigUnmarshaler can be thought of as an Unmarshal function with the byte
 slice provided, or a Decode function.</p>

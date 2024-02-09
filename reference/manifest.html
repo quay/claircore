@@ -184,14 +184,14 @@
                         <h1 id="manifest"><a class="header" href="#manifest">Manifest</a></h1>
 <p>A Manifest is analogous to an <a href="https://github.com/opencontainers/image-spec/blob/master/manifest.md">OCI Image Manifest</a>:
 it defines the order of layers and how to retrieve the them.</p>
-<pre><code>package claircore // import &quot;github.com/quay/claircore&quot;
+<pre><code>package claircore // import "github.com/quay/claircore"
 
 type Manifest struct {
 	// content addressable hash. should be able to be computed via
 	// the hashes of all included layers
-	Hash Digest `json:&quot;hash&quot;`
+	Hash Digest `json:"hash"`
 	// an array of filesystem layers indexed in the same order as the cooresponding image
-	Layers []*Layer `json:&quot;layers&quot;`
+	Layers []*Layer `json:"layers"`
 }
     Manifest represents a docker image. Layers array MUST be indexed in the
     order that image layers are stacked.

@@ -186,7 +186,7 @@
 vulnerabilities. These implementations provide the smarts for understanding if a
 particular artifact in a layer is vulnerable to a particular advisory in the
 database.</p>
-<pre><code>package driver // import &quot;github.com/quay/claircore/libvuln/driver&quot;
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Matcher interface {
 	// a unique name for the matcher
@@ -197,7 +197,7 @@ type Matcher interface {
 	// All conditions are logical AND'd together.
 	Query() []MatchConstraint
 	// Vulnerable informs the Controller if the given package is affected by the given vulnerability.
-	// for example checking the &quot;FixedInVersion&quot; field.
+	// for example checking the "FixedInVersion" field.
 	Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error)
 }
     Matcher is an interface which a Controller uses to query the vulnstore for

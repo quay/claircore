@@ -190,7 +190,7 @@ process.</p>
 <h2 id="usage"><a class="header" href="#usage">Usage</a></h2>
 <p>Libindex is runtime constructed via the <code>libindex.New</code> method. New requires an <code>libindex.Opts</code> struct.</p>
 <h3 id="options"><a class="header" href="#options">Options</a></h3>
-<pre><code>package libindex // import &quot;github.com/quay/claircore/libindex&quot;
+<pre><code>package libindex // import "github.com/quay/claircore/libindex"
 
 type Options struct {
 	// Store is the interface used to persist and retrieve results of indexing.
@@ -237,7 +237,7 @@ type Options struct {
 <p>Store is required needs to be an object that satisfies the indexer.Store interface.</p>
 <p>Locker is required and needs to satisfy the LockSource interface.</p>
 <p>FetchArena is required and needs to satify the FetchArena interface.</p>
-<p>Providing a nil &quot;Ecosystems&quot; slice will supply the default set, instructing
+<p>Providing a nil "Ecosystems" slice will supply the default set, instructing
 Libindex to index for all supported content in a layer, and is typically
 desired.</p>
 <h3 id="construction"><a class="header" href="#construction">Construction</a></h3>
@@ -269,10 +269,10 @@ and where they can be fetched from.</p>
 	}
 </code></pre>
 <p>The Index method will block until an claircore.IndexReport is returned.  The
-context should be bound to some valid lifetime such as a request. </p>
+context should be bound to some valid lifetime such as a request.</p>
 <p>As the Indexer works on the manifest it will update its database throughout the
-process.  You may view the status of an index report via the &quot;IndexReport&quot;
-method. </p>
+process.  You may view the status of an index report via the "IndexReport"
+method.</p>
 <pre><code class="language-go">	ir, ok, err := lib.IndexReport(ctx, m.Hash)
 	if err != nil {
 		panic(err)
@@ -281,7 +281,7 @@ method. </p>
 <p>Libindex performs its work incrementally and saves state as it goes along. If
 Libindex encounters an intermittent error during the index (for example, due to
 network failure while fetching a layer), when the manifest is resubmitted only
-the layers not yet indexed will be fetched and processed. </p>
+the layers not yet indexed will be fetched and processed.</p>
 <h3 id="state"><a class="header" href="#state">State</a></h3>
 <p>Libindex treats layers as content addressable. Once a layer identified by a
 particular hash is indexed its contents are definitively known. A request to
@@ -320,12 +320,12 @@ mechanism.</p>
 	}
 	for manifest, vulns := range affected.VulnerableManifests {
 		for _, vuln := range vulns {
-			fmt.Printf(&quot;vuln affecting manifest %s: %+v&quot;, manifest, vuln)
+			fmt.Printf("vuln affecting manifest %s: %+v", manifest, vuln)
 		}
 	}
 </code></pre>
 <p>The slice of vulnerabilities returned for each manifest hash will be sorted by
-<code>claircore.NormalizedSeverity</code> in &quot;most severe&quot; descending order.</p>
+<code>claircore.NormalizedSeverity</code> in "most severe" descending order.</p>
 
                     </main>
 

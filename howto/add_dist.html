@@ -182,26 +182,26 @@
                 <div id="content" class="content">
                     <main>
                         <h1 id="adding-distribution-and-language-support"><a class="header" href="#adding-distribution-and-language-support">Adding Distribution And Language Support</a></h1>
-<p><em>Note: If terms in this document sound foreign check out <a href="../getting_started.html">Getting Started</a> to acquaint yourself with &quot;indexing&quot;, &quot;scanning&quot;, and &quot;matching&quot;</em></p>
+<p><em>Note: If terms in this document sound foreign check out <a href="../getting_started.html">Getting Started</a> to acquaint yourself with "indexing", "scanning", and "matching"</em></p>
 <p>The claircore team is always open to adding more distributions and languages to the library.</p>
-<p>Generally, distributions or languages must provide a security tracker. </p>
-<p>All officially supported distributions and languages provide a database of security vulnerabilities. </p>
+<p>Generally, distributions or languages must provide a security tracker.</p>
+<p>All officially supported distributions and languages provide a database of security vulnerabilities.</p>
 <p>These databases are maintained by the distribution or language developers and reflect up-to-date CVE and advisory data for their packages.</p>
 <p>If your distribution or language does not provide a security tracker or piggy-backs off another distribution's start an issue in our Github issue tracker to discuss further.</p>
 <h2 id="implementing-an-updater"><a class="header" href="#implementing-an-updater">Implementing an Updater</a></h2>
-<p>The first step to adding your distribution or language to claircore is getting your security tracker's data ingested by Libvuln. </p>
+<p>The first step to adding your distribution or language to claircore is getting your security tracker's data ingested by Libvuln.</p>
 <p>The Updater interfaces are responsible for this task.</p>
 <p>An implementer must consider several design points:</p>
 <ul>
 <li>Does the security database provide enough information to parse each entry into a claircore.Vulnerability?
 <ul>
-<li>Each entry must parse into a claircore.Vulnerability. </li>
-<li>Each Vulnerability <strong>must</strong> contain a package <strong>and</strong> a repository <strong>or</strong> distribution field. </li>
+<li>Each entry must parse into a claircore.Vulnerability.</li>
+<li>Each Vulnerability <strong>must</strong> contain a package <strong>and</strong> a repository <strong>or</strong> distribution field.</li>
 </ul>
 </li>
 <li>Will the Updater need to be configured at runtime?
 <ul>
-<li>Your updater may implement the Configurable interface. Your matcher will have its &quot;Configuration&quot; method called before use, giving you an opportunity for run time configuration.</li>
+<li>Your updater may implement the Configurable interface. Your matcher will have its "Configuration" method called before use, giving you an opportunity for run time configuration.</li>
 </ul>
 </li>
 <li>What fields in a parsed claircore.Vulnerability will be present when indexing layer artifacts.
@@ -211,34 +211,34 @@ When indexing a layer a common data model <strong>must</strong> exist between th
 </ul>
 </li>
 </ul>
-<p>If you are having trouble figuring out these requirements do not hesitate to reach out to us for help. </p>
+<p>If you are having trouble figuring out these requirements do not hesitate to reach out to us for help.</p>
 <p>After you have taken the design points into consideration, you are ready to implement your updater.</p>
-<p>Typically you will create a new package named after the source you are adding support for. </p>
+<p>Typically you will create a new package named after the source you are adding support for.</p>
 <p>Inside this package you can begin implementing the <a href="../reference/updater.html">Updater</a> and <a href="../reference/updatersetfactory.html">Updater Set Factory</a> interfaces.</p>
 <p>Optionally you may implement the <a href="../reference/updater.html">Configurable</a> interface if you need runtime configuration.</p>
-<p>It will undoubtly be helpful to look at the examples in the &quot;ubuntu&quot;, &quot;rhel&quot;, and &quot;debian&quot; packages to get yourself started.</p>
+<p>It will undoubtly be helpful to look at the examples in the "ubuntu", "rhel", and "debian" packages to get yourself started.</p>
 <h2 id="implementing-a-package-scanner"><a class="header" href="#implementing-a-package-scanner">Implementing a Package Scanner</a></h2>
-<p>At this point you hopefully have your Updater working, writing vulnerability data into Libvuln's database. </p>
+<p>At this point you hopefully have your Updater working, writing vulnerability data into Libvuln's database.</p>
 <p>We can now move our attention to package scanning.</p>
 <p>A package scanner is responsible for taking a claircore.Layer and parsing the contents for a particular package database or set of files inside the provided tar archive.
-Once the target files are located the package scanner should parse these files into claircore.Packages and return a slice of these data structures. </p>
+Once the target files are located the package scanner should parse these files into claircore.Packages and return a slice of these data structures.</p>
 <p>Package scanning is context free, meaning no distribution classification has happened yet.
 This is because manifests are made up of layers, and a layer which holds a package database may not hold distribution information such as an os-release file.
 A package scanner need only parse a target package database and return claircore.Packages.</p>
 <p>You need to implement the <a href="../reference/packagescanner.html">Package Scanner</a> interface to achieve this.</p>
 <p>Optionally, you may implement the <a href="../reference/configurable_scanner.html">Configurable Scanner</a> if the scanner needs to perform runtime configuration before use.</p>
-<p>Keep in mind that its very common for distributions to utilize an existing package manager such as RPM. </p>
-<p>If this is the case there's a high likelihood that you can utilize the existing &quot;rpm&quot; or &quot;dpkg&quot; package scanner implementations.</p>
+<p>Keep in mind that its very common for distributions to utilize an existing package manager such as RPM.</p>
+<p>If this is the case there's a high likelihood that you can utilize the existing "rpm" or "dpkg" package scanner implementations.</p>
 <h2 id="implementing-a-distribution-scanner"><a class="header" href="#implementing-a-distribution-scanner">Implementing a Distribution Scanner</a></h2>
 <p>Once the package scanner is implemented, tested, and working you can begin implementing a Distribution Scanner.</p>
 <p>Implementing a distribution scanner is a design choice.
-Distributions and repositories are the way claircore matches packages to vulnerabilities. </p>
+Distributions and repositories are the way claircore matches packages to vulnerabilities.</p>
 <p>If your implemented Updater parses vulnerabilities with distribution information you will likely need to implement a distribution scanner.
 Likewise, if your Updater parses vulnerabilities with repository information (typical with language vulnerabilities) you will likely need to implement a repository scanner.</p>
-<p>A distribution scanner, like a package scanner, is provided a claircore.Layer. </p>
+<p>A distribution scanner, like a package scanner, is provided a claircore.Layer.</p>
 <p>The distribution scanner will parse the provided tar archive exhaustively searching for any clue that this layer was derived from your distribution.
 If you identify that it is, you should return a common distribution used by your Updater implementation.
-This ensures that claircore can match the output of your distribution scanner with your parsed vulnerabilities. </p>
+This ensures that claircore can match the output of your distribution scanner with your parsed vulnerabilities.</p>
 <p>Optionally, you may implement the <a href="../reference/configurable_scanner.html">Configurable Scanner</a> if the scanner needs to perform runtime configuration before use.</p>
 <h2 id="implementing-a-repository-scanner"><a class="header" href="#implementing-a-repository-scanner">Implementing a Repository Scanner</a></h2>
 <p>As mentioned above, implementing a repository scanner is a design choice, often times applicable for language package managers.</p>
@@ -248,19 +248,19 @@ This ensures that claircore can match the output of your distribution scanner wi
 <h2 id="implementing-a-coalescer"><a class="header" href="#implementing-a-coalescer">Implementing a Coalescer</a></h2>
 <p>As you may have noticed, the process of scanning a layer for packages, distribution, and repository information is distinct and separate.</p>
 <p>At some point, claircore will need to take all the context-free information returned from layer scanners and create a complete view of the manifest.
-A coalescer performs this computation. </p>
+A coalescer performs this computation.</p>
 <p>It's unlikely you will need to implement your own coalescer.
-Claircore provides a default &quot;linux&quot; coalescer which will work if your package database is rewritten when modified.
+Claircore provides a default "linux" coalescer which will work if your package database is rewritten when modified.
 For example, if a Dockerfile's <code>RUN</code> command causes a change to to dpkg's <code>/var/lib/dpkg/status</code> database, the resulting manifest will have a copy placed in the associated layer.</p>
 <p>However, if your package database does not fit into this model, implementing a coalescer may be necessary.</p>
 <p>To implement a coalescer, several details must be understood:</p>
 <ul>
-<li>Each layer only provides a &quot;piece&quot; of the final manifest.
+<li>Each layer only provides a "piece" of the final manifest.
 <ul>
 <li>Because manifests are comprised of multiple copy-on-write layers, some layers may contain package information, distribution information, repository information, any combination of those, or no information at all.</li>
 </ul>
 </li>
-<li>An OS may have a &quot;dist-upgrade&quot; performed and the implications of this on the package management system is distribution or language dependent.
+<li>An OS may have a "dist-upgrade" performed and the implications of this on the package management system is distribution or language dependent.
 <ul>
 <li>The coalescer must deal with distribution upgrades in a sane way.
 If your distribution or language does a dist-upgrade, are all packages bumped?
@@ -282,7 +282,7 @@ We will address this in upcoming releases.</li>
 <p>An Ecosystem provides a set of coalescers, package scanners, distribution scanners, and repository scanners to Libindex at the time of indexing.</p>
 <p>Libindex will take the <a href="../reference/ecosystem.html">Ecosystem</a> and scan each layer with all provided scanners.
 When Libindex is ready to coalesce the results of each scanner into an <a href="../reference/index_report.html">IndexReport</a> the provided coalescer is given the output of the configured scanners.</p>
-<p>This allows Libindex to segment the input to the coalescing step to particular scanners that a coalescer understands. </p>
+<p>This allows Libindex to segment the input to the coalescing step to particular scanners that a coalescer understands.</p>
 <p>For instance, if we only wanted a (fictitious) Haskell coalescer to evaluate artifacts returned from a (fictitious) Haskell package and repository scanner we would create an ecosystem similar to:</p>
 <pre><code class="language-go">// HaskellScanner returns a configured PackageScanner.
 func haskellScanner() indexer.PackageScanner { return nil }
@@ -311,9 +311,9 @@ func NewEcosystem(ctx context.Context) *indexer.Ecosystem {
 
 </code></pre>
 <p>This ensures that Libindex will only provide Haskell artifacts to the Haskell coalescer and avoid calling the coalescer with rpm packages for example.</p>
-<p>If your distribution uses an already implemented package manager such as &quot;rpm&quot; or &quot;dpkg&quot;, it's likely you will simply add your scanners to the existing ecosystem in one of those packages.</p>
+<p>If your distribution uses an already implemented package manager such as "rpm" or "dpkg", it's likely you will simply add your scanners to the existing ecosystem in one of those packages.</p>
 <h2 id="alternative-implementations"><a class="header" href="#alternative-implementations">Alternative Implementations</a></h2>
-<p>This how-to guide is a &quot;perfect world&quot; scenario.</p>
+<p>This how-to guide is a "perfect world" scenario.</p>
 <p>Working on claircore has made us realize that this domain is a bit messy.
 Security trackers are not developed with package managers in mind, security databases do not follow correct specs, distribution maintainers spin their own tools, etc.</p>
 <p>We understand that supporting your distribution or language may take some bending of claircore's architecture and business logic.

@@ -186,8 +186,8 @@
 All pull requests should be targeted to the <code>main</code> branch outside of exceptional circumstances.</p>
 <h2 id="testing"><a class="header" href="#testing">Testing</a></h2>
 <p>As many tests as possible should run with the standard <code>go test</code> invocations.
-Adding the special tag <code>integration</code> (e.g. <code>go test -tags integration ./...</code>) will also run &quot;integration&quot; tests.
-The project interprets &quot;integration&quot; tests to mean any test that would need external resources, such as:</p>
+Adding the special tag <code>integration</code> (e.g. <code>go test -tags integration ./...</code>) will also run "integration" tests.
+The project interprets "integration" tests to mean any test that would need external resources, such as:</p>
 <ul>
 <li>External web servers</li>
 <li>External network access</li>
@@ -208,14 +208,14 @@ As many requirements as possible are enforced by CI, like:</p>
 <li>Commit messages having a properly formed subject</li>
 <li>Go modules being tidied</li>
 </ul>
-<p>Please use the &quot;draft&quot; option if the branch is not ready.
-Please enable the &quot;allow edits by maintainers&quot; option.</p>
+<p>Please use the "draft" option if the branch is not ready.
+Please enable the "allow edits by maintainers" option.</p>
 <p>The maintainers may rebase, push, and merge contributors' branches.
 This may necessitate doing a <code>git reset &lt;remote&gt;/&lt;branch&gt;</code> to update a local branch.</p>
 <h2 id="conventions"><a class="header" href="#conventions">Conventions</a></h2>
-<p>Git commits should be formatted like &quot;subject: summary&quot; and avoid going over 80 characters per line.
-The &quot;subject&quot; is usually the package affected by the commit (like <code>jar</code> or <code>rhel</code> -- the relative path isn't needed) but sometimes a broader category (like <code>docs</code>, <code>all</code>, or <code>cicd</code>) is OK.</p>
-<p>All the helper scripts should handle the &quot;normal&quot; convention (<code>origin</code> is <code>quay/claircore</code> and <code>fork</code> is one's personal fork) and the &quot;British&quot; convention (<code>origin</code> is one's personal fork and <code>upstream</code> is <code>quay/claircore</code>).</p>
+<p>Git commits should be formatted like "subject: summary" and avoid going over 80 characters per line.
+The "subject" is usually the package affected by the commit (like <code>jar</code> or <code>rhel</code> -- the relative path isn't needed) but sometimes a broader category (like <code>docs</code>, <code>all</code>, or <code>cicd</code>) is OK.</p>
+<p>All the helper scripts should handle the "normal" convention (<code>origin</code> is <code>quay/claircore</code> and <code>fork</code> is one's personal fork) and the "British" convention (<code>origin</code> is one's personal fork and <code>upstream</code> is <code>quay/claircore</code>).</p>
 <p>More detailed contributor documentation can be found in <a href="https://quay.github.io/claircore/contributor.html">the project documentation</a>.</p>
 
                     </main>

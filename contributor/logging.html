@@ -191,7 +191,7 @@ packages without having unintended prints to stderr.</p>
 <h3 id="adding-context"><a class="header" href="#adding-context">Adding Context</a></h3>
 <p>In a function, use <code>zlog</code> to add key-value pairs of any relevant context:</p>
 <pre><code class="language-go">	ctx = zlog.ContextWithValues(ctx,
-		&quot;component&quot;, &quot;Example.Logger&quot;)
+		"component", "Example.Logger")
 </code></pre>
 <p>Alternatively, the <code>go.opentelemetry.io/otel/baggage</code> package can be used for
 more explicit control around the baggage values.</p>
@@ -201,17 +201,17 @@ more explicit control around the baggage values.</p>
 is to <em>not</em> use <code>Msgf</code>. Any variable data should be set as key-value pairs on
 the Event object.</p>
 <p>For example, don't do this:</p>
-<pre><code class="language-go">	zlog.Info(ctx).Msgf(&quot;done at: %v&quot;, time.Now())
+<pre><code class="language-go">	zlog.Info(ctx).Msgf("done at: %v", time.Now())
 </code></pre>
 <p>Do this instead:</p>
 <pre><code class="language-go">	zlog.Info(ctx).
-		Time(&quot;time&quot;, time.Now()).
-		Msgf(&quot;done&quot;)
+		Time("time", time.Now()).
+		Msgf("done")
 </code></pre>
 <h4 id="grammar"><a class="header" href="#grammar">Grammar</a></h4>
 <p>When noting the change during a chunk of work, make sure that the
 log messages scan as visually similar. Usually, this means formatting messages
-into &quot;${process} ${event}&quot;. For example:</p>
+into "${process} ${event}". For example:</p>
 <pre><code>frob start
 frob initialized
 frob ready
