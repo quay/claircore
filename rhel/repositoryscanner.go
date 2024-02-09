@@ -262,7 +262,17 @@ func mapContentSets(ctx context.Context, sys fs.FS, cm *mappingFile) ([]string, 
 		return nil, fmt.Errorf("rhel: unable to read %q: %w", p, err)
 	}
 	var m contentManifest
-	if err := json.Unmarshal(b, &m); err != nil {
+	var syntaxErr *json.SyntaxError
+	err = json.Unmarshal(b, &m)
+	switch {
+	case errors.Is(err, nil):
+	case errors.As(err, &syntaxErr):
+		zlog.Warn(ctx).
+			Str("manifest-path", p).
+			Err(err).
+			Msg("could not unmarshal content_manifests file")
+		return nil, nil
+	default:
 		return nil, err
 	}
 	// If the JSON file is malformed and has a 0-length list of content sets,

@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/quay/claircore/pkg/tmp"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -14,6 +13,8 @@ import (
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/quay/claircore/pkg/tmp"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/quay/zlog"
@@ -175,6 +176,11 @@ func TestRepositoryScanner(t *testing.T) {
 			want:      nil,
 			cfg:       &RepositoryScannerConfig{DisableAPI: true},
 			layerPath: "testdata/layer-with-embedded-cs.tar",
+		}, {
+			name:      "BadContentManifestsFile",
+			want:      nil,
+			cfg:       &RepositoryScannerConfig{API: srv.URL, Repo2CPEMappingURL: srv.URL + "/repository-2-cpe.json"},
+			layerPath: "testdata/layer-with-invalid-content-manifests-json.tar",
 		},
 	}
 
