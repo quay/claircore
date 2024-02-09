@@ -83,7 +83,7 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 	switch {
 	case errors.Is(err, nil):
 		mainVer = claircore.FromSemver(mpv)
-	case bi.Main.Version == `(devel)`:
+	case bi.Main.Version == `(devel)`, bi.Main.Version == ``:
 		// This is currently the state of any main module built from source; see
 		// the package documentation. Don't record it as a "bad" version and
 		// pull out any vcs metadata that's been stamped in.
@@ -109,8 +109,11 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 			default:
 			}
 		}
-		if len(v) != 0 {
+		switch {
+		case len(v) != 0:
 			mmv = fmt.Sprintf("(devel) (%s)", strings.Join(v, ", "))
+		case mmv == ``:
+			mmv = `(devel)` // Not totally sure what else to put here.
 		}
 	case errors.Is(err, semver.ErrInvalidSemVer):
 		badVers[bi.Main.Path] = bi.Main.Version
@@ -119,10 +122,15 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 		return err
 	}
 
+	// This substitution makes the results look like `go version -m` output.
+	name := bi.Main.Path
+	if name == "" {
+		name = "command-line-arguments"
+	}
 	*out = append(*out, &claircore.Package{
 		Kind:              claircore.BINARY,
 		PackageDB:         pkgdb,
-		Name:              bi.Main.Path,
+		Name:              name,
 		Version:           mmv,
 		Filepath:          p,
 		NormalizedVersion: mainVer,
