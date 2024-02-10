@@ -1,69 +1,123 @@
 package dockerfile
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
-	"io/fs"
+	"errors"
+	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"golang.org/x/tools/txtar"
+	"rsc.io/script"
+	"rsc.io/script/scripttest"
 )
 
 func TestGetLabels(t *testing.T) {
 	ctx := context.Background()
-	td := os.DirFS("testdata")
-	de, err := fs.ReadDir(td, ".")
+	e := script.NewEngine()
+	e.Cmds = scripttest.DefaultCmds()
+	e.Conds = scripttest.DefaultConds()
+	e.Cmds["GetLabels"] = CmdGetLabels
+	const defaultScript = `# Check for expected JSON output.
+GetLabels
+cmp Got Want
+`
+
+	ms, err := filepath.Glob("testdata/*.txtar")
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, de := range de {
-		n := de.Name()
-		if !strings.HasPrefix(n, "Dockerfile") ||
-			strings.HasSuffix(n, ".want") ||
-			strings.HasSuffix(n, ".want.err") {
-			continue
-		}
-		t.Run(n, func(t *testing.T) {
-			f, err := td.Open(n)
+	for _, m := range ms {
+		t.Run(strings.TrimSuffix(filepath.Base(m), filepath.Ext(m)), func(t *testing.T) {
+			ar, err := txtar.ParseFile(m)
 			if err != nil {
-				t.Fatal(err)
+				t.Fatalf("error parsing %q: %v", m, err)
 			}
-			defer f.Close()
-			w, err := td.Open(n + ".want")
+			wd := t.TempDir()
+			s, err := script.NewState(ctx, wd, nil)
 			if err != nil {
-				t.Fatal(err)
+				t.Fatalf("error constructing *State: %v", err)
 			}
-			defer w.Close()
-			wantErr, _ := fs.ReadFile(td, n+".want.err")
-
-			want := make(map[string]string)
-			if err := json.NewDecoder(w).Decode(&want); err != nil {
-				t.Error(err)
+			if err := s.ExtractFiles(ar); err != nil {
+				t.Fatalf("error with ExtractFiles: %v", err)
 			}
-			got, err := GetLabels(ctx, f)
-			if len(wantErr) == 0 {
-				if err != nil {
+			log := new(strings.Builder)
+			defer func() {
+				if err := s.CloseAndWait(log); err != nil {
 					t.Error(err)
 				}
-			} else {
-				if err == nil {
-					t.Error("got nil, wanted error")
-				} else {
-					if got, want := err.Error(), string(bytes.TrimSpace(wantErr)); got != want {
-						t.Errorf("got: %+#q, want: %+#q", got, want)
-					}
+				if log.Len() > 0 {
+					t.Log(strings.TrimSuffix(log.String(), "\n"))
 				}
+			}()
+			sr := bytes.NewBuffer(ar.Comment)
+			if sr.Len() == 0 {
+				m = "(default script)"
+				sr = bytes.NewBufferString(defaultScript)
 			}
-
-			if !cmp.Equal(got, want) {
-				t.Error(cmp.Diff(got, want))
+			if err := e.Execute(s, m, bufio.NewReader(sr), log); err != nil {
+				t.Error(err)
 			}
 		})
 	}
 }
+
+var CmdGetLabels = script.Command(
+	script.CmdUsage{
+		Summary: "parse a Dockerfile and return the labels of the named files",
+		Args:    "[input]",
+		Detail: []string{
+			"If a filename is not given, 'Dockerfile' is assumed.",
+			"The result is JSON-encoded with indents of two spaces and written to the file 'Got'.",
+			"If there's an error, it is printed to stderr.",
+		},
+	},
+	func(s *script.State, args ...string) (script.WaitFunc, error) {
+		name := "Dockerfile"
+		switch len(args) {
+		case 0:
+		case 1:
+			name = args[0]
+		default:
+			return nil, errors.New("bad number of arguments: want at most 1")
+		}
+
+		in, err := os.Open(filepath.Join(s.Getwd(), name))
+		if err != nil {
+			return nil, err
+		}
+		out, err := os.Create(filepath.Join(s.Getwd(), "Got"))
+		if err != nil {
+			in.Close()
+			return nil, err
+		}
+		enc := json.NewEncoder(out)
+		enc.SetEscapeHTML(false)
+		enc.SetIndent("", "  ")
+
+		return func(s *script.State) (stdout, stderr string, err error) {
+			defer in.Close()
+			defer out.Close()
+			var got map[string]string
+			got, err = GetLabels(s.Context(), in)
+			if err == nil {
+				if encErr := enc.Encode(got); encErr != nil {
+					err = fmt.Errorf("json error: %w", encErr)
+				}
+			} else {
+				stderr = err.Error() + "\n"
+				err = errors.New("GetLabels failed")
+			}
+			return
+		}, nil
+	},
+)
 
 func TestSplit(t *testing.T) {
 	for _, p := range []struct {
