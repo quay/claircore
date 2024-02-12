@@ -62,6 +62,30 @@ func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]
 }
 
 func findDistribution(sys fs.FS) (*claircore.Distribution, error) {
+	// TODO(ross): It is not ideal to special-case Oracle Linux like this here.
+	// Ideally, each distribution scanner does it own work and does not know about the existence
+	// of other distribution scanners.
+	// It would be great to solely use etc/os-release; however, ClairCore still supports
+	// RHEL 6 which does not ship with etc/os-release, so this function must continue to rely on
+	// etc/redhat-release.
+	// Oracle Linux ships with etc/oracle-release as well as an unmodified etc/redhat-release, which means
+	// this function may accidentally claim the distribution is RHEL when it is actually Oracle Linux.
+	// For example: Oracle Linux 9 (as of writing) contains the following contents in the etc/redhat-release file:
+	// Red Hat Enterprise Linux release 9.3 (Plow)
+	// For now, special case Oracle Linux until RHEL 6 support is dropped.
+	const oracleReleasePath = `etc/oracle-release`
+	_, err := fs.Stat(sys, oracleReleasePath)
+	switch {
+	case errors.Is(err, nil):
+		// The etc/oracle-release file exists, so this is an Oracle Linux distribution,
+		// and not RHEL.
+		return nil, nil
+	case !errors.Is(err, fs.ErrNotExist):
+		return nil, fmt.Errorf("rhel: unexpected error reading files: %w", err)
+	default:
+		// OK.
+	}
+
 	const (
 		osReleasePath = `etc/os-release`
 		rhReleasePath = `etc/redhat-release`

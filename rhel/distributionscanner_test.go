@@ -25,11 +25,18 @@ func TestDistributionScanner(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if d == nil {
-				t.Fatal("missing distribution")
-			}
-			if got, want := d.Version, strings.TrimPrefix(n, "atomichost-"); got != want {
-				t.Errorf("got: %q, want %q", got, want)
+			switch {
+			case strings.HasPrefix(n, "oracle-"):
+				if d != nil {
+					t.Fatalf("incorrect distribution: %s:%s", d.DID, d.VersionID)
+				}
+			default:
+				if d == nil {
+					t.Fatal("missing distribution")
+				}
+				if got, want := d.Version, strings.TrimPrefix(n, "atomichost-"); got != want {
+					t.Errorf("got: %q, want %q", got, want)
+				}
 			}
 		})
 	}
