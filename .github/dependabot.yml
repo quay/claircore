@@ -1,4 +1,5 @@
 ---
+# This could be much simpler if Dependabot supported YAML instead of some subset that doesn't include anchors.
 version: 2
 updates:
   - package-ecosystem: "github-actions"
@@ -19,6 +20,13 @@ updates:
     commit-message:
       prefix: "chore"
       include: "scope"
+    groups:
+      otel:
+        patterns:
+          - "go.opentelemetry.io/otel/*"
+      golang-x:
+        patterns:
+          - "golang.org/x/*"
   - package-ecosystem: "gomod"
     directory: "/toolkit"
     schedule:
@@ -28,6 +36,13 @@ updates:
     commit-message:
       prefix: "chore"
       include: "scope"
+    groups:
+      otel:
+        patterns:
+        - "go.opentelemetry.io/otel/*"
+      golang-x:
+        patterns:
+          - "golang.org/x/*"
   - package-ecosystem: "gomod"
     directory: "/updater/driver"
     schedule:
@@ -37,3 +52,10 @@ updates:
     commit-message:
       prefix: "chore"
       include: "scope"
+    groups:
+      otel:
+        patterns:
+        - "go.opentelemetry.io/otel/*"
+      golang-x:
+        patterns:
+          - "golang.org/x/*"
