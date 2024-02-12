@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	_ "embed" // embed a sql statement
+	"errors"
 	"fmt"
 	"io"
 	"net/url"
@@ -88,5 +89,21 @@ func (db *RPMDB) AllHeaders(ctx context.Context) ([]io.ReaderAt, error) {
 	return r, nil
 }
 
+func (db *RPMDB) Validate(ctx context.Context) error {
+	var ignore int64
+	err := db.db.QueryRow(validate).Scan(&ignore)
+	switch {
+	case errors.Is(err, nil):
+	case errors.Is(err, sql.ErrNoRows):
+		return errors.New("not an rpm database")
+	default:
+		return err
+	}
+	return nil
+}
+
 //go:embed sql/allpackages.sql
 var allpackages string
+
+//go:embed sql/validate.sql
+var validate string

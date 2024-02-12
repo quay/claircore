@@ -18,6 +18,7 @@ import (
 // NativeDB is the interface implemented for in-process RPM database handlers.
 type nativeDB interface {
 	AllHeaders(context.Context) ([]io.ReaderAt, error)
+	Validate(context.Context) error
 }
 
 // PackagesFromDB extracts the packages from the RPM headers provided by

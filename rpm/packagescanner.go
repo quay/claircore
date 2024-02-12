@@ -162,6 +162,12 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 		default:
 			panic("programmer error: bad kind: " + db.Kind.String())
 		}
+		if err := nat.Validate(ctx); err != nil {
+			zlog.Warn(ctx).
+				Err(err).
+				Msg("rpm: invalid native DB")
+			continue
+		}
 		ps, err := packagesFromDB(ctx, db.String(), nat)
 		if err != nil {
 			return nil, fmt.Errorf("rpm: error reading native db: %w", err)

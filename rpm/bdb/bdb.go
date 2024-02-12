@@ -241,6 +241,11 @@ func (db *PackageDB) AllHeaders(_ context.Context) ([]io.ReaderAt, error) {
 	return ret, nil
 }
 
+// Validate currently here to fulfil an interface.
+func (db *PackageDB) Validate(_ context.Context) error {
+	return nil
+}
+
 // Rope provides an [io.ReaderAt] over an ordered slice of [io.ReaderAt].
 //
 // It's much simpler than a real rope because it's append only.

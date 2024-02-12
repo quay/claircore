@@ -57,6 +57,11 @@ func TestPackages(t *testing.T) {
 			t.Error(err)
 		}
 	}()
+	err = db.Validate(ctx)
+	if err != nil {
+		t.Error("error validating sqlite DB", err)
+	}
+
 	if err := json.NewDecoder(f).Decode(&want); err != nil {
 		t.Error(err)
 	}
@@ -77,5 +82,41 @@ func TestPackages(t *testing.T) {
 
 	if !cmp.Equal(got, want) {
 		t.Error(cmp.Diff(got, want))
+	}
+}
+
+func TestValidate(t *testing.T) {
+	ctx := zlog.Test(context.Background(), t)
+
+	dbfile := filepath.Join(t.TempDir(), `no_packages.sqlite`)
+	dst, err := os.Create(dbfile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer dst.Close()
+	src, err := os.Open(`testdata/no_packages.sqlite`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer src.Close()
+	if _, err := io.Copy(dst, src); err != nil {
+		t.Fatal(err)
+	}
+	if err := dst.Sync(); err != nil {
+		t.Fatal(err)
+	}
+
+	db, err := Open(dbfile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := db.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
+	err = db.Validate(ctx)
+	if err == nil {
+		t.Error("expecting error from Validate() for empty DB")
 	}
 }

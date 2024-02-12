@@ -80,6 +80,11 @@ func (db *PackageDB) AllHeaders(_ context.Context) ([]io.ReaderAt, error) {
 	return r, nil
 }
 
+// Validate currently here to fulfil an interface.
+func (db *PackageDB) Validate(_ context.Context) error {
+	return nil
+}
+
 // GetHeader returns an [io.ReaderAt] populated with [rpm.Header] data or
 // reports an error.
 func (db *PackageDB) GetHeader(pkgID uint32) (io.ReaderAt, error) {
