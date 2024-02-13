@@ -6,10 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"regexp"
+	"strconv"
 	"strings"
 	_ "unsafe" // for error linkname tricks
 
-	"github.com/Masterminds/semver"
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
@@ -53,12 +54,10 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 	// TODO(hank) The "go version" is documented as the toolchain that produced
 	// the binary, which may be distinct from the version of the stdlib used?
 	// Need to investigate.
-	var runtimeVer claircore.Version
-	rtv, err := semver.NewVersion(strings.TrimPrefix(bi.GoVersion, "go"))
+	runtimeVer, err := ParseVersion(strings.TrimPrefix(bi.GoVersion, "go"))
 	switch {
 	case errors.Is(err, nil):
-		runtimeVer = claircore.FromSemver(rtv)
-	case errors.Is(err, semver.ErrInvalidSemVer):
+	case errors.Is(err, ErrInvalidSemVer):
 		badVers["stdlib"] = bi.GoVersion
 	default:
 		return err
@@ -77,12 +76,10 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 	vs := map[string]string{
 		"stdlib": bi.GoVersion,
 	}
-	var mainVer claircore.Version
 	var mmv string
-	mpv, err := semver.NewVersion(bi.Main.Version)
+	mainVer, err := ParseVersion(bi.Main.Version)
 	switch {
 	case errors.Is(err, nil):
-		mainVer = claircore.FromSemver(mpv)
 	case bi.Main.Version == `(devel)`, bi.Main.Version == ``:
 		// This is currently the state of any main module built from source; see
 		// the package documentation. Don't record it as a "bad" version and
@@ -115,7 +112,7 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 		case mmv == ``:
 			mmv = `(devel)` // Not totally sure what else to put here.
 		}
-	case errors.Is(err, semver.ErrInvalidSemVer):
+	case errors.Is(err, ErrInvalidSemVer):
 		badVers[bi.Main.Path] = bi.Main.Version
 		mmv = bi.Main.Version
 	default:
@@ -145,12 +142,10 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 		if r := d.Replace; r != nil {
 			d = r
 		}
-		var nv claircore.Version
-		ver, err := semver.NewVersion(d.Version)
+		nv, err := ParseVersion(d.Version)
 		switch {
 		case errors.Is(err, nil):
-			nv = claircore.FromSemver(ver)
-		case errors.Is(err, semver.ErrInvalidSemVer):
+		case errors.Is(err, ErrInvalidSemVer):
 			badVers[d.Path] = d.Version
 		default:
 			return err
@@ -173,4 +168,43 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 		Interface("versions", vs).
 		Msg("analyzed exe")
 	return nil
+}
+
+var versionRegex = regexp.MustCompile(`^v?([0-9]+)(\.[0-9]+)?(\.[0-9]+)?(-([0-9A-Za-z\-]+(\.[0-9A-Za-z\-]+)*))?(\+([0-9A-Za-z\-]+(\.[0-9A-Za-z\-]+)*))?$`)
+var ErrInvalidSemVer = errors.New("invalid semantic version")
+
+// ParseVersion will return a claircore.Version of type semver given
+// a valid semantic version. If the string is not a valid semver it
+// will return an ErrInvalidSemVer.
+func ParseVersion(ver string) (c claircore.Version, err error) {
+	m := versionRegex.FindStringSubmatch(ver)
+	if m == nil {
+		err = ErrInvalidSemVer
+		return
+	}
+	if c.V[1], err = fitInt32(m[1]); err != nil {
+		return
+	}
+	if c.V[2], err = fitInt32(strings.TrimPrefix(m[2], ".")); err != nil {
+		return
+	}
+	if c.V[3], err = fitInt32(strings.TrimPrefix(m[3], ".")); err != nil {
+		return
+	}
+	c.Kind = "semver"
+	return
+}
+
+func fitInt32(seg string) (int32, error) {
+	if len(seg) > 9 {
+		// Technically 2147483647 is possible so this should be well within bounds.
+		// Slicing here to avoid any big.Int allocations at the expense of a little
+		// more accuracy.
+		seg = seg[:9]
+	}
+	i, err := strconv.ParseInt(seg, 10, 32)
+	if err != nil {
+		return 0, err
+	}
+	return int32(i), nil
 }
