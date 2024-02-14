@@ -44,7 +44,7 @@ func TestRPMSpotCheck(t *testing.T) {
 			"redhat_client": {"claircore-tests"},
 			"fq": {
 				`documentKind:"ContainerRepository"`,
-				`-release_catagories:"Deprecated"`,
+				`-eol_date:[* TO NOW]`,
 			},
 			"fl":   {"id,repository,registry,parsed_data_layers"},
 			"rows": {"500"},
