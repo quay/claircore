@@ -28,13 +28,14 @@ func TestLoadPackage(t *testing.T) {
 				t.Fatal(err)
 			}
 			pkgf := bytes.NewReader(b)
+
 			var pkg PackageDB
 			if err := pkg.Parse(pkgf); err != nil {
-				t.Fatal(err)
+				t.Fatal("error parsing Packages file", err)
 			}
 			rds, err := pkg.AllHeaders(ctx)
 			if err != nil {
-				t.Fatal(err)
+				t.Fatal("error getting AllHeaders", err)
 			}
 			for _, rd := range rds {
 				var h rpm.Header

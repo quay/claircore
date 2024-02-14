@@ -42,7 +42,7 @@ func (db *PackageDB) Parse(r io.ReaderAt) error {
 	db.slot = make([]pkgSlot, 0, lastIndex)
 	b = b[:slotSize]
 	// Read every populated slot (these should be contiguous) and populate the lookup table.
-	for off := int64(slotStart * slotSize); ; off += slotSize {
+	for off := int64(slotStart * slotSize); off < int64(db.NPages*pageSz); off += slotSize {
 		if _, err := r.ReadAt(b, off); err != nil {
 			return fmt.Errorf("ndb: package: unable to read slot @%d: %w", off, err)
 		}
