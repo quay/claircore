@@ -90,16 +90,18 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 	}
 
 	ret := make([]*claircore.Package, 0, len(pkgs))
+	var invalidPkgs []string
 	for _, p := range pkgs {
 		f, err := sys.Open(p)
 		if err != nil {
-			return nil, fmt.Errorf("nodejs: unable to open file: %w", err)
+			return nil, fmt.Errorf("nodejs: unable to open file %q: %w", p, err)
 		}
 
 		var pkgJSON packageJSON
 		err = json.NewDecoder(bufio.NewReader(f)).Decode(&pkgJSON)
 		if err != nil {
-			return nil, fmt.Errorf("nodejs: unable to decode package.json file: %w", err)
+			invalidPkgs = append(invalidPkgs, p)
+			continue
 		}
 
 		pkg := &claircore.Package{
@@ -120,6 +122,10 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 		}
 
 		ret = append(ret, pkg)
+	}
+
+	if len(invalidPkgs) > 0 {
+		zlog.Debug(ctx).Strs("paths", invalidPkgs).Msg("unable to decode package.json, skipping")
 	}
 
 	return ret, nil
