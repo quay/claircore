@@ -17,7 +17,7 @@ jobs:
     steps:
       - id: config
         run: |
-          echo 'go_versions=["1.21","1.20"]' >> $GITHUB_OUTPUT
+          echo 'go_versions=["1.22","1.21","1.20"]' >> $GITHUB_OUTPUT
 
   gating-lints:
     needs: ['config']
@@ -125,9 +125,12 @@ jobs:
           success() &&
           fromJSON(needs.config.outputs.go_versions)[0] == matrix.go
         uses: codecov/codecov-action@v4
+        env:
+          GOVERSION: ${{ matrix.go }}
         with:
           directory: ${{ runner.temp }}
           override_branch: ${{ github.ref_name }}
+          env_vars: GOVERSION
       - name: Database Logs
         if: failure() || env.RUNNER_DEBUG == 1
         run: |
