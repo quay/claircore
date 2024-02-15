@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+
+	"github.com/quay/zlog"
 )
 
 // PackageDB is the "pkgdb" a.k.a. "Packages", the raw package data.
@@ -167,7 +169,7 @@ type hashoffpage struct {
 }
 
 // AllHeaders returns ReaderAts for all RPM headers in the PackageDB.
-func (db *PackageDB) AllHeaders(_ context.Context) ([]io.ReaderAt, error) {
+func (db *PackageDB) AllHeaders(ctx context.Context) ([]io.ReaderAt, error) {
 	var ret []io.ReaderAt
 	pageSz := int64(db.m.PageSize)
 	for n, lim := int64(0), int64(db.m.LastPageNo)+1; n < lim; n++ {
@@ -233,7 +235,10 @@ func (db *PackageDB) AllHeaders(_ context.Context) ([]io.ReaderAt, error) {
 			}
 			// Double-check we'll read the intended amount.
 			if got, want := r.Size(), int64(offpg.Length); got != want {
-				return nil, fmt.Errorf("bdb: expected data length botch: %d != %d", got, want)
+				zlog.Info(ctx).
+					Int64("got", got).
+					Int64("want", want).
+					Msg("bdb: expected data length botch")
 			}
 			ret = append(ret, &r)
 		}
