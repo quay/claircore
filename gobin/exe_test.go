@@ -77,6 +77,14 @@ var versionTestcases = []struct {
 			V:    [...]int32{0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 		},
 	},
+	{
+		name:      "missing patch",
+		versionIn: `1.18`,
+		want: claircore.Version{
+			Kind: "semver",
+			V:    [...]int32{0, 1, 18, 0, 0, 0, 0, 0, 0, 0},
+		},
+	},
 }
 
 func TestParseVersion(t *testing.T) {

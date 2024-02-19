@@ -60,7 +60,7 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 	case errors.Is(err, ErrInvalidSemVer):
 		badVers["stdlib"] = bi.GoVersion
 	default:
-		return err
+		return fmt.Errorf("error parsing runtime version: %q: %w", bi.GoVersion, err)
 	}
 
 	*out = append(*out, &claircore.Package{
@@ -116,7 +116,7 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 		badVers[bi.Main.Path] = bi.Main.Version
 		mmv = bi.Main.Version
 	default:
-		return err
+		return fmt.Errorf("error parsing main version: %q: %w", bi.Main.Version, err)
 	}
 
 	// This substitution makes the results look like `go version -m` output.
@@ -148,7 +148,7 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 		case errors.Is(err, ErrInvalidSemVer):
 			badVers[d.Path] = d.Version
 		default:
-			return err
+			return fmt.Errorf("error parsing dep version: %q: %w", d.Version, err)
 		}
 
 		*out = append(*out, &claircore.Package{
@@ -201,6 +201,9 @@ func fitInt32(seg string) (int32, error) {
 		// Slicing here to avoid any big.Int allocations at the expense of a little
 		// more accuracy.
 		seg = seg[:9]
+	}
+	if seg == "" {
+		return 0, nil
 	}
 	i, err := strconv.ParseInt(seg, 10, 32)
 	if err != nil {
