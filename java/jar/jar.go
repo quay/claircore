@@ -120,8 +120,6 @@ func parse(ctx context.Context, name srcPath, z *zip.Reader) ([]Info, error) {
 		goto Finish
 	case errors.Is(err, errUnpopulated):
 	case strings.HasPrefix(base, "javax") && errors.Is(err, ErrNotAJar):
-	case errors.Is(err, ErrNotAJar):
-		return nil, err
 	default:
 		return nil, archiveErr(name, err)
 	}
@@ -135,8 +133,6 @@ func parse(ctx context.Context, name srcPath, z *zip.Reader) ([]Info, error) {
 		goto Finish
 	case errors.Is(err, errUnpopulated) || errors.Is(err, errInsaneManifest):
 	case strings.HasPrefix(base, "javax") && errors.Is(err, ErrNotAJar):
-	case errors.Is(err, ErrNotAJar):
-		return nil, err
 	default:
 		return nil, archiveErr(name, err)
 	}
@@ -181,15 +177,16 @@ func extractManifest(ctx context.Context, name srcPath, z *zip.Reader) (Info, er
 	switch {
 	case errors.Is(err, nil):
 	case errors.Is(err, fs.ErrNotExist), errors.Is(err, zip.ErrFormat):
-		return Info{}, mkErr("manifest", notAJar(name, err))
+		err = notAJar(name, err)
+		fallthrough
 	default:
-		return Info{}, err
+		return Info{}, mkErr("opening manifest", err)
 	}
 	defer mf.Close()
 	var i Info
 	err = i.parseManifest(ctx, mf)
 	if err != nil {
-		return Info{}, err
+		return Info{}, mkErr("parsing manifest", err)
 	}
 	name.Push(manifestPath)
 	i.Source = name.String()
@@ -236,12 +233,12 @@ func extractProperties(ctx context.Context, name srcPath, z *zip.Reader) ([]Info
 		case errors.Is(err, zip.ErrFormat), errors.Is(err, zip.ErrChecksum):
 			return nil, mkErr("properties", notAJar(name, err))
 		default:
-			return nil, err
+			return nil, mkErr("failed opening properties", err)
 		}
 		err = ret[i].parseProperties(ctx, f)
 		f.Close()
 		if err != nil {
-			return nil, err
+			return nil, mkErr("failed parsing properties", err)
 		}
 		name.Push(p)
 		ret[i].Source = name.String()
@@ -271,7 +268,7 @@ func extractInner(ctx context.Context, p srcPath, z *zip.Reader) ([]Info, error)
 		}
 		rc, err := f.Open()
 		if err != nil {
-			return err
+			return mkErr("failed opening file", err)
 		}
 		defer rc.Close()
 		buf.Reset()
@@ -279,7 +276,7 @@ func extractInner(ctx context.Context, p srcPath, z *zip.Reader) ([]Info, error)
 		h.Reset()
 		sz, err := buf.ReadFrom(io.TeeReader(rc, h))
 		if err != nil {
-			return err
+			return mkErr("failed buffering file", err)
 		}
 		bs := buf.Bytes()
 		// Check header.
@@ -298,7 +295,7 @@ func extractInner(ctx context.Context, p srcPath, z *zip.Reader) ([]Info, error)
 				Msg("not actually a jar: invalid zip")
 			return nil
 		default:
-			return err
+			return mkErr("failed opening inner zip", err)
 		}
 
 		p.Push(name)
@@ -315,7 +312,7 @@ func extractInner(ctx context.Context, p srcPath, z *zip.Reader) ([]Info, error)
 				Msg("not actually a jar")
 			return nil
 		default:
-			return err
+			return mkErr("parse error", err)
 		}
 		c := make([]byte, sha1.Size)
 		h.Sum(c[:0])
@@ -328,7 +325,7 @@ func extractInner(ctx context.Context, p srcPath, z *zip.Reader) ([]Info, error)
 
 	for _, f := range z.File {
 		if err := checkFile(ctx, f); err != nil {
-			return nil, fmt.Errorf("walking %s: %w", p, err)
+			return nil, fmt.Errorf("walking %s: %s: %w", p, f.Name, err)
 		}
 	}
 
@@ -642,7 +639,7 @@ func (i *Info) parseProperties(ctx context.Context, r io.Reader) error {
 		}
 	}
 	if err := s.Err(); err != nil {
-		return err
+		return mkErr("properties scanner", err)
 	}
 	if group == "" || artifact == "" || version == "" {
 		zlog.Debug(ctx).
