@@ -11,11 +11,11 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/quay/claircore/toolkit/types/cpe"
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
-	"github.com/quay/claircore/pkg/cpe"
 )
 
 const (
@@ -36,21 +36,21 @@ var (
 	_ indexer.VersionedScanner    = (*Scanner)(nil)
 )
 
-// Scanner implements a scanner.DistributionScanner that examines os-release
+// Scanner implements a [indexer.DistributionScanner] that examines os-release
 // files, as documented at
 // https://www.freedesktop.org/software/systemd/man/os-release.html
 type Scanner struct{}
 
-// Name implements scanner.VersionedScanner.
+// Name implements [indexer.VersionedScanner].
 func (*Scanner) Name() string { return scannerName }
 
-// Version implements scanner.VersionedScanner.
+// Version implements [indexer.VersionedScanner].
 func (*Scanner) Version() string { return scannerVersion }
 
-// Kind implements scanner.VersionedScanner.
+// Kind implements [indexer.VersionedScanner].
 func (*Scanner) Kind() string { return scannerKind }
 
-// Scan reports any found os-release Distribution information in the provided
+// Scan reports any found os-release distribution information in the provided
 // layer.
 //
 // It's an expected outcome to return (nil, nil) when the os-release file is not
@@ -96,8 +96,7 @@ func (s *Scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Di
 	return []*claircore.Distribution{d}, nil
 }
 
-// ToDist returns the distribution information from the file contents provided on
-// r.
+// ToDist returns the distribution information from the file contents provided on r.
 func toDist(ctx context.Context, r io.Reader) (*claircore.Distribution, error) {
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "osrelease/parse")
@@ -161,7 +160,7 @@ func toDist(ctx context.Context, r io.Reader) (*claircore.Distribution, error) {
 	return &d, nil
 }
 
-// Parse splits the contents r into key-value pairs as described in
+// Parse splits the contents of "r" into key-value pairs as described in
 // os-release(5).
 //
 // See comments in the source for edge cases.
