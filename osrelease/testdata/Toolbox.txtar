@@ -1,0 +1,55 @@
+-- os-release --
+NAME=Fedora
+VERSION="30 (Container Image)"
+ID=fedora
+VERSION_ID=30
+VERSION_CODENAME=""
+PLATFORM_ID="platform:f30"
+PRETTY_NAME="Fedora 30 (Container Image)"
+ANSI_COLOR="0;34"
+LOGO=fedora-logo-icon
+CPE_NAME="cpe:/o:fedoraproject:fedora:30"
+HOME_URL="https://fedoraproject.org/"
+DOCUMENTATION_URL="https://docs.fedoraproject.org/en-US/fedora/f30/system-administrators-guide/"
+SUPPORT_URL="https://fedoraproject.org/wiki/Communicating_and_getting_help"
+BUG_REPORT_URL="https://bugzilla.redhat.com/"
+REDHAT_BUGZILLA_PRODUCT="Fedora"
+REDHAT_BUGZILLA_PRODUCT_VERSION=30
+REDHAT_SUPPORT_PRODUCT="Fedora"
+REDHAT_SUPPORT_PRODUCT_VERSION=30
+PRIVACY_POLICY_URL="https://fedoraproject.org/wiki/Legal:PrivacyPolicy"
+VARIANT="Container Image"
+VARIANT_ID=container
+-- Parsed --
+{
+  "ANSI_COLOR": "0;34",
+  "BUG_REPORT_URL": "https://bugzilla.redhat.com/",
+  "CPE_NAME": "cpe:/o:fedoraproject:fedora:30",
+  "DOCUMENTATION_URL": "https://docs.fedoraproject.org/en-US/fedora/f30/system-administrators-guide/",
+  "HOME_URL": "https://fedoraproject.org/",
+  "ID": "fedora",
+  "LOGO": "fedora-logo-icon",
+  "NAME": "Fedora",
+  "PLATFORM_ID": "platform:f30",
+  "PRETTY_NAME": "Fedora 30 (Container Image)",
+  "PRIVACY_POLICY_URL": "https://fedoraproject.org/wiki/Legal:PrivacyPolicy",
+  "REDHAT_BUGZILLA_PRODUCT": "Fedora",
+  "REDHAT_BUGZILLA_PRODUCT_VERSION": "30",
+  "REDHAT_SUPPORT_PRODUCT": "Fedora",
+  "REDHAT_SUPPORT_PRODUCT_VERSION": "30",
+  "SUPPORT_URL": "https://fedoraproject.org/wiki/Communicating_and_getting_help",
+  "VARIANT_ID": "container",
+  "VARIANT": "Container Image",
+  "VERSION": "30 (Container Image)",
+  "VERSION_CODENAME": "",
+  "VERSION_ID": "30"
+}
+-- Distribution --
+{
+  "cpe": "cpe:/o:fedoraproject:fedora:30",
+  "did": "fedora",
+  "name": "Fedora",
+  "pretty_name": "Fedora",
+  "version": "30 (Container Image)",
+  "version_id": "30"
+}

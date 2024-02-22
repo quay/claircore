@@ -1,0 +1,28 @@
+-- os-release --
+PRETTY_NAME="Distroless"
+NAME="Debian GNU/Linux"
+ID="debian"
+VERSION_ID="12"
+VERSION="Debian GNU/Linux 12 (bookworm)"
+HOME_URL="https://github.com/GoogleContainerTools/distroless"
+SUPPORT_URL="https://github.com/GoogleContainerTools/distroless/blob/master/README.md"
+BUG_REPORT_URL="https://github.com/GoogleContainerTools/distroless/issues/new"
+-- Parsed --
+{
+  "BUG_REPORT_URL": "https://github.com/GoogleContainerTools/distroless/issues/new",
+  "HOME_URL": "https://github.com/GoogleContainerTools/distroless",
+  "ID": "debian",
+  "NAME": "Debian GNU/Linux",
+  "PRETTY_NAME": "Distroless",
+  "SUPPORT_URL": "https://github.com/GoogleContainerTools/distroless/blob/master/README.md",
+  "VERSION": "Debian GNU/Linux 12 (bookworm)",
+  "VERSION_ID": "12"
+}
+-- Distribution --
+{
+  "did": "debian",
+  "name": "Debian GNU/Linux",
+  "pretty_name": "Distroless",
+  "version": "Debian GNU/Linux 12 (bookworm)",
+  "version_id": "12"
+}

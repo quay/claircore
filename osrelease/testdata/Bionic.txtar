@@ -1,0 +1,37 @@
+-- os-release --
+NAME="Ubuntu"
+VERSION="18.04.3 LTS (Bionic Beaver)"
+ID=ubuntu
+ID_LIKE=debian
+PRETTY_NAME="Ubuntu 18.04.3 LTS"
+VERSION_ID="18.04"
+HOME_URL="https://www.ubuntu.com/"
+SUPPORT_URL="https://help.ubuntu.com/"
+BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
+PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+VERSION_CODENAME=bionic
+UBUNTU_CODENAME=bionic
+-- Parsed --
+{
+  "BUG_REPORT_URL": "https://bugs.launchpad.net/ubuntu/",
+  "HOME_URL": "https://www.ubuntu.com/",
+  "ID_LIKE": "debian",
+  "ID": "ubuntu",
+  "NAME": "Ubuntu",
+  "PRETTY_NAME": "Ubuntu 18.04.3 LTS",
+  "PRIVACY_POLICY_URL": "https://www.ubuntu.com/legal/terms-and-policies/privacy-policy",
+  "SUPPORT_URL": "https://help.ubuntu.com/",
+  "UBUNTU_CODENAME": "bionic",
+  "VERSION": "18.04.3 LTS (Bionic Beaver)",
+  "VERSION_CODENAME": "bionic",
+  "VERSION_ID": "18.04"
+}
+-- Distribution --
+{
+  "did": "ubuntu",
+  "name": "Ubuntu",
+  "pretty_name": "Ubuntu 18.04.3 LTS",
+  "version": "18.04.3 LTS (Bionic Beaver)",
+  "version_code_name": "bionic",
+  "version_id": "18.04"
+}

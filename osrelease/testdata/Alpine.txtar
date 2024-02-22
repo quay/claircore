@@ -1,0 +1,23 @@
+-- os-release --
+NAME="Alpine Linux"
+ID=alpine
+VERSION_ID=3.10.2
+PRETTY_NAME="Alpine Linux v3.10"
+HOME_URL="https://alpinelinux.org/"
+BUG_REPORT_URL="https://bugs.alpinelinux.org/"
+-- Parsed --
+{
+  "BUG_REPORT_URL": "https://bugs.alpinelinux.org/",
+  "HOME_URL": "https://alpinelinux.org/",
+  "ID": "alpine",
+  "NAME": "Alpine Linux",
+  "PRETTY_NAME": "Alpine Linux v3.10",
+  "VERSION_ID": "3.10.2"
+}
+-- Distribution --
+{
+  "did": "alpine",
+  "name": "Alpine Linux",
+  "pretty_name": "Alpine Linux v3.10",
+  "version_id": "3.10.2"
+}

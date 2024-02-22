@@ -1,0 +1,57 @@
+-- os-release --
+NAME=Fedora
+VERSION="30.20191008.1 (Workstation Edition)"
+ID=fedora
+VERSION_ID=30
+VERSION_CODENAME=""
+PLATFORM_ID="platform:f30"
+PRETTY_NAME="Fedora 30.20191008.1 (Workstation Edition)"
+ANSI_COLOR="0;34"
+LOGO=fedora-logo-icon
+CPE_NAME="cpe:/o:fedoraproject:fedora:30"
+HOME_URL="https://fedoraproject.org/"
+DOCUMENTATION_URL="https://docs.fedoraproject.org/en-US/fedora/f30/system-administrators-guide/"
+SUPPORT_URL="https://fedoraproject.org/wiki/Communicating_and_getting_help"
+BUG_REPORT_URL="https://bugzilla.redhat.com/"
+REDHAT_BUGZILLA_PRODUCT="Fedora"
+REDHAT_BUGZILLA_PRODUCT_VERSION=30
+REDHAT_SUPPORT_PRODUCT="Fedora"
+REDHAT_SUPPORT_PRODUCT_VERSION=30
+PRIVACY_POLICY_URL="https://fedoraproject.org/wiki/Legal:PrivacyPolicy"
+VARIANT="Workstation Edition"
+VARIANT_ID=workstation
+OSTREE_VERSION='30.20191008.1'
+-- Parsed --
+{
+  "ANSI_COLOR": "0;34",
+  "BUG_REPORT_URL": "https://bugzilla.redhat.com/",
+  "CPE_NAME": "cpe:/o:fedoraproject:fedora:30",
+  "DOCUMENTATION_URL": "https://docs.fedoraproject.org/en-US/fedora/f30/system-administrators-guide/",
+  "HOME_URL": "https://fedoraproject.org/",
+  "ID": "fedora",
+  "LOGO": "fedora-logo-icon",
+  "NAME": "Fedora",
+  "OSTREE_VERSION": "30.20191008.1",
+  "PLATFORM_ID": "platform:f30",
+  "PRETTY_NAME": "Fedora 30.20191008.1 (Workstation Edition)",
+  "PRIVACY_POLICY_URL": "https://fedoraproject.org/wiki/Legal:PrivacyPolicy",
+  "REDHAT_BUGZILLA_PRODUCT": "Fedora",
+  "REDHAT_BUGZILLA_PRODUCT_VERSION": "30",
+  "REDHAT_SUPPORT_PRODUCT": "Fedora",
+  "REDHAT_SUPPORT_PRODUCT_VERSION": "30",
+  "SUPPORT_URL": "https://fedoraproject.org/wiki/Communicating_and_getting_help",
+  "VARIANT_ID": "workstation",
+  "VARIANT": "Workstation Edition",
+  "VERSION": "30.20191008.1 (Workstation Edition)",
+  "VERSION_CODENAME": "",
+  "VERSION_ID": "30"
+}
+-- Distribution --
+{
+  "cpe": "cpe:/o:fedoraproject:fedora:30",
+  "did": "fedora",
+  "name": "Fedora",
+  "pretty_name": "Fedora",
+  "version": "30.20191008.1 (Workstation Edition)",
+  "version_id": "30"
+}

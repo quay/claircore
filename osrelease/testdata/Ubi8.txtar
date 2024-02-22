@@ -1,0 +1,44 @@
+-- os-release --
+NAME="Red Hat Enterprise Linux"
+VERSION="8.0 (Ootpa)"
+ID="rhel"
+ID_LIKE="fedora"
+VERSION_ID="8.0"
+PLATFORM_ID="platform:el8"
+PRETTY_NAME="Red Hat Enterprise Linux 8.0 (Ootpa)"
+ANSI_COLOR="0;31"
+CPE_NAME="cpe:/o:redhat:enterprise_linux:8.0:GA"
+HOME_URL="https://access.redhat.com/"
+BUG_REPORT_URL="https://bugzilla.redhat.com/"
+
+REDHAT_BUGZILLA_PRODUCT="Red Hat Enterprise Linux 8"
+REDHAT_BUGZILLA_PRODUCT_VERSION=8.0
+REDHAT_SUPPORT_PRODUCT="Red Hat Enterprise Linux"
+REDHAT_SUPPORT_PRODUCT_VERSION="8.0"
+-- Parsed --
+{
+  "ANSI_COLOR": "0;31",
+  "BUG_REPORT_URL": "https://bugzilla.redhat.com/",
+  "CPE_NAME": "cpe:/o:redhat:enterprise_linux:8.0:GA",
+  "HOME_URL": "https://access.redhat.com/",
+  "ID_LIKE": "fedora",
+  "ID": "rhel",
+  "NAME": "Red Hat Enterprise Linux",
+  "PLATFORM_ID": "platform:el8",
+  "PRETTY_NAME": "Red Hat Enterprise Linux 8.0 (Ootpa)",
+  "REDHAT_BUGZILLA_PRODUCT": "Red Hat Enterprise Linux 8",
+  "REDHAT_BUGZILLA_PRODUCT_VERSION": "8.0",
+  "REDHAT_SUPPORT_PRODUCT": "Red Hat Enterprise Linux",
+  "REDHAT_SUPPORT_PRODUCT_VERSION": "8.0",
+  "VERSION": "8.0 (Ootpa)",
+  "VERSION_ID": "8.0"
+}
+-- Distribution --
+{
+  "cpe": "cpe:/o:redhat:enterprise_linux:8.0:GA",
+  "did": "rhel",
+  "name": "Red Hat Enterprise Linux",
+  "pretty_name": "Red Hat Enterprise Linux 8",
+  "version": "8.0 (Ootpa)",
+  "version_id": "8.0"
+}
