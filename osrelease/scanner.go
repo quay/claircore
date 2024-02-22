@@ -172,7 +172,7 @@ func Parse(ctx context.Context, r io.Reader) (map[string]string, error) {
 	s := bufio.NewScanner(r)
 	s.Split(bufio.ScanLines)
 	for s.Scan() && ctx.Err() == nil {
-		b := s.Bytes()
+		b := bytes.TrimSpace(s.Bytes())
 		switch {
 		case len(b) == 0:
 			continue
@@ -183,6 +183,7 @@ func Parse(ctx context.Context, r io.Reader) (map[string]string, error) {
 		if eq == -1 {
 			return nil, fmt.Errorf("osrelease: malformed line %q", s.Text())
 		}
+		// Also handling spaces here matches what systemd seems to do.
 		key := strings.TrimSpace(string(b[:eq]))
 		value := strings.TrimSpace(string(b[eq+1:]))
 

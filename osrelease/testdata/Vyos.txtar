@@ -1,0 +1,33 @@
+-- os-release --
+
+    PRETTY_NAME="VyOS 1.4-rolling-202307070317 (current)"
+    NAME="VyOS"
+    VERSION_ID="1.4-rolling-202307070317"
+    VERSION="1.4-rolling-202307070317 (current)"
+    VERSION_CODENAME=bookworm
+    ID=vyos
+    HOME_URL="https://vyos.io"
+    SUPPORT_URL="https://support.vyos.io"
+    BUG_REPORT_URL="https://vyos.dev"
+        
+-- Parsed --
+{
+  "BUG_REPORT_URL": "https://vyos.dev",
+  "HOME_URL": "https://vyos.io",
+  "ID": "vyos",
+  "NAME": "VyOS",
+  "PRETTY_NAME": "VyOS 1.4-rolling-202307070317 (current)",
+  "SUPPORT_URL": "https://support.vyos.io",
+  "VERSION": "1.4-rolling-202307070317 (current)",
+  "VERSION_CODENAME": "bookworm",
+  "VERSION_ID": "1.4-rolling-202307070317"
+}
+-- Distribution --
+{
+  "did": "vyos",
+  "name": "VyOS",
+  "pretty_name": "VyOS 1.4-rolling-202307070317 (current)",
+  "version": "1.4-rolling-202307070317 (current)",
+  "version_code_name": "bookworm",
+  "version_id": "1.4-rolling-202307070317"
+}

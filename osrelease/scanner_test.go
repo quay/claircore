@@ -1,18 +1,22 @@
 package osrelease
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"runtime/trace"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/quay/claircore/toolkit/types/cpe"
 	"github.com/quay/zlog"
+	"golang.org/x/tools/txtar"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
-	"github.com/quay/claircore/toolkit/types/cpe"
 )
 
 type parsecase struct {
@@ -147,6 +151,58 @@ func TestParse(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.File, tc.Test)
+	}
+
+	ctx := context.Background()
+	ms, _ := filepath.Glob("testdata/*.txtar")
+	for _, m := range ms {
+		name := strings.TrimSuffix(filepath.Base(m), ".txtar")
+		t.Run(name, func(t *testing.T) {
+			ctx := zlog.Test(ctx, t)
+			ar, err := txtar.ParseFile(m)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			var inFile, parsedFile, distFile *txtar.File
+			for i, f := range ar.Files {
+				switch f.Name {
+				case "os-release":
+					inFile = &ar.Files[i]
+				case "Parsed":
+					parsedFile = &ar.Files[i]
+				case "Distribution":
+					distFile = &ar.Files[i]
+				}
+			}
+			if inFile == nil || parsedFile == nil || distFile == nil {
+				t.Fatalf("missing files in txtar: %v / %v / %v", inFile, parsedFile, distFile)
+			}
+
+			gotKVs, err := Parse(ctx, bytes.NewReader(inFile.Data))
+			if err != nil {
+				t.Errorf("parse error: %v", err)
+			}
+			wantKVs := make(map[string]string)
+			if err := json.Unmarshal(parsedFile.Data, &wantKVs); err != nil {
+				t.Errorf("unmarshal error: %v", err)
+			}
+			if got, want := gotKVs, wantKVs; !cmp.Equal(got, want) {
+				t.Error(cmp.Diff(got, want))
+			}
+
+			gotDist, err := toDist(ctx, bytes.NewReader(inFile.Data))
+			if err != nil {
+				t.Errorf("toDist error: %v", err)
+			}
+			wantDist := &claircore.Distribution{}
+			if err := json.Unmarshal(distFile.Data, &wantDist); err != nil {
+				t.Errorf("unmarshal error: %v", err)
+			}
+			if got, want := gotDist, wantDist; !cmp.Equal(got, want) {
+				t.Error(cmp.Diff(got, want))
+			}
+		})
 	}
 }
 
