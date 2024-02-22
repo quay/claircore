@@ -288,7 +288,11 @@ func extractInner(ctx context.Context, p srcPath, z *zip.Reader) ([]Info, error)
 		zr, err := zip.NewReader(bytes.NewReader(bs), sz)
 		switch {
 		case errors.Is(err, nil):
-		case errors.Is(err, zip.ErrFormat):
+		case errors.Is(err, io.EOF):
+			// BUG(go1.21) Older versions of the stdlib can report io.EOF when
+			// opening malformed zips.
+			fallthrough
+		case errors.Is(err, zip.ErrFormat) || errors.Is(err, io.EOF):
 			zlog.Debug(ctx).
 				Str("member", name).
 				Err(err).
