@@ -31,7 +31,7 @@ require (
 	golang.org/x/text v0.14.0
 	golang.org/x/time v0.4.0
 	golang.org/x/tools v0.18.0
-	modernc.org/sqlite v1.29.1
+	modernc.org/sqlite v1.29.2
 )
 
 require (
