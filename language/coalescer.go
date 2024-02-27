@@ -1,16 +1,25 @@
-package gobin
+// Package language implements structs and functions common between
+// programming language indexing implementation.
+package language
 
 import (
 	"context"
-	"strings"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
 )
 
+var _ indexer.Coalescer = (*coalescer)(nil)
+
 type coalescer struct{}
 
-func (c *coalescer) Coalesce(ctx context.Context, ls []*indexer.LayerArtifacts) (*claircore.IndexReport, error) {
+// NewCoalescer returns a new common programming language coalescer.
+func NewCoalescer(_ context.Context) (indexer.Coalescer, error) {
+	return &coalescer{}, nil
+}
+
+// Coalesce implements [indexer.Coalescer].
+func (c *coalescer) Coalesce(_ context.Context, ls []*indexer.LayerArtifacts) (*claircore.IndexReport, error) {
 	ir := &claircore.IndexReport{
 		Environments: map[string][]*claircore.Environment{},
 		Packages:     map[string]*claircore.Package{},
@@ -18,36 +27,33 @@ func (c *coalescer) Coalesce(ctx context.Context, ls []*indexer.LayerArtifacts) 
 	}
 	// Similar to ir.Packages, except instead of mapping
 	// id -> package, it maps packageDB -> package.
-	// For langauge packages, it is possible the
+	// For programming language packages, it is possible the
 	// packageDB is overwritten.
 	packages := make(map[string]*claircore.Package)
 	for i := len(ls) - 1; i >= 0; i-- {
 		l := ls[i]
-		var rid string
-		for _, r := range l.Repos {
-			// Magic strings copied out of the osv package.
-			if r.Name != `go` || r.URI != `https://pkg.go.dev/` {
-				continue
-			}
-			rid = r.ID
+		// If we didn't find at least one repo in this layer
+		// no point in searching for packages.
+		if len(l.Repos) == 0 {
+			continue
+		}
+		rs := make([]string, len(l.Repos))
+		for i, r := range l.Repos {
+			rs[i] = r.ID
 			ir.Repositories[r.ID] = r
-			break
 		}
 		for _, pkg := range l.Pkgs {
-			if !strings.HasPrefix(pkg.PackageDB, "go:") {
-				continue
-			}
-			if childPkg, exists := packages[pkg.PackageDB]; exists {
+			if seen, exists := packages[pkg.PackageDB]; exists {
 				// If the package was renamed or has a different version in a high layer,
 				// then we consider this a different package and ignore the
 				// original in the lower layer.
-				if pkg.Name != childPkg.Name || pkg.Version != childPkg.Version {
+				if pkg.Name != seen.Name || pkg.Version != seen.Version {
 					continue
 				}
 				// The name and version is the same, so delete the entry related to the higher
 				// layer, as this package was likely introduced in the lower layer.
-				delete(ir.Packages, childPkg.ID)
-				delete(ir.Environments, childPkg.ID)
+				delete(ir.Packages, seen.ID)
+				delete(ir.Environments, seen.ID)
 			}
 			packages[pkg.PackageDB] = pkg
 			ir.Packages[pkg.ID] = pkg
@@ -55,7 +61,7 @@ func (c *coalescer) Coalesce(ctx context.Context, ls []*indexer.LayerArtifacts) 
 				{
 					PackageDB:     pkg.PackageDB,
 					IntroducedIn:  l.Hash,
-					RepositoryIDs: []string{rid},
+					RepositoryIDs: rs,
 				},
 			}
 		}
