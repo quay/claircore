@@ -6,16 +6,17 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/jackc/pgx/v5/tracelog"
 	"io"
 	"math/rand"
 	"os"
 	"sync"
 	"testing"
 
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/log/testingadapter"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/log/testingadapter"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var (
@@ -98,7 +99,10 @@ func configureDatabase(ctx context.Context, t testing.TB, root *pgxpool.Config, 
 	var cfg *pgxpool.Config
 	// First, connect as the superuser to create the new database and role.
 	cfg = root.Copy()
-	cfg.ConnConfig.Logger = testingadapter.NewLogger(t)
+	cfg.ConnConfig.Tracer = &tracelog.TraceLog{
+		Logger:   testingadapter.NewLogger(t),
+		LogLevel: tracelog.LogLevelTrace,
+	}
 	cfg.MaxConns = 10
 	conn, err := pgx.ConnectConfig(ctx, cfg.ConnConfig)
 	if err != nil {
@@ -200,7 +204,10 @@ func (db *DB) Config() *pgxpool.Config {
 // Close tears down the created database.
 func (db *DB) Close(ctx context.Context, t testing.TB) {
 	cfg := pkgConfig.Copy()
-	cfg.ConnConfig.Logger = testingadapter.NewLogger(t)
+	cfg.ConnConfig.Tracer = &tracelog.TraceLog{
+		Logger:   testingadapter.NewLogger(t),
+		LogLevel: tracelog.LogLevelTrace,
+	}
 	conn, err := pgx.ConnectConfig(ctx, cfg.ConnConfig)
 	if err != nil {
 		t.Fatal(err)

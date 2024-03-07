@@ -3,12 +3,14 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"github.com/jackc/pgx/v5"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/pkg/poolstats"
+	pgxUUID "github.com/vgarvardt/pgx-google-uuid/v5"
 )
 
 // Connect initialize a postgres pgxpool.Pool based on the connection string
@@ -25,7 +27,12 @@ func Connect(ctx context.Context, connString string, applicationName string) (*p
 		params[appnameKey] = applicationName
 	}
 
-	pool, err := pgxpool.ConnectConfig(ctx, cfg)
+	cfg.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
+		pgxUUID.Register(conn.TypeMap())
+		return nil
+	}
+
+	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ConnPool: %v", err)
 	}

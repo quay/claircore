@@ -4,15 +4,17 @@ import (
 	"context"
 	"embed"
 	"fmt"
+	"github.com/jackc/pgx/v5"
+	pgxUUID "github.com/vgarvardt/pgx-google-uuid/v5"
 	"io/fs"
 	"os"
 	"path"
 	"testing"
 
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/log/testingadapter"
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/jackc/pgx/v4/stdlib"
+	"github.com/jackc/pgx/v5/log/testingadapter"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/stdlib"
+	"github.com/jackc/pgx/v5/tracelog"
 	"github.com/remind101/migrate"
 
 	"github.com/quay/claircore/datastore/postgres/migrations"
@@ -50,9 +52,16 @@ func testDB(ctx context.Context, t testing.TB, which dbFlavor) *pgxpool.Pool {
 		t.Fatalf("unable to create test database: %v", err)
 	}
 	cfg := db.Config()
-	cfg.ConnConfig.LogLevel = pgx.LogLevelError
-	cfg.ConnConfig.Logger = testingadapter.NewLogger(t)
-	pool, err := pgxpool.ConnectConfig(ctx, cfg)
+	cfg.MaxConns = 3
+	cfg.ConnConfig.Tracer = &tracelog.TraceLog{
+		Logger:   testingadapter.NewLogger(t),
+		LogLevel: tracelog.LogLevelError,
+	}
+	cfg.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
+		pgxUUID.Register(conn.TypeMap())
+		return nil
+	}
+	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
 		t.Fatalf("failed to connect: %v", err)
 	}

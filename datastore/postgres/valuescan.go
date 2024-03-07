@@ -21,10 +21,10 @@ func (sr jsonbIndexReport) Value() (driver.Value, error) {
 }
 
 func (sr *jsonbIndexReport) Scan(value interface{}) error {
-	b, ok := value.([]byte)
+	b, ok := value.(string)
 	if !ok {
-		return fmt.Errorf("failed to type assert IndexReport to []bytes")
+		return fmt.Errorf("failed to type assert IndexReport to string")
 	}
 
-	return json.Unmarshal(b, &sr)
+	return json.Unmarshal([]byte(b), &sr)
 }

@@ -2,12 +2,14 @@ package ctxlock
 
 import (
 	"context"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/tracelog"
+	pgxUUID "github.com/vgarvardt/pgx-google-uuid/v5"
 	"os"
 	"testing"
 
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/log/testingadapter"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/log/testingadapter"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/test/integration"
@@ -32,9 +34,15 @@ func basicSetup(t testing.TB) (context.Context, *Locker) {
 	}
 	t.Cleanup(func() { db.Close(ctx, t) })
 	cfg := db.Config()
-	cfg.ConnConfig.LogLevel = pgx.LogLevelError
-	cfg.ConnConfig.Logger = testingadapter.NewLogger(t)
-	pool, err := pgxpool.ConnectConfig(ctx, cfg)
+	cfg.ConnConfig.Tracer = &tracelog.TraceLog{
+		Logger:   testingadapter.NewLogger(t),
+		LogLevel: tracelog.LogLevelError,
+	}
+	cfg.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
+		pgxUUID.Register(conn.TypeMap())
+		return nil
+	}
+	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
