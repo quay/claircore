@@ -45,7 +45,7 @@ jobs:
           ' -q '.data.repository.pullRequests.nodes[]' |
             jq --arg remove "$remove" --arg summary "$summary" \
               '@sh "if test -f \(.mergeCommit.oid); then echo \(.id) >> \($remove); else echo \(@text "- [#\(.number)](\(.url)): \(.title)") >> \($summary); fi"' |
-            xargs -t -n1 sh -c
+            xargs -t -n1 -r sh -c
           if test -s "$remove"; then
             l=$(gh api graphql -f query='{repository(owner: "quay", name: "claircore") {label(name: "needs-changelog") {id}}}'|
               jq -r '.data.repository.label.id')
@@ -69,5 +69,5 @@ jobs:
           cat <<'.' >> "$GITHUB_STEP_SUMMARY"
           
           * * *
-          If the changelog message is on another commit, the label needs to be removed manuually. 🫥
+          If the changelog message is on another commit, the label needs to be removed manually. 🫥
           .
