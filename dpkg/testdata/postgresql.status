@@ -1,0 +1,80 @@
+Package: postgresql-client
+Status: install ok installed
+Priority: optional
+Section: database
+Installed-Size: 65
+Maintainer: Debian PostgreSQL Maintainers <team+postgresql@tracker.debian.org>
+Architecture: all
+Multi-Arch: foreign
+Source: postgresql-common (200+deb10u5)
+Version: 11+200+deb10u5
+Depends: postgresql-client-11
+Description: front-end programs for PostgreSQL (supported version)
+ This metapackage always depends on the currently supported database
+ client package for PostgreSQL.
+ .
+ PostgreSQL is a fully featured object-relational database management
+ system.  It supports a large part of the SQL standard and is designed
+ to be extensible by users in many aspects.  Some of the features are:
+ ACID transactions, foreign keys, views, sequences, subqueries,
+ triggers, user-defined types and functions, outer joins, multiversion
+ concurrency control.  Graphical user interfaces and bindings for many
+ programming languages are available as well.
+
+Package: postgresql-client-11
+Status: install ok installed
+Priority: optional
+Section: database
+Installed-Size: 6139
+Maintainer: Debian PostgreSQL Maintainers <team+postgresql@tracker.debian.org>
+Architecture: amd64
+Multi-Arch: foreign
+Source: postgresql-11
+Version: 11.22-0+deb10u2
+Provides: postgresql-client
+Depends: libpq5 (>= 11.22), postgresql-client-common (>= 182~), sensible-utils, libc6 (>= 2.15), libedit2 (>= 3.1-20180525-0), zlib1g (>= 1:1.1.4)
+Suggests: postgresql-11, postgresql-doc-11
+Description: front-end programs for PostgreSQL 11
+ This package contains client and administrative programs for
+ PostgreSQL: these are the interactive terminal client psql and
+ programs for creating and removing users and databases.
+ .
+ This is the client package for PostgreSQL 11. If you install
+ PostgreSQL 11 on a standalone machine, you need the server package
+ postgresql-11, too. On a network, you can install this package on
+ many client machines, while the server package may be installed on
+ only one machine.
+ .
+ PostgreSQL is an object-relational SQL database management system.
+Homepage: http://www.postgresql.org/
+
+Package: postgresql-client-common
+Status: install ok installed
+Priority: optional
+Section: database
+Installed-Size: 177
+Maintainer: Debian PostgreSQL Maintainers <team+postgresql@tracker.debian.org>
+Architecture: all
+Multi-Arch: foreign
+Source: postgresql-common
+Version: 200+deb10u5
+Depends: netbase
+Recommends: lsb-release, libreadline7
+Conffiles:
+ /etc/postgresql-common/supported_versions 71e93cbf6b710f422a5c54e9a63282a5
+ /etc/postgresql-common/user_clusters d2959e6ae6847342be07146ce06af33b
+Description: manager for multiple PostgreSQL client versions
+ The postgresql-client-common package provides a structure under which
+ multiple versions of PostgreSQL client programs may be installed at
+ the same time. It provides a wrapper which selects the right version
+ for the particular cluster you want to access (with a command line
+ option, an environment variable, /etc/postgresql-common/user_clusters,
+ or ~/.postgresqlrc).
+ .
+ PostgreSQL is a fully featured object-relational database management
+ system. It supports a large part of the SQL standard and is designed
+ to be extensible by users in many aspects. Its features include ACID
+ transactions, foreign keys, views, sequences, subqueries, triggers,
+ outer joins, multiversion concurrency control, and user-defined types
+ and functions.
+

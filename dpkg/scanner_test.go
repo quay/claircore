@@ -937,7 +937,6 @@ Version: 1
 // This is a giant status file because texlive was installed.
 func TestGiantStatus(t *testing.T) {
 	t.Parallel()
-	zlog.Test(context.Background(), t)
 	db, err := os.Open(`testdata/texlive.status`)
 	if err != nil {
 		t.Fatal(err)
@@ -960,6 +959,7 @@ func TestGiantStatus(t *testing.T) {
 
 // See quay/claircore#297 for more context.
 func TestKeyringPackage(t *testing.T) {
+	t.Parallel()
 	db, err := os.Open(`testdata/debian-only.status`)
 	if err != nil {
 		t.Fatal(err)
@@ -972,6 +972,40 @@ func TestKeyringPackage(t *testing.T) {
 		t.Error(err)
 	}
 	got, want := hdr.Get("Version"), `2019.1`
+	t.Logf("got: %q, want: %q", got, want)
+	if got != want {
+		t.Fail()
+	}
+}
+
+// See quay/claircore#1291 for more context.
+func TestParsedSource(t *testing.T) {
+	t.Parallel()
+	const filename = `testdata/postgresql.status`
+	ctx := zlog.Test(context.Background(), t)
+
+	db, err := os.Open(filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := newPackages()
+	tp := textproto.NewReader(bufio.NewReader(db))
+
+	if err := parseStatus(ctx, found, filename, tp); err != nil {
+		t.Error(err)
+	}
+
+	pkg, ok := found.bin["postgresql-client"]
+	if !ok {
+		t.Fatalf("unable to find package %q", "postgresql-client")
+	}
+	src := pkg.Source
+	got, want := src.Name, "postgresql-common"
+	t.Logf("got: %q, want: %q", got, want)
+	if got != want {
+		t.Fail()
+	}
+	got, want = src.Version, "200+deb10u5"
 	t.Logf("got: %q, want: %q", got, want)
 	if got != want {
 		t.Fail()
