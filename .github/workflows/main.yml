@@ -17,7 +17,7 @@ jobs:
     steps:
       - id: config
         run: |
-          echo 'go_versions=["1.21","1.20"]' >> $GITHUB_OUTPUT
+          echo 'go_versions=["1.22","1.21"]' >> $GITHUB_OUTPUT
 
   gating-lints:
     needs: ['config']
