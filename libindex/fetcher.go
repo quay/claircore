@@ -34,12 +34,6 @@ var (
 	_ indexer.DescriptionRealizer = (*FetchProxy)(nil)
 )
 
-// BUG(hank) On Linux, the [RemoteFetchArena] makes use of the O_TMPFILE flag to
-// [open(2)], which requires version 3.11 or newer. There is no fallback for
-// older kernels.
-//
-// [open(2)]: https://man7.org/linux/man-pages/man2/open.2.html
-
 // RemoteFetchArena uses disk space to track fetched layers, removing them once
 // all users are done with the layers.
 type RemoteFetchArena struct {
