@@ -10,17 +10,7 @@ on:
       - "**"
 
 jobs:
-  config:
-    runs-on: ubuntu-latest
-    outputs:
-      go_versions: ${{ steps.config.outputs.go_versions }}
-    steps:
-      - id: config
-        run: |
-          echo 'go_versions=["1.22","1.21"]' >> $GITHUB_OUTPUT
-
   gating-lints:
-    needs: ['config']
     name: Gating Lints
     runs-on: ubuntu-latest
     steps:
@@ -73,13 +63,14 @@ jobs:
         run: mdbook build
 
   tests:
-    needs: ['config']
     name: Tests
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        go: ${{ fromJSON(needs.config.outputs.go_versions) }}
+        go:
+          - '1.22'
+          - '1.21'
     steps:
       - name: Check for Previous Run
         id: previous
@@ -123,7 +114,7 @@ jobs:
         if: >-
           steps.previous.outputs.cache-hit != 'true' &&
           success() &&
-          fromJSON(needs.config.outputs.go_versions)[0] == matrix.go
+          strategy.job-index == 0
         uses: codecov/codecov-action@v4
         with:
           directory: ${{ runner.temp }}
