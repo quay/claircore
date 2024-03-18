@@ -25,7 +25,7 @@ import (
 const (
 	name    = "dpkg"
 	kind    = "package"
-	version = "5"
+	version = "6"
 )
 
 var (
