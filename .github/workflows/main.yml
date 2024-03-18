@@ -51,7 +51,7 @@ jobs:
         if: ${{ !cancelled() && steps.checkout.conclusion == 'success' }}
         uses: actions/setup-go@v5
         with:
-          go-version: ${{ fromJSON(needs.config.outputs.go_versions)[0] }}
+          go-version-file: ./go.mod
       - name: Go Tidy
         if: ${{ !cancelled() && steps.checkout.conclusion == 'success' && steps.setupgo.conclusion == 'success' }}
         run: |
