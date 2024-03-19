@@ -48,11 +48,36 @@ type RemoteFetchArena struct {
 }
 
 // NewRemoteFetchArena returns an initialized RemoteFetchArena.
+//
+// If the "root" parameter is "", the advice in [file-hierarchy(7)] and ["Using
+// /tmp/ and /var/tmp/ Safely"] is followed. Specifically, "/var/tmp" is used
+// unless "TMPDIR" is set in the environment, in which case the contents of that
+// variable are interpreted as a path and used.
+//
+// The RemoteFetchArena attempts to use [O_TMPFILE] and falls back to
+// [os.CreateTemp] if that seems to not work. If the filesystem backing "root"
+// does not support O_TMPFILE, files may linger in the event of a process
+// crashing or an unclean shutdown. Operators should either use a different
+// filesystem or arrange for periodic cleanup via [systemd-tmpfiles(8)] or
+// similar.
+//
+// In a containerized environment, operators may need to mount a directory or
+// filesystem on "/var/tmp".
+//
+// On OSX, temporary files are not unlinked from the filesystem upon creation,
+// because an equivalent to Linux's "/proc/self/fd" doesn't seem to exist.
+//
+// On UNIX-unlike systems, none of the above logic takes place.
+//
+// [file-hierarchy(7)]: https://www.freedesktop.org/software/systemd/man/latest/file-hierarchy.html
+// ["Using /tmp/ and /var/tmp/ Safely"]: https://systemd.io/TEMPORARY_DIRECTORIES/
+// [O_TMPFILE]: https://man7.org/linux/man-pages/man2/open.2.html
+// [systemd-tmpfiles(8)]: https://www.freedesktop.org/software/systemd/man/latest/systemd-tmpfiles.html
 func NewRemoteFetchArena(wc *http.Client, root string) *RemoteFetchArena {
 	return &RemoteFetchArena{
 		wc:   wc,
 		sf:   &singleflight.Group{},
-		root: root,
+		root: fixTemp(root),
 	}
 }
 
