@@ -1,6 +1,6 @@
 module github.com/quay/claircore/updater/driver
 
-go 1.16
+go 1.21.8
 
 require (
 	github.com/google/uuid v1.6.0
