@@ -505,6 +505,7 @@ func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *adviso
 			proto.Severity = s.Score
 			proto.NormalizedSeverity, err = fromCVSS2(s.Score)
 		default:
+			// We didn't get a severity from the CVSS scores
 			continue
 		}
 		if err != nil {
@@ -513,6 +514,19 @@ func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *adviso
 				Msg("odd cvss mangling result")
 		}
 	}
+
+	if proto.Severity == "" {
+		// Try and extract a severity from the database_specific object
+		var databaseJSON map[string]json.RawMessage
+		if err := json.Unmarshal([]byte(a.Database), &databaseJSON); err == nil {
+			var severityString string
+			if err := json.Unmarshal(databaseJSON["severity"], &severityString); err == nil {
+				proto.Severity = severityString
+				proto.NormalizedSeverity = severityFromDBString(severityString)
+			}
+		}
+	}
+
 	for i, ref := range a.References {
 		if i != 0 {
 			b.WriteByte(' ')
@@ -658,6 +672,34 @@ func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *adviso
 		}
 	}
 	return nil
+}
+
+// severityFromDBString takes a severity string defined in the
+// database_specific object and parses it into a claircore.Severity.
+// Known severities in the OSV data are (in varying cases):
+//   - CRITICAL
+//   - HIGH
+//   - LOW
+//   - MEDIUM
+//   - MODERATE
+//   - UNKNOWN
+func severityFromDBString(s string) (sev claircore.Severity) {
+	sev = claircore.Unknown
+	switch {
+	case strings.EqualFold(s, "unknown"):
+		sev = claircore.Unknown
+	case strings.EqualFold(s, "negligible"):
+		sev = claircore.Negligible
+	case strings.EqualFold(s, "low"):
+		sev = claircore.Low
+	case strings.EqualFold(s, "moderate"), strings.EqualFold(s, "medium"):
+		sev = claircore.Medium
+	case strings.EqualFold(s, "high"):
+		sev = claircore.High
+	case strings.EqualFold(s, "critical"):
+		sev = claircore.Critical
+	}
+	return sev
 }
 
 // All the methods follow the same pattern: just reslice the slice if

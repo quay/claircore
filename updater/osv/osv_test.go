@@ -20,6 +20,7 @@ import (
 
 	"github.com/quay/zlog"
 
+	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 )
 
@@ -146,5 +147,167 @@ func TestParse(t *testing.T) {
 			}
 			t.Log(buf.String())
 		}
+	}
+}
+
+var severityTestCases = []struct {
+	name                       string
+	a                          *advisory
+	expectedNormalizedSeverity claircore.Severity
+	expectedSeverity           string
+}{
+	{
+		name: "CVSS V3 HIGH",
+		a: &advisory{
+			ID: "test1",
+			Severity: []severity{
+				{
+					Type:  "CVSS_V3",
+					Score: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+				},
+			},
+			Affected: []affected{
+				{
+					Package: _package{
+						Ecosystem: "go",
+						Name:      "something",
+					},
+					Ranges: []_range{
+						{
+							Type: "ECOSYSTEM",
+							Events: []rangeEvent{
+								{
+									Introduced: "0.1",
+									Fixed:      "0.4",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		expectedNormalizedSeverity: claircore.High,
+		expectedSeverity:           "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+	},
+	{
+		name: "CVSS V2 MEDIUM",
+		a: &advisory{
+			ID: "test2",
+			Severity: []severity{
+				{
+					Type:  "CVSS_V2",
+					Score: "AV:L/AC:H/Au:N/C:C/I:C/A:C",
+				},
+			},
+			Affected: []affected{
+				{
+					Package: _package{
+						Ecosystem: "go",
+						Name:      "something",
+					},
+					Ranges: []_range{
+						{
+							Type: "ECOSYSTEM",
+							Events: []rangeEvent{
+								{
+									Introduced: "0.1",
+									Fixed:      "0.4",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		expectedNormalizedSeverity: claircore.Medium,
+		expectedSeverity:           "AV:L/AC:H/Au:N/C:C/I:C/A:C",
+	},
+	{
+		name: "database_specific moderate",
+		a: &advisory{
+			ID: "test2",
+			Affected: []affected{
+				{
+					Package: _package{
+						Ecosystem: "go",
+						Name:      "something",
+					},
+					Ranges: []_range{
+						{
+							Type: "ECOSYSTEM",
+							Events: []rangeEvent{
+								{
+									Introduced: "0.1",
+									Fixed:      "0.4",
+								},
+							},
+						},
+					},
+				},
+			},
+			Database: json.RawMessage([]byte(`{"severity":"moderate"}`)),
+		},
+		expectedNormalizedSeverity: claircore.Medium,
+		expectedSeverity:           "moderate",
+	},
+	{
+		name: "CVSS V3 HIGH and database_specific moderate",
+		a: &advisory{
+			ID: "test2",
+			Severity: []severity{
+				{
+					Type:  "CVSS_V3",
+					Score: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+				},
+			},
+			Affected: []affected{
+				{
+					Package: _package{
+						Ecosystem: "go",
+						Name:      "something",
+					},
+					Ranges: []_range{
+						{
+							Type: "ECOSYSTEM",
+							Events: []rangeEvent{
+								{
+									Introduced: "0.1",
+									Fixed:      "0.4",
+								},
+							},
+						},
+					},
+				},
+			},
+			Database: json.RawMessage([]byte(`{"severity":"moderate"}`)),
+		},
+		expectedNormalizedSeverity: claircore.High,
+		expectedSeverity:           "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+	},
+}
+
+func TestSeverityParsing(t *testing.T) {
+	ctx := zlog.Test(context.Background(), t)
+
+	for _, tt := range severityTestCases {
+		t.Run(tt.name, func(t *testing.T) {
+			ecs := newECS("test")
+
+			err := ecs.Insert(ctx, nil, "", tt.a)
+			if err != nil {
+				t.Error("got error Inserting advisory", err)
+			}
+			if len(ecs.Vulnerability) != 1 {
+				t.Errorf("should have one vulnerability but got %d", len(ecs.Vulnerability))
+			}
+			v := ecs.Vulnerability[0]
+			if v.NormalizedSeverity != tt.expectedNormalizedSeverity {
+				t.Errorf("expected severity %q but got %q", tt.expectedNormalizedSeverity, v.NormalizedSeverity)
+			}
+			if v.Severity != tt.expectedSeverity {
+				t.Errorf("expected severity %q but got %q", tt.expectedSeverity, v.Severity)
+			}
+
+		})
 	}
 }
