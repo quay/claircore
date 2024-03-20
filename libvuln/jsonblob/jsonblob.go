@@ -73,7 +73,6 @@ func (l *Loader) Next() bool {
 		return false
 	}
 
-	var vs []claircore.Vulnerability
 	for l.err = l.dec.Decode(&l.de); l.err == nil; l.err = l.dec.Decode(&l.de) {
 		id := l.de.Ref
 		// If we just hit a new Entry, promote the current one.
@@ -84,15 +83,14 @@ func (l *Loader) Next() bool {
 			l.next.Fingerprint = l.de.Fingerprint
 			l.next.Date = l.de.Date
 		}
-		i := len(vs)
 		switch l.de.Kind {
 		case driver.VulnerabilityKind:
-			vs = append(vs, claircore.Vulnerability{})
-			if err := json.Unmarshal(l.de.Vuln.buf, &vs[i]); err != nil {
+			vuln := claircore.Vulnerability{}
+			if err := json.Unmarshal(l.de.Vuln.buf, &vuln); err != nil {
 				l.err = err
 				return false
 			}
-			l.next.Vuln = append(l.next.Vuln, &vs[i])
+			l.next.Vuln = append(l.next.Vuln, &vuln)
 		case driver.EnrichmentKind:
 			en := driver.EnrichmentRecord{}
 			if err := json.Unmarshal(l.de.Enrichment.buf, &en); err != nil {
