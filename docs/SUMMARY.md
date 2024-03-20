@@ -35,6 +35,7 @@
 - [Contributors](./contributor.md)
   - [Guidelines](./CONTRIBUTING.md)
   - [Changelog](./contributor/changelog.md)
+  - [Commit Style](./contributor/commit-style.md)
   - [Local Development](./contributor/local-dev.md)
   - [Logging](./contributor/logging.md)
   - [Misc](./contributor/misc.md)
