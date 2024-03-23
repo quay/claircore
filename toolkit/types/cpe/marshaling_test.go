@@ -1,10 +1,49 @@
 package cpe
 
 import (
+	"database/sql/driver"
+	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 )
+
+func TestConvertValue(t *testing.T) {
+	w := MustUnbind(`cpe:2.3:a:foo\\bar:big\$money:2010:*:*:*:special:ipod_touch:80gb:*`)
+	var testcases = []struct {
+		name    string
+		wfn     any
+		want    string
+		wantErr error
+	}{
+		{
+			name:    "test value",
+			wfn:     w,
+			want:    `cpe:2.3:a:foo\\bar:big\$money:2010:*:*:*:special:ipod_touch:80gb:*`,
+			wantErr: nil,
+		},
+		{
+			name:    "test pointer",
+			wfn:     &w,
+			want:    `cpe:2.3:a:foo\\bar:big\$money:2010:*:*:*:special:ipod_touch:80gb:*`,
+			wantErr: nil,
+		},
+	}
+	dpc := driver.DefaultParameterConverter
+	for _, tt := range testcases {
+		t.Run(tt.name, func(t *testing.T) {
+			val, err := dpc.ConvertValue(tt.wfn)
+			if err != tt.wantErr {
+				t.Fatal(err)
+			}
+			v := val.(string)
+			if v != tt.want {
+				t.Fatalf("wanted %q but got %q", tt.want, v)
+			}
+			fmt.Println()
+		})
+	}
+}
 
 func TestMarshal(t *testing.T) {
 	t.Parallel()

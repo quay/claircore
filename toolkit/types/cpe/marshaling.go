@@ -50,7 +50,7 @@ func (w *WFN) Scan(src interface{}) (err error) {
 }
 
 // Value implements [driver.Valuer].
-func (w *WFN) Value() (driver.Value, error) {
+func (w WFN) Value() (driver.Value, error) {
 	switch err := w.Valid(); {
 	case err == nil:
 	case errors.Is(err, ErrUnset):
