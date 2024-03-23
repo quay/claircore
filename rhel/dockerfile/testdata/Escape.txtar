@@ -1,0 +1,8 @@
+-- Dockerfile --
+# escape=ꙮ
+LABEL a ꙮ
+ꙮ$b
+-- Want --
+{
+  "a": "$b"
+}

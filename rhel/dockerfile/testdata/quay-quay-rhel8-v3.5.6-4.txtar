@@ -1,3 +1,4 @@
+-- Dockerfile --
 FROM sha256:ad42391b9b4670e68a759d4cdb8780896071a1cb1ed519b474f901e597bf3b3d AS build-npm
 
 COPY $REMOTE_SOURCE $REMOTE_SOURCE_DIR
@@ -153,3 +154,25 @@ CMD ["registry"]
 
 ADD quay-registry-container-v3.5.6-4.json /root/buildinfo/content_manifests/quay-registry-container-v3.5.6-4.json
 LABEL "release"="4" "com.redhat.license_terms"="https://www.redhat.com/agreements" "distribution-scope"="public" "vendor"="Red Hat, Inc." "build-date"="2021-08-17T21:16:14.144538" "architecture"="x86_64" "vcs-type"="git" "vcs-ref"="0e033c625b6a775f5be730ce5a938aa91cc46d29" "com.redhat.build-host"="example.com" "description"="Red Hat Quay" "url"="https://access.redhat.com/containers/#/registry.access.redhat.com/quay/quay-rhel8/images/v3.5.6-4"
+-- Want --
+{
+  "architecture": "x86_64",
+  "build-date": "2021-08-17T21:16:14.144538",
+  "com.redhat.build-host": "example.com",
+  "com.redhat.component": "quay-registry-container",
+  "com.redhat.license_terms": "https://www.redhat.com/agreements",
+  "description": "Red Hat Quay",
+  "distribution-scope": "public",
+  "io.k8s.description": "Red Hat Quay",
+  "io.k8s.display-name": "Red Hat Quay",
+  "io.openshift.tags": "quay",
+  "maintainer": "support@redhat.com",
+  "name": "quay/quay-rhel8",
+  "release": "4",
+  "summary": "Red Hat Quay",
+  "url": "https://access.redhat.com/containers/#/registry.access.redhat.com/quay/quay-rhel8/images/v3.5.6-4",
+  "vcs-ref": "0e033c625b6a775f5be730ce5a938aa91cc46d29",
+  "vcs-type": "git",
+  "vendor": "Red Hat, Inc.",
+  "version": "v3.5.6"
+}
