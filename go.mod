@@ -3,6 +3,7 @@ module github.com/quay/claircore
 go 1.21.8
 
 require (
+	github.com/HdrHistogram/hdrhistogram-go v1.1.2
 	github.com/Masterminds/semver v1.5.0
 	github.com/doug-martin/goqu/v8 v8.6.0
 	github.com/golang/mock v1.6.0
