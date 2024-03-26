@@ -27,6 +27,11 @@ func (v *V4) UnmarshalText(text []byte) error {
 	if err := parseString(v.mv[:], v4VerHook, v4Rev, string(text)); err != nil {
 		return fmt.Errorf("cvss v4: %w", err)
 	}
+	for m, b := range v.mv[:V4SubsequentSystemAvailability+1] { // range inclusive
+		if b == 0 {
+			return fmt.Errorf("cvss v4: %w: missing metric: %q", ErrMalformedVector, V4Metric(m).String())
+		}
+	}
 	return nil
 }
 
@@ -86,9 +91,7 @@ func (v *V4) getScore(m V4Metric) byte {
 		default:
 			b = 'X'
 		}
-		// Do this the easy way for the above once the errata clear up the
-		// ordering issue.
-		if m >= V4ModifiedAttackVector && m < V4ModifiedVulnerableSystemConfidentiality {
+		if m >= V4ModifiedAttackVector && m <= V4ModifiedSubsequentSystemAvailability {
 			b = v.mv[m-V4ModifiedAttackVector]
 		}
 	}
@@ -132,6 +135,24 @@ func (v *V4) Supplemental() (ok bool) {
 		}
 	}
 	return ok
+}
+
+func (v *V4) groups(yeild func([2]int) bool) {
+	var b [2]int
+	b[0], b[1] = int(V4AttackVector), int(V4SubsequentSystemAvailability)+1
+	if !yeild(b) {
+		return
+	}
+	b[0], b[1] = int(V4ExploitMaturity), int(V4ExploitMaturity)+1
+	if !yeild(b) {
+		return
+	}
+	b[0], b[1] = int(V4ConfidentialityRequirement), int(V4ModifiedSubsequentSystemAvailability)+1
+	if !yeild(b) {
+		return
+	}
+	b[0], b[1] = int(V4Safety), int(V4ProviderUrgency)+1
+	yeild(b)
 }
 
 //go:generate go run golang.org/x/tools/cmd/stringer@latest -type=V4Metric,v4Valid -linecomment

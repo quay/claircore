@@ -31,7 +31,7 @@ func (v *V2) UnmarshalText(text []byte) error {
 	if err != nil {
 		return fmt.Errorf("cvss v2: %w", err)
 	}
-	for m, b := range v.mv[:V2Availability] {
+	for m, b := range v.mv[:V2Availability+1] { // range inclusive
 		if b == 0 {
 			return fmt.Errorf("cvss v2: %w: missing metric: %q", ErrMalformedVector, V3Metric(m).String())
 		}
@@ -114,8 +114,11 @@ func (v *V2) String() string {
 // GetString implements [Vector].
 func (v *V2) getString(m V2Metric) (string, error) {
 	b := v.mv[int(m)]
-	if b == 0 {
+	switch {
+	case b == 0 && m <= V2Availability:
 		return "", errValueUnset
+	case b == 0:
+		return "ND", errValueUnset
 	}
 	return v2Unparse(m, b), nil
 }
@@ -134,10 +137,22 @@ func (v *V2) getScore(m V2Metric) byte {
 		case V2ConfidentialityRequirement, V2IntegrityRequirement, V2AvailabilityRequirement:
 			b = 'N'
 		}
-	default:
-		panic("invalid metric: " + m.String())
 	}
 	return b
+}
+
+func (v *V2) groups(yeild func([2]int) bool) {
+	var b [2]int
+	b[0], b[1] = int(V2AccessVector), int(V2Availability)+1
+	if !yeild(b) {
+		return
+	}
+	b[0], b[1] = int(V2Exploitability), int(V2ReportConfidence)+1
+	if !yeild(b) {
+		return
+	}
+	b[0], b[1] = int(V2CollateralDamagePotential), int(V2AvailabilityRequirement)+1
+	yeild(b)
 }
 
 // Get implements [Vector].
