@@ -1,0 +1,1 @@
+REFRESH MATERIALIZED VIEW latest_update_operations;
