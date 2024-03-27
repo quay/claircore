@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -14,7 +15,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/quay/claircore"
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/libvuln/driver"
@@ -125,25 +125,13 @@ var (
 func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
 	s := driver.NewUpdaterSet()
 
-	ds, err := f.findReleases(ctx, f.mirror)
-	if err != nil {
+	if err := f.findReleases(ctx, f.mirror); err != nil {
 		return s, fmt.Errorf("debian: examining remote: %w", err)
 	}
 
 	// TODO: Consider returning stub if Last-Modified has not updated.
 	u := &updater{
 		jsonURL: f.json.String(),
-	}
-	for _, d := range ds {
-		src, err := f.mirror.Parse(path.Join("dists", d.VersionCodeName) + "/")
-		if err != nil {
-			return s, fmt.Errorf("debian: unable to construct source URL: %w", err)
-		}
-
-		u.dists = append(u.dists, sourceURL{
-			distro: d.VersionCodeName,
-			url:    src,
-		})
 	}
 
 	if err := s.Add(u); err != nil {
@@ -154,32 +142,31 @@ func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
 }
 
 // FindReleases is split out as a method to make it easier to examine the mirror and the archive.
-func (f *Factory) findReleases(ctx context.Context, u *url.URL) ([]*claircore.Distribution, error) {
+func (f *Factory) findReleases(ctx context.Context, u *url.URL) error {
 	dir, err := u.Parse("dists/")
 	if err != nil {
-		return nil, fmt.Errorf("debian: unable to construct URL: %w", err)
+		return fmt.Errorf("debian: unable to construct URL: %w", err)
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, dir.String(), nil)
 	if err != nil {
-		return nil, fmt.Errorf("debian: unable to construct request: %w", err)
+		return fmt.Errorf("debian: unable to construct request: %w", err)
 	}
 	res, err := f.c.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("debian: unable to do request: %w", err)
+		return fmt.Errorf("debian: unable to do request: %w", err)
 	}
 	defer res.Body.Close()
 	switch res.StatusCode {
 	case http.StatusOK:
 	default:
-		return nil, fmt.Errorf("debian: unexpected status fetching %q: %s", dir.String(), res.Status)
+		return fmt.Errorf("debian: unexpected status fetching %q: %s", dir.String(), res.Status)
 	}
 	var buf bytes.Buffer
 	if _, err := buf.ReadFrom(res.Body); err != nil {
-		return nil, fmt.Errorf("debian: unable to read dists listing: %w", err)
+		return fmt.Errorf("debian: unable to read dists listing: %w", err)
 	}
 	ms := linkRegexp.FindAllStringSubmatch(buf.String(), -1)
 
-	var todos []*claircore.Distribution
 Listing:
 	for _, m := range ms {
 		dist := m[1]
@@ -257,20 +244,18 @@ Listing:
 			continue
 		}
 
-		todos = append(todos, mkDist(dist, int(ver)))
+		mkDist(dist, int(ver))
 	}
 
-	return todos, nil
+	return nil
 }
 
 // Updater implements [driver.updater].
 type updater struct {
 	// jsonURL is the URL from which to fetch JSON vulnerability data
 	jsonURL string
-	dists   []sourceURL
 
-	c  *http.Client
-	sm *sourcesMap
+	c *http.Client
 }
 
 // UpdaterConfig is the configuration for the updater.
@@ -278,9 +263,9 @@ type UpdaterConfig struct {
 	// Deprecated: Use JSONURL instead.
 	OVALURL string `json:"url" yaml:"url"`
 	JSONURL string `json:"json_url" yaml:"json_url"`
-	// Deprecated: Use DistsURLs instead.
-	DistsURL  string      `json:"dists_url" yaml:"dists_url"`
-	DistsURLs []sourceURL `json:"dists_urls" yaml:"dists_urls"`
+	// Deprecated: DistURL and DistsURLs are unused.
+	DistsURL  string            `json:"dists_url" yaml:"dists_url"`
+	DistsURLs []json.RawMessage `json:"dists_urls" yaml:"dists_urls"`
 }
 
 // Name implements [driver.Updater].
@@ -307,21 +292,6 @@ func (u *updater) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *
 		zlog.Info(ctx).
 			Msg("configured JSON database URL")
 	}
-	if len(cfg.DistsURLs) != 0 {
-		u.dists = cfg.DistsURLs
-		zlog.Info(ctx).
-			Msg("configured dists URLs")
-	}
-
-	var srcs []sourceURL
-	for _, dist := range u.dists {
-		src, err := url.Parse(dist.url.String())
-		if err != nil {
-			return fmt.Errorf("debian: unable to parse dist URL: %w", err)
-		}
-		srcs = append(srcs, sourceURL{distro: dist.distro, url: src})
-	}
-	u.sm = newSourcesMap(u.c, srcs)
 
 	return nil
 }
@@ -385,11 +355,6 @@ func (u *updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io
 	}
 	zlog.Info(ctx).Msg("fetched latest json database successfully")
 
-	if err := u.sm.Update(ctx); err != nil {
-		return nil, "", fmt.Errorf("could not update source to binary map: %w", err)
-	}
-	zlog.Info(ctx).Msg("updated the debian source to binary map successfully")
 	success = true
-
 	return f, driver.Fingerprint(fp), err
 }
