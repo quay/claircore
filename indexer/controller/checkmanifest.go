@@ -70,6 +70,12 @@ func checkManifest(ctx context.Context, s *Controller) (State, error) {
 		return Terminal, fmt.Errorf("failed to retrieve manifest: %w", err)
 	}
 	s.report = sr
+	if sr.State != IndexFinished.String() {
+		// The manifest has been processed with all the Scanners but the index report did not end up in the IndexFinished state.
+		// This means that something must have gone wrong along the way so reprocess the manifest again.
+		// Do not do any filtering of the Vscnrs as we do not went wrong during the scanning process.
+		return FetchLayers, nil
+	}
 
 	return Terminal, nil
 }
