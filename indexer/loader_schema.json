@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:claircore:indexer:dynamicplugin:ecosystem",
+  "$defs": {
+    "config": {
+      "type": "array",
+      "items": {
+        "description": "TODO",
+        "type": "object",
+        "oneOf": [
+          { "$ref": "#/$defs/inline" },
+          { "$ref": "#/$defs/file" }
+        ],
+        "properties": {
+          "path": {
+            "description": "TODO",
+            "type": "string"
+          },
+          "contents": {
+            "description": "TODO",
+            "type": "string"
+          },
+          "default": {
+            "description": "TODO",
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "inline": {
+      "required": [ "contents" ],
+      "not": { "required": [ "path" ] }
+    },
+    "file": {
+      "not": { "$ref": "#/$defs/inline" }
+    }
+  },
+  "title": "Ecosystem Loader",
+  "description": "TODO",
+  "oneOf": [
+    { "$ref": "urn:claircore:config:empty" },
+    { "$ref": "#/$defs/config" }
+  ],
+  "examples": [
+	[{"inline":"{\"name\":\"urn:claircore:example:example:example\"}"}],
+	[{"path":"/run/ecosystem1.json"},{"path":"/run/ecosystem2.json","default":true}]
+  ]
+}

@@ -23,6 +23,17 @@ type Ecosystem struct {
 	Name                 string
 }
 
+type EcosystemSpec struct {
+	Name string `json:"name"`
+
+	Coalescer    []string `json:"coalescer"`
+	Distribution []string `json:"distribution"`
+	File         []string `json:"file"`
+	Package      []string `json:"package"`
+	Repository   []string `json:"repository"`
+	Resolver     []string `json:"resolver"`
+}
+
 // EcosystemsToScanners extracts and dedupes multiple ecosystems and returns
 // their discrete scanners.
 func EcosystemsToScanners(ctx context.Context, ecosystems []*Ecosystem) ([]PackageScanner, []DistributionScanner, []RepositoryScanner, []FileScanner, error) {
