@@ -26,7 +26,7 @@ var sourceRepos = [3]string{"main", "contrib", "non-free"}
 func newSourcesMap(client *http.Client, srcs []sourceURL) *sourcesMap {
 	return &sourcesMap{
 		urls:      srcs,
-		sourceMap: make(map[string]map[string]map[string]struct{}),
+		sourceMap: make(map[string]map[string]map[string]string),
 		etagMap:   make(map[string]string),
 		client:    client,
 	}
@@ -47,7 +47,7 @@ type sourcesMap struct {
 	urls       []sourceURL
 	mu, etagMu sync.RWMutex
 	// sourceMap maps distribution -> source package -> binary packages
-	sourceMap map[string]map[string]map[string]struct{}
+	sourceMap map[string]map[string]map[string]string
 	etagMap   map[string]string
 	client    *http.Client
 }
@@ -55,14 +55,21 @@ type sourcesMap struct {
 // Get returns all the binaries associated with a source package
 // identified by a string. Empty slice is returned if the source
 // doesn't exist in the map.
-func (m *sourcesMap) Get(distro, source string) []string {
+func (m *sourcesMap) Get(distro, source string) []nameVersion {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	bins := []string{}
-	for bin := range m.sourceMap[distro][source] {
-		bins = append(bins, bin)
+	bins := []nameVersion{}
+	for name, ver := range m.sourceMap[distro][source] {
+		bins = append(bins, nameVersion{
+			Name:    name,
+			Version: ver,
+		})
 	}
 	return bins
+}
+
+type nameVersion struct {
+	Name, Version string
 }
 
 // Update pulls the Sources.gz files for the different repos and saves
@@ -145,16 +152,17 @@ func (m *sourcesMap) fetchSources(ctx context.Context, distro, url string) error
 		if source == "linux" {
 			continue
 		}
+		version := hdr.Get("Version")
 		binaries := hdr.Get("Binary")
 		m.mu.Lock()
 		if m.sourceMap[distro] == nil {
-			m.sourceMap[distro] = make(map[string]map[string]struct{})
+			m.sourceMap[distro] = make(map[string]map[string]string)
 		}
 		if m.sourceMap[distro][source] == nil {
-			m.sourceMap[distro][source] = make(map[string]struct{})
+			m.sourceMap[distro][source] = make(map[string]string)
 		}
 		for _, bin := range strings.Split(binaries, ", ") {
-			m.sourceMap[distro][source][bin] = struct{}{}
+			m.sourceMap[distro][source][bin] = version
 		}
 		m.mu.Unlock()
 	}

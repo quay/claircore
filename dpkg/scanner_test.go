@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/textproto"
 	"os"
+	"slices"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -70,7 +71,7 @@ func TestScanner(t *testing.T) {
 			Version:        "1:2.8.2-1ubuntu1",
 			Kind:           claircore.BINARY,
 			Arch:           "amd64",
-			Source:         &claircore.Package{Name: "audit", Version: "1:2.8.2-1ubuntu1", Kind: claircore.SOURCE, PackageDB: "var/lib/dpkg/status"},
+			Source:         &claircore.Package{Name: "audit", Version: "2.8.2-1ubuntu1", Kind: claircore.SOURCE, PackageDB: "var/lib/dpkg/status"},
 			PackageDB:      "var/lib/dpkg/status",
 			RepositoryHint: "5c0000030cfa810d6c835ab82f517ee6",
 		},
@@ -124,7 +125,7 @@ func TestScanner(t *testing.T) {
 			Version:        "1:2.4.47-2build1",
 			Kind:           claircore.BINARY,
 			Arch:           "amd64",
-			Source:         &claircore.Package{Name: "attr", Version: "1:2.4.47-2build1", Kind: claircore.SOURCE, PackageDB: "var/lib/dpkg/status"},
+			Source:         &claircore.Package{Name: "attr", Version: "2.4.47-2build1", Kind: claircore.SOURCE, PackageDB: "var/lib/dpkg/status"},
 			PackageDB:      "var/lib/dpkg/status",
 			RepositoryHint: "a915a7ea4dd5f10d4d4d385d2c24192d",
 		},
@@ -253,7 +254,7 @@ func TestScanner(t *testing.T) {
 			Version:        "1:1.2.11.dfsg-0ubuntu2",
 			Kind:           claircore.BINARY,
 			Arch:           "amd64",
-			Source:         &claircore.Package{Name: "zlib", Version: "1:1.2.11.dfsg-0ubuntu2", Kind: claircore.SOURCE, PackageDB: "var/lib/dpkg/status"},
+			Source:         &claircore.Package{Name: "zlib", Version: "1.2.11.dfsg-0ubuntu2", Kind: claircore.SOURCE, PackageDB: "var/lib/dpkg/status"},
 			PackageDB:      "var/lib/dpkg/status",
 			RepositoryHint: "3270b12c3a9a6ee9f4ae27ffeb407a6c",
 		},
@@ -295,7 +296,7 @@ func TestScanner(t *testing.T) {
 			Version:        "1:2.31.1-0.4ubuntu3.3",
 			Kind:           claircore.BINARY,
 			Arch:           "amd64",
-			Source:         &claircore.Package{Name: "util-linux (2.31.1-0.4ubuntu3.3)", Version: "1:2.31.1-0.4ubuntu3.3", Kind: claircore.SOURCE, PackageDB: "var/lib/dpkg/status"},
+			Source:         &claircore.Package{Name: "util-linux", Version: "2.31.1-0.4ubuntu3.3", Kind: claircore.SOURCE, PackageDB: "var/lib/dpkg/status"},
 			PackageDB:      "var/lib/dpkg/status",
 			RepositoryHint: "944a8ca185896c4fc8e6d403c44c089f",
 		},
@@ -502,7 +503,7 @@ func TestScanner(t *testing.T) {
 			Version:        "1:4.5-1ubuntu2",
 			Kind:           claircore.BINARY,
 			Arch:           "amd64",
-			Source:         &claircore.Package{Name: "shadow", Version: "1:4.5-1ubuntu2", Kind: claircore.SOURCE, PackageDB: "var/lib/dpkg/status"},
+			Source:         &claircore.Package{Name: "shadow", Version: "4.5-1ubuntu2", Kind: claircore.SOURCE, PackageDB: "var/lib/dpkg/status"},
 			PackageDB:      "var/lib/dpkg/status",
 			RepositoryHint: "b07c719065496584ffc5d22aad31bd26",
 		},
@@ -660,7 +661,7 @@ func TestScanner(t *testing.T) {
 			Version:        "1:2.8.2-1ubuntu1",
 			Kind:           claircore.BINARY,
 			Arch:           "all",
-			Source:         &claircore.Package{Name: "audit", Version: "1:2.8.2-1ubuntu1", Kind: claircore.SOURCE, PackageDB: "var/lib/dpkg/status"},
+			Source:         &claircore.Package{Name: "audit", Version: "2.8.2-1ubuntu1", Kind: claircore.SOURCE, PackageDB: "var/lib/dpkg/status"},
 			PackageDB:      "var/lib/dpkg/status",
 			RepositoryHint: "96dff9fbe852eedc8324c4c659c6c9fb",
 		},
@@ -704,7 +705,7 @@ func TestScanner(t *testing.T) {
 			Version:        "1:4.5-1ubuntu2",
 			Kind:           claircore.BINARY,
 			Arch:           "amd64",
-			Source:         &claircore.Package{Name: "shadow", Version: "1:4.5-1ubuntu2", Kind: claircore.SOURCE, PackageDB: "var/lib/dpkg/status"},
+			Source:         &claircore.Package{Name: "shadow", Version: "4.5-1ubuntu2", Kind: claircore.SOURCE, PackageDB: "var/lib/dpkg/status"},
 			PackageDB:      "var/lib/dpkg/status",
 			RepositoryHint: "fb7eb3beb226312b5fc206b9b68196e4",
 		},
@@ -765,7 +766,7 @@ func TestScanner(t *testing.T) {
 			Version:        "1:8.3.0-6ubuntu1~18.04.1",
 			Kind:           claircore.BINARY,
 			Arch:           "amd64",
-			Source:         &claircore.Package{Name: "gcc-8 (8.3.0-6ubuntu1~18.04.1)", Version: "1:8.3.0-6ubuntu1~18.04.1", Kind: claircore.SOURCE, PackageDB: "var/lib/dpkg/status"},
+			Source:         &claircore.Package{Name: "gcc-8", Version: "8.3.0-6ubuntu1~18.04.1", Kind: claircore.SOURCE, PackageDB: "var/lib/dpkg/status"},
 			PackageDB:      "var/lib/dpkg/status",
 			RepositoryHint: "9bccc3f84c1c9038a55c211f84014a65",
 		},
@@ -795,6 +796,7 @@ func TestScanner(t *testing.T) {
 			RepositoryHint: "daafc6eba6eae603327bf8fc49645999",
 		},
 	}
+	slices.SortFunc(want, sortpkg)
 	ctx := zlog.Test(context.Background(), t)
 	l := test.RealizeLayer(ctx, t, test.LayerRef{
 		Registry: "docker.io",
@@ -908,7 +910,6 @@ Version: 1
 // This is a giant status file because texlive was installed.
 func TestGiantStatus(t *testing.T) {
 	t.Parallel()
-	zlog.Test(context.Background(), t)
 	db, err := os.Open(`testdata/texlive.status`)
 	if err != nil {
 		t.Fatal(err)
@@ -931,6 +932,7 @@ func TestGiantStatus(t *testing.T) {
 
 // See quay/claircore#297 for more context.
 func TestKeyringPackage(t *testing.T) {
+	t.Parallel()
 	db, err := os.Open(`testdata/debian-only.status`)
 	if err != nil {
 		t.Fatal(err)
@@ -943,6 +945,40 @@ func TestKeyringPackage(t *testing.T) {
 		t.Error(err)
 	}
 	got, want := hdr.Get("Version"), `2019.1`
+	t.Logf("got: %q, want: %q", got, want)
+	if got != want {
+		t.Fail()
+	}
+}
+
+// See quay/claircore#1291 for more context.
+func TestParsedSource(t *testing.T) {
+	t.Parallel()
+	const filename = `testdata/postgresql.status`
+	ctx := zlog.Test(context.Background(), t)
+
+	db, err := os.Open(filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := newPackages()
+	tp := textproto.NewReader(bufio.NewReader(db))
+
+	if err := parseStatus(ctx, found, filename, tp); err != nil {
+		t.Error(err)
+	}
+
+	pkg, ok := found.bin["postgresql-client"]
+	if !ok {
+		t.Fatalf("unable to find package %q", "postgresql-client")
+	}
+	src := pkg.Source
+	got, want := src.Name, "postgresql-common"
+	t.Logf("got: %q, want: %q", got, want)
+	if got != want {
+		t.Fail()
+	}
+	got, want = src.Version, "200+deb10u5"
 	t.Logf("got: %q, want: %q", got, want)
 	if got != want {
 		t.Fail()

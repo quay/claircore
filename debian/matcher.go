@@ -57,7 +57,7 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 
 	v1, err := version.NewVersion(record.Package.Version)
 	if err != nil {
-		return false, nil
+		return false, err
 	}
 	v2, err := version.NewVersion(vuln.FixedInVersion)
 	if err != nil {
