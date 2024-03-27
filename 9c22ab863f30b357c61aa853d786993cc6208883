@@ -1,0 +1,6 @@
+osv: parse database_specific severity when no CVSS severity is defined
+
+Occasionally there are OSV advisories that don't include any severity
+information in the `.severity` object but they do contain a severity in
+the `.database_specific` object. This change attempts to parse that
+severity if we don't get a severity from the native `.severity` object.
