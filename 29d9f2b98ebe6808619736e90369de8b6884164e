@@ -1,0 +1,10 @@
+libindex: add `O_TMPFILE` fallback logic
+
+After discovering that some common deployment methods are incompatible with
+using the `O_TMPFILE` `open(2)` flag, a fallback path has been added. The
+changes also move the default location of where temporary files are downloaded
+to, to better align with the layout recommended by systemd.
+
+Please see [the documentation] for specifics.
+
+[the documentation]: https://pkg.go.dev/github.com/quay/claircore/libindex@v1.5.26-0.20240325212310-fedb9d327aa7#NewRemoteFetchArena
