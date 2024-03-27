@@ -71,11 +71,14 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 				}
 				vs = append(vs, &v)
 
-				for _, bin := range u.sm.Get(d.VersionCodeName, src) {
+				for _, nv := range u.sm.Get(d.VersionCodeName, src) {
 					// Shallow copy.
 					vuln := v
+					if nv.Version != "" {
+						vuln.FixedInVersion = nv.Version
+					}
 					vuln.Package = &claircore.Package{
-						Name: bin,
+						Name: nv.Name,
 						Kind: claircore.BINARY,
 					}
 
