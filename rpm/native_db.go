@@ -5,6 +5,8 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"path"
+	"regexp"
 	"runtime/trace"
 	"strings"
 
@@ -121,7 +123,8 @@ type Info struct {
 	Module     string
 	Arch       string
 	Digest     string
-	Signature  []byte // This is a PGP signature packet.
+	Signature  []byte   // This is a PGP signature packet.
+	Filenames  []string // Filtered by the [filePatterns] regexp.
 	DigestAlgo int
 	Epoch      int
 }
@@ -129,6 +132,8 @@ type Info struct {
 // Load populates the receiver with information extracted from the provided
 // [rpm.Header].
 func (i *Info) Load(ctx context.Context, h *rpm.Header) error {
+	var dirname, basename []string
+	var dirindex []int32
 	for idx := range h.Infos {
 		e := &h.Infos[idx]
 		if _, ok := wantTags[e.Tag]; !ok {
@@ -159,14 +164,84 @@ func (i *Info) Load(ctx context.Context, h *rpm.Header) error {
 			i.Digest = v.([]string)[0]
 		case rpm.TagSigPGP:
 			i.Signature = v.([]byte)
+		case rpm.TagDirnames:
+			dirname = v.([]string)
+		case rpm.TagDirindexes:
+			dirindex = v.([]int32)
+		case rpm.TagBasenames:
+			basename = v.([]string)
+		case rpm.TagFilenames:
+			// Filenames is the tag used in rpm4 -- this is a best-effort for
+			// supporting it.
+			for _, name := range v.([]string) {
+				if !filePatterns.MatchString(name) {
+					// Record the name as a relative path, as that's what we use
+					// everywhere else.
+					i.Filenames = append(i.Filenames, name[1:])
+				}
+			}
+		}
+	}
+
+	// Catch panics from malformed headers. Can't think of a better way to
+	// handle this.
+	defer func() {
+		if r := recover(); r == nil {
+			return
+		}
+		zlog.Warn(ctx).
+			Str("name", i.Name).
+			Strs("basename", basename).
+			Strs("dirname", dirname).
+			Ints32("dirindex", dirindex).
+			Msg("caught panic in filename construction")
+		i.Filenames = nil
+	}()
+	for j := range basename {
+		// We only want '/'-separated paths, even if running on some other,
+		// weird OS. It seems that RPM assumes '/' throughout.
+		name := path.Join(dirname[dirindex[j]], basename[j])
+		if filePatterns.MatchString(name) {
+			// Record the name as a relative path, as that's what we use
+			// everywhere else.
+			i.Filenames = append(i.Filenames, name[1:])
 		}
 	}
 	return nil
 }
 
+// FilePatterns is a regular expression for *any* file that may need to be
+// recorded alongside a package.
+//
+// The tested strings are absolute paths.
+var filePatterns *regexp.Regexp
+
+func init() {
+	// TODO(hank) The blanket binary pattern is too broad and can miss things.
+	// Long-term, we should add pattern matching akin to [yara] or file(1) as a
+	// plugin mechanism that all indexers can use. That way, the Go indexer
+	// could register a pattern and use a shared filter over the
+	// [fs.WalkDirFunc] while this package (and dpkg, etc) can tell that another
+	// indexer will find those files relevant.
+	//
+	// [yara]: https://github.com/VirusTotal/yara
+	pat := []string{
+		`^.*/[^/]+\.jar$`, // Jar files
+		`^.*/site-packages/[^/]+\.egg-info/PKG-INFO$`, // Python packages
+		`^.*/package.json$`,                           // npm packages
+		`^.*/[^/]+\.gemspec$`,                         // ruby gems
+		`^/usr/bin/[^/]+$`,                            // any executable
+	}
+	filePatterns = regexp.MustCompile(strings.Join(pat, `|`))
+}
+
 var wantTags = map[rpm.Tag]struct{}{
 	rpm.TagArch:              {},
+	rpm.TagBasenames:         {},
+	rpm.TagDirindexes:        {},
+	rpm.TagDirnames:          {},
 	rpm.TagEpoch:             {},
+	rpm.TagFilenames:         {},
 	rpm.TagModularityLabel:   {},
 	rpm.TagName:              {},
 	rpm.TagPayloadDigest:     {},
