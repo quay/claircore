@@ -1,0 +1,5 @@
+debian: update how "source" packages are handled
+
+Previously, the Updater parsed metadata from the repository to try to
+record only "binary" packages. This was inaccurate and, with the new
+dpkg handling, now unneeded. The new approach should be more accurate.
