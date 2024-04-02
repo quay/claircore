@@ -20,12 +20,13 @@ done
 shift $((OPTIND - 1))
 VERSION="${1:?need a version argument}"
 VERSION="v${VERSION#v}"
-
-prs=$(gh search prs --repo $GH_REPO --state closed --merged --label=needs-changelog --json=title,url | jq -r '.[] | (.url | @text) + " - " + (.title | @text)')
-if [ -n "$prs" ]
-then
+prlist=$(mktemp)
+trap 'rm "$prlist"' EXIT
+gh search prs --repo "$GH_REPO" --state closed --merged --label=needs-changelog --json=title,url |\
+	jq -r '.[] | (.url | @text) + " - " + (.title | @text)' >"$prlist"
+if [ -s "$prlist" ]; then
     echo "There are still PRs that need changelog entries"
-    echo $prs
+    cat "$prlist"
     exit 1
 fi
 
