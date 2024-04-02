@@ -121,7 +121,6 @@ func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string
 			$3,
 			(SELECT id FROM vuln WHERE hash_kind = $1 AND hash = $2))
 		ON CONFLICT DO NOTHING;`
-		undo        = `DELETE FROM update_operation WHERE id = $1;`
 		refreshView = `REFRESH MATERIALIZED VIEW CONCURRENTLY latest_update_operations;`
 	)
 
@@ -130,29 +129,18 @@ func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string
 
 	start := time.Now()
 
-	if err := s.pool.QueryRow(ctx, create, updater, string(fingerprint)).Scan(&uoID, &ref); err != nil {
-		return uuid.Nil, fmt.Errorf("failed to create update_operation: %w", err)
-	}
-	var success bool
-	defer func() {
-		if !success {
-			if _, err := s.pool.Exec(ctx, undo, uoID); err != nil {
-				zlog.Error(ctx).
-					Err(err).
-					Stringer("ref", ref).
-					Msg("unable to remove update operation")
-			}
-		}
-	}()
-
-	updateVulnerabilitiesCounter.WithLabelValues("create", strconv.FormatBool(delta)).Add(1)
-	updateVulnerabilitiesDuration.WithLabelValues("create", strconv.FormatBool(delta)).Observe(time.Since(start).Seconds())
-
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("unable to start transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
+
+	if err := tx.QueryRow(ctx, create, updater, string(fingerprint)).Scan(&uoID, &ref); err != nil {
+		return uuid.Nil, fmt.Errorf("failed to create update_operation: %w", err)
+	}
+
+	updateVulnerabilitiesCounter.WithLabelValues("create", strconv.FormatBool(delta)).Add(1)
+	updateVulnerabilitiesDuration.WithLabelValues("create", strconv.FormatBool(delta)).Observe(time.Since(start).Seconds())
 
 	zlog.Debug(ctx).
 		Str("ref", ref.String()).
@@ -275,7 +263,6 @@ func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string
 		return uuid.Nil, fmt.Errorf("could not refresh latest_update_operations: %w", err)
 	}
 
-	success = true
 	zlog.Debug(ctx).
 		Str("ref", ref.String()).
 		Int("skipped", skipCt).
