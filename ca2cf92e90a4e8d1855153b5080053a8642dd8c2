@@ -1,0 +1,6 @@
+dpkg: improve Source handling
+
+The dpkg handling machinery now correctly records source packages and
+versions. Previously, version differences between a source package and
+the resulting binary package(s) were incorrect if the versions were not
+identical.
