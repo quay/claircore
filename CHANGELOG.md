@@ -1,3 +1,43 @@
+<a name="v1.5.26"></a>
+## [v1.5.26] - 2024-04-02
+[v1.5.26]: https://github.com/quay/claircore/compare/v1.5.25...v1.5.26
+
+- debian: update how "source" packages are handled
+  <details>
+  Previously, the Updater parsed metadata from the repository to try to
+  record only "binary" packages. This was inaccurate and, with the new
+  dpkg handling, now unneeded. The new approach should be more accurate.
+  </details>
+
+- dpkg: improve Source handling
+  <details>
+  The dpkg handling machinery now correctly records source packages and
+  versions. Previously, version differences between a source package and
+  the resulting binary package(s) were incorrect if the versions were not
+  identical.
+  </details>
+
+- libindex: add `O_TMPFILE` fallback logic
+  <details>
+  After discovering that some common deployment methods are incompatible with
+  using the `O_TMPFILE` `open(2)` flag, a fallback path has been added. The
+  changes also move the default location of where temporary files are downloaded
+  to, to better align with the layout recommended by systemd.
+  
+  Please see [the documentation] for specifics.
+  
+  [the documentation]: https://pkg.go.dev/github.com/quay/claircore/libindex@v1.5.
+  26-0.20240325212310-fedb9d327aa7#NewRemoteFetchArena
+  </details>
+
+- osv: parse database_specific severity when no CVSS severity is defined
+  <details>
+  Occasionally there are OSV advisories that don't include any severity
+  information in the `.severity` object but they do contain a severity in
+  the `.database_specific` object. This change attempts to parse that
+  severity if we don't get a severity from the native `.severity` object.
+  </details>
+
 <a name="v1.5.25"></a>
 ## [v1.5.25] - 2024-02-26
 [v1.5.25]: https://github.com/quay/claircore/compare/v1.5.24...v1.5.25
