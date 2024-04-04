@@ -457,10 +457,23 @@ func (f *FS) ReadFile(name string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	if i.h.FileInfo().Mode().Type()&fs.ModeSymlink != 0 {
+
+	dataSize := i.h.Size
+	typ := i.h.FileInfo().Mode().Type()
+	var r *tar.Reader
+	switch {
+	case typ.IsRegular() && i.h.Typeflag != tar.TypeLink:
+		r = tar.NewReader(io.NewSectionReader(f.r, i.off, i.sz))
+	case typ.IsRegular() && i.h.Typeflag == tar.TypeLink || typ&fs.ModeSymlink != 0: // is hardlink or symlink
 		return f.ReadFile(i.h.Linkname)
+	default:
+		// Pretend all other kinds of files don't exist.
+		return nil, &fs.PathError{
+			Op:   op,
+			Path: name,
+			Err:  fs.ErrExist,
+		}
 	}
-	r := tar.NewReader(io.NewSectionReader(f.r, i.off, i.sz))
 	if _, err := r.Next(); err != nil {
 		return nil, &fs.PathError{
 			Op:   op,
@@ -468,7 +481,7 @@ func (f *FS) ReadFile(name string) ([]byte, error) {
 			Err:  err,
 		}
 	}
-	ret := make([]byte, i.h.Size)
+	ret := make([]byte, dataSize)
 	if _, err := io.ReadFull(r, ret); err != nil {
 		return nil, &fs.PathError{
 			Op:   op,

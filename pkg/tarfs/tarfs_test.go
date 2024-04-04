@@ -460,6 +460,83 @@ func TestSymlinks(t *testing.T) {
 	}))
 }
 
+func TestReadFile(t *testing.T) {
+	type tarfsFile struct {
+		Header tar.Header
+		Data   []byte
+	}
+
+	tmp := t.TempDir()
+	setupAndRun := func(openErr bool, tarfsFiles []tarfsFile, chk func(*testing.T, *FS)) {
+		t.Helper()
+		// This is a perfect candidate for using test.GenerateFixture, but
+		// creates an import cycle.
+		f, err := os.Create(filepath.Join(tmp, filepath.Base(t.Name())))
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer f.Close()
+
+		tw := tar.NewWriter(f)
+		for _, tarfsFile := range tarfsFiles {
+			h := tarfsFile.Header
+			h.Size = int64(len(tarfsFile.Data))
+			h.Format = tar.FormatGNU
+			if err := tw.WriteHeader(&h); err != nil {
+				t.Error(err)
+			}
+			_, err := tw.Write(tarfsFile.Data)
+			if err != nil {
+				t.Error(err)
+			}
+		}
+		if err := tw.Close(); err != nil {
+			t.Error(err)
+		}
+
+		sys, err := New(f)
+		t.Log(err)
+		if (err != nil) != openErr {
+			t.Fail()
+		}
+
+		if chk != nil {
+			chk(t, sys)
+		}
+	}
+
+	t.Run("Hardlink", func(t *testing.T) {
+		originalData := []byte(`Hello, World!`)
+		abData := make([]byte, len(originalData))
+		copy(abData, originalData)
+
+		setupAndRun(false, []tarfsFile{
+			{
+				Header: tar.Header{Name: `a/`},
+			},
+			{
+				Header: tar.Header{Name: `a/b`},
+				Data:   abData,
+			},
+			{
+				Header: tar.Header{
+					Name:     `a/c`,
+					Typeflag: tar.TypeLink,
+					Linkname: `a/b`,
+				},
+			},
+		}, func(t *testing.T, sys *FS) {
+			acFile, err := sys.ReadFile("a/c")
+			if err != nil {
+				t.Errorf("error while opening file: %v", err)
+			}
+			if !bytes.Equal(originalData, acFile) {
+				t.Errorf("unexpected \"%s\", got \"%s\"", originalData, acFile)
+			}
+		})
+	})
+}
+
 func TestKnownLayers(t *testing.T) {
 	ents, err := os.ReadDir(`testdata/known`)
 	if err != nil {
