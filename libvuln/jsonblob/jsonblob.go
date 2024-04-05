@@ -44,11 +44,25 @@ type Store struct {
 	latest map[driver.UpdateKind]uuid.UUID
 }
 
+// LoadOpt is an option to configure the loader.
+type LoadOpt func(l *Loader)
+
+// MaxEntrySize sets a size limit on the number of vulnerabilities and enrichments
+// each entry can have (the default limit is no limit).
+func MaxEntrySize(sz int) LoadOpt {
+	return func(l *Loader) {
+		l.maxEntrySize = sz
+	}
+}
+
 // Load reads in all the records serialized in the provided [io.Reader].
-func Load(ctx context.Context, r io.Reader) (*Loader, error) {
+func Load(ctx context.Context, r io.Reader, opts ...LoadOpt) (*Loader, error) {
 	l := Loader{
 		dec: json.NewDecoder(r),
 		cur: uuid.Nil,
+	}
+	for _, o := range opts {
+		o(&l)
 	}
 	return &l, nil
 }
@@ -65,6 +79,8 @@ type Loader struct {
 	next *Entry
 	de   diskEntry
 	cur  uuid.UUID
+
+	maxEntrySize int
 }
 
 // Next reports whether there's an [Entry] to be processed.
@@ -72,11 +88,16 @@ func (l *Loader) Next() bool {
 	if l.err != nil {
 		return false
 	}
-
+	// Hint for the GC.
+	l.e = nil
 	for l.err = l.dec.Decode(&l.de); l.err == nil; l.err = l.dec.Decode(&l.de) {
 		id := l.de.Ref
-		// If we just hit a new Entry, promote the current one.
-		if id != l.cur {
+		// If we just hit a new Entry, or if the next Entry is too big, then promote it.
+		promote := id != l.cur ||
+			(l.next != nil &&
+				l.maxEntrySize > 0 &&
+				len(l.next.Vuln)+len(l.next.Enrichment) >= l.maxEntrySize)
+		if promote {
 			l.e = l.next
 			l.next = &Entry{}
 			l.next.Updater = l.de.Updater
@@ -100,7 +121,7 @@ func (l *Loader) Next() bool {
 			l.next.Enrichment = append(l.next.Enrichment, en)
 		}
 		// If this was an initial diskEntry, promote the ref.
-		if id != l.cur {
+		if promote {
 			l.cur = id
 			// If we have an Entry ready, report that.
 			if l.e != nil {
