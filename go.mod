@@ -1,6 +1,6 @@
 module github.com/quay/claircore
 
-go 1.21.8
+go 1.21.9
 
 require (
 	github.com/Masterminds/semver v1.5.0
