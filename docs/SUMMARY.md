@@ -40,3 +40,4 @@
   - [Logging](./contributor/logging.md)
   - [Misc](./contributor/misc.md)
   - [Tests](./contributor/tests.md)
+  - [Go Version](./contributor/go_version.md)
