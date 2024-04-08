@@ -23,8 +23,8 @@ require (
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
 	github.com/rs/zerolog v1.30.0
 	github.com/ulikunitz/xz v0.5.11
-	go.opentelemetry.io/otel v1.24.0
-	go.opentelemetry.io/otel/trace v1.24.0
+	go.opentelemetry.io/otel v1.25.0
+	go.opentelemetry.io/otel/trace v1.25.0
 	golang.org/x/crypto v0.22.0
 	golang.org/x/sync v0.7.0
 	golang.org/x/sys v0.19.0
@@ -55,7 +55,7 @@ require (
 	github.com/prometheus/common v0.48.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
-	go.opentelemetry.io/otel/metric v1.24.0 // indirect
+	go.opentelemetry.io/otel/metric v1.25.0 // indirect
 	golang.org/x/mod v0.17.0 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
 	modernc.org/gc/v3 v3.0.0-20240107210532-573471604cb6 // indirect
