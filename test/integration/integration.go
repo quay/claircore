@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -44,12 +43,14 @@ func skip() bool {
 	return testing.Short() || integrationTag && !inCI
 }
 
-var inCI, inGHA bool
+var inCI, inGHA, externalDB bool
 
 func init() {
-	inCI, _ = strconv.ParseBool(os.Getenv("CI"))
-	inGHA, _ = strconv.ParseBool(os.Getenv("GITHUB_ACTIONS"))
-	actuallyAct, _ := strconv.ParseBool(os.Getenv("ACT"))
+	_, inCI = os.LookupEnv("CI")
+	_, inGHA = os.LookupEnv("GITHUB_ACTIONS")
+	_, externalDB = os.LookupEnv(EnvPGConnString)
+	_, actuallyAct := os.LookupEnv("ACT")
+
 	inGHA = inGHA && !actuallyAct
 }
 
