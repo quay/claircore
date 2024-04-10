@@ -235,6 +235,21 @@ func NeedDB(t testing.TB) {
 		up.Do(startGithubActions(t))
 		return
 	}
+	if externalDB {
+		t.Log("using preconfigured external database")
+		up.Do(func() {
+			cfg, err := pgxpool.ParseConfig(os.Getenv(EnvPGConnString))
+			if err != nil {
+				t.Fatal(err)
+			}
+			pkgConfig = cfg
+			// Database was started externally, we don't have to arrange to have it
+			// torn down.
+		})
+		return
+	}
+
+	t.Log("using embedded database")
 	embedDB.DiscoverVersion(t)
 	up.Do(startEmbedded(t))
 }
@@ -247,18 +262,11 @@ func NeedDB(t testing.TB) {
 //
 // See the example for usage.
 func DBSetup() func() {
-	dsn := os.Getenv(EnvPGConnString)
-	if dsn != "" {
-		cfg, err := pgxpool.ParseConfig(dsn)
-		if err != nil {
-			panic(err)
-		}
-		pkgConfig = cfg
-		up.Do(func() {}) // Trip the sync.Once
-		// Database was started externally, we don't have to arrange to have it
-		// torn down.
-	}
-
+	// This used to do a bunch of setup, but that got pretty gnarly.
+	//
+	// Most of the complexity was moved into [NeedDB] and helper functions run
+	// under the [up] sync.Once, because there's a [testing.T] that can actually
+	// log things.
 	return func() {
 		if pkgDB != nil {
 			pkgDB.Stop()
