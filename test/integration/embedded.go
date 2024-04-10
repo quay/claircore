@@ -72,6 +72,11 @@ func init() {
 }
 
 func startEmbedded(t testing.TB) func() {
+	if os.Getuid() == 0 {
+		// Print warning to prevent wary travelers needing to go spelunking in
+		// the logs.
+		t.Log("⚠️ PostgreSQL refuses to start as root; this will almost certainly not work ⚠️")
+	}
 	return func() {
 		pkgDB = &Engine{}
 		if err := pkgDB.Start(t); err != nil {
