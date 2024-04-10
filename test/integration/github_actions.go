@@ -26,6 +26,10 @@ auto_explain.log_wal = true
 	// GitHub Actions has Postgres installed, so we can just run some commands
 	// to set it up:
 	return func() {
+		// On success, this function leaves [pkgDB] unset, so that the test
+		// binary's teardown logic leaves it running as if it's an external
+		// database. Which it is, just happening to be one that some test or
+		// previous shell command started.
 		defer func() {
 			if t.Failed() {
 				return
@@ -39,6 +43,11 @@ auto_explain.log_wal = true
 		}()
 		// See if a previous test binary already enabled the service:
 		cmd := exec.Command("sudo", "systemctl", "--quiet", "is-active", "postgresql.service")
+		// BUG(hank) If some other process starts "postgresql.service", it need
+		// to ensure that local passwordless authentication is configured. If
+		// processes after a test using this package needs any other
+		// authentication setup, be aware that this package overwrites the
+		// default "pg_hba.conf" with a minimal, local-only configuration.
 		if err := cmd.Run(); err == nil {
 			// Looking for exit 0 to indicate we don't need to do anything.
 			return
