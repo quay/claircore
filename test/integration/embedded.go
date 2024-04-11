@@ -77,6 +77,13 @@ func startEmbedded(t testing.TB) func() {
 		// the logs.
 		t.Log("⚠️ PostgreSQL refuses to start as root; this will almost certainly not work ⚠️")
 	}
+	if embedDB.Arch == "" {
+		t.Logf(`⚠️ unsupported platform "%s/%s"; see https://mvnrepository.com/artifact/io.zonky.test.postgres/embedded-postgres-binaries-bom`,
+			runtime.GOOS, runtime.GOARCH,
+		)
+		t.Log("See the test/integration documentation for how to specify an external database.")
+		t.FailNow()
+	}
 	return func() {
 		pkgDB = &Engine{}
 		if err := pkgDB.Start(t); err != nil {

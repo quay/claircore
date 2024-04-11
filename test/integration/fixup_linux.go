@@ -1,17 +1,17 @@
 package integration
 
 import (
-	"fmt"
 	"os"
 	"runtime"
 	"strings"
 	"syscall"
 )
 
-// the zonkyio/embedded-postgres-binaries project produces
-// arm binaries with the following name schema:
-// 32bit: arm32v6 / arm32v7
-// 64bit (aarch64): arm64v8
+// The zonkyio/embedded-postgres-binaries project produces ARM binaries with the
+// following name schema:
+//
+// - 32bit : arm32v6 / arm32v7
+// - 64bit (aarch64): arm64v8
 
 func findArch() (arch string) {
 	arch = runtime.GOARCH
@@ -23,7 +23,10 @@ func findArch() (arch string) {
 	case "arm":
 		var u syscall.Utsname
 		if err := syscall.Uname(&u); err != nil {
-			panic(err)
+			// Not sure why this would happen? Try to use the lowest revision
+			// and let it crash otherwise.
+			arch += "32v6"
+			break
 		}
 		t := make([]byte, 0, len(u.Machine[:]))
 		for _, b := range u.Machine[:] {
@@ -38,14 +41,15 @@ func findArch() (arch string) {
 			arch += "32v7"
 		case strings.HasPrefix(mach, "armv6"):
 			arch += "32v6"
+		default:
+			return ""
 		}
 	case "ppc64le": // OK
 	case "amd64": // OK
 	default:
-		panic(fmt.Sprintf(
-			`unsupported platform "%s/%s"; see https://mvnrepository.com/artifact/io.zonky.test.postgres/embedded-postgres-binaries-bom`,
-			runtime.GOOS, runtime.GOARCH,
-		))
+		// Will cause the [startEmbedded] function to print a warning and fail
+		// the test if the environment requires an embedded database.
+		return ""
 	}
 	// If on alpine:
 	if _, err := os.Stat("/etc/alpine-release"); err == nil {

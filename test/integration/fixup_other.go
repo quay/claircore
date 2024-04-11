@@ -3,7 +3,6 @@
 package integration
 
 import (
-	"fmt"
 	"runtime"
 )
 
@@ -29,10 +28,9 @@ func findArch() (arch string) {
 	default:
 	}
 	if !ok {
-		panic(fmt.Sprintf(
-			`unsupported platform "%s/%s"; see https://mvnrepository.com/artifact/io.zonky.test.postgres/embedded-postgres-binaries-bom`,
-			runtime.GOOS, runtime.GOARCH,
-		))
+		// Will cause the [startEmbedded] function to print a warning and fail
+		// the test if the environment requires an embedded database.
+		return ""
 	}
 	return arch
 }
