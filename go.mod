@@ -8,13 +8,16 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
+	github.com/hugelgupf/go-shlex v0.0.0-20200702092117-c80c9d0918fa
 	github.com/jackc/pgconn v1.14.3
 	github.com/jackc/pgtype v1.14.2
 	github.com/jackc/pgx/v4 v4.18.3
+	github.com/jackc/pgx/v5 v5.4.3
 	github.com/klauspost/compress v1.17.7
 	github.com/knqyf263/go-apk-version v0.0.0-20200609155635-041fdbb8563f
 	github.com/knqyf263/go-deb-version v0.0.0-20190517075300-09fca494f03d
 	github.com/knqyf263/go-rpm-version v0.0.0-20170716094938-74609b86c936
+	github.com/pganalyze/pg_query_go/v4 v4.2.3
 	github.com/prometheus/client_golang v1.19.0
 	github.com/quay/claircore/toolkit v1.1.1
 	github.com/quay/claircore/updater/driver v1.0.0
@@ -24,6 +27,11 @@ require (
 	github.com/rs/zerolog v1.30.0
 	github.com/ulikunitz/xz v0.5.11
 	go.opentelemetry.io/otel v1.25.0
+	go.opentelemetry.io/otel/exporters/stdout/stdoutmetric v1.25.0
+	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.25.0
+	go.opentelemetry.io/otel/metric v1.25.0
+	go.opentelemetry.io/otel/sdk v1.25.0
+	go.opentelemetry.io/otel/sdk/metric v1.25.0
 	go.opentelemetry.io/otel/trace v1.25.0
 	golang.org/x/crypto v0.22.0
 	golang.org/x/sync v0.7.0
@@ -41,6 +49,7 @@ require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
+	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
@@ -48,6 +57,7 @@ require (
 	github.com/jackc/pgproto3/v2 v2.3.3 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20231201235250-de7065d80cb9 // indirect
 	github.com/jackc/puddle v1.3.0 // indirect
+	github.com/jackc/puddle/v2 v2.2.1 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.16 // indirect
 	github.com/ncruces/go-strftime v0.1.9 // indirect
@@ -55,7 +65,6 @@ require (
 	github.com/prometheus/common v0.48.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
-	go.opentelemetry.io/otel/metric v1.25.0 // indirect
 	golang.org/x/mod v0.17.0 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
 	modernc.org/gc/v3 v3.0.0-20240107210532-573471604cb6 // indirect

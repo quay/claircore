@@ -1,0 +1,8 @@
+-- Fixture --
+# Extremely simple example
+Manifest sha256:1a7fb13a367148e36818c53288a50ec1ed0c99540d7d1d7b6f5a116746be281e
+Layer    sha256:34e5a6b0b8d504be7f094c091bf65b92d10bc773438bfc71505a13f92baece16
+Distribution ID=1 DID=test "VersionID=3.11 for Workgroups"
+PushRepository ID=1 URI=https://example.com
+Package ID=1 Version=1 PackageDB=bdb:var/lib/rpm
+-- Vulns --

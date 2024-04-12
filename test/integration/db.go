@@ -16,6 +16,7 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/log/testingadapter"
 	"github.com/jackc/pgx/v4/pgxpool"
+	pgxpoolv5 "github.com/jackc/pgx/v5/pgxpool"
 )
 
 var (
@@ -88,9 +89,17 @@ func NewDB(ctx context.Context, t testing.TB) (*DB, error) {
 		User:     cfg.ConnConfig.User,
 		Password: cfg.ConnConfig.Password,
 	})
+	cfg5, err := pgxpoolv5.ParseConfig(pkgConfig.ConnString())
+	if err != nil {
+		t.Error(err)
+	}
+	cfg5.ConnConfig.User = role
+	cfg5.ConnConfig.Password = role
+	cfg5.ConnConfig.Database = database
 
 	return &DB{
-		cfg: cfg,
+		cfg:  cfg,
+		cfg5: cfg5,
 	}, nil
 }
 
@@ -179,6 +188,7 @@ func configureDatabase(ctx context.Context, t testing.TB, root *pgxpool.Config, 
 // [auto_explain documentation]: https://www.postgresql.org/docs/current/auto-explain.html
 type DB struct {
 	cfg    *pgxpool.Config
+	cfg5   *pgxpoolv5.Config
 	noDrop bool
 }
 
@@ -195,6 +205,10 @@ func (db *DB) String() string {
 // Config returns a pgxpool.Config for the test database.
 func (db *DB) Config() *pgxpool.Config {
 	return db.cfg.Copy()
+}
+
+func (db *DB) ConfigV5() *pgxpoolv5.Config {
+	return db.cfg5.Copy()
 }
 
 // Close tears down the created database.
