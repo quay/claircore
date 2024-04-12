@@ -22,21 +22,26 @@ import (
 func (s *MatcherV1) UpdateEnrichments(ctx context.Context, name string, fp driver.Fingerprint, es []driver.EnrichmentRecord) (_ uuid.UUID, err error) {
 	ctx, done := s.method(ctx, &err)
 	defer done()
+	iter := func(yield func(driver.EnrichmentRecord) bool) {
+		for _, rec := range es {
+			if !yield(rec) {
+				return
+			}
+		}
+	}
+	return s.UpdateEnrichmentsIter(ctx, name, fp, iter)
+}
+func (s *MatcherV1) UpdateEnrichmentsIter(ctx context.Context, name string, fp driver.Fingerprint, iter func(yield func(driver.EnrichmentRecord) bool)) (_ uuid.UUID, err error) {
+	ctx, done := s.method(ctx, &err)
+	defer done()
 
 	type digestPair struct {
 		Kind   string
 		Digest []byte
 	}
-	hashes := make([]digestPair, len(es))
-	func() {
-		_, span := tracer.Start(ctx, `doHashes`)
-		defer span.End()
-		for i := range es {
-			hashes[i].Kind, hashes[i].Digest = hashEnrichment(&es[i])
-		}
-	}()
 
 	var ref uuid.UUID
+	var ct int
 	err = pgx.BeginTxFunc(ctx, s.pool, txRW, s.tx(ctx, `UpdateEnrichments`, func(ctx context.Context, tx pgx.Tx) (err error) {
 		var id uint64
 		err = pgx.BeginFunc(ctx, tx, s.call(ctx, `create`, func(ctx context.Context, tx pgx.Tx, query string) error {
@@ -52,14 +57,23 @@ func (s *MatcherV1) UpdateEnrichments(ctx context.Context, name string, fp drive
 			Str("ref", ref.String()).
 			Msg("update_operation created")
 
+		// Initial capacity guess.
+		// TODO(hank) Add metrics and revisit or make self-adjusting.
+		hashes := make([]digestPair, 0, 1024)
 		err = pgx.BeginFunc(ctx, tx, s.call(ctx, `insert`, func(ctx context.Context, tx pgx.Tx, query string) error {
 			var batch pgx.Batch
-			for i := range es {
-				batch.Queue(query, hashes[i].Kind, hashes[i].Digest, name, es[i].Tags, es[i].Enrichment)
+			enqueue := func(rec driver.EnrichmentRecord) bool {
+				kind, digest := hashEnrichment(ctx, &rec)
+				hashes = append(hashes, digestPair{Kind: kind, Digest: digest})
+				batch.Queue(query, kind, digest, name, rec.Tags, rec.Enrichment)
+				// TODO(hank) Flush at a certain size?
+				ct++
+				return true
 			}
+			iter(enqueue)
 			res := tx.SendBatch(ctx, &batch)
 			defer res.Close()
-			for range es {
+			for i := 0; i < ct; i++ {
 				if _, err := res.Exec(); err != nil {
 					return err
 				}
@@ -72,12 +86,12 @@ func (s *MatcherV1) UpdateEnrichments(ctx context.Context, name string, fp drive
 
 		err = pgx.BeginFunc(ctx, tx, s.call(ctx, `associate`, func(ctx context.Context, tx pgx.Tx, query string) error {
 			var batch pgx.Batch
-			for i := range es {
+			for i := 0; i < ct; i++ {
 				batch.Queue(query, hashes[i].Kind, hashes[i].Digest, name, id)
 			}
 			res := tx.SendBatch(ctx, &batch)
 			defer res.Close()
-			for range es {
+			for i := 0; i < ct; i++ {
 				if _, err := res.Exec(); err != nil {
 					return err
 				}
@@ -96,7 +110,7 @@ func (s *MatcherV1) UpdateEnrichments(ctx context.Context, name string, fp drive
 
 	zlog.Debug(ctx).
 		Stringer("ref", ref).
-		Int("inserted", len(es)).
+		Int("inserted", ct).
 		Msg("update_operation committed")
 
 	_ = s.pool.AcquireFunc(ctx, s.acquire(ctx, `refresh`, func(ctx context.Context, c *pgxpool.Conn, query string) error {
@@ -110,7 +124,9 @@ func (s *MatcherV1) UpdateEnrichments(ctx context.Context, name string, fp drive
 	return ref, nil
 }
 
-func hashEnrichment(r *driver.EnrichmentRecord) (k string, d []byte) {
+func hashEnrichment(ctx context.Context, r *driver.EnrichmentRecord) (k string, d []byte) {
+	_, span := tracer.Start(ctx, `hashEnrichment`)
+	defer span.End()
 	h := md5.New()
 	sort.Strings(r.Tags)
 	for _, t := range r.Tags {
