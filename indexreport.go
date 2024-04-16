@@ -34,7 +34,7 @@ type IndexReport struct {
 	// an error string in the case the index did not succeed
 	Err string `json:"err"`
 	// Files doesn't end up in the json report but needs to be available at post-coalesce
-	Files map[string]File `json:"-"`
+	Files map[string][]File `json:"-"`
 }
 
 // IndexRecords returns a list of IndexRecords derived from the IndexReport

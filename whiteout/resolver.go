@@ -32,19 +32,21 @@ func (r *Resolver) Resolve(ctx context.Context, ir *claircore.IndexReport, layer
 				packageLayer = ir.Environments[pkgID][i].IntroducedIn.String()
 			}
 		}
-		for fileLayer, f := range ir.Files {
-			// Check if it's a whiteout file, if it applies to the package's
-			// filepath and if the layer the whiteout file came from came after.
-			// The spec states: "Whiteout files MUST only apply to resources in
-			// lower/parent layers" hence why we don't check if they're in the same
-			// layer.
-			if f.Kind == claircore.FileKindWhiteout && ls.isChildOf(fileLayer, packageLayer) && fileIsDeleted(pkg.Filepath, f.Path) {
-				packageDeleted = true
-				zlog.Debug(ctx).
-					Str("package name", pkg.Name).
-					Str("package file", pkg.Filepath).
-					Str("whiteout file", f.Path).
-					Msg("package determined to be deleted")
+		for fileLayer, fs := range ir.Files {
+			for _, f := range fs {
+				// Check if it's a whiteout file, if it applies to the package's
+				// filepath and if the layer the whiteout file came from came after.
+				// The spec states: "Whiteout files MUST only apply to resources in
+				// lower/parent layers" hence why we don't check if they're in the same
+				// layer.
+				if f.Kind == claircore.FileKindWhiteout && ls.isChildOf(fileLayer, packageLayer) && fileIsDeleted(pkg.Filepath, f.Path) {
+					packageDeleted = true
+					zlog.Debug(ctx).
+						Str("package name", pkg.Name).
+						Str("package file", pkg.Filepath).
+						Str("whiteout file", f.Path).
+						Msg("package determined to be deleted")
+				}
 			}
 		}
 		if !packageDeleted {

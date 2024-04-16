@@ -14,9 +14,9 @@ func (c *coalescer) Coalesce(ctx context.Context, layerArtifacts []*indexer.Laye
 	for _, l := range layerArtifacts {
 		for _, f := range l.Files {
 			if ir.Files == nil {
-				ir.Files = make(map[string]claircore.File)
+				ir.Files = make(map[string][]claircore.File)
 			}
-			ir.Files[l.Hash.String()] = f
+			ir.Files[l.Hash.String()] = append(ir.Files[l.Hash.String()], f)
 		}
 	}
 	return ir, nil
