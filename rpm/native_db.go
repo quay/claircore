@@ -39,7 +39,7 @@ type ObjectResponse interface {
 // it will create a implementation agnostic nativeDB and extract specific claircore
 // objects from it.
 func getDBObjects[T ObjectResponse](ctx context.Context, sys fs.FS, db foundDB, fn func(context.Context, string, nativeDB) (T, error)) (T, error) {
-	var nat nativeDB // see native_db.go:/nativeDB
+	var nat nativeDB
 	switch db.Kind {
 	case kindSQLite:
 		r, err := sys.Open(path.Join(db.Path, `rpmdb.sqlite`))
