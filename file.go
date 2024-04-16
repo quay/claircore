@@ -5,6 +5,7 @@ type FileKind string
 
 const (
 	FileKindWhiteout = FileKind("whiteout")
+	FileKindRPM      = FileKind("rpm")
 )
 
 // File represents interesting files that are found in the layer.

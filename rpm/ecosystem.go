@@ -28,6 +28,9 @@ func NewEcosystem(_ context.Context) *indexer.Ecosystem {
 		RepositoryScanners: func(ctx context.Context) ([]indexer.RepositoryScanner, error) {
 			return []indexer.RepositoryScanner{}, nil
 		},
+		FileScanners: func(ctx context.Context) ([]indexer.FileScanner, error) {
+			return []indexer.FileScanner{&FileScanner{}}, nil
+		},
 		Coalescer: func(ctx context.Context) (indexer.Coalescer, error) {
 			return linux.NewCoalescer(), nil
 		},
