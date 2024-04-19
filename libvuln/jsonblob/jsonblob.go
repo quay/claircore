@@ -455,6 +455,16 @@ func (s *Store) DeltaUpdateVulnerabilities(ctx context.Context, updater string, 
 	return uuid.Nil, nil
 }
 
+// UpdateEnrichmentsIter is unimplemented.
+func (s *Store) UpdateEnrichmentsIter(_ context.Context, _ string, _ driver.Fingerprint, _ datastore.EnrichmentIter) (uuid.UUID, error) {
+	return uuid.Nil, errors.ErrUnsupported
+}
+
+// UpdateVulnerabilitiesIter is unimplemented.
+func (s *Store) UpdateVulnerabilitiesIter(_ context.Context, _ string, _ driver.Fingerprint, _ datastore.VulnerabilityIter) (uuid.UUID, error) {
+	return uuid.Nil, errors.ErrUnsupported
+}
+
 var bufPool sync.Pool
 
 func getBuf() []byte {
