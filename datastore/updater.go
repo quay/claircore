@@ -10,6 +10,9 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 )
 
+// VulnerabilityIter is an [Iter] of vulnerabilities.
+type VulnerabilityIter Iter[*claircore.Vulnerability]
+
 // Updater is an interface exporting the necessary methods
 // for updating a vulnerability database.
 type Updater interface {
@@ -19,6 +22,9 @@ type Updater interface {
 	// vulnerabilities, and ensures vulnerabilities from previous updates are
 	// not queried by clients.
 	UpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability) (uuid.UUID, error)
+	// UpdateVulnerabilitiesIter performs the same operation as
+	// UpdateVulnerabilities, but accepting an iterator function.
+	UpdateVulnerabilitiesIter(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulnIter VulnerabilityIter) (uuid.UUID, error)
 	// DeltaUpdateVulnerabilities creates a new UpdateOperation consisting of existing
 	// vulnerabilities and new vulnerabilities. It also takes an array of deleted
 	// vulnerability names which should no longer be available to query.
