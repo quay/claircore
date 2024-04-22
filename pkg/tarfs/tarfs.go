@@ -452,51 +452,6 @@ func (f *FS) ReadDir(name string) ([]fs.DirEntry, error) {
 	return ret, nil
 }
 
-// ReadFile implements fs.ReadFileFS.
-func (f *FS) ReadFile(name string) ([]byte, error) {
-	// ReadFileFS is implemented because it can avoid allocating an intermediate
-	// "file" struct and can immediately allocate a byte slice of the correct
-	// size.
-	const op = `readfile`
-	i, err := f.getInode(op, name)
-	if err != nil {
-		return nil, err
-	}
-
-	dataSize := i.h.Size
-	typ := i.h.FileInfo().Mode().Type()
-	var r *tar.Reader
-	switch {
-	case typ.IsRegular() && i.h.Typeflag != tar.TypeLink:
-		r = tar.NewReader(io.NewSectionReader(f.r, i.off, i.sz))
-	case typ.IsRegular() && i.h.Typeflag == tar.TypeLink || typ&fs.ModeSymlink != 0: // is hardlink or symlink
-		return f.ReadFile(i.h.Linkname)
-	default:
-		// Pretend all other kinds of files don't exist.
-		return nil, &fs.PathError{
-			Op:   op,
-			Path: name,
-			Err:  fs.ErrExist,
-		}
-	}
-	if _, err := r.Next(); err != nil {
-		return nil, &fs.PathError{
-			Op:   op,
-			Path: name,
-			Err:  err,
-		}
-	}
-	ret := make([]byte, dataSize)
-	if _, err := io.ReadFull(r, ret); err != nil {
-		return nil, &fs.PathError{
-			Op:   op,
-			Path: name,
-			Err:  err,
-		}
-	}
-	return ret, nil
-}
-
 // Glob implements fs.GlobFS.
 //
 // See path.Match for the patten syntax.
@@ -548,10 +503,9 @@ func (f *FS) Sub(dir string) (fs.FS, error) {
 
 // A bunch of static assertions for the fs interfaces.
 var (
-	_ fs.FS         = (*FS)(nil)
-	_ fs.GlobFS     = (*FS)(nil)
-	_ fs.ReadDirFS  = (*FS)(nil)
-	_ fs.ReadFileFS = (*FS)(nil)
-	_ fs.StatFS     = (*FS)(nil)
-	_ fs.SubFS      = (*FS)(nil)
+	_ fs.FS        = (*FS)(nil)
+	_ fs.GlobFS    = (*FS)(nil)
+	_ fs.ReadDirFS = (*FS)(nil)
+	_ fs.StatFS    = (*FS)(nil)
+	_ fs.SubFS     = (*FS)(nil)
 )
