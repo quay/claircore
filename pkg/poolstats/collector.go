@@ -60,49 +60,48 @@ func NewCollector(stater Stater, appname string) *Collector {
 // application uses more than one pgxpool.Pool to enable differentiation between
 // them.
 func newCollector(fn staterFunc, n string) *Collector {
+	var constLabels = prometheus.Labels{"application_name": n}
 	return &Collector{
 		name: n,
 		stat: fn,
 		acquireCountDesc: prometheus.NewDesc(
 			"pgxpool_acquire_count",
 			"Cumulative count of successful acquires from the pool.",
-			staticLabels, nil),
+			nil, constLabels),
 		acquireDurationDesc: prometheus.NewDesc(
 			"pgxpool_acquire_duration_seconds_total",
 			"Total duration of all successful acquires from the pool in nanoseconds.",
-			staticLabels, nil),
+			nil, constLabels),
 		acquiredConnsDesc: prometheus.NewDesc(
 			"pgxpool_acquired_conns",
 			"Number of currently acquired connections in the pool.",
-			staticLabels, nil),
+			nil, constLabels),
 		canceledAcquireCountDesc: prometheus.NewDesc(
 			"pgxpool_canceled_acquire_count",
 			"Cumulative count of acquires from the pool that were canceled by a context.",
-			staticLabels, nil),
+			nil, constLabels),
 		constructingConnsDesc: prometheus.NewDesc(
 			"pgxpool_constructing_conns",
 			"Number of conns with construction in progress in the pool.",
-			staticLabels, nil),
+			nil, constLabels),
 		emptyAcquireCountDesc: prometheus.NewDesc(
 			"pgxpool_empty_acquire",
 			"Cumulative count of successful acquires from the pool that waited for a resource to be released or constructed because the pool was empty.",
-			staticLabels, nil),
+			nil, constLabels),
 		idleConnsDesc: prometheus.NewDesc(
 			"pgxpool_idle_conns",
 			"Number of currently idle conns in the pool.",
-			staticLabels, nil),
+			nil, constLabels),
 		maxConnsDesc: prometheus.NewDesc(
 			"pgxpool_max_conns",
 			"Maximum size of the pool.",
-			staticLabels, nil),
+			nil, constLabels),
 		totalConnsDesc: prometheus.NewDesc(
 			"pgxpool_total_conns",
 			"Total number of resources currently in the pool. The value is the sum of ConstructingConns, AcquiredConns, and IdleConns.",
-			staticLabels, nil),
+			nil, constLabels),
 	}
 }
-
-var staticLabels = []string{"application_name"}
 
 // Describe implements the prometheus.Collector interface.
 func (c *Collector) Describe(ch chan<- *prometheus.Desc) {
@@ -116,54 +115,45 @@ func (c *Collector) Collect(metrics chan<- prometheus.Metric) {
 		c.acquireCountDesc,
 		prometheus.CounterValue,
 		float64(s.AcquireCount()),
-		c.name,
 	)
 	metrics <- prometheus.MustNewConstMetric(
 		c.acquireDurationDesc,
 		prometheus.CounterValue,
 		s.AcquireDuration().Seconds(),
-		c.name,
 	)
 	metrics <- prometheus.MustNewConstMetric(
 		c.acquiredConnsDesc,
 		prometheus.GaugeValue,
 		float64(s.AcquiredConns()),
-		c.name,
 	)
 	metrics <- prometheus.MustNewConstMetric(
 		c.canceledAcquireCountDesc,
 		prometheus.CounterValue,
 		float64(s.CanceledAcquireCount()),
-		c.name,
 	)
 	metrics <- prometheus.MustNewConstMetric(
 		c.constructingConnsDesc,
 		prometheus.GaugeValue,
 		float64(s.ConstructingConns()),
-		c.name,
 	)
 	metrics <- prometheus.MustNewConstMetric(
 		c.emptyAcquireCountDesc,
 		prometheus.CounterValue,
 		float64(s.EmptyAcquireCount()),
-		c.name,
 	)
 	metrics <- prometheus.MustNewConstMetric(
 		c.idleConnsDesc,
 		prometheus.GaugeValue,
 		float64(s.IdleConns()),
-		c.name,
 	)
 	metrics <- prometheus.MustNewConstMetric(
 		c.maxConnsDesc,
 		prometheus.GaugeValue,
 		float64(s.MaxConns()),
-		c.name,
 	)
 	metrics <- prometheus.MustNewConstMetric(
 		c.totalConnsDesc,
 		prometheus.GaugeValue,
 		float64(s.TotalConns()),
-		c.name,
 	)
 }
