@@ -2,11 +2,14 @@ package rhel
 
 import (
 	"context"
+	"strings"
 
 	version "github.com/knqyf263/go-rpm-version"
+	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/toolkit/types/cpe"
 )
 
 // Matcher implements driver.Matcher.
@@ -28,12 +31,50 @@ func (*Matcher) Filter(record *claircore.IndexRecord) bool {
 func (*Matcher) Query() []driver.MatchConstraint {
 	return []driver.MatchConstraint{
 		driver.PackageModule,
-		driver.RepositoryName,
 	}
 }
 
+// IsCPESubstringMatch is a Red Hat specific hack that handles the "CPE patterns" in the VEX
+// data. For historical/unfathomable reasons, Red Hat
+// doesn't use the syntax defined in the Matching Expression spec.
+// For example, "cpe:/a:redhat:openshift:4" is expected to match "cpe:/a:redhat:openshift:4.13::el8".
+//
+// This is defined (citation needed) to be a substring match on the "pattern" and "target" CPEs.
+// Since we always normalize CPEs into v2.3 "Formatted String" form, we need to trim the
+// added "ANY" attributes from the pattern.
+//
+// TODO(crozzy) Remove once RH VEX data updates CPEs with standard matching expressions.
+func isCPESubstringMatch(recordCPE cpe.WFN, vulnCPE cpe.WFN) bool {
+	return strings.HasPrefix(recordCPE.String(), strings.TrimRight(vulnCPE.String(), ":*"))
+}
+
 // Vulnerable implements driver.Matcher.
-func (m *Matcher) Vulnerable(_ context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
+//
+// Vulnerable will interpret the claircore.Vulnerability.Repo.CPE
+// as a CPE match expression, and to be considered vulnerable,
+// the relationship between claircore.IndexRecord.Repository.CPE and
+// the claircore.Vulnerability.Repo.CPE needs to be a CPE Name Comparison
+// Relation of SUPERSET(⊇)(Source is a superset or equal to the target).
+// https://nvlpubs.nist.gov/nistpubs/Legacy/IR/nistir7696.pdf Section 6.2.
+func (m *Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
+	if vuln.Repo == nil || record.Repository == nil || vuln.Repo.Key != repositoryKey {
+		return false, nil
+	}
+	var err error
+	// This conversion has to be done because our current data structure doesn't
+	// support the claircore.Vulnerability.Repo.CPE field.
+	vuln.Repo.CPE, err = cpe.Unbind(vuln.Repo.Name)
+	if err != nil {
+		zlog.Warn(ctx).
+			Str("vulnerability name", vuln.Name).
+			Err(err).
+			Msg("unable to unbind repo CPE")
+		return false, nil
+	}
+	if !cpe.Compare(vuln.Repo.CPE, record.Repository.CPE).IsSuperset() && !isCPESubstringMatch(record.Repository.CPE, vuln.Repo.CPE) {
+		return false, nil
+	}
+
 	pkgVer := version.NewVersion(record.Package.Version)
 	var vulnVer version.Version
 	// Assume the vulnerability record we have is for the last known vulnerable
