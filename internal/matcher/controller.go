@@ -142,7 +142,7 @@ func (mc *Controller) filter(ctx context.Context, interested []*claircore.IndexR
 		if err != nil {
 			return nil, err
 		}
-		filtered[record.Package.ID] = match
+		filtered[record.Package.ID] = append(filtered[record.Package.ID], match...)
 	}
 	return filtered, nil
 }
