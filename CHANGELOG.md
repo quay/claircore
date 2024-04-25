@@ -1,3 +1,12 @@
+<a name="v1.5.27"></a>
+## [v1.5.27] - 2024-04-25
+[v1.5.27]: https://github.com/quay/claircore/compare/v1.5.26...v1.5.27
+
+- tarfs: follow hardlinks in `ReadFile`
+  <details>
+  This makes `fs.ReadFile` work as expected when opening hardlinks.
+  </details>
+
 <a name="v1.5.26"></a>
 ## [v1.5.26] - 2024-04-02
 [v1.5.26]: https://github.com/quay/claircore/compare/v1.5.25...v1.5.26
