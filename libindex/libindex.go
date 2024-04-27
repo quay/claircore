@@ -63,6 +63,8 @@ type Libindex struct {
 	// indexerOptions hold construction context for the layerScanner and the
 	// controller factory.
 	indexerOptions *indexer.Options
+
+	ecosystems []indexer.EcosystemSpec
 }
 
 // New creates a new instance of libindex.
@@ -288,3 +290,5 @@ func (l *Libindex) DeleteManifests(ctx context.Context, d ...claircore.Digest) (
 	ctx = zlog.ContextWithValues(ctx, "component", "libindex/Libindex.DeleteManifests")
 	return l.store.DeleteManifests(ctx, d...)
 }
+
+//go:generate go run github.com/quay/claircore/internal/cmd/plugintool -scope indexer

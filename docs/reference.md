@@ -16,3 +16,5 @@ Important interfaces and structs are outlined.
 - [Version Filter](./reference/version_filter.md)
 - [Versioned Scanner](./reference/versioned_scanner.md)
 - [Resolver](./reference/resolver.md)
+
+{{# plugintool indexer }}

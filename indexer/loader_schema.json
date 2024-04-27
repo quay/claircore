@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:claircore:indexer:dynamicplugin:ecosystem",
+  "$defs": {
+    "config": {
+      "type": "array",
+      "description": "The config object must be an array.",
+      "items": {
+        "description": "All elements must have either a \"contents\" key or a \"path\" key and may not have both.",
+        "type": "object",
+        "oneOf": [
+          { "$ref": "#/$defs/inline" },
+          { "$ref": "#/$defs/file" }
+        ],
+        "properties": {
+          "path": {
+            "description": "A path to file containing an Ecosystem description JSON object.",
+            "type": "string"
+          },
+          "contents": {
+            "description": "An Ecosystem description JSON object inside a string.\n\nBeware quoting correctly.",
+            "type": "string"
+          },
+          "default": {
+            "description": "Indicates whether the ecosystem should be active by default.",
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "inline": {
+      "required": [ "contents" ],
+      "not": { "required": [ "path" ] }
+    },
+    "file": {
+      "not": { "$ref": "#/$defs/inline" }
+    }
+  },
+  "title": "Ecosystem Loader",
+  "description": "The Ecosystem Loader plugin allows an operator to stitch together a custom ecosystem by naming other plugins.",
+  "oneOf": [
+    { "$ref": "urn:claircore:config:empty" },
+    { "$ref": "#/$defs/config" }
+  ],
+  "examples": [
+    [{"contents": "{\"name\":\"urn:claircore:example:example:example\"}"}],
+    [{"path": "/run/ecosystem1.json" }, { "path": "/run/ecosystem2.json", "default": true}]
+  ]
+}

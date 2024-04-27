@@ -23,6 +23,22 @@ type Ecosystem struct {
 	Name                 string
 }
 
+// EcosystemSpec ties together a set of plugins.
+type EcosystemSpec struct {
+	Name string `json:"name"`
+
+	// Feature plugins.
+	Distribution []string `json:"distribution"`
+	File         []string `json:"file"`
+	Package      []string `json:"package"`
+	Repository   []string `json:"repository"`
+	// Sees all the plugins above at the manifest level.
+	Coalescer []string `json:"coalescer"`
+
+	// Sees the output of all Coalescers across all ecosystems.
+	Resolver []string `json:"resolver"`
+}
+
 // EcosystemsToScanners extracts and dedupes multiple ecosystems and returns
 // their discrete scanners.
 func EcosystemsToScanners(ctx context.Context, ecosystems []*Ecosystem) ([]PackageScanner, []DistributionScanner, []RepositoryScanner, []FileScanner, error) {

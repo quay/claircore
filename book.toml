@@ -25,3 +25,6 @@ command = "go run github.com/quay/claircore/internal/cmd/mdbook-injecturls"
 [preprocessor.mermaid]
 command = "go run github.com/quay/claircore/internal/cmd/mdbook-mermaid"
 after = ["links"]
+
+[preprocessor.plugins]
+command = "go run github.com/quay/claircore/internal/cmd/plugintool -mdbook"
