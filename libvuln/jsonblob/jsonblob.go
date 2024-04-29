@@ -44,6 +44,64 @@ type Store struct {
 	latest map[driver.UpdateKind]uuid.UUID
 }
 
+type iter2[X, Y any] func(yield func(X, Y) bool)
+
+// RecordIter iterates over records of an update operation.
+type RecordIter iter2[*claircore.Vulnerability, *driver.EnrichmentRecord]
+
+// OperationIter iterates over operations, offering a nested iterator for records.
+type OperationIter iter2[*driver.UpdateOperation, RecordIter]
+
+// Iterate iterates over each record serialized in the [io.Reader] grouping by
+// update operations. It returns an OperationIter, which is an iterator over each
+// update operation with a nested iterator for the associated vulnerability
+// entries, and an error function, to check for iteration errors.
+func Iterate(r io.Reader) (OperationIter, func() error) {
+	var err error
+	var de diskEntry
+
+	d := json.NewDecoder(r)
+	err = d.Decode(&de)
+
+	it := func(yield func(*driver.UpdateOperation, RecordIter) bool) {
+		for err == nil {
+			op := &driver.UpdateOperation{
+				Ref:         de.Ref,
+				Updater:     de.Updater,
+				Fingerprint: de.Fingerprint,
+				Date:        de.Date,
+				Kind:        de.Kind,
+			}
+			it := func(yield func(*claircore.Vulnerability, *driver.EnrichmentRecord) bool) {
+				var vuln *claircore.Vulnerability
+				var en *driver.EnrichmentRecord
+				for err == nil && op.Ref == de.Ref {
+					vuln, en, err = de.Unmarshal()
+					if err != nil || !yield(vuln, en) {
+						break
+					}
+					err = d.Decode(&de)
+				}
+			}
+			if !yield(op, it) {
+				break
+			}
+			for err == nil && op.Ref == de.Ref {
+				err = d.Decode(&de)
+			}
+		}
+	}
+
+	errF := func() error {
+		if errors.Is(err, io.EOF) {
+			return nil
+		}
+		return err
+	}
+
+	return it, errF
+}
+
 // Load reads in all the records serialized in the provided [io.Reader].
 func Load(ctx context.Context, r io.Reader) (*Loader, error) {
 	l := Loader{
@@ -250,6 +308,25 @@ type diskEntry struct {
 	Vuln       *bufShim `json:",omitempty"`
 	Enrichment *bufShim `json:",omitempty"`
 	Kind       driver.UpdateKind
+}
+
+// Unmarshal parses the JSON-encoded vulnerability or enrichment record encoded
+// in the disk entry, based on the update kind.
+func (de *diskEntry) Unmarshal() (v *claircore.Vulnerability, e *driver.EnrichmentRecord, err error) {
+	switch de.Kind {
+	case driver.VulnerabilityKind:
+		v = &claircore.Vulnerability{}
+		if err = json.Unmarshal(de.Vuln.buf, v); err != nil {
+			return
+		}
+	case driver.EnrichmentKind:
+		e = &driver.EnrichmentRecord{}
+		err = json.Unmarshal(de.Enrichment.buf, e)
+		if err != nil {
+			return
+		}
+	}
+	return
 }
 
 // Entries returns a map containing all the Entries stored by calls to
