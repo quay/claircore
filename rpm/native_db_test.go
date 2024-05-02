@@ -3,6 +3,8 @@ package rpm
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -82,6 +84,23 @@ func TestInfo(t *testing.T) {
 					}
 					nat = &db
 				case `sqlite`:
+					f, err := os.Create(filepath.Join(t.TempDir(), "db"))
+					if err != nil {
+						t.Fatal(err)
+					}
+					src, err := os.Open(filename)
+					if err != nil {
+						t.Fatal(err)
+					}
+					if _, err := io.Copy(f, src); err != nil {
+						t.Fatal(err)
+					}
+					if err := errors.Join(src.Close(), f.Close()); err != nil {
+						t.Fatal(err)
+					}
+					filename = f.Name()
+					t.Logf("copied sqlite database to: %s", filename)
+
 					db, err := sqlite.Open(filename)
 					if err != nil {
 						t.Fatal(err)
