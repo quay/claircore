@@ -7,6 +7,8 @@ import (
 // Compare implements the pairwise CPE comparison algorithm as defined by
 // the CPE Name Matching spec: https://nvlpubs.nist.gov/nistpubs/Legacy/IR/nistir7696.pdf
 func Compare(src, tgt WFN) Relations {
+	// Per Section 5.4.2 of the CPE Naming specification, "any" and "unset" are
+	// equivalent when reading from a WFN.
 	var m [NumAttr]Relation
 	for i := 0; i < NumAttr; i++ {
 		sv, tv := src.Attr[i], tgt.Attr[i]
@@ -16,9 +18,9 @@ func Compare(src, tgt WFN) Relations {
 			continue
 		}
 		switch sv.Kind {
-		case ValueAny:
+		case ValueAny, ValueUnset:
 			switch tv.Kind {
-			case ValueAny:
+			case ValueAny, ValueUnset:
 				m[i] = Equal
 			case ValueNA:
 				m[i] = Superset
@@ -27,7 +29,7 @@ func Compare(src, tgt WFN) Relations {
 			}
 		case ValueNA:
 			switch tv.Kind {
-			case ValueAny:
+			case ValueAny, ValueUnset:
 				m[i] = Subset
 			case ValueNA:
 				m[i] = Equal
@@ -37,7 +39,7 @@ func Compare(src, tgt WFN) Relations {
 		case ValueSet:
 			if hasWildcard(sv.V) {
 				switch tv.Kind {
-				case ValueAny:
+				case ValueAny, ValueUnset:
 					m[i] = Subset
 				case ValueNA:
 					m[i] = Disjoint
@@ -51,7 +53,7 @@ func Compare(src, tgt WFN) Relations {
 				break
 			}
 			switch tv.Kind {
-			case ValueAny:
+			case ValueAny, ValueUnset:
 				m[i] = Subset
 			case ValueNA:
 				m[i] = Disjoint
@@ -62,12 +64,6 @@ func Compare(src, tgt WFN) Relations {
 				}
 				m[i] = Disjoint
 			}
-		case ValueUnset:
-			if tv.Kind == ValueUnset {
-				m[i] = Equal
-				break
-			}
-			m[i] = Disjoint
 		}
 	}
 	return m
