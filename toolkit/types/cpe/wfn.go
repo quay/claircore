@@ -8,7 +8,7 @@ import (
 	"unicode/utf8"
 )
 
-//go:generate -command stringer go run golang.org/x/tools/cmd/stringer
+//go:generate -command stringer go run golang.org/x/tools/cmd/stringer@latest
 //go:generate stringer -type Attribute -linecomment
 //go:generate stringer -type ValueKind
 
