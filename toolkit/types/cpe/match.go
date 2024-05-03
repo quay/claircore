@@ -12,7 +12,7 @@ func Compare(src, tgt WFN) Relations {
 		sv, tv := src.Attr[i], tgt.Attr[i]
 		// This encodes table 6-2 of the matching spec.
 		if tv.Kind == ValueSet && hasWildcard(tv.V) {
-			m[i] = Relation(0)
+			m[i] = Invalid
 			continue
 		}
 		switch sv.Kind {
@@ -182,7 +182,7 @@ type Relation uint
 // The super- and sub-sets indicate the conventional sense, meaning a set is
 // equal to itself and also a superset and subset of itself.
 const (
-	_        Relation = iota // invalid
+	Invalid  Relation = iota //∅
 	Superset                 //⊃
 	Subset                   //⊂
 	Equal                    //=
