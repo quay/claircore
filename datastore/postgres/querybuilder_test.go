@@ -202,6 +202,20 @@ func TestGetQueryBuilderDeterministicArgs(t *testing.T) {
 				}
 			},
 		},
+		{
+			name: "FixedInVersion",
+			expectedQuery: preamble + both +
+				`("fixed_in_version" != '')` + epilogue,
+			matchExps: []driver.MatchConstraint{driver.HasFixedInVersion},
+			indexRecord: func() *claircore.IndexRecord {
+				pkgs := test.GenUniquePackages(1)
+				dists := test.GenUniqueDistributions(1)
+				return &claircore.IndexRecord{
+					Package:      pkgs[0],
+					Distribution: dists[0],
+				}
+			},
+		},
 	}
 
 	// This is safe to do because SQL doesn't care about what whitespace is

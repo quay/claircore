@@ -53,13 +53,13 @@ var defaultMatchers = []driver.Matcher{
 	&photon.Matcher{},
 	&python.Matcher{},
 	rhcc.Matcher,
-	&rhel.Matcher{},
 	&ruby.Matcher{},
 	&suse.Matcher{},
 	&ubuntu.Matcher{},
 }
 
 func inner(ctx context.Context) error {
+	registry.Register("rhel", &rhel.MatcherFactory{})
 	for _, m := range defaultMatchers {
 		mf := driver.MatcherStatic(m)
 		registry.Register(m.Name(), mf)
