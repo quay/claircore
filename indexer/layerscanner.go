@@ -205,11 +205,15 @@ func (ls *LayerScanner) scanLayer(ctx context.Context, l *claircore.Layer, s Ver
 		return err
 	}
 
+	if err = result.Store(ctx, ls.store, s, l); err != nil {
+		return err
+	}
+
 	if err = ls.store.SetLayerScanned(ctx, l.Hash, s); err != nil {
 		return fmt.Errorf("could not set layer scanned: %w", err)
 	}
 
-	return result.Store(ctx, ls.store, s, l)
+	return nil
 }
 
 // Result is a type that handles the kind-specific bits of the scan process.
