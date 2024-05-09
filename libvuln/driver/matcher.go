@@ -41,6 +41,8 @@ const (
 	DistributionPrettyName
 	// should match claircore.Package.Repository.Name => claircore.Vulnerability.Package.Repository.Name
 	RepositoryName
+	// should match claircore.Vulnerability.FixedInVersion != ""
+	HasFixedInVersion
 )
 
 // Matcher is an interface which a Controller uses to query the vulnstore for vulnerabilities.
