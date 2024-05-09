@@ -1,6 +1,7 @@
 package cvss
 
 import (
+	"bytes"
 	"encoding"
 	"fmt"
 	"strings"
@@ -52,6 +53,13 @@ func (v *V3) UnmarshalText(text []byte) error {
 		if b == 0 {
 			return fmt.Errorf("cvss v3: %w: missing metric: %q", ErrMalformedVector, V3Metric(m).String())
 		}
+	}
+	chk, err := v.MarshalText()
+	if err != nil {
+		return fmt.Errorf("cvss v3: %w", err)
+	}
+	if !bytes.Equal(chk, text) {
+		return fmt.Errorf("cvss v3: malformed input")
 	}
 	return nil
 }

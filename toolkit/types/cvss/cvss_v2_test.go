@@ -14,6 +14,8 @@ func TestV2(t *testing.T) {
 			{Vector: "AV:L/AC:H/Au:N/C:C/I:C/A:C/E:F/RL:OF/RC:C/CDP:H/TD:H/CR:M/IR:M/AR:H", Error: false},
 			{Vector: "CVSS:2.0/AV:N/AC:L/Au:N/C:N/I:N/A:C", Error: true},
 			{Vector: "AV:N/AC:L/Au:N/C:N/I:N", Error: true},
+			{Vector: "AV:A/AC:L/Au:N/C:C/I:C/A:C/CDP:H/TD:H/CR:H", Error: true},
+			{Vector: "AV:A/AC:L/Au:N/C:C/I:C/A:C/E:F", Error: true},
 		}
 		Error[V2, V2Metric, *V2](t, tcs)
 	})
