@@ -1,3 +1,24 @@
+<a name="v1.5.28"></a>
+## [v1.5.28] - 2024-05-13
+[v1.5.28]: https://github.com/quay/claircore/compare/v1.5.27...v1.5.28
+
+- datastore: add vuln and enrich stream updates
+  <details>
+  In an effort to reduce memory consumption during updating the
+  vulnerability database, add support for iterators. Extend Updater
+  interface with `UpdateVulnerabilitiesIter` method that performs
+  the same operation as `UpdateVulnerabilities` but accepts an iterator
+  function instead of a slice. Also, extend the `EnrichmentUpdater`
+  interface with `UpdateEnrichmentsIter` in the same way.
+  </details>
+
+- cpe: add match expression support
+  <details>
+  This adds support for NIST IR 7696, aka CPE2.3 Name Matching. It's
+  anticipated to be used in upcoming CSAF/VEX support. See
+  https://doi.org/10.6028/NIST.IR.7696 for the specification.
+  </details>
+
 <a name="v1.5.27"></a>
 ## [v1.5.27] - 2024-04-25
 [v1.5.27]: https://github.com/quay/claircore/compare/v1.5.26...v1.5.27
