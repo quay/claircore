@@ -1,0 +1,8 @@
+datastore: add vuln and enrich stream updates
+
+In an effort to reduce memory consumption during updating the
+vulnerability database, add support for iterators. Extend Updater
+interface with `UpdateVulnerabilitiesIter` method that performs
+the same operation as `UpdateVulnerabilities` but accepts an iterator
+function instead of a slice. Also, extend the `EnrichmentUpdater`
+interface with `UpdateEnrichmentsIter` in the same way.
