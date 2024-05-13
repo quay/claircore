@@ -1,0 +1,5 @@
+cpe: add match expression support
+
+This adds support for NIST IR 7696, aka CPE2.3 Name Matching. It's
+anticipated to be used in upcoming CSAF/VEX support. See
+https://doi.org/10.6028/NIST.IR.7696 for the specification.
