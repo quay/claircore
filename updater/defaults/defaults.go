@@ -15,7 +15,6 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/oracle"
 	"github.com/quay/claircore/photon"
-	"github.com/quay/claircore/rhel"
 	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/quay/claircore/rhel/vex"
 	"github.com/quay/claircore/suse"
@@ -42,11 +41,6 @@ func Error() error {
 }
 
 func inner(ctx context.Context) error {
-	rf, err := rhel.NewFactory(ctx, rhel.DefaultManifest)
-	if err != nil {
-		return err
-	}
-	updater.Register("rhel", rf)
 	af, err := alpine.NewFactory(ctx)
 	if err != nil {
 		return err
