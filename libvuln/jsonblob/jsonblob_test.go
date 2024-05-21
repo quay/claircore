@@ -118,3 +118,32 @@ func TestEnrichments(t *testing.T) {
 	}
 	t.Logf("wrote:\n%s", buf.String())
 }
+
+func TestDeltaUpdaters(t *testing.T) {
+	s, err := New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+
+	numVulns := 10
+	vs := test.GenUniqueVulnerabilities(numVulns, "test")
+	ref, err := s.DeltaUpdateVulnerabilities(ctx, "test", "", vs, []string{})
+	if err != nil {
+		t.Error(err)
+	}
+	t.Logf("ref: %v", ref)
+
+	var buf bytes.Buffer
+	if err := s.Store(&buf); err != nil {
+		t.Error(err)
+	}
+	t.Logf("wrote:\n%s", buf.String())
+	lnCt := 0
+	for _, err := buf.ReadBytes('\n'); err == nil; _, err = buf.ReadBytes('\n') {
+		lnCt++
+	}
+	if lnCt != numVulns {
+		t.Errorf("expected %d vulns but got %d", numVulns, lnCt)
+	}
+}

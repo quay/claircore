@@ -450,9 +450,11 @@ func (s *Store) RecordUpdaterSetStatus(ctx context.Context, updaterSet string, u
 	return nil
 }
 
-// DeltaUpdateVulnerabilities is a noop
+// DeltaUpdateVulnerabilities just calls UpdateVulnerabilities. In the jsonblob flow it is assumed that
+// we're always starting from zero.
+// Note: deleted is ignored.
 func (s *Store) DeltaUpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability, deleted []string) (uuid.UUID, error) {
-	return uuid.Nil, nil
+	return s.UpdateVulnerabilities(ctx, updater, fingerprint, vulns)
 }
 
 // UpdateEnrichmentsIter is unimplemented.
