@@ -110,7 +110,7 @@ const (
 func (*RepositoryScanner) Name() string { return "rhel-repository-scanner" }
 
 // Version implements [indexer.VersionedScanner].
-func (*RepositoryScanner) Version() string { return "1.1" }
+func (*RepositoryScanner) Version() string { return "1.2" }
 
 // Kind implements [indexer.VersionedScanner].
 func (*RepositoryScanner) Kind() string { return "repository" }
@@ -244,12 +244,18 @@ func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) (repos
 // examining information contained within the container.
 func mapContentSets(ctx context.Context, sys fs.FS, cm *mappingFile) ([]string, error) {
 	// Get CPEs using embedded content-set files.
-	// The files is be stored in /root/buildinfo/content_manifests/ and will need to
+	// The files are stored in /root/buildinfo/content_manifests/ and will need to
 	// be translated using mapping file provided by Red Hat's PST team.
+	// For RHCOS, the files are stored in /usr/share/buildinfo/.
 	ms, err := fs.Glob(sys, `root/buildinfo/content_manifests/*.json`)
 	if err != nil {
 		panic("programmer error: " + err.Error())
 	}
+	ms2, err := fs.Glob(sys, `usr/share/buildinfo/*.json`)
+	if err != nil {
+		panic("programmer error: " + err.Error())
+	}
+	ms = append(ms, ms2...)
 	if ms == nil {
 		return nil, nil
 	}
