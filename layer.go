@@ -112,6 +112,13 @@ func (l *Layer) Init(ctx context.Context, desc *LayerDescription, r io.ReaderAt)
 			return fmt.Errorf("claircore: layer %v: unable to create fs.FS: %w", desc.Digest, err)
 		}
 		l.sys = sys
+	case `application/vnd.claircore.filesystem`:
+		if desc.URI == "" {
+			return fmt.Errorf("claircore: layer %v: unable to create fs.FS: no URI provided", desc.Digest)
+		}
+		sys := os.DirFS(desc.URI)
+		l.sys = sys
+		l.rd = nil // The reader cannot be used for a filesystem
 	default:
 		return fmt.Errorf("claircore: layer %v: unknown MediaType %q", desc.Digest, desc.MediaType)
 	}
@@ -195,6 +202,9 @@ func (l *Layer) FS() (fs.FS, error) {
 func (l *Layer) Reader() (ReadAtCloser, error) {
 	if !l.init {
 		return nil, errors.New("claircore: unable to return Reader: uninitialized Layer")
+	}
+	if l.rd == nil {
+		return nil, errors.New("claircore: unable to return Reader: ReaderAt is nil")
 	}
 	// Some hacks for making the returned ReadAtCloser implements as many
 	// interfaces as possible.

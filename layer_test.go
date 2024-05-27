@@ -48,6 +48,21 @@ func TestLayer(t *testing.T) {
 		return &l
 	}
 
+	goodFilesystem := func(t *testing.T) *claircore.Layer {
+		t.Helper()
+		var l claircore.Layer
+		desc := claircore.LayerDescription{
+			Digest:    "sha256:" + strings.Repeat("00c0ffee", 8),
+			MediaType: `application/vnd.claircore.filesystem`,
+			URI:       t.TempDir(),
+		}
+
+		if err := l.Init(ctx, &desc, nil); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		return &l
+	}
+
 	t.Run("Init", func(t *testing.T) {
 		t.Run("Checksum", func(t *testing.T) {
 			var l claircore.Layer
@@ -94,6 +109,25 @@ func TestLayer(t *testing.T) {
 				t.Error("unexpected success")
 			}
 		})
+		t.Run("Filesystem", func(t *testing.T) {
+			l := goodFilesystem(t)
+			if err := l.Close(); err != nil {
+				t.Errorf("close error: %v", err)
+			}
+		})
+		t.Run("FilesystemNoURI", func(t *testing.T) {
+			var l claircore.Layer
+			desc := claircore.LayerDescription{
+				Digest:    "sha256:" + strings.Repeat("00c0ffee", 8),
+				MediaType: `application/vnd.claircore.filesystem`,
+				URI:       "",
+			}
+
+			if err := l.Init(ctx, &desc, nil); err == nil {
+				t.Error("unexpected success")
+			}
+		})
+
 	})
 	t.Run("Close", func(t *testing.T) {
 		t.Run("Success", func(t *testing.T) {
@@ -177,6 +211,19 @@ func TestLayer(t *testing.T) {
 				t.Error("unexpected error")
 			}
 		})
+		t.Run("FilesystemSuccess", func(t *testing.T) {
+			l := goodFilesystem(t)
+			t.Cleanup(func() {
+				if err := l.Close(); err != nil {
+					t.Errorf("close error: %v", err)
+				}
+			})
+			_, err := l.FS()
+			t.Logf("error: %v", err)
+			if err != nil {
+				t.Error("unexpected error")
+			}
+		})
 	})
 	t.Run("Reader", func(t *testing.T) {
 		t.Run("Fail", func(t *testing.T) {
@@ -206,6 +253,18 @@ func TestLayer(t *testing.T) {
 			n, err := io.Copy(io.Discard, rac)
 			if n != 1024 || err != nil {
 				t.Errorf("unexpected error: read %d bytes, got error: %v", n, err)
+			}
+		})
+		t.Run("Filesystem", func(t *testing.T) {
+			l := goodFilesystem(t)
+			t.Cleanup(func() {
+				if err := l.Close(); err != nil {
+					t.Errorf("close error: %v", err)
+				}
+			})
+			_, err := l.Reader()
+			if err == nil {
+				t.Error("unexpected success")
 			}
 		})
 	})
