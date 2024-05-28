@@ -68,6 +68,7 @@ type Tracking struct {
 	ID                 string    `json:"id"`
 	CurrentReleaseDate time.Time `json:"current_release_date"`
 	InitialReleaseDate time.Time `json:"initial_release_date"`
+	Status             string    `json:"status"`
 }
 
 // Publisher provides information on the publishing entity.
