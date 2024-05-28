@@ -117,6 +117,9 @@ var testBattery = []struct {
 			},
 		},
 	},
+	{
+		path: "testdata/cve-1999-0001-deleted.json",
+	},
 }
 
 func TestAll(t *testing.T) {
@@ -130,6 +133,10 @@ func TestAll(t *testing.T) {
 			c, err := Parse(f)
 			if err != nil {
 				t.Fatalf("failed to parse CSAF JSON: %v", err)
+			}
+			if c.Document.Tracking.Status == "deleted" {
+				t.Log("advisory deleted", c.Document.Tracking.ID)
+				return
 			}
 			if got := c.ProductTree.FindProductByID(tc.product.ID); !cmp.Equal(tc.product, got) {
 				t.Error(cmp.Diff(tc.product, got))
