@@ -1,127 +1,78 @@
+// Package migrations contains database migrations.
+//
+// It's expected that github.com/remind101/migrate will be used to apply these,
+// but it's possible to do this manually if the user needs something specific.
 package migrations
 
 import (
 	"database/sql"
 	"embed"
+	"fmt"
+	"io"
+	"io/fs"
+	"path"
+	"strings"
 
 	"github.com/remind101/migrate"
 )
 
+// Canonical names for the table containing migration metadata.
 const (
 	IndexerMigrationTable = "libindex_migrations"
 	MatcherMigrationTable = "libvuln_migrations"
 )
 
+// Slices containing the database migrations.
+var (
+	IndexerMigrations []migrate.Migration
+	MatcherMigrations []migrate.Migration
+)
+
+func init() {
+	IndexerMigrations = loadMigrations(`indexer`)
+	MatcherMigrations = loadMigrations(`matcher`)
+}
+
 //go:embed */*.sql
-var fs embed.FS
+var sys embed.FS
 
-func runFile(n string) func(*sql.Tx) error {
-	b, err := fs.ReadFile(n)
-	return func(tx *sql.Tx) error {
-		if err != nil {
-			return err
-		}
-		if _, err := tx.Exec(string(b)); err != nil {
-			return err
-		}
-		return nil
+func loadMigrations(dir string) []migrate.Migration {
+	ents, err := fs.ReadDir(sys, dir)
+	if err != nil {
+		panic(fmt.Errorf("programmer error: unable to read embed: %w", err))
 	}
-}
 
-var IndexerMigrations = []migrate.Migration{
-	{
-		ID: 1,
-		Up: runFile("indexer/01-init.sql"),
-	},
-	{
-		ID: 2,
-		Up: runFile("indexer/02-digests.sql"),
-	},
-	{
-		ID: 3,
-		Up: runFile("indexer/03-unique-manifest_index.sql"),
-	},
-	{
-		ID: 4,
-		Up: runFile("indexer/04-foreign-key-cascades.sql"),
-	},
-	{
-		ID: 5,
-		Up: runFile("indexer/05-delete-manifest-index-index.sql"),
-	},
-	{
-		ID: 6,
-		Up: runFile("indexer/06-file-artifacts.sql"),
-	},
-	{
-		ID: 7,
-		Up: runFile("indexer/07-index-manifest_index.sql"),
-	},
-	{
-		ID: 8,
-		Up: runFile("indexer/08-index-manifest_layer.sql"),
-	},
-}
+	ms := make([]migrate.Migration, 0, len(ents))
+	id := 1
+	for _, ent := range ents {
+		if path.Ext(ent.Name()) != ".sql" {
+			continue
+		}
+		if !ent.Type().IsRegular() {
+			continue
+		}
 
-var MatcherMigrations = []migrate.Migration{
-	{
-		ID: 1,
-		Up: runFile("matcher/01-init.sql"),
-	},
-	{
-		ID: 2,
-		Up: runFile("matcher/02-indexes.sql"),
-	},
-	{
-		ID: 3,
-		Up: runFile("matcher/03-pyup-fingerprint.sql"),
-	},
-	{
-		ID: 4,
-		Up: runFile("matcher/04-enrichments.sql"),
-	},
-	{
-		ID: 5,
-		Up: runFile("matcher/05-uo_enrich-fkey.sql"),
-	},
-	{
-		ID: 6,
-		Up: runFile("matcher/06-delete-debian-update_operation.sql"),
-	},
-	{
-		ID: 7,
-		Up: runFile("matcher/07-force-alpine-update.sql"),
-	},
-	{
-		ID: 8,
-		Up: runFile("matcher/08-updater-status.sql"),
-	},
-	{
-		ID: 9,
-		Up: runFile("matcher/09-delete-pyupio.sql"),
-	},
-	{
-		ID: 10,
-		Up: runFile("matcher/10-delete-osv.sql"),
-	},
-	{
-		ID: 11,
-		Up: runFile("matcher/11-add-update_operation-mv.sql"),
-	},
-	{
-		ID: 12,
-		Up: runFile("matcher/12-add-latest_update_operation-index.sql"),
-	},
-	{
-		ID: 13,
-		Up: runFile("matcher/13-delete-rhel-oval.sql"),
-	},
-	{
-		ID: 14,
-		Up: runFile("matcher/14-delete-rhcc-vulns.sql"),
-	},
-	{
-		ID: 15,
-		Up: runFile("matcher/15-enrichment-indexes.sql"),
-	},
+		p := path.Join(dir, ent.Name())
+		ms = append(ms, migrate.Migration{
+			ID: id,
+			Up: func(tx *sql.Tx) error {
+				f, err := sys.Open(p)
+				if err != nil {
+					return fmt.Errorf("unable to open migration %q: %v", p, err)
+				}
+				defer f.Close()
+				var b strings.Builder
+				if _, err := io.Copy(&b, f); err != nil {
+					return fmt.Errorf("unable to read migration %q: %v", p, err)
+				}
+				if _, err := tx.Exec(b.String()); err != nil {
+					return fmt.Errorf("unable to exec migration %q: %v", p, err)
+				}
+				return nil
+			},
+		})
+		id++
+	}
+
+	return ms
 }
