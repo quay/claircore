@@ -1,0 +1,172 @@
+SET search_path TO "$user",public;
+
+CREATE OR REPLACE PROCEDURE generate_testdata (start INTEGER, stop INTEGER, prefix TEXT)
+	LANGUAGE plpgsql
+AS $$
+BEGIN
+	INSERT INTO advisory_import (
+			advisory,
+			reference,
+			package,
+			attr
+	)
+	SELECT
+		ROW(prefix||'-'||to_char(n, 'FM00000'), now(), 'summary', 'description', 'http://example.com', 'low', 'Low')::matcher_v2_import.advisory,
+		ARRAY[ROW(prefix, to_char(n, 'FM00000'), ARRAY['http://example.com'])]::matcher_v2_import.reference[],
+		ARRAY[ROW('hello', 'binary', ARRAY['amd64'], VersionMultiRange(VersionRange(NULL, ARRAY[to_char(n, 'FM0000000000'), NULL], '[)')), ARRAY['<'||n], 'int', NULL, NULL)]::matcher_v2_import.package[],
+		ARRAY[ROW('application/vnd.claircore.'||prefix, jsonb_build_object('seqence_number', n))]::matcher_v2_import.attr[]
+	FROM
+		generate_series(start, stop) AS n;
+END;
+$$;
+
+CREATE OR REPLACE PROCEDURE check_count (tablename TEXT, want INTEGER, msg TEXT)
+	LANGUAGE plpgsql
+	AS $proc$
+DECLARE
+	got INTEGER;
+BEGIN
+	EXECUTE format('SELECT COUNT(*) FROM "matcher_v2".%I', tablename) INTO got;
+	IF got <> want THEN
+		RAISE 'unexpected number of % rows; got: %, want: % (message: %)', tablename, got, want, msg;
+	END IF;
+END;
+$proc$;
+
+CREATE OR REPLACE PROCEDURE reset_tables ()
+	LANGUAGE SQL
+AS $proc$
+	-- Omit the log table.
+	TRUNCATE matcher_v2_meta.config RESTART IDENTITY CASCADE;
+	TRUNCATE
+		matcher_v2.updater,
+		matcher_v2.run,
+		matcher_v2.updater_run,
+		matcher_v2.advisory,
+		matcher_v2.advisory_meta,
+		matcher_v2.reference,
+		matcher_v2.advisory_reference,
+		matcher_v2.package,
+		matcher_v2.attr,
+		matcher_v2.package_name,
+		matcher_v2.mediatype,
+		matcher_v2.advisory_attr
+	RESTART IDENTITY
+	CASCADE;
+$proc$;
+-- Import --
+SET search_path TO "$user",matcher_v2_import,matcher_v2,public;
+SET plpgsql.extra_errors TO 'all';
+SET plpgsql.extra_warnings TO 'all';
+
+DO LANGUAGE plpgsql $$
+DECLARE
+	updater_name TEXT := 'test.00';
+	run_ref UUID := 'fd49a914-2606-43b8-8363-8c151db15436';
+	upd_run_ref UUID := '196a69a2-193f-4574-9445-be94a3806afb';
+
+	run_id BIGINT;
+	upd_id BIGINT;
+	upd_run_id BIGINT;
+BEGIN
+	CALL matcher_v2_meta.emit_log('test', 'whole-db start');
+	SELECT updater_id(updater_name) INTO upd_id;
+	INSERT INTO run (ref) VALUES (run_ref) RETURNING id INTO run_id;
+	INSERT INTO updater_run (ref, updater, run) VALUES (upd_run_ref, upd_id, run_id)
+		RETURNING id INTO upd_run_id;
+	UPDATE updater_run SET fingerprint = '{}', error = NULL WHERE ref = upd_run_ref;
+	CALL stage();
+	CALL generate_testdata (1, 31000, 'TEST');
+	CALL matcher_v2_meta.emit_log('test', 'inserted rows');
+	CALL commit_add(run_id, upd_id, upd_run_id);
+	CALL finish(run_id, upd_id, upd_run_id);
+	CALL matcher_v2_meta.emit_log('test', 'whole-db done');
+END;
+$$;
+
+CALL check_count ('updater', 1, 'create updater');
+CALL check_count ('run', 1, 'create run');
+CALL check_count ('updater_run', 1, 'create updater_run');
+CALL check_count ('advisory', 31000, 'import advisories');
+
+DO LANGUAGE plpgsql $$
+DECLARE
+	updater_name TEXT := 'test.00';
+	run_ref UUID := 'fd49a914-2606-43b8-8363-8c151db15437';
+	upd_run_ref UUID := '196a69a2-193f-4574-9445-be94a3806afc';
+
+	run_id BIGINT;
+	upd_id BIGINT;
+	upd_run_id BIGINT;
+BEGIN
+	CALL matcher_v2_meta.emit_log('test', 'incremental start');
+	SELECT updater_id(updater_name) INTO upd_id;
+	INSERT INTO run (ref) VALUES (run_ref) RETURNING id INTO run_id;
+	INSERT INTO updater_run (ref, updater, run) VALUES (upd_run_ref, upd_id, run_id)
+		RETURNING id INTO upd_run_id;
+	UPDATE updater_run SET fingerprint = '{}', error = NULL WHERE ref = upd_run_ref;
+	CALL stage();
+	CALL commit_snapshot(run_id, upd_id, upd_run_id);
+	CALL generate_testdata(31000, 31010, 'TEST');
+	CALL commit_add(run_id, upd_id, upd_run_id);
+	CALL finish(run_id, upd_id, upd_run_id);
+	CALL matcher_v2_meta.emit_log('test', 'incremental done');
+END;
+$$;
+
+CALL check_count ('updater', 1, 'select updater');
+CALL check_count ('run', 2, 'create run');
+CALL check_count ('updater_run', 2, 'create updater_run');
+CALL check_count ('advisory', 31010, 'import advisories');
+CALL check_count ('package_name', 1, 'package names');
+CALL check_count ('mediatype', 1, 'mediatypes');
+
+CALL reset_tables();
+-- ImportGC --
+SET search_path TO "$user",matcher_v2_import,matcher_v2,public;
+SET plpgsql.extra_errors TO 'all';
+SET plpgsql.extra_warnings TO 'all';
+
+DO LANGUAGE plpgsql $$
+DECLARE
+	updater_name TEXT := 'test.00';
+	run_ref UUID := 'fd49a914-2606-43b8-8363-8c151db15437';
+	upd_run_ref UUID := '196a69a2-193f-4574-9445-be94a3806afc';
+
+	run_id BIGINT;
+	upd_id BIGINT;
+	upd_run_id BIGINT;
+	i INTEGER;
+BEGIN
+	CALL matcher_v2_meta.emit_log('test', 'import start');
+	FOR i IN 1..3 LOOP
+		CALL matcher_v2_meta.emit_log('test', format('run %s start', i));
+
+		SELECT updater_id(updater_name) INTO upd_id;
+		INSERT INTO run (ref) VALUES (gen_random_uuid()) RETURNING id INTO run_id;
+		INSERT INTO updater_run (ref, updater, run) VALUES (gen_random_uuid(), upd_id, run_id)
+			RETURNING id INTO upd_run_id;
+		UPDATE updater_run SET fingerprint = jsonb_build_object('loop', i), error = NULL WHERE id = upd_run_id;
+
+		CALL stage();
+		CALL generate_testdata (1, 1000, 'LOOP'||i);
+		CALL commit_add(run_id, upd_id, upd_run_id);
+		CALL finish(run_id, upd_id, upd_run_id);
+
+		CALL matcher_v2_meta.emit_log('test', format('run %s done', i));
+	END LOOP;
+	CALL matcher_v2_meta.emit_log('test', 'import done');
+END;
+$$;
+
+CALL check_count ('package_name', 1, 'package names');
+CALL check_count ('mediatype', 3, 'mediatypes');
+
+CALL matcher_v2_meta.emit_log('test', 'gc start');
+CALL matcher_v2.run_gc();
+CALL matcher_v2_meta.emit_log('test', 'gc done');
+
+CALL check_count ('package_name', 1, 'package names');
+CALL check_count ('mediatype', 1, 'mediatypes');
+
+CALL reset_tables();
