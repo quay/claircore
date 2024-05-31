@@ -1,0 +1,321 @@
+SET search_path TO "$user",public;
+
+CREATE OR REPLACE PROCEDURE check_count (tablename TEXT, want INTEGER, msg TEXT)
+	LANGUAGE plpgsql
+	AS $proc$
+DECLARE
+	got INTEGER;
+BEGIN
+	EXECUTE format('SELECT COUNT(*) FROM "matcher_v2".%I', tablename) INTO got;
+	IF got <> want THEN
+		RAISE 'unexpected number of % rows; got: %, want: % (message: %)', tablename, got, want, msg;
+	END IF;
+END;
+$proc$;
+
+CREATE PROCEDURE make_run (TEXT[])
+LANGUAGE SQL
+BEGIN ATOMIC
+	WITH run AS (
+		INSERT INTO matcher_v2.run (ref, complete)
+			VALUES (gen_random_uuid (), TRUE)
+		RETURNING id
+	), upd AS (
+		SELECT
+			id
+		FROM
+			matcher_v2.updater
+		WHERE
+			name = ANY($1)
+	)
+	INSERT INTO matcher_v2.updater_run (ref, updater, run, fingerprint, error)
+		SELECT gen_random_uuid (), upd.id, run.id, '{}', NULL FROM run, upd;
+END;
+
+CREATE OR REPLACE PROCEDURE reset_tables ()
+	LANGUAGE SQL
+AS $proc$
+	-- Omit the log table.
+	TRUNCATE matcher_v2_meta.config RESTART IDENTITY CASCADE;
+	TRUNCATE
+		matcher_v2.updater,
+		matcher_v2.run,
+		matcher_v2.updater_run,
+		matcher_v2.advisory,
+		matcher_v2.advisory_meta,
+		matcher_v2.reference,
+		matcher_v2.advisory_reference,
+		matcher_v2.package,
+		matcher_v2.attr,
+		matcher_v2.package_name,
+		matcher_v2.mediatype,
+		matcher_v2.advisory_attr
+	RESTART IDENTITY
+	CASCADE;
+$proc$;
+-- VersionRange --
+SET search_path TO "$user",matcher_v2,public;
+SET plpgsql.extra_errors TO 'all';
+SET plpgsql.extra_warnings TO 'all';
+/*
+Test the "semver" encoding:
+
+	[ major, minor, patch, pre ]
+
+Build information is omitted, per spec.
+
+If not a prerelease version, "pre" is NULL.
+"Major," "minor," and "patch" components are defined to be numeric, and so are zero-padded to uniform width.
+*/
+DO LANGUAGE plpgSQL $$
+DECLARE
+	-- 1.0.0
+	r VersionRange := VersionRange (NULL, ARRAY['0000000001', '0000000000', '0000000000', NULL], '()');
+	v TEXT[];
+
+	member TEXT[] := ARRAY[
+		ARRAY['0000000000', '0000000005', '0000000000', NULL],      -- 0.5.0
+		ARRAY['0000000000', '0000000005', '0000000000', 'alpha.1'], -- 0.5.0-alpha.1
+		ARRAY['0000000001', '0000000000', '0000000000', 'pre']      -- 1.0.0-pre
+	];
+BEGIN
+	FOREACH v SLICE 1 IN ARRAY member
+	LOOP
+		PERFORM 1 WHERE r @> v;
+		ASSERT FOUND, format('expected to find %s in range', v);
+	END LOOP;
+END;
+$$;
+DO LANGUAGE plpgSQL $$
+DECLARE
+	-- 1.0.0-beta.1
+	r VersionRange := VersionRange (NULL, ARRAY['0000000001', '0000000000', '0000000000', 'beta.1'], '()');
+	v TEXT[];
+
+	member TEXT[] := ARRAY[
+		ARRAY['0000000000', '0000000005', '0000000000', NULL],      -- 0.5.0
+		ARRAY['0000000000', '0000000005', '0000000000', 'alpha.1'], -- 0.5.0-alpha.1
+		ARRAY['0000000001', '0000000000', '0000000000', 'alpha.1']  -- 1.0.0-alpha.1
+	];
+BEGIN
+	FOREACH v SLICE 1 IN ARRAY member
+	LOOP
+		PERFORM 1 WHERE r @> v;
+		ASSERT FOUND, format('expected to find %s in range', v);
+	END LOOP;
+END;
+$$;
+
+DO LANGUAGE plpgSQL $$
+DECLARE
+	-- 1.0.0
+	r VersionRange := VersionRange (NULL, ARRAY['0000000001', '0000000000', '0000000000', NULL], '()');
+	v TEXT[];
+
+	member TEXT[] := ARRAY[
+		ARRAY['0000000001', '0000000000', '0000000000', NULL], -- 1.0.0
+		ARRAY['0000000001', '0000000000', '0000000001', NULL], -- 1.0.1
+		ARRAY['0000000001', '0000000001', '0000000000', NULL], -- 1.1.0
+		ARRAY['0000000002', '0000000000', '0000000000', NULL]  -- 2.0.0
+	];
+BEGIN
+	FOREACH v SLICE 1 IN ARRAY member
+	LOOP
+		PERFORM 1 WHERE r @> v;
+		ASSERT NOT FOUND, format('expected to not find %s in range', v);
+	END LOOP;
+END;
+$$;
+DO LANGUAGE plpgSQL $$
+DECLARE
+	-- 1.0.0-beta.1
+	r VersionRange := VersionRange (NULL, ARRAY['0000000001', '0000000000', '0000000000', 'beta.1'], '()');
+	v TEXT[];
+
+	member TEXT[] := ARRAY[
+		ARRAY['0000000001', '0000000000', '0000000000', NULL],     -- 1.0.0
+		ARRAY['0000000001', '0000000000', '0000000000', 'beta.2'], -- 1.0.0-beta.2
+		ARRAY['0000000001', '0000000000', '0000000000', 'rc.1']    -- 1.0.0-rc.1
+	];
+BEGIN
+	FOREACH v SLICE 1 IN ARRAY member
+	LOOP
+		PERFORM 1 WHERE r @> v;
+		ASSERT NOT FOUND, format('expected to not find %s in range', v);
+	END LOOP;
+END;
+$$;
+-- GarbageCollectUpdaters --
+SET search_path TO "$user",matcher_v2,public;
+SET plpgsql.extra_errors TO 'all';
+SET plpgsql.extra_warnings TO 'all';
+
+-- Create some updaters.
+INSERT INTO updater (name) VALUES ('test.00'), ('test.01');
+
+CALL check_count ('updater', 2, 'create updaters');
+
+-- Create some runs.
+CALL make_run (ARRAY['test.00', 'test.01']);
+CALL make_run (ARRAY['test.00', 'test.01']);
+CALL make_run (ARRAY['test.00', 'test.01']);
+
+CALL check_count ('run', 3, 'initial run check');
+CALL check_count ('updater_run', 3 * 2, 'initial updater_run check');
+CALL check_count ('updater', 2, 'initial updater check');
+
+-- Configure the retention so that this `run_gc` call should do nothing.
+INSERT INTO matcher_v2_meta.config (config) VALUES (jsonb_build_object('retain_runs', 4));
+CALL run_gc ();
+
+CALL check_count ('run', 3, 'second run check');
+CALL check_count ('updater_run', 3 * 2, 'second updater_run check');
+CALL check_count ('updater', 2, 'second updater check');
+
+-- update the config to give the GC something to do.
+INSERT INTO matcher_v2_meta.config (config) VALUES (jsonb_build_object());
+CALL run_gc ();
+
+CALL check_count ('run', 1, 'after gc run check');
+CALL check_count ('updater_run', 1 * 2, 'after gc updater_run check');
+CALL check_count ('updater', 2, 'after gc updater check');
+
+-- Stop using some updaters
+CALL make_run (ARRAY['test.00']);
+CALL run_gc ();
+
+CALL check_count ('run', 1, 'disused updaters run check');
+CALL check_count ('updater_run', 1, 'disused updaters updater_run check');
+CALL check_count ('updater', 1, 'disused updaters updater check');
+
+CALL reset_tables();
+-- UpdaterRun --
+SET search_path TO "$user",matcher_v2,public;
+SET plpgsql.extra_errors TO 'all';
+SET plpgsql.extra_warnings TO 'all';
+
+-- Create an updater:
+DO LANGUAGE plpgsql $$
+DECLARE
+	updater_name TEXT := 'test.00';
+BEGIN
+	INSERT INTO updater (name) VALUES (updater_name);
+
+	CALL check_count ('updater', 1, 'create updater');
+END;
+$$;
+
+-- Use some premade uuids:
+--
+-- run:         fd49a914-2606-43b8-8363-8c151db15436
+-- updater run: 196a69a2-193f-4574-9445-be94a3806afb
+
+DO LANGUAGE plpgsql $$
+DECLARE
+	updater_name TEXT := 'test.00';
+	run_ref UUID := 'fd49a914-2606-43b8-8363-8c151db15436';
+	upd_run_ref UUID := '196a69a2-193f-4574-9445-be94a3806afb';
+
+	run_id BIGINT;
+	upd_id BIGINT;
+	upd_run_id BIGINT;
+BEGIN
+	SELECT id INTO upd_id FROM updater WHERE name = updater_name;
+
+	INSERT INTO run (ref) VALUES (run_ref) RETURNING id INTO run_id;
+	INSERT INTO updater_run (ref, updater, run) VALUES (upd_run_ref, upd_id, run_id)
+		RETURNING id INTO upd_run_id;
+	UPDATE updater_run SET fingerprint = '{}', error = NULL WHERE ref = upd_run_ref;
+
+	CALL check_count ('run', 1, 'create run');
+	CALL check_count ('updater_run', 1, 'create updater_run');
+END;
+$$;
+
+DO LANGUAGE plpgsql $$
+DECLARE
+	updater_name TEXT := 'test.00';
+	run_ref UUID := 'fd49a914-2606-43b8-8363-8c151db15436';
+
+	run_id BIGINT;
+	upd_id BIGINT;
+BEGIN
+	SELECT id INTO upd_id FROM updater WHERE name = updater_name;
+	SELECT id INTO run_id FROM run WHERE ref = run_ref;
+
+	INSERT INTO advisory_meta (advisory, summary, description)
+		VALUES (advisory_id (run_id, upd_id, 'TEST-0001'), 'test', 'a real cool testing advisory');
+
+	CALL check_count ('advisory', 1, 'create advisory');
+	CALL check_count ('advisory_meta', 1, 'create advisory');
+END;
+$$;
+
+DO LANGUAGE plpgsql $$
+DECLARE
+	updater_name TEXT := 'test.00';
+	run_ref UUID := 'fd49a914-2606-43b8-8363-8c151db15436';
+
+	run_id BIGINT;
+	upd_id BIGINT;
+	adv_id BIGINT;
+BEGIN
+	SELECT id INTO upd_id FROM updater WHERE name = updater_name;
+	SELECT id INTO run_id FROM run WHERE ref = run_ref;
+	adv_id := advisory_id (run_id, upd_id, 'TEST-0001');
+
+	INSERT INTO advisory_reference (advisory, reference) VALUES (adv_id, reference_id ('TEST', '0001'));
+	INSERT INTO advisory_reference (advisory, reference) VALUES (adv_id, reference_id ('CVE', '2038-0001'));
+
+	CALL check_count ('reference', 2, 'create reference');
+	CALL check_count ('advisory_reference', 2, 'create reference');
+END;
+$$;
+
+DO LANGUAGE plpgsql $$
+DECLARE
+	updater_name TEXT := 'test.00';
+	run_ref UUID := 'fd49a914-2606-43b8-8363-8c151db15436';
+
+	run_id BIGINT;
+	upd_id BIGINT;
+	adv_id BIGINT;
+BEGIN
+	SELECT id INTO upd_id FROM updater WHERE name = updater_name;
+	SELECT id INTO run_id FROM run WHERE ref = run_ref;
+	adv_id := advisory_id (run_id, upd_id, 'TEST-0001');
+
+	INSERT INTO package (advisory, name, arch, vulnerable_range, version_upstream, version_kind, kind)
+		VALUES (
+			adv_id,
+			package_name_id('fakepackage'),
+			NULL,
+			VersionMultirange (VersionRange (NULL, ARRAY['0000000001', '0000000000', '0000000000', NULL], '()')),
+			ARRAY['<1.0.0'],
+			'semver',
+			'source'
+		);
+
+	CALL check_count ('package', 1, 'create package');
+END;
+$$;
+
+DO LANGUAGE plpgSQL $$
+BEGIN
+	PERFORM 1 FROM package WHERE vulnerable_range @> ARRAY['0000000000', '0000000005', '0000000000', 'alpha.1'];
+	ASSERT FOUND, 'expected to find "0.5.0-alpha.1" in range';
+	PERFORM 1 FROM package WHERE vulnerable_range @> ARRAY['0000000001', '0000000000', '0000000000', 'pre'];
+	ASSERT FOUND, 'expected to find "1.0.0-pre" in range';
+
+	PERFORM 1 FROM package WHERE vulnerable_range @> ARRAY['0000000001', '0000000000', '0000000000', NULL];
+	ASSERT NOT FOUND, 'expected to not find "1.0.0" in range';
+	PERFORM 1 FROM package WHERE vulnerable_range @> ARRAY['0000000001', '0000000000', '0000000001', NULL];
+	ASSERT NOT FOUND, 'expected to not find "1.0.1" in range';
+	PERFORM 1 FROM package WHERE vulnerable_range @> ARRAY['0000000001', '0000000001', '0000000000', NULL];
+	ASSERT NOT FOUND, 'expected to not find "1.1.0" in range';
+	PERFORM 1 FROM package WHERE vulnerable_range @> ARRAY['0000000002', '0000000000', '0000000000', NULL];
+	ASSERT NOT FOUND, 'expected to not find "2.0.0" in range';
+END;
+$$;
+
+CALL reset_tables();
