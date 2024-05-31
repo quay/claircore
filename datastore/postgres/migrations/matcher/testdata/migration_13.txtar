@@ -1,0 +1,35 @@
+-- MetaFunctions --
+SET search_path TO "$user",matcher_v2_meta,public;
+SET plpgsql.extra_errors TO 'all';
+SET plpgsql.extra_warnings TO 'all';
+-- Check that these two forms work at all:
+DO LANGUAGE plpgsql $$
+DECLARE
+	obj JSONB := '{}';
+	want BYTEA := '\x44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a';
+	got BYTEA;
+BEGIN
+	got := config_fingerprint(obj);
+	IF
+		got <> want
+	THEN
+		RAISE EXCEPTION 'bad fingerprint: % <> %', got, want;
+	END IF;
+END
+
+$$;
+-- NB this varies only in the input type.
+DO LANGUAGE plpgsql $$
+DECLARE
+	obj TEXT := '{}';
+	want BYTEA := '\x44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a';
+	got BYTEA;
+BEGIN
+	got := config_fingerprint(obj);
+	IF
+		got <> want
+	THEN
+		RAISE EXCEPTION 'bad fingerprint: % <> %', got, want;
+	END IF;
+END
+$$;
