@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"path"
+	"strconv"
 	"testing"
 
 	"github.com/jackc/pgx/v5/log/testingadapter"
@@ -19,6 +20,9 @@ import (
 	"github.com/quay/claircore/datastore/postgres/types"
 	"github.com/quay/claircore/test/integration"
 )
+
+// MinVersion is minimum needed PostgreSQL version, in the integer format.
+const MinVersion uint64 = 150000
 
 // TestMatcherDB returns a [pgxpool.Pool] connected to a started and configured
 // for a Matcher database.
@@ -36,10 +40,18 @@ func TestIndexerDB(ctx context.Context, t testing.TB) *pgxpool.Pool {
 	return testDB(ctx, t, dbIndexer)
 }
 
+// TestDB returns a [pgxpool.Pool] connected to a started and configured
+// database that has not had any migrations run.
+//
+// If any errors are encountered, the test is failed and exited.
+func TestDB(ctx context.Context, t testing.TB) *pgxpool.Pool {
+	return testDB(ctx, t, dbNone)
+}
+
 type dbFlavor uint
 
 const (
-	_ dbFlavor = iota
+	dbNone dbFlavor = iota
 	dbMatcher
 	dbIndexer
 )
@@ -56,6 +68,7 @@ func testDB(ctx context.Context, t testing.TB, which dbFlavor) *pgxpool.Pool {
 		LogLevel: tracelog.LogLevelError,
 	}
 	cfg.AfterConnect = types.ConnectRegisterTypes
+
 	mdb := stdlib.OpenDB(*cfg.ConnConfig)
 	defer mdb.Close()
 	// run migrations
@@ -67,6 +80,9 @@ func testDB(ctx context.Context, t testing.TB, which dbFlavor) *pgxpool.Pool {
 	case dbIndexer:
 		migrator.Table = migrations.IndexerMigrationTable
 		err = migrator.Exec(migrate.Up, migrations.IndexerMigrations...)
+	case dbNone:
+	default:
+		err = fmt.Errorf("unknown flavor: %v", which)
 	}
 	if err != nil {
 		t.Fatalf("failed to perform migrations: %v", err)
@@ -75,7 +91,7 @@ func testDB(ctx context.Context, t testing.TB, which dbFlavor) *pgxpool.Pool {
 	if err != nil {
 		t.Fatalf("failed to connect: %v", err)
 	}
-
+	checkVersion(ctx, t, pool)
 	loadHelpers(ctx, t, pool, which)
 
 	// BUG(hank) The Test*DB functions close over the passed-in Context and use
@@ -88,6 +104,23 @@ func testDB(ctx context.Context, t testing.TB, which dbFlavor) *pgxpool.Pool {
 	})
 
 	return pool
+}
+
+func checkVersion(ctx context.Context, t testing.TB, pool *pgxpool.Pool) {
+	t.Helper()
+	var vs string
+	err := pool.QueryRow(ctx, `SELECT current_setting('server_version_num');`).Scan(&vs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	v, err := strconv.ParseUint(vs, 10, 64)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if v < MinVersion {
+		t.Fatalf("PostgreSQL version too old: %d < %d", v, MinVersion)
+	}
+	t.Logf("PostgreSQL version: %d", v)
 }
 
 //go:embed sql
