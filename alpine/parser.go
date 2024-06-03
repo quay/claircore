@@ -9,6 +9,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/updater/secdb"
 )
 
 const (
@@ -22,7 +23,7 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 	zlog.Info(ctx).Msg("starting parse")
 	defer r.Close()
 
-	var db SecurityDB
+	var db secdb.SecurityDB
 	if err := json.NewDecoder(r).Decode(&db); err != nil {
 		return nil, err
 	}
@@ -30,7 +31,7 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 }
 
 // parse parses the alpine SecurityDB
-func (u *updater) parse(ctx context.Context, sdb *SecurityDB) ([]*claircore.Vulnerability, error) {
+func (u *updater) parse(ctx context.Context, sdb *secdb.SecurityDB) ([]*claircore.Vulnerability, error) {
 	out := []*claircore.Vulnerability{}
 	for _, pkg := range sdb.Packages {
 		if err := ctx.Err(); err != nil {
