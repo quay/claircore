@@ -64,7 +64,7 @@ jobs:
 
   tests:
     name: Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # TODO(hank) Move back to "-latest" once stablized.
     strategy:
       fail-fast: false
       matrix:
