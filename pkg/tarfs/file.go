@@ -4,7 +4,7 @@ import (
 	"archive/tar"
 	"io"
 	"io/fs"
-	"path/filepath"
+	"path"
 	"strings"
 )
 
@@ -67,7 +67,7 @@ type dirent struct{ *tar.Header }
 
 var _ fs.DirEntry = dirent{}
 
-func (d dirent) Name() string               { return filepath.Base(d.Header.Name) }
+func (d dirent) Name() string               { return path.Base(d.Header.Name) }
 func (d dirent) IsDir() bool                { return d.Header.FileInfo().IsDir() }
 func (d dirent) Type() fs.FileMode          { return d.Header.FileInfo().Mode() & fs.ModeType }
 func (d dirent) Info() (fs.FileInfo, error) { return d.FileInfo(), nil }

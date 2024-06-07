@@ -7,7 +7,6 @@ import (
 	"io"
 	"io/fs"
 	"path"
-	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -34,7 +33,13 @@ type inode struct {
 //
 // This is needed any time a name is pulled from the archive.
 func normPath(p string) string {
-	s, _ := filepath.Rel("/", filepath.Join("/", p))
+	// This is OK because [path.Join] is documented to call [path.Clean], which
+	// will remove any parent ("..") elements, and will always return a string
+	// of at least length 1, because the static component is length 1.
+	s := path.Join("/", p)[1:]
+	if len(s) == 0 {
+		return "."
+	}
 	if utf8.ValidString(s) {
 		return s
 	}
@@ -207,7 +212,7 @@ Again:
 	f.lookup[name] = i
 
 	cycle := make(map[*inode]struct{})
-	dir := filepath.Dir(name)
+	dir := path.Dir(name)
 AddEnt:
 	switch dir {
 	case name:
@@ -530,15 +535,12 @@ func (f *FS) Sub(dir string) (fs.FS, error) {
 		lookup: make(map[string]int),
 	}
 	for n, i := range f.lookup {
-		rel, err := filepath.Rel(bp, n)
-		if err != nil {
-			// Can't be made relative.
-			continue
-		}
-		if strings.HasPrefix(rel, "..") {
+		if !strings.HasPrefix(n, bp) {
 			// Not in this subtree.
 			continue
 		}
+		// NormPath handles the root condition cleanly.
+		rel := normPath(strings.TrimPrefix(n, bp))
 		ret.lookup[rel] = i
 	}
 	return &ret, nil
