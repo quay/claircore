@@ -118,3 +118,129 @@ func TestEnrichments(t *testing.T) {
 	}
 	t.Logf("wrote:\n%s", buf.String())
 }
+
+func TestIterationWithBreak(t *testing.T) {
+	ctx := context.Background()
+	a, err := New()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var want, got struct {
+		V []*claircore.Vulnerability
+		E []driver.EnrichmentRecord
+	}
+
+	want.V = test.GenUniqueVulnerabilities(10, "test")
+	ref, err := a.UpdateVulnerabilities(ctx, "test", "", want.V)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Logf("ref: %v", ref)
+
+	// We will break after getting vulnerabilities.
+	test.GenEnrichments(15)
+	ref, err = a.UpdateEnrichments(ctx, "test", "", want.E)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Logf("ref: %v", ref)
+
+	var buf bytes.Buffer
+	defer func() {
+		t.Logf("wrote:\n%s", buf.String())
+	}()
+	r, w := io.Pipe()
+	eg, ctx := errgroup.WithContext(ctx)
+	eg.Go(func() error { defer w.Close(); return a.Store(w) })
+	eg.Go(func() error {
+		i, iErr := Iterate(io.TeeReader(r, &buf))
+		i(func(o *driver.UpdateOperation, i RecordIter) bool {
+			i(func(v *claircore.Vulnerability, e *driver.EnrichmentRecord) bool {
+				switch o.Kind {
+				case driver.VulnerabilityKind:
+					got.V = append(got.V, v)
+				case driver.EnrichmentKind:
+					got.E = append(got.E, *e)
+				default:
+					t.Errorf("unnexpected kind: %s", o.Kind)
+				}
+				return true
+			})
+			// Stop the operation iter, effectively skipping enrichments.
+			return false
+		})
+		return iErr()
+	})
+	if err := eg.Wait(); err != nil {
+		t.Error(err)
+	}
+	if !cmp.Equal(got, want) {
+		t.Error(cmp.Diff(got, want))
+	}
+}
+
+func TestIterationWithSkip(t *testing.T) {
+	ctx := context.Background()
+	a, err := New()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var want, got struct {
+		V []*claircore.Vulnerability
+		E []driver.EnrichmentRecord
+	}
+
+	want.V = test.GenUniqueVulnerabilities(10, "test")
+	ref, err := a.UpdateVulnerabilities(ctx, "test", "", want.V)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Logf("ref: %v", ref)
+
+	// We will skip the updater "skip this".
+	test.GenUniqueVulnerabilities(10, "skip this")
+
+	want.E = test.GenEnrichments(15)
+	ref, err = a.UpdateEnrichments(ctx, "test", "", want.E)
+	if err != nil {
+		t.Error(err)
+	}
+	t.Logf("ref: %v", ref)
+
+	var buf bytes.Buffer
+	defer func() {
+		t.Logf("wrote:\n%s", buf.String())
+	}()
+	r, w := io.Pipe()
+	eg, ctx := errgroup.WithContext(ctx)
+	eg.Go(func() error { defer w.Close(); return a.Store(w) })
+	eg.Go(func() error {
+		i, iErr := Iterate(io.TeeReader(r, &buf))
+		i(func(o *driver.UpdateOperation, i RecordIter) bool {
+			if o.Updater == "skip this" {
+				return true
+			}
+			i(func(v *claircore.Vulnerability, e *driver.EnrichmentRecord) bool {
+				switch o.Kind {
+				case driver.VulnerabilityKind:
+					got.V = append(got.V, v)
+				case driver.EnrichmentKind:
+					got.E = append(got.E, *e)
+				default:
+					t.Errorf("unnexpected kind: %s", o.Kind)
+				}
+				return true
+			})
+			return true
+		})
+		return iErr()
+	})
+	if err := eg.Wait(); err != nil {
+		t.Error(err)
+	}
+	if !cmp.Equal(got, want) {
+		t.Error(cmp.Diff(got, want))
+	}
+}
