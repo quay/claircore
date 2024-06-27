@@ -299,5 +299,5 @@ func (s *reposcanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircor
 	}
 	zlog.Debug(ctx).
 		Msg("found buildinfo Dockerfile")
-	return []*claircore.Repository{&goldRepo}, nil
+	return []*claircore.Repository{&GoldRepo}, nil
 }

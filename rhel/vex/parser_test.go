@@ -3,6 +3,7 @@ package vex
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"net/url"
@@ -10,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/klauspost/compress/snappy"
-
+	"github.com/package-url/packageurl-go"
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/toolkit/types/csaf"
@@ -315,19 +316,19 @@ func TestParse(t *testing.T) {
 		{
 			name:            "cve-2022-1705",
 			filename:        "testdata/cve-2022-1705.jsonl",
-			expectedVulns:   736,
+			expectedVulns:   1069,
 			expectedDeleted: 0,
 		},
 		{
 			name:            "cve-2024-24786",
 			filename:        "testdata/cve-2024-24786.jsonl",
-			expectedVulns:   246,
+			expectedVulns:   610,
 			expectedDeleted: 0,
 		},
 		{
 			name:            "cve-2022-38752",
 			filename:        "testdata/cve-2022-38752.jsonl",
-			expectedVulns:   40,
+			expectedVulns:   47,
 			expectedDeleted: 0,
 		},
 		{
@@ -373,10 +374,211 @@ func TestParse(t *testing.T) {
 				t.Fatalf("failed to parse CSAF JSON: %v", err)
 			}
 			if len(vulns) != tc.expectedVulns {
-				t.Fatalf("expected %d vulns but got %d", tc.expectedVulns, len(vulns))
+				t.Errorf("expected %d vulns but got %d", tc.expectedVulns, len(vulns))
 			}
 			if len(deleted) != tc.expectedDeleted {
 				t.Fatalf("expected %d deleted but got %d", tc.expectedDeleted, len(deleted))
+			}
+		})
+	}
+}
+
+func TestExtractVersion(t *testing.T) {
+	testcases := []struct {
+		name        string
+		purl        packageurl.PackageURL
+		expectedErr bool
+		want        string
+	}{
+		{
+			name: "rpm_with_epoch",
+			purl: packageurl.PackageURL{
+				Type:      packageurl.TypeRPM,
+				Namespace: "redhat",
+				Name:      "buildah-debugsource",
+				Version:   "1.24.6-5.module+el8.8.0+18083+cd85596b",
+				Qualifiers: packageurl.QualifiersFromMap(map[string]string{
+					"arch":  "ppc64le",
+					"epoch": "1",
+				}),
+			},
+			want: "1:1.24.6-5.module+el8.8.0+18083+cd85596b",
+		},
+		{
+			name: "rpm_without_epoch",
+			purl: packageurl.PackageURL{
+				Type:      packageurl.TypeRPM,
+				Namespace: "redhat",
+				Name:      "buildah-debugsource",
+				Version:   "1.24.6-5.module+el8.8.0+18083+cd85596b",
+				Qualifiers: packageurl.QualifiersFromMap(map[string]string{
+					"arch": "ppc64le",
+				}),
+			},
+			want: "0:1.24.6-5.module+el8.8.0+18083+cd85596b",
+		},
+		{
+			name: "oci_with_tag",
+			purl: packageurl.PackageURL{
+				Type:      packageurl.TypeOCI,
+				Namespace: "",
+				Name:      "keepalived-rhel9",
+				Version:   "sha256:36abd2b22ebabea813c5afde35b0b80a200056f811267e89f0270da9155b1a22",
+				Qualifiers: packageurl.QualifiersFromMap(map[string]string{
+					"arch":           "ppc64le",
+					"repository_url": "registry.redhat.io/rhceph/keepalived-rhel9",
+					"tag":            "2.2.4-3",
+				}),
+			},
+			want: "2.2.4-3",
+		},
+		{
+			name: "oci_without_tag",
+			purl: packageurl.PackageURL{
+				Type:      packageurl.TypeOCI,
+				Namespace: "",
+				Name:      "keepalived-rhel9",
+				Version:   "sha256:36abd2b22ebabea813c5afde35b0b80a200056f811267e89f0270da9155b1a22",
+				Qualifiers: packageurl.QualifiersFromMap(map[string]string{
+					"arch":           "ppc64le",
+					"repository_url": "registry.redhat.io/rhceph/keepalived-rhel9",
+				}),
+			},
+			expectedErr: true,
+		},
+
+		{
+			name: "unsupported_type",
+			purl: packageurl.PackageURL{
+				Type:      packageurl.TypeApk,
+				Namespace: "",
+				Name:      "nice APK",
+				Version:   "v1.1.1",
+				Qualifiers: packageurl.QualifiersFromMap(map[string]string{
+					"arch": "ppc64le",
+				}),
+			},
+			expectedErr: true,
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			v, err := extractFixedInVersion(tc.purl)
+			if !errors.Is(err, nil) && !tc.expectedErr {
+				t.Fatalf("expected no err but got %v", err)
+			}
+			if errors.Is(err, nil) && tc.expectedErr {
+				t.Fatal("expected err but got none")
+			}
+			if v != tc.want {
+				t.Fatalf("expected version %v but got %v", tc.want, v)
+			}
+		})
+	}
+}
+
+func TestExtractPackageName(t *testing.T) {
+	testcases := []struct {
+		name        string
+		purl        packageurl.PackageURL
+		expectedErr bool
+		want        string
+	}{
+		{
+			name: "rpm_simple",
+			purl: packageurl.PackageURL{
+				Type:      packageurl.TypeRPM,
+				Namespace: "redhat",
+				Name:      "buildah-debugsource",
+				Version:   "1.24.6-5.module+el8.8.0+18083+cd85596b",
+				Qualifiers: packageurl.QualifiersFromMap(map[string]string{
+					"arch":  "ppc64le",
+					"epoch": "1",
+				}),
+			},
+			want: "buildah-debugsource",
+		},
+		{
+			name: "oci_with_repository_url",
+			purl: packageurl.PackageURL{
+				Type:      packageurl.TypeOCI,
+				Namespace: "",
+				Name:      "keepalived-rhel9",
+				Version:   "sha256:36abd2b22ebabea813c5afde35b0b80a200056f811267e89f0270da9155b1a22",
+				Qualifiers: packageurl.QualifiersFromMap(map[string]string{
+					"arch":           "ppc64le",
+					"repository_url": "registry.redhat.io/rhceph/keepalived-rhel9",
+					"tag":            "2.2.4-3",
+				}),
+			},
+			want: "rhceph/keepalived-rhel9",
+		},
+		{
+			name: "oci_without_repository_url",
+			purl: packageurl.PackageURL{
+				Type:      packageurl.TypeOCI,
+				Namespace: "",
+				Name:      "keepalived-rhel9",
+				Version:   "sha256:36abd2b22ebabea813c5afde35b0b80a200056f811267e89f0270da9155b1a22",
+				Qualifiers: packageurl.QualifiersFromMap(map[string]string{
+					"arch": "ppc64le",
+				}),
+			},
+			want: "keepalived-rhel9",
+		},
+		{
+			name: "oci_invalid_repository_url",
+			purl: packageurl.PackageURL{
+				Type:      packageurl.TypeOCI,
+				Namespace: "",
+				Name:      "keepalived-rhel9",
+				Version:   "sha256:36abd2b22ebabea813c5afde35b0b80a200056f811267e89f0270da9155b1a22",
+				Qualifiers: packageurl.QualifiersFromMap(map[string]string{
+					"arch":           "ppc64le",
+					"repository_url": "registry.redhat.iorhcephkeepalived-rhel9",
+				}),
+			},
+			expectedErr: true,
+		},
+		{
+			name: "repository_url_with_namespace",
+			purl: packageurl.PackageURL{
+				Type:      packageurl.TypeOCI,
+				Namespace: "something",
+				Name:      "keepalived-rhel9",
+				Version:   "sha256:36abd2b22ebabea813c5afde35b0b80a200056f811267e89f0270da9155b1a22",
+				Qualifiers: packageurl.QualifiersFromMap(map[string]string{
+					"arch":           "ppc64le",
+					"repository_url": "registry.redhat.io/rhceph/keepalived-rhel9",
+				}),
+			},
+			want: "something/keepalived-rhel9",
+		},
+		{
+			name: "unsupported_type",
+			purl: packageurl.PackageURL{
+				Type:      packageurl.TypeApk,
+				Namespace: "",
+				Name:      "nice APK",
+				Version:   "v1.1.1",
+				Qualifiers: packageurl.QualifiersFromMap(map[string]string{
+					"arch": "ppc64le",
+				}),
+			},
+			expectedErr: true,
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			v, err := extractPackageName(tc.purl)
+			if !errors.Is(err, nil) && !tc.expectedErr {
+				t.Fatalf("expected no err but got %v", err)
+			}
+			if errors.Is(err, nil) && tc.expectedErr {
+				t.Fatal("expected err but got none")
+			}
+			if v != tc.want {
+				t.Fatalf("expected name %v but got %v", tc.want, v)
 			}
 		})
 	}

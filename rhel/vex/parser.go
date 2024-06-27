@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"strings"
 
 	"github.com/klauspost/compress/snappy"
@@ -14,7 +15,9 @@ import (
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/pkg/rhctag"
 	"github.com/quay/claircore/rhel/internal/common"
+	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/quay/claircore/toolkit/types/cpe"
 	"github.com/quay/claircore/toolkit/types/csaf"
 	"github.com/quay/claircore/toolkit/types/cvss"
@@ -237,6 +240,7 @@ func extractProductNames(prodRef, relatesToProdRef string, comps []string, c *cs
 // KnownAffectedVulnerabilities processes the "known_affected" array of products
 // in the VEX object.
 func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v csaf.Vulnerability, protoVulnFunc func() *claircore.Vulnerability) ([]*claircore.Vulnerability, error) {
+	ranger := newRanger()
 	unrelatedProductIDs := []string{}
 	debugEnabled := zlog.Debug(ctx).Enabled()
 	out := []*claircore.Vulnerability{}
@@ -292,28 +296,52 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v csaf.Vulne
 				Msg("could not find package in product tree")
 			continue
 		}
+		vuln := protoVulnFunc()
+
+		ch := escapeCPE(cpeHelper)
+		wfn, err := cpe.Unbind(ch)
+		if err != nil {
+			return nil, fmt.Errorf("could not unbind cpe: %s %w", ch, err)
+		}
+		vuln.Repo = c.rc.Get(wfn)
 		// It is possible that we will not find a pURL, in that case
 		// the package.Name will be reported as-is.
 		purlHelper, ok := compProd.IdentificationHelper["purl"]
 		if ok {
 			purl, err := packageurl.FromString(purlHelper)
-			switch {
-			case err != nil:
+			if err != nil {
 				zlog.Warn(ctx).
-					Str("purl", purlHelper).
+					Str("purlHelper", purlHelper).
 					Err(err).
 					Msg("could not parse PURL")
-			default:
-				pkgName = purl.Name
-			}
-			if purl.Type != packageurl.TypeRPM || purl.Namespace != "redhat" {
-				// Just ingest advisories that are Red Hat RPMs, this will
-				// probably change down the line when we consolidate updaters.
 				continue
+			}
+			if !checkPURL(purl) {
+				continue
+			}
+			if pn, err := extractPackageName(purl); err != nil {
+				zlog.Warn(ctx).
+					Str("purl", purl.String()).
+					Err(err).
+					Msg("could not extract package name from pURL")
+			} else {
+				pkgName = pn
+			}
+
+			if purl.Type == packageurl.TypeOCI {
+				// Override repo if we're dealing with a container image
+				vuln.Repo = &rhcc.GoldRepo
+				vuln.Range, err = ranger.add(pkgName, vuln.FixedInVersion)
+				if err != nil {
+					zlog.Warn(ctx).
+						Str("FixedInVersion", vuln.FixedInVersion).
+						Err(err).
+						Msg("could not parse version into range")
+					continue
+				}
 			}
 		}
 
-		vuln := protoVulnFunc()
 		// What is the deal here? Just stick the package name in and f-it?
 		// That's the plan so far as there's no PURL product ID helper.
 		vuln.Package = &claircore.Package{
@@ -321,14 +349,9 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v csaf.Vulne
 			Kind:   claircore.SOURCE,
 			Module: modName,
 		}
-		ch := escapeCPE(cpeHelper)
-		wfn, err := cpe.Unbind(ch)
-		if err != nil {
-			return nil, fmt.Errorf("could not unbind cpe: %s %w", ch, err)
-		}
-		vuln.Repo = c.rc.Get(wfn)
 		sc := c.c.FindScore(pc)
 		if sc != nil {
+			var err error
 			vuln.Severity, err = cvssVectorFromScore(sc)
 			if err != nil {
 				return nil, fmt.Errorf("could not parse CVSS score: %w, file: %s", err, c.vulnLink)
@@ -344,6 +367,7 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v csaf.Vulne
 		}
 		out = append(out, vuln)
 	}
+	ranger.resetLowest()
 	if len(unrelatedProductIDs) > 0 {
 		zlog.Debug(ctx).
 			Strs("product_ids", unrelatedProductIDs).
@@ -368,9 +392,58 @@ func (c *creator) lookupVulnerability(vulnKey string, protoVulnFunc func() *clai
 	return &c.fixedVulns[idx], ok
 }
 
+type ranger struct {
+	lowest map[string]*claircore.Range
+}
+
+func newRanger() *ranger {
+	return &ranger{
+		lowest: map[string]*claircore.Range{},
+	}
+}
+
+// Add takes a packageName and a fixedInVersion and returns a *claircore.Range relating
+// to the fixedInVersion. Add also saves the lowest range per packageName that it's seen.
+// This allows resetLowest() to zero out the lowest values we saw per packageName.
+func (r *ranger) add(packageName, fixedInVersion string) (*claircore.Range, error) {
+	var rng = &claircore.Range{}
+
+	if fixedInVersion == "" {
+		zeroVer := &rhctag.Version{}
+		rng.Lower = zeroVer.Version(true)
+		highestVer := rhctag.Version{
+			Major: math.MaxInt32, // Everything is vulnerable
+		}
+		rng.Upper = highestVer.Version(true)
+	} else {
+		firstPatch, err := rhctag.Parse(fixedInVersion)
+		if err != nil {
+			return nil, err
+		}
+		rng.Upper = firstPatch.Version(false)
+		rng.Lower = firstPatch.Version(true)
+	}
+	curLow := r.lowest[packageName]
+	if curLow == nil || rng.Lower.Compare(&curLow.Lower) == -1 {
+		// If the vulns version is less than our current lower for that package, switch it.
+		r.lowest[packageName] = rng
+	}
+
+	return rng, nil
+}
+
+// ResetLowest Zeros out all the lowest versions' lower bounds
+func (r *ranger) resetLowest() {
+	zeroVer := &rhctag.Version{}
+	for _, r := range r.lowest {
+		r.Lower = zeroVer.Version(true)
+	}
+}
+
 // FixedVulnerabilities processes the "fixed" array of products in the
 // VEX object.
 func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability, protoVulnFunc func() *claircore.Vulnerability) ([]*claircore.Vulnerability, error) {
+	ranger := newRanger()
 	unrelatedProductIDs := []string{}
 	debugEnabled := zlog.Debug(ctx).Enabled()
 	for _, pc := range v.ProductStatus["fixed"] {
@@ -434,27 +507,34 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 				Msg("could not parse PURL")
 			continue
 		}
-		if strings.HasPrefix(purl.Name, "kernel") {
-			// We don't want to ingest kernel advisories as
-			// containers have no say in the kernel.
+		if !checkPURL(purl) {
 			continue
 		}
-		if purl.Type != packageurl.TypeRPM || purl.Namespace != "redhat" {
-			// Just ingest advisories that are Red Hat RPMs, this will
-			// probably change down the line when we consolidate updaters.
+		fixedIn, err := extractFixedInVersion(purl)
+		if err != nil {
+			zlog.Warn(ctx).
+				Str("purl", purl.String()).
+				Err(err).
+				Msg("error extracting fixed_in version from pURL")
 			continue
 		}
-
-		fixedIn := epochVersion(&purl)
+		packageName, err := extractPackageName(purl)
+		if err != nil {
+			zlog.Warn(ctx).
+				Str("purl", purl.String()).
+				Err(err).
+				Msg("error extracting package name from pURL")
+			continue
+		}
 		vulnKey := createPackageKey(repoName, modName, purl.Name, fixedIn)
-		arch := purl.Qualifiers.Map()["arch"]
+		arch := extractArch(purl)
 		if vuln, ok := c.lookupVulnerability(vulnKey, protoVulnFunc); ok && arch != "" {
 			// We've already found this package, just append the arch
 			vuln.Package.Arch = vuln.Package.Arch + "|" + arch
 		} else {
 			vuln.FixedInVersion = fixedIn
 			vuln.Package = &claircore.Package{
-				Name:   purl.Name,
+				Name:   packageName,
 				Kind:   claircore.BINARY,
 				Module: modName,
 			}
@@ -463,13 +543,28 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 				vuln.Package.Arch = arch
 				vuln.ArchOperation = claircore.OpPatternMatch
 			}
-
-			ch := escapeCPE(cpeHelper)
-			wfn, err := cpe.Unbind(ch)
-			if err != nil {
-				return nil, fmt.Errorf("could not unbind cpe: %s %w", ch, err)
+			switch purl.Type {
+			case packageurl.TypeRPM:
+				ch := escapeCPE(cpeHelper)
+				wfn, err := cpe.Unbind(ch)
+				if err != nil {
+					return nil, fmt.Errorf("could not unbind cpe: %s %w", cpeHelper, err)
+				}
+				vuln.Repo = c.rc.Get(wfn)
+			case packageurl.TypeOCI:
+				vuln.Repo = &rhcc.GoldRepo
+				vuln.Range, err = ranger.add(packageName, vuln.FixedInVersion)
+				if err != nil {
+					zlog.Warn(ctx).
+						Str("FixedInVersion", vuln.FixedInVersion).
+						Err(err).
+						Msg("could not parse version into range")
+					continue
+				}
+			default:
+				continue
 			}
-			vuln.Repo = c.rc.Get(wfn)
+
 			// Find remediations and add RHSA URL to links
 			rem := c.c.FindRemediation(pc)
 			if rem != nil {
@@ -492,6 +587,7 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 			}
 		}
 	}
+	ranger.resetLowest()
 	if len(unrelatedProductIDs) > 0 {
 		zlog.Debug(ctx).
 			Strs("product_ids", unrelatedProductIDs).
@@ -587,12 +683,91 @@ func createPackageModule(p *csaf.Product) (string, error) {
 	return modName, nil
 }
 
-func epochVersion(purl *packageurl.PackageURL) string {
-	epoch := "0"
-	if e, ok := purl.Qualifiers.Map()["epoch"]; ok {
-		epoch = e
+// ExtractFixedInVersion deals with 2 pURL types, TypeRPM and TypeOCI
+//   - TypeOCI: return the tag qualifier.
+//   - TypeRPM: check for an epoch qualifier and prepend it to the purl.Version.
+//     If no epoch qualifier, default to 0.
+func extractFixedInVersion(purl packageurl.PackageURL) (string, error) {
+	switch purl.Type {
+	case packageurl.TypeOCI:
+		t, ok := purl.Qualifiers.Map()["tag"]
+		if !ok {
+			return "", fmt.Errorf("could not find tag qualifier for OCI purl type %s", purl.String())
+		}
+		return t, nil
+	case packageurl.TypeRPM:
+		epoch := "0"
+		if e, ok := purl.Qualifiers.Map()["epoch"]; ok {
+			epoch = e
+		}
+		return epoch + ":" + purl.Version, nil
+	default:
+		return "", fmt.Errorf("unexpected purl type %s", purl.Type)
 	}
-	return epoch + ":" + purl.Version
+}
+
+// ExtractPackageName deals with 2 pURL types, TypeRPM and TypeOCI
+//   - TypeOCI: check if there is Namespace and Name i.e. rhel7/rhel-atomic
+//     and return that, if not, check for a repository_url qualifier. If the
+//     repository_url exists then use the namespace/name part, if not, use
+//     the purl.Name.
+//   - TypeRPM: Just return the purl.Name.
+func extractPackageName(purl packageurl.PackageURL) (string, error) {
+	switch purl.Type {
+	case packageurl.TypeOCI:
+		if purl.Namespace != "" {
+			return purl.Namespace + "/" + purl.Name, nil
+		}
+		// Try finding an image name from the tag qualifier
+		ru, ok := purl.Qualifiers.Map()["repository_url"]
+		if !ok {
+			return purl.Name, nil
+		}
+		_, image, found := strings.Cut(ru, "/")
+		if !found {
+			return "", fmt.Errorf("invalid repository_url for OCI pURL type %s", purl.String())
+		}
+		return image, nil
+	case packageurl.TypeRPM:
+		return purl.Name, nil
+	default:
+		return "", fmt.Errorf("unexpected purl type %s", purl.Type)
+	}
+}
+
+var acceptedTypes = map[string]bool{
+	packageurl.TypeOCI: true,
+	packageurl.TypeRPM: true,
+}
+
+// CheckPURL checks if purl is something we're interested in.
+//  1. Check the purl.Type is in the acceptable types.
+//  2. Check if an advisory related to the kernel.
+//  3. Check that all RPMs are in the "redhat" namespace.
+func checkPURL(purl packageurl.PackageURL) bool {
+	if ok := acceptedTypes[purl.Type]; !ok {
+		return false
+	}
+	if strings.HasPrefix(purl.Name, "kernel") {
+		// We don't want to ingest kernel advisories as
+		// containers have no say in the kernel.
+		return false
+	}
+	if purl.Type == packageurl.TypeRPM && purl.Namespace != "redhat" {
+		// Not Red Hat rpm content.
+		return false
+	}
+	return true
+}
+
+func extractArch(purl packageurl.PackageURL) string {
+	arch := purl.Qualifiers.Map()["arch"]
+	switch arch {
+	case "amd64", "x86_64":
+		return "amd64|x86_64"
+	default:
+		return arch
+	}
 }
 
 func escapeCPE(ch string) string {

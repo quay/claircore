@@ -172,3 +172,54 @@ func TestOrdering(t *testing.T) {
 		t.Run(tc.Name, tc.Run)
 	}
 }
+
+type renderTestcase struct {
+	name                  string
+	versionIn             string
+	min                   bool
+	expectedVersionString string
+}
+
+func (tc renderTestcase) Run(t *testing.T) {
+	v, err := Parse(tc.versionIn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ccVer := v.Version(tc.min)
+	rv := &ccVer
+	if rv.String() != tc.expectedVersionString {
+		t.Errorf("unexpected version %s but expected %s", rv.String(), tc.expectedVersionString)
+	}
+}
+
+func TestRendering(t *testing.T) {
+	testcases := []renderTestcase{
+		{
+			name:                  "no_min",
+			min:                   false,
+			versionIn:             "1.9.0-9",
+			expectedVersionString: "1!9.2147483647",
+		},
+		{
+			name:                  "with_min",
+			min:                   true,
+			versionIn:             "1.9.0-9",
+			expectedVersionString: "1!9",
+		},
+		{
+			name:                  "with_v",
+			min:                   true,
+			versionIn:             "v3.4.0-2",
+			expectedVersionString: "3!4",
+		},
+		{
+			name:                  "check_minor",
+			min:                   true,
+			versionIn:             "v3.5.7-8",
+			expectedVersionString: "3!5",
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.name, tc.Run)
+	}
+}

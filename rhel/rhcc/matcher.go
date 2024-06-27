@@ -26,7 +26,7 @@ func (*matcher) Name() string { return "rhel-container-matcher" }
 // Filter implements [driver.Matcher].
 func (*matcher) Filter(r *claircore.IndexRecord) bool {
 	return r.Repository != nil &&
-		r.Repository.Name == goldRepo.Name
+		r.Repository.Name == GoldRepo.Name
 }
 
 // Query implements [driver.Matcher].
