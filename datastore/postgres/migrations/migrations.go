@@ -112,4 +112,8 @@ var MatcherMigrations = []migrate.Migration{
 		ID: 13,
 		Up: runFile("matcher/13-delete-rhel-oval.sql"),
 	},
+	{
+		ID: 14,
+		Up: runFile("matcher/14-delete-rhcc-vulns.sql"),
+	},
 }
