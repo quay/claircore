@@ -25,7 +25,7 @@ import (
 const (
 	name    = "dpkg"
 	kind    = "package"
-	version = "6"
+	version = "7"
 )
 
 var (
@@ -105,7 +105,12 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 		} else {
 			found.Reset()
 		}
-		if err := loadDatabase(ctx, sys, p, found, &pkgs); err != nil {
+		err := loadDatabase(ctx, sys, p, found, &pkgs)
+		switch {
+		case err == nil:
+		case errors.Is(err, errNotDpkgDB):
+			zlog.Info(ctx).AnErr("reason", err).Msg("skipping possible database")
+		default:
 			return nil, err
 		}
 	}
@@ -116,6 +121,10 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 
 	return pkgs, nil
 }
+
+// ErrNotDpkgDB is reported internally when a possible database makes it to the
+// parsing stage but doesn't contain the correct data.
+var errNotDpkgDB = errors.New("not a dpkg database")
 
 type packages struct {
 	bin map[string]*claircore.Package
@@ -220,7 +229,12 @@ func loadDatabase(ctx context.Context, sys fs.FS, dir string, found *packages, o
 
 // ParseStatus parses the dpkg "status" file in "tp".
 //
+// A status file (apparently -- this doesn't seem to be documented) is
+// double-newline separated [deb-control(5)] records.
+//
 // Packages are stored in "found".
+//
+// [deb-control(5)]: https://manpages.debian.org/unstable/dpkg-dev/deb-control.5.en.html
 func parseStatus(ctx context.Context, found *packages, fn string, tp *textproto.Reader) error {
 Restart:
 	hdr, err := tp.ReadMIMEHeader()
@@ -239,11 +253,35 @@ Restart:
 		}
 		name := hdr.Get("Package")
 		v := hdr.Get("Version")
+		arch := hdr.Get("Architecture")
+
+		// Is this a valid package?
+		//
+		// Per deb-control(5), these are the required fields.
+		if name == "" || v == "" || arch == "" {
+			// Is this file a vcpkg database?
+			//
+			// These are keys not used by dpkg, but used by vcpkg. Vcpkg is
+			// documented to name this file "CONTROL", but it's been seen in the
+			// wild named "status".
+			//
+			// See also: https://learn.microsoft.com/en-us/vcpkg/maintainers/control-files
+			for _, k := range []string{`Port-Version`, `Default-Features`, `Feature`} {
+				k = textproto.CanonicalMIMEHeaderKey(k)
+				if _, exists := hdr[k]; exists {
+					// No; signal this file should be ignored.
+					return errNotDpkgDB
+				}
+			}
+			// Probably; report there's an invalid package.
+			return fmt.Errorf("dpkg: invalid package: missing required fields (Package: %q, Version: %q)", name, v)
+		}
+
 		p := &claircore.Package{
 			Name:      name,
 			Version:   v,
 			Kind:      claircore.BINARY,
-			Arch:      hdr.Get("Architecture"),
+			Arch:      arch,
 			PackageDB: fn,
 		}
 		if src := hdr.Get("Source"); src != "" {

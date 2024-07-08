@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bufio"
 	"context"
+	"errors"
 	"io"
 	"net/textproto"
 	"os"
@@ -1008,6 +1009,27 @@ func TestParsedSource(t *testing.T) {
 	got, want = src.Version, "200+deb10u5"
 	t.Logf("got: %q, want: %q", got, want)
 	if got != want {
+		t.Fail()
+	}
+}
+
+// See quay/claircore#1359
+func TestNotDB(t *testing.T) {
+	t.Parallel()
+	const filename = `testdata/vcpkg.status`
+	ctx := zlog.Test(context.Background(), t)
+
+	db, err := os.Open(filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := newPackages()
+	tp := textproto.NewReader(bufio.NewReader(db))
+
+	got := parseStatus(ctx, found, filename, tp)
+	t.Logf("got: %v", got)
+	if want := errNotDpkgDB; !errors.Is(got, want) {
+		t.Logf("want: %v", want)
 		t.Fail()
 	}
 }

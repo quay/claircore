@@ -1,0 +1,219 @@
+Package: libffi
+Version: 3.3
+Architecture: x64-windows
+Multi-Arch: same
+Abi: 712ed0e4431b356d2392012a2d8963da19ddb7e0
+Description: Portable, high level programming interface to various calling conventions
+Type: Port
+Status: install ok installed
+
+Package: zlib
+Version: 1.2.11-6
+Architecture: x64-windows
+Multi-Arch: same
+Abi: 00662fc5e607fe54d2ed6002f3b3dffb70e43561
+Description: A compression library
+Type: Port
+Status: install ok installed
+
+Package: curl
+Version: 7.68.0-1
+Depends: zlib
+Architecture: x64-windows
+Multi-Arch: same
+Abi: 66aaac54c2d8530c7763a75d644cc7630e994121
+Description: A library for transferring data with URLs
+Type: Port
+Status: install ok installed
+
+Package: curl
+Feature: non-http
+Architecture: x64-windows
+Multi-Arch: same
+Description: Enables protocols beyond HTTP/HTTPS/HTTP2
+Type: Port
+Status: install ok installed
+
+Package: curl
+Feature: ssl
+Depends: curl
+Architecture: x64-windows
+Multi-Arch: same
+Description: Default SSL backend
+Type: Port
+Status: install ok installed
+
+Package: curl
+Feature: winssl
+Architecture: x64-windows
+Multi-Arch: same
+Description: SSL support (Secure Channel / "WinSSL")
+Type: Port
+Status: install ok installed
+
+Package: bzip2
+Version: 1.0.6-5
+Architecture: x64-windows
+Multi-Arch: same
+Abi: 72ba4da48d5d2a5960f2b4f30285ed1e005742d9
+Description: High-quality data compressor.
+Type: Port
+Status: install ok installed
+
+Package: liblzma
+Version: 5.2.4-4
+Architecture: x64-windows
+Multi-Arch: same
+Abi: efe52e2ddcd9df4d5c6ee758cd0ddbad199282b4
+Description: Compression library with an API similar to that of zlib.
+Type: Port
+Status: install ok installed
+
+Package: libiconv
+Version: 1.16-1
+Architecture: x64-windows
+Multi-Arch: same
+Abi: 8e01c6a6ffa478cd7282a38ad4d9e33c741b2248
+Description: GNU Unicode text conversion
+Type: Port
+Status: install ok installed
+
+Package: libxml2
+Version: 2.9.9-5
+Depends: libiconv, liblzma, zlib
+Architecture: x64-windows
+Multi-Arch: same
+Abi: 28184c787b852db2b039ed16d9bfee7c7ad018fb
+Description: Libxml2 is the XML C parser and toolkit developed for the Gnome project (but usable outside of the Gnome platform)
+Type: Port
+Status: install ok installed
+
+Package: xxhash
+Version: 0.7.0
+Architecture: x64-windows
+Multi-Arch: same
+Abi: 73001da5f2bec5955370df0528e1e4c42c850aea
+Description: Extremely fast hash algorithm
+Type: Port
+Status: install ok installed
+
+Package: lz4
+Version: 1.9.2
+Depends: xxhash
+Architecture: x64-windows
+Multi-Arch: same
+Abi: a34260c765ccbabb88be0ad1e22db197ef3fa9d1
+Description: Lossless compression algorithm, providing compression speed at 400 MB/s per core.
+Type: Port
+Status: install ok installed
+
+Package: lzo
+Version: 2.10-4
+Architecture: x64-windows
+Multi-Arch: same
+Abi: 4462822fd6949c570d995ff53b3dcc176f776e96
+Description: Lossless data compression library
+Type: Port
+Status: install ok installed
+
+Package: openssl-windows
+Version: 1.1.1d-1
+Architecture: x64-windows
+Multi-Arch: same
+Abi: b60d9e665f44db8f1ecf46999d3a119a60cf85bf
+Description: OpenSSL is an open source project that provides a robust, commercial-grade, and full-featured toolkit for the Transport Layer Security (TLS) and Secure Sockets Layer (SSL) protocols. It is also a general-purpose cryptography library.
+Type: Port
+Status: install ok installed
+
+Package: openssl
+Version: 1.1.1d
+Depends: openssl-windows
+Architecture: x64-windows
+Multi-Arch: same
+Abi: 4ba25726d4eb953d9f9051f22b6336586169ee79
+Description: OpenSSL is an open source project that provides a robust, commercial-grade, and full-featured toolkit for the Transport Layer Security (TLS) and Secure Sockets Layer (SSL) protocols. It is also a general-purpose cryptography library.
+Type: Port
+Status: install ok installed
+
+Package: libarchive
+Version: 3.4.1
+Depends: zlib
+Architecture: x64-windows
+Multi-Arch: same
+Abi: ba1215581a0d9c103604109cfeb3f92673b9754d
+Description: Library for reading and writing streaming archives
+Type: Port
+Status: install ok installed
+
+Package: libarchive
+Feature: bzip2
+Depends: bzip2
+Architecture: x64-windows
+Multi-Arch: same
+Description: BZip2 support
+Type: Port
+Status: install ok installed
+
+Package: libarchive
+Feature: libxml2
+Depends: libxml2
+Architecture: x64-windows
+Multi-Arch: same
+Description: Libxml2 support
+Type: Port
+Status: install ok installed
+
+Package: libarchive
+Feature: lz4
+Depends: lz4
+Architecture: x64-windows
+Multi-Arch: same
+Description: LZ4 support
+Type: Port
+Status: install ok installed
+
+Package: libarchive
+Feature: lzma
+Depends: liblzma
+Architecture: x64-windows
+Multi-Arch: same
+Description: LZMA support
+Type: Port
+Status: install ok installed
+
+Package: libarchive
+Feature: lzo
+Depends: lzo
+Architecture: x64-windows
+Multi-Arch: same
+Description: LZO support
+Type: Port
+Status: install ok installed
+
+Package: libarchive
+Feature: openssl
+Depends: openssl
+Architecture: x64-windows
+Multi-Arch: same
+Description: OpenSSL support
+Type: Port
+Status: install ok installed
+
+Package: libressl
+Version: 2.9.1-2
+Architecture: x64-windows
+Multi-Arch: same
+Abi: faa3fe00496397545d489c14b1a14c25143d91bd
+Description: LibreSSL is a version of the TLS/crypto stack forked from OpenSSL in 2014, with goals of modernizing the codebase, improving security, and applying best practice development processes.
+Type: Port
+Status: install ok installed
+
+Package: libffi
+Version: 3.3
+Architecture: x86-windows
+Multi-Arch: same
+Abi: 26fac73eca7ab28cad695055b44f461dace1fc39
+Description: Portable, high level programming interface to various calling conventions
+Type: Port
+Status: install ok installed
+
