@@ -18,7 +18,7 @@ graph TD
 	subgraph Matcher
 		dbv[Check versions in-database]
 		ma[Filter interested packages]
-		adv[Retrive vulnerabilty information]
+		adv[Retrieve vulnerability information]
 		mv[Deicide vulnerability]
 		ma --> adv --> mv
 		adv -.-> dbv -.-> mv

@@ -24,7 +24,7 @@ stateDiagram-v2
 %% note right of FetchLayers: Determine which layers need to be indexed and fetch them.
 %% note right of ScanLayers: Concurrently run needed Indexers on layers.
 %% note right of Coalesce: Compute the final contents of the container image.
-%% note right of IndexManifest: Associate all the discoved data.
+%% note right of IndexManifest: Associate all the discovered data.
 %% note right of IndexFinished: Persist the results.
 ```
 
