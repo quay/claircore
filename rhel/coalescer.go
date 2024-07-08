@@ -25,7 +25,7 @@ var _ indexer.Coalescer = (*Coalescer)(nil)
 // Coalesce implements [indexer.Coalescer].
 func (*Coalescer) Coalesce(ctx context.Context, artifacts []*indexer.LayerArtifacts) (*claircore.IndexReport, error) {
 	// The comments in here have been largely audited to have consistent language, but
-	// "CPE," "repository," and "product" may be used interchangably here.
+	// "CPE," "repository," and "product" may be used interchangeably here.
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
@@ -38,7 +38,7 @@ func (*Coalescer) Coalesce(ctx context.Context, artifacts []*indexer.LayerArtifa
 
 	// User layers built on top of Red Hat images don't have product CPEs associated with them.
 	// We need to share the product information forward to all layers where it's missing.
-	// This only applies to Red Hat images, obivously.
+	// This only applies to Red Hat images, obviously.
 	var prev []*claircore.Repository
 	for i := range artifacts {
 		lr := filterRedHatRepos(artifacts[i].Repos)

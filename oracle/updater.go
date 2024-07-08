@@ -73,7 +73,7 @@ var (
 	_ driver.Configurable = (*Updater)(nil)
 )
 
-// Name satifies the driver.Updater interface.
+// Name satisfies the driver.Updater interface.
 func (u *Updater) Name() string {
 	which := `all`
 	if u.year != -1 {

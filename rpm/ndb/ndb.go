@@ -77,7 +77,7 @@ func (db *XDB) Parse(r io.ReaderAt) error {
 	return nil
 }
 
-// Index reports the index for the specifed tag.
+// Index reports the index for the specified tag.
 func (db *XDB) Index(tag rpm.Tag) (*Index, error) {
 	slot, ok := db.lookup[tag]
 	if !ok {

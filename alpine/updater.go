@@ -35,7 +35,7 @@ var (
 // Factory is an UpdaterSetFactory for ingesting an Alpine SecDB.
 //
 // Factory expects to be able to discover a directory layout like the one at [https://secdb.alpinelinux.org/] at the configured URL.
-// More explictly, it expects:
+// More explicitly, it expects:
 // - a "last-update" file with opaque contents that change when any constituent database changes
 // - contiguously numbered directories with the name "v$maj.$min" starting with "maj" as "3" and "min" as at most "3"
 // - JSON files inside those directories named "main.json" or "community.json"

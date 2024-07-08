@@ -40,7 +40,7 @@ func (c *Coalescer) Coalesce(ctx context.Context, layerArtifacts []*indexer.Laye
 	}
 
 	// walk layers backwards, grouping packages by package databases the first time we see them.
-	// at the end of this loop we have searched all layers for the newest occurence of a
+	// at the end of this loop we have searched all layers for the newest occurrence of a
 	// package database.
 	dbs := make(map[string][]*claircore.Package)
 	for i := len(layerArtifacts) - 1; i >= 0; i-- {

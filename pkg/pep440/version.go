@@ -28,7 +28,7 @@ func init() {
 	pattern = regexp.MustCompile(r)
 }
 
-// Version repesents a canonical-ish represention of a PEP440 version.
+// Version is a canonical-ish representation of a PEP440 version.
 //
 // Local revisions are discarded.
 type Version struct {
@@ -43,7 +43,7 @@ type Version struct {
 }
 
 // Version returns a fixed-width slice of integers meant for allowing some
-// amount of version comparision with no knowledge of the version scheme.
+// amount of version comparison with no knowledge of the version scheme.
 //
 // In generating this slice, the following rules are applied:
 //
@@ -61,7 +61,7 @@ func (v *Version) Version() (c claircore.Version) {
 		post  = 8
 		dev   = 9
 	)
-	// BUG(hank) The int-slice versioning method tries to accomdate arbitrary
+	// BUG(hank) The int-slice versioning method tries to accommodate arbitrary
 	// numbers, but may give odd results with sufficiently large revision
 	// numbers. One suggested workaround is to make fewer than 9 quintillion
 	// releases.

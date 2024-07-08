@@ -191,11 +191,11 @@ func (l *Libvuln) GC(ctx context.Context) (int64, error) {
 }
 
 // GCFull will run garbage collection until all expired update operations
-// and stale vulnerabilites are removed in accordance with the UpdateRetention
+// and stale vulnerabilities are removed in accordance with the UpdateRetention
 // value.
 //
 // GCFull may return an error accompanied by its other return value,
-// the number of oustanding update operations not deleted.
+// the number of outstanding update operations not deleted.
 func (l *Libvuln) GCFull(ctx context.Context) (int64, error) {
 	if l.updateRetention == 0 {
 		return 0, fmt.Errorf("gc is disabled")

@@ -54,7 +54,7 @@ type Updater interface {
 	Fetch(context.Context, *zip.Writer, Fingerprint, *http.Client) (Fingerprint, error)
 }
 
-// VulnerabilityParser takes a provided fs and reports the Vulnerabilites
+// VulnerabilityParser takes a provided fs and reports the Vulnerabilities
 // found.
 //
 // The returned ParsedVulnerabilites object may have its "Updater" member

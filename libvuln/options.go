@@ -15,7 +15,7 @@ const (
 )
 
 type Options struct {
-	// Store is the interface used to persist and retrieve vulnerabilites
+	// Store is the interface used to persist and retrieve vulnerabilities
 	// for of matching.
 	Store datastore.MatcherStore
 	// Locker provides system-wide locks for the updater subsystem. If the

@@ -6,6 +6,6 @@ type Manifest struct {
 	// content addressable hash. should be able to be computed via
 	// the hashes of all included layers
 	Hash Digest `json:"hash"`
-	// an array of filesystem layers indexed in the same order as the cooresponding image
+	// an array of filesystem layers indexed in the same order as the corresponding image
 	Layers []*Layer `json:"layers"`
 }

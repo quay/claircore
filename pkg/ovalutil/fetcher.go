@@ -23,7 +23,7 @@ type Compressor uint
 //go:generate -command stringer go run golang.org/x/tools/cmd/stringer
 //go:generate stringer -type Compressor -linecomment
 
-// These are the kinds of Compession a Fetcher can deal with.
+// These are the kinds of compression a Fetcher can deal with.
 const (
 	CompressionAuto  Compressor = iota // auto
 	CompressionNone                    // none

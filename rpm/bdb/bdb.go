@@ -246,7 +246,7 @@ func (db *PackageDB) AllHeaders(ctx context.Context) ([]io.ReaderAt, error) {
 	return ret, nil
 }
 
-// Validate currently here to fulfil an interface.
+// Validate is currently here to fulfill an interface.
 func (db *PackageDB) Validate(_ context.Context) error {
 	return nil
 }

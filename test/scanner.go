@@ -6,7 +6,7 @@ import (
 	"github.com/quay/claircore/indexer"
 )
 
-// GenUniquePackageScanners creates n number of unique PackageScanners. the array is gauranteed to not have
+// GenUniquePackageScanners creates n number of unique PackageScanners. the array is guaranteed to not have
 // any scanner fields be duplicates
 func GenUniquePackageScanners(n int) indexer.VersionedScanners {
 	var vscnrs = []indexer.VersionedScanner{}
@@ -19,7 +19,7 @@ func GenUniquePackageScanners(n int) indexer.VersionedScanners {
 	return vscnrs
 }
 
-// GenUniqueDistributionScanners creates n number of unique DistributionScanners. the array is gauranteed to not have
+// GenUniqueDistributionScanners creates n number of unique DistributionScanners. the array is guaranteed to not have
 // any scanner fields be duplicates
 func GenUniqueDistributionScanners(n int) indexer.VersionedScanners {
 	var vscnrs = []indexer.VersionedScanner{}
@@ -32,7 +32,7 @@ func GenUniqueDistributionScanners(n int) indexer.VersionedScanners {
 	return vscnrs
 }
 
-// GenUniqueRepositoryScanners creates n number of unique RepositoryScanners. the array is gauranteed to not have
+// GenUniqueRepositoryScanners creates n number of unique RepositoryScanners. the array is guaranteed to not have
 // any scanner fields be duplicates
 func GenUniqueRepositoryScanners(n int) indexer.VersionedScanners {
 	var vscnrs = []indexer.VersionedScanner{}

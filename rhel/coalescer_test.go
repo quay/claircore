@@ -23,7 +23,7 @@ func TestCoalescer(t *testing.T) {
 	// 1) packages before a distribution was discovered are tagged with
 	//    the first distribution found
 	// 2) all packages found after a subsequent distribution is located
-	//    are tagged wih this distribution
+	//    are tagged with this distribution
 	pkgs := test.GenUniquePackages(6)
 	dists := test.GenUniqueDistributions(3) // we will discard dist 0 due to zero value ambiguity
 	layerArtifacts := []*indexer.LayerArtifacts{

@@ -332,7 +332,7 @@ func (l *Locker) unlock(ctx context.Context, key string, kb []byte, gen int, nex
 			return
 		}
 
-		// If the parent context has been cancelled, create a new short-lived
+		// If the parent context has been canceled, create a new short-lived
 		// one to time-box our query.
 		var done context.CancelFunc
 		if err := ctx.Err(); err != nil {

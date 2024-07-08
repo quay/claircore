@@ -56,7 +56,7 @@ func WithEnabled(enabled []string) ManagerOption {
 //
 // Configuration of individual updaters is delegated to updater/registry.go
 // Note: this option is optimal when ran after WithEnabled option. However,
-// this option has no strict depedency on others.
+// this option has no strict dependency on others.
 func WithConfigs(cfgs Configs) ManagerOption {
 	return func(m *Manager) {
 		m.configs = cfgs

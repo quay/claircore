@@ -90,7 +90,7 @@ func parseContainerPackage(p string) (bool, string, string) {
 	return true, parts[0], parts[1]
 }
 
-// Prefer Red Hat descriptions over Mitre ones
+// Prefer Red Hat descriptions over MITRE ones
 func getDescription(ds []details) string {
 	rhDetailsIdx := -1
 	mitreDetailsIdx := -1

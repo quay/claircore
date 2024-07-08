@@ -132,7 +132,7 @@ func (ls *LayerScanner) Scan(ctx context.Context, manifest claircore.Digest, lay
 	g, ctx := errgroup.WithContext(ctx)
 	// Using the goroutine's built-in limit is worst-case the same as using an
 	// external semaphore (spawn N goroutines and immediately wait on M of them,
-	// waits cancelling when the first error is returned) but putting the
+	// waits canceling when the first error is returned) but putting the
 	// Context check in the "Layers" loop means we only spawn max 3 extra goroutines
 	// that will immediately return.
 	g.SetLimit(ls.inflight)

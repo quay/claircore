@@ -138,7 +138,7 @@ func (s *Controller) run(ctx context.Context) (err error) {
 			// be a retry.
 			err = nil
 		}
-		// This if statement preserves current behaviour of not setting
+		// This if statement preserves current behavior of not setting
 		// currentState to Terminal when it's returned. This should be an
 		// internal detail, but is codified in the tests (for now).
 		if next == Terminal {

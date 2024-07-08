@@ -33,7 +33,7 @@ func WithEnabled(enabled []string) MatchersOption {
 //
 // Configuration of individual matchers is delegated to matchers/registry/registry.go
 // Note: this option is optimal when ran after WithEnabled option. However,
-// this option has no strict depedency on others.
+// this option has no strict dependency on others.
 func WithConfigs(cfgs Configs) MatchersOption {
 	return func(m *Matchers) {
 		m.configs = cfgs

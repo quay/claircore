@@ -27,10 +27,10 @@ type Store interface {
 
 // Locker is the Context-based locking Updater expects.
 type Locker interface {
-	// TryLock returns a cancelled Context if it would need to wait to acquire
+	// TryLock returns a canceled Context if it would need to wait to acquire
 	// the named lock.
 	TryLock(context.Context, string) (context.Context, context.CancelFunc)
 	// Lock waits to acquire the named lock. The returned Context may be
-	// cancelled if the process loses confidence that the lock is valid.
+	// canceled if the process loses confidence that the lock is valid.
 	Lock(context.Context, string) (context.Context, context.CancelFunc)
 }
