@@ -1,7 +1,6 @@
 package cvss
 
 import (
-	"bytes"
 	"encoding"
 	"fmt"
 	"strings"
@@ -22,46 +21,6 @@ var (
 // ParseV3 parses the provided string as a v3 vector.
 func ParseV3(s string) (v V3, err error) {
 	return v, v.UnmarshalText([]byte(s))
-}
-
-// UnmarshalText implements [encoding.TextUnmarshaler].
-func (v *V3) UnmarshalText(text []byte) error {
-	v.ver = -1
-	versionHook := func(ver string) error {
-		maj, min, ok := strings.Cut(ver, ".")
-		if !ok || maj != "3" {
-			return fmt.Errorf("%w: bad version: %q", ErrMalformedVector, ver)
-		}
-		switch min {
-		case "0":
-			v.ver = 0
-		case "1":
-			v.ver = 1
-		default:
-			return fmt.Errorf("%w: bad minor version: %q", ErrMalformedVector, ver)
-		}
-		return nil
-	}
-	err := parseStringLax(v.mv[:], versionHook, v3Rev, string(text))
-	if err != nil {
-		return fmt.Errorf("cvss v3: %w", err)
-	}
-	if v.ver == -1 { // If the versionHook never set the version
-		return fmt.Errorf("cvss v3: %w", ErrMalformedVector)
-	}
-	for m, b := range v.mv[:V3Availability+1] { // range inclusive
-		if b == 0 {
-			return fmt.Errorf("cvss v3: %w: missing metric: %q", ErrMalformedVector, V3Metric(m).String())
-		}
-	}
-	chk, err := v.MarshalText()
-	if err != nil {
-		return fmt.Errorf("cvss v3: %w", err)
-	}
-	if !bytes.Equal(chk, text) {
-		return fmt.Errorf("cvss v3: malformed input")
-	}
-	return nil
 }
 
 // MarshalText implements [encoding.TextMarshaler].
