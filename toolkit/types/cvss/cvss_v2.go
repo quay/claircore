@@ -1,7 +1,6 @@
 package cvss
 
 import (
-	"bytes"
 	"encoding"
 	"fmt"
 	"strings"
@@ -21,30 +20,6 @@ var (
 // ParseV2 parses the provided string as a v2 vector.
 func ParseV2(s string) (v V2, err error) {
 	return v, v.UnmarshalText([]byte(s))
-}
-
-// UnmarshalText implements [encoding.TextUnmarshaler].
-func (v *V2) UnmarshalText(text []byte) error {
-	disallow := func(_ string) error {
-		return fmt.Errorf("unknown metric %q", "CVSS")
-	}
-	err := parseStringLax(v.mv[:], disallow, v2Rev, string(text))
-	if err != nil {
-		return fmt.Errorf("cvss v2: %w", err)
-	}
-	for m, b := range v.mv[:V2Availability+1] { // range inclusive
-		if b == 0 {
-			return fmt.Errorf("cvss v2: %w: missing metric: %q", ErrMalformedVector, V3Metric(m).String())
-		}
-	}
-	chk, err := v.MarshalText()
-	if err != nil {
-		return fmt.Errorf("cvss v2: %w", err)
-	}
-	if !bytes.Equal(chk, text) {
-		return fmt.Errorf("cvss v2: malformed input")
-	}
-	return nil
 }
 
 // MarshalText implements [encoding.TextMarshaler].
