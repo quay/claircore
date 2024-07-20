@@ -141,9 +141,6 @@ const (
 	numV3Metrics int = iota
 )
 
-// Parse implements [Metric].
-func (m V3Metric) parse(v string) byte { return v[0] }
-
 // Valid implements [Metric].
 func (m V3Metric) validValues() string { return v3Valid(m).String() }
 

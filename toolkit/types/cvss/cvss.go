@@ -38,7 +38,6 @@ import (
 	"encoding"
 	"errors"
 	"fmt"
-	"math/bits"
 	"strings"
 )
 
@@ -46,10 +45,14 @@ import (
 This package is organized according to the CVSS version;
 all the needed functionality specific to a version should be grouped into files with a "cvss_vN" prefix, where "N" is the major version number.
 
-The implementations usually abuse the lookup table created by the [stringer] tool to implement parsing and validation.
+The implementations usually abuse the lookup table created by the [stringer] tool to implement validation.
 Accordingly, "go generate" must be run whenever a given version's [Metric] constants are modified.
 
+Parsers are built with [ragel].
+See the helper script in toolkit/internal/cmd/mkragel for some documentation on how ragel is used.
+
 [stringer]: https://pkg.go.dev/golang.org/x/tools/cmd/stringer
+[ragel]: https://www.colm.net/open-source/ragel/
 */
 var internalDoc = struct{}{}
 
@@ -148,142 +151,6 @@ func marshalVector[M Metric, V Vector[M]](prefix string, v V) ([]byte, error) {
 	return text, nil
 }
 
-// ParseStringLax is a generic function for parsing vectors and fragments of
-// vectors.
-//
-// It is the caller's responsibility to ensure that required metrics are
-// populated. The only validation this function provides is at-most-once
-// semantics.
-func parseStringLax[M Metric](v []byte, ver func(string) error, lookup map[string]M, s string) error {
-	if ct := strings.Count(s, "/"); ct > len(v)+1 { // Extra for the prefix element
-		return fmt.Errorf("%w: too many elements", ErrMalformedVector)
-	}
-
-	var seen uint64
-	var pre bool
-	for len(s) != 0 {
-		var e string
-		idx := strings.IndexByte(s, '/')
-		if idx > 0 {
-			e, s = s[:idx], s[idx+1:]
-		} else {
-			e, s = s, ""
-		}
-		a, val, ok := strings.Cut(e, ":")
-		switch {
-		case !ok:
-			return fmt.Errorf("%w: expected %q", ErrMalformedVector, ":")
-		case val == "", a == "":
-			return fmt.Errorf("%w: invalid element: %q", ErrMalformedVector, e)
-		}
-
-		// Be maximally flexible here so this is useful throughout the package:
-		// A `CVSS` element is only allowed in position 0, but not enforced to
-		// be there. This is needed for v2 vectors.
-		m, ok := lookup[a]
-		if !ok {
-			if (!pre && seen == 0) && a == "CVSS" {
-				if err := ver(val); err != nil {
-					return fmt.Errorf("%w: %w", ErrMalformedVector, err)
-				}
-				pre = true
-				continue
-			}
-			return fmt.Errorf("%w: unknown abbreviation %q", ErrMalformedVector, a)
-		}
-		if strings.Index(m.validValues(), val) == -1 {
-			return fmt.Errorf("%w: unknown value for %q: %q", ErrMalformedVector, a, val)
-		}
-		mark := uint64(1) << int(m)
-		if seen&(mark) != 0 {
-			return fmt.Errorf("%w: duplicate metric: %q", ErrMalformedVector, a)
-		}
-		seen |= mark
-		v[m] = m.parse(val)
-	}
-	return nil
-}
-
-// ParseString is a generic function for parsing vectors.
-//
-// In addition to the guarantees provided by the [parseStringLax] function, this
-// function enforces the metrics appear in order (as dictated by the numeric
-// value of the [Metric]s), and that the vector is "complete".
-func parseString[M Metric](v []byte, ver func(string) error, lookup map[string]M, s string) error {
-	switch ct := strings.Count(s, "/"); {
-	case ct > len(v)+1: // Extra for the prefix element
-		return fmt.Errorf("%w: too many elements", ErrMalformedVector)
-	case ct < minSepCount(len(v)):
-		return fmt.Errorf("%w: too few elements", ErrMalformedVector)
-	}
-
-	var seen uint64
-	var pre bool
-	for len(s) != 0 {
-		var e string
-		idx := strings.IndexByte(s, '/')
-		if idx > 0 {
-			e, s = s[:idx], s[idx+1:]
-		} else {
-			e, s = s, ""
-		}
-		a, val, ok := strings.Cut(e, ":")
-
-		switch {
-		case !ok:
-			return fmt.Errorf("%w: expected %q", ErrMalformedVector, ":")
-		case !pre && seen == 0:
-			if a != "CVSS" {
-				return fmt.Errorf(`%w: expected "CVSS" element`, ErrMalformedVector)
-			}
-			if err := ver(val); err != nil {
-				return fmt.Errorf("%w: %w", ErrMalformedVector, err)
-			}
-			pre = true
-			continue
-		case val == "", a == "":
-			return fmt.Errorf("%w: invalid element: %q", ErrMalformedVector, e)
-		}
-
-		m, ok := lookup[a]
-		switch {
-		case !ok:
-			return fmt.Errorf("%w: unknown abbreviation %q", ErrMalformedVector, a)
-		case strings.Index(m.validValues(), val) == -1:
-			return fmt.Errorf("%w: unknown value for %q: %q", ErrMalformedVector, a, val)
-		}
-
-		mark := uint64(1) << int(m)
-		switch {
-		case seen&(mark) != 0:
-			return fmt.Errorf("%w: duplicate metric: %q", ErrMalformedVector, a)
-		case bits.LeadingZeros64(seen) < bits.LeadingZeros64(mark):
-			// This exploits the fact that metrics are strictly ordered;
-			// later metrics always have fewer leading zeros.
-			return fmt.Errorf("%w: metric out of order: %q", ErrMalformedVector, a)
-		}
-		seen |= mark
-		v[m] = m.parse(val)
-	}
-	return nil
-}
-
-// MinSepCount reports the minimum number of separators present in a valid
-// vector.
-func minSepCount(n int) (l int) {
-	switch n {
-	case numV4Metrics:
-		l = 11
-	case numV3Metrics:
-		l = 8
-	case numV2Metrics:
-		panic("programmer error: called with V2 vector")
-	default:
-		panic(fmt.Sprintf("programmer error: unexpected vector length: %d", n))
-	}
-	return l
-}
-
 // Metric is a CVSS metric.
 //
 // The set of types this describes is namespaced per-version.
@@ -293,9 +160,6 @@ type Metric interface {
 
 	// Valid returns the concatenation of valid values for the metric.
 	validValues() string
-	// Parse returns the "packed" representation for the receiver based on the
-	// provided value.
-	parse(string) byte
 	// Num returns the number of valid metrics of this type.
 	num() int
 }

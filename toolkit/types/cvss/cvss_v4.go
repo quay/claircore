@@ -178,9 +178,6 @@ const (
 	numV4Metrics int = iota
 )
 
-// Parse implements [Metric].
-func (m V4Metric) parse(v string) byte { return v[0] }
-
 // Valid implements [Metric].
 func (m V4Metric) validValues() string { return v4Valid(m).String() }
 

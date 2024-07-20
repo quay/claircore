@@ -197,28 +197,6 @@ const (
 	numV2Metrics int = iota
 )
 
-// Parse implements [Metric].
-func (m V2Metric) parse(v string) byte {
-	switch m {
-	case V2ReportConfidence:
-		if v == "UR" {
-			return 'u'
-		}
-	case V2CollateralDamagePotential:
-		switch v {
-		case "LM":
-			return 'l'
-		case "ND":
-			return 'X'
-		}
-	case V2TargetDistribution:
-		if v == "ND" {
-			return 'X'
-		}
-	}
-	return v[0]
-}
-
 // Valid implements [Metric].
 func (m V2Metric) validValues() string { return v2Valid(m).String() }
 
