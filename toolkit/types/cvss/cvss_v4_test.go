@@ -170,10 +170,10 @@ func TestV4(t *testing.T) {
 }
 
 type v4Testcase struct {
-	Name string
-	In   string
 	Want *V4
 	Err  error
+	Name string
+	In   string
 }
 
 func (tc *v4Testcase) Check(t *testing.T) {

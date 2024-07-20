@@ -1,7 +1,6 @@
 package cvss
 
 import (
-	"bytes"
 	"encoding"
 	"fmt"
 	"strings"
@@ -21,33 +20,6 @@ var (
 // ParseV4 parses the provided string as a v4 vector.
 func ParseV4(s string) (v V4, err error) {
 	return v, v.UnmarshalText([]byte(s))
-}
-
-// UnmarshalText implements [encoding.TextUnmarshaler].
-func (v *V4) UnmarshalText(text []byte) error {
-	if err := parseString(v.mv[:], v4VerHook, v4Rev, string(text)); err != nil {
-		return fmt.Errorf("cvss v4: %w", err)
-	}
-	for m, b := range v.mv[:V4SubsequentSystemAvailability+1] { // range inclusive
-		if b == 0 {
-			return fmt.Errorf("cvss v4: %w: missing metric: %q", ErrMalformedVector, V4Metric(m).String())
-		}
-	}
-	chk, err := v.MarshalText()
-	if err != nil {
-		return fmt.Errorf("cvss v4: %w", err)
-	}
-	if !bytes.Equal(chk, text) {
-		return fmt.Errorf("cvss v4: malformed input")
-	}
-	return nil
-}
-
-func v4VerHook(ver string) error {
-	if ver != "4.0" {
-		return fmt.Errorf("%w: unknown verison %q", ErrMalformedVector, ver)
-	}
-	return nil
 }
 
 // MarshalText implements [encoding.TextMarshaler].
