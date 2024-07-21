@@ -268,5 +268,3 @@ const (
 	v2IntegrityRequirementValid                      // LMHND
 	v2AvailabilityRequirementValid                   // LMHND
 )
-
-var v2Rev = mkRevLookup[V2Metric]()

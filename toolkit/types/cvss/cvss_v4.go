@@ -251,5 +251,3 @@ const (
 	v4VulnerabilityResponseEffortValid                            // XLMH
 	v4ProviderUrgencyValid                                        // XRedAmberGreenClear
 )
-
-var v4Rev = mkRevLookup[V4Metric]()

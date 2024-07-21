@@ -219,5 +219,3 @@ const (
 	v3ModifiedIntegrityValid                         // XHLN
 	v3ModifiedAvailabilityValid                      // XHLN
 )
-
-var v3Rev = mkRevLookup[V3Metric]()

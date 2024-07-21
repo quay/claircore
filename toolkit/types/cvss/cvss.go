@@ -104,19 +104,6 @@ func Version(vec string) (v int) {
 	return v
 }
 
-// MkRevLookup constructs a reverse-lookup table for the [Metric] M.
-//
-// This is used to go "backwards" from the [fmt.Stringer] representation.
-func mkRevLookup[M Metric]() map[string]M {
-	max := M(0).num()
-	ret := make(map[string]M, max)
-	for i := 0; i < max; i++ {
-		m := M(i)
-		ret[m.String()] = m
-	}
-	return ret
-}
-
 // MarshalVector is a generic function to marshal vectors.
 //
 // The [Vector.getString] method is used here.
