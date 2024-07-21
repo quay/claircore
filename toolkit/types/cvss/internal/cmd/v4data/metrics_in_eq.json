@@ -1,0 +1,28 @@
+[
+  [
+    "AttackVector",
+    "PrivilegesRequired",
+    "UserInteraction"
+  ],
+  [
+    "AttackComplexity",
+    "AttackRequirements"
+  ],
+  [],
+  [
+    "SubsequentSystemConfidentiality",
+    "SubsequentSystemIntegrity",
+    "SubsequentSystemAvailability"
+  ],
+  [
+    "ExploitMaturity"
+  ],
+  [
+    "VulnerableSystemConfidentiality",
+    "VulnerableSystemIntegrity",
+    "VulnerableSystemAvailability",
+    "ConfidentialityRequirement",
+    "IntegrityRequirement",
+    "AvailabilityRequirement"
+  ]
+]
