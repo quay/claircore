@@ -7,8 +7,10 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
@@ -43,7 +45,7 @@ func TestMatcherIntegration(t *testing.T) {
 	m := &Matcher{}
 	locks, err := ctxlock.New(ctx, pool)
 	if err != nil {
-		t.Fatalf("%v", err)
+		t.Fatal(err)
 	}
 	defer locks.Close(ctx)
 
@@ -62,18 +64,18 @@ func TestMatcherIntegration(t *testing.T) {
 	mgr, err := updates.NewManager(ctx, store, locks, srv.Client(),
 		updates.WithFactories(facs), updates.WithConfigs(cfg))
 	if err != nil {
-		t.Fatalf("%v", err)
+		t.Fatal(err)
 	}
 
 	// force update
 	if err := mgr.Run(ctx); err != nil {
-		t.Fatalf("%v", err)
+		t.Fatal(err)
 	}
 
 	path := filepath.Join("testdata", "indexreport-splunk-8.2.6.json")
 	f, err := os.Open(path)
 	if err != nil {
-		t.Fatalf("%v", err)
+		t.Fatal(err)
 	}
 	defer f.Close()
 	var ir claircore.IndexReport
@@ -86,20 +88,23 @@ func TestMatcherIntegration(t *testing.T) {
 		t.Fatalf("expected error to be nil but got %v", err)
 	}
 
+	// List of known IDs that should be in the returned report.
+	// There may be additional IDs over time, so add them here when noticed.
+	need := []string{"GHSA-p8p7-x288-28g6"}
+
 	vulns := vr.Vulnerabilities
-	t.Logf("Number of Vulnerabilities found: %d", len(vulns))
-
-	if len(vulns) < 2 {
-		t.Fatal("failed to match vulns")
-	}
-
-	var hasFixed bool
+	ids := make([]string, len(vulns))
 	for _, v := range vulns {
-		if v.FixedInVersion != "" {
-			hasFixed = true
+		ids = append(ids, v.Name)
+	}
+	t.Logf("Number of Vulnerabilities found: %d", len(vulns))
+	for _, id := range need {
+		if !slices.Contains(ids, id) {
+			t.Logf("missing %q", id)
+			t.Error()
 		}
 	}
-	if !hasFixed {
-		t.Fatalf("failed to find a fixed vuln")
+	if t.Failed() {
+		t.Log(cmp.Diff(ids, need))
 	}
 }
