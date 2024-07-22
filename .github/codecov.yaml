@@ -1,6 +1,7 @@
 ignore:
 - "test"  # Our test helpers largely do not have tests themselves.
 - "**/*_string.go"  # Ignore generated string implementations.
+- "**/internal/cmd"  # Internal commands are fine to exclude from coverage.
 
 coverage:
   status:
