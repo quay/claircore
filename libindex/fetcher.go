@@ -24,6 +24,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
+	"github.com/quay/claircore/internal/httputil"
 	"github.com/quay/claircore/internal/wart"
 	"github.com/quay/claircore/internal/zreader"
 )
@@ -282,18 +283,9 @@ func (a *RemoteFetchArena) fetchUnlinkedFile(ctx context.Context, key string, de
 	}
 	defer resp.Body.Close()
 	span.SetAttributes(attribute.Int("http.code", resp.StatusCode))
-	switch resp.StatusCode {
-	case http.StatusOK:
-	default:
-		// Especially for 4xx errors, the response body may indicate what's going
-		// on, so include some of it in the error message. Capped at 256 bytes in
-		// order to not flood the log.
-		bodyStart, err := io.ReadAll(io.LimitReader(resp.Body, 256))
-		if err == nil {
-			return nil, fmt.Errorf("fetcher: unexpected status code: %s (body starts: %q)",
-				resp.Status, bodyStart)
-		}
-		return nil, fmt.Errorf("fetcher: unexpected status code: %s", resp.Status)
+	err = httputil.CheckResponse(resp, http.StatusOK)
+	if err != nil {
+		return nil, err
 	}
 	tr := io.TeeReader(resp.Body, vh)
 
