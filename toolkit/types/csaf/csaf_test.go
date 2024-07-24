@@ -17,6 +17,8 @@ var testBattery = []struct {
 	scoreProductID       string
 	score                *Score
 	prodIdentifier       *Product
+	threatProductID      string
+	threatData           *ThreatData
 }{
 	{
 		path: "testdata/cve-2021-0084.json",
@@ -109,6 +111,12 @@ var testBattery = []struct {
 			},
 			ProductIDs: []string{"red_hat_satellite_6:rubygem-audited"},
 		},
+		threatProductID: "red_hat_satellite_6:rubygem-audited",
+		threatData: &ThreatData{
+			Category:   "impact",
+			Details:    "Low",
+			ProductIDs: []string{"red_hat_satellite_6:rubygem-audited"},
+		},
 		prodIdentifier: &Product{
 			Name: "Red Hat Satellite 6",
 			ID:   "red_hat_satellite_6",
@@ -149,6 +157,9 @@ func TestAll(t *testing.T) {
 			}
 			if got := c.FindScore(tc.scoreProductID); !cmp.Equal(tc.score, got) {
 				t.Error(cmp.Diff(tc.score, got))
+			}
+			if got := c.FindThreat(tc.threatProductID, "impact"); !cmp.Equal(tc.threatData, got) {
+				t.Error(cmp.Diff(tc.threatData, got))
 			}
 			if got := c.ProductTree.Branches[0].FindProductIdentifier("cpe", tc.prodIdentifier.IdentificationHelper["cpe"]); !cmp.Equal(tc.prodIdentifier, got) {
 				t.Error(cmp.Diff(tc.prodIdentifier, got))
