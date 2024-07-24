@@ -388,7 +388,7 @@ database.</p>
 <pre><code>package libvuln // import "github.com/quay/claircore/libvuln"
 
 type Options struct {
-	// Store is the interface used to persist and retrieve vulnerabilites
+	// Store is the interface used to persist and retrieve vulnerabilities
 	// for of matching.
 	Store datastore.MatcherStore
 	// Locker provides system-wide locks for the updater subsystem. If the
@@ -590,7 +590,7 @@ stateDiagram-v2
 %% note right of FetchLayers: Determine which layers need to be indexed and fetch them.
 %% note right of ScanLayers: Concurrently run needed Indexers on layers.
 %% note right of Coalesce: Compute the final contents of the container image.
-%% note right of IndexManifest: Associate all the discoved data.
+%% note right of IndexManifest: Associate all the discovered data.
 %% note right of IndexFinished: Persist the results.
 </pre>
 <h2 id="data-model"><a class="header" href="#data-model">Data Model</a></h2>
@@ -645,7 +645,7 @@ graph TD
 	subgraph Matcher
 		dbv[Check versions in-database]
 		ma[Filter interested packages]
-		adv[Retrive vulnerabilty information]
+		adv[Retrieve vulnerability information]
 		mv[Deicide vulnerability]
 		ma --&gt; adv --&gt; mv
 		adv -.-&gt; dbv -.-&gt; mv
@@ -1722,7 +1722,7 @@ type Manifest struct {
 	// content addressable hash. should be able to be computed via
 	// the hashes of all included layers
 	Hash Digest `json:"hash"`
-	// an array of filesystem layers indexed in the same order as the cooresponding image
+	// an array of filesystem layers indexed in the same order as the corresponding image
 	Layers []*Layer `json:"layers"`
 }
     Manifest represents a docker image. Layers array MUST be indexed in the
