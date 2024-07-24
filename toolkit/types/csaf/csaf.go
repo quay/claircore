@@ -296,6 +296,20 @@ func (csafDoc *CSAF) FindScore(productID string) *Score {
 	return nil
 }
 
+// FindThreat returns ThreatData (if it exists) for a given productID otherwise nil.
+func (csafDoc *CSAF) FindThreat(productID string, category string) *ThreatData {
+	for _, v := range csafDoc.Vulnerabilities {
+		for _, t := range v.Threats {
+			for _, p := range t.ProductIDs {
+				if p == productID && t.Category == category {
+					return &t
+				}
+			}
+		}
+	}
+	return nil
+}
+
 // FindRelationship returns a Relationship (if it exists) for a given productID-category pair
 // otherwise nil.
 func (csafDoc *CSAF) FindRelationship(productID, category string) *Relationship {
