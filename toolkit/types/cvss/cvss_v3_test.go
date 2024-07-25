@@ -97,6 +97,7 @@ func TestV3(t *testing.T) {
 		t.Run("3.1", func(t *testing.T) {
 			tcs := []ScoreTestcase{
 				{Vector: "CVSS:3.1/AV:P/AC:H/PR:H/UI:R/S:U/C:N/I:N/A:N", Score: 0}, // Zero metrics
+				{Vector: "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:N/I:N/A:N", Score: 0}, // Zero metrics
 
 				{Vector: "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:L/I:L/A:N", Score: 6.4}, // CVE-2013-0375
 				{Vector: "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:L/I:N/A:N", Score: 3.1}, // CVE-2014-3566
