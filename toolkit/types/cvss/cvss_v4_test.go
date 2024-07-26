@@ -21,6 +21,10 @@ func TestV4(t *testing.T) {
 			{Vector: "CVSS:4.0/AV:N/AC:L/AT:N/PR:H/UI:N/VC:L/VI:L/VA:N/SC:N/SI:N/E:X", Error: true},
 			{Vector: "CVSS:4.0/CVSS:4.0/AV:N/AC:L/AT:N/PR:H/UI:N/VC:L/VI:L/VA:N/SC:N/SI:N/SA:N", Error: true},
 			{Vector: "CVSS:4.0/AV:A/AC:L/AT:N/PR:H/UI:A/VC:LN/VI:L/VA:N/SC:N/SI:N/SA:N", Error: true},
+			{Vector: "CVSS:4.0/AV:N/AC:L/AT:N/PR:H/UI:N/VC:L/VI:L/VA:N/SC:N/SI:N/SA:N/SA:N", Error: true},
+			{Vector: "CVSS:4.0/AV:N/AC:L/AT:N/PR:H/UI:N/VC:L/VI:L/VA:N/SC:N/SI:N/SA:🚮", Error: true},
+			{Vector: "CVSS:4.0/AV:N/AC:L/AT:N/PR:H/UI:N/VC:L/VI:L/VA:N/SC:N/SI:N/E:A/SA:N", Error: true},
+			{Vector: "CVSS:4.0/AV:N/AC:L/AT:N/PR:H/UI:N/VC:L/VI:L/VA:N/SC:N/SI:N", Error: true},
 		}
 		Error[V4, V4Metric, *V4](t, tcs)
 	})
