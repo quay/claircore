@@ -22,7 +22,7 @@ func TestMatch(t *testing.T) {
 	// There seems to be no test vectors for the match specification.
 	matchTable := []testcase{
 		{
-			Source: `cpe:/a:Adobe::9.*::PalmOS`,
+			Source: `cpe:/a:Adobe::9.%02::PalmOS`,
 			Target: `cpe:/a::Reader:9.3.2:-:-`,
 			Want: Relations([NumAttr]Relation{
 				Equal, Subset, Superset, Superset, Superset, Disjoint, Equal, Equal, Equal, Equal, Equal,

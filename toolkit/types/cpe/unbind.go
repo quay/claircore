@@ -64,16 +64,25 @@ func UnbindURI(s string) (WFN, error) {
 		if i == 5 && strings.HasPrefix(c, "~") {
 			attrs := [...]Attribute{Edition, SwEdition, TargetSW, TargetHW, Other}
 			for i, c := range strings.SplitN(c, `~`, 6)[1:] {
-				r.Attr[attrs[i]].unbindURI(&b, c)
+				if err := r.Attr[attrs[i]].unbindURI(&b, c); err != nil {
+					return WFN{}, fmt.Errorf("cpe: %v: %w", attrs[i], err)
+				}
 			}
 			continue
 		}
-		r.Attr[attrs[i]].unbindURI(&b, c)
+		if err := r.Attr[attrs[i]].unbindURI(&b, c); err != nil {
+			return WFN{}, fmt.Errorf("cpe: %v: %w", attrs[i], err)
+		}
 	}
 	return r, r.Valid()
 }
 
-func (v *Value) unbindURI(b *strings.Builder, s string) {
+func (v *Value) unbindURI(b *strings.Builder, s string) error {
+	// From the characters that should be escaped, see
+	// https://nvlpubs.nist.gov/nistpubs/Legacy/IR/nistir7695.pdf table 6-1.
+	// Need to allow '%' and '~'. The former for escapes and the latter because
+	// they're allowed in CPE2.2 URIs.
+	const disallow = "!\"#$&'()*+,/:;<=>?@[\\]^`{|}"
 	b.Reset()
 	switch s {
 	case ``:
@@ -82,15 +91,29 @@ func (v *Value) unbindURI(b *strings.Builder, s string) {
 		v.Kind = ValueNA
 	default:
 		v.Kind = ValueSet
-		valueURI.WriteString(b, strings.ToLower(s))
+		s = strings.ToLower(s)
+		if i := strings.IndexAny(s, disallow); i != -1 {
+			return fmt.Errorf("disallowed character %q", s[i])
+		}
+		valueURI.WriteString(b, s)
 		v.V = b.String()
 	}
+	return nil
 }
 
-// ValueURI is a replace that undoes the URI percent encoding.
+// ValueURI is a replacer that undoes URI percent encoding and puts legally URI
+// encoded characters into formatted-string escaping.
+//
+// If there are remaining percent encodes, they will be passed through. In
+// theory we could normalize these, but I think we'd need to use something a bit
+// more heavy-duty, like a [text.Transformer].
 var valueURI = strings.NewReplacer(
 	`.`, `\.`,
 	`-`, `\-`,
+	// 2.2 CPEs don't have any special handling for tilde, but 2.3 puts special
+	// semantics in the "Edition" component. Those are handled farther up in the
+	// call stack, so handle the corner case where there's a tile in another
+	// component.
 	`~`, `\~`,
 	// The specified algorithm sticks validation logic for * and ? in the
 	// unquoting. We skip that and just make sure to validate later.
@@ -125,6 +148,8 @@ var valueURI = strings.NewReplacer(
 	`%7c`, `\|`,
 	`%7d`, `\}`,
 	`%7e`, `\~`,
+	// Do not handle:
+	//`:`, `%3a`, // Can't be here anyway, it's used to separate components.
 )
 
 // UnbindFS attempts to unbind a string as CPE 2.3 formatted string into a WFN.

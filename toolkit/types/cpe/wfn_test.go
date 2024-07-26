@@ -9,6 +9,10 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
+func valueAny() Value         { return Value{Kind: ValueAny} }
+func valueNA() Value          { return Value{Kind: ValueNA} }
+func valueSet(v string) Value { return Value{Kind: ValueSet, V: v} }
+
 func TestValidate(t *testing.T) {
 	t.Parallel()
 	tt := []struct {
@@ -91,81 +95,81 @@ func TestBinding(t *testing.T) {
 		// wfn:[part="a",vendor="microsoft",product="internet_explorer",version="8\.0\.6001",update="beta",edition=ANY]
 		{
 			WFN: WFN{Attr: [NumAttr]Value{
-				{Kind: ValueSet, V: "a"},
-				{Kind: ValueSet, V: "microsoft"},
-				{Kind: ValueSet, V: "internet_explorer"},
-				{Kind: ValueSet, V: "8\\.0\\.6001"},
-				{Kind: ValueSet, V: "beta"},
-				{Kind: ValueAny},
+				valueSet("a"),
+				valueSet("microsoft"),
+				valueSet("internet_explorer"),
+				valueSet(`8\.0\.6001`),
+				valueSet("beta"),
+				valueAny(),
 			}},
 			Bound: `cpe:2.3:a:microsoft:internet_explorer:8.0.6001:beta:*:*:*:*:*:*`,
 		},
 		// wfn:[part="a",vendor="microsoft",product="internet_explorer",version="8\.*",update="sp?",edition=ANY]
 		{
 			WFN: WFN{Attr: [NumAttr]Value{
-				{Kind: ValueSet, V: "a"},
-				{Kind: ValueSet, V: "microsoft"},
-				{Kind: ValueSet, V: "internet_explorer"},
-				{Kind: ValueSet, V: "8\\.*"},
-				{Kind: ValueSet, V: "sp?"},
+				valueSet("a"),
+				valueSet("microsoft"),
+				valueSet("internet_explorer"),
+				valueSet(`8\.*`),
+				valueSet("sp?"),
 			}},
 			Bound: `cpe:2.3:a:microsoft:internet_explorer:8.*:sp?:*:*:*:*:*:*`,
 		},
 		// wfn:[part="a",vendor="microsoft",product="internet_explorer",version="8\.\*",update="sp?"]
 		{
 			WFN: WFN{Attr: [NumAttr]Value{
-				{Kind: ValueSet, V: "a"},
-				{Kind: ValueSet, V: "microsoft"},
-				{Kind: ValueSet, V: "internet_explorer"},
-				{Kind: ValueSet, V: "8\\.\\*"},
-				{Kind: ValueSet, V: "sp?"},
+				valueSet("a"),
+				valueSet("microsoft"),
+				valueSet("internet_explorer"),
+				valueSet(`8\.\*`),
+				valueSet("sp?"),
 			}},
 			Bound: `cpe:2.3:a:microsoft:internet_explorer:8.\*:sp?:*:*:*:*:*:*`,
 		},
 		// wfn:[part="a",vendor="hp",product="insight",version="7\.4\.0\.1570",update=NA,sw_edition="online",target_sw="win2003",target_hw="x64"]
 		{
 			WFN: WFN{Attr: [NumAttr]Value{
-				{Kind: ValueSet, V: "a"},
-				{Kind: ValueSet, V: "hp"},
-				{Kind: ValueSet, V: "insight"},
-				{Kind: ValueSet, V: `7\.4\.0\.1570`},
-				{Kind: ValueNA},
+				valueSet("a"),
+				valueSet("hp"),
+				valueSet("insight"),
+				valueSet(`7\.4\.0\.1570`),
+				valueNA(),
 				{},
 				{},
-				{Kind: ValueSet, V: "online"},
-				{Kind: ValueSet, V: "win2003"},
-				{Kind: ValueSet, V: "x64"},
+				valueSet("online"),
+				valueSet("win2003"),
+				valueSet("x64"),
 			}},
 			Bound: `cpe:2.3:a:hp:insight:7.4.0.1570:-:*:*:online:win2003:x64:*`,
 		},
 		// wfn:[part="a",vendor="hp",product="openview_network_manager",version="7\.51",target_sw="linux"]
 		{
 			WFN: WFN{Attr: [NumAttr]Value{
-				{Kind: ValueSet, V: "a"},
-				{Kind: ValueSet, V: "hp"},
-				{Kind: ValueSet, V: "openview_network_manager"},
-				{Kind: ValueSet, V: `7\.51`},
+				valueSet("a"),
+				valueSet("hp"),
+				valueSet("openview_network_manager"),
+				valueSet(`7\.51`),
 				{},
 				{},
 				{},
 				{},
-				{Kind: ValueSet, V: "linux"},
+				valueSet("linux"),
 			}},
 			Bound: `cpe:2.3:a:hp:openview_network_manager:7.51:*:*:*:*:linux:*:*`,
 		},
 		// wfn:[part="a",vendor="foo\\bar",product="big\$money_2010",sw_edition="special",target_sw="ipod_touch",target_hw="80gb"]
 		{
 			WFN: WFN{Attr: [NumAttr]Value{
-				{Kind: ValueSet, V: "a"},
-				{Kind: ValueSet, V: `foo\\bar`},
-				{Kind: ValueSet, V: `big\$money_2010`},
+				valueSet("a"),
+				valueSet(`foo\\bar`),
+				valueSet(`big\$money_2010`),
 				{},
 				{},
 				{},
 				{},
-				{Kind: ValueSet, V: "special"},
-				{Kind: ValueSet, V: "ipod_touch"},
-				{Kind: ValueSet, V: "80gb"},
+				valueSet("special"),
+				valueSet("ipod_touch"),
+				valueSet("80gb"),
 			}},
 			Bound: `cpe:2.3:a:foo\\bar:big\$money_2010:*:*:*:*:special:ipod_touch:80gb:*`,
 		},
@@ -180,48 +184,72 @@ func TestBinding(t *testing.T) {
 
 func TestUnbinding(t *testing.T) {
 	t.Parallel()
-	// UnbindTable is a table of string to WFN mappings copied out of the standards
+
+	type unbindCase struct {
+		Bound string
+		WFN   WFN
+		Error bool
+	}
+	inner := func(tcs []unbindCase, unbind func(string) (WFN, error)) func(*testing.T) {
+		return func(t *testing.T) {
+			t.Helper()
+			for i, tc := range tcs {
+				t.Logf("%02d: %q", i, tc.Bound)
+				got, err := unbind(tc.Bound)
+				if tc.Error {
+					if err == nil {
+						t.Errorf("%02d: expected error, got nil", i)
+					}
+					continue
+				}
+				if err != nil {
+					t.Logf("%02d: %v", i, err)
+				}
+				if want := tc.WFN; !cmp.Equal(got, want) {
+					t.Errorf("%02d: %v", i, cmp.Diff(got, want))
+				}
+			}
+		}
+	}
+
+	// FsTable is a table of string to WFN mappings copied out of the standards
 	// document: https://nvlpubs.nist.gov/nistpubs/Legacy/IR/nistir7695.pdf
 	//
 	// The goal wfn from the text is kept in a comment, then transcribed by hand into a
 	// WFN literal, and the starting binding is copied verbatim.
-	unbindTable := []struct {
-		Bound string
-		WFN   WFN
-		Error bool
-	}{
+	fsTable := []unbindCase{
 		// wfn:[part="a",vendor="microsoft",product="internet_explorer",version="8\.0\.6001",update="beta",edition=ANY,language=ANY,sw_edition=ANY,target_sw=ANY,target_hw=ANY,other=ANY]
 		{
 			Bound: `cpe:2.3:a:microsoft:internet_explorer:8.0.6001:beta:*:*:*:*:*:*`,
 			WFN: WFN{Attr: [NumAttr]Value{
-				{Kind: ValueSet, V: "a"},
-				{Kind: ValueSet, V: "microsoft"},
-				{Kind: ValueSet, V: "internet_explorer"},
-				{Kind: ValueSet, V: "8\\.0\\.6001"},
-				{Kind: ValueSet, V: "beta"},
-				{Kind: ValueAny},
-				{Kind: ValueAny},
-				{Kind: ValueAny},
-				{Kind: ValueAny},
-				{Kind: ValueAny},
-				{Kind: ValueAny},
+				valueSet("a"),
+				valueSet("microsoft"),
+				valueSet("internet_explorer"),
+				valueSet(`8\.0\.6001`),
+				valueSet("beta"),
+				valueAny(),
+				valueAny(),
+				valueAny(),
+				valueAny(),
+				valueAny(),
+				valueAny(),
 			}},
 		},
 		// wfn:[part="a",vendor="hp",product="insight_diagnostics",version="7\.4\.0\.1570",update=NA,edition=ANY,language=ANY,sw_edition="online",target_sw="win2003",target_hw="x64",other=ANY]
 		{
 			Bound: `cpe:2.3:a:hp:insight_diagnostics:7.4.0.1570:-:*:*:online:win2003:x64:*`,
 			WFN: WFN{Attr: [NumAttr]Value{
-				{Kind: ValueSet, V: "a"},
-				{Kind: ValueSet, V: "hp"},
-				{Kind: ValueSet, V: "insight_diagnostics"},
-				{Kind: ValueSet, V: `7\.4\.0\.1570`},
-				{Kind: ValueNA},
-				{Kind: ValueAny},
-				{Kind: ValueAny},
-				{Kind: ValueSet, V: "online"},
-				{Kind: ValueSet, V: "win2003"},
-				{Kind: ValueSet, V: "x64"},
-				{Kind: ValueAny},
+				valueSet("a"),
+				valueSet("hp"),
+				valueSet("insight_diagnostics"),
+				valueSet(`7\.4\.0\.1570`),
+				valueNA(),
+				valueAny(),
+				valueAny(),
+				valueSet("online"),
+				valueSet("win2003"),
+				valueSet("x64"),
+				valueAny(),
 			}},
 		},
 		// Invalid bound form because of unquoted (and misplaced) asterisk.
@@ -233,117 +261,93 @@ func TestUnbinding(t *testing.T) {
 		{
 			Bound: `cpe:2.3:a:foo\\bar:big\$money:2010:*:*:*:special:ipod_touch:80gb:*`,
 			WFN: WFN{Attr: [NumAttr]Value{
-				{Kind: ValueSet, V: "a"},
-				{Kind: ValueSet, V: `foo\\bar`},
-				{Kind: ValueSet, V: `big\$money`},
-				{Kind: ValueSet, V: "2010"},
-				{Kind: ValueAny},
-				{Kind: ValueAny},
-				{Kind: ValueAny},
-				{Kind: ValueSet, V: "special"},
-				{Kind: ValueSet, V: "ipod_touch"},
-				{Kind: ValueSet, V: "80gb"},
-				{Kind: ValueAny},
+				valueSet("a"),
+				valueSet(`foo\\bar`),
+				valueSet(`big\$money`),
+				valueSet("2010"),
+				valueAny(),
+				valueAny(),
+				valueAny(),
+				valueSet("special"),
+				valueSet("ipod_touch"),
+				valueSet("80gb"),
+				valueAny(),
 			}},
 		},
 	}
-	for _, tc := range unbindTable {
-		t.Logf("%q", tc.Bound)
-		got, err := UnbindFS(tc.Bound)
-		if tc.Error {
-			t.Log(err)
-			if err == nil {
-				t.Error("expected error, got nil")
-			}
-			continue
-		}
-		if err != nil {
-			t.Error(err)
-		}
-		if want := tc.WFN; !cmp.Equal(got, want) {
-			t.Error(cmp.Diff(got, want))
-		}
-	}
-}
 
-func TestURIUnbinding(t *testing.T) {
-	t.Parallel()
 	// This table is made from the URI unbinding examples in the standards document.
-	tt := []struct {
-		Bound string
-		WFN   WFN
-		Error bool
-	}{
+	uriTable := []unbindCase{
 		// wfn:[part="a",vendor="microsoft",product="internet_explorer",version="8\.0\.6001",update="beta",edition=ANY,language=ANY]
 		{
 			WFN: WFN{Attr: [NumAttr]Value{
-				{Kind: ValueSet, V: "a"},
-				{Kind: ValueSet, V: "microsoft"},
-				{Kind: ValueSet, V: "internet_explorer"},
-				{Kind: ValueSet, V: `8\.0\.6001`},
-				{Kind: ValueSet, V: "beta"},
-				{Kind: ValueAny},
-				{Kind: ValueAny},
+				valueSet("a"),
+				valueSet("microsoft"),
+				valueSet("internet_explorer"),
+				valueSet(`8\.0\.6001`),
+				valueSet("beta"),
+				valueAny(),
+				valueAny(),
 			}},
 			Bound: `cpe:/a:microsoft:internet_explorer:8.0.6001:beta`,
 		},
 		// wfn:[part="a",vendor="microsoft",product="internet_explorer",version="8\.\*",update="sp\?",edition=ANY,language=ANY]
 		{
 			WFN: WFN{Attr: [NumAttr]Value{
-				{Kind: ValueSet, V: "a"},
-				{Kind: ValueSet, V: "microsoft"},
-				{Kind: ValueSet, V: "internet_explorer"},
-				{Kind: ValueSet, V: `8\.\*`},
-				{Kind: ValueSet, V: `sp\?`},
-				{Kind: ValueAny},
-				{Kind: ValueAny},
+				valueSet("a"),
+				valueSet("microsoft"),
+				valueSet("internet_explorer"),
+				valueSet(`8\.\*`),
+				valueSet(`sp\?`),
+				valueAny(),
+				valueAny(),
 			}},
 			Bound: `cpe:/a:microsoft:internet_explorer:8.%2a:sp%3f`,
 		},
 		// wfn:[part="a",vendor="microsoft",product="internet_explorer",version="8\.*",update="sp?",edition=ANY,language=ANY]
 		{
 			WFN: WFN{Attr: [NumAttr]Value{
-				{Kind: ValueSet, V: "a"},
-				{Kind: ValueSet, V: "microsoft"},
-				{Kind: ValueSet, V: "internet_explorer"},
-				{Kind: ValueSet, V: `8\.*`},
-				{Kind: ValueSet, V: "sp?"},
-				{Kind: ValueAny},
-				{Kind: ValueAny},
+				valueSet("a"),
+				valueSet("microsoft"),
+				valueSet("internet_explorer"),
+				valueSet(`8\.*`),
+				valueSet("sp?"),
+				valueAny(),
+				valueAny(),
 			}},
 			Bound: `cpe:/a:microsoft:internet_explorer:8.%02:sp%01`,
 		},
 		// wfn:[part="a",vendor="hp",product="insight_diagnostics",version="7\.4\.0\.1570",update=ANY,edition=ANY,sw_edition="online",target_sw="win2003",target_hw="x64",other=ANY,language=ANY]
 		{
 			WFN: WFN{Attr: [NumAttr]Value{
-				{Kind: ValueSet, V: "a"},
-				{Kind: ValueSet, V: "hp"},
-				{Kind: ValueSet, V: "insight_diagnostics"},
-				{Kind: ValueSet, V: `7\.4\.0\.1570`},
-				{Kind: ValueAny},
-				{Kind: ValueAny},
-				{Kind: ValueAny},
-				{Kind: ValueSet, V: "online"},
-				{Kind: ValueSet, V: "win2003"},
-				{Kind: ValueSet, V: "x64"},
-				{Kind: ValueAny},
+				valueSet("a"),
+				valueSet("hp"),
+				valueSet("insight_diagnostics"),
+				valueSet(`7\.4\.0\.1570`),
+				valueAny(),
+				valueAny(),
+				valueAny(),
+				valueSet("online"),
+				valueSet("win2003"),
+				valueSet("x64"),
+				valueAny(),
 			}},
 			Bound: `cpe:/a:hp:insight_diagnostics:7.4.0.1570::~~online~win2003~x64~`,
 		},
 		// wfn:[part="a",vendor="hp",product="openview_network_manager",version="7\.51",update=NA,edition=ANY,sw_edition=ANY,target_sw="linux",target_HW=ANY,other=ANY,language=ANY]
 		{
 			WFN: WFN{Attr: [NumAttr]Value{
-				{Kind: ValueSet, V: "a"},
-				{Kind: ValueSet, V: "hp"},
-				{Kind: ValueSet, V: "openview_network_manager"},
-				{Kind: ValueSet, V: `7\.51`},
-				{Kind: ValueNA},
-				{Kind: ValueAny},
-				{Kind: ValueAny},
-				{Kind: ValueAny},
-				{Kind: ValueSet, V: "linux"},
-				{Kind: ValueAny},
-				{Kind: ValueAny},
+				valueSet("a"),
+				valueSet("hp"),
+				valueSet("openview_network_manager"),
+				valueSet(`7\.51`),
+				valueNA(),
+				valueAny(),
+				valueAny(),
+				valueAny(),
+				valueSet("linux"),
+				valueAny(),
+				valueAny(),
 			}},
 			Bound: `cpe:/a:hp:openview_network_manager:7.51:-:~~~linux~~`,
 		},
@@ -355,41 +359,50 @@ func TestURIUnbinding(t *testing.T) {
 		// wfn:[part="a",vendor="foo\~bar",product="big\~money_2010",version=ANY,update=ANY,edition=ANY,language=ANY]
 		{
 			WFN: WFN{Attr: [NumAttr]Value{
-				{Kind: ValueSet, V: "a"},
-				{Kind: ValueSet, V: `foo\~bar`},
-				{Kind: ValueSet, V: `big\~money_2010`},
-				{Kind: ValueAny},
-				{Kind: ValueAny},
-				{Kind: ValueAny},
-				{Kind: ValueAny},
+				valueSet("a"),
+				valueSet(`foo\~bar`),
+				valueSet(`big\~money_2010`),
+				valueAny(),
+				valueAny(),
+				valueAny(),
+				valueAny(),
 			}},
 			Bound: `cpe:/a:foo~bar:big%7emoney_2010`,
 		},
 		// An error is raised when this URI is unbound, because it contains a special character ("%02") embedded within a valuestring.
+		{Bound: `cpe:/a:foo:bar:12.%02.1234`, Error: true},
+		// Errors because of a disallowed character.
+		{Bound: `cpe:/a:redhat:openshift:4.*`, Error: true},
+		// Should be fine, because it's just short.
 		{
-			Bound: `cpe:/a:foo:bar:12.%02.1234`,
-			Error: true,
+			Bound: `cpe:/a:redhat:openshift:4`,
+			WFN: WFN{Attr: [NumAttr]Value{
+				valueSet("a"),
+				valueSet("redhat"),
+				valueSet("openshift"),
+				valueSet("4"),
+				valueAny(),
+				valueAny(),
+				valueAny(),
+			}},
+		},
+		// Should be fine, because a wildcard is in an allowed state.
+		{
+			Bound: `cpe:/a:redhat:openshift:4.%02`,
+			WFN: WFN{Attr: [NumAttr]Value{
+				valueSet("a"),
+				valueSet("redhat"),
+				valueSet("openshift"),
+				valueSet(`4\.*`),
+				valueAny(),
+				valueAny(),
+				valueAny(),
+			}},
 		},
 	}
-	for _, tc := range tt {
-		t.Logf("bound: %q", tc.Bound)
-		got, err := UnbindURI(tc.Bound)
-		if tc.Error {
-			t.Log(err)
-			if err == nil {
-				t.Error("expected error, got nil")
-			}
-			continue
-		}
-		if err != nil {
-			t.Error(err)
-		}
-		want := tc.WFN
-		t.Logf("\ngot:\t%#v\nwant:\t%#v", got, want)
-		if !cmp.Equal(got, want) {
-			t.Error(cmp.Diff(got, want))
-		}
-	}
+
+	t.Run("FS", inner(fsTable, UnbindFS))
+	t.Run("URI", inner(uriTable, UnbindURI))
 }
 
 func TestDictionary(t *testing.T) {
