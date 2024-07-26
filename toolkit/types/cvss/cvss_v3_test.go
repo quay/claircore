@@ -27,6 +27,7 @@ func TestV3(t *testing.T) {
 			{Vector: "CVSS:3.1/CVSS:3.0/AV:P/AC:H/PR:H/UI:R/S:U/C:N/I:N/A:N", Error: true},
 			{Vector: "CVSS:3.1/AV:P/AC:H/PR:H/UI:R/S:U/C:N/I:N/A:N/AV:X", Error: true},
 			{Vector: "CVSS:3.3", Error: true},
+			{Vector: "CVSS:3.1/AV:P/AC:H/PR:H/UI:R/S:U/C:N/I:N", Error: true},
 		}
 		Error[V3, V3Metric, *V3](t, tcs)
 	})
