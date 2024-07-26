@@ -8,14 +8,17 @@ import (
 func TestV2(t *testing.T) {
 	t.Run("Error", func(t *testing.T) {
 		tcs := []ErrorTestcase{
-			{Vector: "AV:N/AC:L/Au:N/C:N/I:N/A:C", Error: false},
-			{Vector: "AV:N/AC:L/Au:N/C:C/I:C/A:C", Error: false},
-			{Vector: "AV:L/AC:H/Au:N/C:C/I:C/A:C", Error: false},
-			{Vector: "AV:L/AC:H/Au:N/C:C/I:C/A:C/E:F/RL:OF/RC:C/CDP:H/TD:H/CR:M/IR:M/AR:H", Error: false},
+			{Vector: "AV:N/AC:L/Au:N/C:N/I:N/A:C"},
+			{Vector: "AV:N/AC:L/Au:N/C:C/I:C/A:C"},
+			{Vector: "AV:L/AC:H/Au:N/C:C/I:C/A:C"},
+			{Vector: "AV:L/AC:H/Au:N/C:C/I:C/A:C/E:F/RL:OF/RC:C/CDP:H/TD:H/CR:M/IR:M/AR:H"},
 			{Vector: "CVSS:2.0/AV:N/AC:L/Au:N/C:N/I:N/A:C", Error: true},
 			{Vector: "AV:N/AC:L/Au:N/C:N/I:N", Error: true},
 			{Vector: "AV:A/AC:L/Au:N/C:C/I:C/A:C/CDP:H/TD:H/CR:H", Error: true},
 			{Vector: "AV:A/AC:L/Au:N/C:C/I:C/A:C/E:F", Error: true},
+			{Vector: "AV:L/AC:H/Au:N/C:C/I:C/A:C/Au:N", Error: true},
+			{Vector: "AV:L/AC:H/Au:N/C:C/I:C/A:", Error: true},
+			{Vector: "AV:L/AC:H/Au:N/C:C/I:C/A:C?notaurl=1", Error: true},
 		}
 		Error[V2, V2Metric, *V2](t, tcs)
 	})
