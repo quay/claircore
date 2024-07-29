@@ -47,10 +47,11 @@ func Compare(src, tgt WFN) Relations {
 					// case insensitive glob compare
 					if !patCompare(sv.V, tv.V) {
 						m[i] = Disjoint
+					} else {
+						m[i] = Superset
 					}
-					m[i] = Superset
 				}
-				break
+				continue
 			}
 			switch tv.Kind {
 			case ValueAny, ValueUnset:

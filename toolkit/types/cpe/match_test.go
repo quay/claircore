@@ -13,6 +13,7 @@ import (
 )
 
 func TestMatch(t *testing.T) {
+	t.Parallel()
 	type testcase struct {
 		Source string
 		Target string
@@ -55,6 +56,13 @@ func TestMatch(t *testing.T) {
 			Target: MustUnbind(`cpe:/o:redhat:enterprise_linux:8`).String(),
 			Want: Relations([NumAttr]Relation{
 				Equal, Equal, Equal, Equal, Equal, Subset, Equal, Equal, Equal, Equal, Equal,
+			}),
+		},
+		{
+			Source: `cpe:2.3:a:redhat:openshift:4.*:*:el8:*:*:*:*:*`,
+			Target: `cpe:2.3:a:redhat:openshift:5.1:*:el8:*:*:*:*:*`,
+			Want: Relations([NumAttr]Relation{
+				Equal, Equal, Equal, Disjoint, Equal, Equal, Equal, Equal, Equal, Equal, Equal,
 			}),
 		},
 	}
@@ -124,5 +132,37 @@ func tabfmtResults(w io.Writer, r Relations) {
 		{"disjoint", r.IsDisjoint()},
 	} {
 		fmt.Fprintf(w, "%s?\t%v\n", x.rel, x.val)
+	}
+}
+
+func TestPatternCompare(t *testing.T) {
+	t.Parallel()
+	type testcase struct {
+		Source string
+		Target string
+		Want   bool
+	}
+	var b strings.Builder
+	eq := func(ok bool) string {
+		if ok {
+			return `⩵`
+		}
+		return `≠`
+	}
+
+	table := []testcase{
+		{`4\.*`, `5\.1`, false},
+	}
+	for _, tc := range table {
+		t.Run("", func(t *testing.T) {
+			b.Reset()
+			got, want := patCompare(tc.Source, tc.Target), tc.Want
+			fmt.Fprintf(&b, "got: %#q %s %#q", tc.Source, eq(got), tc.Target)
+			if got != want {
+				fmt.Fprintf(&b, ", want: %#q %s %#q", tc.Source, eq(want), tc.Target)
+				t.Fail()
+			}
+			t.Log(b.String())
+		})
 	}
 }
