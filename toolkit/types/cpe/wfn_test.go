@@ -1,9 +1,10 @@
 package cpe
 
 import (
+	"bufio"
 	"compress/gzip"
-	"encoding/xml"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -406,62 +407,37 @@ func TestUnbinding(t *testing.T) {
 }
 
 func TestDictionary(t *testing.T) {
+	const fmt = "line #%02d:\nin:\t%+q\ngot:\t%q\nwant:\t%q"
 	t.Parallel()
-	const fmt = "in: %+q\ngot:\t%q\nwant:\t%q"
-	f, err := os.Open("testdata/official-cpe-dictionary_v2.3.xml.gz")
+	f, err := os.Open("testdata/dictionary.list.gz")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer f.Close()
-	gz, err := gzip.NewReader(f)
+	gz, err := gzip.NewReader(bufio.NewReader(f))
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer gz.Close()
 
-	var l xmlCPEList
-	if err := xml.NewDecoder(gz).Decode(&l); err != nil {
+	s := bufio.NewScanner(gz)
+	for i := 1; s.Scan(); i++ {
+		fs := strings.Split(s.Text(), "\t")
+		want := fs[1]
+		for _, in := range fs {
+			wfn, err := Unbind(in)
+			if err != nil {
+				t.Fatal(err)
+				t.Fatalf("%v: %#q", err, in)
+			}
+			if got := wfn.BindFS(); got != want {
+				t.Logf(fmt, i, in, got, want)
+				t.Logf("wfn: %#v", wfn)
+				t.Fail()
+			}
+		}
+	}
+	if err := s.Err(); err != nil {
 		t.Error(err)
 	}
-	for _, i := range l.Items {
-		n := i.Name
-		wfn, err := UnbindURI(n)
-		if err != nil {
-			t.Fatal(err)
-		}
-		got, want := wfn.BindFS(), i.Item.Name
-		if got != want {
-			t.Logf(fmt, n, got, want)
-			t.Logf("wfn: %#v", wfn)
-			t.FailNow()
-		}
-
-		n = i.Item.Name
-		wfn, err = UnbindFS(n)
-		if err != nil {
-			t.Fatal(err)
-		}
-		got, want = wfn.BindFS(), n
-		if got != want {
-			t.Logf(fmt, n, got, want)
-			t.Logf("wfn: %#v", wfn)
-			t.FailNow()
-		}
-	}
-}
-
-type xmlCPEList struct {
-	XMLName xml.Name     `xml:"cpe-list"`
-	Items   []xmlCPEItem `xml:"cpe-item"`
-}
-
-type xmlCPEItem struct {
-	XMLName xml.Name     `xml:"cpe-item"`
-	Name    string       `xml:"name,attr"`
-	Item    xmlCPE23Item `xml:"cpe23-item"`
-}
-
-type xmlCPE23Item struct {
-	XMLName xml.Name `xml:"cpe23-item"`
-	Name    string   `xml:"name,attr"`
 }

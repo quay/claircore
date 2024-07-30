@@ -8,10 +8,6 @@ import (
 	"unicode/utf8"
 )
 
-//go:generate -command stringer go run golang.org/x/tools/cmd/stringer@latest
-//go:generate stringer -type Attribute -linecomment
-//go:generate stringer -type ValueKind
-
 // Attribute is a type for enumerating the valid CPE attributes.
 type Attribute int
 

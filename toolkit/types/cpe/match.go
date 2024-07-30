@@ -172,8 +172,6 @@ func (rs Relations) IsDisjoint() bool {
 // Relation indicates the relation of two WFN attributes.
 type Relation uint
 
-//go:generate stringer -type Relation -linecomment
-
 // These are the possible relations between WFNs and their components.
 //
 // The super- and sub-sets indicate the conventional sense, meaning a set is
