@@ -10,7 +10,136 @@ import (
 	"testing"
 
 	"github.com/klauspost/compress/snappy"
+
+	"github.com/quay/zlog"
+
+	"github.com/quay/claircore/toolkit/types/csaf"
 )
+
+func TestWalkRelationships(t *testing.T) {
+	testcases := []struct {
+		name                              string
+		in                                string
+		c                                 *csaf.CSAF
+		expectedPkgName, expectedRepoName string
+		err                               bool
+	}{
+		{
+			c: &csaf.CSAF{
+				ProductTree: csaf.ProductBranch{},
+			},
+			in:               "EAP 7.4 log4j async",
+			expectedPkgName:  "",
+			expectedRepoName: "",
+			name:             "no_relationship",
+			err:              true,
+		},
+		{
+			c: &csaf.CSAF{
+				ProductTree: csaf.ProductBranch{
+					Relationships: csaf.Relationships{
+						csaf.Relationship{
+							Category: "default_component_of",
+							FullProductName: csaf.Product{
+								Name: "fence-agents-common-0:4.10.0-62.el9_4.3.noarch as a component of Red Hat Enterprise Linux ResilientStorage (v. 9)",
+								ID:   "ResilientStorage-9.4.0.Z.MAIN.EUS:fence-agents-common-0:4.10.0-62.el9_4.3.noarch",
+							},
+							ProductRef:          "fence-agents-common-0:4.10.0-62.el9_4.3.noarch",
+							RelatesToProductRef: "ResilientStorage-9.4.0.Z.MAIN.EUS",
+						},
+					},
+				},
+			},
+			in:               "ResilientStorage-9.4.0.Z.MAIN.EUS:fence-agents-common-0:4.10.0-62.el9_4.3.noarch",
+			expectedPkgName:  "fence-agents-common-0:4.10.0-62.el9_4.3.noarch",
+			expectedRepoName: "ResilientStorage-9.4.0.Z.MAIN.EUS",
+			name:             "simple_relationship",
+		},
+		{
+			c: &csaf.CSAF{
+				ProductTree: csaf.ProductBranch{
+					Relationships: csaf.Relationships{
+						csaf.Relationship{
+							Category: "default_component_of",
+							FullProductName: csaf.Product{
+								Name: "httpd:2.4:8100020240612075645:489197e6 as a component of Red Hat Enterprise Linux AppStream (v. 8)",
+								ID:   "AppStream-8.10.0.Z.MAIN.EUS:httpd:2.4:8100020240612075645:489197e6",
+							},
+							ProductRef:          "httpd:2.4:8100020240612075645:489197e6",
+							RelatesToProductRef: "AppStream-8.10.0.Z.MAIN.EUS",
+						},
+						csaf.Relationship{
+							Category: "default_component_of",
+							FullProductName: csaf.Product{
+								Name: "httpd-0:2.4.37-65.module+el8.10.0+21982+14717793.aarch64 as a component of httpd:2.4:8100020240612075645:489197e6 as a component of Red Hat Enterprise Linux AppStream (v. 8)",
+								ID:   "AppStream-8.10.0.Z.MAIN.EUS:httpd:2.4:8100020240612075645:489197e6:httpd-0:2.4.37-65.module+el8.10.0+21982+14717793.aarch64",
+							},
+							ProductRef:          "httpd-0:2.4.37-65.module+el8.10.0+21982+14717793.aarch64",
+							RelatesToProductRef: "AppStream-8.10.0.Z.MAIN.EUS:httpd:2.4:8100020240612075645:489197e6",
+						},
+					},
+				},
+			},
+			in:               "AppStream-8.10.0.Z.MAIN.EUS:httpd:2.4:8100020240612075645:489197e6:httpd-0:2.4.37-65.module+el8.10.0+21982+14717793.aarch64",
+			expectedPkgName:  "httpd-0:2.4.37-65.module+el8.10.0+21982+14717793.aarch64",
+			expectedRepoName: "AppStream-8.10.0.Z.MAIN.EUS",
+			name:             "two_level_relationship",
+		},
+		{
+			c: &csaf.CSAF{
+				ProductTree: csaf.ProductBranch{
+					Relationships: csaf.Relationships{
+						csaf.Relationship{
+							Category: "default_component_of",
+							FullProductName: csaf.Product{
+								Name: "jmc package as part of cros OS",
+								ID:   "J-COMP:JMC",
+							},
+							ProductRef:          "JMC",
+							RelatesToProductRef: "J-COMP",
+						},
+						csaf.Relationship{
+							Category: "default_component_of",
+							FullProductName: csaf.Product{
+								Name: "jmc package as part of J mod",
+								ID:   "CROS:J-MOD",
+							},
+							ProductRef:          "J-MOD",
+							RelatesToProductRef: "CROS",
+						},
+						csaf.Relationship{
+							Category: "default_component_of",
+							FullProductName: csaf.Product{
+								Name: "jmc package as part of J-mod as part of J-COMP as part of cros OS",
+								ID:   "CROS:J-MOD:J-COMP:JMC",
+							},
+							ProductRef:          "J-COMP:JMC",
+							RelatesToProductRef: "CROS:J-MOD",
+						},
+					},
+				},
+			},
+			in:               "CROS:J-MOD:J-COMP:JMC",
+			expectedPkgName:  "JMC",
+			expectedRepoName: "CROS",
+			name:             "two_times_two_level_relationship",
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			pkgName, repoName, err := walkRelationships(tc.in, tc.c)
+			if err != nil && !tc.err {
+				t.Errorf("expected no error but got %q", err)
+			}
+			if pkgName != tc.expectedPkgName {
+				t.Errorf("expected %s but got %s", tc.expectedPkgName, pkgName)
+			}
+			if repoName != tc.expectedRepoName {
+				t.Errorf("expected %s but got %s", tc.expectedRepoName, repoName)
+			}
+		})
+	}
+}
 
 func TestEscapeCPE(t *testing.T) {
 	testcases := []struct {
@@ -52,7 +181,7 @@ func TestEscapeCPE(t *testing.T) {
 
 func TestParse(t *testing.T) {
 	t.Parallel()
-	c := context.Background()
+	ctx := context.Background()
 	url, err := url.Parse(BaseURL)
 	if err != nil {
 		t.Error(err)
@@ -76,12 +205,25 @@ func TestParse(t *testing.T) {
 			expectedVulns:   736,
 			expectedDeleted: 0,
 		},
+		{
+			name:            "cve-2024-24786",
+			filename:        "testdata/cve-2024-24786.jsonl",
+			expectedVulns:   246,
+			expectedDeleted: 0,
+		},
+		{
+			name:            "cve-2022-38752",
+			filename:        "testdata/cve-2022-38752.jsonl",
+			expectedVulns:   40,
+			expectedDeleted: 0,
+		},
 	}
 
 	u := &Updater{url: url, client: http.DefaultClient}
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
+			ctx := zlog.Test(ctx, t)
 			f, err := os.Open(tc.filename)
 			if err != nil {
 				t.Fatalf("failed to open test data file %s: %v", tc.filename, err)
@@ -107,7 +249,7 @@ func TestParse(t *testing.T) {
 				t.Errorf("failed to close snappy Writer: %v", err)
 			}
 
-			vulns, deleted, err := u.DeltaParse(c, io.NopCloser(&buf))
+			vulns, deleted, err := u.DeltaParse(ctx, io.NopCloser(&buf))
 			if err != nil {
 				t.Fatalf("failed to parse CSAF JSON: %v", err)
 			}

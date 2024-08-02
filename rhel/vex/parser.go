@@ -159,7 +159,6 @@ func (pc *productCache) Get(productID string, c *csaf.CSAF) *csaf.Product {
 	p := c.ProductTree.FindProductByID(productID)
 	pc.cache[productID] = p
 	return p
-
 }
 
 // NewCreator returns a creator object used for processing parts of a VEX file
@@ -186,47 +185,72 @@ type creator struct {
 	rc                 *repoCache
 }
 
+// WalkRelationships attempts to resolve a relationship until we have a package product_id and
+// a repo product_id. Relationships can be nested. If the pkgID and the repoID are the same we
+// either found no relationship or a relationship where both ends are pointing to the same
+// product_id, either way we don't have enough data to create a vulnerability.
+func walkRelationships(productID string, doc *csaf.CSAF) (string, string, error) {
+	pkgID, repoID := extractProductNames(productID, productID, doc)
+	if pkgID == repoID {
+		return "", "", fmt.Errorf("could not extract a distict pkgID and repoID from %q", productID)
+	}
+	return pkgID, repoID, nil
+}
+
+// ExtractProductNames recursively looks up the package product_id and the repo product_id.
+// The assumtion is that the repo is always the last found relates_to_product_reference and the
+// package is the last found product_reference.
+func extractProductNames(prodRelID string, repoRelID string, c *csaf.CSAF) (string, string) {
+	prodRel := c.FindRelationship(prodRelID, "default_component_of")
+	if prodRel != nil {
+		prodRelID, _ = extractProductNames(prodRel.ProductRef, prodRel.RelatesToProductRef, c)
+	}
+	repoRel := c.FindRelationship(repoRelID, "default_component_of")
+	if repoRel != nil {
+		_, repoRelID = extractProductNames(repoRel.ProductRef, repoRel.RelatesToProductRef, c)
+	}
+	return prodRelID, repoRelID
+}
+
 // KnownAffectedVulnerabilities processes the "known_affected" array of products
 // in the VEX object.
 func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v csaf.Vulnerability, protoVulnFunc func() *claircore.Vulnerability) ([]*claircore.Vulnerability, error) {
+	unrelatedProductIDs := []string{}
 	out := []*claircore.Vulnerability{}
 	for _, pc := range v.ProductStatus["known_affected"] {
-		rel := c.c.ProductTree.Relationships.FindRelationship(pc, "default_component_of")
-		if rel == nil {
-			// Should never get here, error in data
-			zlog.Debug(ctx).
-				Str("product:package", pc).
-				Msg("could not find a relationship for product:package")
-			continue
+		pkgName, repoName, err := walkRelationships(pc, c.c)
+		if err != nil {
+			unrelatedProductIDs = append(unrelatedProductIDs, pc)
+			// It's possible to get here due to middleware not having a defined component:package
+			// relationship.
 		}
-		if strings.HasPrefix(rel.ProductRef, "kernel") {
+		if strings.HasPrefix(pkgName, "kernel") {
 			// We don't want to ingest kernel advisories as
 			// containers have no say in the kernel.
 			continue
 		}
-		repoProd := c.pc.Get(rel.RelatesToProductRef, c.c)
+
+		repoProd := c.pc.Get(repoName, c.c)
 		if repoProd == nil {
-			// Should never get here, error in data
 			zlog.Warn(ctx).
-				Str("prod", rel.RelatesToProductRef).
+				Str("prod", repoName).
 				Msg("could not find product in product tree")
 			continue
 		}
 		cpeHelper, ok := repoProd.IdentificationHelper["cpe"]
 		if !ok {
 			zlog.Warn(ctx).
-				Str("prod", rel.RelatesToProductRef).
+				Str("prod", repoName).
 				Msg("could not find cpe helper type in product")
 			continue
 		}
 
 		// pkgName will be overridden if we find a valid pURL
-		pkgName := rel.ProductRef
-		compProd := c.pc.Get(rel.ProductRef, c.c)
+		compProd := c.pc.Get(pkgName, c.c)
 		if compProd == nil {
 			// Should never get here, error in data
 			zlog.Warn(ctx).
-				Str("pkg", rel.ProductRef).
+				Str("pkg", pkgName).
 				Msg("could not find package in product tree")
 			continue
 		}
@@ -281,6 +305,11 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v csaf.Vulne
 		}
 		out = append(out, vuln)
 	}
+	if len(unrelatedProductIDs) > 0 {
+		zlog.Debug(ctx).
+			Strs("product_ids", unrelatedProductIDs).
+			Msg("skipped unrelatable product_ids")
+	}
 
 	return out, nil
 }
@@ -303,40 +332,43 @@ func (c *creator) lookupVulnerability(vulnKey string, protoVulnFunc func() *clai
 // FixedVulnerabilities processes the "fixed" array of products in the
 // VEX object.
 func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability, protoVulnFunc func() *claircore.Vulnerability) ([]*claircore.Vulnerability, error) {
+	unrelatedProductIDs := []string{}
 	for _, pc := range v.ProductStatus["fixed"] {
-		rel := c.c.FindRelationship(pc, "default_component_of")
-		if rel == nil {
-			// We can get here, it means we don't have a repo:pkg relationship.
-			// In our case, this information is not useful, so skip.
+		pkgName, repoName, err := walkRelationships(pc, c.c)
+		if err != nil {
+			unrelatedProductIDs = append(unrelatedProductIDs, pc)
+			// It's possible to get here due to middleware not having a defined component:package
+			// relationship.
 			continue
 		}
-		repoProd := c.pc.Get(rel.RelatesToProductRef, c.c)
+
+		repoProd := c.pc.Get(repoName, c.c)
 		if repoProd == nil {
 			// Should never get here, error in data
 			zlog.Warn(ctx).
-				Str("prod", rel.RelatesToProductRef).
+				Str("prod", repoName).
 				Msg("could not find product in product tree")
 			continue
 		}
 		cpeHelper, ok := repoProd.IdentificationHelper["cpe"]
 		if !ok {
 			zlog.Warn(ctx).
-				Str("prod", rel.RelatesToProductRef).
+				Str("prod", repoName).
 				Msg("could not find cpe helper type in product")
 			continue
 		}
-		compProd := c.pc.Get(rel.ProductRef, c.c)
+		compProd := c.pc.Get(pkgName, c.c)
 		if compProd == nil {
 			// Should never get here, error in data
 			zlog.Warn(ctx).
-				Str("pkg", rel.ProductRef).
+				Str("pkg", pkgName).
 				Msg("could not find package in product tree")
 			continue
 		}
 		purlHelper, ok := compProd.IdentificationHelper["purl"]
 		if !ok {
 			zlog.Warn(ctx).
-				Str("pkg", rel.ProductRef).
+				Str("pkg", pkgName).
 				Msg("could not find purl helper type in product")
 			continue
 		}
@@ -359,7 +391,7 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 		}
 
 		fixedIn := epochVersion(&purl)
-		vulnKey := createPackageKey(rel.RelatesToProductRef, purl.Name, fixedIn)
+		vulnKey := createPackageKey(repoName, purl.Name, fixedIn)
 		arch := purl.Qualifiers.Map()["arch"]
 		if vuln, ok := c.lookupVulnerability(vulnKey, protoVulnFunc); ok && arch != "" {
 			// We've already found this package, just append the arch
@@ -404,6 +436,12 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 			}
 		}
 	}
+	if len(unrelatedProductIDs) > 0 {
+		zlog.Debug(ctx).
+			Strs("product_ids", unrelatedProductIDs).
+			Msg("skipped unrelatable product_ids")
+	}
+
 	out := make([]*claircore.Vulnerability, len(c.fixedVulns))
 	for i := range c.fixedVulns {
 		out[i] = &c.fixedVulns[i]
