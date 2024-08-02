@@ -10,8 +10,7 @@ clear-cache:
 # generates mocks of interfaces for testing
 .PHONY: genmocks
 genmocks:
-	@command -v mockgen >/dev/null || go install github.com/golang/mock/mockgen
-	go generate ./...
+	go generate -run mockgen ./...
 
 # Runs integration tests. An embedded postgres binary will be fetched if the
 # environment variable "POSTGRES_CONNECTION_STRING" isn't set.

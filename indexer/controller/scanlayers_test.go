@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/quay/zlog"
+	"go.uber.org/mock/gomock"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"

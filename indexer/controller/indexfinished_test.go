@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/quay/zlog"
+	"go.uber.org/mock/gomock"
 
 	indexer "github.com/quay/claircore/test/mock/indexer"
 )

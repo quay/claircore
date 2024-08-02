@@ -5,7 +5,6 @@ go 1.21.8
 require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/doug-martin/goqu/v8 v8.6.0
-	github.com/golang/mock v1.6.0
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgconn v1.14.3
@@ -25,6 +24,7 @@ require (
 	github.com/ulikunitz/xz v0.5.11
 	go.opentelemetry.io/otel v1.28.0
 	go.opentelemetry.io/otel/trace v1.28.0
+	go.uber.org/mock v0.4.0
 	golang.org/x/crypto v0.25.0
 	golang.org/x/sync v0.8.0
 	golang.org/x/sys v0.23.0
