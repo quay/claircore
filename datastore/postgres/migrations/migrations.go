@@ -108,4 +108,8 @@ var MatcherMigrations = []migrate.Migration{
 		ID: 12,
 		Up: runFile("matcher/12-add-latest_update_operation-index.sql"),
 	},
+	{
+		ID: 13,
+		Up: runFile("matcher/13-delete-rhel-oval.sql"),
+	},
 }
