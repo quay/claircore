@@ -288,7 +288,7 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 					Severity:           releasesByMinor[minor].Severity,
 					NormalizedSeverity: common.NormalizeSeverity(releasesByMinor[minor].Severity),
 					Package:            p,
-					Repo:               &goldRepo,
+					Repo:               &GoldRepo,
 					Links:              links,
 					FixedInVersion:     firstPatch.Original,
 					Range:              r,
