@@ -58,9 +58,6 @@ type item struct {
 
 type itemKind int
 
-//go:generate -command stringer go run golang.org/x/tools/cmd/stringer
-//go:generate stringer -type itemKind
-
 const (
 	itemError itemKind = iota
 	itemComment
