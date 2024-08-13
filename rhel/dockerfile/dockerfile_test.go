@@ -4,60 +4,56 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io/fs"
-	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"golang.org/x/tools/txtar"
 )
 
 func TestGetLabels(t *testing.T) {
+	var errPrefix = []byte("error:")
 	ctx := context.Background()
-	td := os.DirFS("testdata")
-	de, err := fs.ReadDir(td, ".")
+
+	ms, err := filepath.Glob("testdata/*.txtar")
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, de := range de {
-		n := de.Name()
-		if !strings.HasPrefix(n, "Dockerfile") ||
-			strings.HasSuffix(n, ".want") ||
-			strings.HasSuffix(n, ".want.err") {
-			continue
-		}
-		t.Run(n, func(t *testing.T) {
-			f, err := td.Open(n)
+	for _, m := range ms {
+		t.Run(strings.TrimSuffix(filepath.Base(m), filepath.Ext(m)), func(t *testing.T) {
+			ar, err := txtar.ParseFile(m)
 			if err != nil {
-				t.Fatal(err)
+				t.Fatalf("error parsing archive: %v", err)
 			}
-			defer f.Close()
-			w, err := td.Open(n + ".want")
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer w.Close()
-			wantErr, _ := fs.ReadFile(td, n+".want.err")
 
-			want := make(map[string]string)
-			if err := json.NewDecoder(w).Decode(&want); err != nil {
-				t.Error(err)
-			}
-			got, err := GetLabels(ctx, f)
-			if len(wantErr) == 0 {
-				if err != nil {
-					t.Error(err)
-				}
-			} else {
-				if err == nil {
-					t.Error("got nil, wanted error")
-				} else {
-					if got, want := err.Error(), string(bytes.TrimSpace(wantErr)); got != want {
-						t.Errorf("got: %+#q, want: %+#q", got, want)
+			var got, want map[string]string
+			wantErr := bytes.HasPrefix(ar.Comment, errPrefix)
+			for _, f := range ar.Files {
+				switch f.Name {
+				case "Dockerfile":
+					got, err = GetLabels(ctx, bytes.NewReader(f.Data))
+				case "Want":
+					want = make(map[string]string)
+					if err := json.Unmarshal(f.Data, &want); err != nil {
+						t.Fatalf("unmarshaling wanted values: %v", err)
 					}
+				default:
+					t.Logf("skipping unknown file: %s", f.Name)
 				}
 			}
 
+			if wantErr {
+				got := err.Error()
+				want := string(bytes.TrimSpace(bytes.TrimPrefix(ar.Comment, errPrefix)))
+				if got != want {
+					t.Error(cmp.Diff(got, want))
+				}
+				return
+			}
+			if err != nil {
+				t.Errorf("error parsing labels: %v", err)
+			}
 			if !cmp.Equal(got, want) {
 				t.Error(cmp.Diff(got, want))
 			}

@@ -1,6 +1,11 @@
+-- Dockerfile --
 FROM scratch
 
 ENV A="B C" \
     D=E
 
 LABEL label="$A $D"
+-- Want --
+{
+  "label": "B C E"
+}
