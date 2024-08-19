@@ -214,10 +214,11 @@ func extractProductNames(prodRelID string, repoRelID string, c *csaf.CSAF) (stri
 // in the VEX object.
 func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v csaf.Vulnerability, protoVulnFunc func() *claircore.Vulnerability) ([]*claircore.Vulnerability, error) {
 	unrelatedProductIDs := []string{}
+	debugEnabled := zlog.Debug(ctx).Enabled()
 	out := []*claircore.Vulnerability{}
 	for _, pc := range v.ProductStatus["known_affected"] {
 		pkgName, repoName, err := walkRelationships(pc, c.c)
-		if err != nil {
+		if err != nil && debugEnabled {
 			unrelatedProductIDs = append(unrelatedProductIDs, pc)
 			// It's possible to get here due to middleware not having a defined component:package
 			// relationship.
@@ -331,9 +332,10 @@ func (c *creator) lookupVulnerability(vulnKey string, protoVulnFunc func() *clai
 // VEX object.
 func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability, protoVulnFunc func() *claircore.Vulnerability) ([]*claircore.Vulnerability, error) {
 	unrelatedProductIDs := []string{}
+	debugEnabled := zlog.Debug(ctx).Enabled()
 	for _, pc := range v.ProductStatus["fixed"] {
 		pkgName, repoName, err := walkRelationships(pc, c.c)
-		if err != nil {
+		if err != nil && debugEnabled {
 			unrelatedProductIDs = append(unrelatedProductIDs, pc)
 			// It's possible to get here due to middleware not having a defined component:package
 			// relationship.
