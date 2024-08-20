@@ -2,18 +2,17 @@ package java
 
 import (
 	"context"
+	"net/url"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/zlog"
-	"net/url"
 )
 
 // Matcher matches discovered Java Maven packages against advisories provided via OSV.
 type Matcher struct{}
 
-var (
-	_ driver.Matcher = (*Matcher)(nil)
-)
+var _ driver.Matcher = (*Matcher)(nil)
 
 // Name implements driver.Matcher.
 func (*Matcher) Name() string { return "java-maven" }

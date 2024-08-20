@@ -5,16 +5,19 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/quay/zlog"
+
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/test"
 )
 
 func TestVulnerable(t *testing.T) {
 	matcher := &Matcher{}
 
 	testcases := []struct {
-		name   string
 		record *claircore.IndexRecord
 		vuln   *claircore.Vulnerability
+		name   string
 		want   bool
 	}{
 		{
@@ -198,4 +201,8 @@ func TestVulnerable(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestMatcher(t *testing.T) {
+	test.RunMatcherTests(zlog.Test(context.Background(), t), t, "testdata/matcher", new(Matcher))
 }
