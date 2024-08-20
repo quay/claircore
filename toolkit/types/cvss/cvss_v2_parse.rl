@@ -53,9 +53,11 @@ cr  = ( "CR"  >metric_start %mark_metric) ":" ( ("L"|"M"|"H"|"ND")           >va
 ir  = ( "IR"  >metric_start %mark_metric) ":" ( ("L"|"M"|"H"|"ND")           >value_start %mark_value);
 ar  = ( "AR"  >metric_start %mark_metric) ":" ( ("L"|"M"|"H"|"ND")           >value_start %mark_value);
 
-metric = ( av | ac | au | c | i | a | e | rl | rc | cdp | td | cr | ir | ar );
+base = av "/" ac "/" au "/" c "/" i "/" a;
+temporal = e "/" rl "/" rc;
+environmental = cdp "/" td "/" cr "/" ir "/" ar;
 
-main := ( metric ( "/" metric )+ ) $err {
+main := ( base ("/" temporal)? ("/" environmental)? ) $err {
 	if p == eof {
 		return fmt.Errorf("cvss v2: %w: too short", ErrMalformedVector)
 	}
