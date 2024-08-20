@@ -1,7 +1,11 @@
 package cvss
 
 import (
+	"bufio"
+	"os"
 	"reflect"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -63,6 +67,41 @@ func Roundtrip[T any, M Metric, P VectorImpl[M, T]](t *testing.T, vecs []string)
 	}
 }
 
+// LoadRoundtripFixture loads the named file as a list of vectors.
+//
+// The format of the fixture is:
+// - Vector string, one per line.
+// - Empty lines and lines beginning with '#' are ignored.
+// - Trailing words after a '#' are ignored.
+func LoadRoundtripFixture(t testing.TB, file string) (vecs []string) {
+	t.Helper()
+	f, err := os.Open(file)
+	if err != nil {
+		t.Fatalf("opening roundtrip fixture %q: %v", file, err)
+	}
+	s := bufio.NewScanner(f)
+	defer func() {
+		if err := s.Err(); err != nil {
+			t.Errorf("bufio error: %v", err)
+		}
+		if err := f.Close(); err != nil {
+			t.Errorf("close error: %v", err)
+		}
+	}()
+
+	for s.Scan() {
+		l := s.Text()
+		if len(l) == 0 || l[0] == '#' {
+			continue
+		}
+		if idx := strings.IndexByte(l, '#'); idx != -1 {
+			l = strings.TrimSpace(l[:idx])
+		}
+		vecs = append(vecs, l)
+	}
+	return vecs
+}
+
 type ScoreTestcase struct {
 	Vector string
 	Score  float64
@@ -101,6 +140,57 @@ func Score[T any, M Metric, P VectorImpl[M, T]](t *testing.T, tcs []ScoreTestcas
 	}
 }
 
+// LoadScoreFixture loads the name file as a list of [ScoreTestcase].
+//
+// The format of the fixture is:
+// - Space separated vector and decimal number, one per line.
+// - Empty lines and lines beginning with '#' are ignored.
+// - Fields beyond the first two are ignored.
+func LoadScoreFixture(t testing.TB, file string) (tcs []ScoreTestcase) {
+	t.Helper()
+	f, err := os.Open(file)
+	if err != nil {
+		t.Fatalf("opening score fixture %q: %v", file, err)
+	}
+	s := bufio.NewScanner(f)
+	defer func() {
+		if err := s.Err(); err != nil {
+			t.Errorf("bufio error: %v", err)
+		}
+		if err := f.Close(); err != nil {
+			t.Errorf("close error: %v", err)
+		}
+	}()
+
+Line:
+	for s.Scan() {
+		l := s.Text()
+		if len(l) == 0 || l[0] == '#' {
+			continue
+		}
+		fs := strings.Fields(l)
+		var tc ScoreTestcase
+	Field:
+		for i, f := range fs {
+			switch i {
+			case 0:
+				tc.Vector = f
+			case 1:
+				s, err := strconv.ParseFloat(f, 64)
+				if err != nil {
+					t.Errorf("bad float (%v), skipping: %#q", err, l)
+					continue Line
+				}
+				tc.Score = s
+			default:
+				break Field
+			}
+		}
+		tcs = append(tcs, tc)
+	}
+	return tcs
+}
+
 type ErrorTestcase struct {
 	Vector string
 	Error  bool
@@ -120,4 +210,56 @@ func Error[T any, M Metric, P VectorImpl[M, T]](t *testing.T, tcs []ErrorTestcas
 			}
 		})
 	}
+}
+
+// LoadErrorFixture loads the named file as a list of vectors.
+//
+// The format of the fixture is:
+// - Vector string, one per line.
+// - Empty lines and lines beginning with '#' are ignored.
+// - A trailing word with "#OK" marks the line as _not_ failing.
+func LoadErrorFixture(t testing.TB, file string) (tcs []ErrorTestcase) {
+	t.Helper()
+	f, err := os.Open(file)
+	if err != nil {
+		t.Fatalf("opening error fixture %q: %v", file, err)
+	}
+	s := bufio.NewScanner(f)
+	defer func() {
+		if err := s.Err(); err != nil {
+			t.Errorf("bufio error: %v", err)
+		}
+		if err := f.Close(); err != nil {
+			t.Errorf("close error: %v", err)
+		}
+	}()
+
+Line:
+	for s.Scan() {
+		l := s.Text()
+		if len(l) == 0 || l[0] == '#' {
+			continue
+		}
+		tc := ErrorTestcase{
+			Error: true,
+		}
+		fs := strings.Fields(l)
+		for i, f := range fs {
+			switch i {
+			case 0:
+				tc.Vector = f
+			case 1:
+				if f == `#OK` {
+					tc.Error = false
+					break
+				}
+				fallthrough
+			default:
+				t.Errorf("odd line, skipping: %#q", l)
+				continue Line
+			}
+		}
+		tcs = append(tcs, tc)
+	}
+	return tcs
 }

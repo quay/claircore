@@ -10,6 +10,9 @@ import (
 
 // LoadVectorList loads a list of newline-separated CVSS vectors, omitting empty
 // lines and lines starting with '#'.
+//
+// This is substantially the same as the "Load Fixture" functions, but only
+// considers the first field and keeps the returned lines as []byte.
 func loadVectorList(t testing.TB, name string) [][]byte {
 	t.Helper()
 	in, err := os.ReadFile(filepath.Join(`testdata`, name))
@@ -17,9 +20,13 @@ func loadVectorList(t testing.TB, name string) [][]byte {
 		t.Fatal(err)
 	}
 	vecs := bytes.Split(in, []byte{'\n'})
-	return slices.DeleteFunc(vecs, func(b []byte) bool {
+	vecs = slices.DeleteFunc(vecs, func(b []byte) bool {
 		return len(b) == 0 || b[0] == '#'
 	})
+	for i, vec := range vecs {
+		vecs[i] = bytes.Fields(vec)[0]
+	}
+	return vecs
 }
 
 func BenchmarkUnmarshal(b *testing.B) {
@@ -43,7 +50,7 @@ func benchmarkV4(b *testing.B) {
 
 	// Tests a list of different vectors.
 	b.Run("List", func(b *testing.B) {
-		vecs := loadVectorList(b, `v4_bench.list`)
+		vecs := loadVectorList(b, `v4_roundtrip.list`)
 		var n int64
 		for _, vec := range vecs {
 			n += int64(len(vec))
@@ -81,7 +88,7 @@ func benchmarkV4(b *testing.B) {
 func benchmarkV3(b *testing.B) {
 	// Tests a list of different vectors.
 	b.Run("List", func(b *testing.B) {
-		vecs := loadVectorList(b, `v3_bench.list`)
+		vecs := loadVectorList(b, `v31_score.list`)
 		var n int64
 		for _, vec := range vecs {
 			n += int64(len(vec))
@@ -115,7 +122,7 @@ func benchmarkV3(b *testing.B) {
 func benchmarkV2(b *testing.B) {
 	// Tests a list of different vectors.
 	b.Run("List", func(b *testing.B) {
-		vecs := loadVectorList(b, `v2_bench.list`)
+		vecs := loadVectorList(b, `v2_score.list`)
 		var n int64
 		for _, vec := range vecs {
 			n += int64(len(vec))

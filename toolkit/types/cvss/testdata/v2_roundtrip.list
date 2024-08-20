@@ -1,0 +1,6 @@
+AV:N/AC:L/Au:N/C:N/I:N/A:C                                                # CVE-2002-0392
+AV:N/AC:L/Au:N/C:C/I:C/A:C                                                # CVE-2003-0818
+AV:L/AC:H/Au:N/C:C/I:C/A:C                                                # CVE-2003-0062
+AV:L/AC:H/Au:N/C:C/I:C/A:C/E:F/RL:OF/RC:C/CDP:H/TD:H/CR:M/IR:M/AR:H       # CVE-2002-0392
+AV:L/AC:H/Au:N/C:C/I:C/A:C/E:F/RL:OF/RC:UR/CDP:ND/TD:ND/CR:ND/IR:ND/AR:ND # made up
+AV:L/AC:H/Au:N/C:C/I:C/A:C/E:F/RL:OF/RC:UR/CDP:LM/TD:ND/CR:ND/IR:ND/AR:ND # made up

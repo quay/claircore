@@ -7,49 +7,13 @@ import (
 
 func TestV2(t *testing.T) {
 	t.Run("Error", func(t *testing.T) {
-		tcs := []ErrorTestcase{
-			{Vector: "AV:N/AC:L/Au:N/C:N/I:N/A:C"},
-			{Vector: "AV:N/AC:L/Au:N/C:C/I:C/A:C"},
-			{Vector: "AV:L/AC:H/Au:N/C:C/I:C/A:C"},
-			{Vector: "AV:L/AC:H/Au:N/C:C/I:C/A:C/E:F/RL:OF/RC:C/CDP:H/TD:H/CR:M/IR:M/AR:H"},
-			{Vector: "CVSS:2.0/AV:N/AC:L/Au:N/C:N/I:N/A:C", Error: true},
-			{Vector: "AV:N/AC:L/Au:N/C:N/I:N", Error: true},
-			{Vector: "AV:A/AC:L/Au:N/C:C/I:C/A:C/CDP:H/TD:H/CR:H", Error: true},
-			{Vector: "AV:A/AC:L/Au:N/C:C/I:C/A:C/E:F", Error: true},
-			{Vector: "AV:L/AC:H/Au:N/C:C/I:C/A:C/Au:N", Error: true},
-			{Vector: "AV:L/AC:H/Au:N/C:C/I:C/A:", Error: true},
-			{Vector: "AV:L/AC:H/Au:N/C:C/I:C/A:C?notaurl=1", Error: true},
-			{Vector: "AV:A/AC:L/Au:N/A:C/I:C/C:C", Error: true},
-		}
-		Error[V2, V2Metric, *V2](t, tcs)
+		Error[V2, V2Metric, *V2](t, LoadErrorFixture(t, "testdata/v2_error.list"))
 	})
 	t.Run("Roundtrip", func(t *testing.T) {
-		vecs := []string{
-			"AV:N/AC:L/Au:N/C:N/I:N/A:C",                                                // CVE-2002-0392
-			"AV:N/AC:L/Au:N/C:C/I:C/A:C",                                                // CVE-2003-0818
-			"AV:L/AC:H/Au:N/C:C/I:C/A:C",                                                // CVE-2003-0062
-			"AV:L/AC:H/Au:N/C:C/I:C/A:C/E:F/RL:OF/RC:C/CDP:H/TD:H/CR:M/IR:M/AR:H",       // CVE-2002-0392
-			"AV:L/AC:H/Au:N/C:C/I:C/A:C/E:F/RL:OF/RC:UR/CDP:ND/TD:ND/CR:ND/IR:ND/AR:ND", // made up
-			"AV:L/AC:H/Au:N/C:C/I:C/A:C/E:F/RL:OF/RC:UR/CDP:LM/TD:ND/CR:ND/IR:ND/AR:ND", // made up
-		}
-		Roundtrip[V2, V2Metric, *V2](t, vecs)
+		Roundtrip[V2, V2Metric, *V2](t, LoadRoundtripFixture(t, "testdata/v2_roundtrip.list"))
 	})
 	t.Run("Score", func(t *testing.T) {
-		tcs := []ScoreTestcase{
-			{Vector: "AV:N/AC:L/Au:N/C:N/I:N/A:C", Score: 7.8},                                            // CVE-2002-0392
-			{Vector: "AV:N/AC:L/Au:N/C:N/I:N/A:C/E:F/RL:OF/RC:C", Score: 6.4},                             // CVE-2002-0392
-			{Vector: "AV:N/AC:L/Au:N/C:N/I:N/A:C/E:F/RL:OF/RC:C/CDP:N/TD:N/CR:M/IR:M/AR:H", Score: 0.0},   // CVE-2002-0392
-			{Vector: "AV:N/AC:L/Au:N/C:N/I:N/A:C/E:F/RL:OF/RC:C/CDP:H/TD:H/CR:M/IR:M/AR:H", Score: 9.2},   // CVE-2002-0392
-			{Vector: "AV:N/AC:L/Au:N/C:C/I:C/A:C", Score: 10.0},                                           // CVE-2003-0818
-			{Vector: "AV:N/AC:L/Au:N/C:C/I:C/A:C/E:F/RL:OF/RC:C", Score: 8.3},                             // CVE-2003-0818
-			{Vector: "AV:N/AC:L/Au:N/C:C/I:C/A:C/E:F/RL:OF/RC:C/CDP:N/TD:N/CR:M/IR:M/AR:L", Score: 0.0},   // CVE-2003-0818
-			{Vector: "AV:N/AC:L/Au:N/C:C/I:C/A:C/E:F/RL:OF/RC:C/CDP:H/TD:H/CR:M/IR:M/AR:L", Score: 9.0},   // CVE-2003-0818
-			{Vector: "AV:L/AC:H/Au:N/C:C/I:C/A:C", Score: 6.2},                                            // CVE-2003-0062
-			{Vector: "AV:L/AC:H/Au:N/C:C/I:C/A:C/E:POC/RL:OF/RC:C", Score: 4.9},                           // CVE-2003-0062
-			{Vector: "AV:L/AC:H/Au:N/C:C/I:C/A:C/E:POC/RL:OF/RC:C/CDP:N/TD:N/CR:M/IR:M/AR:M", Score: 0.0}, // CVE-2003-0062
-			{Vector: "AV:L/AC:H/Au:N/C:C/I:C/A:C/E:POC/RL:OF/RC:C/CDP:H/TD:H/CR:M/IR:M/AR:M", Score: 7.5}, // CVE-2003-0062
-		}
-		Score[V2, V2Metric, *V2](t, tcs)
+		Score[V2, V2Metric, *V2](t, LoadScoreFixture(t, "testdata/v2_score.list"))
 	})
 
 	t.Run("Unparse", func(t *testing.T) {
