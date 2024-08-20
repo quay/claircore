@@ -168,6 +168,8 @@ func TestV4(t *testing.T) {
 			{Vector: "CVSS:4.0/AV:A/AC:L/AT:N/PR:N/UI:N/VC:H/VI:H/VA:N/SC:N/SI:N/SA:N/MSI:S/S:P", Score: 9.7},
 			{Vector: "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:N/V:C", Score: 8.7},
 			{Vector: "CVSS:4.0/AV:A/AC:H/AT:N/PR:H/UI:A/VC:L/VI:L/VA:L/SC:N/SI:N/SA:N/E:U", Score: 0.1},
+			{Vector: "CVSS:4.0/AV:A/AC:L/AT:N/PR:L/UI:A/VC:L/VI:L/VA:N/SC:N/SI:N/SA:H", Score: 4.1},
+			{Vector: "CVSS:4.0/AV:A/AC:L/AT:N/PR:L/UI:A/VC:L/VI:L/VA:N/SC:N/SI:N/SA:H/CR:X", Score: 4.1}, // previous, in abnormal form
 		}
 		Score[V4, V4Metric, *V4](t, tt)
 	})
