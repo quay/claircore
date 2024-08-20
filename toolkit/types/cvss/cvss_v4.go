@@ -62,7 +62,7 @@ func (v *V4) getString(m V4Metric) (string, error) {
 // GetScore implements [Vector].
 func (v *V4) getScore(m V4Metric) byte {
 	b := v.mv[int(m)]
-	if m >= V4ExploitMaturity && b == 0 {
+	if m >= V4ExploitMaturity && (b == 0 /* not present */ || b == 'X' /* not defined */) {
 		switch m {
 		case V4ExploitMaturity:
 			b = 'A'
