@@ -1,3 +1,25 @@
+<a name="v1.5.29"></a>
+## [v1.5.29] - 2024-08-21
+[v1.5.29]: https://github.com/quay/claircore/compare/v1.5.28...v1.5.29
+
+- rhel: move IgnoreUnpatched config key from updater to matcher
+  <details>
+  Previously the IgnoreUnpatched config key was a part of the RHEL
+  updater and would dictate whether or not the updater would ingest
+  unpatched vulnerabilities. This change moves that key to the RHEL
+  matcher and dictates whether the matcher should check for a
+  fixed_in_version when querying potential vulnerabilities. This makes the
+  config option more usable at the expense of DB size.
+  </details>
+
+- rhel: add csaf/vex updater
+  <details>
+  Replace the RHEL OVAL updater with a CSAF/VEX updater for Red Hat
+  security data. Update the matching logic to deal with CPE patterns
+  coming from the VEX files. Remove RHEL updater and add a migration to
+  delete Red Hat OVAL data from the database.
+  </details>
+
 <a name="v1.5.28"></a>
 ## [v1.5.28] - 2024-05-13
 [v1.5.28]: https://github.com/quay/claircore/compare/v1.5.27...v1.5.28
