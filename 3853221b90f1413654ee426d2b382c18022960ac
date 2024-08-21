@@ -1,0 +1,8 @@
+rhel: move IgnoreUnpatched config key from updater to matcher
+
+Previously the IgnoreUnpatched config key was a part of the RHEL
+updater and would dictate whether or not the updater would ingest
+unpatched vulnerabilities. This change moves that key to the RHEL
+matcher and dictates whether the matcher should check for a
+fixed_in_version when querying potential vulnerabilities. This makes the
+config option more usable at the expense of DB size.
