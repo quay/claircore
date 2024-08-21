@@ -16,6 +16,7 @@ import (
 	"github.com/quay/zlog"
 	"golang.org/x/tools/txtar"
 
+	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/toolkit/types/csaf"
 )
 
@@ -43,17 +44,20 @@ func serveSecDB(t *testing.T, txtarFile string) (string, *http.Client) {
 		t.Fatal(err)
 	}
 	filename := filepath.Base(relFilepath)
-	mux.HandleFunc("/"+filename, func(w http.ResponseWriter, _ *http.Request) {
+	mux.HandleFunc("/"+filename, func(w http.ResponseWriter, r *http.Request) {
 		for k, v := range headers {
 			w.Header().Set(k, v[0])
 		}
-
-		f, err := os.Open("testdata/" + relFilepath)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if _, err := io.Copy(w, f); err != nil {
-			t.Fatal(err)
+		switch r.Method {
+		case http.MethodHead:
+		case http.MethodGet:
+			f, err := os.Open("testdata/" + relFilepath)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := io.Copy(w, f); err != nil {
+				t.Fatal(err)
+			}
 		}
 	})
 	for _, f := range archive.Files {
@@ -111,9 +115,12 @@ func TestFactory(t *testing.T) {
 	if f.changesEtag != "something" {
 		t.Errorf("bad etag for the changes.csv endpoint: %s", f.changesEtag)
 	}
+	if f.deletionsEtag != "somethingelse" {
+		t.Errorf("bad etag for the deletions.csv endpoint: %s", f.deletionsEtag)
+	}
 
 	// Check saved vulns
-	expectedLnCt := 8
+	expectedLnCt := 7
 	lnCt := 0
 	r := bufio.NewReader(snappy.NewReader(data))
 	for b, err := r.ReadBytes('\n'); err == nil; b, err = r.ReadBytes('\n') {
@@ -127,7 +134,7 @@ func TestFactory(t *testing.T) {
 		t.Errorf("got %d entries but expected %d", lnCt, expectedLnCt)
 	}
 
-	newData, newFP, err := s.Updaters()[0].Fetch(ctx, "")
+	newData, newFP, err := s.Updaters()[0].Fetch(ctx, driver.Fingerprint(f.String()))
 	if err != nil {
 		t.Fatalf("error re-Fetching, cannot continue: %v", err)
 	}
@@ -143,9 +150,9 @@ func TestFactory(t *testing.T) {
 	if f.deletionsEtag != "somethingelse" {
 		t.Errorf("bad etag for the deletions.csv endpoint: %s", f.deletionsEtag)
 	}
-	buf := &bytes.Buffer{}
-	sz, _ := newData.Read(buf.Bytes())
-	if sz != 0 {
-		t.Errorf("got too much data: %s", buf.String())
+
+	r = bufio.NewReader(snappy.NewReader(newData))
+	for _, err := r.ReadBytes('\n'); err == nil; _, err = r.ReadBytes('\n') {
+		t.Fatal("should not have anymore data")
 	}
 }
