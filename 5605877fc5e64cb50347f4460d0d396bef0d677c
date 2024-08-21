@@ -1,0 +1,6 @@
+rhel: add csaf/vex updater
+
+Replace the RHEL OVAL updater with a CSAF/VEX updater for Red Hat
+security data. Update the matching logic to deal with CPE patterns
+coming from the VEX files. Remove RHEL updater and add a migration to
+delete Red Hat OVAL data from the database.
