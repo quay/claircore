@@ -1,0 +1,495 @@
+-- Database --
+{
+  "records": [
+    {
+      "Package": {
+        "$ref": "file:package/645.json"
+      },
+      "Repository": {
+        "$ref": "file:repository/6.json"
+      }
+    },
+    {
+      "Package": {
+        "$ref": "file:package/752.json"
+      },
+      "Repository": {
+        "$ref": "file:repository/6.json"
+      }
+    }
+  ],
+  "vulnerabilities": {
+    "645": [
+      {
+        "$ref": "file:vulnerability/93791.json"
+      },
+      {
+        "$ref": "file:vulnerability/96395.json"
+      },
+      {
+        "$ref": "file:vulnerability/99314.json"
+      },
+      {
+        "$ref": "file:vulnerability/146867.json"
+      },
+      {
+        "$ref": "file:vulnerability/147654.json"
+      },
+      {
+        "$ref": "file:vulnerability/147856.json"
+      }
+    ],
+    "752": [
+      {
+        "$ref": "file:vulnerability/97516.json"
+      },
+      {
+        "$ref": "file:vulnerability/99057.json"
+      },
+      {
+        "$ref": "file:vulnerability/152607.json"
+      }
+    ]
+  }
+}
+-- IndexReport --
+{
+  "manifest_hash": "sha256:b5f7035fdee6d7bdc9180bc2d5d959802df4f85359d557aaba58b7f4e7755827",
+  "packages": {
+    "$ref": "file:package.json"
+  },
+  "distributions": {
+  "$ref": "file:distribution.json"
+  },
+  "repository": {
+    "$ref": "file:repository.json"
+  },
+  "environments": {
+    "$ref": "file:environment.json"
+  }
+}
+-- Want --
+{
+  "manifest_hash": "sha256:b5f7035fdee6d7bdc9180bc2d5d959802df4f85359d557aaba58b7f4e7755827",
+  "packages": {
+    "$ref": "file:package.json"
+  },
+  "distributions": {
+  "$ref": "file:distribution.json"
+  },
+  "repository": {
+    "$ref": "file:repository.json"
+  },
+  "environments": {
+    "$ref": "file:environment.json"
+  },
+  "vulnerabilities": {
+    "$ref": "file:vulnerability.json"
+  },
+  "package_vulnerabilities": {
+    "645": [
+      "93791",
+      "96395",
+      "99314",
+      "146867",
+      "147654",
+      "147856"
+    ],
+    "752": [
+      "97516",
+      "99057",
+      "152607"
+    ]
+  }
+}
+-- distribution.json --
+{
+  "1": {
+    "$ref": "file:distribution/1.json"
+  }
+}
+-- distribution/1.json --
+{
+  "id": "1",
+  "did": "rhel",
+  "name": "Red Hat Enterprise Linux Server",
+  "version": "8",
+  "version_id": "8",
+  "cpe": "cpe:2.3:o:redhat:enterprise_linux:8:*:*:*:*:*:*:*",
+  "pretty_name": "Red Hat Enterprise Linux Server 8"
+}
+-- environment.json --
+{
+  "645": [
+    {
+      "package_db": "python:root/.local/lib/python3.6/site-packages",
+      "introduced_in": "sha256:ccd9806acfea1bda00f871aa431ce15f0c3e005086b841e2ff745dac1cb0a43b",
+      "repository_ids": [
+        "6"
+      ]
+    }
+  ],
+  "748": [
+    {
+      "$ref": "file:environment/rhel.json"
+    },
+    {
+      "$ref": "file:environment/rpm.json"
+    }
+  ],
+  "750": [
+    {
+      "$ref": "file:environment/rhel.json"
+    },
+    {
+      "$ref": "file:environment/rpm.json"
+    }
+  ],
+  "752": [
+    {
+      "package_db": "python:root/.local/lib/python3.6/site-packages",
+      "introduced_in": "sha256:8cc83216fd11f4327c57027e11441342af6cdd131948c6917ea5cd153f57ec6a",
+      "repository_ids": [
+        "6"
+      ]
+    }
+  ]
+}
+-- environment/rhel.json --
+{
+  "package_db": "bdb:var/lib/rpm",
+  "introduced_in": "sha256:4b14b9ed20ce1c182d1511a515e34f2f677aeeba730f23fa63c3aa55bc87f6cc",
+  "distribution_id": "1",
+  "repository_ids": [
+    "1",
+    "2",
+    "3",
+    "4"
+  ]
+}
+-- environment/rpm.json --
+{
+  "package_db": "bdb:var/lib/rpm",
+  "introduced_in": "sha256:4b14b9ed20ce1c182d1511a515e34f2f677aeeba730f23fa63c3aa55bc87f6cc"
+}
+-- package.json --
+{
+  "645": {
+    "$ref": "file:package/645.json"
+  },
+  "748": {
+    "$ref": "file:package/748.json"
+  },
+  "750": {
+    "$ref": "file:package/750.json"
+  },
+  "752": {
+    "$ref": "file:package/752.json"
+  }
+}
+-- package/645.json --
+{
+  "id": "645",
+  "name": "pyyaml",
+  "version": "5.1",
+  "kind": "binary",
+  "source": {
+    "id": "2"
+  },
+  "normalized_version": "pep440:0.5.1.0.0.0.0.0.0.0"
+}
+-- package/748.json --
+{
+  "id": "748",
+  "name": "python3-setuptools",
+  "version": "39.2.0-6.el8_7.1",
+  "kind": "binary",
+  "source": {
+    "id": "101",
+    "name": "python-setuptools",
+    "version": "39.2.0-6.el8_7.1",
+    "kind": "source"
+  },
+  "arch": "noarch"
+}
+-- package/750.json --
+{
+  "id": "750",
+  "name": "python36",
+  "version": "3.6.8-38.module+el8.5.0+12207+5c5719bc",
+  "kind": "binary",
+  "source": {
+    "id": "749",
+    "name": "python36",
+    "version": "3.6.8-38.module+el8.5.0+12207+5c5719bc",
+    "kind": "source",
+    "module": "python36:3.6:8050020210811103506:982725ab"
+  },
+  "module": "python36:3.6:8050020210811103506:982725ab",
+  "arch": "x86_64"
+}
+-- package/752.json --
+{
+  "id": "752",
+  "name": "protobuf",
+  "version": "3.14.0",
+  "kind": "binary",
+  "source": {
+    "id": "2"
+  },
+  "normalized_version": "pep440:0.3.14.0.0.0.0.0.0.0"
+}
+-- repository.json --
+{
+  "1": {
+    "$ref": "file:repository/1.json"
+  },
+  "2": {
+    "$ref": "file:repository/2.json"
+  },
+  "3": {
+    "$ref": "file:repository/3.json"
+  },
+  "4": {
+    "$ref": "file:repository/4.json"
+  },
+  "5": {
+    "$ref": "file:repository/5.json"
+  },
+  "6": {
+    "$ref": "file:repository/6.json"
+  }
+}
+-- repository/1.json --
+{
+  "id": "1",
+  "name": "cpe:/o:redhat:enterprise_linux:8::baseos",
+  "key": "rhel-cpe-repository",
+  "cpe": "cpe:2.3:o:redhat:enterprise_linux:8:*:baseos:*:*:*:*:*"
+}
+-- repository/2.json --
+{
+  "id": "2",
+  "name": "cpe:/o:redhat:rhel:8.3::baseos",
+  "key": "rhel-cpe-repository",
+  "cpe": "cpe:2.3:o:redhat:rhel:8.3:*:baseos:*:*:*:*:*"
+}
+-- repository/3.json --
+{
+  "id": "3",
+  "name": "cpe:/a:redhat:enterprise_linux:8::appstream",
+  "key": "rhel-cpe-repository",
+  "cpe": "cpe:2.3:a:redhat:enterprise_linux:8:*:appstream:*:*:*:*:*"
+}
+-- repository/4.json --
+{
+  "id": "4",
+  "name": "cpe:/a:redhat:rhel:8.3::appstream",
+  "key": "rhel-cpe-repository",
+  "cpe": "cpe:2.3:a:redhat:rhel:8.3:*:appstream:*:*:*:*:*"
+}
+-- repository/5.json --
+{
+  "id": "5",
+  "name": "Red Hat Container Catalog",
+  "uri": "https://catalog.redhat.com/software/containers/explore"
+}
+-- repository/6.json --
+{
+  "id": "6",
+  "name": "pypi",
+  "uri": "https://pypi.org/simple"
+}
+-- vulnerability.json --
+{
+  "146867": {
+    "$ref": "file:vulnerability/146867.json"
+  },
+  "147654": {
+    "$ref": "file:vulnerability/147654.json"
+  },
+  "147856": {
+    "$ref": "file:vulnerability/147856.json"
+  },
+  "152607": {
+    "$ref": "file:vulnerability/152607.json"
+  },
+  "93791": {
+    "$ref": "file:vulnerability/93791.json"
+  },
+  "96395": {
+    "$ref": "file:vulnerability/96395.json"
+  },
+  "97516": {
+    "$ref": "file:vulnerability/97516.json"
+  },
+  "99057": {
+    "$ref": "file:vulnerability/99057.json"
+  },
+  "99314": {
+    "$ref": "file:vulnerability/99314.json"
+  }
+}
+-- vulnerability/146867.json --
+{
+  "id": "146867",
+  "updater": "osv/pypi",
+  "name": "PYSEC-2020-176",
+  "issued": "2020-02-18T22:15:00-06:00",
+  "links": "https://www.exploit-db.com/download/47655 https://github.com/yaml/pyyaml/blob/master/CHANGES https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/52N5XS73Z5S4ZN7I7R56ICCPCTKCUV4H/ https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/33VBUY73AA6CTTYL3LRWHNFDULV7PFPN/ https://github.com/advisories/GHSA-3pqx-4fqf-j49f",
+  "normalized_severity": "Unknown",
+  "package": {
+    "name": "pyyaml",
+    "kind": "binary"
+  },
+  "repository": {
+    "$ref": "file:repository/6.json"
+  },
+  "fixed_in_version": "fixed=5.2b1&introduced=5.1"
+}
+-- vulnerability/147654.json --
+{
+  "id": "147654",
+  "updater": "osv/pypi",
+  "name": "PYSEC-2020-96",
+  "issued": "2020-03-24T10:15:00-05:00",
+  "links": "https://bugzilla.redhat.com/show_bug.cgi?id=CVE-2020-1747 https://github.com/yaml/pyyaml/pull/386 https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/WORRFHPQVAFKKXXWLSSW6XKUYLWM6CSH/ https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/ZBJA3SGNJKCAYPSHOHWY3KBCWNM5NYK2/ https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/K5HEPD7LEVDPCITY5IMDYWXUMX37VFMY/ http://lists.opensuse.org/opensuse-security-announce/2020-04/msg00017.html http://lists.opensuse.org/opensuse-security-announce/2020-05/msg00017.html https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/MMQXSZXNJT6ERABJZAAICI3DQSQLCP3D/ https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/7PPAS6C4SZRDQLR7C22A5U3QOLXY33JX/ https://github.com/advisories/GHSA-6757-jp84-gxfx",
+  "normalized_severity": "Unknown",
+  "package": {
+    "name": "pyyaml",
+    "kind": "binary"
+  },
+  "repository": {
+    "$ref": "file:repository/6.json"
+  },
+  "fixed_in_version": "fixed=5.3.1&introduced=5.1"
+}
+-- vulnerability/147856.json --
+{
+  "id": "147856",
+  "updater": "osv/pypi",
+  "name": "PYSEC-2021-142",
+  "issued": "2021-02-09T15:15:00-06:00",
+  "links": "https://bugzilla.redhat.com/show_bug.cgi?id=1860466 https://github.com/advisories/GHSA-8q59-q68h-6hv4",
+  "normalized_severity": "Unknown",
+  "package": {
+    "name": "pyyaml",
+    "kind": "binary"
+  },
+  "repository": {
+    "$ref": "file:repository/6.json"
+  },
+  "fixed_in_version": "fixed=5.4"
+}
+-- vulnerability/152607.json --
+{
+  "id": "152607",
+  "updater": "osv/pypi",
+  "name": "PYSEC-2022-48",
+  "issued": "2022-01-26T08:15:00-06:00",
+  "links": "https://github.com/protocolbuffers/protobuf/releases/tag/v3.15.0 https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/IFX6KPNOFHYD6L4XES5PCM3QNSKZBOTQ/ https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/3DVUZPALAQ34TQP6KFNLM4IZS6B32XSA/ https://github.com/advisories/GHSA-77rm-9x9h-xj3g",
+  "normalized_severity": "Unknown",
+  "package": {
+    "name": "protobuf",
+    "kind": "binary"
+  },
+  "repository": {
+    "$ref": "file:repository/6.json"
+  },
+  "fixed_in_version": "fixed=3.15.0"
+}
+-- vulnerability/93791.json --
+{
+  "id": "93791",
+  "updater": "osv/pypi",
+  "name": "GHSA-3pqx-4fqf-j49f",
+  "description": "Deserialization of Untrusted Data in PyYAML",
+  "issued": "2021-04-20T11:40:42-05:00",
+  "links": "https://nvd.nist.gov/vuln/detail/CVE-2019-20477 https://github.com/yaml/pyyaml https://github.com/yaml/pyyaml/blob/master/CHANGES https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/33VBUY73AA6CTTYL3LRWHNFDULV7PFPN https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/52N5XS73Z5S4ZN7I7R56ICCPCTKCUV4H https://www.exploit-db.com/download/47655",
+  "severity": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+  "normalized_severity": "Critical",
+  "package": {
+    "name": "pyyaml",
+    "kind": "binary"
+  },
+  "repository": {
+    "$ref": "file:repository/6.json"
+  },
+  "fixed_in_version": "fixed=5.2&introduced=5.1"
+}
+-- vulnerability/96395.json --
+{
+  "id": "96395",
+  "updater": "osv/pypi",
+  "name": "GHSA-6757-jp84-gxfx",
+  "description": "Improper Input Validation in PyYAML",
+  "issued": "2021-04-20T11:14:24-05:00",
+  "links": "https://nvd.nist.gov/vuln/detail/CVE-2020-1747 https://github.com/yaml/pyyaml/pull/386 https://github.com/yaml/pyyaml/commit/5080ba513377b6355a0502104846ee804656f1e0 https://bugzilla.redhat.com/show_bug.cgi?id=CVE-2020-1747 https://github.com/yaml/pyyaml https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/7PPAS6C4SZRDQLR7C22A5U3QOLXY33JX https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/K5HEPD7LEVDPCITY5IMDYWXUMX37VFMY https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/MMQXSZXNJT6ERABJZAAICI3DQSQLCP3D https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/WORRFHPQVAFKKXXWLSSW6XKUYLWM6CSH https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/ZBJA3SGNJKCAYPSHOHWY3KBCWNM5NYK2 https://www.oracle.com/security-alerts/cpujul2022.html http://lists.opensuse.org/opensuse-security-announce/2020-04/msg00017.html http://lists.opensuse.org/opensuse-security-announce/2020-05/msg00017.html",
+  "severity": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+  "normalized_severity": "Critical",
+  "package": {
+    "name": "pyyaml",
+    "kind": "binary"
+  },
+  "repository": {
+    "$ref": "file:repository/6.json"
+  },
+  "fixed_in_version": "fixed=5.3.1"
+}
+-- vulnerability/97516.json --
+{
+  "id": "97516",
+  "updater": "osv/pypi",
+  "name": "GHSA-77rm-9x9h-xj3g",
+  "description": "NULL Pointer Dereference in Protocol Buffers",
+  "issued": "2022-01-26T18:01:15-06:00",
+  "links": "https://nvd.nist.gov/vuln/detail/CVE-2021-22570 https://github.com/protocolbuffers/protobuf https://github.com/protocolbuffers/protobuf/releases/tag/v3.15.0 https://lists.debian.org/debian-lts-announce/2023/04/msg00019.html https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/3DVUZPALAQ34TQP6KFNLM4IZS6B32XSA https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/5PAGL5M2KGYPN3VEQCRJJE6NA7D5YG5X https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/BTRGBRC5KGCA4SK5MUNLPYJRAGXMBIYY https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/IFX6KPNOFHYD6L4XES5PCM3QNSKZBOTQ https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/KQJB6ZPRLKV6WCMX2PRRRQBFAOXFBK6B https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/MRWRAXAFR3JR7XCFWTHC2KALSZKWACCE https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/NVTWVQRB5OCCTMKEQFY5MYED3DXDVSLP https://security.netapp.com/advisory/ntap-20220429-0005 https://www.oracle.com/security-alerts/cpuapr2022.html",
+  "severity": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+  "normalized_severity": "High",
+  "package": {
+    "name": "protobuf",
+    "kind": "binary"
+  },
+  "repository": {
+    "$ref": "file:repository/6.json"
+  },
+  "fixed_in_version": "fixed=3.15.0"
+}
+-- vulnerability/99057.json --
+{
+  "id": "99057",
+  "updater": "osv/pypi",
+  "name": "GHSA-8gq9-2x98-w8hf",
+  "description": "protobuf-cpp and protobuf-python have potential Denial of Service issue",
+  "issued": "2022-09-23T15:31:15-05:00",
+  "links": "https://github.com/protocolbuffers/protobuf/security/advisories/GHSA-8gq9-2x98-w8hf https://nvd.nist.gov/vuln/detail/CVE-2022-1941 https://cloud.google.com/support/bulletins#GCP-2022-019 https://github.com/protocolbuffers/protobuf https://lists.debian.org/debian-lts-announce/2023/04/msg00019.html https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/CBAUKJQL6O4TIWYBENORSY5P43TVB4M3 https://lists.fedoraproject.org/archives/list/package-announce%40lists.fedoraproject.org/message/MPCGUT3T5L6C3IDWUPSUO22QDCGQKTOP https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/CBAUKJQL6O4TIWYBENORSY5P43TVB4M3 https://lists.fedoraproject.org/archives/list/package-announce@lists.fedoraproject.org/message/MPCGUT3T5L6C3IDWUPSUO22QDCGQKTOP https://security.netapp.com/advisory/ntap-20240705-0001 http://www.openwall.com/lists/oss-security/2022/09/27/1",
+  "severity": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+  "normalized_severity": "High",
+  "package": {
+    "name": "protobuf",
+    "kind": "binary"
+  },
+  "repository": {
+    "$ref": "file:repository/6.json"
+  },
+  "fixed_in_version": "fixed=3.18.3"
+}
+-- vulnerability/99314.json --
+{
+  "id": "99314",
+  "updater": "osv/pypi",
+  "name": "GHSA-8q59-q68h-6hv4",
+  "description": "Improper Input Validation in PyYAML",
+  "issued": "2021-03-25T16:26:26-05:00",
+  "links": "https://nvd.nist.gov/vuln/detail/CVE-2020-14343 https://github.com/SeldonIO/seldon-core/issues/2252 https://github.com/yaml/pyyaml/issues/420 https://github.com/yaml/pyyaml/issues/420#issuecomment-663673966 https://github.com/yaml/pyyaml/commit/a001f2782501ad2d24986959f0239a354675f9dc https://bugzilla.redhat.com/show_bug.cgi?id=1860466 https://github.com/yaml/pyyaml https://pypi.org/project/PyYAML https://www.oracle.com/security-alerts/cpuapr2022.html https://www.oracle.com/security-alerts/cpujul2022.html",
+  "severity": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+  "normalized_severity": "Critical",
+  "package": {
+    "name": "pyyaml",
+    "kind": "binary"
+  },
+  "repository": {
+    "$ref": "file:repository/6.json"
+  },
+  "fixed_in_version": "fixed=5.4"
+}
