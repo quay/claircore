@@ -19,14 +19,27 @@ env:
   QUAY_USER: projectquay+claircore_github
 
 jobs:
+  versions:
+    if: ${{ github.repository == 'quay/claircore' }}
+    name: Check available go versions
+    runs-on: 'ubuntu-latest'
+    outputs:
+      versions: ${{ steps.versions.outputs.versions }}
+    steps:
+      - id: versions
+        run: |
+          curl -sL 'https://golang.org/dl/?mode=json' |
+            jq -rc 'map(.version|sub("go(?<maj>1\\.[0-9]+)\\.[0-9]+$";"\(.maj)"))|@text "versions=\(.)"' >> $GITHUB_OUTPUT
+
   golang-image:
     if: ${{ github.repository == 'quay/claircore' }}
+    needs: versions
     name: Build and publish golang image
     runs-on: 'ubuntu-latest'
     strategy:
       fail-fast: false
       matrix:
-        go: ['1.18', '1.19', '1.20', '1.21', '1.22']
+        go: ${{ fromJSON(needs.versions.outputs.versions) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
