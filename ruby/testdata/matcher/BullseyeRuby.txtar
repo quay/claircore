@@ -1,0 +1,203 @@
+-- Database --
+{
+  "records": [
+    {
+      "Package": {
+        "$ref": "file:package/2578.json"
+      },
+      "Repository": {
+        "$ref": "file:repository/1.json"
+      }
+    },
+    {
+      "Package": {
+        "$ref": "file:package/2590.json"
+      },
+      "Repository": {
+        "$ref": "file:repository/1.json"
+      }
+    }
+  ],
+  "vulnerabilities": {
+    "2590": [
+      {
+        "$ref": "file:vulnerability/15566.json"
+      },
+      {
+        "$ref": "file:vulnerability/15988.json"
+      }
+    ]
+  }
+}
+-- IndexReport --
+{
+  "manifest_hash": "sha256:a69611773e59734e43c2c6a892ee477bbbb3c7fe450c67621f466424215c9d1e",
+  "packages": {
+    "2578": {
+      "$ref": "file:package/2578.json"
+    },
+    "2590": {
+      "$ref": "file:package/2590.json"
+    }
+  },
+  "distributions": {
+    "1": {
+      "$ref": "file:distribution/1.json"
+    }
+  },
+  "repository": {
+    "1": {
+      "$ref": "file:repository/1.json"
+    }
+  },
+  "environments": {
+    "2578": [
+      {
+        "$ref": "file:environment/1.json"
+      }
+    ],
+    "2590": [
+      {
+        "$ref": "file:environment/2.json"
+      }
+    ]
+  }
+}
+-- Want --
+{
+  "manifest_hash": "sha256:a69611773e59734e43c2c6a892ee477bbbb3c7fe450c67621f466424215c9d1e",
+  "packages": {
+    "2578": {
+      "$ref": "file:package/2578.json"
+    },
+    "2590": {
+      "$ref": "file:package/2590.json"
+    }
+  },
+  "distributions": {
+    "1": {
+      "$ref": "file:distribution/1.json"
+    }
+  },
+  "repository": {
+    "1": {
+      "$ref": "file:repository/1.json"
+    }
+  },
+  "environments": {
+    "2578": [
+      {
+        "$ref": "file:environment/1.json"
+      }
+    ],
+    "2590": [
+      {
+        "$ref": "file:environment/2.json"
+      }
+    ]
+  },
+  "vulnerabilities": {
+    "15566": {
+      "$ref": "file:vulnerability/15566.json"
+    },
+    "15988": {
+      "$ref": "file:vulnerability/15988.json"
+    }
+  },
+  "package_vulnerabilities": {
+    "2590": [
+      "15566",
+      "15988"
+    ]
+  }
+}
+-- distribution/1.json --
+{
+  "id": "1",
+  "did": "debian",
+  "name": "Debian GNU/Linux",
+  "version": "11 (bullseye)",
+  "version_code_name": "bullseye",
+  "version_id": "11",
+  "pretty_name": "Debian GNU/Linux 11 (bullseye)"
+}
+-- environment/1.json --
+{
+  "package_db": "usr/local/bundle/specifications/rake-13.0.6.gemspec",
+  "introduced_in": "sha256:2deda8efde35fbfe5a4372dee905669e687558e590ee858a368e25c4bcc20afb",
+  "repository_ids": [
+    "1"
+  ]
+}
+-- environment/2.json --
+{
+  "package_db": "usr/local/bundle/specifications/secure_headers-6.0.0.gemspec",
+  "introduced_in": "sha256:efc0c4e55a1d12c7228db037bab3d4022487ec971a85b29b6131a33138360b12",
+  "repository_ids": [
+    "1"
+  ]
+}
+-- package/2578.json --
+{
+  "id": "2578",
+  "name": "rake",
+  "version": "13.0.6",
+  "kind": "binary",
+  "source": {
+    "id": "1"
+  }
+}
+-- package/2590.json --
+{
+  "id": "2590",
+  "name": "secure_headers",
+  "version": "6.0.0",
+  "kind": "binary",
+  "source": {
+    "id": "1"
+  }
+}
+-- repository/1.json --
+{
+  "id": "1",
+  "name": "rubygems",
+  "uri": "https://rubygems.org/gems/"
+}
+-- vulnerability/15566.json --
+{
+  "id": "15566",
+  "updater": "osv/rubygems",
+  "name": "GHSA-w978-rmpf-qmwg",
+  "description": "Limited header injection when using dynamic overrides with user input in RubyGems secure_headers",
+  "issued": "2020-01-22T20:27:53-06:00",
+  "links": "https://github.com/twitter/secure_headers/security/advisories/GHSA-w978-rmpf-qmwg https://nvd.nist.gov/vuln/detail/CVE-2020-5216 https://github.com/twitter/secure_headers/commit/301695706f6a70517c2a90c6ef9b32178440a2d0 https://github.com/rubysec/ruby-advisory-db/blob/master/gems/secure_headers/CVE-2020-5216.yml https://github.com/twitter/secure_headers",
+  "severity": "CVSS:3.1/AV:N/AC:H/PR:L/UI:R/S:C/C:L/I:L/A:N",
+  "normalized_severity": "Medium",
+  "package": {
+    "name": "secure_headers"
+  },
+  "repository": {
+    "name": "rubygems",
+    "uri": "https://rubygems.org/gems/"
+  },
+  "fixed_in_version": "fixed=6.3.0&introduced=6.0.0"
+}
+-- vulnerability/15988.json --
+{
+  "id": "15988",
+  "updater": "osv/rubygems",
+  "name": "GHSA-xq52-rv6w-397c",
+  "description": "Directive injection when using dynamic overrides with user input",
+  "issued": "2020-01-22T20:28:11-06:00",
+  "links": "https://github.com/twitter/secure_headers/security/advisories/GHSA-xq52-rv6w-397c https://nvd.nist.gov/vuln/detail/CVE-2020-5217 https://github.com/twitter/secure_headers/issues/418 https://github.com/twitter/secure_headers/pull/421 https://github.com/twitter/secure_headers/commit/936a160e3e9659737a9f9eafce13eea36b5c9fa3 https://github.com/rubysec/ruby-advisory-db/blob/master/gems/secure_headers/CVE-2020-5217.yml https://github.com/twitter/secure_headers",
+  "severity": "CVSS:3.1/AV:N/AC:H/PR:L/UI:R/S:C/C:L/I:L/A:N",
+  "normalized_severity": "Medium",
+  "package": {
+    "name": "secure_headers"
+  },
+  "repository": {
+    "name": "rubygems",
+    "uri": "https://rubygems.org/gems/"
+  },
+  "fixed_in_version": "fixed=6.2.0&introduced=6.0.0"
+}
