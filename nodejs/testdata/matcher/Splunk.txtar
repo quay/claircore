@@ -1,0 +1,616 @@
+-- Database --
+{
+  "records": [
+    {
+      "Package": {
+        "$ref": "file:package/4.json"
+      },
+      "Repository": {
+        "$ref": "file:repository/1.json"
+      }
+    },
+    {
+      "Package": {
+        "$ref": "file:package/20.json"
+      },
+      "Repository": {
+        "$ref": "file:repository/1.json"
+      }
+    },
+    {
+      "Package": {
+        "$ref": "file:package/22.json"
+      },
+      "Repository": {
+        "$ref": "file:repository/1.json"
+      }
+    },
+    {
+      "Package": {
+        "$ref": "file:package/28.json"
+      },
+      "Repository": {
+        "$ref": "file:repository/1.json"
+      }
+    },
+    {
+      "Package": {
+        "$ref": "file:package/32.json"
+      },
+      "Repository": {
+        "$ref": "file:repository/1.json"
+      }
+    },
+    {
+      "Package": {
+        "$ref": "file:package/6.json"
+      },
+      "Repository": {
+        "$ref": "file:repository/1.json"
+      }
+    },
+    {
+      "Package": {
+        "$ref": "file:package/10.json"
+      },
+      "Repository": {
+        "$ref": "file:repository/1.json"
+      }
+    },
+    {
+      "Package": {
+        "$ref": "file:package/2.json"
+      },
+      "Repository": {
+        "$ref": "file:repository/1.json"
+      }
+    },
+    {
+      "Package": {
+        "$ref": "file:package/8.json"
+      },
+      "Repository": {
+        "$ref": "file:repository/1.json"
+      }
+    },
+    {
+      "Package": {
+        "$ref": "file:package/12.json"
+      },
+      "Repository": {
+        "$ref": "file:repository/1.json"
+      }
+    },
+    {
+      "Package": {
+        "$ref": "file:package/14.json"
+      },
+      "Repository": {
+        "$ref": "file:repository/1.json"
+      }
+    },
+    {
+      "Package": {
+        "$ref": "file:package/16.json"
+      },
+      "Repository": {
+        "$ref": "file:repository/1.json"
+      }
+    },
+    {
+      "Package": {
+        "$ref": "file:package/18.json"
+      },
+      "Repository": {
+        "$ref": "file:repository/1.json"
+      }
+    },
+    {
+      "Package": {
+        "$ref": "file:package/24.json"
+      },
+      "Repository": {
+        "$ref": "file:repository/1.json"
+      }
+    },
+    {
+      "Package": {
+        "$ref": "file:package/26.json"
+      },
+      "Repository": {
+        "$ref": "file:repository/1.json"
+      }
+    },
+    {
+      "Package": {
+        "$ref": "file:package/30.json"
+      },
+      "Repository": {
+        "$ref": "file:repository/1.json"
+      }
+    },
+    {
+      "Package": {
+        "$ref": "file:package/36.json"
+      },
+      "Repository": {
+        "$ref": "file:repository/1.json"
+      }
+    }
+  ],
+  "vulnerabilities": {
+    "24": [
+      {
+        "$ref": "file:vulnerability/3263.json"
+      }
+    ]
+  }
+}
+-- IndexReport --
+{
+  "manifest_hash": "sha256:a2f4094b86baa321e3555c4e225ebf0905eae7146fa4f59382403d2b0f15868c",
+  "state": "IndexFinished",
+  "packages": {
+    "$ref": "file:package.json"
+  },
+  "repository": {
+    "$ref": "file:repository.json"
+  },
+  "environments": {
+    "$ref": "file:environment.json"
+  },
+  "success": true
+}
+-- Want --
+{
+  "manifest_hash": "sha256:a2f4094b86baa321e3555c4e225ebf0905eae7146fa4f59382403d2b0f15868c",
+  "packages": {
+    "$ref": "file:package.json"
+  },
+  "repository": {
+    "$ref": "file:repository.json"
+  },
+  "environments": {
+    "$ref": "file:environment.json"
+  },
+  "vulnerabilities": {
+    "$ref": "file:vulnerability.json"
+  },
+  "package_vulnerabilities": {
+    "24": [
+      "3263"
+    ]
+  }
+}
+-- environment.json --
+{
+  "14": [
+    {
+      "package_db": "nodejs:opt/splunk/lib/node_modules/htmlparser2/package.json",
+      "introduced_in": "sha256:a6a6a6b063cad7b36fc07027f36c210d62a4dec10b2a696363b5203ab05ff91d",
+      "repository_ids": [
+        "1"
+      ]
+    }
+  ],
+  "20": [
+    {
+      "package_db": "nodejs:opt/splunk/lib/node_modules/parse5/package.json",
+      "introduced_in": "sha256:a6a6a6b063cad7b36fc07027f36c210d62a4dec10b2a696363b5203ab05ff91d",
+      "repository_ids": [
+        "1"
+      ]
+    }
+  ],
+  "22": [
+    {
+      "package_db": "nodejs:opt/splunk/lib/node_modules/pdfkit/package.json",
+      "introduced_in": "sha256:a6a6a6b063cad7b36fc07027f36c210d62a4dec10b2a696363b5203ab05ff91d",
+      "repository_ids": [
+        "1"
+      ]
+    }
+  ],
+  "32": [
+    {
+      "package_db": "nodejs:opt/splunk-etc/apps/splunk_monitoring_console/src/visualizations/heatmap/node_modules/jquery/package.json",
+      "introduced_in": "sha256:a6a6a6b063cad7b36fc07027f36c210d62a4dec10b2a696363b5203ab05ff91d",
+      "repository_ids": [
+        "1"
+      ]
+    }
+  ],
+  "6": [
+    {
+      "package_db": "nodejs:opt/splunk/lib/node_modules/cssstyle/package.json",
+      "introduced_in": "sha256:a6a6a6b063cad7b36fc07027f36c210d62a4dec10b2a696363b5203ab05ff91d",
+      "repository_ids": [
+        "1"
+      ]
+    }
+  ],
+  "24": [
+    {
+      "package_db": "nodejs:opt/splunk/lib/node_modules/request/package.json",
+      "introduced_in": "sha256:a6a6a6b063cad7b36fc07027f36c210d62a4dec10b2a696363b5203ab05ff91d",
+      "repository_ids": [
+        "1"
+      ]
+    }
+  ],
+  "26": [
+    {
+      "package_db": "nodejs:opt/splunk/lib/node_modules/xml-name-validator/package.json",
+      "introduced_in": "sha256:a6a6a6b063cad7b36fc07027f36c210d62a4dec10b2a696363b5203ab05ff91d",
+      "repository_ids": [
+        "1"
+      ]
+    }
+  ],
+  "30": [
+    {
+      "package_db": "nodejs:opt/splunk-etc/apps/splunk_monitoring_console/src/visualizations/heatmap/node_modules/d3/package.json",
+      "introduced_in": "sha256:a6a6a6b063cad7b36fc07027f36c210d62a4dec10b2a696363b5203ab05ff91d",
+      "repository_ids": [
+        "1"
+      ]
+    }
+  ],
+  "4": [
+    {
+      "package_db": "nodejs:opt/splunk/lib/node_modules/cssom/package.json",
+      "introduced_in": "sha256:a6a6a6b063cad7b36fc07027f36c210d62a4dec10b2a696363b5203ab05ff91d",
+      "repository_ids": [
+        "1"
+      ]
+    }
+  ],
+  "10": [
+    {
+      "package_db": "nodejs:opt/splunk/lib/node_modules/domhandler/package.json",
+      "introduced_in": "sha256:a6a6a6b063cad7b36fc07027f36c210d62a4dec10b2a696363b5203ab05ff91d",
+      "repository_ids": [
+        "1"
+      ]
+    }
+  ],
+  "12": [
+    {
+      "package_db": "nodejs:opt/splunk/lib/node_modules/entities/package.json",
+      "introduced_in": "sha256:a6a6a6b063cad7b36fc07027f36c210d62a4dec10b2a696363b5203ab05ff91d",
+      "repository_ids": [
+        "1"
+      ]
+    }
+  ],
+  "16": [
+    {
+      "package_db": "nodejs:opt/splunk/lib/node_modules/jsdom/package.json",
+      "introduced_in": "sha256:a6a6a6b063cad7b36fc07027f36c210d62a4dec10b2a696363b5203ab05ff91d",
+      "repository_ids": [
+        "1"
+      ]
+    }
+  ],
+  "36": [
+    {
+      "package_db": "nodejs:opt/splunk-etc/apps/splunk_monitoring_console/src/visualizations/heatmap/node_modules/underscore/package.json",
+      "introduced_in": "sha256:a6a6a6b063cad7b36fc07027f36c210d62a4dec10b2a696363b5203ab05ff91d",
+      "repository_ids": [
+        "1"
+      ]
+    }
+  ],
+  "2": [
+    {
+      "package_db": "nodejs:opt/splunk/lib/node_modules/coffee-script/package.json",
+      "introduced_in": "sha256:a6a6a6b063cad7b36fc07027f36c210d62a4dec10b2a696363b5203ab05ff91d",
+      "repository_ids": [
+        "1"
+      ]
+    }
+  ],
+  "8": [
+    {
+      "package_db": "nodejs:opt/splunk/lib/node_modules/domelementtype/package.json",
+      "introduced_in": "sha256:a6a6a6b063cad7b36fc07027f36c210d62a4dec10b2a696363b5203ab05ff91d",
+      "repository_ids": [
+        "1"
+      ]
+    }
+  ],
+  "18": [
+    {
+      "package_db": "nodejs:opt/splunk/lib/node_modules/nwmatcher/package.json",
+      "introduced_in": "sha256:a6a6a6b063cad7b36fc07027f36c210d62a4dec10b2a696363b5203ab05ff91d",
+      "repository_ids": [
+        "1"
+      ]
+    }
+  ],
+  "28": [
+    {
+      "package_db": "nodejs:opt/splunk/lib/node_modules/xmlhttprequest/package.json",
+      "introduced_in": "sha256:a6a6a6b063cad7b36fc07027f36c210d62a4dec10b2a696363b5203ab05ff91d",
+      "repository_ids": [
+        "1"
+      ]
+    }
+  ]
+}
+-- package.json --
+{
+  "4": {
+    "$ref": "file:package/4.json"
+  },
+  "20": {
+    "$ref": "file:package/20.json"
+  },
+  "22": {
+    "$ref": "file:package/22.json"
+  },
+  "28": {
+    "$ref": "file:package/28.json"
+  },
+  "32": {
+    "$ref": "file:package/32.json"
+  },
+  "6": {
+    "$ref": "file:package/6.json"
+  },
+  "10": {
+    "$ref": "file:package/10.json"
+  },
+  "2": {
+    "$ref": "file:package/2.json"
+  },
+  "8": {
+    "$ref": "file:package/8.json"
+  },
+  "12": {
+    "$ref": "file:package/12.json"
+  },
+  "14": {
+    "$ref": "file:package/14.json"
+  },
+  "16": {
+    "$ref": "file:package/16.json"
+  },
+  "18": {
+    "$ref": "file:package/18.json"
+  },
+  "24": {
+    "$ref": "file:package/24.json"
+  },
+  "26": {
+    "$ref": "file:package/26.json"
+  },
+  "30": {
+    "$ref": "file:package/30.json"
+  },
+  "36": {
+    "$ref": "file:package/36.json"
+  }
+}
+-- package/2.json --
+{
+  "id": "2",
+  "name": "coffee-script",
+  "version": "1.1.2",
+  "kind": "binary",
+  "source": {
+    "id": "1"
+  },
+  "normalized_version": "semver:0.1.1.2.0.0.0.0.0.0"
+}
+-- package/4.json --
+{
+  "id": "4",
+  "name": "cssom",
+  "version": "0.3.0",
+  "kind": "binary",
+  "source": {
+    "id": "1"
+  },
+  "normalized_version": "semver:0.0.3.0.0.0.0.0.0.0"
+}
+-- package/6.json --
+{
+  "id": "6",
+  "name": "cssstyle",
+  "version": "0.2.21",
+  "kind": "binary",
+  "source": {
+    "id": "1"
+  },
+  "normalized_version": "semver:0.0.2.21.0.0.0.0.0.0"
+}
+-- package/8.json --
+{
+  "id": "8",
+  "name": "domelementtype",
+  "version": "1.1.3",
+  "kind": "binary",
+  "source": {
+    "id": "1"
+  },
+  "normalized_version": "semver:0.1.1.3.0.0.0.0.0.0"
+}
+-- package/10.json --
+{
+  "id": "10",
+  "name": "domhandler",
+  "version": "2.2.1",
+  "kind": "binary",
+  "source": {
+    "id": "1"
+  },
+  "normalized_version": "semver:0.2.2.1.0.0.0.0.0.0"
+}
+-- package/12.json --
+{
+  "id": "12",
+  "name": "entities",
+  "version": "1.0.0",
+  "kind": "binary",
+  "source": {
+    "id": "1"
+  },
+  "normalized_version": "semver:0.1.0.0.0.0.0.0.0.0"
+}
+-- package/14.json --
+{
+  "id": "14",
+  "name": "htmlparser2",
+  "version": "3.8.0",
+  "kind": "binary",
+  "source": {
+    "id": "1"
+  },
+  "normalized_version": "semver:0.3.8.0.0.0.0.0.0.0"
+}
+-- package/16.json --
+{
+  "id": "16",
+  "name": "jsdom",
+  "version": "4.3.0",
+  "kind": "binary",
+  "source": {
+    "id": "1"
+  },
+  "normalized_version": "semver:0.4.3.0.0.0.0.0.0.0"
+}
+-- package/18.json --
+{
+  "id": "18",
+  "name": "nwmatcher",
+  "version": "1.4.4",
+  "kind": "binary",
+  "source": {
+    "id": "1"
+  },
+  "normalized_version": "semver:0.1.4.4.0.0.0.0.0.0"
+}
+-- package/20.json --
+{
+  "id": "20",
+  "name": "parse5",
+  "version": "1.1.6",
+  "kind": "binary",
+  "source": {
+    "id": "1"
+  },
+  "normalized_version": "semver:0.1.1.6.0.0.0.0.0.0"
+}
+-- package/22.json --
+{
+  "id": "22",
+  "name": "pdfkit",
+  "version": "0.1.5",
+  "kind": "binary",
+  "source": {
+    "id": "1"
+  },
+  "normalized_version": "semver:0.0.1.5.0.0.0.0.0.0"
+}
+-- package/24.json --
+{
+  "id": "24",
+  "name": "request",
+  "version": "2.68.0",
+  "kind": "binary",
+  "source": {
+    "id": "1"
+  },
+  "normalized_version": "semver:0.2.68.0.0.0.0.0.0.0"
+}
+-- package/26.json --
+{
+  "id": "26",
+  "name": "xml-name-validator",
+  "version": "2.0.1",
+  "kind": "binary",
+  "source": {
+    "id": "1"
+  },
+  "normalized_version": "semver:0.2.0.1.0.0.0.0.0.0"
+}
+-- package/28.json --
+{
+  "id": "28",
+  "name": "xmlhttprequest",
+  "version": "1.7.0",
+  "kind": "binary",
+  "source": {
+    "id": "1"
+  },
+  "normalized_version": "semver:0.1.7.0.0.0.0.0.0.0"
+}
+-- package/30.json --
+{
+  "id": "30",
+  "name": "d3",
+  "version": "3.5.17",
+  "kind": "binary",
+  "source": {
+    "id": "1"
+  },
+  "normalized_version": "semver:0.3.5.17.0.0.0.0.0.0"
+}
+-- package/32.json --
+{
+  "id": "32",
+  "name": "jquery",
+  "version": "3.5.0",
+  "kind": "binary",
+  "source": {
+    "id": "1"
+  },
+  "normalized_version": "semver:0.3.5.0.0.0.0.0.0.0"
+}
+-- package/36.json --
+{
+  "id": "36",
+  "name": "underscore",
+  "version": "1.13.1",
+  "kind": "binary",
+  "source": {
+    "id": "1"
+  },
+  "normalized_version": "semver:0.1.13.1.0.0.0.0.0.0"
+}
+-- repository.json --
+{
+  "1": {
+    "$ref": "file:repository/1.json"
+  }
+}
+-- repository/1.json --
+{
+  "id": "1",
+  "name": "npm",
+  "uri": "https://www.npmjs.com/"
+}
+-- vulnerability.json --
+{
+  "3263": {
+    "$ref": "file:vulnerability/3263.json"
+  }
+}
+-- vulnerability/3263.json --
+{
+  "id": "3263",
+  "updater": "osv/npm",
+  "name": "GHSA-p8p7-x288-28g6",
+  "description": "Server-Side Request Forgery in Request",
+  "issued": "2023-03-16T10:30:19-05:00",
+  "links": "https://nvd.nist.gov/vuln/detail/CVE-2023-28155 https://github.com/request/request/issues/3442 https://github.com/cypress-io/request/pull/28 https://github.com/github/advisory-database/pull/2500 https://github.com/request/request/pull/3444 https://github.com/cypress-io/request/commit/c5bcf21d40fb61feaff21a0e5a2b3934a440024f https://doyensec.com/resources/Doyensec_Advisory_RequestSSRF_Q12023.pdf https://github.com/cypress-io/request/blob/master/lib/redirect.js#L116 https://github.com/cypress-io/request/releases/tag/v3.0.0 https://github.com/request/request https://github.com/request/request/blob/master/lib/redirect.js#L111 https://security.netapp.com/advisory/ntap-20230413-0007",
+  "severity": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
+  "normalized_severity": "Medium",
+  "package": {
+    "$ref": "file:package/24.json"
+  },
+  "repository": {
+    "$ref": "file:repository/1.json"
+  }
+}
