@@ -14,6 +14,7 @@ import (
 )
 
 func TestScanLocal(t *testing.T) {
+	t.Parallel()
 	ctx, done := context.WithCancel(context.Background())
 	defer done()
 
