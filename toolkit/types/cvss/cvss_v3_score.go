@@ -128,7 +128,7 @@ func (v *V3) Score() float64 {
 	if impact <= 0 {
 		return 0
 	}
-	base := round(scopeMod * math.Min(impact+exploitability, 10))
+	base := round(math.Min(scopeMod*(impact+exploitability), 10))
 	// This is the "Temporal" score, which should be fine to do unconditionally
 	// because the "Not Defined" weight is the multiplicative identity.
 	score := round(base * vals[V3ExploitMaturity] * vals[V3RemediationLevel] * vals[V3ReportConfidence])

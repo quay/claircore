@@ -94,6 +94,8 @@ func TestV3(t *testing.T) {
 				{Vector: "CVSS:3.0/AV:P/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H", Score: 7.6}, // CVE-2018-3652
 				{Vector: "CVSS:3.0/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:H/A:H", Score: 7.5}, // CVE-2019-0884 (IE)
 				{Vector: "CVSS:3.0/AV:N/AC:H/PR:N/UI:R/S:U/C:L/I:L/A:N", Score: 4.2}, // CVE-2019-0884 (Edge)
+
+				{Vector: "CVSS:3.0/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H", Score: 10.0}, // made up
 			}
 			Score[V3, V3Metric, *V3](t, tcs)
 		})
@@ -135,6 +137,7 @@ func TestV3(t *testing.T) {
 
 				{Vector: "CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:L/I:L/A:N/E:F/RL:X", Score: 3.7},       // From spec example
 				{Vector: "CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:L/I:L/A:N/CR:H/IR:H/AR:H", Score: 4.8}, // made up
+				{Vector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H", Score: 10.0},               // made up
 			}
 			Score[V3, V3Metric, *V3](t, tcs)
 		})
