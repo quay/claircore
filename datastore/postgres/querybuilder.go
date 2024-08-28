@@ -71,6 +71,8 @@ func buildGetQuery(record *claircore.IndexRecord, opts *datastore.GetOpts) (stri
 			ex = goqu.Ex{"dist_arch": record.Distribution.Arch}
 		case driver.RepositoryName:
 			ex = goqu.Ex{"repo_name": record.Repository.Name}
+		case driver.RepositoryKey:
+			ex = goqu.Ex{"repo_key": record.Repository.Key}
 		case driver.HasFixedInVersion:
 			ex = goqu.Ex{"fixed_in_version": goqu.Op{exp.NeqOp.String(): ""}}
 		default:

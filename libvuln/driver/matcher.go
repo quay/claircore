@@ -41,6 +41,8 @@ const (
 	DistributionPrettyName
 	// should match claircore.Package.Repository.Name => claircore.Vulnerability.Package.Repository.Name
 	RepositoryName
+	// should match claircore.Package.Repository.Key => claircore.Vulnerability.Package.Repository.Key
+	RepositoryKey
 	// should match claircore.Vulnerability.FixedInVersion != ""
 	HasFixedInVersion
 )
