@@ -26,7 +26,7 @@ const (
 	// BaseURL is the base url for the Red Hat VEX security data.
 	//
 	//doc:url updater
-	BaseURL = "https://access.redhat.com/security/data/csaf/v2/vex/"
+	BaseURL = "https://security.access.redhat.com/data/csaf/v2/vex/"
 
 	latestFile     = "archive_latest.txt"
 	changesFile    = "changes.csv"

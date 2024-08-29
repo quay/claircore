@@ -24,7 +24,7 @@ import (
 
 //doc:url updater
 const (
-	dbURL  = "https://access.redhat.com/security/data/metrics/cvemap.xml"
+	dbURL  = "https://security.access.redhat.com/data/metrics/cvemap.xml"
 	cveURL = "https://access.redhat.com/security/cve/"
 )
 

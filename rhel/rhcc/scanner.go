@@ -56,7 +56,7 @@ type ScannerConfig struct {
 // Hat.
 //
 //doc:url indexer
-const DefaultName2ReposMappingURL = "https://access.redhat.com/security/data/metrics/container-name-repos-map.json"
+const DefaultName2ReposMappingURL = "https://security.access.redhat.com/data/metrics/container-name-repos-map.json"
 
 // Configure implements [indexer.RPCScanner].
 func (s *scanner) Configure(ctx context.Context, f indexer.ConfigDeserializer, c *http.Client) error {
