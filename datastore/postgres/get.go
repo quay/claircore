@@ -36,6 +36,11 @@ var (
 	)
 )
 
+type recordQuery struct {
+	record *claircore.IndexRecord
+	query  string
+}
+
 // Get implements vulnstore.Vulnerability.
 func (s *MatcherStore) Get(ctx context.Context, records []*claircore.IndexRecord, opts datastore.GetOpts) (map[string][]*claircore.Vulnerability, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "internal/vulnstore/postgres/Get")
@@ -46,6 +51,8 @@ func (s *MatcherStore) Get(ctx context.Context, records []*claircore.IndexRecord
 	defer tx.Rollback(ctx)
 	// start a batch
 	batch := &pgx.Batch{}
+	resCache := map[string]pgx.Rows{}
+	rqs := []*recordQuery{}
 	for _, record := range records {
 		query, err := buildGetQuery(record, &opts)
 		if err != nil {
@@ -56,8 +63,13 @@ func (s *MatcherStore) Get(ctx context.Context, records []*claircore.IndexRecord
 				Msg("could not build query for record")
 			continue
 		}
+		rqs = append(rqs, &recordQuery{query: query, record: record})
+		if _, ok := resCache[query]; ok {
+			continue
+		}
 		// queue the select query
 		batch.Queue(query)
+		resCache[query] = nil
 	}
 	// send the batch
 
@@ -70,11 +82,18 @@ func (s *MatcherStore) Get(ctx context.Context, records []*claircore.IndexRecord
 	// gather all the returned vulns for each queued select statement
 	results := make(map[string][]*claircore.Vulnerability)
 	vulnSet := make(map[string]map[string]struct{})
-	for _, record := range records {
-		rows, err := res.Query()
-		if err != nil {
-			res.Close()
-			return nil, err
+	for _, rq := range rqs {
+		rows, ok := resCache[rq.query]
+		if !ok {
+			return nil, fmt.Errorf("unexpected vulnerability query: %s", rq.query)
+		}
+		if rows == nil {
+			rows, err = res.Query()
+			if err != nil {
+				res.Close()
+				return nil, err
+			}
+			resCache[rq.query] = rows
 		}
 
 		// unpack all returned rows into claircore.Vulnerability structs
@@ -121,7 +140,7 @@ func (s *MatcherStore) Get(ctx context.Context, records []*claircore.IndexRecord
 				return nil, fmt.Errorf("failed to scan vulnerability: %v", err)
 			}
 
-			rid := record.Package.ID
+			rid := rq.record.Package.ID
 			if _, ok := vulnSet[rid]; !ok {
 				vulnSet[rid] = make(map[string]struct{})
 			}
