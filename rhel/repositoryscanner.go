@@ -103,7 +103,7 @@ const (
 	// DefaultRepo2CPEMappingURL is default URL with a mapping file provided by Red Hat.
 	//
 	//doc:url indexer
-	DefaultRepo2CPEMappingURL = "https://access.redhat.com/security/data/metrics/repository-to-cpe.json"
+	DefaultRepo2CPEMappingURL = "https://security.access.redhat.com/data/metrics/repository-to-cpe.json"
 )
 
 // Name implements [indexer.VersionedScanner].
