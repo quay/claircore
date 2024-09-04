@@ -218,10 +218,13 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v csaf.Vulne
 	out := []*claircore.Vulnerability{}
 	for _, pc := range v.ProductStatus["known_affected"] {
 		pkgName, repoName, err := walkRelationships(pc, c.c)
-		if err != nil && debugEnabled {
-			unrelatedProductIDs = append(unrelatedProductIDs, pc)
+		if err != nil {
 			// It's possible to get here due to middleware not having a defined component:package
 			// relationship.
+			if debugEnabled {
+				unrelatedProductIDs = append(unrelatedProductIDs, pc)
+			}
+			continue
 		}
 		if strings.HasPrefix(pkgName, "kernel") {
 			// We don't want to ingest kernel advisories as
@@ -335,10 +338,12 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 	debugEnabled := zlog.Debug(ctx).Enabled()
 	for _, pc := range v.ProductStatus["fixed"] {
 		pkgName, repoName, err := walkRelationships(pc, c.c)
-		if err != nil && debugEnabled {
-			unrelatedProductIDs = append(unrelatedProductIDs, pc)
+		if err != nil {
 			// It's possible to get here due to middleware not having a defined component:package
 			// relationship.
+			if debugEnabled {
+				unrelatedProductIDs = append(unrelatedProductIDs, pc)
+			}
 			continue
 		}
 
