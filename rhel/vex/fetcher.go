@@ -196,6 +196,12 @@ func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 // to w means they are deemed to have changed since the compressed
 // file was last processed. w and fp can be modified.
 func (u *Updater) processChanges(ctx context.Context, w io.Writer, fp *fingerprint) error {
+	tf, err := tmp.NewFile("", "rhel-vex-changes.")
+	if err != nil {
+		return err
+	}
+	defer tf.Close()
+
 	uri, err := u.url.Parse(changesFile)
 	if err != nil {
 		return err
@@ -226,7 +232,15 @@ func (u *Updater) processChanges(ctx context.Context, w io.Writer, fp *fingerpri
 	}
 	fp.changesEtag = res.Header.Get("etag")
 
-	rd := csv.NewReader(res.Body)
+	var r io.Reader = res.Body
+	if _, err := io.Copy(tf, r); err != nil {
+		return fmt.Errorf("unable to copy resp body to tempfile: %w", err)
+	}
+	if n, err := tf.Seek(0, io.SeekStart); err != nil || n != 0 {
+		return fmt.Errorf("unable to seek changes to start: at %d, %v", n, err)
+	}
+
+	rd := csv.NewReader(tf)
 	rd.FieldsPerRecord = 2
 	rd.ReuseRecord = true
 	var (
