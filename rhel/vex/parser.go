@@ -183,31 +183,49 @@ type creator struct {
 	rc                 *repoCache
 }
 
-// WalkRelationships attempts to resolve a relationship until we have a package product_id and
-// a repo product_id. Relationships can be nested. If the pkgID and the repoID are the same we
-// either found no relationship or a relationship where both ends are pointing to the same
-// product_id, either way we don't have enough data to create a vulnerability.
-func walkRelationships(productID string, doc *csaf.CSAF) (string, string, error) {
-	pkgID, repoID := extractProductNames(productID, productID, doc)
-	if pkgID == repoID {
-		return "", "", fmt.Errorf("could not extract a distict pkgID and repoID from %q", productID)
+// WalkRelationships attempts to resolve a relationship until we have a package product_id,
+// a repo product_id and possibly a package module product_id. Relationships can be nested.
+// If we don't get an initial relationship or we don't get two component parts we cannot
+// create a vulnerability. We never see more than 3 components in the wild but if we did
+// we'd assume the component next to the repo product_id is the package module product_id.
+func walkRelationships(productID string, doc *csaf.CSAF) (string, string, string, error) {
+	prodRel := doc.FindRelationship(productID, "default_component_of")
+	if prodRel == nil {
+		return "", "", "", fmt.Errorf("cannot determine initial relationship for %q", productID)
 	}
-	return pkgID, repoID, nil
+	comps := extractProductNames(prodRel.ProductRef, prodRel.RelatesToProductRef, []string{}, doc)
+	switch {
+	case len(comps) == 2:
+		// We have a package and repo
+		return comps[0], "", comps[1], nil
+	case len(comps) > 2:
+		// We have a package, module and repo
+		return comps[0], comps[len(comps)-2], comps[len(comps)-1], nil
+	default:
+		return "", "", "", fmt.Errorf("cannot determine relationships for %q", productID)
+	}
 }
 
-// ExtractProductNames recursively looks up the package product_id and the repo product_id.
-// The assumtion is that the repo is always the last found relates_to_product_reference and the
-// package is the last found product_reference.
-func extractProductNames(prodRelID string, repoRelID string, c *csaf.CSAF) (string, string) {
-	prodRel := c.FindRelationship(prodRelID, "default_component_of")
+// ExtractProductNames recursively looks up product_id relationships and adds them to a
+// component slice in order. prodRef (and it's potential children) are leftmost in the return
+// slice and relatesToProdRef (and it's potential children) are rightmost.
+// For example: prodRef=a_pkg and relatesToProdRef=a_repo:a_module and a Relationship where
+// Relationship.ProductRef=a_module and Relationship.RelatesToProductRef=a_repo the return
+// slice would be: ["a_pkg", "a_module", "a_repo"].
+func extractProductNames(prodRef, relatesToProdRef string, comps []string, c *csaf.CSAF) []string {
+	prodRel := c.FindRelationship(prodRef, "default_component_of")
 	if prodRel != nil {
-		prodRelID, _ = extractProductNames(prodRel.ProductRef, prodRel.RelatesToProductRef, c)
+		comps = extractProductNames(prodRel.ProductRef, prodRel.RelatesToProductRef, comps, c)
+	} else {
+		comps = append(comps, prodRef)
 	}
-	repoRel := c.FindRelationship(repoRelID, "default_component_of")
+	repoRel := c.FindRelationship(relatesToProdRef, "default_component_of")
 	if repoRel != nil {
-		_, repoRelID = extractProductNames(repoRel.ProductRef, repoRel.RelatesToProductRef, c)
+		comps = extractProductNames(repoRel.ProductRef, repoRel.RelatesToProductRef, comps, c)
+	} else {
+		comps = append(comps, relatesToProdRef)
 	}
-	return prodRelID, repoRelID
+	return comps
 }
 
 // KnownAffectedVulnerabilities processes the "known_affected" array of products
@@ -217,7 +235,7 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v csaf.Vulne
 	debugEnabled := zlog.Debug(ctx).Enabled()
 	out := []*claircore.Vulnerability{}
 	for _, pc := range v.ProductStatus["known_affected"] {
-		pkgName, repoName, err := walkRelationships(pc, c.c)
+		pkgName, modName, repoName, err := walkRelationships(pc, c.c)
 		if err != nil {
 			// It's possible to get here due to middleware not having a defined component:package
 			// relationship.
@@ -245,6 +263,18 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v csaf.Vulne
 				Str("prod", repoName).
 				Msg("could not find cpe helper type in product")
 			continue
+		}
+
+		// Deal with modules if we found one.
+		if modName != "" {
+			modProd := c.pc.Get(modName, c.c)
+			modName, err = createPackageModule(modProd)
+			if err != nil {
+				zlog.Warn(ctx).
+					Str("module", modName).
+					Err(err).
+					Msg("could not create package module")
+			}
 		}
 
 		// pkgName will be overridden if we find a valid pURL
@@ -281,8 +311,9 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v csaf.Vulne
 		// What is the deal here? Just stick the package name in and f-it?
 		// That's the plan so far as there's no PURL product ID helper.
 		vuln.Package = &claircore.Package{
-			Name: pkgName,
-			Kind: claircore.SOURCE,
+			Name:   pkgName,
+			Kind:   claircore.SOURCE,
+			Module: modName,
 		}
 		ch := escapeCPE(cpeHelper)
 		wfn, err := cpe.Unbind(ch)
@@ -337,7 +368,7 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 	unrelatedProductIDs := []string{}
 	debugEnabled := zlog.Debug(ctx).Enabled()
 	for _, pc := range v.ProductStatus["fixed"] {
-		pkgName, repoName, err := walkRelationships(pc, c.c)
+		pkgName, modName, repoName, err := walkRelationships(pc, c.c)
 		if err != nil {
 			// It's possible to get here due to middleware not having a defined component:package
 			// relationship.
@@ -362,6 +393,19 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 				Msg("could not find cpe helper type in product")
 			continue
 		}
+
+		// Deal with modules if we found one.
+		if modName != "" {
+			modProd := c.pc.Get(modName, c.c)
+			modName, err = createPackageModule(modProd)
+			if err != nil {
+				zlog.Warn(ctx).
+					Str("module", modName).
+					Err(err).
+					Msg("could not create package module")
+			}
+		}
+
 		compProd := c.pc.Get(pkgName, c.c)
 		if compProd == nil {
 			// Should never get here, error in data
@@ -396,7 +440,7 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 		}
 
 		fixedIn := epochVersion(&purl)
-		vulnKey := createPackageKey(repoName, purl.Name, fixedIn)
+		vulnKey := createPackageKey(repoName, modName, purl.Name, fixedIn)
 		arch := purl.Qualifiers.Map()["arch"]
 		if vuln, ok := c.lookupVulnerability(vulnKey, protoVulnFunc); ok && arch != "" {
 			// We've already found this package, just append the arch
@@ -404,8 +448,9 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 		} else {
 			vuln.FixedInVersion = fixedIn
 			vuln.Package = &claircore.Package{
-				Name: purl.Name,
-				Kind: claircore.BINARY,
+				Name:   purl.Name,
+				Kind:   claircore.BINARY,
+				Module: modName,
 			}
 
 			if arch != "" {
@@ -501,11 +546,39 @@ func cvssVectorFromScore(sc *csaf.Score) (vec string, err error) {
 
 // CreatePackageKey creates a unique key to describe an arch agnostic
 // package for deduplication purposes.
-// i.e. AppStream-8.2.0.Z.TUS:python3-idle-0:3.6.8-24.el8_2.2
-func createPackageKey(repo, name, fixedIn string) string {
+// i.e. AppStream-8.2.0.Z.TUS:a_module:python3-idle-0:3.6.8-24.el8_2.2
+func createPackageKey(repo, mod, name, fixedIn string) string {
 	// The other option here is just to use repo + PURL string
 	// w/o the qualifiers I suppose instead of repo + NEVR.
-	return repo + ":" + name + "-" + fixedIn
+	return repo + ":" + mod + ":" + name + "-" + fixedIn
+}
+
+func createPackageModule(p *csaf.Product) (string, error) {
+	modPURLHelper, ok := p.IdentificationHelper["purl"]
+	if !ok {
+		return "", nil
+	}
+	purl, err := packageurl.FromString(modPURLHelper)
+	if err != nil {
+		return "", err
+	}
+	if purl.Type != "rpmmod" {
+		return "", fmt.Errorf("invalid RPM module PURL: %q", purl.String())
+	}
+	var modName string
+	switch {
+	case purl.Namespace == "redhat":
+		version, _, _ := strings.Cut(purl.Version, ":")
+		modName = purl.Name + ":" + version
+	case strings.HasPrefix(purl.Namespace, "redhat/"):
+		// Account for the case where the PURL is unconventional
+		// e.g. pkg:rpmmod/redhat/postgresql:15/postgresql
+		_, modName, _ = strings.Cut(purl.Namespace, "/")
+	default:
+		// We never see this in the wild but account for it just in case.
+		return "", fmt.Errorf("non-Red Hat PURL")
+	}
+	return modName, nil
 }
 
 func epochVersion(purl *packageurl.PackageURL) string {

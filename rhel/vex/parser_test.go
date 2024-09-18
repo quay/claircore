@@ -16,13 +16,88 @@ import (
 	"github.com/quay/claircore/toolkit/types/csaf"
 )
 
+func TestCreatePackageModule(t *testing.T) {
+	testcases := []struct {
+		name           string
+		in             *csaf.Product
+		expectedModule string
+		err            bool
+	}{
+		{
+			name: "simple",
+			in: &csaf.Product{
+				IdentificationHelper: map[string]string{
+					"purl": "pkg:rpmmod/redhat/postgresql@13:8060020240903094008:ad008a3a",
+				},
+			},
+			expectedModule: "postgresql:13",
+		},
+		{
+			name: "with minor",
+			in: &csaf.Product{
+				IdentificationHelper: map[string]string{
+					"purl": "pkg:rpmmod/redhat/postgresql@9.2:8060020240903094008:ad008a3a",
+				},
+			},
+			expectedModule: "postgresql:9.2",
+		},
+		{
+			name: "no colon",
+			in: &csaf.Product{
+				IdentificationHelper: map[string]string{
+					"purl": "pkg:rpmmod/redhat/postgresql@9",
+				},
+			},
+			expectedModule: "postgresql:9",
+		},
+		{
+			name: "unconventional",
+			in: &csaf.Product{
+				IdentificationHelper: map[string]string{
+					"purl": "pkg:rpmmod/redhat/postgresql:15/postgresql",
+				},
+			},
+			expectedModule: "postgresql:15",
+		},
+		{
+			name: "invalid purl",
+			in: &csaf.Product{
+				IdentificationHelper: map[string]string{
+					"purl": "invalid",
+				},
+			},
+			err: true,
+		},
+		{
+			name: "non Red Hat PURL",
+			in: &csaf.Product{
+				IdentificationHelper: map[string]string{
+					"purl": "pkg:rpmmod/oracle/postgresql@9",
+				},
+			},
+			err: true,
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			modName, err := createPackageModule(tc.in)
+			if err != nil && !tc.err {
+				t.Errorf("expected no error but got %q", err)
+			}
+			if modName != tc.expectedModule {
+				t.Errorf("expected %s but got %s", tc.expectedModule, modName)
+			}
+		})
+	}
+}
+
 func TestWalkRelationships(t *testing.T) {
 	testcases := []struct {
-		name                              string
-		in                                string
-		c                                 *csaf.CSAF
-		expectedPkgName, expectedRepoName string
-		err                               bool
+		name                                               string
+		in                                                 string
+		c                                                  *csaf.CSAF
+		expectedPkgName, expectedModName, expectedRepoName string
+		err                                                bool
 	}{
 		{
 			c: &csaf.CSAF{
@@ -30,6 +105,7 @@ func TestWalkRelationships(t *testing.T) {
 			},
 			in:               "EAP 7.4 log4j async",
 			expectedPkgName:  "",
+			expectedModName:  "",
 			expectedRepoName: "",
 			name:             "no_relationship",
 			err:              true,
@@ -52,6 +128,7 @@ func TestWalkRelationships(t *testing.T) {
 			},
 			in:               "ResilientStorage-9.4.0.Z.MAIN.EUS:fence-agents-common-0:4.10.0-62.el9_4.3.noarch",
 			expectedPkgName:  "fence-agents-common-0:4.10.0-62.el9_4.3.noarch",
+			expectedModName:  "",
 			expectedRepoName: "ResilientStorage-9.4.0.Z.MAIN.EUS",
 			name:             "simple_relationship",
 		},
@@ -82,6 +159,7 @@ func TestWalkRelationships(t *testing.T) {
 			},
 			in:               "AppStream-8.10.0.Z.MAIN.EUS:httpd:2.4:8100020240612075645:489197e6:httpd-0:2.4.37-65.module+el8.10.0+21982+14717793.aarch64",
 			expectedPkgName:  "httpd-0:2.4.37-65.module+el8.10.0+21982+14717793.aarch64",
+			expectedModName:  "httpd:2.4:8100020240612075645:489197e6",
 			expectedRepoName: "AppStream-8.10.0.Z.MAIN.EUS",
 			name:             "two_level_relationship",
 		},
@@ -121,18 +199,53 @@ func TestWalkRelationships(t *testing.T) {
 			},
 			in:               "CROS:J-MOD:J-COMP:JMC",
 			expectedPkgName:  "JMC",
+			expectedModName:  "J-MOD",
 			expectedRepoName: "CROS",
 			name:             "two_times_two_level_relationship",
+		},
+		{
+			c: &csaf.CSAF{
+				ProductTree: csaf.ProductBranch{
+					Relationships: csaf.Relationships{
+						csaf.Relationship{
+							Category: "default_component_of",
+							FullProductName: csaf.Product{
+								Name: "perl:5.32:8100020240314121426:9fe1d287 as a component of Red Hat Enterprise Linux AppStream (v. 8)",
+								ID:   "AppStream-8.10.0.GA:perl:5.32:8100020240314121426:9fe1d287",
+							},
+							ProductRef:          "perl:5.32:8100020240314121426:9fe1d287",
+							RelatesToProductRef: "AppStream-8.10.0.GA",
+						},
+						csaf.Relationship{
+							Category: "default_component_of",
+							FullProductName: csaf.Product{
+								Name: "perl-Carp-0:1.50-439.module+el8.10.0+21354+3ad137bb.noarch as a component of perl:5.32:8100020240314121426:9fe1d287 as a component of Red Hat Enterprise Linux AppStream (v. 8)",
+								ID:   "AppStream-8.10.0.GA:perl:5.32:8100020240314121426:9fe1d287:perl-Carp-0:1.50-439.module+el8.10.0+21354+3ad137bb.noarch",
+							},
+							ProductRef:          "perl-Carp-0:1.50-439.module+el8.10.0+21354+3ad137bb.noarch",
+							RelatesToProductRef: "AppStream-8.10.0.GA:perl:5.32:8100020240314121426:9fe1d287",
+						},
+					},
+				},
+			},
+			in:               "AppStream-8.10.0.GA:perl:5.32:8100020240314121426:9fe1d287:perl-Carp-0:1.50-439.module+el8.10.0+21354+3ad137bb.noarch",
+			expectedPkgName:  "perl-Carp-0:1.50-439.module+el8.10.0+21354+3ad137bb.noarch",
+			expectedModName:  "perl:5.32:8100020240314121426:9fe1d287",
+			expectedRepoName: "AppStream-8.10.0.GA",
+			name:             "perl_module_relationships",
 		},
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			pkgName, repoName, err := walkRelationships(tc.in, tc.c)
+			pkgName, modName, repoName, err := walkRelationships(tc.in, tc.c)
 			if err != nil && !tc.err {
 				t.Errorf("expected no error but got %q", err)
 			}
 			if pkgName != tc.expectedPkgName {
 				t.Errorf("expected %s but got %s", tc.expectedPkgName, pkgName)
+			}
+			if modName != tc.expectedModName {
+				t.Errorf("expected %s but got %s", tc.expectedModName, modName)
 			}
 			if repoName != tc.expectedRepoName {
 				t.Errorf("expected %s but got %s", tc.expectedRepoName, repoName)
@@ -215,6 +328,12 @@ func TestParse(t *testing.T) {
 			name:            "cve-2022-38752",
 			filename:        "testdata/cve-2022-38752.jsonl",
 			expectedVulns:   40,
+			expectedDeleted: 0,
+		},
+		{
+			name:            "cve-2024-7348",
+			filename:        "testdata/cve-2024-7348.jsonl",
+			expectedVulns:   910,
 			expectedDeleted: 0,
 		},
 	}
