@@ -62,22 +62,7 @@ jobs:
       - name: mdBook Build
         run: mdbook build
 
-  current-go-version:
-    name: Get go.mod version
-    runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.parse-mod.outputs.version }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - id: parse-mod
-        run: |
-          go_mod_file="go.mod"
-          while IFS= read -r line; do if [[ $line =~ ^go\ (.*)$ ]]; then go_ver="${BASH_REMATCH[1]}"; fi; done < $go_mod_file
-          echo "version=$go_ver" >> $GITHUB_OUTPUT
-
   tests:
-    needs: current-go-version
     name: Tests
     runs-on: ubuntu-latest
     strategy:
@@ -86,7 +71,6 @@ jobs:
         go:
           - 'stable'
           - 'oldstable'
-          - '${{ needs.current-go-version.outputs.version }}'
     steps:
       - name: Check for Previous Run
         id: previous
