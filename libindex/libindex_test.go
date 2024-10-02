@@ -21,7 +21,7 @@ func createTestVulns(n int) []claircore.Vulnerability {
 		vulns = append(vulns, claircore.Vulnerability{
 			ID:                 strconv.Itoa(i),
 			Name:               "CVE-2018-20187",
-			Links:              "https://www.cve.org/CVERecord?id=CVE-2018-20187",
+			Links:              "https://security.alpinelinux.org/vuln/CVE-2018-20187",
 			Updater:            "alpine-community-v3.10-updater",
 			FixedInVersion:     "2.9.0-r0",
 			NormalizedSeverity: claircore.Unknown,
