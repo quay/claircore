@@ -3,7 +3,6 @@ package alpine
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 
 	"github.com/quay/zlog"
@@ -13,7 +12,7 @@ import (
 )
 
 const (
-	cveURLPrefix = "https://www.cve.org/CVERecord?id=%s"
+	cveURLPrefix = "https://security.alpinelinux.org/vuln/"
 )
 
 var _ driver.Parser = (*updater)(nil)
@@ -59,7 +58,7 @@ func unpackSecFixes(partial claircore.Vulnerability, secFixes map[string][]strin
 			v := partial
 			v.Name = id
 			v.FixedInVersion = fixedIn
-			v.Links = fmt.Sprintf(cveURLPrefix, id)
+			v.Links = cveURLPrefix + id
 			out = append(out, &v)
 		}
 	}
