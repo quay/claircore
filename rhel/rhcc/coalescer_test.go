@@ -21,7 +21,7 @@ func TestCoalescer(t *testing.T) {
 		// Mark them as if they came from this package's package scanner
 		p.RepositoryHint = `rhcc`
 	}
-	repo := []*claircore.Repository{&goldRepo}
+	repo := []*claircore.Repository{&GoldRepo}
 	layerArtifacts := []*indexer.LayerArtifacts{
 		{
 			Hash: test.RandomSHA256Digest(t),
@@ -67,7 +67,7 @@ func TestCoalescer(t *testing.T) {
 		}
 		for _, id := range e.RepositoryIDs {
 			r := ir.Repositories[id]
-			if got, want := r.Name, goldRepo.Name; got != want {
+			if got, want := r.Name, GoldRepo.Name; got != want {
 				t.Errorf("got: %q, want: %q", got, want)
 			}
 		}
