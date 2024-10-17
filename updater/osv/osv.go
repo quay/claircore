@@ -492,6 +492,12 @@ func newECS(u string) ecs {
 	}
 }
 
+type rangeVer struct {
+	fixedInVersion string
+	semverRange    *claircore.Range
+	ecosystemRange url.Values
+}
+
 func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *advisory) (err error) {
 	if a.GitOnly() {
 		return nil
@@ -544,12 +550,10 @@ func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *adviso
 	proto.Links = b.String()
 	for i := range a.Affected {
 		af := &a.Affected[i]
-		v := e.NewVulnerability()
-		(*v) = proto
 		for _, r := range af.Ranges {
+			vers := []*rangeVer{}
 			switch r.Type {
 			case `SEMVER`:
-				v.Range = &claircore.Range{}
 			case `ECOSYSTEM`:
 				b.Reset()
 			case `GIT`:
@@ -561,25 +565,40 @@ func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *adviso
 					Msg("odd range type")
 			}
 			// This does some heavy assumptions about valid inputs.
-			ranges := make(url.Values)
-			for _, ev := range r.Events {
+			vs := &rangeVer{semverRange: &claircore.Range{}, ecosystemRange: url.Values{}}
+			var seenIntroduced bool
+			for ie := range r.Events {
+				ev := r.Events[ie]
 				var err error
 				switch r.Type {
 				case `SEMVER`:
 					var ver *semver.Version
 					switch {
-					case ev.Introduced == "0": // -Inf
-						v.Range.Lower.Kind = `semver`
+					case ev.Introduced != "" && seenIntroduced:
+						vs = &rangeVer{semverRange: &claircore.Range{}}
+						fallthrough
 					case ev.Introduced != "":
-						ver, err = semver.NewVersion(ev.Introduced)
-						if err == nil {
-							v.Range.Lower = claircore.FromSemver(ver)
+						seenIntroduced = true
+						switch {
+						case ev.Introduced == "0": // -Inf
+							vs.semverRange.Lower.Kind = `semver`
+						default:
+							ver, err = semver.NewVersion(ev.Introduced)
+							if err == nil {
+								vs.semverRange.Lower = claircore.FromSemver(ver)
+							}
 						}
+						// Is this the last event? If so append the range and
+						// implicitly terminate.
+						if ie == len(r.Events)-1 {
+							vers = append(vers, vs)
+						}
+						continue
 					case ev.Fixed != "": // less than
 						ver, err = semver.NewVersion(ev.Fixed)
 						if err == nil {
-							v.Range.Upper = claircore.FromSemver(ver)
-							v.FixedInVersion = ver.Original()
+							vs.semverRange.Upper = claircore.FromSemver(ver)
+							vs.fixedInVersion = ver.Original()
 						}
 					case ev.LastAffected != "" && len(af.Versions) != 0: // less than equal to
 						// TODO(hank) Should be able to convert this to a "less than."
@@ -594,11 +613,11 @@ func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *adviso
 						ver, err = semver.NewVersion(ev.LastAffected)
 						if err == nil {
 							nv := ver.IncPatch()
-							v.Range.Upper = claircore.FromSemver(&nv)
+							vs.semverRange.Upper = claircore.FromSemver(&nv)
 						}
 					case ev.Limit == "*": // +Inf
-						v.Range.Upper.Kind = `semver`
-						v.Range.Upper.V[0] = 65535
+						vs.semverRange.Upper.Kind = `semver`
+						vs.semverRange.Upper.V[0] = 65535
 					case ev.Limit != "": // Something arbitrary
 						zlog.Info(ctx).
 							Str("which", "limit").
@@ -608,14 +627,26 @@ func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *adviso
 				case `ECOSYSTEM`:
 					switch af.Package.Ecosystem {
 					case ecosystemMaven, ecosystemPyPI, ecosystemRubyGems:
+						vs.semverRange = nil
 						switch {
-						case ev.Introduced == "0":
+						case ev.Introduced != "" && seenIntroduced:
+							vs = &rangeVer{ecosystemRange: url.Values{}}
+							fallthrough
 						case ev.Introduced != "":
-							ranges.Add("introduced", ev.Introduced)
+							seenIntroduced = true
+							switch {
+							case ev.Introduced == "0":
+							default:
+								vs.ecosystemRange.Add("introduced", ev.Introduced)
+							}
+							if ie == len(r.Events)-1 {
+								vers = append(vers, vs)
+							}
+							continue
 						case ev.Fixed != "":
-							ranges.Add("fixed", ev.Fixed)
+							vs.ecosystemRange.Add("fixed", ev.Fixed)
 						case ev.LastAffected != "":
-							ranges.Add("lastAffected", ev.LastAffected)
+							vs.ecosystemRange.Add("lastAffected", ev.LastAffected)
 						}
 					case ecosystemGo, ecosystemNPM:
 						return fmt.Errorf(`unexpected "ECOSYSTEM" entry for %q ecosystem: %s`, af.Package.Ecosystem, a.ID)
@@ -624,7 +655,7 @@ func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *adviso
 						case ev.Introduced == "0": // -Inf
 						case ev.Introduced != "":
 						case ev.Fixed != "":
-							v.FixedInVersion = ev.Fixed
+							vs.fixedInVersion = ev.Fixed
 						case ev.LastAffected != "":
 						case ev.Limit == "*": // +Inf
 						case ev.Limit != "":
@@ -634,49 +665,58 @@ func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *adviso
 				if err != nil {
 					zlog.Warn(ctx).Err(err).Msg("event version error")
 				}
+				vers = append(vers, vs)
 			}
-			if len(ranges) > 0 {
+			// Now we need to cycle through the ranges and create the vulnerabilities.
+			for _, ve := range vers {
+				v := e.NewVulnerability()
+				(*v) = proto
+				v.Range = ve.semverRange
+				v.FixedInVersion = ve.fixedInVersion
+				if len(ve.ecosystemRange) > 0 {
+					switch af.Package.Ecosystem {
+					case ecosystemMaven, ecosystemPyPI, ecosystemRubyGems:
+						v.FixedInVersion = ve.ecosystemRange.Encode()
+					}
+				}
+
+				if r := v.Range; r != nil {
+					// We have an implicit +Inf range if there's a single event,
+					// this should catch it?
+					if r.Upper.Kind == "" {
+						r.Upper.Kind = r.Lower.Kind
+						r.Upper.V[0] = 65535
+					}
+					if r.Lower.Compare(&r.Upper) == 1 {
+						e.RemoveVulnerability(v)
+						skipped.Ignored = append(skipped.Ignored, fmt.Sprintf("%s(%s,%s)", a.ID, r.Lower.String(), r.Upper.String()))
+						continue
+					}
+				}
+				var vs string
+				switch r.Type {
+				case `ECOSYSTEM`:
+					vs = b.String()
+				}
+				pkgName := af.Package.PURL
 				switch af.Package.Ecosystem {
-				case ecosystemMaven, ecosystemPyPI, ecosystemRubyGems:
-					v.FixedInVersion = ranges.Encode()
+				case ecosystemGo, ecosystemMaven, ecosystemNPM, ecosystemPyPI, ecosystemRubyGems:
+					pkgName = af.Package.Name
+				}
+				pkg, novel := e.LookupPackage(pkgName, vs)
+				v.Package = pkg
+				switch af.Package.Ecosystem {
+				case ecosystemGo, ecosystemMaven, ecosystemNPM, ecosystemPyPI, ecosystemRubyGems:
+					v.Package.Kind = claircore.BINARY
+				}
+				if novel {
+					pkg.RepositoryHint = af.Package.Ecosystem
+				}
+				if repo := e.LookupRepository(name); repo != nil {
+					v.Repo = repo
 				}
 			}
 
-			if r := v.Range; r != nil {
-				// We have an implicit +Inf range if there's a single event,
-				// this should catch it?
-				if r.Upper.Kind == "" {
-					r.Upper.Kind = r.Lower.Kind
-					r.Upper.V[0] = 65535
-				}
-				if r.Lower.Compare(&r.Upper) == 1 {
-					e.RemoveVulnerability(v)
-					skipped.Ignored = append(skipped.Ignored, fmt.Sprintf("%s(%s,%s)", a.ID, r.Lower.String(), r.Upper.String()))
-					continue
-				}
-			}
-			var vs string
-			switch r.Type {
-			case `ECOSYSTEM`:
-				vs = b.String()
-			}
-			pkgName := af.Package.PURL
-			switch af.Package.Ecosystem {
-			case ecosystemGo, ecosystemMaven, ecosystemNPM, ecosystemPyPI, ecosystemRubyGems:
-				pkgName = af.Package.Name
-			}
-			pkg, novel := e.LookupPackage(pkgName, vs)
-			v.Package = pkg
-			switch af.Package.Ecosystem {
-			case ecosystemGo, ecosystemMaven, ecosystemNPM, ecosystemPyPI, ecosystemRubyGems:
-				v.Package.Kind = claircore.BINARY
-			}
-			if novel {
-				pkg.RepositoryHint = af.Package.Ecosystem
-			}
-			if repo := e.LookupRepository(name); repo != nil {
-				v.Repo = repo
-			}
 		}
 	}
 	return nil

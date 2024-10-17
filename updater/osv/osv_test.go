@@ -18,6 +18,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Masterminds/semver"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
@@ -138,15 +141,498 @@ func TestParse(t *testing.T) {
 		}
 		t.Logf("parsed %d vulnerabilities", len(vs))
 		if len(vs) != 0 {
-			t.Log("first one:")
-			var buf bytes.Buffer
-			enc := json.NewEncoder(&buf)
-			enc.SetIndent("", "\t")
-			if err := enc.Encode(vs[0]); err != nil {
-				t.Error(err)
+			for _, v := range vs {
+				var buf bytes.Buffer
+				enc := json.NewEncoder(&buf)
+				enc.SetIndent("", "\t")
+				if err := enc.Encode(v); err != nil {
+					t.Error(err)
+				}
+				t.Log(buf.String())
 			}
-			t.Log(buf.String())
 		}
+	}
+}
+
+var insertTestCases = []struct {
+	name          string
+	ad            *advisory
+	expectedVulns []claircore.Vulnerability
+}{
+	{
+		name: "normal",
+		ad: &advisory{
+			ID: "test1",
+			Affected: []affected{
+				{
+					Package: _package{
+						Ecosystem: "go",
+						Name:      "something",
+					},
+					Ranges: []_range{
+						{
+							Type: "SEMVER",
+							Events: []rangeEvent{
+								{
+									Introduced: "0",
+								},
+								{
+									Fixed: "0.4.0",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		expectedVulns: []claircore.Vulnerability{
+			{
+				Name:    "test1",
+				Updater: "test",
+				Range: &claircore.Range{
+					Lower: claircore.FromSemver(semver.MustParse("0.0.0")),
+					Upper: claircore.FromSemver(semver.MustParse("0.4.0")),
+				},
+				FixedInVersion: "0.4.0",
+			},
+		},
+	},
+	{
+		name: "unfixed",
+		ad: &advisory{
+			ID: "test1",
+			Affected: []affected{
+				{
+					Package: _package{
+						Ecosystem: "go",
+						Name:      "something",
+					},
+					Ranges: []_range{
+						{
+							Type: "SEMVER",
+							Events: []rangeEvent{
+								{
+									Introduced: "0",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		expectedVulns: []claircore.Vulnerability{
+			{
+				Name:    "test1",
+				Updater: "test",
+				Range: &claircore.Range{
+					Lower: claircore.FromSemver(semver.MustParse("0.0.0")),
+					Upper: claircore.Version{
+						Kind: "semver",
+						V:    [10]int32{65535, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+					},
+				},
+				FixedInVersion: "",
+			},
+		},
+	},
+	{
+		name: "two_affected",
+		ad: &advisory{
+			ID: "test1",
+			Affected: []affected{
+				{
+					Package: _package{
+						Ecosystem: "go",
+						Name:      "something",
+					},
+					Ranges: []_range{
+						{
+							Type: "SEMVER",
+							Events: []rangeEvent{
+								{
+									Introduced: "0",
+								},
+								{
+									Fixed: "0.4.10",
+								},
+							},
+						},
+					},
+				},
+				{
+					Package: _package{
+						Ecosystem: "go",
+						Name:      "something",
+					},
+					Ranges: []_range{
+						{
+							Type: "SEMVER",
+							Events: []rangeEvent{
+								{
+									Introduced: "0.5.0",
+								},
+								{
+									Fixed: "0.5.3",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		expectedVulns: []claircore.Vulnerability{
+			{
+				Name:    "test1",
+				Updater: "test",
+				Range: &claircore.Range{
+					Lower: claircore.FromSemver(semver.MustParse("0.0.0")),
+					Upper: claircore.FromSemver(semver.MustParse("0.4.10")),
+				},
+				FixedInVersion: "0.4.10",
+			},
+			{
+				Name:    "test1",
+				Updater: "test",
+				Range: &claircore.Range{
+					Lower: claircore.FromSemver(semver.MustParse("0.5.0")),
+					Upper: claircore.FromSemver(semver.MustParse("0.5.3")),
+				},
+				FixedInVersion: "0.5.3",
+			},
+		},
+	},
+	{
+		name: "three_fixes",
+		ad: &advisory{
+			ID: "test1",
+			Affected: []affected{
+				{
+					Package: _package{
+						Ecosystem: "go",
+						Name:      "something",
+					},
+					Ranges: []_range{
+						{
+							Type: "SEMVER",
+							Events: []rangeEvent{
+								{
+									Introduced: "0",
+								},
+								{
+									Fixed: "2.1.16",
+								},
+								{
+									Introduced: "2.2.0",
+								},
+								{
+									Fixed: "2.2.10",
+								},
+								{
+									Introduced: "2.3.0",
+								},
+								{
+									Fixed: "2.3.5",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		expectedVulns: []claircore.Vulnerability{
+			{
+				Name:    "test1",
+				Updater: "test",
+				Range: &claircore.Range{
+					Lower: claircore.FromSemver(semver.MustParse("0.0.0")),
+					Upper: claircore.FromSemver(semver.MustParse("2.1.16")),
+				},
+				FixedInVersion: "2.1.16",
+			},
+			{
+				Name:    "test1",
+				Updater: "test",
+				Range: &claircore.Range{
+					Lower: claircore.FromSemver(semver.MustParse("2.2.0")),
+					Upper: claircore.FromSemver(semver.MustParse("2.2.10")),
+				},
+				FixedInVersion: "2.2.10",
+			},
+			{
+				Name:    "test1",
+				Updater: "test",
+				Range: &claircore.Range{
+					Lower: claircore.FromSemver(semver.MustParse("2.3.0")),
+					Upper: claircore.FromSemver(semver.MustParse("2.3.5")),
+				},
+				FixedInVersion: "2.3.5",
+			},
+		},
+	},
+	{
+		name: "two_fixes_one_unfixed",
+		ad: &advisory{
+			ID: "test1",
+			Affected: []affected{
+				{
+					Package: _package{
+						Ecosystem: "go",
+						Name:      "something",
+					},
+					Ranges: []_range{
+						{
+							Type: "SEMVER",
+							Events: []rangeEvent{
+								{
+									Introduced: "0",
+								},
+								{
+									Fixed: "2.1.16",
+								},
+								{
+									Introduced: "2.2.0",
+								},
+								{
+									Fixed: "2.2.10",
+								},
+								{
+									Introduced: "2.3.0",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		expectedVulns: []claircore.Vulnerability{
+			{
+				Name:    "test1",
+				Updater: "test",
+				Range: &claircore.Range{
+					Lower: claircore.FromSemver(semver.MustParse("0.0.0")),
+					Upper: claircore.FromSemver(semver.MustParse("2.1.16")),
+				},
+				FixedInVersion: "2.1.16",
+			},
+			{
+				Name:    "test1",
+				Updater: "test",
+				Range: &claircore.Range{
+					Lower: claircore.FromSemver(semver.MustParse("2.2.0")),
+					Upper: claircore.FromSemver(semver.MustParse("2.2.10")),
+				},
+				FixedInVersion: "2.2.10",
+			},
+			{
+				Name:    "test1",
+				Updater: "test",
+				Range: &claircore.Range{
+					Lower: claircore.FromSemver(semver.MustParse("2.3.0")),
+					Upper: claircore.Version{
+						Kind: "semver",
+						V:    [10]int32{65535, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+					},
+				},
+				FixedInVersion: "",
+			},
+		},
+	},
+	{
+		// In this situation we're just expecting the last one.
+		name: "two_consecutive_introduced_invalid",
+		ad: &advisory{
+			ID: "test1",
+			Affected: []affected{
+				{
+					Package: _package{
+						Ecosystem: "go",
+						Name:      "something",
+					},
+					Ranges: []_range{
+						{
+							Type: "SEMVER",
+							Events: []rangeEvent{
+								{
+									Introduced: "2.2.0",
+								},
+								{
+									Introduced: "2.3.0",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		expectedVulns: []claircore.Vulnerability{
+			{
+				Name:    "test1",
+				Updater: "test",
+				Range: &claircore.Range{
+					Lower: claircore.FromSemver(semver.MustParse("2.3.0")),
+					Upper: claircore.Version{
+						Kind: "semver",
+						V:    [10]int32{65535, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+					},
+				},
+				FixedInVersion: "",
+			},
+		},
+	},
+	{
+		name: "ecosystem_multi",
+		ad: &advisory{
+			ID: "test1",
+			Affected: []affected{
+				{
+					Package: _package{
+						Ecosystem: "PyPI",
+						Name:      "cherrypy",
+					},
+					Ranges: []_range{
+						{
+							Type: "ECOSYSTEM",
+							Events: []rangeEvent{
+								{
+									Introduced: "0",
+								},
+								{
+									Fixed: "2.1.1",
+								},
+								{
+									Introduced: "3.0",
+								},
+								{
+									Fixed: "3.0.2",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		expectedVulns: []claircore.Vulnerability{
+			{
+				Name:           "test1",
+				Updater:        "test",
+				Range:          nil,
+				FixedInVersion: "fixed=2.1.1",
+			},
+			{
+				Name:           "test1",
+				Updater:        "test",
+				Range:          nil,
+				FixedInVersion: "fixed=3.0.2&introduced=3.0",
+			},
+		},
+	},
+	{
+		name: "ecosystem_unfixed",
+		ad: &advisory{
+			ID: "test1",
+			Affected: []affected{
+				{
+					Package: _package{
+						Ecosystem: "PyPI",
+						Name:      "cherrypy",
+					},
+					Ranges: []_range{
+						{
+							Type: "ECOSYSTEM",
+							Events: []rangeEvent{
+								{
+									Introduced: "3.0",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		expectedVulns: []claircore.Vulnerability{
+			{
+				Name:           "test1",
+				Updater:        "test",
+				Range:          nil,
+				FixedInVersion: "introduced=3.0",
+			},
+		},
+	},
+	{
+		name: "same package different ranges",
+		ad: &advisory{
+			ID: "test1",
+			Affected: []affected{
+				{
+					Package: _package{
+						Ecosystem: "Maven",
+						Name:      "something",
+					},
+					Ranges: []_range{
+						{
+							Type: "ECOSYSTEM",
+							Events: []rangeEvent{
+								{
+									Introduced: "0",
+								},
+								{
+									Fixed: "0.4.0",
+								},
+							},
+						},
+						{
+							Type: "ECOSYSTEM",
+							Events: []rangeEvent{
+								{
+									Introduced: "1.0.0",
+								},
+								{
+									Fixed: "1.2.0",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		expectedVulns: []claircore.Vulnerability{
+			{
+				Name:           "test1",
+				Updater:        "test",
+				FixedInVersion: "fixed=0.4.0",
+			},
+			{
+				Name:           "test1",
+				Updater:        "test",
+				FixedInVersion: "fixed=1.2.0&introduced=1.0.0",
+			},
+		},
+	},
+}
+
+// cmpIgnore will ignore everything expect the Name, Updater, Range and FixedInVersion.
+var cmpIgnore = cmpopts.IgnoreFields(
+	claircore.Vulnerability{}, "ID", "Updater", "Description", "Severity", "NormalizedSeverity", "Package", "Repo")
+
+func TestInsert(t *testing.T) {
+	ctx := zlog.Test(context.Background(), t)
+
+	for _, tt := range insertTestCases {
+		t.Run(tt.name, func(t *testing.T) {
+			ecs := newECS("test")
+
+			err := ecs.Insert(ctx, nil, "", tt.ad)
+			if err != nil {
+				t.Error("got error Inserting advisory", err)
+			}
+			if len(ecs.Vulnerability) != len(tt.expectedVulns) {
+				t.Fatalf("should have %d vulnerability but got %d", len(tt.expectedVulns), len(ecs.Vulnerability))
+			}
+
+			if !cmp.Equal(ecs.Vulnerability, tt.expectedVulns, cmpIgnore) {
+				t.Error(cmp.Diff(ecs.Vulnerability, tt.expectedVulns, cmpIgnore))
+			}
+		})
 	}
 }
 
