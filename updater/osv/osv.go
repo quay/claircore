@@ -197,12 +197,20 @@ func (f *Factory) UpdaterSet(ctx context.Context) (s driver.UpdaterSet, err erro
 
 // Ignore is a set of incoming ecosystems that we can throw out immediately.
 var ignore = map[string]struct{}{
+	"almalinux":      {}, // Currently not supported.
 	"alpine":         {}, // Have a dedicated alpine updater.
 	"android":        {}, // AFAIK, there's no Android container runtime.
+	"chainguard":     {}, // Currently not supported.
 	"debian":         {}, // Have a dedicated debian updater.
 	"github actions": {}, // Shouldn't be in containers?
 	"linux":          {}, // Containers have no say in the kernel.
+	"opensuse":       {}, // Have a dedicated SUSE updater.
 	"oss-fuzz":       {}, // Seems to only record git revisions.
+	"red hat":        {}, // Have a dedicated Red Hat VEX updater.
+	"rocky linux":    {}, // Currently not supported.
+	"suse":           {}, // Have a dedicated SUSE updater.
+	"ubuntu":         {}, // Have a dedicated ubuntu updater.
+	"wolfi":          {}, // Currently not supported.
 }
 
 type updater struct {
