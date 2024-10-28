@@ -3,13 +3,16 @@ package suse
 import (
 	"bytes"
 	"context"
-	"regexp"
+	"fmt"
 	"runtime/trace"
 
+	"github.com/Masterminds/semver"
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
+	"github.com/quay/claircore/osrelease"
+	"github.com/quay/claircore/pkg/cpe"
 )
 
 // Suse Enterprise Server has service pack releases however their security database files are bundled together
@@ -29,38 +32,12 @@ const (
 	suseReleasePath = `etc/SuSE-release`
 )
 
-type suseRegex struct {
-	release Release
-	regexp  *regexp.Regexp
-}
+type suseType string
 
-var suseRegexes = []suseRegex{
-	{
-		release: EnterpriseServer15,
-		// regex for /etc/issue
-		regexp: regexp.MustCompile(`(?i)SUSE Linux Enterprise Server 15`),
-	},
-	{
-		release: EnterpriseServer12,
-		regexp:  regexp.MustCompile(`(?i)SUSE Linux Enterprise Server 12`),
-	},
-	{
-		release: EnterpriseServer11,
-		regexp:  regexp.MustCompile(`(?i)SUSE Linux Enterprise Server 11`),
-	},
-	{
-		release: Leap151,
-		regexp:  regexp.MustCompile(`(?i)openSUSE Leap 15.1`),
-	},
-	{
-		release: Leap150,
-		regexp:  regexp.MustCompile(`(?i)openSUSE Leap 15.0`),
-	},
-	{
-		release: Leap423,
-		regexp:  regexp.MustCompile(`(?i)openSUSE Leap 42.3`),
-	},
-}
+var (
+	SLES suseType = "sles"
+	LEAP suseType = "leap"
+)
 
 var (
 	_ indexer.DistributionScanner = (*DistributionScanner)(nil)
@@ -99,7 +76,7 @@ func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]
 		return nil, nil
 	}
 	for _, buff := range files {
-		dist := ds.parse(buff)
+		dist := ds.parse(ctx, buff)
 		if dist != nil {
 			return []*claircore.Distribution{dist}, nil
 		}
@@ -111,11 +88,47 @@ func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]
 // distribution if it exists.
 //
 // separated into its own method to aid testing.
-func (ds *DistributionScanner) parse(buff *bytes.Buffer) *claircore.Distribution {
-	for _, ur := range suseRegexes {
-		if ur.regexp.Match(buff.Bytes()) {
-			return releaseToDist(ur.release)
+func (ds *DistributionScanner) parse(ctx context.Context, buff *bytes.Buffer) *claircore.Distribution {
+	kv, err := osrelease.Parse(ctx, buff)
+	if err != nil {
+		zlog.Warn(ctx).Err(err).Msg("malformed os-release file")
+		return nil
+	}
+	cpeName, cpeOK := kv["CPE_NAME"]
+	if !cpeOK {
+		return nil
+	}
+	// Instead of regexing through, we can grab the CPE.
+	c, err := cpe.Unbind(cpeName)
+	if err != nil {
+		zlog.Warn(ctx).Err(err).Msg("could not unbind CPE")
+		return nil
+	}
+
+	d, err := cpeToDist(c)
+	if err != nil {
+		zlog.Warn(ctx).Err(err).Msg("error converting cpe to distribution")
+		return nil
+	}
+
+	return d
+}
+
+func cpeToDist(r cpe.WFN) (*claircore.Distribution, error) {
+	if vendor, err := cpe.NewValue("opensuse"); err == nil && r.Attr[cpe.Vendor] == vendor {
+		if prod, err := cpe.NewValue("leap"); err == nil && r.Attr[cpe.Product] == prod {
+			return mkLeapDist(r.String(), r.Attr[cpe.Version].String()), nil
 		}
 	}
-	return nil
+	if vendor, err := cpe.NewValue("suse"); err == nil && r.Attr[cpe.Vendor] == vendor {
+		if prod, err := cpe.NewValue("sles"); err == nil && r.Attr[cpe.Product] == prod {
+			// Canonicalize the version to the major.
+			v, err := semver.NewVersion(r.Attr[cpe.Version].String())
+			if err != nil {
+				return nil, err
+			}
+			return mkELDist(r.String(), fmt.Sprint(v.Major())), nil
+		}
+	}
+	return nil, nil
 }

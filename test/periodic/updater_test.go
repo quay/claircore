@@ -105,7 +105,13 @@ func TestRHEL(t *testing.T) {
 
 func TestSUSE(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
-	set, err := suse.UpdaterSet(ctx)
+	fac := new(suse.Factory)
+	err := fac.Configure(ctx, noopConfigure, pkgClient)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	set, err := fac.UpdaterSet(ctx)
 	if err != nil {
 		t.Fatal()
 	}

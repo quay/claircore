@@ -9,15 +9,20 @@ import (
 )
 
 var (
-	gzipPool sync.Pool
-	zstdPool sync.Pool
+	gzipPool = sync.Pool{
+		New: func() any {
+			return new(gzip.Reader)
+		},
+	}
+	zstdPool = sync.Pool{
+		New: func() any {
+			return new(zstd.Decoder)
+		},
+	}
 )
 
 func getGzip(r io.Reader) (*gzip.Reader, error) {
 	z := gzipPool.Get().(*gzip.Reader)
-	if z == nil {
-		return gzip.NewReader(r)
-	}
 	if err := z.Reset(r); err != nil {
 		return nil, err
 	}
@@ -30,9 +35,6 @@ func putGzip(z *gzip.Reader) {
 
 func getZstd(r io.Reader) (*zstd.Decoder, error) {
 	z := zstdPool.Get().(*zstd.Decoder)
-	if z == nil {
-		return zstd.NewReader(r)
-	}
 	if err := z.Reset(r); err != nil {
 		return nil, err
 	}

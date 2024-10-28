@@ -62,7 +62,7 @@ func inner(ctx context.Context) error {
 	updater.Register("aws", driver.UpdaterSetFactoryFunc(aws.UpdaterSet))
 	updater.Register("oracle", driver.UpdaterSetFactoryFunc(oracle.UpdaterSet))
 	updater.Register("photon", driver.UpdaterSetFactoryFunc(photon.UpdaterSet))
-	updater.Register("suse", driver.UpdaterSetFactoryFunc(suse.UpdaterSet))
+	updater.Register("suse", new(suse.Factory))
 	updater.Register("rhcc", driver.UpdaterSetFactoryFunc(rhcc.UpdaterSet))
 
 	cvssSet := driver.NewUpdaterSet()

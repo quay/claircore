@@ -31,7 +31,7 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 	zlog.Debug(ctx).Msg("xml decoded")
 	protoVulns := func(def oval.Definition) ([]*claircore.Vulnerability, error) {
 		return []*claircore.Vulnerability{
-			&claircore.Vulnerability{
+			{
 				Updater:            u.Name(),
 				Name:               def.Title,
 				Description:        def.Description,
@@ -39,9 +39,8 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 				Severity:           def.Advisory.Severity,
 				NormalizedSeverity: NormalizeSeverity(def.Advisory.Severity),
 				// each updater is configured to parse a suse release
-				// specific xml database. we'll use the updater's release
-				// to map the parsed vulnerabilities
-				Dist: releaseToDist(u.release),
+				// specific xml database.
+				Dist: u.d,
 			},
 		}, nil
 	}
