@@ -110,16 +110,6 @@ type fingerprint struct {
 	version                    string
 }
 
-// NewFingerprint creates a new fingerprint object.
-func newFingerprint(changesEtag string, deletionsEtag string, requestTime time.Time) *fingerprint {
-	return &fingerprint{
-		changesEtag:   changesEtag,
-		deletionsEtag: deletionsEtag,
-		requestTime:   requestTime,
-		version:       updaterVersion,
-	}
-}
-
 // ParseFingerprint takes a generic driver.Fingerprint and creates a vex.fingerprint.
 // The string format saved in the DB is returned by the fingerprint.String() method.
 func parseFingerprint(in driver.Fingerprint) (*fingerprint, error) {
