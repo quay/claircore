@@ -307,10 +307,10 @@ func TestParse(t *testing.T) {
 		expectedDeleted int
 	}{
 		{
-			name:            "six_advisories_two_deletions",
+			name:            "six_advisories_four_deletions",
 			filename:        "testdata/example_vex.jsonl",
 			expectedVulns:   546,
-			expectedDeleted: 2,
+			expectedDeleted: 4,
 		},
 		{
 			name:            "cve-2022-1705",

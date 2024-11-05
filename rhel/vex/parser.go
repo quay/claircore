@@ -100,7 +100,13 @@ func (u *Updater) DeltaParse(ctx context.Context, contents io.ReadCloser) ([]*cl
 		}
 	}
 	vulns := []*claircore.Vulnerability{}
-	for _, vs := range out {
+	for n, vs := range out {
+		if len(vs) == 0 {
+			// If there are no vulns for this CVE make sure we signal that
+			// it is deleted in case it once had vulns.
+			deleted = append(deleted, n)
+			continue
+		}
 		vulns = append(vulns, vs...)
 	}
 
