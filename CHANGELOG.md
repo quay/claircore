@@ -1,3 +1,15 @@
+<a name="v1.5.33"></a>
+## [v1.5.33] - 2024-11-08
+[v1.5.33]: https://github.com/quay/claircore/compare/v1.5.32...v1.5.33
+
+- suse: dynamic distribution discovery
+  <details>
+  Previously Suse distributions were static/predefined in the code, the
+  lack of updates to those definitions had allowed the Suse support lapse.
+  This change adds dynamic support for two Suse distro flavors:
+  suse.linux.enterprise.server and opensuse.leap.
+  </details>
+
 <a name="v1.5.32"></a>
 ## [v1.5.32] - 2024-10-04
 [v1.5.32]: https://github.com/quay/claircore/compare/v1.5.31...v1.5.32
