@@ -1,0 +1,6 @@
+suse: dynamic distribution discovery
+
+Previously Suse distributions were static/predefined in the code, the
+lack of updates to those definitions had allowed the Suse support lapse.
+This change adds dynamic support for two Suse distro flavors:
+suse.linux.enterprise.server and opensuse.leap.
