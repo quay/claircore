@@ -54,7 +54,11 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 	// TODO(hank) The "go version" is documented as the toolchain that produced
 	// the binary, which may be distinct from the version of the stdlib used?
 	// Need to investigate.
-	runtimeVer, err := ParseVersion(strings.TrimPrefix(bi.GoVersion, "go"))
+	// GoVersion only documents "go1.19.2" as an example, but something like
+	// "go1.20.12 X:strictfipsruntime" has been seen in the wild, hence the call
+	// to [strings.Cut]. This is necessary for accurate vulnerability matching.
+	goVer, _, _ := strings.Cut(strings.TrimPrefix(bi.GoVersion, "go"), " ")
+	runtimeVer, err := ParseVersion(goVer)
 	switch {
 	case errors.Is(err, nil):
 	case errors.Is(err, ErrInvalidSemVer):
@@ -64,9 +68,13 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 	}
 
 	*out = append(*out, &claircore.Package{
-		Kind:              claircore.BINARY,
-		Name:              "stdlib",
-		Version:           bi.GoVersion,
+		Kind: claircore.BINARY,
+		Name: "stdlib",
+		// This was previously bi.GoVersion,
+		// but it must be changed to ensure an entry
+		// with the fixed NormalizedVersion is added to the
+		// package table without requiring a migration.
+		Version:           goVer,
 		PackageDB:         pkgdb,
 		Filepath:          p,
 		NormalizedVersion: runtimeVer,

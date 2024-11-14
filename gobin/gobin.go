@@ -35,7 +35,7 @@ type Detector struct{}
 
 const (
 	detectorName    = `gobin`
-	detectorVersion = `5`
+	detectorVersion = `6`
 	detectorKind    = `package`
 )
 
