@@ -1,17 +1,23 @@
 package epss
 
 import (
+	"bufio"
 	"compress/gzip"
 	"context"
+	"encoding/json"
 	"errors"
+	"github.com/google/go-cmp/cmp"
+	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/zlog"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -265,4 +271,140 @@ func (tc parseTestcase) Run(ctx context.Context, srv *httptest.Server) func(*tes
 		}
 		tc.Check(t, rs, err)
 	}
+}
+
+type fakeGetter struct {
+	items []driver.EnrichmentRecord
+}
+
+func (g *fakeGetter) GetEnrichment(ctx context.Context, cves []string) ([]driver.EnrichmentRecord, error) {
+	var results []driver.EnrichmentRecord
+	for _, cve := range cves {
+		for _, item := range g.items {
+			for _, tag := range item.Tags {
+				if tag == cve {
+					results = append(results, item)
+					break
+				}
+			}
+		}
+	}
+	return results, nil
+}
+
+func TestEnrich(t *testing.T) {
+	t.Parallel()
+	ctx := zlog.Test(context.Background(), t)
+	data, err := parseCSV("testdata/data.csv")
+	if err != nil {
+		t.Fatal(err)
+	}
+	g := &fakeGetter{items: data}
+	r := &claircore.VulnerabilityReport{
+		Vulnerabilities: map[string]*claircore.Vulnerability{
+			"-1": {
+				Description: "This is a fake vulnerability that doesn't have a CVE.",
+			},
+			"1": {
+				Description: "This is a fake vulnerability that looks like CVE-2022-34667.",
+			},
+			"6004": {
+				Description: "CVE-2024-9972 is here",
+			},
+			"6005": {
+				Description: "CVE-2024-9986 is awesome",
+			},
+		},
+	}
+	e := &Enricher{}
+	kind, es, err := e.Enrich(ctx, g, r)
+	if err != nil {
+		t.Error(err)
+	}
+	if got, want := kind, Type; got != want {
+		t.Errorf("got: %q, want: %q", got, want)
+	}
+	want := map[string][]map[string]interface{}{
+		"1": {
+			{
+				"cve":          "CVE-2022-34667",
+				"epss":         float64(0.00073),
+				"percentile":   float64(0.32799),
+				"modelVersion": "v2023.03.01",
+				"date":         "2024-10-25T00:00:00+0000",
+			},
+		},
+		"6004": {
+			{
+				"cve":          "CVE-2024-9972",
+				"epss":         float64(0.00091),
+				"percentile":   float64(0.39923),
+				"modelVersion": "v2023.03.01",
+				"date":         "2024-10-25T00:00:00+0000",
+			},
+		},
+		"6005": {
+			{
+				"cve":          "CVE-2024-9986",
+				"epss":         float64(0.00165),
+				"percentile":   float64(0.53867),
+				"modelVersion": "v2023.03.01",
+				"date":         "2024-10-25T00:00:00+0000",
+			},
+		},
+	}
+
+	got := map[string][]map[string]interface{}{}
+	if err := json.Unmarshal(es[0], &got); err != nil {
+		t.Error(err)
+	} else {
+		log.Printf("Got: %+v\n", got)
+
+		if !cmp.Equal(got, want) {
+			t.Error(cmp.Diff(got, want))
+		}
+	}
+}
+
+func parseCSV(filePath string) ([]driver.EnrichmentRecord, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	var records []driver.EnrichmentRecord
+	var headers []string
+
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+
+		// Skip empty lines and metadata lines
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+
+		record := strings.Split(line, ",")
+		if headers == nil {
+			headers = record
+			continue
+		}
+
+		if len(record) != len(headers) {
+			log.Printf("warning: skipping line with mismatched fields: %s\n", line)
+			continue
+		}
+
+		r, err := newItemFeed(record, headers, "v2023.03.01", "2024-10-25T00:00:00+0000")
+		if err != nil {
+			return nil, err
+		}
+		records = append(records, r)
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+	return records, nil
 }

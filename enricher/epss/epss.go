@@ -18,6 +18,7 @@ import (
 	"path"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -75,7 +76,11 @@ func (e *Enricher) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c 
 	ctx = zlog.ContextWithValues(ctx, "component", "enricher/epss/Enricher/Configure")
 	var cfg Config
 	e.c = c
-
+	if f == nil {
+		zlog.Warn(ctx).Msg("No configuration provided; proceeding with default settings")
+		e.sourceURL()
+		return nil
+	}
 	if err := f(&cfg); err != nil {
 		return err
 	}
@@ -142,30 +147,34 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, _ driver.Fingerprint) (i
 	var headers []string
 	enc := json.NewEncoder(out)
 	totalCVEs := 0
+	var modelVersion, date string
 
-	// get headers
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
-		if strings.HasPrefix(line, "#") || line == "" {
-			continue // Skip comment or empty lines
+		if line == "" {
+			continue
 		}
-		headers = strings.Split(line, ",")
-		break
-	}
-
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if strings.HasPrefix(line, "#") || line == "" {
+		// assume metadata is always available at first comment of the file
+		if strings.HasPrefix(line, "#") && date == "" && modelVersion == "" {
+			modelVersion, date = parseMetadata(line)
+			zlog.Info(ctx).
+				Str("modelVersion", modelVersion).
+				Str("scoreDate", date).
+				Msg("parsed metadata")
+			continue
+		}
+		if headers == nil {
+			headers = strings.Split(line, ",")
 			continue
 		}
 
 		record := strings.Split(line, ",")
 		if len(record) != len(headers) {
 			zlog.Warn(ctx).Str("line", line).Msg("skipping line with mismatched fields")
-			continue // Skip lines with mismatched number of fields
+			continue
 		}
 
-		r, err := newItemFeed(record, headers)
+		r, err := newItemFeed(record, headers, modelVersion, date)
 		if err != nil {
 			return nil, "", err
 		}
@@ -222,43 +231,61 @@ func (e *Enricher) sourceURL() {
 	currentDate := time.Now()
 	formattedDate := currentDate.Format("2006-01-02")
 	filePath := fmt.Sprintf("epss_scores-%s.csv.gz", formattedDate)
-	e.feedPath = path.Join(DefaultFeeds, filePath)
+
+	feedURL, err := url.Parse(DefaultFeeds)
+	if err != nil {
+		panic(fmt.Errorf("invalid default feed URL: %w", err))
+	}
+
+	feedURL.Path = path.Join(feedURL.Path, filePath)
+	e.feedPath = feedURL.String()
 }
 
 func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *claircore.VulnerabilityReport) (string, []json.RawMessage, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "enricher/epss/Enricher/Enrich")
-
-	// We return any CVSS blobs for CVEs mentioned in the free-form parts of the
-	// vulnerability.
 	m := make(map[string][]json.RawMessage)
-
 	erCache := make(map[string][]driver.EnrichmentRecord)
+
 	for id, v := range r.Vulnerabilities {
 		t := make(map[string]struct{})
-		ctx := zlog.ContextWithValues(ctx,
-			"vuln", v.Name)
+		ctx := zlog.ContextWithValues(ctx, "vuln", v.Name)
+
 		for _, elem := range []string{
 			v.Description,
 			v.Name,
 			v.Links,
 		} {
-			for _, m := range cveRegexp.FindAllString(elem, -1) {
+			// Check if the element is non-empty before running the regex
+			if elem == "" {
+				zlog.Debug(ctx).Str("element", elem).Msg("skipping empty element")
+				continue
+			}
+
+			matches := cveRegexp.FindAllString(elem, -1)
+			if len(matches) == 0 {
+				zlog.Debug(ctx).Str("element", elem).Msg("no CVEs found in element")
+				continue
+			}
+			for _, m := range matches {
 				t[m] = struct{}{}
 			}
 		}
+
+		// Skip if no CVEs were found
 		if len(t) == 0 {
+			zlog.Debug(ctx).Msg("no CVEs found in vulnerability metadata")
 			continue
 		}
+
 		ts := make([]string, 0, len(t))
 		for m := range t {
 			ts = append(ts, m)
 		}
-		zlog.Debug(ctx).
-			Strs("cve", ts).
-			Msg("found CVEs")
-
 		sort.Strings(ts)
+
 		cveKey := strings.Join(ts, "_")
+		zlog.Debug(ctx).Str("cve_key", cveKey).Strs("cve", ts).Msg("generated CVE cache key")
+
 		rec, ok := erCache[cveKey]
 		if !ok {
 			var err error
@@ -268,16 +295,27 @@ func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *cla
 			}
 			erCache[cveKey] = rec
 		}
-		zlog.Debug(ctx).
-			Int("count", len(rec)).
-			Msg("found records")
+
+		zlog.Debug(ctx).Int("count", len(rec)).Msg("found records")
+
+		// Skip if no enrichment records are found
+		if len(rec) == 0 {
+			zlog.Debug(ctx).Strs("cve", ts).Msg("no enrichment records found for CVEs")
+			continue
+		}
+
 		for _, r := range rec {
+			if _, exists := m[id]; !exists {
+				m[id] = []json.RawMessage{}
+			}
 			m[id] = append(m[id], r.Enrichment)
 		}
 	}
+
 	if len(m) == 0 {
 		return Type, nil, nil
 	}
+
 	b, err := json.Marshal(m)
 	if err != nil {
 		return Type, nil, err
@@ -285,10 +323,22 @@ func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *cla
 	return Type, []json.RawMessage{b}, nil
 }
 
-func newItemFeed(record []string, headers []string) (driver.EnrichmentRecord, error) {
-	item := make(map[string]string)
+func newItemFeed(record []string, headers []string, modelVersion string, scoreDate string) (driver.EnrichmentRecord, error) {
+	item := make(map[string]interface{}) // Use interface{} to allow mixed types
 	for i, value := range record {
-		item[headers[i]] = value
+		// epss details are numeric values
+		if f, err := strconv.ParseFloat(value, 64); err == nil {
+			item[headers[i]] = f
+		} else {
+			item[headers[i]] = value
+		}
+	}
+
+	if modelVersion != "" {
+		item["modelVersion"] = modelVersion
+	}
+	if scoreDate != "" {
+		item["date"] = scoreDate
 	}
 
 	enrichment, err := json.Marshal(item)
@@ -297,9 +347,34 @@ func newItemFeed(record []string, headers []string) (driver.EnrichmentRecord, er
 	}
 
 	r := driver.EnrichmentRecord{
-		Tags:       []string{item["cve"]},
+		Tags:       []string{item["cve"].(string)}, // Ensure the "cve" field is a string
 		Enrichment: enrichment,
 	}
 
 	return r, nil
+}
+
+func parseMetadata(line string) (modelVersion string, scoreDate string) {
+	// Set default values
+	modelVersion = "N/A"
+	scoreDate = "0001-01-01"
+
+	trimmedLine := strings.TrimPrefix(line, "#")
+	parts := strings.Split(trimmedLine, ",")
+	for _, part := range parts {
+		keyValue := strings.SplitN(part, ":", 2)
+		if len(keyValue) == 2 {
+			key := strings.TrimSpace(keyValue[0])
+			value := strings.TrimSpace(keyValue[1])
+
+			switch key {
+			case "score_date":
+				scoreDate = value
+			case "model_version":
+				modelVersion = value
+			}
+		}
+	}
+
+	return modelVersion, scoreDate
 }
