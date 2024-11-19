@@ -115,7 +115,7 @@ jobs:
           steps.previous.outputs.cache-hit != 'true' &&
           success() &&
           strategy.job-index == 0
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           directory: ${{ runner.temp }}
           override_branch: ${{ github.ref_name }}
