@@ -1,7 +1,6 @@
 package epss
 
 import (
-	"bufio"
 	"compress/gzip"
 	"context"
 	"encoding/json"
@@ -17,7 +16,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 	"testing"
 )
 
@@ -295,11 +293,30 @@ func (g *fakeGetter) GetEnrichment(ctx context.Context, cves []string) ([]driver
 func TestEnrich(t *testing.T) {
 	t.Parallel()
 	ctx := zlog.Test(context.Background(), t)
-	data, err := parseCSV("testdata/data.csv")
+	srv := mockServer(t)
+	e := &Enricher{}
+	f := func(i interface{}) error {
+		cfg, ok := i.(*Config)
+		if !ok {
+			t.Fatal("assertion failed")
+		}
+		u := srv.URL + "/data.csv.gz"
+		cfg.FeedRoot = &u
+		return nil
+	}
+	if err := e.Configure(ctx, f, srv.Client()); err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+	rc, _, err := e.FetchEnrichment(ctx, "")
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+	defer rc.Close()
+	rs, err := e.ParseEnrichment(ctx, rc)
 	if err != nil {
 		t.Fatal(err)
 	}
-	g := &fakeGetter{items: data}
+	g := &fakeGetter{items: rs}
 	r := &claircore.VulnerabilityReport{
 		Vulnerabilities: map[string]*claircore.Vulnerability{
 			"-1": {
@@ -316,7 +333,6 @@ func TestEnrich(t *testing.T) {
 			},
 		},
 	}
-	e := &Enricher{}
 	kind, es, err := e.Enrich(ctx, g, r)
 	if err != nil {
 		t.Error(err)
@@ -364,47 +380,4 @@ func TestEnrich(t *testing.T) {
 			t.Error(cmp.Diff(got, want))
 		}
 	}
-}
-
-func parseCSV(filePath string) ([]driver.EnrichmentRecord, error) {
-	file, err := os.Open(filePath)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	var records []driver.EnrichmentRecord
-	var headers []string
-
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-
-		// Skip empty lines and metadata lines
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-
-		record := strings.Split(line, ",")
-		if headers == nil {
-			headers = record
-			continue
-		}
-
-		if len(record) != len(headers) {
-			log.Printf("warning: skipping line with mismatched fields: %s\n", line)
-			continue
-		}
-
-		r, err := newItemFeed(record, headers, "v2023.03.01", "2024-10-25T00:00:00+0000")
-		if err != nil {
-			return nil, err
-		}
-		records = append(records, r)
-	}
-
-	if err := scanner.Err(); err != nil {
-		return nil, err
-	}
-	return records, nil
 }
