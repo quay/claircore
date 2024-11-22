@@ -221,7 +221,7 @@ func (doc hydraDoc) Run(dir string) func(*testing.T) {
 		defer logResponse(t, res.Request.URL.Path, buf)()
 
 		s := &rpm.Scanner{}
-		var got []*claircore.Package
+		pkgMap := map[string]*claircore.Package{}
 		var which claircore.Digest
 		for _, ld := range image.Data[0].Parsed.Layers {
 			// TODO(hank) Need a way to use the nicer API, but pass the
@@ -242,15 +242,23 @@ func (doc hydraDoc) Run(dir string) func(*testing.T) {
 			if err != nil {
 				t.Error(err)
 			}
-			if len(pkgs) >= len(want) {
-				got = pkgs
-				which = ld
-				break
+			for _, p := range pkgs {
+				pkgMap[p.Name] = p
 			}
 		}
+		// Newer images contain multiple layers with RPM DBs. We need to account for
+		// all packages but deduplicate across layers.
+		got := make([]*claircore.Package, 0, len(pkgMap))
+		for _, p := range pkgMap {
+			got = append(got, p)
+		}
+
 		t.Logf("found %d packages in %v", len(got), which)
 		t.Logf("comparing to %d packages in manifest %s", len(want), doc.ID)
 
+		if len(want) != len(got) {
+			t.Errorf("wanted %d packages but got %d", len(want), len(got))
+		}
 		if !cmp.Equal(got, want, rpmtest.Options) {
 			t.Error(cmp.Diff(got, want, rpmtest.Options))
 		}

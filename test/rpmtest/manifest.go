@@ -17,13 +17,14 @@ type Manifest struct {
 	RPM []ManifestRPM `json:"rpms"`
 }
 type ManifestRPM struct {
-	Name    string `json:"name"`
-	Version string `json:"version"`
-	Release string `json:"release"`
-	Arch    string `json:"architecture"`
-	Source  string `json:"srpm_nevra"`
-	GPG     string `json:"gpg"`
-	Module  string `json:"module"`
+	Name        string `json:"name"`
+	Version     string `json:"version"`
+	Release     string `json:"release"`
+	Arch        string `json:"architecture"`
+	SourceNEVRA string `json:"srpm_nevra"`
+	SourceName  string `json:"srpm_name"`
+	GPG         string `json:"gpg"`
+	Module      string `json:"module"`
 }
 
 func PackagesFromRPMManifest(t *testing.T, r io.Reader) []*claircore.Package {
@@ -44,15 +45,28 @@ func PackagesFromRPMManifest(t *testing.T, r io.Reader) []*claircore.Package {
 			RepositoryHint: "key:" + rpm.GPG,
 			Module:         rpm.Module,
 		}
-		if s, ok := src[rpm.Source]; ok {
+
+		// Newer images produced from Konflux shove all the source information
+		// into the SourceName and omit the SourceNEVRA. Try both.
+		var source string
+		switch {
+		case rpm.SourceNEVRA != "":
+			source = rpm.SourceNEVRA
+		case rpm.SourceName != "":
+			source = rpm.SourceName
+		default:
+			continue
+		}
+
+		if s, ok := src[source]; ok {
 			p.Source = s
 		} else {
-			s := strings.TrimSuffix(rpm.Source, ".src")
+			s := strings.TrimSuffix(strings.TrimSuffix(source, ".rpm"), ".src")
 			pos := len(s)
 			for i := 0; i < 2; i++ {
 				pos = strings.LastIndexByte(s[:pos], '-')
 				if pos == -1 {
-					t.Fatalf("malformed NEVRA: %q", rpm.Source)
+					t.Fatalf("malformed NEVRA/NVRA: %q for %q", source, rpm.Name)
 				}
 			}
 			idx := len(srcs)
@@ -62,9 +76,10 @@ func PackagesFromRPMManifest(t *testing.T, r io.Reader) []*claircore.Package {
 				Version: strings.TrimPrefix(s[pos+1:], "0:"),
 				Module:  rpm.Module,
 			})
-			src[rpm.Source] = &srcs[idx]
+			src[source] = &srcs[idx]
 			p.Source = &srcs[idx]
 		}
+
 		out = append(out, &p)
 	}
 	return out
