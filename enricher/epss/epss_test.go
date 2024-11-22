@@ -5,10 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/google/go-cmp/cmp"
-	"github.com/quay/claircore"
-	"github.com/quay/claircore/libvuln/driver"
-	"github.com/quay/zlog"
 	"io"
 	"log"
 	"net/http"
@@ -17,6 +13,12 @@ import (
 	"path"
 	"path/filepath"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
+
+	"github.com/quay/claircore"
+	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/zlog"
 )
 
 func TestConfigure(t *testing.T) {
@@ -32,7 +34,7 @@ func TestConfigure(t *testing.T) {
 			},
 		},
 		{
-			Name: "OK", // URL without .gz will be replaced with default URL
+			Name: "Not OK", // URL without .gz is invalid
 			Config: func(i interface{}) error {
 				cfg := i.(*Config)
 				s := "http://example.com/"
@@ -40,8 +42,8 @@ func TestConfigure(t *testing.T) {
 				return nil
 			},
 			Check: func(t *testing.T, err error) {
-				if err != nil {
-					t.Errorf("unexpected error with .gz URL: %v", err)
+				if err == nil {
+					t.Errorf("expected invalid URL error, but got none: %v", err)
 				}
 			},
 		},
@@ -161,28 +163,36 @@ func noopConfig(_ interface{}) error { return nil }
 
 func mockServer(t *testing.T) *httptest.Server {
 	const root = `testdata/`
+
+	// Define a static ETag for testing purposes
+	const etagValue = `"test-etag-12345"`
+
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch path.Ext(r.URL.Path) {
 		case ".gz": // only gz feed is supported
+			w.Header().Set("ETag", etagValue)
+
 			f, err := os.Open(filepath.Join(root, "data.csv"))
 			if err != nil {
 				t.Errorf("open failed: %v", err)
 				w.WriteHeader(http.StatusInternalServerError)
-				break
+				return
 			}
 			defer f.Close()
+
 			gz := gzip.NewWriter(w)
 			defer gz.Close()
 			if _, err := io.Copy(gz, f); err != nil {
 				t.Errorf("write error: %v", err)
 				w.WriteHeader(http.StatusInternalServerError)
-				break
+				return
 			}
 		default:
 			t.Errorf("unknown request path: %q", r.URL.Path)
 			w.WriteHeader(http.StatusBadRequest)
 		}
 	}))
+
 	t.Cleanup(srv.Close)
 	return srv
 }
@@ -255,7 +265,9 @@ func (tc parseTestcase) Run(ctx context.Context, srv *httptest.Server) func(*tes
 		if err := e.Configure(ctx, f, srv.Client()); err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
-		rc, _, err := e.FetchEnrichment(ctx, "")
+
+		hint := driver.Fingerprint("test-e-tag-54321")
+		rc, _, err := e.FetchEnrichment(ctx, hint)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
