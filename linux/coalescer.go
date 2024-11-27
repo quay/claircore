@@ -48,6 +48,7 @@ func (c *Coalescer) Coalesce(ctx context.Context, layerArtifacts []*indexer.Laye
 		if len(artifacts.Pkgs) == 0 {
 			continue
 		}
+		lh := artifacts.Hash.String()
 
 		tmp := make(map[string][]*claircore.Package)
 		for _, pkg := range artifacts.Pkgs {
@@ -57,6 +58,12 @@ func (c *Coalescer) Coalesce(ctx context.Context, layerArtifacts []*indexer.Laye
 		}
 		for db, pkgs := range tmp {
 			dbs[db] = pkgs
+		}
+		for _, f := range artifacts.Files {
+			if c.ir.Files == nil {
+				c.ir.Files = make(map[string][]claircore.File)
+			}
+			c.ir.Files[lh] = append(c.ir.Files[lh], f)
 		}
 	}
 
