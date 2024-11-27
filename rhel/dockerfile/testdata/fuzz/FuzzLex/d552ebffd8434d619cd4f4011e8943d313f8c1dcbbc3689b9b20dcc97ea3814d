@@ -1,2 +1,0 @@
-go test fuzz v1
-[]byte("LABEL A=B \\\n\tC=D # Comments not allowed in this position\n")
