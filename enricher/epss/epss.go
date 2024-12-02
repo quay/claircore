@@ -11,13 +11,13 @@ import (
 	"net/http"
 	"net/url"
 	"path"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/enricher"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/tmp"
 	"github.com/quay/zlog"
@@ -35,13 +35,6 @@ type EPSSItem struct {
 	EPSS         float64 `json:"epss"`
 	Percentile   float64 `json:"percentile"`
 }
-
-// This is a slightly more relaxed version of the validation pattern in the NVD
-// JSON schema: https://csrc.nist.gov/schema/nvd/feed/1.1/CVE_JSON_4.0_min_1.1.schema
-//
-// It allows for "CVE" to be case insensitive and for dashes and underscores
-// between the different segments.
-var cveRegexp = regexp.MustCompile(`(?i:cve)[-_][0-9]{4}[-_][0-9]{4,}`)
 
 const (
 	// Type is the type of data returned from the Enricher's Enrich method.
@@ -167,7 +160,7 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, prevFingerprint driver.F
 	// assume metadata is always in the first line
 	record, err := csvReader.Read()
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to read metadata line: %w", err)
+		return nil, "", fmt.Errorf("unable to read metadata line: %w", err)
 	}
 
 	var modelVersion, date string
@@ -309,7 +302,7 @@ func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *cla
 				continue
 			}
 
-			matches := cveRegexp.FindAllString(elem, -1)
+			matches := enricher.CVERegexp.FindAllString(elem, -1)
 			if len(matches) == 0 {
 				zlog.Debug(ctx).Str("element", elem).Msg("no CVEs found in element")
 				continue
