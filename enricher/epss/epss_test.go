@@ -170,7 +170,7 @@ func mockServer(t *testing.T) *httptest.Server {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch path.Ext(r.URL.Path) {
 		case ".gz": // only gz feed is supported
-			w.Header().Set("ETag", etagValue)
+			w.Header().Set("etag", etagValue)
 
 			f, err := os.Open(filepath.Join(root, "data.csv"))
 			if err != nil {

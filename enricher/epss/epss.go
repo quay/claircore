@@ -16,11 +16,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/quay/zlog"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/enricher"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/tmp"
-	"github.com/quay/zlog"
 )
 
 var (
@@ -47,13 +48,6 @@ const (
 	// epssName is the name of the enricher
 	epssName = `clair.epss`
 )
-
-func init() {
-	var err error
-	if err != nil {
-		panic(err)
-	}
-}
 
 // Enricher provides EPSS data as enrichments to a VulnerabilityReport.
 //
@@ -136,7 +130,7 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, prevFingerprint driver.F
 		return nil, "", fmt.Errorf("unable to fetch file: received status %d", resp.StatusCode)
 	}
 
-	etag := resp.Header.Get("ETag")
+	etag := resp.Header.Get("etag")
 	if etag == "" {
 		return nil, "", fmt.Errorf("ETag not found in response headers")
 	}
