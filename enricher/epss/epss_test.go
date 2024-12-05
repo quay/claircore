@@ -15,10 +15,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
-	"github.com/quay/zlog"
 )
 
 func TestConfigure(t *testing.T) {
@@ -38,7 +38,7 @@ func TestConfigure(t *testing.T) {
 			Config: func(i interface{}) error {
 				cfg := i.(*Config)
 				s := "http://example.com/"
-				cfg.FeedRoot = &s
+				cfg.BaseURL = &s
 				return nil
 			},
 			Check: func(t *testing.T, err error) {
@@ -58,11 +58,11 @@ func TestConfigure(t *testing.T) {
 			},
 		},
 		{
-			Name: "BadURL", // Malformed URL in FeedRoot
+			Name: "BadURL", // Malformed URL in BaseURL
 			Config: func(i interface{}) error {
 				cfg := i.(*Config)
 				s := "http://[notaurl:/"
-				cfg.FeedRoot = &s
+				cfg.BaseURL = &s
 				return nil
 			},
 			Check: func(t *testing.T, err error) {
@@ -72,11 +72,11 @@ func TestConfigure(t *testing.T) {
 			},
 		},
 		{
-			Name: "ValidGZURL", // Proper .gz URL in FeedRoot
+			Name: "ValidGZURL", // Proper .gz URL in BaseURL
 			Config: func(i interface{}) error {
 				cfg := i.(*Config)
 				s := "http://example.com/epss_scores-2024-10-25.csv.gz"
-				cfg.FeedRoot = &s
+				cfg.BaseURL = &s
 				return nil
 			},
 			Check: func(t *testing.T, err error) {
@@ -169,7 +169,7 @@ func mockServer(t *testing.T) *httptest.Server {
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch path.Ext(r.URL.Path) {
-		case ".gz": // only gz feed is supported
+		case ".gz": // only gz baseURL is supported
 			w.Header().Set("etag", etagValue)
 
 			f, err := os.Open(filepath.Join(root, "data.csv"))
@@ -207,7 +207,7 @@ func (tc fetchTestcase) Run(ctx context.Context, srv *httptest.Server) func(*tes
 				t.Fatal("expected Config type for i, but got a different type")
 			}
 			u := srv.URL + "/data.csv.gz"
-			cfg.FeedRoot = &u
+			cfg.BaseURL = &u
 			return nil
 		}
 
@@ -259,7 +259,7 @@ func (tc parseTestcase) Run(ctx context.Context, srv *httptest.Server) func(*tes
 				t.Fatal("assertion failed")
 			}
 			u := srv.URL + "/data.csv.gz"
-			cfg.FeedRoot = &u
+			cfg.BaseURL = &u
 			return nil
 		}
 		if err := e.Configure(ctx, f, srv.Client()); err != nil {
@@ -313,7 +313,7 @@ func TestEnrich(t *testing.T) {
 			t.Fatal("assertion failed")
 		}
 		u := srv.URL + "/data.csv.gz"
-		cfg.FeedRoot = &u
+		cfg.BaseURL = &u
 		return nil
 	}
 	if err := e.Configure(ctx, f, srv.Client()); err != nil {
