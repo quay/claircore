@@ -11,7 +11,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -19,6 +18,7 @@ import (
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/enricher"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/tmp"
 )
@@ -253,13 +253,6 @@ func (e *Enricher) ParseEnrichment(ctx context.Context, rc io.ReadCloser) ([]dri
 	return ret, nil
 }
 
-// This is a slightly more relaxed version of the validation pattern in the NVD
-// JSON schema: https://csrc.nist.gov/schema/nvd/feed/1.1/CVE_JSON_4.0_min_1.1.schema
-//
-// It allows for "CVE" to be case insensitive and for dashes and underscores
-// between the different segments.
-var cveRegexp = regexp.MustCompile(`(?i:cve)[-_][0-9]{4}[-_][0-9]{4,}`)
-
 // Enrich implements driver.Enricher.
 func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *claircore.VulnerabilityReport) (string, []json.RawMessage, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "enricher/cvss/Enricher/Enrich")
@@ -278,7 +271,7 @@ func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *cla
 			v.Name,
 			v.Links,
 		} {
-			for _, m := range cveRegexp.FindAllString(elem, -1) {
+			for _, m := range enricher.CVERegexp.FindAllString(elem, -1) {
 				t[m] = struct{}{}
 			}
 		}
