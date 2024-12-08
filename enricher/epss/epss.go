@@ -1,3 +1,4 @@
+// Package epss provides a epss enricher.
 package epss
 
 import (
@@ -16,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
@@ -64,7 +66,7 @@ type Enricher struct {
 
 // Config is the configuration for Enricher.
 type Config struct {
-	BaseURL *string `json:"url" yaml:"url"`
+	URL *string `json:"url" yaml:"url"`
 }
 
 func (e *Enricher) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *http.Client) error {
@@ -79,18 +81,18 @@ func (e *Enricher) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c 
 	if err := f(&cfg); err != nil {
 		return err
 	}
-	if cfg.BaseURL != nil {
+	if cfg.URL != nil {
 		// validate the URL format
-		if _, err := url.Parse(*cfg.BaseURL); err != nil {
-			return fmt.Errorf("invalid URL format for BaseURL: %w", err)
+		if _, err := url.Parse(*cfg.URL); err != nil {
+			return fmt.Errorf("invalid URL format for URL: %w", err)
 		}
 
 		// only .gz file is supported
-		if strings.HasSuffix(*cfg.BaseURL, ".gz") {
+		if strings.HasSuffix(*cfg.URL, ".gz") {
 			//overwrite feedPath is cfg provides another baseURL path
-			e.feedPath = *cfg.BaseURL
+			e.feedPath = *cfg.URL
 		} else {
-			return fmt.Errorf("invalid baseURL root: expected a '.gz' file, but got '%q'", *cfg.BaseURL)
+			return fmt.Errorf("invalid baseURL root: expected a '.gz' file, but got '%q'", *cfg.URL)
 		}
 	}
 
@@ -128,14 +130,19 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, prevFingerprint driver.F
 	if err = httputil.CheckResponse(resp, http.StatusOK); err != nil {
 		return nil, "", fmt.Errorf("unable to fetch file: %w", err)
 	}
-
-	etag := resp.Header.Get("etag")
-	if etag == "" {
-		return nil, "", fmt.Errorf("ETag not found in response headers")
+	var str string
+	var newFingerprint driver.Fingerprint
+	str = resp.Header.Get("etag")
+	if str == "" {
+		newUUID, err := uuid.NewRandom()
+		if err != nil {
+			return nil, "", fmt.Errorf("failed to generate UUID: %w", err)
+		}
+		// Generate a UUID for customized URL
+		str = newUUID.String()
+		zlog.Warn(ctx).Msg("ETag not found; generated UUID for fingerprint")
 	}
-
-	newFingerprint := driver.Fingerprint(etag)
-
+	newFingerprint = driver.Fingerprint(str)
 	if prevFingerprint == newFingerprint {
 		zlog.Info(ctx).Str("fingerprint", string(newFingerprint)).Msg("file unchanged; skipping processing")
 		return nil, prevFingerprint, nil
@@ -158,7 +165,6 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, prevFingerprint driver.F
 
 	var modelVersion, date string
 	for _, field := range record {
-		field = strings.TrimSpace(field)
 		field = strings.TrimPrefix(strings.TrimSpace(field), "#")
 		key, value, found := strings.Cut(field, ":")
 		if !found {
@@ -176,11 +182,8 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, prevFingerprint driver.F
 		return nil, "", fmt.Errorf("missing metadata fields in record: %v", record)
 	}
 	csvReader.Comment = '#'
-	csvReader.FieldsPerRecord = 3 // Expect exactly 3 fields per record
 
-	if modelVersion == "" || date == "" {
-		return nil, "", fmt.Errorf("missing metadata fields in record: %v", record)
-	}
+	csvReader.FieldsPerRecord = 3 // Expect exactly 3 fields per record
 
 	// Read and validate header line
 	record, err = csvReader.Read()
@@ -262,8 +265,8 @@ func (*Enricher) Name() string {
 }
 
 func currentFeedURL() string {
-	currentDate := time.Now()
-	formattedDate := currentDate.Format("2006-01-02")
+	yesterday := time.Now().AddDate(0, 0, -1) // Get yesterday's date
+	formattedDate := yesterday.Format("2006-01-02")
 	filePath := fmt.Sprintf("epss_scores-%s.csv.gz", formattedDate)
 
 	feedURL, err := url.Parse(DefaultBaseURL)
@@ -354,7 +357,7 @@ func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *cla
 }
 
 func newItemFeed(record []string, modelVersion string, scoreDate string) (driver.EnrichmentRecord, error) {
-	// Assuming record has already been validated to have 3 fields
+	// Validate the record has the expected length
 	if len(record) != 3 {
 		return driver.EnrichmentRecord{}, fmt.Errorf("unexpected record length: %d", len(record))
 	}
