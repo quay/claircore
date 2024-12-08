@@ -38,7 +38,7 @@ func TestConfigure(t *testing.T) {
 			Config: func(i interface{}) error {
 				cfg := i.(*Config)
 				s := "http://example.com/"
-				cfg.BaseURL = &s
+				cfg.URL = &s
 				return nil
 			},
 			Check: func(t *testing.T, err error) {
@@ -58,11 +58,11 @@ func TestConfigure(t *testing.T) {
 			},
 		},
 		{
-			Name: "BadURL", // Malformed URL in BaseURL
+			Name: "BadURL", // Malformed URL in URL
 			Config: func(i interface{}) error {
 				cfg := i.(*Config)
 				s := "http://[notaurl:/"
-				cfg.BaseURL = &s
+				cfg.URL = &s
 				return nil
 			},
 			Check: func(t *testing.T, err error) {
@@ -72,11 +72,11 @@ func TestConfigure(t *testing.T) {
 			},
 		},
 		{
-			Name: "ValidGZURL", // Proper .gz URL in BaseURL
+			Name: "ValidGZURL", // Proper .gz URL in URL
 			Config: func(i interface{}) error {
 				cfg := i.(*Config)
 				s := "http://example.com/epss_scores-2024-10-25.csv.gz"
-				cfg.BaseURL = &s
+				cfg.URL = &s
 				return nil
 			},
 			Check: func(t *testing.T, err error) {
@@ -207,7 +207,7 @@ func (tc fetchTestcase) Run(ctx context.Context, srv *httptest.Server) func(*tes
 				t.Fatal("expected Config type for i, but got a different type")
 			}
 			u := srv.URL + "/data.csv.gz"
-			cfg.BaseURL = &u
+			cfg.URL = &u
 			return nil
 		}
 
@@ -259,7 +259,7 @@ func (tc parseTestcase) Run(ctx context.Context, srv *httptest.Server) func(*tes
 				t.Fatal("assertion failed")
 			}
 			u := srv.URL + "/data.csv.gz"
-			cfg.BaseURL = &u
+			cfg.URL = &u
 			return nil
 		}
 		if err := e.Configure(ctx, f, srv.Client()); err != nil {
@@ -313,7 +313,7 @@ func TestEnrich(t *testing.T) {
 			t.Fatal("assertion failed")
 		}
 		u := srv.URL + "/data.csv.gz"
-		cfg.BaseURL = &u
+		cfg.URL = &u
 		return nil
 	}
 	if err := e.Configure(ctx, f, srv.Client()); err != nil {
