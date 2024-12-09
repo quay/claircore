@@ -51,7 +51,7 @@ func (s *MatcherStore) Get(ctx context.Context, records []*claircore.IndexRecord
 	defer tx.Rollback(ctx)
 	// start a batch
 	batch := &pgx.Batch{}
-	resCache := map[string]pgx.Rows{}
+	resCache := map[string][]*claircore.Vulnerability{}
 	rqs := []*recordQuery{}
 	for _, record := range records {
 		query, err := buildGetQuery(record, &opts)
@@ -72,7 +72,6 @@ func (s *MatcherStore) Get(ctx context.Context, records []*claircore.IndexRecord
 		resCache[query] = nil
 	}
 	// send the batch
-
 	start := time.Now()
 	res := tx.SendBatch(ctx, batch)
 	// Can't just defer the close, because the batch must be fully handled
@@ -83,17 +82,28 @@ func (s *MatcherStore) Get(ctx context.Context, records []*claircore.IndexRecord
 	results := make(map[string][]*claircore.Vulnerability)
 	vulnSet := make(map[string]map[string]struct{})
 	for _, rq := range rqs {
-		rows, ok := resCache[rq.query]
+		rid := rq.record.Package.ID
+		vulns, ok := resCache[rq.query]
 		if !ok {
 			return nil, fmt.Errorf("unexpected vulnerability query: %s", rq.query)
 		}
-		if rows == nil {
-			rows, err = res.Query()
-			if err != nil {
-				res.Close()
-				return nil, err
+		if vulns != nil { // We already have results we don't need to go back to the DB.
+			if _, ok := vulnSet[rid]; !ok {
+				vulnSet[rid] = make(map[string]struct{})
 			}
-			resCache[rq.query] = rows
+			for _, v := range vulns {
+				if _, ok := vulnSet[rid][v.ID]; !ok {
+					vulnSet[rid][v.ID] = struct{}{}
+					results[rid] = append(results[rid], v)
+				}
+			}
+			continue
+		}
+		resCache[rq.query] = []*claircore.Vulnerability{}
+		rows, err := res.Query()
+		if err != nil {
+			res.Close()
+			return nil, fmt.Errorf("error getting rows: %w", err)
 		}
 
 		// unpack all returned rows into claircore.Vulnerability structs
@@ -140,7 +150,6 @@ func (s *MatcherStore) Get(ctx context.Context, records []*claircore.IndexRecord
 				return nil, fmt.Errorf("failed to scan vulnerability: %v", err)
 			}
 
-			rid := rq.record.Package.ID
 			if _, ok := vulnSet[rid]; !ok {
 				vulnSet[rid] = make(map[string]struct{})
 			}
@@ -149,6 +158,7 @@ func (s *MatcherStore) Get(ctx context.Context, records []*claircore.IndexRecord
 				results[rid] = append(results[rid], v)
 			}
 		}
+		resCache[rq.query] = results[rid]
 	}
 	if err := res.Close(); err != nil {
 		return nil, fmt.Errorf("some weird batch error: %v", err)
