@@ -17,7 +17,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
@@ -129,24 +128,16 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, prevFingerprint driver.F
 	if err = httputil.CheckResponse(resp, http.StatusOK); err != nil {
 		return nil, "", fmt.Errorf("unable to fetch file: %w", err)
 	}
-	var str string
-	var newFingerprint driver.Fingerprint
-	str = resp.Header.Get("etag")
-	if str == "" {
-		newUUID, err := uuid.NewRandom()
-		if err != nil {
-			return nil, "", fmt.Errorf("failed to generate UUID: %w", err)
-		}
-		// Generate a UUID for customized URL
-		str = newUUID.String()
-		zlog.Warn(ctx).Msg("ETag not found; generated UUID for fingerprint")
-	}
-	newFingerprint = driver.Fingerprint(str)
-	if prevFingerprint == newFingerprint {
-		zlog.Info(ctx).Str("fingerprint", string(newFingerprint)).Msg("file unchanged; skipping processing")
-		return nil, prevFingerprint, nil
-	}
 
+	var newFingerprint driver.Fingerprint
+	if etag := resp.Header.Get("etag"); etag != "" {
+		newFingerprint = driver.Fingerprint(etag)
+		if prevFingerprint == newFingerprint {
+			zlog.Info(ctx).Str("fingerprint", string(newFingerprint)).Msg("file unchanged; skipping processing")
+			return nil, prevFingerprint, nil
+		}
+		newFingerprint = driver.Fingerprint(etag)
+	}
 	gzipReader, err := gzip.NewReader(resp.Body)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to decompress file: %w", err)
