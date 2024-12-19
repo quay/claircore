@@ -53,7 +53,7 @@ Package scanning is context free, meaning no distribution classification has hap
 This is because manifests are made up of layers, and a layer which holds a package database may not hold distribution information such as an os-release file.
 A package scanner need only parse a target package database and return claircore.Packages.
 
-You need to implement the [Package Scanner](../reference/packagescanner.md) interface to achieve this.
+You need to implement the [Package Scanner](../reference/package_scanner.md) interface to achieve this.
 
 Optionally, you may implement the [Configurable Scanner](../reference/configurable_scanner.md) if the scanner needs to perform runtime configuration before use.
 
