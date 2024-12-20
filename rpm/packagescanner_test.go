@@ -2,6 +2,7 @@ package rpm
 
 import (
 	"context"
+	"net/url"
 	"os"
 	"path/filepath"
 	"testing"
@@ -23,6 +24,46 @@ func TestScan(t *testing.T) {
 			t.Error(err)
 		}
 	})
+
+	// BUG(hank) This is a dirty hack -- the next person through here should
+	// clean this up such that we can systematically test for this information.
+	//
+	// The main issue is that the repository information is only partially
+	// recorded in a separate database.
+	nodeRepoIDs := map[string]struct{}{
+		"RHEL-9.2.0-updates-20230615.3-AppStream": {},
+		"RHEL-9.2.0-updates-20230615.3-BaseOS":    {},
+		"rhel-9-for-x86_64-appstream-rpms":        {},
+		"rhel-9-for-x86_64-baseos-rpms":           {},
+	}
+	nodeRepoCheck := func(t testing.TB, pkg *claircore.Package) {
+		v, err := url.ParseQuery(pkg.RepositoryHint)
+		pkg.RepositoryHint = url.Values{"key": {"199e2f91fd431d51"}}.Encode()
+		if err != nil {
+			t.Errorf("unable to parse repo hint for %q: %v", pkg.Name, err)
+			return
+		}
+
+		cmpKey := func(key string, want string) {
+			got := v.Get(key)
+			if got != want {
+				t.Errorf("%s: %s: %s", pkg.Name, key, cmp.Diff(got, want))
+			}
+		}
+
+		if !v.Has("hash") {
+			t.Errorf("%s: missing key %q", pkg.Name, "hash")
+		}
+		cmpKey("key", "199e2f91fd431d51")
+
+		if v.Has("reposrc") {
+			cmpKey("reposrc", "dnf")
+			id := v.Get("repoid")
+			if _, ok := nodeRepoIDs[id]; !ok {
+				t.Errorf("%s: unknown repo ID %q", pkg.Name, id)
+			}
+		}
+	}
 
 	tt := []PackageTestcase{
 		{
@@ -54,6 +95,7 @@ func TestScan(t *testing.T) {
 				Name:     "ubi9/nodejs-18",
 				Digest:   `sha256:1ae06b64755052cef4c32979aded82a18f664c66fa7b50a6d2924afac2849c6e`,
 			},
+			Repo: nodeRepoCheck,
 		},
 	}
 	for _, tc := range tt {
@@ -62,9 +104,12 @@ func TestScan(t *testing.T) {
 }
 
 type PackageTestcase struct {
+	// This hook is needed because the pyxis "rpm manifest" does not contain
+	// this information.
+	Repo         func(testing.TB, *claircore.Package)
+	Ref          test.LayerRef
 	Name         string
 	ManifestFile string
-	Ref          test.LayerRef
 }
 
 func (tc PackageTestcase) Run(ctx context.Context, a *test.CachedArena) func(*testing.T) {
@@ -104,6 +149,11 @@ func (tc PackageTestcase) Run(ctx context.Context, a *test.CachedArena) func(*te
 		got, err := s.Scan(ctx, &ls[0])
 		if err != nil {
 			t.Error(err)
+		}
+		if tc.Repo != nil {
+			for _, p := range got {
+				tc.Repo(t, p)
+			}
 		}
 		t.Logf("found %d packages", len(got))
 		if !cmp.Equal(got, want, rpmtest.Options) {
