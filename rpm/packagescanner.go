@@ -3,9 +3,11 @@ package rpm
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
+	"net/url"
 	"os"
 	"path"
 	"runtime/trace"
@@ -30,7 +32,7 @@ var (
 	_ indexer.PackageScanner   = (*Scanner)(nil)
 )
 
-// Scanner implements the scanner.PackageScanner interface.
+// Scanner implements the [indexer.PackageScanner] interface.
 //
 // This looks for directories that look like rpm databases and examines the
 // files it finds there.
@@ -38,13 +40,13 @@ var (
 // The zero value is ready to use.
 type Scanner struct{}
 
-// Name implements scanner.VersionedScanner.
+// Name implements [indexer.VersionedScanner].
 func (*Scanner) Name() string { return pkgName }
 
-// Version implements scanner.VersionedScanner.
+// Version implements [indexer.VersionedScanner].
 func (*Scanner) Version() string { return pkgVersion }
 
-// Kind implements scanner.VersionedScanner.
+// Kind implements [indexer.VersionedScanner].
 func (*Scanner) Kind() string { return pkgKind }
 
 // Scan attempts to find rpm databases within the layer and enumerate the
@@ -173,6 +175,38 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 			return nil, fmt.Errorf("rpm: error reading native db: %w", err)
 		}
 		pkgs = append(pkgs, ps...)
+	}
+	rm, err := repoMap(ctx, sys)
+	switch {
+	case errors.Is(err, nil) && len(rm) != 0: // OK
+		zlog.Debug(ctx).Msg("using dnf-discovered repoids")
+		for _, pkg := range pkgs {
+			nerva := fmt.Sprintf("%s-%s.%s", pkg.Name, pkg.Version, pkg.Arch)
+			repoid, ok := rm[nerva]
+			if !ok {
+				// Packages not installed via dnf, which may happen during
+				// bootstrapping, aren't present in the dnf history database.
+				// This means the process shouldn't bail if the package is
+				// missing.
+				continue
+			}
+			v, err := url.ParseQuery(pkg.RepositoryHint)
+			if err != nil { // Shouldn't happen:
+				zlog.Warn(ctx).
+					AnErr("url.ParseQuery", err).
+					Msg("malformed RepositoryHint")
+				continue
+			}
+			v.Add("reposrc", "dnf")
+			v.Add("repoid", repoid)
+			pkg.RepositoryHint = v.Encode()
+		}
+	case errors.Is(err, nil) && len(rm) == 0: // nothing found
+		zlog.Debug(ctx).Msg("no dnf-discovered repoids available")
+	default: // some error
+		zlog.Warn(ctx).
+			AnErr("repoMap", err).
+			Msg("unable to open dnf history database")
 	}
 
 	return pkgs, nil
