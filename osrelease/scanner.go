@@ -178,13 +178,13 @@ func Parse(ctx context.Context, r io.Reader) (map[string]string, error) {
 		case b[0] == '#':
 			continue
 		}
-		eq := bytes.IndexRune(b, '=')
-		if eq == -1 {
+		if !bytes.ContainsRune(b, '=') {
 			return nil, fmt.Errorf("osrelease: malformed line %q", s.Text())
 		}
 		// Also handling spaces here matches what systemd seems to do.
-		key := strings.TrimSpace(string(b[:eq]))
-		value := strings.TrimSpace(string(b[eq+1:]))
+		key, value, _ := strings.Cut(string(b), "=")
+		key = strings.TrimSpace(key)
+		value = strings.TrimSpace(value)
 
 		// The value side is defined to follow shell-like quoting rules, which I
 		// take to mean:
@@ -201,11 +201,12 @@ func Parse(ctx context.Context, r io.Reader) (map[string]string, error) {
 		//
 		// With these in mind, the arms of the switch below implement the first
 		// case and a limited version of the second.
-		switch value[0] {
-		case '\'':
+		switch {
+		case len(value) == 0:
+		case value[0] == '\'':
 			value = strings.TrimFunc(value, func(r rune) bool { return r == '\'' })
 			value = strings.ReplaceAll(value, `'\''`, `'`)
-		case '"':
+		case value[0] == '"':
 			// This only implements the metacharacters that are called out in
 			// the os-release documentation.
 			value = strings.TrimFunc(value, func(r rune) bool { return r == '"' })
