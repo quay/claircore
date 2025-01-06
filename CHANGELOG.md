@@ -1,3 +1,15 @@
+<a name="v1.5.34"></a>
+## [v1.5.34] - 2025-01-06
+[v1.5.34]: https://github.com/quay/claircore/compare/v1.5.33...v1.5.34
+
+- rhel: deprecate updater in favor of VEX updater
+  <details>
+  We can extract vulnerability information about containers from the
+  VEX data. This negates the need to look for it in the cvemap.xml file.
+  This change modifies the VEX updater to allow for ingesting
+  vulnerabilities in a way that can be matched my the RHCC matcher.
+  </details>
+
 <a name="v1.5.33"></a>
 ## [v1.5.33] - 2024-11-08
 [v1.5.33]: https://github.com/quay/claircore/compare/v1.5.32...v1.5.33
