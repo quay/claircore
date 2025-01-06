@@ -1,0 +1,6 @@
+rhel: deprecate updater in favor of VEX updater
+
+We can extract vulnerability information about containers from the
+VEX data. This negates the need to look for it in the cvemap.xml file.
+This change modifies the VEX updater to allow for ingesting
+vulnerabilities in a way that can be matched my the RHCC matcher.
