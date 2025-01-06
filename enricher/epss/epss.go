@@ -68,6 +68,13 @@ type Config struct {
 	URL *string `json:"url" yaml:"url"`
 }
 
+// NewFactory creates a Factory for the EPSS enricher.
+func NewFactory() driver.UpdaterSetFactory {
+	set := driver.NewUpdaterSet()
+	_ = set.Add(&Enricher{})
+	return driver.StaticSet(set)
+}
+
 func (e *Enricher) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *http.Client) error {
 	ctx = zlog.ContextWithValues(ctx, "component", "enricher/epss/Enricher/Configure")
 	var cfg Config
