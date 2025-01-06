@@ -100,9 +100,9 @@ func (p *labelParser) Run() error {
 			if strings.Contains(v, `escape=`) {
 				eq := strings.IndexByte(v, '=')
 				if eq == -1 {
-					return fmt.Errorf("botched parser directive: %#q", i.val)
+					panic("string changed while parsing?")
 				}
-				esc, _ := utf8.DecodeRuneInString(v[:eq+1])
+				esc, _ := utf8.DecodeRuneInString(v[eq+1:])
 				p.lex.Escape(esc)
 				p.unquote.Escape(esc)
 				p.vars.Escape(esc)

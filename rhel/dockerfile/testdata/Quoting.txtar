@@ -1,0 +1,11 @@
+-- Dockerfile --
+ARG a=\"
+ARG a=\'
+ARG a=\\
+ARG a=\b
+LABEL s='single\' quote: \\\b' d="double\" quote: \\\b\e"
+-- Want --
+{
+  "s": "single' quote: \\\\b",
+  "d": "double\" quote: \\\b\\e"
+}

@@ -1,0 +1,4 @@
+error: invalid assignment syntax: `A=B 	C=D # Comments not allowed in this position`
+-- Dockerfile --
+LABEL A=B \
+	C=D # Comments not allowed in this position

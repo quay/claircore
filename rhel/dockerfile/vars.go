@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -27,6 +28,7 @@ type Vars struct {
 	state     varState
 	expand    varExpand
 	esc       bool
+	nullMod   bool
 	varName   strings.Builder
 	varExpand strings.Builder
 }
@@ -68,15 +70,15 @@ var _ transform.Transformer = (*Vars)(nil)
 // expansions.
 func (v *Vars) Reset() {
 	v.state = varConsume
-	v.expand = varExNone
+	v.expand = varExpandSimple
 	v.esc = false
+	v.nullMod = false
 	v.varName.Reset()
 	v.varExpand.Reset()
 }
 
 // Transform implements transform.Transformer.
 func (v *Vars) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err error) {
-	varStart := -1
 	r, sz := rune(0), 0
 	if v.state == varEmit {
 		// If we're here, we need to emit first thing.
@@ -112,18 +114,16 @@ func (v *Vars) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err error
 				v.esc = false
 				nDst += utf8.EncodeRune(dst[nDst:], v.escchar)
 			case r == VarMeta:
-				// Record current position in case the destination is too small
-				// and the process backs out.
-				varStart = nSrc + sz
 				v.varName.Reset()
 				v.varExpand.Reset()
 				v.state = varBegin
+				v.nullMod = false
 				continue
 			}
 			nDst += utf8.EncodeRune(dst[nDst:], r)
 		case varBegin:
 			// This arm is one rune beyond the metacharacter.
-			v.expand = varExNone
+			v.expand = varExpandSimple
 			if r == '{' {
 				v.state = varBraceName
 				continue
@@ -150,21 +150,32 @@ func (v *Vars) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err error
 			// This arm begins on the rune after the opening brace.
 			switch r {
 			case ':':
-				// POSIX variable expansion has ':' as a modifier on the forms
-				// of expansion ('-', '=', '+'), but the Dockerfile reference
-				// only mentions ':-' and ':+'.
-				peek, psz := utf8.DecodeRune(src[nSrc+sz:])
-				switch peek {
-				case '-':
-					v.expand = varExDefault
-				case '+':
-					v.expand = varExIfSet
+				v.nullMod = true
+				continue
+			case '/': // Non-POSIX: substitutions
+				return nDst, nSrc, fmt.Errorf("dockerfile: bad expansion of %q: pattern substitution unsupported", v.varName.String())
+			case '=':
+				v.expand = varSetDefault
+			case '-':
+				v.expand = varExpandDefault
+			case '+':
+				v.expand = varExpandAlternate
+			case '?':
+				v.expand = varErrIfUnset
+			case '%', '#':
+				switch r {
+				case '%': // suffix
+					v.expand = varTrimSuffix
+				case '#': // prefix
+					v.expand = varTrimPrefix
 				default:
-					nSrc = varStart
-					return nDst, nSrc, fmt.Errorf("bad default spec at %d", nSrc+sz)
+					panic("unreachable")
 				}
-				sz += psz
-				v.state = varBraceExpand
+				// If doubled, consume the next rune as well and set greedy mode.
+				if peek, psz := utf8.DecodeRune(src[nSrc+sz:]); peek == r {
+					sz += psz
+					v.expand++
+				}
 			case '}':
 				n, done := v.emit(dst[nDst:])
 				if !done {
@@ -177,6 +188,19 @@ func (v *Vars) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err error
 			default:
 				v.varName.WriteRune(r)
 			}
+			// Check if the expansion mode should have the modified null handling.
+			if (r == '-' || r == '+' || r == '?' || r == '=') && v.nullMod {
+				v.expand++
+				v.nullMod = false
+			}
+			// If one of the valid expansion modifiers, jump to the next state.
+			if r == '-' || r == '+' || r == '?' || r == '=' || r == '%' || r == '#' {
+				v.state = varBraceExpand
+			}
+			// If the code ever gets here, there's a rogue colon.
+			if v.nullMod {
+				return nDst, nSrc, fmt.Errorf("dockerfile: bad expansion of %q: rogue colon", v.varName.String())
+			}
 		case varBraceExpand:
 			// This arm begins on the rune after the expansion specifier.
 			if r != '}' {
@@ -184,16 +208,27 @@ func (v *Vars) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err error
 				continue
 			}
 			n, done := v.emit(dst[nDst:])
-			if !done {
+			switch {
+			case !done:
 				nSrc += sz
 				v.state = varEmit
 				return nDst, nSrc, transform.ErrShortDst
+			case v.state == varError:
+				return nDst, nSrc, fmt.Errorf("dockerfile: bad expansion of %q: %s (%v)",
+					v.varName.String(),
+					v.varExpand.String(),
+					v.expand,
+				)
 			}
 			nDst += n
 			v.state = varConsume
 		default:
 			panic("state botch")
 		}
+	}
+	if v.esc {
+		// Ended in a "bare" escape character. Just pass it through.
+		nDst += utf8.EncodeRune(dst[nDst:], v.escchar)
 	}
 	if v.state == varBareword && atEOF {
 		// Hit EOF, so variable name is complete.
@@ -217,29 +252,152 @@ func validName(r rune) bool {
 // enough space in dst.
 func (v *Vars) emit(dst []byte) (int, bool) {
 	dstSz := len(dst)
-	var w string
-	res, ok := v.v[v.varName.String()]
+	// Names from the POSIX explanation of shell parameter expansion.
+	param := v.varName.String()
+	word := v.varExpand.String()
+	val, ok := v.v[param]
 	switch v.expand {
-	case varExNone: // Use what's returned from the lookup.
-		w = res
-	case varExDefault: // Use lookup or default.
-		if ok {
-			w = res
-			break
+	case varExpandSimple: // Use what's returned from the lookup.
+	case varExpandDefault: // Use "parameter" if set, "word" if not.
+		if !ok {
+			val = word
 		}
-		w = v.varExpand.String()
-	case varExIfSet: // Use the expando or nothing.
+	case varExpandDefaultNull: // Use "parameter" if set, "word" if not or set to null.
+		if !ok || val == "" {
+			val = word
+		}
+	case varExpandAlternate: // Use "word" if set.
 		if ok {
-			w = v.varExpand.String()
+			val = word
+		}
+	case varExpandAlternateNull: // Use "word" if set and not null.
+		if ok && val != "" {
+			val = word
+		}
+	case varErrIfUnset: // Report an error if unset.
+		if !ok {
+			v.state = varError
+			return 0, true
+		}
+	case varErrIfUnsetNull: // Report an error if unset or null.
+		if !ok || val == "" {
+			v.state = varError
+			return 0, true
+		}
+	case varSetDefault, varSetDefaultNull:
+		switch v.expand {
+		case varSetDefault: // Set param if unset.
+			if !ok {
+				v.v[param] = word
+			}
+		case varSetDefaultNull: // Set "param" if unset or null.
+			if !ok || val == "" {
+				v.v[param] = word
+			}
+		default:
+			panic("unreachable")
+		}
+		v.expand = varExpandSimple
+		return v.emit(dst)
+	case varTrimPrefix, varTrimPrefixGreedy, varTrimSuffix, varTrimSuffixGreedy:
+		greedy := v.expand == varTrimPrefixGreedy || v.expand == varTrimSuffixGreedy
+		suffix := v.expand == varTrimSuffix || v.expand == varTrimSuffixGreedy
+		re, err := convertPattern([]byte(word), greedy, suffix)
+		if err != nil {
+			v.state = varError
+			return 0, true
+		}
+		ms := re.FindStringSubmatch(val)
+		switch len(ms) {
+		case 0, 1:
+			// No match, do nothing.
+		case 2:
+			if suffix {
+				val = strings.TrimSuffix(val, ms[1])
+			} else {
+				val = strings.TrimPrefix(val, ms[1])
+			}
+		default:
+			panic(fmt.Sprintf("pattern compiler is acting up; got: %#v", ms))
 		}
 	default:
 		panic("expand state botch")
 	}
-	if dstSz < len(w) {
+	if dstSz < len(val) {
 		return 0, false
 	}
-	n := copy(dst, w)
+	n := copy(dst, val)
 	return n, true
+}
+
+// ConvertPattern transforms "pat" from (something like) the POSIX sh pattern
+// language to a regular expression, then returns the compiled regexp.
+//
+// The resulting regexp reports the prefix/suffix to be removed as the first
+// submatch when executed.
+//
+// This conversion is tricky, because extra hoops are needed to work around the
+// leftmost-first behavior.
+func convertPattern(pat []byte, greedy bool, suffix bool) (_ *regexp.Regexp, err error) {
+	var rePat strings.Builder
+	rePat.Grow(len(pat) * 2) // 🤷
+	// This is needed to "push" a suffix pattern to the correct place. Note that
+	// the "greediness" is backwards: this is the input that's _not_ the
+	// pattern.
+	pad := `(?:.*)`
+	if greedy {
+		pad = `(?:.*?)`
+	}
+
+	rePat.WriteByte('^')
+	if suffix {
+		rePat.WriteString(pad)
+	}
+	rePat.WriteByte('(')
+	off := 0
+	r, sz := rune(0), 0
+	for ; off < len(pat); off += sz {
+		r, sz = utf8.DecodeRune(pat[off:])
+		if r == utf8.RuneError {
+			err = fmt.Errorf("dockerfile: bad pattern %q", pat)
+			return
+		}
+		switch r {
+		case '*': // Kleene star
+			rePat.WriteString(`.*`)
+			if !suffix && !greedy {
+				rePat.WriteByte('?')
+			}
+		case '?': // Single char
+			rePat.WriteByte('.')
+		case '\\':
+			peek, psz := utf8.DecodeRune(pat[off+sz:])
+			switch peek {
+			case '*', '?', '\\':
+				// These are metacharacters in both languages, so the escapes should be passed through.
+				rePat.WriteRune(r)
+				rePat.WriteRune(peek)
+				sz += psz
+			case '}', '/':
+				// For these escapes, just skip the escape char: we want the literal.
+				// Handle slash-escapes, even though we don't support unanchored replacements.
+			default:
+				return nil, fmt.Errorf(`dockerfile: bad escape '\%c' in pattern %q`, peek, pat)
+			}
+		case '$', '(', ')', '+', '.', '[', ']', '^', '{', '|', '}': // Regexp metacharacters
+			rePat.WriteByte('\\')
+			fallthrough
+		default:
+			rePat.WriteRune(r)
+		}
+	}
+	rePat.WriteByte(')')
+	if !suffix {
+		rePat.WriteString(pad)
+	}
+	rePat.WriteByte('$')
+
+	return regexp.Compile(rePat.String())
 }
 
 // Assert that this is a SpanningTransformer.
@@ -303,16 +461,24 @@ const (
 	varBraceName
 	varBraceExpand
 	varEmit
+	varError
 )
 
 // VarExpand tracks how the current brace expression expects to be expanded.
 type varExpand uint8
 
 const (
-	// Expand to the named variable or the empty string.
-	varExNone varExpand = iota
-	// Expand to the named variable or the provided word.
-	varExDefault
-	// Expand to the provided word or the empty string.
-	varExIfSet
+	varExpandSimple        varExpand = iota // simple expansion
+	varExpandDefault                        // default expansion
+	varExpandDefaultNull                    // default+null expansion
+	varSetDefault                           // set default
+	varSetDefaultNull                       // set default, incl. null
+	varExpandAlternate                      // alternate expansion
+	varExpandAlternateNull                  // alternate expanxion, incl. null
+	varErrIfUnset                           // error if unset
+	varErrIfUnsetNull                       // error if unset or null
+	varTrimSuffix                           // trim suffix
+	varTrimSuffixGreedy                     // greedy trim suffix
+	varTrimPrefix                           // trim prefix
+	varTrimPrefixGreedy                     // greedy trim prefix
 )
