@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net/url"
 	"path"
 	"regexp"
 	"strings"
@@ -126,13 +127,11 @@ func (i *Info) EVR() string {
 
 // Hint constructs a string suitable to be use as the "RepositoryHint".
 func (i *Info) Hint() string {
-	var b strings.Builder
+	v := url.Values{}
 	if i.Digest != "" {
-		b.WriteString("hash:")
 		switch i.DigestAlgo {
 		case 8:
-			b.WriteString("sha256:")
-			b.WriteString(i.Digest)
+			v.Set("hash", "sha256:"+i.Digest)
 		}
 	}
 	if len(i.Signature) != 0 {
@@ -144,22 +143,16 @@ func (i *Info) Hint() string {
 				if p.SigType != 0 {
 					continue
 				}
-				if b.Len() != 0 {
-					b.WriteByte('|')
-				}
-				fmt.Fprintf(&b, "key:%016x", p.IssuerKeyId)
+				v.Add("key", fmt.Sprintf("%016x", p.IssuerKeyId))
 			case *packet.Signature:
 				if p.SigType != 0 || p.IssuerKeyId == nil {
 					continue
 				}
-				if b.Len() != 0 {
-					b.WriteByte('|')
-				}
-				fmt.Fprintf(&b, "key:%016x", *p.IssuerKeyId)
+				v.Add("key", fmt.Sprintf("%016x", *p.IssuerKeyId))
 			}
 		}
 	}
-	return b.String()
+	return v.Encode()
 }
 
 // ModuleStream reports the module and stream from the full module version.
