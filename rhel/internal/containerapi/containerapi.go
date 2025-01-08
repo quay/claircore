@@ -1,4 +1,7 @@
 // Package containerapi is a minimal client around the Red Hat Container API.
+//
+// Deprecated: This package's functionality should only be required for
+// container images that are long-since out of support.
 package containerapi
 
 import (
@@ -10,6 +13,7 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"sync"
 
 	"github.com/quay/zlog"
 )
@@ -38,6 +42,13 @@ type ContainerAPI struct {
 
 // GetCPEs fetches CPE information for given build from Red Hat Container API.
 func (c *ContainerAPI) GetCPEs(ctx context.Context, nvr, arch string) ([]string, error) {
+	deprecationWarning.Do(func() {
+		zlog.Warn(ctx).
+			Bool("deprecation", true).
+			Msg("support for the Red Hat Container API will be removed in a future release")
+		zlog.Warn(ctx).
+			Msg("container images using this code are extremely old!")
+	})
 	uri, err := c.Root.Parse(path.Join("v1/images/nvr/", nvr))
 	if err != nil {
 		return nil, err
@@ -80,3 +91,5 @@ func (c *ContainerAPI) GetCPEs(ctx context.Context, nvr, arch string) ([]string,
 	}
 	return nil, nil
 }
+
+var deprecationWarning sync.Once
