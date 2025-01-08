@@ -1,0 +1,23 @@
+{
+    "architecture":                 "x86_64",
+    "build-date":                   "2024-09-26T11:14:10",
+    "com.redhat.component":         "rhdh-hub-container",
+    "com.redhat.license_terms":     "https://www.redhat.com/agreements",
+    "description":                  "Red Hat Developer Hub container",
+    "distribution-scope":           "public",
+    "io.k8s.description":           "Red Hat Developer Hub container",
+    "io.k8s.display-name":          "Red Hat Developer Hub container",
+    "io.openshift.expose-services": "",
+    "io.openshift.tags":            "rhdh,hub",
+    "license":                      "ASLv2",
+    "maintainer":                   "RHDH Team <rhdh-bot@redhat.com>",
+    "name":                         "rhdh/rhdh-hub-rhel9",
+    "release":                      "100",
+    "summary":                      "Red Hat Developer Hub container",
+    "url":                          "https://access.redhat.com/containers/#/registry.access.redhat.com/rhdh/rhdh-hub-rhel9/images/1.3-100",
+    "usage":                        "",
+    "vcs-ref":                      "72c6868d723ff5e259db5294aa746e941f90f7b0",
+    "vcs-type":                     "git",
+    "vendor":                       "Red Hat, Inc.",
+    "version":                      "1.3"
+}

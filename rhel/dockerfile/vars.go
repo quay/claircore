@@ -209,7 +209,7 @@ func (v *Vars) Transform(dst, src []byte, atEOF bool) (nDst, nSrc int, err error
 
 // ValidName tests whether the rune is valid in a variable name.
 func validName(r rune) bool {
-	return unicode.In(r, unicode.Letter, unicode.Digit) || r == '_' || r == '-'
+	return unicode.In(r, unicode.Letter, unicode.Digit) || r == '_'
 }
 
 // Emit writes out the expanded variable, using state accumulated in the

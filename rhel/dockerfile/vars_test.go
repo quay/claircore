@@ -110,6 +110,15 @@ func TestVars(t *testing.T) {
 			SrcSz:   10,
 			Setup:   setX,
 		},
+		{
+			Name:    "Hyphen",
+			In:      `$X-$X`,
+			Out:     `expand-expand`,
+			SpanSz:  0,
+			SpanErr: transform.ErrEndOfSpan,
+			SrcSz:   5,
+			Setup:   setX,
+		},
 	}
 	// TODO(hank) Need to hit the various corner error cases.
 	t.Run("Span", func(t *testing.T) {

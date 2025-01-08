@@ -60,6 +60,19 @@ func TestContainerScanner(t *testing.T) {
 		RepositoryHint: "rhcc",
 		Arch:           "x86_64",
 	}
+	rhdhSourceContainer := &claircore.Package{
+		Name:    "rhdh-hub-container",
+		Version: "1.3-100",
+		NormalizedVersion: claircore.Version{
+			Kind: "rhctag",
+			V:    [10]int32{1, 3},
+		},
+		Kind:           claircore.SOURCE,
+		PackageDB:      "root/buildinfo/Dockerfile-rhdh-rhdh-hub-rhel9-1.3-100",
+		RepositoryHint: "rhcc",
+		Arch:           "x86_64",
+	}
+
 	name2reposData := map[string]map[string][]string{
 		"data": {"openshift/ose-logging-elasticsearch6": {"openshift4/ose-logging-elasticsearch6"}},
 	}
@@ -125,6 +138,26 @@ func TestContainerScanner(t *testing.T) {
 					Kind:           claircore.BINARY,
 					Source:         loggingSourceContainer,
 					PackageDB:      "root/buildinfo/Dockerfile-openshift-ose-logging-elasticsearch6-v4.6.0-202112132021.p0.g2a13a81.assembly.stream",
+					RepositoryHint: "rhcc",
+					Arch:           "x86_64",
+				},
+			},
+		},
+		{
+			Name:       "RHDH",
+			Dockerfile: "testdata/Dockerfile-rhdh-rhdh-hub-rhel9-1.3-100",
+			Want: []*claircore.Package{
+				rhdhSourceContainer,
+				{
+					Name:    "rhdh/rhdh-hub-rhel9",
+					Version: "1.3-100",
+					NormalizedVersion: claircore.Version{
+						Kind: "rhctag",
+						V:    [10]int32{1, 3},
+					},
+					Kind:           claircore.BINARY,
+					Source:         rhdhSourceContainer,
+					PackageDB:      "root/buildinfo/Dockerfile-rhdh-rhdh-hub-rhel9-1.3-100",
 					RepositoryHint: "rhcc",
 					Arch:           "x86_64",
 				},
