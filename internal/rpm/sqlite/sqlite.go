@@ -98,12 +98,15 @@ func (db *RPMDB) All(ctx context.Context) (iter.Seq[io.ReaderAt], func() error) 
 }
 
 func (db *RPMDB) Validate(ctx context.Context) error {
+	if err := db.db.PingContext(ctx); err != nil {
+		return fmt.Errorf("sqlite: database problem: %w", err)
+	}
 	var ignore int64
 	err := db.db.QueryRow(validate).Scan(&ignore)
 	switch {
 	case errors.Is(err, nil):
 	case errors.Is(err, sql.ErrNoRows):
-		return errors.New("not an rpm database")
+		return fmt.Errorf("sqlite: not an rpm database: %w", err)
 	default:
 		return err
 	}
