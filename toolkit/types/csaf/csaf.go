@@ -46,10 +46,11 @@ type CSAF struct {
 //
 // https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html#321-document-property
 type DocumentMetadata struct {
-	Title      string      `json:"title"`
-	Tracking   Tracking    `json:"tracking"`
-	References []Reference `json:"references"`
-	Publisher  Publisher   `json:"publisher"`
+	Title             string            `json:"title"`
+	Tracking          Tracking          `json:"tracking"`
+	References        []Reference       `json:"references"`
+	Publisher         Publisher         `json:"publisher"`
+	AggregateSeverity AggregateSeverity `json:"aggregate_severity"`
 }
 
 // Document references holds a list of references associated with the whole document.
@@ -80,6 +81,14 @@ type Publisher struct {
 	IssuingAuthority string `json:"issuing_authority"`
 	Name             string `json:"name"`
 	Namespace        string `json:"namespace"`
+}
+
+// AggregateSeverity provides information on the severity of one or more vulnerabilities in the document.
+//
+// https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html#3212-document-property---aggregate-severity
+type AggregateSeverity struct {
+	Namespace string `json:"namespace"`
+	Text      string `json:"text"`
 }
 
 // Vulnerability contains information about a CVE and its associated threats.

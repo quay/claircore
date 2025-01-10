@@ -16,6 +16,7 @@ var testBattery = []struct {
 	remediation          *RemediationData
 	scoreProductID       string
 	score                *Score
+	severity             AggregateSeverity
 	prodIdentifier       *Product
 	threatProductID      string
 	threatData           *ThreatData
@@ -40,6 +41,10 @@ var testBattery = []struct {
 		},
 		remediation: nil, // no remediation data in this file
 		score:       nil, // no score data in this file
+		severity: AggregateSeverity{
+			Namespace: "https://access.redhat.com/security/updates/classification/",
+			Text:      "important",
+		},
 		prodIdentifier: &Product{
 			Name: "Red Hat Enterprise Linux 7",
 			ID:   "red_hat_enterprise_linux_7",
@@ -73,6 +78,10 @@ var testBattery = []struct {
 			URL:      "https://access.redhat.com/errata/RHSA-2022:0011",
 		},
 		score: nil, // no score for RHSAs
+		severity: AggregateSeverity{
+			Namespace: "https://access.redhat.com/security/updates/classification/",
+			Text:      "Important",
+		},
 		prodIdentifier: &Product{
 			Name: "Red Hat Enterprise Linux Server E4S (v. 7.6)",
 			ID:   "7Server-7.6.E4S",
@@ -111,6 +120,10 @@ var testBattery = []struct {
 			},
 			ProductIDs: []string{"red_hat_satellite_6:rubygem-audited"},
 		},
+		severity: AggregateSeverity{
+			Namespace: "https://access.redhat.com/security/updates/classification/",
+			Text:      "low",
+		},
 		threatProductID: "red_hat_satellite_6:rubygem-audited",
 		threatData: &ThreatData{
 			Category:   "impact",
@@ -145,6 +158,9 @@ func TestAll(t *testing.T) {
 			if c.Document.Tracking.Status == "deleted" {
 				t.Log("advisory deleted", c.Document.Tracking.ID)
 				return
+			}
+			if !cmp.Equal(tc.severity, c.Document.AggregateSeverity) {
+				t.Error(cmp.Diff(tc.severity, c.Document.AggregateSeverity))
 			}
 			if got := c.ProductTree.FindProductByID(tc.product.ID); !cmp.Equal(tc.product, got) {
 				t.Error(cmp.Diff(tc.product, got))
