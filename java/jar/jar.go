@@ -136,7 +136,7 @@ func parse(ctx context.Context, name srcPath, z *zip.Reader) ([]Info, error) {
 	default:
 		return nil, archiveErr(name, err)
 	}
-	// As a last resort, just look at the name of the jar.
+	// Try to learn something from the name of the jar if that fails.
 	i, err = checkName(ctx, name.Cur())
 	switch {
 	case errors.Is(err, nil):
@@ -148,9 +148,11 @@ func parse(ctx context.Context, name srcPath, z *zip.Reader) ([]Info, error) {
 	default:
 		return nil, archiveErr(name, err)
 	}
-	// If we haven't jumped past this point, this is almost certainly not a jar,
-	// so return an error.
-	return nil, mkErr("", unidentified(base))
+
+	// At this point, we have yet to find anything other than the file
+	// extension which can help confirm this is, in fact, a JAR.
+	// We accept this, and continue to search through the non-standard JAR
+	// in case we may find any valid inner JARs.
 
 Finish:
 	// Now, we need to examine any jars bundled in this jar.
@@ -308,7 +310,6 @@ func extractInner(ctx context.Context, p srcPath, z *zip.Reader) ([]Info, error)
 		switch {
 		case errors.Is(err, nil):
 		case errors.Is(err, ErrNotAJar) ||
-			errors.Is(err, ErrUnidentified) ||
 			errors.Is(err, errInsaneManifest):
 			zlog.Debug(ctx).
 				Str("member", name).
