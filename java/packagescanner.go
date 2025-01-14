@@ -71,7 +71,7 @@ type Scanner struct {
 func (*Scanner) Name() string { return "java" }
 
 // Version implements scanner.VersionedScanner.
-func (*Scanner) Version() string { return "6" }
+func (*Scanner) Version() string { return "7" }
 
 // Kind implements scanner.VersionedScanner.
 func (*Scanner) Kind() string { return "package" }
@@ -185,7 +185,7 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 		infos, err := jar.Parse(ctx, n, z)
 		switch {
 		case err == nil:
-		case errors.Is(err, jar.ErrUnidentified) || errors.Is(err, jar.ErrNotAJar):
+		case errors.Is(err, jar.ErrNotAJar):
 			// If there's an error that's one of the "known" reasons (e.g. not a
 			// read error or a malformed file), just log it and continue on.
 			zlog.Info(ctx).
