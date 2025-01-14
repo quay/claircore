@@ -11,11 +11,8 @@ type localError struct {
 	msg   string
 }
 
-// These are sentinel errors that can be used with errors.Is.
-var (
-	ErrUnidentified = errors.New("unidentified jar")
-	ErrNotAJar      = errors.New("does not seem to be a jar")
-)
+// ErrNotAJar is a sentinel error that can be used with errors.Is.
+var ErrNotAJar = errors.New("does not seem to be a jar")
 
 func (e *localError) Error() string {
 	switch {
@@ -43,22 +40,6 @@ func archiveErr(m srcPath, err error) *localError {
 		msg:   fmt.Sprintf("at %q", m.String()),
 		inner: err,
 	}
-}
-
-type errUnidentified struct {
-	name string
-}
-
-func unidentified(n string) *errUnidentified {
-	return &errUnidentified{n}
-}
-
-func (e *errUnidentified) Is(target error) bool {
-	return target == ErrUnidentified || target == e
-}
-
-func (e *errUnidentified) Error() string {
-	return fmt.Sprintf("unidentified jar: %s", e.name)
 }
 
 type errNotAJar struct {
