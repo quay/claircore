@@ -17,14 +17,15 @@ type Manifest struct {
 	RPM []ManifestRPM `json:"rpms"`
 }
 type ManifestRPM struct {
-	Name        string `json:"name"`
-	Version     string `json:"version"`
-	Release     string `json:"release"`
-	Arch        string `json:"architecture"`
-	SourceNEVRA string `json:"srpm_nevra"`
-	SourceName  string `json:"srpm_name"`
-	GPG         string `json:"gpg"`
-	Module      string `json:"module"`
+	Name           string `json:"name"`
+	Version        string `json:"version"`
+	Release        string `json:"release"`
+	Arch           string `json:"architecture"`
+	SourceNEVRA    string `json:"srpm_nevra"`
+	SourceName     string `json:"srpm_name"`
+	GPG            string `json:"gpg"`
+	Module         string `json:"module"`
+	RepositoryHint string `json:"_repositoryhint,omitempty"`
 }
 
 func PackagesFromRPMManifest(t *testing.T, r io.Reader) []*claircore.Package {
@@ -37,12 +38,19 @@ func PackagesFromRPMManifest(t *testing.T, r io.Reader) []*claircore.Package {
 	srcs := make([]claircore.Package, 0, len(m.RPM))
 	src := make(map[string]*claircore.Package)
 	for _, rpm := range m.RPM {
+		v, err := url.ParseQuery(rpm.RepositoryHint)
+		if err != nil {
+			t.Errorf("%s: %v", rpm.Name, err)
+			continue
+		}
+		v.Set("key", rpm.GPG)
+
 		p := claircore.Package{
 			Name:           rpm.Name,
 			Version:        rpm.Version + "-" + rpm.Release,
 			Kind:           "binary",
 			Arch:           rpm.Arch,
-			RepositoryHint: url.Values{"key": {rpm.GPG}}.Encode(),
+			RepositoryHint: v.Encode(),
 			Module:         rpm.Module,
 		}
 
