@@ -4,14 +4,13 @@ import (
 	"context"
 
 	"github.com/quay/claircore/indexer"
-	"github.com/quay/claircore/rpm"
 )
 
 // NewEcosystem provides the set of scanners and coalescer for the rhel ecosystem.
 func NewEcosystem(_ context.Context) *indexer.Ecosystem {
 	return &indexer.Ecosystem{
 		PackageScanners: func(_ context.Context) ([]indexer.PackageScanner, error) {
-			return []indexer.PackageScanner{new(rpm.Scanner)}, nil
+			return []indexer.PackageScanner{PackageScanner{}}, nil
 		},
 		DistributionScanners: func(_ context.Context) ([]indexer.DistributionScanner, error) {
 			return []indexer.DistributionScanner{new(DistributionScanner)}, nil
