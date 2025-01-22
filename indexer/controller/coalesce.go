@@ -128,7 +128,7 @@ func MergeSR(source *claircore.IndexReport, merge []*claircore.IndexReport) *cla
 		}
 
 		for k, v := range ir.Files {
-			source.Files[k] = v
+			source.Files[k] = append(source.Files[k], v...)
 		}
 	}
 	return source
