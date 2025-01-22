@@ -70,8 +70,6 @@ func TestParse(t *testing.T) {
 			switch {
 			case errors.Is(err, nil):
 				t.Log(ps)
-			case errors.Is(err, ErrUnidentified):
-				t.Log(err)
 			case filepath.Base(h.Name) == "javax.inject-1.jar" && errors.Is(err, ErrNotAJar):
 				// This is an odd one, it has no metadata.
 				t.Log(err)
@@ -111,8 +109,6 @@ func TestWAR(t *testing.T) {
 		for _, p := range ps {
 			t.Log(p.String())
 		}
-	case errors.Is(err, ErrUnidentified):
-		t.Error(err)
 	default:
 		t.Errorf("unexpected: %v", err)
 	}
@@ -473,5 +469,55 @@ func TestManifestSectionReader(t *testing.T) {
 				t.Error(cmp.Diff(got, want))
 			}
 		})
+	}
+}
+
+func TestInnerJar(t *testing.T) {
+	name := filepath.Join("testdata", "inner", "inner.jar")
+	rc, err := zip.OpenReader(name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := rc.Close(); err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	ctx := zlog.Test(context.Background(), t)
+	got, err := Parse(ctx, name, &rc.Reader)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(got) != 3 {
+		t.Errorf("got %d entries, expected 3", len(got))
+	}
+
+	// Ignore the SHA.
+	for i := range got {
+		got[i].SHA = nil
+	}
+
+	want := []Info{
+		{
+			Name:    "jackson-annotations",
+			Version: "2.13.0",
+			Source:  ".",
+		},
+		{
+			Name:    "log4j-api",
+			Version: "2.14",
+			Source:  ".",
+		},
+		{
+			Name:    "log4j",
+			Version: "2.14.0",
+			Source:  ".",
+		},
+	}
+
+	if !cmp.Equal(got, want) {
+		t.Error(cmp.Diff(got, want))
 	}
 }
