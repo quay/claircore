@@ -2,6 +2,7 @@ package rhel
 
 import (
 	"context"
+	"net/url"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -61,9 +62,11 @@ func (*Coalescer) Coalesce(ctx context.Context, artifacts []*indexer.LayerArtifa
 	// This dance with copying the product information in both directions means
 	// that if Red Hat product information is found, it "taints" all the layers.
 
+	// Break the key-by-ID convention because we need to talk about the repo
+	// name in the package matching step.
 	for _, a := range artifacts {
 		for _, repo := range a.Repos {
-			ir.Repositories[repo.ID] = repo
+			ir.Repositories[repo.Name] = repo
 		}
 	}
 	// In our coalescing logic if a Distribution is found in layer "n" all packages found
@@ -116,10 +119,15 @@ func (*Coalescer) Coalesce(ctx context.Context, artifacts []*indexer.LayerArtifa
 					PackageDB:      pkg.PackageDB,
 					IntroducedIn:   layerArtifacts.Hash,
 					DistributionID: distID,
-					RepositoryIDs:  make([]string, len(layerArtifacts.Repos)),
 				}
-				for i := range layerArtifacts.Repos {
-					environment.RepositoryIDs[i] = layerArtifacts.Repos[i].ID
+				v, _ := url.ParseQuery(pkg.RepositoryHint)
+				if id := v.Get("repoid"); id != "" {
+					environment.RepositoryIDs = v["repoid"]
+				} else {
+					environment.RepositoryIDs = make([]string, len(layerArtifacts.Repos))
+					for i := range layerArtifacts.Repos {
+						environment.RepositoryIDs[i] = layerArtifacts.Repos[i].Name
+					}
 				}
 				db.packages[pkg.ID] = pkg
 				db.environments[pkg.ID] = environment
