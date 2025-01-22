@@ -272,13 +272,13 @@ func TestIsCPEStringSubsetMatch(t *testing.T) {
 		match              bool
 	}{
 		{
-			name:      "simple_case",
+			name:      "Simple",
 			recordCPE: cpe.MustUnbind("cpe:/a:redhat:openshift:4.13::el8"),
 			vulnCPE:   cpe.MustUnbind("cpe:/a:redhat:openshift:4"),
 			match:     true,
 		},
 		{
-			name:      "wrong_minor",
+			name:      "WrongMinor",
 			recordCPE: cpe.MustUnbind("cpe:/a:redhat:openshift:4.13::el8"),
 			vulnCPE:   cpe.MustUnbind("cpe:/a:redhat:openshift:4.1::el8"),
 			match:     false,
