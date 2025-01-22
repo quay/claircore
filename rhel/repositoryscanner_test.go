@@ -103,17 +103,22 @@ func TestRepositoryScanner(t *testing.T) {
 			name: "FromMappingUrl",
 			want: []*claircore.Repository{
 				{
-					Name: "cpe:/o:redhat:enterprise_linux:6::server",
+					Name: "content-set-1",
 					Key:  repositoryKey,
 					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:6::server"),
 				},
 				{
-					Name: "cpe:/o:redhat:enterprise_linux:7::server",
+					Name: "content-set-1",
 					Key:  repositoryKey,
 					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:7::server"),
 				},
 				{
-					Name: "cpe:/o:redhat:enterprise_linux:8::server",
+					Name: "content-set-2",
+					Key:  repositoryKey,
+					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:7::server"),
+				},
+				{
+					Name: "content-set-2",
 					Key:  repositoryKey,
 					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8::server"),
 				},
@@ -125,17 +130,22 @@ func TestRepositoryScanner(t *testing.T) {
 			name: "FromMappingFile",
 			want: []*claircore.Repository{
 				{
-					Name: "cpe:/o:redhat:enterprise_linux:6::server",
+					Name: "content-set-1",
 					Key:  repositoryKey,
 					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:6::server"),
 				},
 				{
-					Name: "cpe:/o:redhat:enterprise_linux:7::server",
+					Name: "content-set-1",
 					Key:  repositoryKey,
 					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:7::server"),
 				},
 				{
-					Name: "cpe:/o:redhat:enterprise_linux:8::server",
+					Name: "content-set-2",
+					Key:  repositoryKey,
+					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:7::server"),
+				},
+				{
+					Name: "content-set-2",
 					Key:  repositoryKey,
 					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8::server"),
 				},
@@ -147,17 +157,22 @@ func TestRepositoryScanner(t *testing.T) {
 			name: "FromMappingFileAirGap",
 			want: []*claircore.Repository{
 				{
-					Name: "cpe:/o:redhat:enterprise_linux:6::server",
+					Name: "content-set-1",
 					Key:  repositoryKey,
 					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:6::server"),
 				},
 				{
-					Name: "cpe:/o:redhat:enterprise_linux:7::server",
+					Name: "content-set-1",
 					Key:  repositoryKey,
 					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:7::server"),
 				},
 				{
-					Name: "cpe:/o:redhat:enterprise_linux:8::server",
+					Name: "content-set-2",
+					Key:  repositoryKey,
+					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:7::server"),
+				},
+				{
+					Name: "content-set-2",
 					Key:  repositoryKey,
 					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8::server"),
 				},
@@ -176,47 +191,60 @@ func TestRepositoryScanner(t *testing.T) {
 			want:      nil,
 			cfg:       &RepositoryScannerConfig{DisableAPI: true},
 			layerPath: "testdata/layer-with-embedded-cs.tar",
-		}, {
+		},
+		{
 			name:      "BadContentManifestsFile",
 			want:      nil,
 			cfg:       &RepositoryScannerConfig{API: srv.URL, Repo2CPEMappingURL: srv.URL + "/repository-2-cpe.json"},
 			layerPath: "testdata/layer-with-invalid-content-manifests-json.tar",
-		}, {
+		},
+		{
 			name: "RHCOSLayerFromMappingFile",
 			want: []*claircore.Repository{
 				{
-					Name: "cpe:/o:redhat:enterprise_linux:6::server",
+					Name: "content-set-1",
 					Key:  repositoryKey,
 					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:6::server"),
 				},
 				{
-					Name: "cpe:/o:redhat:enterprise_linux:7::server",
+					Name: "content-set-1",
 					Key:  repositoryKey,
 					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:7::server"),
 				},
 				{
-					Name: "cpe:/o:redhat:enterprise_linux:8::server",
+					Name: "content-set-2",
+					Key:  repositoryKey,
+					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:7::server"),
+				},
+				{
+					Name: "content-set-2",
 					Key:  repositoryKey,
 					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8::server"),
 				},
 			},
 			cfg:       &RepositoryScannerConfig{Repo2CPEMappingFile: f.Name()},
 			layerPath: "testdata/rhcos-layer-with-embedded-cs.tar",
-		}, {
+		},
+		{
 			name: "RHCOSLayerFromMappingFileWithConflictingFiles",
 			want: []*claircore.Repository{
 				{
-					Name: "cpe:/o:redhat:enterprise_linux:6::server",
+					Name: "content-set-1",
 					Key:  repositoryKey,
 					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:6::server"),
 				},
 				{
-					Name: "cpe:/o:redhat:enterprise_linux:7::server",
+					Name: "content-set-1",
 					Key:  repositoryKey,
 					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:7::server"),
 				},
 				{
-					Name: "cpe:/o:redhat:enterprise_linux:8::server",
+					Name: "content-set-2",
+					Key:  repositoryKey,
+					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:7::server"),
+				},
+				{
+					Name: "content-set-2",
 					Key:  repositoryKey,
 					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8::server"),
 				},

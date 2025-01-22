@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime/trace"
+	"slices"
 	"strings"
 	"time"
 
@@ -19,6 +20,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
+	"github.com/quay/claircore/internal/dnf"
 	"github.com/quay/claircore/internal/zreader"
 	"github.com/quay/claircore/rhel/dockerfile"
 	"github.com/quay/claircore/rhel/internal/common"
@@ -26,25 +28,25 @@ import (
 	"github.com/quay/claircore/toolkit/types/cpe"
 )
 
-/*
-RepositoryScanner implements repository detection logic for RHEL.
-
-The RHEL detection logic needs outside information because the Red Hat build
-system does not (and did not, in the past) store the relevant information in the
-layer itself. In addition, dnf and yum do not persist provenance information
-outside of a cache and rpm considers such information outside its baliwick.
-
-In the case of the RHEL ecosystem, "repository" is a bit of a misnomer, as
-advisories are tracked on the Product level, and so Clair's "repository" data is
-used instead to indicate a Product. This mismatch can lead to apparent
-duplications in reporting. For example, if an advisory is marked as affecting
-"cpe:/a:redhat:enterprise_linux:8" and
-"cpe:/a:redhat:enterprise_linux:8::appstream", this results in two advisories
-being recorded. (CPEs do not namespace the way this example may imply; that is
-to say, the latter is not "contained in" or a "member of" the former.) If a
-layer reports that it is both the "cpe:/a:redhat:enterprise_linux:8" and
-"cpe:/a:redhat:enterprise_linux:8::appstream" layer, then both advisories match.
-*/
+// RepositoryScanner implements repository detection logic for RHEL.
+//
+// The RHEL detection logic needs outside information because the Red Hat build
+// system does not (and did not, in the past) store the relevant information in
+// the layer itself. In addition, dnf and yum do not persist provenance
+// information outside of a cache and rpm considers such information outside its
+// baliwick.
+//
+// In the case of the RHEL ecosystem, "repository" is a bit of a misnomer, as
+// advisories are tracked on the Product level, and so Clair's "repository" data
+// is used instead to indicate a Product. This mismatch can lead to apparent
+// duplication in reporting. For example, if an advisory is marked as affecting
+// "cpe:/a:redhat:enterprise_linux:8" and
+// "cpe:/a:redhat:enterprise_linux:8::appstream", this results in two advisories
+// being recorded. (CPEs do not namespace the way this example may imply; that
+// is to say, the latter is not "contained in" or a "member of" the former.) If
+// a layer reports that it is both the "cpe:/a:redhat:enterprise_linux:8" and
+// "cpe:/a:redhat:enterprise_linux:8::appstream" layer, then both advisories
+// match.
 type RepositoryScanner struct {
 	// These members are created after the Configure call.
 	upd        *common.Updater
@@ -72,8 +74,6 @@ var (
 //   - If both the "URL" and "File" are provided, the file will be loaded
 //     initially and then updated periodically from the URL.
 type RepositoryScannerConfig struct {
-	// DisableAPI disables the use of the API.
-	DisableAPI bool `json:"disable_api" yaml:"disable_api"`
 	// API is the URL to talk to the Red Hat Container API.
 	//
 	// See [DefaultContainerAPI] and [containerapi.ContainerAPI].
@@ -91,6 +91,8 @@ type RepositoryScannerConfig struct {
 	//
 	// The default is 10 seconds.
 	Timeout time.Duration `json:"timeout" yaml:"timeout"`
+	// DisableAPI disables the use of the API.
+	DisableAPI bool `json:"disable_api" yaml:"disable_api"`
 }
 
 const (
@@ -110,7 +112,7 @@ const (
 func (*RepositoryScanner) Name() string { return "rhel-repository-scanner" }
 
 // Version implements [indexer.VersionedScanner].
-func (*RepositoryScanner) Version() string { return "1.2" }
+func (*RepositoryScanner) Version() string { return "2" }
 
 // Kind implements [indexer.VersionedScanner].
 func (*RepositoryScanner) Kind() string { return "repository" }
@@ -180,7 +182,7 @@ func (r *RepositoryScanner) Configure(ctx context.Context, f indexer.ConfigDeser
 }
 
 // Scan implements [indexer.RepositoryScanner].
-func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) (repositories []*claircore.Repository, err error) {
+func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Repository, error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "rhel/RepositoryScanner.Scan",
@@ -204,24 +206,74 @@ func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) (repos
 	if !ok || cm == nil {
 		return []*claircore.Repository{}, fmt.Errorf("rhel: unable to create a mappingFile object")
 	}
-	CPEs, err := mapContentSets(ctx, sys, cm)
+
+	// First, look at DNF.
+	repoids, err := dnf.FindRepoids(ctx, sys)
+	switch {
+	case err != nil: // continue to error check and return
+	case len(repoids) == 0:
+		// If DNF yielded nothing, check for content-sets data.
+		repoids, err = repoidsFromContentSets(ctx, sys)
+	default:
+	}
 	if err != nil {
 		return []*claircore.Repository{}, err
 	}
-	if CPEs == nil && r.apiFetcher != nil {
-		// Embedded content-sets are available only for new images.
-		// For old images, use fallback option and query Red Hat Container API.
-		ctx, done := context.WithTimeout(ctx, r.cfg.Timeout)
-		defer done()
-		CPEs, err = mapContainerAPI(ctx, sys, r.apiFetcher)
+
+	pairs := func(yield func(string, string) bool) {
+		var found bool
+		for _, repoid := range repoids {
+			cpes, ok := cm.GetOne(ctx, repoid)
+			if !ok {
+				continue
+			}
+			found = true
+			for _, cpe := range cpes {
+				if !yield(repoid, cpe) {
+					return
+				}
+			}
+		}
+		if found {
+			return
+		}
+
+		if r.apiFetcher != nil {
+			// Embedded content-sets are unavailable in very old images.
+			// For these, use fallback option and query Red Hat Container API.
+			ctx, done := context.WithTimeout(ctx, r.cfg.Timeout)
+			defer done()
+
+			// !!! This ends up being a weird nonlocal return. !!!
+			var cpes []string
+			cpes, err = mapContainerAPI(ctx, sys, r.apiFetcher)
+			if err != nil {
+				zlog.Warn(ctx).
+					Err(err).
+					Msg("container API error")
+				return
+			}
+			for _, cpe := range cpes {
+				if !yield("", cpe) {
+					return
+				}
+			}
+		}
+	}
+	var repositories []*claircore.Repository
+	for repoid, cpeID := range pairs {
+		// TODO(hank) Remove these ContainerAPI hacks:
+		// Start ContainerAPI hacks
 		if err != nil {
 			return []*claircore.Repository{}, err
 		}
-	}
+		if repoid == "" {
+			repoid = cpeID
+		}
+		// End ContainerAPI hacks
 
-	for _, cpeID := range CPEs {
 		r := &claircore.Repository{
-			Name: cpeID,
+			Name: repoid,
 			Key:  repositoryKey,
 		}
 		r.CPE, err = cpe.Unbind(cpeID)
@@ -236,17 +288,29 @@ func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) (repos
 
 		repositories = append(repositories, r)
 	}
+	slices.SortFunc(repositories, func(a, b *claircore.Repository) int {
+		if ord := strings.Compare(a.Name, b.Name); ord != 0 {
+			return ord
+		}
+		if ord := strings.Compare(a.CPE.BindFS(), b.CPE.BindFS()); ord != 0 {
+			return ord
+		}
+		return 0
+	})
+	repositories = slices.CompactFunc(repositories, func(a, b *claircore.Repository) bool {
+		return a.Name == b.Name && a.CPE.BindFS() == b.CPE.BindFS()
+	})
 
 	return repositories, nil
 }
 
-// MapContentSets returns a slice of CPEs bound into strings, as discovered by
-// examining information contained within the container.
-func mapContentSets(ctx context.Context, sys fs.FS, cm *mappingFile) ([]string, error) {
-	// Get CPEs using embedded content-set files.
-	// The files are stored in /root/buildinfo/content_manifests/ and will need to
-	// be translated using mapping file provided by Red Hat's PST team.
-	// For RHCOS, the files are stored in /usr/share/buildinfo/.
+// RepoidsFromContentSets returns a slice of repoids, as discovered by examining
+// information contained within the container.
+func repoidsFromContentSets(ctx context.Context, sys fs.FS) ([]string, error) {
+	// Get repoids using embedded content-set files. The files are stored in
+	// /root/buildinfo/content_manifests/ and will need to be translated using
+	// mapping file provided by Red Hat's PST team. For RHCOS, the files are
+	// stored in /usr/share/buildinfo/.
 	ms, err := fs.Glob(sys, `root/buildinfo/content_manifests/*.json`)
 	if err != nil {
 		panic("programmer error: " + err.Error())
@@ -286,7 +350,7 @@ func mapContentSets(ctx context.Context, sys fs.FS, cm *mappingFile) ([]string, 
 	if len(m.ContentSets) == 0 {
 		return nil, nil
 	}
-	return cm.Get(ctx, m.ContentSets)
+	return m.ContentSets, nil
 }
 
 // MappingFile is a data struct for mapping file between repositories and CPEs
@@ -299,27 +363,16 @@ type repo struct {
 	CPEs []string `json:"cpes"`
 }
 
-func (m *mappingFile) Get(ctx context.Context, rs []string) ([]string, error) {
-	s := map[string]struct{}{}
-	for _, r := range rs {
-		cpes, ok := m.Data[r]
-		if !ok {
-			zlog.Debug(ctx).
-				Str("repository", r).
-				Msg("repository not present in a mapping file")
-			continue
-		}
-		for _, cpe := range cpes.CPEs {
-			s[cpe] = struct{}{}
-		}
+// GetOne takes a repoid and reports the CPEs and if the repoid was known
+// beforehand.
+func (m *mappingFile) GetOne(ctx context.Context, repoid string) (cpes []string, ok bool) {
+	if repo, ok := m.Data[repoid]; ok {
+		return repo.CPEs, true
 	}
-
-	i, r := 0, make([]string, len(s))
-	for k := range s {
-		r[i] = k
-		i++
-	}
-	return r, nil
+	zlog.Debug(ctx).
+		Str("repository", repoid).
+		Msg("repository not present in a mapping file")
+	return nil, false
 }
 
 // ContentManifest structure is the data provided by OSBS.
