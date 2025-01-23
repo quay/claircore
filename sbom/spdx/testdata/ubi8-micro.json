@@ -1,0 +1,743 @@
+{
+  "err": "",
+  "state": "IndexFinished",
+  "success": true,
+  "packages": {
+    "1844": {
+      "id": "1844",
+      "cpe": "",
+      "arch": "noarch",
+      "kind": "binary",
+      "name": "tzdata",
+      "source": {
+        "id": "1843",
+        "cpe": "",
+        "kind": "source",
+        "name": "tzdata",
+        "version": "2024b-4.el8",
+        "normalized_version": ""
+      },
+      "version": "2024b-4.el8",
+      "normalized_version": ""
+    },
+    "1848": {
+      "id": "1848",
+      "cpe": "",
+      "arch": "noarch",
+      "kind": "binary",
+      "name": "setup",
+      "source": {
+        "id": "1847",
+        "cpe": "",
+        "kind": "source",
+        "name": "setup",
+        "version": "2.12.2-9.el8",
+        "normalized_version": ""
+      },
+      "version": "2.12.2-9.el8",
+      "normalized_version": ""
+    },
+    "1850": {
+      "id": "1850",
+      "cpe": "",
+      "arch": "noarch",
+      "kind": "binary",
+      "name": "basesystem",
+      "source": {
+        "id": "1849",
+        "cpe": "",
+        "kind": "source",
+        "name": "basesystem",
+        "version": "11-5.el8",
+        "normalized_version": ""
+      },
+      "version": "11-5.el8",
+      "normalized_version": ""
+    },
+    "1854": {
+      "id": "1854",
+      "cpe": "",
+      "arch": "x86_64",
+      "kind": "binary",
+      "name": "pcre2",
+      "source": {
+        "id": "1853",
+        "cpe": "",
+        "kind": "source",
+        "name": "pcre2",
+        "version": "10.32-3.el8_6",
+        "normalized_version": ""
+      },
+      "version": "10.32-3.el8_6",
+      "normalized_version": ""
+    },
+    "1856": {
+      "id": "1856",
+      "cpe": "",
+      "arch": "x86_64",
+      "kind": "binary",
+      "name": "ncurses-libs",
+      "source": {
+        "id": "1855",
+        "cpe": "",
+        "kind": "source",
+        "name": "ncurses",
+        "version": "6.1-10.20180224.el8",
+        "normalized_version": ""
+      },
+      "version": "6.1-10.20180224.el8",
+      "normalized_version": ""
+    },
+    "1858": {
+      "id": "1858",
+      "cpe": "",
+      "arch": "x86_64",
+      "kind": "binary",
+      "name": "glibc-common",
+      "source": {
+        "id": "1857",
+        "cpe": "",
+        "kind": "source",
+        "name": "glibc",
+        "version": "2.28-251.el8_10.5",
+        "normalized_version": ""
+      },
+      "version": "2.28-251.el8_10.5",
+      "normalized_version": ""
+    },
+    "1860": {
+      "id": "1860",
+      "cpe": "",
+      "arch": "x86_64",
+      "kind": "binary",
+      "name": "bash",
+      "source": {
+        "id": "1859",
+        "cpe": "",
+        "kind": "source",
+        "name": "bash",
+        "version": "4.4.20-5.el8",
+        "normalized_version": ""
+      },
+      "version": "4.4.20-5.el8",
+      "normalized_version": ""
+    },
+    "1868": {
+      "id": "1868",
+      "cpe": "",
+      "arch": "x86_64",
+      "kind": "binary",
+      "name": "libcap",
+      "source": {
+        "id": "1867",
+        "cpe": "",
+        "kind": "source",
+        "name": "libcap",
+        "version": "2.48-6.el8_9",
+        "normalized_version": ""
+      },
+      "version": "2.48-6.el8_9",
+      "normalized_version": ""
+    },
+    "1882": {
+      "id": "1882",
+      "cpe": "",
+      "arch": "x86_64",
+      "kind": "binary",
+      "name": "libacl",
+      "source": {
+        "id": "1881",
+        "cpe": "",
+        "kind": "source",
+        "name": "acl",
+        "version": "2.2.53-3.el8",
+        "normalized_version": ""
+      },
+      "version": "2.2.53-3.el8",
+      "normalized_version": ""
+    },
+    "2026": {
+      "id": "2026",
+      "cpe": "",
+      "arch": "x86_64",
+      "kind": "binary",
+      "name": "libgcc",
+      "source": {
+        "id": "2025",
+        "cpe": "",
+        "kind": "source",
+        "name": "gcc",
+        "version": "8.5.0-22.el8_10",
+        "normalized_version": ""
+      },
+      "version": "8.5.0-22.el8_10",
+      "normalized_version": ""
+    },
+    "2030": {
+      "id": "2030",
+      "cpe": "",
+      "arch": "x86_64",
+      "kind": "binary",
+      "name": "redhat-release",
+      "source": {
+        "id": "2029",
+        "cpe": "",
+        "kind": "source",
+        "name": "redhat-release",
+        "version": "8.10-0.3.el8",
+        "normalized_version": ""
+      },
+      "version": "8.10-0.3.el8",
+      "normalized_version": ""
+    },
+    "2032": {
+      "id": "2032",
+      "cpe": "",
+      "arch": "x86_64",
+      "kind": "binary",
+      "name": "filesystem",
+      "source": {
+        "id": "2031",
+        "cpe": "",
+        "kind": "source",
+        "name": "filesystem",
+        "version": "3.8-6.el8",
+        "normalized_version": ""
+      },
+      "version": "3.8-6.el8",
+      "normalized_version": ""
+    },
+    "2036": {
+      "id": "2036",
+      "cpe": "",
+      "arch": "noarch",
+      "kind": "binary",
+      "name": "ncurses-base",
+      "source": {
+        "id": "1855",
+        "cpe": "",
+        "kind": "source",
+        "name": "ncurses",
+        "version": "6.1-10.20180224.el8",
+        "normalized_version": ""
+      },
+      "version": "6.1-10.20180224.el8",
+      "normalized_version": ""
+    },
+    "2038": {
+      "id": "2038",
+      "cpe": "",
+      "arch": "x86_64",
+      "kind": "binary",
+      "name": "libselinux",
+      "source": {
+        "id": "2037",
+        "cpe": "",
+        "kind": "source",
+        "name": "libselinux",
+        "version": "2.9-9.el8_10",
+        "normalized_version": ""
+      },
+      "version": "2.9-9.el8_10",
+      "normalized_version": ""
+    },
+    "2040": {
+      "id": "2040",
+      "cpe": "",
+      "arch": "x86_64",
+      "kind": "binary",
+      "name": "glibc-minimal-langpack",
+      "source": {
+        "id": "1857",
+        "cpe": "",
+        "kind": "source",
+        "name": "glibc",
+        "version": "2.28-251.el8_10.5",
+        "normalized_version": ""
+      },
+      "version": "2.28-251.el8_10.5",
+      "normalized_version": ""
+    },
+    "2042": {
+      "id": "2042",
+      "cpe": "",
+      "arch": "x86_64",
+      "kind": "binary",
+      "name": "glibc",
+      "source": {
+        "id": "1857",
+        "cpe": "",
+        "kind": "source",
+        "name": "glibc",
+        "version": "2.28-251.el8_10.5",
+        "normalized_version": ""
+      },
+      "version": "2.28-251.el8_10.5",
+      "normalized_version": ""
+    },
+    "2044": {
+      "id": "2044",
+      "cpe": "",
+      "arch": "x86_64",
+      "kind": "binary",
+      "name": "libsepol",
+      "source": {
+        "id": "2043",
+        "cpe": "",
+        "kind": "source",
+        "name": "libsepol",
+        "version": "2.9-3.el8",
+        "normalized_version": ""
+      },
+      "version": "2.9-3.el8",
+      "normalized_version": ""
+    },
+    "2064": {
+      "id": "2064",
+      "cpe": "",
+      "arch": "x86_64",
+      "kind": "binary",
+      "name": "libattr",
+      "source": {
+        "id": "2063",
+        "cpe": "",
+        "kind": "source",
+        "name": "attr",
+        "version": "2.4.48-3.el8",
+        "normalized_version": ""
+      },
+      "version": "2.4.48-3.el8",
+      "normalized_version": ""
+    },
+    "2066": {
+      "id": "2066",
+      "cpe": "",
+      "arch": "x86_64",
+      "kind": "binary",
+      "name": "coreutils-single",
+      "source": {
+        "id": "2065",
+        "cpe": "",
+        "kind": "source",
+        "name": "coreutils",
+        "version": "8.30-15.el8",
+        "normalized_version": ""
+      },
+      "version": "8.30-15.el8",
+      "normalized_version": ""
+    },
+    "2214": {
+      "id": "2214",
+      "cpe": "",
+      "arch": "x86_64",
+      "kind": "source",
+      "name": "ubi8-micro-container",
+      "source": {
+        "id": "1181",
+        "cpe": "",
+        "name": "",
+        "version": "",
+        "normalized_version": ""
+      },
+      "version": "8.10-19",
+      "normalized_version": "rhctag:8.10.0.0.0.0.0.0.0.0"
+    },
+    "2216": {
+      "id": "2216",
+      "cpe": "",
+      "arch": "x86_64",
+      "kind": "binary",
+      "name": "ubi8/ubi-micro",
+      "source": {
+        "id": "2214",
+        "cpe": "",
+        "arch": "x86_64",
+        "kind": "source",
+        "name": "ubi8-micro-container",
+        "version": "8.10-19",
+        "normalized_version": ""
+      },
+      "version": "8.10-19",
+      "normalized_version": "rhctag:8.10.0.0.0.0.0.0.0.0"
+    }
+  },
+  "repository": {
+    "3": {
+      "id": "3",
+      "cpe": "cpe:2.3:o:redhat:enterprise_linux:8:*:baseos:*:*:*:*:*",
+      "key": "rhel-cpe-repository",
+      "name": "cpe:/o:redhat:enterprise_linux:8::baseos"
+    },
+    "4": {
+      "id": "4",
+      "cpe": "cpe:2.3:a:redhat:enterprise_linux:8:*:appstream:*:*:*:*:*",
+      "key": "rhel-cpe-repository",
+      "name": "cpe:/a:redhat:enterprise_linux:8::appstream"
+    },
+    "5": {
+      "id": "5",
+      "cpe": "",
+      "uri": "https://catalog.redhat.com/software/containers/explore",
+      "name": "Red Hat Container Catalog"
+    }
+  },
+  "environments": {
+    "1844": [
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": [
+          "3",
+          "4"
+        ],
+        "distribution_id": "6"
+      },
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": null,
+        "distribution_id": ""
+      }
+    ],
+    "1848": [
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": [
+          "3",
+          "4"
+        ],
+        "distribution_id": "6"
+      },
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": null,
+        "distribution_id": ""
+      }
+    ],
+    "1850": [
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": [
+          "3",
+          "4"
+        ],
+        "distribution_id": "6"
+      },
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": null,
+        "distribution_id": ""
+      }
+    ],
+    "1854": [
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": [
+          "3",
+          "4"
+        ],
+        "distribution_id": "6"
+      },
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": null,
+        "distribution_id": ""
+      }
+    ],
+    "1856": [
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": [
+          "3",
+          "4"
+        ],
+        "distribution_id": "6"
+      },
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": null,
+        "distribution_id": ""
+      }
+    ],
+    "1858": [
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": [
+          "3",
+          "4"
+        ],
+        "distribution_id": "6"
+      },
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": null,
+        "distribution_id": ""
+      }
+    ],
+    "1860": [
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": [
+          "3",
+          "4"
+        ],
+        "distribution_id": "6"
+      },
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": null,
+        "distribution_id": ""
+      }
+    ],
+    "1868": [
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": [
+          "3",
+          "4"
+        ],
+        "distribution_id": "6"
+      },
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": null,
+        "distribution_id": ""
+      }
+    ],
+    "1882": [
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": [
+          "3",
+          "4"
+        ],
+        "distribution_id": "6"
+      },
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": null,
+        "distribution_id": ""
+      }
+    ],
+    "2026": [
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": [
+          "3",
+          "4"
+        ],
+        "distribution_id": "6"
+      },
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": null,
+        "distribution_id": ""
+      }
+    ],
+    "2030": [
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": [
+          "3",
+          "4"
+        ],
+        "distribution_id": "6"
+      },
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": null,
+        "distribution_id": ""
+      }
+    ],
+    "2032": [
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": [
+          "3",
+          "4"
+        ],
+        "distribution_id": "6"
+      },
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": null,
+        "distribution_id": ""
+      }
+    ],
+    "2036": [
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": [
+          "3",
+          "4"
+        ],
+        "distribution_id": "6"
+      },
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": null,
+        "distribution_id": ""
+      }
+    ],
+    "2038": [
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": [
+          "3",
+          "4"
+        ],
+        "distribution_id": "6"
+      },
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": null,
+        "distribution_id": ""
+      }
+    ],
+    "2040": [
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": [
+          "3",
+          "4"
+        ],
+        "distribution_id": "6"
+      },
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": null,
+        "distribution_id": ""
+      }
+    ],
+    "2042": [
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": [
+          "3",
+          "4"
+        ],
+        "distribution_id": "6"
+      },
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": null,
+        "distribution_id": ""
+      }
+    ],
+    "2044": [
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": [
+          "3",
+          "4"
+        ],
+        "distribution_id": "6"
+      },
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": null,
+        "distribution_id": ""
+      }
+    ],
+    "2064": [
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": [
+          "3",
+          "4"
+        ],
+        "distribution_id": "6"
+      },
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": null,
+        "distribution_id": ""
+      }
+    ],
+    "2066": [
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": [
+          "3",
+          "4"
+        ],
+        "distribution_id": "6"
+      },
+      {
+        "package_db": "bdb:var/lib/rpm",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": null,
+        "distribution_id": ""
+      }
+    ],
+    "2214": [
+      {
+        "package_db": "root/buildinfo/Dockerfile-ubi8-ubi-micro-8.10-19",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": [
+          "5"
+        ],
+        "distribution_id": ""
+      }
+    ],
+    "2216": [
+      {
+        "package_db": "root/buildinfo/Dockerfile-ubi8-ubi-micro-8.10-19",
+        "introduced_in": "sha256:0cdc646404194f6ede416263e7299a39254dd6005bef2f7f90d7d2e0e3baeef9",
+        "repository_ids": [
+          "5"
+        ],
+        "distribution_id": ""
+      }
+    ]
+  },
+  "distributions": {
+    "6": {
+      "id": "6",
+      "cpe": "cpe:2.3:o:redhat:enterprise_linux:8:*:*:*:*:*:*:*",
+      "did": "rhel",
+      "arch": "",
+      "name": "Red Hat Enterprise Linux Server",
+      "version": "8",
+      "version_id": "8",
+      "pretty_name": "Red Hat Enterprise Linux Server 8",
+      "version_code_name": ""
+    }
+  },
+  "manifest_hash": "sha256:2ca89d5a5c35b2d6be72e3b510e522186726e0c5960ca57e212abcee24115006"
+}

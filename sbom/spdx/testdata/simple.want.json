@@ -1,0 +1,131 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "documentNamespace": "Test SPDX encoder namespace",
+  "comment": "Test SPDX encoder comment",
+  "creationInfo": {
+    "creators": [
+      "Tool: Claircore",
+      "Organization: Clair"
+    ],
+    "created": "2025-01-14T09:51:40Z"
+  },
+  "packages": [
+    {
+      "name": "package B source",
+      "SPDXID": "SPDXRef-Package-122",
+      "versionInfo": "v1.0.0",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "primaryPackagePurpose": "SOURCE"
+    },
+    {
+      "name": "package A",
+      "SPDXID": "SPDXRef-Package-123",
+      "versionInfo": "v1.0.0",
+      "packageFileName": "bdb:var/lib/rpm",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "primaryPackagePurpose": "APPLICATION"
+    },
+    {
+      "name": "package B",
+      "SPDXID": "SPDXRef-Package-456",
+      "versionInfo": "v2.0.0",
+      "packageFileName": "maven:opt/couchbase/lib/cbas/repo/eventstream-1.0.1.jar",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "primaryPackagePurpose": "APPLICATION"
+    },
+    {
+      "name": "Red Hat Enterprise Linux Server",
+      "SPDXID": "SPDXRef-Distribution-13",
+      "versionInfo": "7",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "summary": "distribution",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:o:redhat:enterprise_linux:7:*:*:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "OTHER",
+          "referenceType": "did",
+          "referenceLocator": "rhel"
+        },
+        {
+          "referenceCategory": "OTHER",
+          "referenceType": "version_id",
+          "referenceLocator": "7"
+        },
+        {
+          "referenceCategory": "OTHER",
+          "referenceType": "pretty_name",
+          "referenceLocator": "Red Hat Enterprise Linux Server 7"
+        }
+      ],
+      "primaryPackagePurpose": "OPERATING-SYSTEM"
+    },
+    {
+      "name": "cpe:/a:redhat:rhel_eus:8.6::appstream",
+      "SPDXID": "SPDXRef-Repository-11",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "summary": "repository",
+      "externalRefs": [
+        {
+          "referenceCategory": "SECURITY",
+          "referenceType": "cpe23Type",
+          "referenceLocator": "cpe:2.3:a:redhat:rhel_eus:8.6:*:appstream:*:*:*:*:*"
+        },
+        {
+          "referenceCategory": "OTHER",
+          "referenceType": "key",
+          "referenceLocator": "rhel-cpe-repository"
+        }
+      ],
+      "primaryPackagePurpose": "OTHER"
+    },
+    {
+      "name": "maven",
+      "SPDXID": "SPDXRef-Repository-12",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": true,
+      "summary": "repository",
+      "externalRefs": [
+        {
+          "referenceCategory": "OTHER",
+          "referenceType": "uri",
+          "referenceLocator": "https://repo1.maven.apache.org/maven2"
+        }
+      ],
+      "primaryPackagePurpose": "OTHER"
+    }
+  ],
+  "relationships": [
+    {
+      "spdxElementId": "SPDXRef-Package-123",
+      "relatedSpdxElement": "SPDXRef-Distribution-13",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-123",
+      "relatedSpdxElement": "SPDXRef-Package-122",
+      "relationshipType": "GENERATED_FROM"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-123",
+      "relatedSpdxElement": "SPDXRef-Repository-11",
+      "relationshipType": "CONTAINED_BY"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-456",
+      "relatedSpdxElement": "SPDXRef-Repository-12",
+      "relationshipType": "CONTAINED_BY"
+    }
+  ]
+}
