@@ -4,19 +4,13 @@ package rpm
 import (
 	"context"
 	"fmt"
-	"io"
 	"io/fs"
-	"os"
-	"path"
 	"runtime/trace"
 
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
-	"github.com/quay/claircore/rpm/bdb"
-	"github.com/quay/claircore/rpm/ndb"
-	"github.com/quay/claircore/rpm/sqlite"
 )
 
 const (
@@ -89,194 +83,12 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 			continue
 		}
 		done[db.Path] = struct{}{}
-
-		var nat nativeDB // see native_db.go:/nativeDB
-		switch db.Kind {
-		case kindSQLite:
-			r, err := sys.Open(path.Join(db.Path, `rpmdb.sqlite`))
-			if err != nil {
-				return nil, fmt.Errorf("rpm: error reading sqlite db: %w", err)
-			}
-			defer func() {
-				if err := r.Close(); err != nil {
-					zlog.Warn(ctx).Err(err).Msg("unable to close sqlite db")
-				}
-			}()
-			f, err := os.CreateTemp(os.TempDir(), `rpmdb.sqlite.*`)
-			if err != nil {
-				return nil, fmt.Errorf("rpm: error reading sqlite db: %w", err)
-			}
-			defer func() {
-				if err := os.Remove(f.Name()); err != nil {
-					zlog.Error(ctx).Err(err).Msg("unable to unlink sqlite db")
-				}
-				if err := f.Close(); err != nil {
-					zlog.Warn(ctx).Err(err).Msg("unable to close sqlite db")
-				}
-			}()
-			zlog.Debug(ctx).Str("file", f.Name()).Msg("copying sqlite db out of FS")
-			if _, err := io.Copy(f, r); err != nil {
-				return nil, fmt.Errorf("rpm: error reading sqlite db: %w", err)
-			}
-			if err := f.Sync(); err != nil {
-				return nil, fmt.Errorf("rpm: error reading sqlite db: %w", err)
-			}
-			sdb, err := sqlite.Open(f.Name())
-			if err != nil {
-				return nil, fmt.Errorf("rpm: error reading sqlite db: %w", err)
-			}
-			defer sdb.Close()
-			nat = sdb
-		case kindBDB:
-			f, err := sys.Open(path.Join(db.Path, `Packages`))
-			if err != nil {
-				return nil, fmt.Errorf("rpm: error reading bdb db: %w", err)
-			}
-			defer f.Close()
-			r, done, err := mkAt(ctx, db.Kind, f)
-			if err != nil {
-				return nil, fmt.Errorf("rpm: error reading bdb db: %w", err)
-			}
-			defer done()
-			var bpdb bdb.PackageDB
-			if err := bpdb.Parse(r); err != nil {
-				return nil, fmt.Errorf("rpm: error parsing bdb db: %w", err)
-			}
-			nat = &bpdb
-		case kindNDB:
-			f, err := sys.Open(path.Join(db.Path, `Packages.db`))
-			if err != nil {
-				return nil, fmt.Errorf("rpm: error reading ndb db: %w", err)
-			}
-			defer f.Close()
-			r, done, err := mkAt(ctx, db.Kind, f)
-			if err != nil {
-				return nil, fmt.Errorf("rpm: error reading ndb db: %w", err)
-			}
-			defer done()
-			var npdb ndb.PackageDB
-			if err := npdb.Parse(r); err != nil {
-				return nil, fmt.Errorf("rpm: error parsing ndb db: %w", err)
-			}
-			nat = &npdb
-		default:
-			panic("programmer error: bad kind: " + db.Kind.String())
-		}
-		if err := nat.Validate(ctx); err != nil {
-			zlog.Warn(ctx).
-				Err(err).
-				Msg("rpm: invalid native DB")
-			continue
-		}
-		ps, err := packagesFromDB(ctx, db.String(), nat)
+		ps, err := getDBObjects(ctx, sys, db, packagesFromDB)
 		if err != nil {
-			return nil, fmt.Errorf("rpm: error reading native db: %w", err)
+			return nil, err
 		}
 		pkgs = append(pkgs, ps...)
 	}
 
 	return pkgs, nil
-}
-
-func findDBs(ctx context.Context, out *[]foundDB, sys fs.FS) fs.WalkDirFunc {
-	return func(p string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if d.IsDir() {
-			return nil
-		}
-
-		dir, n := path.Split(p)
-		dir = path.Clean(dir)
-		switch n {
-		case `Packages`:
-			f, err := sys.Open(p)
-			if err != nil {
-				return err
-			}
-			ok := bdb.CheckMagic(ctx, f)
-			f.Close()
-			if !ok {
-				return nil
-			}
-			*out = append(*out, foundDB{
-				Path: dir,
-				Kind: kindBDB,
-			})
-		case `rpmdb.sqlite`:
-			*out = append(*out, foundDB{
-				Path: dir,
-				Kind: kindSQLite,
-			})
-		case `Packages.db`:
-			f, err := sys.Open(p)
-			if err != nil {
-				return err
-			}
-			ok := ndb.CheckMagic(ctx, f)
-			f.Close()
-			if !ok {
-				return nil
-			}
-			*out = append(*out, foundDB{
-				Path: dir,
-				Kind: kindNDB,
-			})
-		}
-		return nil
-	}
-}
-
-func mkAt(ctx context.Context, k dbKind, f fs.File) (io.ReaderAt, func(), error) {
-	if r, ok := f.(io.ReaderAt); ok {
-		return r, func() {}, nil
-	}
-	spool, err := os.CreateTemp(os.TempDir(), `Packages.`+k.String()+`.`)
-	if err != nil {
-		return nil, nil, fmt.Errorf("rpm: error spooling db: %w", err)
-	}
-	ctx = zlog.ContextWithValues(ctx, "file", spool.Name())
-	if err := os.Remove(spool.Name()); err != nil {
-		zlog.Error(ctx).Err(err).Msg("unable to remove spool; file leaked!")
-	}
-	zlog.Debug(ctx).
-		Msg("copying db out of fs.FS")
-	if _, err := io.Copy(spool, f); err != nil {
-		if err := spool.Close(); err != nil {
-			zlog.Warn(ctx).Err(err).Msg("unable to close spool")
-		}
-		return nil, nil, fmt.Errorf("rpm: error spooling db: %w", err)
-	}
-	return spool, closeSpool(ctx, spool), nil
-}
-
-func closeSpool(ctx context.Context, f *os.File) func() {
-	return func() {
-		if err := f.Close(); err != nil {
-			zlog.Warn(ctx).Err(err).Msg("unable to close spool")
-		}
-	}
-}
-
-type dbKind uint
-
-//go:generate -command stringer go run golang.org/x/tools/cmd/stringer
-//go:generate stringer -linecomment -type dbKind
-
-const (
-	_ dbKind = iota
-
-	kindBDB    // bdb
-	kindSQLite // sqlite
-	kindNDB    // ndb
-)
-
-type foundDB struct {
-	Path string
-	Kind dbKind
-}
-
-func (f foundDB) String() string {
-	return f.Kind.String() + ":" + f.Path
 }

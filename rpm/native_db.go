@@ -5,6 +5,8 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/fs"
+	"os"
 	"path"
 	"regexp"
 	"runtime/trace"
@@ -14,13 +16,140 @@ import (
 	"golang.org/x/crypto/openpgp/packet"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/rpm/bdb"
 	"github.com/quay/claircore/rpm/internal/rpm"
+	"github.com/quay/claircore/rpm/ndb"
+	"github.com/quay/claircore/rpm/sqlite"
 )
 
 // NativeDB is the interface implemented for in-process RPM database handlers.
 type nativeDB interface {
 	AllHeaders(context.Context) ([]io.ReaderAt, error)
 	Validate(context.Context) error
+}
+
+// ObjectResponse is a generic object that we're expecting to extract from
+// RPM database, currently either a slice of Packages or Files.
+type ObjectResponse interface {
+	[]*claircore.Package | []claircore.File
+}
+
+// GetDBObjects does all the dirty work of extracting generic claircore objects
+// from an RPM database. Provide it with a foundDB, the sys and a fn extract function
+// it will create an implementation agnostic nativeDB and extract specific claircore
+// objects from it.
+func getDBObjects[T ObjectResponse](ctx context.Context, sys fs.FS, db foundDB, fn func(context.Context, string, nativeDB) (T, error)) (T, error) {
+	var nat nativeDB
+	switch db.Kind {
+	case kindSQLite:
+		r, err := sys.Open(path.Join(db.Path, `rpmdb.sqlite`))
+		if err != nil {
+			return nil, fmt.Errorf("rpm: error reading sqlite db: %w", err)
+		}
+		defer func() {
+			if err := r.Close(); err != nil {
+				zlog.Warn(ctx).Err(err).Msg("unable to close sqlite db")
+			}
+		}()
+		f, err := os.CreateTemp(os.TempDir(), `rpmdb.sqlite.*`)
+		if err != nil {
+			return nil, fmt.Errorf("rpm: error reading sqlite db: %w", err)
+		}
+		defer func() {
+			if err := os.Remove(f.Name()); err != nil {
+				zlog.Error(ctx).Err(err).Msg("unable to unlink sqlite db")
+			}
+			if err := f.Close(); err != nil {
+				zlog.Warn(ctx).Err(err).Msg("unable to close sqlite db")
+			}
+		}()
+		zlog.Debug(ctx).Str("file", f.Name()).Msg("copying sqlite db out of FS")
+		if _, err := io.Copy(f, r); err != nil {
+			return nil, fmt.Errorf("rpm: error reading sqlite db: %w", err)
+		}
+		if err := f.Sync(); err != nil {
+			return nil, fmt.Errorf("rpm: error reading sqlite db: %w", err)
+		}
+		sdb, err := sqlite.Open(f.Name())
+		if err != nil {
+			return nil, fmt.Errorf("rpm: error reading sqlite db: %w", err)
+		}
+		defer sdb.Close()
+		nat = sdb
+	case kindBDB:
+		f, err := sys.Open(path.Join(db.Path, `Packages`))
+		if err != nil {
+			return nil, fmt.Errorf("rpm: error reading bdb db: %w", err)
+		}
+		defer f.Close()
+		r, done, err := mkAt(ctx, db.Kind, f)
+		if err != nil {
+			return nil, fmt.Errorf("rpm: error reading bdb db: %w", err)
+		}
+		defer done()
+		var bpdb bdb.PackageDB
+		if err := bpdb.Parse(r); err != nil {
+			return nil, fmt.Errorf("rpm: error parsing bdb db: %w", err)
+		}
+		nat = &bpdb
+	case kindNDB:
+		f, err := sys.Open(path.Join(db.Path, `Packages.db`))
+		if err != nil {
+			return nil, fmt.Errorf("rpm: error reading ndb db: %w", err)
+		}
+		defer f.Close()
+		r, done, err := mkAt(ctx, db.Kind, f)
+		if err != nil {
+			return nil, fmt.Errorf("rpm: error reading ndb db: %w", err)
+		}
+		defer done()
+		var npdb ndb.PackageDB
+		if err := npdb.Parse(r); err != nil {
+			return nil, fmt.Errorf("rpm: error parsing ndb db: %w", err)
+		}
+		nat = &npdb
+	default:
+		panic("programmer error: bad kind: " + db.Kind.String())
+	}
+	if err := nat.Validate(ctx); err != nil {
+		zlog.Warn(ctx).
+			Err(err).
+			Msg("rpm: invalid native DB")
+		return nil, nil
+	}
+	ps, err := fn(ctx, db.String(), nat)
+	if err != nil {
+		return nil, fmt.Errorf("rpm: error reading native db: %w", err)
+	}
+
+	return ps, nil
+}
+
+// FilesFromDB extracts the files that were instsalled via RPM from the
+// RPM headers.
+func filesFromDB(ctx context.Context, _ string, db nativeDB) ([]claircore.File, error) {
+	defer trace.StartRegion(ctx, "filesFromDB").End()
+	rds, err := db.AllHeaders(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("rpm: error reading headers: %w", err)
+	}
+	var files []claircore.File
+	for _, rd := range rds {
+		var h rpm.Header
+		if err := h.Parse(ctx, rd); err != nil {
+			return nil, err
+		}
+		var info Info
+		if err := info.Load(ctx, &h); err != nil {
+			return nil, err
+		}
+		for _, f := range info.Filenames {
+			files = append(files, claircore.File{
+				Path: f,
+			})
+		}
+	}
+	return files, nil
 }
 
 // PackagesFromDB extracts the packages from the RPM headers provided by
@@ -230,7 +359,8 @@ func init() {
 		`^.*/site-packages/[^/]+\.egg-info/PKG-INFO$`, // Python packages
 		`^.*/package.json$`,                           // npm packages
 		`^.*/[^/]+\.gemspec$`,                         // ruby gems
-		`^/usr/bin/[^/]+$`,                            // any executable
+		`^/usr/s?bin/[^/]+$`,                          // any executable
+		"^/usr/libexec/[^/]+/[^/]+$",                  // sometimes the executables are here too
 	}
 	filePatterns = regexp.MustCompile(strings.Join(pat, `|`))
 }
@@ -298,4 +428,107 @@ func constructHint(b *strings.Builder, info *Info) string {
 		}
 	}
 	return b.String()
+}
+
+func findDBs(ctx context.Context, out *[]foundDB, sys fs.FS) fs.WalkDirFunc {
+	return func(p string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			return nil
+		}
+
+		dir, n := path.Split(p)
+		dir = path.Clean(dir)
+		switch n {
+		case `Packages`:
+			f, err := sys.Open(p)
+			if err != nil {
+				return err
+			}
+			ok := bdb.CheckMagic(ctx, f)
+			f.Close()
+			if !ok {
+				return nil
+			}
+			*out = append(*out, foundDB{
+				Path: dir,
+				Kind: kindBDB,
+			})
+		case `rpmdb.sqlite`:
+			*out = append(*out, foundDB{
+				Path: dir,
+				Kind: kindSQLite,
+			})
+		case `Packages.db`:
+			f, err := sys.Open(p)
+			if err != nil {
+				return err
+			}
+			ok := ndb.CheckMagic(ctx, f)
+			f.Close()
+			if !ok {
+				return nil
+			}
+			*out = append(*out, foundDB{
+				Path: dir,
+				Kind: kindNDB,
+			})
+		}
+		return nil
+	}
+}
+
+func mkAt(ctx context.Context, k dbKind, f fs.File) (io.ReaderAt, func(), error) {
+	if r, ok := f.(io.ReaderAt); ok {
+		return r, func() {}, nil
+	}
+	spool, err := os.CreateTemp(os.TempDir(), `Packages.`+k.String()+`.`)
+	if err != nil {
+		return nil, nil, fmt.Errorf("rpm: error spooling db: %w", err)
+	}
+	ctx = zlog.ContextWithValues(ctx, "file", spool.Name())
+	if err := os.Remove(spool.Name()); err != nil {
+		zlog.Error(ctx).Err(err).Msg("unable to remove spool; file leaked!")
+	}
+	zlog.Debug(ctx).
+		Msg("copying db out of fs.FS")
+	if _, err := io.Copy(spool, f); err != nil {
+		if err := spool.Close(); err != nil {
+			zlog.Warn(ctx).Err(err).Msg("unable to close spool")
+		}
+		return nil, nil, fmt.Errorf("rpm: error spooling db: %w", err)
+	}
+	return spool, closeSpool(ctx, spool), nil
+}
+
+func closeSpool(ctx context.Context, f *os.File) func() {
+	return func() {
+		if err := f.Close(); err != nil {
+			zlog.Warn(ctx).Err(err).Msg("unable to close spool")
+		}
+	}
+}
+
+type dbKind uint
+
+//go:generate -command stringer go run golang.org/x/tools/cmd/stringer
+//go:generate stringer -linecomment -type dbKind
+
+const (
+	_ dbKind = iota
+
+	kindBDB    // bdb
+	kindSQLite // sqlite
+	kindNDB    // ndb
+)
+
+type foundDB struct {
+	Path string
+	Kind dbKind
+}
+
+func (f foundDB) String() string {
+	return f.Kind.String() + ":" + f.Path
 }
