@@ -26,6 +26,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
+	"github.com/quay/claircore/rpm"
 )
 
 // Detector detects go binaries and reports the packages used to build them.
@@ -84,7 +85,8 @@ func (Detector) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Pack
 	// Only create a single spool file per call, re-use for every binary.
 	var spool spoolfile
 	walk := func(p string, d fs.DirEntry, err error) error {
-		ctx := zlog.ContextWithValues(ctx, "path", d.Name())
+		ctx := zlog.ContextWithValues(ctx, "filename", d.Name())
+
 		switch {
 		case err != nil:
 			return err
@@ -105,6 +107,18 @@ func (Detector) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Pack
 			// Not executable
 			return nil
 		}
+
+		isRPM, err := rpm.FileInstalledByRPM(ctx, l, p)
+		if err != nil {
+			return err
+		}
+		if isRPM {
+			zlog.Debug(ctx).
+				Str("path", p).
+				Msg("file path determined to be of RPM origin")
+			return nil
+		}
+
 		f, err := sys.Open(p)
 		if err != nil {
 			// TODO(crozzy): Remove log line once controller is in a
