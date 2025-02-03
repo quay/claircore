@@ -16,6 +16,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
+	"github.com/quay/claircore/rpm"
 )
 
 var (
@@ -103,6 +104,16 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 
 	var ret []*claircore.Package
 	for _, g := range gs {
+		isRPM, err := rpm.FileInstalledByRPM(ctx, layer, g)
+		if err != nil {
+			return nil, fmt.Errorf("ruby: unable to check RPM db: %w", err)
+		}
+		if isRPM {
+			zlog.Debug(ctx).
+				Str("path", g).
+				Msg("file path determined to be of RPM origin")
+			continue
+		}
 		f, err := sys.Open(g)
 		if err != nil {
 			return nil, fmt.Errorf("ruby: unable to open file: %w", err)
