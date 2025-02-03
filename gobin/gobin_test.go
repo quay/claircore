@@ -60,6 +60,12 @@ func TestEmptyFile(t *testing.T) {
 	if err := l.Init(ctx, &test.AnyDescription, f); err != nil {
 		t.Error(err)
 	}
+	t.Cleanup(func() {
+		if err := l.Close(); err != nil {
+			t.Error(err)
+		}
+	})
+
 	var s Detector
 	_, err = s.Scan(ctx, &l)
 	if err != nil {
@@ -137,6 +143,11 @@ func TestScanner(t *testing.T) {
 	if err := l.Init(ctx, &test.AnyDescription, f); err != nil {
 		t.Error(err)
 	}
+	t.Cleanup(func() {
+		if err := l.Close(); err != nil {
+			t.Error(err)
+		}
+	})
 
 	// Run the scanner on the fake layer.
 	var s Detector
