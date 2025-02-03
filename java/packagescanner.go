@@ -24,6 +24,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/java/jar"
+	"github.com/quay/claircore/rpm"
 )
 
 var (
@@ -147,6 +148,17 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 	defer putBuf(buf)
 	for _, n := range ars {
 		ctx := zlog.ContextWithValues(ctx, "file", n)
+		isRPM, err := rpm.FileInstalledByRPM(ctx, layer, n)
+		if err != nil {
+			return nil, err
+		}
+		if isRPM {
+			zlog.Debug(ctx).
+				Str("path", n).
+				Msg("file path determined to be of RPM origin")
+			continue
+		}
+
 		sh.Reset()
 		buf.Reset()
 		// Calculate the SHA1 as it's buffered, since it may be needed for
