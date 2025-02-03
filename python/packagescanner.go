@@ -19,6 +19,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/pkg/pep440"
+	"github.com/quay/claircore/rpm"
 )
 
 var (
@@ -79,6 +80,16 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	}
 	var ret []*claircore.Package
 	for _, n := range ms {
+		isRPM, err := rpm.FileInstalledByRPM(ctx, layer, n)
+		if err != nil {
+			return nil, err
+		}
+		if isRPM {
+			zlog.Debug(ctx).
+				Str("path", n).
+				Msg("file path determined to be of RPM origin")
+			continue
+		}
 		b, err := fs.ReadFile(sys, n)
 		if err != nil {
 			return nil, fmt.Errorf("python: unable to read file: %w", err)
@@ -143,14 +154,14 @@ func findDeliciousEgg(ctx context.Context, sys fs.FS) (out []string, err error) 
 	// Is this layer an rpm layer?
 	//
 	// If so, files in the disto-managed directory can be skipped.
-	var rpm bool
+	var isRPM bool
 	for _, p := range []string{
 		"var/lib/rpm/Packages",
 		"var/lib/rpm/rpmdb.sqlite",
 		"var/lib/rpm/Packages.db",
 	} {
 		if fi, err := fs.Stat(sys, p); err == nil && fi.Mode().IsRegular() {
-			rpm = true
+			isRPM = true
 			break
 		}
 	}
@@ -172,12 +183,12 @@ func findDeliciousEgg(ctx context.Context, sys fs.FS) (out []string, err error) 
 		switch {
 		case err != nil:
 			return err
-		case (rpm || dpkg) && d.Type().IsDir():
+		case (isRPM || dpkg) && d.Type().IsDir():
 			// Skip one level up from the "packages" directory so the walk also
 			// skips the standard library.
 			var pat string
 			switch {
-			case rpm:
+			case isRPM:
 				pat = `usr/lib*/python[23].*`
 				ev = ev.Bool("rpm_dir", true)
 			case dpkg:
