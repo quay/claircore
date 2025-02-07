@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Misc - Claircore Documentation</title>
+        <title>Releases - Claircore Documentation</title>
 
 
         <!-- Custom HTML head -->
@@ -160,25 +160,50 @@
 
                 <div id="content" class="content">
                     <main>
-                        <p>Here's various codebase conventions that don't have dedicated pages:</p>
-<ul>
-<li>URLs
-URLs in code should be annotated with a <code>//doc:url</code> directive comment. See
-the the <code>internal/cmd/mdbook-injecturls</code> command for documentation on how the
-preprocessor works. The list of keywords isn't an allowlist, so an invocation
-like the following should list the ones actually used in the documentation
-using a command like <code>git grep injecturls -- :/docs/*.md</code>.</li>
-</ul>
+                        <h1 id="releases"><a class="header" href="#releases">Releases</a></h1>
+<p>Claircore releases are cut when they are needed, as judged by the maintainers.</p>
+<p>Releases are made from the <code>main</code> branch.
+On rare occasions when a fix is time-sensitive, it is possible to create a release branch and make a release from it.</p>
+<h2 id="process"><a class="header" href="#process">Process</a></h2>
+<blockquote>
+<p><strong><em>NOTE:</em></strong> Ensure changelog entries have been created for the relevant commits.
+(see <a href="./changelog.html">Changelog documentation</a>)</p>
+</blockquote>
+<h3 id="from-main"><a class="header" href="#from-main">From main</a></h3>
+<pre><code class="language-sh">NEW_VERSION=v0.999.999
+.github/scripts/prepare-release -b main -r upstream "$NEW_VERSION"
+</code></pre>
+<p>Follow the <code>prepare-release</code> command's instructions to merge changelog updates and release the tag.</p>
+<h3 id="from-release-branch"><a class="header" href="#from-release-branch">From release branch</a></h3>
+<p>First, create the relevant release branch.
+For example, if you are releasing <code>v0.999.1</code> create <code>release-v0.999</code> from the previous tag (in this case, <code>v0.999.0</code>).
+Next, cherry-pick any needed commits with the <code>-x</code> flag to keep a reference to the original commit.
+This may involve rewriting the changes.
+Once the backports are done, push the release branch.</p>
+<pre><code class="language-sh">LAST_MINOR=v0.999.0
+BRANCH=release-${LAST_MINOR%.*} # e.g. release-v0.999
+git branch $BRANCH $LAST_MINOR
+TO_BACKPORT=beefc0ffee # Use the commit digest of the original commit
+git cherry-pick -x $TO_BACKPORT
+git push upstream $BRANCH
+</code></pre>
+<p>Finally, prepare the release specifying the release branch.</p>
+<pre><code class="language-sh">LAST_MINOR=v0.999.0
+NEW_VERSION=v0.999.1
+BRANCH=release-${LAST_MINOR%.*} # e.g. release-v0.999
+.github/scripts/prepare-release -b $BRANCH -r upstream $NEW_VERSION
+</code></pre>
+<p>Follow the <code>prepare-release</code> command's instructions to merge changelog updates and release the tag.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../contributor/logging.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../contributor/misc.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../contributor/releases.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../contributor/tests.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -188,11 +213,11 @@ using a command like <code>git grep injecturls -- :/docs/*.md</code>.</li>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../contributor/logging.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../contributor/misc.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../contributor/releases.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../contributor/tests.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
