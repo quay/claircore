@@ -1,3 +1,13 @@
+<a name="v1.5.35"></a>
+## [v1.5.35] - 2025-02-11
+[v1.5.35]: https://github.com/quay/claircore/compare/v1.5.34...v1.5.35
+
+- sbom: add encoder to encode index reports as SPDX documents
+  <details>
+  This change adds the ability in claircore to convert an index report
+  into an SPDX-2.3 document.
+  </details>
+
 <a name="v1.5.34"></a>
 ## [v1.5.34] - 2025-01-06
 [v1.5.34]: https://github.com/quay/claircore/compare/v1.5.33...v1.5.34
