@@ -1,0 +1,4 @@
+sbom: add encoder to encode index reports as SPDX documents
+
+This change adds the ability in claircore to convert an index report
+into an SPDX-2.3 document.
