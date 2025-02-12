@@ -3,13 +3,11 @@
 //
 // # Main module versioning
 //
-// The go toolchain currently only fills in version information for modules
+// The go toolchain before go1.24 only fills in version information for modules
 // obtained as a module. Most go executables are built from source checkouts,
-// meaning they are not in module form. See [issue 50603] for details on why and
-// what's being explored to provide this information. Accordingly, claircore
-// cannot report advisories for main modules.
-//
-// [issue 50603]: https://golang.org/issues/50603
+// meaning they are not in module form pre-go1.24. Accordingly, claircore cannot
+// report advisories for main modules built pre-go1.24. See relevant go commit:
+// https://cs.opensource.google/go/go/+/8aa2eed8fb90303c0876e51e097105eca7299734
 package gobin
 
 import (
