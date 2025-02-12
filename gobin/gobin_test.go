@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"testing"
 
@@ -159,7 +158,7 @@ func TestScanner(t *testing.T) {
 		case v.Kind != claircore.BINARY:
 		case v.PackageDB != "go:bin/bisect":
 			t.Errorf("unexpected package DB: %s: %q", v.Name, v.PackageDB)
-		case !verRegexp.MatchString(v.Version):
+		case !versionRegex.MatchString(v.Version):
 			t.Errorf("unexpected version: %s: %q", v.Name, v.Version)
 		case !strings.Contains(v.Name, "/"):
 			t.Errorf("unexpected module name: %q", v.Name)
@@ -169,5 +168,3 @@ func TestScanner(t *testing.T) {
 		t.Errorf("unexpected entry: %v", v)
 	}
 }
-
-var verRegexp = regexp.MustCompile(`^v([0-9]+\.){2}[0-9]+(-[.0-9]+-[0-9a-f]+)?(\+incompatible)?$`)

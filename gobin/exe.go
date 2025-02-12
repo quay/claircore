@@ -84,15 +84,22 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 	vs := map[string]string{
 		"stdlib": bi.GoVersion,
 	}
-	var mmv string
-	mainVer, err := ParseVersion(bi.Main.Version)
+
+	// The go main module version is reported differently depending on the go
+	// toolchain, pre-go1.24 module versions built with `go build` will report
+	// `(devel)`, go1.24 and above will report this version like this:
+	// v1.5.36-0.20250212170732-e3af313feaab+dirty i.e. the version stamped in
+	// the compiled binary is based on the version control system tag and/or commit.
+	// A +dirty suffix will be appended if there are uncommitted changes. Previous
+	// behavior can be obtained by using the flag `-buildvcs=false`.
+	mmv := bi.Main.Version
+	mainVer, err := ParseVersion(mmv)
 	switch {
 	case errors.Is(err, nil):
 	case bi.Main.Version == `(devel)`, bi.Main.Version == ``:
-		// This is currently the state of any main module built from source; see
-		// the package documentation. Don't record it as a "bad" version and
-		// pull out any vcs metadata that's been stamped in.
-		mmv = bi.Main.Version
+		// This is currently the state of any main module built from source
+		// before go1.24; see the package documentation. Don't record it as
+		// a "bad" version and pull out any vcs metadata that's been stamped in.
 		var v []string
 		for _, s := range bi.Settings {
 			switch s.Key {
@@ -122,7 +129,6 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 		}
 	case errors.Is(err, ErrInvalidSemVer):
 		badVers[bi.Main.Path] = bi.Main.Version
-		mmv = bi.Main.Version
 	default:
 		return fmt.Errorf("error parsing main version: %q: %w", bi.Main.Version, err)
 	}
