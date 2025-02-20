@@ -17,6 +17,7 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
+	"github.com/quay/claircore/rpm"
 )
 
 const repository = "npm"
@@ -92,6 +93,17 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 	ret := make([]*claircore.Package, 0, len(pkgs))
 	var invalidPkgs []string
 	for _, p := range pkgs {
+		isRPM, err := rpm.FileInstalledByRPM(ctx, layer, p)
+		if err != nil {
+			return nil, err
+		}
+		if isRPM {
+			zlog.Debug(ctx).
+				Str("path", p).
+				Msg("file path determined to be of RPM origin")
+			continue
+		}
+
 		f, err := sys.Open(p)
 		if err != nil {
 			return nil, fmt.Errorf("nodejs: unable to open file %q: %w", p, err)
