@@ -17,7 +17,8 @@ FROM
 	JOIN (
 		SELECT
 			item_id
-		FROM rpm
+		FROM 
+			rpm
 		WHERE
 			? = name ||'-'||
 				CASE
