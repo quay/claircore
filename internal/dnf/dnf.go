@@ -15,7 +15,6 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/quay/claircore/internal/rpm"
 	"github.com/quay/zlog"
 	_ "modernc.org/sqlite" // register the sqlite driver
 
