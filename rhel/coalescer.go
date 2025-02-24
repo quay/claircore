@@ -2,6 +2,7 @@ package rhel
 
 import (
 	"context"
+	"net/url"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -116,10 +117,15 @@ func (*Coalescer) Coalesce(ctx context.Context, artifacts []*indexer.LayerArtifa
 					PackageDB:      pkg.PackageDB,
 					IntroducedIn:   layerArtifacts.Hash,
 					DistributionID: distID,
-					RepositoryIDs:  make([]string, len(layerArtifacts.Repos)),
 				}
-				for i := range layerArtifacts.Repos {
-					environment.RepositoryIDs[i] = layerArtifacts.Repos[i].ID
+				v, _ := url.ParseQuery(pkg.RepositoryHint)
+				if id := v.Get("repoid"); id != "" {
+					environment.RepositoryIDs = v["repoid"]
+				} else {
+					environment.RepositoryIDs = make([]string, len(layerArtifacts.Repos))
+					for i := range layerArtifacts.Repos {
+						environment.RepositoryIDs[i] = layerArtifacts.Repos[i].ID
+					}
 				}
 				db.packages[pkg.ID] = pkg
 				db.environments[pkg.ID] = environment
