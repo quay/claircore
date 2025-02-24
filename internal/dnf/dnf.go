@@ -73,7 +73,7 @@ type Annotator interface {
 	Wrap(context.Context, iter.Seq[claircore.Package]) (iter.Seq[claircore.Package], func() error)
 }
 
-// Identity is an [Annotator] who's [Annotator.Wrap] method does nothing.
+// Identity is an [Annotator] whose [Annotator.Wrap] method does nothing.
 //
 // Provided as a variable to allow callers to determine if the returned
 // [Annotator] will do anything.
