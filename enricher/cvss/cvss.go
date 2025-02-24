@@ -231,11 +231,10 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 }
 
 // ParseEnrichment implements driver.EnrichmentUpdater.
-func (e *Enricher) ParseEnrichment(ctx context.Context, rc io.ReadCloser) ([]driver.EnrichmentRecord, error) {
+func (e *Enricher) ParseEnrichment(ctx context.Context, rc io.Reader) ([]driver.EnrichmentRecord, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "enricher/cvss/Enricher/ParseEnrichment")
 	// Our Fetch method actually has all the smarts w/r/t to constructing the
 	// records, so this is just decoding in a loop.
-	defer rc.Close()
 	var err error
 	dec := json.NewDecoder(rc)
 	ret := make([]driver.EnrichmentRecord, 0, 1024) // Wild guess at initial capacity.

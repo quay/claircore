@@ -227,10 +227,8 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, prevFingerprint driver.F
 }
 
 // ParseEnrichment implements driver.EnrichmentUpdater.
-func (e *Enricher) ParseEnrichment(ctx context.Context, rc io.ReadCloser) ([]driver.EnrichmentRecord, error) {
+func (e *Enricher) ParseEnrichment(ctx context.Context, rc io.Reader) ([]driver.EnrichmentRecord, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "enricher/epss/Enricher/ParseEnrichment")
-
-	defer rc.Close()
 
 	dec := json.NewDecoder(rc)
 	ret := make([]driver.EnrichmentRecord, 0, 250_000)
