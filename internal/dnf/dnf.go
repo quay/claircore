@@ -140,7 +140,7 @@ func (a *annotator) Wrap(ctx context.Context, seq iter.Seq[claircore.Package]) (
 
 	mapFunc := func(yield func(claircore.Package) bool) {
 		for pkg := range seq {
-			key := rpm.NERVA(&pkg)
+			key := rpm.NEVRA(&pkg)
 			// If a previous iteration found that a Name is definitely not
 			// present, do nothing:
 			if _, ok := a.absent.Load(key); ok {
