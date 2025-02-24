@@ -3,10 +3,8 @@ package chainguard
 import (
 	"context"
 	"fmt"
-	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/zlog"
-	"io"
 	"net/http"
 )
 
@@ -87,7 +85,7 @@ func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
 	}
 	if add {
 		s.Add(&updater{
-			name: "chainguard",
+			name: "chainguard-updater",
 			url:  f.chainguardURL,
 		})
 	}
@@ -98,7 +96,7 @@ func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
 	}
 	if add {
 		s.Add(&updater{
-			name: "wolfi",
+			name: "wolfi-updater",
 			url:  f.wolfiURL,
 		})
 	}
@@ -139,14 +137,12 @@ type updater struct {
 
 // UpdaterConfig is the configuration accepted by Chainguard and Wolfi updaters.
 //
-// By convention, this should be in a map called "-updater".
-// For example, "alpine-main-v3.12-updater".
+// By convention, this should be in a map called "chainguard-updater" or "wolfi-updater".
 //
 // If a SecDB JSON file is not found at the proper place by [Factory.UpdaterSet], this configuration will not be consulted.
 type UpdaterConfig struct {
 	// URL overrides any discovered URL for the JSON file.
-	ChainguardURL string `json:"chainguard_url" yaml:"chainguard_url"`
-	WolfiURL      string `json:"wolfi_url" yaml:"wolfi_url"`
+	URL string `json:"url" yaml:"url"`
 }
 
 // Configure implements driver.Configurable.
@@ -158,7 +154,7 @@ func (u *updater) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *
 	if cfg.URL != "" {
 		u.url = cfg.URL
 		zlog.Info(ctx).
-			Str("component", "alpine/Updater.Configure").
+			Str("component", "chainguard/Updater.Configure").
 			Str("updater", u.Name()).
 			Msg("configured url")
 	}
@@ -166,17 +162,6 @@ func (u *updater) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *
 	return nil
 }
 
-func (u updater) Name() string {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (u updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (u updater) Parse(ctx context.Context, contents io.ReadCloser) ([]*claircore.Vulnerability, error) {
-	//TODO implement me
-	panic("implement me")
+func (u *updater) Name() string {
+	return u.name
 }

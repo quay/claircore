@@ -19,8 +19,8 @@ const (
 	scannerVersion = "1"
 	scannerKind    = "distribution"
 
-	chainguard = `chainguard`
-	wolfi      = `wolfi`
+	chainguardID = `chainguard`
+	wolfiID      = `wolfi`
 )
 
 var (
@@ -63,31 +63,25 @@ func (s *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]*
 	b, err := fs.ReadFile(sys, osrelease.Path)
 	switch {
 	case errors.Is(err, nil):
-		m, err := osrelease.Parse(ctx, bytes.NewReader(b))
-		if err != nil {
-			return nil, err
-		}
-
-		switch id := m[`ID`]; id {
-		case chainguard, wolfi:
-			return []*claircore.Distribution{
-				{
-					Name: m[`NAME`],
-					DID:  id,
-					// Neither chainguard nor wolfi images are considered to be "versioned".
-					// Explicitly set the version to the empty string for clarity.
-					Version:    "",
-					PrettyName: m[`PRETTY_NAME`],
-				},
-			}, nil
-		default:
-			// This is neither chainguard nor wolfi.
-			return nil, nil
-		}
 	case errors.Is(err, fs.ErrNotExist):
 		// os-release file must exist in chainguard and wolfi images.
 		return nil, nil
 	default:
 		return nil, err
+	}
+
+	m, err := osrelease.Parse(ctx, bytes.NewReader(b))
+	if err != nil {
+		return nil, err
+	}
+
+	switch id := m[`ID`]; id {
+	case chainguardID:
+		return []*claircore.Distribution{chainguardDist}, nil
+	case wolfiID:
+		return []*claircore.Distribution{wolfiDist}, nil
+	default:
+		// This is neither chainguard nor wolfi.
+		return nil, nil
 	}
 }

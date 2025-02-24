@@ -8,7 +8,7 @@ import (
 	"github.com/quay/claircore/linux"
 )
 
-// NewEcosystem provides the set of scanners and coalescers for the chainguard ecosystem
+// NewEcosystem provides the set of scanners and coalescers for the chainguard/wolfi ecosystem.
 func NewEcosystem(_ context.Context) *indexer.Ecosystem {
 	return &indexer.Ecosystem{
 		PackageScanners: func(ctx context.Context) ([]indexer.PackageScanner, error) {
