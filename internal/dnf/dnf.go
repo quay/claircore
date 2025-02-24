@@ -98,7 +98,7 @@ func (ident) Close() error {
 	return nil
 }
 
-// NewAnnotator holds book-keeping for producing multiple independent mapping
+// newAnnotator holds book-keeping for producing multiple independent mapping
 // iterators for a given dnf history database.
 func newAnnotator(ctx context.Context, r fs.File, enum int) (*annotator, error) {
 	var err error
