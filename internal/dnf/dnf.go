@@ -120,7 +120,7 @@ func newAnnotator(ctx context.Context, r fs.File, enum int) (*annotator, error) 
 	return &a, nil
 }
 
-// Annotator holds the state for a mapping iterators that use a given dnf
+// Annotator holds the state for mapping iterators that use a given dnf
 // database.
 type annotator struct {
 	spool *os.File
