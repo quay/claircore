@@ -22,7 +22,7 @@ import (
 type updaterMock struct {
 	_name  func() string
 	_fetch func(_ context.Context, _ driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error)
-	_parse func(ctx context.Context, contents io.ReadCloser) ([]*claircore.Vulnerability, error)
+	_parse func(ctx context.Context, contents io.Reader) ([]*claircore.Vulnerability, error)
 }
 
 func (u *updaterMock) Name() string {
@@ -33,7 +33,7 @@ func (u *updaterMock) Fetch(ctx context.Context, fp driver.Fingerprint) (io.Read
 	return u._fetch(ctx, fp)
 }
 
-func (u *updaterMock) Parse(ctx context.Context, contents io.ReadCloser) ([]*claircore.Vulnerability, error) {
+func (u *updaterMock) Parse(ctx context.Context, contents io.Reader) ([]*claircore.Vulnerability, error) {
 	return u._parse(ctx, contents)
 }
 
@@ -49,7 +49,7 @@ func TestGC(t *testing.T) {
 		_fetch: func(_ context.Context, _ driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
 			return nil, "", nil
 		},
-		_parse: func(ctx context.Context, contents io.ReadCloser) ([]*claircore.Vulnerability, error) {
+		_parse: func(ctx context.Context, contents io.Reader) ([]*claircore.Vulnerability, error) {
 			return []*claircore.Vulnerability{
 				{
 					Name:    randString(t),

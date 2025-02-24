@@ -19,13 +19,13 @@ type Updater interface {
 
 // Parser is an interface which is embedded into the Updater interface.
 //
-// Parse should be called with an io.ReadCloser struct where the contents of a security
+// Parse should be called with an io.Reader struct where the contents of a security
 // advisory database can be read and parsed into an array of *claircore.Vulnerability
 type Parser interface {
-	// Parse should take an io.ReadCloser, read the contents, parse the contents
+	// Parse should take an io.Reader, read the contents, parse the contents
 	// into a list of claircore.Vulnerability structs and then return
 	// the list. Parse should assume contents are uncompressed and ready for parsing.
-	Parse(ctx context.Context, contents io.ReadCloser) ([]*claircore.Vulnerability, error)
+	Parse(ctx context.Context, contents io.Reader) ([]*claircore.Vulnerability, error)
 }
 
 // Fetcher is an interface which is embedded into the Updater interface.

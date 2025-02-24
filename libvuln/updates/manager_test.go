@@ -98,7 +98,7 @@ func (tu *testUpdater) Fetch(context.Context, driver.Fingerprint) (io.ReadCloser
 	return nil, "", nil
 }
 
-func (tu *testUpdater) Parse(ctx context.Context, vulnUpdates io.ReadCloser) ([]*claircore.Vulnerability, error) {
+func (tu *testUpdater) Parse(ctx context.Context, vulnUpdates io.Reader) ([]*claircore.Vulnerability, error) {
 	// NOOP
 	return nil, nil
 }

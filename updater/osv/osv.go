@@ -328,7 +328,7 @@ func (u *updater) Fetch(ctx context.Context, fp driver.Fingerprint) (io.ReadClos
 }
 
 // Fetcher implements driver.Updater.
-func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
+func (u *updater) Parse(ctx context.Context, r io.Reader) ([]*claircore.Vulnerability, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "updater/osv/updater.Parse")
 	ra, ok := r.(io.ReaderAt)
 	if !ok {

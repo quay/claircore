@@ -17,10 +17,9 @@ const (
 
 var _ driver.Parser = (*updater)(nil)
 
-func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
+func (u *updater) Parse(ctx context.Context, r io.Reader) ([]*claircore.Vulnerability, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "alpine/Updater.Parse")
 	zlog.Info(ctx).Msg("starting parse")
-	defer r.Close()
 
 	var db SecurityDB
 	if err := json.NewDecoder(r).Decode(&db); err != nil {

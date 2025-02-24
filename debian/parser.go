@@ -33,10 +33,9 @@ type ReleaseData struct {
 }
 
 // Parse implements [driver.Parser].
-func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
+func (u *updater) Parse(ctx context.Context, r io.Reader) ([]*claircore.Vulnerability, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "debian/Updater.Parse")
 	zlog.Info(ctx).Msg("starting parse")
-	defer r.Close()
 
 	var vulnsJSON JSONData
 	err := json.NewDecoder(r).Decode(&vulnsJSON)

@@ -33,9 +33,9 @@ type EnrichmentUpdater interface {
 	//
 	// If there's no new data, the method should report Unchanged.
 	FetchEnrichment(context.Context, Fingerprint) (io.ReadCloser, Fingerprint, error)
-	// ParseEnrichment reads from the provided io.ReadCloser, parses its contents,
+	// ParseEnrichment reads from the provided io.Reader, parses its contents,
 	// and returns a slice of EnrichmentRecords or an error.
-	ParseEnrichment(context.Context, io.ReadCloser) ([]EnrichmentRecord, error)
+	ParseEnrichment(context.Context, io.Reader) ([]EnrichmentRecord, error)
 }
 
 // NoopUpdater is designed to be embedded into other Updater types so they can
@@ -51,7 +51,7 @@ func (u NoopUpdater) Fetch(_ context.Context, _ Fingerprint) (io.ReadCloser, Fin
 }
 
 // Parse implements Updater.
-func (u NoopUpdater) Parse(_ context.Context, _ io.ReadCloser) ([]*claircore.Vulnerability, error) {
+func (u NoopUpdater) Parse(_ context.Context, _ io.Reader) ([]*claircore.Vulnerability, error) {
 	return []*claircore.Vulnerability{}, nil
 }
 

@@ -141,11 +141,10 @@ func (u *updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io
 }
 
 // Parse implements [driver.Updater].
-func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
+func (u *updater) Parse(ctx context.Context, r io.Reader) ([]*claircore.Vulnerability, error) {
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "ubuntu/Updater.Parse")
 	zlog.Info(ctx).Msg("starting parse")
-	defer r.Close()
 	root := oval.Root{}
 	dec := xml.NewDecoder(r)
 	dec.CharsetReader = xmlutil.CharsetReader

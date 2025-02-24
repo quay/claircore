@@ -17,10 +17,9 @@ import (
 
 var _ driver.Parser = (*Updater)(nil)
 
-func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
+func (u *Updater) Parse(ctx context.Context, r io.Reader) ([]*claircore.Vulnerability, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "photon/Updater.Parse")
 	zlog.Info(ctx).Msg("starting parse")
-	defer r.Close()
 	root := oval.Root{}
 	dec := xml.NewDecoder(r)
 	dec.CharsetReader = xmlutil.CharsetReader
