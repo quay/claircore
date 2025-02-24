@@ -51,7 +51,7 @@ func (u NoopUpdater) Fetch(_ context.Context, _ Fingerprint) (io.ReadCloser, Fin
 }
 
 // Parse implements Updater.
-func (u NoopUpdater) Parse(_ context.Context, _ io.ReadCloser) ([]*claircore.Vulnerability, error) {
+func (u NoopUpdater) Parse(_ context.Context, _ io.Reader) ([]*claircore.Vulnerability, error) {
 	return []*claircore.Vulnerability{}, nil
 }
 

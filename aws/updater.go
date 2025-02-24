@@ -74,7 +74,7 @@ func (u *Updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io
 	return rc, driver.Fingerprint(updatesRepoMD.Checksum.Sum), nil
 }
 
-func (u *Updater) Parse(ctx context.Context, contents io.ReadCloser) ([]*claircore.Vulnerability, error) {
+func (u *Updater) Parse(ctx context.Context, contents io.Reader) ([]*claircore.Vulnerability, error) {
 	var updates alas.Updates
 	dec := xml.NewDecoder(contents)
 	dec.CharsetReader = xmlutil.CharsetReader

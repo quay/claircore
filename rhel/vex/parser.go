@@ -24,7 +24,7 @@ import (
 )
 
 // Parse implements [driver.Updater].
-func (u *Updater) Parse(ctx context.Context, contents io.ReadCloser) ([]*claircore.Vulnerability, error) {
+func (u *Updater) Parse(ctx context.Context, contents io.Reader) ([]*claircore.Vulnerability, error) {
 	// NOOP
 	return nil, errors.ErrUnsupported
 }
