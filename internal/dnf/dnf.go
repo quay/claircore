@@ -16,7 +16,6 @@ import (
 	"sync"
 
 	"github.com/quay/zlog"
-	_ "modernc.org/sqlite" // register the sqlite driver
 
 	"github.com/quay/claircore"
 )
