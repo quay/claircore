@@ -18,6 +18,9 @@ import (
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/rpm"
+
+	_ "modernc.org/sqlite" // register the sqlite driver
 )
 
 // BUG(hank) The dnf mapping is less useful than it could be because there's no
