@@ -47,6 +47,13 @@ func init() {
 	}
 }
 
+// NewFactory creates a Factory for the CISA KEV enricher.
+func NewFactory() driver.UpdaterSetFactory {
+	set := driver.NewUpdaterSet()
+	_ = set.Add(&Enricher{})
+	return driver.StaticSet(set)
+}
+
 // Enricher provides exploit data as enrichments to a VulnerabilityReport.
 //
 // Configure must be called before any other methods.
