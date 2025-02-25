@@ -71,7 +71,7 @@ type Scanner struct {
 func (*Scanner) Name() string { return "java" }
 
 // Version implements scanner.VersionedScanner.
-func (*Scanner) Version() string { return "6" }
+func (*Scanner) Version() string { return "7" }
 
 // Kind implements scanner.VersionedScanner.
 func (*Scanner) Kind() string { return "package" }
