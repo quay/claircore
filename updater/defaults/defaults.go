@@ -5,6 +5,7 @@ package defaults
 
 import (
 	"context"
+	"github.com/quay/claircore/chainguard"
 	"sync"
 	"time"
 
@@ -55,6 +56,11 @@ func inner(ctx context.Context) error {
 		return err
 	}
 	updater.Register("debian", df)
+	cf, err := chainguard.NewFactory(ctx)
+	if err != nil {
+		return err
+	}
+	updater.Register("chainguard", cf)
 
 	updater.Register("osv", new(osv.Factory))
 	updater.Register("rhel-vex", new(vex.Factory))
