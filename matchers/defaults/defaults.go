@@ -3,6 +3,7 @@ package defaults
 
 import (
 	"context"
+	"github.com/quay/claircore/chainguard"
 	"sync"
 	"time"
 
@@ -46,6 +47,8 @@ func Error() error {
 var defaultMatchers = []driver.Matcher{
 	&alpine.Matcher{},
 	&aws.Matcher{},
+	chainguard.ChainguardMatcher,
+	chainguard.WolfiMatcher,
 	&debian.Matcher{},
 	&gobin.Matcher{},
 	&java.Matcher{},
