@@ -6,6 +6,7 @@ import (
 	"github.com/quay/zlog"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	"github.com/quay/claircore/libvuln/driver"
 )
@@ -18,7 +19,7 @@ const ovalFmt = `org.almalinux.alsa-%d.xml.bz2`
 // NewFactory creates a Factory making updaters based on the contents of the
 // provided pulp manifest.
 func NewFactory(_ context.Context) (*Factory, error) {
-	return &Factory{}, nil
+	return &Factory{etags: make(map[int]string)}, nil
 }
 
 // Factory contains the configuration for fetching and parsing a Pulp manifest.
@@ -84,6 +85,7 @@ func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
 
 	var done bool
 	for i := 8; !done; i++ {
+		ctx = zlog.ContextWithValues(ctx, "version", strconv.Itoa(i))
 		u, err := f.base.Parse(fmt.Sprintf(ovalFmt, i))
 		if err != nil {
 			return s, fmt.Errorf("alma: unable to construct request: %w", err)
