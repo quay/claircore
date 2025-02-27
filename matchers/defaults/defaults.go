@@ -3,6 +3,7 @@ package defaults
 
 import (
 	"context"
+	"github.com/quay/claircore/alma"
 	"github.com/quay/claircore/chainguard"
 	"sync"
 	"time"
@@ -45,6 +46,7 @@ func Error() error {
 // all the matchers libvuln will use to match
 // index records to vulnerabilities.
 var defaultMatchers = []driver.Matcher{
+	&alma.Matcher{},
 	&alpine.Matcher{},
 	&aws.Matcher{},
 	chainguard.ChainguardMatcher,

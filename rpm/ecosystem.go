@@ -2,6 +2,7 @@ package rpm
 
 import (
 	"context"
+	"github.com/quay/claircore/alma"
 
 	"github.com/quay/claircore/aws"
 	"github.com/quay/claircore/indexer"
@@ -19,6 +20,7 @@ func NewEcosystem(_ context.Context) *indexer.Ecosystem {
 		},
 		DistributionScanners: func(ctx context.Context) ([]indexer.DistributionScanner, error) {
 			return []indexer.DistributionScanner{
+				&alma.DistributionScanner{},
 				&aws.DistributionScanner{},
 				&oracle.DistributionScanner{},
 				&suse.DistributionScanner{},

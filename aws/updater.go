@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/xml"
 	"fmt"
+	"github.com/quay/claircore/updater/repomd"
 	"io"
 	"net/http"
 	"strings"
@@ -12,7 +13,6 @@ import (
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/aws/internal/alas"
 	"github.com/quay/claircore/internal/xmlutil"
 	"github.com/quay/claircore/libvuln/driver"
 )
@@ -56,7 +56,7 @@ func (u *Updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io
 		return nil, "", fmt.Errorf("failed to retrieve repo metadata: %v", err)
 	}
 
-	updatesRepoMD, err := repoMD.Repo(alas.UpdateInfo, "")
+	updatesRepoMD, err := repoMD.Repo(repomd.UpdateInfo, "")
 	if err != nil {
 		return nil, "", fmt.Errorf("updates repo metadata could not be retrieved: %v", err)
 	}
@@ -75,7 +75,7 @@ func (u *Updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io
 }
 
 func (u *Updater) Parse(ctx context.Context, contents io.ReadCloser) ([]*claircore.Vulnerability, error) {
-	var updates alas.Updates
+	var updates repomd.Updates
 	dec := xml.NewDecoder(contents)
 	dec.CharsetReader = xmlutil.CharsetReader
 	if err := dec.Decode(&updates); err != nil {
@@ -104,7 +104,7 @@ func (u *Updater) Parse(ctx context.Context, contents io.ReadCloser) ([]*clairco
 
 // unpack takes the partially populated vulnerability and creates a fully populated vulnerability for each
 // provided alas.Package
-func (u *Updater) unpack(partial *claircore.Vulnerability, packages []alas.Package) []*claircore.Vulnerability {
+func (u *Updater) unpack(partial *claircore.Vulnerability, packages []repomd.Package) []*claircore.Vulnerability {
 	out := []*claircore.Vulnerability{}
 
 	var b strings.Builder
@@ -126,7 +126,7 @@ func (u *Updater) unpack(partial *claircore.Vulnerability, packages []alas.Packa
 	return out
 }
 
-func versionString(b *strings.Builder, p alas.Package) string {
+func versionString(b *strings.Builder, p repomd.Package) string {
 	b.Reset()
 
 	if p.Epoch != "" && p.Epoch != "0" {
@@ -141,7 +141,7 @@ func versionString(b *strings.Builder, p alas.Package) string {
 }
 
 // refsToLinks takes an alas.Update and creates a string with all the href links
-func refsToLinks(u alas.Update) string {
+func refsToLinks(u repomd.Update) string {
 	out := []string{}
 	for _, ref := range u.References {
 		out = append(out, ref.Href)

@@ -1,21 +1,20 @@
 package aws
 
 import (
+	"github.com/quay/claircore/updater/repomd"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-
-	"github.com/quay/claircore/aws/internal/alas"
 )
 
 func TestVersionString(t *testing.T) {
 	testcases := []struct {
-		pkg      alas.Package
+		pkg      repomd.Package
 		expected string
 	}{
 		{
-			pkg: alas.Package{
+			pkg: repomd.Package{
 				Epoch:   "",
 				Version: "3.3.10",
 				Release: "26.amzn2",
@@ -23,7 +22,7 @@ func TestVersionString(t *testing.T) {
 			expected: "3.3.10-26.amzn2",
 		},
 		{
-			pkg: alas.Package{
+			pkg: repomd.Package{
 				Epoch:   "0",
 				Version: "3.3.10",
 				Release: "26.amzn2",
@@ -31,7 +30,7 @@ func TestVersionString(t *testing.T) {
 			expected: "3.3.10-26.amzn2",
 		},
 		{
-			pkg: alas.Package{
+			pkg: repomd.Package{
 				Epoch:   "10",
 				Version: "3.1.0",
 				Release: "8.amzn2.0.8",
