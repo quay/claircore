@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/quay/claircore/chainguard"
 	"io"
 	"net/http"
 	"sort"
@@ -96,6 +97,7 @@ func New(ctx context.Context, opts *Options, cl *http.Client) (*Libindex, error)
 		opts.Ecosystems = []*indexer.Ecosystem{
 			dpkg.NewEcosystem(ctx),
 			alpine.NewEcosystem(ctx),
+			chainguard.NewEcosystem(ctx),
 			rhel.NewEcosystem(ctx),
 			rpm.NewEcosystem(ctx),
 			python.NewEcosystem(ctx),
