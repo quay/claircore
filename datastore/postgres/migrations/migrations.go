@@ -57,6 +57,10 @@ var IndexerMigrations = []migrate.Migration{
 		ID: 7,
 		Up: runFile("indexer/07-index-manifest_index.sql"),
 	},
+	{
+		ID: 8,
+		Up: runFile("indexer/08-index-manifest_layer.sql"),
+	},
 }
 
 var MatcherMigrations = []migrate.Migration{
