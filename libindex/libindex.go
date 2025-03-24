@@ -110,6 +110,7 @@ func New(ctx context.Context, opts *Options, cl *http.Client) (*Libindex, error)
 	opts.Ecosystems = append(opts.Ecosystems, whiteout.NewEcosystem(ctx))
 	opts.Resolvers = []indexer.Resolver{
 		&whiteout.Resolver{},
+		&rhel.Resolver{},
 	}
 
 	if cl == nil {
