@@ -128,7 +128,7 @@ func (a *annotator) Init(ctx context.Context, r fs.File, enum int) (err error) {
 	// Only way to get this is via the outer [NewAnnotator], so skip an extra
 	// frame, as that's where the user created this object.
 	_, file, line, _ := runtime.Caller(2)
-	runtime.SetFinalizer(&a, func(_ *annotator) {
+	runtime.SetFinalizer(a, func(_ *annotator) {
 		panic(fmt.Sprintf("%s:%d: Annotator not closed", file, line))
 	})
 
