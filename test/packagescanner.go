@@ -104,7 +104,7 @@ func (tc ScannerTestcase) RunSubset(ctx context.Context, n int) func(*testing.T)
 			}
 
 			if !cmp.Equal(p, g) {
-				t.Error(cmp.Diff(p, g))
+				t.Errorf("%v-%v-%v: %v", p.Name, p.RepositoryHint, p.Filepath, cmp.Diff(p, g))
 			}
 		}
 	}
