@@ -221,16 +221,21 @@ func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) ([]*cl
 	}
 
 	pairs := func(yield func(string, string) bool) {
+		var found bool
 		for _, repoid := range repoids {
 			cpes, ok := cm.GetOne(ctx, repoid)
 			if !ok {
 				continue
 			}
+			found = true
 			for _, cpe := range cpes {
 				if !yield(repoid, cpe) {
 					return
 				}
 			}
+		}
+		if found {
+			return
 		}
 
 		if r.apiFetcher != nil {
