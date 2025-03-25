@@ -1,13 +1,13 @@
 package alpine
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/quay/zlog"
+
+	"github.com/quay/claircore/test"
 )
 
 func serveSecDB(t *testing.T) (string, *http.Client) {
@@ -17,7 +17,8 @@ func serveSecDB(t *testing.T) (string, *http.Client) {
 }
 
 func TestFactory(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
+
 	root, c := serveSecDB(t)
 	fac := &Factory{}
 	err := fac.Configure(ctx, func(v any) error {
