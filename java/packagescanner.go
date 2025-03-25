@@ -241,20 +241,28 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 			// claircore.Package mapping code around embedded jars. There's a
 			// testcase to be written, there.
 
-			// Only examine the last element of the source list:
-			js := strings.Split(i.Source, ":")
-			switch l := js[len(js)-1]; {
+			idx := strings.LastIndex(i.Source, ":")
+			// If the top-level JAR file can only be identified by its name,
+			// i.Source will just be `.`
+			// In this case, PackageDB should just be the filepath, n.
+			// Otherwise, use i.Source.
+			pkgDB := n
+			if idx != -1 {
+				pkgDB = i.Source[:idx]
+			}
+			// Only examine anything after the last colon (or the entire path if there is no colon).
+			switch l := i.Source[idx+1:]; {
 			case strings.HasSuffix(l, "pom.properties"):
 				fallthrough
 			case s.root != nil && i.Source == s.root.String():
 				// Populate as a maven artifact.
-				pkg.PackageDB = `maven:` + n
+				pkg.PackageDB = `maven:` + pkgDB
 			case l == "META-INF/MANIFEST.MF":
 				// information pulled from a manifest file
-				pkg.PackageDB = `jar:` + n
+				pkg.PackageDB = `jar:` + pkgDB
 			case l == ".":
 				// Name guess.
-				pkg.PackageDB = `file:` + n
+				pkg.PackageDB = `file:` + pkgDB
 			default:
 				return nil, fmt.Errorf("java: martian Info: %+v", i)
 			}
