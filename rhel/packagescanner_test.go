@@ -107,11 +107,6 @@ func (tc PackageTestcase) Run(ctx context.Context, a *test.CachedArena) func(*te
 			t.Error(err)
 		}
 		t.Logf("found %d packages", len(got))
-		/*
-			for _, pkg := range got {
-				t.Logf("%s: %#q", pkg.Name, pkg.RepositoryHint)
-			}
-		*/
 		if !cmp.Equal(got, want, rpmtest.Options) {
 			t.Error(cmp.Diff(got, want, rpmtest.Options))
 		}
