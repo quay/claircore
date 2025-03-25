@@ -371,6 +371,8 @@ type Info struct {
 	Version string
 	// Source is the archive member used to populate the information. If the
 	// name of the archive was used, this will be ".".
+	// If this jar is embedded inside another jar or series of jars,
+	// each jar file will be included and separated via ":".
 	Source string
 	// SHA is populated with the SHA1 of the file if this entry was discovered
 	// inside another archive.
