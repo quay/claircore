@@ -4,13 +4,12 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"path"
 	"strings"
 	"sync"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/libvuln/driver"
 )
@@ -60,11 +59,10 @@ func NewFactory(_ context.Context) (*Factory, error) {
 
 // UpdaterSet implements driver.UpdaterSetFactory.
 func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "alpine/Factory.UpdaterSet")
 	s := driver.NewUpdaterSet()
 	if f.c == nil {
-		zlog.Info(ctx).
-			Msg("unconfigured")
+		slog.InfoContext(ctx,
+			"unconfigured")
 		return s, nil
 	}
 
@@ -81,9 +79,9 @@ func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
 	if f.etag != "" {
 		req.Header.Set(`if-none-match`, f.etag)
 	}
-	zlog.Debug(ctx).
-		Stringer("url", u).
-		Msg("making request")
+	slog.DebugContext(ctx,
+		"making request",
+		"url", u)
 	res, err := f.c.Do(req)
 	if err != nil {
 		return s, fmt.Errorf("alpine: error requesting %q: %w", u.String(), err)
@@ -91,9 +89,9 @@ func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
 	defer res.Body.Close()
 	switch res.StatusCode {
 	case http.StatusNotModified:
-		zlog.Debug(ctx).
-			Stringer("url", u).
-			Msg("not modified")
+		slog.DebugContext(ctx,
+			"not modified",
+			"url", u)
 		return f.cur, nil
 	case http.StatusOK:
 	default:
@@ -127,12 +125,12 @@ Major:
 			if err != nil {
 				return s, fmt.Errorf("alpine: unable to construct request: %w", err)
 			}
-			ctx := zlog.ContextWithValues(ctx, "url", u.String(), "release", r.String())
+			l := slog.With("url", u, "release", r)
 			req, err := http.NewRequestWithContext(ctx, http.MethodHead, u.String(), nil)
 			if err != nil {
 				return s, fmt.Errorf("alpine: unable to construct request: %w", err)
 			}
-			zlog.Debug(ctx).Msg("checking release")
+			l.DebugContext(ctx, "checking release")
 			res, err := f.c.Do(req)
 			if err != nil {
 				return s, fmt.Errorf("alpine: error requesting %q: %w", u.String(), err)
@@ -143,13 +141,13 @@ Major:
 				foundLower = true
 				todo = append(todo, r)
 			case http.StatusNotFound:
-				zlog.Debug(ctx).Msg("not found")
+				l.DebugContext(ctx, "not found")
 				if foundLower {
 					break Minor
 				}
 				break Major
 			default:
-				zlog.Info(ctx).Str("status", res.Status).Msg("unexpected status reported")
+				l.InfoContext(ctx, "unexpected status reported", "status", res.Status)
 			}
 		}
 	}
@@ -159,12 +157,12 @@ Major:
 			if err != nil {
 				return s, fmt.Errorf("alpine: unable to construct request: %w", err)
 			}
-			ctx := zlog.ContextWithValues(ctx, "url", u.String(), "release", r.String(), "repo", n)
+			l := slog.With("url", u, "release", r, "repo", n)
 			req, err := http.NewRequestWithContext(ctx, http.MethodHead, u.String(), nil)
 			if err != nil {
 				return s, fmt.Errorf("alpine: unable to construct request: %w", err)
 			}
-			zlog.Debug(ctx).Msg("checking repository")
+			l.DebugContext(ctx, "checking repository")
 			res, err := f.c.Do(req)
 			if err != nil {
 				return s, fmt.Errorf("alpine: error requesting %q: %w", u.String(), err)
@@ -172,12 +170,12 @@ Major:
 			res.Body.Close()
 			switch res.StatusCode {
 			case http.StatusOK:
-				zlog.Debug(ctx).Msg("found")
+				l.DebugContext(ctx, "found")
 			case http.StatusNotFound:
-				zlog.Debug(ctx).Msg("not found")
+				l.DebugContext(ctx, "not found")
 				continue
 			default:
-				zlog.Info(ctx).Str("status", res.Status).Msg("unexpected status reported")
+				l.InfoContext(ctx, "unexpected status reported", "status", res.Status)
 				continue
 			}
 			s.Add(&updater{
@@ -247,10 +245,9 @@ func (u *updater) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *
 	}
 	if cfg.URL != "" {
 		u.url = cfg.URL
-		zlog.Info(ctx).
-			Str("component", "alpine/Updater.Configure").
-			Str("updater", u.Name()).
-			Msg("configured url")
+		slog.InfoContext(ctx,
+			"configured url",
+			"updater", u.Name())
 	}
 	u.client = c
 	return nil

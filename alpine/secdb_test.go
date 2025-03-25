@@ -48,7 +48,7 @@ var v3_10CommunityTruncatedSecDB = SecurityDB{
 }
 
 func TestSecDBParse(t *testing.T) {
-	var table = []struct {
+	table := []struct {
 		testFile string
 		expected SecurityDB
 	}{

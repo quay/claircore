@@ -6,11 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"regexp"
 	"runtime/trace"
 	"strings"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -61,12 +60,10 @@ func (*DistributionScanner) Kind() string { return scannerKind }
 // If the files are found but all regexp fail to match an empty slice is returned.
 func (s *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Distribution, error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "alpine/DistributionScanner.Scan",
+	slog.DebugContext(ctx, "start",
 		"version", s.Version(),
 		"layer", l.Hash.String())
-	zlog.Debug(ctx).Msg("start")
-	defer zlog.Debug(ctx).Msg("done")
+	defer slog.DebugContext(ctx, "done")
 	sys, err := l.FS()
 	if err != nil {
 		return nil, fmt.Errorf("alpine: unable to open layer: %w", err)
@@ -102,13 +99,13 @@ func readOSRelease(ctx context.Context, sys fs.FS) (*claircore.Distribution, err
 			return nil, err
 		}
 		if id := m[`ID`]; id != `alpine` {
-			zlog.Debug(ctx).Str("id", id).Msg("seemingly not alpine")
+			slog.DebugContext(ctx, "seemingly not alpine", "id", id)
 			break
 		}
 		vid := m[`VERSION_ID`]
 		idx := strings.LastIndexByte(vid, '.')
 		if idx == -1 {
-			zlog.Debug(ctx).Str("val", vid).Msg("martian VERSION_ID")
+			slog.DebugContext(ctx, "martian VERSION_ID", "val", vid)
 			break
 		}
 		v := vid[:idx]
@@ -126,9 +123,9 @@ func readOSRelease(ctx context.Context, sys fs.FS) (*claircore.Distribution, err
 			PrettyName: m[`PRETTY_NAME`],
 		}, nil
 	case errors.Is(err, fs.ErrNotExist):
-		zlog.Debug(ctx).
-			Str("path", osrelease.Path).
-			Msg("file doesn't exist")
+		slog.DebugContext(ctx,
+			"file doesn't exist",
+			"path", osrelease.Path)
 	default:
 		return nil, err
 	}
@@ -153,7 +150,7 @@ func readIssue(ctx context.Context, sys fs.FS) (*claircore.Distribution, error) 
 
 		ms := issueRegexp.FindSubmatch(b)
 		if ms == nil {
-			zlog.Debug(ctx).Msg("seemingly not alpine")
+			slog.DebugContext(ctx, "seemingly not alpine")
 			break
 		}
 		v := string(ms[1])
@@ -164,9 +161,9 @@ func readIssue(ctx context.Context, sys fs.FS) (*claircore.Distribution, error) 
 			PrettyName: fmt.Sprintf(`Alpine Linux v%s`, v),
 		}, nil
 	case errors.Is(err, fs.ErrNotExist):
-		zlog.Debug(ctx).
-			Str("path", issuePath).
-			Msg("file doesn't exist")
+		slog.DebugContext(ctx,
+			"file doesn't exist",
+			"path", issuePath)
 	default:
 		return nil, err
 	}
