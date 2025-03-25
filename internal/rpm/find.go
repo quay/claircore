@@ -33,12 +33,7 @@ func FindDBs(ctx context.Context, sys fs.FS) ([]FoundDB, error) {
 	slices.SortFunc(found, func(a, b FoundDB) int {
 		cmp := strings.Compare(a.path, b.path)
 		if cmp == 0 {
-			switch {
-			case a.kind < b.kind:
-				cmp = -1
-			case a.kind > b.kind:
-				cmp = +1
-			}
+			panic(fmt.Sprintf("same path with multiple kinds: a: %#v, b: %#v", a, b))
 		}
 		return cmp
 	})
