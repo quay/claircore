@@ -48,6 +48,9 @@ type NativeDB interface {
 // PackagesFromDB extracts the packages from the rpm headers provided by
 // the database.
 //
+// The returned iterator takes ownership of the provided [NativeDB] and will
+// close it when done.
+//
 // "Pkgdb" is used to populate "PackageDB" in the returned [claircore.Package]
 // instances.
 func PackagesFromDB(ctx context.Context, pkgdb string, db NativeDB) (iter.Seq[claircore.Package], func() error) {
