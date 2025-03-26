@@ -105,9 +105,20 @@ func (tc PackageTestcase) Run(ctx context.Context, a *test.CachedArena) func(*te
 		if err != nil {
 			t.Error(err)
 		}
-		t.Logf("found %d packages", len(got))
-		if !cmp.Equal(got, want, rpmtest.Options) {
-			t.Error(cmp.Diff(got, want, rpmtest.Options))
+		t.Logf("found %d packages, want %d", len(got), len(want))
+		if gotLen, wantLen := len(got), len(want); gotLen != wantLen {
+			t.Fail()
+		}
+		for i := range want {
+			got, want := got[i], want[i]
+			diff := cmp.Diff(got, want, rpmtest.Options)
+			if diff == "" {
+				diff = "OK"
+			}
+			t.Logf("%s:\t%v\n", want.Name, diff)
+			if !cmp.Equal(got, want, rpmtest.Options) {
+				t.Fail()
+			}
 		}
 	}
 }
