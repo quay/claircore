@@ -116,31 +116,42 @@ const (
 var checkpath sync.Once
 
 func copyTo(t testing.TB, name string, rc io.Reader) *os.File {
-	cf, err := os.Create(name)
+	tmp, err := os.CreateTemp(filepath.Dir(name), filepath.Base(name+"."))
+	if err != nil {
+		t.Error(err)
+		return nil
+	}
+	defer func() {
+		os.Remove(tmp.Name())
+		tmp.Close()
+	}()
+
+	if _, err = io.Copy(tmp, rc); err != nil {
+		t.Error(err)
+		return nil
+	}
+	if err = tmp.Sync(); err != nil {
+		t.Error(err)
+		return nil
+	}
+	// May race with another process but should result in the same contents, so
+	// just go with it.
+	if err := os.Rename(tmp.Name(), name); err != nil {
+		t.Error(err)
+		return nil
+	}
+
+	f, err := os.Open(name)
 	if err != nil {
 		t.Error(err)
 		return nil
 	}
 	t.Cleanup(func() {
-		if err := cf.Close(); err != nil {
+		if err := f.Close(); err != nil {
 			t.Log(err)
 		}
 	})
-
-	if _, err = io.Copy(cf, rc); err != nil {
-		t.Error(err)
-		return nil
-	}
-	if err = cf.Sync(); err != nil {
-		t.Error(err)
-		return nil
-	}
-	if _, err = cf.Seek(0, io.SeekStart); err != nil {
-		t.Error(err)
-		return nil
-	}
-
-	return cf
+	return f
 }
 
 type tokenResponse struct {
