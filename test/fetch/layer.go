@@ -3,6 +3,7 @@
 package fetch
 
 import (
+	"bytes"
 	"compress/gzip"
 	"context"
 	"encoding/hex"
@@ -21,6 +22,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test/integration"
+	"github.com/quay/claircore/test/internal/cache"
 )
 
 const (
@@ -48,7 +50,7 @@ func Layer(ctx context.Context, t testing.TB, from, repo string, blob claircore.
 	}
 	// Splitting the digest like this future-proofs things against some weirdo
 	// running this on Windows.
-	cachefile := filepath.Join(integration.CacheDir(t), "layer", blob.Algorithm(), hex.EncodeToString(blob.Checksum()))
+	cachefile := filepath.Join(integration.CacheDir(t), cache.Layer, blob.Algorithm(), hex.EncodeToString(blob.Checksum()))
 	switch _, err := os.Stat(cachefile); {
 	case err == nil:
 		t.Logf("layer cached: %s", cachefile)
@@ -71,22 +73,27 @@ func Layer(ctx context.Context, t testing.TB, from, repo string, blob claircore.
 	if !ok {
 		return nil, fmt.Errorf("unknown registry: %q", from)
 	}
-	rc, err := client.Blob(ctx, pkgClient, repo, blob)
+	blobReader, err := client.Blob(ctx, pkgClient, repo, blob)
 	if err != nil {
 		return nil, err
 	}
-	defer rc.Close()
+	defer blobReader.Close()
+	ck := blob.Hash()
+	rd := io.TeeReader(blobReader, ck)
 	// BUG(hank) Any compression scheme that isn't gzip isn't handled correctly.
 	if !opts[NoDecompression] {
 		var gr *gzip.Reader
-		gr, err = gzip.NewReader(rc)
+		gr, err = gzip.NewReader(rd)
 		if err != nil {
 			return nil, err
 		}
 		defer gr.Close()
-		rc = gr
+		rd = gr
 	}
-	cf := copyTo(t, cachefile, rc)
+	cf := copyTo(t, cachefile, rd)
+	if got, want := ck.Sum(nil), blob.Checksum(); !bytes.Equal(got, want) {
+		t.Errorf("bad digest: got: %x, want: %x", got, want)
+	}
 	if t.Failed() {
 		os.Remove(cachefile)
 		return nil, errors.New("unable to open cachefile")
