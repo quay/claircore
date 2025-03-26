@@ -37,7 +37,24 @@ func PackagesFromRPMManifest(t *testing.T, r io.Reader) []*claircore.Package {
 	out := make([]*claircore.Package, 0, len(m.RPM))
 	srcs := make([]claircore.Package, 0, len(m.RPM))
 	src := make(map[string]*claircore.Package)
-	for _, rpm := range m.RPM {
+	for n, rpm := range m.RPM {
+		for _, s := range []struct {
+			Field string
+			Value *string
+		}{
+			{"name", &rpm.Name},
+			{"version", &rpm.Version},
+			{"release", &rpm.Release},
+			{"architecture", &rpm.Arch},
+		} {
+			if *s.Value == "" {
+				t.Errorf("record %03d: missing %q", n, s.Field)
+			}
+		}
+		if t.Failed() {
+			continue
+		}
+
 		v, err := url.ParseQuery(rpm.RepositoryHint)
 		if err != nil {
 			t.Errorf("%s: %v", rpm.Name, err)
@@ -71,7 +88,7 @@ func PackagesFromRPMManifest(t *testing.T, r io.Reader) []*claircore.Package {
 		} else {
 			s := strings.TrimSuffix(strings.TrimSuffix(source, ".rpm"), ".src")
 			pos := len(s)
-			for i := 0; i < 2; i++ {
+			for range 2 {
 				pos = strings.LastIndexByte(s[:pos], '-')
 				if pos == -1 {
 					t.Fatalf("malformed NEVRA/NVRA: %q for %q", source, rpm.Name)
