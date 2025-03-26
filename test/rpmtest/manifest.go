@@ -142,12 +142,19 @@ var HintCompare = cmp.FilterPath(
 var EpochCompare = cmp.FilterPath(
 	func(p cmp.Path) bool { return p.Last().String() == ".Version" },
 	cmp.Comparer(func(a, b string) bool {
-		evr, vr := a, b
-		if len(b) > len(a) {
-			evr = b
-			vr = a
+		as, bs := strings.SplitN(a, ":", 1), strings.SplitN(b, ":", 1)
+		switch la, lb := len(as), len(bs); {
+		case la == 1 && lb == 1:
+			return a == b
+		case la == 1:
+			return a == bs[1]
+		case lb == 1:
+			return as[1] == b
+		case la > 1 && lb > 1:
+			return as[1] == bs[1]
+		default:
+			panic("unreachable")
 		}
-		return strings.Contains(evr, vr)
 	}),
 )
 
