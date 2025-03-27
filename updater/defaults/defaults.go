@@ -5,11 +5,13 @@ package defaults
 
 import (
 	"context"
+	"github.com/quay/claircore/alma"
 	"sync"
 	"time"
 
 	"github.com/quay/claircore/alpine"
 	"github.com/quay/claircore/aws"
+	"github.com/quay/claircore/chainguard"
 	"github.com/quay/claircore/debian"
 	"github.com/quay/claircore/enricher/cvss"
 	"github.com/quay/claircore/libvuln/driver"
@@ -40,6 +42,11 @@ func Error() error {
 }
 
 func inner(ctx context.Context) error {
+	almaF, err := alma.NewFactory(ctx)
+	if err != nil {
+		return err
+	}
+	updater.Register("alma", almaF)
 	af, err := alpine.NewFactory(ctx)
 	if err != nil {
 		return err
@@ -55,6 +62,11 @@ func inner(ctx context.Context) error {
 		return err
 	}
 	updater.Register("debian", df)
+	cf, err := chainguard.NewFactory(ctx)
+	if err != nil {
+		return err
+	}
+	updater.Register("chainguard", cf)
 
 	updater.Register("osv", new(osv.Factory))
 	updater.Register("rhel-vex", new(vex.Factory))

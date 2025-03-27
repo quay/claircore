@@ -1,25 +1,20 @@
-package alpine
+package chainguard
 
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"github.com/quay/zlog"
 	"io"
 
-	"github.com/quay/zlog"
-
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/updater/secdb"
 )
 
-const (
-	cveURLPrefix = "https://security.alpinelinux.org/vuln/"
-)
-
-var _ driver.Parser = (*updater)(nil)
+const urlPrefix = "https://images.chainguard.dev/security/"
 
 func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "alpine/Updater.Parse")
+	ctx = zlog.ContextWithValues(ctx, "component", "chainguard/Updater.Parse")
 	zlog.Info(ctx).Msg("starting parse")
 	defer r.Close()
 
@@ -32,6 +27,16 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 
 // parse parses the alpine SecurityDB
 func (u *updater) parse(ctx context.Context, sdb *secdb.SecurityDB) ([]*claircore.Vulnerability, error) {
+	var dist *claircore.Distribution
+	switch u.Name() {
+	case "chainguard-updater":
+		dist = chainguardDist
+	case "wolfi-updater":
+		dist = wolfiDist
+	}
+	if dist == nil {
+		return nil, fmt.Errorf("chainguard: no distribution found for %s", u.Name())
+	}
 	out := []*claircore.Vulnerability{}
 	for _, pkg := range sdb.Packages {
 		if err := ctx.Err(); err != nil {
@@ -44,7 +49,7 @@ func (u *updater) parse(ctx context.Context, sdb *secdb.SecurityDB) ([]*claircor
 				Name: pkg.Pkg.Name,
 				Kind: claircore.SOURCE,
 			},
-			Dist: u.release.Distribution(),
+			Dist: dist,
 		}
 		out = append(out, unpackSecFixes(partial, pkg.Pkg.Secfixes)...)
 	}
@@ -54,12 +59,12 @@ func (u *updater) parse(ctx context.Context, sdb *secdb.SecurityDB) ([]*claircor
 // unpackSecFixes takes a map of secFixes and creates a claircore.Vulnerability for each all CVEs present.
 func unpackSecFixes(partial claircore.Vulnerability, secFixes map[string][]string) []*claircore.Vulnerability {
 	out := []*claircore.Vulnerability{}
-	for fixedIn, IDs := range secFixes {
-		for _, id := range IDs {
+	for fixedIn, ids := range secFixes {
+		for _, id := range ids {
 			v := partial
 			v.Name = id
 			v.FixedInVersion = fixedIn
-			v.Links = cveURLPrefix + id
+			v.Links = urlPrefix + id
 			out = append(out, &v)
 		}
 	}
