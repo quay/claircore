@@ -36,6 +36,7 @@
   - [Guidelines](./CONTRIBUTING.md)
   - [Changelog](./contributor/changelog.md)
   - [Commit Style](./contributor/commit-style.md)
+  - [Iterator Patterns](./contributor/iter.md)
   - [Local Development](./contributor/local-dev.md)
   - [Logging](./contributor/logging.md)
   - [Misc](./contributor/misc.md)
