@@ -1,0 +1,10 @@
+# This is testcases for the rpm version parsing implementation. Tests are one
+# line of the form `in n e v r a`, where "in" is the input string, and the
+# remaining fields are the NEVRA components. Empty qutoes ("" or '') can be
+# used to note the absence of a component.
+#
+# Empty lines and lines starting with `#` are skipped.
+fonts-filesystem-1:2.0.5-12.fc39.noarch  fonts-filesystem  1   2.0.5  12.fc39  noarch
+fonts-filesystem-1:2.0.5-12.fc39         fonts-filesystem  1   2.0.5  12.fc39  ''
+fonts-filesystem-2.0.5-12.fc39           fonts-filesystem  ''  2.0.5  12.fc39  ''
+1:2.0.5-12.fc39                          ''                1   2.0.5  12.fc39  ''

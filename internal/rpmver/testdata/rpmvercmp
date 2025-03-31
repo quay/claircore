@@ -1,0 +1,152 @@
+# This is testcases for the rpm version comparison implementation. Tests are
+# one line of the form `a op b`, where "a" and "b" are version strings and "op"
+# is one of `<`, `>`, or `==` specifying how they should sort.
+#
+# Empty lines and lines starting with `#` are skipped.
+1 == 1
+2 > 1
+01 == 1
+1a < 1b
+1 < 999^
+~1 < 999
+1a == 1.a
+1.100.z == 1_100z
+4321 > 4.3.2.1
+2.1 > 2.0~
+
+# Ported from rpm's tests/rpmvercmp.at
+1.0 == 1.0
+1.0 < 2.0
+2.0 > 1.0
+
+2.0.1 == 2.0.1
+2.0 < 2.0.1
+2.0.1 > 2.0
+
+2.0.1a == 2.0.1a
+2.0.1a > 2.0.1
+2.0.1 < 2.0.1a
+
+5.5p1 == 5.5p1
+5.5p1 < 5.5p2
+5.5p2 > 5.5p1
+
+5.5p10 == 5.5p10
+5.5p1 < 5.5p10
+5.5p10 > 5.5p1
+
+10xyz < 10.1xyz
+10.1xyz > 10xyz
+
+xyz10 == xyz10
+xyz10 < xyz10.1
+xyz10.1 > xyz10
+
+xyz.4 == xyz.4
+xyz.4 < 8
+8 > xyz.4
+xyz.4 < 2
+2 > xyz.4
+
+5.5p2 < 5.6p1
+5.6p1 > 5.5p2
+
+5.6p1 < 6.5p1
+6.5p1 > 5.6p1
+
+6.0.rc1 > 6.0
+6.0 < 6.0.rc1
+
+10b2 > 10a1
+10a2 < 10b2
+
+1.0aa == 1.0aa
+1.0a < 1.0aa
+1.0aa > 1.0a
+
+10.0001 == 10.0001
+10.0001 == 10.1
+10.1 == 10.0001
+10.0001 < 10.0039
+10.0039 > 10.0001
+
+4.999.9 < 5.0
+5.0 > 4.999.9
+
+20101121 == 20101121
+20101121 < 20101122
+20101122 > 20101121
+
+2_0 == 2_0
+2.0 == 2_0
+2_0 == 2.0
+
+# RhBug:178798 case
+a == a
+a+ == a+
+a+ == a_
+a_ == a+
++a == +a
++a == _a
+_a == +a
++_ == +_
+_+ == +_
+_+ == _+
++ == _
+_ == +
+
+# Basic testcases for tilde sorting
+1.0~rc1 == 1.0~rc1
+1.0~rc1 < 1.0
+1.0 > 1.0~rc1
+1.0~rc1 < 1.0~rc2
+1.0~rc2 > 1.0~rc1
+1.0~rc1~git123 == 1.0~rc1~git123
+1.0~rc1~git123 < 1.0~rc1
+1.0~rc1 > 1.0~rc1~git123
+
+# Basic testcases for caret sorting
+1.0^ == 1.0^
+1.0^ > 1.0
+1.0 < 1.0^
+1.0^git1 == 1.0^git1
+1.0^git1 > 1.0
+1.0 < 1.0^git1
+1.0^git1 < 1.0^git2
+1.0^git2 > 1.0^git1
+1.0^git1 < 1.01
+1.01 > 1.0^git1
+1.0^20160101 == 1.0^20160101
+1.0^20160101 < 1.0.1
+1.0.1 > 1.0^20160101
+1.0^20160101^git1 == 1.0^20160101^git1
+1.0^20160102 > 1.0^20160101^git1
+1.0^20160101^git1 < 1.0^20160102
+
+# Basic testcases for tilde and caret sorting
+1.0~rc1^git1 == 1.0~rc1^git1
+1.0~rc1^git1 > 1.0~rc1
+1.0~rc1 < 1.0~rc1^git1
+1.0^git1~pre == 1.0^git1~pre
+1.0^git1 > 1.0^git1~pre
+1.0^git1~pre < 1.0^git1
+
+# These are included here to document current, arguably buggy behaviors
+# for reference purposes and for easy checking against unintended
+# behavior changes.
+#
+# RhBug:811992 case
+1b.fc17 == 1b.fc17
+1b.fc17 < 1.fc17
+1.fc17 > 1b.fc17
+1g.fc17 == 1g.fc17
+1g.fc17 > 1.fc17
+1.fc17 < 1g.fc17
+
+# Non-ascii characters are considered equal so these are all the same, eh...
+1.1.α == 1.1.α
+1.1.α == 1.1.β
+1.1.β == 1.1.α
+1.1.αα == 1.1.α
+1.1.α == 1.1.ββ
+1.1.ββ == 1.1.αα

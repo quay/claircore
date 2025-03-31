@@ -1,0 +1,21 @@
+# This is testcases for the rpm NEVRA comparison implementation. Tests are
+# one line of the form `a op b`, where "a" and "b" are NEVRA strings and "op"
+# is one of `<`, `>`, or `==` specifying how they should sort.
+#
+# Empty lines and lines starting with `#` are skipped.
+fonts-filesystem-1:2.0.5-12.fc39.noarch == fonts-filesystem-1:2.0.5-12.fc39.noarch
+fonts-filesystem-0:2.0.5-12.fc39.noarch == fonts-filesystem-2.0.5-12.fc39.noarch
+fonts-filesystem-1:2.0.6-12.fc39.noarch >  fonts-filesystem-1:2.0.5-12.fc39.noarch
+# EVR strings work.
+1:1-1 >  0:99-99
+1-1   <  1-2
+1-1   == 1-1
+# Having an optional part sorts later:
+a-1-1       > 1-1
+1-1         < 1-1-a
+1-1.aarch64 > 1-1
+1-1         < 1-1.aarch64
+# Names sort like strings.
+a-1-1 < b-1-1
+# Arches sort like strings.
+a-1-1.aarch64 < a-1-1.riscv
