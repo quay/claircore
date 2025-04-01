@@ -4,6 +4,8 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"slices"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -105,6 +107,9 @@ func (tc PackageTestcase) Run(ctx context.Context, a *test.CachedArena) func(*te
 		if err != nil {
 			t.Error(err)
 		}
+		slices.SortFunc(got, func(a, b *claircore.Package) int {
+			return strings.Compare(a.Name, b.Name)
+		})
 		t.Logf("found %d packages, want %d", len(got), len(want))
 		if gotLen, wantLen := len(got), len(want); gotLen != wantLen {
 			t.Fail()
