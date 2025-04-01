@@ -3,7 +3,7 @@ package rpmtest
 import (
 	"encoding/json"
 	"io"
-	"sort"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -17,14 +17,15 @@ type Manifest struct {
 	RPM []ManifestRPM `json:"rpms"`
 }
 type ManifestRPM struct {
-	Name        string `json:"name"`
-	Version     string `json:"version"`
-	Release     string `json:"release"`
-	Arch        string `json:"architecture"`
-	SourceNEVRA string `json:"srpm_nevra"`
-	SourceName  string `json:"srpm_name"`
-	GPG         string `json:"gpg"`
-	Module      string `json:"module"`
+	Name           string `json:"name"`
+	Version        string `json:"version"`
+	Release        string `json:"release"`
+	Arch           string `json:"architecture"`
+	SourceNEVRA    string `json:"srpm_nevra"`
+	SourceName     string `json:"srpm_name"`
+	GPG            string `json:"gpg"`
+	Module         string `json:"module"`
+	RepositoryHint string `json:"_repositoryhint,omitempty"`
 }
 
 func PackagesFromRPMManifest(t *testing.T, r io.Reader) []*claircore.Package {
@@ -36,13 +37,37 @@ func PackagesFromRPMManifest(t *testing.T, r io.Reader) []*claircore.Package {
 	out := make([]*claircore.Package, 0, len(m.RPM))
 	srcs := make([]claircore.Package, 0, len(m.RPM))
 	src := make(map[string]*claircore.Package)
-	for _, rpm := range m.RPM {
+	for n, rpm := range m.RPM {
+		for _, s := range []struct {
+			Field string
+			Value *string
+		}{
+			{"name", &rpm.Name},
+			{"version", &rpm.Version},
+			{"release", &rpm.Release},
+			{"architecture", &rpm.Arch},
+		} {
+			if *s.Value == "" {
+				t.Errorf("record %03d: missing %q", n, s.Field)
+			}
+		}
+		if t.Failed() {
+			continue
+		}
+
+		v, err := url.ParseQuery(rpm.RepositoryHint)
+		if err != nil {
+			t.Errorf("%s: %v", rpm.Name, err)
+			continue
+		}
+		v.Set("key", rpm.GPG)
+
 		p := claircore.Package{
 			Name:           rpm.Name,
 			Version:        rpm.Version + "-" + rpm.Release,
 			Kind:           "binary",
 			Arch:           rpm.Arch,
-			RepositoryHint: "key:" + rpm.GPG,
+			RepositoryHint: v.Encode(),
 			Module:         rpm.Module,
 		}
 
@@ -63,7 +88,7 @@ func PackagesFromRPMManifest(t *testing.T, r io.Reader) []*claircore.Package {
 		} else {
 			s := strings.TrimSuffix(strings.TrimSuffix(source, ".rpm"), ".src")
 			pos := len(s)
-			for i := 0; i < 2; i++ {
+			for range 2 {
 				pos = strings.LastIndexByte(s[:pos], '-')
 				if pos == -1 {
 					t.Fatalf("malformed NEVRA/NVRA: %q for %q", source, rpm.Name)
@@ -97,35 +122,18 @@ var Options = cmp.Options{
 // so cook up a comparison function that understands the rpm package's packed format.
 var HintCompare = cmp.FilterPath(
 	func(p cmp.Path) bool { return p.Last().String() == ".RepositoryHint" },
-	cmpopts.AcyclicTransformer("NormalizeHint", func(h string) string {
-		n := [][2]string{}
-		for _, s := range strings.Split(h, "|") {
-			if s == "" {
-				continue
-			}
-			k, v, ok := strings.Cut(s, ":")
-			if !ok {
-				panic("odd format: " + s)
-			}
-			if k == "hash" {
-				continue
-			}
-			i := len(n)
-			n = append(n, [2]string{})
-			n[i][0] = k
-			n[i][1] = v
+	cmp.Comparer(func(a, b string) bool {
+		av, err := url.ParseQuery(a)
+		if err != nil {
+			panic(err)
 		}
-		sort.Slice(n, func(i, j int) bool { return n[i][0] < n[i][1] })
-		var b strings.Builder
-		for i, s := range n {
-			if i != 0 {
-				b.WriteByte('|')
-			}
-			b.WriteString(s[0])
-			b.WriteByte(':')
-			b.WriteString(s[1])
+		bv, err := url.ParseQuery(b)
+		if err != nil {
+			panic(err)
 		}
-		return b.String()
+		av.Del("hash")
+		bv.Del("hash")
+		return cmp.Equal(av.Encode(), bv.Encode())
 	}),
 )
 
@@ -134,12 +142,19 @@ var HintCompare = cmp.FilterPath(
 var EpochCompare = cmp.FilterPath(
 	func(p cmp.Path) bool { return p.Last().String() == ".Version" },
 	cmp.Comparer(func(a, b string) bool {
-		evr, vr := a, b
-		if len(b) > len(a) {
-			evr = b
-			vr = a
+		as, bs := strings.SplitN(a, ":", 1), strings.SplitN(b, ":", 1)
+		switch la, lb := len(as), len(bs); {
+		case la == 1 && lb == 1:
+			return a == b
+		case la == 1:
+			return a == bs[1]
+		case lb == 1:
+			return as[1] == b
+		case la > 1 && lb > 1:
+			return as[1] == bs[1]
+		default:
+			panic("unreachable")
 		}
-		return strings.Contains(evr, vr)
 	}),
 )
 
