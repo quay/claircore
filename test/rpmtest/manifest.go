@@ -3,7 +3,7 @@ package rpmtest
 import (
 	"encoding/json"
 	"io"
-	"sort"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -42,7 +42,7 @@ func PackagesFromRPMManifest(t *testing.T, r io.Reader) []*claircore.Package {
 			Version:        rpm.Version + "-" + rpm.Release,
 			Kind:           "binary",
 			Arch:           rpm.Arch,
-			RepositoryHint: "key:" + rpm.GPG,
+			RepositoryHint: url.Values{"key": {rpm.GPG}}.Encode(),
 			Module:         rpm.Module,
 		}
 
@@ -97,35 +97,18 @@ var Options = cmp.Options{
 // so cook up a comparison function that understands the rpm package's packed format.
 var HintCompare = cmp.FilterPath(
 	func(p cmp.Path) bool { return p.Last().String() == ".RepositoryHint" },
-	cmpopts.AcyclicTransformer("NormalizeHint", func(h string) string {
-		n := [][2]string{}
-		for _, s := range strings.Split(h, "|") {
-			if s == "" {
-				continue
-			}
-			k, v, ok := strings.Cut(s, ":")
-			if !ok {
-				panic("odd format: " + s)
-			}
-			if k == "hash" {
-				continue
-			}
-			i := len(n)
-			n = append(n, [2]string{})
-			n[i][0] = k
-			n[i][1] = v
+	cmp.Comparer(func(a, b string) bool {
+		av, err := url.ParseQuery(a)
+		if err != nil {
+			panic(err)
 		}
-		sort.Slice(n, func(i, j int) bool { return n[i][0] < n[i][1] })
-		var b strings.Builder
-		for i, s := range n {
-			if i != 0 {
-				b.WriteByte('|')
-			}
-			b.WriteString(s[0])
-			b.WriteByte(':')
-			b.WriteString(s[1])
+		bv, err := url.ParseQuery(b)
+		if err != nil {
+			panic(err)
 		}
-		return b.String()
+		av.Del("hash")
+		bv.Del("hash")
+		return cmp.Equal(av.Encode(), bv.Encode())
 	}),
 )
 
