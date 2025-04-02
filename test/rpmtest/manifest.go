@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/url"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -114,7 +115,7 @@ func PackagesFromRPMManifest(t *testing.T, r io.Reader) []*claircore.Package {
 
 var Options = cmp.Options{
 	HintCompare,
-	EpochCompare,
+	VersionCompare,
 	IgnorePackageDB,
 	SortPackages,
 	ModuleCompare,
@@ -140,17 +141,19 @@ var HintCompare = cmp.FilterPath(
 	}),
 )
 
-// RPM Manifest doesn't have package epoch information.
-// This checks if the VR string is contained in the EVR string.
-var EpochCompare = cmp.FilterPath(
-	func(p cmp.Path) bool { return p.Last().String() == ".Version" },
-	cmp.Comparer(func(a, b string) bool {
-		evr, vr := a, b
-		if len(b) > len(a) {
-			evr = b
-			vr = a
+// Turn [claircore.Package.Version] into [rpmver.Version].
+var VersionCompare = cmp.FilterPath(
+	func(p cmp.Path) bool {
+		l := p.Last()
+		return l.Type() == reflect.TypeFor[claircore.Package]() && l.String() == ".Version"
+	},
+	cmp.Transformer("ParseRPMVersion", func(v string) rpmver.Version {
+		println(v)
+		p, err := rpmver.Parse(v)
+		if err != nil {
+			panic(v + ": " + err.Error())
 		}
-		return strings.Contains(evr, vr)
+		return p
 	}),
 )
 
