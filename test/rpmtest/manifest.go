@@ -1,9 +1,13 @@
 package rpmtest
 
 import (
+	stdcmp "cmp"
 	"encoding/json"
+	"fmt"
 	"io"
-	"sort"
+	"net/url"
+	"reflect"
+	"slices"
 	"strings"
 	"testing"
 
@@ -11,20 +15,41 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/rpmver"
 )
 
 type Manifest struct {
 	RPM []ManifestRPM `json:"rpms"`
 }
+
+/*
+Example JSON object:
+
+	{
+	  "architecture": "s390x",
+	  "gpg": "199e2f91fd431d51",
+	  "name": "perl-Encode",
+	  "nvra": "perl-Encode-2.97-3.el8.s390x",
+	  "release": "3.el8",
+	  "srpm_name": "perl-Encode",
+	  "srpm_nevra": "perl-Encode-4:2.97-3.el8.src",
+	  "summary": "Character encodings in Perl",
+	  "version": "2.97"
+	}
+*/
+
 type ManifestRPM struct {
-	Name        string `json:"name"`
-	Version     string `json:"version"`
-	Release     string `json:"release"`
-	Arch        string `json:"architecture"`
-	SourceNEVRA string `json:"srpm_nevra"`
-	SourceName  string `json:"srpm_name"`
-	GPG         string `json:"gpg"`
-	Module      string `json:"module"`
+	Name           string `json:"name"`
+	Epoch          string `json:"epoch,omitempty"` // Not in Red Hat-provided manifests.
+	Version        string `json:"version"`
+	Release        string `json:"release"`
+	Architecture   string `json:"architecture"`
+	NEVRA          string `json:"nevra"` // Sometimes in Red Hat-provided manifests?
+	SourceNEVRA    string `json:"srpm_nevra"`
+	SourceName     string `json:"srpm_name"`
+	GPG            string `json:"gpg"`
+	Module         string `json:"module,omitempty"`          // Not in Red Hat-provided manifests.
+	RepositoryHint string `json:"_repositoryhint,omitempty"` // Not in Red Hat-provided manifests.
 }
 
 func PackagesFromRPMManifest(t *testing.T, r io.Reader) []*claircore.Package {
@@ -36,110 +61,99 @@ func PackagesFromRPMManifest(t *testing.T, r io.Reader) []*claircore.Package {
 	out := make([]*claircore.Package, 0, len(m.RPM))
 	srcs := make([]claircore.Package, 0, len(m.RPM))
 	src := make(map[string]*claircore.Package)
-	for _, rpm := range m.RPM {
-		p := claircore.Package{
-			Name:           rpm.Name,
-			Version:        rpm.Version + "-" + rpm.Release,
-			Kind:           "binary",
-			Arch:           rpm.Arch,
-			RepositoryHint: "key:" + rpm.GPG,
-			Module:         rpm.Module,
-		}
+	slices.SortFunc(m.RPM, func(a, b ManifestRPM) int {
+		return strings.Compare(a.Name, b.Name)
+	})
 
+	for n, rpm := range m.RPM {
+		pv, err := rpmver.Parse(stdcmp.Or(
+			rpm.NEVRA,
+			fmt.Sprintf("%s-%s:%s-%s.%s",
+				rpm.Name, stdcmp.Or(rpm.Epoch, "0"), rpm.Version, rpm.Release, rpm.Architecture)))
+		if err != nil {
+			t.Errorf("#%03d: unable to determine version: %v", n, err)
+			continue
+		}
 		// Newer images produced from Konflux shove all the source information
 		// into the SourceName and omit the SourceNEVRA. Try both.
-		var source string
-		switch {
-		case rpm.SourceNEVRA != "":
-			source = rpm.SourceNEVRA
-		case rpm.SourceName != "":
-			source = rpm.SourceName
-		default:
+		//
+		// This sometimes has ".rpm" on it?
+		sv, err := rpmver.Parse(strings.TrimSuffix(stdcmp.Or(rpm.SourceNEVRA, rpm.SourceName), ".rpm"))
+		if err != nil {
+			t.Errorf("#%03d: unable to determine source version: %v", n, err)
 			continue
 		}
 
-		if s, ok := src[source]; ok {
+		p := claircore.Package{
+			Name:           rpm.Name,
+			Version:        pv.EVR(),
+			Kind:           "binary",
+			Arch:           rpm.Architecture,
+			RepositoryHint: url.Values{"key": {rpm.GPG}}.Encode(),
+			Module:         rpm.Module,
+		}
+		srckey := sv.String()
+		if s, ok := src[srckey]; ok {
 			p.Source = s
 		} else {
-			s := strings.TrimSuffix(strings.TrimSuffix(source, ".rpm"), ".src")
-			pos := len(s)
-			for i := 0; i < 2; i++ {
-				pos = strings.LastIndexByte(s[:pos], '-')
-				if pos == -1 {
-					t.Fatalf("malformed NEVRA/NVRA: %q for %q", source, rpm.Name)
-				}
-			}
 			idx := len(srcs)
 			srcs = append(srcs, claircore.Package{
 				Kind:    "source",
-				Name:    s[:pos],
-				Version: strings.TrimPrefix(s[pos+1:], "0:"),
+				Name:    *sv.Name,
+				Version: sv.EVR(),
 				Module:  rpm.Module,
 			})
-			src[source] = &srcs[idx]
+			src[srckey] = &srcs[idx]
 			p.Source = &srcs[idx]
 		}
 
 		out = append(out, &p)
 	}
+
 	return out
 }
 
 var Options = cmp.Options{
 	HintCompare,
-	EpochCompare,
+	VersionCompare,
 	IgnorePackageDB,
 	SortPackages,
 	ModuleCompare,
 }
 
-// RPM Manifest doesn't have checksum information. It does have keyid information,
-// so cook up a comparison function that understands the rpm package's packed format.
+// RPM Manifest doesn't have checksum information.
+//
+// It does have keyid information, so cook up a comparison function.
 var HintCompare = cmp.FilterPath(
 	func(p cmp.Path) bool { return p.Last().String() == ".RepositoryHint" },
-	cmpopts.AcyclicTransformer("NormalizeHint", func(h string) string {
-		n := [][2]string{}
-		for _, s := range strings.Split(h, "|") {
-			if s == "" {
-				continue
-			}
-			k, v, ok := strings.Cut(s, ":")
-			if !ok {
-				panic("odd format: " + s)
-			}
-			if k == "hash" {
-				continue
-			}
-			i := len(n)
-			n = append(n, [2]string{})
-			n[i][0] = k
-			n[i][1] = v
+	cmp.Comparer(func(a, b string) bool {
+		av, err := url.ParseQuery(a)
+		if err != nil {
+			panic(err)
 		}
-		sort.Slice(n, func(i, j int) bool { return n[i][0] < n[i][1] })
-		var b strings.Builder
-		for i, s := range n {
-			if i != 0 {
-				b.WriteByte('|')
-			}
-			b.WriteString(s[0])
-			b.WriteByte(':')
-			b.WriteString(s[1])
+		bv, err := url.ParseQuery(b)
+		if err != nil {
+			panic(err)
 		}
-		return b.String()
+		av.Del("hash")
+		bv.Del("hash")
+		return cmp.Equal(av.Encode(), bv.Encode())
 	}),
 )
 
-// RPM Manifest doesn't have package epoch information.
-// This checks if the VR string is contained in the EVR string.
-var EpochCompare = cmp.FilterPath(
-	func(p cmp.Path) bool { return p.Last().String() == ".Version" },
-	cmp.Comparer(func(a, b string) bool {
-		evr, vr := a, b
-		if len(b) > len(a) {
-			evr = b
-			vr = a
+// Turn [claircore.Package.Version] into [rpmver.Version].
+var VersionCompare = cmp.FilterPath(
+	func(p cmp.Path) bool {
+		l := p.Last()
+		return l.Type() == reflect.TypeFor[claircore.Package]() && l.String() == ".Version"
+	},
+	cmp.Transformer("ParseRPMVersion", func(v string) rpmver.Version {
+		println(v)
+		p, err := rpmver.Parse(v)
+		if err != nil {
+			panic(v + ": " + err.Error())
 		}
-		return strings.Contains(evr, vr)
+		return p
 	}),
 )
 
