@@ -12,6 +12,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/xmlutil"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/pkg/cpe"
 	"github.com/quay/claircore/pkg/ovalutil"
 )
 
@@ -71,6 +72,32 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 		if len(vs) == 0 {
 			return nil, fmt.Errorf("could not determine dist")
 		}
+		
+		// Check if the vulnerability only affects a userspace_ksplice package.
+		// These errata should never be applied to a container since ksplice
+		// userspace packages are not supported to be run within a container.
+		// TODO(DO NOT MERGE): Assume no CPEs is not ksplice. Is this a problem
+		//  with the test?
+		// TODO(DO NOT MERGE): Is this even the right way to go about this?
+		isOnlyKsplice := len(def.Advisory.AffectedCPEList) > 0
+		for _, affected := range def.Advisory.AffectedCPEList {
+			wfn, err := cpe.Unbind(affected)
+			if err != nil {
+				// TODO(DO NOT MERGE): Assume unbindable CPE is not a ksplice.
+				//  Is this a problem with the test?
+				zlog.Warn(ctx).Msg("could not parse CPE")
+				isOnlyKsplice = false
+				break
+			}
+			if wfn.Attr[cpe.Edition].V != "userspace_ksplice" {
+				isOnlyKsplice = false
+				break
+			}
+		}
+		if isOnlyKsplice {
+			return nil, fmt.Errorf("vuln is userspace_ksplice")
+		}
+
 		return vs, nil
 	}
 	vulns, err := ovalutil.RPMDefsToVulns(ctx, &root, protoVulns)
