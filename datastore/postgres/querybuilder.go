@@ -11,7 +11,6 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore"
-	"github.com/quay/claircore/libvuln/driver"
 )
 
 // getQueryBuilder validates a IndexRecord and creates a query string for vulnerability matching
@@ -44,36 +43,36 @@ func buildGetQuery(record *claircore.IndexRecord, opts *datastore.GetOpts) (stri
 	}
 
 	// add matchers
-	seen := make(map[driver.MatchConstraint]struct{})
+	seen := make(map[claircore.MatchConstraint]struct{})
 	for _, m := range matchers {
 		if _, ok := seen[m]; ok {
 			continue
 		}
 		var ex goqu.Ex
 		switch m {
-		case driver.PackageModule:
+		case claircore.PackageModule:
 			ex = goqu.Ex{"package_module": record.Package.Module}
-		case driver.DistributionDID:
+		case claircore.DistributionDID:
 			ex = goqu.Ex{"dist_id": record.Distribution.DID}
-		case driver.DistributionName:
+		case claircore.DistributionName:
 			ex = goqu.Ex{"dist_name": record.Distribution.Name}
-		case driver.DistributionVersionID:
+		case claircore.DistributionVersionID:
 			ex = goqu.Ex{"dist_version_id": record.Distribution.VersionID}
-		case driver.DistributionVersion:
+		case claircore.DistributionVersion:
 			ex = goqu.Ex{"dist_version": record.Distribution.Version}
-		case driver.DistributionVersionCodeName:
+		case claircore.DistributionVersionCodeName:
 			ex = goqu.Ex{"dist_version_code_name": record.Distribution.VersionCodeName}
-		case driver.DistributionPrettyName:
+		case claircore.DistributionPrettyName:
 			ex = goqu.Ex{"dist_pretty_name": record.Distribution.PrettyName}
-		case driver.DistributionCPE:
+		case claircore.DistributionCPE:
 			ex = goqu.Ex{"dist_cpe": record.Distribution.CPE}
-		case driver.DistributionArch:
+		case claircore.DistributionArch:
 			ex = goqu.Ex{"dist_arch": record.Distribution.Arch}
-		case driver.RepositoryName:
+		case claircore.RepositoryName:
 			ex = goqu.Ex{"repo_name": record.Repository.Name}
-		case driver.RepositoryKey:
+		case claircore.RepositoryKey:
 			ex = goqu.Ex{"repo_key": record.Repository.Key}
-		case driver.HasFixedInVersion:
+		case claircore.HasFixedInVersion:
 			ex = goqu.Ex{"fixed_in_version": goqu.Op{exp.NeqOp.String(): ""}}
 		default:
 			return "", fmt.Errorf("was provided unknown matcher: %v", m)

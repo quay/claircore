@@ -11,6 +11,7 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/python"
 	"github.com/quay/claircore/rhel"
+	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/quay/claircore/ubuntu"
 )
 
@@ -24,6 +25,7 @@ var defaultOmniMatcher = []driver.Matcher{
 	&python.Matcher{},
 	&rhel.Matcher{},
 	&ubuntu.Matcher{},
+	rhcc.Matcher,
 }
 
 // OmniMatcher is a aggregation of Matcher implementations.
@@ -43,6 +45,25 @@ func New(m []driver.Matcher) OmniMatcher {
 		return defaultOmniMatcher
 	}
 	return m
+}
+
+func (om OmniMatcher) GetPipelines() []claircore.CheckVulnerablePipeline {
+	ps := []claircore.CheckVulnerablePipeline{}
+	for _, m := range om {
+		p := claircore.CheckVulnerablePipeline{
+			Vulnernable: m.Vulnerable,
+			Filter:      m.Filter,
+			Query:       m.Query,
+			Name:        m.Name(),
+		}
+		f, ok := m.(driver.VersionFilter)
+		if ok {
+			p.VersionFilter = f.VersionFilter
+			p.VersionAuthoritative = f.VersionAuthoritative
+		}
+		ps = append(ps, p)
+	}
+	return ps
 }
 
 // Vulnerable will call each Matcher's Vulnerable method until one returns true.

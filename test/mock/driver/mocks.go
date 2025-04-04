@@ -70,10 +70,10 @@ func (mr *MockMatcherMockRecorder) Name() *gomock.Call {
 }
 
 // Query mocks base method.
-func (m *MockMatcher) Query() []driver.MatchConstraint {
+func (m *MockMatcher) Query() []claircore.MatchConstraint {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Query")
-	ret0, _ := ret[0].([]driver.MatchConstraint)
+	ret0, _ := ret[0].([]claircore.MatchConstraint)
 	return ret0
 }
 

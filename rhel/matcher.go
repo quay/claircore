@@ -30,10 +30,10 @@ func (*Matcher) Filter(record *claircore.IndexRecord) bool {
 }
 
 // Query implements driver.Matcher.
-func (m *Matcher) Query() []driver.MatchConstraint {
-	mcs := []driver.MatchConstraint{driver.PackageModule, driver.RepositoryKey}
+func (m *Matcher) Query() []claircore.MatchConstraint {
+	mcs := []claircore.MatchConstraint{claircore.PackageModule, claircore.RepositoryKey}
 	if m.ignoreUnpatched {
-		mcs = append(mcs, driver.HasFixedInVersion)
+		mcs = append(mcs, claircore.HasFixedInVersion)
 	}
 	return mcs
 }

@@ -257,7 +257,7 @@ func (l *Libindex) AffectedManifests(ctx context.Context, vulns []claircore.Vuln
 				return context.Cause(ctx)
 			default:
 			}
-			hashes, err := l.store.AffectedManifests(ctx, vulns[i], om.Vulnerable)
+			hashes, err := l.store.AffectedManifests(ctx, vulns[i], om.GetPipelines())
 			if err != nil {
 				return err
 			}
