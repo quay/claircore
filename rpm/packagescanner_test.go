@@ -4,6 +4,8 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"slices"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -105,9 +107,23 @@ func (tc PackageTestcase) Run(ctx context.Context, a *test.CachedArena) func(*te
 		if err != nil {
 			t.Error(err)
 		}
-		t.Logf("found %d packages", len(got))
-		if !cmp.Equal(got, want, rpmtest.Options) {
-			t.Error(cmp.Diff(got, want, rpmtest.Options))
+		slices.SortFunc(got, func(a, b *claircore.Package) int {
+			return strings.Compare(a.Name, b.Name)
+		})
+		t.Logf("found %d packages, want %d", len(got), len(want))
+		if gotLen, wantLen := len(got), len(want); gotLen != wantLen {
+			t.Fail()
+		}
+		for i := range want {
+			got, want := got[i], want[i]
+			diff := cmp.Diff(got, want, rpmtest.Options)
+			if diff == "" {
+				diff = "OK"
+			}
+			t.Logf("%s:\t%v\n", want.Name, diff)
+			if !cmp.Equal(got, want, rpmtest.Options) {
+				t.Fail()
+			}
 		}
 	}
 }

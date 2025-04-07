@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/url"
 	"path"
 	"regexp"
 	"runtime/trace"
@@ -263,14 +264,12 @@ func constructEVR(b *strings.Builder, info *Info) string {
 	return b.String()
 }
 
-func constructHint(b *strings.Builder, info *Info) string {
-	b.Reset()
+func constructHint(_ *strings.Builder, info *Info) string {
+	v := url.Values{}
 	if info.Digest != "" {
-		b.WriteString("hash:")
 		switch info.DigestAlgo {
 		case 8:
-			b.WriteString("sha256:")
-			b.WriteString(info.Digest)
+			v.Set("hash", "sha256:"+info.Digest)
 		}
 	}
 	if len(info.Signature) != 0 {
@@ -282,20 +281,14 @@ func constructHint(b *strings.Builder, info *Info) string {
 				if p.SigType != 0 {
 					continue
 				}
-				if b.Len() != 0 {
-					b.WriteByte('|')
-				}
-				fmt.Fprintf(b, "key:%016x", p.IssuerKeyId)
+				v.Set("key", fmt.Sprintf("%016x", p.IssuerKeyId))
 			case *packet.Signature:
 				if p.SigType != 0 || p.IssuerKeyId == nil {
 					continue
 				}
-				if b.Len() != 0 {
-					b.WriteByte('|')
-				}
-				fmt.Fprintf(b, "key:%016x", *p.IssuerKeyId)
+				v.Set("key", fmt.Sprintf("%016x", *p.IssuerKeyId))
 			}
 		}
 	}
-	return b.String()
+	return v.Encode()
 }
