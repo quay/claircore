@@ -12,6 +12,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/xmlutil"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/pkg/cpe"
 	"github.com/quay/claircore/pkg/ovalutil"
 )
 
@@ -71,6 +72,49 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 		if len(vs) == 0 {
 			return nil, fmt.Errorf("could not determine dist")
 		}
+
+		// Check if the vulnerability only affects a userspace_ksplice package.
+		//  These errata should never be applied to a container since ksplice
+		//  userspace packages are not supported to be run within a container.
+		// If we couldn't find a CPE list, make sure to include the
+		//  vulnerability. We'd rather have false positives for
+		//  userspace_ksplice packages than have false negatives for
+		//  *everything*.
+		isOnlyKsplice := len(def.Advisory.AffectedCPEList) > 0
+		// If there's at least one ksplice CPE and not all the affected CPEs
+		//  are ksplice related, this will cause false positives we can catch.
+		//  This should rarely happen. The most common case for this is if one
+		//  of the CPEs wasn't parseable.
+		atLeastOneKsplice := false
+		for _, affected := range def.Advisory.AffectedCPEList {
+			wfn, err := cpe.Unbind(affected)
+			if err != nil {
+				// Found a CPE but could not parse it. Let's break out of these
+				//  checks and signal that these vulnerabilities should be
+				//  added to the list, but that there may be false positives.
+				zlog.Warn(ctx).Str("cpe", affected).Msg("could not parse CPE")
+				isOnlyKsplice = false
+				atLeastOneKsplice = true
+				break
+			}
+			if wfn.Attr[cpe.Edition].V == "userspace_ksplice" {
+				atLeastOneKsplice = true
+			} else {
+				isOnlyKsplice = false
+			}
+		}
+
+		if isOnlyKsplice {
+			zlog.Debug(ctx).Msg("skipping ksplice vulnerabilities")
+			return nil, nil
+		}
+
+		if atLeastOneKsplice {
+			zlog.Warn(ctx).
+				Str("def_title", def.Title).
+				Msg("potential false positives: vulnerability has at least one unskippable ksplice match")
+		}
+
 		return vs, nil
 	}
 	vulns, err := ovalutil.RPMDefsToVulns(ctx, &root, protoVulns)
