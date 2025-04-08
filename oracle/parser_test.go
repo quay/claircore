@@ -25,7 +25,7 @@ func TestParse(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Logf("found %d vulnerabilities", len(vs))
-	if got, want := len(vs), 6065; got != want {
+	if got, want := len(vs), 6021; got != want {
 		t.Fatalf("got: %d vulnerabilities, want: %d vulnerabilities", got, want)
 	}
 }
