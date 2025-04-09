@@ -1,4 +1,4 @@
-rpm: add function to determine if paths are RPM
+rpm: add function to determine if packages are installed from RPMs
 
 This change allows language detectors to be able to discard packages
 that have been determined to have come from an RPM package. This ensures
