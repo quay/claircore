@@ -1,0 +1,7 @@
+rpm: add function to determine if paths are RPM
+
+This change allows language detectors to be able to discard packages
+that have been determined to have come from an RPM package. This ensures
+that only the RPM package is matched to advisories and reduces
+false-positives where language packages are patched but their metadata
+is not updated (or cannot be updated).
