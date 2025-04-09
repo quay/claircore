@@ -4,6 +4,7 @@ import (
 	"context"
 
 	version "github.com/knqyf263/go-apk-version"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 )
@@ -35,11 +36,11 @@ func (*Matcher) Filter(record *claircore.IndexRecord) bool {
 }
 
 // Query implements driver.Matcher.
-func (*Matcher) Query() []claircore.MatchConstraint {
-	return []claircore.MatchConstraint{
-		claircore.DistributionDID,
-		claircore.DistributionName,
-		claircore.DistributionPrettyName,
+func (*Matcher) Query() []driver.MatchConstraint {
+	return []driver.MatchConstraint{
+		driver.DistributionDID,
+		driver.DistributionName,
+		driver.DistributionPrettyName,
 	}
 }
 

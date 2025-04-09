@@ -37,7 +37,7 @@ func (*TestMatcher) Filter(*claircore.IndexRecord) bool {
 	return false
 }
 
-func (*TestMatcher) Query() []claircore.MatchConstraint {
+func (*TestMatcher) Query() []driver.MatchConstraint {
 	return nil
 }
 

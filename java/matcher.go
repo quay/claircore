@@ -4,9 +4,10 @@ import (
 	"context"
 	"net/url"
 
+	"github.com/quay/zlog"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
-	"github.com/quay/zlog"
 )
 
 // Matcher matches discovered Java Maven packages against advisories provided via OSV.
@@ -23,8 +24,8 @@ func (*Matcher) Filter(r *claircore.IndexRecord) bool {
 }
 
 // Query implements driver.Matcher.
-func (*Matcher) Query() []claircore.MatchConstraint {
-	return []claircore.MatchConstraint{claircore.RepositoryName}
+func (*Matcher) Query() []driver.MatchConstraint {
+	return []driver.MatchConstraint{driver.RepositoryName}
 }
 
 func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {

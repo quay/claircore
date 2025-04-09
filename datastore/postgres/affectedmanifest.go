@@ -13,6 +13,9 @@ import (
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/libvuln/driver"
+	_ "github.com/quay/claircore/matchers/defaults"
+	"github.com/quay/claircore/matchers/registry"
 )
 
 var (
@@ -39,71 +42,71 @@ var (
 	)
 )
 
-func queryBuilder(v *claircore.Vulnerability, vp claircore.CheckVulnerablePipeline) (string, error) {
+func queryBuilder(v *claircore.Vulnerability, m driver.Matcher) (string, error) {
 	psql := goqu.Dialect("postgres")
 	exps := []goqu.Expression{}
 	packageQuery := goqu.Ex{"package.name": v.Package.Name}
 	exps = append(exps, packageQuery)
-	seen := make(map[claircore.MatchConstraint]struct{})
-	for _, m := range vp.Query() {
+	seen := make(map[driver.MatchConstraint]struct{})
+	for _, m := range m.Query() {
 		if _, ok := seen[m]; ok {
 			continue
 		}
 		var ex goqu.Ex
 		switch m {
-		case claircore.PackageModule:
+		case driver.PackageModule:
 			ex = goqu.Ex{"package.module": v.Package.Module}
-		case claircore.DistributionDID:
+		case driver.DistributionDID:
 			if v.Dist.DID == "" {
 				return "", ErrVulnNotApplicable
 			}
 			ex = goqu.Ex{"dist.did": v.Dist.DID}
-		case claircore.DistributionName:
+		case driver.DistributionName:
 			if v.Dist.Name == "" {
 				return "", ErrVulnNotApplicable
 			}
 			ex = goqu.Ex{"dist.name": v.Dist.Name}
-		case claircore.DistributionVersionID:
+		case driver.DistributionVersionID:
 			if v.Dist.VersionID == "" {
 				return "", ErrVulnNotApplicable
 			}
 			ex = goqu.Ex{"dist.version_id": v.Dist.VersionID}
-		case claircore.DistributionVersion:
+		case driver.DistributionVersion:
 			if v.Dist.Version == "" {
 				return "", ErrVulnNotApplicable
 			}
 			ex = goqu.Ex{"dist.version": v.Dist.Version}
-		case claircore.DistributionVersionCodeName:
+		case driver.DistributionVersionCodeName:
 			if v.Dist.VersionCodeName == "" {
 				return "", ErrVulnNotApplicable
 			}
 			ex = goqu.Ex{"dist.version_code_name": v.Dist.VersionCodeName}
-		case claircore.DistributionPrettyName:
+		case driver.DistributionPrettyName:
 			if v.Dist.PrettyName == "" {
 				return "", ErrVulnNotApplicable
 			}
 			ex = goqu.Ex{"dist.pretty_name": v.Dist.PrettyName}
-		case claircore.DistributionCPE:
+		case driver.DistributionCPE:
 			if v.Dist.CPE.String() == "" {
 				return "", ErrVulnNotApplicable
 			}
 			ex = goqu.Ex{"dist.cpe": v.Dist.CPE}
-		case claircore.DistributionArch:
+		case driver.DistributionArch:
 			if v.Dist.Arch == "" {
 				return "", ErrVulnNotApplicable
 			}
 			ex = goqu.Ex{"dist.arch": v.Dist.Arch}
-		case claircore.RepositoryName:
+		case driver.RepositoryName:
 			if v.Repo.Name == "" {
 				return "", ErrVulnNotApplicable
 			}
 			ex = goqu.Ex{"repo.name": v.Repo.Name}
-		case claircore.RepositoryKey:
+		case driver.RepositoryKey:
 			if v.Repo.Key == "" {
 				return "", ErrVulnNotApplicable
 			}
 			ex = goqu.Ex{"repo.key": v.Repo.Key}
-		case claircore.HasFixedInVersion:
+		case driver.HasFixedInVersion:
 			if v.FixedInVersion == "" {
 				// No unpatched vulnerabilities wanted
 				return "", ErrVulnNotApplicable
@@ -114,7 +117,8 @@ func queryBuilder(v *claircore.Vulnerability, vp claircore.CheckVulnerablePipeli
 		exps = append(exps, ex)
 		seen[m] = struct{}{}
 	}
-	if vp.VersionAuthoritative != nil {
+	f, ok := m.(driver.VersionFilter)
+	if ok && f.VersionAuthoritative() {
 		kind, lower, upper := rangefmt(v.Range)
 		if kind != nil {
 			exps = append(exps, goqu.And(
@@ -156,100 +160,108 @@ func queryBuilder(v *claircore.Vulnerability, vp claircore.CheckVulnerablePipeli
 	return sql, nil
 }
 
-func (s *IndexerStore) AffectedManifests(ctx context.Context, v claircore.Vulnerability, vps []claircore.CheckVulnerablePipeline) ([]claircore.Digest, error) {
+func (s *IndexerStore) AffectedManifests(ctx context.Context, v claircore.Vulnerability) ([]claircore.Digest, error) {
+	matcherFactories := registry.Registered()
 	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/AffectedManifests")
 	mrs := map[string]struct{}{}
 	out := []claircore.Digest{}
-	for _, vp := range vps {
-		miQuery, err := queryBuilder(&v, vp)
-		switch {
-		case errors.Is(err, nil):
-		case errors.Is(err, ErrVulnNotApplicable):
-			continue
-		default:
-			return nil, fmt.Errorf("error building query %w", err)
+	for n, mf := range matcherFactories {
+		ms, err := mf.Matcher(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create matchers from factory %s: %w", n, err)
 		}
-		err = func() error {
-			start := time.Now()
-			rows, err := s.pool.Query(ctx, miQuery)
+		for _, m := range ms {
+			miQuery, err := queryBuilder(&v, m)
 			switch {
 			case errors.Is(err, nil):
+			case errors.Is(err, ErrVulnNotApplicable):
+				continue
 			default:
-				return fmt.Errorf("failed to query packages associated with vulnerability %q: %w", v.ID, err)
+				return nil, fmt.Errorf("error building query %w", err)
 			}
+			err = func() error {
+				start := time.Now()
+				rows, err := s.pool.Query(ctx, miQuery)
+				switch {
+				case errors.Is(err, nil):
+				default:
+					return fmt.Errorf("failed to query packages associated with vulnerability %q: %w", v.ID, err)
+				}
 
-			defer rows.Close()
-			for rows.Next() {
-				ir := &claircore.IndexRecord{
-					Package:      &claircore.Package{},
-					Repository:   &claircore.Repository{},
-					Distribution: &claircore.Distribution{},
-				}
-				var (
-					manifestDigest *claircore.Digest
-					nVer           pgtype.Int4Array
-					nKind          *string
-				)
-				err := rows.Scan(
-					&manifestDigest,
-					&ir.Package.Name,
-					&ir.Package.Version,
-					&ir.Package.Kind,
-					&nKind,
-					&nVer,
-					&ir.Package.Arch,
-					&ir.Distribution.Name,
-					&ir.Distribution.DID,
-					&ir.Distribution.Version,
-					&ir.Distribution.VersionCodeName,
-					&ir.Distribution.VersionID,
-					&ir.Distribution.Arch,
-					&ir.Distribution.CPE,
-					&ir.Distribution.PrettyName,
-					&ir.Repository.Name,
-					&ir.Repository.Key,
-					&ir.Repository.URI,
-					&ir.Repository.CPE,
-				)
-				if err != nil {
-					return fmt.Errorf("failed to scan index record: %w", err)
-				}
-				if nKind != nil {
-					ir.Package.NormalizedVersion.Kind = *nKind
-					for i, n := range nVer.Elements {
-						ir.Package.NormalizedVersion.V[i] = n.Int
+				defer rows.Close()
+				for rows.Next() {
+					ir := &claircore.IndexRecord{
+						Package:      &claircore.Package{},
+						Repository:   &claircore.Repository{},
+						Distribution: &claircore.Distribution{},
 					}
-				}
-				if _, ok := mrs[manifestDigest.String()]; ok {
-					// We've already seen the manifest we don't need to
-					// redo the work.
-					continue
-				}
-				if !vp.Filter(ir) {
-					continue
-				}
-				var match bool
-				if vp.VersionAuthoritative != nil && vp.VersionAuthoritative() {
-					// We've already done the vulnerable checking so don't need
-					// to call the Vulnerable() function.
-					match = true
-				} else {
-					match, err = vp.Vulnernable(ctx, ir, &v)
+					var (
+						manifestDigest *claircore.Digest
+						nVer           pgtype.Int4Array
+						nKind          *string
+					)
+					err := rows.Scan(
+						&manifestDigest,
+						&ir.Package.Name,
+						&ir.Package.Version,
+						&ir.Package.Kind,
+						&nKind,
+						&nVer,
+						&ir.Package.Arch,
+						&ir.Distribution.Name,
+						&ir.Distribution.DID,
+						&ir.Distribution.Version,
+						&ir.Distribution.VersionCodeName,
+						&ir.Distribution.VersionID,
+						&ir.Distribution.Arch,
+						&ir.Distribution.CPE,
+						&ir.Distribution.PrettyName,
+						&ir.Repository.Name,
+						&ir.Repository.Key,
+						&ir.Repository.URI,
+						&ir.Repository.CPE,
+					)
 					if err != nil {
-						return fmt.Errorf("error checking for if IndexRecord is vulnerable %w", err)
+						return fmt.Errorf("failed to scan index record: %w", err)
+					}
+					if nKind != nil {
+						ir.Package.NormalizedVersion.Kind = *nKind
+						for i, n := range nVer.Elements {
+							ir.Package.NormalizedVersion.V[i] = n.Int
+						}
+					}
+					if _, ok := mrs[manifestDigest.String()]; ok {
+						// We've already seen the manifest we don't need to
+						// redo the work.
+						continue
+					}
+					if !m.Filter(ir) {
+						continue
+					}
+					var match bool
+					f, ok := m.(driver.VersionFilter)
+					if ok && f.VersionAuthoritative() {
+						// We've already done the vulnerable checking so don't need
+						// to call the Vulnerable() function.
+						match = true
+					} else {
+						match, err = m.Vulnerable(ctx, ir, &v)
+						if err != nil {
+							return fmt.Errorf("error checking for if IndexRecord is vulnerable %w", err)
+						}
+					}
+					if match {
+						mrs[manifestDigest.String()] = struct{}{}
+						out = append(out, *manifestDigest)
 					}
 				}
-				if match {
-					mrs[manifestDigest.String()] = struct{}{}
-					out = append(out, *manifestDigest)
-				}
+				getAffectedManifestsCounter.WithLabelValues("query_batch").Add(1)
+				getAffectedManifestsDuration.WithLabelValues("query_batch").Observe(time.Since(start).Seconds())
+				return nil
+			}()
+			if err != nil {
+				return nil, err
 			}
-			getAffectedManifestsCounter.WithLabelValues("query_batch").Add(1)
-			getAffectedManifestsDuration.WithLabelValues("query_batch").Observe(time.Since(start).Seconds())
-			return nil
-		}()
-		if err != nil {
-			return nil, err
 		}
 	}
 	return out, nil

@@ -25,8 +25,8 @@ func (matcher *Matcher) Filter(record *claircore.IndexRecord) bool {
 }
 
 // Query implements driver.Matcher.
-func (matcher *Matcher) Query() []claircore.MatchConstraint {
-	return []claircore.MatchConstraint{claircore.RepositoryName}
+func (matcher *Matcher) Query() []driver.MatchConstraint {
+	return []driver.MatchConstraint{driver.RepositoryName}
 }
 
 // Vulnerable implements driver.Matcher.

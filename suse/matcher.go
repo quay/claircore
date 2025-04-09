@@ -41,11 +41,11 @@ func (*Matcher) Filter(record *claircore.IndexRecord) bool {
 }
 
 // Query implements driver.Matcher
-func (*Matcher) Query() []claircore.MatchConstraint {
-	return []claircore.MatchConstraint{
-		claircore.DistributionDID,
-		claircore.DistributionName,
-		claircore.DistributionVersion,
+func (*Matcher) Query() []driver.MatchConstraint {
+	return []driver.MatchConstraint{
+		driver.DistributionDID,
+		driver.DistributionName,
+		driver.DistributionVersion,
 	}
 }
 

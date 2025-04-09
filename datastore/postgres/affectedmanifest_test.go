@@ -3,7 +3,6 @@ package postgres
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -15,7 +14,6 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
-	"github.com/quay/claircore/pkg/omnimatcher"
 	"github.com/quay/claircore/test/integration"
 	pgtest "github.com/quay/claircore/test/postgres"
 	"github.com/quay/claircore/toolkit/types/cpe"
@@ -164,17 +162,16 @@ func (e *affectedTest) IndexManifest(t *testing.T) {
 // manifest is affected.
 func (e *affectedTest) AffectedManifests(t *testing.T) {
 	ctx := zlog.Test(e.ctx, t)
-	om := omnimatcher.New(nil)
-	hashes, err := e.store.AffectedManifests(ctx, *e.v, om.GetPipelines())
+	hashes, err := e.store.AffectedManifests(ctx, *e.v)
 	if err != nil {
 		t.Fatalf("failed to retrieve affected manifest for vuln %s: %v", e.v.ID, err)
 	}
 
-	if len(hashes) != 1 && e.isVulnerable {
+	if len(hashes) == 0 && e.isVulnerable {
 		t.Fatalf("expected manifest to be vulnerable to %s for package %s", e.v.Name, e.v.Package.Name)
 	}
 
-	if len(hashes) != 0 && !e.isVulnerable {
+	if len(hashes) == 1 && !e.isVulnerable {
 		t.Fatalf("expected manifest not to be vulnerable to %s for package %s", e.v.Name, e.v.Package.Name)
 	}
 }
@@ -348,64 +345,4 @@ func TestAffectedManifests(t *testing.T) {
 		}
 		t.Run(tc.name, e2e.Run)
 	}
-}
-
-func TestQueryBuilder(t *testing.T) {
-	mcs := []claircore.MatchConstraint{
-		claircore.RepositoryKey,
-	}
-	pipe := claircore.CheckVulnerablePipeline{
-		Query: func() []claircore.MatchConstraint { return mcs },
-	}
-	v := &claircore.Vulnerability{
-		Name: "CVE-123",
-		Package: &claircore.Package{
-			Name:    "pcre2",
-			Version: "v1.2.3",
-			Kind:    claircore.BINARY,
-		},
-		Repo: &claircore.Repository{
-			Key:  "rhel-cpe-repository",
-			Name: "cpe:/o:redhat:enterprise_linux:8::baseos",
-			CPE:  cpe.MustUnbind("cpe:2.3:o:redhat:enterprise_linux:8:*:baseos:*:*:*:*:*"),
-		},
-	}
-	sql, err := queryBuilder(v, pipe)
-	if err != nil {
-		t.Error(err)
-	}
-	fmt.Println(sql)
-}
-
-func TestQueryBuilder2(t *testing.T) {
-	mcs := []claircore.MatchConstraint{
-		claircore.RepositoryKey,
-	}
-	pipe := claircore.CheckVulnerablePipeline{
-		Query:                func() []claircore.MatchConstraint { return mcs },
-		VersionAuthoritative: func() bool { return true },
-	}
-	v := &claircore.Vulnerability{
-		Name: "CVE-123",
-		Range: &claircore.Range{
-			Lower: claircore.FromSemver(semver.MustParse("v1.2.0")),
-			Upper: claircore.FromSemver(semver.MustParse("v1.2.3")),
-		},
-		Package: &claircore.Package{
-			Name:              "go something",
-			Version:           "v1.2.3",
-			NormalizedVersion: claircore.FromSemver(semver.MustParse("v1.2.3")),
-			Kind:              claircore.BINARY,
-		},
-		Repo: &claircore.Repository{
-			Key:  "go something repo",
-			Name: "go",
-		},
-	}
-	sql, err := queryBuilder(v, pipe)
-	if err != nil {
-		t.Error(err)
-	}
-	fmt.Println(sql)
-
 }
