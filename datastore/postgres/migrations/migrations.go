@@ -65,6 +65,10 @@ var IndexerMigrations = []migrate.Migration{
 		ID: 9,
 		Up: runFile("indexer/09-delete-scannerlist.sql"),
 	},
+	{
+		ID: 10,
+		Up: runFile("indexer/10-package_scanartifact-id.sql"),
+	},
 }
 
 var MatcherMigrations = []migrate.Migration{
