@@ -11,6 +11,7 @@ import (
 
 	"github.com/quay/zlog"
 
+	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 )
 
@@ -28,28 +29,31 @@ const (
 	//doc:url updater
 	BaseURL = "https://security.access.redhat.com/data/csaf/v2/vex/"
 
-	latestFile     = "archive_latest.txt"
-	changesFile    = "changes.csv"
-	deletionsFile  = "deletions.csv"
-	lookBackToYear = 2014
-	repoKey        = "rhel-cpe-repository"
-	updaterVersion = "4"
+	defaultCompressedFileTimeout = 2 * time.Minute
+	latestFile                   = "archive_latest.txt"
+	changesFile                  = "changes.csv"
+	deletionsFile                = "deletions.csv"
+	lookBackToYear               = 2014
+	repoKey                      = "rhel-cpe-repository"
+	updaterVersion               = "4"
 )
 
 // Factory creates an Updater to process all of the Red Hat VEX data.
 //
 // [Configure] must be called before [UpdaterSet].
 type Factory struct {
-	c    *http.Client
-	base *url.URL
+	c                     *http.Client
+	base                  *url.URL
+	compressedFileTimeout time.Duration
 }
 
 // UpdaterSet constructs one Updater
 func (f *Factory) UpdaterSet(_ context.Context) (driver.UpdaterSet, error) {
 	us := driver.NewUpdaterSet()
 	u := &Updater{
-		url:    f.base,
-		client: f.c,
+		url:                   f.base,
+		client:                f.c,
+		compressedFileTimeout: f.compressedFileTimeout,
 	}
 	err := us.Add(u)
 	if err != nil {
@@ -67,6 +71,8 @@ type FactoryConfig struct {
 	//
 	// Must include the trailing slash.
 	URL string `json:"url" yaml:"url"`
+	// CompressedFileTimeout sets the timeout for downloading the compressed VEX file.
+	CompressedFileTimeout claircore.Duration `json:"compressed_file_timeout" yaml:"compressed_file_timeout"`
 }
 
 // Configure implements driver.Configurable
@@ -88,14 +94,20 @@ func (f *Factory) Configure(ctx context.Context, cf driver.ConfigUnmarshaler, c 
 	if err != nil {
 		return err
 	}
+
+	f.compressedFileTimeout = defaultCompressedFileTimeout
+	if cfg.CompressedFileTimeout != 0 {
+		f.compressedFileTimeout = time.Duration(cfg.CompressedFileTimeout)
+	}
 	return nil
 }
 
 // Updater is responsible from reading VEX data served at the URL
 // and creating vulnerabilities.
 type Updater struct {
-	url    *url.URL
-	client *http.Client
+	url                   *url.URL
+	client                *http.Client
+	compressedFileTimeout time.Duration
 }
 
 // fingerprint is used to track the state of the changes.csv and deletions.csv endpoints.

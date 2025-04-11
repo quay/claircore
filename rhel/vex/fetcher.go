@@ -27,9 +27,8 @@ import (
 )
 
 var (
-	compressedFileTimeout = 2 * time.Minute
-	deletedTemplate       = `{"document":{"tracking":{"id":"%s","status":"deleted"}}}`
-	cvePathRegex          = regexp.MustCompile(`^\d{4}/(cve-\d{4}-\d{4,}).json$`)
+	deletedTemplate = `{"document":{"tracking":{"id":"%s","status":"deleted"}}}`
+	cvePathRegex    = regexp.MustCompile(`^\d{4}/(cve-\d{4}-\d{4,}).json$`)
 )
 
 // Fetch pulls data down from the Red Hat VEX endpoints. The order of operations is:
@@ -107,7 +106,7 @@ func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 	}
 
 	if processArchive {
-		rctx, cancel := context.WithTimeout(ctx, compressedFileTimeout)
+		rctx, cancel := context.WithTimeout(ctx, u.compressedFileTimeout)
 		defer cancel()
 
 		if compressedURL == nil {
