@@ -12,9 +12,9 @@ import (
 	"runtime/trace"
 	"strings"
 
+	"github.com/Masterminds/semver"
 	"github.com/quay/zlog"
 
-	"github.com/Masterminds/semver"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/rpm"
@@ -45,7 +45,7 @@ type Scanner struct{}
 func (*Scanner) Name() string { return "nodejs" }
 
 // Version implements scanner.VersionedScanner.
-func (*Scanner) Version() string { return "2" }
+func (*Scanner) Version() string { return "3" }
 
 // Kind implements scanner.VersionedScanner.
 func (*Scanner) Kind() string { return "package" }
