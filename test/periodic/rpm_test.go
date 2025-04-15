@@ -223,7 +223,8 @@ func (doc hydraDoc) Run(dir string) func(*testing.T) {
 		s := &rpm.Scanner{}
 		pkgMap := map[string]*claircore.Package{}
 		var which claircore.Digest
-		for _, ld := range image.Data[0].Parsed.Layers {
+		for i := len(image.Data[0].Parsed.Layers) - 1; i >= 0; i-- {
+			ld := image.Data[0].Parsed.Layers[i]
 			// TODO(hank) Need a way to use the nicer API, but pass the
 			// Integration bypass.
 			n, err := fetch.Layer(ctx, t, doc.Registry, doc.Repository, ld, fetch.IgnoreIntegration)
