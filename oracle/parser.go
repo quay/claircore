@@ -76,43 +76,40 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 		// Check if the vulnerability only affects a userspace_ksplice package.
 		//  These errata should never be applied to a container since ksplice
 		//  userspace packages are not supported to be run within a container.
-		// If we couldn't find a CPE list, make sure to include the
-		//  vulnerability. We'd rather have false positives for
-		//  userspace_ksplice packages than have false negatives for
-		//  *everything*.
-		isOnlyKsplice := len(def.Advisory.AffectedCPEList) > 0
 		// If there's at least one ksplice CPE and not all the affected CPEs
 		//  are ksplice related, this will cause false positives we can catch.
-		//  This should rarely happen. The most common case for this is if one
+		//  This should rarely happen; the most common case for this is if one
 		//  of the CPEs wasn't parseable.
-		atLeastOneKsplice := false
+		kspliceCPEs := 0
+		cpes := len(def.Advisory.AffectedCPEList)
 		for _, affected := range def.Advisory.AffectedCPEList {
 			wfn, err := cpe.Unbind(affected)
 			if err != nil {
-				// Found a CPE but could not parse it. Let's break out of these
-				//  checks and signal that these vulnerabilities should be
-				//  added to the list, but that there may be false positives.
-				zlog.Warn(ctx).Str("cpe", affected).Msg("could not parse CPE")
-				isOnlyKsplice = false
-				atLeastOneKsplice = true
-				break
+				// Found a CPE but could not parse it. Log a warning and return
+				//  successfully.
+				zlog.Warn(ctx).
+					Str("def_title", def.Title).
+					Str("cpe", affected).
+					Msg("could not parse CPE: there may be a false positive match with a userspace_ksplice package")
+				return vs, nil
 			}
 			if wfn.Attr[cpe.Edition].V == "userspace_ksplice" {
-				atLeastOneKsplice = true
-			} else {
-				isOnlyKsplice = false
+				kspliceCPEs++
 			}
 		}
 
-		if isOnlyKsplice {
-			zlog.Debug(ctx).Msg("skipping ksplice vulnerabilities")
+		switch diff := cpes - kspliceCPEs; {
+		case cpes == 0:
+			// Continue if there are no CPEs.
+		case diff == 0:
+			zlog.Debug(ctx).Msg("skipping userspace_ksplice vulnerabilities")
 			return nil, nil
-		}
-
-		if atLeastOneKsplice {
+		case diff > 0:
 			zlog.Warn(ctx).
 				Str("def_title", def.Title).
-				Msg("potential false positives: vulnerability has at least one unskippable ksplice match")
+				Msg("potential false positives: OVAL may have a userspace_ksplice CPE which could not be skipped")
+		default:
+			panic("programmer error")
 		}
 
 		return vs, nil
