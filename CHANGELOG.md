@@ -1,3 +1,27 @@
+<a name="v1.5.36"></a>
+## [v1.5.36] - 2025-04-18
+[v1.5.36]: https://github.com/quay/claircore/compare/v1.5.35...v1.5.36
+
+- vex: allow timeout to pull down VEX archive to be configurable
+  <details>
+  As part of the RHEL VEX update process claircore will initially pull down an
+  archive of all CVEs, this archive includes all CVEs not just the ones
+  that affect Red Hat products. This means the file (while compressed)
+  will be quite large. The code previously allowed a timeout of 2 minutes
+  to pull down this file. This value remains the default but users have the
+  option to configure it to a different value using
+  updaters.config.rhel-vex.compressed_file_timeout.
+  </details>
+
+- rpm: add function to determine if packages are installed from RPMs
+  <details>
+  This change allows language detectors to be able to discard packages
+  that have been determined to have come from an RPM package. This ensures
+  that only the RPM package is matched to advisories and reduces
+  false-positives where language packages are patched but their metadata
+  is not updated (or cannot be updated).
+  </details>
+
 <a name="v1.5.35"></a>
 ## [v1.5.35] - 2025-02-11
 [v1.5.35]: https://github.com/quay/claircore/compare/v1.5.34...v1.5.35
