@@ -22,6 +22,7 @@ import (
 type MockMatcher struct {
 	ctrl     *gomock.Controller
 	recorder *MockMatcherMockRecorder
+	isgomock struct{}
 }
 
 // MockMatcherMockRecorder is the mock recorder for MockMatcher.
@@ -42,17 +43,17 @@ func (m *MockMatcher) EXPECT() *MockMatcherMockRecorder {
 }
 
 // Filter mocks base method.
-func (m *MockMatcher) Filter(arg0 *claircore.IndexRecord) bool {
+func (m *MockMatcher) Filter(record *claircore.IndexRecord) bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Filter", arg0)
+	ret := m.ctrl.Call(m, "Filter", record)
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
 // Filter indicates an expected call of Filter.
-func (mr *MockMatcherMockRecorder) Filter(arg0 any) *gomock.Call {
+func (mr *MockMatcherMockRecorder) Filter(record any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Filter", reflect.TypeOf((*MockMatcher)(nil).Filter), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Filter", reflect.TypeOf((*MockMatcher)(nil).Filter), record)
 }
 
 // Name mocks base method.
@@ -84,16 +85,16 @@ func (mr *MockMatcherMockRecorder) Query() *gomock.Call {
 }
 
 // Vulnerable mocks base method.
-func (m *MockMatcher) Vulnerable(arg0 context.Context, arg1 *claircore.IndexRecord, arg2 *claircore.Vulnerability) (bool, error) {
+func (m *MockMatcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Vulnerable", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "Vulnerable", ctx, record, vuln)
 	ret0, _ := ret[0].(bool)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Vulnerable indicates an expected call of Vulnerable.
-func (mr *MockMatcherMockRecorder) Vulnerable(arg0, arg1, arg2 any) *gomock.Call {
+func (mr *MockMatcherMockRecorder) Vulnerable(ctx, record, vuln any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Vulnerable", reflect.TypeOf((*MockMatcher)(nil).Vulnerable), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Vulnerable", reflect.TypeOf((*MockMatcher)(nil).Vulnerable), ctx, record, vuln)
 }
