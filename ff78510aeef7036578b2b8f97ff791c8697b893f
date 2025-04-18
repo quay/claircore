@@ -1,0 +1,9 @@
+vex: allow timeout to pull down VEX archive to be configurable
+
+As part of the RHEL VEX update process claircore will initially pull down an
+archive of all CVEs, this archive includes all CVEs not just the ones
+that affect Red Hat products. This means the file (while compressed)
+will be quite large. The code previously allowed a timeout of 2 minutes
+to pull down this file. This value remains the default but users have the
+option to configure it to a different value using
+updaters.config.rhel-vex.compressed_file_timeout.
