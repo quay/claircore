@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Repository Scanner - Claircore Documentation</title>
+        <title>Iterator Patterns - Claircore Documentation</title>
 
 
         <!-- Custom HTML head -->
@@ -163,26 +163,181 @@
 
                 <div id="content" class="content">
                     <main>
-                        <h1 id="repository-scanner"><a class="header" href="#repository-scanner">Repository Scanner</a></h1>
-<p>A RepositoryScanner should identify any repositories discovered in the provided layer.
-It is OK for the scanner to identify no repositories.</p>
-<pre><code>package indexer // import "github.com/quay/claircore/indexer"
+                        <h1 id="iterator-patterns"><a class="header" href="#iterator-patterns">Iterator patterns</a></h1>
+<p>Go 1.23 stabilized the "<a href="https://tip.golang.org/doc/go1.23#language">range over func</a>" feature.
+This allows user-defined types to work with <code>range</code> expressions,
+which effectively allows for creating "iterators" as in languages like <a href="https://doc.rust-lang.org/std/iter/index.html">Rust</a>.</p>
+<p>As this feature is relatively new, here's some helpers on when and where to
+deploy it, and what patterns it's replacing. Familiarity with the [<code>iter</code>]
+documentation is assumed throughout.</p>
+<h2 id="large-collections"><a class="header" href="#large-collections">Large collections</a></h2>
+<p>The most obvious use is to replace collections (slices, maps) that have a lot of
+entries that callers may ignore. Using an <code>iter.Seq</code> allows for the values to be
+produced one-by-one, allowing for better resource usage.</p>
+<p>A pitfall to watch out for is holding resources longer than intended.
+Compare the two following snippets:</p>
+<pre><code class="language-go">func do(ctx context.Context) (err error) {
+    var objs []any
+    objs, err = getLotsofDatabaseObjects(ctx)
+    if err != nil {
+        return err
+    }
+    obj := objs[0]
 
-type RepositoryScanner interface {
-	VersionedScanner
-	Scan(context.Context, *claircore.Layer) ([]*claircore.Repository, error)
+    // Simulate doing something
+    time.Sleep(time.Minute)
+
+    return nil
 }
 </code></pre>
+<pre><code class="language-go">func do(ctx context.Context) (err error) {
+    var objs iter.Seq[any]
+    objs, err = DatabaseObjectsIter(ctx)
+    if err != nil {
+        return err
+    }
+    for obj := range objs {
+        // Simulate doing something
+        time.Sleep(time.Minute)
+        break
+    }
+
+    return nil
+}
+</code></pre>
+<p>Although the second one only produces one return, it holds onto a database
+handle for the entire duration. This may be a net win or it may not, but the
+lifetime of the handle has moved in a non-obvious way between the two
+functions: the first has it scoped to the <code>getLotsofDatabaseObjects</code> function,
+and the second has it captured in the returned <code>objs</code> iterator.</p>
+<p>There's no way to express this sort of lifetime in Go, so make sure to document
+when iterators hold resources in a way that may have not been an issue when
+working with builtin collections.</p>
+<h2 id="error-handling"><a class="header" href="#error-handling">Error handling</a></h2>
+<p>Error propagation requires more thought when working with iterators. There are
+three broad classes of error to consider.</p>
+<p>As a rule of thumb, using an iterator raises procedure from the "value domain" to
+the "function domain," so error reporting must move domains with it.</p>
+<h3 id="iterator-construction-errors"><a class="header" href="#iterator-construction-errors">Iterator construction errors</a></h3>
+<p>This class of errors occurs when code cannot construct an iterator. Functions
+generally have the prototype of:</p>
+<pre><code class="language-go">type ConstructError func() (iter.Seq[any], error)
+</code></pre>
+<p>This means that if there's an error return, the iterator was not returned.
+By way of analogy to the <code>database/sql</code> package, this is like constructing a
+<code>sql.Rows</code> object:</p>
+<pre><code class="language-go">var db *sql.Conn
+
+rows, err := db.QueryContext(ctx, `SELECT version()`) // ← here
+if err != nil {
+    panic(err)
+}
+defer rows.Close()
+
+for rows.Next() {
+    var v any
+    if err := rows.Scan(&amp;v); err != nil {
+        panic(err)
+    }
+    // ...
+}
+
+if err := rows.Err(); err != nil {
+    panic(err)
+}
+</code></pre>
+<p>If an error is returned, there are no rows to read.</p>
+<h3 id="internal-iteration-errors"><a class="header" href="#internal-iteration-errors">Internal iteration errors</a></h3>
+<p>This class of errors occurs when there's an error in the iterator itself, almost
+certainly from a lower layer. An example prototype would be:</p>
+<pre><code class="language-go">type FallableIterator func() (iter.Seq[any], func() error)
+</code></pre>
+<p>Function returns like this are usually meant to be called after the iterator has
+been consumed to see if there was a problem. By way of analogy to the
+<code>database/sql</code> package, this is like calling the <code>Err</code> method of a <code>sql.Rows</code>
+object:</p>
+<pre><code class="language-go">var db *sql.Conn
+
+rows, err := db.QueryContext(ctx, `SELECT version()`)
+if err != nil {
+    panic(err)
+}
+defer rows.Close()
+
+for rows.Next() {
+    var v any
+    if err := rows.Scan(&amp;v); err != nil {
+        panic(err)
+    }
+    // ...
+}
+
+if err := rows.Err(); err != nil { // ← here
+    panic(err)
+}
+</code></pre>
+<h3 id="per-iteration-errors"><a class="header" href="#per-iteration-errors">Per-iteration errors</a></h3>
+<p>This class of errors occurs when there's an error producing one specific value.
+An example prototype would be:</p>
+<pre><code class="language-go">type PerIterationErr func() iter.Seq2[any, error]
+</code></pre>
+<p>Doing this allows the calling code to do error handling in a way it sees fit,
+instead of a callee making the decision. For an iterator of this style, the
+slice-based equivalent would be something like <code>func[V any]() []struct{Value V, Err error}</code>. The slice-based code usually just returned no results and an error,
+though. By way of analogy to the <code>database/sql</code> package, this is like the return
+of the <code>Scan</code> method of a <code>sql.Rows</code> object:</p>
+<pre><code class="language-go">var db *sql.Conn
+
+rows, err := db.QueryContext(ctx, `SELECT version()`)
+if err != nil {
+    panic(err)
+}
+defer rows.Close()
+
+for rows.Next() {
+    var v any
+    if err := rows.Scan(&amp;v); err != nil { // ← here
+        panic(err)
+    }
+    // ...
+}
+
+if err := rows.Err(); err != nil {
+    panic(err)
+}
+</code></pre>
+<h3 id="combining-styles"><a class="header" href="#combining-styles">Combining styles</a></h3>
+<p>There's no hard-and-fast rule, but if an author needs (wants) to make use of all
+three, an "iterator factory" is usually a good pattern:</p>
+<pre><code class="language-go">type Collection struct {}
+
+func NewCollection() (Collection, error) { // construction error reporting
+    panic("unimplemented")
+}
+
+func (c *Collection) Close() { // explicit lifetime for held resources
+    panic("unimplemented")
+}
+
+func (c *Collection) All() (iter.Seq2[any, error], func()) { // per-iteration and internal error reporting
+    panic("unimplemented")
+}
+</code></pre>
+<h2 id="composition"><a class="header" href="#composition">Composition</a></h2>
+<p>Iterators are "just" some language help over the function-passing syntax, so
+it's possible to compose them in arbitrary ways. Just remember that the
+iterators are calling "into" the loop body; to put that another way, iterators
+invert control.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../reference/remote_matcher.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../contributor/commit-style.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <i class="fa fa-angle-left"></i>
                             </a>
 
-                            <a rel="next prefetch" href="../reference/resolver.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../contributor/local-dev.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <i class="fa fa-angle-right"></i>
                             </a>
 
@@ -192,11 +347,11 @@ type RepositoryScanner interface {
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../reference/remote_matcher.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../contributor/commit-style.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <i class="fa fa-angle-left"></i>
                     </a>
 
-                    <a rel="next prefetch" href="../reference/resolver.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../contributor/local-dev.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <i class="fa fa-angle-right"></i>
                     </a>
             </nav>
