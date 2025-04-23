@@ -260,8 +260,9 @@ func (doc hydraDoc) Run(dir string) func(*testing.T) {
 		if len(want) != len(got) {
 			t.Errorf("wanted %d packages but got %d", len(want), len(got))
 		}
-		if !cmp.Equal(got, want, rpmtest.Options) {
-			t.Error(cmp.Diff(got, want, rpmtest.Options))
+		opts := rpmtest.Options(t)
+		if !cmp.Equal(got, want, opts) {
+			t.Error(cmp.Diff(got, want, opts))
 		}
 	}
 }
