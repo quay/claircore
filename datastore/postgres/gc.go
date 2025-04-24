@@ -94,6 +94,10 @@ func (s *MatcherStore) GC(ctx context.Context, keep int) (int64, error) {
 			if err != nil {
 				errC <- err
 			}
+			err = enrichmentCleanup(ctx, s.pool, u)
+			if err != nil {
+				errC <- err
+			}
 		}(updater)
 	}
 
@@ -214,7 +218,7 @@ AND v1.id = v2.id;
 	start := time.Now()
 	ctx = zlog.ContextWithValues(ctx, "updater", updater)
 	zlog.Debug(ctx).
-		Msg("starting clean up")
+		Msg("starting vuln clean up")
 	res, err := pool.Exec(ctx, deleteOrphanedVulns, updater)
 	if err != nil {
 		gcCounter.WithLabelValues("deleteVulns", "false").Inc()
@@ -223,6 +227,35 @@ AND v1.id = v2.id;
 	zlog.Debug(ctx).Int64("rows affected", res.RowsAffected()).Msg("vulns deleted")
 	gcCounter.WithLabelValues("deleteVulns", "true").Inc()
 	gcDuration.WithLabelValues("deleteVulns").Observe(time.Since(start).Seconds())
+
+	return nil
+}
+
+func enrichmentCleanup(ctx context.Context, pool *pgxpool.Pool, updater string) error {
+	const (
+		deleteOrphanedEnrichments = `
+DELETE FROM enrichment e1 USING
+	enrichment e2
+	LEFT JOIN uo_enrich uen
+		ON e2.id = uen.enrich
+	WHERE uen.enrich IS NULL
+	AND e2.updater = $1
+	AND e1.id = e2.id;
+`
+	)
+
+	start := time.Now()
+	ctx = zlog.ContextWithValues(ctx, "updater", updater)
+	zlog.Debug(ctx).
+		Msg("starting enrichment clean up")
+	res, err := pool.Exec(ctx, deleteOrphanedEnrichments, updater)
+	if err != nil {
+		gcCounter.WithLabelValues("deleteEnrichments", "false").Inc()
+		return fmt.Errorf("failed while exec'ing enrichment delete: %w", err)
+	}
+	zlog.Debug(ctx).Int64("rows affected", res.RowsAffected()).Msg("enrichments deleted")
+	gcCounter.WithLabelValues("deleteEnrichments", "true").Inc()
+	gcDuration.WithLabelValues("deleteEnrichments").Observe(time.Since(start).Seconds())
 
 	return nil
 }
