@@ -79,12 +79,12 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 		return nil, fmt.Errorf("python: failed to find delicious egg: %w", err)
 	}
 	var ret []*claircore.Package
+	fc, err := rpm.NewFileChecker(ctx, layer)
+	if err != nil {
+		return nil, fmt.Errorf("python: unable to check RPM db: %w", err)
+	}
 	for _, n := range ms {
-		isRPM, err := rpm.FileInstalledByRPM(ctx, layer, n)
-		if err != nil {
-			return nil, err
-		}
-		if isRPM {
+		if fc.IsRPM(n) {
 			zlog.Debug(ctx).
 				Str("path", n).
 				Msg("file path determined to be of RPM origin")

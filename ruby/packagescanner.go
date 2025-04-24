@@ -103,12 +103,12 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	}
 
 	var ret []*claircore.Package
+	fc, err := rpm.NewFileChecker(ctx, layer)
+	if err != nil {
+		return nil, fmt.Errorf("ruby: unable to check RPM db: %w", err)
+	}
 	for _, g := range gs {
-		isRPM, err := rpm.FileInstalledByRPM(ctx, layer, g)
-		if err != nil {
-			return nil, fmt.Errorf("ruby: unable to check RPM db: %w", err)
-		}
-		if isRPM {
+		if fc.IsRPM(g) {
 			zlog.Debug(ctx).
 				Str("path", g).
 				Msg("file path determined to be of RPM origin")

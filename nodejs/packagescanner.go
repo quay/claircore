@@ -92,12 +92,13 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 
 	ret := make([]*claircore.Package, 0, len(pkgs))
 	var invalidPkgs []string
+	fc, err := rpm.NewFileChecker(ctx, layer)
+	if err != nil {
+		return nil, fmt.Errorf("nodejs: unable to check RPM db: %w", err)
+	}
+
 	for _, p := range pkgs {
-		isRPM, err := rpm.FileInstalledByRPM(ctx, layer, p)
-		if err != nil {
-			return nil, err
-		}
-		if isRPM {
+		if fc.IsRPM(p) {
 			zlog.Debug(ctx).
 				Str("path", p).
 				Msg("file path determined to be of RPM origin")

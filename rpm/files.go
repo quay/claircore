@@ -132,13 +132,26 @@ func (fc *filesCache) getFiles(ctx context.Context, layer *claircore.Layer) (map
 	return files, nil
 }
 
-// FileInstalledByRPM takes a [claircore.Layer] and filepath string and
-// returns a boolean signifying whether that file came from an RPM package.
-func FileInstalledByRPM(ctx context.Context, layer *claircore.Layer, filepath string) (bool, error) {
-	files, err := fc.getFiles(ctx, layer)
+// NewFileChecker creates a new FileChecker using the file cache to memoize lookups
+// of the set of paths that are RPM files.
+func NewFileChecker(ctx context.Context, layer *claircore.Layer) (*FileChecker, error) {
+	fs, err := fc.getFiles(ctx, layer)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
-	_, exists := files[filepath]
-	return exists, nil
+	return &FileChecker{
+		files: fs,
+	}, nil
+}
+
+// FileChecker is used to check if a path is an RPM file.
+type FileChecker struct {
+	files map[string]struct{}
+}
+
+// IsRPM returns true if the given path exists in the set of paths that are
+// considered to be RPM files in the layer this FileChecker was created for.
+func (fc *FileChecker) IsRPM(path string) bool {
+	_, exists := fc.files[path]
+	return exists
 }

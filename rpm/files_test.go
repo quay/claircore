@@ -82,10 +82,11 @@ func TestIsRPMFile(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx, cancel := context.WithCancel(zlog.Test(context.Background(), t))
 			t.Parallel()
-			isRPM, err := FileInstalledByRPM(ctx, &realizedLayers[0], tt.filePath)
+			fc, err := NewFileChecker(ctx, &realizedLayers[0])
 			if err != nil {
 				t.Fatal(err)
 			}
+			isRPM := fc.IsRPM(tt.filePath)
 			if tt.isRPM != isRPM {
 				t.Errorf("expected isRPM: %t, got isRPM: %t", tt.isRPM, isRPM)
 			}
