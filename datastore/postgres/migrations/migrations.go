@@ -120,4 +120,8 @@ var MatcherMigrations = []migrate.Migration{
 		ID: 14,
 		Up: runFile("matcher/14-delete-rhcc-vulns.sql"),
 	},
+	{
+		ID: 15,
+		Up: runFile("matcher/15-enrichment-indexes.sql"),
+	},
 }

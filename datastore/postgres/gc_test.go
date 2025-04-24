@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"io"
 	"net/http"
 	"testing"
@@ -18,6 +19,8 @@ import (
 	"github.com/quay/claircore/test/integration"
 	pgtest "github.com/quay/claircore/test/postgres"
 )
+
+var _ driver.Updater = (*updaterMock)(nil)
 
 type updaterMock struct {
 	_name  func() string
@@ -35,6 +38,30 @@ func (u *updaterMock) Fetch(ctx context.Context, fp driver.Fingerprint) (io.Read
 
 func (u *updaterMock) Parse(ctx context.Context, contents io.ReadCloser) ([]*claircore.Vulnerability, error) {
 	return u._parse(ctx, contents)
+}
+
+var (
+	_ driver.Updater           = (*enricherMock)(nil)
+	_ driver.EnrichmentUpdater = (*enricherMock)(nil)
+)
+
+type enricherMock struct {
+	driver.NoopUpdater
+	_name  func() string
+	_fetch func(_ context.Context, _ driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error)
+	_parse func(ctx context.Context, contents io.ReadCloser) ([]driver.EnrichmentRecord, error)
+}
+
+func (e enricherMock) Name() string {
+	return e._name()
+}
+
+func (e enricherMock) FetchEnrichment(ctx context.Context, fingerprint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
+	return e._fetch(ctx, fingerprint)
+}
+
+func (e enricherMock) ParseEnrichment(ctx context.Context, contents io.ReadCloser) ([]driver.EnrichmentRecord, error) {
+	return e._parse(ctx, contents)
 }
 
 // TestGC confirms the garbage collection of
@@ -55,6 +82,23 @@ func TestGC(t *testing.T) {
 					Name:    randString(t),
 					Updater: "MockUpdater",
 					Package: test.GenUniquePackages(1)[0],
+				},
+			}, nil
+		},
+	}
+
+	// mock returns exactly one random enrichment each time its Parse method is called.
+	// each update operation will be associated with a single enrichment.
+	mockEnrich := &enricherMock{
+		_name: func() string { return "MockEnrichmentUpdater" },
+		_fetch: func(_ context.Context, _ driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
+			return nil, "", nil
+		},
+		_parse: func(ctx context.Context, contents io.ReadCloser) ([]driver.EnrichmentRecord, error) {
+			return []driver.EnrichmentRecord{
+				{
+					Tags:       []string{randString(t)},
+					Enrichment: json.RawMessage("{}"),
 				},
 			}, nil
 		},
@@ -116,14 +160,22 @@ func TestGC(t *testing.T) {
 				locks,
 				http.DefaultClient, // Used on purpose -- shouldn't actually get called by anything.
 				updates.WithEnabled([]string{}),
+				updates.WithFactories(map[string]driver.UpdaterSetFactory{
+					"MockEnrichmentUpdater": func() driver.UpdaterSetFactory {
+						set := driver.NewUpdaterSet()
+						_ = set.Add(mockEnrich)
+						return driver.StaticSet(set)
+					}(),
+				}),
 				updates.WithOutOfTree([]driver.Updater{mock}),
 			)
 			if err != nil {
 				t.Fatalf("failed creating update manager: %v", err)
 			}
 
+			t.Logf("update Opts: %d", tt.updateOps)
 			// run updater n times to create n update operations
-			for i := 0; i < tt.updateOps; i++ {
+			for range tt.updateOps {
 				err := mgr.Run(ctx)
 				if err != nil {
 					t.Fatalf("manager failed to run: %v", err)
@@ -138,9 +190,16 @@ func TestGC(t *testing.T) {
 			if len(ops["MockUpdater"]) != tt.updateOps {
 				t.Fatalf("%s got: %v want: %v", tt.name, len(ops["MockUpdater"]), tt.updateOps)
 			}
+			ops, err = store.GetUpdateOperations(ctx, driver.EnrichmentKind)
+			if err != nil {
+				t.Fatalf("failed obtaining enrichment update ops: %v", err)
+			}
+			if len(ops["MockEnrichmentUpdater"]) != tt.updateOps {
+				t.Fatalf("%s got: %v want: %v", tt.name, len(ops["MockEnrichmentUpdater"]), tt.updateOps)
+			}
 
 			// run gc
-			expectedNotDone := Max(tt.updateOps-tt.keep-GCThrottle, 0)
+			expectedNotDone := max(2*(tt.updateOps-tt.keep)-GCThrottle, 0)
 			notDone, err := store.GC(ctx, tt.keep)
 			switch {
 			case err != nil:
@@ -153,14 +212,20 @@ func TestGC(t *testing.T) {
 			if tt.updateOps < tt.keep {
 				wantKeep = tt.updateOps
 			}
-			ops, err = store.GetUpdateOperations(ctx, driver.VulnerabilityKind)
+			expectedRemaining := 2*wantKeep + expectedNotDone
+
+			updaterOps, err := store.GetUpdateOperations(ctx, driver.VulnerabilityKind)
 			if err != nil {
 				t.Fatalf("failed obtaining update ops: %v", err)
 			}
-			t.Logf("ops %v", ops)
-			expectedRemaining := wantKeep + expectedNotDone
-			if len(ops["MockUpdater"]) != expectedRemaining {
-				t.Fatalf("%s got: %v want: %v", tt.name, len(ops["MockUpdater"]), expectedRemaining)
+			t.Logf("ops %v", updaterOps)
+			enricherOps, err := store.GetUpdateOperations(ctx, driver.EnrichmentKind)
+			if err != nil {
+				t.Fatalf("failed obtaining enrichment update ops: %v", err)
+			}
+			t.Logf("ops %v", enricherOps)
+			if len(updaterOps["MockUpdater"])+len(enricherOps["MockEnrichmentUpdater"]) != expectedRemaining {
+				t.Fatalf("%s got: %v want: %v", tt.name, len(updaterOps["MockUpdater"])+len(enricherOps["MockEnrichmentUpdater"]), expectedRemaining)
 			}
 		})
 	}
@@ -173,11 +238,4 @@ func randString(t *testing.T) string {
 		t.Fatalf("failed to generate random string: %v", err)
 	}
 	return hex.EncodeToString(buf)
-}
-
-func Max(x, y int) int {
-	if x < y {
-		return y
-	}
-	return x
 }

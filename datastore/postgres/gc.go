@@ -15,6 +15,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/zlog"
 	"golang.org/x/sync/semaphore"
+
+	"github.com/quay/claircore/libvuln/driver"
 )
 
 var (
@@ -54,6 +56,8 @@ const (
 // If a full GC is required run this method until the returned int64 value
 // is 0.
 func (s *MatcherStore) GC(ctx context.Context, keep int) (int64, error) {
+	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/GC")
+
 	// obtain update operations which need deletin'
 	ops, totalOps, err := eligibleUpdateOpts(ctx, s.pool, keep)
 	if err != nil {
@@ -81,20 +85,32 @@ func (s *MatcherStore) GC(ctx context.Context, keep int) (int64, error) {
 	cpus := int64(runtime.GOMAXPROCS(0))
 	sem := semaphore.NewWeighted(cpus)
 
-	errC := make(chan error, len(updaters))
+	errC := make(chan error, len(updaters[driver.VulnerabilityKind])+len(updaters[driver.EnrichmentKind]))
 
-	for _, updater := range updaters {
-		err = sem.Acquire(ctx, 1)
-		if err != nil {
-			break
+	for kind, us := range updaters {
+		var cleanup cleanupFunc
+		switch kind {
+		case driver.VulnerabilityKind:
+			cleanup = vulnCleanup
+		case driver.EnrichmentKind:
+			cleanup = enrichmentCleanup
+		default:
+			zlog.Error(ctx).Str("kind", string(kind)).Msg("unknown updater kind; skipping cleanup")
+			continue
 		}
-		go func(u string) {
-			defer sem.Release(1)
-			err := vulnCleanup(ctx, s.pool, u)
+		for _, u := range us {
+			err = sem.Acquire(ctx, 1)
 			if err != nil {
-				errC <- err
+				break
 			}
-		}(updater)
+			go func(cleanup cleanupFunc, u string) {
+				defer sem.Release(1)
+				err := cleanup(ctx, s.pool, u)
+				if err != nil {
+					errC <- err
+				}
+			}(cleanup, u)
+		}
 	}
 
 	// unconditionally wait for all in-flight go routines to return.
@@ -116,11 +132,11 @@ func (s *MatcherStore) GC(ctx context.Context, keep int) (int64, error) {
 
 // distinctUpdaters returns all updaters which have registered an update
 // operation.
-func distinctUpdaters(ctx context.Context, pool *pgxpool.Pool) ([]string, error) {
+func distinctUpdaters(ctx context.Context, pool *pgxpool.Pool) (map[driver.UpdateKind][]string, error) {
 	const (
 		// will always contain at least two update operations
 		selectUpdaters = `
-SELECT DISTINCT(updater) FROM update_operation;
+SELECT DISTINCT(updater), kind FROM update_operation;
 `
 	)
 	rows, err := pool.Query(ctx, selectUpdaters)
@@ -129,17 +145,20 @@ SELECT DISTINCT(updater) FROM update_operation;
 	}
 	defer rows.Close()
 
-	var updaters []string
+	updaters := make(map[driver.UpdateKind][]string)
 	for rows.Next() {
-		var updater string
-		err := rows.Scan(&updater)
+		var (
+			updater string
+			kind    driver.UpdateKind
+		)
+		err := rows.Scan(&updater, &kind)
 		switch err {
 		case nil:
 			// hop out
 		default:
 			return nil, fmt.Errorf("error scanning updater: %v", err)
 		}
-		updaters = append(updaters, updater)
+		updaters[kind] = append(updaters[kind], updater)
 	}
 	if rows.Err() != nil {
 		return nil, rows.Err()
@@ -198,6 +217,8 @@ WHERE array_length(ordered_ops.refs, 1) > $2;
 	return m, int64(len(m)), nil
 }
 
+type cleanupFunc func(context.Context, *pgxpool.Pool, string) error
+
 func vulnCleanup(ctx context.Context, pool *pgxpool.Pool, updater string) error {
 	const (
 		deleteOrphanedVulns = `
@@ -214,7 +235,7 @@ AND v1.id = v2.id;
 	start := time.Now()
 	ctx = zlog.ContextWithValues(ctx, "updater", updater)
 	zlog.Debug(ctx).
-		Msg("starting clean up")
+		Msg("starting vuln clean up")
 	res, err := pool.Exec(ctx, deleteOrphanedVulns, updater)
 	if err != nil {
 		gcCounter.WithLabelValues("deleteVulns", "false").Inc()
@@ -223,6 +244,35 @@ AND v1.id = v2.id;
 	zlog.Debug(ctx).Int64("rows affected", res.RowsAffected()).Msg("vulns deleted")
 	gcCounter.WithLabelValues("deleteVulns", "true").Inc()
 	gcDuration.WithLabelValues("deleteVulns").Observe(time.Since(start).Seconds())
+
+	return nil
+}
+
+func enrichmentCleanup(ctx context.Context, pool *pgxpool.Pool, updater string) error {
+	const (
+		deleteOrphanedEnrichments = `
+DELETE FROM enrichment e1 USING
+	enrichment e2
+	LEFT JOIN uo_enrich uen
+		ON e2.id = uen.enrich
+	WHERE uen.enrich IS NULL
+	AND e2.updater = $1
+	AND e1.id = e2.id;
+`
+	)
+
+	start := time.Now()
+	ctx = zlog.ContextWithValues(ctx, "updater", updater)
+	zlog.Debug(ctx).
+		Msg("starting enrichment clean up")
+	res, err := pool.Exec(ctx, deleteOrphanedEnrichments, updater)
+	if err != nil {
+		gcCounter.WithLabelValues("deleteEnrichments", "false").Inc()
+		return fmt.Errorf("failed while exec'ing enrichment delete: %w", err)
+	}
+	zlog.Debug(ctx).Int64("rows affected", res.RowsAffected()).Msg("enrichments deleted")
+	gcCounter.WithLabelValues("deleteEnrichments", "true").Inc()
+	gcDuration.WithLabelValues("deleteEnrichments").Observe(time.Since(start).Seconds())
 
 	return nil
 }
