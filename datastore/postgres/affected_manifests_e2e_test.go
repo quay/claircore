@@ -7,8 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
@@ -194,15 +193,12 @@ func (e *affectedE2E) IndexArtifacts(t *testing.T) {
 		t.Fatalf("failed to insert manifest: %v", err)
 	}
 	for _, pkg := range e.ir.Packages {
-		var nVer pgtype.Int4Array
-		nVer.Status = pgtype.Present
-		nVer.Set(pkg.NormalizedVersion.V)
 		_, err := e.pool.Exec(ctx, insertPkg,
 			pkg.Name,
 			pkg.Kind,
 			pkg.Version,
 			pkg.NormalizedVersion.Kind,
-			&nVer,
+			pkg.NormalizedVersion,
 			pkg.Module,
 			pkg.Arch,
 			pkg.ID,
@@ -212,13 +208,12 @@ func (e *affectedE2E) IndexArtifacts(t *testing.T) {
 		}
 		if pkg.Source != nil {
 			pkg := pkg.Source
-			nVer.Set(pkg.NormalizedVersion.V)
 			_, err := e.pool.Exec(ctx, insertPkg,
 				pkg.Name,
 				pkg.Kind,
 				pkg.Version,
 				pkg.NormalizedVersion.Kind,
-				&nVer,
+				pkg.NormalizedVersion,
 				pkg.Module,
 				pkg.Arch,
 				pkg.ID,

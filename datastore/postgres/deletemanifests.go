@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/zlog"
@@ -62,7 +62,7 @@ func (s *IndexerStore) DeleteManifests(ctx context.Context, ds ...claircore.Dige
 	}(&err)
 	deletedManifests := make([]claircore.Digest, 0, len(ds))
 	for _, d := range ds {
-		s.pool.BeginFunc(ctx, func(tx pgx.Tx) error {
+		pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
 			defer promTimer(deleteManifestsDuration, "deleteLayers", &err)()
 			defer func(e *error) {
 				deleteManifestsCounter.WithLabelValues("deleteLayers", success(*e)).Inc()

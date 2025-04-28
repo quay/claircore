@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/zlog"
@@ -143,15 +143,13 @@ WHERE
 	for rows.Next() {
 		var pkg claircore.Package
 		var id int64
-		var nKind *string
-		var nVer pgtype.Int4Array
 		err := rows.Scan(
 			&id,
 			&pkg.Name,
 			&pkg.Version,
 			&pkg.Kind,
-			&nKind,
-			&nVer,
+			&pkg.NormalizedVersion.Kind,
+			&pkg.NormalizedVersion,
 			&pkg.Module,
 			&pkg.Arch,
 		)
@@ -160,12 +158,6 @@ WHERE
 		}
 		idStr := strconv.FormatInt(id, 10)
 		pkg.ID = idStr
-		if nKind != nil {
-			pkg.NormalizedVersion.Kind = *nKind
-			for i, n := range nVer.Elements {
-				pkg.NormalizedVersion.V[i] = n.Int
-			}
-		}
 		pkgsToFilter = append(pkgsToFilter, pkg)
 	}
 	zlog.Debug(ctx).Int("count", len(pkgsToFilter)).Msg("packages to filter")

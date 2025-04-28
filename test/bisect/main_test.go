@@ -29,7 +29,7 @@ import (
 	"github.com/quay/claircore/datastore/postgres"
 	"github.com/quay/claircore/libindex"
 	"github.com/quay/claircore/libvuln"
-	"github.com/quay/claircore/pkg/ctxlock"
+	"github.com/quay/claircore/pkg/ctxlock/v2"
 	"github.com/quay/claircore/test/integration"
 	_ "github.com/quay/claircore/updater/defaults"
 )
