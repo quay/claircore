@@ -5,6 +5,9 @@
 //
 // This package makes use of "unsafe" to avoid some allocations, but the "safe"
 // build tag can be provided to use allocating versions of the functions.
+//
+// TODO(crozzy): Once pgx v4 is no longer needed, copy code at /v2 path one level up
+// and delete /v2 path.
 package ctxlock
 
 import (
@@ -18,11 +21,17 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/quay/zlog"
 )
 
+// TODO(hank) Specify this algorithm to check its soundness.
+
+// New creates a Locker that will pull connections from the provided pool.
+//
+// The provided context is only used for logging and initial setup. Close must
+// be called to release held resources.
 func New(ctx context.Context, p *pgxpool.Pool) (*Locker, error) {
 	l := &Locker{
 		p:  p,

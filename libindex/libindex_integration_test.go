@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/quay/zlog"
 	"go.uber.org/mock/gomock"
 
@@ -19,7 +19,7 @@ import (
 	"github.com/quay/claircore/datastore/postgres"
 	"github.com/quay/claircore/internal/wart"
 	"github.com/quay/claircore/linux"
-	"github.com/quay/claircore/pkg/ctxlock"
+	"github.com/quay/claircore/pkg/ctxlock/v2"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 	indexer "github.com/quay/claircore/test/mock/indexer"
