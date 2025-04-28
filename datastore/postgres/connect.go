@@ -4,10 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/quay/zlog"
 
+	"github.com/quay/claircore/datastore/postgres/types"
 	"github.com/quay/claircore/pkg/poolstats"
 )
 
@@ -24,8 +25,9 @@ func Connect(ctx context.Context, connString string, applicationName string) (*p
 	if _, ok := params[appnameKey]; !ok {
 		params[appnameKey] = applicationName
 	}
+	cfg.AfterConnect = types.ConnectRegisterTypes
 
-	pool, err := pgxpool.ConnectConfig(ctx, cfg)
+	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ConnPool: %v", err)
 	}

@@ -200,14 +200,16 @@ func (s *IndexerStore) IndexPackages(ctx context.Context, pkgs []*claircore.Pack
 }
 
 func queueInsert(ctx context.Context, b *microbatch.Insert, stmt string, pkg *claircore.Package) error {
-	var vKind *string
-	var vNorm []int32
-	if pkg.NormalizedVersion.Kind != "" {
-		vKind = &pkg.NormalizedVersion.Kind
-		vNorm = pkg.NormalizedVersion.V[:]
+	// There is a disconnect between the claircore.Package.NormalizedVersion field
+	// (which is never nil) and the DB column norm_version (which can be null) so
+	// we need to key off the kind to judge whether to leave it null or not.
+	// TODO(crozzy): Explore if we can include this logic as part of the Version's EncodePlan.
+	normVer := &pkg.NormalizedVersion
+	if pkg.NormalizedVersion.Kind == "" {
+		normVer = nil
 	}
 	err := b.Queue(ctx, stmt,
-		pkg.Name, pkg.Kind, pkg.Version, vKind, vNorm, pkg.Module, pkg.Arch,
+		pkg.Name, pkg.Kind, pkg.Version, pkg.NormalizedVersion.Kind, normVer, pkg.Module, pkg.Arch,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to queue insert for package %q: %w", pkg.Name, err)

@@ -14,7 +14,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/updates"
-	"github.com/quay/claircore/pkg/ctxlock"
+	"github.com/quay/claircore/pkg/ctxlock/v2"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 	pgtest "github.com/quay/claircore/test/postgres"
@@ -181,7 +181,6 @@ func TestGC(t *testing.T) {
 					t.Fatalf("manager failed to run: %v", err)
 				}
 			}
-
 			// confirm update operations exist
 			ops, err := store.GetUpdateOperations(ctx, driver.VulnerabilityKind)
 			if err != nil {

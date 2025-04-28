@@ -18,11 +18,17 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/quay/zlog"
 )
 
+// TODO(hank) Specify this algorithm to check its soundness.
+
+// New creates a Locker that will pull connections from the provided pool.
+//
+// The provided context is only used for logging and initial setup. Close must
+// be called to release held resources.
 func New(ctx context.Context, p *pgxpool.Pool) (*Locker, error) {
 	l := &Locker{
 		p:  p,
