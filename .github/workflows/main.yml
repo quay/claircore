@@ -108,7 +108,7 @@ jobs:
             cd "$dir"
             go list -m
             go mod download
-            go test -race ${RUNNER_DEBUG:+-v} "-coverprofile=${{ runner.temp }}/$(go list -m | tr / _).codecov.out" -covermode=atomic ./...
+            GOMAXPROCS=2 go test -race ${RUNNER_DEBUG:+-v} "-coverprofile=${{ runner.temp }}/$(go list -m | tr / _).codecov.out" -covermode=atomic ./...
           ); done
       - name: Codecov
         if: >-

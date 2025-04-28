@@ -5,6 +5,9 @@
 //
 // This package makes use of "unsafe" to avoid some allocations, but the "safe"
 // build tag can be provided to use allocating versions of the functions.
+//
+// TODO(crozzy): Once pgx v4 is no longer needed, copy code at /v2 path one level up
+// and delete /v2 path.
 package ctxlock
 
 import (
@@ -18,44 +21,18 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jackc/pgconn"
-	"github.com/jackc/pgx/v4/pgxpool"
-	pgxpoolv5 "github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/quay/zlog"
-
-	v2 "github.com/quay/claircore/pkg/ctxlock/v2"
 )
 
-type pool interface {
-	*pgxpool.Pool | *pgxpoolv5.Pool
-}
-
-type locker interface {
-	TryLock(parent context.Context, key string) (context.Context, context.CancelFunc)
-	Lock(parent context.Context, key string) (context.Context, context.CancelFunc)
-	Close(_ context.Context) (_ error)
-}
-
 // TODO(hank) Specify this algorithm to check its soundness.
-// TODO(crozzy) Once dependent projects have been updated to use v5, remove
-// the v2 package and convert ctxlock to use pgxpoolv5 directly.
 
 // New creates a Locker that will pull connections from the provided pool.
 //
 // The provided context is only used for logging and initial setup. Close must
 // be called to release held resources.
-func New[T pool](ctx context.Context, p T) (locker, error) {
-	switch v := any(p).(type) {
-	case *pgxpoolv5.Pool:
-		return v2.New(ctx, v)
-	case *pgxpool.Pool:
-		return new(ctx, v)
-	default:
-		return nil, fmt.Errorf("unsupported pool type: %T", p)
-	}
-}
-
-func new(ctx context.Context, p *pgxpool.Pool) (*Locker, error) {
+func New(ctx context.Context, p *pgxpool.Pool) (*Locker, error) {
 	l := &Locker{
 		p:  p,
 		rc: sync.NewCond(&sync.Mutex{}),

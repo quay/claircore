@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -42,12 +42,10 @@ func (s *IndexerStore) IndexReport(ctx context.Context, hash claircore.Digest) (
 			 JOIN manifest ON manifest.hash = $1
 	WHERE indexreport.manifest_id = manifest.id;
 	`
-	// we scan into a jsonbIndexReport which has value/scan method set
-	// then type convert back to scanner.domain object
-	var jsr jsonbIndexReport
+	var sr claircore.IndexReport
 
 	start := time.Now()
-	err := s.pool.QueryRow(ctx, query, hash).Scan(&jsr)
+	err := s.pool.QueryRow(ctx, query, hash).Scan(&sr)
 	switch {
 	case errors.Is(err, nil):
 	case errors.Is(err, pgx.ErrNoRows):
@@ -58,6 +56,5 @@ func (s *IndexerStore) IndexReport(ctx context.Context, hash claircore.Digest) (
 	indexReportCounter.WithLabelValues("query").Add(1)
 	indexReportDuration.WithLabelValues("query").Observe(time.Since(start).Seconds())
 
-	sr := claircore.IndexReport(jsr)
 	return &sr, true, nil
 }
