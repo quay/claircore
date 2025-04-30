@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/quay/claircore/rpm/internal/rpm"
+	"github.com/quay/claircore/internal/rpm/rpmdb"
 )
 
 var le = binary.LittleEndian
@@ -36,7 +36,7 @@ func CheckMagic(_ context.Context, r io.Reader) bool {
 // XDB is the "xdb" a.k.a. "Index.db", the ndb mechanism for creating indexes.
 type XDB struct {
 	r      io.ReaderAt
-	lookup map[rpm.Tag]*xdbSlot
+	lookup map[rpmdb.Tag]*xdbSlot
 	slot   []xdbSlot
 	xdbHeader
 }
@@ -58,7 +58,7 @@ func (db *XDB) Parse(r io.ReaderAt) error {
 
 	// Size for full pages of slots.
 	max := (len(pg) / slotSize) - slotStart
-	db.lookup = make(map[rpm.Tag]*xdbSlot, max)
+	db.lookup = make(map[rpmdb.Tag]*xdbSlot, max)
 	db.slot = make([]xdbSlot, max)
 	n := 0
 	var x *xdbSlot
@@ -67,7 +67,7 @@ func (db *XDB) Parse(r io.ReaderAt) error {
 		if err := x.UnmarshalBinary(pg[off:]); err != nil {
 			return err
 		}
-		if x.Tag == 0 || x.Tag == rpm.TagInvalid {
+		if x.Tag == 0 || x.Tag == rpmdb.TagInvalid {
 			break
 		}
 		db.lookup[x.Tag] = x
@@ -78,7 +78,7 @@ func (db *XDB) Parse(r io.ReaderAt) error {
 }
 
 // Index reports the index for the specified tag.
-func (db *XDB) Index(tag rpm.Tag) (*Index, error) {
+func (db *XDB) Index(tag rpmdb.Tag) (*Index, error) {
 	slot, ok := db.lookup[tag]
 	if !ok {
 		return nil, fmt.Errorf("ndb: no such tag %d", tag)
@@ -134,7 +134,7 @@ func (h *xdbHeader) UnmarshalBinary(b []byte) error {
 
 type xdbSlot struct {
 	Subtag    uint8
-	Tag       rpm.Tag
+	Tag       rpmdb.Tag
 	StartPage uint32
 	PageCount uint32
 }
@@ -157,7 +157,7 @@ func (s *xdbSlot) UnmarshalBinary(b []byte) error {
 		return fmt.Errorf("slot: bad magic")
 	}
 	s.Subtag = b[subtagOffset]
-	s.Tag = rpm.Tag(le.Uint32(b[tagOffset:]))
+	s.Tag = rpmdb.Tag(le.Uint32(b[tagOffset:]))
 	s.StartPage = le.Uint32(b[startOffset:])
 	s.PageCount = le.Uint32(b[countOffset:])
 	return nil

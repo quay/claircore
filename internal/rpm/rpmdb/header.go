@@ -1,4 +1,4 @@
-package rpm
+package rpmdb
 
 import (
 	"bufio"
@@ -10,9 +10,6 @@ import (
 	"io"
 	"unsafe"
 )
-
-// See the reference material at
-// https://rpm-software-management.github.io/rpm/manual/.
 
 // Header is a parsed RPM header.
 type Header struct {
@@ -55,7 +52,7 @@ func ParseHeader(ctx context.Context, r io.ReaderAt) (*Header, error) {
 // The ReaderAt must stay available throughout the lifetime of the Header.
 func (h *Header) Parse(ctx context.Context, r io.ReaderAt) error {
 	if err := h.loadArenas(ctx, r); err != nil {
-		return fmt.Errorf("rpm: failed to parse header: %w", err)
+		return fmt.Errorf("rpmdb: failed to parse header: %w", err)
 	}
 	var isBDB bool
 	switch err := h.verifyRegion(ctx); {
@@ -63,10 +60,10 @@ func (h *Header) Parse(ctx context.Context, r io.ReaderAt) error {
 	case errors.Is(err, errNoRegion):
 		isBDB = true
 	default:
-		return fmt.Errorf("rpm: failed to parse header: %w", err)
+		return fmt.Errorf("rpmdb: failed to parse header: %w", err)
 	}
 	if err := h.verifyInfo(ctx, isBDB); err != nil {
-		return fmt.Errorf("rpm: failed to parse header: %w", err)
+		return fmt.Errorf("rpmdb: failed to parse header: %w", err)
 	}
 	return nil
 }
@@ -87,7 +84,7 @@ func (h *Header) ReadData(_ context.Context, e *EntryInfo) (interface{}, error) 
 		}
 		b := make([]byte, e.count)
 		if _, err := h.data.ReadAt(b, int64(e.offset)); err != nil {
-			return nil, fmt.Errorf("rpm: header: error reading binary: %w", err)
+			return nil, fmt.Errorf("rpmdb: header: error reading binary: %w", err)
 		}
 		return b, nil
 	case TypeI18nString, TypeStringArray:
@@ -98,7 +95,7 @@ func (h *Header) ReadData(_ context.Context, e *EntryInfo) (interface{}, error) 
 			s[i] = sc.Text()
 		}
 		if err := sc.Err(); err != nil {
-			return nil, fmt.Errorf("rpm: header: error reading string array: %w", err)
+			return nil, fmt.Errorf("rpmdb: header: error reading string array: %w", err)
 		}
 		return s, nil
 	case TypeString:
@@ -106,7 +103,7 @@ func (h *Header) ReadData(_ context.Context, e *EntryInfo) (interface{}, error) 
 		r := bufio.NewReader(io.NewSectionReader(h.data, int64(e.offset), -1))
 		s, err := r.ReadString(0x00)
 		if err != nil {
-			return nil, fmt.Errorf("rpm: header: error reading string: %w", err)
+			return nil, fmt.Errorf("rpmdb: header: error reading string: %w", err)
 		}
 		// ReadString includes the delimiter, be sure to remove it.
 		return s[:len(s)-1], nil
@@ -118,7 +115,7 @@ func (h *Header) ReadData(_ context.Context, e *EntryInfo) (interface{}, error) 
 			b := make([]byte, 8)
 			for i := range r {
 				if _, err := io.ReadFull(sr, b); err != nil {
-					return nil, fmt.Errorf("rpm: header: error reading %T: %w", r[0], err)
+					return nil, fmt.Errorf("rpmdb: header: error reading %T: %w", r[0], err)
 				}
 				r[i] = binary.BigEndian.Uint64(b)
 			}
@@ -128,7 +125,7 @@ func (h *Header) ReadData(_ context.Context, e *EntryInfo) (interface{}, error) 
 			b := make([]byte, 4)
 			for i := range r {
 				if _, err := io.ReadFull(sr, b); err != nil {
-					return nil, fmt.Errorf("rpm: header: error reading %T: %w", r[0], err)
+					return nil, fmt.Errorf("rpmdb: header: error reading %T: %w", r[0], err)
 				}
 				r[i] = int32(binary.BigEndian.Uint32(b))
 			}
@@ -138,7 +135,7 @@ func (h *Header) ReadData(_ context.Context, e *EntryInfo) (interface{}, error) 
 			b := make([]byte, 2)
 			for i := range r {
 				if _, err := io.ReadFull(sr, b); err != nil {
-					return nil, fmt.Errorf("rpm: header: error reading %T: %w", r[0], err)
+					return nil, fmt.Errorf("rpmdb: header: error reading %T: %w", r[0], err)
 				}
 				r[i] = int16(binary.BigEndian.Uint16(b))
 			}
@@ -146,7 +143,7 @@ func (h *Header) ReadData(_ context.Context, e *EntryInfo) (interface{}, error) 
 		case TypeInt8:
 			b := make([]byte, int(e.count))
 			if _, err := io.ReadFull(sr, b); err != nil {
-				return nil, fmt.Errorf("rpm: header: error reading int8: %w", err)
+				return nil, fmt.Errorf("rpmdb: header: error reading int8: %w", err)
 			}
 			// Despite byte == uint8 and uint8 being convertible to int8, this is
 			// the only way I can figure out to avoid an extra copy or using a
@@ -156,7 +153,7 @@ func (h *Header) ReadData(_ context.Context, e *EntryInfo) (interface{}, error) 
 		case TypeChar: // Char and Bin are different because they're offset differently.
 			r := make([]byte, int(e.count))
 			if _, err := sr.ReadAt(r, 0); err != nil {
-				return nil, fmt.Errorf("rpm: header: error reading char: %w", err)
+				return nil, fmt.Errorf("rpmdb: header: error reading char: %w", err)
 			}
 			return r, nil
 		}

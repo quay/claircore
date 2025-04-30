@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/quay/claircore/rpm/internal/rpm"
+	"github.com/quay/claircore/internal/rpm/rpmdb"
 )
 
 func TestLoadIndex(t *testing.T) {
@@ -17,7 +17,7 @@ func TestLoadIndex(t *testing.T) {
 	if err := xdb.Parse(idxf); err != nil {
 		t.Fatal(err)
 	}
-	idx, err := xdb.Index(rpm.TagName)
+	idx, err := xdb.Index(rpmdb.TagName)
 	if err != nil {
 		t.Fatal(err)
 	}
