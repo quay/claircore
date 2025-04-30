@@ -1,4 +1,4 @@
-package rpm
+package rpmdb
 
 // C.f. rpm's include/rpm/rpmtag.h -- This was done by hand with some editor
 // scripts, but there has to be a better way.

@@ -14,8 +14,8 @@ import (
 	"github.com/quay/zlog"
 	"golang.org/x/tools/txtar"
 
+	"github.com/quay/claircore/internal/rpm/rpmdb"
 	"github.com/quay/claircore/rpm/bdb"
-	"github.com/quay/claircore/rpm/internal/rpm"
 	"github.com/quay/claircore/rpm/ndb"
 	"github.com/quay/claircore/rpm/sqlite"
 )
@@ -117,7 +117,7 @@ func TestInfo(t *testing.T) {
 
 				got := make(map[string][]string, len(want))
 				for _, rd := range rds {
-					var h rpm.Header
+					var h rpmdb.Header
 					if err := h.Parse(ctx, rd); err != nil {
 						t.Error(err)
 						continue

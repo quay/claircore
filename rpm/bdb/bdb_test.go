@@ -9,7 +9,7 @@ import (
 
 	"github.com/quay/zlog"
 
-	"github.com/quay/claircore/rpm/internal/rpm"
+	"github.com/quay/claircore/internal/rpm/rpmdb"
 )
 
 func TestLoadPackage(t *testing.T) {
@@ -38,13 +38,13 @@ func TestLoadPackage(t *testing.T) {
 			}
 			t.Logf("got %d headers", len(rds))
 			for _, rd := range rds {
-				var h rpm.Header
+				var h rpmdb.Header
 				if err := h.Parse(ctx, rd); err != nil {
 					t.Fatal(err)
 				}
 				var found bool
 				for i := range h.Infos {
-					if h.Infos[i].Tag == rpm.TagName {
+					if h.Infos[i].Tag == rpmdb.TagName {
 						v, err := h.ReadData(ctx, &h.Infos[i])
 						if err != nil {
 							t.Error(err)

@@ -1,4 +1,4 @@
-package rpm
+package rpmdb
 
 import (
 	"bufio"
@@ -10,9 +10,6 @@ import (
 	"io"
 	"unsafe"
 )
-
-// See the reference material at
-// https://rpm-software-management.github.io/rpm/manual/.
 
 // Header is a parsed RPM header.
 type Header struct {

@@ -18,8 +18,8 @@ import (
 	"golang.org/x/crypto/openpgp/packet"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/rpm/rpmdb"
 	"github.com/quay/claircore/rpm/bdb"
-	"github.com/quay/claircore/rpm/internal/rpm"
 	"github.com/quay/claircore/rpm/ndb"
 	"github.com/quay/claircore/rpm/sqlite"
 )
@@ -142,7 +142,7 @@ func filesFromDB(ctx context.Context, _ string, db nativeDB) ([]claircore.File, 
 	}
 	var files []claircore.File
 	for _, rd := range rds {
-		var h rpm.Header
+		var h rpmdb.Header
 		if err := h.Parse(ctx, rd); err != nil {
 			return nil, err
 		}
@@ -176,7 +176,7 @@ func packagesFromDB(ctx context.Context, pkgdb string, db nativeDB) ([]*claircor
 	var b strings.Builder
 
 	for _, rd := range rds {
-		var h rpm.Header
+		var h rpmdb.Header
 		if err := h.Parse(ctx, rd); err != nil {
 			return nil, err
 		}
@@ -266,8 +266,8 @@ type Info struct {
 }
 
 // Load populates the receiver with information extracted from the provided
-// [rpm.Header].
-func (i *Info) Load(ctx context.Context, h *rpm.Header) error {
+// [rpmdb.Header].
+func (i *Info) Load(ctx context.Context, h *rpmdb.Header) error {
 	var dirname, basename []string
 	var dirindex []int32
 	for idx := range h.Infos {
@@ -280,33 +280,33 @@ func (i *Info) Load(ctx context.Context, h *rpm.Header) error {
 			return err
 		}
 		switch e.Tag {
-		case rpm.TagName:
+		case rpmdb.TagName:
 			i.Name = v.(string)
-		case rpm.TagEpoch:
+		case rpmdb.TagEpoch:
 			i.Epoch = int(v.([]int32)[0])
-		case rpm.TagVersion:
+		case rpmdb.TagVersion:
 			i.Version = v.(string)
-		case rpm.TagRelease:
+		case rpmdb.TagRelease:
 			i.Release = v.(string)
-		case rpm.TagSourceRPM:
+		case rpmdb.TagSourceRPM:
 			i.SourceNEVR = v.(string)
-		case rpm.TagModularityLabel:
+		case rpmdb.TagModularityLabel:
 			i.Module = v.(string)
-		case rpm.TagArch:
+		case rpmdb.TagArch:
 			i.Arch = v.(string)
-		case rpm.TagPayloadDigestAlgo:
+		case rpmdb.TagPayloadDigestAlgo:
 			i.DigestAlgo = int(v.([]int32)[0])
-		case rpm.TagPayloadDigest:
+		case rpmdb.TagPayloadDigest:
 			i.Digest = v.([]string)[0]
-		case rpm.TagSigPGP:
+		case rpmdb.TagSigPGP:
 			i.Signature = v.([]byte)
-		case rpm.TagDirnames:
+		case rpmdb.TagDirnames:
 			dirname = v.([]string)
-		case rpm.TagDirindexes:
+		case rpmdb.TagDirindexes:
 			dirindex = v.([]int32)
-		case rpm.TagBasenames:
+		case rpmdb.TagBasenames:
 			basename = v.([]string)
-		case rpm.TagFilenames:
+		case rpmdb.TagFilenames:
 			// Filenames is the tag used in rpm4 -- this is a best-effort for
 			// supporting it.
 			for _, name := range v.([]string) {
@@ -372,21 +372,21 @@ func init() {
 	filePatterns = regexp.MustCompile(strings.Join(pat, `|`))
 }
 
-var wantTags = map[rpm.Tag]struct{}{
-	rpm.TagArch:              {},
-	rpm.TagBasenames:         {},
-	rpm.TagDirindexes:        {},
-	rpm.TagDirnames:          {},
-	rpm.TagEpoch:             {},
-	rpm.TagFilenames:         {},
-	rpm.TagModularityLabel:   {},
-	rpm.TagName:              {},
-	rpm.TagPayloadDigest:     {},
-	rpm.TagPayloadDigestAlgo: {},
-	rpm.TagRelease:           {},
-	rpm.TagSigPGP:            {},
-	rpm.TagSourceRPM:         {},
-	rpm.TagVersion:           {},
+var wantTags = map[rpmdb.Tag]struct{}{
+	rpmdb.TagArch:              {},
+	rpmdb.TagBasenames:         {},
+	rpmdb.TagDirindexes:        {},
+	rpmdb.TagDirnames:          {},
+	rpmdb.TagEpoch:             {},
+	rpmdb.TagFilenames:         {},
+	rpmdb.TagModularityLabel:   {},
+	rpmdb.TagName:              {},
+	rpmdb.TagPayloadDigest:     {},
+	rpmdb.TagPayloadDigestAlgo: {},
+	rpmdb.TagRelease:           {},
+	rpmdb.TagSigPGP:            {},
+	rpmdb.TagSourceRPM:         {},
+	rpmdb.TagVersion:           {},
 }
 
 func constructEVR(b *strings.Builder, info *Info) string {
