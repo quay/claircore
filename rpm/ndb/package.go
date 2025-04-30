@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"hash/adler32"
 	"io"
+	"iter"
 )
 
 // Pages are hard-coded to 4096 bytes for the Package database; this
@@ -65,6 +66,18 @@ func (db *PackageDB) Parse(r io.ReaderAt) error {
 	db.r = r
 
 	return nil
+}
+
+// Headers returns an iterator over all the header blobs in the database.
+func (db *PackageDB) Headers(_ context.Context) iter.Seq2[io.ReaderAt, error] {
+	return func(yield func(io.ReaderAt, error) bool) {
+		for _, s := range db.slot {
+			r, err := db.GetHeader(s.Index)
+			if !yield(r, err) {
+				return
+			}
+		}
+	}
 }
 
 // AllHeaders returns ReaderAts for all RPM headers in the PackageDB.
