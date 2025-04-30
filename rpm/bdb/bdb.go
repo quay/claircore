@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"iter"
 
 	"github.com/quay/zlog"
 )
@@ -168,82 +169,115 @@ type hashoffpage struct {
 	Length uint32  /* 08-11: Total length of item. */
 }
 
-// AllHeaders returns ReaderAts for all RPM headers in the PackageDB.
-func (db *PackageDB) AllHeaders(ctx context.Context) ([]io.ReaderAt, error) {
-	var ret []io.ReaderAt
+// Headers returns an iterator over all RPM headers in the PackageDB.
+func (db *PackageDB) Headers(ctx context.Context) iter.Seq2[io.ReaderAt, error] {
 	pageSz := int64(db.m.PageSize)
-	for n, lim := int64(0), int64(db.m.LastPageNo)+1; n < lim; n++ {
-		pg := io.NewSectionReader(db.r, n*pageSz, pageSz)
-		var h hashpage
-		if err := binary.Read(pg, db.ord, &h); err != nil {
-			return nil, fmt.Errorf("bdb: error reading hashpage: %w", err)
-		}
-		if h.Type != pagetypeHashUnsorted && h.Type != pagetypeHash {
-			continue
-		}
-		if h.Entries%2 != 0 {
-			return nil, errors.New("bdb: odd number of entries")
-		}
-
-		ent := make([]hashentry, int(h.Entries)/2)
-		for i := range ent {
-			if err := binary.Read(pg, db.ord, &ent[i]); err != nil {
-				return nil, fmt.Errorf("bdb: error reading hash entry: %w", err)
+	return func(yield func(io.ReaderAt, error) bool) {
+		for n, lim := int64(0), int64(db.m.LastPageNo)+1; n < lim; n++ {
+			pg := io.NewSectionReader(db.r, n*pageSz, pageSz)
+			var h hashpage
+			if err := binary.Read(pg, db.ord, &h); err != nil {
+				if !yield(nil, fmt.Errorf("bdb: error reading hashpage: %w", err)) {
+					return
+				}
 			}
-		}
-
-		k := []byte{0x00}
-		for _, e := range ent {
-			off := int64(e.Data)
-			// First, check what kind of hash entry this is.
-			view := io.NewSectionReader(pg, off, hashoffpageSize)
-			if _, err := view.ReadAt(k, 0); err != nil {
-				return nil, fmt.Errorf("bdb: error peeking page type: %w", err)
-			}
-			if k[0] != pagetypeHashOffIndex {
+			if h.Type != pagetypeHashUnsorted && h.Type != pagetypeHash {
 				continue
 			}
-			// Read the page header, now that we know it's correct.
-			var offpg hashoffpage
-			if err := binary.Read(view, db.ord, &offpg); err != nil {
-				return nil, fmt.Errorf("bdb: error reading hashoffpage: %w", err)
-			}
-			var r rope
-			for n := offpg.PageNo; n != 0; {
-				off := pageSz * int64(n)
-				pg := io.NewSectionReader(db.r, off, pageSz)
-				var h hashpage
-				if err := binary.Read(pg, db.ord, &h); err != nil {
-					return nil, fmt.Errorf("bdb: error reading hashpage: %w", err)
+			if h.Entries%2 != 0 {
+				if !yield(nil, errors.New("bdb: odd number of entries")) {
+					return
 				}
-				if h.Type != pagetypeOverflow {
+			}
+
+			ent := make([]hashentry, int(h.Entries)/2)
+			for i := range ent {
+				if err := binary.Read(pg, db.ord, &ent[i]); err != nil {
+					if !yield(nil, fmt.Errorf("bdb: error reading hash entry: %w", err)) {
+						return
+					}
+				}
+			}
+
+			k := []byte{0x00}
+			for _, e := range ent {
+				off := int64(e.Data)
+				// First, check what kind of hash entry this is.
+				view := io.NewSectionReader(pg, off, hashoffpageSize)
+				if _, err := view.ReadAt(k, 0); err != nil {
+					if !yield(nil, fmt.Errorf("bdb: error peeking page type: %w", err)) {
+						return
+					}
+				}
+				if k[0] != pagetypeHashOffIndex {
 					continue
 				}
-				off += hashpageSize
+				// Read the page header, now that we know it's correct.
+				var offpg hashoffpage
+				if err := binary.Read(view, db.ord, &offpg); err != nil {
+					if !yield(nil, fmt.Errorf("bdb: error reading hashoffpage: %w", err)) {
+						return
+					}
+				}
+				var r rope
+				for n := offpg.PageNo; n != 0; {
+					off := pageSz * int64(n)
+					pg := io.NewSectionReader(db.r, off, pageSz)
+					var h hashpage
+					if err := binary.Read(pg, db.ord, &h); err != nil {
+						if !yield(nil, fmt.Errorf("bdb: error reading hashpage: %w", err)) {
+							return
+						}
+					}
+					if h.Type != pagetypeOverflow {
+						continue
+					}
+					off += hashpageSize
 
-				var data *io.SectionReader
-				if h.NextPageNo == 0 {
-					// If this is the last page, only read to the end.
-					data = io.NewSectionReader(db.r, off, int64(h.HighFreeOffset))
-				} else {
-					data = io.NewSectionReader(db.r, off, pageSz-hashpageSize)
+					var data *io.SectionReader
+					if h.NextPageNo == 0 {
+						// If this is the last page, only read to the end.
+						data = io.NewSectionReader(db.r, off, int64(h.HighFreeOffset))
+					} else {
+						data = io.NewSectionReader(db.r, off, pageSz-hashpageSize)
+					}
+					if err := r.add(data); err != nil {
+						if !yield(nil, fmt.Errorf("bdb: error adding to rope: %w", err)) {
+							return
+						}
+					}
+					n = h.NextPageNo
 				}
-				if err := r.add(data); err != nil {
-					return nil, fmt.Errorf("bdb: error adding to rope: %w", err)
+				// Double-check we'll read the intended amount.
+				if got, want := r.Size(), int64(offpg.Length); got != want {
+					zlog.Info(ctx).
+						Int64("got", got).
+						Int64("want", want).
+						Msg("bdb: expected data length botch")
 				}
-				n = h.NextPageNo
+
+				if !yield(&r, nil) {
+					return
+				}
 			}
-			// Double-check we'll read the intended amount.
-			if got, want := r.Size(), int64(offpg.Length); got != want {
-				zlog.Info(ctx).
-					Int64("got", got).
-					Int64("want", want).
-					Msg("bdb: expected data length botch")
-			}
-			ret = append(ret, &r)
 		}
 	}
-	return ret, nil
+}
+
+func tryCollect[T any](seq iter.Seq2[T, error]) ([]T, error) {
+	var slice []T
+	for v, err := range seq {
+		if err != nil {
+			return nil, err
+		}
+		slice = append(slice, v)
+	}
+	return slice, nil
+}
+
+// AllHeaders returns ReaderAts for all RPM headers in the PackageDB.
+func (db *PackageDB) AllHeaders(ctx context.Context) ([]io.ReaderAt, error) {
+	return tryCollect(db.Headers(ctx))
 }
 
 // Validate is currently here to fulfill an interface.
