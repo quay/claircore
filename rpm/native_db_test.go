@@ -14,10 +14,10 @@ import (
 	"github.com/quay/zlog"
 	"golang.org/x/tools/txtar"
 
+	"github.com/quay/claircore/internal/rpm/bdb"
+	"github.com/quay/claircore/internal/rpm/ndb"
 	"github.com/quay/claircore/internal/rpm/rpmdb"
-	"github.com/quay/claircore/rpm/bdb"
-	"github.com/quay/claircore/rpm/ndb"
-	"github.com/quay/claircore/rpm/sqlite"
+	"github.com/quay/claircore/internal/rpm/sqlite"
 )
 
 func TestInfo(t *testing.T) {
@@ -35,7 +35,8 @@ func TestInfo(t *testing.T) {
 			t.Run(name, func(t *testing.T) {
 				t.Parallel()
 				ctx := zlog.Test(context.Background(), t)
-				filename := strings.TrimSpace(string(ar.Comment))
+				// Temporary hack as some packages are moving...
+				filename := filepath.Join("../internal/rpm", strings.TrimSpace(string(ar.Comment)))
 				t.Logf("opening %q", filename)
 
 				var want map[string][]string
@@ -52,13 +53,8 @@ func TestInfo(t *testing.T) {
 					t.Fatal(`"want.json" not found`)
 				}
 
-				pre, _, ok := strings.Cut(filename, `/testdata/`)
-				if !ok {
-					t.Fatal("input file not in a testdata directory")
-				}
-
 				var nat nativeDB
-				switch pre {
+				switch strings.ToLower(name) {
 				case `bdb`:
 					f, err := os.Open(filename)
 					if err != nil {
