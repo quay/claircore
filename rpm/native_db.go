@@ -17,10 +17,10 @@ import (
 	"golang.org/x/crypto/openpgp/packet"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/rpm/bdb"
+	"github.com/quay/claircore/internal/rpm/ndb"
 	"github.com/quay/claircore/internal/rpm/rpmdb"
-	"github.com/quay/claircore/rpm/bdb"
-	"github.com/quay/claircore/rpm/ndb"
-	"github.com/quay/claircore/rpm/sqlite"
+	"github.com/quay/claircore/internal/rpm/sqlite"
 )
 
 // NativeDB is the interface implemented for in-process RPM database handlers.

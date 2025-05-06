@@ -5,8 +5,8 @@ import (
 	"io/fs"
 	"path"
 
-	"github.com/quay/claircore/rpm/bdb"
-	"github.com/quay/claircore/rpm/ndb"
+	"github.com/quay/claircore/internal/rpm/bdb"
+	"github.com/quay/claircore/internal/rpm/ndb"
 )
 
 func findDBs(ctx context.Context, out *[]foundDB, sys fs.FS) fs.WalkDirFunc {
