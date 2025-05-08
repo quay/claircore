@@ -72,7 +72,7 @@ type Scanner struct {
 func (*Scanner) Name() string { return "java" }
 
 // Version implements scanner.VersionedScanner.
-func (*Scanner) Version() string { return "7" }
+func (*Scanner) Version() string { return "8" }
 
 // Kind implements scanner.VersionedScanner.
 func (*Scanner) Kind() string { return "package" }
@@ -177,14 +177,17 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 			return nil, err
 		}
 		zb := buf.Bytes()
-		if !bytes.Equal(zb[:4], jar.Header) {
-			// Has a reasonable size and name, but isn't really a zip.
-			zlog.Debug(ctx).Msg("not actually a jar: bad header")
-			continue
-		}
+		// Let the zip reader determine if this is actually a valid zip file.
+		// We cannot just check the header, as it's possible the jar file
+		// starts off with a script. This scenario is explicitly mentioned in
+		// the standard library: https://cs.opensource.google/go/go/+/refs/tags/go1.24.3:src/archive/zip/reader.go;l=41.
 		z, err := zip.NewReader(bytes.NewReader(zb), sz)
 		switch {
 		case errors.Is(err, nil):
+		case errors.Is(err, io.EOF):
+			// BUG(go1.21) Older versions of the stdlib can report io.EOF when
+			// opening malformed zips.
+			fallthrough
 		case errors.Is(err, zip.ErrFormat):
 			zlog.Info(ctx).
 				Err(err).

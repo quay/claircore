@@ -45,13 +45,6 @@ import (
 	"github.com/quay/zlog"
 )
 
-// Header is the magic bytes at the beginning of a jar.
-//
-// JAR files are documented as only using the "standard" zip magic number.
-// There are two other magic numbers (ending in "\x05\x06" and "\x07\x08"
-// respectively) for zips, but they should not be used.
-var Header = []byte{'P', 'K', 0x03, 0x04}
-
 // MinSize is the absolute minimum size for a jar.
 //
 // This is the size of an empty zip. Files smaller than this cannot be jars.
@@ -281,12 +274,10 @@ func extractInner(ctx context.Context, p srcPath, z *zip.Reader) ([]Info, error)
 			return mkErr("failed buffering file", err)
 		}
 		bs := buf.Bytes()
-		// Check header.
-		if !bytes.Equal(bs[:4], Header) {
-			zlog.Debug(ctx).Str("member", name).Msg("not actually a jar: bad header")
-			return nil
-		}
-		// Okay, now reasonably certain this is a jar.
+		// Let the zip reader determine if this is actually a valid zip file.
+		// We cannot just check the header, as it's possible the jar file
+		// starts off with a script. This scenario is explicitly mentioned in
+		// the standard library: https://cs.opensource.google/go/go/+/refs/tags/go1.24.3:src/archive/zip/reader.go;l=41.
 		zr, err := zip.NewReader(bytes.NewReader(bs), sz)
 		switch {
 		case errors.Is(err, nil):
@@ -294,7 +285,7 @@ func extractInner(ctx context.Context, p srcPath, z *zip.Reader) ([]Info, error)
 			// BUG(go1.21) Older versions of the stdlib can report io.EOF when
 			// opening malformed zips.
 			fallthrough
-		case errors.Is(err, zip.ErrFormat) || errors.Is(err, io.EOF):
+		case errors.Is(err, zip.ErrFormat):
 			zlog.Debug(ctx).
 				Str("member", name).
 				Err(err).
