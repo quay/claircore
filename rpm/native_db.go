@@ -3,6 +3,7 @@ package rpm
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -44,8 +45,13 @@ func getDBObjects[T ObjectResponse](ctx context.Context, sys fs.FS, db foundDB, 
 	switch db.Kind {
 	case kindSQLite:
 		r, err := sys.Open(path.Join(db.Path, `rpmdb.sqlite`))
-		if err != nil {
-			return nil, fmt.Errorf("rpm: error reading sqlite db: %w", err)
+		switch {
+		case errors.Is(err, nil):
+		case errors.Is(err, fs.ErrNotExist):
+			zlog.Warn(ctx).Err(err).Msg("rpm: unable to open sqlite db")
+			return nil, nil
+		default:
+			return nil, fmt.Errorf("rpm: unable to open sqlite db: %w", err)
 		}
 		defer func() {
 			if err := r.Close(); err != nil {

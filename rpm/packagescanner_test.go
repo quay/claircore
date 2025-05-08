@@ -118,6 +118,41 @@ func TestPackageDetection(t *testing.T) {
 	}
 }
 
+func TestDanglingSymlink(t *testing.T) {
+	ctx := zlog.Test(context.Background(), t)
+	desc := claircore.LayerDescription{
+		Digest:    test.RandomSHA256Digest(t).String(),
+		URI:       "file:///dev/null",
+		MediaType: test.MediaType,
+		Headers:   make(map[string][]string),
+	}
+
+	f, err := os.Open(`testdata/dangling_symlink`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := f.Close(); err != nil {
+			t.Error(err)
+		}
+	})
+	var l claircore.Layer
+	if err := l.Init(ctx, &desc, f); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := l.Close(); err != nil {
+			t.Error(err)
+		}
+	})
+
+	s := &Scanner{}
+	_, err = s.Scan(ctx, &l)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestLayer(t *testing.T) {
 	ctx := context.Background()
 	ents, err := os.ReadDir(`testdata/layers`)
