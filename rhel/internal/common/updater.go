@@ -25,6 +25,7 @@ type Updater struct {
 	reqRate      *rate.Limiter
 	mu           sync.RWMutex // protects lastModified
 	lastModified string
+	firstUse     atomic.Bool // use mapping URL for the first scan
 }
 
 // NewUpdater returns an Updater holding a value of the type passed as "init",
@@ -38,6 +39,7 @@ func NewUpdater(url string, init interface{}) *Updater {
 		reqRate: rate.NewLimiter(interval, 1),
 	}
 	u.value.Store(init)
+	u.firstUse.Store(true)
 	// If we were provided an initial value, pull the first token.
 	if !reflect.ValueOf(init).IsNil() {
 		u.reqRate.Allow()
@@ -50,14 +52,17 @@ func NewUpdater(url string, init interface{}) *Updater {
 func (u *Updater) Get(ctx context.Context, c *http.Client) (interface{}, error) {
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "rhel/internal/common/Updater.Get")
+
 	var err error
-	if u.url != "" && u.reqRate.Allow() {
-		zlog.Debug(ctx).Msg("got unlucky, updating mapping file")
-		err = u.Fetch(ctx, c)
-		if err != nil {
+	first := u.firstUse.Swap(false) // atomically get and unset the flag
+
+	if u.url != "" && (first || u.reqRate.Allow()) {
+		zlog.Debug(ctx).Msg("attempting to update mapping file from URL")
+		if fetchErr := u.Fetch(ctx, c); fetchErr != nil {
 			zlog.Error(ctx).
-				Err(err).
-				Msg("error updating mapping file")
+				Err(fetchErr).
+				Msg("error updating mapping file from URL")
+			err = fetchErr
 		}
 	}
 
