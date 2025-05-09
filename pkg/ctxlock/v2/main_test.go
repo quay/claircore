@@ -2,23 +2,15 @@ package ctxlock
 
 import (
 	"context"
-	"os"
 	"testing"
 
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/log/testingadapter"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/log/testingadapter"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/tracelog"
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/test/integration"
 )
-
-func TestMain(m *testing.M) {
-	var c int
-	defer func() { os.Exit(c) }()
-	defer integration.DBSetup()()
-	c = m.Run()
-}
 
 func basicSetup(t testing.TB) (context.Context, *Locker) {
 	t.Helper()
@@ -31,17 +23,19 @@ func basicSetup(t testing.TB) (context.Context, *Locker) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { db.Close(ctx, t) })
-	cfg := db.Configv4()
-	cfg.ConnConfig.LogLevel = pgx.LogLevelError
-	cfg.ConnConfig.Logger = testingadapter.NewLogger(t)
-	pool, err := pgxpool.ConnectConfig(ctx, cfg)
+	cfg := db.Config()
+	cfg.ConnConfig.Tracer = &tracelog.TraceLog{
+		Logger:   testingadapter.NewLogger(t),
+		LogLevel: tracelog.LogLevelError,
+	}
+	pool, err := pgxpool.NewWithConfig(ctx, cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(pool.Close)
 
 	// Create the Locker.
-	l, err := new(ctx, pool)
+	l, err := New(ctx, pool)
 	if err != nil {
 		t.Fatal(err)
 	}

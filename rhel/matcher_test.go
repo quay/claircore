@@ -37,6 +37,12 @@ func serveOVAL(t *testing.T) (string, *http.Client) {
 	return srv.URL, srv.Client()
 }
 
+func serveOVALForBenchmark(b *testing.B) (string, *http.Client) {
+	srv := httptest.NewServer(http.FileServer(http.Dir("testdata")))
+	b.Cleanup(srv.Close)
+	return srv.URL, srv.Client()
+}
+
 func TestMatcherIntegration(t *testing.T) {
 	t.Parallel()
 	integration.NeedDB(t)
@@ -104,6 +110,71 @@ func TestMatcherIntegration(t *testing.T) {
 	}
 	if err := json.NewEncoder(io.Discard).Encode(&vr); err != nil {
 		t.Fatalf("failed to marshal VR: %v", err)
+	}
+}
+
+func BenchmarkMatcherIntegration(b *testing.B) {
+	b.ReportAllocs() // Report memory allocations during the benchmark
+
+	// Ensure the database is available
+	integration.NeedDB(b)
+
+	// Set up the context and database pool
+	ctx := zlog.Test(context.Background(), b)
+	pool := pgtest.TestMatcherDB(ctx, b)
+	store := postgres.NewMatcherStore(pool)
+
+	// Set up locks
+	locks, err := ctxlock.New(ctx, pool)
+	if err != nil {
+		b.Fatalf("failed to create locks: %v", err)
+	}
+	defer locks.Close(ctx)
+
+	// Load test data
+	fs, err := filepath.Glob("testdata/*.xml")
+	if err != nil {
+		b.Fatalf("failed to load test data: %v", err)
+	}
+
+	// Set up the OVAL server
+	root, c := serveOVALForBenchmark(b)
+
+	// Prepare updater factories
+	facs := make(map[string]driver.UpdaterSetFactory, len(fs))
+	for _, fn := range fs {
+		u, err := NewUpdater(
+			fmt.Sprintf("test-updater-%s", filepath.Base(fn)),
+			1,
+			root+"/"+filepath.Base(fn),
+			false,
+		)
+		if err != nil {
+			b.Fatalf("failed to create updater: %v", err)
+		}
+		u.Configure(ctx, func(v interface{}) error { return nil }, c)
+		if err != nil {
+			b.Fatalf("failed to configure updater: %v", err)
+		}
+		s := driver.NewUpdaterSet()
+		if err := s.Add(u); err != nil {
+			b.Fatalf("failed to add updater to set: %v", err)
+		}
+		facs[u.Name()] = driver.StaticSet(s)
+	}
+
+	// Create the updates manager
+	mgr, err := updates.NewManager(ctx, store, locks, c, updates.WithFactories(facs))
+	if err != nil {
+		b.Fatalf("failed to create updates manager: %v", err)
+	}
+
+	// Benchmark loop
+	for i := 0; i < b.N; i++ {
+		// Force update by running the manager
+		if err := mgr.Run(ctx); err != nil {
+			b.Fatalf("mgr.Run failed: %v", err)
+		}
 	}
 }
 
