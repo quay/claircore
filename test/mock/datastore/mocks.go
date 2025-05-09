@@ -25,6 +25,7 @@ import (
 type MockEnrichment struct {
 	ctrl     *gomock.Controller
 	recorder *MockEnrichmentMockRecorder
+	isgomock struct{}
 }
 
 // MockEnrichmentMockRecorder is the mock recorder for MockEnrichment.
@@ -45,24 +46,25 @@ func (m *MockEnrichment) EXPECT() *MockEnrichmentMockRecorder {
 }
 
 // GetEnrichment mocks base method.
-func (m *MockEnrichment) GetEnrichment(arg0 context.Context, arg1 string, arg2 []string) ([]driver.EnrichmentRecord, error) {
+func (m *MockEnrichment) GetEnrichment(ctx context.Context, kind string, tags []string) ([]driver.EnrichmentRecord, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetEnrichment", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "GetEnrichment", ctx, kind, tags)
 	ret0, _ := ret[0].([]driver.EnrichmentRecord)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetEnrichment indicates an expected call of GetEnrichment.
-func (mr *MockEnrichmentMockRecorder) GetEnrichment(arg0, arg1, arg2 any) *gomock.Call {
+func (mr *MockEnrichmentMockRecorder) GetEnrichment(ctx, kind, tags any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEnrichment", reflect.TypeOf((*MockEnrichment)(nil).GetEnrichment), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEnrichment", reflect.TypeOf((*MockEnrichment)(nil).GetEnrichment), ctx, kind, tags)
 }
 
 // MockEnrichmentUpdater is a mock of EnrichmentUpdater interface.
 type MockEnrichmentUpdater struct {
 	ctrl     *gomock.Controller
 	recorder *MockEnrichmentUpdaterMockRecorder
+	isgomock struct{}
 }
 
 // MockEnrichmentUpdaterMockRecorder is the mock recorder for MockEnrichmentUpdater.
@@ -83,39 +85,40 @@ func (m *MockEnrichmentUpdater) EXPECT() *MockEnrichmentUpdaterMockRecorder {
 }
 
 // UpdateEnrichments mocks base method.
-func (m *MockEnrichmentUpdater) UpdateEnrichments(arg0 context.Context, arg1 string, arg2 driver.Fingerprint, arg3 []driver.EnrichmentRecord) (uuid.UUID, error) {
+func (m *MockEnrichmentUpdater) UpdateEnrichments(ctx context.Context, kind string, fingerprint driver.Fingerprint, enrichments []driver.EnrichmentRecord) (uuid.UUID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateEnrichments", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "UpdateEnrichments", ctx, kind, fingerprint, enrichments)
 	ret0, _ := ret[0].(uuid.UUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UpdateEnrichments indicates an expected call of UpdateEnrichments.
-func (mr *MockEnrichmentUpdaterMockRecorder) UpdateEnrichments(arg0, arg1, arg2, arg3 any) *gomock.Call {
+func (mr *MockEnrichmentUpdaterMockRecorder) UpdateEnrichments(ctx, kind, fingerprint, enrichments any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEnrichments", reflect.TypeOf((*MockEnrichmentUpdater)(nil).UpdateEnrichments), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEnrichments", reflect.TypeOf((*MockEnrichmentUpdater)(nil).UpdateEnrichments), ctx, kind, fingerprint, enrichments)
 }
 
 // UpdateEnrichmentsIter mocks base method.
-func (m *MockEnrichmentUpdater) UpdateEnrichmentsIter(arg0 context.Context, arg1 string, arg2 driver.Fingerprint, arg3 datastore.EnrichmentIter) (uuid.UUID, error) {
+func (m *MockEnrichmentUpdater) UpdateEnrichmentsIter(ctx context.Context, kind string, fingerprint driver.Fingerprint, enIter datastore.EnrichmentIter) (uuid.UUID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateEnrichmentsIter", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "UpdateEnrichmentsIter", ctx, kind, fingerprint, enIter)
 	ret0, _ := ret[0].(uuid.UUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UpdateEnrichmentsIter indicates an expected call of UpdateEnrichmentsIter.
-func (mr *MockEnrichmentUpdaterMockRecorder) UpdateEnrichmentsIter(arg0, arg1, arg2, arg3 any) *gomock.Call {
+func (mr *MockEnrichmentUpdaterMockRecorder) UpdateEnrichmentsIter(ctx, kind, fingerprint, enIter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEnrichmentsIter", reflect.TypeOf((*MockEnrichmentUpdater)(nil).UpdateEnrichmentsIter), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEnrichmentsIter", reflect.TypeOf((*MockEnrichmentUpdater)(nil).UpdateEnrichmentsIter), ctx, kind, fingerprint, enIter)
 }
 
 // MockMatcherStore is a mock of MatcherStore interface.
 type MockMatcherStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockMatcherStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockMatcherStoreMockRecorder is the mock recorder for MockMatcherStore.
@@ -156,63 +159,63 @@ func (mr *MockMatcherStoreMockRecorder) DeleteUpdateOperations(arg0 any, arg1 ..
 }
 
 // DeltaUpdateVulnerabilities mocks base method.
-func (m *MockMatcherStore) DeltaUpdateVulnerabilities(arg0 context.Context, arg1 string, arg2 driver.Fingerprint, arg3 []*claircore.Vulnerability, arg4 []string) (uuid.UUID, error) {
+func (m *MockMatcherStore) DeltaUpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability, deletedVulns []string) (uuid.UUID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeltaUpdateVulnerabilities", arg0, arg1, arg2, arg3, arg4)
+	ret := m.ctrl.Call(m, "DeltaUpdateVulnerabilities", ctx, updater, fingerprint, vulns, deletedVulns)
 	ret0, _ := ret[0].(uuid.UUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // DeltaUpdateVulnerabilities indicates an expected call of DeltaUpdateVulnerabilities.
-func (mr *MockMatcherStoreMockRecorder) DeltaUpdateVulnerabilities(arg0, arg1, arg2, arg3, arg4 any) *gomock.Call {
+func (mr *MockMatcherStoreMockRecorder) DeltaUpdateVulnerabilities(ctx, updater, fingerprint, vulns, deletedVulns any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeltaUpdateVulnerabilities", reflect.TypeOf((*MockMatcherStore)(nil).DeltaUpdateVulnerabilities), arg0, arg1, arg2, arg3, arg4)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeltaUpdateVulnerabilities", reflect.TypeOf((*MockMatcherStore)(nil).DeltaUpdateVulnerabilities), ctx, updater, fingerprint, vulns, deletedVulns)
 }
 
 // GC mocks base method.
-func (m *MockMatcherStore) GC(arg0 context.Context, arg1 int) (int64, error) {
+func (m *MockMatcherStore) GC(ctx context.Context, keep int) (int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GC", arg0, arg1)
+	ret := m.ctrl.Call(m, "GC", ctx, keep)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GC indicates an expected call of GC.
-func (mr *MockMatcherStoreMockRecorder) GC(arg0, arg1 any) *gomock.Call {
+func (mr *MockMatcherStoreMockRecorder) GC(ctx, keep any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GC", reflect.TypeOf((*MockMatcherStore)(nil).GC), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GC", reflect.TypeOf((*MockMatcherStore)(nil).GC), ctx, keep)
 }
 
 // Get mocks base method.
-func (m *MockMatcherStore) Get(arg0 context.Context, arg1 []*claircore.IndexRecord, arg2 datastore.GetOpts) (map[string][]*claircore.Vulnerability, error) {
+func (m *MockMatcherStore) Get(ctx context.Context, records []*claircore.IndexRecord, opts datastore.GetOpts) (map[string][]*claircore.Vulnerability, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "Get", ctx, records, opts)
 	ret0, _ := ret[0].(map[string][]*claircore.Vulnerability)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockMatcherStoreMockRecorder) Get(arg0, arg1, arg2 any) *gomock.Call {
+func (mr *MockMatcherStoreMockRecorder) Get(ctx, records, opts any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockMatcherStore)(nil).Get), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockMatcherStore)(nil).Get), ctx, records, opts)
 }
 
 // GetEnrichment mocks base method.
-func (m *MockMatcherStore) GetEnrichment(arg0 context.Context, arg1 string, arg2 []string) ([]driver.EnrichmentRecord, error) {
+func (m *MockMatcherStore) GetEnrichment(ctx context.Context, kind string, tags []string) ([]driver.EnrichmentRecord, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetEnrichment", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "GetEnrichment", ctx, kind, tags)
 	ret0, _ := ret[0].([]driver.EnrichmentRecord)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetEnrichment indicates an expected call of GetEnrichment.
-func (mr *MockMatcherStoreMockRecorder) GetEnrichment(arg0, arg1, arg2 any) *gomock.Call {
+func (mr *MockMatcherStoreMockRecorder) GetEnrichment(ctx, kind, tags any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEnrichment", reflect.TypeOf((*MockMatcherStore)(nil).GetEnrichment), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEnrichment", reflect.TypeOf((*MockMatcherStore)(nil).GetEnrichment), ctx, kind, tags)
 }
 
 // GetLatestUpdateRef mocks base method.
@@ -246,18 +249,18 @@ func (mr *MockMatcherStoreMockRecorder) GetLatestUpdateRefs(arg0, arg1 any) *gom
 }
 
 // GetUpdateDiff mocks base method.
-func (m *MockMatcherStore) GetUpdateDiff(arg0 context.Context, arg1, arg2 uuid.UUID) (*driver.UpdateDiff, error) {
+func (m *MockMatcherStore) GetUpdateDiff(ctx context.Context, prev, cur uuid.UUID) (*driver.UpdateDiff, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUpdateDiff", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "GetUpdateDiff", ctx, prev, cur)
 	ret0, _ := ret[0].(*driver.UpdateDiff)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetUpdateDiff indicates an expected call of GetUpdateDiff.
-func (mr *MockMatcherStoreMockRecorder) GetUpdateDiff(arg0, arg1, arg2 any) *gomock.Call {
+func (mr *MockMatcherStoreMockRecorder) GetUpdateDiff(ctx, prev, cur any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUpdateDiff", reflect.TypeOf((*MockMatcherStore)(nil).GetUpdateDiff), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUpdateDiff", reflect.TypeOf((*MockMatcherStore)(nil).GetUpdateDiff), ctx, prev, cur)
 }
 
 // GetUpdateOperations mocks base method.
@@ -296,97 +299,98 @@ func (mr *MockMatcherStoreMockRecorder) Initialized(arg0 any) *gomock.Call {
 }
 
 // RecordUpdaterSetStatus mocks base method.
-func (m *MockMatcherStore) RecordUpdaterSetStatus(arg0 context.Context, arg1 string, arg2 time.Time) error {
+func (m *MockMatcherStore) RecordUpdaterSetStatus(ctx context.Context, updaterSet string, updateTime time.Time) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RecordUpdaterSetStatus", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "RecordUpdaterSetStatus", ctx, updaterSet, updateTime)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RecordUpdaterSetStatus indicates an expected call of RecordUpdaterSetStatus.
-func (mr *MockMatcherStoreMockRecorder) RecordUpdaterSetStatus(arg0, arg1, arg2 any) *gomock.Call {
+func (mr *MockMatcherStoreMockRecorder) RecordUpdaterSetStatus(ctx, updaterSet, updateTime any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordUpdaterSetStatus", reflect.TypeOf((*MockMatcherStore)(nil).RecordUpdaterSetStatus), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordUpdaterSetStatus", reflect.TypeOf((*MockMatcherStore)(nil).RecordUpdaterSetStatus), ctx, updaterSet, updateTime)
 }
 
 // RecordUpdaterStatus mocks base method.
-func (m *MockMatcherStore) RecordUpdaterStatus(arg0 context.Context, arg1 string, arg2 time.Time, arg3 driver.Fingerprint, arg4 error) error {
+func (m *MockMatcherStore) RecordUpdaterStatus(ctx context.Context, updaterName string, updateTime time.Time, fingerprint driver.Fingerprint, updaterError error) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RecordUpdaterStatus", arg0, arg1, arg2, arg3, arg4)
+	ret := m.ctrl.Call(m, "RecordUpdaterStatus", ctx, updaterName, updateTime, fingerprint, updaterError)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RecordUpdaterStatus indicates an expected call of RecordUpdaterStatus.
-func (mr *MockMatcherStoreMockRecorder) RecordUpdaterStatus(arg0, arg1, arg2, arg3, arg4 any) *gomock.Call {
+func (mr *MockMatcherStoreMockRecorder) RecordUpdaterStatus(ctx, updaterName, updateTime, fingerprint, updaterError any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordUpdaterStatus", reflect.TypeOf((*MockMatcherStore)(nil).RecordUpdaterStatus), arg0, arg1, arg2, arg3, arg4)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordUpdaterStatus", reflect.TypeOf((*MockMatcherStore)(nil).RecordUpdaterStatus), ctx, updaterName, updateTime, fingerprint, updaterError)
 }
 
 // UpdateEnrichments mocks base method.
-func (m *MockMatcherStore) UpdateEnrichments(arg0 context.Context, arg1 string, arg2 driver.Fingerprint, arg3 []driver.EnrichmentRecord) (uuid.UUID, error) {
+func (m *MockMatcherStore) UpdateEnrichments(ctx context.Context, kind string, fingerprint driver.Fingerprint, enrichments []driver.EnrichmentRecord) (uuid.UUID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateEnrichments", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "UpdateEnrichments", ctx, kind, fingerprint, enrichments)
 	ret0, _ := ret[0].(uuid.UUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UpdateEnrichments indicates an expected call of UpdateEnrichments.
-func (mr *MockMatcherStoreMockRecorder) UpdateEnrichments(arg0, arg1, arg2, arg3 any) *gomock.Call {
+func (mr *MockMatcherStoreMockRecorder) UpdateEnrichments(ctx, kind, fingerprint, enrichments any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEnrichments", reflect.TypeOf((*MockMatcherStore)(nil).UpdateEnrichments), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEnrichments", reflect.TypeOf((*MockMatcherStore)(nil).UpdateEnrichments), ctx, kind, fingerprint, enrichments)
 }
 
 // UpdateEnrichmentsIter mocks base method.
-func (m *MockMatcherStore) UpdateEnrichmentsIter(arg0 context.Context, arg1 string, arg2 driver.Fingerprint, arg3 datastore.EnrichmentIter) (uuid.UUID, error) {
+func (m *MockMatcherStore) UpdateEnrichmentsIter(ctx context.Context, kind string, fingerprint driver.Fingerprint, enIter datastore.EnrichmentIter) (uuid.UUID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateEnrichmentsIter", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "UpdateEnrichmentsIter", ctx, kind, fingerprint, enIter)
 	ret0, _ := ret[0].(uuid.UUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UpdateEnrichmentsIter indicates an expected call of UpdateEnrichmentsIter.
-func (mr *MockMatcherStoreMockRecorder) UpdateEnrichmentsIter(arg0, arg1, arg2, arg3 any) *gomock.Call {
+func (mr *MockMatcherStoreMockRecorder) UpdateEnrichmentsIter(ctx, kind, fingerprint, enIter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEnrichmentsIter", reflect.TypeOf((*MockMatcherStore)(nil).UpdateEnrichmentsIter), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEnrichmentsIter", reflect.TypeOf((*MockMatcherStore)(nil).UpdateEnrichmentsIter), ctx, kind, fingerprint, enIter)
 }
 
 // UpdateVulnerabilities mocks base method.
-func (m *MockMatcherStore) UpdateVulnerabilities(arg0 context.Context, arg1 string, arg2 driver.Fingerprint, arg3 []*claircore.Vulnerability) (uuid.UUID, error) {
+func (m *MockMatcherStore) UpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability) (uuid.UUID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateVulnerabilities", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "UpdateVulnerabilities", ctx, updater, fingerprint, vulns)
 	ret0, _ := ret[0].(uuid.UUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UpdateVulnerabilities indicates an expected call of UpdateVulnerabilities.
-func (mr *MockMatcherStoreMockRecorder) UpdateVulnerabilities(arg0, arg1, arg2, arg3 any) *gomock.Call {
+func (mr *MockMatcherStoreMockRecorder) UpdateVulnerabilities(ctx, updater, fingerprint, vulns any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateVulnerabilities", reflect.TypeOf((*MockMatcherStore)(nil).UpdateVulnerabilities), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateVulnerabilities", reflect.TypeOf((*MockMatcherStore)(nil).UpdateVulnerabilities), ctx, updater, fingerprint, vulns)
 }
 
 // UpdateVulnerabilitiesIter mocks base method.
-func (m *MockMatcherStore) UpdateVulnerabilitiesIter(arg0 context.Context, arg1 string, arg2 driver.Fingerprint, arg3 datastore.VulnerabilityIter) (uuid.UUID, error) {
+func (m *MockMatcherStore) UpdateVulnerabilitiesIter(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulnIter datastore.VulnerabilityIter) (uuid.UUID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateVulnerabilitiesIter", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "UpdateVulnerabilitiesIter", ctx, updater, fingerprint, vulnIter)
 	ret0, _ := ret[0].(uuid.UUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UpdateVulnerabilitiesIter indicates an expected call of UpdateVulnerabilitiesIter.
-func (mr *MockMatcherStoreMockRecorder) UpdateVulnerabilitiesIter(arg0, arg1, arg2, arg3 any) *gomock.Call {
+func (mr *MockMatcherStoreMockRecorder) UpdateVulnerabilitiesIter(ctx, updater, fingerprint, vulnIter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateVulnerabilitiesIter", reflect.TypeOf((*MockMatcherStore)(nil).UpdateVulnerabilitiesIter), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateVulnerabilitiesIter", reflect.TypeOf((*MockMatcherStore)(nil).UpdateVulnerabilitiesIter), ctx, updater, fingerprint, vulnIter)
 }
 
 // MockUpdater is a mock of Updater interface.
 type MockUpdater struct {
 	ctrl     *gomock.Controller
 	recorder *MockUpdaterMockRecorder
+	isgomock struct{}
 }
 
 // MockUpdaterMockRecorder is the mock recorder for MockUpdater.
@@ -427,33 +431,33 @@ func (mr *MockUpdaterMockRecorder) DeleteUpdateOperations(arg0 any, arg1 ...any)
 }
 
 // DeltaUpdateVulnerabilities mocks base method.
-func (m *MockUpdater) DeltaUpdateVulnerabilities(arg0 context.Context, arg1 string, arg2 driver.Fingerprint, arg3 []*claircore.Vulnerability, arg4 []string) (uuid.UUID, error) {
+func (m *MockUpdater) DeltaUpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability, deletedVulns []string) (uuid.UUID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeltaUpdateVulnerabilities", arg0, arg1, arg2, arg3, arg4)
+	ret := m.ctrl.Call(m, "DeltaUpdateVulnerabilities", ctx, updater, fingerprint, vulns, deletedVulns)
 	ret0, _ := ret[0].(uuid.UUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // DeltaUpdateVulnerabilities indicates an expected call of DeltaUpdateVulnerabilities.
-func (mr *MockUpdaterMockRecorder) DeltaUpdateVulnerabilities(arg0, arg1, arg2, arg3, arg4 any) *gomock.Call {
+func (mr *MockUpdaterMockRecorder) DeltaUpdateVulnerabilities(ctx, updater, fingerprint, vulns, deletedVulns any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeltaUpdateVulnerabilities", reflect.TypeOf((*MockUpdater)(nil).DeltaUpdateVulnerabilities), arg0, arg1, arg2, arg3, arg4)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeltaUpdateVulnerabilities", reflect.TypeOf((*MockUpdater)(nil).DeltaUpdateVulnerabilities), ctx, updater, fingerprint, vulns, deletedVulns)
 }
 
 // GC mocks base method.
-func (m *MockUpdater) GC(arg0 context.Context, arg1 int) (int64, error) {
+func (m *MockUpdater) GC(ctx context.Context, keep int) (int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GC", arg0, arg1)
+	ret := m.ctrl.Call(m, "GC", ctx, keep)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GC indicates an expected call of GC.
-func (mr *MockUpdaterMockRecorder) GC(arg0, arg1 any) *gomock.Call {
+func (mr *MockUpdaterMockRecorder) GC(ctx, keep any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GC", reflect.TypeOf((*MockUpdater)(nil).GC), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GC", reflect.TypeOf((*MockUpdater)(nil).GC), ctx, keep)
 }
 
 // GetLatestUpdateRef mocks base method.
@@ -487,18 +491,18 @@ func (mr *MockUpdaterMockRecorder) GetLatestUpdateRefs(arg0, arg1 any) *gomock.C
 }
 
 // GetUpdateDiff mocks base method.
-func (m *MockUpdater) GetUpdateDiff(arg0 context.Context, arg1, arg2 uuid.UUID) (*driver.UpdateDiff, error) {
+func (m *MockUpdater) GetUpdateDiff(ctx context.Context, prev, cur uuid.UUID) (*driver.UpdateDiff, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetUpdateDiff", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "GetUpdateDiff", ctx, prev, cur)
 	ret0, _ := ret[0].(*driver.UpdateDiff)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetUpdateDiff indicates an expected call of GetUpdateDiff.
-func (mr *MockUpdaterMockRecorder) GetUpdateDiff(arg0, arg1, arg2 any) *gomock.Call {
+func (mr *MockUpdaterMockRecorder) GetUpdateDiff(ctx, prev, cur any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUpdateDiff", reflect.TypeOf((*MockUpdater)(nil).GetUpdateDiff), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUpdateDiff", reflect.TypeOf((*MockUpdater)(nil).GetUpdateDiff), ctx, prev, cur)
 }
 
 // GetUpdateOperations mocks base method.
@@ -537,97 +541,98 @@ func (mr *MockUpdaterMockRecorder) Initialized(arg0 any) *gomock.Call {
 }
 
 // RecordUpdaterSetStatus mocks base method.
-func (m *MockUpdater) RecordUpdaterSetStatus(arg0 context.Context, arg1 string, arg2 time.Time) error {
+func (m *MockUpdater) RecordUpdaterSetStatus(ctx context.Context, updaterSet string, updateTime time.Time) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RecordUpdaterSetStatus", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "RecordUpdaterSetStatus", ctx, updaterSet, updateTime)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RecordUpdaterSetStatus indicates an expected call of RecordUpdaterSetStatus.
-func (mr *MockUpdaterMockRecorder) RecordUpdaterSetStatus(arg0, arg1, arg2 any) *gomock.Call {
+func (mr *MockUpdaterMockRecorder) RecordUpdaterSetStatus(ctx, updaterSet, updateTime any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordUpdaterSetStatus", reflect.TypeOf((*MockUpdater)(nil).RecordUpdaterSetStatus), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordUpdaterSetStatus", reflect.TypeOf((*MockUpdater)(nil).RecordUpdaterSetStatus), ctx, updaterSet, updateTime)
 }
 
 // RecordUpdaterStatus mocks base method.
-func (m *MockUpdater) RecordUpdaterStatus(arg0 context.Context, arg1 string, arg2 time.Time, arg3 driver.Fingerprint, arg4 error) error {
+func (m *MockUpdater) RecordUpdaterStatus(ctx context.Context, updaterName string, updateTime time.Time, fingerprint driver.Fingerprint, updaterError error) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RecordUpdaterStatus", arg0, arg1, arg2, arg3, arg4)
+	ret := m.ctrl.Call(m, "RecordUpdaterStatus", ctx, updaterName, updateTime, fingerprint, updaterError)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RecordUpdaterStatus indicates an expected call of RecordUpdaterStatus.
-func (mr *MockUpdaterMockRecorder) RecordUpdaterStatus(arg0, arg1, arg2, arg3, arg4 any) *gomock.Call {
+func (mr *MockUpdaterMockRecorder) RecordUpdaterStatus(ctx, updaterName, updateTime, fingerprint, updaterError any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordUpdaterStatus", reflect.TypeOf((*MockUpdater)(nil).RecordUpdaterStatus), arg0, arg1, arg2, arg3, arg4)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RecordUpdaterStatus", reflect.TypeOf((*MockUpdater)(nil).RecordUpdaterStatus), ctx, updaterName, updateTime, fingerprint, updaterError)
 }
 
 // UpdateEnrichments mocks base method.
-func (m *MockUpdater) UpdateEnrichments(arg0 context.Context, arg1 string, arg2 driver.Fingerprint, arg3 []driver.EnrichmentRecord) (uuid.UUID, error) {
+func (m *MockUpdater) UpdateEnrichments(ctx context.Context, kind string, fingerprint driver.Fingerprint, enrichments []driver.EnrichmentRecord) (uuid.UUID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateEnrichments", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "UpdateEnrichments", ctx, kind, fingerprint, enrichments)
 	ret0, _ := ret[0].(uuid.UUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UpdateEnrichments indicates an expected call of UpdateEnrichments.
-func (mr *MockUpdaterMockRecorder) UpdateEnrichments(arg0, arg1, arg2, arg3 any) *gomock.Call {
+func (mr *MockUpdaterMockRecorder) UpdateEnrichments(ctx, kind, fingerprint, enrichments any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEnrichments", reflect.TypeOf((*MockUpdater)(nil).UpdateEnrichments), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEnrichments", reflect.TypeOf((*MockUpdater)(nil).UpdateEnrichments), ctx, kind, fingerprint, enrichments)
 }
 
 // UpdateEnrichmentsIter mocks base method.
-func (m *MockUpdater) UpdateEnrichmentsIter(arg0 context.Context, arg1 string, arg2 driver.Fingerprint, arg3 datastore.EnrichmentIter) (uuid.UUID, error) {
+func (m *MockUpdater) UpdateEnrichmentsIter(ctx context.Context, kind string, fingerprint driver.Fingerprint, enIter datastore.EnrichmentIter) (uuid.UUID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateEnrichmentsIter", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "UpdateEnrichmentsIter", ctx, kind, fingerprint, enIter)
 	ret0, _ := ret[0].(uuid.UUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UpdateEnrichmentsIter indicates an expected call of UpdateEnrichmentsIter.
-func (mr *MockUpdaterMockRecorder) UpdateEnrichmentsIter(arg0, arg1, arg2, arg3 any) *gomock.Call {
+func (mr *MockUpdaterMockRecorder) UpdateEnrichmentsIter(ctx, kind, fingerprint, enIter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEnrichmentsIter", reflect.TypeOf((*MockUpdater)(nil).UpdateEnrichmentsIter), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEnrichmentsIter", reflect.TypeOf((*MockUpdater)(nil).UpdateEnrichmentsIter), ctx, kind, fingerprint, enIter)
 }
 
 // UpdateVulnerabilities mocks base method.
-func (m *MockUpdater) UpdateVulnerabilities(arg0 context.Context, arg1 string, arg2 driver.Fingerprint, arg3 []*claircore.Vulnerability) (uuid.UUID, error) {
+func (m *MockUpdater) UpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability) (uuid.UUID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateVulnerabilities", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "UpdateVulnerabilities", ctx, updater, fingerprint, vulns)
 	ret0, _ := ret[0].(uuid.UUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UpdateVulnerabilities indicates an expected call of UpdateVulnerabilities.
-func (mr *MockUpdaterMockRecorder) UpdateVulnerabilities(arg0, arg1, arg2, arg3 any) *gomock.Call {
+func (mr *MockUpdaterMockRecorder) UpdateVulnerabilities(ctx, updater, fingerprint, vulns any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateVulnerabilities", reflect.TypeOf((*MockUpdater)(nil).UpdateVulnerabilities), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateVulnerabilities", reflect.TypeOf((*MockUpdater)(nil).UpdateVulnerabilities), ctx, updater, fingerprint, vulns)
 }
 
 // UpdateVulnerabilitiesIter mocks base method.
-func (m *MockUpdater) UpdateVulnerabilitiesIter(arg0 context.Context, arg1 string, arg2 driver.Fingerprint, arg3 datastore.VulnerabilityIter) (uuid.UUID, error) {
+func (m *MockUpdater) UpdateVulnerabilitiesIter(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulnIter datastore.VulnerabilityIter) (uuid.UUID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateVulnerabilitiesIter", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "UpdateVulnerabilitiesIter", ctx, updater, fingerprint, vulnIter)
 	ret0, _ := ret[0].(uuid.UUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // UpdateVulnerabilitiesIter indicates an expected call of UpdateVulnerabilitiesIter.
-func (mr *MockUpdaterMockRecorder) UpdateVulnerabilitiesIter(arg0, arg1, arg2, arg3 any) *gomock.Call {
+func (mr *MockUpdaterMockRecorder) UpdateVulnerabilitiesIter(ctx, updater, fingerprint, vulnIter any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateVulnerabilitiesIter", reflect.TypeOf((*MockUpdater)(nil).UpdateVulnerabilitiesIter), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateVulnerabilitiesIter", reflect.TypeOf((*MockUpdater)(nil).UpdateVulnerabilitiesIter), ctx, updater, fingerprint, vulnIter)
 }
 
 // MockVulnerability is a mock of Vulnerability interface.
 type MockVulnerability struct {
 	ctrl     *gomock.Controller
 	recorder *MockVulnerabilityMockRecorder
+	isgomock struct{}
 }
 
 // MockVulnerabilityMockRecorder is the mock recorder for MockVulnerability.
@@ -648,16 +653,16 @@ func (m *MockVulnerability) EXPECT() *MockVulnerabilityMockRecorder {
 }
 
 // Get mocks base method.
-func (m *MockVulnerability) Get(arg0 context.Context, arg1 []*claircore.IndexRecord, arg2 datastore.GetOpts) (map[string][]*claircore.Vulnerability, error) {
+func (m *MockVulnerability) Get(ctx context.Context, records []*claircore.IndexRecord, opts datastore.GetOpts) (map[string][]*claircore.Vulnerability, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", arg0, arg1, arg2)
+	ret := m.ctrl.Call(m, "Get", ctx, records, opts)
 	ret0, _ := ret[0].(map[string][]*claircore.Vulnerability)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockVulnerabilityMockRecorder) Get(arg0, arg1, arg2 any) *gomock.Call {
+func (mr *MockVulnerabilityMockRecorder) Get(ctx, records, opts any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockVulnerability)(nil).Get), arg0, arg1, arg2)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockVulnerability)(nil).Get), ctx, records, opts)
 }
