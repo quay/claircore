@@ -99,8 +99,12 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 		}
 
 		switch diff := cpes - kspliceCPEs; {
+		case kspliceCPEs == 0:
+			// Continue if there are no ksplice CPEs.
 		case cpes == 0:
-			// Continue if there are no CPEs.
+			zlog.Warn(ctx).
+				Str("def_title", def.Title).
+				Msg("potential false positives: couldn't find CPEs to check for ksplice packages")
 		case diff == 0:
 			zlog.Debug(ctx).Msg("skipping userspace_ksplice vulnerabilities")
 			return nil, nil
