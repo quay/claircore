@@ -6,8 +6,6 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    reviewers:
-      - "quay/babysitters"
     commit-message:
       prefix: "chore"
       include: "scope"
@@ -15,8 +13,6 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    reviewers:
-      - "quay/babysitters"
     commit-message:
       prefix: "chore"
       include: "scope"
@@ -31,8 +27,6 @@ updates:
     directory: "/toolkit"
     schedule:
       interval: "weekly"
-    reviewers:
-      - "quay/babysitters"
     commit-message:
       prefix: "chore"
       include: "scope"
@@ -47,8 +41,6 @@ updates:
     directory: "/updater/driver"
     schedule:
       interval: "weekly"
-    reviewers:
-      - "quay/babysitters"
     commit-message:
       prefix: "chore"
       include: "scope"
