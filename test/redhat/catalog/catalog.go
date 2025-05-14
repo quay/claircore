@@ -211,7 +211,7 @@ type ParsedData struct {
 	OS     string   `json:"os"`
 	Ports  string   `json:"ports"`
 	// Repositories defined within an image as reported by yum command.
-	Repos []TODO `json:"repos"`
+	Repos []ParsedDataRepo `json:"repos"`
 	// Size of this image as reported by image metadata.
 	Size int64 `json:"size"`
 	// Information about uncompressed layer sizes.
@@ -222,6 +222,31 @@ type ParsedData struct {
 	User string `json:"user"`
 	// Virtual size of this image as reported by image metadata.
 	VirtualSize int64 `json:"virtual_size"`
+}
+
+// BUG(hank) The [ParsedData.Layers] slice is backwards: the last-applied layer
+// is at the 0th position. OCI types have the first-applied layer in the 0th
+// position.
+
+// TopLayer is a helper to work around the layer notation difference.
+//
+// See the BUG note for more information.
+func (d *ParsedData) TopLayer() string {
+	return d.Layers[0]
+}
+
+// ParsedDataRepo has no description.
+//
+// Implements the object described at https://catalog.redhat.com/api/containers/docs/objects/ParsedDataRepo.html
+type ParsedDataRepo struct {
+	BaseURL  string `json:"baseurl"`
+	Expire   string `json:"expire"`
+	Filename string `json:"filename"`
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Packages string `json:"pkgs"`
+	Size     string `json:"size"`
+	Updated  string `json:"updated"`
 }
 
 // RpmManifest contains all the RPM packages for a given [Image].
