@@ -3,6 +3,7 @@ package rpmtest
 import (
 	"net/url"
 	"reflect"
+	"slices"
 	"sync"
 	"testing"
 
@@ -16,11 +17,11 @@ import (
 // Options is a standard set of [cmp.Options] for working with packages from
 // rpm. The passed [testing.TB] is captured, so the returned Options cannot be
 // reused across tests.
-func Options(t testing.TB) cmp.Options {
+func Options(t testing.TB, repos []string) cmp.Options {
 	return cmp.Options{
-		HintCompare(t),
+		HintCompare(t, repos),
 		VersionTransform(t),
-		IgnorePackageDB,
+		IgnoreFields,
 		SortPackages,
 		ModuleCompare,
 	}
@@ -30,7 +31,14 @@ func Options(t testing.TB) cmp.Options {
 //
 // The RPM manifest doesn't have checksum information. It does have keyid
 // information, so normalize down to the common set.
-func HintCompare(t testing.TB) cmp.Option {
+func HintCompare(t testing.TB, repos []string) cmp.Option {
+	const (
+		keyHash = `hash`
+		keyRepo = `repoid`
+	)
+	if repos != nil {
+		slices.Sort(repos)
+	}
 	return cmp.FilterPath(
 		func(p cmp.Path) bool { return p.Last().String() == ".RepositoryHint" },
 		cmp.Comparer(func(a, b string) bool {
@@ -42,11 +50,48 @@ func HintCompare(t testing.TB) cmp.Option {
 			if err != nil {
 				t.Errorf("%q: %v", b, err)
 			}
-			av.Del("hash")
-			bv.Del("hash")
+
+			// Ignore "hash" keys.
+			av.Del(keyHash)
+			bv.Del(keyHash)
+
+			ar, aok := av[keyRepo]
+			br, bok := bv[keyRepo]
+			switch {
+			case aok == bok: // Let the normal compare work.
+			case aok && !bok:
+				// If only the "a" values have repo values, make sure it's a
+				// subset of the allowed values.
+				if isSubset(repos, ar) {
+					av.Del(keyRepo)
+				}
+			case !aok && bok:
+				// Ditto for the "b" values.
+				if isSubset(repos, br) {
+					bv.Del(keyRepo)
+				}
+			}
+
 			return cmp.Equal(av.Encode(), bv.Encode())
 		}),
 	)
+}
+
+// IsSubset reports if "sub" is a subset or equal to "super".
+//
+// It's assumed the slices are "set-like," meaning they do not contain
+// duplicated elements, although this is not checked.
+func isSubset[S ~[]E, E comparable](super, sub S) bool {
+	if super == nil || len(super) < len(sub) {
+		return false
+	}
+	n := 0
+	for _, e := range sub {
+		if slices.Contains(super, e) {
+			n++
+		}
+	}
+	return n == len(sub)
 }
 
 // VersionTransform turns a [Package.Version] into [rpmver.Version]. Go-cmp
@@ -95,5 +140,5 @@ var (
 	SortPackages = cmpopts.SortSlices(func(a, b *claircore.Package) bool {
 		return a.Name < b.Name
 	})
-	IgnorePackageDB = cmpopts.IgnoreFields(claircore.Package{}, ".PackageDB")
+	IgnoreFields = cmpopts.IgnoreFields(claircore.Package{}, ".PackageDB")
 )
