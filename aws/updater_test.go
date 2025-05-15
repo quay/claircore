@@ -44,7 +44,7 @@ func TestVersionString(t *testing.T) {
 	for _, testcase := range testcases {
 		v := versionString(&b, testcase.pkg)
 		if !cmp.Equal(v, testcase.expected) {
-			t.Errorf(cmp.Diff(v, testcase.expected))
+			t.Error(cmp.Diff(v, testcase.expected))
 		}
 	}
 }
