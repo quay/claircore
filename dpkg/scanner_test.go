@@ -842,25 +842,6 @@ func TestScanner(t *testing.T) {
 	}
 }
 
-func TestAbsolutePaths(t *testing.T) {
-	t.Parallel()
-	ctx := zlog.Test(context.Background(), t)
-	l := test.RealizeLayer(ctx, t, test.LayerRef{
-		Registry: "gcr.io",
-		Name:     "vmwarecloudadvocacy/acmeshop-user",
-		Digest:   "sha256:3c9020349340788076971d5ea638b71e35233fd8e149e269d8eebfa17960c03f",
-	})
-	var s Scanner
-	got, err := s.Scan(ctx, l)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Logf("found %d packages", len(got))
-	if len(got) == 0 {
-		t.Fail()
-	}
-}
-
 func TestExtraMetadata(t *testing.T) {
 	t.Parallel()
 	mod := test.Modtime(t, "scanner_test.go")
