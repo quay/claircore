@@ -38,10 +38,6 @@ func NewUpdater(url string, init interface{}) *Updater {
 		reqRate: rate.NewLimiter(interval, 1),
 	}
 	u.value.Store(init)
-	// If we were provided an initial value, pull the first token.
-	if !reflect.ValueOf(init).IsNil() {
-		u.reqRate.Allow()
-	}
 	return &u
 }
 
