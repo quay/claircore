@@ -222,8 +222,13 @@ func OpenDB(ctx context.Context, sys fs.FS, found FoundDB) (*Database, error) {
 	switch found.kind {
 	case kindSQLite:
 		sdb, err := sqlite.Open(spool.Name())
-		if err != nil {
-			return nil, fmt.Errorf("internal/rpm: error reading sqlite db: %w", err)
+		switch {
+		case errors.Is(err, nil):
+		case errors.Is(err, fs.ErrNotExist):
+			zlog.Warn(ctx).Err(err).Msg("internal/rpm: unable to open sqlite db")
+			return nil, nil
+		default:
+			return nil, fmt.Errorf("internal/rpm: unable to open sqlite db: %w", err)
 		}
 		db.headers = sdb
 		cleanup.close = sdb.Close
