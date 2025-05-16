@@ -4,9 +4,10 @@ import (
 	"context"
 	"net/url"
 
+	"github.com/quay/zlog"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
-	"github.com/quay/zlog"
 )
 
 // Matcher matches discovered Java Maven packages against advisories provided via OSV.

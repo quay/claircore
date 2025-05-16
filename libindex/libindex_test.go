@@ -62,7 +62,7 @@ func TestAffectedManifests(t *testing.T) {
 			mockStore: func(t *testing.T) indexer.Store {
 				ctrl := gomock.NewController(t)
 				s := indexer.NewMockStore(ctrl)
-				s.EXPECT().AffectedManifests(gomock.Any(), gomock.Any(), gomock.Any()).Return(
+				s.EXPECT().AffectedManifests(gomock.Any(), gomock.Any()).Return(
 					[]claircore.Digest{
 						digest("first digest"),
 						digest("second digest"),
@@ -80,7 +80,7 @@ func TestAffectedManifests(t *testing.T) {
 			mockStore: func(t *testing.T) indexer.Store {
 				ctrl := gomock.NewController(t)
 				s := indexer.NewMockStore(ctrl)
-				s.EXPECT().AffectedManifests(gomock.Any(), gomock.Any(), gomock.Any()).Return(
+				s.EXPECT().AffectedManifests(gomock.Any(), gomock.Any()).Return(
 					[]claircore.Digest{
 						digest("first digest"),
 						digest("second digest"),
@@ -142,8 +142,7 @@ func BenchmarkAffectedManifests(b *testing.B) {
 	// create store
 	ctrl := gomock.NewController(b)
 	s := indexer.NewMockStore(ctrl)
-	var check claircore.CheckVulnernableFunc
-	s.EXPECT().AffectedManifests(gomock.Any(), gomock.Any(), gomock.AssignableToTypeOf(check)).Return(
+	s.EXPECT().AffectedManifests(gomock.Any(), gomock.Any()).Return(
 		[]claircore.Digest{
 			digest("first digest"),
 			digest("second digest"),
