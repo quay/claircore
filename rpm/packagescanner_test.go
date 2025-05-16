@@ -107,7 +107,7 @@ func TestPackageDetection(t *testing.T) {
 						seq := rpmtest.PackagesFromManifest(t, slices.Values(m.RPMs))
 						want := wart.CollectPointer(seq)
 
-						opts := rpmtest.Options(t)
+						opts := rpmtest.Options(t, nil)
 						if !cmp.Equal(got, want, opts) {
 							t.Error(cmp.Diff(got, want, opts))
 						}

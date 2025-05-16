@@ -3,6 +3,7 @@ package rpm
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/fs"
 	"runtime/trace"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
+	"github.com/quay/claircore/internal/rpm"
 )
 
 const (
@@ -24,7 +26,7 @@ var (
 	_ indexer.PackageScanner   = (*Scanner)(nil)
 )
 
-// Scanner implements the scanner.PackageScanner interface.
+// Scanner implements the [indexer.PackageScanner] interface.
 //
 // This looks for directories that look like rpm databases and examines the
 // files it finds there.
@@ -32,19 +34,22 @@ var (
 // The zero value is ready to use.
 type Scanner struct{}
 
-// Name implements scanner.VersionedScanner.
+// Name implements [indexer.VersionedScanner].
 func (*Scanner) Name() string { return pkgName }
 
-// Version implements scanner.VersionedScanner.
+// Version implements [indexer.VersionedScanner].
 func (*Scanner) Version() string { return pkgVersion }
 
-// Kind implements scanner.VersionedScanner.
+// Kind implements [indexer.VersionedScanner].
 func (*Scanner) Kind() string { return pkgKind }
 
 // Scan attempts to find rpm databases within the layer and enumerate the
 // packages there.
 //
 // A return of (nil, nil) is expected if there's no rpm database.
+//
+// Deprecated: In-tree [indexer.PackageScanner] implementations should almost
+// certainly use the "internal/rpm" and "internal/dnf" packages.
 func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.Package, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
@@ -63,32 +68,36 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 		return nil, fmt.Errorf("rpm: unable to open layer: %w", err)
 	}
 
-	found := make([]foundDB, 0)
-	if err := fs.WalkDir(sys, ".", findDBs(ctx, &found, sys)); err != nil {
-		return nil, fmt.Errorf("rpm: error walking fs: %w", err)
-	}
-	if len(found) == 0 {
-		return nil, nil
-	}
-
-	zlog.Debug(ctx).Int("count", len(found)).Msg("found possible databases")
-
-	var pkgs []*claircore.Package
-	done := map[string]struct{}{}
-	for _, db := range found {
-		ctx := zlog.ContextWithValues(ctx, "db", db.String())
-		zlog.Debug(ctx).Msg("examining database")
-		if _, ok := done[db.Path]; ok {
-			zlog.Debug(ctx).Msg("already seen, skipping")
-			continue
-		}
-		done[db.Path] = struct{}{}
-		ps, err := getDBObjects(ctx, sys, db, packagesFromDB)
+	var out []*claircore.Package
+	dbs, errFunc := rpm.FindDBs(ctx, sys)
+	defer func() {
+		err = errors.Join(err, errFunc())
+	}()
+	for db := range dbs {
+		err = func() error {
+			ctx := zlog.ContextWithValues(ctx, "db", db.String())
+			zlog.Debug(ctx).Msg("examining database")
+			db, err := rpm.OpenDB(ctx, sys, db)
+			switch {
+			case err == nil:
+			case errors.Is(err, fs.ErrNotExist):
+				return nil
+			default:
+				return err
+			}
+			defer db.Close()
+			for pkg, err := range db.Packages(ctx) {
+				if err != nil {
+					return err
+				}
+				out = append(out, &pkg)
+			}
+			return nil
+		}()
 		if err != nil {
 			return nil, err
 		}
-		pkgs = append(pkgs, ps...)
 	}
 
-	return pkgs, nil
+	return out, nil
 }
