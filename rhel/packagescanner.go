@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"runtime/trace"
 
 	"github.com/quay/zlog"
@@ -58,7 +59,11 @@ func (p PackageScanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*cl
 			ctx := zlog.ContextWithValues(ctx, "db", found.String())
 			zlog.Debug(ctx).Msg("examining database")
 			db, err := rpm.OpenDB(ctx, sys, found)
-			if err != nil {
+			switch {
+			case err == nil:
+			case errors.Is(err, fs.ErrNotExist):
+				return nil
+			default:
 				return err
 			}
 			defer db.Close()
