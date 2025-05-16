@@ -149,13 +149,13 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 	ck := make([]byte, sha1.Size)
 	doSearch := s.root != nil
 	defer putBuf(buf)
-	fc, err := rpm.NewFileChecker(ctx, layer)
+	set, err := rpm.NewPathSet(ctx, layer)
 	if err != nil {
 		return nil, fmt.Errorf("java: unable to check RPM db: %w", err)
 	}
 	for _, n := range ars {
 		ctx := zlog.ContextWithValues(ctx, "file", n)
-		if fc.IsRPM(n) {
+		if set.Contains(n) {
 			zlog.Debug(ctx).
 				Str("path", n).
 				Msg("file path determined to be of RPM origin")
