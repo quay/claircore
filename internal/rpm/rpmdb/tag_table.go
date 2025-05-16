@@ -1,4 +1,4 @@
-package rpm
+package rpmdb
 
 type tagTab struct {
 	Short      string

@@ -1,4 +1,4 @@
-package ndb
+package bdb
 
 import (
 	"bytes"
@@ -9,14 +9,14 @@ import (
 
 	"github.com/quay/zlog"
 
-	"github.com/quay/claircore/rpm/internal/rpm"
+	"github.com/quay/claircore/internal/rpm/rpmdb"
 )
 
 func TestLoadPackage(t *testing.T) {
 	ctx := context.Background()
 
 	dir := os.DirFS("testdata")
-	ms, err := fs.Glob(dir, "Packages*.db")
+	ms, err := fs.Glob(dir, "*Packages")
 	if err != nil || len(ms) == 0 {
 		t.Fatalf("error or not enough matches: %v/%d", err, len(ms))
 	}
@@ -28,23 +28,23 @@ func TestLoadPackage(t *testing.T) {
 				t.Fatal(err)
 			}
 			pkgf := bytes.NewReader(b)
-
 			var pkg PackageDB
 			if err := pkg.Parse(pkgf); err != nil {
-				t.Fatal("error parsing Packages file", err)
+				t.Fatal(err)
 			}
 			rds, err := pkg.AllHeaders(ctx)
 			if err != nil {
-				t.Fatal("error getting AllHeaders", err)
+				t.Fatal(err)
 			}
+			t.Logf("got %d headers", len(rds))
 			for _, rd := range rds {
-				var h rpm.Header
+				var h rpmdb.Header
 				if err := h.Parse(ctx, rd); err != nil {
 					t.Fatal(err)
 				}
 				var found bool
 				for i := range h.Infos {
-					if h.Infos[i].Tag == rpm.TagName {
+					if h.Infos[i].Tag == rpmdb.TagName {
 						v, err := h.ReadData(ctx, &h.Infos[i])
 						if err != nil {
 							t.Error(err)

@@ -13,9 +13,15 @@ import (
 	"path"
 	"slices"
 	"strings"
+	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/quay/zlog"
 	"golang.org/x/tools/txtar"
 
+	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/wart"
+	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/redhat/catalog"
 	"github.com/quay/claircore/test/redhat/hydra"
 )
@@ -168,4 +174,102 @@ func (a *Archive) Repository() (catalog.Repository, error) {
 		return r, json.Unmarshal(f.Data, &r)
 	}
 	return r, errors.New("no repository object")
+}
+
+// Tests runs "tf" on images described in the archive and checks the output with
+// the relevant rpm manifest in the archive.
+func (a *Archive) Tests(
+	ctx context.Context,
+	ca *test.CachedArena,
+	repoAllow map[string][]string,
+	tf func(context.Context, *claircore.Layer) ([]*claircore.Package, error),
+) func(*testing.T) {
+	if repoAllow == nil {
+		repoAllow = make(map[string][]string)
+	}
+	return func(t *testing.T) {
+		for _, ref := range a.Repositories() {
+			t.Run(ref, func(t *testing.T) {
+				t.Parallel()
+
+				arches := map[string]struct{}{}
+				reg, repo, _ := strings.Cut(ref, "/")
+				imgs, err := a.Image(reg, repo)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				for _, img := range imgs.Data {
+					// Only consider the first listed instance of an
+					// architecture, since that's the only rpm manifest that
+					// will be populated.
+					if _, skip := arches[img.Archtecture]; skip {
+						continue
+					}
+					arches[img.Archtecture] = struct{}{}
+
+					t.Run(img.Archtecture, func(t *testing.T) {
+						ctx := zlog.Test(ctx, t)
+						m, err := a.Manifest(img.ID)
+						if err != nil {
+							t.Fatal(err)
+						}
+
+						repos := repoAllow[ref]
+						for _, r := range img.ParsedData.Repos {
+							repos = append(repos, r.ID)
+						}
+						t.Logf("allowlisting rpm repositories: %#v", repos)
+
+						var got []*claircore.Package
+						// Find the top-most layer that returns results.
+						for i, digest := range img.ParsedData.Layers {
+							layerRef := test.LayerRef{
+								Registry: reg,
+								Name:     repo,
+								Digest:   digest,
+							}
+
+							// Fetch the layer via the test caching machinery.
+							ca.LoadLayerFromRegistry(ctx, t, layerRef)
+							r := ca.Realizer(ctx).(*test.CachedRealizer)
+							t.Cleanup(func() {
+								if err := r.Close(); err != nil {
+									t.Error(err)
+								}
+							})
+							ls, err := r.RealizeDescriptions(ctx, []claircore.LayerDescription{
+								{
+									Digest:    digest,
+									URI:       "http://example.com",
+									MediaType: test.MediaType,
+									Headers:   make(map[string][]string),
+								},
+							})
+							if err != nil {
+								t.Fatal(err)
+							}
+
+							got, err = tf(ctx, &ls[0])
+							if err != nil {
+								t.Error(err)
+							}
+							if len(got) != 0 {
+								break
+							}
+							t.Logf("skipped layer %d (%s): no packages", i+1, digest)
+						}
+
+						seq := PackagesFromManifest(t, slices.Values(m.RPMs))
+						want := wart.CollectPointer(seq)
+
+						opts := Options(t, repos)
+						if !cmp.Equal(got, want, opts) {
+							t.Error(cmp.Diff(got, want, opts))
+						}
+					})
+				}
+			})
+		}
+	}
 }

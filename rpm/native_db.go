@@ -10,7 +10,6 @@ import (
 	"net/url"
 	"os"
 	"path"
-	"regexp"
 	"runtime/trace"
 	"strings"
 
@@ -18,10 +17,10 @@ import (
 	"golang.org/x/crypto/openpgp/packet"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/rpm/bdb"
-	"github.com/quay/claircore/rpm/internal/rpm"
-	"github.com/quay/claircore/rpm/ndb"
-	"github.com/quay/claircore/rpm/sqlite"
+	"github.com/quay/claircore/internal/rpm/bdb"
+	"github.com/quay/claircore/internal/rpm/ndb"
+	"github.com/quay/claircore/internal/rpm/rpmdb"
+	"github.com/quay/claircore/internal/rpm/sqlite"
 )
 
 // NativeDB is the interface implemented for in-process RPM database handlers.
@@ -142,7 +141,7 @@ func filesFromDB(ctx context.Context, _ string, db nativeDB) ([]claircore.File, 
 	}
 	var files []claircore.File
 	for _, rd := range rds {
-		var h rpm.Header
+		var h rpmdb.Header
 		if err := h.Parse(ctx, rd); err != nil {
 			return nil, err
 		}
@@ -176,7 +175,7 @@ func packagesFromDB(ctx context.Context, pkgdb string, db nativeDB) ([]*claircor
 	var b strings.Builder
 
 	for _, rd := range rds {
-		var h rpm.Header
+		var h rpmdb.Header
 		if err := h.Parse(ctx, rd); err != nil {
 			return nil, err
 		}
@@ -250,145 +249,6 @@ func packagesFromDB(ctx context.Context, pkgdb string, db nativeDB) ([]*claircor
 	return pkgs, nil
 }
 
-// Info is the package information extracted from the RPM header.
-type Info struct {
-	Name       string
-	Version    string
-	Release    string
-	SourceNEVR string
-	Module     string
-	Arch       string
-	Digest     string
-	Signature  []byte   // This is a PGP signature packet.
-	Filenames  []string // Filtered by the [filePatterns] regexp.
-	DigestAlgo int
-	Epoch      int
-}
-
-// Load populates the receiver with information extracted from the provided
-// [rpm.Header].
-func (i *Info) Load(ctx context.Context, h *rpm.Header) error {
-	var dirname, basename []string
-	var dirindex []int32
-	for idx := range h.Infos {
-		e := &h.Infos[idx]
-		if _, ok := wantTags[e.Tag]; !ok {
-			continue
-		}
-		v, err := h.ReadData(ctx, e)
-		if err != nil {
-			return err
-		}
-		switch e.Tag {
-		case rpm.TagName:
-			i.Name = v.(string)
-		case rpm.TagEpoch:
-			i.Epoch = int(v.([]int32)[0])
-		case rpm.TagVersion:
-			i.Version = v.(string)
-		case rpm.TagRelease:
-			i.Release = v.(string)
-		case rpm.TagSourceRPM:
-			i.SourceNEVR = v.(string)
-		case rpm.TagModularityLabel:
-			i.Module = v.(string)
-		case rpm.TagArch:
-			i.Arch = v.(string)
-		case rpm.TagPayloadDigestAlgo:
-			i.DigestAlgo = int(v.([]int32)[0])
-		case rpm.TagPayloadDigest:
-			i.Digest = v.([]string)[0]
-		case rpm.TagSigPGP:
-			i.Signature = v.([]byte)
-		case rpm.TagDirnames:
-			dirname = v.([]string)
-		case rpm.TagDirindexes:
-			dirindex = v.([]int32)
-		case rpm.TagBasenames:
-			basename = v.([]string)
-		case rpm.TagFilenames:
-			// Filenames is the tag used in rpm4 -- this is a best-effort for
-			// supporting it.
-			for _, name := range v.([]string) {
-				if !filePatterns.MatchString(name) {
-					// Record the name as a relative path, as that's what we use
-					// everywhere else.
-					i.Filenames = append(i.Filenames, name[1:])
-				}
-			}
-		}
-	}
-
-	// Catch panics from malformed headers. Can't think of a better way to
-	// handle this.
-	defer func() {
-		if r := recover(); r == nil {
-			return
-		}
-		zlog.Warn(ctx).
-			Str("name", i.Name).
-			Strs("basename", basename).
-			Strs("dirname", dirname).
-			Ints32("dirindex", dirindex).
-			Msg("caught panic in filename construction")
-		i.Filenames = nil
-	}()
-	for j := range basename {
-		// We only want '/'-separated paths, even if running on some other,
-		// weird OS. It seems that RPM assumes '/' throughout.
-		name := path.Join(dirname[dirindex[j]], basename[j])
-		if filePatterns.MatchString(name) {
-			// Record the name as a relative path, as that's what we use
-			// everywhere else.
-			i.Filenames = append(i.Filenames, name[1:])
-		}
-	}
-	return nil
-}
-
-// FilePatterns is a regular expression for *any* file that may need to be
-// recorded alongside a package.
-//
-// The tested strings are absolute paths.
-var filePatterns *regexp.Regexp
-
-func init() {
-	// TODO(hank) The blanket binary pattern is too broad and can miss things.
-	// Long-term, we should add pattern matching akin to [yara] or file(1) as a
-	// plugin mechanism that all indexers can use. That way, the Go indexer
-	// could register a pattern and use a shared filter over the
-	// [fs.WalkDirFunc] while this package (and dpkg, etc) can tell that another
-	// indexer will find those files relevant.
-	//
-	// [yara]: https://github.com/VirusTotal/yara
-	pat := []string{
-		`^.*/[^/]+\.jar$`, // Jar files
-		`^.*/site-packages/[^/]+\.egg-info/PKG-INFO$`, // Python packages
-		`^.*/package.json$`,                           // npm packages
-		`^.*/[^/]+\.gemspec$`,                         // ruby gems
-		`^/usr/s?bin/[^/]+$`,                          // any executable
-		"^/usr/libexec/[^/]+/[^/]+$",                  // sometimes the executables are here too
-	}
-	filePatterns = regexp.MustCompile(strings.Join(pat, `|`))
-}
-
-var wantTags = map[rpm.Tag]struct{}{
-	rpm.TagArch:              {},
-	rpm.TagBasenames:         {},
-	rpm.TagDirindexes:        {},
-	rpm.TagDirnames:          {},
-	rpm.TagEpoch:             {},
-	rpm.TagFilenames:         {},
-	rpm.TagModularityLabel:   {},
-	rpm.TagName:              {},
-	rpm.TagPayloadDigest:     {},
-	rpm.TagPayloadDigestAlgo: {},
-	rpm.TagRelease:           {},
-	rpm.TagSigPGP:            {},
-	rpm.TagSourceRPM:         {},
-	rpm.TagVersion:           {},
-}
-
 func constructEVR(b *strings.Builder, info *Info) string {
 	b.Reset()
 	if info.Epoch != 0 {
@@ -429,56 +289,6 @@ func constructHint(_ *strings.Builder, info *Info) string {
 	return v.Encode()
 }
 
-func findDBs(ctx context.Context, out *[]foundDB, sys fs.FS) fs.WalkDirFunc {
-	return func(p string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if d.IsDir() {
-			return nil
-		}
-
-		dir, n := path.Split(p)
-		dir = path.Clean(dir)
-		switch n {
-		case `Packages`:
-			f, err := sys.Open(p)
-			if err != nil {
-				return err
-			}
-			ok := bdb.CheckMagic(ctx, f)
-			f.Close()
-			if !ok {
-				return nil
-			}
-			*out = append(*out, foundDB{
-				Path: dir,
-				Kind: kindBDB,
-			})
-		case `rpmdb.sqlite`:
-			*out = append(*out, foundDB{
-				Path: dir,
-				Kind: kindSQLite,
-			})
-		case `Packages.db`:
-			f, err := sys.Open(p)
-			if err != nil {
-				return err
-			}
-			ok := ndb.CheckMagic(ctx, f)
-			f.Close()
-			if !ok {
-				return nil
-			}
-			*out = append(*out, foundDB{
-				Path: dir,
-				Kind: kindNDB,
-			})
-		}
-		return nil
-	}
-}
-
 func mkAt(ctx context.Context, k dbKind, f fs.File) (io.ReaderAt, func(), error) {
 	if r, ok := f.(io.ReaderAt); ok {
 		return r, func() {}, nil
@@ -508,26 +318,4 @@ func closeSpool(ctx context.Context, f *os.File) func() {
 			zlog.Warn(ctx).Err(err).Msg("unable to close spool")
 		}
 	}
-}
-
-type dbKind uint
-
-//go:generate -command stringer go run golang.org/x/tools/cmd/stringer
-//go:generate stringer -linecomment -type dbKind
-
-const (
-	_ dbKind = iota
-
-	kindBDB    // bdb
-	kindSQLite // sqlite
-	kindNDB    // ndb
-)
-
-type foundDB struct {
-	Path string
-	Kind dbKind
-}
-
-func (f foundDB) String() string {
-	return f.Kind.String() + ":" + f.Path
 }
