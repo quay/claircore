@@ -84,7 +84,7 @@ func (Detector) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Pack
 	//
 	// Only create a single spool file per call, re-use for every binary.
 	var spool spoolfile
-	fc, err := rpm.NewFileChecker(ctx, l)
+	set, err := rpm.NewPathSet(ctx, l)
 	if err != nil {
 		return nil, fmt.Errorf("gobin: unable to check RPM db: %w", err)
 	}
@@ -113,7 +113,7 @@ func (Detector) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Pack
 			return nil
 		}
 
-		if fc.IsRPM(p) {
+		if set.Contains(p) {
 			zlog.Debug(ctx).
 				Str("path", p).
 				Msg("file path determined to be of RPM origin")
