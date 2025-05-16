@@ -15,7 +15,7 @@ import (
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/rpm"
+	"github.com/quay/claircore/rhel"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/fetch"
 	"github.com/quay/claircore/test/rpmtest"
@@ -25,6 +25,8 @@ import (
 // container images, then fetches and indexes the manifest and compares it to
 // the published RPM manifest for the image.
 func TestRPMSpotCheck(t *testing.T) {
+	// TODO(hank) This should be unified with the
+	// "test/cmd/fetch-container-rpm-manifest" command.
 	ctx := context.Background()
 	// This is the URL for our search query. Needs to get Solr search parameters
 	// added to the RawQuery member.
@@ -220,7 +222,7 @@ func (doc hydraDoc) Run(dir string) func(*testing.T) {
 		want := rpmtest.PackagesFromRPMManifest(t, io.TeeReader(res.Body, buf))
 		defer logResponse(t, res.Request.URL.Path, buf)()
 
-		s := &rpm.Scanner{}
+		s := &rhel.PackageScanner{}
 		pkgMap := map[string]*claircore.Package{}
 		var which claircore.Digest
 		for i := len(image.Data[0].Parsed.Layers) - 1; i >= 0; i-- {
@@ -260,7 +262,7 @@ func (doc hydraDoc) Run(dir string) func(*testing.T) {
 		if len(want) != len(got) {
 			t.Errorf("wanted %d packages but got %d", len(want), len(got))
 		}
-		opts := rpmtest.Options(t)
+		opts := rpmtest.Options(t, nil)
 		if !cmp.Equal(got, want, opts) {
 			t.Error(cmp.Diff(got, want, opts))
 		}
