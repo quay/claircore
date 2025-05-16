@@ -139,7 +139,7 @@ func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string
 		  $10, $11, $12, $13, $14,
 		  $15, $16, $17, $18, $19, $20, $21, $22,
 		  $23, $24, $25,
-		  $26, $27, $28, VersionRange($29, $30)
+		  $26, $27, $28, COALESCE($29, VersionRange('{}', '{}', '()'))
 		)
 		ON CONFLICT (hash_kind, hash) DO NOTHING;`
 		// Assoc associates an update operation and a vulnerability. It fails
@@ -268,7 +268,7 @@ func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string
 			repo = &zeroRepo
 		}
 		hashKind, hash := md5Vuln(vuln)
-		vKind, vrLower, vrUpper := rangefmt(vuln.Range)
+		vKind, _, _ := rangefmt(vuln.Range)
 
 		err = mBatcher.Queue(ctx, insert,
 			hashKind, hash,
@@ -276,7 +276,7 @@ func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string
 			pkg.Name, pkg.Version, pkg.Module, pkg.Arch, pkg.Kind,
 			dist.DID, dist.Name, dist.Version, dist.VersionCodeName, dist.VersionID, dist.Arch, dist.CPE, dist.PrettyName,
 			repo.Name, repo.Key, repo.URI,
-			vuln.FixedInVersion, vuln.ArchOperation, vKind, vrLower, vrUpper,
+			vuln.FixedInVersion, vuln.ArchOperation, vKind, vuln.Range,
 		)
 		if err != nil {
 			err = fmt.Errorf("failed to queue vulnerability: %w", err)
