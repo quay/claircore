@@ -17,6 +17,8 @@ type Version struct {
 	V    [10]int32
 }
 
+var UnmatchableKind = "unmatchable"
+
 // VersionSort returns a function suitable for passing to sort.Slice or
 // sort.SliceStable.
 func VersionSort(vs []Version) func(int, int) bool {
