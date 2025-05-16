@@ -19,6 +19,7 @@ import (
 	"github.com/quay/claircore/pkg/rhctag"
 	"github.com/quay/claircore/rhel/dockerfile"
 	"github.com/quay/claircore/rhel/internal/common"
+	"github.com/quay/claircore/toolkit/types/cpe"
 )
 
 var (
@@ -105,7 +106,7 @@ func (s *scanner) Configure(ctx context.Context, f indexer.ConfigDeserializer, c
 func (s *scanner) Name() string { return "rhel_containerscanner" }
 
 // Version implements [indexer.VersionedScanner].
-func (s *scanner) Version() string { return "1" }
+func (s *scanner) Version() string { return "2" }
 
 // Kind implements [indexer.VersionedScanner].
 func (s *scanner) Kind() string { return "package" }
@@ -130,11 +131,19 @@ func (s *scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Pa
 	}
 
 	// add source package from component label
-	labels, p, err := findLabels(ctx, sys)
+	labels, p, err := findDockerfileLabels(ctx, sys)
 	switch {
 	case errors.Is(err, nil):
 	case errors.Is(err, errNotFound):
-		return nil, nil
+		// try and find the labels from labels.json
+		labels, p, err = findJSONLabels(ctx, sys)
+		switch {
+		case errors.Is(err, nil):
+		case errors.Is(err, errNotFound):
+			return nil, nil
+		default:
+			return nil, err
+		}
 	default:
 		return nil, err
 	}
@@ -219,7 +228,26 @@ type mappingFile struct {
 	Data map[string][]string `json:"data"`
 }
 
-func findLabels(ctx context.Context, sys fs.FS) (map[string]string, string, error) {
+func findJSONLabels(ctx context.Context, sys fs.FS) (map[string]string, string, error) {
+	labels := make(map[string]string)
+	l, err := fs.ReadFile(sys, "root/buildinfo/labels.json")
+	switch {
+	case errors.Is(err, nil):
+	case errors.Is(err, fs.ErrNotExist):
+		zlog.Debug(ctx).
+			Msg("labels.json file doesn't exist")
+		return nil, "", errNotFound
+	default:
+		return nil, "", err
+	}
+	err = json.Unmarshal(l, &labels)
+	if err != nil {
+		return nil, "", err
+	}
+	return labels, "", nil
+}
+
+func findDockerfileLabels(ctx context.Context, sys fs.FS) (map[string]string, string, error) {
 	ms, err := fs.Glob(sys, "root/buildinfo/Dockerfile-*")
 	if err != nil { // Can only return ErrBadPattern.
 		panic("progammer error: " + err.Error())
@@ -278,7 +306,7 @@ var _ indexer.RepositoryScanner = (*reposcanner)(nil)
 func (s *reposcanner) Name() string { return "rhel_containerscanner" }
 
 // Version implements [indexer.VersionedScanner].
-func (s *reposcanner) Version() string { return "1" }
+func (s *reposcanner) Version() string { return "2" }
 
 // Kind implements [indexer.VersionedScanner].
 func (s *reposcanner) Kind() string { return "repository" }
@@ -294,10 +322,33 @@ func (s *reposcanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircor
 	if err != nil { // Can only return ErrBadPattern.
 		panic("progammer error")
 	}
-	if len(ms) == 0 {
-		return nil, nil
+	if len(ms) > 0 {
+		zlog.Debug(ctx).
+			Msg("found buildinfo Dockerfile")
+		return []*claircore.Repository{&GoldRepo}, nil
 	}
-	zlog.Debug(ctx).
-		Msg("found buildinfo Dockerfile")
-	return []*claircore.Repository{&GoldRepo}, nil
+
+	// We didn't get a Dockerfile, so check for labels.json.
+	labels, _, err := findJSONLabels(ctx, sys)
+	switch {
+	case errors.Is(err, nil):
+	case errors.Is(err, errNotFound):
+		return nil, nil
+	default:
+		return nil, err
+	}
+	if c, ok := labels["cpe"]; ok {
+		wfn, err := cpe.Unbind(c)
+		if err != nil {
+			return nil, err
+		}
+		return []*claircore.Repository{
+			{
+				CPE:  wfn,
+				Name: wfn.String(),
+				Key:  RepositoryKey,
+			},
+		}, nil
+	}
+	return []*claircore.Repository{}, nil
 }
