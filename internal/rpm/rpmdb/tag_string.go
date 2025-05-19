@@ -319,6 +319,27 @@ func _() {
 	_ = x[TagModularityLabel-5096]
 	_ = x[TagPayloadDigestAlt-5097]
 	_ = x[TagArchSuffix-5098]
+	_ = x[TagSpec-5099]
+	_ = x[TagTranslationURL-5100]
+	_ = x[TagUpstreamReleases-5101]
+	_ = x[TagSourceLicense-5102]
+	_ = x[TagPreUntrans-5103]
+	_ = x[TagPostUntrans-5104]
+	_ = x[TagPreUntransProg-5105]
+	_ = x[TagPostUntransProg-5106]
+	_ = x[TagPreUntransFlags-5107]
+	_ = x[TagPostUntransFlags-5108]
+	_ = x[TagSysusers-5109]
+	_ = x[TagBuildSystem-5110]
+	_ = x[TagBuildOption-5111]
+	_ = x[TagPayloadSize-5112]
+	_ = x[TagPayloadSizeAlt-5113]
+	_ = x[TagRPMFormat-5114]
+	_ = x[TagFileMimeIndex-5115]
+	_ = x[TagMimeDict-5116]
+	_ = x[TagFileMimes-5117]
+	_ = x[TagPackageDigests-5118]
+	_ = x[TagPackageDigestAlgos-5119]
 }
 
 const (
@@ -331,7 +352,7 @@ const (
 	_Tag_name_6 = "TagNameTagVersionTagReleaseTagEpochTagSummaryTagDescriptionTagBuildTimeTagBuildHostTagInstallTimeTagSizeTagDistributionTagVendorTagGIFTagXPMTagLicenseTagPackagerTagGroupTagChangelogTagSourceTagPatchTagURLTagOSTagArchTagPreInstallTagPostInstallTagPreUninstallTagPostUninstallTagOldFilenamesTagFileSizesTagFileStatesTagFileModesTagFileUidsTagFileGidsTagFileRDevsTagFileMTimesTagFileDigestsTagFileLinkTosTagFileFlagsTagRootTagFileUsernameTagFileGroupnameTagExcludeTagExclusiveTagIconTagSourceRPMTagFileVerifyFlagsTagArchiveSizeTagProvideNameTagRequireFlagsTagRequireNameTagRequireVersionTagNoSourceTagNoPatchTagConflictFlagsTagConflictNameTagConflictVersionTagDefaultPrefixTagBuildRootTagInstallPrefixTagExcludeArchTagExcludeOSTagExclusiveArchTagExclusiveOSTagAutoReqProvTagRPMVersionTagTriggerScriptsTagTriggerNameTagTriggerVersionTagTriggerFlagsTagTriggerIndex"
 	_Tag_name_7 = "TagVerifyScriptTagChangelogTimeTagChangelogNameTagChangelogTextTagBrokenMD5TagPreReqTagPreInstallProgTagPostInstallProgTagPreUninstallProgTagPostUninstallProgTagBuildArchsTagObsoleteNameTagVerifyScriptProgTagTriggerScriptProgTagDocDirTagCookieTagFileDevicesTagFileInodesTagFileLangsTagPrefixesTagInstallPrefixesTagTriggerInstallTagTriggerUninstallTagTriggerPostUninstallTagAutoReqTagAutoProvTagCapabilityTagSourcePackageTagOldOriginalFilenamesTagBuildPreReqTagBuildRequiresTagBuildConflictsTagBuildMacrosTagProvideFlagsTagProvideVersionTagObsoleteFlagsTagObsoleteVersionTagDirindexesTagBasenamesTagDirnamesTagOrigDirindexesTagOrigBasenamesTagOrigDirnamesTagOptFlagsTagDistURLTagPayloadFormatTagPayloadCompressorTagPayloadFlagsTagInstallColorTagInstallTIDTagRemoveTIDTagSHA1RHNTagRHNPlatformTagPlatformTagPatchesNameTagPatchesFlagsTagPatchesVersionTagCacheCtimeTagCachePkgPathTagCachePkgSizeTagCachePkgMtimeTagFileColorsTagFileClassTagClassDictTagFileDependsXTagFileDependsNTagDependsDictTagSourcePkgIDTagFileContextsTagFSContextsTagREContextsTagPoliciesTagPreTransTagPostTransTagPreTransProgTagPostTransProgTagDistTagTagOldSuggestsNameTagOldSuggestsVersionTagOldSuggestsFlagsTagOldEnhancesNameTagOldEnhancesVersionTagOldEnhancesFlagsTagPriorityTagCVSIDTagBLinkPkgIDTagBLinkHdrIDTagBLinkNEVRATagFLinkPkgIDTagFLinkHdrIDTagFLinkNEVRATagPackageOriginTagTriggerPreInstallTagBuildSuggestsTagBuildEnhancesTagScriptStatesTagScriptMetricsTagBuildCPUClockTagFileDigestAlgosTagVariantsTagXMajorTagXMinorTagRepoTagTagKeywordsTagBuildPlatformsTagPackageColorTagPackagePrefColorTagXAttrsDictTagFileXAttrsxTagDepAttrsDictTagConflictAttrsXTagObsoleteAttrsXTagProvideAttrsXTagRequireAttrsXTagBuildProvidesTagBuildObsoletesTagDbInstanceTagNVRA"
 	_Tag_name_8 = "TagFilenamesTagFileProvideTagFileRequireTagFsNamesTagFsFizesTagTriggerCondsTagTriggerTypeTagOrigFileNamesTagLongFileSizesTagLongSizeTagFileCapsTagFileDigestAlgoTagBugURLTagEVRTagNVRTagNEVRTagNEVRATagHeaderColorTagVerboseTagEpochNumTagPreInstallFlagsTagPostInstallFlagsTagPreUninstallFlagsTagPostUninstallFlagsTagPreTransFlagsTagPostTransFlagsTagVerifyScriptFlagsTagTriggerScriptFlags"
-	_Tag_name_9 = "TagCollectionsTagPolicyNamesTagPolicyTypesTagPolicyTypesIndexesTagPolicyFlagsTagVCSTagOrderNameTagOrderVersionTagOrderFlagsTagMSSFManifestTagMSSFDomainTagInstFilenamesTagRequireNEVRSTagProvideNEVRSTagObsoleteNEVRSTagConflictNEVRSTagFileNLinksTagRecommendNameTagRecommendVersionTagRecommendFlagsTagSuggestNameTagSuggestVersionTagSuggestFlagsTagSupplementNameTagSupplementVersionTagSupplementFlagsTagEnhanceNameTagEnhanceVersionTagEnhanceFlagsTagRecommendNEVRSTagSuggestNEVRSTagSupplementNEVRSTagEnhanceNEVRSTagEncodingTagFileTriggerInstallTagFileTriggerUninstallTagFileTriggerPostUninstallTagFileTriggerScriptsTagFileTriggerScriptProgTagFileTriggerScriptFlagsTagFileTriggerNameTagFileTriggerIndexTagFileTriggerVersionTagFileTriggerFlagsTagTransFileTriggerInstallTagTransFileTriggerUninstallTagTransFileTriggerPostUninstallTagTransFileTriggerScriptsTagTransFileTriggerScriptProgTagTransFileTriggerScriptFlagsTagTransFileTriggerNameTagTransFileTriggerIndexTagTransFileTriggerVersionTagTransFileTriggerFlagsTagRemovePathPostFixesTagFileTriggerPrioritiesTagTransFileTriggerPrioritiesTagFileTriggerCondsTagFileTriggerTypeTagTransFileTriggerCondsTagTransFileTriggerTypeTagFileSignaturesTagFileSignatureLengthTagPayloadDigestTagPayloadDigestAlgoTagAutoInstalledTagIdentityTagModularityLabelTagPayloadDigestAltTagArchSuffix"
+	_Tag_name_9 = "TagCollectionsTagPolicyNamesTagPolicyTypesTagPolicyTypesIndexesTagPolicyFlagsTagVCSTagOrderNameTagOrderVersionTagOrderFlagsTagMSSFManifestTagMSSFDomainTagInstFilenamesTagRequireNEVRSTagProvideNEVRSTagObsoleteNEVRSTagConflictNEVRSTagFileNLinksTagRecommendNameTagRecommendVersionTagRecommendFlagsTagSuggestNameTagSuggestVersionTagSuggestFlagsTagSupplementNameTagSupplementVersionTagSupplementFlagsTagEnhanceNameTagEnhanceVersionTagEnhanceFlagsTagRecommendNEVRSTagSuggestNEVRSTagSupplementNEVRSTagEnhanceNEVRSTagEncodingTagFileTriggerInstallTagFileTriggerUninstallTagFileTriggerPostUninstallTagFileTriggerScriptsTagFileTriggerScriptProgTagFileTriggerScriptFlagsTagFileTriggerNameTagFileTriggerIndexTagFileTriggerVersionTagFileTriggerFlagsTagTransFileTriggerInstallTagTransFileTriggerUninstallTagTransFileTriggerPostUninstallTagTransFileTriggerScriptsTagTransFileTriggerScriptProgTagTransFileTriggerScriptFlagsTagTransFileTriggerNameTagTransFileTriggerIndexTagTransFileTriggerVersionTagTransFileTriggerFlagsTagRemovePathPostFixesTagFileTriggerPrioritiesTagTransFileTriggerPrioritiesTagFileTriggerCondsTagFileTriggerTypeTagTransFileTriggerCondsTagTransFileTriggerTypeTagFileSignaturesTagFileSignatureLengthTagPayloadDigestTagPayloadDigestAlgoTagAutoInstalledTagIdentityTagModularityLabelTagPayloadDigestAltTagArchSuffixTagSpecTagTranslationURLTagUpstreamReleasesTagSourceLicenseTagPreUntransTagPostUntransTagPreUntransProgTagPostUntransProgTagPreUntransFlagsTagPostUntransFlagsTagSysusersTagBuildSystemTagBuildOptionTagPayloadSizeTagPayloadSizeAltTagRPMFormatTagFileMimeIndexTagMimeDictTagFileMimesTagPackageDigestsTagPackageDigestAlgos"
 )
 
 var (
@@ -341,7 +362,7 @@ var (
 	_Tag_index_6 = [...]uint16{0, 7, 17, 27, 35, 45, 59, 71, 83, 97, 104, 119, 128, 134, 140, 150, 161, 169, 181, 190, 198, 204, 209, 216, 229, 243, 258, 274, 289, 301, 314, 326, 337, 348, 360, 373, 387, 401, 413, 420, 435, 451, 461, 473, 480, 492, 510, 524, 538, 553, 567, 584, 595, 605, 621, 636, 654, 670, 682, 698, 712, 724, 740, 754, 768, 781, 798, 812, 829, 844, 859}
 	_Tag_index_7 = [...]uint16{0, 15, 31, 47, 63, 75, 84, 101, 119, 138, 158, 171, 186, 205, 225, 234, 243, 257, 270, 282, 293, 311, 328, 347, 370, 380, 391, 404, 420, 443, 457, 473, 490, 504, 519, 536, 552, 570, 583, 595, 606, 623, 639, 654, 665, 675, 691, 711, 726, 741, 754, 766, 776, 790, 801, 815, 830, 847, 860, 875, 890, 906, 919, 931, 943, 958, 973, 987, 1001, 1016, 1029, 1042, 1053, 1064, 1076, 1091, 1107, 1117, 1135, 1156, 1175, 1193, 1214, 1233, 1244, 1252, 1265, 1278, 1291, 1304, 1317, 1330, 1346, 1366, 1382, 1398, 1413, 1429, 1445, 1463, 1474, 1483, 1492, 1502, 1513, 1530, 1545, 1564, 1577, 1591, 1606, 1623, 1640, 1656, 1672, 1688, 1705, 1718, 1725}
 	_Tag_index_8 = [...]uint16{0, 12, 26, 40, 50, 60, 75, 89, 105, 121, 132, 143, 160, 169, 175, 181, 188, 196, 210, 220, 231, 249, 268, 288, 309, 325, 342, 362, 383}
-	_Tag_index_9 = [...]uint16{0, 14, 28, 42, 63, 77, 83, 95, 110, 123, 138, 151, 167, 182, 197, 213, 229, 242, 258, 277, 294, 308, 325, 340, 357, 377, 395, 409, 426, 441, 458, 473, 491, 506, 517, 538, 561, 588, 609, 633, 658, 676, 695, 716, 735, 761, 789, 821, 847, 876, 906, 929, 953, 979, 1003, 1025, 1049, 1078, 1097, 1115, 1139, 1162, 1179, 1201, 1217, 1237, 1253, 1264, 1282, 1301, 1314}
+	_Tag_index_9 = [...]uint16{0, 14, 28, 42, 63, 77, 83, 95, 110, 123, 138, 151, 167, 182, 197, 213, 229, 242, 258, 277, 294, 308, 325, 340, 357, 377, 395, 409, 426, 441, 458, 473, 491, 506, 517, 538, 561, 588, 609, 633, 658, 676, 695, 716, 735, 761, 789, 821, 847, 876, 906, 929, 953, 979, 1003, 1025, 1049, 1078, 1097, 1115, 1139, 1162, 1179, 1201, 1217, 1237, 1253, 1264, 1282, 1301, 1314, 1321, 1338, 1357, 1373, 1386, 1400, 1417, 1435, 1453, 1472, 1483, 1497, 1511, 1525, 1542, 1554, 1570, 1581, 1593, 1610, 1631}
 )
 
 func (i Tag) String() string {
@@ -370,7 +391,7 @@ func (i Tag) String() string {
 	case 5000 <= i && i <= 5027:
 		i -= 5000
 		return _Tag_name_8[_Tag_index_8[i]:_Tag_index_8[i+1]]
-	case 5029 <= i && i <= 5098:
+	case 5029 <= i && i <= 5119:
 		i -= 5029
 		return _Tag_name_9[_Tag_index_9[i]:_Tag_index_9[i+1]]
 	default:

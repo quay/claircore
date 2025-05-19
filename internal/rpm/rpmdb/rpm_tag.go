@@ -353,6 +353,27 @@ const (
 	TagModularityLabel
 	TagPayloadDigestAlt
 	TagArchSuffix
+	TagSpec
+	TagTranslationURL
+	TagUpstreamReleases
+	TagSourceLicense // internal
+	TagPreUntrans
+	TagPostUntrans
+	TagPreUntransProg
+	TagPostUntransProg
+	TagPreUntransFlags
+	TagPostUntransFlags
+	TagSysusers    // extension
+	TagBuildSystem // internal
+	TagBuildOption // internal
+	TagPayloadSize
+	TagPayloadSizeAlt
+	TagRPMFormat
+	TagFileMimeIndex
+	TagMimeDict
+	TagFileMimes // extension
+	TagPackageDigests
+	TagPackageDigestAlgos
 )
 
 // Stealing a trick from codegen to assert some values.
@@ -363,7 +384,7 @@ func _() {
 	_ = x[TagTriggerIndex-1069]
 	_ = x[TagNVRA-1196]
 	_ = x[TagTriggerScriptFlags-5027]
-	_ = x[TagPayloadDigestAlt-5097]
+	_ = x[TagPackageDigestAlgos-5119]
 }
 
 // Kind is the Kind of data stored in a given Tag.
