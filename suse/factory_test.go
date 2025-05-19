@@ -5,11 +5,13 @@ import (
 	"net/http"
 	"net/url"
 	"testing"
+
+	"github.com/quay/zlog"
 )
 
 func TestFactory(t *testing.T) {
-	ctx := context.Background()
-	u, _ := url.Parse("https://ftp.suse.com/pub/projects/security/oval/")
+	ctx := zlog.Test(context.Background(), t)
+	u, _ := url.Parse(base)
 	f := &Factory{
 		c:    http.DefaultClient,
 		base: u,

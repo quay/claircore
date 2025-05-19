@@ -10,15 +10,16 @@ import (
 	"sync"
 
 	"github.com/Masterminds/semver"
+	"github.com/quay/zlog"
+	"golang.org/x/net/html"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/ovalutil"
-	"github.com/quay/zlog"
-	"golang.org/x/net/html"
 )
 
 //doc:url updater
-const base = `https://ftp.suse.com/pub/projects/security/oval/`
+const base = `https://support.novell.com/security/oval/`
 
 var (
 	reELFile = regexp.MustCompile(`suse.linux.enterprise.server.([1-9][1-9]).xml.gz`)
