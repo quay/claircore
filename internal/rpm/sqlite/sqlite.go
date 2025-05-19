@@ -64,7 +64,7 @@ func (db *RPMDB) Close() error {
 	return db.db.Close()
 }
 
-// Headers returns all RPM headers in the database.
+// Headers returns an iterator over all RPM headers in the database.
 func (db *RPMDB) Headers(ctx context.Context) iter.Seq2[io.ReaderAt, error] {
 	// Keys are sorted coming out of this query.
 	rows, err := db.db.QueryContext(ctx, allpackages)
@@ -93,32 +93,6 @@ func (db *RPMDB) Headers(ctx context.Context) iter.Seq2[io.ReaderAt, error] {
 			yield(nil, fmt.Errorf("sqlite: sql error: %w", err))
 		}
 	}
-}
-
-// AllHeaders returns ReaderAts for all RPM headers in the database.
-func (db *RPMDB) AllHeaders(ctx context.Context) ([]io.ReaderAt, error) {
-	// Keys are sorted coming out of this query.
-	rows, err := db.db.QueryContext(ctx, allpackages)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var r []io.ReaderAt
-	var hnum int64
-	for rows.Next() {
-		blob := make([]byte, 0, 4*4096) // Eyeballing a good initial capacity; do some profiling.
-		// As an alternative, this function could allocate one large buffer and subslice it for each
-		// Scan call, then use io.SectionReaders for the returned []io.ReaderAt.
-		if err := rows.Scan(&hnum, &blob); err != nil {
-			return nil, fmt.Errorf("sqlite: scan error: %w", err)
-		}
-		r = append(r, bytes.NewReader(blob))
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("sqlite: sql error: %w", err)
-	}
-
-	return r, nil
 }
 
 func (db *RPMDB) Validate(ctx context.Context) error {

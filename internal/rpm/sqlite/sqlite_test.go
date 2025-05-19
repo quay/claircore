@@ -66,12 +66,13 @@ func TestPackages(t *testing.T) {
 		t.Error(err)
 	}
 
-	hdrs, err := db.AllHeaders(ctx)
-	if err != nil {
-		t.Error(err)
-	}
 	var got []uint64
-	for _, rd := range hdrs {
+	for rd, err := range db.Headers(ctx) {
+		if err != nil {
+			t.Error(err)
+			got = append(got, 0)
+			continue
+		}
 		h.Reset()
 		if _, err := io.Copy(h, rd.(io.Reader)); err != nil {
 			t.Error(err)
