@@ -80,24 +80,6 @@ func (db *PackageDB) Headers(_ context.Context) iter.Seq2[io.ReaderAt, error] {
 	}
 }
 
-// AllHeaders returns ReaderAts for all RPM headers in the PackageDB.
-func (db *PackageDB) AllHeaders(_ context.Context) ([]io.ReaderAt, error) {
-	r := make([]io.ReaderAt, len(db.slot))
-	var err error
-	for i, s := range db.slot {
-		r[i], err = db.GetHeader(s.Index)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return r, nil
-}
-
-// Validate is currently here to fulfill an interface.
-func (db *PackageDB) Validate(_ context.Context) error {
-	return nil
-}
-
 // GetHeader returns an [io.ReaderAt] populated with [rpm.Header] data or
 // reports an error.
 func (db *PackageDB) GetHeader(pkgID uint32) (io.ReaderAt, error) {
