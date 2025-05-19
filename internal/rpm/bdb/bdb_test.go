@@ -32,16 +32,17 @@ func TestLoadPackage(t *testing.T) {
 			if err := pkg.Parse(pkgf); err != nil {
 				t.Fatal(err)
 			}
-			rds, err := pkg.AllHeaders(ctx)
-			if err != nil {
-				t.Fatal(err)
-			}
-			t.Logf("got %d headers", len(rds))
-			for _, rd := range rds {
+			ct := 0
+			for rd, err := range pkg.Headers(ctx) {
+				if err != nil {
+					t.Error(err)
+					continue
+				}
 				var h rpmdb.Header
 				if err := h.Parse(ctx, rd); err != nil {
 					t.Fatal(err)
 				}
+				ct++
 				var found bool
 				for i := range h.Infos {
 					if h.Infos[i].Tag == rpmdb.TagName {
@@ -59,6 +60,7 @@ func TestLoadPackage(t *testing.T) {
 					t.Error(`missing "name" tag`)
 				}
 			}
+			t.Logf("got %d headers", ct)
 		})
 	}
 }
