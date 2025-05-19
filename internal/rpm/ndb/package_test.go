@@ -33,11 +33,11 @@ func TestLoadPackage(t *testing.T) {
 			if err := pkg.Parse(pkgf); err != nil {
 				t.Fatal("error parsing Packages file", err)
 			}
-			rds, err := pkg.AllHeaders(ctx)
-			if err != nil {
-				t.Fatal("error getting AllHeaders", err)
-			}
-			for _, rd := range rds {
+			for rd, err := range pkg.Headers(ctx) {
+				if err != nil {
+					t.Error(err)
+					continue
+				}
 				var h rpmdb.Header
 				if err := h.Parse(ctx, rd); err != nil {
 					t.Fatal(err)
