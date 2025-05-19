@@ -264,27 +264,6 @@ func (db *PackageDB) Headers(ctx context.Context) iter.Seq2[io.ReaderAt, error] 
 	}
 }
 
-func tryCollect[T any](seq iter.Seq2[T, error]) ([]T, error) {
-	var slice []T
-	for v, err := range seq {
-		if err != nil {
-			return nil, err
-		}
-		slice = append(slice, v)
-	}
-	return slice, nil
-}
-
-// AllHeaders returns ReaderAts for all RPM headers in the PackageDB.
-func (db *PackageDB) AllHeaders(ctx context.Context) ([]io.ReaderAt, error) {
-	return tryCollect(db.Headers(ctx))
-}
-
-// Validate is currently here to fulfill an interface.
-func (db *PackageDB) Validate(_ context.Context) error {
-	return nil
-}
-
 // Rope provides an [io.ReaderAt] over an ordered slice of [io.ReaderAt].
 //
 // It's much simpler than a real rope because it's append only.
