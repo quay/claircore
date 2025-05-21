@@ -315,3 +315,19 @@ func TestLabelError(t *testing.T) {
 		t.Errorf("%v != %v", got, want)
 	}
 }
+
+func TestBugURL(t *testing.T) {
+	const in = `cpe:/a:redhat:openshift:4.*`
+	const want = `https://issues.redhat.com/secure/CreateIssueDetails%21init.jspa?description=A+Clair+instance+noticed+an+invalid+CPE%3A%7Bcode%7Dcpe%3A%2Fa%3Aredhat%3Aopenshift%3A4.%2A%7Bcode%7D%0AThe+reported+error+was%3A%7Bcode%7Dcpe%3A+version%3A+disallowed+character+%27%2A%27%7Bcode%7D&issuetype=1&pid=12330022&summary=invalid+CPE+in+Red+Hat+data`
+
+	_, err := cpe.Unbind(in)
+	if err == nil {
+		t.Error("expected error")
+	}
+	got := bugURL(in, err)
+
+	t.Logf("\ngot:  %s\nwant: %s", got, want)
+	if got != want {
+		t.Fail()
+	}
+}

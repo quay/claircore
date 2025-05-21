@@ -283,7 +283,7 @@ func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) ([]*cl
 		if err != nil {
 			zlog.Warn(ctx).
 				Err(err).
-				Str("url", `https://bugzilla.redhat.com/enter_bug.cgi?product=Container%20Factory`).
+				Str("url", bugURL(cpeID, err)).
 				Str("cpeID", cpeID).
 				Msg("invalid CPE, please report a bug upstream")
 			continue
@@ -305,6 +305,24 @@ func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) ([]*cl
 	})
 
 	return repositories, nil
+}
+
+// BugURL constructs a link directly to the Red Hat Jira instance.
+func bugURL(id string, err error) string {
+	const desc = "A Clair instance noticed an invalid CPE:{code}%s{code}\nThe reported error was:{code}%v{code}"
+	v := url.Values{
+		"pid":         {"12330022"}, // ID for the Red Hat Jira "SECDATA" project.
+		"issuetype":   {"1"},
+		"summary":     {"invalid CPE in Red Hat data"},
+		"description": {fmt.Sprintf(desc, id, err)},
+	}
+	u := url.URL{
+		Scheme:   "https",
+		Host:     "issues.redhat.com",
+		Path:     "/secure/CreateIssueDetails!init.jspa",
+		RawQuery: v.Encode(),
+	}
+	return u.String()
 }
 
 // RepoidsFromContentSets returns a slice of repoids, as discovered by examining
