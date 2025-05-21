@@ -17,6 +17,7 @@ import (
 //go:generate fetch -o testdata/package/ubi9_httpd-24.txtar ubi9/httpd-24
 
 func TestPackageDetection(t *testing.T) {
+	t.Parallel()
 	ctx := zlog.Test(context.Background(), t)
 	ms, err := filepath.Glob("testdata/package/*.txtar")
 	if err != nil {

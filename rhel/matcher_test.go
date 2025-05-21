@@ -115,6 +115,8 @@ type vulnerableTestCase struct {
 }
 
 func TestVulnerable(t *testing.T) {
+	t.Parallel()
+
 	record := &claircore.IndexRecord{
 		Package: &claircore.Package{
 			Version: "0.33.0-6.el8",
