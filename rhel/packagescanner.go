@@ -31,6 +31,9 @@ func (p PackageScanner) Name() string { return "rhel-package-scanner" }
 func (p PackageScanner) Version() string { return "1" }
 
 // Scan implements [indexer.PackageScanner].
+//
+// This implementation stores additional information needed to correlate with
+// [claircore.Repository] values in the "RepositoryHint" field.
 func (p PackageScanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.Package, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err

@@ -12,24 +12,24 @@ import (
 	"github.com/quay/claircore/toolkit/types/cpe"
 )
 
-// Matcher implements driver.Matcher.
+// Matcher implements [driver.Matcher].
 type Matcher struct {
 	ignoreUnpatched bool
 }
 
 var _ driver.Matcher = (*Matcher)(nil)
 
-// Name implements driver.Matcher.
+// Name implements [driver.Matcher].
 func (*Matcher) Name() string {
 	return "rhel"
 }
 
-// Filter implements driver.Matcher.
+// Filter implements [driver.Matcher].
 func (*Matcher) Filter(record *claircore.IndexRecord) bool {
 	return record.Repository != nil && record.Repository.Key == repositoryKey
 }
 
-// Query implements driver.Matcher.
+// Query implements [driver.Matcher].
 func (m *Matcher) Query() []driver.MatchConstraint {
 	mcs := []driver.MatchConstraint{driver.PackageModule, driver.RepositoryKey}
 	if m.ignoreUnpatched {
@@ -38,34 +38,37 @@ func (m *Matcher) Query() []driver.MatchConstraint {
 	return mcs
 }
 
-// IsCPESubstringMatch is a Red Hat specific hack that handles the "CPE patterns" in the VEX
-// data. For historical/unfathomable reasons, Red Hat
-// doesn't use the syntax defined in the Matching Expression spec.
-// For example, "cpe:/a:redhat:openshift:4" is expected to match "cpe:/a:redhat:openshift:4.13::el8".
+// IsCPESubstringMatch is a Red Hat specific hack that handles the "CPE
+// patterns" in the VEX data. For historical/unfathomable reasons, Red Hat
+// doesn't use the syntax defined in the Matching Expression spec. For example,
+// "cpe:/a:redhat:openshift:4" is expected to match
+// "cpe:/a:redhat:openshift:4.13::el8".
 //
-// This is defined (citation needed) to be a substring match on the "pattern" and "target" CPEs.
-// Since we always normalize CPEs into v2.3 "Formatted String" form, we need to trim the
-// added "ANY" attributes from the pattern.
+// This is defined (citation needed) to be a substring match on the "pattern"
+// and "target" CPEs. Since we always normalize CPEs into v2.3 "Formatted
+// String" form, we need to trim the added "ANY" attributes from the pattern.
 //
-// TODO(crozzy) Remove once RH VEX data updates CPEs with standard matching expressions.
+// TODO(crozzy) Remove once RH VEX data updates CPEs with standard matching
+// expressions.
 func isCPESubstringMatch(recordCPE cpe.WFN, vulnCPE cpe.WFN) bool {
 	return strings.HasPrefix(recordCPE.String(), strings.TrimRight(vulnCPE.String(), ":*"))
 }
 
-// Vulnerable implements driver.Matcher.
+// Vulnerable implements [driver.Matcher].
 //
-// Vulnerable will interpret the claircore.Vulnerability.Repo.CPE
-// as a CPE match expression, and to be considered vulnerable,
-// the relationship between claircore.IndexRecord.Repository.CPE and
-// the claircore.Vulnerability.Repo.CPE needs to be a CPE Name Comparison
-// Relation of SUPERSET(⊇)(Source is a superset or equal to the target).
-// https://nvlpubs.nist.gov/nistpubs/Legacy/IR/nistir7696.pdf Section 6.2.
+// Vulnerable will interpret the [claircore.Vulnerability].Repo.CPE as a CPE
+// match expression, and to be considered vulnerable, the relationship between
+// [claircore.IndexRecord].Repository.CPE and the
+// [claircore.Vulnerability].Repo.CPE needs to be a CPE Name Comparison Relation
+// of SUPERSET(⊇)(Source is a superset or equal to the target).
+//
+// See: https://nvlpubs.nist.gov/nistpubs/Legacy/IR/nistir7696.pdf Section 6.2.
 func (m *Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
 	if vuln.Repo == nil || record.Repository == nil || vuln.Repo.Key != repositoryKey {
 		return false, nil
 	}
 	var err error
-	// This conversion has to be done because our current data structure doesn't
+	// This conversion has to be done because our current data model doesn't
 	// support the claircore.Vulnerability.Repo.CPE field.
 	vuln.Repo.CPE, err = cpe.Unbind(vuln.Repo.Name)
 	if err != nil {
@@ -79,6 +82,7 @@ func (m *Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord,
 		return false, nil
 	}
 
+	// TODO(hank) Switch to the [rpmver] package.
 	pkgVer := version.NewVersion(record.Package.Version)
 	var vulnVer version.Version
 	// Assume the vulnerability record we have is for the last known vulnerable

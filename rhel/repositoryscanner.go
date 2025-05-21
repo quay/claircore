@@ -182,6 +182,9 @@ func (r *RepositoryScanner) Configure(ctx context.Context, f indexer.ConfigDeser
 }
 
 // Scan implements [indexer.RepositoryScanner].
+//
+// The two important pieces of information are the "repoid" and CPE, which are
+// stored in the [claircore.Repository]'s "Name" and "CPE" fields, respectively.
 func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Repository, error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	ctx = zlog.ContextWithValues(ctx,
