@@ -8,17 +8,15 @@ import (
 	"github.com/quay/claircore/indexer"
 )
 
-/*
-Coalescer takes individual layer artifacts and coalesces them into a full report
-on the manifest's contents.
-
-Due to the specifics of the RHEL build system, some information needs to be
-back-propagated. That is to say, some information discovered in later layers is
-also attributed to earlier layers. Both the product and distribution information
-work this way.
-
-A Coalescer is safe for concurrent use.
-*/
+// Coalescer takes individual layer artifacts and coalesces them into a full
+// report on the manifest's contents.
+//
+// Due to the specifics of the RHEL build system, some information needs to be
+// back-propagated. That is to say, some information discovered in later layers
+// is also attributed to earlier layers. Both the product and distribution
+// information work this way.
+//
+// A Coalescer is safe for concurrent use.
 type Coalescer struct{}
 
 var _ indexer.Coalescer = (*Coalescer)(nil)
@@ -51,6 +49,10 @@ func (*Coalescer) Coalesce(ctx context.Context, artifacts []*indexer.LayerArtifa
 	}
 	// The same thing has to be done in reverse, because the first layer(s) are missing
 	// the relevant information.
+	//
+	// With [ENGCMP-5332], this shouldn't be needed, so check back in 5 years.
+	//
+	// [ENGCMP-5332]: https://issues.redhat.com/browse/ENGCMP-5332
 	for i := len(artifacts) - 1; i >= 0; i-- {
 		lr := filterRedHatRepos(artifacts[i].Repos)
 		if len(lr) != 0 {
@@ -62,16 +64,18 @@ func (*Coalescer) Coalesce(ctx context.Context, artifacts []*indexer.LayerArtifa
 	// This dance with copying the product information in both directions means
 	// that if Red Hat product information is found, it "taints" all the layers.
 
-	// Break the key-by-ID convention because we need to talk about the repo
-	// name in the package matching step.
+	// Break the key-by-ID convention because we need to talk about the repoid
+	// in the package matching step.
 	for _, a := range artifacts {
 		for _, repo := range a.Repos {
 			ir.Repositories[repo.Name] = repo
 		}
 	}
 	// In our coalescing logic if a Distribution is found in layer "n" all packages found
-	// in layers [0-n] will be associated with this layer. This is for the same reasons
+	// in layers 0..n will be associated with this layer. This is for the same reasons
 	// for the repository tainting, above.
+	//
+	// This may not be needed because of matcher changes.
 	var curDist *claircore.Distribution
 	for _, a := range artifacts {
 		if len(a.Dist) != 0 {
@@ -80,18 +84,19 @@ func (*Coalescer) Coalesce(ctx context.Context, artifacts []*indexer.LayerArtifa
 			break
 		}
 	}
-	// Next lets begin associating packages with their Environment. We must
-	// consider each package in a package database as a unique entity for
-	// the edge case where a unique package is located in more then one package database.
-	// we'll use a struct as a helper and a map to lookup these structs
+	// Next, let's begin associating packages with their Environment. We must
+	// consider each package in a package database as a unique entity for the
+	// edge case where a unique package is located in more then one package
+	// database. We'll use a struct as a helper and a map to lookup these
+	// structs.
 	type packageDatabase struct {
 		packages     map[string]*claircore.Package
 		environments map[string]*claircore.Environment
 	}
 	dbs := map[string]*packageDatabase{}
 
-	// lets walk each layer forward looking for packages, new distributions, and
-	// creating the environments we discover packages in.
+	// Let's walk each layer forward looking for packages, new distributions,
+	// and creating the environments we discover packages in.
 	for _, layerArtifacts := range artifacts {
 		// check if we need to update our currDist
 		if len(layerArtifacts.Dist) != 0 {
@@ -141,21 +146,20 @@ func (*Coalescer) Coalesce(ctx context.Context, artifacts []*indexer.LayerArtifa
 	// Now let's go through packages and finds out whether each package is still
 	// available in package database in higher layers.
 	// When package is not available in higher layers it means that package was
-	// either updated/downgraded/removed. In such a cases we need to remove it
-	// from list of packages
+	// either updated/downgraded/removed.
 	// If a package is available in all layers it means that it should be added
-	// to list of packages and associate an environment for it.
-	for i := range artifacts {
-		currentLayerArtifacts := artifacts[i]
+	// to the list of packages and associate an environment for it.
+	for i, currentLayerArtifacts := range artifacts {
 		if len(currentLayerArtifacts.Pkgs) == 0 {
 			continue
 		}
 		for _, currentPkg := range currentLayerArtifacts.Pkgs {
 			if _, ok := ir.Packages[currentPkg.ID]; ok {
-				// the package was already processed in previous layers
+				// The package was already processed in previous layers.
 				continue
 			}
-			// for each package let's find out if it is also available in other layers dbs
+			// For each package, let's find out if it is also available in other
+			// layer's dbs.
 			found := true
 			for j := i + 1; j < len(artifacts); j++ {
 				nextLayerArtifacts := artifacts[j]
