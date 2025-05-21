@@ -8,12 +8,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/quay/claircore/toolkit/types/cpe"
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/test"
-	"github.com/quay/claircore/toolkit/types/cpe"
 )
 
 type CoalescerTestcase struct {
@@ -36,10 +36,6 @@ func (tc CoalescerTestcase) Run(ctx context.Context, t *testing.T) {
 	})
 }
 
-// TestCoalescer tests the private method coalesce on the [Coalescer].
-//
-// It's simpler to test the core business logic of a [Coalescer] after database
-// access would have occurred.
 func TestCoalescer(t *testing.T) {
 	t.Parallel()
 	ctx := zlog.Test(context.Background(), t)
@@ -413,6 +409,49 @@ func TestCoalescer(t *testing.T) {
 					},
 				}
 
+				return input, want
+			},
+		},
+		{
+			Name: "WithDNF",
+			Fixture: func(t testing.TB) ([]*indexer.LayerArtifacts, *claircore.IndexReport) {
+				repo1 := &claircore.Repository{
+					ID:   "1",
+					Name: "test_1",
+					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8::appstream"),
+					Key:  repositoryKey,
+				}
+				pkg1 := &claircore.Package{
+					ID:        "1",
+					Name:      "hello",
+					Version:   "1.0-1",
+					PackageDB: "fixture:/var/lib/rpm",
+					RepositoryHint: (url.Values{
+						"repoid": {repo1.Name},
+					}).Encode(),
+				}
+				input := []*indexer.LayerArtifacts{
+					{
+						Hash:  test.RandomSHA256Digest(t),
+						Pkgs:  []*claircore.Package{pkg1},
+						Dist:  nil,
+						Repos: []*claircore.Repository{repo1},
+					},
+				}
+				want := &claircore.IndexReport{
+					Hash:          test.RandomSHA256Digest(t),
+					Packages:      map[string]*claircore.Package{pkg1.ID: pkg1},
+					Distributions: map[string]*claircore.Distribution{},
+					Repositories:  map[string]*claircore.Repository{repo1.Name: repo1},
+					Environments: map[string][]*claircore.Environment{
+						pkg1.ID: {
+							{
+								PackageDB:     pkg1.PackageDB,
+								RepositoryIDs: []string{repo1.Name},
+							},
+						},
+					},
+				}
 				return input, want
 			},
 		},
