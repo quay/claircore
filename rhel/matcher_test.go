@@ -115,6 +115,8 @@ type vulnerableTestCase struct {
 }
 
 func TestVulnerable(t *testing.T) {
+	t.Parallel()
+
 	record := &claircore.IndexRecord{
 		Package: &claircore.Package{
 			Version: "0.33.0-6.el8",
@@ -272,13 +274,13 @@ func TestIsCPEStringSubsetMatch(t *testing.T) {
 		match              bool
 	}{
 		{
-			name:      "simple_case",
+			name:      "Simple",
 			recordCPE: cpe.MustUnbind("cpe:/a:redhat:openshift:4.13::el8"),
 			vulnCPE:   cpe.MustUnbind("cpe:/a:redhat:openshift:4"),
 			match:     true,
 		},
 		{
-			name:      "wrong_minor",
+			name:      "WrongMinor",
 			recordCPE: cpe.MustUnbind("cpe:/a:redhat:openshift:4.13::el8"),
 			vulnCPE:   cpe.MustUnbind("cpe:/a:redhat:openshift:4.1::el8"),
 			match:     false,
