@@ -12,6 +12,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/xmlutil"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/pkg/cpe"
 	"github.com/quay/claircore/pkg/ovalutil"
 )
 
@@ -71,6 +72,50 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 		if len(vs) == 0 {
 			return nil, fmt.Errorf("could not determine dist")
 		}
+
+		// Check if the vulnerability only affects a userspace_ksplice package.
+		//  These errata should never be applied to a container since ksplice
+		//  userspace packages are not supported to be run within a container.
+		// If there's at least one ksplice CPE and not all the affected CPEs
+		//  are ksplice related, this will cause false positives we can catch.
+		//  This should rarely happen; the most common case for this is if one
+		//  of the CPEs wasn't parseable.
+		kspliceCPEs := 0
+		cpes := len(def.Advisory.AffectedCPEList)
+		for _, affected := range def.Advisory.AffectedCPEList {
+			wfn, err := cpe.Unbind(affected)
+			if err != nil {
+				// Found a CPE but could not parse it. Log a warning and return
+				//  successfully.
+				zlog.Warn(ctx).
+					Str("def_title", def.Title).
+					Str("cpe", affected).
+					Msg("could not parse CPE: there may be a false positive match with a userspace_ksplice package")
+				return vs, nil
+			}
+			if wfn.Attr[cpe.Edition].V == "userspace_ksplice" {
+				kspliceCPEs++
+			}
+		}
+
+		switch diff := cpes - kspliceCPEs; {
+		case kspliceCPEs == 0:
+			// Continue if there are no ksplice CPEs.
+		case cpes == 0:
+			zlog.Warn(ctx).
+				Str("def_title", def.Title).
+				Msg("potential false positives: couldn't find CPEs to check for ksplice packages")
+		case diff == 0:
+			zlog.Debug(ctx).Msg("skipping userspace_ksplice vulnerabilities")
+			return nil, nil
+		case diff > 0:
+			zlog.Warn(ctx).
+				Str("def_title", def.Title).
+				Msg("potential false positives: OVAL may have a userspace_ksplice CPE which could not be skipped")
+		default:
+			panic("programmer error")
+		}
+
 		return vs, nil
 	}
 	vulns, err := ovalutil.RPMDefsToVulns(ctx, &root, protoVulns)
