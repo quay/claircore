@@ -2,6 +2,7 @@ package nodejs
 
 import (
 	"context"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 )
