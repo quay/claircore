@@ -17,7 +17,37 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
+	"github.com/quay/claircore/toolkit/types/cpe"
 )
+
+func genLayerFunc(path string, imgPath string) func(t testing.TB, w *os.File) {
+	return func(t testing.TB, w *os.File) {
+		dockerfile, err := os.Open(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer dockerfile.Close()
+		fi, err := dockerfile.Stat()
+		if err != nil {
+			t.Fatal(err)
+		}
+		tw := tar.NewWriter(w)
+		hdr, err := tar.FileInfoHeader(fi, "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		hdr.Name = imgPath
+		if err := tw.WriteHeader(hdr); err != nil {
+			t.Error(err)
+		}
+		if _, err := io.Copy(tw, dockerfile); err != nil {
+			t.Error(err)
+		}
+		if err := tw.Close(); err != nil {
+			t.Error(err)
+		}
+	}
+}
 
 func TestContainerScanner(t *testing.T) {
 	t.Parallel()
@@ -80,6 +110,7 @@ func TestContainerScanner(t *testing.T) {
 	type testcase struct {
 		Name       string
 		Dockerfile string
+		LabelsFile string
 		Want       []*claircore.Package
 	}
 	table := []testcase{
@@ -163,6 +194,27 @@ func TestContainerScanner(t *testing.T) {
 				},
 			},
 		},
+		{
+			Name:       "LabelsTest",
+			Dockerfile: "",
+			LabelsFile: "testdata/some_labels.json",
+			Want: []*claircore.Package{
+				clairSourceContainer,
+				{
+					Name:    "some-component",
+					Version: "v3.5.5-4",
+					NormalizedVersion: claircore.Version{
+						Kind: "rhctag",
+						V:    [10]int32{3, 5},
+					},
+					Kind:           claircore.BINARY,
+					Source:         rhdhSourceContainer,
+					PackageDB:      "root/buildinfo/Dockerfile-rhdh-rhdh-hub-rhel9-1.3-100",
+					RepositoryHint: "rhcc",
+					Arch:           "x86_64",
+				},
+			},
+		},
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/container-name-repos-map.json", func(w http.ResponseWriter, _ *http.Request) {
@@ -193,34 +245,15 @@ func TestContainerScanner(t *testing.T) {
 		t.Run(tt.Name, func(t *testing.T) {
 			ctx := zlog.Test(ctx, t)
 			mod := test.Modtime(t, tt.Dockerfile)
-			a.GenerateLayer(t, tt.Name, mod, func(t testing.TB, w *os.File) {
-				dockerfile, err := os.Open(tt.Dockerfile)
-				if err != nil {
-					t.Fatal(err)
-				}
-				defer dockerfile.Close()
-				fi, err := dockerfile.Stat()
-				if err != nil {
-					t.Fatal(err)
-				}
-				tw := tar.NewWriter(w)
-				hdr, err := tar.FileInfoHeader(fi, "")
-				if err != nil {
-					t.Fatal(err)
-				}
-				hdr.Name = path.Join("root/buildinfo", path.Base(tt.Dockerfile))
-				if err := tw.WriteHeader(hdr); err != nil {
-					t.Error(err)
-				}
-				if _, err := io.Copy(tw, dockerfile); err != nil {
-					t.Error(err)
-				}
-				if err := tw.Close(); err != nil {
-					t.Error(err)
-				}
-				t.Logf("wrote tar to: %s", w.Name())
-			})
+			if tt.Dockerfile != "" {
+				mod := test.Modtime(t, tt.Dockerfile)
+				a.GenerateLayer(t, tt.Name, mod, genLayerFunc(tt.Dockerfile, path.Join("root/buildinfo", path.Base(tt.Dockerfile))))
+			}
 
+			if tt.LabelsFile != "" {
+				mod = test.Modtime(t, tt.LabelsFile)
+				a.GenerateLayer(t, tt.Name, mod, genLayerFunc(tt.LabelsFile, "root/buildinfo/labels.json"))
+			}
 			r := a.Realizer(ctx).(*test.CachedRealizer)
 			defer func() {
 				if err := r.Close(); err != nil {
@@ -242,6 +275,81 @@ func TestContainerScanner(t *testing.T) {
 				t.Error(err)
 			}
 			t.Logf("found %d packages", len(got))
+			if !cmp.Equal(got, tt.Want) {
+				t.Error(cmp.Diff(got, tt.Want))
+			}
+		})
+	}
+}
+
+func TestContainerRepoScanner(t *testing.T) {
+	t.Parallel()
+	ctx := zlog.Test(context.Background(), t)
+	type testcase struct {
+		Name       string
+		Dockerfile string
+		LabelsFile string
+		Want       []*claircore.Repository
+	}
+	table := []testcase{
+		{
+			Name:       "DockerfileSimple",
+			Dockerfile: "testdata/Dockerfile-quay-quay-rhel8-v3.5.6-4",
+			Want:       []*claircore.Repository{&GoldRepo},
+		},
+		{
+			Name:       "LabelsSimple",
+			Dockerfile: "",
+			LabelsFile: "testdata/some_labels.json",
+			Want: []*claircore.Repository{
+				{
+					Name: "cpe:2.3:a:some:component:1.0:*:*:*:*:*:*:*",
+					Key:  "rhcc-container-repository",
+					URI:  "",
+					CPE:  cpe.MustUnbind("cpe:2.3:a:some:component:1.0:*:*:*"),
+				},
+			},
+		},
+	}
+	a := test.NewCachedArena(t)
+	t.Cleanup(func() {
+		if err := a.Close(ctx); err != nil {
+			t.Error(err)
+		}
+	})
+	var rs reposcanner
+	for _, tt := range table {
+		t.Run(tt.Name, func(t *testing.T) {
+			ctx := zlog.Test(ctx, t)
+			if tt.Dockerfile != "" {
+				mod := test.Modtime(t, tt.Dockerfile)
+				a.GenerateLayer(t, tt.Name, mod, genLayerFunc(tt.Dockerfile, path.Join("root/buildinfo", path.Base(tt.Dockerfile))))
+			}
+
+			if tt.LabelsFile != "" {
+				mod := test.Modtime(t, tt.LabelsFile)
+				a.GenerateLayer(t, tt.Name, mod, genLayerFunc(tt.LabelsFile, "root/buildinfo/labels.json"))
+			}
+			r := a.Realizer(ctx).(*test.CachedRealizer)
+			defer func() {
+				if err := r.Close(); err != nil {
+					t.Error(err)
+				}
+			}()
+			ls, err := r.RealizeDescriptions(ctx, []claircore.LayerDescription{{
+				Digest:    "sha256:" + strings.Repeat("beef", 16),
+				URI:       "file:" + tt.Name,
+				MediaType: test.MediaType,
+				Headers:   make(map[string][]string),
+			}})
+			if err != nil {
+				t.Error(err)
+			}
+			got, err := rs.Scan(ctx, &ls[0])
+			if err != nil {
+				t.Error(err)
+			}
+			t.Logf("found %d repository", len(got))
 			if !cmp.Equal(got, tt.Want) {
 				t.Error(cmp.Diff(got, tt.Want))
 			}
