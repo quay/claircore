@@ -98,12 +98,8 @@ DO
 		setIndexedFinishedDuration.WithLabelValues("insertManifestScanned").Observe(time.Since(start).Seconds())
 	}
 
-	// push IndexReport to the store
-	// we cast claircore.IndexReport to jsonbIndexReport in order to obtain the value/scan
-	// implementations
-
 	start := time.Now()
-	_, err = tx.Exec(ctx, upsertIndexReport, ir.Hash, jsonbIndexReport(*ir))
+	_, err = tx.Exec(ctx, upsertIndexReport, ir.Hash, ir)
 	if err != nil {
 		return fmt.Errorf("failed to upsert scan result: %w", err)
 	}

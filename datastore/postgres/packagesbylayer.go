@@ -7,8 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -117,14 +116,13 @@ WHERE
 
 		var id, srcID int64
 		var nKind, fPath *string
-		var nVer pgtype.Int4Array
 		err := rows.Scan(
 			&id,
 			&pkg.Name,
 			&pkg.Kind,
 			&pkg.Version,
 			&nKind,
-			&nVer,
+			&pkg.NormalizedVersion,
 			&pkg.Module,
 			&pkg.Arch,
 
@@ -146,9 +144,6 @@ WHERE
 		}
 		if nKind != nil {
 			pkg.NormalizedVersion.Kind = *nKind
-			for i, n := range nVer.Elements {
-				pkg.NormalizedVersion.V[i] = n.Int
-			}
 		}
 		if fPath != nil {
 			pkg.Filepath = *fPath
