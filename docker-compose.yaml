@@ -1,5 +1,3 @@
-version: "3.7"
-
 # if you are using firewalld add this consistent bridge name
 # to your trusted zone
 # sudo firewall-cmd --zone=trusted --add-interface=claircore --permanent
@@ -11,11 +9,12 @@ networks:
 
 services:
   claircore-db:
-    image: postgres:11.5
+    image: postgres:15
     container_name: claircore-db
     environment:
       POSTGRES_USER: "claircore"
       POSTGRES_DB: "claircore"
+      POSTGRES_HOST_AUTH_METHOD: "trust"
     ports:
       - "5434:5432"
     healthcheck:
