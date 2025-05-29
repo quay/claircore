@@ -55,11 +55,8 @@ ON CONFLICT
 DO
 	UPDATE SET scan_result = excluded.scan_result;
 `
-	// we cast scanner.IndexReport to jsonbIndexReport in order to obtain the value/scan
-	// implementations
-
 	start := time.Now()
-	_, err := s.pool.Exec(ctx, query, ir.Hash, jsonbIndexReport(*ir))
+	_, err := s.pool.Exec(ctx, query, ir.Hash, ir)
 	if err != nil {
 		return fmt.Errorf("failed to upsert index report: %w", err)
 	}

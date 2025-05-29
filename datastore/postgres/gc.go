@@ -9,8 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/zlog"
@@ -182,14 +181,9 @@ WHERE array_length(ordered_ops.refs, 1) > $2;
 
 	defer rows.Close()
 	for rows.Next() {
-		// pgx will not scan directly into a []uuid.UUID
-		tmp := pgtype.UUIDArray{}
-		err := rows.Scan(&tmp)
+		err := rows.Scan(&m)
 		if err != nil {
 			return nil, 0, fmt.Errorf("error scanning update operations: %w", err)
-		}
-		for _, u := range tmp.Elements {
-			m = append(m, u.Bytes) // this works since [16]byte value is assignable to uuid.UUID
 		}
 	}
 	if rows.Err() != nil {
