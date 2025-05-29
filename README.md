@@ -3,7 +3,8 @@
 [![GoDoc](https://pkg.go.dev/badge/github.com/quay/claircore?status.svg)](https://pkg.go.dev/github.com/quay/claircore)
 [![codecov](https://codecov.io/github/quay/claircore/coverage.svg?branch=main)](https://codecov.io/github/quay/claircore?branch=main)
 
-A container security library from Red Hat's Clair and Advanced Cluster Security teams.q 
+Claircore provides a set of go modules which handle scanning container layers for installed packages and reporting any
+discovered vulnerabilities. The engine behind Clair and Advanced Cluster Security.
 
 For a full overview see: [Claircore Book](https://quay.github.io/claircore)
 
@@ -20,7 +21,7 @@ There some things claircore needs:
 
 ### Basic components
 
-Claircore's main entire points are:
+Claircore's main entry points are:
 - `libindex`: The module that indexes packages and reports all packages for each layer.
 - `libvuln`: The module that matches vulnerabilities using an index report.
 
