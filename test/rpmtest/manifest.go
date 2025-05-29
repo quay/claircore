@@ -45,6 +45,12 @@ func PackagesFromManifest(t *testing.T, items iter.Seq[catalog.RpmsItems]) iter.
 				t.Errorf("#%03d: (%#v) unable to determine version: %v", n, it, err)
 				continue
 			}
+
+			if it.SrpmName == "" && it.SrpmNEVRA == "" {
+				// This is a binary package with no source information. This can be discounted.
+				continue
+			}
+
 			// Newer images produced from Konflux shove all the source information
 			// into the SourceName and omit the SourceNEVRA. Try both.
 			//
