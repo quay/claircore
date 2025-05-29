@@ -4,6 +4,7 @@ import (
 	"context"
 
 	version "github.com/knqyf263/go-apk-version"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 )

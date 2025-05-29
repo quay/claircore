@@ -23,8 +23,8 @@ import (
 
 //doc:url updater
 const (
-	defaultMirror = `https://deb.debian.org/`
-	defaultJSON   = `https://security-tracker.debian.org/tracker/data/json`
+	DefaultMirror = `https://deb.debian.org/`
+	DefaultJSON   = `https://security-tracker.debian.org/tracker/data/json`
 )
 
 var (
@@ -64,7 +64,7 @@ func (f *Factory) Configure(_ context.Context, cf driver.ConfigUnmarshaler, c *h
 		return fmt.Errorf("debian: neither archive_url nor oval_url should be populated anymore; use json_url and mirror_url instead")
 	}
 
-	u, err := url.Parse(defaultMirror)
+	u, err := url.Parse(DefaultMirror)
 	if cfg.MirrorURL != "" {
 		u, err = url.Parse(cfg.MirrorURL)
 	}
@@ -76,7 +76,7 @@ func (f *Factory) Configure(_ context.Context, cf driver.ConfigUnmarshaler, c *h
 		return fmt.Errorf("debian: bad mirror URL: %w", err)
 	}
 
-	f.json, err = url.Parse(defaultJSON)
+	f.json, err = url.Parse(DefaultJSON)
 	if cfg.JSONURL != "" {
 		f.json, err = url.Parse(cfg.JSONURL)
 	}
