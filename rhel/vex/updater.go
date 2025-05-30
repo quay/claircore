@@ -33,7 +33,7 @@ const (
 	latestFile                   = "archive_latest.txt"
 	changesFile                  = "changes.csv"
 	deletionsFile                = "deletions.csv"
-	lookBackToYear               = 2014
+	lookBackToYear               = 2017
 	repoKey                      = "rhel-cpe-repository"
 	updaterVersion               = "4"
 )
