@@ -26,6 +26,8 @@ var (
 	_ indexer.RPCScanner     = (*scanner)(nil)
 )
 
+// Deprecated: scanner will be removed in a future releases as Red Hat images
+// produced from the legacy build system stop being produced / supported.
 type scanner struct {
 	upd    *common.Updater
 	client *http.Client
@@ -255,8 +257,6 @@ func findLabels(ctx context.Context, sys fs.FS) (map[string]string, string, erro
 	return labels, p, nil
 }
 
-var errNotFound = errors.New("not found")
-
 // GetVR extracts the version-release string from the provided string ending in
 // an NVR.
 //
@@ -270,6 +270,8 @@ func getVR(nvr string) string {
 	return nvr[i+1:]
 }
 
+// Deprecated: reposcanner will be removed in a future releases as Red Hat images
+// produced from the legacy build system stop being produced / supported.
 type reposcanner struct{}
 
 var _ indexer.RepositoryScanner = (*reposcanner)(nil)

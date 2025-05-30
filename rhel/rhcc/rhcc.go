@@ -5,12 +5,20 @@
 package rhcc
 
 import (
+	"errors"
+
 	"github.com/quay/claircore"
 )
 
+const RepositoryKey = "rhcc-container-repository"
+
 // GoldRepo is the claircore.Repository that every RHCC index record is associated with.
 // It is also the claircore.Repository that is associated with OCI VEX vulnerabilities.
-var GoldRepo = claircore.Repository{
-	Name: "Red Hat Container Catalog",
-	URI:  `https://catalog.redhat.com/software/containers/explore`,
-}
+var (
+	GoldRepo = claircore.Repository{
+		Name: "Red Hat Container Catalog",
+		URI:  `https://catalog.redhat.com/software/containers/explore`,
+		Key:  RepositoryKey,
+	}
+	errNotFound = errors.New("not found")
+)
