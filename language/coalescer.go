@@ -23,6 +23,9 @@ func NewCoalescer(_ context.Context) (indexer.Coalescer, error) {
 // Image builders may opt to update language-packages instead of deleting and recreating them
 // (as in, there may or may not be a whiteout file to make it clear the package was updated).
 // This function ensures both scenarios are supported.
+//
+// This should only be used when there is only a single package at a filepath.
+// This is unsuitable for languages which have multiple packages at a filepath.
 func (c *coalescer) Coalesce(_ context.Context, ls []*indexer.LayerArtifacts) (*claircore.IndexReport, error) {
 	ir := &claircore.IndexReport{
 		Environments: map[string][]*claircore.Environment{},
@@ -30,9 +33,9 @@ func (c *coalescer) Coalesce(_ context.Context, ls []*indexer.LayerArtifacts) (*
 		Repositories: map[string]*claircore.Repository{},
 	}
 	// Similar to ir.Packages, except instead of mapping
-	// id -> package, it maps packageDB -> package.
+	// id -> package, it maps filepath -> package.
 	// For language packages, it is possible the
-	// packageDB is overwritten between subsequent layers.
+	// filepath is overwritten between subsequent layers.
 	packages := make(map[string]*claircore.Package)
 	for i := len(ls) - 1; i >= 0; i-- {
 		l := ls[i]
@@ -47,7 +50,7 @@ func (c *coalescer) Coalesce(_ context.Context, ls []*indexer.LayerArtifacts) (*
 			ir.Repositories[r.ID] = r
 		}
 		for _, pkg := range l.Pkgs {
-			if seen, exists := packages[pkg.PackageDB]; exists {
+			if seen, exists := packages[pkg.Filepath]; exists {
 				// If the package was renamed or has a different version in a higher (previously seen) layer,
 				// then this is considered a different package.
 				// In that case, ignore the original package in the lower (this) layer.
@@ -59,7 +62,7 @@ func (c *coalescer) Coalesce(_ context.Context, ls []*indexer.LayerArtifacts) (*
 				delete(ir.Packages, seen.ID)
 				delete(ir.Environments, seen.ID)
 			}
-			packages[pkg.PackageDB] = pkg
+			packages[pkg.Filepath] = pkg
 			ir.Packages[pkg.ID] = pkg
 			ir.Environments[pkg.ID] = []*claircore.Environment{
 				{
