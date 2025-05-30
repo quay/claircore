@@ -47,6 +47,7 @@ func createPackage(i int, ii int, n int) *claircore.Package {
 		Arch:           fmt.Sprintf("arch-%d", ii),
 		Kind:           claircore.BINARY,
 		PackageDB:      fmt.Sprintf("package-db-%d", i),
+		Filepath:       fmt.Sprintf("filepath-%d", i),
 		RepositoryHint: fmt.Sprintf("repository-hint-%d", i),
 		Module:         fmt.Sprintf("module:%d", ii),
 		Source: &claircore.Package{
