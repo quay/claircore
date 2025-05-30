@@ -3,8 +3,8 @@
 [![GoDoc](https://pkg.go.dev/badge/github.com/quay/claircore?status.svg)](https://pkg.go.dev/github.com/quay/claircore)
 [![codecov](https://codecov.io/github/quay/claircore/coverage.svg?branch=main)](https://codecov.io/github/quay/claircore?branch=main)
 
-Claircore provides a set of go modules which handle scanning container layers for installed packages and reporting any
-discovered vulnerabilities. The engine behind Clair and Advanced Cluster Security.
+Claircore provides a set of go modules which handle scanning container layers for installed packages and reporting any discovered vulnerabilities.
+Claircore is designed to be embedded into a service wrapper.
 
 For a full overview see: [Claircore Book](https://quay.github.io/claircore)
 
