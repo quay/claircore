@@ -45,7 +45,46 @@ type Store struct {
 }
 
 // Load reads in all the records serialized in the provided [io.Reader].
-func Load(ctx context.Context, r io.Reader) (*Loader, error) {
+func Load(ctx context.Context, r io.Reader) (*Store, error) {
+	s, err := New()
+	if err != nil {
+		return nil, err
+	}
+
+	l, err := NewLoader(r)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO(DO NOT MERGE): This implementation might be a bit naive. Currently,
+	//  it basically copies [OfflineImport]. We could probably do some custom
+	//  parsing such that it basically just decodes the json into the
+	//  appropriate [Store] fields.
+	//  [OfflineImport]: https://github.com/quay/claircore/blob/126f688bb11220fb34708719be91952dc32ff7b1/libvuln/updates.go#L17-L74
+	for l.Next() {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
+		e := l.Entry()
+		if e.Enrichment != nil {
+			if _, err = s.UpdateEnrichments(ctx, e.Updater, e.Fingerprint, e.Enrichment); err != nil {
+				return nil, fmt.Errorf("updating enrichements: %w", err)
+			}
+		}
+		if e.Vuln != nil {
+			if _, err = s.UpdateVulnerabilities(ctx, e.Updater, e.Fingerprint, e.Vuln); err != nil {
+				return nil, fmt.Errorf("updating vulnerabilities: %w", err)
+			}
+		}
+	}
+	if err := l.Err(); err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+// NewLoader creates a new Loader from the provided [io.Reader].
+func NewLoader(r io.Reader) (*Loader, error) {
 	l := Loader{
 		dec: json.NewDecoder(r),
 		cur: uuid.Nil,
