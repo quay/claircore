@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"io"
 	"reflect"
 	"strings"
@@ -178,6 +179,7 @@ func checkEqual(ctx context.Context, t *testing.T, tc testcase, lib *Libindex, i
 			return m == ".Files" || (s.Type() == reflect.TypeOf((*claircore.Package)(nil)) &&
 				(m == ".RepositoryHint" || m == ".PackageDB"))
 		}, cmp.Ignore()),
+		cmpopts.IgnoreFields(claircore.Package{}, "Filepath"),
 	}
 	hash := tc.Digest()
 	if got, want := ir.Hash, hash; !cmp.Equal(got, want, cmpopts) {

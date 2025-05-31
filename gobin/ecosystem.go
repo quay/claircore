@@ -16,6 +16,6 @@ func NewEcosystem(_ context.Context) *indexer.Ecosystem {
 		},
 		DistributionScanners: func(context.Context) ([]indexer.DistributionScanner, error) { return nil, nil },
 		RepositoryScanners:   func(context.Context) ([]indexer.RepositoryScanner, error) { return nil, nil },
-		Coalescer:            language.NewCoalescer,
+		Coalescer:            language.NewMultiCoalescer,
 	}
 }
