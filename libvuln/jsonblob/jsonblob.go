@@ -45,85 +45,43 @@ type Store struct {
 }
 
 // Load reads in all the records serialized in the provided [io.Reader].
-func Load(ctx context.Context, r io.Reader) (*Loader, error) {
-	l := Loader{
-		dec: json.NewDecoder(r),
-		cur: uuid.Nil,
-	}
-	return &l, nil
-}
-
-// Loader is an iterator that returns a series of [Entry].
-//
-// Users should call [*Loader.Next] until it reports false, then check for
-// errors via [*Loader.Err].
-type Loader struct {
-	err error
-	e   *Entry
-
-	dec  *json.Decoder
-	next *Entry
-	de   diskEntry
-	cur  uuid.UUID
-}
-
-// Next reports whether there's an [Entry] to be processed.
-func (l *Loader) Next() bool {
-	if l.err != nil {
-		return false
+func Load(ctx context.Context, r io.Reader) (*Store, error) {
+	s, err := New()
+	if err != nil {
+		return nil, err
 	}
 
-	for l.err = l.dec.Decode(&l.de); l.err == nil; l.err = l.dec.Decode(&l.de) {
-		id := l.de.Ref
-		// If we just hit a new Entry, promote the current one.
-		if id != l.cur {
-			l.e = l.next
-			l.next = &Entry{}
-			l.next.Updater = l.de.Updater
-			l.next.Fingerprint = l.de.Fingerprint
-			l.next.Date = l.de.Date
+	l, err := NewLoader(r)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO(DO NOT MERGE): ~~This implementation might be a bit naive. Currently,
+	//  it basically copies [OfflineImport]. We could probably do some custom
+	//  parsing such that it basically just decodes the json into the
+	//  appropriate [Store] fields.~~
+	//  Actually, this might be the way.
+	//  [OfflineImport]: https://github.com/quay/claircore/blob/126f688bb11220fb34708719be91952dc32ff7b1/libvuln/updates.go#L17-L74
+	for l.Next() {
+		if err := ctx.Err(); err != nil {
+			return nil, err
 		}
-		switch l.de.Kind {
-		case driver.VulnerabilityKind:
-			vuln := claircore.Vulnerability{}
-			if err := json.Unmarshal(l.de.Vuln.buf, &vuln); err != nil {
-				l.err = err
-				return false
+		e := l.Entry()
+		if e.Enrichment != nil {
+			if _, err = s.UpdateEnrichments(ctx, e.Updater, e.Fingerprint, e.Enrichment); err != nil {
+				return nil, fmt.Errorf("updating enrichements: %w", err)
 			}
-			l.next.Vuln = append(l.next.Vuln, &vuln)
-		case driver.EnrichmentKind:
-			en := driver.EnrichmentRecord{}
-			if err := json.Unmarshal(l.de.Enrichment.buf, &en); err != nil {
-				l.err = err
-				return false
-			}
-			l.next.Enrichment = append(l.next.Enrichment, en)
 		}
-		// If this was an initial diskEntry, promote the ref.
-		if id != l.cur {
-			l.cur = id
-			// If we have an Entry ready, report that.
-			if l.e != nil {
-				return true
+		if e.Vuln != nil {
+			if _, err = s.UpdateVulnerabilities(ctx, e.Updater, e.Fingerprint, e.Vuln); err != nil {
+				return nil, fmt.Errorf("updating vulnerabilities: %w", err)
 			}
 		}
 	}
-	l.e = l.next
-	return true
-}
-
-// Entry returns the latest loaded [Entry].
-func (l *Loader) Entry() *Entry {
-	return l.e
-}
-
-// Err is the latest encountered error.
-func (l *Loader) Err() error {
-	// Don't report EOF as an error.
-	if errors.Is(l.err, io.EOF) {
-		return nil
+	if err := l.Err(); err != nil {
+		return nil, err
 	}
-	return l.err
+	return s, nil
 }
 
 // Store writes out the contents of the receiver to the provided [io.Writer].
