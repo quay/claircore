@@ -257,8 +257,6 @@ type diskEntry struct {
 //
 // It is unsafe for modification because it does not return a copy of the map.
 func (s *Store) Entries() map[uuid.UUID]*Entry {
-	// BUG(hank) [Store.Entries] reports seemingly-empty entries when populated
-	// via [Store.UpdateVulnerabilities].
 	s.RLock()
 	defer s.RUnlock()
 	return s.entry
@@ -284,6 +282,7 @@ func (s *Store) UpdateVulnerabilities(ctx context.Context, updater string, finge
 	}
 
 	e := Entry{
+		Vuln:   vulns,
 		vulns:  buf,
 		vulnCt: len(vulns),
 	}
@@ -413,6 +412,7 @@ func (s *Store) UpdateEnrichments(ctx context.Context, kind string, fp driver.Fi
 	}
 
 	e := Entry{
+		Enrichment:   es,
 		enrichments:  buf,
 		enrichmentCt: len(es),
 	}
