@@ -4,11 +4,10 @@ import (
 	"context"
 
 	"github.com/quay/claircore/indexer"
-	"github.com/quay/claircore/language"
 )
 
 // NewEcosystem provides the ecosystem for handling go binaries.
-func NewEcosystem(_ context.Context) *indexer.Ecosystem {
+func NewEcosystem(ctx context.Context) *indexer.Ecosystem {
 	return &indexer.Ecosystem{
 		Name: "gobin",
 		PackageScanners: func(context.Context) ([]indexer.PackageScanner, error) {
@@ -16,6 +15,6 @@ func NewEcosystem(_ context.Context) *indexer.Ecosystem {
 		},
 		DistributionScanners: func(context.Context) ([]indexer.DistributionScanner, error) { return nil, nil },
 		RepositoryScanners:   func(context.Context) ([]indexer.RepositoryScanner, error) { return nil, nil },
-		Coalescer:            language.NewCoalescer,
+		Coalescer:            func(context.Context) (indexer.Coalescer, error) { return &coalescer{}, nil },
 	}
 }
