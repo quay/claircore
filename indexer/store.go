@@ -69,7 +69,7 @@ type Querier interface {
 	IndexReport(ctx context.Context, hash claircore.Digest) (*claircore.IndexReport, bool, error)
 	// AffectedManifests returns a list of manifest digests which the target vulnerability
 	// affects.
-	AffectedManifests(ctx context.Context, v claircore.Vulnerability, f claircore.CheckVulnernableFunc) ([]claircore.Digest, error)
+	AffectedManifests(ctx context.Context, v claircore.Vulnerability) ([]claircore.Digest, error)
 }
 
 // Indexer interface provide the method set required for indexing layer and manifest contents into
