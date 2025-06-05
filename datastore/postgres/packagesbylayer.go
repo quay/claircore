@@ -48,9 +48,11 @@ FROM
 WHERE
 	name = $1 AND version = $2 AND kind = $3;
 `
+		// TODO: It'd be nice to just use package_scanartifact.id, but what to do about the source_package ID?
+		// Just use the source package ID for now I guess?
 		query = `
 SELECT
-	package.id,
+	package_scanartifact.id,
 	package.name,
 	package.kind,
 	package.version,
