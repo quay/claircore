@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path"
 	"sort"
 	"strings"
 	"testing"
@@ -28,10 +27,6 @@ func TestRepositoryScanner(t *testing.T) {
 	t.Parallel()
 	ctx := zlog.Test(context.Background(), t)
 
-	// Set up a response map and test server to mock the Container API.
-	apiData := map[string]*strings.Reader{
-		"rh-pkg-1-1": strings.NewReader(`{"data":[{"cpe_ids":["cpe:/o:redhat:enterprise_linux:8::computenode","cpe:/o:redhat:enterprise_linux:8::baseos"],"parsed_data":{"architecture":"x86_64","labels":[{"name":"architecture","value":"x86_64"}]}}]}`),
-	}
 	mappingData := strings.NewReader(`{"data":{"content-set-1":{"cpes":["cpe:/o:redhat:enterprise_linux:6::server","cpe:/o:redhat:enterprise_linux:7::server"]},"content-set-2":{"cpes":["cpe:/o:redhat:enterprise_linux:7::server","cpe:/o:redhat:enterprise_linux:8::server"]}}}`)
 	var mappingDataBytes bytes.Buffer
 	if _, err := io.Copy(&mappingDataBytes, mappingData); err != nil {
@@ -48,22 +43,8 @@ func TestRepositoryScanner(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
-	mux.HandleFunc("/v1/images/nvr/", func(w http.ResponseWriter, r *http.Request) {
-		path := path.Base(r.URL.Path)
-		d := apiData[path]
-		if _, err := d.Seek(0, io.SeekStart); err != nil {
-			t.Fatal(err)
-		}
-		if _, err := io.Copy(w, d); err != nil {
-			t.Fatal(err)
-		}
-	})
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
-
-	esrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		t.Fatal("external http request invoked when none was expected")
-	}))
 
 	td := t.TempDir()
 	f, err := tmp.NewFile(td, "repository-2-cpe.json")
@@ -83,23 +64,6 @@ func TestRepositoryScanner(t *testing.T) {
 		want      []*claircore.Repository
 	}{
 		{
-			name: "FromAPI",
-			want: []*claircore.Repository{
-				{
-					Name: "cpe:/o:redhat:enterprise_linux:8::baseos",
-					Key:  repositoryKey,
-					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8::baseos"),
-				},
-				{
-					Name: "cpe:/o:redhat:enterprise_linux:8::computenode",
-					Key:  repositoryKey,
-					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8::computenode"),
-				},
-			},
-			cfg:       &RepositoryScannerConfig{API: srv.URL, Repo2CPEMappingURL: srv.URL + "/repository-2-cpe.json"},
-			layerPath: "testdata/layer-with-cpe.tar",
-		},
-		{
 			name: "FromMappingUrl",
 			want: []*claircore.Repository{
 				{
@@ -118,7 +82,7 @@ func TestRepositoryScanner(t *testing.T) {
 					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8::server"),
 				},
 			},
-			cfg:       &RepositoryScannerConfig{API: srv.URL, Repo2CPEMappingURL: srv.URL + "/repository-2-cpe.json"},
+			cfg:       &RepositoryScannerConfig{Repo2CPEMappingURL: srv.URL + "/repository-2-cpe.json"},
 			layerPath: "testdata/layer-with-embedded-cs.tar",
 		},
 		{
@@ -162,7 +126,7 @@ func TestRepositoryScanner(t *testing.T) {
 					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8::server"),
 				},
 			},
-			cfg:       &RepositoryScannerConfig{DisableAPI: true, API: esrv.URL, Repo2CPEMappingURL: "/", Repo2CPEMappingFile: f.Name()},
+			cfg:       &RepositoryScannerConfig{Repo2CPEMappingURL: "/", Repo2CPEMappingFile: f.Name()},
 			layerPath: "testdata/layer-with-embedded-cs.tar",
 		},
 		{
@@ -174,12 +138,12 @@ func TestRepositoryScanner(t *testing.T) {
 		{
 			name:      "NoCPEWithAirGap",
 			want:      nil,
-			cfg:       &RepositoryScannerConfig{DisableAPI: true},
+			cfg:       &RepositoryScannerConfig{},
 			layerPath: "testdata/layer-with-embedded-cs.tar",
 		}, {
 			name:      "BadContentManifestsFile",
 			want:      nil,
-			cfg:       &RepositoryScannerConfig{API: srv.URL, Repo2CPEMappingURL: srv.URL + "/repository-2-cpe.json"},
+			cfg:       &RepositoryScannerConfig{Repo2CPEMappingURL: srv.URL + "/repository-2-cpe.json"},
 			layerPath: "testdata/layer-with-invalid-content-manifests-json.tar",
 		}, {
 			name: "RHCOSLayerFromMappingFile",
