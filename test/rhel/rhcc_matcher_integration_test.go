@@ -16,7 +16,7 @@ import (
 	match_engine "github.com/quay/claircore/internal/matcher"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/updates"
-	"github.com/quay/claircore/pkg/ctxlock"
+	"github.com/quay/claircore/pkg/ctxlock/v2"
 	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/quay/claircore/rhel/vex"
 	"github.com/quay/claircore/test/integration"

@@ -8,7 +8,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore/postgres"
 	"github.com/quay/claircore/libindex"
-	"github.com/quay/claircore/pkg/ctxlock"
+	"github.com/quay/claircore/pkg/ctxlock/v2"
 )
 
 func ExampleLibindex() {
