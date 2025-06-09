@@ -23,14 +23,7 @@ import (
 	testpostgres "github.com/quay/claircore/test/postgres"
 )
 
-func TestMain(m *testing.M) {
-	var c int
-	defer func() { os.Exit(c) }()
-	defer integration.DBSetup()()
-	c = m.Run()
-}
-
-func TestMatcherIntegration(t *testing.T) {
+func TestRHCCMatcherIntegration(t *testing.T) {
 	t.Parallel()
 
 	type testcase struct {

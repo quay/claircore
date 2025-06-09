@@ -16,6 +16,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore/postgres"
+	"github.com/quay/claircore/debian"
 	"github.com/quay/claircore/internal/matcher"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/updates"
@@ -51,7 +52,7 @@ func TestMatcherIntegration(t *testing.T) {
 			fmt.Fprintln(w, `Version: 10.12`)
 			fmt.Fprintln(w, `Codename: buster`)
 		case `/`:
-			tgt, err := url.Parse(defaultJSON)
+			tgt, err := url.Parse(debian.DefaultJSON)
 			if err != nil {
 				t.Error(err)
 				w.WriteHeader(http.StatusInternalServerError)
@@ -62,7 +63,7 @@ func TestMatcherIntegration(t *testing.T) {
 		case `/debian/dists/buster/main/source/Sources.gz`,
 			`/debian/dists/buster/contrib/source/Sources.gz`,
 			`/debian/dists/buster/non-free/source/Sources.gz`:
-			tgt, err := url.Parse(defaultMirror)
+			tgt, err := url.Parse(debian.DefaultMirror)
 			if err != nil {
 				t.Error(err)
 				w.WriteHeader(http.StatusInternalServerError)
@@ -83,14 +84,14 @@ func TestMatcherIntegration(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	m := &Matcher{}
+	m := &debian.Matcher{}
 
 	locks, err := ctxlock.New(ctx, pool)
 	if err != nil {
 		t.Error(err)
 	}
 	defer locks.Close(ctx)
-	fac, err := NewFactory(ctx)
+	fac, err := debian.NewFactory(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -99,7 +100,7 @@ func TestMatcherIntegration(t *testing.T) {
 	}
 	cfg := map[string]driver.ConfigUnmarshaler{
 		"debian": func(v interface{}) error {
-			cfg := v.(*FactoryConfig)
+			cfg := v.(*debian.FactoryConfig)
 			cfg.MirrorURL = srv.URL
 			cfg.JSONURL = srv.URL
 			return nil
