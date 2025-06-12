@@ -1,3 +1,12 @@
+<a name="v1.5.39"></a>
+## [v1.5.39] - 2025-06-12
+[v1.5.39]: https://github.com/quay/claircore/compare/v1.5.38...v1.5.39
+
+- chore: upgrade from pgx v4 to v5
+  <details>
+  In July 2025 v4 will reach end of life. This change updates claircore to use v5.
+  </details>
+
 <a name="v1.5.38"></a>
 ## [v1.5.38] - 2025-06-06
 [v1.5.38]: https://github.com/quay/claircore/compare/v1.5.37...v1.5.38
