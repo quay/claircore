@@ -1,0 +1,3 @@
+chore: upgrade from pgx v4 to v5
+
+In July 2025 v4 will reach end of life. This change updates claircore to use v5.
