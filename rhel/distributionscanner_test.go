@@ -9,6 +9,7 @@ import (
 )
 
 func TestDistributionScanner(t *testing.T) {
+	t.Parallel()
 	sys := os.DirFS(`testdata/releasefiles`)
 	ents, err := fs.ReadDir(sys, ".")
 	if err != nil {

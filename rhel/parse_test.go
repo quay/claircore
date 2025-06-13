@@ -14,8 +14,9 @@ import (
 )
 
 func TestCVEDefFromUnpatched(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
-	var table = []struct {
+	table := []struct {
 		name              string
 		fileName          string
 		configFunc        driver.ConfigUnmarshaler
@@ -23,15 +24,15 @@ func TestCVEDefFromUnpatched(t *testing.T) {
 		ignoreUnpatched   bool
 	}{
 		{
-			name:              "default path",
+			name:              "DefaultPath",
 			fileName:          "testdata/rhel-8-rpm-unpatched.xml",
-			configFunc:        func(_ interface{}) error { return nil },
+			configFunc:        func(_ any) error { return nil },
 			expectedVulnCount: 192,
 		},
 		{
-			name:              "ignore unpatched path",
+			name:              "IgnoreUnpatchedPath",
 			fileName:          "testdata/rhel-8-rpm-unpatched.xml",
-			configFunc:        func(c interface{}) error { return nil },
+			configFunc:        func(c any) error { return nil },
 			ignoreUnpatched:   true,
 			expectedVulnCount: 0,
 		},
