@@ -42,6 +42,9 @@ var (
 // DefaultSearchAPI is a maven-like REST API that may be used to do
 // reverse lookups based on an archive's sha1 sum.
 //
+// Experimentally, the host "central.sonatype.com" also works. This URL is not
+// mentioned in the Maven Central documentation, though.
+//
 //doc:url indexer
 const DefaultSearchAPI = `https://search.maven.org/solrsearch/select`
 const DefaultRequestTimeout = 2 * time.Second
