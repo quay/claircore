@@ -83,7 +83,6 @@ func (i *Info) Load(ctx context.Context, h *rpmdb.Header) error {
 			// This takes the whole filenames value and splits it into an
 			// rpm5-style dir+base.
 			names := v.([]string)
-			println(i.Name, e.Tag.String(), names)
 			sort.Strings(names)
 			i.dirname = make([]string, 0)
 			i.dirindex = make([]int32, 0, len(names))
