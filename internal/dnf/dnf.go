@@ -108,12 +108,18 @@ type dbDesc struct {
 
 // Possible is the slice of dbDesc that's examined by openHistoryDB.
 var possible = []dbDesc{
-	// Defined here:
-	// https://github.com/rpm-software-management/dnf5/blob/13886935418e28482de7b675169482b85303845d/include/libdnf/transaction/transaction_item_action.hpp#L35
-	{Path: `usr/lib/sysimage/libdnf5/transaction_history.sqlite`, Enum: 5}, // dnf5
-	// Defined here:
-	// https://github.com/rpm-software-management/libdnf/blob/93759bc5cac262906e52b6a173d7b157914ec29e/libdnf/transaction/Types.hpp#L45
-	{Path: `var/lib/dnf/history.sqlite`, Enum: 8}, // dnf3/4
+	{ // dnf5
+		// https://github.com/rpm-software-management/dnf5/blob/5.2.13.0/libdnf5/transaction/db/db.cpp#L78-L89
+		Path: `usr/lib/sysimage/libdnf5/transaction_history.sqlite`,
+		// https://github.com/rpm-software-management/dnf5/blob/5.2.13.0/include/libdnf5/transaction/transaction_item_action.hpp#L42
+		Enum: 5,
+	},
+	{ // dnf3/4
+		// https://github.com/rpm-software-management/libdnf/blob/4.90/libdnf/transaction/Swdb.hpp#L57
+		Path: `var/lib/dnf/history.sqlite`,
+		// https://github.com/rpm-software-management/libdnf/blob/4.90/libdnf/transaction/Types.hpp#L53
+		Enum: 8,
+	},
 }
 
 // HistoryDB is a handle to the dnf history database.
