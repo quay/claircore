@@ -69,15 +69,15 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	}
 
 	var out []*claircore.Package
-	found, errFunc := rpm.FindDBs(ctx, sys)
+	dbs, errFunc := rpm.FindDBs(ctx, sys)
 	defer func() {
 		err = errors.Join(err, errFunc())
 	}()
-	for found := range found {
+	for db := range dbs {
 		err = func() error {
-			ctx := zlog.ContextWithValues(ctx, "db", found.String())
+			ctx := zlog.ContextWithValues(ctx, "db", db.String())
 			zlog.Debug(ctx).Msg("examining database")
-			db, err := rpm.OpenDB(ctx, sys, found)
+			db, err := rpm.OpenDB(ctx, sys, db)
 			switch {
 			case err == nil:
 			case errors.Is(err, fs.ErrNotExist):
