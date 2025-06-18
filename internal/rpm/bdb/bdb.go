@@ -180,6 +180,7 @@ func (db *PackageDB) Headers(ctx context.Context) iter.Seq2[io.ReaderAt, error] 
 				if !yield(nil, fmt.Errorf("bdb: error reading hashpage: %w", err)) {
 					return
 				}
+				continue
 			}
 			if h.Type != pagetypeHashUnsorted && h.Type != pagetypeHash {
 				continue
@@ -188,6 +189,7 @@ func (db *PackageDB) Headers(ctx context.Context) iter.Seq2[io.ReaderAt, error] 
 				if !yield(nil, errors.New("bdb: odd number of entries")) {
 					return
 				}
+				continue
 			}
 
 			ent := make([]hashentry, int(h.Entries)/2)
@@ -196,10 +198,12 @@ func (db *PackageDB) Headers(ctx context.Context) iter.Seq2[io.ReaderAt, error] 
 					if !yield(nil, fmt.Errorf("bdb: error reading hash entry: %w", err)) {
 						return
 					}
+					continue
 				}
 			}
 
 			k := []byte{0x00}
+		Entry:
 			for _, e := range ent {
 				off := int64(e.Data)
 				// First, check what kind of hash entry this is.
@@ -208,6 +212,7 @@ func (db *PackageDB) Headers(ctx context.Context) iter.Seq2[io.ReaderAt, error] 
 					if !yield(nil, fmt.Errorf("bdb: error peeking page type: %w", err)) {
 						return
 					}
+					continue
 				}
 				if k[0] != pagetypeHashOffIndex {
 					continue
@@ -218,6 +223,7 @@ func (db *PackageDB) Headers(ctx context.Context) iter.Seq2[io.ReaderAt, error] 
 					if !yield(nil, fmt.Errorf("bdb: error reading hashoffpage: %w", err)) {
 						return
 					}
+					continue
 				}
 				var r rope
 				for n := offpg.PageNo; n != 0; {
@@ -228,6 +234,7 @@ func (db *PackageDB) Headers(ctx context.Context) iter.Seq2[io.ReaderAt, error] 
 						if !yield(nil, fmt.Errorf("bdb: error reading hashpage: %w", err)) {
 							return
 						}
+						continue Entry
 					}
 					if h.Type != pagetypeOverflow {
 						continue
@@ -245,6 +252,7 @@ func (db *PackageDB) Headers(ctx context.Context) iter.Seq2[io.ReaderAt, error] 
 						if !yield(nil, fmt.Errorf("bdb: error adding to rope: %w", err)) {
 							return
 						}
+						continue Entry
 					}
 					n = h.NextPageNo
 				}
