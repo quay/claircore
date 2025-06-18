@@ -197,9 +197,6 @@ func openHistoryDB(ctx context.Context, sys fs.FS) (*historyDB, error) {
 		db: db,
 		rm: found.Enum,
 	}
-	runtime.AddCleanup(db, func(p string) {
-		os.Remove(p)
-	}, spool.Name())
 	// This is an internal function, so add an extra caller frame.
 	_, file, line, _ := runtime.Caller(2)
 	runtime.SetFinalizer(h, func(_ *historyDB) {
