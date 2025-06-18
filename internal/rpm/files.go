@@ -71,7 +71,7 @@ func (c *fileCache) GetPathSet(ctx context.Context, layer *claircore.Layer) (*Pa
 		for found := range seq {
 			zlog.Debug(ctx).
 				Stringer("db", found).
-				Msg("found possible databases")
+				Msg("found possible database")
 			err = func() error {
 				db, err := OpenDB(ctx, sys, found)
 				if err != nil {
