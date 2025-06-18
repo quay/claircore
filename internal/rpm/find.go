@@ -89,7 +89,7 @@ func walk(ctx context.Context, out chan<- FoundDB, sys fs.FS) fs.WalkDirFunc {
 			ok := bdb.CheckMagic(ctx, f)
 			f.Close()
 			if !ok {
-				break
+				return nil
 			}
 			kind = kindBDB
 		case `rpmdb.sqlite`:
@@ -102,12 +102,12 @@ func walk(ctx context.Context, out chan<- FoundDB, sys fs.FS) fs.WalkDirFunc {
 			ok := ndb.CheckMagic(ctx, f)
 			f.Close()
 			if !ok {
-				break
+				return nil
 			}
 			kind = kindNDB
 		}
 		if kind == 0 {
-			return nil
+			panic("unreachable")
 		}
 
 		select {
