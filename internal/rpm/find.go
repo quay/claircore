@@ -107,7 +107,7 @@ func walk(ctx context.Context, out chan<- FoundDB, sys fs.FS) fs.WalkDirFunc {
 			kind = kindNDB
 		}
 		if kind == 0 {
-			panic("unreachable")
+			return nil
 		}
 
 		select {
