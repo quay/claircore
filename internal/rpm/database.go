@@ -101,8 +101,13 @@ func (db *Database) Packages(ctx context.Context) iter.Seq2[claircore.Package, e
 					Kind:    claircore.SOURCE,
 					Name:    *v.Name,
 					Version: v.EVR(),
-					// RepositoryHint: info.Hint(), // ???
-					PackageDB: db.pkgdb,
+					// This is probably correct. It would be a very weird
+					// situation where a source rpm is in a different
+					// repository from the output rpm.
+					//
+					// TODO(hank) Ask upstream about srpm and module interaction.
+					RepositoryHint: info.Hint(),
+					PackageDB:      db.pkgdb,
 				}
 
 				pkg.Source = &src
