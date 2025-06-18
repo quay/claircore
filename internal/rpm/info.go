@@ -9,7 +9,6 @@ import (
 	"path"
 	"regexp"
 	"slices"
-	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -83,7 +82,7 @@ func (i *Info) Load(ctx context.Context, h *rpmdb.Header) error {
 			// This takes the whole filenames value and splits it into an
 			// rpm5-style dir+base.
 			names := v.([]string)
-			sort.Strings(names)
+			slices.Sort(names)
 			i.dirname = make([]string, 0)
 			i.dirindex = make([]int32, 0, len(names))
 			i.basename = make([]string, 0, len(names))
