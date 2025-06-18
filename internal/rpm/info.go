@@ -156,7 +156,7 @@ func (i *Info) NEVRA() rpmver.Version {
 	}
 }
 
-// Hint constructs a string suitable to be use as the "RepositoryHint".
+// Hint constructs a string suitable to be used as the "RepositoryHint".
 func (i *Info) Hint() string {
 	v := url.Values{}
 	if i.Digest != "" {
