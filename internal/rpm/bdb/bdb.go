@@ -305,9 +305,11 @@ func (r *rope) ReadAt(b []byte, off int64) (int, error) {
 			idx++
 			if idx != len(r.rd) {
 				rdoff = 0 // Reading from the start, now that we're on the next one.
-				continue
+				break     // May return EOF or nil on an exact-sized read, so hit the post-switch check.
 			}
 			fallthrough
+		// Don't need to handle non-EOF short reads because [io.ReaderAt] is documented
+		// to error on short reads.
 		default:
 			return n, err
 		}
