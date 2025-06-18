@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io/fs"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
 	"runtime/trace"
@@ -22,7 +21,6 @@ import (
 	"github.com/quay/claircore/internal/zreader"
 	"github.com/quay/claircore/rhel/dockerfile"
 	"github.com/quay/claircore/rhel/internal/common"
-	"github.com/quay/claircore/rhel/internal/containerapi"
 	"github.com/quay/claircore/toolkit/types/cpe"
 )
 
@@ -47,9 +45,8 @@ layer reports that it is both the "cpe:/a:redhat:enterprise_linux:8" and
 */
 type RepositoryScanner struct {
 	// These members are created after the Configure call.
-	upd        *common.Updater
-	apiFetcher *containerapi.ContainerAPI
-	client     *http.Client
+	upd    *common.Updater
+	client *http.Client
 
 	cfg RepositoryScannerConfig
 }
@@ -72,14 +69,7 @@ var (
 //   - If both the "URL" and "File" are provided, the file will be loaded
 //     initially and then updated periodically from the URL.
 type RepositoryScannerConfig struct {
-	// DisableAPI disables the use of the API.
-	DisableAPI bool `json:"disable_api" yaml:"disable_api"`
-	// API is the URL to talk to the Red Hat Container API.
-	//
-	// See [DefaultContainerAPI] and [containerapi.ContainerAPI].
-	API string `json:"api" yaml:"api"`
 	// Repo2CPEMappingURL can be used to fetch the repo mapping file.
-	// Consulting the mapping file is preferred over the Container API.
 	//
 	// See [DefaultRepo2CPEMappingURL] and [repo2cpe].
 	Repo2CPEMappingURL string `json:"repo2cpe_mapping_url" yaml:"repo2cpe_mapping_url"`
@@ -96,10 +86,6 @@ type RepositoryScannerConfig struct {
 const (
 	// RepositoryKey marks a repository as being based on a Red Hat CPE.
 	repositoryKey = "rhel-cpe-repository"
-	// DefaultContainerAPI is the default Red Hat Container API URL.
-	//
-	//doc:url indexer
-	DefaultContainerAPI = "https://catalog.redhat.com/api/containers/"
 	// DefaultRepo2CPEMappingURL is default URL with a mapping file provided by Red Hat.
 	//
 	//doc:url indexer
@@ -123,10 +109,6 @@ func (r *RepositoryScanner) Configure(ctx context.Context, f indexer.ConfigDeser
 	r.client = c
 	if err := f(&r.cfg); err != nil {
 		return err
-	}
-	// Set defaults if not set via passed function.
-	if r.cfg.API == "" {
-		r.cfg.API = DefaultContainerAPI
 	}
 	if r.cfg.Timeout == 0 {
 		r.cfg.Timeout = 10 * time.Second
@@ -161,21 +143,6 @@ func (r *RepositoryScanner) Configure(ctx context.Context, f indexer.ConfigDeser
 	defer done()
 	r.upd.Get(tctx, c)
 
-	if r.cfg.DisableAPI {
-		zlog.Debug(ctx).Msg("container API disabled")
-	} else {
-		// Additional setup
-		root, err := url.Parse(r.cfg.API)
-		if err != nil {
-			return err
-		}
-
-		r.apiFetcher = &containerapi.ContainerAPI{
-			Root:   root,
-			Client: r.client,
-		}
-	}
-
 	return nil
 }
 
@@ -207,16 +174,6 @@ func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) (repos
 	CPEs, err := mapContentSets(ctx, sys, cm)
 	if err != nil {
 		return []*claircore.Repository{}, err
-	}
-	if CPEs == nil && r.apiFetcher != nil {
-		// Embedded content-sets are available only for new images.
-		// For old images, use fallback option and query Red Hat Container API.
-		ctx, done := context.WithTimeout(ctx, r.cfg.Timeout)
-		defer done()
-		CPEs, err = mapContainerAPI(ctx, sys, r.apiFetcher)
-		if err != nil {
-			return []*claircore.Repository{}, err
-		}
 	}
 
 	for _, cpeID := range CPEs {
@@ -331,47 +288,6 @@ type contentManifest struct {
 // ManifestMetadata struct holds additional metadata about the build.
 type manifestMetadata struct {
 	ImageLayerIndex int `json:"image_layer_index"`
-}
-
-// MapContainerAPI returns a slice of CPEs bound into strings, as discovered by
-// pulling labels from the Dockerfile contained in the layer and submitted to the
-// Container API.
-func mapContainerAPI(ctx context.Context, sys fs.FS, api *containerapi.ContainerAPI) ([]string, error) {
-	ms, err := fs.Glob(sys, "root/buildinfo/Dockerfile-*")
-	if err != nil {
-		panic("programmer error: " + err.Error())
-	}
-	if ms == nil {
-		return nil, nil
-	}
-	p := ms[0]
-	b, err := fs.ReadFile(sys, p)
-	if err != nil {
-		return nil, fmt.Errorf("rhel: unable to read %q: %w", p, err)
-	}
-
-	nvr, arch, err := extractBuildNVR(ctx, p, b)
-	switch {
-	case errors.Is(err, nil):
-	case errors.Is(err, errBadDockerfile):
-		zlog.Info(ctx).
-			AnErr("label_error", err).
-			Msg("bad dockerfile")
-		return nil, nil
-	default:
-		return nil, err
-	}
-
-	cpes, err := api.GetCPEs(ctx, nvr, arch)
-	if err != nil {
-		return nil, err
-	}
-	zlog.Debug(ctx).
-		Str("nvr", nvr).
-		Str("arch", arch).
-		Strs("cpes", cpes).
-		Msg("got CPEs from container API")
-	return cpes, nil
 }
 
 // ExtractBuildNVR extracts the build's NVR and arch from the named Dockerfile and its contents.
