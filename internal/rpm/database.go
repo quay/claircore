@@ -193,11 +193,10 @@ func (db *Database) String() string {
 func loadPackageInfo(ctx context.Context, headers iter.Seq2[io.ReaderAt, error]) iter.Seq2[Info, error] {
 	return func(yield func(Info, error) bool) {
 		var h rpmdb.Header
-		var z Info
 
 		for r, err := range headers {
 			if err != nil {
-				if !yield(z, fmt.Errorf("rpm: unable to read header: %w", err)) {
+				if !yield(Info{}, fmt.Errorf("rpm: unable to read header: %w", err)) {
 					return
 				}
 				continue
@@ -205,7 +204,7 @@ func loadPackageInfo(ctx context.Context, headers iter.Seq2[io.ReaderAt, error])
 
 			h = rpmdb.Header{}
 			if err := h.Parse(ctx, r); err != nil {
-				if !yield(z, fmt.Errorf("rpm: unable to parse header: %w", err)) {
+				if !yield(Info{}, fmt.Errorf("rpm: unable to parse header: %w", err)) {
 					return
 				}
 				continue
@@ -213,7 +212,7 @@ func loadPackageInfo(ctx context.Context, headers iter.Seq2[io.ReaderAt, error])
 
 			var i Info
 			if err := i.Load(ctx, &h); err != nil {
-				if !yield(z, fmt.Errorf("rpm: unable to load package information: %w", err)) {
+				if !yield(Info{}, fmt.Errorf("rpm: unable to load package information: %w", err)) {
 					return
 				}
 				continue
