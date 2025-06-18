@@ -50,7 +50,9 @@ func (c *fileCache) GetPathSet(ctx context.Context, layer *claircore.Layer) (*Pa
 		if s := v.(weak.Pointer[PathSet]).Value(); s != nil {
 			return s, nil
 		}
-	} else {
+		// Unable to upgrade: it's been garbage collected.
+		// Attempt to delete it so the next caller just has the load fail,
+		// then treat the key as novel.
 		c.m.CompareAndDelete(key, v)
 	}
 
@@ -110,6 +112,8 @@ func NewPathSet(ctx context.Context, layer *claircore.Layer) (*PathSet, error) {
 
 // PathSet is used to check if a path is an RPM-owned file.
 type PathSet struct {
+	// Disallow copy to prevent another reference to the "paths" map's
+	// backing memory.
 	_noCopy noCopy
 	paths   map[string]struct{}
 }
@@ -142,7 +146,7 @@ func (s *PathSet) len() int {
 	return len(s.paths)
 }
 
-// NoCopy is a ZST to trip the "copylocks" vet check.
+// NoCopy is a zero-sized type to trip the "copylocks" vet check.
 type noCopy struct{}
 
 func (*noCopy) Lock()   {}
