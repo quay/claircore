@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"maps"
 	"runtime"
 	"strings"
 	"sync"
@@ -130,7 +129,7 @@ func (s *PathSet) GoString() string {
 	var b strings.Builder
 
 	b.WriteByte('[')
-	for k := range maps.Keys(s.paths) {
+	for k := range s.paths {
 		if b.Len() > 1 {
 			b.WriteByte(' ')
 		}
