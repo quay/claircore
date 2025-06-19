@@ -47,7 +47,7 @@ func Wrap(ctx context.Context, sys fs.FS, seq PackageSeq) (PackageSeq, error) {
 
 		for pkg, err := range seq {
 			if err != nil {
-				if !yield(claircore.Package{}, err) {
+				if !yield(pkg, err) {
 					return
 				}
 				continue
