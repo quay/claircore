@@ -45,7 +45,66 @@ func (c *fileCache) GetPathSet(ctx context.Context, layer *claircore.Layer) (*Pa
 	// become nil and handle that case before dereferencing it.
 
 	key := unique.Make(layer.Hash.String())
-	if v, ok := c.m.Load(key); ok {
+	for {
+		v, ok := c.m.Load(key)
+		if !ok {
+			fn := func() (any, error) {
+				if v, ok := c.m.Load(key); ok {
+					if s := v.(weak.Pointer[PathSet]).Value(); s != nil {
+						return s, nil
+					}
+					c.m.CompareAndDelete(key, v)
+				}
+
+				set := &PathSet{
+					paths: make(map[string]struct{}),
+				}
+				sys, err := layer.FS()
+				if err != nil {
+					return nil, fmt.Errorf("rpm: unable to open layer: %w", err)
+				}
+				seq, errFunc := FindDBs(ctx, sys)
+				defer func() {
+					err = errors.Join(err, errFunc())
+				}()
+
+				for found := range seq {
+					zlog.Debug(ctx).
+						Stringer("db", found).
+						Msg("found possible database")
+					err = func() error {
+						db, err := OpenDB(ctx, sys, found)
+						if err != nil {
+							return err
+						}
+						defer db.Close()
+						ctx := zlog.ContextWithValues(ctx, "db", db.String())
+						zlog.Debug(ctx).Msg("examining database")
+						return db.populatePathSet(ctx, set)
+					}()
+					if err != nil {
+						return nil, err
+					}
+
+				}
+				wp := weak.Make(set)
+				runtime.AddCleanup(set, c.cleanupFunc(wp), key)
+				c.m.Store(key, wp)
+				return set, nil
+			}
+
+			ch := c.sf.DoChan(key.Value(), fn)
+			select {
+			case <-ctx.Done():
+				return nil, context.Cause(ctx)
+			case res := <-ch:
+				if err := res.Err; err != nil {
+					return nil, err
+				}
+				return res.Val.(*PathSet), nil
+			}
+		}
+
 		if s := v.(weak.Pointer[PathSet]).Value(); s != nil {
 			return s, nil
 		}
@@ -53,54 +112,6 @@ func (c *fileCache) GetPathSet(ctx context.Context, layer *claircore.Layer) (*Pa
 		// Attempt to delete it so the next caller just has the load fail,
 		// then treat the key as novel.
 		c.m.CompareAndDelete(key, v)
-	}
-
-	ch := c.sf.DoChan(key.Value(), func() (any, error) {
-		set := &PathSet{
-			paths: make(map[string]struct{}),
-		}
-		sys, err := layer.FS()
-		if err != nil {
-			return nil, fmt.Errorf("rpm: unable to open layer: %w", err)
-		}
-		seq, errFunc := FindDBs(ctx, sys)
-		defer func() {
-			err = errors.Join(err, errFunc())
-		}()
-
-		for found := range seq {
-			zlog.Debug(ctx).
-				Stringer("db", found).
-				Msg("found possible database")
-			err = func() error {
-				db, err := OpenDB(ctx, sys, found)
-				if err != nil {
-					return err
-				}
-				defer db.Close()
-				ctx := zlog.ContextWithValues(ctx, "db", db.String())
-				zlog.Debug(ctx).Msg("examining database")
-				return db.populatePathSet(ctx, set)
-			}()
-			if err != nil {
-				return nil, err
-			}
-
-		}
-		wp := weak.Make(set)
-		runtime.AddCleanup(set, c.cleanupFunc(wp), key)
-		c.m.Store(key, wp)
-		return set, nil
-	})
-
-	select {
-	case <-ctx.Done():
-		return nil, context.Cause(ctx)
-	case res := <-ch:
-		if err := res.Err; err != nil {
-			return nil, err
-		}
-		return res.Val.(*PathSet), nil
 	}
 }
 
