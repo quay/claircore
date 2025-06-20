@@ -20,18 +20,3 @@ type HeaderReader interface {
 type validator interface {
 	Validate(context.Context) error
 }
-
-// Does what it says on the tin.
-func flat_map[T any, U any](seq iter.Seq[T], f func(T) (U, bool)) iter.Seq[U] {
-	return func(yield func(U) bool) {
-		for t := range seq {
-			u, ok := f(t)
-			if !ok {
-				continue
-			}
-			if !yield(u) {
-				return
-			}
-		}
-	}
-}
