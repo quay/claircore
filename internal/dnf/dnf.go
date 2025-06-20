@@ -16,6 +16,7 @@ import (
 	"net/url"
 	"os"
 	"runtime"
+	"slices"
 
 	"github.com/quay/zlog"
 	_ "modernc.org/sqlite" // register the sqlite driver
@@ -252,6 +253,8 @@ func (h *historyDB) AddRepoid(ctx context.Context, pkg *claircore.Package) error
 				pkg.Name, pkg.RepositoryHint, err)
 		}
 		v.Add("repoid", id)
+		slices.Sort(v["repoid"])
+		v["repoid"] = slices.Compact(v["repoid"])
 		pkg.RepositoryHint = v.Encode()
 	}
 
