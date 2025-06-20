@@ -77,8 +77,12 @@ func HintCompare(t testing.TB, repos []string) cmp.Option {
 	)
 }
 
+// IsSubset reports if "sub" is a subset or equal to "super".
+//
+// It's assumed the slices are "set-like," meaning they do not contain
+// duplicated elements, although this is not checked.
 func isSubset[S ~[]E, E comparable](super, sub S) bool {
-	if super == nil {
+	if super == nil || len(super) < len(sub) {
 		return false
 	}
 	n := 0
