@@ -215,9 +215,13 @@ func (h *historyDB) AddRepoid(ctx context.Context, pkg *claircore.Package) error
 	}
 
 	// TODO(hank) Shouldn't need to build a string like this.
-	ver, err := rpmver.Parse(fmt.Sprintf("%s-%s.%s", pkg.Name, pkg.Version, pkg.Arch))
+	v := fmt.Sprintf("%s-%s.%s", pkg.Name, pkg.Version, pkg.Arch) // "Version" contains the EVR.
+	ver, err := rpmver.Parse(v)
 	if err != nil {
-		// TODO(hank) Log?
+		zlog.Warn(ctx).
+			Err(err).
+			Str("version", v).
+			Msg("unable to re-parse rpm version")
 		return nil
 	}
 
