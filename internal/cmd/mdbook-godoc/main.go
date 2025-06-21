@@ -57,7 +57,7 @@ func newProc(ctx context.Context, cfg *mdbook.Context) (*mdbook.Proc, error) {
 					ret = err
 					return sub
 				}
-				b.WriteString("\n```")
+				b.WriteString("\n```\n")
 				return b.String()
 			})
 			return ret
