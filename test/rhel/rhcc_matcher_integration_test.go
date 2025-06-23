@@ -22,10 +22,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	var c int
-	defer func() { os.Exit(c) }()
-	defer integration.DBSetup()()
-	c = m.Run()
+	test.Main(m, test.DBSetup)
 }
 
 func TestRHCCMatcherIntegration(t *testing.T) {
