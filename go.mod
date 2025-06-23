@@ -20,6 +20,7 @@ require (
 	github.com/spdx/tools-golang v0.5.7
 	github.com/ulikunitz/xz v0.5.15
 	go.opentelemetry.io/otel v1.42.0
+	go.opentelemetry.io/otel/sdk v1.42.0
 	go.opentelemetry.io/otel/trace v1.42.0
 	go.uber.org/mock v0.6.0
 	golang.org/x/crypto v0.48.0
@@ -31,6 +32,8 @@ require (
 	golang.org/x/tools v0.42.0
 	modernc.org/sqlite v1.48.0
 )
+
+require go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.36.0
 
 require (
 	github.com/anchore/go-struct-converter v0.1.0 // indirect
