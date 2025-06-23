@@ -251,6 +251,9 @@ func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) ([]*cl
 			var cpes []string
 			cpes, err = mapContainerAPI(ctx, sys, r.apiFetcher)
 			if err != nil {
+				zlog.Warn(ctx).
+					Err(err).
+					Msg("container API error")
 				return
 			}
 			for _, cpe := range cpes {
