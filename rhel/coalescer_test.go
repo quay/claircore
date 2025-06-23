@@ -8,12 +8,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/quay/claircore/toolkit/types/cpe"
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/test"
-	"github.com/quay/claircore/toolkit/types/cpe"
 )
 
 type CoalescerTestcase struct {
