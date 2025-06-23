@@ -183,7 +183,7 @@ func OpenDB(ctx context.Context, sys fs.FS, found FoundDB) (*Database, error) {
 
 	spool, err := os.CreateTemp(os.TempDir(), fmt.Sprintf(`rpm.package.%v.`, found.kind))
 	if err != nil {
-		return nil, fmt.Errorf("rpm: error spooling db: %w", err)
+		return nil, fmt.Errorf("internal/rpm: error spooling db: %w", err)
 	}
 	ctx = zlog.ContextWithValues(ctx, "file", spool.Name())
 	cleanup.spool = spool
@@ -213,7 +213,7 @@ func OpenDB(ctx context.Context, sys fs.FS, found FoundDB) (*Database, error) {
 		if err := spool.Close(); err != nil {
 			zlog.Warn(ctx).Err(err).Msg("unable to close spool")
 		}
-		return nil, fmt.Errorf("rpm: error spooling db: %w", err)
+		return nil, fmt.Errorf("internal/rpm: error spooling db: %w", err)
 	}
 	if err := spool.Sync(); err != nil {
 		zlog.Warn(ctx).Err(err).Msg("unable to sync spool; results may be Weird")
