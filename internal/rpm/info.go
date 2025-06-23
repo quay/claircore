@@ -100,11 +100,11 @@ func (i *Info) Load(ctx context.Context, h *rpmdb.Header) error {
 	}
 
 	if b, d := len(i.basename), len(i.dirindex); b != d {
-		return fmt.Errorf(`rpm: Info: mismatched "base" and "dir" counts: %d, %d`, b, d)
+		return fmt.Errorf(`internal/rpm: Info: mismatched "base" and "dir" counts: %d, %d`, b, d)
 	}
 	if len(i.dirindex) != 0 {
 		if v, bound := slices.Max(i.dirindex), len(i.dirname); int(v) >= bound {
-			return fmt.Errorf(`rpm: Info: invalid "dirindex": index %d is out-of-bounds (length %d)`, v, bound)
+			return fmt.Errorf(`internal/rpm: Info: invalid "dirindex": index %d is out-of-bounds (length %d)`, v, bound)
 		}
 	}
 
