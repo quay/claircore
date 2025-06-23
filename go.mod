@@ -40,6 +40,8 @@ require (
 	modernc.org/sqlite v1.37.1
 )
 
+require go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.36.0 // indirect
+
 require (
 	github.com/anchore/go-struct-converter v0.0.0-20221118182256-c68fdcfa2092 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
@@ -65,6 +67,7 @@ require (
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/otel/metric v1.36.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.36.0
 	golang.org/x/exp v0.0.0-20250408133849-7e4ce0ab07d0 // indirect
 	golang.org/x/mod v0.25.0 // indirect
 	google.golang.org/protobuf v1.36.5 // indirect
