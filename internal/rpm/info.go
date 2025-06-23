@@ -69,15 +69,16 @@ func (i *Info) Load(ctx context.Context, h *rpmdb.Header) error {
 			i.Digest = v.([]string)[0]
 		case rpmdb.TagSigPGP:
 			i.Signature = v.([]byte)
-		case rpmdb.TagDirnames:
+		case rpmdb.TagDirnames: // v5-only
 			i.dirname = v.([]string)
-		case rpmdb.TagDirindexes:
+		case rpmdb.TagDirindexes: // v5-only
 			i.dirindex = v.([]int32)
-		case rpmdb.TagBasenames:
+		case rpmdb.TagBasenames: // v5-only
 			i.basename = v.([]string)
 		case rpmdb.TagFilenames:
 			// Filenames is the tag used in rpm4 -- this is a best-effort for
-			// supporting it.
+			// supporting it. This should be exclusive with the
+			// Dirnames/Dirindexes/Basenames tags.
 			//
 			// This takes the whole filenames value and splits it into an
 			// rpm5-style dir+base.
