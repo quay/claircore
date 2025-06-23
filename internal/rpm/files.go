@@ -61,7 +61,7 @@ func (c *fileCache) GetPathSet(ctx context.Context, layer *claircore.Layer) (*Pa
 				}
 				sys, err := layer.FS()
 				if err != nil {
-					return nil, fmt.Errorf("rpm: unable to open layer: %w", err)
+					return nil, fmt.Errorf("internal/rpm: unable to open layer: %w", err)
 				}
 				seq, errFunc := FindDBs(ctx, sys)
 				defer func() {
