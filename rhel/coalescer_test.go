@@ -36,10 +36,6 @@ func (tc CoalescerTestcase) Run(ctx context.Context, t *testing.T) {
 	})
 }
 
-// TestCoalescer tests the private method coalesce on the [Coalescer].
-//
-// It's simpler to test the core business logic of a [Coalescer] after database
-// access would have occurred.
 func TestCoalescer(t *testing.T) {
 	t.Parallel()
 	ctx := zlog.Test(context.Background(), t)
