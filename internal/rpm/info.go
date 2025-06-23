@@ -96,6 +96,8 @@ func (i *Info) Load(ctx context.Context, h *rpmdb.Header) error {
 				}
 				i.dirindex = append(i.dirindex, int32(cur))
 			}
+		default:
+			panic(fmt.Sprintf("programmer error: unhandled tag: %v", e.Tag))
 		}
 	}
 
