@@ -136,10 +136,12 @@ type historyDB struct {
 // This function may return a nil *historyDB, which is still safe to use.
 func openHistoryDB(ctx context.Context, sys fs.FS) (*historyDB, error) {
 	var found *dbDesc
+Stat:
 	for _, v := range possible {
 		switch _, err := fs.Stat(sys, v.Path); {
 		case errors.Is(err, nil):
 			found = &v
+			break Stat
 		case errors.Is(err, fs.ErrNotExist): // OK
 		default:
 			return nil, fmt.Errorf("internal/dnf: unexpected error handling fs.FS: %w", err)
