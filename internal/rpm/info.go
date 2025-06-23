@@ -148,8 +148,8 @@ func (i *Info) InsertIntoSet(s *PathSet) {
 // NEVRA constructs a Name-Epoch-Version-Release-Architecture [rpmver.Version].
 func (i *Info) NEVRA() rpmver.Version {
 	return rpmver.Version{
-		Name:         &([]string{i.Name})[0],
-		Architecture: &([]string{i.Arch})[0],
+		Name:         &i.Name,
+		Architecture: &i.Arch,
 		Epoch:        strconv.Itoa(i.Epoch),
 		Version:      i.Version,
 		Release:      i.Release,
