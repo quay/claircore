@@ -64,7 +64,7 @@ func (db *RPMDB) Close() error {
 	return db.db.Close()
 }
 
-// Headers returns all RPM headers in the database.
+// Headers returns an iterator over all RPM headers in the database.
 func (db *RPMDB) Headers(ctx context.Context) iter.Seq2[io.ReaderAt, error] {
 	// Keys are sorted coming out of this query.
 	rows, err := db.db.QueryContext(ctx, allpackages)
