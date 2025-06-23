@@ -228,7 +228,7 @@ var (
 			`^.*/package.json$`,                           // npm packages
 			`^.*/[^/]+\.gemspec$`,                         // ruby gems
 			`^/usr/s?bin/[^/]+$`,                          // any executable
-			"^/usr/libexec/[^/]+/[^/]+$",                  // sometimes the executables are here too
+			`^/usr/libexec/[^/]+/[^/]+$`,                  // sometimes the executables are here too
 		}
 		return regexp.MustCompile(strings.Join(pat, `|`))
 	})
