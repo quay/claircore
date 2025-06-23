@@ -19,15 +19,13 @@ import (
 	"github.com/quay/claircore/pkg/ctxlock/v2"
 	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/quay/claircore/rhel/vex"
+	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 	testpostgres "github.com/quay/claircore/test/postgres"
 )
 
 func TestMain(m *testing.M) {
-	var c int
-	defer func() { os.Exit(c) }()
-	defer integration.DBSetup()()
-	c = m.Run()
+	test.Main(m, test.DBSetup)
 }
 
 func TestMatcherIntegration(t *testing.T) {
