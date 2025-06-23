@@ -53,9 +53,9 @@ WHERE
 	if len(scnrs) == 0 {
 		return []*claircore.Repository{}, nil
 	}
-	scannerIDs, err := s.selectScanners(ctx, scnrs)
+	scannerIDs, err := s.selectScanners(scnrs)
 	if err != nil {
-		return nil, fmt.Errorf("unable to select scanners: %w", err)
+		return nil, err
 	}
 
 	start := time.Now()
