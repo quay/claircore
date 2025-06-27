@@ -1,8 +1,6 @@
 package postgres
 
 import (
-	"github.com/jackc/pgtype"
-
 	"github.com/quay/claircore"
 )
 
@@ -10,7 +8,9 @@ import (
 // handling a slice of Digests.
 type digestSlice []claircore.Digest
 
-func (s digestSlice) EncodeText(_ *pgtype.ConnInfo, buf []byte) ([]byte, error) {
+// MarshalText implements encoding.TextMarshaler.
+func (s digestSlice) MarshalText() ([]byte, error) {
+	buf := make([]byte, 0, len(s)*75)
 	buf = append(buf, '{')
 	for i, d := range s {
 		if i != 0 {
