@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -289,8 +289,8 @@ func protoRecord(ctx context.Context, pool *pgxpool.Pool, v claircore.Vulnerabil
 		protoRecordCounter.WithLabelValues("selectDist").Add(1)
 		protoRecordDuration.WithLabelValues("selectDist").Observe(time.Since(start).Seconds())
 
-		if id.Status == pgtype.Present {
-			id := strconv.FormatInt(id.Int, 10)
+		if id.Valid {
+			id := strconv.FormatInt(id.Int64, 10)
 			protoRecord.Distribution = &claircore.Distribution{
 				ID:              id,
 				Arch:            v.Dist.Arch,
@@ -324,8 +324,8 @@ func protoRecord(ctx context.Context, pool *pgxpool.Pool, v claircore.Vulnerabil
 		protoRecordCounter.WithLabelValues("selectDist").Add(1)
 		protoRecordDuration.WithLabelValues("selectDist").Observe(time.Since(start).Seconds())
 
-		if id.Status == pgtype.Present {
-			id := strconv.FormatInt(id.Int, 10)
+		if id.Valid {
+			id := strconv.FormatInt(id.Int64, 10)
 			protoRecord.Repository = &claircore.Repository{
 				ID:   id,
 				Key:  v.Repo.Key,

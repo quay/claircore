@@ -25,7 +25,7 @@ func TestDigestEncode(t *testing.T) {
 		`","sha256:` + strings.Repeat(`e`, 64) +
 		`","sha256:` + strings.Repeat(`f`, 64) +
 		`"}`
-	got, err := ds.EncodeText(nil, nil)
+	got, err := ds.MarshalText()
 	if err != nil {
 		t.Error(err)
 	}
