@@ -9,6 +9,7 @@ import (
 	"io"
 	"math"
 	"strings"
+	"unique"
 
 	"github.com/klauspost/compress/snappy"
 	"github.com/package-url/packageurl-go"
@@ -118,20 +119,21 @@ func (u *Updater) DeltaParse(ctx context.Context, contents io.ReadCloser) ([]*cl
 
 // repoCache keeps a cache of all seen claircore.Repository objects.
 type repoCache struct {
-	cache map[string]*claircore.Repository
+	cache map[unique.Handle[string]]*claircore.Repository
 }
 
 // NewRepoCache returns a repoCache with the backing map instantiated.
 func newRepoCache() *repoCache {
 	return &repoCache{
-		cache: make(map[string]*claircore.Repository),
+		cache: make(map[unique.Handle[string]]*claircore.Repository),
 	}
 }
 
-// Get attempts to find a repo in the cache identified by a WFN. If
-// it isn't found a repo is created and returned.
-func (rc *repoCache) Get(cpe cpe.WFN) *claircore.Repository {
-	if r, ok := rc.cache[cpe.String()]; ok {
+// Get attempts to find a repo in the cache identified by a WFN and
+// the repoKey. If it isn't found a repo is created and returned.
+func (rc *repoCache) Get(cpe cpe.WFN, repoKey string) *claircore.Repository {
+	k := unique.Make(cpe.String() + "|" + repoKey)
+	if r, ok := rc.cache[k]; ok {
 		return r
 	}
 	r := &claircore.Repository{
@@ -139,7 +141,7 @@ func (rc *repoCache) Get(cpe cpe.WFN) *claircore.Repository {
 		Name: cpe.String(),
 		Key:  repoKey,
 	}
-	rc.cache[cpe.String()] = r
+	rc.cache[k] = r
 	return r
 }
 
@@ -303,7 +305,7 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v csaf.Vulne
 		if err != nil {
 			return nil, fmt.Errorf("could not unbind cpe: %s %w", ch, err)
 		}
-		vuln.Repo = c.rc.Get(wfn)
+		vuln.Repo = c.rc.Get(wfn, repoKey)
 		// It is possible that we will not find a pURL, in that case
 		// the package.Name will be reported as-is.
 		purlHelper, ok := compProd.IdentificationHelper["purl"]
@@ -329,8 +331,7 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v csaf.Vulne
 			}
 
 			if purl.Type == packageurl.TypeOCI {
-				// Override repo if we're dealing with a container image
-				vuln.Repo = &rhcc.GoldRepo
+				vuln.Repo = c.rc.Get(wfn, rhcc.RepositoryKey)
 				vuln.Range, err = ranger.add(pkgName, vuln.FixedInVersion)
 				if err != nil {
 					zlog.Warn(ctx).
@@ -543,16 +544,17 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 				vuln.Package.Arch = arch
 				vuln.ArchOperation = claircore.OpPatternMatch
 			}
+			ch := escapeCPE(cpeHelper)
+			wfn, err := cpe.Unbind(ch)
+			if err != nil {
+				return nil, fmt.Errorf("could not unbind cpe: %s %w", cpeHelper, err)
+			}
+
 			switch purl.Type {
 			case packageurl.TypeRPM:
-				ch := escapeCPE(cpeHelper)
-				wfn, err := cpe.Unbind(ch)
-				if err != nil {
-					return nil, fmt.Errorf("could not unbind cpe: %s %w", cpeHelper, err)
-				}
-				vuln.Repo = c.rc.Get(wfn)
+				vuln.Repo = c.rc.Get(wfn, repoKey)
 			case packageurl.TypeOCI:
-				vuln.Repo = &rhcc.GoldRepo
+				vuln.Repo = c.rc.Get(wfn, rhcc.RepositoryKey)
 				vuln.Range, err = ranger.add(packageName, vuln.FixedInVersion)
 				if err != nil {
 					zlog.Warn(ctx).

@@ -118,6 +118,16 @@ func TestSimple(t *testing.T) {
 				Original: "4-22",
 			},
 		},
+		{
+			Name: "labels_epoch",
+			In:   "1742843776",
+			Err:  false,
+			Want: Version{
+				Major:    1742843776,
+				Minor:    0,
+				Original: "1742843776",
+			},
+		},
 	}
 
 	for _, tc := range tt {

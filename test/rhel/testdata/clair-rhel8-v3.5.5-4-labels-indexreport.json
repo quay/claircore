@@ -74,15 +74,16 @@
   },
   "repository": {
     "1": {
-      "name": "Red Hat Container Catalog",
-      "uri": "https://catalog.redhat.com/software/containers/explore",
-      "key": "rhcc-container-repository"
+      "id": "1",
+      "name": "cpe:2.3:a:redhat:quay:3:*:el8:*:*:*:*:*",
+      "key": "rhcc-container-repository",
+      "cpe": "cpe:2.3:a:redhat:quay:3:*:el8:*:*:*:*:*"
     }
   },
   "environments": {
     "32": [
       {
-        "package_db": "root/buildinfo/Dockerfile-quay-clair-rhel8-v3.5.5-4",
+        "package_db": "root/buildinfo/labels.json",
         "introduced_in": "sha256:a5ac7bbd6645d6b98e41600a1510d7378d74e6b0b858622b57fce2a8a05a87e5",
         "repository_ids": [
           "1"
@@ -91,7 +92,7 @@
     ],
     "34": [
       {
-        "package_db": "root/buildinfo/Dockerfile-quay-clair-rhel8-v3.5.5-4",
+        "package_db": "root/buildinfo/labels.json",
         "introduced_in": "sha256:a5ac7bbd6645d6b98e41600a1510d7378d74e6b0b858622b57fce2a8a05a87e5",
         "repository_ids": [
           "1"
@@ -100,7 +101,7 @@
     ],
     "36": [
       {
-        "package_db": "root/buildinfo/Dockerfile-ubi8-8.4-206.1626828523",
+        "package_db": "root/buildinfo/labels.json",
         "introduced_in": "sha256:a50df8fd88fecefc26fd331f832672108deb08cf9d2b303a5b86156a7f51b5d8",
         "repository_ids": [
           "1"
@@ -109,7 +110,7 @@
     ],
     "38": [
       {
-        "package_db": "root/buildinfo/Dockerfile-ubi8-8.4-206.1626828523",
+        "package_db": "root/buildinfo/labels.json",
         "introduced_in": "sha256:a50df8fd88fecefc26fd331f832672108deb08cf9d2b303a5b86156a7f51b5d8",
         "repository_ids": [
           "1"

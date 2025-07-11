@@ -41,7 +41,8 @@
   "repository": {
     "1": {
       "name": "Red Hat Container Catalog",
-      "uri": "https://catalog.redhat.com/software/containers/explore"
+      "uri": "https://catalog.redhat.com/software/containers/explore",
+      "key": "rhcc-container-repository"
     }
   },
   "environments": {
