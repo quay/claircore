@@ -15,13 +15,17 @@ func (c *coalescer) Coalesce(ctx context.Context, ls []*indexer.LayerArtifacts) 
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
+
 	ir := &claircore.IndexReport{
 		Environments: map[string][]*claircore.Environment{},
 		Packages:     map[string]*claircore.Package{},
 		Repositories: map[string]*claircore.Repository{},
 	}
 
-	for _, l := range ls {
+	// We need to find the last layer that has rhcc content.
+	lastRHCCLayer := true
+	for i := len(ls) - 1; i >= 0; i-- {
+		l := ls[i]
 		if len(l.Repos) == 0 {
 			continue
 		}
@@ -34,7 +38,14 @@ func (c *coalescer) Coalesce(ctx context.Context, ls []*indexer.LayerArtifacts) 
 			if pkg.RepositoryHint != `rhcc` {
 				continue
 			}
+			if !lastRHCCLayer {
+				// Discount the package for matching by setting its
+				// NormalizedVersion.Kind to UnmatchableKind.
+				pkg.NormalizedVersion.Kind = claircore.UnmatchableKind
+			}
+
 			ir.Packages[pkg.ID] = pkg
+
 			ir.Environments[pkg.ID] = []*claircore.Environment{
 				{
 					PackageDB:     pkg.PackageDB,
@@ -43,6 +54,7 @@ func (c *coalescer) Coalesce(ctx context.Context, ls []*indexer.LayerArtifacts) 
 				},
 			}
 		}
+		lastRHCCLayer = false
 	}
 	return ir, nil
 }

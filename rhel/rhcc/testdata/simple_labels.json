@@ -1,0 +1,6 @@
+{
+    "name": "openshift-gitops-1/gitops-rhel8-operator",
+    "org.opencontainers.image.created": "2025-04-14T02:14:26Z",
+    "cpe": "cpe:/a:redhat:openshift_gitops:1.16::el8",
+    "architecture": "x86_64"
+}

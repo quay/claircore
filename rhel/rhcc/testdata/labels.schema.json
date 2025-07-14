@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Red Hat Container Catalog Labels",
+  "description": "Schema for root/buildinfo/labels.json files in Red Hat container images",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Container image name"
+    },
+    "org.opencontainers.image.created": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC3339 timestamp when the image was created"
+    },
+    "cpe": {
+      "type": "string",
+      "description": "Common Platform Enumeration identifier"
+    },
+    "architecture": {
+      "type": "string",
+      "description": "Target architecture (e.g., x86_64, aarch64)"
+    }
+  },
+  "required": ["name", "org.opencontainers.image.created", "cpe", "architecture"],
+  "additionalProperties": false
+} 
