@@ -109,6 +109,9 @@ func (mc *Controller) dbFilter() (bool, bool) {
 func (mc *Controller) findInterested(records []*claircore.IndexRecord) []*claircore.IndexRecord {
 	out := []*claircore.IndexRecord{}
 	for _, record := range records {
+		if record.Package.NormalizedVersion.Kind == claircore.UnmatchableKind {
+			continue
+		}
 		if mc.m.Filter(record) {
 			out = append(out, record)
 		}

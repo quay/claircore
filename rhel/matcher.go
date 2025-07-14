@@ -50,7 +50,7 @@ func (m *Matcher) Query() []driver.MatchConstraint {
 //
 // TODO(crozzy) Remove once RH VEX data updates CPEs with standard matching
 // expressions.
-func isCPESubstringMatch(recordCPE cpe.WFN, vulnCPE cpe.WFN) bool {
+func IsCPESubstringMatch(recordCPE cpe.WFN, vulnCPE cpe.WFN) bool {
 	return strings.HasPrefix(recordCPE.String(), strings.TrimRight(vulnCPE.String(), ":*"))
 }
 
@@ -78,7 +78,7 @@ func (m *Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord,
 			Msg("unable to unbind repo CPE")
 		return false, nil
 	}
-	if !cpe.Compare(vuln.Repo.CPE, record.Repository.CPE).IsSuperset() && !isCPESubstringMatch(record.Repository.CPE, vuln.Repo.CPE) {
+	if !cpe.Compare(vuln.Repo.CPE, record.Repository.CPE).IsSuperset() && !IsCPESubstringMatch(record.Repository.CPE, vuln.Repo.CPE) {
 		return false, nil
 	}
 

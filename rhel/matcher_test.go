@@ -290,7 +290,7 @@ func TestIsCPEStringSubsetMatch(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 			tt := tc
-			matched := isCPESubstringMatch(tt.recordCPE, tt.vulnCPE)
+			matched := IsCPESubstringMatch(tt.recordCPE, tt.vulnCPE)
 			if matched != tt.match {
 				t.Errorf("unexpected matching %s and %s", tt.recordCPE, tt.vulnCPE)
 			}

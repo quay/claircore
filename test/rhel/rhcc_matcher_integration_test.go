@@ -58,6 +58,12 @@ func TestMatcherIntegration(t *testing.T) {
 			cveID:       "CVE-2020-8565",
 			match:       false,
 		},
+		{
+			Name:        "Clair labels",
+			indexReport: "clair-rhel8-v3.5.5-4-labels",
+			cveID:       "CVE-2021-3762",
+			match:       true,
+		},
 	}
 
 	integration.NeedDB(t)
