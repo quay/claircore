@@ -38,13 +38,6 @@ var (
 
 func (s *IndexerStore) FilesByLayer(ctx context.Context, hash claircore.Digest, scnrs indexer.VersionedScanners) ([]claircore.File, error) {
 	const (
-		selectScanner = `
-		SELECT id
-		FROM scanner
-		WHERE name = $1
-		  AND version = $2
-		  AND kind = $3;
-		`
 		query = `
 		SELECT file.path, file.kind
 		FROM file_scanartifact
@@ -59,17 +52,9 @@ func (s *IndexerStore) FilesByLayer(ctx context.Context, hash claircore.Digest, 
 		return []claircore.File{}, nil
 	}
 
-	// get scanner ids
-	scannerIDs := make([]int64, len(scnrs))
-	for i, scnr := range scnrs {
-		start := time.Now()
-		err := s.pool.QueryRow(ctx, selectScanner, scnr.Name(), scnr.Version(), scnr.Kind()).
-			Scan(&scannerIDs[i])
-		filesByLayerCounter.WithLabelValues("selectScanner").Add(1)
-		filesByLayerDuration.WithLabelValues("selectScanner").Observe(time.Since(start).Seconds())
-		if err != nil {
-			return nil, fmt.Errorf("failed to retrieve file ids for scanner %q: %w", scnr, err)
-		}
+	scannerIDs, err := s.selectScanners(scnrs)
+	if err != nil {
+		return nil, err
 	}
 
 	start := time.Now()
