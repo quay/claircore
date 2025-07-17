@@ -32,7 +32,25 @@ func TestRepositoryScanner(t *testing.T) {
 	apiData := map[string]*strings.Reader{
 		"rh-pkg-1-1": strings.NewReader(`{"data":[{"cpe_ids":["cpe:/o:redhat:enterprise_linux:8::computenode","cpe:/o:redhat:enterprise_linux:8::baseos"],"parsed_data":{"architecture":"x86_64","labels":[{"name":"architecture","value":"x86_64"}]}}]}`),
 	}
-	mappingData := strings.NewReader(`{"data":{"content-set-1":{"cpes":["cpe:/o:redhat:enterprise_linux:6::server","cpe:/o:redhat:enterprise_linux:7::server"]},"content-set-2":{"cpes":["cpe:/o:redhat:enterprise_linux:7::server","cpe:/o:redhat:enterprise_linux:8::server"]}}}`)
+	repoData := `
+	{
+		"data": {
+			"content-set-1": {
+				"cpes": ["cpe:/o:redhat:enterprise_linux:6::server", "cpe:/o:redhat:enterprise_linux:7::server"]
+			},
+			"content-set-2": {
+				"cpes": ["cpe:/o:redhat:enterprise_linux:7::server", "cpe:/o:redhat:enterprise_linux:8::server"]
+			},
+			"content-set-3": {
+				"cpes": ["cpe:/o:redhat:enterprise_linux:8::server", "cpe:/o:redhat:enterprise_linux:9::server"]
+			},
+			"content-set-4": {
+				"cpes": ["cpe:/o:redhat:enterprise_linux:9::server", "cpe:/o:redhat:enterprise_linux:10::server"]
+			}
+		}
+	}
+	`
+	mappingData := strings.NewReader(repoData)
 	var mappingDataBytes bytes.Buffer
 	if _, err := io.Copy(&mappingDataBytes, mappingData); err != nil {
 		t.Fatal(err)
@@ -251,6 +269,60 @@ func TestRepositoryScanner(t *testing.T) {
 			},
 			cfg:       &RepositoryScannerConfig{Repo2CPEMappingFile: f.Name()},
 			layerPath: "testdata/rhcos-layer-with-conflicting-files.tar",
+		},
+		{
+			name: "FromDNFHintTrueUsesDNF",
+			want: []*claircore.Repository{
+				{
+					Name: "content-set-3",
+					Key:  repositoryKey,
+					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8::server"),
+				},
+				{
+					Name: "content-set-3",
+					Key:  repositoryKey,
+					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:9::server"),
+				},
+				{
+					Name: "content-set-4",
+					Key:  repositoryKey,
+					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:10::server"),
+				},
+				{
+					Name: "content-set-4",
+					Key:  repositoryKey,
+					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:9::server"),
+				},
+			},
+			cfg:       &RepositoryScannerConfig{Repo2CPEMappingFile: f.Name()},
+			layerPath: "testdata/layer-dnf-hint-true.tar",
+		},
+		{
+			name: "NoFromDNFHintField_UsesContentSets",
+			want: []*claircore.Repository{
+				{
+					Name: "content-set-1",
+					Key:  repositoryKey,
+					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:6::server"),
+				},
+				{
+					Name: "content-set-1",
+					Key:  repositoryKey,
+					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:7::server"),
+				},
+				{
+					Name: "content-set-2",
+					Key:  repositoryKey,
+					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:7::server"),
+				},
+				{
+					Name: "content-set-2",
+					Key:  repositoryKey,
+					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8::server"),
+				},
+			},
+			cfg:       &RepositoryScannerConfig{Repo2CPEMappingFile: f.Name()},
+			layerPath: "testdata/layer-with-embedded-cs.tar", // Existing test data with no from_dnf_hint field
 		},
 	}
 

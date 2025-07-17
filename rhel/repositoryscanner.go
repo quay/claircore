@@ -199,6 +199,13 @@ func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) ([]*cl
 		return nil, fmt.Errorf("rhel: unable to open layer: %w", err)
 	}
 
+	useDNFData := false
+	man, err := getContentManifest(ctx, sys)
+	if err != nil {
+		return nil, fmt.Errorf("rhel: unable to get content manifest: %w", err)
+	}
+	useDNFData = man == nil || man.FromDNFHint
+
 	tctx, done := context.WithTimeout(ctx, r.cfg.Timeout)
 	defer done()
 	cmi, err := r.upd.Get(tctx, r.client)
@@ -210,15 +217,13 @@ func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) ([]*cl
 		return []*claircore.Repository{}, fmt.Errorf("rhel: unable to create a mappingFile object")
 	}
 
-	// First, look at DNF.
-	repoids, err := dnf.FindRepoids(ctx, sys)
-	switch {
-	case err != nil: // continue to error check and return
-	case len(repoids) == 0:
-		// If DNF yielded nothing, check for content-sets data.
+	var repoids []string
+	if useDNFData {
+		repoids, err = dnf.FindRepoids(ctx, sys)
+	} else {
 		repoids, err = repoidsFromContentSets(ctx, sys)
-	default:
 	}
+
 	if err != nil {
 		return []*claircore.Repository{}, err
 	}
@@ -326,52 +331,17 @@ func bugURL(id string, err error) string {
 }
 
 // RepoidsFromContentSets returns a slice of repoids, as discovered by examining
-// information contained within the container.
+// information contained within the container. Found repoids will need to be translated
+// using a mapping file provided by Red Hat's PST team.
 func repoidsFromContentSets(ctx context.Context, sys fs.FS) ([]string, error) {
-	// Get repoids using embedded content-set files. The files are stored in
-	// /root/buildinfo/content_manifests/ and will need to be translated using
-	// mapping file provided by Red Hat's PST team. For RHCOS, the files are
-	// stored in /usr/share/buildinfo/.
-	ms, err := fs.Glob(sys, `root/buildinfo/content_manifests/*.json`)
+	cm, err := getContentManifest(ctx, sys)
 	if err != nil {
-		panic("programmer error: " + err.Error())
-	}
-	ms2, err := fs.Glob(sys, `usr/share/buildinfo/*.json`)
-	if err != nil {
-		panic("programmer error: " + err.Error())
-	}
-	ms = append(ms, ms2...)
-	if ms == nil {
-		return nil, nil
-	}
-	p := ms[0]
-	zlog.Debug(ctx).
-		Str("manifest-path", p).
-		Msg("found content manifest file")
-	b, err := fs.ReadFile(sys, p)
-	if err != nil {
-		return nil, fmt.Errorf("rhel: unable to read %q: %w", p, err)
-	}
-	var m contentManifest
-	var syntaxErr *json.SyntaxError
-	err = json.Unmarshal(b, &m)
-	switch {
-	case errors.Is(err, nil):
-	case errors.As(err, &syntaxErr):
-		zlog.Warn(ctx).
-			Str("manifest-path", p).
-			Err(err).
-			Msg("could not unmarshal content_manifests file")
-		return nil, nil
-	default:
 		return nil, err
 	}
-	// If the JSON file is malformed and has a 0-length list of content sets,
-	// report nil so that the API can be consulted.
-	if len(m.ContentSets) == 0 {
+	if cm == nil {
 		return nil, nil
 	}
-	return m.ContentSets, nil
+	return cm.ContentSets, nil
 }
 
 // MappingFile is a data struct for mapping file between repositories and CPEs
@@ -394,17 +364,6 @@ func (m *mappingFile) GetOne(ctx context.Context, repoid string) (cpes []string,
 		Str("repository", repoid).
 		Msg("repository not present in a mapping file")
 	return nil, false
-}
-
-// ContentManifest structure is the data provided by OSBS.
-type contentManifest struct {
-	ContentSets []string         `json:"content_sets"`
-	Metadata    manifestMetadata `json:"metadata"`
-}
-
-// ManifestMetadata struct holds additional metadata about the build.
-type manifestMetadata struct {
-	ImageLayerIndex int `json:"image_layer_index"`
 }
 
 // MapContainerAPI returns a slice of CPEs bound into strings, as discovered by

@@ -52,6 +52,13 @@ func (p PackageScanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*cl
 		return nil, fmt.Errorf("rhel: unable to open layer: %w", err)
 	}
 
+	doDNFWrap := false
+	cm, err := getContentManifest(ctx, sys)
+	if err != nil {
+		return nil, fmt.Errorf("rhel: unable to get content manifest: %w", err)
+	}
+	doDNFWrap = cm == nil || cm.FromDNFHint
+
 	var out []*claircore.Package
 	found, errFunc := rpm.FindDBs(ctx, sys)
 	defer func() {
@@ -70,9 +77,14 @@ func (p PackageScanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*cl
 				return err
 			}
 			defer db.Close()
-			pkgs, err := dnf.Wrap(ctx, sys, db.Packages(ctx))
-			if err != nil {
-				return err
+			var pkgs dnf.PackageSeq
+			if doDNFWrap {
+				pkgs, err = dnf.Wrap(ctx, sys, db.Packages(ctx))
+				if err != nil {
+					return err
+				}
+			} else {
+				pkgs = db.Packages(ctx)
 			}
 			for pkg, err := range pkgs {
 				if err != nil {
