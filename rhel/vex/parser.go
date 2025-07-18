@@ -338,6 +338,11 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v csaf.Vulne
 				pkgName = pn
 			}
 
+			if mn, ok := purl.Qualifiers.Map()["rpmmod"]; ok {
+				// It is possible to have a module name in the purl, not in the relationship.
+				modName = mn
+			}
+
 			if purl.Type == packageurl.TypeOCI {
 				vuln.Repo = c.rc.Get(wfn, rhcc.RepositoryKey)
 				vuln.Range, err = ranger.add(pkgName, vuln.FixedInVersion)
@@ -535,6 +540,11 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 				Msg("error extracting package name from pURL")
 			continue
 		}
+		if mn, ok := purl.Qualifiers.Map()["rpmmod"]; ok {
+			// It is possible to have a module name in the purl, not in the relationship.
+			modName = mn
+		}
+
 		vulnKey := createPackageKey(repoName, modName, purl.Name, fixedIn)
 		arch := extractArch(purl)
 		if vuln, ok := c.lookupVulnerability(vulnKey, protoVulnFunc); ok && arch != "" {

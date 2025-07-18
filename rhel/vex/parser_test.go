@@ -3,17 +3,23 @@ package vex
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"testing"
+	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/klauspost/compress/snappy"
 	"github.com/package-url/packageurl-go"
 	"github.com/quay/zlog"
 
+	"github.com/quay/claircore"
+
+	"github.com/quay/claircore/toolkit/types/cpe"
 	"github.com/quay/claircore/toolkit/types/csaf"
 )
 
@@ -289,6 +295,89 @@ func TestEscapeCPE(t *testing.T) {
 			if out != tc.want {
 				t.Errorf("expected %s but got %s", tc.want, out)
 			}
+		})
+	}
+}
+
+func TestParseCompare(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+	url, err := url.Parse(BaseURL)
+	if err != nil {
+		t.Error(err)
+	}
+
+	testcases := []struct {
+		name          string
+		filename      string
+		expectedVulns []*claircore.Vulnerability
+	}{
+		{
+			name:     "cve-2024-24786",
+			filename: "testdata/cve-2024-24786-simple.json",
+			expectedVulns: []*claircore.Vulnerability{
+				{
+					Updater:            "rhel-vex",
+					Name:               "CVE-2024-24786",
+					Description:        "A flaw was found in Golang's protobuf module, where the unmarshal function can enter an infinite loop when processing certain invalid inputs. This issue occurs during unmarshaling into a message that includes a google.protobuf.Any or when the UnmarshalOptions.DiscardUnknown option is enabled. This flaw allows an attacker to craft malicious input tailored to trigger the identified flaw in the unmarshal function. By providing carefully constructed invalid inputs, they could potentially cause the function to enter an infinite loop, resulting in a denial of service condition or other unintended behaviors in the affected system.",
+					Issued:             time.Date(2024, time.March, 5, 0, 0, 0, 0, time.UTC),
+					Links:              "https://access.redhat.com/security/cve/CVE-2024-24786 https://bugzilla.redhat.com/show_bug.cgi?id=2268046 https://www.cve.org/CVERecord?id=CVE-2024-24786 https://nvd.nist.gov/vuln/detail/CVE-2024-24786 https://go.dev/cl/569356 https://groups.google.com/g/golang-announce/c/ArQ6CDgtEjY/ https://pkg.go.dev/vuln/GO-2024-2611 https://security.access.redhat.com/data/csaf/v2/vex/2024/cve-2024-24786.json",
+					Severity:           "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H",
+					NormalizedSeverity: claircore.Medium,
+					Package:            &claircore.Package{Name: "go-toolset", Kind: "source", Module: "go-toolset:rhel8"},
+					Repo: &claircore.Repository{
+						Name: "cpe:2.3:o:redhat:enterprise_linux:8:*:*:*:*:*:*:*",
+						Key:  "rhel-cpe-repository",
+						CPE:  cpe.MustUnbind("cpe:2.3:o:redhat:enterprise_linux:8"),
+					},
+				},
+			},
+		},
+	}
+	u := &Updater{url: url, client: http.DefaultClient}
+	opt := cmp.Comparer(func(src, tgt cpe.WFN) bool {
+		return cpe.Compare(src, tgt).IsEqual()
+	})
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := zlog.Test(ctx, t)
+			f, err := os.Open(tc.filename)
+			if err != nil {
+				t.Fatalf("failed to open test data file %s: %v", tc.filename, err)
+			}
+
+			b, err := io.ReadAll(f)
+			if err != nil {
+				t.Fatalf("failed to read file bytes: %v", err)
+			}
+			var bc bytes.Buffer
+			err = json.Compact(&bc, b)
+			if err != nil {
+				t.Fatalf("failed to compact JSON: %v", err)
+			}
+			bc.WriteByte('\n')
+			var buf bytes.Buffer
+			sw := snappy.NewBufferedWriter(&buf)
+			bLen, err := sw.Write(bc.Bytes())
+			if err != nil {
+				t.Fatalf("error writing snappy data to buffer: %v", err)
+			}
+			if bLen != len(bc.Bytes()) {
+				t.Errorf("didn't write the correct # of bytes")
+			}
+			if err = sw.Close(); err != nil {
+				t.Errorf("failed to close snappy Writer: %v", err)
+			}
+
+			got, _, err := u.DeltaParse(ctx, io.NopCloser(&buf))
+			if err != nil {
+				t.Fatalf("failed to parse CSAF JSON: %v", err)
+			}
+			if !cmp.Equal(got, tc.expectedVulns, opt) {
+				t.Error(cmp.Diff(got, tc.expectedVulns, opt))
+			}
+			t.Log(len(got), "vulnerabilities found")
 		})
 	}
 }
