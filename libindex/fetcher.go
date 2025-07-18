@@ -10,10 +10,11 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"runtime"
 	"strings"
 	"sync"
+	"unique"
+	"weak"
 
 	"github.com/quay/zlog"
 	"go.opentelemetry.io/otel/attribute"
@@ -39,13 +40,13 @@ var (
 // all users are done with the layers.
 type RemoteFetchArena struct {
 	wc *http.Client
-	sf *singleflight.Group
+	sf singleflight.Group
 
-	// Rc holds (string, *rc).
-	//
-	// The string is a layer digest.
-	rc   sync.Map
-	root string
+	// Layers is a map[unique.Handle[string]][weak.Pointer[layerFile]]
+	// where the key is the layer digest and the value points to a file
+	// with the layer's contents.
+	layers sync.Map
+	root   string
 }
 
 // NewRemoteFetchArena returns an initialized RemoteFetchArena.
@@ -77,97 +78,34 @@ type RemoteFetchArena struct {
 func NewRemoteFetchArena(wc *http.Client, root string) *RemoteFetchArena {
 	return &RemoteFetchArena{
 		wc:   wc,
-		sf:   &singleflight.Group{},
 		root: fixTemp(root),
 	}
 }
 
-// Rc is a reference counter.
-type rc struct {
-	sync.Mutex
-	val   *tempFile
-	count int
-	done  func()
+// LayerFile is a wrapper around a tempFile which
+// automatically cleans the tempFile upon gc.
+type layerFile struct {
+	*tempFile
 }
 
-// NewRc makes an rc.
-func newRc(v *tempFile, done func()) *rc {
-	return &rc{
-		val:  v,
-		done: done,
-	}
+// NewLayerFile creates a new file to hold a container image layer's contents.
+func newLayerFile(f *tempFile) *layerFile {
+	lf := &layerFile{tempFile: f}
+	runtime.AddCleanup(lf, func(f *tempFile) {
+		_ = f.Close()
+	}, f)
+	return lf
 }
-
-// Dec decrements the reference count, closing the inner file and calling the
-// cleanup hook if necessary.
-func (r *rc) dec() (err error) {
-	r.Lock()
-	defer r.Unlock()
-	if r.count == 0 {
-		return errors.New("close botch: count already 0")
-	}
-	r.count--
-	if r.count == 0 {
-		r.done()
-		err = r.val.Close()
-	}
-	return err
-}
-
-// Ref increments the reference count.
-func (r *rc) Ref() *ref {
-	r.Lock()
-	r.count++
-	r.Unlock()
-	n := &ref{rc: r}
-	runtime.SetFinalizer(n, (*ref).Close)
-	return n
-}
-
-// Ref is a reference handle, RAII-style.
-type ref struct {
-	once sync.Once
-	rc   *rc
-}
-
-// Val clones the inner File.
-func (r *ref) Val() (*os.File, error) {
-	r.rc.Lock()
-	defer r.rc.Unlock()
-	return r.rc.val.Reopen()
-}
-
-// Close decrements the refcount.
-func (r *ref) Close() (err error) {
-	did := false
-	r.once.Do(func() {
-		err = r.rc.dec()
-		did = true
-	})
-	if !did {
-		return errClosed
-	}
-	return err
-}
-
-// Errors out of the rc/ref types.
-var (
-	errClosed = errors.New("Ref already Closed")
-	errStale  = errors.New("stale file reference")
-)
 
 // FetchInto populates "l" and "cl" via a [singleflight.Group].
 //
 // It returns a closure to be used with an [errgroup.Group]
 func (a *RemoteFetchArena) fetchInto(ctx context.Context, l *claircore.Layer, cl *io.Closer, desc *claircore.LayerDescription) (do func() error) {
-	key := desc.Digest
-	// All the refcounting needs to happen _outside_ the singleflight, because
-	// the result of a singleflight call can be shared. Without doing it this
-	// way, the refcount would be incorrect.
+	key := unique.Make(desc.Digest)
 	do = func() error {
-		ctx, span := tracer.Start(ctx, "RemoteFetchArena.fetchInto", trace.WithAttributes(attribute.String("key", key)))
+		ctx, span := tracer.Start(ctx, "RemoteFetchArena.fetchInto", trace.WithAttributes(attribute.String("key", key.Value())))
 		defer span.End()
-		var c *rc
+		var lf *layerFile
 		var err error
 		defer func() {
 			span.RecordError(err)
@@ -179,39 +117,51 @@ func (a *RemoteFetchArena) fetchInto(ctx context.Context, l *claircore.Layer, cl
 			return
 		}()
 
-		try := func() (any, error) {
-			return a.fetchUnlinkedFile(ctx, key, desc)
-		}
-		select {
-		case res := <-a.sf.DoChan(key, try):
-			if e := res.Err; e != nil {
-				err = fmt.Errorf("error realizing layer %s: %w", key, e)
-				return err
+		for {
+			v, ok := a.layers.Load(key)
+			if ok {
+				lf = v.(weak.Pointer[layerFile]).Value()
+				if lf != nil {
+					break
+				}
+				// The weak pointer has been gc'd,
+				// so delete and try again.
+				a.layers.CompareAndDelete(key, v)
+			} else {
+				ch := a.sf.DoChan(key.Value(), func() (any, error) {
+					return a.fetchUnlinkedFile(ctx, key, desc)
+				})
+				select {
+				case <-ctx.Done():
+					err = context.Cause(ctx)
+					return err
+				case res := <-ch:
+					if e := res.Err; e != nil {
+						err = fmt.Errorf("error realizing layer %s: %w", key.Value(), e)
+						return err
+					}
+					lf = res.Val.(*layerFile)
+					span.AddEvent("got value from singleflight")
+					span.SetAttributes(attribute.Bool("shared", res.Shared))
+					break
+				}
 			}
-			c = res.Val.(*rc)
-			span.AddEvent("got value from singleflight")
-			span.SetAttributes(attribute.Bool("shared", res.Shared))
-		case <-ctx.Done():
-			err = context.Cause(ctx)
+		}
+
+		// Re-open the file containing the layer contents.
+		// We don't bother explicitly calling the file's Close method,
+		// as it is implicitly handled once lf is deleted from the map and
+		// subsequently gc'd.
+		f, err := lf.Reopen()
+		if err != nil {
 			return err
 		}
 
-		r := c.Ref()
-		f, err := r.Val()
-		switch {
-		case errors.Is(err, nil):
-		case errors.Is(err, errStale):
-			zlog.Debug(ctx).Str("key", key).Msg("managed to get stale ref, retrying")
-			return do()
-		default:
-			r.Close()
+		if err := l.Init(ctx, desc, f); err != nil {
 			return err
 		}
-		if err := l.Init(ctx, desc, f); err != nil {
-			return errors.Join(err, f.Close(), r.Close())
-		}
 		*cl = closeFunc(func() error {
-			return errors.Join(l.Close(), f.Close(), r.Close())
+			return l.Close()
 		})
 		return nil
 	}
@@ -228,9 +178,9 @@ func (f closeFunc) Close() error {
 
 // FetchUnlinkedFile is the inner function used inside the singleflight.
 //
-// Because we know we're the only concurrent call that's dealing with this key,
+// Because we know we're the only concurrent call dealing with this key,
 // we can be a bit more lax.
-func (a *RemoteFetchArena) fetchUnlinkedFile(ctx context.Context, key string, desc *claircore.LayerDescription) (*rc, error) {
+func (a *RemoteFetchArena) fetchUnlinkedFile(ctx context.Context, key unique.Handle[string], desc *claircore.LayerDescription) (*layerFile, error) {
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "libindex/fetchArena.fetchUnlinkedFile",
 		"arena", a.root,
@@ -240,6 +190,20 @@ func (a *RemoteFetchArena) fetchUnlinkedFile(ctx context.Context, key string, de
 	defer span.End()
 	span.SetStatus(codes.Error, "")
 	zlog.Debug(ctx).Msg("layer fetch start")
+
+	// It is possible another goroutine added this key to the map before we got here.
+	// Do one more check to confirm if we really have to pull the layer.
+	if v, ok := a.layers.Load(key); ok {
+		if lf := v.(weak.Pointer[layerFile]).Value(); lf != nil {
+			zlog.Debug(ctx).Msg("layer fetch ok")
+			span.SetStatus(codes.Ok, "")
+			return lf, nil
+		}
+		a.layers.CompareAndDelete(key, v)
+	}
+
+	// We know for sure the key for this layer is not in the map,
+	// so we definitely have to pull the contents.
 
 	// Validate the layer input.
 	if desc.URI == "" {
@@ -253,11 +217,7 @@ func (a *RemoteFetchArena) fetchUnlinkedFile(ctx context.Context, key string, de
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse remote path uri: %v", err)
 	}
-	v, ok := a.rc.Load(key)
-	if ok {
-		span.SetStatus(codes.Ok, "")
-		return v.(*rc), nil
-	}
+
 	// Otherwise, it needs to be populated.
 	f, err := openTemp(a.root)
 	if err != nil {
@@ -364,17 +324,16 @@ func (a *RemoteFetchArena) fetchUnlinkedFile(ctx context.Context, key string, de
 		return nil, err
 	}
 
-	rc := newRc(f, func() {
-		a.rc.Delete(key)
-	})
-	if _, ok := a.rc.Swap(key, rc); ok {
-		rc.Ref().Close()
-		return nil, fmt.Errorf("fetcher: double-store for key %q", key)
-	}
+	lf := newLayerFile(f)
+	wp := weak.Make(lf)
+	runtime.AddCleanup(f, func(key unique.Handle[string]) {
+		a.layers.CompareAndDelete(key, wp)
+	}, key)
+	a.layers.Store(key, wp)
 
 	zlog.Debug(ctx).Msg("layer fetch ok")
 	span.SetStatus(codes.Ok, "")
-	return rc, nil
+	return lf, nil
 }
 
 // Close forgets all references in the arena.
@@ -384,10 +343,7 @@ func (a *RemoteFetchArena) Close(ctx context.Context) error {
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "libindex/fetchArena.Close",
 		"arena", a.root)
-	a.rc.Range(func(k, _ any) bool {
-		a.rc.Delete(k)
-		return true
-	})
+	a.layers.Clear()
 	return nil
 }
 
@@ -420,7 +376,7 @@ func (p *FetchProxy) Realize(ctx context.Context, ls []*claircore.Layer) error {
 	return nil
 }
 
-// RealizeDesciptions returns [claircore.Layer] structs populated according to
+// RealizeDescriptions returns [claircore.Layer] structs populated according to
 // the passed slice of [claircore.LayerDescription].
 func (p *FetchProxy) RealizeDescriptions(ctx context.Context, descs []claircore.LayerDescription) ([]claircore.Layer, error) {
 	ctx = zlog.ContextWithValues(ctx,
