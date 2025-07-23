@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/zlog"
@@ -17,7 +18,6 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore"
 	"github.com/quay/claircore/libvuln/driver"
-	"github.com/quay/claircore/pkg/microbatch"
 )
 
 var (
@@ -31,7 +31,7 @@ var (
 			Namespace: "claircore",
 			Subsystem: "vulnstore",
 			Name:      "updatevulnerabilities_total",
-			Help:      "Total number of database queries issued in the updateVulnerabilities method.",
+			Help:      "Total number of database queries issued in the UpdateVulnerabilities method.",
 		},
 		[]string{"query", "is_delta"},
 	)
@@ -40,7 +40,7 @@ var (
 			Namespace: "claircore",
 			Subsystem: "vulnstore",
 			Name:      "updatevulnerabilities_duration_seconds",
-			Help:      "The duration of all queries issued in the updateVulnerabilities method",
+			Help:      "The duration of all queries issued in the UpdateVulnerabilities method",
 		},
 		[]string{"query", "is_delta"},
 	)
@@ -245,7 +245,13 @@ func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string
 	vulnCt := 0
 	start = time.Now()
 
-	mBatcher := microbatch.NewInsert(tx, 2000, time.Minute)
+	var batch pgx.Batch
+	flush := func() (err error) {
+		err = tx.SendBatch(ctx, &batch).Close()
+		clear(batch.QueuedQueries)
+		batch.QueuedQueries = batch.QueuedQueries[:0]
+		return err
+	}
 
 	vulnIter(func(vuln *claircore.Vulnerability, iterErr error) bool {
 		if iterErr != nil {
@@ -270,7 +276,7 @@ func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string
 		hashKind, hash := md5Vuln(vuln)
 		vKind, _, _ := rangefmt(vuln.Range)
 
-		err = mBatcher.Queue(ctx, insert,
+		batch.Queue(insert,
 			hashKind, hash,
 			vuln.Name, vuln.Updater, vuln.Description, vuln.Issued, vuln.Links, vuln.Severity, vuln.NormalizedSeverity,
 			pkg.Name, pkg.Version, pkg.Module, pkg.Arch, pkg.Kind,
@@ -278,23 +284,21 @@ func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string
 			repo.Name, repo.Key, repo.URI,
 			vuln.FixedInVersion, vuln.ArchOperation, vKind, vuln.Range,
 		)
-		if err != nil {
-			err = fmt.Errorf("failed to queue vulnerability: %w", err)
+		batch.Queue(assoc, hashKind, hash, uoID)
+
+		if ct := batch.Len(); ct < 1000 {
+			return true
+		}
+		if err = flush(); err != nil {
+			err = fmt.Errorf("failed batching: %w", err)
 			return false
 		}
-
-		err = mBatcher.Queue(ctx, assoc, hashKind, hash, uoID)
-		if err != nil {
-			err = fmt.Errorf("failed to queue association: %w", err)
-			return false
-		}
-
 		return true
 	})
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("iterating on vulnerabilities: %w", err)
 	}
-	if err := mBatcher.Done(ctx); err != nil {
+	if err := flush(); err != nil {
 		return uuid.Nil, fmt.Errorf("failed to finish batch vulnerability insert: %w", err)
 	}
 
