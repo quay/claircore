@@ -1,17 +1,18 @@
 package postgres
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
-	"github.com/quay/claircore/pkg/microbatch"
 )
 
 var zeroPackage = claircore.Package{}
@@ -22,7 +23,7 @@ var (
 			Namespace: "claircore",
 			Subsystem: "indexer",
 			Name:      "indexpackage_total",
-			Help:      "Total number of database queries issued in the IndexPackage method.",
+			Help:      "Total number of database queries issued in the IndexPackages method.",
 		},
 		[]string{"query"},
 	)
@@ -32,7 +33,7 @@ var (
 			Namespace: "claircore",
 			Subsystem: "indexer",
 			Name:      "indexpackage_duration_seconds",
-			Help:      "The duration of all queries issued in the IndexPackage method",
+			Help:      "The duration of all queries issued in the IndexPackages method",
 		},
 		[]string{"query"},
 	)
@@ -98,72 +99,39 @@ func (s *IndexerStore) IndexPackages(ctx context.Context, pkgs []*claircore.Pack
 		`
 	)
 
-	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/indexPackages")
-	// obtain a transaction scoped batch
-	tx, err := s.pool.Begin(ctx)
-	if err != nil {
-		return fmt.Errorf("store:indexPackage failed to create transaction: %w", err)
-	}
-	defer tx.Rollback(ctx)
+	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/IndexerStore.IndexPackages")
 
-	insertPackageStmt, err := tx.Prepare(ctx, "insertPackageStmt", insert)
-	if err != nil {
-		return fmt.Errorf("failed to create statement: %w", err)
-	}
-	insertPackageScanArtifactWithStmt, err := tx.Prepare(ctx, "insertPackageScanArtifactWith", insertWith)
-	if err != nil {
-		return fmt.Errorf("failed to create statement: %w", err)
-	}
-
+	var batch, assocBatch pgx.Batch
 	skipCt := 0
-
-	start := time.Now()
-	mBatcher := microbatch.NewInsert(tx, 500, time.Minute)
+	queueInsert := func(pkg *claircore.Package) {
+		// There is a disconnect between the claircore.Package.NormalizedVersion field
+		// (which is never nil) and the DB column norm_version (which can be null) so
+		// we need to key off the kind to judge whether to leave it null or not.
+		// TODO(crozzy): Explore if we can include this logic as part of the Version's EncodePlan.
+		normVer := &pkg.NormalizedVersion
+		if pkg.NormalizedVersion.Kind == "" {
+			normVer = nil
+		}
+		batch.Queue(insert,
+			pkg.Name, pkg.Kind, pkg.Version, pkg.NormalizedVersion.Kind, normVer, pkg.Module, pkg.Arch,
+		)
+	}
 	for _, pkg := range pkgs {
 		if pkg.Name == "" {
 			skipCt++
-		}
-		if pkg.Source == nil {
-			pkg.Source = &zeroPackage
-		}
-
-		if err := queueInsert(ctx, mBatcher, insertPackageStmt.Name, pkg.Source); err != nil {
-			return err
-		}
-		if err := queueInsert(ctx, mBatcher, insertPackageStmt.Name, pkg); err != nil {
-			return err
-		}
-	}
-	err = mBatcher.Done(ctx)
-	if err != nil {
-		return fmt.Errorf("final batch insert failed for pkg: %w", err)
-	}
-	indexPackageCounter.WithLabelValues("insert_batch").Add(1)
-	indexPackageDuration.WithLabelValues("insert_batch").Observe(time.Since(start).Seconds())
-
-	zlog.Debug(ctx).
-		Int("skipped", skipCt).
-		Int("inserted", len(pkgs)-skipCt).
-		Msg("packages inserted")
-
-	skipCt = 0
-	// make package scan artifacts
-	mBatcher = microbatch.NewInsert(tx, 500, time.Minute)
-
-	start = time.Now()
-	for _, pkg := range pkgs {
-		if pkg.Name == "" {
-			skipCt++
+			// Original code has this not continue, but that seems wrong...
 			continue
 		}
-		err := mBatcher.Queue(
-			ctx,
-			insertPackageScanArtifactWithStmt.SQL,
-			pkg.Source.Name,
-			pkg.Source.Kind,
-			pkg.Source.Version,
-			pkg.Source.Module,
-			pkg.Source.Arch,
+		src := cmp.Or(pkg.Source, &zeroPackage)
+		queueInsert(src)
+		queueInsert(pkg)
+		assocBatch.Queue(
+			insertWith,
+			src.Name,
+			src.Kind,
+			src.Version,
+			src.Module,
+			src.Arch,
 			pkg.Name,
 			pkg.Kind,
 			pkg.Version,
@@ -177,42 +145,37 @@ func (s *IndexerStore) IndexPackages(ctx context.Context, pkgs []*claircore.Pack
 			pkg.RepositoryHint,
 			pkg.Filepath,
 		)
+	}
+
+	err := pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
+		start := time.Now()
+		err := tx.SendBatch(ctx, &batch).Close()
+		indexPackageCounter.WithLabelValues("insert_batch").Add(1)
+		indexPackageDuration.WithLabelValues("insert_batch").Observe(time.Since(start).Seconds())
 		if err != nil {
-			return fmt.Errorf("batch insert failed for package_scanartifact %v: %w", pkg, err)
+			return err
 		}
-	}
-	err = mBatcher.Done(ctx)
-	if err != nil {
-		return fmt.Errorf("final batch insert failed for package_scanartifact: %w", err)
-	}
-	indexPackageCounter.WithLabelValues("insertWith_batch").Add(1)
-	indexPackageDuration.WithLabelValues("insertWith_batch").Observe(time.Since(start).Seconds())
-	zlog.Debug(ctx).
-		Int("skipped", skipCt).
-		Int("inserted", len(pkgs)-skipCt).
-		Msg("scanartifacts inserted")
+		zlog.Debug(ctx).
+			Int("skipped", skipCt).
+			Int("inserted", len(pkgs)-skipCt).
+			Msg("packages inserted")
 
-	err = tx.Commit(ctx)
-	if err != nil {
-		return fmt.Errorf("store:indexPackages failed to commit tx: %w", err)
-	}
-	return nil
-}
+		start = time.Now()
+		err = tx.SendBatch(ctx, &assocBatch).Close()
+		indexPackageCounter.WithLabelValues("insertWith_batch").Add(1)
+		indexPackageDuration.WithLabelValues("insertWith_batch").Observe(time.Since(start).Seconds())
+		zlog.Debug(ctx).
+			Int("skipped", skipCt).
+			Int("inserted", len(pkgs)-skipCt).
+			Msg("scanartifacts inserted")
+		if err != nil {
+			return err
+		}
 
-func queueInsert(ctx context.Context, b *microbatch.Insert, stmt string, pkg *claircore.Package) error {
-	// There is a disconnect between the claircore.Package.NormalizedVersion field
-	// (which is never nil) and the DB column norm_version (which can be null) so
-	// we need to key off the kind to judge whether to leave it null or not.
-	// TODO(crozzy): Explore if we can include this logic as part of the Version's EncodePlan.
-	normVer := &pkg.NormalizedVersion
-	if pkg.NormalizedVersion.Kind == "" {
-		normVer = nil
-	}
-	err := b.Queue(ctx, stmt,
-		pkg.Name, pkg.Kind, pkg.Version, pkg.NormalizedVersion.Kind, normVer, pkg.Module, pkg.Arch,
-	)
+		return nil
+	})
 	if err != nil {
-		return fmt.Errorf("failed to queue insert for package %q: %w", pkg.Name, err)
+		return fmt.Errorf("IndexPackages failed: %w", err)
 	}
 	return nil
 }
