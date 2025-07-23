@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
-	"github.com/quay/claircore/pkg/microbatch"
 )
 
 var (
@@ -71,52 +72,22 @@ func (s *IndexerStore) IndexRepositories(ctx context.Context, repos []*claircore
 		ON CONFLICT DO NOTHING;
 		`
 	)
-	// obtain a transaction scoped batch
-	tx, err := s.pool.Begin(ctx)
-	if err != nil {
-		return fmt.Errorf("store:indexRepositories failed to create transaction: %w", err)
-	}
-	defer tx.Rollback(ctx)
 
-	insertRepoStmt, err := tx.Prepare(ctx, "insertRepoStmt", insert)
-	if err != nil {
-		return fmt.Errorf("failed to create insert repo statement: %w", err)
-	}
-	insertRepoScanArtifactWithStmt, err := tx.Prepare(ctx, "insertRepoScanArtifactWith", insertWith)
-	if err != nil {
-		return fmt.Errorf("failed to create insert repo scanartifact statement: %w", err)
-	}
-
-	start := time.Now()
-	mBatcher := microbatch.NewInsert(tx, 500, time.Minute)
+	// NOTE(hank) The repository insert batching could use lots of memory. A
+	// previous version of this code was using a cutoff size of 500 entries, so
+	// it's unlikely that it was ever hit and removing it shouldn't noticeably
+	// change behavior.
+	var repoBatch, assocBatch pgx.Batch
 	for _, repo := range repos {
-		err := mBatcher.Queue(
-			ctx,
-			insertRepoStmt.SQL,
+		repoBatch.Queue(insert,
 			repo.Name,
 			repo.Key,
 			repo.URI,
 			repo.CPE,
 		)
-		if err != nil {
-			return fmt.Errorf("batch insert failed for repo %v: %w", repo, err)
-		}
 	}
-	err = mBatcher.Done(ctx)
-	if err != nil {
-		return fmt.Errorf("final batch insert failed for repo: %w", err)
-	}
-	indexRepositoriesCounter.WithLabelValues("insert_batch").Add(1)
-	indexRepositoriesDuration.WithLabelValues("insert_batch").Observe(time.Since(start).Seconds())
-
-	// make repo scan artifacts
-
-	start = time.Now()
-	mBatcher = microbatch.NewInsert(tx, 500, time.Minute)
 	for _, repo := range repos {
-		err := mBatcher.Queue(
-			ctx,
-			insertRepoScanArtifactWithStmt.SQL,
+		assocBatch.Queue(insertWith,
 			repo.Name,
 			repo.Key,
 			repo.URI,
@@ -125,20 +96,32 @@ func (s *IndexerStore) IndexRepositories(ctx context.Context, repos []*claircore
 			scnr.Kind(),
 			l.Hash,
 		)
-		if err != nil {
-			return fmt.Errorf("batch insert failed for repo_scanartifact %v: %w", repo, err)
-		}
 	}
-	err = mBatcher.Done(ctx)
-	if err != nil {
-		return fmt.Errorf("final batch insert failed for repo_scanartifact: %w", err)
-	}
-	indexRepositoriesCounter.WithLabelValues("insertWith_batch").Add(1)
-	indexRepositoriesDuration.WithLabelValues("insertWith_batch").Observe(time.Since(start).Seconds())
 
-	err = tx.Commit(ctx)
+	err := pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
+		var start time.Time
+		var err error
+
+		start = time.Now()
+		err = tx.SendBatch(ctx, &repoBatch).Close()
+		indexRepositoriesCounter.WithLabelValues("insert_batch").Add(1)
+		indexRepositoriesDuration.WithLabelValues("insert_batch").Observe(time.Since(start).Seconds())
+		if err != nil {
+			return fmt.Errorf("batch insert failed for repos: %w", err)
+		}
+
+		start = time.Now()
+		err = tx.SendBatch(ctx, &assocBatch).Close()
+		indexRepositoriesCounter.WithLabelValues("insertWith_batch").Add(1)
+		indexRepositoriesDuration.WithLabelValues("insertWith_batch").Observe(time.Since(start).Seconds())
+		if err != nil {
+			return fmt.Errorf("batch insert failed for repo association: %w", err)
+		}
+
+		return nil
+	})
 	if err != nil {
-		return fmt.Errorf("store:indexRepositories failed to commit tx: %w", err)
+		return fmt.Errorf("IndexRepositories failed: %w", err)
 	}
 	return nil
 }
