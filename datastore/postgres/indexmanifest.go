@@ -6,12 +6,12 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
-	"github.com/quay/claircore/pkg/microbatch"
 )
 
 var (
@@ -50,10 +50,10 @@ func (s *IndexerStore) IndexManifest(ctx context.Context, ir *claircore.IndexRep
 		ON CONFLICT DO NOTHING;
 		`
 	)
-	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/indexManifest")
+	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/IndexerStore.IndexManifest")
 
 	if ir.Hash.String() == "" {
-		return fmt.Errorf("received empty hash. cannot associate contents with a manifest hash")
+		return fmt.Errorf("received empty hash; cannot associate contents with a manifest hash")
 	}
 	hash := ir.Hash.String()
 
@@ -63,20 +63,7 @@ func (s *IndexerStore) IndexManifest(ctx context.Context, ir *claircore.IndexRep
 		return nil
 	}
 
-	// obtain a transaction scoped batch
-	tx, err := s.pool.Begin(ctx)
-	if err != nil {
-		return fmt.Errorf("postgres: indexManifest failed to create transaction: %w", err)
-	}
-	defer tx.Rollback(ctx)
-
-	queryStmt, err := tx.Prepare(ctx, "queryStmt", query)
-	if err != nil {
-		return fmt.Errorf("failed to create statement: %w", err)
-	}
-
-	start := time.Now()
-	mBatcher := microbatch.NewInsert(tx, 500, time.Minute)
+	var batch pgx.Batch
 	for _, record := range records {
 		// ignore nil packages
 		if record.Package == nil {
@@ -90,42 +77,23 @@ func (s *IndexerStore) IndexManifest(ctx context.Context, ir *claircore.IndexRep
 
 		// if source package exists create record
 		if v[0] != nil {
-			err = mBatcher.Queue(
-				ctx,
-				queryStmt.SQL,
-				v[0],
-				v[2],
-				v[3],
-				hash,
-			)
-			if err != nil {
-				return fmt.Errorf("batch insert failed for source package record %v: %w", record, err)
-			}
+			batch.Queue(query, v[0], v[2], v[3], hash)
 		}
+		batch.Queue(query, v[1], v[2], v[3], hash)
+	}
 
-		err = mBatcher.Queue(
-			ctx,
-			queryStmt.SQL,
-			v[1],
-			v[2],
-			v[3],
-			hash,
-		)
+	err := pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
+		start := time.Now()
+		err := tx.SendBatch(ctx, &batch).Close()
+		indexManifestCounter.WithLabelValues("query_batch").Add(1)
+		indexManifestDuration.WithLabelValues("query_batch").Observe(time.Since(start).Seconds())
 		if err != nil {
-			return fmt.Errorf("batch insert failed for package record %v: %w", record, err)
+			return fmt.Errorf("batch insert failed: %w", err)
 		}
-
-	}
-	err = mBatcher.Done(ctx)
+		return nil
+	})
 	if err != nil {
-		return fmt.Errorf("final batch insert failed: %w", err)
-	}
-	indexManifestCounter.WithLabelValues("query_batch").Add(1)
-	indexManifestDuration.WithLabelValues("query_batch").Observe(time.Since(start).Seconds())
-
-	err = tx.Commit(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to commit tx: %w", err)
+		return fmt.Errorf("IndexManifest failed: %w", err)
 	}
 	return nil
 }
