@@ -19,7 +19,6 @@ import (
 
 	"github.com/quay/claircore/datastore"
 	"github.com/quay/claircore/libvuln/driver"
-	"github.com/quay/claircore/pkg/microbatch"
 )
 
 var (
@@ -130,61 +129,67 @@ DO
 
 	var id uint64
 	var ref uuid.UUID
+	var enCt int
 
-	start := time.Now()
-
-	if err := s.pool.QueryRow(ctx, create, name, string(fp)).Scan(&id, &ref); err != nil {
+	err := s.pool.AcquireFunc(ctx, func(conn *pgxpool.Conn) error {
+		start := time.Now()
+		if err := s.pool.QueryRow(ctx, create, name, string(fp)).Scan(&id, &ref); err != nil {
+			return err
+		}
+		updateEnrichmentsCounter.WithLabelValues("create").Add(1)
+		updateEnrichmentsDuration.WithLabelValues("create").Observe(time.Since(start).Seconds())
+		zlog.Debug(ctx).
+			Str("ref", ref.String()).
+			Msg("update_operation created")
+		return nil
+	})
+	if err != nil {
 		return uuid.Nil, fmt.Errorf("failed to create update_operation: %w", err)
 	}
 
-	updateEnrichmentsCounter.WithLabelValues("create").Add(1)
-	updateEnrichmentsDuration.WithLabelValues("create").Observe(time.Since(start).Seconds())
-
-	tx, err := s.pool.Begin(ctx)
-	if err != nil {
-		return uuid.Nil, fmt.Errorf("unable to start transaction: %w", err)
-	}
-	defer tx.Rollback(ctx)
-
-	zlog.Debug(ctx).
-		Str("ref", ref.String()).
-		Msg("update_operation created")
-
-	batch := microbatch.NewInsert(tx, 2000, time.Minute)
-	start = time.Now()
-	enCt := 0
-	it(func(en *driver.EnrichmentRecord, iterErr error) bool {
-		if iterErr != nil {
-			err = iterErr
-			return false
+	err = pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
+		var err error
+		var batch pgx.Batch
+		flush := func() (err error) {
+			err = tx.SendBatch(ctx, &batch).Close()
+			clear(batch.QueuedQueries)
+			batch.QueuedQueries = batch.QueuedQueries[:0]
+			return err
 		}
-		enCt++
-		hashKind, hash := hashEnrichment(en)
-		err = batch.Queue(ctx, insert,
-			hashKind, hash, name, en.Tags, en.Enrichment,
-		)
+		start := time.Now()
+
+		defer func() {
+			updateEnrichmentsCounter.WithLabelValues("insert_batch").Add(1)
+			updateEnrichmentsDuration.WithLabelValues("insert_batch").Observe(time.Since(start).Seconds())
+		}()
+		it(func(en *driver.EnrichmentRecord, iterErr error) bool {
+			if iterErr != nil {
+				err = iterErr
+				return false
+			}
+			enCt++
+			hashKind, hash := hashEnrichment(en)
+			batch.Queue(insert, hashKind, hash, name, en.Tags, en.Enrichment)
+			batch.Queue(assoc, hashKind, hash, name, id)
+
+			if ct := batch.Len(); ct > 1000 {
+				if err = flush(); err != nil {
+					err = fmt.Errorf("failed batching: %w", err)
+					return false
+				}
+			}
+
+			return true
+		})
 		if err != nil {
-			err = fmt.Errorf("failed to queue enrichment: %w", err)
-			return false
+			return fmt.Errorf("iterating on enrichments: %w", err)
 		}
-		if err := batch.Queue(ctx, assoc, hashKind, hash, name, id); err != nil {
-			err = fmt.Errorf("failed to queue association: %w", err)
-			return false
-		}
-		return true
+		return flush()
 	})
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("iterating on enrichments: %w", err)
+		return uuid.Nil, fmt.Errorf("failed batch enrichment insert: %w", err)
 	}
-	if err := batch.Done(ctx); err != nil {
-		return uuid.Nil, fmt.Errorf("failed to finish batch enrichment insert: %w", err)
-	}
-	updateEnrichmentsCounter.WithLabelValues("insert_batch").Add(1)
-	updateEnrichmentsDuration.WithLabelValues("insert_batch").Observe(time.Since(start).Seconds())
 
-	if err := tx.Commit(ctx); err != nil {
-		return uuid.Nil, fmt.Errorf("failed to commit transaction: %w", err)
-	}
 	if _, err = s.pool.Exec(ctx, refreshView); err != nil {
 		return uuid.Nil, fmt.Errorf("could not refresh latest_update_operations: %w", err)
 	}
