@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
-	"github.com/quay/claircore/pkg/microbatch"
 )
 
 var (
@@ -78,28 +79,9 @@ func (s *IndexerStore) IndexDistributions(ctx context.Context, dists []*claircor
 		`
 	)
 
-	// obtain a transaction scoped batch
-	tx, err := s.pool.Begin(ctx)
-	if err != nil {
-		return fmt.Errorf("store:indexDistributions failed to create transaction: %v", err)
-	}
-	defer tx.Rollback(ctx)
-
-	insertDistStmt, err := tx.Prepare(ctx, "insertDistStmt", insert)
-	if err != nil {
-		return fmt.Errorf("failed to create statement: %w", err)
-	}
-	insertDistScanArtifactWithStmt, err := tx.Prepare(ctx, "insertDistScanArtifactWith", insertWith)
-	if err != nil {
-		return fmt.Errorf("failed to create statement: %w", err)
-	}
-
-	start := time.Now()
-	mBatcher := microbatch.NewInsert(tx, 500, time.Minute)
+	var batch, assocBatch pgx.Batch
 	for _, dist := range dists {
-		err := mBatcher.Queue(
-			ctx,
-			insertDistStmt.SQL,
+		batch.Queue(insert,
 			dist.Name,
 			dist.DID,
 			dist.Version,
@@ -109,24 +91,9 @@ func (s *IndexerStore) IndexDistributions(ctx context.Context, dists []*claircor
 			dist.CPE,
 			dist.PrettyName,
 		)
-		if err != nil {
-			return fmt.Errorf("batch insert failed for dist %v: %w", dist, err)
-		}
 	}
-	err = mBatcher.Done(ctx)
-	if err != nil {
-		return fmt.Errorf("final batch insert failed for dist: %w", err)
-	}
-	indexDistributionsCounter.WithLabelValues("insert_batch").Add(1)
-	indexDistributionsDuration.WithLabelValues("insert_batch").Observe(time.Since(start).Seconds())
-
-	// make dist scan artifacts
-	start = time.Now()
-	mBatcher = microbatch.NewInsert(tx, 500, time.Minute)
 	for _, dist := range dists {
-		err := mBatcher.Queue(
-			ctx,
-			insertDistScanArtifactWithStmt.SQL,
+		assocBatch.Queue(insertWith,
 			dist.Name,
 			dist.DID,
 			dist.Version,
@@ -140,20 +107,33 @@ func (s *IndexerStore) IndexDistributions(ctx context.Context, dists []*claircor
 			scnr.Kind(),
 			layer.Hash,
 		)
-		if err != nil {
-			return fmt.Errorf("batch insert failed for dist_scanartifact %v: %w", dist, err)
-		}
 	}
-	err = mBatcher.Done(ctx)
-	if err != nil {
-		return fmt.Errorf("final batch insert failed for dist_scanartifact: %w", err)
-	}
-	indexDistributionsCounter.WithLabelValues("insertWith_batch").Add(1)
-	indexDistributionsDuration.WithLabelValues("insertWith_batch").Observe(time.Since(start).Seconds())
 
-	err = tx.Commit(ctx)
+	err := pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
+		var start time.Time
+		var err error
+
+		start = time.Now()
+		err = tx.SendBatch(ctx, &batch).Close()
+		indexDistributionsCounter.WithLabelValues("insert_batch").Add(1)
+		indexDistributionsDuration.WithLabelValues("insert_batch").Observe(time.Since(start).Seconds())
+		if err != nil {
+			return err
+		}
+
+		start = time.Now()
+		err = tx.SendBatch(ctx, &assocBatch).Close()
+		indexDistributionsCounter.WithLabelValues("insertWith_batch").Add(1)
+		indexDistributionsDuration.WithLabelValues("insertWith_batch").Observe(time.Since(start).Seconds())
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
 	if err != nil {
-		return fmt.Errorf("store:indexDistributions failed to commit tx: %w", err)
+		return fmt.Errorf("IndexDistributions failed: %w", err)
 	}
+
 	return nil
 }
