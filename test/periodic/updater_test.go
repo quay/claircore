@@ -14,7 +14,7 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/oracle"
 	"github.com/quay/claircore/photon"
-	"github.com/quay/claircore/rhel"
+	"github.com/quay/claircore/rhel/vex"
 	"github.com/quay/claircore/suse"
 	"github.com/quay/claircore/ubuntu"
 	"github.com/quay/claircore/updater/osv"
@@ -86,13 +86,10 @@ func TestPhoton(t *testing.T) {
 	runUpdaterSet(ctx, t, set)
 }
 
-func TestRHEL(t *testing.T) {
+func TestRHELVEX(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
-	fac, err := rhel.NewFactory(ctx, rhel.DefaultManifest)
-	if err != nil {
-		t.Fatal()
-	}
-	err = fac.Configure(ctx, noopConfigure, pkgClient)
+	fac := new(vex.Factory)
+	err := fac.Configure(ctx, noopConfigure, pkgClient)
 	if err != nil {
 		t.Fatal(err)
 	}
