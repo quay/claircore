@@ -25,7 +25,7 @@ import (
 
 func TestConfigure(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(context.Background(), t)
+	ctx := zlog.Test(t.Context(), t)
 	tt := []configTestcase{
 		{
 			Name: "None",
@@ -111,7 +111,7 @@ func noopConfig(_ interface{}) error { return nil }
 
 func TestFetch(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(context.Background(), t)
+	ctx := zlog.Test(t.Context(), t)
 	srv := mockServer(t)
 	tt := []fetchTestcase{
 		{
@@ -137,7 +137,7 @@ func TestFetch(t *testing.T) {
 			Name: "Unchanged",
 			Hint: func() string {
 				// This is copied out of the metafile in testdata:
-				const h = `708083B92E47F0B25C7DD68B89ECD9EF3F2EF91403F511AE13195A596F02E02E`
+				const h = `D165E29D8D911F3F1E0919A5C1E8C423B14AF1C38F57847DD0A8CC9DBD027618`
 				var b strings.Builder
 				b.WriteByte('{')
 				for y, lim := firstYear, time.Now().Year(); y <= lim; y++ {
@@ -234,7 +234,7 @@ func mockServer(t *testing.T) *httptest.Server {
 
 func TestParse(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(context.Background(), t)
+	ctx := zlog.Test(t.Context(), t)
 	srv := mockServer(t)
 	tt := []parseTestcase{
 		{
@@ -285,12 +285,12 @@ func (tc parseTestcase) Run(ctx context.Context, srv *httptest.Server) func(*tes
 
 func TestEnrich(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(context.Background(), t)
+	ctx := zlog.Test(t.Context(), t)
 	feedIn, err := os.Open("testdata/feed.json")
 	if err != nil {
 		t.Fatal(err)
 	}
-	f, err := newItemFeed(2021, feedIn)
+	f, err := newItemFeed(2016, feedIn)
 	if err != nil {
 		t.Error(err)
 	}
@@ -301,13 +301,13 @@ func TestEnrich(t *testing.T) {
 				Description: "This is a fake vulnerability that doesn't have a CVE.",
 			},
 			"1": {
-				Description: "This is a fake vulnerability that looks like CVE-2021-0498.",
+				Description: "This is a fake vulnerability that looks like CVE-2016-2781.",
 			},
 			"6004": {
-				Description: "CVE-2020-6004 was unassigned",
+				Description: "CVE-2016-0001 was unassigned",
 			},
 			"6005": {
-				Description: "CVE-2021-0498 duplicate",
+				Description: "CVE-2016-3674 duplicate",
 			},
 		},
 	}
@@ -321,31 +321,31 @@ func TestEnrich(t *testing.T) {
 	}
 	want := map[string][]map[string]interface{}{
 		"1": {{
-			"version":               "3.1",
-			"vectorString":          "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+			"version":               "3.0",
+			"vectorString":          "CVSS:3.0/AV:L/AC:L/PR:L/UI:N/S:C/C:N/I:H/A:N",
 			"attackVector":          "LOCAL",
 			"attackComplexity":      "LOW",
 			"privilegesRequired":    "LOW",
 			"userInteraction":       "NONE",
-			"scope":                 "UNCHANGED",
-			"confidentialityImpact": "HIGH",
+			"scope":                 "CHANGED",
+			"confidentialityImpact": "NONE",
 			"integrityImpact":       "HIGH",
-			"availabilityImpact":    "HIGH",
-			"baseScore":             7.8,
-			"baseSeverity":          "HIGH",
+			"availabilityImpact":    "NONE",
+			"baseScore":             6.5,
+			"baseSeverity":          "MEDIUM",
 		}},
 		"6005": {{
 			"version":               "3.1",
-			"vectorString":          "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
-			"attackVector":          "LOCAL",
+			"vectorString":          "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+			"attackVector":          "NETWORK",
 			"attackComplexity":      "LOW",
-			"privilegesRequired":    "LOW",
+			"privilegesRequired":    "NONE",
 			"userInteraction":       "NONE",
 			"scope":                 "UNCHANGED",
 			"confidentialityImpact": "HIGH",
-			"integrityImpact":       "HIGH",
-			"availabilityImpact":    "HIGH",
-			"baseScore":             7.8,
+			"integrityImpact":       "NONE",
+			"availabilityImpact":    "NONE",
+			"baseScore":             7.5,
 			"baseSeverity":          "HIGH",
 		}},
 	}
@@ -363,12 +363,28 @@ type fakeGetter struct {
 	res []driver.EnrichmentRecord
 }
 
-func (f *fakeGetter) GetEnrichment(ctx context.Context, tags []string) ([]driver.EnrichmentRecord, error) {
+func (f *fakeGetter) GetEnrichment(_ context.Context, tags []string) ([]driver.EnrichmentRecord, error) {
 	id := tags[0]
-	for _, cve := range f.items {
-		if cve.CVE.Meta.ID == id && cve.Impact.V3.CVSS != nil {
+	for _, v := range f.items {
+		if v.CVE.ID != id {
+			continue
+		}
+		for _, cvss := range v.CVE.Metrics.V31 {
+			if cvss.Type != "Primary" {
+				continue
+			}
 			r := []driver.EnrichmentRecord{
-				{Tags: tags, Enrichment: cve.Impact.V3.CVSS},
+				{Tags: tags, Enrichment: cvss.CVSS},
+			}
+			f.res = r
+			return r, nil
+		}
+		for _, cvss := range v.CVE.Metrics.V30 {
+			if cvss.Type != "Primary" {
+				continue
+			}
+			r := []driver.EnrichmentRecord{
+				{Tags: tags, Enrichment: cvss.CVSS},
 			}
 			f.res = r
 			return r, nil
