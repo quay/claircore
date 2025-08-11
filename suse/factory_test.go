@@ -20,6 +20,9 @@ func TestFactory(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if len(us.Updaters()) == 0 {
+		t.Error("expected at least one updater")
+	}
 	for _, u := range us.Updaters() {
 		t.Log(u.Name())
 	}

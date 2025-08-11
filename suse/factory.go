@@ -19,7 +19,7 @@ import (
 )
 
 //doc:url updater
-const base = `https://support.novell.com/security/oval/`
+const base = `https://ftp.suse.com/pub/projects/security/oval/`
 
 var (
 	reELFile = regexp.MustCompile(`suse.linux.enterprise.server.([1-9][1-9]).xml.gz`)
