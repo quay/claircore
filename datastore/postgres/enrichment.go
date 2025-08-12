@@ -114,7 +114,6 @@ VALUES
 			WHERE
 				hash_kind = $1
 				AND hash = $2
-				AND updater = $3
 		),
 		$3,
 		$4,
