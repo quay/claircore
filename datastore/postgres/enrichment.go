@@ -21,6 +21,15 @@ import (
 	"github.com/quay/claircore/libvuln/driver"
 )
 
+const (
+	// analyzeEveryNRecords controls how frequently we refresh planner statistics
+	// during large bulk inserts to avoid post-churn misestimation stalls.
+	analyzeEveryNRecords = 10000
+	// batchFlushThreshold controls how many queued statements are sent in one
+	// pgx batch to the database.
+	batchFlushThreshold = 1000
+)
+
 var (
 	updateEnrichmentsCounter = promauto.NewCounterVec(
 		prometheus.CounterOpts{
@@ -167,11 +176,19 @@ DO
 				return false
 			}
 			enCt++
+
+			// Periodically refresh planner statistics during bulk inserts to avoid stalls
+			if enCt%analyzeEveryNRecords == 0 {
+				if _, analyzeErr := s.pool.Exec(ctx, "ANALYZE enrichment"); analyzeErr != nil {
+					zlog.Warn(ctx).Err(analyzeErr).Int("record_count", enCt).Msg("failed to analyze enrichment table during processing")
+				}
+			}
+
 			hashKind, hash := hashEnrichment(en)
 			batch.Queue(insert, hashKind, hash, name, en.Tags, en.Enrichment)
 			batch.Queue(assoc, hashKind, hash, name, id)
 
-			if ct := batch.Len(); ct > 1000 {
+			if ct := batch.Len(); ct > batchFlushThreshold {
 				if err = flush(); err != nil {
 					err = fmt.Errorf("failed batching: %w", err)
 					return false
@@ -187,6 +204,10 @@ DO
 	})
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("failed batch enrichment insert: %w", err)
+	}
+
+	if _, err = s.pool.Exec(ctx, "ANALYZE enrichment"); err != nil {
+		return uuid.Nil, fmt.Errorf("could not ANALYZE enrichment: %w", err)
 	}
 
 	if _, err = s.pool.Exec(ctx, refreshView); err != nil {
