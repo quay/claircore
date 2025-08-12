@@ -124,4 +124,8 @@ var MatcherMigrations = []migrate.Migration{
 		ID: 15,
 		Up: runFile("matcher/15-enrichment-indexes.sql"),
 	},
+	{
+		ID: 16,
+		Up: runFile("matcher/16-delete-cvss-enrichments.sql"),
+	},
 }
