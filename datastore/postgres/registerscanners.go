@@ -7,6 +7,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/quay/claircore/indexer"
 )
 
@@ -82,5 +83,60 @@ SELECT
 		registerScannerDuration.WithLabelValues("insert").Observe(time.Since(start).Seconds())
 	}
 
+	return s.populateScanners(ctx)
+}
+
+const selectAllScanner = `
+SELECT
+	id, name, version, kind
+FROM
+	scanner;
+`
+
+func (s *IndexerStore) populateScanners(ctx context.Context) error {
+	s.scanners = make(map[string]int64)
+	rows, err := s.pool.Query(ctx, selectAllScanner)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve scanners: %w", err)
+	}
+	for rows.Next() {
+		var id int64
+		var name, version, kind string
+		err := rows.Scan(
+			&id,
+			&name,
+			&version,
+			&kind,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to scan scanners: %w", err)
+		}
+		s.scanners[makeScannerKey(name, version, kind)] = id
+	}
 	return nil
+}
+
+func (s *IndexerStore) selectScanners(vs indexer.VersionedScanners) ([]int64, error) {
+	ids := make([]int64, len(vs))
+	for i, v := range vs {
+		id, ok := s.scanners[makeScannerKey(v.Name(), v.Version(), v.Kind())]
+		if !ok {
+			return nil, fmt.Errorf("failed to retrieve id for scanner %q", v.Name())
+		}
+		ids[i] = id
+	}
+
+	return ids, nil
+}
+
+func (s *IndexerStore) selectScanner(v indexer.VersionedScanner) (int64, error) {
+	id, ok := s.scanners[makeScannerKey(v.Name(), v.Version(), v.Kind())]
+	if !ok {
+		return 0, fmt.Errorf("failed to retrieve id for scanner %q", v.Name())
+	}
+	return id, nil
+}
+
+func makeScannerKey(name, version, kind string) string {
+	return name + "_" + version + "_" + kind
 }
