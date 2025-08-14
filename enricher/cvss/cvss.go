@@ -32,15 +32,15 @@ var (
 
 const (
 	// Type is the type of data returned from the Enricher's Enrich method.
-	Type = `message/vnd.clair.map.vulnerability; enricher=clair.cvss schema=https://csrc.nist.gov/schema/nvd/feed/1.1/cvss-v3.x.json`
+	Type = `message/vnd.clair.map.vulnerability; enricher=clair.cvss schema=https://csrc.nist.gov/schema/nvd/api/2.0/cve_api_json_2.0.schema`
 	// DefaultFeeds is the default place to look for CVE feeds.
 	//
 	// The enricher expects the structure to mirror that found here: files
-	// organized by year, prefixed with `nvdcve-1.1-` and with `.meta` and
+	// organized by year, prefixed with `nvdcve-2.0-` and with `.meta` and
 	// `.json.gz` extensions.
 	//
 	//doc:url updater
-	DefaultFeeds = `https://nvd.nist.gov/feeds/json/cve/1.1/`
+	DefaultFeeds = `https://nvd.nist.gov/feeds/json/cve/2.0/`
 
 	// This appears above and must be the same.
 	name = `clair.cvss`
@@ -72,7 +72,7 @@ type Config struct {
 }
 
 // Configure implements driver.Configurable.
-func (e *Enricher) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *http.Client) error {
+func (e *Enricher) Configure(_ context.Context, f driver.ConfigUnmarshaler, c *http.Client) error {
 	var cfg Config
 	e.c = c
 	if err := f(&cfg); err != nil {
@@ -98,11 +98,11 @@ func (e *Enricher) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c 
 }
 
 func metafileURL(root *url.URL, yr int) (*url.URL, error) {
-	return root.Parse(fmt.Sprintf("nvdcve-1.1-%d.meta", yr))
+	return root.Parse(fmt.Sprintf("nvdcve-2.0-%d.meta", yr))
 }
 
 func gzURL(root *url.URL, yr int) (*url.URL, error) {
-	return root.Parse(fmt.Sprintf("nvdcve-1.1-%d.json.gz", yr))
+	return root.Parse(fmt.Sprintf("nvdcve-2.0-%d.json.gz", yr))
 }
 
 // Name implements driver.Enricher and driver.EnrichmentUpdater.
@@ -115,7 +115,7 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 	// year → sha256
 	prev := make(map[int]string)
 	if err := json.Unmarshal([]byte(hint), &prev); err != nil && hint != "" {
-		return nil, driver.Fingerprint(""), err
+		return nil, "", err
 	}
 	cur := make(map[int]string, len(prev))
 	yrs := make([]int, 0)
