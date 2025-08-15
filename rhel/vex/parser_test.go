@@ -31,10 +31,19 @@ func TestCreatePackageModule(t *testing.T) {
 		err            bool
 	}{
 		{
-			name: "simple",
+			name: "rpmmod no longer valid",
 			in: &csaf.Product{
 				IdentificationHelper: map[string]string{
 					"purl": "pkg:rpmmod/redhat/postgresql@13:8060020240903094008:ad008a3a",
+				},
+			},
+			err: true,
+		},
+		{
+			name: "simple",
+			in: &csaf.Product{
+				IdentificationHelper: map[string]string{
+					"purl": "pkg:rpm/redhat/postgresql@13?rpmmod=postgresql:13:8060020240903094008:ad008a3a",
 				},
 			},
 			expectedModule: "postgresql:13",
@@ -43,7 +52,7 @@ func TestCreatePackageModule(t *testing.T) {
 			name: "with minor",
 			in: &csaf.Product{
 				IdentificationHelper: map[string]string{
-					"purl": "pkg:rpmmod/redhat/postgresql@9.2:8060020240903094008:ad008a3a",
+					"purl": "pkg:rpm/redhat/postgresql@9.2?rpmmod=postgresql:9.2:8060020240903094008:ad008a3a",
 				},
 			},
 			expectedModule: "postgresql:9.2",
@@ -52,7 +61,7 @@ func TestCreatePackageModule(t *testing.T) {
 			name: "no colon",
 			in: &csaf.Product{
 				IdentificationHelper: map[string]string{
-					"purl": "pkg:rpmmod/redhat/postgresql@9",
+					"purl": "pkg:rpm/redhat/postgresql@9?rpmmod=postgresql:9:8060020240903094008:ad008a3a",
 				},
 			},
 			expectedModule: "postgresql:9",
@@ -61,7 +70,7 @@ func TestCreatePackageModule(t *testing.T) {
 			name: "unconventional",
 			in: &csaf.Product{
 				IdentificationHelper: map[string]string{
-					"purl": "pkg:rpmmod/redhat/postgresql:15/postgresql",
+					"purl": "pkg:rpm/redhat/postgresql:15/postgresql?rpmmod=postgresql:15:8060020240903094008:ad008a3a",
 				},
 			},
 			expectedModule: "postgresql:15",
@@ -424,6 +433,12 @@ func TestParse(t *testing.T) {
 			name:            "cve-2024-7348",
 			filename:        "testdata/cve-2024-7348.jsonl",
 			expectedVulns:   910,
+			expectedDeleted: 0,
+		},
+		{
+			name:            "cve-2024-7348-new-module-format",
+			filename:        "testdata/cve-2024-7348-new-module-format.jsonl",
+			expectedVulns:   944,
 			expectedDeleted: 0,
 		},
 	}
