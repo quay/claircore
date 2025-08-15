@@ -326,7 +326,7 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v csaf.Vulne
 					Msg("could not parse PURL")
 				continue
 			}
-			if !checkPURL(purl) {
+			if !checkPackagePURL(purl) {
 				continue
 			}
 			if pn, err := extractPackageName(purl); err != nil {
@@ -521,7 +521,7 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 				Msg("could not parse PURL")
 			continue
 		}
-		if !checkPURL(purl) {
+		if !checkPackagePURL(purl) {
 			continue
 		}
 		fixedIn, err := extractFixedInVersion(purl)
@@ -675,6 +675,8 @@ func createPackageKey(repo, mod, name, fixedIn string) string {
 	return repo + ":" + mod + ":" + name + "-" + fixedIn
 }
 
+// CreatePackageModule creates a module name from a product.
+// The module must have an rpmmod qualifier to be considered a module.
 func createPackageModule(p *csaf.Product) (string, error) {
 	modPURLHelper, ok := p.IdentificationHelper["purl"]
 	if !ok {
@@ -684,7 +686,7 @@ func createPackageModule(p *csaf.Product) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if purl.Type != "rpmmod" {
+	if purl.Qualifiers.Map()["rpmmod"] == "" {
 		return "", fmt.Errorf("invalid RPM module PURL: %q", purl.String())
 	}
 	var modName string
@@ -760,11 +762,12 @@ var acceptedTypes = map[string]bool{
 	packageurl.TypeRPM: true,
 }
 
-// CheckPURL checks if purl is something we're interested in.
+// CheckPackagePURL checks if purl is something we're interested in.
 //  1. Check the purl.Type is in the acceptable types.
 //  2. Check if an advisory related to the kernel.
 //  3. Check that all RPMs are in the "redhat" namespace.
-func checkPURL(purl packageurl.PackageURL) bool {
+//  4. Check that there is no rpmmod qualifier.
+func checkPackagePURL(purl packageurl.PackageURL) bool {
 	if ok := acceptedTypes[purl.Type]; !ok {
 		return false
 	}
@@ -775,6 +778,10 @@ func checkPURL(purl packageurl.PackageURL) bool {
 	}
 	if purl.Type == packageurl.TypeRPM && purl.Namespace != "redhat" {
 		// Not Red Hat rpm content.
+		return false
+	}
+	if purl.Qualifiers.Map()["rpmmod"] != "" {
+		// This is not a package pURL, it's a module pURL.
 		return false
 	}
 	return true
