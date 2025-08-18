@@ -9,13 +9,13 @@ import (
 )
 
 func TestFeedIngest(t *testing.T) {
-	ctx := zlog.Test(nil, t)
+	ctx := zlog.Test(t.Context(), t)
 	in, err := os.Open("testdata/feed.json")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer in.Close()
-	f, err := newItemFeed(1970, in)
+	f, err := newItemFeed(2016, in)
 	if err != nil {
 		t.Error(err)
 	}
@@ -29,7 +29,7 @@ func TestFeedIngest(t *testing.T) {
 		t.Error("no lines?")
 	}
 	t.Logf("initial output:\n\t%s", string(b[:c]))
-	if got, want := bytes.Count(b, []byte("\n")), 218; got != want {
+	if got, want := bytes.Count(b, []byte("\n")), 2; got != want {
 		t.Errorf("got: %d lines, want: %d lines", got, want)
 	}
 }

@@ -4,44 +4,49 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"strings"
 
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/libvuln/driver"
 )
 
-type cveFeed struct {
-	Count int             `json:"CVE_data_numberOfCVEs,string"`
-	Items json.RawMessage `json:"CVE_Items"`
+type vulnFeed struct {
+	Total int             `json:"totalResults"`
+	Vulns json.RawMessage `json:"vulnerabilities"`
 }
 
-// This is an envelope type so we can get at the cvssv3 object way in there.
-type cve struct {
+// This is an envelope type so we can get at the cvssv3 objects way in there.
+type vuln struct {
 	CVE struct {
-		Meta struct {
-			ID string `json:"ID"`
-		} `json:"CVE_data_meta"`
+		ID         string `json:"id"`
+		VulnStatus string `json:"vulnStatus"`
+		Metrics    struct {
+			V30 []struct {
+				Type string          `json:"type"`
+				CVSS json.RawMessage `json:"cvssData"`
+			} `json:"cvssMetricV30"`
+			V31 []struct {
+				Type string          `json:"type"`
+				CVSS json.RawMessage `json:"cvssData"`
+			} `json:"cvssMetricV31"`
+		} `json:"metrics"`
 	} `json:"cve"`
-	Impact struct {
-		V3 struct {
-			CVSS json.RawMessage `json:"cvssV3"`
-		} `json:"baseMetricV3"`
-	} `json:"impact"`
 }
 
 type itemFeed struct {
 	year  int
-	items []cve
+	items []vuln
 }
 
 func newItemFeed(year int, r io.Reader) (*itemFeed, error) {
-	var feed cveFeed
+	var feed vulnFeed
 	err := json.NewDecoder(r).Decode(&feed)
 	if err != nil {
 		return nil, err
 	}
-	items := make([]cve, 0, feed.Count)
-	err = json.Unmarshal(feed.Items, &items)
+	items := make([]vuln, 0, feed.Total)
+	err = json.Unmarshal(feed.Vulns, &items)
 	if err != nil {
 		return nil, err
 	}
@@ -61,14 +66,36 @@ func (f *itemFeed) WriteCVSS(ctx context.Context, w io.Writer) error {
 	// anything -- the Fetch step rips out the relevant JSON.
 	var skip, wrote uint
 	enc := json.NewEncoder(w)
-	for _, c := range f.items {
-		if c.Impact.V3.CVSS == nil {
+	for _, v := range f.items {
+		if strings.EqualFold(v.CVE.VulnStatus, "Rejected") {
+			// Ignore rejected vulnerabilities.
+			skip++
+			continue
+		}
+		var enrichment json.RawMessage
+		for _, cvss := range v.CVE.Metrics.V30 {
+			if cvss.Type != "Primary" {
+				continue
+			}
+			enrichment = cvss.CVSS
+			break
+		}
+		// Prefer CVSS 3.1 over 3.0.
+		for _, cvss := range v.CVE.Metrics.V31 {
+			if cvss.Type != "Primary" {
+				continue
+			}
+			enrichment = cvss.CVSS
+			break
+		}
+		if enrichment == nil {
+			// Did not find a CVSS 3.x from the primary source.
 			skip++
 			continue
 		}
 		r := driver.EnrichmentRecord{
-			Tags:       []string{c.CVE.Meta.ID},
-			Enrichment: c.Impact.V3.CVSS,
+			Tags:       []string{v.CVE.ID},
+			Enrichment: enrichment,
 		}
 		if err := enc.Encode(&r); err != nil {
 			return err
