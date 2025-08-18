@@ -42,7 +42,7 @@ jobs:
         go: ${{ fromJSON(needs.versions.outputs.versions) }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Check verisons and dates
         run: |
           v=$(.github/scripts/get-latest-golang-minor-version.sh ${{ matrix.go }})

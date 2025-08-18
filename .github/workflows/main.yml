@@ -28,7 +28,7 @@ jobs:
       - name: Checkout
         id: checkout
         if: ${{ !cancelled() }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Check Filenames
         if: ${{ !cancelled() && steps.checkout.conclusion == 'success' }}
         run: | # Check for all the characters Windows hates.
@@ -54,7 +54,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup mdBook
         uses: peaceiris/actions-mdbook@v2
         with:
@@ -80,7 +80,7 @@ jobs:
           key: commit-ok-${{ matrix.go }}-${{ github.sha }}
       - name: Checkout
         if: steps.previous.outputs.cache-hit != 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - uses: actions/setup-go@v5
         if: steps.previous.outputs.cache-hit != 'true'
         with:
