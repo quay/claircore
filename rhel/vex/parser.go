@@ -16,6 +16,7 @@ import (
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/rpmver"
 	"github.com/quay/claircore/pkg/rhctag"
 	"github.com/quay/claircore/rhel/internal/common"
 	"github.com/quay/claircore/rhel/rhcc"
@@ -326,7 +327,19 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v csaf.Vulne
 					Msg("could not parse PURL")
 				continue
 			}
-			if !checkPURL(purl) {
+			switch err := checkPURL(purl); {
+			case err == nil:
+			case errors.Is(err, errSkipPURL):
+				zlog.Debug(ctx).
+					Stringer("purl", purl).
+					AnErr("reason", err).
+					Msg("skipping purl")
+				continue
+			default:
+				zlog.Warn(ctx).
+					Stringer("purl", purl).
+					AnErr("reason", err).
+					Msg("skipping purl")
 				continue
 			}
 			if pn, err := extractPackageName(purl); err != nil {
@@ -420,7 +433,7 @@ func newRanger() *ranger {
 // to the fixedInVersion. Add also saves the lowest range per packageName that it's seen.
 // This allows resetLowest() to zero out the lowest values we saw per packageName.
 func (r *ranger) add(packageName, fixedInVersion string) (*claircore.Range, error) {
-	var rng = &claircore.Range{}
+	rng := &claircore.Range{}
 
 	if fixedInVersion == "" {
 		zeroVer := &rhctag.Version{}
@@ -521,7 +534,19 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 				Msg("could not parse PURL")
 			continue
 		}
-		if !checkPURL(purl) {
+		switch err := checkPURL(purl); {
+		case err == nil:
+		case errors.Is(err, errSkipPURL):
+			zlog.Debug(ctx).
+				Stringer("purl", purl).
+				AnErr("reason", err).
+				Msg("skipping purl")
+			continue
+		default:
+			zlog.Warn(ctx).
+				Stringer("purl", purl).
+				AnErr("reason", err).
+				Msg("skipping purl")
 			continue
 		}
 		fixedIn, err := extractFixedInVersion(purl)
@@ -760,24 +785,64 @@ var acceptedTypes = map[string]bool{
 	packageurl.TypeRPM: true,
 }
 
+// ErrSkipPURL is a sentinel to indicate the purl fails the [checkPURL] function
+// in an expected way.
+var errSkipPURL = errors.New("skip purl")
+
+var _ error = (*skipPURLError)(nil)
+
+// SkipPURLError is the concrete type returned for "expected" [checkPURL]
+// failures.
+type skipPURLError struct {
+	Reason string
+	Value  string
+	Inner  []error
+}
+
+// Error implements [error].
+func (s *skipPURLError) Error() string {
+	return fmt.Sprintf("%s %q", s.Reason, s.Value)
+}
+
+func (s *skipPURLError) Is(tgt error) bool { return tgt == errSkipPURL }
+func (s *skipPURLError) Unwrap() []error   { return s.Inner }
+
+// SkipPURL is a helper constructor for [skipPURLError] values.
+func skipPURL(r, v string, inner ...error) error {
+	return &skipPURLError{Reason: r, Value: v, Inner: inner}
+}
+
 // CheckPURL checks if purl is something we're interested in.
 //  1. Check the purl.Type is in the acceptable types.
 //  2. Check if an advisory related to the kernel.
 //  3. Check that all RPMs are in the "redhat" namespace.
-func checkPURL(purl packageurl.PackageURL) bool {
+func checkPURL(purl packageurl.PackageURL) error {
+	var errs []error
 	if ok := acceptedTypes[purl.Type]; !ok {
-		return false
+		errs = append(errs, skipPURL("unknown type", purl.Type))
 	}
 	if strings.HasPrefix(purl.Name, "kernel") {
 		// We don't want to ingest kernel advisories as
 		// containers have no say in the kernel.
-		return false
+		errs = append(errs, skipPURL("ignore package", purl.Name))
 	}
-	if purl.Type == packageurl.TypeRPM && purl.Namespace != "redhat" {
-		// Not Red Hat rpm content.
-		return false
+
+	switch purl.Type {
+	case packageurl.TypeRPM:
+		// Check:
+		// 	- is from Red Hat
+		//	- doesn't have an obviously invalid version
+		if purl.Namespace != "redhat" {
+			errs = append(errs, skipPURL("bad namespace", purl.Namespace))
+		}
+		if v := purl.Version; v != "" {
+			if _, e := rpmver.Parse(v); e != nil {
+				errs = append(errs, skipPURL("bad version", v))
+			}
+		}
+	default: // No additional checks.
 	}
-	return true
+	return errors.Join(errs...)
 }
 
 func extractArch(purl packageurl.PackageURL) string {
