@@ -333,12 +333,14 @@ func TestParseCompare(t *testing.T) {
 					Links:              "https://access.redhat.com/security/cve/CVE-2024-24786 https://bugzilla.redhat.com/show_bug.cgi?id=2268046 https://www.cve.org/CVERecord?id=CVE-2024-24786 https://nvd.nist.gov/vuln/detail/CVE-2024-24786 https://go.dev/cl/569356 https://groups.google.com/g/golang-announce/c/ArQ6CDgtEjY/ https://pkg.go.dev/vuln/GO-2024-2611 https://security.access.redhat.com/data/csaf/v2/vex/2024/cve-2024-24786.json",
 					Severity:           "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H",
 					NormalizedSeverity: claircore.Medium,
-					Package:            &claircore.Package{Name: "go-toolset", Kind: "source", Module: "go-toolset:rhel8"},
+					Package:            &claircore.Package{Name: "cri-tools", Kind: "binary", Arch: "aarch64"},
+					FixedInVersion:     "0:1.29.0-3.1.el9",
 					Repo: &claircore.Repository{
-						Name: "cpe:2.3:o:redhat:enterprise_linux:8:*:*:*:*:*:*:*",
+						Name: "cpe:2.3:a:redhat:openshift:4.16:*:el9:*:*:*:*:*",
 						Key:  "rhel-cpe-repository",
-						CPE:  cpe.MustUnbind("cpe:2.3:o:redhat:enterprise_linux:8"),
+						CPE:  cpe.MustUnbind("cpe:2.3:a:redhat:openshift:4.16::el9"),
 					},
+					ArchOperation: claircore.OpPatternMatch,
 				},
 			},
 		},
@@ -401,45 +403,59 @@ func TestParse(t *testing.T) {
 
 	testcases := []struct {
 		name            string
-		filename        string
+		filenames       []string
 		expectedVulns   int
 		expectedDeleted int
 	}{
 		{
-			name:            "six_advisories_four_deletions",
-			filename:        "testdata/example_vex.jsonl",
+			name: "five_advisories_four_deletions",
+			filenames: []string{
+				"testdata/cve-2023-42670.json",
+				"testdata/cve-2023-42669.json",
+				"testdata/cve-2023-4154.json",
+				"testdata/cve-2023-4091.json",
+				"testdata/cve-2023-3961.json",
+				"testdata/delete_CVE-2023-0030.json",
+				"testdata/delete_CVE-2023-0031.json",
+			},
 			expectedVulns:   546,
 			expectedDeleted: 4,
 		},
 		{
 			name:            "cve-2022-1705",
-			filename:        "testdata/cve-2022-1705.jsonl",
+			filenames:       []string{"testdata/cve-2022-1705.json"},
 			expectedVulns:   1069,
 			expectedDeleted: 0,
 		},
 		{
 			name:            "cve-2024-24786",
-			filename:        "testdata/cve-2024-24786.jsonl",
+			filenames:       []string{"testdata/cve-2024-24786.json"},
 			expectedVulns:   610,
 			expectedDeleted: 0,
 		},
 		{
 			name:            "cve-2022-38752",
-			filename:        "testdata/cve-2022-38752.jsonl",
+			filenames:       []string{"testdata/cve-2022-38752.json"},
 			expectedVulns:   47,
 			expectedDeleted: 0,
 		},
 		{
 			name:            "cve-2024-7348",
-			filename:        "testdata/cve-2024-7348.jsonl",
+			filenames:       []string{"testdata/cve-2024-7348.json"},
 			expectedVulns:   910,
 			expectedDeleted: 0,
 		},
 		{
 			name:            "cve-2024-7348-new-module-format",
-			filename:        "testdata/cve-2024-7348-new-module-format.jsonl",
+			filenames:       []string{"testdata/cve-2024-7348-new-module-format.json"},
 			expectedVulns:   944,
 			expectedDeleted: 0,
+		},
+		{
+			name:            "cve-2024-24786-dont-save-errant-modules",
+			filenames:       []string{"testdata/cve-2024-24786-illegal-module.json"},
+			expectedVulns:   0,
+			expectedDeleted: 1, // when the file contains no vulnerabilities, we send a delete signal to the DB
 		},
 	}
 
@@ -448,28 +464,36 @@ func TestParse(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := zlog.Test(ctx, t)
-			f, err := os.Open(tc.filename)
-			if err != nil {
-				t.Fatalf("failed to open test data file %s: %v", tc.filename, err)
+
+			// Build a snappy stream consisting of compacted JSON blobs from each file,
+			// newline-separated to simulate JSONL input across multiple files.
+			var combined bytes.Buffer
+			for _, fn := range tc.filenames {
+				f, err := os.Open(fn)
+				if err != nil {
+					t.Fatalf("failed to open test data file %s: %v", fn, err)
+				}
+				b, err := io.ReadAll(f)
+				_ = f.Close()
+				if err != nil {
+					t.Fatalf("failed to read file bytes for %s: %v", fn, err)
+				}
+				var bc bytes.Buffer
+				if err := json.Compact(&bc, b); err != nil {
+					t.Fatalf("failed to compact JSON for %s: %v", fn, err)
+				}
+				bc.WriteByte('\n')
+				if _, err := combined.Write(bc.Bytes()); err != nil {
+					t.Fatalf("failed appending compacted JSON for %s: %v", fn, err)
+				}
 			}
 
-			// Ideally, you'd just use snappy.Encode() but apparently
-			// the stream format and the block format are not interchangeable:
-			// https://pkg.go.dev/github.com/klauspost/compress/snappy#Writer.
-			b, err := io.ReadAll(f)
-			if err != nil {
-				t.Fatalf("failed to read file bytes: %v", err)
-			}
 			var buf bytes.Buffer
 			sw := snappy.NewBufferedWriter(&buf)
-			bLen, err := sw.Write(b)
-			if err != nil {
+			if _, err := sw.Write(combined.Bytes()); err != nil {
 				t.Fatalf("error writing snappy data to buffer: %v", err)
 			}
-			if bLen != len(b) {
-				t.Errorf("didn't write the correct # of bytes")
-			}
-			if err = sw.Close(); err != nil {
+			if err := sw.Close(); err != nil {
 				t.Errorf("failed to close snappy Writer: %v", err)
 			}
 
