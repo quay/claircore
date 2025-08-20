@@ -797,3 +797,99 @@ func TestSeverityParsing(t *testing.T) {
 		})
 	}
 }
+
+func TestInsertLinksAliases(t *testing.T) {
+	tests := []struct {
+		name string
+		adv  advisory
+		want string
+	}{
+		{
+			name: "only refs",
+			adv: advisory{
+				References: []reference{
+					{URL: "https://example.com/ref1"},
+					{URL: "https://example.com/ref2"},
+				},
+				Affected: []affected{{
+					Package: _package{Ecosystem: ecosystemGo, Name: "pkg"},
+					Ranges:  []_range{{Type: "SEMVER", Events: []rangeEvent{{Introduced: "0"}}}},
+				}},
+			},
+			want: "https://example.com/ref1 https://example.com/ref2",
+		},
+		{
+			name: "only aliases single",
+			adv: advisory{
+				Aliases: []string{"CVE-2023-0001"},
+				Affected: []affected{{
+					Package: _package{Ecosystem: ecosystemGo, Name: "pkg"},
+					Ranges:  []_range{{Type: "SEMVER", Events: []rangeEvent{{Introduced: "0"}}}},
+				}},
+			},
+			want: "https://osv.dev/vulnerability/CVE-2023-0001",
+		},
+		{
+			name: "only aliases multiple",
+			adv: advisory{
+				Aliases: []string{"CVE-2023-0001", "GHSA-xxxx-yyyy"},
+				Affected: []affected{{
+					Package: _package{Ecosystem: ecosystemGo, Name: "pkg"},
+					Ranges:  []_range{{Type: "SEMVER", Events: []rangeEvent{{Introduced: "0"}}}},
+				}},
+			},
+			want: "https://osv.dev/vulnerability/CVE-2023-0001 https://osv.dev/vulnerability/GHSA-xxxx-yyyy",
+		},
+		{
+			name: "refs then aliases",
+			adv: advisory{
+				References: []reference{{URL: "https://example.com/ref1"}, {URL: "https://example.com/ref2"}},
+				Aliases:    []string{"CVE-2023-0001", "GHSA-xxxx-yyyy"},
+				Affected: []affected{{
+					Package: _package{Ecosystem: ecosystemGo, Name: "pkg"},
+					Ranges:  []_range{{Type: "SEMVER", Events: []rangeEvent{{Introduced: "0"}}}},
+				}},
+			},
+			want: "https://example.com/ref1 https://example.com/ref2 https://osv.dev/vulnerability/CVE-2023-0001 https://osv.dev/vulnerability/GHSA-xxxx-yyyy",
+		},
+		{
+			name: "single ref",
+			adv: advisory{
+				References: []reference{{URL: "https://example.com/ref1"}},
+				Affected: []affected{{
+					Package: _package{Ecosystem: ecosystemGo, Name: "pkg"},
+					Ranges:  []_range{{Type: "SEMVER", Events: []rangeEvent{{Introduced: "0"}}}},
+				}},
+			},
+			want: "https://example.com/ref1",
+		},
+		{
+			name: "empty",
+			adv: advisory{
+				Affected: []affected{{
+					Package: _package{Ecosystem: ecosystemGo, Name: "pkg"},
+					Ranges:  []_range{{Type: "SEMVER", Events: []rangeEvent{{Introduced: "0"}}}},
+				}},
+			},
+			want: "",
+		},
+	}
+
+	ctx := zlog.Test(context.Background(), t)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := newECS("osv")
+			var st stats
+			if err := (&e).Insert(ctx, &st, "pkg", &tt.adv); err != nil {
+				t.Fatalf("Insert() error: %v", err)
+			}
+			if len(e.Vulnerability) == 0 {
+				t.Fatalf("no vulnerability recorded")
+			}
+			got := e.Vulnerability[len(e.Vulnerability)-1].Links
+			if got != tt.want {
+				t.Errorf("got %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
