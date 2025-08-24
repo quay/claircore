@@ -1,31 +1,21 @@
-package rpm
+package chainguard
 
 import (
 	"context"
-	"github.com/quay/claircore/alma"
 
-	"github.com/quay/claircore/aws"
+	"github.com/quay/claircore/apk"
 	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/linux"
-	"github.com/quay/claircore/oracle"
-	"github.com/quay/claircore/photon"
-	"github.com/quay/claircore/suse"
 )
 
-// NewEcosystem provides the set of scanners and coalescers for the rpm ecosystem
+// NewEcosystem provides the set of scanners and coalescers for the chainguard/wolfi ecosystem.
 func NewEcosystem(_ context.Context) *indexer.Ecosystem {
 	return &indexer.Ecosystem{
 		PackageScanners: func(ctx context.Context) ([]indexer.PackageScanner, error) {
-			return []indexer.PackageScanner{&Scanner{}}, nil
+			return []indexer.PackageScanner{&apk.Scanner{}}, nil
 		},
 		DistributionScanners: func(ctx context.Context) ([]indexer.DistributionScanner, error) {
-			return []indexer.DistributionScanner{
-				&alma.DistributionScanner{},
-				&aws.DistributionScanner{},
-				&oracle.DistributionScanner{},
-				&suse.DistributionScanner{},
-				&photon.DistributionScanner{},
-			}, nil
+			return []indexer.DistributionScanner{&DistributionScanner{}}, nil
 		},
 		RepositoryScanners: func(ctx context.Context) ([]indexer.RepositoryScanner, error) {
 			return []indexer.RepositoryScanner{}, nil

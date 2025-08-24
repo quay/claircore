@@ -6,6 +6,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"github.com/quay/claircore/updater/repomd"
 	"io"
 	"net/http"
 	"net/url"
@@ -15,7 +16,6 @@ import (
 
 	"github.com/quay/zlog"
 
-	"github.com/quay/claircore/aws/internal/alas"
 	"github.com/quay/claircore/internal/xmlutil"
 	"github.com/quay/claircore/pkg/tmp"
 )
@@ -48,7 +48,7 @@ func NewClient(ctx context.Context, hc *http.Client, release Release) (*Client, 
 }
 
 // RepoMD returns a alas.RepoMD containing sha256 information of a repositories contents
-func (c *Client) RepoMD(ctx context.Context) (alas.RepoMD, error) {
+func (c *Client) RepoMD(ctx context.Context) (repomd.RepoMD, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "aws/Client.RepoMD")
 	for _, mirror := range c.mirrors {
 		m := *mirror
@@ -80,7 +80,7 @@ func (c *Client) RepoMD(ctx context.Context) (alas.RepoMD, error) {
 			continue
 		}
 
-		repoMD := alas.RepoMD{}
+		repoMD := repomd.RepoMD{}
 		dec := xml.NewDecoder(resp.Body)
 		dec.CharsetReader = xmlutil.CharsetReader
 		if err := dec.Decode(&repoMD); err != nil {
@@ -95,7 +95,7 @@ func (c *Client) RepoMD(ctx context.Context) (alas.RepoMD, error) {
 	}
 
 	zlog.Error(ctx).Msg("exhausted all mirrors")
-	return alas.RepoMD{}, fmt.Errorf("all mirrors failed to retrieve repo metadata")
+	return repomd.RepoMD{}, fmt.Errorf("all mirrors failed to retrieve repo metadata")
 }
 
 // Updates returns the *http.Response of the first mirror to establish a connection

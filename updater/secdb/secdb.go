@@ -1,4 +1,7 @@
-package alpine
+// Package secdb defines the common structs used in secdbs.
+//
+// Specifically, this is common between Alpine, Chainguard, and Wolfi.
+package secdb
 
 // Details define a package's name and relevant security fixes included in a
 // given version.
@@ -16,7 +19,7 @@ type Package struct {
 
 // SecurityDB is the security database structure.
 type SecurityDB struct {
-	Distroversion string    `json:"distroversion"`
+	Distroversion string    `json:"distroversion"` // Alpine, only
 	Reponame      string    `json:"reponame"`
 	Urlprefix     string    `json:"urlprefix"`
 	Apkurl        string    `json:"apkurl"`
