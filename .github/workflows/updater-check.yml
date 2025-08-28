@@ -16,4 +16,4 @@ jobs:
         with:
           check-latest: true
           go-version-file: ./go.mod
-      - run: go test ./test/periodic -enable
+      - run: go test -timeout=20m ./test/periodic -enable
