@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/quay/claircore"
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/alpine"
@@ -164,6 +165,7 @@ func runUpdaterSet(ctx context.Context, t *testing.T, set driver.UpdaterSet) {
 func runUpdater(ctx context.Context, t *testing.T, u driver.Updater) {
 	var rc io.ReadCloser
 	var nfp driver.Fingerprint
+	var vs []*claircore.Vulnerability
 	var err error
 	// Debounce any network hiccups.
 	for i := range 5 {
@@ -187,7 +189,11 @@ func runUpdater(ctx context.Context, t *testing.T, u driver.Updater) {
 		}
 	}()
 
-	vs, err := u.Parse(ctx, rc)
+	if du, ok := u.(driver.DeltaUpdater); ok {
+		vs, _, err = du.DeltaParse(ctx, rc)
+	} else {
+		vs, err = u.Parse(ctx, rc)
+	}
 	if err != nil {
 		t.Error(err)
 	}
