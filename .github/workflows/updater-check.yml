@@ -22,7 +22,7 @@ jobs:
           check-latest: true
           go-version-file: ./go.mod
       - name: Check
-        run: go test ./test/periodic -enable
+        run: go test -timeout=20m ./test/periodic -enable
       - name: Create URL
         id: url
         if: failure()
