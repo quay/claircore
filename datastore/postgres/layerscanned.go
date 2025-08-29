@@ -2,11 +2,8 @@ package postgres
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -40,14 +37,6 @@ func (s *IndexerStore) LayerScanned(ctx context.Context, hash claircore.Digest, 
 	// TODO(hank) Could this be written as a single query that reports NULL if
 	// the scanner isn't present?
 	const (
-		selectScanner = `
-SELECT
-	id
-FROM
-	scanner
-WHERE
-	name = $1 AND version = $2 AND kind = $3;
-`
 		selectScanned = `
 SELECT
 	EXISTS(
@@ -64,23 +53,14 @@ SELECT
 `
 	)
 
-	start := time.Now()
-	var scannerID int64
-	err := s.pool.QueryRow(ctx, selectScanner, scnr.Name(), scnr.Version(), scnr.Kind()).
-		Scan(&scannerID)
-	switch {
-	case errors.Is(err, nil):
-	case errors.Is(err, pgx.ErrNoRows):
-		return false, fmt.Errorf("scanner %s not found", scnr.Name())
-	default:
+	scannerID, err := s.selectScanner(scnr)
+	if err != nil {
 		return false, err
 	}
-	layerScannedCounter.WithLabelValues("selectScanner").Add(1)
-	layerScannedDuration.WithLabelValues("selectScanner").Observe(time.Since(start).Seconds())
 
 	var ok bool
 
-	start = time.Now()
+	start := time.Now()
 	err = s.pool.QueryRow(ctx, selectScanned, hash.String(), scannerID).
 		Scan(&ok)
 	if err != nil {
