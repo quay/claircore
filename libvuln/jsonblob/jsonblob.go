@@ -147,7 +147,7 @@ func (s *Store) Store(w io.Writer) error {
 			defer f.Close()
 			shim := newBufShim(f)
 			defer shim.Close()
-			for i := 0; i < ct; i++ {
+			for range ct {
 				dent := diskEntry{
 					CommonEntry: e,
 					Ref:         id,
