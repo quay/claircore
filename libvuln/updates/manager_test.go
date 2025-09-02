@@ -74,7 +74,7 @@ func TestDeltaUpdates(t *testing.T) {
 
 	if !cmp.Equal(vulns, finalVulns,
 		cmpopts.IgnoreFields(claircore.Vulnerability{}, "ID"), // Depends on the DB
-		cmpopts.SortSlices(func(a, b interface{}) bool {
+		cmpopts.SortSlices(func(a, b any) bool {
 			return a.(*claircore.Vulnerability).Name < b.(*claircore.Vulnerability).Name
 		})) {
 		t.Error(cmp.Diff(vulns, finalVulns))

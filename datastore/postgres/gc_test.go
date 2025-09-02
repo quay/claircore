@@ -207,10 +207,7 @@ func TestGC(t *testing.T) {
 				t.Fatalf("%s got: %v, want: %v", tt.name, notDone, expectedNotDone)
 			}
 
-			wantKeep := tt.keep
-			if tt.updateOps < tt.keep {
-				wantKeep = tt.updateOps
-			}
+			wantKeep := min(tt.updateOps, tt.keep)
 			expectedRemaining := 2*wantKeep + expectedNotDone
 
 			updaterOps, err := store.GetUpdateOperations(ctx, driver.VulnerabilityKind)

@@ -3,6 +3,7 @@ package updater
 import (
 	"context"
 	"errors"
+	"maps"
 	"net/http"
 	"strings"
 	"sync"
@@ -40,9 +41,7 @@ func Registered() map[string]driver.UpdaterSetFactory {
 	pkg.Lock()
 	defer pkg.Unlock()
 	r := make(map[string]driver.UpdaterSetFactory, len(pkg.fs))
-	for k, v := range pkg.fs {
-		r[k] = v
-	}
+	maps.Copy(r, pkg.fs)
 	return r
 }
 
@@ -85,4 +84,4 @@ func Configure(ctx context.Context, fs map[string]driver.UpdaterSetFactory, cfg 
 }
 
 // NoopConfig is used when an explicit config is not provided.
-func noopConfig(_ interface{}) error { return nil }
+func noopConfig(_ any) error { return nil }

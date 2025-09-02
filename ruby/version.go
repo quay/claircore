@@ -46,7 +46,7 @@ func (v Version) Compare(other Version) int {
 	leftLen := len(segs)
 	rightLen := len(otherSegs)
 	limit := max(leftLen, rightLen)
-	for i := 0; i < limit; i++ {
+	for i := range limit {
 		left, right := Segment(numericSegment("0")), Segment(numericSegment("0"))
 		if i < leftLen {
 			left = segs[i]

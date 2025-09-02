@@ -73,7 +73,7 @@ func TestCoalescer(t *testing.T) {
 	}
 	// we expect packages 1-4 to be tagged with dist id 1
 	// and packages 5-6 to be tagged with dist id 2
-	for i := 0; i < 4; i++ {
+	for i := range 4 {
 		environment := ir.Environments[strconv.Itoa(i)][0]
 		if environment.DistributionID != "1" {
 			t.Fatalf("expected distribution id %d but got %s", 1, environment.DistributionID)

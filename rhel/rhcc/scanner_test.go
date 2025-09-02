@@ -174,7 +174,7 @@ func TestContainerScanner(t *testing.T) {
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 	var cs scanner
-	cf := func(v interface{}) error {
+	cf := func(v any) error {
 		cfg := v.(*ScannerConfig)
 		cfg.Name2ReposMappingURL = srv.URL + "/container-name-repos-map.json"
 		return nil

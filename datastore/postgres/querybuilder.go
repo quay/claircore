@@ -86,7 +86,7 @@ func buildGetQuery(record *claircore.IndexRecord, opts *datastore.GetOpts) (stri
 		var lit strings.Builder
 		b := make([]byte, 0, 16)
 		lit.WriteString("'{")
-		for i := 0; i < 10; i++ {
+		for i := range 10 {
 			if i != 0 {
 				lit.WriteByte(',')
 			}

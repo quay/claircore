@@ -10,7 +10,7 @@ import (
 // any scanner fields be duplicates
 func GenUniquePackageScanners(n int) indexer.VersionedScanners {
 	var vscnrs = []indexer.VersionedScanner{}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		name, version, kind := fmt.Sprintf("test-scanner-%d", i), fmt.Sprintf("version-%d", i), fmt.Sprint("package")
 		m := indexer.NewPackageScannerMock(name, version, kind)
 		vscnrs = append(vscnrs, indexer.VersionedScanner(m))
@@ -23,7 +23,7 @@ func GenUniquePackageScanners(n int) indexer.VersionedScanners {
 // any scanner fields be duplicates
 func GenUniqueDistributionScanners(n int) indexer.VersionedScanners {
 	var vscnrs = []indexer.VersionedScanner{}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		name, version, kind := fmt.Sprintf("test-scanner-%d", i), fmt.Sprintf("version-%d", i), fmt.Sprint("distribution")
 		m := indexer.NewPackageScannerMock(name, version, kind)
 		vscnrs = append(vscnrs, indexer.VersionedScanner(m))
@@ -36,7 +36,7 @@ func GenUniqueDistributionScanners(n int) indexer.VersionedScanners {
 // any scanner fields be duplicates
 func GenUniqueRepositoryScanners(n int) indexer.VersionedScanners {
 	var vscnrs = []indexer.VersionedScanner{}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		name, version, kind := fmt.Sprintf("test-scanner-%d", i), fmt.Sprintf("version-%d", i), fmt.Sprint("repository")
 		m := indexer.NewPackageScannerMock(name, version, kind)
 		vscnrs = append(vscnrs, indexer.VersionedScanner(m))

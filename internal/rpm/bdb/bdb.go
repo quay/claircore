@@ -46,7 +46,7 @@ Again:
 		return errors.New("bdb: database encryption not supported")
 	}
 	ok := false
-	for i := 0; i < 8; i++ {
+	for i := range 8 {
 		var sz uint32 = (1 << i) * 512
 		if db.m.PageSize == sz {
 			ok = true

@@ -118,7 +118,7 @@ func Benchmark_PackagesByLayer(b *testing.B) {
 			}
 
 			b.ResetTimer()
-			for i := 0; i < b.N; i++ {
+			for b.Loop() {
 				_, err := store.PackagesByLayer(ctx, bench.hash, vscnrs)
 				if err != nil {
 					b.Fatalf("failed to retrieve packages by layer: %v", err)

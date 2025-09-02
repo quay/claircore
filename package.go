@@ -24,13 +24,13 @@ type Package struct {
 	// NormalizedVersion is a representation of a version string that's
 	// correctly ordered when compared with other representations from the same
 	// producer.
-	NormalizedVersion Version `json:"normalized_version,omitempty"`
+	NormalizedVersion Version `json:"normalized_version"`
 	// Module and stream which this package is part of
 	Module string `json:"module,omitempty"`
 	// Package architecture
 	Arch string `json:"arch,omitempty"`
 	// CPE name for package
-	CPE cpe.WFN `json:"cpe,omitempty"`
+	CPE cpe.WFN `json:"cpe"`
 }
 
 const (

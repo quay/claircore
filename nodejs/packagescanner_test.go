@@ -1,7 +1,6 @@
 package nodejs_test
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"testing"
@@ -15,8 +14,7 @@ import (
 
 func TestScanLocal(t *testing.T) {
 	t.Parallel()
-	ctx, done := context.WithCancel(context.Background())
-	defer done()
+	ctx := t.Context()
 
 	table := []struct {
 		name      string

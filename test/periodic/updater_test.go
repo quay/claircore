@@ -21,7 +21,7 @@ import (
 )
 
 // Helper for keeping the default configuration.
-func noopConfigure(_ interface{}) error {
+func noopConfigure(_ any) error {
 	return nil
 }
 
@@ -166,7 +166,7 @@ func runUpdater(ctx context.Context, t *testing.T, u driver.Updater) {
 	var nfp driver.Fingerprint
 	var err error
 	// Debounce any network hiccups.
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		rc, nfp, err = u.Fetch(ctx, fp)
 		if err == nil {
 			break

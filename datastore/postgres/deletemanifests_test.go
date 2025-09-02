@@ -253,7 +253,7 @@ INSERT INTO manifest_layer (i, manifest_id, layer_id)
 		s := NewIndexerStore(pool)
 		ctx := zlog.Test(ctx, t)
 		toDelete := make([]claircore.Digest, manifestsN)
-		for i := 0; i < manifestsN; i++ {
+		for i := range manifestsN {
 			ir := &claircore.IndexReport{}
 			ir.Hash = test.RandomSHA256Digest(t)
 			toDelete[i] = ir.Hash
