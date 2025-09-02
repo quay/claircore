@@ -31,6 +31,12 @@ type Package struct {
 	Arch string `json:"arch,omitempty"`
 	// CPE name for package
 	CPE cpe.WFN `json:"cpe,omitempty"`
+	// Scanner name
+	ScannerName string `json:"scanner_name,omitempty"`
+	// Scanner version
+	ScannerVersion string `json:"scanner_version,omitempty"`
+	// Scanner kind
+	ScannerKind string `json:"scanner_kind,omitempty"`
 }
 
 const (
