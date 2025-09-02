@@ -65,7 +65,7 @@ func (o ArchOp) Value() (driver.Value, error) {
 	return o.String(), nil
 }
 
-func (o *ArchOp) Scan(i interface{}) error {
+func (o *ArchOp) Scan(i any) error {
 	switch v := i.(type) {
 	case []byte:
 		return o.UnmarshalText(v)
