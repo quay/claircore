@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"maps"
 	"sync"
 
 	"golang.org/x/sync/errgroup"
@@ -115,21 +116,13 @@ func MergeSR(source *claircore.IndexReport, merge []*claircore.IndexReport) *cla
 		for k, v := range ir.Environments {
 			source.Environments[k] = append(source.Environments[k], v...)
 		}
-		for k, v := range ir.Packages {
-			source.Packages[k] = v
-		}
+		maps.Copy(source.Packages, ir.Packages)
 
-		for k, v := range ir.Distributions {
-			source.Distributions[k] = v
-		}
+		maps.Copy(source.Distributions, ir.Distributions)
 
-		for k, v := range ir.Repositories {
-			source.Repositories[k] = v
-		}
+		maps.Copy(source.Repositories, ir.Repositories)
 
-		for k, v := range ir.Files {
-			source.Files[k] = v
-		}
+		maps.Copy(source.Files, ir.Files)
 	}
 	return source
 }
