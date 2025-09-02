@@ -98,7 +98,7 @@ func TestMatcherIntegration(t *testing.T) {
 		"debian": fac,
 	}
 	cfg := map[string]driver.ConfigUnmarshaler{
-		"debian": func(v interface{}) error {
+		"debian": func(v any) error {
 			cfg := v.(*FactoryConfig)
 			cfg.MirrorURL = srv.URL
 			cfg.JSONURL = srv.URL
