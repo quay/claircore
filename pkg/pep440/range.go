@@ -87,7 +87,7 @@ func ParseRange(r string) (Range, error) {
 	r = strings.Map(stripSpace, r)
 
 	var ret []criterion
-	for _, r := range strings.Split(r, ",") {
+	for r := range strings.SplitSeq(r, ",") {
 		i := strings.LastIndexAny(r, op) + 1
 		o := r[:i]
 		v, err := Parse(r[i:])
