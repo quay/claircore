@@ -31,7 +31,7 @@ type Updater struct {
 // periodically updated from the endpoint "url."
 //
 // To omit an initial value, use a typed nil pointer.
-func NewUpdater(url string, init interface{}) *Updater {
+func NewUpdater(url string, init any) *Updater {
 	u := Updater{
 		url:     url,
 		typ:     reflect.TypeOf(init).Elem(),
@@ -43,7 +43,7 @@ func NewUpdater(url string, init interface{}) *Updater {
 
 // Get returns a pointer to the current copy of the value. The Get call may be
 // hijacked to update the value from the configured endpoint.
-func (u *Updater) Get(ctx context.Context, c *http.Client) (interface{}, error) {
+func (u *Updater) Get(ctx context.Context, c *http.Client) (any, error) {
 	ctx = zlog.ContextWithValues(ctx,
 		"component", "rhel/internal/common/Updater.Get")
 	var err error
