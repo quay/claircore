@@ -38,6 +38,9 @@ var (
 //doc:url updater
 const DefaultURL = `https://osv-vulnerabilities.storage.googleapis.com/`
 
+// AliasBaseURL is the URL to prepend to aliases to convert them into links.
+const aliasBaseURL = `https://osv.dev/vulnerability/`
+
 // Factory is the UpdaterSetFactory exposed by this package.
 //
 // [Configure] must be called before [UpdaterSet]. See the [FactoryConfig] type.
@@ -546,6 +549,10 @@ func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *adviso
 			b.WriteByte(' ')
 		}
 		b.WriteString(ref.URL)
+	}
+	for _, alias := range a.Aliases {
+		b.WriteByte(' ')
+		b.WriteString(aliasBaseURL + alias)
 	}
 	proto.Links = b.String()
 	for i := range a.Affected {
