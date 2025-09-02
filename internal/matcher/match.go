@@ -110,7 +110,7 @@ func EnrichedMatch(ctx context.Context, ir *claircore.IndexReport, ms []driver.M
 	mCh := make(chan driver.Matcher)
 	vCh := make(chan map[string][]*claircore.Vulnerability, lim)
 	mg, mctx := errgroup.WithContext(ctx) // match group, match context
-	for i := 0; i < lim; i++ {
+	for range lim {
 		mg.Go(func() error { // Worker
 			var m driver.Matcher
 			for m = range mCh {
@@ -191,7 +191,7 @@ func EnrichedMatch(ctx context.Context, ir *claircore.IndexReport, ms []driver.M
 	})
 	// Use an atomic to track closing the results channel.
 	ct := uint32(lim)
-	for i := 0; i < lim; i++ {
+	for range lim {
 		eg.Go(func() error { // Worker
 			defer func() {
 				if atomic.AddUint32(&ct, ^uint32(0)) == 0 {
