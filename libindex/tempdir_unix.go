@@ -3,6 +3,7 @@
 package libindex
 
 import (
+	"cmp"
 	"os"
 )
 
@@ -10,11 +11,5 @@ import (
 //
 // See [NewRemoteFetchArena].
 func fixTemp(dir string) string {
-	if dir != "" {
-		return dir
-	}
-	if d, ok := os.LookupEnv("TMPDIR"); ok && d != "" {
-		return d
-	}
-	return "/var/tmp"
+	return cmp.Or(dir, os.Getenv("TMPDIR"), "/var/tmp")
 }

@@ -2,55 +2,66 @@ package libindex
 
 import (
 	"errors"
-	"fmt"
+	"io/fs"
 	"os"
 	"sync"
+	"weak"
 
 	"golang.org/x/sys/unix"
 )
 
-var tmpMap sync.Map
-
-func canTmp(dir string) (ok, loaded bool) {
-	v, loaded := tmpMap.Load(dir)
-	if v == nil {
-		return false, loaded
-	}
-	return v.(bool), loaded
+var tmpMap = struct {
+	sync.RWMutex
+	// This map never gets cleaned up, but also never pins the [os.Root] object.
+	dir map[weak.Pointer[os.Root]]bool
+}{
+	dir: make(map[weak.Pointer[os.Root]]bool),
 }
 
-func setTmp(dir string, ok bool) {
-	tmpMap.Store(dir, ok)
-}
-
-type tempFile struct {
-	*os.File
-}
-
-func openTemp(dir string) (*tempFile, error) {
-	var f *os.File
-	var err error
-
-	ok, loaded := canTmp(dir)
-	switch {
-	case loaded && ok:
-		f, err = os.OpenFile(dir, os.O_WRONLY|unix.O_TMPFILE, 0644)
-	case loaded && !ok:
-		f, err = os.CreateTemp(dir, "fetcher.*")
-	case !loaded:
-		f, err = os.OpenFile(dir, os.O_WRONLY|unix.O_TMPFILE, 0644)
-		if err == nil || !errors.Is(err, unix.ENOTSUP) {
-			ok = true
-			break
-		}
-		f, err = os.CreateTemp(dir, "fetcher.*")
-	default:
-		panic("unreachable")
-	}
+func canTmp(dir *os.Root) bool {
+	key := weak.Make(dir)
+	tmpMap.RLock()
+	ok, loaded := tmpMap.dir[key]
+	tmpMap.RUnlock()
+	// want the default inverted:
 	if !loaded {
-		setTmp(dir, ok)
+		ok = true
 	}
-	if !ok && err == nil {
+	return ok
+}
+
+func setTmp(dir *os.Root, ok bool) {
+	key := weak.Make(dir)
+	tmpMap.Lock()
+	defer tmpMap.Unlock()
+	tmpMap.dir[key] = ok
+}
+
+func openTemp(dir *os.Root) (f *os.File, err error) {
+	tmpOK := canTmp(dir)
+
+Loop:
+	for {
+		name := "."
+		flag := os.O_WRONLY
+		if !tmpOK {
+			name = fetchFilename()
+		} else {
+			flag |= unix.O_TMPFILE
+		}
+		f, err = dir.OpenFile(name, flag, 0o644)
+		switch {
+		case tmpOK && errors.Is(err, unix.ENOTSUP):
+			tmpOK = false
+			setTmp(dir, false)
+			// Now try again using the fallback path.
+		case !tmpOK && errors.Is(err, fs.ErrExist):
+			// Try again because the process just guessed a bad name.
+		default:
+			break Loop
+		}
+	}
+	if !tmpOK && err == nil {
 		// This is just a best-effort action to keep files from accumulating.
 		// The correct way is to use the kernel feature for this: the O_TMPFILE flag.
 		_ = os.Remove(f.Name())
@@ -59,17 +70,5 @@ func openTemp(dir string) (*tempFile, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &tempFile{File: f}, nil
-}
-
-func (t *tempFile) Reopen() (*os.File, error) {
-	fd := int(t.Fd())
-	if fd == -1 {
-		return nil, errStale
-	}
-	p := fmt.Sprintf("/proc/self/fd/%d", fd)
-	// Need to use OpenFile so that the symlink is not dereferenced.
-	// There's some proc magic so that opening that symlink itself copies the
-	// description.
-	return os.OpenFile(p, os.O_RDONLY, 0644)
+	return f, nil
 }
