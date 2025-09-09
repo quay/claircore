@@ -32,8 +32,8 @@ import (
 func TestParse(t *testing.T) {
 	t.Parallel()
 	ctx := zlog.Test(context.Background(), t)
-	const url = `https://archive.apache.org/dist/cassandra/4.0.0/apache-cassandra-4.0.0-bin.tar.gz`
-	const sha = `2ff17bda7126c50a2d4b26fe6169807f35d2db9e308dc2851109e1c7438ac2f1`
+	const url = `https://repo1.maven.org/maven2/com/orientechnologies/orientdb-community/3.2.37/orientdb-community-3.2.37.tar.gz`
+	const sha = `101d93340ae17cfdc622ef37e30c8c3993874ab199fd5ff3fc76d466740fefe3`
 	name := fetch(t, url, sha)
 
 	f, err := os.Open(name)
@@ -71,8 +71,11 @@ func TestParse(t *testing.T) {
 			switch {
 			case errors.Is(err, nil):
 				t.Log(ps)
-			case filepath.Base(h.Name) == "javax.inject-1.jar" && errors.Is(err, ErrNotAJar):
-				// This is an odd one, it has no metadata.
+			case (filepath.Base(h.Name) == "graal-sdk-21.3.5.jar" ||
+				filepath.Base(h.Name) == "regex-21.3.5.jar" ||
+				filepath.Base(h.Name) == "js-scriptengine-21.3.5.jar" ||
+				filepath.Base(h.Name) == "profiler-21.3.5.jar") && errors.Is(err, ErrNotAJar):
+				// These are odd ones, there's no MANIFEST.MF or pom.properties files.
 				t.Log(err)
 			default:
 				t.Errorf("unexpected: %v", err)
