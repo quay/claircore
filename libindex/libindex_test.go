@@ -154,8 +154,7 @@ func BenchmarkAffectedManifests(b *testing.B) {
 	ctx = zlog.Test(ctx, b)
 	li := &Libindex{store: s}
 
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
+	for b.Loop() {
 		_, err := li.AffectedManifests(ctx, createTestVulns(100))
 		if err != nil {
 			b.Fatalf("did not expect error: %v", err)
