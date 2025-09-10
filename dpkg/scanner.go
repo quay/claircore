@@ -240,7 +240,7 @@ Restart:
 	hdr, err := tp.ReadMIMEHeader()
 	for ; err == nil && len(hdr) > 0; hdr, err = tp.ReadMIMEHeader() {
 		var ok, installed bool
-		for _, s := range strings.Fields(hdr.Get("Status")) {
+		for s := range strings.FieldsSeq(hdr.Get("Status")) {
 			switch s {
 			case "installed":
 				installed = true
