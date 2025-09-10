@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-type Additional interface{}
+type Additional any
 
 type Response struct {
 	Code    string `json:"code"`
