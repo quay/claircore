@@ -50,7 +50,7 @@ func (vs *VersionedScanners) PStoVS(scnrs []PackageScanner) {
 	} else {
 		*vs = (*vs)[:n]
 	}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		(*vs)[i] = scnrs[i]
 	}
 }
@@ -73,7 +73,7 @@ func (vs *VersionedScanners) DStoVS(scnrs []DistributionScanner) {
 	} else {
 		*vs = (*vs)[:n]
 	}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		(*vs)[i] = scnrs[i]
 	}
 }
@@ -96,7 +96,7 @@ func (vs *VersionedScanners) RStoVS(scnrs []RepositoryScanner) {
 	} else {
 		*vs = (*vs)[:n]
 	}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		(*vs)[i] = scnrs[i]
 	}
 }
@@ -119,7 +119,7 @@ func (vs *VersionedScanners) FStoVS(scnrs []FileScanner) {
 	} else {
 		*vs = (*vs)[:n]
 	}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		(*vs)[i] = scnrs[i]
 	}
 }
