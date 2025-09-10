@@ -2,6 +2,7 @@ package suse
 
 import (
 	"context"
+	"slices"
 
 	version "github.com/knqyf263/go-rpm-version"
 
@@ -31,9 +32,9 @@ func (*Matcher) Filter(record *claircore.IndexRecord) bool {
 	}
 
 	switch {
-	case contains(OSReleaseIDs, record.Distribution.DID):
+	case slices.Contains(OSReleaseIDs, record.Distribution.DID):
 		return true
-	case contains(OSReleaseNames, record.Distribution.Name):
+	case slices.Contains(OSReleaseNames, record.Distribution.Name):
 		return true
 	default:
 		return false
@@ -62,19 +63,4 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 		cmp = func(i int) bool { return i == version.LESS }
 	}
 	return cmp(pkgVer.Compare(vulnVer)) && vuln.ArchOperation.Cmp(record.Package.Arch, vuln.Package.Arch), nil
-}
-
-// contains is a helper function to see if a slice of strings contains a specific string
-func contains(opts []string, s string) bool {
-
-	// Iterate through list
-	for _, opt := range opts {
-
-		// If found
-		if opt == s {
-			return true
-		}
-	}
-	// Not found
-	return false
 }
