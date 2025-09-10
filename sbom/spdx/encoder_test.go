@@ -62,7 +62,7 @@ func TestEncoder(t *testing.T) {
 			}
 			defer w.Close()
 
-			var want map[string]interface{}
+			var want map[string]any
 			if err := json.NewDecoder(w).Decode(&want); err != nil {
 				t.Error(err)
 			}
@@ -75,7 +75,7 @@ func TestEncoder(t *testing.T) {
 			if err := e.Encode(ctx, &buf, &ir); err != nil {
 				t.Error(err)
 			}
-			var got map[string]interface{}
+			var got map[string]any
 			if err := json.NewDecoder(&buf).Decode(&got); err != nil {
 				t.Error(err)
 			}
