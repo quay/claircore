@@ -166,7 +166,7 @@ func (u *Updater) Run(ctx context.Context, strict bool) error {
 		}
 		return nil
 	})
-	for i := 0; i < lim; i++ {
+	for range lim {
 		eg.Go(func() error {
 			defer wg.Done()
 			spool, err := os.CreateTemp(tmpDir, tmpPattern)
