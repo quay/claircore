@@ -17,7 +17,7 @@ func TestFactory(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
 	root, c := ServeSecDB(t, "testdata/server.txtar")
 	fac := &Factory{}
-	err := fac.Configure(ctx, func(v interface{}) error {
+	err := fac.Configure(ctx, func(v any) error {
 		cf := v.(*FactoryConfig)
 		cf.URL = root + "/"
 		return nil
