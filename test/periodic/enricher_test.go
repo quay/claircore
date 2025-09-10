@@ -27,7 +27,7 @@ func runEnricher(ctx context.Context, t *testing.T, u driver.EnrichmentUpdater) 
 	var nfp driver.Fingerprint
 	var err error
 	// Debounce any network hiccups.
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		rc, nfp, err = u.FetchEnrichment(ctx, fp)
 		if err == nil {
 			break
