@@ -15,7 +15,7 @@ import (
 func TestCVSS(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
 	e := &cvss.Enricher{}
-	err := e.Configure(ctx, func(interface{}) error { return nil }, pkgClient)
+	err := e.Configure(ctx, func(any) error { return nil }, pkgClient)
 	if err != nil {
 		t.Fatal(err)
 	}
