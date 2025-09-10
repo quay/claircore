@@ -23,6 +23,78 @@ import (
 	"github.com/quay/claircore/toolkit/types/csaf"
 )
 
+func TestComponentPURLToModuleName(t *testing.T) {
+	testcases := []struct {
+		name string
+		in   packageurl.PackageURL
+		want string
+		err  bool
+	}{
+		{
+			name: "old version",
+			in: packageurl.PackageURL{
+				Type:      "rpmmod",
+				Namespace: "redhat",
+				Name:      "postgresql",
+				Version:   "13:8060020240903094008:ad008a3a",
+			},
+			want: "",
+		},
+		{
+			name: "simple",
+			in: packageurl.PackageURL{
+				Type:      packageurl.TypeRPM,
+				Namespace: "redhat",
+				Name:      "postgresql-upgrade-devel-debuginfo",
+				Version:   "15.8-1.module+el9.4.0+22208+cd6b92ff",
+				Qualifiers: packageurl.QualifiersFromMap(map[string]string{
+					"arch":   "s390x",
+					"rpmmod": "postgresql:15:9040020240812115436:rhel9",
+				}),
+			},
+			want: "postgresql:15",
+		},
+		{
+			name: "short version",
+			in: packageurl.PackageURL{
+				Type:       packageurl.TypeRPM,
+				Namespace:  "redhat",
+				Name:       "golang-race",
+				Qualifiers: packageurl.QualifiersFromMap(map[string]string{"rpmmod": "go-toolset:rhel8"}),
+			},
+			want: "go-toolset:rhel8",
+		},
+		{
+			name: "empty rpmmod",
+			in: packageurl.PackageURL{
+				Type:       packageurl.TypeRPM,
+				Namespace:  "redhat",
+				Name:       "golang-race",
+				Qualifiers: packageurl.QualifiersFromMap(map[string]string{"rpmmod": ""}),
+			},
+			err: true,
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := componentPURLToModuleName(tc.in)
+			if tc.err {
+				if err == nil {
+					t.Fatalf("expected error, got nil")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("expected %s but got %s", tc.want, got)
+			}
+		})
+	}
+}
+
+// TestCreatePackageModule tests the createPackageModule function. This function is deprecated.
 func TestCreatePackageModule(t *testing.T) {
 	testcases := []struct {
 		name           string
@@ -439,8 +511,8 @@ func TestParse(t *testing.T) {
 		{
 			name:            "cve-2024-24786-new-module-format",
 			filenames:       []string{"testdata/cve-2024-24786-1.json"},
-			expectedVulns:   0,
-			expectedDeleted: 1, // when the file contains no vulnerabilities, we send a delete signal to the DB
+			expectedVulns:   686,
+			expectedDeleted: 0, // when the file contains no vulnerabilities, we send a delete signal to the DB
 		},
 	}
 
