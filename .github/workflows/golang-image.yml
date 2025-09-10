@@ -1,6 +1,7 @@
 ---
 name: Build and publish golang image
-
+permissions:
+  contents: read
 on:
   workflow_dispatch:
     inputs:
@@ -43,10 +44,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          persist-credentials: false
       - name: Check verisons and dates
+        env:
+          MATRIX_GO: ${{ matrix.go }}
         run: |
-          v=$(.github/scripts/get-latest-golang-minor-version.sh ${{ matrix.go }})
-          t=$(curl -sSLf "https://quay.io/api/v1/repository/${QUAY_ORG}/${QUAY_REPO}/tag/?specificTag=${{ matrix.go }}&onlyActiveTags=true" |
+          v=$(.github/scripts/get-latest-golang-minor-version.sh "${MATRIX_GO}")
+          t=$(curl -sSLf "https://quay.io/api/v1/repository/${QUAY_ORG}/${QUAY_REPO}/tag/?specificTag=${MATRIX_GO}&onlyActiveTags=true" |
             jq -r '.tags[0].last_modified//"Thu, 01 Jan 1970 00:00:00 -0000"')
           g=$(curl -sSLfI --http2 "https://dl.google.com/go/go${v}.linux-amd64.tar.gz" |
             awk 'BEGIN {FS=": "}/^last-modified/{print $2}')

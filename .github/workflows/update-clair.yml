@@ -8,10 +8,14 @@ name: Create PR for Clair
 jobs:
   send-pull-requests:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
     steps:
       - name: Setup
         run: |
-          tag=`basename ${{ github.ref }}`
+          tag=`basename "${GITHUB_REF}"`
           branch="chore-update-claircore-to-${tag}"
           echo "VERSION=${tag}" >> $GITHUB_ENV
           echo "BRANCH=${branch}" >> $GITHUB_ENV
@@ -28,11 +32,12 @@ jobs:
         with:
           ref: main
           repository: quay/clair
+          persist-credentials: false
 
       - name: Update claircore
         run: |
           # Update the script files to the latest version.
-          go get github.com/quay/claircore@${{ env.VERSION }}
+          go get "github.com/quay/claircore@${VERSION}"
           go mod tidy
 
       - name: Create Pull Request

@@ -16,16 +16,22 @@ jobs:
   prepare:
     name: Prepare Release
     runs-on: 'ubuntu-latest'
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@v5
         with:
           ref: ${{ github.event.inputs.branch }}
           fetch-depth: 0
+          persist-credentials: true # need the changelog ref
       - name: Changelog
+        env:
+          TAG: ${{ github.event.inputs.tag }}
         run: |
           git fetch --tags origin refs/notes/changelog:refs/notes/changelog
-          .github/scripts/changelog-update "${{ github.event.inputs.tag }}"
+          .github/scripts/changelog-update "${TAG}"
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v7
         with:
