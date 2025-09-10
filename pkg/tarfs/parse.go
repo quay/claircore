@@ -23,7 +23,7 @@ var ErrFormat = errors.New("tarfs: format error reading file")
 // ParseErr returns an error that .Is reports true for ErrFormat.
 //
 // The `%w` verb does not work.
-func parseErr(f string, v ...interface{}) error {
+func parseErr(f string, v ...any) error {
 	return parseError(fmt.Sprintf(f, v...))
 }
 
