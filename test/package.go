@@ -18,7 +18,7 @@ func GenDuplicatePackages(n int) ([]*claircore.Package, error) {
 
 	pkgs := []*claircore.Package{}
 	nn := n / 2
-	for i := 0; i < n; i++ {
+	for i := range n {
 		ii := i % nn
 		pkgs = append(pkgs, createPackage(i, ii, n))
 	}
@@ -32,7 +32,7 @@ func GenDuplicatePackages(n int) ([]*claircore.Package, error) {
 // are given an n + 1 ID to avoid duplicated primary keys on insert.
 func GenUniquePackages(n int) []*claircore.Package {
 	pkgs := []*claircore.Package{}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		pkgs = append(pkgs, createPackage(i, i, n))
 	}
 

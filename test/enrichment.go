@@ -12,7 +12,7 @@ import (
 // content.
 func GenEnrichments(n int) []driver.EnrichmentRecord {
 	var rs []driver.EnrichmentRecord
-	for i := 0; i < n; i++ {
+	for i := range n {
 		t := strconv.Itoa(i)
 		e := fmt.Sprintf(`{"%[1]d":{"id":%[1]d}}`, i)
 		rs = append(rs, driver.EnrichmentRecord{

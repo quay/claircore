@@ -12,7 +12,7 @@ import (
 // The array is guaranteed not to have any duplicated fields.
 func GenUniqueRepositories(n int, opts ...GenRepoOption) []*claircore.Repository {
 	repos := []*claircore.Repository{}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		r := claircore.Repository{
 			ID:   strconv.Itoa(i),
 			Name: fmt.Sprintf("repository-%d", i),
