@@ -3,6 +3,7 @@ package updater
 import (
 	"context"
 	"errors"
+	"maps"
 	"net/http"
 	"strings"
 	"sync"
@@ -40,9 +41,7 @@ func Registered() map[string]driver.UpdaterSetFactory {
 	pkg.Lock()
 	defer pkg.Unlock()
 	r := make(map[string]driver.UpdaterSetFactory, len(pkg.fs))
-	for k, v := range pkg.fs {
-		r[k] = v
-	}
+	maps.Copy(r, pkg.fs)
 	return r
 }
 
