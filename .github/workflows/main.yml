@@ -1,6 +1,7 @@
 ---
 name: CI
-
+permissions:
+  contents: read
 on:
   push:
     branches:
@@ -29,6 +30,8 @@ jobs:
         id: checkout
         if: ${{ !cancelled() }}
         uses: actions/checkout@v5
+        with:
+          persist-credentials: false
       - name: Check Filenames
         if: ${{ !cancelled() && steps.checkout.conclusion == 'success' }}
         run: | # Check for all the characters Windows hates.
@@ -55,6 +58,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          persist-credentials: false
       - name: Setup mdBook
         uses: peaceiris/actions-mdbook@v2
         with:
@@ -81,6 +86,8 @@ jobs:
       - name: Checkout
         if: steps.previous.outputs.cache-hit != 'true'
         uses: actions/checkout@v5
+        with:
+          persist-credentials: false
       - uses: actions/setup-go@v6
         if: steps.previous.outputs.cache-hit != 'true'
         with:

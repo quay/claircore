@@ -1,0 +1,18 @@
+rules:
+  unpinned-uses:
+    config:
+      policies:
+        # Default:
+        '*': hash-pin
+        # Our workflows:
+        quay/clair-workflows: any
+        # Known actions:
+        actions/*: ref-pin
+        codecov/codecov-action: ref-pin
+        gsactions/commit-message-checker: ref-pin
+        peaceiris/actions-gh-pages: ref-pin
+        peaceiris/actions-mdbook: ref-pin
+        peter-evans/create-pull-request: ref-pin
+        redhat-actions/*: ref-pin
+        sequoia-pgp/fast-forward: ref-pin
+        tibdex/github-app-token: ref-pin
