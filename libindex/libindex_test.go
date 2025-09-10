@@ -17,7 +17,7 @@ import (
 
 func createTestVulns(n int) []claircore.Vulnerability {
 	vulns := []claircore.Vulnerability{}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		vulns = append(vulns, claircore.Vulnerability{
 			ID:                 strconv.Itoa(i),
 			Name:               "CVE-2018-20187",

@@ -266,7 +266,7 @@ func (l *Libindex) AffectedManifests(ctx context.Context, vulns []claircore.Vuln
 		}
 	}
 V:
-	for i := 0; i < len(vulns); i++ {
+	for i := range vulns {
 		g.Go(do(i))
 		select {
 		case <-ctx.Done():
