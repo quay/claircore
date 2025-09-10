@@ -16,7 +16,7 @@ type MatcherFactory interface {
 //
 // The function should populate a passed struct with any configuration
 // information.
-type MatcherConfigUnmarshaler func(interface{}) error
+type MatcherConfigUnmarshaler func(any) error
 
 // MatcherConfigurable is an interface that MatcherFactory can implement to opt-in to having
 // their configuration provided dynamically.
