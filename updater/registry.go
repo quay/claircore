@@ -85,4 +85,4 @@ func Configure(ctx context.Context, fs map[string]driver.UpdaterSetFactory, cfg 
 }
 
 // NoopConfig is used when an explicit config is not provided.
-func noopConfig(_ interface{}) error { return nil }
+func noopConfig(_ any) error { return nil }
