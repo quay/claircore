@@ -205,9 +205,9 @@ func (c *Client) getMirrors(ctx context.Context, list string) error {
 	}
 
 	b := strings.TrimSuffix(string(body), "\n")
-	urls := strings.Split(b, "\n")
+	urls := strings.SplitSeq(b, "\n")
 
-	for _, u := range urls {
+	for u := range urls {
 		uu, err := url.Parse(u)
 		if err != nil {
 			return fmt.Errorf("could not parse returned mirror %v as URL: %v", u, err)
