@@ -4,6 +4,7 @@ package registry
 import (
 	"context"
 	"errors"
+	"maps"
 	"net/http"
 	"strings"
 	"sync"
@@ -35,9 +36,7 @@ func Registered() map[string]driver.MatcherFactory {
 	pkg.Lock()
 	defer pkg.Unlock()
 	r := make(map[string]driver.MatcherFactory, len(pkg.fs))
-	for k, v := range pkg.fs {
-		r[k] = v
-	}
+	maps.Copy(r, pkg.fs)
 	return r
 }
 
