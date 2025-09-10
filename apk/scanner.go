@@ -80,8 +80,8 @@ func (*Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.
 	// can't because the database "keys" are case sensitive, unlike MIME
 	// headers. So, roll our own entry and header splitting.
 	delim := []byte("\n\n")
-	entries := bytes.Split(b, delim)
-	for _, entry := range entries {
+	entries := bytes.SplitSeq(b, delim)
+	for entry := range entries {
 		if len(entry) == 0 {
 			continue
 		}
