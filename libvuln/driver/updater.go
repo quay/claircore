@@ -52,7 +52,7 @@ type Fingerprint string
 //
 // The function should populate a passed struct with any configuration
 // information.
-type ConfigUnmarshaler func(interface{}) error
+type ConfigUnmarshaler func(any) error
 
 // Configurable is an interface that Updaters can implement to opt-in to having
 // their configuration provided dynamically.
