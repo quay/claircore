@@ -21,7 +21,7 @@ import (
 )
 
 // Helper for keeping the default configuration.
-func noopConfigure(_ interface{}) error {
+func noopConfigure(_ any) error {
 	return nil
 }
 
