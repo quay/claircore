@@ -792,7 +792,7 @@ func extractArch(purl packageurl.PackageURL) string {
 
 func escapeCPE(ch string) string {
 	c := strings.Split(ch, ":")
-	for i := 0; i < len(c); i++ {
+	for i := range c {
 		if strings.HasSuffix(c[i], "*") {
 			c[i] = c[i][:len(c[i])-1] + `%02`
 		}
