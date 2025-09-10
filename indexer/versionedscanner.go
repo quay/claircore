@@ -25,7 +25,7 @@ type VersionedScanner interface {
 // slice provided.
 //
 // This will typically be something like (*json.Decoder).Decode.
-type ConfigDeserializer func(interface{}) error
+type ConfigDeserializer func(any) error
 
 // RPCScanner is an interface scanners can implement to receive configuration
 // and denote that they expect to be able to talk to the network at run time.

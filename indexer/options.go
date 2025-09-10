@@ -8,7 +8,7 @@ import (
 type Options struct {
 	Client        *http.Client
 	ScannerConfig struct {
-		Package, Dist, Repo, File map[string]func(interface{}) error
+		Package, Dist, Repo, File map[string]func(any) error
 	}
 	Store        Store
 	LayerScanner *LayerScanner
