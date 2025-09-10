@@ -361,7 +361,7 @@ func waitForInit(ctx context.Context, m *libvuln.Libvuln) error {
 // as JSON and writes it into the file named by the template output.
 //
 // If "tmpl" is nil, the function returns nil immediately.
-func writeOut(tmpl *template.Template, name string, v interface{}) error {
+func writeOut(tmpl *template.Template, name string, v any) error {
 	if tmpl == nil {
 		return nil
 	}
