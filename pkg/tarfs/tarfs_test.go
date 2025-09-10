@@ -74,7 +74,7 @@ func TestFS(t *testing.T) {
 		var wg sync.WaitGroup
 		t.Logf("running %d goroutines", lim)
 		wg.Add(lim)
-		for i := 0; i < lim; i++ {
+		for range lim {
 			go func() {
 				defer wg.Done()
 				if err := fstest.TestFS(sys, fileset...); err != nil {

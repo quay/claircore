@@ -64,7 +64,7 @@ func normPath(p string) string {
 			b.WriteRune(r)
 			continue
 		}
-		for n := 0; n < w; n++ {
+		for n := range w {
 			c := uint8(s[i+n])
 			b.WriteString(`\x`)
 			b.WriteString(strconv.FormatUint(uint64(c), 16))
