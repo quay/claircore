@@ -46,7 +46,7 @@ func (v *Version) MarshalText() ([]byte, error) {
 	b := make([]byte, 0, 16) // 16 byte wide scratch buffer
 	buf.WriteString(v.Kind)
 	buf.WriteByte(':')
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		if i != 0 {
 			buf.WriteByte('.')
 		}
@@ -119,7 +119,7 @@ func (v *Version) Compare(x *Version) int {
 	if v.Kind != x.Kind {
 		return strings.Compare(v.Kind, x.Kind)
 	}
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		if v.V[i] > x.V[i] {
 			return 1
 		}
