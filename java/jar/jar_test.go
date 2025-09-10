@@ -447,7 +447,6 @@ func TestManifestSectionReader(t *testing.T) {
 	}
 
 	for _, n := range ms {
-		n := n
 		t.Run(filepath.Base(n), func(t *testing.T) {
 			wantF, err := os.Open(n + ".want")
 			if err != nil {
