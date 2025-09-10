@@ -9,9 +9,14 @@ jobs:
   check_labels:
     name: Check Labels
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          persist-credentials: true # need to fetch changelog ref
       - name: Switch to Changelog ref
         run: |
           git fetch origin +refs/notes/changelog:refs/notes/changelog

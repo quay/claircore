@@ -10,10 +10,45 @@ jobs:
   test_schedule:
     name: Periodic
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
     steps:
       - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
       - uses: actions/setup-go@v6
         with:
           check-latest: true
           go-version-file: ./go.mod
-      - run: go test ./test/periodic -enable
+      - name: Check
+        run: go test ./test/periodic -enable
+      - name: Create URL
+        id: url
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run view "${GITHUB_RUN_ID}" --json jobs --jq '
+            .jobs[] | select(.name == "Periodic") |
+            (
+              "LOGS_URL=" +
+              .url +
+              (.steps[] | select(.name == "Check") | "#step:\(.number):0")
+            )' >> "$GITHUB_OUTPUT"
+      - name: Create Issue
+        uses: actions/github-script@v8
+        if: failure()
+        env:
+          LOGS_URL: ${{ steps.url.outputs.LOGS_URL }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const url = process.env.LOGS_URL;
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'periodic: updater check failed',
+              body: `See [output](${url}) for more.`,
+              labels: ['robot'],
+            })
