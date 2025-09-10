@@ -12,6 +12,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -291,11 +292,8 @@ func (g *fakeGetter) GetEnrichment(ctx context.Context, cves []string) ([]driver
 	var results []driver.EnrichmentRecord
 	for _, cve := range cves {
 		for _, item := range g.items {
-			for _, tag := range item.Tags {
-				if tag == cve {
-					results = append(results, item)
-					break
-				}
+			if slices.Contains(item.Tags, cve) {
+				results = append(results, item)
 			}
 		}
 	}
