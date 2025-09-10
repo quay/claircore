@@ -41,7 +41,7 @@ func (s Severity) Value() (driver.Value, error) {
 	return s.String(), nil
 }
 
-func (s *Severity) Scan(i interface{}) error {
+func (s *Severity) Scan(i any) error {
 	switch v := i.(type) {
 	case []byte:
 		return s.UnmarshalText(v)

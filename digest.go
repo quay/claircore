@@ -118,7 +118,7 @@ func (d *Digest) setChecksum(b []byte) error {
 }
 
 // Scan implements sql.Scanner.
-func (d *Digest) Scan(i interface{}) error {
+func (d *Digest) Scan(i any) error {
 	switch v := i.(type) {
 	case nil:
 		return nil
