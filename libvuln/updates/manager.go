@@ -393,4 +393,4 @@ func (m *Manager) driveUpdater(ctx context.Context, u driver.Updater) (err error
 }
 
 // NoopConfig is used when an explicit config is not provided.
-func noopConfig(_ interface{}) error { return nil }
+func noopConfig(_ any) error { return nil }
