@@ -8,5 +8,5 @@ type Repository struct {
 	Name string  `json:"name,omitempty"`
 	Key  string  `json:"key,omitempty"`
 	URI  string  `json:"uri,omitempty"`
-	CPE  cpe.WFN `json:"cpe,omitempty"`
+	CPE  cpe.WFN `json:"cpe"`
 }
