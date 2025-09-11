@@ -3,6 +3,7 @@ package driver
 import (
 	"context"
 	"fmt"
+	"maps"
 	"regexp"
 )
 
@@ -75,9 +76,7 @@ func (s *UpdaterSet) Merge(set UpdaterSet) error {
 		return ErrExists{exists}
 	}
 
-	for n, u := range set.set {
-		s.set[n] = u
-	}
+	maps.Copy(s.set, set.set)
 	return nil
 }
 

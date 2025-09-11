@@ -75,7 +75,7 @@ func (h *Header) Parse(ctx context.Context, r io.ReaderAt) error {
 //
 // NB The TypeChar, TypeInt8, TypeInt16, TypeInt32, TypeInt64, and TypeI18nString
 // all return slices.
-func (h *Header) ReadData(_ context.Context, e *EntryInfo) (interface{}, error) {
+func (h *Header) ReadData(_ context.Context, e *EntryInfo) (any, error) {
 	// TODO(hank) Provide a generic function like `func[T any](*Header, *EntryInfo) T` to do this.
 	switch e.Type {
 	case TypeBin:

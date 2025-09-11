@@ -191,7 +191,7 @@ func commonLayerServer(t testing.TB, ct int) ([]claircore.LayerDescription, http
 	dir := t.TempDir()
 	descs := make([]claircore.LayerDescription, ct)
 	fetch := make(map[string]*uint64, ct)
-	for i := 0; i < ct; i++ {
+	for i := range ct {
 		n := strconv.Itoa(i)
 		f, err := os.Create(filepath.Join(dir, strconv.Itoa(i)))
 		if err != nil {

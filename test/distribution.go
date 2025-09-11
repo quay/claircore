@@ -11,7 +11,7 @@ import (
 // WFN returns a [cpe.WFN] with "i" as the CPE version.
 func WFN(i int) cpe.WFN {
 	r := cpe.WFN{}
-	for i := 0; i < cpe.NumAttr; i++ {
+	for i := range cpe.NumAttr {
 		r.Attr[i].Kind = cpe.ValueAny
 	}
 	var err error
@@ -38,7 +38,7 @@ func WFN(i int) cpe.WFN {
 // The array is guaranteed not to have any duplicated fields.
 func GenUniqueDistributions(n int) []*claircore.Distribution {
 	dists := []*claircore.Distribution{}
-	for i := 0; i < n; i++ {
+	for i := range n {
 		dists = append(dists, &claircore.Distribution{
 			ID:              strconv.Itoa(i),
 			Name:            fmt.Sprintf("distribution-%d", i),

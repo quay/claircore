@@ -12,6 +12,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -35,7 +36,7 @@ func TestConfigure(t *testing.T) {
 		},
 		{
 			Name: "Not OK", // URL without .gz is invalid
-			Config: func(i interface{}) error {
+			Config: func(i any) error {
 				cfg := i.(*Config)
 				s := "http://example.com/"
 				cfg.URL = &s
@@ -50,7 +51,7 @@ func TestConfigure(t *testing.T) {
 
 		{
 			Name:   "UnmarshalError", // Expected error on unmarshaling
-			Config: func(_ interface{}) error { return errors.New("expected error") },
+			Config: func(_ any) error { return errors.New("expected error") },
 			Check: func(t *testing.T, err error) {
 				if err == nil {
 					t.Error("expected unmarshal error, but got none")
@@ -59,7 +60,7 @@ func TestConfigure(t *testing.T) {
 		},
 		{
 			Name: "BadURL", // Malformed URL in URL
-			Config: func(i interface{}) error {
+			Config: func(i any) error {
 				cfg := i.(*Config)
 				s := "http://[notaurl:/"
 				cfg.URL = &s
@@ -73,7 +74,7 @@ func TestConfigure(t *testing.T) {
 		},
 		{
 			Name: "ValidGZURL", // Proper .gz URL in URL
-			Config: func(i interface{}) error {
+			Config: func(i any) error {
 				cfg := i.(*Config)
 				s := "http://example.com/epss_scores-2024-10-25.csv.gz"
 				cfg.URL = &s
@@ -154,12 +155,12 @@ type fetchTestcase struct {
 }
 
 type configTestcase struct {
-	Config func(interface{}) error
+	Config func(any) error
 	Check  func(*testing.T, error)
 	Name   string
 }
 
-func noopConfig(_ interface{}) error { return nil }
+func noopConfig(_ any) error { return nil }
 
 func mockServer(t *testing.T) *httptest.Server {
 	const root = `testdata/`
@@ -201,7 +202,7 @@ func (tc fetchTestcase) Run(ctx context.Context, srv *httptest.Server) func(*tes
 	return func(t *testing.T) {
 		e := &Enricher{}
 		ctx := zlog.Test(ctx, t)
-		configFunc := func(i interface{}) error {
+		configFunc := func(i any) error {
 			cfg, ok := i.(*Config)
 			if !ok {
 				t.Fatal("expected Config type for i, but got a different type")
@@ -253,7 +254,7 @@ func (tc parseTestcase) Run(ctx context.Context, srv *httptest.Server) func(*tes
 	e := &Enricher{}
 	return func(t *testing.T) {
 		ctx := zlog.Test(ctx, t)
-		f := func(i interface{}) error {
+		f := func(i any) error {
 			cfg, ok := i.(*Config)
 			if !ok {
 				t.Fatal("assertion failed")
@@ -291,11 +292,8 @@ func (g *fakeGetter) GetEnrichment(ctx context.Context, cves []string) ([]driver
 	var results []driver.EnrichmentRecord
 	for _, cve := range cves {
 		for _, item := range g.items {
-			for _, tag := range item.Tags {
-				if tag == cve {
-					results = append(results, item)
-					break
-				}
+			if slices.Contains(item.Tags, cve) {
+				results = append(results, item)
 			}
 		}
 	}
@@ -307,7 +305,7 @@ func TestEnrich(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
 	srv := mockServer(t)
 	e := &Enricher{}
-	f := func(i interface{}) error {
+	f := func(i any) error {
 		cfg, ok := i.(*Config)
 		if !ok {
 			t.Fatal("assertion failed")
@@ -352,7 +350,7 @@ func TestEnrich(t *testing.T) {
 	if got, want := kind, Type; got != want {
 		t.Errorf("got: %q, want: %q", got, want)
 	}
-	want := map[string][]map[string]interface{}{
+	want := map[string][]map[string]any{
 		"1": {
 			{
 				"cve":          "CVE-2022-34667",
@@ -382,7 +380,7 @@ func TestEnrich(t *testing.T) {
 		},
 	}
 
-	got := map[string][]map[string]interface{}{}
+	got := map[string][]map[string]any{}
 	if err := json.Unmarshal(es[0], &got); err != nil {
 		t.Error(err)
 	} else {

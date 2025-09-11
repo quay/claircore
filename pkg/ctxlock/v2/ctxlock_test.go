@@ -65,7 +65,7 @@ func TestContested(t *testing.T) {
 	start := make(chan struct{})
 	var wg sync.WaitGroup
 	wg.Add(w)
-	for i := 0; i < w; i++ {
+	for i := range w {
 		go func(i int) {
 			defer wg.Done()
 			ctx := zlog.ContextWithValues(ctx, "worker", strconv.Itoa(i))

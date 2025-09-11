@@ -3,6 +3,7 @@ package linux
 import (
 	"context"
 	"fmt"
+	"maps"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -55,9 +56,7 @@ func (c *Coalescer) Coalesce(ctx context.Context, layerArtifacts []*indexer.Laye
 				tmp[pkg.PackageDB] = append(tmp[pkg.PackageDB], pkg)
 			}
 		}
-		for db, pkgs := range tmp {
-			dbs[db] = pkgs
-		}
+		maps.Copy(dbs, tmp)
 	}
 
 	for db, packages := range dbs {

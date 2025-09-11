@@ -375,7 +375,7 @@ func rangefmt(r *claircore.Range) (kind *string, lower, upper string) {
 	b := make([]byte, 0, 16) // 16 byte wide scratch buffer
 
 	buf.WriteByte('{')
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		if i != 0 {
 			buf.WriteByte(',')
 		}
@@ -386,7 +386,7 @@ func rangefmt(r *claircore.Range) (kind *string, lower, upper string) {
 	buf.Reset()
 	v = &r.Upper
 	buf.WriteByte('{')
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		if i != 0 {
 			buf.WriteByte(',')
 		}

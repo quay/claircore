@@ -206,7 +206,7 @@ func Benchmark_IndexPackages(b *testing.B) {
 			}
 
 			b.ResetTimer()
-			for i := 0; i < b.N; i++ {
+			for b.Loop() {
 				// run the indexing
 				err = store.IndexPackages(ctx, pkgs, bench.layer, vscnrs[0])
 				if err != nil {

@@ -11,7 +11,7 @@ import (
 // InsertScannerList is to be used with `test.GenUniqueScanners()`. Inserts
 // a ScannerList record for scanner IDs 0...n associated with provided manifest hash
 func InsertScannerList(ctx context.Context, pool *pgxpool.Pool, hash claircore.Digest, n int) error {
-	for i := 0; i < n; i++ {
+	for i := range n {
 		_, err := pool.Exec(ctx,
 			`INSERT INTO scannerlist
 			 (manifest_id, scanner_id)

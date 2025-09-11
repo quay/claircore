@@ -212,7 +212,7 @@ func (u *Updater) exportV1(ctx context.Context, z *zip.Writer, prev fs.FS) error
 		}
 		return nil
 	})
-	for i := 0; i < lim; i++ {
+	for range lim {
 		// Worker goroutine.
 		eg.Go(func() error {
 			defer wg.Done()

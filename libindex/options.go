@@ -28,7 +28,7 @@ type Options struct {
 	// LayerScanConcurrency specifies the number of layers to be scanned in parallel.
 	LayerScanConcurrency int
 	// LayerFetchOpt is unused and kept here for backwards compatibility.
-	LayerFetchOpt interface{}
+	LayerFetchOpt any
 	// NoLayerValidation controls whether layers are checked to actually be
 	// content-addressed. With this option toggled off, callers can trigger
 	// layers to be indexed repeatedly by changing the identifier in the
@@ -46,7 +46,7 @@ type Options struct {
 	// Providing a function for a scanner that's not expecting it is not a fatal
 	// error.
 	ScannerConfig struct {
-		Package, Dist, Repo, File map[string]func(interface{}) error
+		Package, Dist, Repo, File map[string]func(any) error
 	}
 	Resolvers []indexer.Resolver
 }

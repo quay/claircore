@@ -70,7 +70,7 @@ func ServeLayers(t *testing.T, n int) (*http.Client, []claircore.LayerDescriptio
 		t.Fatal(err)
 	}
 
-	for i := 0; i < n; i++ {
+	for i := range n {
 		buf := &bytes.Buffer{}
 		h := sha256.New()
 		w := tar.NewWriter(io.MultiWriter(buf, h))
@@ -115,7 +115,7 @@ func RealizeLayers(ctx context.Context, t *testing.T, refs ...LayerRef) []clairc
 	ret := make([]claircore.Layer, len(refs))
 	fetchCh := make(chan int)
 	var wg sync.WaitGroup
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -155,7 +155,7 @@ func RealizeLayers(ctx context.Context, t *testing.T, refs ...LayerRef) []clairc
 			}
 		}()
 	}
-	for n := 0; n < len(refs); n++ {
+	for n := range refs {
 		fetchCh <- n
 	}
 	close(fetchCh)

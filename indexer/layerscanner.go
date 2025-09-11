@@ -61,7 +61,7 @@ func configAndFilter[S VersionedScanner](ctx context.Context, opts *Options, ss 
 	i := 0
 	for _, s := range ss {
 		n := s.Name()
-		var cfgMap map[string]func(interface{}) error
+		var cfgMap map[string]func(any) error
 		switch k := s.Kind(); k {
 		case "package":
 			cfgMap = opts.ScannerConfig.Package
@@ -81,10 +81,10 @@ func configAndFilter[S VersionedScanner](ctx context.Context, opts *Options, ss 
 
 		f, haveCfg := cfgMap[n]
 		if !haveCfg {
-			f = func(interface{}) error { return nil }
+			f = func(any) error { return nil }
 		}
-		cs, csOK := interface{}(s).(ConfigurableScanner)
-		rs, rsOK := interface{}(s).(RPCScanner)
+		cs, csOK := any(s).(ConfigurableScanner)
+		rs, rsOK := any(s).(RPCScanner)
 		switch {
 		case haveCfg && !csOK && !rsOK:
 			zlog.Warn(ctx).
