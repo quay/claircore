@@ -285,6 +285,7 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v csaf.Vulne
 			continue
 		}
 
+		// This path is deprecated as the VEX data should no longer define modules in the relationship.
 		// Deal with modules if we found one.
 		if modName != "" {
 			modProd := c.pc.Get(modName, c.c)
@@ -338,9 +339,12 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v csaf.Vulne
 				pkgName = pn
 			}
 
-			if mn, ok := purl.Qualifiers.Map()["rpmmod"]; ok {
-				// It is possible to have a module name in the purl, not in the relationship.
-				modName = mn
+			if modName, err = componentPURLToModuleName(purl); err != nil {
+				zlog.Warn(ctx).
+					Str("purl", purl.String()).
+					Err(err).
+					Msg("invalid rpmmod in component pURL")
+				continue
 			}
 
 			if purl.Type == packageurl.TypeOCI {
@@ -487,6 +491,7 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 			continue
 		}
 
+		// This path is deprecated as the VEX data should no longer define modules in the relationship.
 		// Deal with modules if we found one.
 		if modName != "" {
 			modProd := c.pc.Get(modName, c.c)
@@ -540,9 +545,12 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 				Msg("error extracting package name from pURL")
 			continue
 		}
-		if mn, ok := purl.Qualifiers.Map()["rpmmod"]; ok {
-			// It is possible to have a module name in the purl, not in the relationship.
-			modName = mn
+		if modName, err = componentPURLToModuleName(purl); err != nil {
+			zlog.Warn(ctx).
+				Str("purl", purl.String()).
+				Err(err).
+				Msg("invalid rpmmod in component pURL")
+			continue
 		}
 
 		vulnKey := createPackageKey(repoName, modName, purl.Name, fixedIn)
@@ -675,6 +683,28 @@ func createPackageKey(repo, mod, name, fixedIn string) string {
 	return repo + ":" + mod + ":" + name + "-" + fixedIn
 }
 
+// componentPURLToModuleName extracts the module name from the component PURL.
+func componentPURLToModuleName(purl packageurl.PackageURL) (string, error) {
+	v, ok := purl.Qualifiers.Map()["rpmmod"]
+	if !ok {
+		return "", nil
+	}
+	if v == "" {
+		return "", fmt.Errorf("empty rpmmod in pURL qualifiers %s", purl.String())
+	}
+	name, rest, ok := strings.Cut(v, ":")
+	if !ok || rest == "" {
+		return "", fmt.Errorf("invalid module name in pURL qualifiers %s", purl.String())
+	}
+	stream, _, _ := strings.Cut(rest, ":")
+	if stream == "" {
+		return "", fmt.Errorf("invalid module stream in pURL qualifiers %s", purl.String())
+	}
+	return name + ":" + stream, nil
+}
+
+// DEPRECATED: createPackageModule shouldn't be used anymore when VEX files
+// are updated to use the new module format.
 func createPackageModule(p *csaf.Product) (string, error) {
 	modPURLHelper, ok := p.IdentificationHelper["purl"]
 	if !ok {
