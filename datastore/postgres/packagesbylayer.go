@@ -65,7 +65,10 @@ SELECT
 	source_package.arch,
 	package_scanartifact.package_db,
 	package_scanartifact.repository_hint,
-	package_scanartifact.filepath
+	package_scanartifact.filepath,
+	scanner.name,
+	scanner.version,
+	scanner.kind
 FROM
 	package_scanartifact
 	LEFT JOIN package ON
@@ -74,6 +77,7 @@ FROM
 			package_scanartifact.source_id
 			= source_package.id
 	JOIN layer ON layer.hash = $1
+	JOIN package_scanartifact.scanner_id = scanner.id
 WHERE
 	package_scanartifact.layer_id = layer.id
 	AND package_scanartifact.scanner_id = ANY ($2);

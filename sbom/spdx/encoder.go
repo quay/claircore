@@ -16,7 +16,9 @@ import (
 	"github.com/spdx/tools-golang/spdx/v2/v2_3"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/pkg/purl"
 	"github.com/quay/claircore/sbom"
+	"github.com/quay/zlog"
 )
 
 // Version describes the SPDX version to target.
@@ -195,6 +197,17 @@ func (e *Encoder) parseIndexReport(ctx context.Context, ir *claircore.IndexRepor
 			pkg.PackageFileName = pkgDB
 			pkg.FilesAnalyzed = true
 			pkg.PrimaryPackagePurpose = pkgPurpose
+			purl, err := purl.Generate(ctx, r)
+			switch {
+			case err != nil:
+				zlog.Error(ctx).Err(err).Msg("failed to generate PURL")
+			default:
+				pkg.PackageExternalReferences = append(pkg.PackageExternalReferences, &v2_3.PackageExternalReference{
+					Category: "OTHER",
+					RefType:  "purl",
+					Locator:  purl.String(),
+				})
+			}
 
 			pkgs[pkgID] = pkg
 			pkgIDs = append(pkgIDs, pkgID)
