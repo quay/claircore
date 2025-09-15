@@ -41,6 +41,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc.js"></script>
@@ -97,10 +98,13 @@
                 sidebar = sidebar || 'visible';
             } else {
                 sidebar = 'hidden';
+                sidebar_toggle.checked = false;
             }
-            sidebar_toggle.checked = sidebar === 'visible';
-            html.classList.remove('sidebar-visible');
-            html.classList.add("sidebar-" + sidebar);
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
@@ -154,7 +158,12 @@
 
                 <div id="search-wrapper" class="hidden">
                     <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
                     </form>
                     <div id="searchresults-outer" class="searchresults-outer hidden">
                         <div id="searchresults-header" class="searchresults-header"></div>
@@ -197,21 +206,21 @@ type Coalescer interface {
     A coalesced IndexReport should provide only the packages present in the
     final container image once all layers were applied.
 </code></pre>
-<p>package indexer // import "github.com/quay/claircore/indexer"</p>
-<p>type LayerArtifacts struct {
-Hash  claircore.Digest
-Pkgs  []*claircore.Package
-Dist  []*claircore.Distribution // each layer can only have a single distribution
-Repos []*claircore.Repository
-Files []claircore.File
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
+
+type LayerArtifacts struct {
+	Hash  claircore.Digest
+	Pkgs  []*claircore.Package
+	Dist  []*claircore.Distribution // each layer can only have a single distribution
+	Repos []*claircore.Repository
+	Files []claircore.File
 }
-LayerArifact aggregates the artifacts found within a layer.</p>
-<pre><code>
-A `Coalsecer` implementation is free to determine this computation given the
-artifacts found in a layer. A `Coalescer` is called with a slice of
-`LayerArtifacts` structs. The manifest's layer ordering is preserved in the
-provided slice.
+    LayerArifact aggregates the artifacts found within a layer.
 </code></pre>
+<p>A <code>Coalsecer</code> implementation is free to determine this computation given the
+artifacts found in a layer. A <code>Coalescer</code> is called with a slice of
+<code>LayerArtifacts</code> structs. The manifest's layer ordering is preserved in the
+provided slice.</p>
 
                     </main>
 
@@ -260,6 +269,7 @@ provided slice.
 
         <!-- Custom JS scripts -->
         <script src="../docs/mermaid.min.js"></script>
+
 
 
     </div>

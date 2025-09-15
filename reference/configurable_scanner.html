@@ -41,6 +41,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc.js"></script>
@@ -97,10 +98,13 @@
                 sidebar = sidebar || 'visible';
             } else {
                 sidebar = 'hidden';
+                sidebar_toggle.checked = false;
             }
-            sidebar_toggle.checked = sidebar === 'visible';
-            html.classList.remove('sidebar-visible');
-            html.classList.add("sidebar-" + sidebar);
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
@@ -154,7 +158,12 @@
 
                 <div id="search-wrapper" class="hidden">
                     <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
                     </form>
                     <div id="searchresults-outer" class="searchresults-outer hidden">
                         <div id="searchresults-header" class="searchresults-header"></div>
@@ -181,7 +190,7 @@ with a <code>ConfigDeserializer</code> function. The <code>Scanner</code> may pa
 argument to the <code>ConfigDeserializer</code> function to populate the struct.</p>
 <pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
-type ConfigDeserializer func(interface{}) error
+type ConfigDeserializer func(any) error
     ConfigDeserializer can be thought of as an Unmarshal function with the byte
     slice provided.
 
@@ -189,19 +198,20 @@ type ConfigDeserializer func(interface{}) error
 </code></pre>
 <pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
-type ConfigDeserializer func(interface{}) error
+type ConfigDeserializer func(any) error
     ConfigDeserializer can be thought of as an Unmarshal function with the byte
     slice provided.
 
     This will typically be something like (*json.Decoder).Decode.
 </code></pre>
-<p>package indexer // import "github.com/quay/claircore/indexer"</p>
-<p>type ConfigurableScanner interface {
-Configure(context.Context, ConfigDeserializer) error
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
+
+type ConfigurableScanner interface {
+	Configure(context.Context, ConfigDeserializer) error
 }
-ConfigurableScanner is an interface scanners can implement to receive
-configuration.</p>
-<pre><code></code></pre>
+    ConfigurableScanner is an interface scanners can implement to receive
+    configuration.
+</code></pre>
 
                     </main>
 
@@ -250,6 +260,7 @@ configuration.</p>
 
         <!-- Custom JS scripts -->
         <script src="../docs/mermaid.min.js"></script>
+
 
 
     </div>

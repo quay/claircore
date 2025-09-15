@@ -41,6 +41,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc.js"></script>
@@ -97,10 +98,13 @@
                 sidebar = sidebar || 'visible';
             } else {
                 sidebar = 'hidden';
+                sidebar_toggle.checked = false;
             }
-            sidebar_toggle.checked = sidebar === 'visible';
-            html.classList.remove('sidebar-visible');
-            html.classList.add("sidebar-" + sidebar);
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
@@ -154,7 +158,12 @@
 
                 <div id="search-wrapper" class="hidden">
                     <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
                     </form>
                     <div id="searchresults-outer" class="searchresults-outer hidden">
                         <div id="searchresults-header" class="searchresults-header"></div>
@@ -195,73 +204,6 @@ type MatcherStore interface {
 }
     MatcherStore aggregates all interface types
 </code></pre>
-<p>package datastore // import "github.com/quay/claircore/datastore"</p>
-<p>type Updater interface {
-EnrichmentUpdater</p>
-<pre><code>// UpdateVulnerabilities creates a new UpdateOperation, inserts the provided
-// vulnerabilities, and ensures vulnerabilities from previous updates are
-// not queried by clients.
-UpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability) (uuid.UUID, error)
-// UpdateVulnerabilitiesIter performs the same operation as
-// UpdateVulnerabilities, but accepting an iterator function.
-UpdateVulnerabilitiesIter(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulnIter VulnerabilityIter) (uuid.UUID, error)
-// DeltaUpdateVulnerabilities creates a new UpdateOperation consisting of existing
-// vulnerabilities and new vulnerabilities. It also takes an array of deleted
-// vulnerability names which should no longer be available to query.
-DeltaUpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability, deletedVulns []string) (uuid.UUID, error)
-// GetUpdateOperations returns a list of UpdateOperations in date descending
-// order for the given updaters.
-//
-// The returned map is keyed by Updater implementation's unique names.
-//
-// If no updaters are specified, all UpdateOperations are returned.
-GetUpdateOperations(context.Context, driver.UpdateKind, ...string) (map[string][]driver.UpdateOperation, error)
-// GetLatestUpdateRefs reports the latest update reference for every known
-// updater.
-GetLatestUpdateRefs(context.Context, driver.UpdateKind) (map[string][]driver.UpdateOperation, error)
-// GetLatestUpdateRef reports the latest update reference of any known
-// updater.
-GetLatestUpdateRef(context.Context, driver.UpdateKind) (uuid.UUID, error)
-// DeleteUpdateOperations removes an UpdateOperation.
-// A call to GC must be run after this to garbage collect vulnerabilities associated
-// with the UpdateOperation.
-//
-// The number of UpdateOperations deleted is returned.
-DeleteUpdateOperations(context.Context, ...uuid.UUID) (int64, error)
-// GetUpdateOperationDiff reports the UpdateDiff of the two referenced
-// Operations.
-//
-// In diff(1) terms, this is like
-//
-//	diff prev cur
-//
-GetUpdateDiff(ctx context.Context, prev, cur uuid.UUID) (*driver.UpdateDiff, error)
-// GC will delete any update operations for an updater which exceeds the provided keep
-// value.
-//
-// Implementations may throttle the GC process for datastore efficiency reasons.
-//
-// The returned int64 value indicates the remaining number of update operations needing GC.
-// Running this method till the returned value is 0 accomplishes a full GC of the vulnstore.
-GC(ctx context.Context, keep int) (int64, error)
-// Initialized reports whether the vulnstore contains vulnerabilities.
-Initialized(context.Context) (bool, error)
-// RecordUpdaterStatus records that an updater is up to date with vulnerabilities at this time
-RecordUpdaterStatus(ctx context.Context, updaterName string, updateTime time.Time, fingerprint driver.Fingerprint, updaterError error) error
-// RecordUpdaterSetStatus records that all updaters from an updater set are up to date with vulnerabilities at this time
-RecordUpdaterSetStatus(ctx context.Context, updaterSet string, updateTime time.Time) error
-</code></pre>
-<p>}
-Updater is an interface exporting the necessary methods for updating a
-vulnerability database.</p>
-<pre><code></code></pre>
-<p>package datastore // import "github.com/quay/claircore/datastore"</p>
-<p>type MatcherStore interface {
-Updater
-Vulnerability
-Enrichment
-}
-MatcherStore aggregates all interface types</p>
 <pre><code>package datastore // import "github.com/quay/claircore/datastore"
 
 type Updater interface {
@@ -323,111 +265,7 @@ type Updater interface {
     Updater is an interface exporting the necessary methods for updating a
     vulnerability database.
 </code></pre>
-<p>package datastore // import "github.com/quay/claircore/datastore"</p>
-<p>type EnrichmentUpdater interface {
-// UpdateEnrichments creates a new EnrichmentUpdateOperation, inserts the provided
-// EnrichmentRecord(s), and ensures enrichments from previous updates are not
-// queries by clients.
-UpdateEnrichments(ctx context.Context, kind string, fingerprint driver.Fingerprint, enrichments []driver.EnrichmentRecord) (uuid.UUID, error)
-// UpdateEnrichmentsIter performs the same operation as UpdateEnrichments, but
-// accepting an iterator function.
-UpdateEnrichmentsIter(ctx context.Context, kind string, fingerprint driver.Fingerprint, enIter EnrichmentIter) (uuid.UUID, error)
-}
-EnrichmentUpdater is an interface exporting the necessary methods for
-storing and querying Enrichments.</p>
-<pre><code></code></pre>
-<p>package datastore // import "github.com/quay/claircore/datastore"</p>
-<p>type MatcherStore interface {
-Updater
-Vulnerability
-Enrichment
-}
-MatcherStore aggregates all interface types</p>
 <pre><code>package datastore // import "github.com/quay/claircore/datastore"
-
-type Updater interface {
-	EnrichmentUpdater
-
-	// UpdateVulnerabilities creates a new UpdateOperation, inserts the provided
-	// vulnerabilities, and ensures vulnerabilities from previous updates are
-	// not queried by clients.
-	UpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability) (uuid.UUID, error)
-	// UpdateVulnerabilitiesIter performs the same operation as
-	// UpdateVulnerabilities, but accepting an iterator function.
-	UpdateVulnerabilitiesIter(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulnIter VulnerabilityIter) (uuid.UUID, error)
-	// DeltaUpdateVulnerabilities creates a new UpdateOperation consisting of existing
-	// vulnerabilities and new vulnerabilities. It also takes an array of deleted
-	// vulnerability names which should no longer be available to query.
-	DeltaUpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability, deletedVulns []string) (uuid.UUID, error)
-	// GetUpdateOperations returns a list of UpdateOperations in date descending
-	// order for the given updaters.
-	//
-	// The returned map is keyed by Updater implementation's unique names.
-	//
-	// If no updaters are specified, all UpdateOperations are returned.
-	GetUpdateOperations(context.Context, driver.UpdateKind, ...string) (map[string][]driver.UpdateOperation, error)
-	// GetLatestUpdateRefs reports the latest update reference for every known
-	// updater.
-	GetLatestUpdateRefs(context.Context, driver.UpdateKind) (map[string][]driver.UpdateOperation, error)
-	// GetLatestUpdateRef reports the latest update reference of any known
-	// updater.
-	GetLatestUpdateRef(context.Context, driver.UpdateKind) (uuid.UUID, error)
-	// DeleteUpdateOperations removes an UpdateOperation.
-	// A call to GC must be run after this to garbage collect vulnerabilities associated
-	// with the UpdateOperation.
-	//
-	// The number of UpdateOperations deleted is returned.
-	DeleteUpdateOperations(context.Context, ...uuid.UUID) (int64, error)
-	// GetUpdateOperationDiff reports the UpdateDiff of the two referenced
-	// Operations.
-	//
-	// In diff(1) terms, this is like
-	//
-	//	diff prev cur
-	//
-	GetUpdateDiff(ctx context.Context, prev, cur uuid.UUID) (*driver.UpdateDiff, error)
-	// GC will delete any update operations for an updater which exceeds the provided keep
-	// value.
-	//
-	// Implementations may throttle the GC process for datastore efficiency reasons.
-	//
-	// The returned int64 value indicates the remaining number of update operations needing GC.
-	// Running this method till the returned value is 0 accomplishes a full GC of the vulnstore.
-	GC(ctx context.Context, keep int) (int64, error)
-	// Initialized reports whether the vulnstore contains vulnerabilities.
-	Initialized(context.Context) (bool, error)
-	// RecordUpdaterStatus records that an updater is up to date with vulnerabilities at this time
-	RecordUpdaterStatus(ctx context.Context, updaterName string, updateTime time.Time, fingerprint driver.Fingerprint, updaterError error) error
-	// RecordUpdaterSetStatus records that all updaters from an updater set are up to date with vulnerabilities at this time
-	RecordUpdaterSetStatus(ctx context.Context, updaterSet string, updateTime time.Time) error
-}
-    Updater is an interface exporting the necessary methods for updating a
-    vulnerability database.
-</code></pre>
-<p>package datastore // import "github.com/quay/claircore/datastore"</p>
-<p>type EnrichmentUpdater interface {
-// UpdateEnrichments creates a new EnrichmentUpdateOperation, inserts the provided
-// EnrichmentRecord(s), and ensures enrichments from previous updates are not
-// queries by clients.
-UpdateEnrichments(ctx context.Context, kind string, fingerprint driver.Fingerprint, enrichments []driver.EnrichmentRecord) (uuid.UUID, error)
-// UpdateEnrichmentsIter performs the same operation as UpdateEnrichments, but
-// accepting an iterator function.
-UpdateEnrichmentsIter(ctx context.Context, kind string, fingerprint driver.Fingerprint, enIter EnrichmentIter) (uuid.UUID, error)
-}
-EnrichmentUpdater is an interface exporting the necessary methods for
-storing and querying Enrichments.</p>
-<pre><code>package datastore // import "github.com/quay/claircore/datastore"
-
-type Vulnerability interface {
-	// Get finds the vulnerabilities which match each package provided in the
-	// [IndexRecord]s. This may be a one-to-many relationship. A map of Package
-	// ID to Vulnerabilities is returned.
-	Get(ctx context.Context, records []*claircore.IndexRecord, opts GetOpts) (map[string][]*claircore.Vulnerability, error)
-}
-    Vulnerability is the interface for querying stored Vulnerabilities.
-```
-```
-package datastore // import "github.com/quay/claircore/datastore"
 
 type MatcherStore interface {
 	Updater
@@ -436,65 +274,67 @@ type MatcherStore interface {
 }
     MatcherStore aggregates all interface types
 </code></pre>
-<p>package datastore // import "github.com/quay/claircore/datastore"</p>
-<p>type Updater interface {
-EnrichmentUpdater</p>
-<pre><code>// UpdateVulnerabilities creates a new UpdateOperation, inserts the provided
-// vulnerabilities, and ensures vulnerabilities from previous updates are
-// not queried by clients.
-UpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability) (uuid.UUID, error)
-// UpdateVulnerabilitiesIter performs the same operation as
-// UpdateVulnerabilities, but accepting an iterator function.
-UpdateVulnerabilitiesIter(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulnIter VulnerabilityIter) (uuid.UUID, error)
-// DeltaUpdateVulnerabilities creates a new UpdateOperation consisting of existing
-// vulnerabilities and new vulnerabilities. It also takes an array of deleted
-// vulnerability names which should no longer be available to query.
-DeltaUpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability, deletedVulns []string) (uuid.UUID, error)
-// GetUpdateOperations returns a list of UpdateOperations in date descending
-// order for the given updaters.
-//
-// The returned map is keyed by Updater implementation's unique names.
-//
-// If no updaters are specified, all UpdateOperations are returned.
-GetUpdateOperations(context.Context, driver.UpdateKind, ...string) (map[string][]driver.UpdateOperation, error)
-// GetLatestUpdateRefs reports the latest update reference for every known
-// updater.
-GetLatestUpdateRefs(context.Context, driver.UpdateKind) (map[string][]driver.UpdateOperation, error)
-// GetLatestUpdateRef reports the latest update reference of any known
-// updater.
-GetLatestUpdateRef(context.Context, driver.UpdateKind) (uuid.UUID, error)
-// DeleteUpdateOperations removes an UpdateOperation.
-// A call to GC must be run after this to garbage collect vulnerabilities associated
-// with the UpdateOperation.
-//
-// The number of UpdateOperations deleted is returned.
-DeleteUpdateOperations(context.Context, ...uuid.UUID) (int64, error)
-// GetUpdateOperationDiff reports the UpdateDiff of the two referenced
-// Operations.
-//
-// In diff(1) terms, this is like
-//
-//	diff prev cur
-//
-GetUpdateDiff(ctx context.Context, prev, cur uuid.UUID) (*driver.UpdateDiff, error)
-// GC will delete any update operations for an updater which exceeds the provided keep
-// value.
-//
-// Implementations may throttle the GC process for datastore efficiency reasons.
-//
-// The returned int64 value indicates the remaining number of update operations needing GC.
-// Running this method till the returned value is 0 accomplishes a full GC of the vulnstore.
-GC(ctx context.Context, keep int) (int64, error)
-// Initialized reports whether the vulnstore contains vulnerabilities.
-Initialized(context.Context) (bool, error)
-// RecordUpdaterStatus records that an updater is up to date with vulnerabilities at this time
-RecordUpdaterStatus(ctx context.Context, updaterName string, updateTime time.Time, fingerprint driver.Fingerprint, updaterError error) error
-// RecordUpdaterSetStatus records that all updaters from an updater set are up to date with vulnerabilities at this time
-RecordUpdaterSetStatus(ctx context.Context, updaterSet string, updateTime time.Time) error
+<pre><code>package datastore // import "github.com/quay/claircore/datastore"
+
+type Updater interface {
+	EnrichmentUpdater
+
+	// UpdateVulnerabilities creates a new UpdateOperation, inserts the provided
+	// vulnerabilities, and ensures vulnerabilities from previous updates are
+	// not queried by clients.
+	UpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability) (uuid.UUID, error)
+	// UpdateVulnerabilitiesIter performs the same operation as
+	// UpdateVulnerabilities, but accepting an iterator function.
+	UpdateVulnerabilitiesIter(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulnIter VulnerabilityIter) (uuid.UUID, error)
+	// DeltaUpdateVulnerabilities creates a new UpdateOperation consisting of existing
+	// vulnerabilities and new vulnerabilities. It also takes an array of deleted
+	// vulnerability names which should no longer be available to query.
+	DeltaUpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability, deletedVulns []string) (uuid.UUID, error)
+	// GetUpdateOperations returns a list of UpdateOperations in date descending
+	// order for the given updaters.
+	//
+	// The returned map is keyed by Updater implementation's unique names.
+	//
+	// If no updaters are specified, all UpdateOperations are returned.
+	GetUpdateOperations(context.Context, driver.UpdateKind, ...string) (map[string][]driver.UpdateOperation, error)
+	// GetLatestUpdateRefs reports the latest update reference for every known
+	// updater.
+	GetLatestUpdateRefs(context.Context, driver.UpdateKind) (map[string][]driver.UpdateOperation, error)
+	// GetLatestUpdateRef reports the latest update reference of any known
+	// updater.
+	GetLatestUpdateRef(context.Context, driver.UpdateKind) (uuid.UUID, error)
+	// DeleteUpdateOperations removes an UpdateOperation.
+	// A call to GC must be run after this to garbage collect vulnerabilities associated
+	// with the UpdateOperation.
+	//
+	// The number of UpdateOperations deleted is returned.
+	DeleteUpdateOperations(context.Context, ...uuid.UUID) (int64, error)
+	// GetUpdateOperationDiff reports the UpdateDiff of the two referenced
+	// Operations.
+	//
+	// In diff(1) terms, this is like
+	//
+	//	diff prev cur
+	//
+	GetUpdateDiff(ctx context.Context, prev, cur uuid.UUID) (*driver.UpdateDiff, error)
+	// GC will delete any update operations for an updater which exceeds the provided keep
+	// value.
+	//
+	// Implementations may throttle the GC process for datastore efficiency reasons.
+	//
+	// The returned int64 value indicates the remaining number of update operations needing GC.
+	// Running this method till the returned value is 0 accomplishes a full GC of the vulnstore.
+	GC(ctx context.Context, keep int) (int64, error)
+	// Initialized reports whether the vulnstore contains vulnerabilities.
+	Initialized(context.Context) (bool, error)
+	// RecordUpdaterStatus records that an updater is up to date with vulnerabilities at this time
+	RecordUpdaterStatus(ctx context.Context, updaterName string, updateTime time.Time, fingerprint driver.Fingerprint, updaterError error) error
+	// RecordUpdaterSetStatus records that all updaters from an updater set are up to date with vulnerabilities at this time
+	RecordUpdaterSetStatus(ctx context.Context, updaterSet string, updateTime time.Time) error
+}
+    Updater is an interface exporting the necessary methods for updating a
+    vulnerability database.
 </code></pre>
-<p>}
-Updater is an interface exporting the necessary methods for updating a
-vulnerability database.</p>
 <pre><code>package datastore // import "github.com/quay/claircore/datastore"
 
 type EnrichmentUpdater interface {
@@ -509,21 +349,200 @@ type EnrichmentUpdater interface {
     EnrichmentUpdater is an interface exporting the necessary methods for
     storing and querying Enrichments.
 </code></pre>
-<p>package datastore // import "github.com/quay/claircore/datastore"</p>
-<p>type Vulnerability interface {
-// Get finds the vulnerabilities which match each package provided in the
-// [IndexRecord]s. This may be a one-to-many relationship. A map of Package
-// ID to Vulnerabilities is returned.
-Get(ctx context.Context, records []*claircore.IndexRecord, opts GetOpts) (map[string][]*claircore.Vulnerability, error)
+<pre><code>package datastore // import "github.com/quay/claircore/datastore"
+
+type MatcherStore interface {
+	Updater
+	Vulnerability
+	Enrichment
 }
-Vulnerability is the interface for querying stored Vulnerabilities.</p>
+    MatcherStore aggregates all interface types
+</code></pre>
+<pre><code>package datastore // import "github.com/quay/claircore/datastore"
+
+type Updater interface {
+	EnrichmentUpdater
+
+	// UpdateVulnerabilities creates a new UpdateOperation, inserts the provided
+	// vulnerabilities, and ensures vulnerabilities from previous updates are
+	// not queried by clients.
+	UpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability) (uuid.UUID, error)
+	// UpdateVulnerabilitiesIter performs the same operation as
+	// UpdateVulnerabilities, but accepting an iterator function.
+	UpdateVulnerabilitiesIter(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulnIter VulnerabilityIter) (uuid.UUID, error)
+	// DeltaUpdateVulnerabilities creates a new UpdateOperation consisting of existing
+	// vulnerabilities and new vulnerabilities. It also takes an array of deleted
+	// vulnerability names which should no longer be available to query.
+	DeltaUpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability, deletedVulns []string) (uuid.UUID, error)
+	// GetUpdateOperations returns a list of UpdateOperations in date descending
+	// order for the given updaters.
+	//
+	// The returned map is keyed by Updater implementation's unique names.
+	//
+	// If no updaters are specified, all UpdateOperations are returned.
+	GetUpdateOperations(context.Context, driver.UpdateKind, ...string) (map[string][]driver.UpdateOperation, error)
+	// GetLatestUpdateRefs reports the latest update reference for every known
+	// updater.
+	GetLatestUpdateRefs(context.Context, driver.UpdateKind) (map[string][]driver.UpdateOperation, error)
+	// GetLatestUpdateRef reports the latest update reference of any known
+	// updater.
+	GetLatestUpdateRef(context.Context, driver.UpdateKind) (uuid.UUID, error)
+	// DeleteUpdateOperations removes an UpdateOperation.
+	// A call to GC must be run after this to garbage collect vulnerabilities associated
+	// with the UpdateOperation.
+	//
+	// The number of UpdateOperations deleted is returned.
+	DeleteUpdateOperations(context.Context, ...uuid.UUID) (int64, error)
+	// GetUpdateOperationDiff reports the UpdateDiff of the two referenced
+	// Operations.
+	//
+	// In diff(1) terms, this is like
+	//
+	//	diff prev cur
+	//
+	GetUpdateDiff(ctx context.Context, prev, cur uuid.UUID) (*driver.UpdateDiff, error)
+	// GC will delete any update operations for an updater which exceeds the provided keep
+	// value.
+	//
+	// Implementations may throttle the GC process for datastore efficiency reasons.
+	//
+	// The returned int64 value indicates the remaining number of update operations needing GC.
+	// Running this method till the returned value is 0 accomplishes a full GC of the vulnstore.
+	GC(ctx context.Context, keep int) (int64, error)
+	// Initialized reports whether the vulnstore contains vulnerabilities.
+	Initialized(context.Context) (bool, error)
+	// RecordUpdaterStatus records that an updater is up to date with vulnerabilities at this time
+	RecordUpdaterStatus(ctx context.Context, updaterName string, updateTime time.Time, fingerprint driver.Fingerprint, updaterError error) error
+	// RecordUpdaterSetStatus records that all updaters from an updater set are up to date with vulnerabilities at this time
+	RecordUpdaterSetStatus(ctx context.Context, updaterSet string, updateTime time.Time) error
+}
+    Updater is an interface exporting the necessary methods for updating a
+    vulnerability database.
+</code></pre>
+<pre><code>package datastore // import "github.com/quay/claircore/datastore"
+
+type EnrichmentUpdater interface {
+	// UpdateEnrichments creates a new EnrichmentUpdateOperation, inserts the provided
+	// EnrichmentRecord(s), and ensures enrichments from previous updates are not
+	// queries by clients.
+	UpdateEnrichments(ctx context.Context, kind string, fingerprint driver.Fingerprint, enrichments []driver.EnrichmentRecord) (uuid.UUID, error)
+	// UpdateEnrichmentsIter performs the same operation as UpdateEnrichments, but
+	// accepting an iterator function.
+	UpdateEnrichmentsIter(ctx context.Context, kind string, fingerprint driver.Fingerprint, enIter EnrichmentIter) (uuid.UUID, error)
+}
+    EnrichmentUpdater is an interface exporting the necessary methods for
+    storing and querying Enrichments.
+</code></pre>
+<pre><code>package datastore // import "github.com/quay/claircore/datastore"
+
+type Vulnerability interface {
+	// Get finds the vulnerabilities which match each package provided in the
+	// [IndexRecord]s. This may be a one-to-many relationship. A map of Package
+	// ID to Vulnerabilities is returned.
+	Get(ctx context.Context, records []*claircore.IndexRecord, opts GetOpts) (map[string][]*claircore.Vulnerability, error)
+}
+    Vulnerability is the interface for querying stored Vulnerabilities.
+</code></pre>
+<pre><code>package datastore // import "github.com/quay/claircore/datastore"
+
+type MatcherStore interface {
+	Updater
+	Vulnerability
+	Enrichment
+}
+    MatcherStore aggregates all interface types
+</code></pre>
+<pre><code>package datastore // import "github.com/quay/claircore/datastore"
+
+type Updater interface {
+	EnrichmentUpdater
+
+	// UpdateVulnerabilities creates a new UpdateOperation, inserts the provided
+	// vulnerabilities, and ensures vulnerabilities from previous updates are
+	// not queried by clients.
+	UpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability) (uuid.UUID, error)
+	// UpdateVulnerabilitiesIter performs the same operation as
+	// UpdateVulnerabilities, but accepting an iterator function.
+	UpdateVulnerabilitiesIter(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulnIter VulnerabilityIter) (uuid.UUID, error)
+	// DeltaUpdateVulnerabilities creates a new UpdateOperation consisting of existing
+	// vulnerabilities and new vulnerabilities. It also takes an array of deleted
+	// vulnerability names which should no longer be available to query.
+	DeltaUpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability, deletedVulns []string) (uuid.UUID, error)
+	// GetUpdateOperations returns a list of UpdateOperations in date descending
+	// order for the given updaters.
+	//
+	// The returned map is keyed by Updater implementation's unique names.
+	//
+	// If no updaters are specified, all UpdateOperations are returned.
+	GetUpdateOperations(context.Context, driver.UpdateKind, ...string) (map[string][]driver.UpdateOperation, error)
+	// GetLatestUpdateRefs reports the latest update reference for every known
+	// updater.
+	GetLatestUpdateRefs(context.Context, driver.UpdateKind) (map[string][]driver.UpdateOperation, error)
+	// GetLatestUpdateRef reports the latest update reference of any known
+	// updater.
+	GetLatestUpdateRef(context.Context, driver.UpdateKind) (uuid.UUID, error)
+	// DeleteUpdateOperations removes an UpdateOperation.
+	// A call to GC must be run after this to garbage collect vulnerabilities associated
+	// with the UpdateOperation.
+	//
+	// The number of UpdateOperations deleted is returned.
+	DeleteUpdateOperations(context.Context, ...uuid.UUID) (int64, error)
+	// GetUpdateOperationDiff reports the UpdateDiff of the two referenced
+	// Operations.
+	//
+	// In diff(1) terms, this is like
+	//
+	//	diff prev cur
+	//
+	GetUpdateDiff(ctx context.Context, prev, cur uuid.UUID) (*driver.UpdateDiff, error)
+	// GC will delete any update operations for an updater which exceeds the provided keep
+	// value.
+	//
+	// Implementations may throttle the GC process for datastore efficiency reasons.
+	//
+	// The returned int64 value indicates the remaining number of update operations needing GC.
+	// Running this method till the returned value is 0 accomplishes a full GC of the vulnstore.
+	GC(ctx context.Context, keep int) (int64, error)
+	// Initialized reports whether the vulnstore contains vulnerabilities.
+	Initialized(context.Context) (bool, error)
+	// RecordUpdaterStatus records that an updater is up to date with vulnerabilities at this time
+	RecordUpdaterStatus(ctx context.Context, updaterName string, updateTime time.Time, fingerprint driver.Fingerprint, updaterError error) error
+	// RecordUpdaterSetStatus records that all updaters from an updater set are up to date with vulnerabilities at this time
+	RecordUpdaterSetStatus(ctx context.Context, updaterSet string, updateTime time.Time) error
+}
+    Updater is an interface exporting the necessary methods for updating a
+    vulnerability database.
+</code></pre>
+<pre><code>package datastore // import "github.com/quay/claircore/datastore"
+
+type EnrichmentUpdater interface {
+	// UpdateEnrichments creates a new EnrichmentUpdateOperation, inserts the provided
+	// EnrichmentRecord(s), and ensures enrichments from previous updates are not
+	// queries by clients.
+	UpdateEnrichments(ctx context.Context, kind string, fingerprint driver.Fingerprint, enrichments []driver.EnrichmentRecord) (uuid.UUID, error)
+	// UpdateEnrichmentsIter performs the same operation as UpdateEnrichments, but
+	// accepting an iterator function.
+	UpdateEnrichmentsIter(ctx context.Context, kind string, fingerprint driver.Fingerprint, enIter EnrichmentIter) (uuid.UUID, error)
+}
+    EnrichmentUpdater is an interface exporting the necessary methods for
+    storing and querying Enrichments.
+</code></pre>
+<pre><code>package datastore // import "github.com/quay/claircore/datastore"
+
+type Vulnerability interface {
+	// Get finds the vulnerabilities which match each package provided in the
+	// [IndexRecord]s. This may be a one-to-many relationship. A map of Package
+	// ID to Vulnerabilities is returned.
+	Get(ctx context.Context, records []*claircore.IndexRecord, opts GetOpts) (map[string][]*claircore.Vulnerability, error)
+}
+    Vulnerability is the interface for querying stored Vulnerabilities.
+</code></pre>
 <pre><code>package datastore // import "github.com/quay/claircore/datastore"
 
 type Enrichment interface {
 	GetEnrichment(ctx context.Context, kind string, tags []string) ([]driver.EnrichmentRecord, error)
 }
     Enrichment is an interface for querying enrichments from the store.
-```
 </code></pre>
 
                     </main>
@@ -573,6 +592,7 @@ type Enrichment interface {
 
         <!-- Custom JS scripts -->
         <script src="../docs/mermaid.min.js"></script>
+
 
 
     </div>

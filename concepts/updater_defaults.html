@@ -41,6 +41,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc.js"></script>
@@ -97,10 +98,13 @@
                 sidebar = sidebar || 'visible';
             } else {
                 sidebar = 'hidden';
+                sidebar_toggle.checked = false;
             }
-            sidebar_toggle.checked = sidebar === 'visible';
-            html.classList.remove('sidebar-visible');
-            html.classList.add("sidebar-" + sidebar);
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
@@ -154,7 +158,12 @@
 
                 <div id="search-wrapper" class="hidden">
                     <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
                     </form>
                     <div id="searchresults-outer" class="searchresults-outer hidden">
                         <div id="searchresults-header" class="searchresults-header"></div>
@@ -188,10 +197,10 @@ dynamically.</p>
 <li>https://cdn.amazonlinux.com/al2023/core/mirrors/latest/x86_64/mirror.list</li>
 <li>https://deb.debian.org/</li>
 <li>https://security-tracker.debian.org/tracker/data/json</li>
-<li>https://nvd.nist.gov/feeds/json/cve/1.1/</li>
+<li>https://nvd.nist.gov/feeds/json/cve/2.0/</li>
+<li>https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json</li>
 <li>https://linux.oracle.com/security/oval/com.oracle.elsa-&ast;.xml.bz2</li>
 <li>https://packages.vmware.com/photon/photon_oval_definitions/</li>
-<li>https://security.access.redhat.com/data/oval/v2/PULP_MANIFEST</li>
 <li>https://security.access.redhat.com/data/csaf/v2/vex/</li>
 <li>https://support.novell.com/security/oval/</li>
 <li>https://api.launchpad.net/1.0/</li>
@@ -246,6 +255,7 @@ dynamically.</p>
 
         <!-- Custom JS scripts -->
         <script src="../docs/mermaid.min.js"></script>
+
 
 
     </div>

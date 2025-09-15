@@ -42,6 +42,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "searchindex.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc.js"></script>
@@ -98,10 +99,13 @@
                 sidebar = sidebar || 'visible';
             } else {
                 sidebar = 'hidden';
+                sidebar_toggle.checked = false;
             }
-            sidebar_toggle.checked = sidebar === 'visible';
-            html.classList.remove('sidebar-visible');
-            html.classList.add("sidebar-" + sidebar);
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
@@ -155,7 +159,12 @@
 
                 <div id="search-wrapper" class="hidden">
                     <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
                     </form>
                     <div id="searchresults-outer" class="searchresults-outer hidden">
                         <div id="searchresults-header" class="searchresults-header"></div>
@@ -251,7 +260,7 @@ type Options struct {
 	// LayerScanConcurrency specifies the number of layers to be scanned in parallel.
 	LayerScanConcurrency int
 	// LayerFetchOpt is unused and kept here for backwards compatibility.
-	LayerFetchOpt interface{}
+	LayerFetchOpt any
 	// NoLayerValidation controls whether layers are checked to actually be
 	// content-addressed. With this option toggled off, callers can trigger
 	// layers to be indexed repeatedly by changing the identifier in the
@@ -269,7 +278,7 @@ type Options struct {
 	// Providing a function for a scanner that's not expecting it is not a fatal
 	// error.
 	ScannerConfig struct {
-		Package, Dist, Repo, File map[string]func(interface{}) error
+		Package, Dist, Repo, File map[string]func(any) error
 	}
 	Resolvers []indexer.Resolver
 }
@@ -778,10 +787,10 @@ dynamically.</p>
 <li>https://cdn.amazonlinux.com/al2023/core/mirrors/latest/x86_64/mirror.list</li>
 <li>https://deb.debian.org/</li>
 <li>https://security-tracker.debian.org/tracker/data/json</li>
-<li>https://nvd.nist.gov/feeds/json/cve/1.1/</li>
+<li>https://nvd.nist.gov/feeds/json/cve/2.0/</li>
+<li>https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json</li>
 <li>https://linux.oracle.com/security/oval/com.oracle.elsa-&ast;.xml.bz2</li>
 <li>https://packages.vmware.com/photon/photon_oval_definitions/</li>
-<li>https://security.access.redhat.com/data/oval/v2/PULP_MANIFEST</li>
 <li>https://security.access.redhat.com/data/csaf/v2/vex/</li>
 <li>https://support.novell.com/security/oval/</li>
 <li>https://api.launchpad.net/1.0/</li>
@@ -982,21 +991,21 @@ type Coalescer interface {
     A coalesced IndexReport should provide only the packages present in the
     final container image once all layers were applied.
 </code></pre>
-<p>package indexer // import "github.com/quay/claircore/indexer"</p>
-<p>type LayerArtifacts struct {
-Hash  claircore.Digest
-Pkgs  []*claircore.Package
-Dist  []*claircore.Distribution // each layer can only have a single distribution
-Repos []*claircore.Repository
-Files []claircore.File
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
+
+type LayerArtifacts struct {
+	Hash  claircore.Digest
+	Pkgs  []*claircore.Package
+	Dist  []*claircore.Distribution // each layer can only have a single distribution
+	Repos []*claircore.Repository
+	Files []claircore.File
 }
-LayerArifact aggregates the artifacts found within a layer.</p>
-<pre><code>
-A `Coalsecer` implementation is free to determine this computation given the
-artifacts found in a layer. A `Coalescer` is called with a slice of
-`LayerArtifacts` structs. The manifest's layer ordering is preserved in the
-provided slice.
+    LayerArifact aggregates the artifacts found within a layer.
 </code></pre>
+<p>A <code>Coalsecer</code> implementation is free to determine this computation given the
+artifacts found in a layer. A <code>Coalescer</code> is called with a slice of
+<code>LayerArtifacts</code> structs. The manifest's layer ordering is preserved in the
+provided slice.</p>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="configurablescanner"><a class="header" href="#configurablescanner">ConfigurableScanner</a></h1>
 <p>A <code>ConfigurableSanner</code> is an optional interface a <code>Scanner</code> interface may
 implement.  When implemented, the scanner's <code>Configure</code> method will be called
@@ -1004,7 +1013,7 @@ with a <code>ConfigDeserializer</code> function. The <code>Scanner</code> may pa
 argument to the <code>ConfigDeserializer</code> function to populate the struct.</p>
 <pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
-type ConfigDeserializer func(interface{}) error
+type ConfigDeserializer func(any) error
     ConfigDeserializer can be thought of as an Unmarshal function with the byte
     slice provided.
 
@@ -1012,19 +1021,20 @@ type ConfigDeserializer func(interface{}) error
 </code></pre>
 <pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
-type ConfigDeserializer func(interface{}) error
+type ConfigDeserializer func(any) error
     ConfigDeserializer can be thought of as an Unmarshal function with the byte
     slice provided.
 
     This will typically be something like (*json.Decoder).Decode.
 </code></pre>
-<p>package indexer // import "github.com/quay/claircore/indexer"</p>
-<p>type ConfigurableScanner interface {
-Configure(context.Context, ConfigDeserializer) error
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
+
+type ConfigurableScanner interface {
+	Configure(context.Context, ConfigDeserializer) error
 }
-ConfigurableScanner is an interface scanners can implement to receive
-configuration.</p>
-<pre><code></code></pre>
+    ConfigurableScanner is an interface scanners can implement to receive
+    configuration.
+</code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="distribution-scanner"><a class="header" href="#distribution-scanner">Distribution Scanner</a></h1>
 <p>A Distribution Scanner should identify any operating system distribution
 associated with the provided layer. It is OK for no distribution information to
@@ -1124,19 +1134,20 @@ type IndexReport struct {
 
 func (report *IndexReport) IndexRecords() []*IndexRecord
 </code></pre>
-<p>package claircore // import "github.com/quay/claircore"</p>
-<p>type IndexRecord struct {
-Package      *Package
-Distribution *Distribution
-Repository   *Repository
-}
-IndexRecord is an entry in the IndexReport.</p>
-<pre><code>IndexRecords provide full access to contextual package structures such as
-Distribution and Repository.
+<pre><code>package claircore // import "github.com/quay/claircore"
 
-A list of these can be thought of as an "unpacked" IndexReport
+type IndexRecord struct {
+	Package      *Package
+	Distribution *Distribution
+	Repository   *Repository
+}
+    IndexRecord is an entry in the IndexReport.
+
+    IndexRecords provide full access to contextual package structures such as
+    Distribution and Repository.
+
+    A list of these can be thought of as an "unpacked" IndexReport
 </code></pre>
-<pre><code></code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="indexer-store"><a class="header" href="#indexer-store">Indexer Store</a></h1>
 <p>The <code>indexer.Store</code> interface defines all necessary persistence methods for
 <code>Libindex</code> to provide its functionality.</p>
@@ -1164,51 +1175,6 @@ type Store interface {
     Store is an interface for dealing with objects libindex needs to persist.
     Stores may be implemented per storage backend.
 </code></pre>
-<p>package indexer // import "github.com/quay/claircore/indexer"</p>
-<p>type Setter interface {
-// PersistManifest must store the presence of a manifest and it's layers into the system.
-//
-// Typically this will write into identity tables so later methods have a foreign key
-// to reference and data integrity is applied.
-PersistManifest(ctx context.Context, manifest claircore.Manifest) error
-// DeleteManifests removes the manifests indicated by the passed digests
-// from the backing store.
-DeleteManifests(context.Context, ...claircore.Digest) ([]claircore.Digest, error)</p>
-<pre><code>// SetLayerScanned marks the provided layer hash successfully scanned by the provided versioned scanner.
-//
-// After this method is returned a call to Querier.LayerScanned with the same arguments must return true.
-SetLayerScanned(ctx context.Context, hash claircore.Digest, scnr VersionedScanner) error
-// RegisterPackageScanners registers the provided scanners with the persistence layer.
-RegisterScanners(ctx context.Context, scnrs VersionedScanners) error
-// SetIndexReport persists the current state of the IndexReport.
-//
-// IndexReports maybe in intermediate states to provide feedback for clients. this method should be
-// used to communicate scanning state updates. to signal the scan has completely successfully
-// see SetIndexFinished.
-SetIndexReport(context.Context, *claircore.IndexReport) error
-// SetIndexFinished marks a scan successfully completed.
-//
-// After this method returns a call to Querier.ManifestScanned with the manifest hash represted in the provided IndexReport
-// must return true.
-//
-// Also a call to Querier.IndexReport with the manifest hash represted in the provided IndexReport must return the IndexReport
-// in finished state.
-SetIndexFinished(ctx context.Context, sr *claircore.IndexReport, scnrs VersionedScanners) error
-</code></pre>
-<p>}
-Setter interface provides the method set for required marking events,
-or registering components, associated with an Index operation.</p>
-<pre><code></code></pre>
-<p>package indexer // import "github.com/quay/claircore/indexer"</p>
-<p>type Store interface {
-Setter
-Querier
-Indexer
-// Close frees any resources associated with the Store.
-Close(context.Context) error
-}
-Store is an interface for dealing with objects libindex needs to persist.
-Stores may be implemented per storage backend.</p>
 <pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type Setter interface {
@@ -1245,39 +1211,18 @@ type Setter interface {
     Setter interface provides the method set for required marking events,
     or registering components, associated with an Index operation.
 </code></pre>
-<p>package indexer // import "github.com/quay/claircore/indexer"</p>
-<p>type Querier interface {
-// ManifestScanned returns whether the given manifest was scanned by the provided scanners.
-ManifestScanned(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) (bool, error)
-// LayerScanned returns whether the given layer was scanned by the provided scanner.
-LayerScanned(ctx context.Context, hash claircore.Digest, scnr VersionedScanner) (bool, error)
-// PackagesByLayer gets all the packages found in a layer limited by the provided scanners.
-PackagesByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]*claircore.Package, error)
-// DistributionsByLayer gets all the distributions found in a layer limited by the provided scanners.
-DistributionsByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]*claircore.Distribution, error)
-// RepositoriesByLayer gets all the repositories found in a layer limited by the provided scanners.
-RepositoriesByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]*claircore.Repository, error)
-// FilesByLayer gets all the interesting files found in a layer limited by the provided scanners.
-FilesByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]claircore.File, error)
-// IndexReport attempts to retrieve a persisted IndexReport.
-IndexReport(ctx context.Context, hash claircore.Digest) (*claircore.IndexReport, bool, error)
-// AffectedManifests returns a list of manifest digests which the target vulnerability
-// affects.
-AffectedManifests(ctx context.Context, v claircore.Vulnerability, f claircore.CheckVulnernableFunc) ([]claircore.Digest, error)
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
+
+type Store interface {
+	Setter
+	Querier
+	Indexer
+	// Close frees any resources associated with the Store.
+	Close(context.Context) error
 }
-Querier interface provides the method set to ascertain indexed artifacts and
-query whether a layer or manifest has been scanned.</p>
-<pre><code></code></pre>
-<p>package indexer // import "github.com/quay/claircore/indexer"</p>
-<p>type Store interface {
-Setter
-Querier
-Indexer
-// Close frees any resources associated with the Store.
-Close(context.Context) error
-}
-Store is an interface for dealing with objects libindex needs to persist.
-Stores may be implemented per storage backend.</p>
+    Store is an interface for dealing with objects libindex needs to persist.
+    Stores may be implemented per storage backend.
+</code></pre>
 <pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type Setter interface {
@@ -1314,28 +1259,102 @@ type Setter interface {
     Setter interface provides the method set for required marking events,
     or registering components, associated with an Index operation.
 </code></pre>
-<p>package indexer // import "github.com/quay/claircore/indexer"</p>
-<p>type Querier interface {
-// ManifestScanned returns whether the given manifest was scanned by the provided scanners.
-ManifestScanned(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) (bool, error)
-// LayerScanned returns whether the given layer was scanned by the provided scanner.
-LayerScanned(ctx context.Context, hash claircore.Digest, scnr VersionedScanner) (bool, error)
-// PackagesByLayer gets all the packages found in a layer limited by the provided scanners.
-PackagesByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]*claircore.Package, error)
-// DistributionsByLayer gets all the distributions found in a layer limited by the provided scanners.
-DistributionsByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]*claircore.Distribution, error)
-// RepositoriesByLayer gets all the repositories found in a layer limited by the provided scanners.
-RepositoriesByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]*claircore.Repository, error)
-// FilesByLayer gets all the interesting files found in a layer limited by the provided scanners.
-FilesByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]claircore.File, error)
-// IndexReport attempts to retrieve a persisted IndexReport.
-IndexReport(ctx context.Context, hash claircore.Digest) (*claircore.IndexReport, bool, error)
-// AffectedManifests returns a list of manifest digests which the target vulnerability
-// affects.
-AffectedManifests(ctx context.Context, v claircore.Vulnerability, f claircore.CheckVulnernableFunc) ([]claircore.Digest, error)
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
+
+type Querier interface {
+	// ManifestScanned returns whether the given manifest was scanned by the provided scanners.
+	ManifestScanned(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) (bool, error)
+	// LayerScanned returns whether the given layer was scanned by the provided scanner.
+	LayerScanned(ctx context.Context, hash claircore.Digest, scnr VersionedScanner) (bool, error)
+	// PackagesByLayer gets all the packages found in a layer limited by the provided scanners.
+	PackagesByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]*claircore.Package, error)
+	// DistributionsByLayer gets all the distributions found in a layer limited by the provided scanners.
+	DistributionsByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]*claircore.Distribution, error)
+	// RepositoriesByLayer gets all the repositories found in a layer limited by the provided scanners.
+	RepositoriesByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]*claircore.Repository, error)
+	// FilesByLayer gets all the interesting files found in a layer limited by the provided scanners.
+	FilesByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]claircore.File, error)
+	// IndexReport attempts to retrieve a persisted IndexReport.
+	IndexReport(ctx context.Context, hash claircore.Digest) (*claircore.IndexReport, bool, error)
+	// AffectedManifests returns a list of manifest digests which the target vulnerability
+	// affects.
+	AffectedManifests(ctx context.Context, v claircore.Vulnerability, f claircore.CheckVulnernableFunc) ([]claircore.Digest, error)
 }
-Querier interface provides the method set to ascertain indexed artifacts and
-query whether a layer or manifest has been scanned.</p>
+    Querier interface provides the method set to ascertain indexed artifacts and
+    query whether a layer or manifest has been scanned.
+</code></pre>
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
+
+type Store interface {
+	Setter
+	Querier
+	Indexer
+	// Close frees any resources associated with the Store.
+	Close(context.Context) error
+}
+    Store is an interface for dealing with objects libindex needs to persist.
+    Stores may be implemented per storage backend.
+</code></pre>
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
+
+type Setter interface {
+	// PersistManifest must store the presence of a manifest and it's layers into the system.
+	//
+	// Typically this will write into identity tables so later methods have a foreign key
+	// to reference and data integrity is applied.
+	PersistManifest(ctx context.Context, manifest claircore.Manifest) error
+	// DeleteManifests removes the manifests indicated by the passed digests
+	// from the backing store.
+	DeleteManifests(context.Context, ...claircore.Digest) ([]claircore.Digest, error)
+
+	// SetLayerScanned marks the provided layer hash successfully scanned by the provided versioned scanner.
+	//
+	// After this method is returned a call to Querier.LayerScanned with the same arguments must return true.
+	SetLayerScanned(ctx context.Context, hash claircore.Digest, scnr VersionedScanner) error
+	// RegisterPackageScanners registers the provided scanners with the persistence layer.
+	RegisterScanners(ctx context.Context, scnrs VersionedScanners) error
+	// SetIndexReport persists the current state of the IndexReport.
+	//
+	// IndexReports maybe in intermediate states to provide feedback for clients. this method should be
+	// used to communicate scanning state updates. to signal the scan has completely successfully
+	// see SetIndexFinished.
+	SetIndexReport(context.Context, *claircore.IndexReport) error
+	// SetIndexFinished marks a scan successfully completed.
+	//
+	// After this method returns a call to Querier.ManifestScanned with the manifest hash represted in the provided IndexReport
+	// must return true.
+	//
+	// Also a call to Querier.IndexReport with the manifest hash represted in the provided IndexReport must return the IndexReport
+	// in finished state.
+	SetIndexFinished(ctx context.Context, sr *claircore.IndexReport, scnrs VersionedScanners) error
+}
+    Setter interface provides the method set for required marking events,
+    or registering components, associated with an Index operation.
+</code></pre>
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
+
+type Querier interface {
+	// ManifestScanned returns whether the given manifest was scanned by the provided scanners.
+	ManifestScanned(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) (bool, error)
+	// LayerScanned returns whether the given layer was scanned by the provided scanner.
+	LayerScanned(ctx context.Context, hash claircore.Digest, scnr VersionedScanner) (bool, error)
+	// PackagesByLayer gets all the packages found in a layer limited by the provided scanners.
+	PackagesByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]*claircore.Package, error)
+	// DistributionsByLayer gets all the distributions found in a layer limited by the provided scanners.
+	DistributionsByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]*claircore.Distribution, error)
+	// RepositoriesByLayer gets all the repositories found in a layer limited by the provided scanners.
+	RepositoriesByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]*claircore.Repository, error)
+	// FilesByLayer gets all the interesting files found in a layer limited by the provided scanners.
+	FilesByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]claircore.File, error)
+	// IndexReport attempts to retrieve a persisted IndexReport.
+	IndexReport(ctx context.Context, hash claircore.Digest) (*claircore.IndexReport, bool, error)
+	// AffectedManifests returns a list of manifest digests which the target vulnerability
+	// affects.
+	AffectedManifests(ctx context.Context, v claircore.Vulnerability, f claircore.CheckVulnernableFunc) ([]claircore.Digest, error)
+}
+    Querier interface provides the method set to ascertain indexed artifacts and
+    query whether a layer or manifest has been scanned.
+</code></pre>
 <pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type Indexer interface {
@@ -1352,7 +1371,6 @@ type Indexer interface {
 }
     Indexer interface provide the method set required for indexing layer and
     manifest contents into a persistent store.
-```
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="matcher-store"><a class="header" href="#matcher-store">Matcher Store</a></h1>
 <p>The <code>datastore.MatcherStore</code> interface defines all necessary persistence methods for <code>Libvuln</code>
@@ -1375,73 +1393,6 @@ type MatcherStore interface {
 }
     MatcherStore aggregates all interface types
 </code></pre>
-<p>package datastore // import "github.com/quay/claircore/datastore"</p>
-<p>type Updater interface {
-EnrichmentUpdater</p>
-<pre><code>// UpdateVulnerabilities creates a new UpdateOperation, inserts the provided
-// vulnerabilities, and ensures vulnerabilities from previous updates are
-// not queried by clients.
-UpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability) (uuid.UUID, error)
-// UpdateVulnerabilitiesIter performs the same operation as
-// UpdateVulnerabilities, but accepting an iterator function.
-UpdateVulnerabilitiesIter(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulnIter VulnerabilityIter) (uuid.UUID, error)
-// DeltaUpdateVulnerabilities creates a new UpdateOperation consisting of existing
-// vulnerabilities and new vulnerabilities. It also takes an array of deleted
-// vulnerability names which should no longer be available to query.
-DeltaUpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability, deletedVulns []string) (uuid.UUID, error)
-// GetUpdateOperations returns a list of UpdateOperations in date descending
-// order for the given updaters.
-//
-// The returned map is keyed by Updater implementation's unique names.
-//
-// If no updaters are specified, all UpdateOperations are returned.
-GetUpdateOperations(context.Context, driver.UpdateKind, ...string) (map[string][]driver.UpdateOperation, error)
-// GetLatestUpdateRefs reports the latest update reference for every known
-// updater.
-GetLatestUpdateRefs(context.Context, driver.UpdateKind) (map[string][]driver.UpdateOperation, error)
-// GetLatestUpdateRef reports the latest update reference of any known
-// updater.
-GetLatestUpdateRef(context.Context, driver.UpdateKind) (uuid.UUID, error)
-// DeleteUpdateOperations removes an UpdateOperation.
-// A call to GC must be run after this to garbage collect vulnerabilities associated
-// with the UpdateOperation.
-//
-// The number of UpdateOperations deleted is returned.
-DeleteUpdateOperations(context.Context, ...uuid.UUID) (int64, error)
-// GetUpdateOperationDiff reports the UpdateDiff of the two referenced
-// Operations.
-//
-// In diff(1) terms, this is like
-//
-//	diff prev cur
-//
-GetUpdateDiff(ctx context.Context, prev, cur uuid.UUID) (*driver.UpdateDiff, error)
-// GC will delete any update operations for an updater which exceeds the provided keep
-// value.
-//
-// Implementations may throttle the GC process for datastore efficiency reasons.
-//
-// The returned int64 value indicates the remaining number of update operations needing GC.
-// Running this method till the returned value is 0 accomplishes a full GC of the vulnstore.
-GC(ctx context.Context, keep int) (int64, error)
-// Initialized reports whether the vulnstore contains vulnerabilities.
-Initialized(context.Context) (bool, error)
-// RecordUpdaterStatus records that an updater is up to date with vulnerabilities at this time
-RecordUpdaterStatus(ctx context.Context, updaterName string, updateTime time.Time, fingerprint driver.Fingerprint, updaterError error) error
-// RecordUpdaterSetStatus records that all updaters from an updater set are up to date with vulnerabilities at this time
-RecordUpdaterSetStatus(ctx context.Context, updaterSet string, updateTime time.Time) error
-</code></pre>
-<p>}
-Updater is an interface exporting the necessary methods for updating a
-vulnerability database.</p>
-<pre><code></code></pre>
-<p>package datastore // import "github.com/quay/claircore/datastore"</p>
-<p>type MatcherStore interface {
-Updater
-Vulnerability
-Enrichment
-}
-MatcherStore aggregates all interface types</p>
 <pre><code>package datastore // import "github.com/quay/claircore/datastore"
 
 type Updater interface {
@@ -1503,111 +1454,7 @@ type Updater interface {
     Updater is an interface exporting the necessary methods for updating a
     vulnerability database.
 </code></pre>
-<p>package datastore // import "github.com/quay/claircore/datastore"</p>
-<p>type EnrichmentUpdater interface {
-// UpdateEnrichments creates a new EnrichmentUpdateOperation, inserts the provided
-// EnrichmentRecord(s), and ensures enrichments from previous updates are not
-// queries by clients.
-UpdateEnrichments(ctx context.Context, kind string, fingerprint driver.Fingerprint, enrichments []driver.EnrichmentRecord) (uuid.UUID, error)
-// UpdateEnrichmentsIter performs the same operation as UpdateEnrichments, but
-// accepting an iterator function.
-UpdateEnrichmentsIter(ctx context.Context, kind string, fingerprint driver.Fingerprint, enIter EnrichmentIter) (uuid.UUID, error)
-}
-EnrichmentUpdater is an interface exporting the necessary methods for
-storing and querying Enrichments.</p>
-<pre><code></code></pre>
-<p>package datastore // import "github.com/quay/claircore/datastore"</p>
-<p>type MatcherStore interface {
-Updater
-Vulnerability
-Enrichment
-}
-MatcherStore aggregates all interface types</p>
 <pre><code>package datastore // import "github.com/quay/claircore/datastore"
-
-type Updater interface {
-	EnrichmentUpdater
-
-	// UpdateVulnerabilities creates a new UpdateOperation, inserts the provided
-	// vulnerabilities, and ensures vulnerabilities from previous updates are
-	// not queried by clients.
-	UpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability) (uuid.UUID, error)
-	// UpdateVulnerabilitiesIter performs the same operation as
-	// UpdateVulnerabilities, but accepting an iterator function.
-	UpdateVulnerabilitiesIter(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulnIter VulnerabilityIter) (uuid.UUID, error)
-	// DeltaUpdateVulnerabilities creates a new UpdateOperation consisting of existing
-	// vulnerabilities and new vulnerabilities. It also takes an array of deleted
-	// vulnerability names which should no longer be available to query.
-	DeltaUpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability, deletedVulns []string) (uuid.UUID, error)
-	// GetUpdateOperations returns a list of UpdateOperations in date descending
-	// order for the given updaters.
-	//
-	// The returned map is keyed by Updater implementation's unique names.
-	//
-	// If no updaters are specified, all UpdateOperations are returned.
-	GetUpdateOperations(context.Context, driver.UpdateKind, ...string) (map[string][]driver.UpdateOperation, error)
-	// GetLatestUpdateRefs reports the latest update reference for every known
-	// updater.
-	GetLatestUpdateRefs(context.Context, driver.UpdateKind) (map[string][]driver.UpdateOperation, error)
-	// GetLatestUpdateRef reports the latest update reference of any known
-	// updater.
-	GetLatestUpdateRef(context.Context, driver.UpdateKind) (uuid.UUID, error)
-	// DeleteUpdateOperations removes an UpdateOperation.
-	// A call to GC must be run after this to garbage collect vulnerabilities associated
-	// with the UpdateOperation.
-	//
-	// The number of UpdateOperations deleted is returned.
-	DeleteUpdateOperations(context.Context, ...uuid.UUID) (int64, error)
-	// GetUpdateOperationDiff reports the UpdateDiff of the two referenced
-	// Operations.
-	//
-	// In diff(1) terms, this is like
-	//
-	//	diff prev cur
-	//
-	GetUpdateDiff(ctx context.Context, prev, cur uuid.UUID) (*driver.UpdateDiff, error)
-	// GC will delete any update operations for an updater which exceeds the provided keep
-	// value.
-	//
-	// Implementations may throttle the GC process for datastore efficiency reasons.
-	//
-	// The returned int64 value indicates the remaining number of update operations needing GC.
-	// Running this method till the returned value is 0 accomplishes a full GC of the vulnstore.
-	GC(ctx context.Context, keep int) (int64, error)
-	// Initialized reports whether the vulnstore contains vulnerabilities.
-	Initialized(context.Context) (bool, error)
-	// RecordUpdaterStatus records that an updater is up to date with vulnerabilities at this time
-	RecordUpdaterStatus(ctx context.Context, updaterName string, updateTime time.Time, fingerprint driver.Fingerprint, updaterError error) error
-	// RecordUpdaterSetStatus records that all updaters from an updater set are up to date with vulnerabilities at this time
-	RecordUpdaterSetStatus(ctx context.Context, updaterSet string, updateTime time.Time) error
-}
-    Updater is an interface exporting the necessary methods for updating a
-    vulnerability database.
-</code></pre>
-<p>package datastore // import "github.com/quay/claircore/datastore"</p>
-<p>type EnrichmentUpdater interface {
-// UpdateEnrichments creates a new EnrichmentUpdateOperation, inserts the provided
-// EnrichmentRecord(s), and ensures enrichments from previous updates are not
-// queries by clients.
-UpdateEnrichments(ctx context.Context, kind string, fingerprint driver.Fingerprint, enrichments []driver.EnrichmentRecord) (uuid.UUID, error)
-// UpdateEnrichmentsIter performs the same operation as UpdateEnrichments, but
-// accepting an iterator function.
-UpdateEnrichmentsIter(ctx context.Context, kind string, fingerprint driver.Fingerprint, enIter EnrichmentIter) (uuid.UUID, error)
-}
-EnrichmentUpdater is an interface exporting the necessary methods for
-storing and querying Enrichments.</p>
-<pre><code>package datastore // import "github.com/quay/claircore/datastore"
-
-type Vulnerability interface {
-	// Get finds the vulnerabilities which match each package provided in the
-	// [IndexRecord]s. This may be a one-to-many relationship. A map of Package
-	// ID to Vulnerabilities is returned.
-	Get(ctx context.Context, records []*claircore.IndexRecord, opts GetOpts) (map[string][]*claircore.Vulnerability, error)
-}
-    Vulnerability is the interface for querying stored Vulnerabilities.
-```
-```
-package datastore // import "github.com/quay/claircore/datastore"
 
 type MatcherStore interface {
 	Updater
@@ -1616,65 +1463,67 @@ type MatcherStore interface {
 }
     MatcherStore aggregates all interface types
 </code></pre>
-<p>package datastore // import "github.com/quay/claircore/datastore"</p>
-<p>type Updater interface {
-EnrichmentUpdater</p>
-<pre><code>// UpdateVulnerabilities creates a new UpdateOperation, inserts the provided
-// vulnerabilities, and ensures vulnerabilities from previous updates are
-// not queried by clients.
-UpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability) (uuid.UUID, error)
-// UpdateVulnerabilitiesIter performs the same operation as
-// UpdateVulnerabilities, but accepting an iterator function.
-UpdateVulnerabilitiesIter(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulnIter VulnerabilityIter) (uuid.UUID, error)
-// DeltaUpdateVulnerabilities creates a new UpdateOperation consisting of existing
-// vulnerabilities and new vulnerabilities. It also takes an array of deleted
-// vulnerability names which should no longer be available to query.
-DeltaUpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability, deletedVulns []string) (uuid.UUID, error)
-// GetUpdateOperations returns a list of UpdateOperations in date descending
-// order for the given updaters.
-//
-// The returned map is keyed by Updater implementation's unique names.
-//
-// If no updaters are specified, all UpdateOperations are returned.
-GetUpdateOperations(context.Context, driver.UpdateKind, ...string) (map[string][]driver.UpdateOperation, error)
-// GetLatestUpdateRefs reports the latest update reference for every known
-// updater.
-GetLatestUpdateRefs(context.Context, driver.UpdateKind) (map[string][]driver.UpdateOperation, error)
-// GetLatestUpdateRef reports the latest update reference of any known
-// updater.
-GetLatestUpdateRef(context.Context, driver.UpdateKind) (uuid.UUID, error)
-// DeleteUpdateOperations removes an UpdateOperation.
-// A call to GC must be run after this to garbage collect vulnerabilities associated
-// with the UpdateOperation.
-//
-// The number of UpdateOperations deleted is returned.
-DeleteUpdateOperations(context.Context, ...uuid.UUID) (int64, error)
-// GetUpdateOperationDiff reports the UpdateDiff of the two referenced
-// Operations.
-//
-// In diff(1) terms, this is like
-//
-//	diff prev cur
-//
-GetUpdateDiff(ctx context.Context, prev, cur uuid.UUID) (*driver.UpdateDiff, error)
-// GC will delete any update operations for an updater which exceeds the provided keep
-// value.
-//
-// Implementations may throttle the GC process for datastore efficiency reasons.
-//
-// The returned int64 value indicates the remaining number of update operations needing GC.
-// Running this method till the returned value is 0 accomplishes a full GC of the vulnstore.
-GC(ctx context.Context, keep int) (int64, error)
-// Initialized reports whether the vulnstore contains vulnerabilities.
-Initialized(context.Context) (bool, error)
-// RecordUpdaterStatus records that an updater is up to date with vulnerabilities at this time
-RecordUpdaterStatus(ctx context.Context, updaterName string, updateTime time.Time, fingerprint driver.Fingerprint, updaterError error) error
-// RecordUpdaterSetStatus records that all updaters from an updater set are up to date with vulnerabilities at this time
-RecordUpdaterSetStatus(ctx context.Context, updaterSet string, updateTime time.Time) error
+<pre><code>package datastore // import "github.com/quay/claircore/datastore"
+
+type Updater interface {
+	EnrichmentUpdater
+
+	// UpdateVulnerabilities creates a new UpdateOperation, inserts the provided
+	// vulnerabilities, and ensures vulnerabilities from previous updates are
+	// not queried by clients.
+	UpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability) (uuid.UUID, error)
+	// UpdateVulnerabilitiesIter performs the same operation as
+	// UpdateVulnerabilities, but accepting an iterator function.
+	UpdateVulnerabilitiesIter(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulnIter VulnerabilityIter) (uuid.UUID, error)
+	// DeltaUpdateVulnerabilities creates a new UpdateOperation consisting of existing
+	// vulnerabilities and new vulnerabilities. It also takes an array of deleted
+	// vulnerability names which should no longer be available to query.
+	DeltaUpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability, deletedVulns []string) (uuid.UUID, error)
+	// GetUpdateOperations returns a list of UpdateOperations in date descending
+	// order for the given updaters.
+	//
+	// The returned map is keyed by Updater implementation's unique names.
+	//
+	// If no updaters are specified, all UpdateOperations are returned.
+	GetUpdateOperations(context.Context, driver.UpdateKind, ...string) (map[string][]driver.UpdateOperation, error)
+	// GetLatestUpdateRefs reports the latest update reference for every known
+	// updater.
+	GetLatestUpdateRefs(context.Context, driver.UpdateKind) (map[string][]driver.UpdateOperation, error)
+	// GetLatestUpdateRef reports the latest update reference of any known
+	// updater.
+	GetLatestUpdateRef(context.Context, driver.UpdateKind) (uuid.UUID, error)
+	// DeleteUpdateOperations removes an UpdateOperation.
+	// A call to GC must be run after this to garbage collect vulnerabilities associated
+	// with the UpdateOperation.
+	//
+	// The number of UpdateOperations deleted is returned.
+	DeleteUpdateOperations(context.Context, ...uuid.UUID) (int64, error)
+	// GetUpdateOperationDiff reports the UpdateDiff of the two referenced
+	// Operations.
+	//
+	// In diff(1) terms, this is like
+	//
+	//	diff prev cur
+	//
+	GetUpdateDiff(ctx context.Context, prev, cur uuid.UUID) (*driver.UpdateDiff, error)
+	// GC will delete any update operations for an updater which exceeds the provided keep
+	// value.
+	//
+	// Implementations may throttle the GC process for datastore efficiency reasons.
+	//
+	// The returned int64 value indicates the remaining number of update operations needing GC.
+	// Running this method till the returned value is 0 accomplishes a full GC of the vulnstore.
+	GC(ctx context.Context, keep int) (int64, error)
+	// Initialized reports whether the vulnstore contains vulnerabilities.
+	Initialized(context.Context) (bool, error)
+	// RecordUpdaterStatus records that an updater is up to date with vulnerabilities at this time
+	RecordUpdaterStatus(ctx context.Context, updaterName string, updateTime time.Time, fingerprint driver.Fingerprint, updaterError error) error
+	// RecordUpdaterSetStatus records that all updaters from an updater set are up to date with vulnerabilities at this time
+	RecordUpdaterSetStatus(ctx context.Context, updaterSet string, updateTime time.Time) error
+}
+    Updater is an interface exporting the necessary methods for updating a
+    vulnerability database.
 </code></pre>
-<p>}
-Updater is an interface exporting the necessary methods for updating a
-vulnerability database.</p>
 <pre><code>package datastore // import "github.com/quay/claircore/datastore"
 
 type EnrichmentUpdater interface {
@@ -1689,21 +1538,200 @@ type EnrichmentUpdater interface {
     EnrichmentUpdater is an interface exporting the necessary methods for
     storing and querying Enrichments.
 </code></pre>
-<p>package datastore // import "github.com/quay/claircore/datastore"</p>
-<p>type Vulnerability interface {
-// Get finds the vulnerabilities which match each package provided in the
-// [IndexRecord]s. This may be a one-to-many relationship. A map of Package
-// ID to Vulnerabilities is returned.
-Get(ctx context.Context, records []*claircore.IndexRecord, opts GetOpts) (map[string][]*claircore.Vulnerability, error)
+<pre><code>package datastore // import "github.com/quay/claircore/datastore"
+
+type MatcherStore interface {
+	Updater
+	Vulnerability
+	Enrichment
 }
-Vulnerability is the interface for querying stored Vulnerabilities.</p>
+    MatcherStore aggregates all interface types
+</code></pre>
+<pre><code>package datastore // import "github.com/quay/claircore/datastore"
+
+type Updater interface {
+	EnrichmentUpdater
+
+	// UpdateVulnerabilities creates a new UpdateOperation, inserts the provided
+	// vulnerabilities, and ensures vulnerabilities from previous updates are
+	// not queried by clients.
+	UpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability) (uuid.UUID, error)
+	// UpdateVulnerabilitiesIter performs the same operation as
+	// UpdateVulnerabilities, but accepting an iterator function.
+	UpdateVulnerabilitiesIter(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulnIter VulnerabilityIter) (uuid.UUID, error)
+	// DeltaUpdateVulnerabilities creates a new UpdateOperation consisting of existing
+	// vulnerabilities and new vulnerabilities. It also takes an array of deleted
+	// vulnerability names which should no longer be available to query.
+	DeltaUpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability, deletedVulns []string) (uuid.UUID, error)
+	// GetUpdateOperations returns a list of UpdateOperations in date descending
+	// order for the given updaters.
+	//
+	// The returned map is keyed by Updater implementation's unique names.
+	//
+	// If no updaters are specified, all UpdateOperations are returned.
+	GetUpdateOperations(context.Context, driver.UpdateKind, ...string) (map[string][]driver.UpdateOperation, error)
+	// GetLatestUpdateRefs reports the latest update reference for every known
+	// updater.
+	GetLatestUpdateRefs(context.Context, driver.UpdateKind) (map[string][]driver.UpdateOperation, error)
+	// GetLatestUpdateRef reports the latest update reference of any known
+	// updater.
+	GetLatestUpdateRef(context.Context, driver.UpdateKind) (uuid.UUID, error)
+	// DeleteUpdateOperations removes an UpdateOperation.
+	// A call to GC must be run after this to garbage collect vulnerabilities associated
+	// with the UpdateOperation.
+	//
+	// The number of UpdateOperations deleted is returned.
+	DeleteUpdateOperations(context.Context, ...uuid.UUID) (int64, error)
+	// GetUpdateOperationDiff reports the UpdateDiff of the two referenced
+	// Operations.
+	//
+	// In diff(1) terms, this is like
+	//
+	//	diff prev cur
+	//
+	GetUpdateDiff(ctx context.Context, prev, cur uuid.UUID) (*driver.UpdateDiff, error)
+	// GC will delete any update operations for an updater which exceeds the provided keep
+	// value.
+	//
+	// Implementations may throttle the GC process for datastore efficiency reasons.
+	//
+	// The returned int64 value indicates the remaining number of update operations needing GC.
+	// Running this method till the returned value is 0 accomplishes a full GC of the vulnstore.
+	GC(ctx context.Context, keep int) (int64, error)
+	// Initialized reports whether the vulnstore contains vulnerabilities.
+	Initialized(context.Context) (bool, error)
+	// RecordUpdaterStatus records that an updater is up to date with vulnerabilities at this time
+	RecordUpdaterStatus(ctx context.Context, updaterName string, updateTime time.Time, fingerprint driver.Fingerprint, updaterError error) error
+	// RecordUpdaterSetStatus records that all updaters from an updater set are up to date with vulnerabilities at this time
+	RecordUpdaterSetStatus(ctx context.Context, updaterSet string, updateTime time.Time) error
+}
+    Updater is an interface exporting the necessary methods for updating a
+    vulnerability database.
+</code></pre>
+<pre><code>package datastore // import "github.com/quay/claircore/datastore"
+
+type EnrichmentUpdater interface {
+	// UpdateEnrichments creates a new EnrichmentUpdateOperation, inserts the provided
+	// EnrichmentRecord(s), and ensures enrichments from previous updates are not
+	// queries by clients.
+	UpdateEnrichments(ctx context.Context, kind string, fingerprint driver.Fingerprint, enrichments []driver.EnrichmentRecord) (uuid.UUID, error)
+	// UpdateEnrichmentsIter performs the same operation as UpdateEnrichments, but
+	// accepting an iterator function.
+	UpdateEnrichmentsIter(ctx context.Context, kind string, fingerprint driver.Fingerprint, enIter EnrichmentIter) (uuid.UUID, error)
+}
+    EnrichmentUpdater is an interface exporting the necessary methods for
+    storing and querying Enrichments.
+</code></pre>
+<pre><code>package datastore // import "github.com/quay/claircore/datastore"
+
+type Vulnerability interface {
+	// Get finds the vulnerabilities which match each package provided in the
+	// [IndexRecord]s. This may be a one-to-many relationship. A map of Package
+	// ID to Vulnerabilities is returned.
+	Get(ctx context.Context, records []*claircore.IndexRecord, opts GetOpts) (map[string][]*claircore.Vulnerability, error)
+}
+    Vulnerability is the interface for querying stored Vulnerabilities.
+</code></pre>
+<pre><code>package datastore // import "github.com/quay/claircore/datastore"
+
+type MatcherStore interface {
+	Updater
+	Vulnerability
+	Enrichment
+}
+    MatcherStore aggregates all interface types
+</code></pre>
+<pre><code>package datastore // import "github.com/quay/claircore/datastore"
+
+type Updater interface {
+	EnrichmentUpdater
+
+	// UpdateVulnerabilities creates a new UpdateOperation, inserts the provided
+	// vulnerabilities, and ensures vulnerabilities from previous updates are
+	// not queried by clients.
+	UpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability) (uuid.UUID, error)
+	// UpdateVulnerabilitiesIter performs the same operation as
+	// UpdateVulnerabilities, but accepting an iterator function.
+	UpdateVulnerabilitiesIter(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulnIter VulnerabilityIter) (uuid.UUID, error)
+	// DeltaUpdateVulnerabilities creates a new UpdateOperation consisting of existing
+	// vulnerabilities and new vulnerabilities. It also takes an array of deleted
+	// vulnerability names which should no longer be available to query.
+	DeltaUpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability, deletedVulns []string) (uuid.UUID, error)
+	// GetUpdateOperations returns a list of UpdateOperations in date descending
+	// order for the given updaters.
+	//
+	// The returned map is keyed by Updater implementation's unique names.
+	//
+	// If no updaters are specified, all UpdateOperations are returned.
+	GetUpdateOperations(context.Context, driver.UpdateKind, ...string) (map[string][]driver.UpdateOperation, error)
+	// GetLatestUpdateRefs reports the latest update reference for every known
+	// updater.
+	GetLatestUpdateRefs(context.Context, driver.UpdateKind) (map[string][]driver.UpdateOperation, error)
+	// GetLatestUpdateRef reports the latest update reference of any known
+	// updater.
+	GetLatestUpdateRef(context.Context, driver.UpdateKind) (uuid.UUID, error)
+	// DeleteUpdateOperations removes an UpdateOperation.
+	// A call to GC must be run after this to garbage collect vulnerabilities associated
+	// with the UpdateOperation.
+	//
+	// The number of UpdateOperations deleted is returned.
+	DeleteUpdateOperations(context.Context, ...uuid.UUID) (int64, error)
+	// GetUpdateOperationDiff reports the UpdateDiff of the two referenced
+	// Operations.
+	//
+	// In diff(1) terms, this is like
+	//
+	//	diff prev cur
+	//
+	GetUpdateDiff(ctx context.Context, prev, cur uuid.UUID) (*driver.UpdateDiff, error)
+	// GC will delete any update operations for an updater which exceeds the provided keep
+	// value.
+	//
+	// Implementations may throttle the GC process for datastore efficiency reasons.
+	//
+	// The returned int64 value indicates the remaining number of update operations needing GC.
+	// Running this method till the returned value is 0 accomplishes a full GC of the vulnstore.
+	GC(ctx context.Context, keep int) (int64, error)
+	// Initialized reports whether the vulnstore contains vulnerabilities.
+	Initialized(context.Context) (bool, error)
+	// RecordUpdaterStatus records that an updater is up to date with vulnerabilities at this time
+	RecordUpdaterStatus(ctx context.Context, updaterName string, updateTime time.Time, fingerprint driver.Fingerprint, updaterError error) error
+	// RecordUpdaterSetStatus records that all updaters from an updater set are up to date with vulnerabilities at this time
+	RecordUpdaterSetStatus(ctx context.Context, updaterSet string, updateTime time.Time) error
+}
+    Updater is an interface exporting the necessary methods for updating a
+    vulnerability database.
+</code></pre>
+<pre><code>package datastore // import "github.com/quay/claircore/datastore"
+
+type EnrichmentUpdater interface {
+	// UpdateEnrichments creates a new EnrichmentUpdateOperation, inserts the provided
+	// EnrichmentRecord(s), and ensures enrichments from previous updates are not
+	// queries by clients.
+	UpdateEnrichments(ctx context.Context, kind string, fingerprint driver.Fingerprint, enrichments []driver.EnrichmentRecord) (uuid.UUID, error)
+	// UpdateEnrichmentsIter performs the same operation as UpdateEnrichments, but
+	// accepting an iterator function.
+	UpdateEnrichmentsIter(ctx context.Context, kind string, fingerprint driver.Fingerprint, enIter EnrichmentIter) (uuid.UUID, error)
+}
+    EnrichmentUpdater is an interface exporting the necessary methods for
+    storing and querying Enrichments.
+</code></pre>
+<pre><code>package datastore // import "github.com/quay/claircore/datastore"
+
+type Vulnerability interface {
+	// Get finds the vulnerabilities which match each package provided in the
+	// [IndexRecord]s. This may be a one-to-many relationship. A map of Package
+	// ID to Vulnerabilities is returned.
+	Get(ctx context.Context, records []*claircore.IndexRecord, opts GetOpts) (map[string][]*claircore.Vulnerability, error)
+}
+    Vulnerability is the interface for querying stored Vulnerabilities.
+</code></pre>
 <pre><code>package datastore // import "github.com/quay/claircore/datastore"
 
 type Enrichment interface {
 	GetEnrichment(ctx context.Context, kind string, tags []string) ([]driver.EnrichmentRecord, error)
 }
     Enrichment is an interface for querying enrichments from the store.
-```
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="manifest"><a class="header" href="#manifest">Manifest</a></h1>
 <p>A Manifest is analogous to an <a href="https://github.com/opencontainers/image-spec/blob/master/manifest.md">OCI Image Manifest</a>:
@@ -1828,13 +1856,14 @@ type RPCScanner interface {
     RPCScanner is an interface scanners can implement to receive configuration
     and denote that they expect to be able to talk to the network at run time.
 </code></pre>
-<p>package indexer // import "github.com/quay/claircore/indexer"</p>
-<p>type ConfigDeserializer func(interface{}) error
-ConfigDeserializer can be thought of as an Unmarshal function with the byte
-slice provided.</p>
-<pre><code>This will typically be something like (*json.Decoder).Decode.
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
+
+type ConfigDeserializer func(any) error
+    ConfigDeserializer can be thought of as an Unmarshal function with the byte
+    slice provided.
+
+    This will typically be something like (*json.Decoder).Decode.
 </code></pre>
-<pre><code></code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="updater"><a class="header" href="#updater">Updater</a></h1>
 <p>An Updater is responsible for performing run-time fetching and parsing of a security database.
 The returned vulnerabilities will be written to claircore's database and used in vulnerability matching.</p>
@@ -1858,30 +1887,6 @@ type Updater interface {
     Updater is an aggregate interface combining the method set of a Fetcher and
     a Parser and forces a Name() to be provided
 </code></pre>
-<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
-<p>type Fetcher interface {
-Fetch(context.Context, Fingerprint) (io.ReadCloser, Fingerprint, error)
-}
-Fetcher is an interface which is embedded into the Updater interface.</p>
-<pre><code>When called the interface should determine if new security advisory data
-is available. Fingerprint may be passed into in order for the Fetcher to
-determine if the contents has changed
-
-If there is new content Fetcher should return a io.ReadCloser where the new
-content can be read. Optionally a fingerprint can be returned which uniquely
-identifies the new content.
-
-If the conent has not change an Unchanged error should be returned.
-</code></pre>
-<pre><code></code></pre>
-<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
-<p>type Updater interface {
-Name() string
-Fetcher
-Parser
-}
-Updater is an aggregate interface combining the method set of a Fetcher and
-a Parser and forces a Name() to be provided</p>
 <pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Fetcher interface {
@@ -1899,27 +1904,16 @@ type Fetcher interface {
 
     If the conent has not change an Unchanged error should be returned.
 </code></pre>
-<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
-<p>type Parser interface {
-// Parse should take an io.ReadCloser, read the contents, parse the contents
-// into a list of claircore.Vulnerability structs and then return
-// the list. Parse should assume contents are uncompressed and ready for parsing.
-Parse(ctx context.Context, contents io.ReadCloser) ([]*claircore.Vulnerability, error)
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
+
+type Updater interface {
+	Name() string
+	Fetcher
+	Parser
 }
-Parser is an interface which is embedded into the Updater interface.</p>
-<pre><code>Parse should be called with an io.ReadCloser struct where the contents
-of a security advisory database can be read and parsed into an array of
-*claircore.Vulnerability
+    Updater is an aggregate interface combining the method set of a Fetcher and
+    a Parser and forces a Name() to be provided
 </code></pre>
-<pre><code></code></pre>
-<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
-<p>type Updater interface {
-Name() string
-Fetcher
-Parser
-}
-Updater is an aggregate interface combining the method set of a Fetcher and
-a Parser and forces a Name() to be provided</p>
 <pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Fetcher interface {
@@ -1937,25 +1931,67 @@ type Fetcher interface {
 
     If the conent has not change an Unchanged error should be returned.
 </code></pre>
-<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
-<p>type Parser interface {
-// Parse should take an io.ReadCloser, read the contents, parse the contents
-// into a list of claircore.Vulnerability structs and then return
-// the list. Parse should assume contents are uncompressed and ready for parsing.
-Parse(ctx context.Context, contents io.ReadCloser) ([]*claircore.Vulnerability, error)
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
+
+type Parser interface {
+	// Parse should take an io.ReadCloser, read the contents, parse the contents
+	// into a list of claircore.Vulnerability structs and then return
+	// the list. Parse should assume contents are uncompressed and ready for parsing.
+	Parse(ctx context.Context, contents io.ReadCloser) ([]*claircore.Vulnerability, error)
 }
-Parser is an interface which is embedded into the Updater interface.</p>
-<pre><code>Parse should be called with an io.ReadCloser struct where the contents
-of a security advisory database can be read and parsed into an array of
-*claircore.Vulnerability
+    Parser is an interface which is embedded into the Updater interface.
+
+    Parse should be called with an io.ReadCloser struct where the contents
+    of a security advisory database can be read and parsed into an array of
+    *claircore.Vulnerability
+</code></pre>
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
+
+type Updater interface {
+	Name() string
+	Fetcher
+	Parser
+}
+    Updater is an aggregate interface combining the method set of a Fetcher and
+    a Parser and forces a Name() to be provided
+</code></pre>
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
+
+type Fetcher interface {
+	Fetch(context.Context, Fingerprint) (io.ReadCloser, Fingerprint, error)
+}
+    Fetcher is an interface which is embedded into the Updater interface.
+
+    When called the interface should determine if new security advisory data
+    is available. Fingerprint may be passed into in order for the Fetcher to
+    determine if the contents has changed
+
+    If there is new content Fetcher should return a io.ReadCloser where the new
+    content can be read. Optionally a fingerprint can be returned which uniquely
+    identifies the new content.
+
+    If the conent has not change an Unchanged error should be returned.
+</code></pre>
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
+
+type Parser interface {
+	// Parse should take an io.ReadCloser, read the contents, parse the contents
+	// into a list of claircore.Vulnerability structs and then return
+	// the list. Parse should assume contents are uncompressed and ready for parsing.
+	Parse(ctx context.Context, contents io.ReadCloser) ([]*claircore.Vulnerability, error)
+}
+    Parser is an interface which is embedded into the Updater interface.
+
+    Parse should be called with an io.ReadCloser struct where the contents
+    of a security advisory database can be read and parsed into an array of
+    *claircore.Vulnerability
 </code></pre>
 <pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Fingerprint string
     Fingerprint is some identifying information about a vulnerability database.
-```
-```
-package driver // import "github.com/quay/claircore/libvuln/driver"
+</code></pre>
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Updater interface {
 	Name() string
@@ -1965,20 +2001,22 @@ type Updater interface {
     Updater is an aggregate interface combining the method set of a Fetcher and
     a Parser and forces a Name() to be provided
 </code></pre>
-<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
-<p>type Fetcher interface {
-Fetch(context.Context, Fingerprint) (io.ReadCloser, Fingerprint, error)
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
+
+type Fetcher interface {
+	Fetch(context.Context, Fingerprint) (io.ReadCloser, Fingerprint, error)
 }
-Fetcher is an interface which is embedded into the Updater interface.</p>
-<pre><code>When called the interface should determine if new security advisory data
-is available. Fingerprint may be passed into in order for the Fetcher to
-determine if the contents has changed
+    Fetcher is an interface which is embedded into the Updater interface.
 
-If there is new content Fetcher should return a io.ReadCloser where the new
-content can be read. Optionally a fingerprint can be returned which uniquely
-identifies the new content.
+    When called the interface should determine if new security advisory data
+    is available. Fingerprint may be passed into in order for the Fetcher to
+    determine if the contents has changed
 
-If the conent has not change an Unchanged error should be returned.
+    If there is new content Fetcher should return a io.ReadCloser where the new
+    content can be read. Optionally a fingerprint can be returned which uniquely
+    identifies the new content.
+
+    If the conent has not change an Unchanged error should be returned.
 </code></pre>
 <pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
@@ -1994,9 +2032,11 @@ type Parser interface {
     of a security advisory database can be read and parsed into an array of
     *claircore.Vulnerability
 </code></pre>
-<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
-<p>type Fingerprint string
-Fingerprint is some identifying information about a vulnerability database.</p>
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
+
+type Fingerprint string
+    Fingerprint is some identifying information about a vulnerability database.
+</code></pre>
 <pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Configurable interface {
@@ -2004,9 +2044,8 @@ type Configurable interface {
 }
     Configurable is an interface that Updaters can implement to opt-in to having
     their configuration provided dynamically.
-```
-```
-package driver // import "github.com/quay/claircore/libvuln/driver"
+</code></pre>
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Updater interface {
 	Name() string
@@ -2016,20 +2055,22 @@ type Updater interface {
     Updater is an aggregate interface combining the method set of a Fetcher and
     a Parser and forces a Name() to be provided
 </code></pre>
-<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
-<p>type Fetcher interface {
-Fetch(context.Context, Fingerprint) (io.ReadCloser, Fingerprint, error)
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
+
+type Fetcher interface {
+	Fetch(context.Context, Fingerprint) (io.ReadCloser, Fingerprint, error)
 }
-Fetcher is an interface which is embedded into the Updater interface.</p>
-<pre><code>When called the interface should determine if new security advisory data
-is available. Fingerprint may be passed into in order for the Fetcher to
-determine if the contents has changed
+    Fetcher is an interface which is embedded into the Updater interface.
 
-If there is new content Fetcher should return a io.ReadCloser where the new
-content can be read. Optionally a fingerprint can be returned which uniquely
-identifies the new content.
+    When called the interface should determine if new security advisory data
+    is available. Fingerprint may be passed into in order for the Fetcher to
+    determine if the contents has changed
 
-If the conent has not change an Unchanged error should be returned.
+    If there is new content Fetcher should return a io.ReadCloser where the new
+    content can be read. Optionally a fingerprint can be returned which uniquely
+    identifies the new content.
+
+    If the conent has not change an Unchanged error should be returned.
 </code></pre>
 <pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
@@ -2045,9 +2086,11 @@ type Parser interface {
     of a security advisory database can be read and parsed into an array of
     *claircore.Vulnerability
 </code></pre>
-<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
-<p>type Fingerprint string
-Fingerprint is some identifying information about a vulnerability database.</p>
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
+
+type Fingerprint string
+    Fingerprint is some identifying information about a vulnerability database.
+</code></pre>
 <pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Configurable interface {
@@ -2056,14 +2099,15 @@ type Configurable interface {
     Configurable is an interface that Updaters can implement to opt-in to having
     their configuration provided dynamically.
 </code></pre>
-<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
-<p>type ConfigUnmarshaler func(interface{}) error
-ConfigUnmarshaler can be thought of as an Unmarshal function with the byte
-slice provided, or a Decode function.</p>
-<pre><code>The function should populate a passed struct with any configuration
-information.
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
+
+type ConfigUnmarshaler func(any) error
+    ConfigUnmarshaler can be thought of as an Unmarshal function with the byte
+    slice provided, or a Decode function.
+
+    The function should populate a passed struct with any configuration
+    information.
 </code></pre>
-<pre><code></code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="updatersetfactory"><a class="header" href="#updatersetfactory">UpdaterSetFactory</a></h1>
 <p>An UpdaterSetFactory is a factory for runtime construction and configuration for Updaters.</p>
 <pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
@@ -2084,17 +2128,19 @@ type UpdaterSetFactory interface {
 
 func StaticSet(s UpdaterSet) UpdaterSetFactory
 </code></pre>
-<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
-<p>type UpdaterSet struct {
-// Has unexported fields.
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
+
+type UpdaterSet struct {
+	// Has unexported fields.
 }
-UpdaterSet holds a deduplicated set of updaters.</p>
-<p>func NewUpdaterSet() UpdaterSet
+    UpdaterSet holds a deduplicated set of updaters.
+
+func NewUpdaterSet() UpdaterSet
 func (s *UpdaterSet) Add(u Updater) error
 func (s *UpdaterSet) Merge(set UpdaterSet) error
 func (s *UpdaterSet) RegexFilter(regex string) error
-func (s *UpdaterSet) Updaters() []Updater</p>
-<pre><code></code></pre>
+func (s *UpdaterSet) Updaters() []Updater
+</code></pre>
 <div style="break-before: page; page-break-before: always;"></div><h1 id="versionfilter"><a class="header" href="#versionfilter">VersionFilter</a></h1>
 <p><code>VersionFilter</code> is an additional interface a <code>Matcher</code> may implement.
 If implemented, <code>Libvuln</code> will attempt to use the database and the normalized
@@ -2637,6 +2683,7 @@ The <code>go</code> version will also be updated if there is deemed to be a secu
             window.setTimeout(window.print, 100);
         });
         </script>
+
 
     </div>
     </body>

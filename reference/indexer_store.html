@@ -41,6 +41,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc.js"></script>
@@ -97,10 +98,13 @@
                 sidebar = sidebar || 'visible';
             } else {
                 sidebar = 'hidden';
+                sidebar_toggle.checked = false;
             }
-            sidebar_toggle.checked = sidebar === 'visible';
-            html.classList.remove('sidebar-visible');
-            html.classList.add("sidebar-" + sidebar);
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
@@ -154,7 +158,12 @@
 
                 <div id="search-wrapper" class="hidden">
                     <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
                     </form>
                     <div id="searchresults-outer" class="searchresults-outer hidden">
                         <div id="searchresults-header" class="searchresults-header"></div>
@@ -201,51 +210,6 @@ type Store interface {
     Store is an interface for dealing with objects libindex needs to persist.
     Stores may be implemented per storage backend.
 </code></pre>
-<p>package indexer // import "github.com/quay/claircore/indexer"</p>
-<p>type Setter interface {
-// PersistManifest must store the presence of a manifest and it's layers into the system.
-//
-// Typically this will write into identity tables so later methods have a foreign key
-// to reference and data integrity is applied.
-PersistManifest(ctx context.Context, manifest claircore.Manifest) error
-// DeleteManifests removes the manifests indicated by the passed digests
-// from the backing store.
-DeleteManifests(context.Context, ...claircore.Digest) ([]claircore.Digest, error)</p>
-<pre><code>// SetLayerScanned marks the provided layer hash successfully scanned by the provided versioned scanner.
-//
-// After this method is returned a call to Querier.LayerScanned with the same arguments must return true.
-SetLayerScanned(ctx context.Context, hash claircore.Digest, scnr VersionedScanner) error
-// RegisterPackageScanners registers the provided scanners with the persistence layer.
-RegisterScanners(ctx context.Context, scnrs VersionedScanners) error
-// SetIndexReport persists the current state of the IndexReport.
-//
-// IndexReports maybe in intermediate states to provide feedback for clients. this method should be
-// used to communicate scanning state updates. to signal the scan has completely successfully
-// see SetIndexFinished.
-SetIndexReport(context.Context, *claircore.IndexReport) error
-// SetIndexFinished marks a scan successfully completed.
-//
-// After this method returns a call to Querier.ManifestScanned with the manifest hash represted in the provided IndexReport
-// must return true.
-//
-// Also a call to Querier.IndexReport with the manifest hash represted in the provided IndexReport must return the IndexReport
-// in finished state.
-SetIndexFinished(ctx context.Context, sr *claircore.IndexReport, scnrs VersionedScanners) error
-</code></pre>
-<p>}
-Setter interface provides the method set for required marking events,
-or registering components, associated with an Index operation.</p>
-<pre><code></code></pre>
-<p>package indexer // import "github.com/quay/claircore/indexer"</p>
-<p>type Store interface {
-Setter
-Querier
-Indexer
-// Close frees any resources associated with the Store.
-Close(context.Context) error
-}
-Store is an interface for dealing with objects libindex needs to persist.
-Stores may be implemented per storage backend.</p>
 <pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type Setter interface {
@@ -282,39 +246,18 @@ type Setter interface {
     Setter interface provides the method set for required marking events,
     or registering components, associated with an Index operation.
 </code></pre>
-<p>package indexer // import "github.com/quay/claircore/indexer"</p>
-<p>type Querier interface {
-// ManifestScanned returns whether the given manifest was scanned by the provided scanners.
-ManifestScanned(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) (bool, error)
-// LayerScanned returns whether the given layer was scanned by the provided scanner.
-LayerScanned(ctx context.Context, hash claircore.Digest, scnr VersionedScanner) (bool, error)
-// PackagesByLayer gets all the packages found in a layer limited by the provided scanners.
-PackagesByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]*claircore.Package, error)
-// DistributionsByLayer gets all the distributions found in a layer limited by the provided scanners.
-DistributionsByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]*claircore.Distribution, error)
-// RepositoriesByLayer gets all the repositories found in a layer limited by the provided scanners.
-RepositoriesByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]*claircore.Repository, error)
-// FilesByLayer gets all the interesting files found in a layer limited by the provided scanners.
-FilesByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]claircore.File, error)
-// IndexReport attempts to retrieve a persisted IndexReport.
-IndexReport(ctx context.Context, hash claircore.Digest) (*claircore.IndexReport, bool, error)
-// AffectedManifests returns a list of manifest digests which the target vulnerability
-// affects.
-AffectedManifests(ctx context.Context, v claircore.Vulnerability, f claircore.CheckVulnernableFunc) ([]claircore.Digest, error)
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
+
+type Store interface {
+	Setter
+	Querier
+	Indexer
+	// Close frees any resources associated with the Store.
+	Close(context.Context) error
 }
-Querier interface provides the method set to ascertain indexed artifacts and
-query whether a layer or manifest has been scanned.</p>
-<pre><code></code></pre>
-<p>package indexer // import "github.com/quay/claircore/indexer"</p>
-<p>type Store interface {
-Setter
-Querier
-Indexer
-// Close frees any resources associated with the Store.
-Close(context.Context) error
-}
-Store is an interface for dealing with objects libindex needs to persist.
-Stores may be implemented per storage backend.</p>
+    Store is an interface for dealing with objects libindex needs to persist.
+    Stores may be implemented per storage backend.
+</code></pre>
 <pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type Setter interface {
@@ -351,28 +294,102 @@ type Setter interface {
     Setter interface provides the method set for required marking events,
     or registering components, associated with an Index operation.
 </code></pre>
-<p>package indexer // import "github.com/quay/claircore/indexer"</p>
-<p>type Querier interface {
-// ManifestScanned returns whether the given manifest was scanned by the provided scanners.
-ManifestScanned(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) (bool, error)
-// LayerScanned returns whether the given layer was scanned by the provided scanner.
-LayerScanned(ctx context.Context, hash claircore.Digest, scnr VersionedScanner) (bool, error)
-// PackagesByLayer gets all the packages found in a layer limited by the provided scanners.
-PackagesByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]*claircore.Package, error)
-// DistributionsByLayer gets all the distributions found in a layer limited by the provided scanners.
-DistributionsByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]*claircore.Distribution, error)
-// RepositoriesByLayer gets all the repositories found in a layer limited by the provided scanners.
-RepositoriesByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]*claircore.Repository, error)
-// FilesByLayer gets all the interesting files found in a layer limited by the provided scanners.
-FilesByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]claircore.File, error)
-// IndexReport attempts to retrieve a persisted IndexReport.
-IndexReport(ctx context.Context, hash claircore.Digest) (*claircore.IndexReport, bool, error)
-// AffectedManifests returns a list of manifest digests which the target vulnerability
-// affects.
-AffectedManifests(ctx context.Context, v claircore.Vulnerability, f claircore.CheckVulnernableFunc) ([]claircore.Digest, error)
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
+
+type Querier interface {
+	// ManifestScanned returns whether the given manifest was scanned by the provided scanners.
+	ManifestScanned(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) (bool, error)
+	// LayerScanned returns whether the given layer was scanned by the provided scanner.
+	LayerScanned(ctx context.Context, hash claircore.Digest, scnr VersionedScanner) (bool, error)
+	// PackagesByLayer gets all the packages found in a layer limited by the provided scanners.
+	PackagesByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]*claircore.Package, error)
+	// DistributionsByLayer gets all the distributions found in a layer limited by the provided scanners.
+	DistributionsByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]*claircore.Distribution, error)
+	// RepositoriesByLayer gets all the repositories found in a layer limited by the provided scanners.
+	RepositoriesByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]*claircore.Repository, error)
+	// FilesByLayer gets all the interesting files found in a layer limited by the provided scanners.
+	FilesByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]claircore.File, error)
+	// IndexReport attempts to retrieve a persisted IndexReport.
+	IndexReport(ctx context.Context, hash claircore.Digest) (*claircore.IndexReport, bool, error)
+	// AffectedManifests returns a list of manifest digests which the target vulnerability
+	// affects.
+	AffectedManifests(ctx context.Context, v claircore.Vulnerability, f claircore.CheckVulnernableFunc) ([]claircore.Digest, error)
 }
-Querier interface provides the method set to ascertain indexed artifacts and
-query whether a layer or manifest has been scanned.</p>
+    Querier interface provides the method set to ascertain indexed artifacts and
+    query whether a layer or manifest has been scanned.
+</code></pre>
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
+
+type Store interface {
+	Setter
+	Querier
+	Indexer
+	// Close frees any resources associated with the Store.
+	Close(context.Context) error
+}
+    Store is an interface for dealing with objects libindex needs to persist.
+    Stores may be implemented per storage backend.
+</code></pre>
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
+
+type Setter interface {
+	// PersistManifest must store the presence of a manifest and it's layers into the system.
+	//
+	// Typically this will write into identity tables so later methods have a foreign key
+	// to reference and data integrity is applied.
+	PersistManifest(ctx context.Context, manifest claircore.Manifest) error
+	// DeleteManifests removes the manifests indicated by the passed digests
+	// from the backing store.
+	DeleteManifests(context.Context, ...claircore.Digest) ([]claircore.Digest, error)
+
+	// SetLayerScanned marks the provided layer hash successfully scanned by the provided versioned scanner.
+	//
+	// After this method is returned a call to Querier.LayerScanned with the same arguments must return true.
+	SetLayerScanned(ctx context.Context, hash claircore.Digest, scnr VersionedScanner) error
+	// RegisterPackageScanners registers the provided scanners with the persistence layer.
+	RegisterScanners(ctx context.Context, scnrs VersionedScanners) error
+	// SetIndexReport persists the current state of the IndexReport.
+	//
+	// IndexReports maybe in intermediate states to provide feedback for clients. this method should be
+	// used to communicate scanning state updates. to signal the scan has completely successfully
+	// see SetIndexFinished.
+	SetIndexReport(context.Context, *claircore.IndexReport) error
+	// SetIndexFinished marks a scan successfully completed.
+	//
+	// After this method returns a call to Querier.ManifestScanned with the manifest hash represted in the provided IndexReport
+	// must return true.
+	//
+	// Also a call to Querier.IndexReport with the manifest hash represted in the provided IndexReport must return the IndexReport
+	// in finished state.
+	SetIndexFinished(ctx context.Context, sr *claircore.IndexReport, scnrs VersionedScanners) error
+}
+    Setter interface provides the method set for required marking events,
+    or registering components, associated with an Index operation.
+</code></pre>
+<pre><code>package indexer // import "github.com/quay/claircore/indexer"
+
+type Querier interface {
+	// ManifestScanned returns whether the given manifest was scanned by the provided scanners.
+	ManifestScanned(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) (bool, error)
+	// LayerScanned returns whether the given layer was scanned by the provided scanner.
+	LayerScanned(ctx context.Context, hash claircore.Digest, scnr VersionedScanner) (bool, error)
+	// PackagesByLayer gets all the packages found in a layer limited by the provided scanners.
+	PackagesByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]*claircore.Package, error)
+	// DistributionsByLayer gets all the distributions found in a layer limited by the provided scanners.
+	DistributionsByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]*claircore.Distribution, error)
+	// RepositoriesByLayer gets all the repositories found in a layer limited by the provided scanners.
+	RepositoriesByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]*claircore.Repository, error)
+	// FilesByLayer gets all the interesting files found in a layer limited by the provided scanners.
+	FilesByLayer(ctx context.Context, hash claircore.Digest, scnrs VersionedScanners) ([]claircore.File, error)
+	// IndexReport attempts to retrieve a persisted IndexReport.
+	IndexReport(ctx context.Context, hash claircore.Digest) (*claircore.IndexReport, bool, error)
+	// AffectedManifests returns a list of manifest digests which the target vulnerability
+	// affects.
+	AffectedManifests(ctx context.Context, v claircore.Vulnerability, f claircore.CheckVulnernableFunc) ([]claircore.Digest, error)
+}
+    Querier interface provides the method set to ascertain indexed artifacts and
+    query whether a layer or manifest has been scanned.
+</code></pre>
 <pre><code>package indexer // import "github.com/quay/claircore/indexer"
 
 type Indexer interface {
@@ -389,7 +406,6 @@ type Indexer interface {
 }
     Indexer interface provide the method set required for indexing layer and
     manifest contents into a persistent store.
-```
 </code></pre>
 
                     </main>
@@ -439,6 +455,7 @@ type Indexer interface {
 
         <!-- Custom JS scripts -->
         <script src="../docs/mermaid.min.js"></script>
+
 
 
     </div>

@@ -41,6 +41,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc.js"></script>
@@ -97,10 +98,13 @@
                 sidebar = sidebar || 'visible';
             } else {
                 sidebar = 'hidden';
+                sidebar_toggle.checked = false;
             }
-            sidebar_toggle.checked = sidebar === 'visible';
-            html.classList.remove('sidebar-visible');
-            html.classList.add("sidebar-" + sidebar);
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
@@ -154,7 +158,12 @@
 
                 <div id="search-wrapper" class="hidden">
                     <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
                     </form>
                     <div id="searchresults-outer" class="searchresults-outer hidden">
                         <div id="searchresults-header" class="searchresults-header"></div>
@@ -201,7 +210,7 @@ type Options struct {
 	// LayerScanConcurrency specifies the number of layers to be scanned in parallel.
 	LayerScanConcurrency int
 	// LayerFetchOpt is unused and kept here for backwards compatibility.
-	LayerFetchOpt interface{}
+	LayerFetchOpt any
 	// NoLayerValidation controls whether layers are checked to actually be
 	// content-addressed. With this option toggled off, callers can trigger
 	// layers to be indexed repeatedly by changing the identifier in the
@@ -219,7 +228,7 @@ type Options struct {
 	// Providing a function for a scanner that's not expecting it is not a fatal
 	// error.
 	ScannerConfig struct {
-		Package, Dist, Repo, File map[string]func(interface{}) error
+		Package, Dist, Repo, File map[string]func(any) error
 	}
 	Resolvers []indexer.Resolver
 }
@@ -367,6 +376,7 @@ mechanism.</p>
 
         <!-- Custom JS scripts -->
         <script src="../docs/mermaid.min.js"></script>
+
 
 
     </div>

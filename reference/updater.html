@@ -41,6 +41,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc.js"></script>
@@ -97,10 +98,13 @@
                 sidebar = sidebar || 'visible';
             } else {
                 sidebar = 'hidden';
+                sidebar_toggle.checked = false;
             }
-            sidebar_toggle.checked = sidebar === 'visible';
-            html.classList.remove('sidebar-visible');
-            html.classList.add("sidebar-" + sidebar);
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
         </script>
 
         <nav id="sidebar" class="sidebar" aria-label="Table of contents">
@@ -154,7 +158,12 @@
 
                 <div id="search-wrapper" class="hidden">
                     <form id="searchbar-outer" class="searchbar-outer">
-                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                        <div class="search-wrapper">
+                            <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <i class="fa fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
                     </form>
                     <div id="searchresults-outer" class="searchresults-outer hidden">
                         <div id="searchresults-header" class="searchresults-header"></div>
@@ -197,30 +206,6 @@ type Updater interface {
     Updater is an aggregate interface combining the method set of a Fetcher and
     a Parser and forces a Name() to be provided
 </code></pre>
-<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
-<p>type Fetcher interface {
-Fetch(context.Context, Fingerprint) (io.ReadCloser, Fingerprint, error)
-}
-Fetcher is an interface which is embedded into the Updater interface.</p>
-<pre><code>When called the interface should determine if new security advisory data
-is available. Fingerprint may be passed into in order for the Fetcher to
-determine if the contents has changed
-
-If there is new content Fetcher should return a io.ReadCloser where the new
-content can be read. Optionally a fingerprint can be returned which uniquely
-identifies the new content.
-
-If the conent has not change an Unchanged error should be returned.
-</code></pre>
-<pre><code></code></pre>
-<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
-<p>type Updater interface {
-Name() string
-Fetcher
-Parser
-}
-Updater is an aggregate interface combining the method set of a Fetcher and
-a Parser and forces a Name() to be provided</p>
 <pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Fetcher interface {
@@ -238,27 +223,16 @@ type Fetcher interface {
 
     If the conent has not change an Unchanged error should be returned.
 </code></pre>
-<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
-<p>type Parser interface {
-// Parse should take an io.ReadCloser, read the contents, parse the contents
-// into a list of claircore.Vulnerability structs and then return
-// the list. Parse should assume contents are uncompressed and ready for parsing.
-Parse(ctx context.Context, contents io.ReadCloser) ([]*claircore.Vulnerability, error)
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
+
+type Updater interface {
+	Name() string
+	Fetcher
+	Parser
 }
-Parser is an interface which is embedded into the Updater interface.</p>
-<pre><code>Parse should be called with an io.ReadCloser struct where the contents
-of a security advisory database can be read and parsed into an array of
-*claircore.Vulnerability
+    Updater is an aggregate interface combining the method set of a Fetcher and
+    a Parser and forces a Name() to be provided
 </code></pre>
-<pre><code></code></pre>
-<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
-<p>type Updater interface {
-Name() string
-Fetcher
-Parser
-}
-Updater is an aggregate interface combining the method set of a Fetcher and
-a Parser and forces a Name() to be provided</p>
 <pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Fetcher interface {
@@ -276,25 +250,67 @@ type Fetcher interface {
 
     If the conent has not change an Unchanged error should be returned.
 </code></pre>
-<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
-<p>type Parser interface {
-// Parse should take an io.ReadCloser, read the contents, parse the contents
-// into a list of claircore.Vulnerability structs and then return
-// the list. Parse should assume contents are uncompressed and ready for parsing.
-Parse(ctx context.Context, contents io.ReadCloser) ([]*claircore.Vulnerability, error)
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
+
+type Parser interface {
+	// Parse should take an io.ReadCloser, read the contents, parse the contents
+	// into a list of claircore.Vulnerability structs and then return
+	// the list. Parse should assume contents are uncompressed and ready for parsing.
+	Parse(ctx context.Context, contents io.ReadCloser) ([]*claircore.Vulnerability, error)
 }
-Parser is an interface which is embedded into the Updater interface.</p>
-<pre><code>Parse should be called with an io.ReadCloser struct where the contents
-of a security advisory database can be read and parsed into an array of
-*claircore.Vulnerability
+    Parser is an interface which is embedded into the Updater interface.
+
+    Parse should be called with an io.ReadCloser struct where the contents
+    of a security advisory database can be read and parsed into an array of
+    *claircore.Vulnerability
+</code></pre>
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
+
+type Updater interface {
+	Name() string
+	Fetcher
+	Parser
+}
+    Updater is an aggregate interface combining the method set of a Fetcher and
+    a Parser and forces a Name() to be provided
+</code></pre>
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
+
+type Fetcher interface {
+	Fetch(context.Context, Fingerprint) (io.ReadCloser, Fingerprint, error)
+}
+    Fetcher is an interface which is embedded into the Updater interface.
+
+    When called the interface should determine if new security advisory data
+    is available. Fingerprint may be passed into in order for the Fetcher to
+    determine if the contents has changed
+
+    If there is new content Fetcher should return a io.ReadCloser where the new
+    content can be read. Optionally a fingerprint can be returned which uniquely
+    identifies the new content.
+
+    If the conent has not change an Unchanged error should be returned.
+</code></pre>
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
+
+type Parser interface {
+	// Parse should take an io.ReadCloser, read the contents, parse the contents
+	// into a list of claircore.Vulnerability structs and then return
+	// the list. Parse should assume contents are uncompressed and ready for parsing.
+	Parse(ctx context.Context, contents io.ReadCloser) ([]*claircore.Vulnerability, error)
+}
+    Parser is an interface which is embedded into the Updater interface.
+
+    Parse should be called with an io.ReadCloser struct where the contents
+    of a security advisory database can be read and parsed into an array of
+    *claircore.Vulnerability
 </code></pre>
 <pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Fingerprint string
     Fingerprint is some identifying information about a vulnerability database.
-```
-```
-package driver // import "github.com/quay/claircore/libvuln/driver"
+</code></pre>
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Updater interface {
 	Name() string
@@ -304,20 +320,22 @@ type Updater interface {
     Updater is an aggregate interface combining the method set of a Fetcher and
     a Parser and forces a Name() to be provided
 </code></pre>
-<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
-<p>type Fetcher interface {
-Fetch(context.Context, Fingerprint) (io.ReadCloser, Fingerprint, error)
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
+
+type Fetcher interface {
+	Fetch(context.Context, Fingerprint) (io.ReadCloser, Fingerprint, error)
 }
-Fetcher is an interface which is embedded into the Updater interface.</p>
-<pre><code>When called the interface should determine if new security advisory data
-is available. Fingerprint may be passed into in order for the Fetcher to
-determine if the contents has changed
+    Fetcher is an interface which is embedded into the Updater interface.
 
-If there is new content Fetcher should return a io.ReadCloser where the new
-content can be read. Optionally a fingerprint can be returned which uniquely
-identifies the new content.
+    When called the interface should determine if new security advisory data
+    is available. Fingerprint may be passed into in order for the Fetcher to
+    determine if the contents has changed
 
-If the conent has not change an Unchanged error should be returned.
+    If there is new content Fetcher should return a io.ReadCloser where the new
+    content can be read. Optionally a fingerprint can be returned which uniquely
+    identifies the new content.
+
+    If the conent has not change an Unchanged error should be returned.
 </code></pre>
 <pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
@@ -333,9 +351,11 @@ type Parser interface {
     of a security advisory database can be read and parsed into an array of
     *claircore.Vulnerability
 </code></pre>
-<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
-<p>type Fingerprint string
-Fingerprint is some identifying information about a vulnerability database.</p>
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
+
+type Fingerprint string
+    Fingerprint is some identifying information about a vulnerability database.
+</code></pre>
 <pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Configurable interface {
@@ -343,9 +363,8 @@ type Configurable interface {
 }
     Configurable is an interface that Updaters can implement to opt-in to having
     their configuration provided dynamically.
-```
-```
-package driver // import "github.com/quay/claircore/libvuln/driver"
+</code></pre>
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Updater interface {
 	Name() string
@@ -355,20 +374,22 @@ type Updater interface {
     Updater is an aggregate interface combining the method set of a Fetcher and
     a Parser and forces a Name() to be provided
 </code></pre>
-<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
-<p>type Fetcher interface {
-Fetch(context.Context, Fingerprint) (io.ReadCloser, Fingerprint, error)
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
+
+type Fetcher interface {
+	Fetch(context.Context, Fingerprint) (io.ReadCloser, Fingerprint, error)
 }
-Fetcher is an interface which is embedded into the Updater interface.</p>
-<pre><code>When called the interface should determine if new security advisory data
-is available. Fingerprint may be passed into in order for the Fetcher to
-determine if the contents has changed
+    Fetcher is an interface which is embedded into the Updater interface.
 
-If there is new content Fetcher should return a io.ReadCloser where the new
-content can be read. Optionally a fingerprint can be returned which uniquely
-identifies the new content.
+    When called the interface should determine if new security advisory data
+    is available. Fingerprint may be passed into in order for the Fetcher to
+    determine if the contents has changed
 
-If the conent has not change an Unchanged error should be returned.
+    If there is new content Fetcher should return a io.ReadCloser where the new
+    content can be read. Optionally a fingerprint can be returned which uniquely
+    identifies the new content.
+
+    If the conent has not change an Unchanged error should be returned.
 </code></pre>
 <pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
@@ -384,9 +405,11 @@ type Parser interface {
     of a security advisory database can be read and parsed into an array of
     *claircore.Vulnerability
 </code></pre>
-<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
-<p>type Fingerprint string
-Fingerprint is some identifying information about a vulnerability database.</p>
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
+
+type Fingerprint string
+    Fingerprint is some identifying information about a vulnerability database.
+</code></pre>
 <pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
 
 type Configurable interface {
@@ -395,14 +418,15 @@ type Configurable interface {
     Configurable is an interface that Updaters can implement to opt-in to having
     their configuration provided dynamically.
 </code></pre>
-<p>package driver // import "github.com/quay/claircore/libvuln/driver"</p>
-<p>type ConfigUnmarshaler func(interface{}) error
-ConfigUnmarshaler can be thought of as an Unmarshal function with the byte
-slice provided, or a Decode function.</p>
-<pre><code>The function should populate a passed struct with any configuration
-information.
+<pre><code>package driver // import "github.com/quay/claircore/libvuln/driver"
+
+type ConfigUnmarshaler func(any) error
+    ConfigUnmarshaler can be thought of as an Unmarshal function with the byte
+    slice provided, or a Decode function.
+
+    The function should populate a passed struct with any configuration
+    information.
 </code></pre>
-<pre><code></code></pre>
 
                     </main>
 
@@ -451,6 +475,7 @@ information.
 
         <!-- Custom JS scripts -->
         <script src="../docs/mermaid.min.js"></script>
+
 
 
     </div>
