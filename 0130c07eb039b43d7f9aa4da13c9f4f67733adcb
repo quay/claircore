@@ -1,0 +1,5 @@
+cvss: switch to NVD 2.0 JSON feeds
+
+NVD deprecated their 1.1 JSON feed which claircore relied on for CVSS
+enrichment data. This change updates the CVSS enricher updater to use
+the 2.0 feeds.
