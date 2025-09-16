@@ -1,0 +1,6 @@
+vex: account for new VEX RPM module logic
+
+The Red Hat security data team are updating how modules are represented
+in VEX files, this change accounts for that update. Specifically, module
+relationships are no longer formally expressed through VEX
+relationships but rather as PURL qualifiers.
