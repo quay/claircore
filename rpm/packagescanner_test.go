@@ -201,3 +201,30 @@ func TestLayer(t *testing.T) {
 		})
 	}
 }
+
+func TestLayerDoesNotExist(t *testing.T) {
+	ctx := zlog.Test(t.Context(), t)
+
+	desc := &claircore.LayerDescription{
+		Digest:    test.RandomSHA256Digest(t).String(),
+		URI:       "doesnotexist",
+		MediaType: "application/vnd.claircore.filesystem",
+	}
+
+	l := &claircore.Layer{}
+	err := l.Init(ctx, desc, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := l.Close(); err != nil {
+			t.Error(err)
+		}
+	})
+
+	var s Scanner
+	_, err = s.Scan(ctx, l)
+	if err == nil {
+		t.Error("expected an error")
+	}
+}

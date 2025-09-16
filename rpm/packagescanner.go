@@ -50,9 +50,9 @@ func (*Scanner) Kind() string { return pkgKind }
 //
 // Deprecated: In-tree [indexer.PackageScanner] implementations should almost
 // certainly use the "internal/rpm" and "internal/dnf" packages.
-func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.Package, error) {
-	if err := ctx.Err(); err != nil {
-		return nil, err
+func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) (out []*claircore.Package, err error) {
+	if ctxErr := ctx.Err(); ctxErr != nil {
+		return nil, ctxErr
 	}
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	trace.Log(ctx, "layer", layer.Hash.String())
@@ -68,7 +68,6 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 		return nil, fmt.Errorf("rpm: unable to open layer: %w", err)
 	}
 
-	var out []*claircore.Package
 	dbs, errFunc := rpm.FindDBs(ctx, sys)
 	defer func() {
 		err = errors.Join(err, errFunc())
@@ -77,18 +76,18 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 		err = func() error {
 			ctx := zlog.ContextWithValues(ctx, "db", db.String())
 			zlog.Debug(ctx).Msg("examining database")
-			db, err := rpm.OpenDB(ctx, sys, db)
+			db, dbErr := rpm.OpenDB(ctx, sys, db)
 			switch {
-			case err == nil:
-			case errors.Is(err, fs.ErrNotExist):
+			case dbErr == nil:
+			case errors.Is(dbErr, fs.ErrNotExist):
 				return nil
 			default:
-				return err
+				return dbErr
 			}
 			defer db.Close()
-			for pkg, err := range db.Packages(ctx) {
-				if err != nil {
-					return err
+			for pkg, pkgErr := range db.Packages(ctx) {
+				if pkgErr != nil {
+					return pkgErr
 				}
 				out = append(out, &pkg)
 			}
