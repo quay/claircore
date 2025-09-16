@@ -1,3 +1,22 @@
+<a name="v1.5.40"></a>
+## [v1.5.40] - 2025-09-16
+[v1.5.40]: https://github.com/quay/claircore/compare/v1.5.39...v1.5.40
+
+- vex: account for new VEX RPM module logic
+  <details>
+  The Red Hat security data team are updating how modules are represented
+  in VEX files, this change accounts for that update. Specifically, module
+  relationships are no longer formally expressed through VEX
+  relationships but rather as PURL qualifiers.
+  </details>
+
+- cvss: switch to NVD 2.0 JSON feeds
+  <details>
+  NVD deprecated their 1.1 JSON feed which claircore relied on for CVSS
+  enrichment data. This change updates the CVSS enricher updater to use
+  the 2.0 feeds.
+  </details>
+
 <a name="v1.5.39"></a>
 ## [v1.5.39] - 2025-06-12
 [v1.5.39]: https://github.com/quay/claircore/compare/v1.5.38...v1.5.39
