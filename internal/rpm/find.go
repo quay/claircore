@@ -172,7 +172,7 @@ func OpenDB(ctx context.Context, sys fs.FS, found FoundDB) (*Database, error) {
 
 	cleanup := &databaseCleanup{}
 	db := Database{
-		pkgdb:   found.path,
+		pkgdb:   found.String(),
 		cleanup: cleanup,
 	}
 
