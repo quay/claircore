@@ -9,7 +9,6 @@ import (
 	"iter"
 	"os"
 	"path"
-	"unique"
 
 	"github.com/quay/zlog"
 	"golang.org/x/sync/errgroup"
@@ -68,7 +67,6 @@ func FindDBs(ctx context.Context, sys fs.FS) (iter.Seq[FoundDB], func() error) {
 }
 
 func walk(ctx context.Context, out chan<- FoundDB, sys fs.FS) fs.WalkDirFunc {
-	handle := unique.Make(sys)
 	return func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -112,9 +110,8 @@ func walk(ctx context.Context, out chan<- FoundDB, sys fs.FS) fs.WalkDirFunc {
 
 		select {
 		case out <- FoundDB{
-			path:   dir,
-			kind:   kind,
-			handle: handle,
+			path: dir,
+			kind: kind,
 		}:
 			// OK
 		case <-ctx.Done():
@@ -126,9 +123,8 @@ func walk(ctx context.Context, out chan<- FoundDB, sys fs.FS) fs.WalkDirFunc {
 
 // FoundDB is a pointer to a probable rpm database found in an [fs.FS].
 type FoundDB struct {
-	path   string
-	kind   dbKind
-	handle unique.Handle[fs.FS]
+	path string
+	kind dbKind
 }
 
 // String implements [fmt.Stringer].
@@ -158,12 +154,11 @@ func OpenDB(ctx context.Context, sys fs.FS, found FoundDB) (*Database, error) {
 	// of logic around opening the databases. This pass attempts to fix that by
 	// using new go features.
 
-	switch {
-	case found.kind == 0:
+	if found.kind == 0 {
 		return nil, errors.New("internal/rpm: programmer error: passed zero FoundDB")
-	case unique.Make(sys) != found.handle:
-		return nil, errors.New("internal/rpm: programmer error: passed mismatched fs.FS and FoundDB")
 	}
+	// TODO(hank) Cook up some test against passing the wrong [fs.FS]. Don't use
+	// the unique package.
 
 	f, err := sys.Open(found.filename())
 	if err != nil {
