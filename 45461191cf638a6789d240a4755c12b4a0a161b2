@@ -1,0 +1,4 @@
+rpm: fix use of `unique.Handle` pinning `fs.FS`
+
+Previous code wouldn't allow memory resources to be reclaimed and could
+lead to excessive memory consumption by the indexer in v1.5.40.
