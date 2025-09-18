@@ -1,3 +1,13 @@
+<a name="v1.5.41"></a>
+## [v1.5.41] - 2025-09-18
+[v1.5.41]: https://github.com/quay/claircore/compare/v1.5.40...v1.5.41
+
+- rpm: fix use of `unique.Handle` pinning `fs.FS`
+  <details>
+  Previous code wouldn't allow memory resources to be reclaimed and could
+  lead to excessive memory consumption by the indexer in v1.5.40.
+  </details>
+
 <a name="v1.5.40"></a>
 ## [v1.5.40] - 2025-09-16
 [v1.5.40]: https://github.com/quay/claircore/compare/v1.5.39...v1.5.40
