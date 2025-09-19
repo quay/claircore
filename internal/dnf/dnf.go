@@ -32,6 +32,9 @@ import (
 //
 // [CLAIRDEV-45]: https://issues.redhat.com/browse/CLAIRDEV-45
 
+// NOTE(hank) Fedora seems to use some hex identifier for repoids. This might be
+// a problem if we ever want to support Fedora.
+
 // PackageSeq is an alias for the Package iterator type.
 type PackageSeq = iter.Seq2[claircore.Package, error]
 
@@ -76,7 +79,7 @@ func FindRepoids(ctx context.Context, sys fs.FS) ([]string, error) {
 	defer h.Close()
 
 	var ret []string
-	rows, err := h.db.QueryContext(ctx, allRepoids, h.rm)
+	rows, err := h.db.QueryContext(ctx, h.AllRepoids)
 	if err != nil {
 		return nil, err
 	}
@@ -100,59 +103,43 @@ func FindRepoids(ctx context.Context, sys fs.FS) ([]string, error) {
 	return ret, nil
 }
 
-// DbDesc describes the path to a dnf history database and the enum used to
-// denote a "removed" action.
-type dbDesc struct {
-	Path string
-	Enum int
-}
-
-// Possible is the slice of dbDesc that's examined by openHistoryDB.
-var possible = []dbDesc{
-	{ // dnf5
-		// https://github.com/rpm-software-management/dnf5/blob/5.2.13.0/libdnf5/transaction/db/db.cpp#L78-L89
-		Path: `usr/lib/sysimage/libdnf5/transaction_history.sqlite`,
-		// https://github.com/rpm-software-management/dnf5/blob/5.2.13.0/include/libdnf5/transaction/transaction_item_action.hpp#L42
-		Enum: 5,
-	},
-	{ // dnf3/4
-		// https://github.com/rpm-software-management/libdnf/blob/4.90/libdnf/transaction/Swdb.hpp#L57
-		Path: `var/lib/dnf/history.sqlite`,
-		// https://github.com/rpm-software-management/libdnf/blob/4.90/libdnf/transaction/Types.hpp#L53
-		Enum: 8,
-	},
-}
+const (
+	// https://github.com/rpm-software-management/dnf5/blob/5.2.13.0/libdnf5/transaction/db/db.cpp#L78-L89
+	pathDnf5 = `usr/lib/sysimage/libdnf5/transaction_history.sqlite`
+	// https://github.com/rpm-software-management/libdnf/blob/4.90/libdnf/transaction/Swdb.hpp#L57
+	pathDnf4 = `var/lib/dnf/history.sqlite`
+)
 
 // HistoryDB is a handle to the dnf history database.
 //
 // All methods are safe to call on a nil receiver.
 type historyDB struct {
 	db *sql.DB
-	rm int
+	queries
 }
 
 // OpenHistoryDB does what it says on the tin.
 //
 // This function may return a nil *historyDB, which is still safe to use.
 func openHistoryDB(ctx context.Context, sys fs.FS) (*historyDB, error) {
-	var found *dbDesc
+	var found string
 Stat:
-	for _, v := range possible {
-		switch _, err := fs.Stat(sys, v.Path); {
+	for _, name := range []string{pathDnf5, pathDnf4} {
+		switch _, err := fs.Stat(sys, name); {
 		case errors.Is(err, nil):
-			found = &v
+			found = name
 			break Stat
 		case errors.Is(err, fs.ErrNotExist): // OK
 		default:
 			return nil, fmt.Errorf("internal/dnf: unexpected error handling fs.FS: %w", err)
 		}
 	}
-	if found == nil {
+	if found == "" {
 		return nil, nil
 	}
 	var h *historyDB
 
-	f, err := sys.Open(found.Path)
+	f, err := sys.Open(found)
 	if err != nil {
 		return nil, fmt.Errorf("internal/dnf: unexpected error opening history: %w", err)
 	}
@@ -195,10 +182,15 @@ Stat:
 	if err := db.PingContext(ctx); err != nil {
 		return nil, fmt.Errorf("internal/dnf: error reading sqlite db: %w", err)
 	}
+	queries, err := pickQueries(ctx, db)
+	if err != nil {
+		// Error should be annotated already, just return it.
+		return nil, err
+	}
 
 	h = &historyDB{
-		db: db,
-		rm: found.Enum,
+		db:      db,
+		queries: queries,
 	}
 	// This is an internal function, so add an extra caller frame.
 	_, file, line, _ := runtime.Caller(2)
@@ -206,6 +198,50 @@ Stat:
 		panic(fmt.Sprintf("%s:%d: historyDB not closed", file, line))
 	})
 	return h, nil
+}
+
+// PickQueries returns the correct set of queries based on the tables present in
+// the database.
+func pickQueries(ctx context.Context, db *sql.DB) (q queries, err error) {
+	names, err := tableNames(ctx, db)
+	if err != nil {
+		return q, err
+	}
+	zlog.Debug(ctx).Strs("tables", names).Msg("found tables in database")
+
+	switch {
+	case !slices.Contains(names, `config`):
+		q = dnf4Queries
+	case !slices.Contains(names, `trans_item_action`):
+		q = dnf4Queries
+	default:
+		q = dnf5Queries
+	}
+
+	return q, nil
+}
+
+// TableNames reports the tables present in the database.
+func tableNames(ctx context.Context, db *sql.DB) (out []string, err error) {
+	rows, err := db.QueryContext(ctx, getTables)
+	if err != nil {
+		return nil, fmt.Errorf("internal/dnf: error querying table names: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var n string
+		if err := rows.Scan(&n); err != nil {
+			return nil, fmt.Errorf("internal/dnf: error reading table name: %w", err)
+		}
+		out = append(out, n)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("internal/dnf: error reading table names: %w", err)
+	}
+
+	slices.Sort(out)
+	return out, nil
 }
 
 // AddRepoid modifies the passed [claircore.Package] with a discovered dnf
@@ -230,7 +266,7 @@ func (h *historyDB) AddRepoid(ctx context.Context, pkg *claircore.Package) error
 
 	var id string
 	err = h.db.
-		QueryRowContext(ctx, repoidForPackage, h.rm,
+		QueryRowContext(ctx, h.RepoidForPackage,
 			*ver.Name, ver.Epoch, ver.Version, ver.Release, *ver.Architecture).
 		Scan(&id)
 	switch {
