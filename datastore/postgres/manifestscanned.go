@@ -47,7 +47,7 @@ func (s *IndexerStore) ManifestScanned(ctx context.Context, hash claircore.Diges
 	)
 
 	// get the ids of the scanners we are testing for.
-	expectedIDs, err := s.selectScanners(ctx, vs)
+	expectedIDs, err := s.selectScanners(vs)
 	if err != nil {
 		return false, err
 	}

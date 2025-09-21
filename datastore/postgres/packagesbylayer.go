@@ -39,14 +39,6 @@ var (
 
 func (s *IndexerStore) PackagesByLayer(ctx context.Context, hash claircore.Digest, scnrs indexer.VersionedScanners) ([]*claircore.Package, error) {
 	const (
-		selectScanner = `
-SELECT
-	id
-FROM
-	scanner
-WHERE
-	name = $1 AND version = $2 AND kind = $3;
-`
 		query = `
 SELECT
 	package.id,
@@ -84,16 +76,9 @@ WHERE
 		return []*claircore.Package{}, nil
 	}
 	// get scanner ids
-	scannerIDs := make([]int64, len(scnrs))
-	for i, scnr := range scnrs {
-		start := time.Now()
-		err := s.pool.QueryRow(ctx, selectScanner, scnr.Name(), scnr.Version(), scnr.Kind()).
-			Scan(&scannerIDs[i])
-		if err != nil {
-			return nil, fmt.Errorf("failed to retrieve scanner ids: %w", err)
-		}
-		packagesByLayerCounter.WithLabelValues("selectScanner").Add(1)
-		packagesByLayerDuration.WithLabelValues("selectScanner").Observe(time.Since(start).Seconds())
+	scannerIDs, err := s.selectScanners(scnrs)
+	if err != nil {
+		return nil, err
 	}
 
 	start := time.Now()
