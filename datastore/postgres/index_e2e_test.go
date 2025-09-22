@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -216,7 +217,7 @@ func (e *indexE2e) Run(t *testing.T) {
 }
 
 // PersistManifest confirms we create the necessary
-// Manifest and Layer identifies so layer code
+// Manifest and Layer identities so layer code
 // foreign key references do not fail.
 func (e *indexE2e) PersistManifest(t *testing.T) {
 	ctx := zlog.Test(e.ctx, t)
@@ -236,7 +237,7 @@ func (e *indexE2e) RegisterScanner(t *testing.T) {
 	}
 }
 
-// IndexAndRetreivePackages confirms inserting and
+// IndexAndRetrievePackages confirms inserting and
 // selecting packages associated with a layer works
 // correctly.
 func (e *indexE2e) IndexAndRetrievePackages(t *testing.T) {
@@ -260,7 +261,7 @@ func (e *indexE2e) IndexAndRetrievePackages(t *testing.T) {
 	}
 }
 
-// IndexAndRetreiveDistributions confirms inserting and
+// IndexAndRetrieveDistributions confirms inserting and
 // selecting distributions associated with a layer works
 // correctly.
 func (e *indexE2e) IndexAndRetrieveDistributions(t *testing.T) {
@@ -284,7 +285,7 @@ func (e *indexE2e) IndexAndRetrieveDistributions(t *testing.T) {
 	}
 }
 
-// IndexAndRetreiveRepos confirms inserting and
+// IndexAndRetrieveRepos confirms inserting and
 // selecting repositories associated with a layer works
 // correctly.
 func (e *indexE2e) IndexAndRetrieveRepos(t *testing.T) {
@@ -345,7 +346,7 @@ func (e *indexE2e) LayerScannedNotExists(t *testing.T) {
 }
 
 // LayerScannedFalse confirms a false boolean is returned when attempting
-// to obtain if a non-exitent layer was scanned by a valid scanner
+// to obtain if a non-existent layer was scanned by a valid scanner
 func (e *indexE2e) LayerScannedFalse(t *testing.T) {
 	ctx := zlog.Test(e.ctx, t)
 
@@ -417,5 +418,25 @@ func (e *indexE2e) IndexReport(t *testing.T) {
 	}
 	if !cmp.Equal(A.State, B.State) {
 		t.Fatalf("%v", cmp.Diff(A.Hash.String(), B.Hash.String()))
+	}
+
+	cDigest := claircore.MustParseDigest(`sha256:` + strings.Repeat(`c`, 64))
+	c, err := e.store.ManifestScanned(ctx, cDigest, e.scnrs)
+	if err != nil {
+		t.Fatalf("failed to query if manifest was scanned: %v", err)
+	}
+	if c {
+		t.Fatalf("expected manifest to not exist")
+	}
+
+	C, ok, err := e.store.IndexReport(ctx, cDigest)
+	if err != nil {
+		t.Fatalf("failed to retrieve index report: %v", err)
+	}
+	if ok {
+		t.Fatalf("non-existent index report shouldn't be ok")
+	}
+	if C != nil {
+		t.Fatalf("non-existent index report should be nil")
 	}
 }
