@@ -4,10 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/fs"
 	"os"
-	"path"
 	"strings"
 	"testing"
 
@@ -42,14 +40,14 @@ func TestEncoder(t *testing.T) {
 	WithPURLConverter(pr)(e)
 
 	ctx := context.Background()
-	td := os.DirFS("testdata")
+	td := os.DirFS("testdata/round-trip")
 	de, err := fs.ReadDir(td, ".")
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, de := range de {
 		n := de.Name()
-		if strings.HasSuffix(n, ".want.json") {
+		if de.IsDir() || !strings.HasSuffix(n, ".ir.json") {
 			continue
 		}
 		t.Run(n, func(t *testing.T) {
@@ -58,9 +56,8 @@ func TestEncoder(t *testing.T) {
 				t.Fatal(err)
 			}
 			defer f.Close()
-			ext := path.Ext(n)
-			base := strings.TrimSuffix(n, ext)
-			wantPath := fmt.Sprintf("%s.want%s", base, ext)
+			base := strings.TrimSuffix(n, ".ir.json")
+			wantPath := base + ".spdx.json"
 			w, err := td.Open(wantPath)
 			if err != nil {
 				t.Fatal(err)
