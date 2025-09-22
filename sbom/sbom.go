@@ -11,3 +11,8 @@ import (
 type Encoder interface {
 	Encode(ctx context.Context, w io.Writer, ir *claircore.IndexReport) error
 }
+
+// Decoder is an interface to convert an encoded SBOM from r into a claircore.IndexReport
+type Decoder interface {
+	Decode(ctx context.Context, r io.Reader) (*claircore.IndexReport, error)
+}

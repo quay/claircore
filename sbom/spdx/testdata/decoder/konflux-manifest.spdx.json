@@ -1,0 +1,154 @@
+{
+    "SPDXID": "SPDXRef-DOCUMENT",
+    "creationInfo": {
+        "created": "2026-01-06T05:13:54Z",
+        "creators": [
+            "Organization: Red Hat",
+            "Tool: Konflux CI",
+            "Tool: Mobster-1.1.0"
+        ]
+    },
+    "dataLicense": "CC0-1.0",
+    "name": "quay.io/redhat-user-workloads/osci-rhel-containers-tenant/rhel-9-7/ubi9-9-7@sha256:2c9bb68a869abf7d7417f6639509ab5eb8500d8429ea11ab59e677be5545162b",
+    "spdxVersion": "SPDX-2.3",
+    "documentNamespace": "https://konflux-ci.dev/spdxdocs/quay.io/redhat-user-workloads/osci-rhel-containers-tenant/rhel-9-7/ubi9-9-7@sha256:2c9bb68a869abf7d7417f6639509ab5eb8500d8429ea11ab59e677be5545162b-ea00a4da-ca97-4853-99a8-51fb11129920",
+    "packages": [
+        {
+            "SPDXID": "SPDXRef-image-index",
+            "checksums": [
+                {
+                    "algorithm": "SHA256",
+                    "checksumValue": "2c9bb68a869abf7d7417f6639509ab5eb8500d8429ea11ab59e677be5545162b"
+                }
+            ],
+            "downloadLocation": "NOASSERTION",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE_MANAGER",
+                    "referenceLocator": "pkg:oci/ubi9-9-7@sha256:2c9bb68a869abf7d7417f6639509ab5eb8500d8429ea11ab59e677be5545162b?repository_url=quay.io/redhat-user-workloads/osci-rhel-containers-tenant/rhel-9-7/ubi9-9-7",
+                    "referenceType": "purl"
+                }
+            ],
+            "filesAnalyzed": false,
+            "licenseDeclared": "NOASSERTION",
+            "name": "ubi9-9-7",
+            "supplier": "Organization: Red Hat",
+            "versionInfo": "3e794df56e99dd97dc87933feb0fbd960b8c9ca7"
+        },
+        {
+            "SPDXID": "SPDXRef-image-ubi9-9-7-ad76d826ad41cbb3095cf703e1cfe88610e4c7d688e0206a22bfc505d8ecb0a7",
+            "checksums": [
+                {
+                    "algorithm": "SHA256",
+                    "checksumValue": "989a54762df6a21190a34dda0ffb682358fe5c29b249645536a2436b313af367"
+                }
+            ],
+            "downloadLocation": "NOASSERTION",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE_MANAGER",
+                    "referenceLocator": "pkg:oci/ubi9-9-7@sha256:989a54762df6a21190a34dda0ffb682358fe5c29b249645536a2436b313af367?arch=amd64&repository_url=quay.io/redhat-user-workloads/osci-rhel-containers-tenant/rhel-9-7/ubi9-9-7",
+                    "referenceType": "purl"
+                }
+            ],
+            "filesAnalyzed": false,
+            "licenseDeclared": "NOASSERTION",
+            "name": "ubi9-9-7_amd64",
+            "supplier": "Organization: Red Hat",
+            "versionInfo": "3e794df56e99dd97dc87933feb0fbd960b8c9ca7"
+        },
+        {
+            "SPDXID": "SPDXRef-image-ubi9-9-7-b3ab4ff3a3ac98ea745fee70c36a9a900f106e7d8c50997584d3bf35623598da",
+            "checksums": [
+                {
+                    "algorithm": "SHA256",
+                    "checksumValue": "004d4796c3447872eeb79730110d2f677cb059dc358b134a73ce036692c13a42"
+                }
+            ],
+            "downloadLocation": "NOASSERTION",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE_MANAGER",
+                    "referenceLocator": "pkg:oci/ubi9-9-7@sha256:004d4796c3447872eeb79730110d2f677cb059dc358b134a73ce036692c13a42?arch=arm64&repository_url=quay.io/redhat-user-workloads/osci-rhel-containers-tenant/rhel-9-7/ubi9-9-7",
+                    "referenceType": "purl"
+                }
+            ],
+            "filesAnalyzed": false,
+            "licenseDeclared": "NOASSERTION",
+            "name": "ubi9-9-7_arm64",
+            "supplier": "Organization: Red Hat",
+            "versionInfo": "3e794df56e99dd97dc87933feb0fbd960b8c9ca7"
+        },
+        {
+            "SPDXID": "SPDXRef-image-ubi9-9-7-faa1cbfaa86a5e8be2fc312c6f2678aff258d914736a71c025363462105872cd",
+            "checksums": [
+                {
+                    "algorithm": "SHA256",
+                    "checksumValue": "2d8104fbbb0e70022cd542242d178f6bbd9a90789b47a83cdc36c6f2f7afdac9"
+                }
+            ],
+            "downloadLocation": "NOASSERTION",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE_MANAGER",
+                    "referenceLocator": "pkg:oci/ubi9-9-7@sha256:2d8104fbbb0e70022cd542242d178f6bbd9a90789b47a83cdc36c6f2f7afdac9?arch=s390x&repository_url=quay.io/redhat-user-workloads/osci-rhel-containers-tenant/rhel-9-7/ubi9-9-7",
+                    "referenceType": "purl"
+                }
+            ],
+            "filesAnalyzed": false,
+            "licenseDeclared": "NOASSERTION",
+            "name": "ubi9-9-7_s390x",
+            "supplier": "Organization: Red Hat",
+            "versionInfo": "3e794df56e99dd97dc87933feb0fbd960b8c9ca7"
+        },
+        {
+            "SPDXID": "SPDXRef-image-ubi9-9-7-c293268484b315e34f57c860e1595fac0e3c8e2db9f8693c0159af545a32bedd",
+            "checksums": [
+                {
+                    "algorithm": "SHA256",
+                    "checksumValue": "330f0aef267aa52e18a3292c0b6be6748e7186cfc9b35e9621867f5aa438b301"
+                }
+            ],
+            "downloadLocation": "NOASSERTION",
+            "externalRefs": [
+                {
+                    "referenceCategory": "PACKAGE_MANAGER",
+                    "referenceLocator": "pkg:oci/ubi9-9-7@sha256:330f0aef267aa52e18a3292c0b6be6748e7186cfc9b35e9621867f5aa438b301?arch=ppc64le&repository_url=quay.io/redhat-user-workloads/osci-rhel-containers-tenant/rhel-9-7/ubi9-9-7",
+                    "referenceType": "purl"
+                }
+            ],
+            "filesAnalyzed": false,
+            "licenseDeclared": "NOASSERTION",
+            "name": "ubi9-9-7_ppc64le",
+            "supplier": "Organization: Red Hat",
+            "versionInfo": "3e794df56e99dd97dc87933feb0fbd960b8c9ca7"
+        }
+    ],
+    "relationships": [
+        {
+            "spdxElementId": "SPDXRef-DOCUMENT",
+            "relatedSpdxElement": "SPDXRef-image-index",
+            "relationshipType": "DESCRIBES"
+        },
+        {
+            "spdxElementId": "SPDXRef-image-ubi9-9-7-ad76d826ad41cbb3095cf703e1cfe88610e4c7d688e0206a22bfc505d8ecb0a7",
+            "relatedSpdxElement": "SPDXRef-image-index",
+            "relationshipType": "VARIANT_OF"
+        },
+        {
+            "spdxElementId": "SPDXRef-image-ubi9-9-7-b3ab4ff3a3ac98ea745fee70c36a9a900f106e7d8c50997584d3bf35623598da",
+            "relatedSpdxElement": "SPDXRef-image-index",
+            "relationshipType": "VARIANT_OF"
+        },
+        {
+            "spdxElementId": "SPDXRef-image-ubi9-9-7-faa1cbfaa86a5e8be2fc312c6f2678aff258d914736a71c025363462105872cd",
+            "relatedSpdxElement": "SPDXRef-image-index",
+            "relationshipType": "VARIANT_OF"
+        },
+        {
+            "spdxElementId": "SPDXRef-image-ubi9-9-7-c293268484b315e34f57c860e1595fac0e3c8e2db9f8693c0159af545a32bedd",
+            "relatedSpdxElement": "SPDXRef-image-index",
+            "relationshipType": "VARIANT_OF"
+        }
+    ]
+}
