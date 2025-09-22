@@ -22,7 +22,7 @@ import (
 func TestEncoder(t *testing.T) {
 	e := &Encoder{
 		Version: V2_3,
-		Format:  JSONFormat,
+		Format:  FormatJSON,
 		Creators: []Creator{
 			{
 				Creator:     "Claircore",
