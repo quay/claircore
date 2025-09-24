@@ -298,16 +298,21 @@ func TestEnrich(t *testing.T) {
 	r := &claircore.VulnerabilityReport{
 		Vulnerabilities: map[string]*claircore.Vulnerability{
 			"-1": {
-				Description: "This is a fake vulnerability that doesn't have a CVE.",
+				// Not a CVE
+				Name: "GO-007",
 			},
 			"1": {
-				Description: "This is a fake vulnerability that looks like CVE-2016-2781.",
+				// Legitimate CVE
+				Name: "CVE-2016-2781",
 			},
 			"6004": {
-				Description: "CVE-2016-0001 was unassigned",
+				// Unassigned CVE
+				Name: "CVE-2016-0001",
 			},
 			"6005": {
-				Description: "CVE-2016-3674 duplicate",
+				//  Check description isn't considered
+				Name:        "CVE-2016-3674",
+				Description: "CVE-2016-2781 duplicate",
 			},
 		},
 	}
