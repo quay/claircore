@@ -283,7 +283,6 @@ func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *cla
 		ctx := zlog.ContextWithValues(ctx, "vuln", v.Name)
 
 		for _, elem := range []string{
-			v.Description,
 			v.Name,
 			v.Links,
 		} {
