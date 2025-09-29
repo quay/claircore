@@ -1,0 +1,5 @@
+enrichment: don't consider vulnerability.Description for enrichments
+
+Descriptions can often refer to different CVEs or multiple CVEs to the
+actual CVE that is associated to the vulnerability leading to erroneous scores.
+We should only consider the Name and Links fields.
