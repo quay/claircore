@@ -1,3 +1,21 @@
+<a name="v1.5.43"></a>
+## [v1.5.43] - 2025-09-29
+[v1.5.43]: https://github.com/quay/claircore/compare/v1.5.42...v1.5.43
+
+- enrichment: don't consider vulnerability.Description for enrichments
+  <details>
+  Descriptions can often refer to different CVEs or multiple CVEs to the
+  actual CVE that is associated to the vulnerability leading to erroneous scores.
+  We should only consider the Name and Links fields.
+  </details>
+
+- postgres: better GetEnrichments query
+  <details>
+  The new query is in "normal" `JOIN`-and-`WHERE` form and does not use
+  the `latest_update_operations` view. In testing, this was much quicker
+  to execute.
+  </details>
+
 <a name="v1.5.42"></a>
 ## [v1.5.42] - 2025-09-19
 [v1.5.42]: https://github.com/quay/claircore/compare/v1.5.41...v1.5.42
