@@ -1,0 +1,5 @@
+postgres: better GetEnrichments query
+
+The new query is in "normal" `JOIN`-and-`WHERE` form and does not use
+the `latest_update_operations` view. In testing, this was much quicker
+to execute.
