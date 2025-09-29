@@ -455,6 +455,49 @@ func TestCoalescer(t *testing.T) {
 				return input, want
 			},
 		},
+		{
+			Name: "WithDNFUnknownRepo",
+			Fixture: func(t testing.TB) ([]*indexer.LayerArtifacts, *claircore.IndexReport) {
+				repo1 := &claircore.Repository{
+					ID:   "1",
+					Name: "test_1",
+					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8::appstream"),
+					Key:  repositoryKey,
+				}
+				pkg1 := &claircore.Package{
+					ID:        "1",
+					Name:      "hello",
+					Version:   "1.0-1",
+					PackageDB: "fixture:/var/lib/rpm",
+					RepositoryHint: (url.Values{
+						"repoid": {"does-not-exist"},
+					}).Encode(),
+				}
+				input := []*indexer.LayerArtifacts{
+					{
+						Hash:  test.RandomSHA256Digest(t),
+						Pkgs:  []*claircore.Package{pkg1},
+						Dist:  nil,
+						Repos: []*claircore.Repository{repo1},
+					},
+				}
+				want := &claircore.IndexReport{
+					Hash:          test.RandomSHA256Digest(t),
+					Packages:      map[string]*claircore.Package{pkg1.ID: pkg1},
+					Distributions: map[string]*claircore.Distribution{},
+					Repositories:  map[string]*claircore.Repository{repo1.Name: repo1},
+					Environments: map[string][]*claircore.Environment{
+						pkg1.ID: {
+							{
+								PackageDB:     pkg1.PackageDB,
+								RepositoryIDs: nil,
+							},
+						},
+					},
+				}
+				return input, want
+			},
+		},
 	}
 
 	for _, tc := range tcs {

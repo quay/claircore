@@ -127,7 +127,9 @@ func (*Coalescer) Coalesce(ctx context.Context, artifacts []*indexer.LayerArtifa
 				}
 				v, _ := url.ParseQuery(pkg.RepositoryHint)
 				if id := v.Get("repoid"); id != "" {
-					environment.RepositoryIDs = v["repoid"]
+					if _, ok := ir.Repositories[id]; ok {
+						environment.RepositoryIDs = v["repoid"]
+					}
 				} else {
 					environment.RepositoryIDs = make([]string, len(layerArtifacts.Repos))
 					for i := range layerArtifacts.Repos {
