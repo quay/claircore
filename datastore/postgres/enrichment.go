@@ -233,23 +233,28 @@ func hashEnrichment(r *driver.EnrichmentRecord) (k string, d []byte) {
 
 func (s *MatcherStore) GetEnrichment(ctx context.Context, name string, tags []string) (res []driver.EnrichmentRecord, err error) {
 	const query = `
-SELECT
-	e.tags, e.data
-FROM
-	uo_enrich AS uo
-JOIN
-	enrichment AS e
-	ON (uo.enrich = e.id)
-JOIN
-	update_operation AS op
-	ON (uo.uo = op.id)
-WHERE
-	op.updater = $1
-	AND op.kind = 'enrichment'
-	AND e.tags && $2::text[]
-ORDER BY
-	op.id DESC
-LIMIT 1;`
+with e as materialized (
+select
+	id,
+	tags,
+	data
+from
+	public.enrichment
+where
+	tags && $2::text[] )
+select
+	e.tags,
+	e.data
+from
+	e
+join public.uo_enrich uo on
+	uo.enrich = e.id
+join public.latest_update_operations l on
+	l.id = uo.uo
+where
+	l.updater = $1
+	and l.kind = 'enrichment'
+limit 1;`
 
 	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/GetEnrichment")
 	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
