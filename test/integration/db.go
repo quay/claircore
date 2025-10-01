@@ -13,7 +13,6 @@ import (
 	"testing"
 
 	"github.com/jackc/pgconn"
-	pgxpoolv4 "github.com/jackc/pgx/v4/pgxpool"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/log/testingadapter"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -69,7 +68,6 @@ const (
 // configured. The "uuid-ossp" extension is already loaded.
 //
 // DBSetup and NeedDB are expected to have been called correctly.
-// TODO(crozzy): Remove pgx v4 code after ctxlock stops supporting v4.
 func NewDB(ctx context.Context, t testing.TB) (*DB, error) {
 	dbid, roleid := mkIDs()
 	database := fmt.Sprintf("db%x", dbid)
@@ -92,17 +90,8 @@ func NewDB(ctx context.Context, t testing.TB) (*DB, error) {
 		Password: cfg.ConnConfig.Password,
 	})
 
-	cfg4, err := pgxpoolv4.ParseConfig(pkgConfig.ConnString())
-	if err != nil {
-		t.Error(err)
-	}
-	cfg4.ConnConfig.User = role
-	cfg4.ConnConfig.Password = role
-	cfg4.ConnConfig.Database = database
-
 	return &DB{
-		cfg:  cfg,
-		cfg4: cfg4,
+		cfg: cfg,
 	}, nil
 }
 
@@ -193,7 +182,6 @@ func configureDatabase(ctx context.Context, t testing.TB, root *pgxpool.Config, 
 // [auto_explain documentation]: https://www.postgresql.org/docs/current/auto-explain.html
 type DB struct {
 	cfg    *pgxpool.Config
-	cfg4   *pgxpoolv4.Config
 	noDrop bool
 }
 
@@ -210,10 +198,6 @@ func (db *DB) String() string {
 // Config returns a pgxpool.Config for the test database.
 func (db *DB) Config() *pgxpool.Config {
 	return db.cfg.Copy()
-}
-
-func (db *DB) Configv4() *pgxpoolv4.Config {
-	return db.cfg4.Copy()
 }
 
 // Close tears down the created database.
