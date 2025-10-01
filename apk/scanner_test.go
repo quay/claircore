@@ -1,11 +1,9 @@
 package apk
 
 import (
-	"context"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
@@ -13,7 +11,7 @@ import (
 
 func TestScan(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	// TODO(hank) Turn into a fixture.
 	want := []*claircore.Package{
 		{
