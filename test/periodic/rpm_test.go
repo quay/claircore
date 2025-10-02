@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/rhel"
@@ -133,7 +132,7 @@ func (doc hydraDoc) Run(dir string) func(*testing.T) {
 	}
 	return func(t *testing.T) {
 		t.Parallel()
-		ctx := zlog.Test(context.Background(), t)
+		ctx := test.Logging(t)
 		try := 1
 
 	Retry:
