@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/textproto"
 	"net/url"
@@ -14,8 +15,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/tmp"
@@ -184,28 +183,25 @@ Listing:
 		dist = strings.Trim(dist, "/")
 		rf, err := dir.Parse(path.Join(dist, `Release`))
 		if err != nil {
-			zlog.Info(ctx).
-				Err(err).
-				Stringer("context", dir).
-				Str("target", path.Join(dist, `Release`)).
-				Msg("unable to construct URL")
+			slog.InfoContext(ctx, "unable to construct URL",
+				"reason", err,
+				"context", dir,
+				"target", path.Join(dist, `Release`))
 			continue
 		}
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, rf.String(), nil)
 		if err != nil {
-			zlog.Info(ctx).
-				Err(err).
-				Stringer("url", rf).
-				Msg("unable to construct request")
+			slog.InfoContext(ctx, "unable to construct request",
+				"reason", err,
+				"url", rf)
 			continue
 		}
 		req.Header.Set("range", "bytes=0-512")
 		res, err := f.c.Do(req)
 		if err != nil {
-			zlog.Info(ctx).
-				Err(err).
-				Stringer("url", rf).
-				Msg("unable to do request")
+			slog.InfoContext(ctx, "unable to do request",
+				"reason", err,
+				"url", rf)
 			continue
 		}
 		buf.Reset()
@@ -216,31 +212,31 @@ Listing:
 		case http.StatusNotFound: // Probably extremely old, it's fine.
 			continue
 		default:
-			zlog.Info(ctx).
-				Str("status", res.Status).
-				Stringer("url", rf).
-				Msg("unexpected response")
+			slog.InfoContext(ctx, "unexpected response",
+				"status", res.Status,
+				"url", rf)
 			continue
 		}
 		tp := textproto.NewReader(bufio.NewReader(io.MultiReader(&buf, bytes.NewReader([]byte("\r\n\r\n")))))
 		h, err := tp.ReadMIMEHeader()
 		if err != nil {
-			zlog.Info(ctx).Err(err).Msg("unable to read MIME-ish headers")
+			slog.InfoContext(ctx, "unable to read MIME-ish headers",
+				"reason", err)
 			continue
 		}
 		sv := h.Get("Version")
 		if sv == "" {
-			zlog.Debug(ctx).Str("dist", dist).Msg("no version assigned, skipping")
+			slog.DebugContext(ctx, "no version assigned, skipping", "dist", dist)
 			continue
 		}
 		vs := strings.Split(sv, ".")
 		if len(vs) == 1 {
-			zlog.Debug(ctx).Str("dist", dist).Msg("no version assigned, skipping")
+			slog.DebugContext(ctx, "no version assigned, skipping", "dist", dist)
 			continue
 		}
 		ver, err := strconv.ParseInt(vs[0], 10, 32)
 		if err != nil {
-			zlog.Info(ctx).Err(err).Msg("unable to parse version")
+			slog.InfoContext(ctx, "unable to parse version", "reason", err)
 			continue
 		}
 
@@ -275,7 +271,6 @@ func (u *updater) Name() string {
 
 // Configure implements [driver.Configurable].
 func (u *updater) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *http.Client) error {
-	ctx = zlog.ContextWithValues(ctx, "component", "debian/Updater.Configure")
 	u.c = c
 	var cfg UpdaterConfig
 	if err := f(&cfg); err != nil {
@@ -283,14 +278,13 @@ func (u *updater) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *
 	}
 
 	if cfg.DistsURL != "" || cfg.OVALURL != "" {
-		zlog.Error(ctx).Msg("configured with deprecated URLs")
+		slog.ErrorContext(ctx, "configured with deprecated URLs")
 		return fmt.Errorf("debian: neither url nor dists_url should be used anymore; use json_url and dists_urls instead")
 	}
 
 	if cfg.JSONURL != "" {
 		u.jsonURL = cfg.JSONURL
-		zlog.Info(ctx).
-			Msg("configured JSON database URL")
+		slog.InfoContext(ctx, "configured JSON database URL")
 	}
 
 	return nil
@@ -298,9 +292,7 @@ func (u *updater) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *
 
 // Fetch implements [driver.Fetcher].
 func (u *updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "debian/Updater.Fetch",
-		"database", u.jsonURL)
+	log := slog.With("database", u.jsonURL)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.jsonURL, nil)
 	if err != nil {
@@ -324,7 +316,7 @@ func (u *updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io
 	switch resp.StatusCode {
 	case http.StatusOK:
 		if fingerprint == "" || fp != string(fingerprint) {
-			zlog.Info(ctx).Msg("fetching latest JSON database")
+			log.InfoContext(ctx, "fetching latest JSON database")
 			break
 		}
 		fallthrough
@@ -343,7 +335,7 @@ func (u *updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io
 	defer func() {
 		if !success {
 			if err := f.Close(); err != nil {
-				zlog.Warn(ctx).Err(err).Msg("unable to close spool")
+				log.WarnContext(ctx, "unable to close spool", "reason", err)
 			}
 		}
 	}()
@@ -353,7 +345,7 @@ func (u *updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io
 	if _, err := f.Seek(0, io.SeekStart); err != nil {
 		return nil, "", fmt.Errorf("failed to seek body: %w", err)
 	}
-	zlog.Info(ctx).Msg("fetched latest json database successfully")
+	log.InfoContext(ctx, "fetched latest json database successfully")
 
 	success = true
 	return f, driver.Fingerprint(fp), err
