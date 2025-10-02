@@ -17,7 +17,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/quay/zlog"
 	"go.uber.org/mock/gomock"
 	"golang.org/x/tools/txtar"
 
@@ -58,9 +57,6 @@ type MatcherGetCall struct {
 // [Jq]: https://jqlang.github.io/jq/
 func RunMatcherTests(ctx context.Context, t *testing.T, dir string, matchers ...driver.Matcher) {
 	t.Helper()
-	if ctx == nil {
-		ctx = zlog.Test(context.Background(), t)
-	}
 
 	ms, err := filepath.Glob(filepath.Join(dir, "*.txtar"))
 	if err != nil {
@@ -73,7 +69,7 @@ func RunMatcherTests(ctx context.Context, t *testing.T, dir string, matchers ...
 		n := filepath.Base(m)
 		n = strings.TrimSuffix(n, filepath.Ext(n))
 		t.Run(n, func(t *testing.T) {
-			ctx := zlog.Test(ctx, t)
+			ctx := Logging(t, ctx)
 			t.Logf("loading txtar: %#q", m)
 
 			ar, err := txtar.ParseFile(m)

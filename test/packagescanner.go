@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -46,7 +45,7 @@ func (tc ScannerTestcase) Digest() claircore.Digest {
 func (tc ScannerTestcase) Run(ctx context.Context) func(*testing.T) {
 	sort.Slice(tc.Want, pkgSort(tc.Want))
 	return func(t *testing.T) {
-		ctx := zlog.Test(ctx, t)
+		ctx := Logging(t, ctx)
 		l := tc.getLayer(ctx, t)
 
 		got, err := tc.Scanner.Scan(ctx, l)
@@ -69,7 +68,7 @@ func (tc ScannerTestcase) Run(ctx context.Context) func(*testing.T) {
 func (tc ScannerTestcase) RunSubset(ctx context.Context, n int) func(*testing.T) {
 	sort.Slice(tc.Want, pkgSort(tc.Want))
 	return func(t *testing.T) {
-		ctx := zlog.Test(ctx, t)
+		ctx := Logging(t, ctx)
 		l := tc.getLayer(ctx, t)
 
 		got, err := tc.Scanner.Scan(ctx, l)
