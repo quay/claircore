@@ -5,13 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"runtime"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/quay/zlog"
 	"golang.org/x/sync/semaphore"
 
 	"github.com/quay/claircore"
@@ -62,8 +62,6 @@ type Manager struct {
 
 // NewManager will return a manager ready to have its Start or Run methods called.
 func NewManager(ctx context.Context, store datastore.Updater, locks LockSource, client *http.Client, opts ...ManagerOption) (*Manager, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "libvuln/updates/NewManager")
-
 	// the default Manager
 	m := &Manager{
 		store:     store,
@@ -98,21 +96,19 @@ func NewManager(ctx context.Context, store datastore.Updater, locks LockSource, 
 //
 // Start must only be called once between context cancellations.
 func (m *Manager) Start(ctx context.Context) error {
-	ctx = zlog.ContextWithValues(ctx, "component", "libvuln/updates/Manager.Start")
-
 	if m.interval == 0 {
 		return fmt.Errorf("manager must be configured with an interval to start")
 	}
 
 	// perform the initial run
-	zlog.Info(ctx).Msg("starting initial updates")
+	slog.InfoContext(ctx, "starting initial updates")
 	err := m.Run(ctx)
 	if err != nil {
-		zlog.Error(ctx).Err(err).Msg("errors encountered during updater run")
+		slog.ErrorContext(ctx, "errors encountered during updater run", "reason", err)
 	}
 
 	// perform run on every tick
-	zlog.Info(ctx).Str("interval", m.interval.String()).Msg("starting background updates")
+	slog.InfoContext(ctx, "starting background updates", "interval", m.interval)
 	t := time.NewTicker(m.interval)
 	defer t.Stop()
 	for {
@@ -122,7 +118,7 @@ func (m *Manager) Start(ctx context.Context) error {
 		case <-t.C:
 			err := m.Run(ctx)
 			if err != nil {
-				zlog.Error(ctx).Err(err).Msg("errors encountered during updater run")
+				slog.ErrorContext(ctx, "errors encountered during updater run", "reason", err)
 			}
 		}
 	}
@@ -134,8 +130,6 @@ func (m *Manager) Start(ctx context.Context) error {
 // Run is safe to call at anytime, regardless of whether background updaters
 // are running.
 func (m *Manager) Run(ctx context.Context) error {
-	ctx = zlog.ContextWithValues(ctx, "component", "libvuln/updates/Manager.Run")
-
 	updaters := []driver.Updater{}
 	// Constructing updater sets may require network access
 	// depending on the factory.
@@ -145,23 +139,21 @@ func (m *Manager) Run(ctx context.Context) error {
 		updateTime := time.Now()
 		set, err := factory.UpdaterSet(ctx)
 		if err != nil {
-			zlog.Error(ctx).Err(err).Msg("failed constructing factory, excluding from run")
+			slog.ErrorContext(ctx, "failed constructing factory, excluding from run", "reason", err)
 			continue
 		}
 		if stubUpdaterInSet(set) {
 			updaterSetName, err := getFactoryNameFromStubUpdater(set)
 			if err != nil {
-				zlog.Error(ctx).
-					Err(err).
-					Msg("error getting updater set name")
+				slog.ErrorContext(ctx, "error getting updater set name",
+					"reason", err)
 			}
 			err = m.store.RecordUpdaterSetStatus(ctx, updaterSetName, updateTime)
 			if err != nil {
-				zlog.Error(ctx).
-					Err(err).
-					Str("updaterSetName", updaterSetName).
-					Time("updateTime", updateTime).
-					Msg("error while recording update success for all updaters in updater set")
+				slog.ErrorContext(ctx, "error while recording update success for all updaters in updater set",
+					"updaterSetName", updaterSetName,
+					"updateTime", updateTime,
+					"reason", err)
 			}
 			continue
 		}
@@ -178,29 +170,25 @@ func (m *Manager) Run(ctx context.Context) error {
 				cfg = noopConfig
 			}
 			if err := f.Configure(ctx, cfg, m.client); err != nil {
-				zlog.Warn(ctx).
-					Err(err).
-					Str("updater", name).
-					Msg("failed configuring updater, excluding from current run")
+				slog.WarnContext(ctx, "failed configuring updater, excluding from current run",
+					"updater", name,
+					"reason", err)
 				continue
 			}
 		}
 		toRun = append(toRun, u)
 	}
 
-	zlog.Info(ctx).
-		Int("total", len(toRun)).
-		Int("batchSize", m.batchSize).
-		Msg("running updaters")
+	slog.InfoContext(ctx, "running updaters",
+		"total", len(toRun),
+		"batchSize", m.batchSize)
 
 	sem := semaphore.NewWeighted(int64(m.batchSize))
 	errChan := make(chan error, len(toRun)+1) // +1 for a potential ctx error
 	for i := range toRun {
 		err := sem.Acquire(ctx, 1)
 		if err != nil {
-			zlog.Error(ctx).
-				Err(err).
-				Msg("sem acquire failed, ending updater run")
+			slog.ErrorContext(ctx, "sem acquire failed, ending updater run", "reason", err)
 			break
 		}
 
@@ -210,10 +198,9 @@ func (m *Manager) Run(ctx context.Context) error {
 			ctx, done := m.locks.TryLock(ctx, u.Name())
 			defer done()
 			if err := ctx.Err(); err != nil {
-				zlog.Debug(ctx).
-					Err(err).
-					Str("updater", u.Name()).
-					Msg("lock context canceled, excluding from run")
+				slog.DebugContext(ctx, "lock context canceled, excluding from run",
+					"reason", err,
+					"updater", u.Name())
 				return
 			}
 
@@ -232,19 +219,16 @@ func (m *Manager) Run(ctx context.Context) error {
 	if m.updateRetention != 0 {
 		ctx, done := m.locks.TryLock(ctx, "garbage-collection")
 		if err := ctx.Err(); err != nil {
-			zlog.Debug(ctx).
-				Err(err).
-				Msg("lock context canceled, garbage collection already running")
+			slog.DebugContext(ctx, "lock context canceled, garbage collection already running", "reason", err)
 		} else {
-			zlog.Info(ctx).Int("retention", m.updateRetention).Msg("GC started")
+			slog.InfoContext(ctx, "GC started", "retention", m.updateRetention)
 			i, err := m.store.GC(ctx, m.updateRetention)
 			if err != nil {
-				zlog.Error(ctx).Err(err).Msg("error while performing GC")
+				slog.ErrorContext(ctx, "error while performing GC", "reason", err)
 			} else {
-				zlog.Info(ctx).
-					Int64("remaining_ops", i).
-					Int("retention", m.updateRetention).
-					Msg("GC completed")
+				slog.InfoContext(ctx, "GC completed",
+					"remaining_ops", i,
+					"retention", m.updateRetention)
 			}
 		}
 		done()
@@ -286,36 +270,30 @@ func getFactoryNameFromStubUpdater(set driver.UpdaterSet) (string, error) {
 func (m *Manager) driveUpdater(ctx context.Context, u driver.Updater) (err error) {
 	var newFP driver.Fingerprint
 	updateTime := time.Now()
+	name := u.Name()
+	log := slog.With("updater", name)
 	defer func() {
-		deferErr := m.store.RecordUpdaterStatus(ctx, u.Name(), updateTime, newFP, err)
+		deferErr := m.store.RecordUpdaterStatus(ctx, name, updateTime, newFP, err)
 		if deferErr != nil {
-			zlog.Error(ctx).
-				Err(deferErr).
-				Str("updater", u.Name()).
-				Time("updateTime", updateTime).
-				Msg("error while recording updater status")
+			log.ErrorContext(ctx, "error while recording updater status",
+				"reason", deferErr,
+				"updateTime", updateTime)
 		}
 	}()
 
-	name := u.Name()
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "libvuln/updates/Manager.driveUpdater",
-		"updater", name)
-	zlog.Info(ctx).Msg("starting update")
-	defer zlog.Info(ctx).Msg("finished update")
+	log.InfoContext(ctx, "starting update")
+	defer log.InfoContext(ctx, "finished update")
 	uoKind := driver.VulnerabilityKind
 
 	// Do some assertions
 	eu, euOK := u.(driver.EnrichmentUpdater)
 	if euOK {
-		zlog.Info(ctx).
-			Msg("found EnrichmentUpdater")
+		log.InfoContext(ctx, "found EnrichmentUpdater")
 		uoKind = driver.EnrichmentKind
 	}
 	du, duOK := u.(driver.DeltaUpdater)
 	if duOK {
-		zlog.Info(ctx).
-			Msg("found DeltaUpdater")
+		slog.InfoContext(ctx, "found DeltaUpdater")
 	}
 
 	var prevFP driver.Fingerprint
@@ -341,7 +319,7 @@ func (m *Manager) driveUpdater(ctx context.Context, u driver.Updater) (err error
 	switch {
 	case err == nil:
 	case errors.Is(err, driver.Unchanged):
-		zlog.Info(ctx).Msg("vulnerability database unchanged")
+		log.InfoContext(ctx, "vulnerability database unchanged")
 		err = nil
 		return
 	default:
@@ -386,9 +364,7 @@ func (m *Manager) driveUpdater(ctx context.Context, u driver.Updater) (err error
 		err = fmt.Errorf("failed to update: %v", err)
 		return
 	}
-	zlog.Info(ctx).
-		Str("ref", ref.String()).
-		Msg("successful update")
+	log.InfoContext(ctx, "successful update", "ref", ref)
 	return nil
 }
 
