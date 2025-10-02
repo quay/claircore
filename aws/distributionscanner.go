@@ -3,10 +3,9 @@ package aws
 import (
 	"bytes"
 	"context"
+	"log/slog"
 	"regexp"
 	"runtime/trace"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -71,17 +70,12 @@ func (*DistributionScanner) Kind() string { return scannerKind }
 // If the files are found but all regexp fail to match an empty slice is returned.
 func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Distribution, error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "aws_dist_scanner",
-		"name", ds.Name(),
-		"version", ds.Version(),
-		"kind", ds.Kind(),
-		"layer", l.Hash.String())
-	zlog.Debug(ctx).Msg("start")
-	defer zlog.Debug(ctx).Msg("done")
+	log := slog.With("layer", l.Hash.String(), "version", ds.Version())
+	log.DebugContext(ctx, "start")
+	defer log.DebugContext(ctx, "done")
 	files, err := l.Files(osReleasePath)
 	if err != nil {
-		zlog.Debug(ctx).Msg("didn't find an os-release")
+		log.DebugContext(ctx, "didn't find an os-release")
 		return nil, nil
 	}
 	for _, buff := range files {
