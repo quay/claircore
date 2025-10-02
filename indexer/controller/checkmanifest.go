@@ -3,11 +3,11 @@ package controller
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strconv"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/indexer"
 )
@@ -35,7 +35,7 @@ func checkManifest(ctx context.Context, s *Controller) (State, error) {
 	// if we haven't seen this manifest, determine which scanners to use, persist it
 	// and transition to FetchLayer state.
 	if !ok {
-		zlog.Info(ctx).Msg("manifest to be scanned")
+		slog.InfoContext(ctx, "manifest to be scanned")
 
 		// if a manifest was analyzed by a particular scanner we can
 		// omit it from this index, as all its comprising layers were analyzed
@@ -61,7 +61,7 @@ func checkManifest(ctx context.Context, s *Controller) (State, error) {
 
 	// we have seen this manifest before and it's been been processed with the desired scanners
 	// retrieve the existing one and transition to Terminal.
-	zlog.Info(ctx).Msg("manifest already scanned")
+	slog.InfoContext(ctx, "manifest already scanned")
 	sr, ok, err := s.Store.IndexReport(ctx, s.manifest.Hash)
 	if err != nil {
 		return Terminal, fmt.Errorf("failed to retrieve manifest: %w", err)
