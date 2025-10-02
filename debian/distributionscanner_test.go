@@ -1,19 +1,18 @@
 package debian
 
 import (
-	"context"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"regexp"
 	"testing"
 
-	"github.com/quay/zlog"
+	"github.com/quay/claircore/test"
 )
 
 func TestDistributionScanner(t *testing.T) {
 	ver := regexp.MustCompile(`^\d+ \(\w+\)$`)
-	ctx := zlog.Test(context.Background(), t)
 	ents, err := os.ReadDir(`testdata/dist`)
 	if err != nil {
 		t.Fatal(err)
@@ -31,8 +30,9 @@ func TestDistributionScanner(t *testing.T) {
 	for tcDir, tcEnts := range testCase {
 		for _, e := range tcEnts {
 			t.Run(e.Name(), func(t *testing.T) {
+				ctx := test.Logging(t)
 				sys := os.DirFS(filepath.Join(tcDir, e.Name()))
-				d, err := findDist(ctx, sys)
+				d, err := findDist(ctx, slog.Default(), sys)
 				if err != nil {
 					t.Error(err)
 				}
