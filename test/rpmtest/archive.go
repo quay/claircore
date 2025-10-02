@@ -16,7 +16,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/quay/zlog"
 	"golang.org/x/tools/txtar"
 
 	"github.com/quay/claircore"
@@ -209,7 +208,7 @@ func (a *Archive) Tests(
 					arches[img.Archtecture] = struct{}{}
 
 					t.Run(img.Archtecture, func(t *testing.T) {
-						ctx := zlog.Test(ctx, t)
+						ctx := test.Logging(t)
 						m, err := a.Manifest(img.ID)
 						if err != nil {
 							t.Fatal(err)
