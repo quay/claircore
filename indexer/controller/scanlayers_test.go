@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/quay/zlog"
 	"go.uber.org/mock/gomock"
 
 	"github.com/quay/claircore"
@@ -17,7 +16,6 @@ import (
 )
 
 func TestScanLayers(t *testing.T) {
-	ctx := context.Background()
 	tt := []struct {
 		mock          func(t *testing.T) indexer.Store
 		name          string
@@ -38,7 +36,7 @@ func TestScanLayers(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			ctx := zlog.Test(ctx, t)
+			ctx := test.Logging(t)
 			s := table.mock(t)
 			opts := &indexer.Options{
 				Store: s,
@@ -62,7 +60,7 @@ func TestScanLayers(t *testing.T) {
 }
 
 func TestScanNoErrors(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	ctrl := gomock.NewController(t)
 
 	store := indexer_mock.NewMockStore(ctrl)

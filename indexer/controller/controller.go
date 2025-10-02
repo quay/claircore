@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"math/rand"
 	"time"
 
-	"github.com/quay/zlog"
+	"github.com/quay/claircore/toolkit/log"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -64,12 +65,10 @@ func (s *Controller) Index(ctx context.Context, manifest *claircore.Manifest) (*
 	// set manifest info on controller
 	s.manifest = manifest
 	s.report.Hash = manifest.Hash
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "indexer/controller/Controller.Index",
-		"manifest", s.manifest.Hash.String())
+	ctx = log.With(ctx, "manifest", s.manifest.Hash)
 	s.Realizer = s.FetchArena.Realizer(ctx)
 	defer s.Realizer.Close()
-	zlog.Info(ctx).Msg("starting scan")
+	slog.InfoContext(ctx, "starting scan")
 	return s.report, s.run(ctx)
 }
 
@@ -83,7 +82,7 @@ func (s *Controller) run(ctx context.Context) (err error) {
 	// As long as there's not an error and the current state isn't Terminal, run
 	// the corresponding function.
 	for err == nil && s.currentState != Terminal {
-		ctx := zlog.ContextWithValues(ctx, "state", s.currentState.String())
+		ctx := log.With(ctx, "state", s.currentState)
 		next, err = stateToStateFunc[s.currentState](ctx, s)
 		switch {
 		case errors.Is(err, nil) && !errors.Is(ctx.Err(), nil):
@@ -107,16 +106,12 @@ func (s *Controller) run(ctx context.Context) (err error) {
 			continue
 		default:
 			s.setState(IndexError)
-			zlog.Error(ctx).
-				Err(err).
-				Msg("error during scan")
+			slog.ErrorContext(ctx, "error during scan", "reason", err)
 			s.report.Success = false
 			s.report.Err = err.Error()
 		}
 		if setReportErr := s.Store.SetIndexReport(ctx, s.report); !errors.Is(setReportErr, nil) {
-			zlog.Info(ctx).
-				Err(setReportErr).
-				Msg("failed persisting index report")
+			slog.InfoContext(ctx, "failed persisting index report", "reason", setReportErr)
 			s.setState(IndexError)
 			s.report.Err = fmt.Sprintf("failed persisting index report: %s", setReportErr.Error())
 			err = setReportErr
