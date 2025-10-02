@@ -6,8 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/quay/zlog"
-
 	"github.com/quay/claircore/alpine"
 	"github.com/quay/claircore/aws"
 	"github.com/quay/claircore/debian"
@@ -16,6 +14,7 @@ import (
 	"github.com/quay/claircore/photon"
 	"github.com/quay/claircore/rhel/vex"
 	"github.com/quay/claircore/suse"
+	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/ubuntu"
 	"github.com/quay/claircore/updater/osv"
 )
@@ -26,16 +25,16 @@ func noopConfigure(_ any) error {
 }
 
 func TestAWS(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	set, err := aws.UpdaterSet(ctx)
 	if err != nil {
 		t.Fatal()
 	}
-	runUpdaterSet(ctx, t, set)
+	runUpdaterSet(t, set)
 }
 
 func TestAlpine(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	fac, err := alpine.NewFactory(ctx)
 	if err != nil {
 		t.Fatal()
@@ -48,11 +47,11 @@ func TestAlpine(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	runUpdaterSet(ctx, t, set)
+	runUpdaterSet(t, set)
 }
 
 func TestDebian(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	fac, err := debian.NewFactory(ctx)
 	if err != nil {
 		t.Fatal()
@@ -65,29 +64,29 @@ func TestDebian(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	runUpdaterSet(ctx, t, set)
+	runUpdaterSet(t, set)
 }
 
 func TestOracle(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	set, err := oracle.UpdaterSet(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	runUpdaterSet(ctx, t, set)
+	runUpdaterSet(t, set)
 }
 
 func TestPhoton(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	set, err := photon.UpdaterSet(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	runUpdaterSet(ctx, t, set)
+	runUpdaterSet(t, set)
 }
 
 func TestRHELVEX(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	fac := new(vex.Factory)
 	err := fac.Configure(ctx, noopConfigure, pkgClient)
 	if err != nil {
@@ -97,11 +96,11 @@ func TestRHELVEX(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	runUpdaterSet(ctx, t, set)
+	runUpdaterSet(t, set)
 }
 
 func TestSUSE(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	fac := new(suse.Factory)
 	err := fac.Configure(ctx, noopConfigure, pkgClient)
 	if err != nil {
@@ -112,11 +111,11 @@ func TestSUSE(t *testing.T) {
 	if err != nil {
 		t.Fatal()
 	}
-	runUpdaterSet(ctx, t, set)
+	runUpdaterSet(t, set)
 }
 
 func TestUbuntu(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	fac, err := ubuntu.NewFactory(ctx)
 	if err != nil {
 		t.Fatal(err)
@@ -129,11 +128,11 @@ func TestUbuntu(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	runUpdaterSet(ctx, t, set)
+	runUpdaterSet(t, set)
 }
 
 func TestOSV(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	fac := &osv.Factory{}
 	if err := fac.Configure(ctx, noopConfigure, pkgClient); err != nil {
 		t.Fatal(err)
@@ -142,14 +141,14 @@ func TestOSV(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	runUpdaterSet(ctx, t, us)
+	runUpdaterSet(t, us)
 }
 
-func runUpdaterSet(ctx context.Context, t *testing.T, set driver.UpdaterSet) {
+func runUpdaterSet(t *testing.T, set driver.UpdaterSet) {
 	t.Helper()
 	for _, u := range set.Updaters() {
 		t.Run(u.Name(), func(t *testing.T) {
-			ctx := zlog.Test(ctx, t)
+			ctx := test.Logging(t)
 			if cfg, ok := u.(driver.Configurable); ok {
 				err := cfg.Configure(ctx, noopConfigure, pkgClient)
 				if err != nil {
