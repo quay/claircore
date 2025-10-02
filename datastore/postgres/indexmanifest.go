@@ -3,13 +3,13 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 )
@@ -50,7 +50,6 @@ func (s *IndexerStore) IndexManifest(ctx context.Context, ir *claircore.IndexRep
 		ON CONFLICT DO NOTHING;
 		`
 	)
-	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/IndexerStore.IndexManifest")
 
 	if ir.Hash.String() == "" {
 		return fmt.Errorf("received empty hash; cannot associate contents with a manifest hash")
@@ -59,7 +58,7 @@ func (s *IndexerStore) IndexManifest(ctx context.Context, ir *claircore.IndexRep
 
 	records := ir.IndexRecords()
 	if len(records) == 0 {
-		zlog.Warn(ctx).Msg("manifest being indexed has 0 index records")
+		slog.WarnContext(ctx, "manifest being indexed has 0 index records")
 		return nil
 	}
 

@@ -3,13 +3,13 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore"
@@ -43,7 +43,6 @@ type recordQuery struct {
 
 // Get implements vulnstore.Vulnerability.
 func (s *MatcherStore) Get(ctx context.Context, records []*claircore.IndexRecord, opts datastore.GetOpts) (map[string][]*claircore.Vulnerability, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "internal/vulnstore/postgres/Get")
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return nil, err
@@ -57,10 +56,9 @@ func (s *MatcherStore) Get(ctx context.Context, records []*claircore.IndexRecord
 		query, err := buildGetQuery(record, &opts)
 		if err != nil {
 			// if we cannot build a query for an individual record continue to the next
-			zlog.Debug(ctx).
-				Err(err).
-				Str("record", fmt.Sprintf("%+v", record)).
-				Msg("could not build query for record")
+			slog.DebugContext(ctx, "could not build query for record",
+				"reason", err,
+				"record", record)
 			continue
 		}
 		rqs = append(rqs, &recordQuery{query: query, record: record})

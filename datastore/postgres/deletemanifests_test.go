@@ -1,11 +1,9 @@
 package postgres
 
 import (
-	"context"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -17,13 +15,13 @@ import (
 
 func TestDeleteManifests(t *testing.T) {
 	integration.NeedDB(t)
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	pool := pgtest.TestIndexerDB(ctx, t)
 	store := NewIndexerStore(pool)
 	defer store.Close(ctx)
 
 	t.Run("Nonexistent", func(t *testing.T) {
-		ctx := zlog.Test(ctx, t)
+		ctx := test.Logging(t, ctx)
 		in := []claircore.Digest{
 			test.RandomSHA256Digest(t),
 		}
@@ -36,7 +34,7 @@ func TestDeleteManifests(t *testing.T) {
 		}
 	})
 	t.Run("NonexistentMulti", func(t *testing.T) {
-		ctx := zlog.Test(ctx, t)
+		ctx := test.Logging(t, ctx)
 		in := []claircore.Digest{
 			test.RandomSHA256Digest(t),
 			test.RandomSHA256Digest(t),
@@ -54,7 +52,7 @@ func TestDeleteManifests(t *testing.T) {
 	})
 	const insertManifest = `INSERT INTO manifest (hash) SELECT unnest($1::TEXT[]);`
 	t.Run("One", func(t *testing.T) {
-		ctx := zlog.Test(ctx, t)
+		ctx := test.Logging(t, ctx)
 		want := []claircore.Digest{
 			test.RandomSHA256Digest(t),
 		}
@@ -70,7 +68,7 @@ func TestDeleteManifests(t *testing.T) {
 		}
 	})
 	t.Run("Locked", func(t *testing.T) {
-		ctx := zlog.Test(ctx, t)
+		ctx := test.Logging(t)
 		want := []claircore.Digest{
 			test.RandomSHA256Digest(t),
 			test.RandomSHA256Digest(t),
@@ -107,7 +105,7 @@ func TestDeleteManifests(t *testing.T) {
 		}
 	})
 	t.Run("Subset", func(t *testing.T) {
-		ctx := zlog.Test(ctx, t)
+		ctx := test.Logging(t, ctx)
 		in := make([]claircore.Digest, 8)
 		for i := range in {
 			in[i] = test.RandomSHA256Digest(t)
@@ -139,7 +137,7 @@ INSERT INTO manifest_layer (i, manifest_id, layer_id)
 			nManifests = 8
 			layersPer  = 4
 		)
-		ctx := zlog.Test(ctx, t)
+		ctx := test.Logging(t, ctx)
 		ms := make([]claircore.Digest, nManifests)
 		for i := range ms {
 			ms[i] = test.RandomSHA256Digest(t)
@@ -207,7 +205,7 @@ INSERT INTO manifest_layer (i, manifest_id, layer_id)
 			nManifests       = 8
 			nonBaseLayersPer = 3
 		)
-		ctx := zlog.Test(ctx, t)
+		ctx := test.Logging(t, ctx)
 		ms := make([]claircore.Digest, nManifests)
 		for i := range ms {
 			ms[i] = test.RandomSHA256Digest(t)
@@ -289,7 +287,7 @@ INSERT INTO manifest_layer (i, manifest_id, layer_id)
 			packageN   = 10
 		)
 		s := NewIndexerStore(pool)
-		ctx := zlog.Test(ctx, t)
+		ctx := test.Logging(t, ctx)
 		toDelete := make([]claircore.Digest, manifestsN)
 		for i := range manifestsN {
 			ir := &claircore.IndexReport{}

@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/md5"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
 	"time"
@@ -13,7 +14,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore"
@@ -48,7 +48,6 @@ var (
 
 // UpdateVulnerabilitiesIter implements vulnstore.Updater.
 func (s *MatcherStore) UpdateVulnerabilitiesIter(ctx context.Context, updater string, fp driver.Fingerprint, it datastore.VulnerabilityIter) (uuid.UUID, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/MatcherStore.UpdateVulnerabilitiesIter")
 	return s.updateVulnerabilities(ctx, updater, fp, it, nil)
 }
 
@@ -58,7 +57,6 @@ func (s *MatcherStore) UpdateVulnerabilitiesIter(ctx context.Context, updater st
 // provided vulnerabilities and computes a diff comprising the removed
 // and added vulnerabilities for this UpdateOperation.
 func (s *MatcherStore) UpdateVulnerabilities(ctx context.Context, updater string, fp driver.Fingerprint, vulns []*claircore.Vulnerability) (uuid.UUID, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/MatcherStore.UpdateVulnerabilities")
 	iterVulns := func(yield func(*claircore.Vulnerability, error) bool) {
 		for i := range vulns {
 			if !yield(vulns[i], nil) {
@@ -81,7 +79,6 @@ func (s *MatcherStore) UpdateVulnerabilities(ctx context.Context, updater string
 //   - Insert the new vulnerabilities
 //   - Associate new vulnerabilities with new updateOperation
 func (s *MatcherStore) DeltaUpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability, deletedVulns []string) (uuid.UUID, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/MatcherStore.DeltaUpdateVulnerabilities")
 	iterVulns := func(yield func(*claircore.Vulnerability, error) bool) {
 		for i := range vulns {
 			if !yield(vulns[i], nil) {
@@ -171,12 +168,11 @@ func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string
 	updateVulnerabilitiesCounter.WithLabelValues("create", strconv.FormatBool(delta)).Add(1)
 	updateVulnerabilitiesDuration.WithLabelValues("create", strconv.FormatBool(delta)).Observe(time.Since(start).Seconds())
 
-	zlog.Debug(ctx).
-		Str("ref", ref.String()).
-		Msg("update_operation created")
+	log := slog.With("ref", ref)
+	log.DebugContext(ctx, "update_operation created")
 
 	if delta {
-		ctx = zlog.ContextWithValues(ctx, "mode", "delta")
+		log = log.With("mode", "delta")
 		// Get existing vulns
 		// The reason this still works even though the new update_operation
 		// is already created is because the latest_update_operation view isn't updated until
@@ -312,11 +308,9 @@ func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string
 		return uuid.Nil, fmt.Errorf("could not refresh latest_update_operations: %w", err)
 	}
 
-	zlog.Debug(ctx).
-		Str("ref", ref.String()).
-		Int("skipped", skipCt).
-		Int("inserted", vulnCt-skipCt).
-		Msg("update_operation committed")
+	log.DebugContext(ctx, "update_operation committed",
+		"skipped", skipCt,
+		"inserted", vulnCt-skipCt)
 	return ref, nil
 }
 

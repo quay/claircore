@@ -1,14 +1,12 @@
 package postgres
 
 import (
-	"context"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore"
@@ -33,7 +31,7 @@ func TestGetQueryBuilderDeterministicArgs(t *testing.T) {
 		both     = `(((("package_name" = 'package-0') AND ("package_kind" = 'binary')) OR (("package_name" = 'source-package-0') AND ("package_kind" = 'source'))) AND `
 		noSource = `((("package_name" = 'package-0') AND  ("package_kind" = 'binary')) AND `
 	)
-	var table = []struct {
+	table := []struct {
 		// name of test
 		name string
 		// the expected query string returned
@@ -253,7 +251,7 @@ type testCase struct {
 // considered when querying for vulns
 func TestLatestVulns(t *testing.T) {
 	integration.NeedDB(t)
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 
 	cases := []testCase{
 		{

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"runtime"
 	"strings"
 	"time"
@@ -12,7 +13,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/quay/zlog"
 	"golang.org/x/sync/semaphore"
 
 	"github.com/quay/claircore/libvuln/driver"
@@ -55,8 +55,6 @@ const (
 // If a full GC is required run this method until the returned int64 value
 // is 0.
 func (s *MatcherStore) GC(ctx context.Context, keep int) (int64, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/GC")
-
 	// obtain update operations which need deletin'
 	ops, totalOps, err := eligibleUpdateOpts(ctx, s.pool, keep)
 	if err != nil {
@@ -94,7 +92,7 @@ func (s *MatcherStore) GC(ctx context.Context, keep int) (int64, error) {
 		case driver.EnrichmentKind:
 			cleanup = enrichmentCleanup
 		default:
-			zlog.Error(ctx).Str("kind", string(kind)).Msg("unknown updater kind; skipping cleanup")
+			slog.ErrorContext(ctx, "unknown updater kind; skipping cleanup", "kind", string(kind))
 			continue
 		}
 		for _, u := range us {
@@ -229,15 +227,13 @@ AND v1.id = v2.id;
 	)
 
 	start := time.Now()
-	ctx = zlog.ContextWithValues(ctx, "updater", updater)
-	zlog.Debug(ctx).
-		Msg("starting vuln clean up")
+	slog.DebugContext(ctx, "starting vuln clean up")
 	res, err := pool.Exec(ctx, deleteOrphanedVulns, updater)
 	if err != nil {
 		gcCounter.WithLabelValues("deleteVulns", "false").Inc()
 		return fmt.Errorf("failed while exec'ing vuln delete: %w", err)
 	}
-	zlog.Debug(ctx).Int64("rows affected", res.RowsAffected()).Msg("vulns deleted")
+	slog.DebugContext(ctx, "vulns deleted", "rows affected", res.RowsAffected())
 	gcCounter.WithLabelValues("deleteVulns", "true").Inc()
 	gcDuration.WithLabelValues("deleteVulns").Observe(time.Since(start).Seconds())
 
@@ -258,15 +254,13 @@ DELETE FROM enrichment e1 USING
 	)
 
 	start := time.Now()
-	ctx = zlog.ContextWithValues(ctx, "updater", updater)
-	zlog.Debug(ctx).
-		Msg("starting enrichment clean up")
+	slog.DebugContext(ctx, "starting enrichment clean up")
 	res, err := pool.Exec(ctx, deleteOrphanedEnrichments, updater)
 	if err != nil {
 		gcCounter.WithLabelValues("deleteEnrichments", "false").Inc()
 		return fmt.Errorf("failed while exec'ing enrichment delete: %w", err)
 	}
-	zlog.Debug(ctx).Int64("rows affected", res.RowsAffected()).Msg("enrichments deleted")
+	slog.DebugContext(ctx, "enrichments deleted", "rows affected", res.RowsAffected())
 	gcCounter.WithLabelValues("deleteEnrichments", "true").Inc()
 	gcDuration.WithLabelValues("deleteEnrichments").Observe(time.Since(start).Seconds())
 

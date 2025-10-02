@@ -9,8 +9,6 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/quay/zlog"
-
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/libvuln/updates"
@@ -146,7 +144,7 @@ func TestGC(t *testing.T) {
 
 	for _, tt := range table {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx := zlog.Test(context.Background(), t)
+			ctx := test.Logging(t)
 			pool := pgtest.TestMatcherDB(ctx, t)
 			store := NewMatcherStore(pool)
 			locks, err := ctxlock.New(ctx, pool)

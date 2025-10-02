@@ -1,15 +1,14 @@
 package postgres
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 	pgtest "github.com/quay/claircore/test/postgres"
 )
@@ -26,7 +25,7 @@ type diffTestCase struct {
 // are captured there, e.g. if there's no difference between the two operations.
 func TestGetUpdateDiff(t *testing.T) {
 	integration.NeedDB(t)
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 
 	cases := []diffTestCase{
 		// second op adds two new vulns

@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
-	"github.com/quay/zlog"
 	"github.com/remind101/migrate"
 
 	"github.com/quay/claircore/datastore"
@@ -56,7 +55,6 @@ var (
 // DeleteUpdateOperations implements vulnstore.Updater.
 func (s *MatcherStore) DeleteUpdateOperations(ctx context.Context, id ...uuid.UUID) (int64, error) {
 	const query = `DELETE FROM update_operation WHERE ref = ANY($1::uuid[]);`
-	ctx = zlog.ContextWithValues(ctx, "component", "internal/vulnstore/postgres/deleteUpdateOperations")
 	if len(id) == 0 {
 		return 0, nil
 	}

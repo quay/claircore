@@ -4,12 +4,12 @@ import (
 	"cmp"
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -99,8 +99,6 @@ func (s *IndexerStore) IndexPackages(ctx context.Context, pkgs []*claircore.Pack
 		`
 	)
 
-	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/IndexerStore.IndexPackages")
-
 	var batch, assocBatch pgx.Batch
 	skipCt := 0
 	queueInsert := func(pkg *claircore.Package) {
@@ -155,19 +153,17 @@ func (s *IndexerStore) IndexPackages(ctx context.Context, pkgs []*claircore.Pack
 		if err != nil {
 			return err
 		}
-		zlog.Debug(ctx).
-			Int("skipped", skipCt).
-			Int("inserted", len(pkgs)-skipCt).
-			Msg("packages inserted")
+		slog.DebugContext(ctx, "packages inserted",
+			"skipped", skipCt,
+			"inserted", len(pkgs)-skipCt)
 
 		start = time.Now()
 		err = tx.SendBatch(ctx, &assocBatch).Close()
 		indexPackageCounter.WithLabelValues("insertWith_batch").Add(1)
 		indexPackageDuration.WithLabelValues("insertWith_batch").Observe(time.Since(start).Seconds())
-		zlog.Debug(ctx).
-			Int("skipped", skipCt).
-			Int("inserted", len(pkgs)-skipCt).
-			Msg("scanartifacts inserted")
+		slog.DebugContext(ctx, "scanartifacts inserted",
+			"skipped", skipCt,
+			"inserted", len(pkgs)-skipCt)
 		if err != nil {
 			return err
 		}

@@ -8,11 +8,11 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/pkg/omnimatcher"
+	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 	pgtest "github.com/quay/claircore/test/postgres"
 )
@@ -27,7 +27,7 @@ type affectedE2E struct {
 
 func TestAffectedE2E(t *testing.T) {
 	integration.NeedDB(t)
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	pool := pgtest.TestIndexerDB(ctx, t)
 	store := NewIndexerStore(pool)
 
@@ -161,7 +161,7 @@ func (e *affectedE2E) Run(t *testing.T) {
 // this is required so foreign key constraints do not
 // fail in later tests.
 func (e *affectedE2E) IndexArtifacts(t *testing.T) {
-	ctx := zlog.Test(e.ctx, t)
+	ctx := test.Logging(t, e.ctx)
 	const (
 		insertManifest = `
 		INSERT INTO	manifest 
@@ -255,7 +255,7 @@ func (e *affectedE2E) IndexArtifacts(t *testing.T) {
 // IndexManifest confirms the contents of a manifest
 // can be written to the manifest index table.
 func (e *affectedE2E) IndexManifest(t *testing.T) {
-	ctx := zlog.Test(e.ctx, t)
+	ctx := test.Logging(t, e.ctx)
 	err := e.store.IndexManifest(ctx, &e.ir)
 	if err != nil {
 		t.Fatalf("failed to index manifest: %v", err)
@@ -266,7 +266,7 @@ func (e *affectedE2E) IndexManifest(t *testing.T) {
 // in the vulnereability report reports the associated
 // manifest is affected.
 func (e *affectedE2E) AffectedManifests(t *testing.T) {
-	ctx := zlog.Test(e.ctx, t)
+	ctx := test.Logging(t, e.ctx)
 	om := omnimatcher.New(nil)
 	for _, vuln := range e.vr.Vulnerabilities {
 		hashes, err := e.store.AffectedManifests(ctx, *vuln, om.Vulnerable)
