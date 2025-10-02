@@ -9,8 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/quay/zlog"
-
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/aws/internal/alas"
 	"github.com/quay/claircore/internal/xmlutil"
@@ -43,7 +41,6 @@ func (u *Updater) Configure(ctx context.Context, _ driver.ConfigUnmarshaler, c *
 }
 
 func (u *Updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "aws/Updater.Fetch")
 	client, err := NewClient(ctx, u.c, u.release)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to create client: %v", err)
