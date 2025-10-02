@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 )
@@ -35,7 +35,6 @@ var (
 )
 
 func (s *IndexerStore) DeleteManifests(ctx context.Context, ds ...claircore.Digest) ([]claircore.Digest, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/DeleteManifests")
 	const (
 		getManifestID  = `SELECT id FROM manifest WHERE hash = $1`
 		getLayers      = `SELECT layer_id FROM manifest_layer WHERE manifest_id = $1;`
@@ -110,18 +109,16 @@ func (s *IndexerStore) DeleteManifests(ctx context.Context, ds ...claircore.Dige
 					return fmt.Errorf("unable check layer usage: %w", err)
 				}
 				ra := tag.RowsAffected()
-				zlog.Debug(ctx).
-					Int64("count", ra).
-					Str("manifest", d.String()).
-					Msg("deleted layers for manifest")
+				slog.DebugContext(ctx, "deleted layers for manifest",
+					"count", ra,
+					"manifest", d)
 			}
 			deletedManifests = append(deletedManifests, d)
 			return nil
 		})
 	}
-	zlog.Debug(ctx).
-		Int("count", len(deletedManifests)).
-		Int("nonexistant", len(ds)-len(deletedManifests)).
-		Msg("deleted manifests")
+	slog.DebugContext(ctx, "deleted manifests",
+		"count", len(deletedManifests),
+		"nonexistant", len(ds)-len(deletedManifests))
 	return deletedManifests, nil
 }

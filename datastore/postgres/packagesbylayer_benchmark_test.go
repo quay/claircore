@@ -1,10 +1,7 @@
 package postgres
 
 import (
-	"context"
 	"testing"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
@@ -14,7 +11,6 @@ import (
 
 func Benchmark_PackagesByLayer(b *testing.B) {
 	integration.NeedDB(b)
-	ctx := context.Background()
 	benchmarks := []struct {
 		name  string
 		hash  claircore.Digest
@@ -91,7 +87,7 @@ func Benchmark_PackagesByLayer(b *testing.B) {
 
 	for _, bench := range benchmarks {
 		b.Run(bench.name, func(b *testing.B) {
-			ctx := zlog.Test(ctx, b)
+			ctx := test.Logging(b)
 			pool := pgtest.TestIndexerDB(ctx, b)
 			store := NewIndexerStore(pool)
 
