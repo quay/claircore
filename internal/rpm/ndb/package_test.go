@@ -2,19 +2,14 @@ package ndb
 
 import (
 	"bytes"
-	"context"
 	"io/fs"
 	"os"
 	"testing"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/internal/rpm/rpmdb"
 )
 
 func TestLoadPackage(t *testing.T) {
-	ctx := context.Background()
-
 	dir := os.DirFS("testdata")
 	ms, err := fs.Glob(dir, "Packages*.db")
 	if err != nil || len(ms) == 0 {
@@ -22,7 +17,7 @@ func TestLoadPackage(t *testing.T) {
 	}
 	for _, n := range ms {
 		t.Run(n, func(t *testing.T) {
-			ctx := zlog.Test(ctx, t)
+			ctx := t.Context()
 			b, err := fs.ReadFile(dir, n)
 			if err != nil {
 				t.Fatal(err)
