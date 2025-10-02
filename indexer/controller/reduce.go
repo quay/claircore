@@ -2,8 +2,7 @@ package controller
 
 import (
 	"context"
-
-	"github.com/quay/zlog"
+	"log/slog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -16,10 +15,7 @@ func reduce(ctx context.Context, store indexer.Store, scnrs indexer.VersionedSca
 		for _, scnr := range scnrs {
 			ok, err := store.LayerScanned(ctx, l.Hash, scnr)
 			if err != nil {
-				zlog.Debug(ctx).
-					Stringer("layer", l.Hash).
-					Err(err).
-					Msg("unable to lookup layer")
+				slog.DebugContext(ctx, "unable to lookup layer", "layer", l.Hash, "reason", err)
 				return nil, err
 			}
 			if !ok {

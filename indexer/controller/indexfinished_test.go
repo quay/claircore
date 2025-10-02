@@ -1,17 +1,15 @@
 package controller
 
 import (
-	"context"
 	"testing"
 
-	"github.com/quay/zlog"
 	"go.uber.org/mock/gomock"
 
+	"github.com/quay/claircore/test"
 	indexer "github.com/quay/claircore/test/mock/indexer"
 )
 
 func TestIndexFinished(t *testing.T) {
-	ctx := context.Background()
 	tt := []struct {
 		name          string
 		expectedState State
@@ -33,7 +31,7 @@ func TestIndexFinished(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			ctx := zlog.Test(ctx, t)
+			ctx := test.Logging(t)
 			store := table.mock(t)
 			scnr := New(&indexer.Options{
 				Store: store,

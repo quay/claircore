@@ -3,12 +3,11 @@ package controller
 import (
 	"context"
 	"fmt"
-
-	"github.com/quay/zlog"
+	"log/slog"
 )
 
 func indexManifest(ctx context.Context, c *Controller) (State, error) {
-	zlog.Info(ctx).Msg("starting index manifest")
+	slog.InfoContext(ctx, "starting index manifest")
 
 	if c.report == nil {
 		return Terminal, fmt.Errorf("reached IndexManifest state with a nil report field. cannot continue")
