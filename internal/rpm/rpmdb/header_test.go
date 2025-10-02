@@ -1,15 +1,12 @@
 package rpmdb
 
 import (
-	"context"
 	"os"
 	"testing"
-
-	"github.com/quay/zlog"
 )
 
 func TestParseHeader(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := t.Context()
 	f, err := os.Open(`testdata/package.header`)
 	if err != nil {
 		t.Fatal(err)
