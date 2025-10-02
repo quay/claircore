@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"sort"
 	"strconv"
 	"time"
@@ -15,7 +16,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/datastore"
 	"github.com/quay/claircore/libvuln/driver"
@@ -70,7 +70,6 @@ var (
 )
 
 func (s *MatcherStore) UpdateEnrichmentsIter(ctx context.Context, updater string, fp driver.Fingerprint, it datastore.EnrichmentIter) (uuid.UUID, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/MatcherStore.UpdateEnrichmentsIter")
 	return s.updateEnrichments(ctx, updater, fp, it)
 }
 
@@ -78,7 +77,6 @@ func (s *MatcherStore) UpdateEnrichmentsIter(ctx context.Context, updater string
 // EnrichmentRecord(s), and ensures enrichments from previous updates are not
 // queried by clients.
 func (s *MatcherStore) UpdateEnrichments(ctx context.Context, updater string, fp driver.Fingerprint, es []driver.EnrichmentRecord) (uuid.UUID, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/MatcherStore.UpdateEnrichments")
 	enIter := func(yield func(record *driver.EnrichmentRecord, err error) bool) {
 		for i := range es {
 			if !yield(&es[i], nil) {
@@ -133,7 +131,6 @@ DO
 	NOTHING;`
 		refreshView = `REFRESH MATERIALIZED VIEW CONCURRENTLY latest_update_operations;`
 	)
-	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/UpdateEnrichments")
 
 	var id uint64
 	var ref uuid.UUID
@@ -146,9 +143,7 @@ DO
 		}
 		updateEnrichmentsCounter.WithLabelValues("create").Add(1)
 		updateEnrichmentsDuration.WithLabelValues("create").Observe(time.Since(start).Seconds())
-		zlog.Debug(ctx).
-			Str("ref", ref.String()).
-			Msg("update_operation created")
+		slog.DebugContext(ctx, "update_operation created", "ref", ref)
 		return nil
 	})
 	if err != nil {
@@ -180,7 +175,9 @@ DO
 			// Periodically refresh planner statistics during bulk inserts to avoid stalls
 			if enCt%analyzeEveryNRecords == 0 {
 				if _, analyzeErr := s.pool.Exec(ctx, "ANALYZE enrichment"); analyzeErr != nil {
-					zlog.Warn(ctx).Err(analyzeErr).Int("record_count", enCt).Msg("failed to analyze enrichment table during processing")
+					slog.WarnContext(ctx, "failed to analyze enrichment table during processing",
+						"record_count", enCt,
+						"reason", analyzeErr)
 				}
 			}
 
@@ -213,10 +210,9 @@ DO
 	if _, err = s.pool.Exec(ctx, refreshView); err != nil {
 		return uuid.Nil, fmt.Errorf("could not refresh latest_update_operations: %w", err)
 	}
-	zlog.Debug(ctx).
-		Stringer("ref", ref).
-		Int("inserted", enCt).
-		Msg("update_operation committed")
+	slog.DebugContext(ctx, "update_operation committed",
+		"ref", ref,
+		"inserted", enCt)
 	return ref, nil
 }
 
@@ -256,7 +252,6 @@ where
 	and l.kind = 'enrichment'
 limit 1;`
 
-	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/GetEnrichment")
 	timer := prometheus.NewTimer(prometheus.ObserverFunc(func(v float64) {
 		getEnrichmentsDuration.WithLabelValues("query", strconv.FormatBool(errors.Is(err, nil))).Observe(v)
 	}))
