@@ -10,9 +10,9 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/test"
 )
 
 type testCase struct {
@@ -24,7 +24,7 @@ type testCase struct {
 
 func (tc *testCase) Run(ctx context.Context, t *testing.T) {
 	t.Run(tc.Name, func(t *testing.T) {
-		ctx := zlog.Test(ctx, t)
+		ctx := test.Logging(t, ctx)
 		seq := func(yield func(claircore.Package, error) bool) {
 			yield(tc.Package, nil)
 		}
@@ -43,7 +43,7 @@ func (tc *testCase) Run(ctx context.Context, t *testing.T) {
 
 func TestWrap(t *testing.T) {
 	t.Run("dnf4", func(t *testing.T) {
-		ctx := zlog.Test(t.Context(), t)
+		ctx := test.Logging(t)
 		sys := os.DirFS(filepath.Join("testdata", path.Base(t.Name())))
 
 		tcs := []testCase{
@@ -77,7 +77,7 @@ func TestWrap(t *testing.T) {
 		}
 	})
 	t.Run("dnf5", func(t *testing.T) {
-		ctx := zlog.Test(t.Context(), t)
+		ctx := test.Logging(t)
 		sys := os.DirFS(filepath.Join("testdata", path.Base(t.Name())))
 
 		tcs := []testCase{
@@ -129,7 +129,7 @@ func TestFindRepoids(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.Name, func(t *testing.T) {
-			ctx := zlog.Test(t.Context(), t)
+			ctx := test.Logging(t)
 			sys := os.DirFS(filepath.Join("testdata", tc.Name))
 
 			got, err := FindRepoids(ctx, sys)
