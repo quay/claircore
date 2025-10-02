@@ -2,9 +2,8 @@ package matcher
 
 import (
 	"context"
+	"log/slog"
 	"time"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore"
@@ -30,15 +29,12 @@ func NewController(m driver.Matcher, store datastore.Vulnerability) *Controller 
 
 // Match is the entrypoint for [Controller].
 func (mc *Controller) Match(ctx context.Context, records []*claircore.IndexRecord) (map[string][]*claircore.Vulnerability, error) {
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "internal/matcher/Controller.Match",
-		"matcher", mc.m.Name())
+	log := slog.With("matcher", mc.m.Name())
 	// find the packages the matcher is interested in.
 	interested := mc.findInterested(records)
-	zlog.Debug(ctx).
-		Int("interested", len(interested)).
-		Int("records", len(records)).
-		Msg("interest")
+	log.DebugContext(ctx, "interest",
+		"interested", len(interested),
+		"records", len(records))
 
 	// early return; do not call db at all
 	if len(interested) == 0 {
@@ -48,26 +44,23 @@ func (mc *Controller) Match(ctx context.Context, records []*claircore.IndexRecor
 	remoteMatcher, matchedVulns, err := mc.queryRemoteMatcher(ctx, interested)
 	if remoteMatcher {
 		if err != nil {
-			zlog.Error(ctx).Err(err).Msg("remote matcher error, returning empty results")
+			log.ErrorContext(ctx, "remote matcher error, returning empty results", "reason", err)
 			return map[string][]*claircore.Vulnerability{}, nil
 		}
 		return matchedVulns, nil
 	}
 
 	dbSide, authoritative := mc.dbFilter()
-	zlog.Debug(ctx).
-		Bool("opt-in", dbSide).
-		Bool("authoritative", authoritative).
-		Msg("version filter compatible?")
+	log.DebugContext(ctx, "version filter compatible?",
+		"opt-in", dbSide,
+		"authoritative", authoritative)
 
 	// query the vulnstore
 	vulns, err := mc.query(ctx, interested, dbSide)
 	if err != nil {
 		return nil, err
 	}
-	zlog.Debug(ctx).
-		Int("vulnerabilities", len(vulns)).
-		Msg("query")
+	log.DebugContext(ctx, "query", "count", len(vulns))
 
 	if authoritative {
 		return vulns, nil
@@ -77,9 +70,7 @@ func (mc *Controller) Match(ctx context.Context, records []*claircore.IndexRecor
 	if err != nil {
 		return nil, err
 	}
-	zlog.Debug(ctx).
-		Int("filtered", len(filteredVulns)).
-		Msg("filtered")
+	log.DebugContext(ctx, "filtered", "count", len(filteredVulns))
 	return filteredVulns, nil
 }
 

@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"runtime"
 	"sync"
 	"sync/atomic"
 
-	"github.com/quay/zlog"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/quay/claircore"
@@ -202,15 +202,11 @@ func EnrichedMatch(ctx context.Context, ir *claircore.IndexReport, ms []driver.M
 			for e = range eCh {
 				kind, msg, err := e.Enrich(ectx, getter(s, e.Name()), vr)
 				if err != nil {
-					zlog.Error(ctx).
-						Err(err).
-						Msg("enrichment error")
+					slog.ErrorContext(ctx, "enrichment error", "reason", err)
 					continue
 				}
 				if len(msg) == 0 {
-					zlog.Debug(ctx).
-						Str("name", e.Name()).
-						Msg("enricher reported nothing, skipping")
+					slog.DebugContext(ctx, "enricher reported nothing, skipping", "name", e.Name())
 					continue
 				}
 				res := entry{
