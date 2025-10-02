@@ -7,8 +7,6 @@ import (
 	"unique"
 	"weak"
 
-	"github.com/quay/zlog"
-
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
 )
@@ -27,7 +25,7 @@ type FileCheckerTestcase struct {
 
 func (tc *FileCheckerTestcase) Run(ctx context.Context, t *testing.T, a *test.CachedArena) {
 	t.Run(tc.Name, func(t *testing.T) {
-		ctx := zlog.Test(ctx, t)
+		ctx := test.Logging(t, ctx)
 		a.LoadLayerFromRegistry(ctx, t, tc.Layer)
 		r := a.Realizer(ctx).(*test.CachedRealizer)
 		t.Cleanup(func() {
@@ -56,7 +54,7 @@ func (tc *FileCheckerTestcase) Run(ctx context.Context, t *testing.T, a *test.Ca
 		for _, tc := range tc.Testcases {
 			t.Run(tc.Name, func(t *testing.T) {
 				t.Parallel()
-				ctx := zlog.Test(ctx, t)
+				ctx := test.Logging(t, ctx)
 				ctx, cancel := context.WithCancel(ctx)
 				defer cancel()
 
@@ -74,7 +72,7 @@ func (tc *FileCheckerTestcase) Run(ctx context.Context, t *testing.T, a *test.Ca
 }
 
 func TestIsRPMFile(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	a := test.NewCachedArena(t)
 
 	t.Cleanup(func() {

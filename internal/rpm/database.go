@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"io"
 	"iter"
+	"log/slog"
 	"runtime/trace"
 	"strings"
 	"sync"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/rpm/rpmdb"
@@ -45,9 +44,7 @@ func (db *Database) Packages(ctx context.Context) iter.Seq2[claircore.Package, e
 		var ok bool
 		ct := 0
 		defer func() {
-			zlog.Debug(ctx).
-				Int("packages", ct).
-				Msg("processed rpm db")
+			slog.DebugContext(ctx, "processed rpm db", "packages", ct)
 		}()
 		retErr := func(err error) (cont bool) {
 			trace.WithRegion(ctx, "internal/rpm.Database.PackagesYield", func() { cont = yield(claircore.Package{}, err) })
@@ -87,14 +84,11 @@ func (db *Database) Packages(ctx context.Context) iter.Seq2[claircore.Package, e
 			for !ok {
 				v, err := rpmver.Parse(srcRPM)
 				if err != nil {
-					zlog.Info(ctx).
-						Err(err).
-						Msg("unable to parse SOURCERPM tag, skipping")
+					slog.InfoContext(ctx, "unable to parse SOURCERPM tag, skipping", "reason", err)
 					break
 				}
 				if v.Name == nil {
-					zlog.Info(ctx).
-						Msg("no name parse out of SOURCERPM tag, skipping")
+					slog.InfoContext(ctx, "no name parse out of SOURCERPM tag, skipping")
 					break
 				}
 				src := claircore.Package{
@@ -135,39 +129,31 @@ var sourceVersionWarning sync.Once
 
 func printSourceVersionWarning(ctx context.Context) {
 	sourceVersionWarning.Do(func() {
-		zlog.Warn(ctx).
-			Strs("see-also", []string{
+		slog.WarnContext(ctx, "rpm source packages always record 0 epoch; this may cause incorrect matching",
+			"see-also", strings.Join([]string{
 				`https://github.com/rpm-software-management/rpm/issues/2796`,
 				`https://github.com/rpm-software-management/rpm/discussions/3703`,
 				`https://github.com/rpm-software-management/rpm/pull/3755`,
-			}).
-			Msg("rpm source packages always record 0 epoch; this may cause incorrect matching")
+			}, " "))
 	})
 }
 
 // PopulatePathSet adds relevant paths from the RPM database to the provided
 // [PathSet].
-func (db *Database) populatePathSet(ctx context.Context, s *PathSet) error {
+func (db *Database) populatePathSet(ctx context.Context, s *PathSet) (int, error) {
 	ctx, task := trace.NewTask(ctx, "internal/rpm.Database.populatePathSet")
 	defer task.End()
 
 	seq := loadPackageInfo(ctx, db.headers.Headers(ctx))
 	ct := 0
-	defer func() {
-		zlog.Debug(ctx).
-			Int("packages", ct).
-			Int("files", s.len()).
-			Msg("processed rpm db")
-	}()
-
 	for info, err := range seq {
 		if err != nil {
-			return err
+			return 0, err
 		}
 		ct++
 		info.InsertIntoSet(s)
 	}
-	return nil
+	return ct, nil
 }
 
 func (db *Database) Close() error {

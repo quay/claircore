@@ -7,10 +7,10 @@ import (
 	"io"
 	"io/fs"
 	"iter"
+	"log/slog"
 	"os"
 	"path"
 
-	"github.com/quay/zlog"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/quay/claircore/internal/rpm/bdb"
@@ -166,7 +166,7 @@ func OpenDB(ctx context.Context, sys fs.FS, found FoundDB) (*Database, error) {
 	}
 	defer func() {
 		if err := f.Close(); err != nil {
-			zlog.Warn(ctx).Stringer("kind", found.kind).Err(err).Msg("unable to close db")
+			slog.WarnContext(ctx, "unable to close db", "kind", found, "reason", err)
 		}
 	}()
 
@@ -180,10 +180,9 @@ func OpenDB(ctx context.Context, sys fs.FS, found FoundDB) (*Database, error) {
 	if err != nil {
 		return nil, fmt.Errorf("internal/rpm: error spooling db: %w", err)
 	}
-	ctx = zlog.ContextWithValues(ctx, "file", spool.Name())
+	log := slog.With("file", spool.Name())
 	cleanup.spool = spool
-	zlog.Debug(ctx).
-		Msg("copying db out of fs.FS")
+	log.DebugContext(ctx, "copying db out of fs.FS")
 
 	// Need to have the file linked into the filesystem for the sqlite package.
 	//
@@ -206,12 +205,12 @@ func OpenDB(ctx context.Context, sys fs.FS, found FoundDB) (*Database, error) {
 	// [this post]: https://sqlite.org/forum/info/57aaaf20cf703d301fed5aeaef59e70723f1d9454fb3a4e6383b2bfac6897e5a
 	if _, err := io.Copy(spool, f); err != nil {
 		if err := spool.Close(); err != nil {
-			zlog.Warn(ctx).Err(err).Msg("unable to close spool")
+			log.WarnContext(ctx, "unable to close spool", "reason", err)
 		}
 		return nil, fmt.Errorf("internal/rpm: error spooling db: %w", err)
 	}
 	if err := spool.Sync(); err != nil {
-		zlog.Warn(ctx).Err(err).Msg("unable to sync spool; results may be Weird")
+		log.WarnContext(ctx, "unable to sync spool; results may be Weird", "reason", err)
 	}
 
 	switch found.kind {
@@ -219,10 +218,10 @@ func OpenDB(ctx context.Context, sys fs.FS, found FoundDB) (*Database, error) {
 		sdb, err := sqlite.Open(spool.Name())
 		if err != nil {
 			if err := spool.Close(); err != nil {
-				zlog.Warn(ctx).Err(err).Msg("unable to close spool")
+				log.WarnContext(ctx, "unable to close spool", "reason", err)
 			}
 			if err := os.Remove(spool.Name()); err != nil {
-				zlog.Warn(ctx).Err(err).Msg("unable to remove spool")
+				log.WarnContext(ctx, "unable to remove spool", "reason", err)
 			}
 			return nil, fmt.Errorf("internal/rpm: unable to open sqlite db: %w", err)
 		}
@@ -243,9 +242,7 @@ func OpenDB(ctx context.Context, sys fs.FS, found FoundDB) (*Database, error) {
 	default:
 		panic("unreachable")
 	}
-	zlog.Debug(ctx).
-		Stringer("db", found).
-		Msg("opened database")
+	log.DebugContext(ctx, "opened database", "db", found)
 
 	if v, ok := db.headers.(validator); ok {
 		if err := v.Validate(ctx); err != nil {

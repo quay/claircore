@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"runtime"
 	"strings"
 	"sync"
 	"unique"
 	"weak"
 
-	"github.com/quay/zlog"
 	"golang.org/x/sync/singleflight"
 
 	"github.com/quay/claircore"
@@ -69,18 +69,22 @@ func (c *fileCache) GetPathSet(ctx context.Context, layer *claircore.Layer) (*Pa
 				}()
 
 				for found := range seq {
-					zlog.Debug(ctx).
-						Stringer("db", found).
-						Msg("found possible database")
+					slog.DebugContext(ctx, "found possible database", "db", found)
 					err = func() error {
 						db, err := OpenDB(ctx, sys, found)
 						if err != nil {
 							return err
 						}
 						defer db.Close()
-						ctx := zlog.ContextWithValues(ctx, "db", db.String())
-						zlog.Debug(ctx).Msg("examining database")
-						return db.populatePathSet(ctx, set)
+						log := slog.With("db", db)
+						log.DebugContext(ctx, "examining database")
+						ct, err := db.populatePathSet(ctx, set)
+						if err == nil {
+							log.DebugContext(ctx, "processed rpm db",
+								"packages", ct,
+								"files", set.len())
+						}
+						return err
 					}()
 					if err != nil {
 						return nil, err
