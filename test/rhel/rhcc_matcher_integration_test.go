@@ -1,15 +1,12 @@
 package rhel
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"testing"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore/postgres"
@@ -19,6 +16,7 @@ import (
 	"github.com/quay/claircore/pkg/ctxlock/v2"
 	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/quay/claircore/rhel/vex"
+	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 	testpostgres "github.com/quay/claircore/test/postgres"
 )
@@ -67,7 +65,7 @@ func TestMatcherIntegration(t *testing.T) {
 	}
 
 	integration.NeedDB(t)
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	pool := testpostgres.TestMatcherDB(ctx, t)
 	store := postgres.NewMatcherStore(pool)
 	locks, err := ctxlock.New(ctx, pool)
