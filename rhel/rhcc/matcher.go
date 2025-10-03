@@ -2,9 +2,9 @@ package rhcc
 
 import (
 	"context"
+	"log/slog"
 
 	rpmVersion "github.com/knqyf263/go-rpm-version"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
@@ -43,10 +43,7 @@ func (*matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 		// This is not a gold repo record, so we need to check if the CPE matches.
 		vuln.Repo.CPE, err = cpe.Unbind(vuln.Repo.Name)
 		if err != nil {
-			zlog.Warn(ctx).
-				Str("vulnerability name", vuln.Name).
-				Err(err).
-				Msg("unable to unbind repo CPE")
+			slog.WarnContext(ctx, "unable to unbind repo CPE", "reason", err, "vulnerability name", vuln.Name)
 			return false, nil
 		}
 		if !cpe.Compare(vuln.Repo.CPE, record.Repository.CPE).IsSuperset() && !rhel.IsCPESubstringMatch(record.Repository.CPE, vuln.Repo.CPE) {
@@ -54,10 +51,7 @@ func (*matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 		}
 	}
 	pkgVer, fixedInVer := rpmVersion.NewVersion(record.Package.Version), rpmVersion.NewVersion(vuln.FixedInVersion)
-	zlog.Debug(ctx).
-		Str("record", record.Package.Version).
-		Str("vulnerability", vuln.FixedInVersion).
-		Msg("comparing versions")
+	slog.DebugContext(ctx, "comparing versions", "record", record.Package.Version, "vulnerability", vuln.FixedInVersion)
 	return pkgVer.LessThan(fixedInVer), nil
 }
 

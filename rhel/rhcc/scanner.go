@@ -6,12 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"net/http"
 	"os"
 	"strings"
 	"time"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -62,7 +61,6 @@ const DefaultName2ReposMappingURL = "https://security.access.redhat.com/data/met
 
 // Configure implements [indexer.RPCScanner].
 func (s *scanner) Configure(ctx context.Context, f indexer.ConfigDeserializer, c *http.Client) error {
-	ctx = zlog.ContextWithValues(ctx, "component", "rhel/rhcc/scanner.Configure")
 	s.client = c
 	if err := f(&s.cfg); err != nil {
 		return err
@@ -117,7 +115,6 @@ func (s *scanner) Kind() string { return "package" }
 
 // Scan implements [indexer.PackageScanner].
 func (s *scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Package, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "rhel/rhcc/scanner.Scan")
 	const (
 		compLabel = `com.redhat.component`
 		nameLabel = `name`
@@ -160,7 +157,7 @@ func (s *scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Pa
 		var ok bool
 		(*chk.Found), ok = labels[chk.Want]
 		if !ok {
-			zlog.Info(ctx).Str("label", chk.Want).Msg("expected label not found in dockerfile")
+			slog.InfoContext(ctx, "expected label not found in dockerfile", "label", chk.Want)
 			return nil, nil
 		}
 	}
@@ -189,8 +186,7 @@ func (s *scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Pa
 	}
 	repos, ok := v.Data[name]
 	if ok {
-		zlog.Debug(ctx).Str("name", name).
-			Msg("name present in mapping file")
+		slog.DebugContext(ctx, "name present in mapping file", "name", name)
 	} else {
 		// Didn't find external_repos in mapping, use name label as package
 		// name.
@@ -229,9 +225,7 @@ func findLabels(ctx context.Context, sys fs.FS) (map[string]string, string, erro
 	if len(ms) == 0 {
 		return nil, "", errNotFound
 	}
-	zlog.Debug(ctx).
-		Strs("paths", ms).
-		Msg("found possible buildinfo Dockerfile(s)")
+	slog.DebugContext(ctx, "found possible buildinfo Dockerfile(s)", "paths", ms)
 	var p string
 	for _, m := range ms {
 		if strings.Count(m, "-") > 1 {
@@ -242,9 +236,7 @@ func findLabels(ctx context.Context, sys fs.FS) (map[string]string, string, erro
 	if p == "" {
 		return nil, "", errNotFound
 	}
-	zlog.Info(ctx).
-		Str("path", p).
-		Msg("found buildinfo Dockerfile")
+	slog.InfoContext(ctx, "found buildinfo Dockerfile", "path", p)
 	f, err := sys.Open(p)
 	if err != nil {
 		return nil, "", err
@@ -287,7 +279,6 @@ func (s *reposcanner) Kind() string { return "repository" }
 
 // Scan implements [indexer.RepositoryScanner].
 func (s *reposcanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Repository, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "rhel/rhcc/reposcanner.Scan")
 	sys, err := l.FS()
 	if err != nil {
 		return nil, fmt.Errorf("rhcc: unable to open layer: %w", err)
@@ -299,7 +290,6 @@ func (s *reposcanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircor
 	if len(ms) == 0 {
 		return nil, nil
 	}
-	zlog.Debug(ctx).
-		Msg("found buildinfo Dockerfile")
+	slog.DebugContext(ctx, "found buildinfo Dockerfile")
 	return []*claircore.Repository{&GoldRepo}, nil
 }

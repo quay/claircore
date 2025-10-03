@@ -2,7 +2,6 @@ package rhcc
 
 import (
 	"archive/tar"
-	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -13,7 +12,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
@@ -21,7 +19,7 @@ import (
 
 func TestContainerScanner(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	clairSourceContainer := &claircore.Package{
 		Name:    "quay-clair-container",
 		Version: "v3.5.5-4",
@@ -191,7 +189,7 @@ func TestContainerScanner(t *testing.T) {
 	})
 	for _, tt := range table {
 		t.Run(tt.Name, func(t *testing.T) {
-			ctx := zlog.Test(ctx, t)
+			ctx := test.Logging(t)
 			mod := test.Modtime(t, tt.Dockerfile)
 			a.GenerateLayer(t, tt.Name, mod, func(t testing.TB, w *os.File) {
 				dockerfile, err := os.Open(tt.Dockerfile)

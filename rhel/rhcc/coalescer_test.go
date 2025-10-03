@@ -1,11 +1,8 @@
 package rhcc
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -14,7 +11,7 @@ import (
 
 func TestCoalescer(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	coalescer := &coalescer{}
 	repo := []*claircore.Repository{&GoldRepo}
 	repo[0].ID = "1" // Assign it an ID and check it later.
