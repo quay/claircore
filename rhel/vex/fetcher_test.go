@@ -3,18 +3,17 @@ package vex
 import (
 	"bufio"
 	"bytes"
-	"context"
 	"testing"
 
 	"github.com/klauspost/compress/snappy"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/toolkit/types/csaf"
 )
 
 func TestFactory(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	root, c := ServeSecDB(t, "testdata/server.txtar")
 	fac := &Factory{}
 	err := fac.Configure(ctx, func(v any) error {
