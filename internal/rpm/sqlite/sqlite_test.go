@@ -1,7 +1,6 @@
 package sqlite
 
 import (
-	"context"
 	"encoding/json"
 	"hash/crc64"
 	"io"
@@ -10,11 +9,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/quay/zlog"
 )
 
 func TestPackages(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := t.Context()
 	h := crc64.New(crc64.MakeTable(crc64.ISO))
 
 	// Copying to a tempdir is needed if the tests are being run from a prepared
@@ -87,7 +85,7 @@ func TestPackages(t *testing.T) {
 }
 
 func TestValidate(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := t.Context()
 
 	dbfile := filepath.Join(t.TempDir(), `no_packages.sqlite`)
 	dst, err := os.Create(dbfile)

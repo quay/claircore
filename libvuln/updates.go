@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/datastore/postgres"
 	"github.com/quay/claircore/libvuln/driver"
@@ -23,8 +23,6 @@ func OfflineImport(ctx context.Context, pool *pgxpool.Pool, in io.Reader) error 
 	// BUG(hank) The OfflineImport function is a wart, needed to work around
 	// some package namespacing issues. It should get refactored if claircore
 	// gets merged into clair.
-	ctx = zlog.ContextWithValues(ctx, "component", "libvuln/OfflineImporter")
-
 	s := postgres.NewMatcherStore(pool)
 	l, err := jsonblob.Load(ctx, in)
 	if err != nil {
@@ -39,13 +37,12 @@ func OfflineImport(ctx context.Context, pool *pgxpool.Pool, in io.Reader) error 
 Update:
 	for l.Next() {
 		e := l.Entry()
+		log := slog.With("updater", e.Updater)
 		for _, op := range ops[e.Updater] {
 			// This only helps if updaters don't keep something that
 			// changes in the fingerprint.
 			if op.Fingerprint == e.Fingerprint {
-				zlog.Info(ctx).
-					Str("updater", e.Updater).
-					Msg("fingerprint match, skipping")
+				log.InfoContext(ctx, "fingerprint match, skipping")
 				continue Update
 			}
 		}
@@ -60,12 +57,10 @@ Update:
 				return fmt.Errorf("updating vulnerabilities: %w", err)
 			}
 		}
-		zlog.Info(ctx).
-			Str("updater", e.Updater).
-			Str("ref", ref.String()).
-			Int("vuln_count", len(e.Vuln)).
-			Int("enrichment_count", len(e.Enrichment)).
-			Msg("update imported")
+		log.InfoContext(ctx, "update imported",
+			"ref", ref,
+			"vuln_count", len(e.Vuln),
+			"enrichment_count", len(e.Enrichment))
 	}
 	if err := l.Err(); err != nil {
 		return err

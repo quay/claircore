@@ -3,10 +3,10 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/libvuln/driver"
 )
@@ -57,9 +57,7 @@ func recordUpdaterStatus(ctx context.Context, pool *pgxpool.Pool, updaterName st
 					last_error = $4
 				RETURNING updater_name;`
 	)
-
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "internal/vulnstore/postgres/recordUpdaterStatus")
+	log := slog.With("updater", updaterName)
 
 	tx, err := pool.Begin(ctx)
 	if err != nil {
@@ -70,17 +68,13 @@ func recordUpdaterStatus(ctx context.Context, pool *pgxpool.Pool, updaterName st
 	var returnedUpdaterName string
 
 	if updaterError == nil {
-		zlog.Debug(ctx).
-			Str("updater", updaterName).
-			Msg("recording successful update")
+		log.DebugContext(ctx, "recording successful update")
 		_, err := tx.Exec(ctx, upsertSuccessfulUpdate, updaterName, updateTime, fingerprint)
 		if err != nil {
 			return fmt.Errorf("failed to upsert successful updater status: %w", err)
 		}
 	} else {
-		zlog.Debug(ctx).
-			Str("updater", updaterName).
-			Msg("recording failed update")
+		log.DebugContext(ctx, "recording failed update")
 		if err := tx.QueryRow(ctx, upsertFailedUpdate, updaterName, updateTime, fingerprint, updaterError.Error()).Scan(&returnedUpdaterName); err != nil {
 			return fmt.Errorf("failed to upsert failed updater status: %w", err)
 		}
@@ -89,10 +83,7 @@ func recordUpdaterStatus(ctx context.Context, pool *pgxpool.Pool, updaterName st
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
-
-	zlog.Debug(ctx).
-		Str("updater", updaterName).
-		Msg("updater status stored in database")
+	log.DebugContext(ctx, "updater status stored in database")
 
 	return nil
 }
@@ -109,9 +100,6 @@ func recordUpdaterSetStatus(ctx context.Context, pool *pgxpool.Pool, updaterSet 
 		WHERE updater_name like $2 || '%';`
 	)
 
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "internal/vulnstore/postgres/recordUpdaterSetStatus")
-
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("unable to start transaction: %w", err)
@@ -127,10 +115,9 @@ func recordUpdaterSetStatus(ctx context.Context, pool *pgxpool.Pool, updaterSet 
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
-	zlog.Debug(ctx).
-		Str("factory", updaterSet).
-		Int64("rowsAffected", tag.RowsAffected()).
-		Msg("status updated for factory updaters")
+	slog.DebugContext(ctx, "status updated for factory updaters",
+		"factory", updaterSet,
+		"rowsAffected", tag.RowsAffected())
 
 	return nil
 }

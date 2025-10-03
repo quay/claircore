@@ -2,13 +2,14 @@ package aws
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/quay/zlog"
+	"github.com/quay/claircore/test"
 )
 
 type clientTestcase struct {
@@ -31,11 +32,12 @@ func (tc *clientTestcase) Run(ctx context.Context) func(*testing.T) {
 	}))
 	client := Client{
 		c:       srv.Client(),
+		log:     slog.Default(),
 		mirrors: make([]*url.URL, 0),
 	}
 
 	return func(t *testing.T) {
-		ctx := zlog.Test(ctx, t)
+		ctx := test.Logging(t)
 		t.Cleanup(srv.Close)
 
 		err := client.getMirrors(ctx, srv.URL)
@@ -48,8 +50,9 @@ func (tc *clientTestcase) Run(ctx context.Context) func(*testing.T) {
 		}
 	}
 }
+
 func TestClientGetMirrors(t *testing.T) {
-	ctx := context.Background()
+	ctx := test.Logging(t)
 	tests := []clientTestcase{
 		{
 			Release: AmazonLinux1,

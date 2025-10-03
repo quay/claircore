@@ -8,9 +8,9 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/test"
 )
 
 var dist310 = stableRelease{3, 10}.Distribution()
@@ -128,8 +128,8 @@ var v3_10CommunityTruncatedVulns = []*claircore.Vulnerability{
 
 func TestParser(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
-	var table = []struct {
+	ctx := test.Logging(t)
+	table := []struct {
 		release  release
 		repo     string
 		testFile string
@@ -145,7 +145,8 @@ func TestParser(t *testing.T) {
 
 	for _, test := range table {
 		t.Run(test.testFile, func(t *testing.T) {
-			ctx := zlog.Test(ctx, t)
+			ctx, done := context.WithCancel(ctx)
+			t.Cleanup(done)
 
 			path := fmt.Sprintf("testdata/%s", test.testFile)
 			f, err := os.Open(path)
