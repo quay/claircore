@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net"
 	"runtime"
 
-	"github.com/quay/zlog"
+	"github.com/quay/claircore/toolkit/log"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/quay/claircore"
@@ -30,13 +31,10 @@ type LayerScanner struct {
 //
 // The provided Context is only used for the duration of the call.
 func NewLayerScanner(ctx context.Context, concurrent int, opts *Options) (*LayerScanner, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "indexer.NewLayerScanner")
-	zlog.Info(ctx).Msg("NewLayerScanner: constructing a new layer-scanner")
+	slog.InfoContext(ctx, "constructing")
 	switch {
 	case concurrent < 1:
-		zlog.Warn(ctx).
-			Int("value", concurrent).
-			Msg("rectifying nonsense 'concurrent' argument")
+		slog.WarnContext(ctx, "rectifying nonsense 'concurrent' argument", "value", concurrent)
 		fallthrough
 	case concurrent == 0:
 		concurrent = runtime.GOMAXPROCS(0)
@@ -61,6 +59,7 @@ func configAndFilter[S VersionedScanner](ctx context.Context, opts *Options, ss 
 	i := 0
 	for _, s := range ss {
 		n := s.Name()
+		log := slog.With("scanner", n)
 		var cfgMap map[string]func(any) error
 		switch k := s.Kind(); k {
 		case "package":
@@ -72,10 +71,7 @@ func configAndFilter[S VersionedScanner](ctx context.Context, opts *Options, ss 
 		case "file":
 			cfgMap = opts.ScannerConfig.File
 		default:
-			zlog.Warn(ctx).
-				Str("kind", k).
-				Str("scanner", n).
-				Msg("unknown scanner kind")
+			log.WarnContext(ctx, "unknown scanner kind", "kind", k)
 			continue
 		}
 
@@ -87,25 +83,17 @@ func configAndFilter[S VersionedScanner](ctx context.Context, opts *Options, ss 
 		rs, rsOK := any(s).(RPCScanner)
 		switch {
 		case haveCfg && !csOK && !rsOK:
-			zlog.Warn(ctx).
-				Str("scanner", n).
-				Msg("configuration present for an unconfigurable scanner, skipping")
+			log.WarnContext(ctx, "configuration present for an unconfigurable scanner, skipping")
 		case csOK && rsOK:
 			fallthrough
 		case !csOK && rsOK:
 			if err := rs.Configure(ctx, f, opts.Client); err != nil {
-				zlog.Error(ctx).
-					Str("scanner", n).
-					Err(err).
-					Msg("configuration failed")
+				log.ErrorContext(ctx, "configuration failed", "reason", err)
 				continue
 			}
 		case csOK && !rsOK:
 			if err := cs.Configure(ctx, f); err != nil {
-				zlog.Error(ctx).
-					Str("scanner", n).
-					Err(err).
-					Msg("configuration failed")
+				log.ErrorContext(ctx, "configuration failed", "reason", err)
 				continue
 			}
 		}
@@ -125,9 +113,7 @@ func configAndFilter[S VersionedScanner](ctx context.Context, opts *Options, ss 
 // The provided Context controls cancellation for all scanners. The first error
 // reported halts all work and is returned from Scan.
 func (ls *LayerScanner) Scan(ctx context.Context, manifest claircore.Digest, layers []*claircore.Layer) error {
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "indexer/LayerScanner.Scan",
-		"manifest", manifest.String())
+	ctx = log.With(ctx, "manifest", manifest)
 
 	g, ctx := errgroup.WithContext(ctx)
 	// Using the goroutine's built-in limit is worst-case the same as using an
@@ -183,20 +169,16 @@ Layers:
 // ScanLayer (along with the result type) handles an individual (scanner, layer)
 // pair.
 func (ls *LayerScanner) scanLayer(ctx context.Context, l *claircore.Layer, s VersionedScanner) error {
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "indexer/LayerScanner.scanLayer",
-		"scanner", s.Name(),
-		"kind", s.Kind(),
-		"layer", l.Hash.String())
-	zlog.Debug(ctx).Msg("scan start")
-	defer zlog.Debug(ctx).Msg("scan done")
+	ctx = log.With(ctx, "scanner", s.Name(), "kind", s.Kind(), "layer", l.Hash)
+	slog.DebugContext(ctx, "scan start")
+	defer slog.DebugContext(ctx, "scan done")
 
 	ok, err := ls.store.LayerScanned(ctx, l.Hash, s)
 	if err != nil {
 		return err
 	}
 	if ok {
-		zlog.Debug(ctx).Msg("layer already scanned")
+		slog.DebugContext(ctx, "layer already scanned")
 		return nil
 	}
 
@@ -251,10 +233,10 @@ func (r *result) Do(ctx context.Context, s VersionedScanner, l *claircore.Layer)
 	switch {
 	case errors.Is(err, nil):
 	case errors.As(err, &addrErr):
-		zlog.Warn(ctx).Str("scanner", s.Name()).Err(err).Msg("scanner not able to access resources")
+		slog.WarnContext(ctx, "scanner not able to access resources", "scanner", s.Name(), "reason", err)
 		return nil
 	default:
-		zlog.Info(ctx).Err(err).Send()
+		slog.InfoContext(ctx, "unexpected error", "reason", err)
 	}
 
 	return err
@@ -264,25 +246,25 @@ func (r *result) Do(ctx context.Context, s VersionedScanner, l *claircore.Layer)
 // the result.
 func (r *result) Store(ctx context.Context, store Store, s VersionedScanner, l *claircore.Layer) error {
 	if r.pkgs != nil {
-		zlog.Debug(ctx).Int("count", len(r.pkgs)).Msg("scan returned packages")
+		slog.DebugContext(ctx, "scan returned packages", "count", len(r.pkgs))
 		if err := store.IndexPackages(ctx, r.pkgs, l, s); err != nil {
 			return err
 		}
 	}
 	if r.dists != nil {
-		zlog.Debug(ctx).Int("count", len(r.dists)).Msg("scan returned dists")
+		slog.DebugContext(ctx, "scan returned distributions", "count", len(r.dists))
 		if err := store.IndexDistributions(ctx, r.dists, l, s); err != nil {
 			return err
 		}
 	}
 	if r.repos != nil {
-		zlog.Debug(ctx).Int("count", len(r.repos)).Msg("scan returned repos")
+		slog.DebugContext(ctx, "scan returned repositories", "count", len(r.repos))
 		if err := store.IndexRepositories(ctx, r.repos, l, s); err != nil {
 			return err
 		}
 	}
 	if r.files != nil {
-		zlog.Debug(ctx).Int("count", len(r.files)).Msg("scan returned files")
+		slog.DebugContext(ctx, "scan returned files", "count", len(r.files))
 		if err := store.IndexFiles(ctx, r.files, l, s); err != nil {
 			return err
 		}

@@ -2,11 +2,9 @@ package indexer
 
 import (
 	"context"
-
-	"github.com/quay/zlog"
 )
 
-// Ecosystems group together scanners and a Coalescer which are commonly used
+// An Ecosystem groups together scanners and a Coalescer which are commonly used
 // together.
 //
 // A typical ecosystem is "dpkg" which will use the "dpkg" package indexer, the
@@ -26,7 +24,6 @@ type Ecosystem struct {
 // EcosystemsToScanners extracts and dedupes multiple ecosystems and returns
 // their discrete scanners.
 func EcosystemsToScanners(ctx context.Context, ecosystems []*Ecosystem) ([]PackageScanner, []DistributionScanner, []RepositoryScanner, []FileScanner, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "indexer/EcosystemsToScanners")
 	ps := []PackageScanner{}
 	ds := []DistributionScanner{}
 	rs := []RepositoryScanner{}
