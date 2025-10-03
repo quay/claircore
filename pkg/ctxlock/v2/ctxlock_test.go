@@ -1,12 +1,10 @@
 package ctxlock
 
 import (
-	"strconv"
 	"sync"
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/quay/zlog"
 )
 
 func TestUncontested(t *testing.T) {
@@ -32,7 +30,6 @@ func TestUncontested(t *testing.T) {
 	for i := range wi {
 		go func(i int) {
 			defer wg.Done()
-			ctx := zlog.ContextWithValues(ctx, "worker", strconv.Itoa(i))
 			<-start
 			t.Logf("worker %d: start", i)
 			for _, id := range wi[i] {
@@ -68,7 +65,6 @@ func TestContested(t *testing.T) {
 	for i := range w {
 		go func(i int) {
 			defer wg.Done()
-			ctx := zlog.ContextWithValues(ctx, "worker", strconv.Itoa(i))
 			<-start
 			t.Logf("worker %d: start", i)
 			for _, id := range ids {

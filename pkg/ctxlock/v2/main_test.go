@@ -7,15 +7,15 @@ import (
 	"github.com/jackc/pgx/v5/log/testingadapter"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/tracelog"
-	"github.com/quay/zlog"
 
+	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 )
 
 func basicSetup(t testing.TB) (context.Context, *Locker) {
 	t.Helper()
 	integration.NeedDB(t)
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 
 	// Setup the Database.
 	db, err := integration.NewDB(ctx, t)

@@ -8,16 +8,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"runtime"
 	"runtime/pprof"
 	"runtime/trace"
-	"strconv"
 	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/internal/dblock"
 )
@@ -93,26 +92,20 @@ var (
 func (l *Locker) run(ctx context.Context) {
 	ctx = pprof.WithLabels(ctx, pprof.Labels(tracelabel, `run`))
 	pprof.SetGoroutineLabels(ctx)
-	ctx = zlog.ContextWithValues(ctx, "component", "internal/ctxlock/Locker.run")
 	for {
 		tctx, done := context.WithTimeout(ctx, 5*time.Second)
 		err := l.p.AcquireFunc(tctx, l.reconnect(ctx))
 		done()
 		switch {
 		case errors.Is(err, errExiting):
-			zlog.Debug(ctx).
-				Msg("ctxlocker exiting")
+			slog.DebugContext(ctx, "ctxlocker exiting")
 			return
 		case errors.Is(err, nil):
 			return
 		case errors.Is(err, context.DeadlineExceeded):
-			zlog.Info(ctx).
-				Err(err).
-				Msg("retrying immediately")
+			slog.InfoContext(ctx, "retrying immediately", "reason", err)
 		default:
-			zlog.Warn(ctx).
-				Err(err).
-				Msg("unexpected error; retrying immediately")
+			slog.WarnContext(ctx, "unexpected error; retrying immediately", "reason", err)
 		}
 	}
 }
@@ -133,7 +126,6 @@ func (l *Locker) Close(_ context.Context) (_ error) {
 // itself until awoken. All other methods should strobe the Cond to wake up this
 // loop and check if the connection has died.
 func (l *Locker) reconnect(ctx context.Context) func(*pgxpool.Conn) error {
-	ctx = zlog.ContextWithValues(ctx, "component", "internal/ctxlock/Locker.reconnect")
 	return func(c *pgxpool.Conn) error {
 		l.rc.L.Lock()
 		defer l.rc.L.Unlock()
@@ -141,15 +133,15 @@ func (l *Locker) reconnect(ctx context.Context) func(*pgxpool.Conn) error {
 		l.gone = make(chan struct{})
 		l.cur = make(map[string]struct{}, 100) // Guess at a good capacity.
 		l.gen++
-		ctx = zlog.ContextWithValues(ctx, "gen", strconv.Itoa(l.gen))
+		log := slog.With(slog.Int("gen", l.gen))
 		defer func() {
 			close(l.gone)
 			l.gone = nil
 			l.conn = nil
 			l.cur = nil
-			zlog.Debug(ctx).Msg("torn down")
+			log.DebugContext(ctx, "torn down")
 		}()
-		zlog.Debug(ctx).Msg("set up")
+		log.DebugContext(ctx, "set up")
 		l.rc.Broadcast()
 
 		for l.gen > 0 {
@@ -157,9 +149,7 @@ func (l *Locker) reconnect(ctx context.Context) func(*pgxpool.Conn) error {
 			err := c.Ping(ctx)
 			done()
 			if err != nil {
-				zlog.Warn(ctx).
-					Err(err).
-					Msg("liveness check failed")
+				log.WarnContext(ctx, "liveness check failed", "reason", err)
 				return err
 			}
 			l.rc.Wait()
@@ -183,15 +173,6 @@ func (l *Locker) ping(ctx context.Context) {
 	}
 }
 
-/*
-The TryLock and Lock methods do not add logging baggage, because the additional
-allocations around the context.Context really stack up. Ensure that any
-additional information is added to the zlog calls directly.
-
-I've left some Debug logs commented out because zlog needs to gain a level knob
-for tests. Currently, the logs always happen and throw off benchmarks.
-*/
-
 // TryLock attempts to lock on the provided key.
 //
 // If unsuccessful, an already-canceled Context will be returned.
@@ -199,7 +180,8 @@ for tests. Currently, the logs always happen and throw off benchmarks.
 // If successful, the returned Context will be parented to the passed-in Context
 // and also to the underlying connection used for the lock.
 func (l *Locker) TryLock(parent context.Context, key string) (context.Context, context.CancelFunc) {
-	// zlog.Debug(parent).Str("key", key).Msg("trying lock")
+	a := slog.String("key", key)
+	slog.DebugContext(parent, "trying lock", a)
 	defer trace.StartRegion(parent, pkgname+".TryLock").End()
 	child, done := context.WithCancel(parent)
 	w, err := l.try(parent, key, done)
@@ -209,14 +191,9 @@ func (l *Locker) TryLock(parent context.Context, key string) (context.Context, c
 	case errors.Is(err, errConnGone) ||
 		errors.Is(err, errLockFail) ||
 		errors.Is(err, errDoubleLock):
-		zlog.Debug(parent).
-			Err(err).
-			Str("key", key).
-			Msg("lock failed")
+		slog.DebugContext(parent, "lock failed", a, "reason", err)
 	default:
-		zlog.Info(parent).
-			Err(err).
-			Msg("checking lock liveness")
+		slog.InfoContext(parent, "checking lock liveness", a, "reason", err)
 		l.rc.Broadcast()
 	}
 	done()
@@ -226,7 +203,8 @@ func (l *Locker) TryLock(parent context.Context, key string) (context.Context, c
 // Lock attempts to obtain the named lock until it succeeds or the passed
 // Context is canceled.
 func (l *Locker) Lock(parent context.Context, key string) (context.Context, context.CancelFunc) {
-	// zlog.Debug(parent).Str("key", key).Msg("locking")
+	a := slog.String("key", key)
+	slog.DebugContext(parent, "locking", a)
 	defer trace.StartRegion(parent, pkgname+".Lock").End()
 	child, done := context.WithCancel(parent)
 	for wait := time.Duration(500 * time.Millisecond); ; backoff(&wait) {
@@ -237,14 +215,9 @@ func (l *Locker) Lock(parent context.Context, key string) (context.Context, cont
 		case errors.Is(err, errConnGone) ||
 			errors.Is(err, errLockFail) ||
 			errors.Is(err, errDoubleLock):
-			zlog.Debug(parent).
-				Err(err).
-				Str("key", key).
-				Msg("lock failed")
+			slog.DebugContext(parent, "lock failed", a, "reason", err)
 		default:
-			zlog.Info(parent).
-				Err(err).
-				Msg("checking lock liveness")
+			slog.InfoContext(parent, "checking lock liveness", a, "reason", err)
 			l.rc.Broadcast()
 		}
 
@@ -343,18 +316,14 @@ func (l *Locker) unlock(ctx context.Context, key string, kb []byte, gen int, nex
 			[][]byte{kb}, nil,
 			[]int16{1}, nil).Close()
 		if err != nil {
-			zlog.Debug(ctx).
-				Err(err).
-				Msg("error during unlock")
+			slog.DebugContext(ctx, "error during unlock", "reason", err)
 			// Since we're in a different call path now, we need to signal on
 			// error here, as well.
 			l.rc.Broadcast()
 			return
 		}
 		if _, ok := l.cur[key]; !ok || tag.RowsAffected() == 0 {
-			zlog.Error(ctx).
-				Str("key", key).
-				Msg("lock protocol botch")
+			slog.ErrorContext(ctx, "lock protocol botch", "key", key)
 		}
 		delete(l.cur, key)
 	}
