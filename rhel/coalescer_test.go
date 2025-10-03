@@ -9,7 +9,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/quay/claircore/toolkit/types/cpe"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -23,7 +22,7 @@ type CoalescerTestcase struct {
 
 func (tc CoalescerTestcase) Run(ctx context.Context, t *testing.T) {
 	t.Run(tc.Name, func(t *testing.T) {
-		ctx := zlog.Test(ctx, t)
+		ctx := test.Logging(t, ctx)
 		input, want := tc.Fixture(t)
 		got, err := new(Coalescer).Coalesce(ctx, input)
 		if err != nil {
@@ -38,7 +37,7 @@ func (tc CoalescerTestcase) Run(ctx context.Context, t *testing.T) {
 
 func TestCoalescer(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 
 	tcs := []CoalescerTestcase{
 		{

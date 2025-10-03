@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
@@ -15,8 +16,6 @@ import (
 	"slices"
 	"strings"
 	"time"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -108,9 +107,6 @@ func (*RepositoryScanner) Kind() string { return "repository" }
 
 // Configure implements [indexer.RPCScanner].
 func (r *RepositoryScanner) Configure(ctx context.Context, f indexer.ConfigDeserializer, c *http.Client) error {
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "rhel/RepositoryScanner.Configure",
-		"version", r.Version())
 	r.client = c
 	if err := f(&r.cfg); err != nil {
 		return err
@@ -157,12 +153,8 @@ func (r *RepositoryScanner) Configure(ctx context.Context, f indexer.ConfigDeser
 // stored in the [claircore.Repository]'s "Name" and "CPE" fields, respectively.
 func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Repository, error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "rhel/RepositoryScanner.Scan",
-		"version", r.Version(),
-		"layer", l.Hash.String())
-	zlog.Debug(ctx).Msg("start")
-	defer zlog.Debug(ctx).Msg("done")
+	slog.DebugContext(ctx, "start")
+	defer slog.DebugContext(ctx, "done")
 
 	sys, err := l.FS()
 	if err != nil {
@@ -220,11 +212,10 @@ func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) ([]*cl
 	for repoid, cpeID := range pairs {
 		c, err := cpe.Unbind(cpeID)
 		if err != nil {
-			zlog.Warn(ctx).
-				Err(err).
-				Str("url", bugURL(cpeID, err)).
-				Str("cpeID", cpeID).
-				Msg("invalid CPE, please report a bug upstream")
+			slog.WarnContext(ctx, "invalid CPE, please report a bug upstream",
+				"reason", err,
+				"cpeID", cpeID,
+				"url", bugURL(cpeID, err))
 			continue
 		}
 
@@ -257,7 +248,7 @@ func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) ([]*cl
 }
 
 // BugURL constructs a link directly to the Red Hat Jira instance.
-func bugURL(id string, err error) string {
+func bugURL(id string, err error) *url.URL {
 	const desc = "A Clair instance noticed an invalid CPE:{code}%s{code}\nThe reported error was:{code}%v{code}"
 	v := url.Values{
 		"pid":         {"12330022"}, // ID for the Red Hat Jira "SECDATA" project.
@@ -271,7 +262,7 @@ func bugURL(id string, err error) string {
 		Path:     "/secure/CreateIssueDetails!init.jspa",
 		RawQuery: v.Encode(),
 	}
-	return u.String()
+	return &u
 }
 
 // RepoidsFromContentSets returns a slice of repoids, as discovered by examining
@@ -304,9 +295,7 @@ func (m *mappingFile) GetOne(ctx context.Context, repoid string) (cpes []string,
 	if repo, ok := m.Data[repoid]; ok {
 		return repo.CPEs, true
 	}
-	zlog.Debug(ctx).
-		Str("repository", repoid).
-		Msg("repository not present in a mapping file")
+	slog.DebugContext(ctx, "repository not present in a mapping file", "repository", repoid)
 	return nil, false
 }
 
