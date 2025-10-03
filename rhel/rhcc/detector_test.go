@@ -2,14 +2,12 @@ package rhcc
 
 import (
 	"archive/tar"
-	"context"
 	"io"
 	"os"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
@@ -18,7 +16,7 @@ import (
 
 func TestPackageDetector(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 
 	type testcase struct {
 		Name       string
@@ -130,7 +128,7 @@ func TestPackageDetector(t *testing.T) {
 	})
 	for _, tt := range table {
 		t.Run(tt.Name, func(t *testing.T) {
-			ctx := zlog.Test(ctx, t)
+			ctx := test.Logging(t)
 			mod := test.Modtime(t, tt.LabelsFile)
 			a.GenerateLayer(t, tt.Name, mod, genLayerFunc(tt.LabelsFile, tt.LabelsPath))
 
@@ -164,7 +162,7 @@ func TestPackageDetector(t *testing.T) {
 
 func TestRepositoryDetector(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 
 	type testcase struct {
 		Name       string
@@ -218,7 +216,7 @@ func TestRepositoryDetector(t *testing.T) {
 	})
 	for _, tt := range table {
 		t.Run(tt.Name, func(t *testing.T) {
-			ctx := zlog.Test(ctx, t)
+			ctx := test.Logging(t)
 			mod := test.Modtime(t, tt.LabelsFile)
 			a.GenerateLayer(t, tt.Name, mod, genLayerFunc(tt.LabelsFile, tt.LabelsPath))
 

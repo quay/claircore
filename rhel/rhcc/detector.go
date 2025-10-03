@@ -6,10 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"strconv"
 	"time"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -43,7 +42,6 @@ func (s *detector) Kind() string { return "package" }
 // It performs a package scan on the given layer and returns all the RHEL
 // container identifying metadata by using the labels.json file.
 func (s *detector) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Package, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "rhel/rhcc/detector.Scan")
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -62,7 +60,7 @@ func (s *detector) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.P
 
 	// Check if required fields are present
 	if labels.Name == "" || labels.Architecture == "" || labels.Created.IsZero() {
-		zlog.Warn(ctx).Msg("required labels not found in labels.json")
+		slog.WarnContext(ctx, "required labels not found in labels.json")
 		return nil, nil
 	}
 
@@ -70,7 +68,7 @@ func (s *detector) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.P
 	rhctagVersion, err := rhctag.Parse(vr)
 	if err != nil {
 		// A unix timestamp should always parse, so this is unexpected.
-		zlog.Warn(ctx).Err(err).Str("version", vr).Msg("failed to parse rhctag version")
+		slog.WarnContext(ctx, "failed to parse rhctag version", "reason", err, "version", vr)
 		return nil, nil
 	}
 
@@ -146,7 +144,6 @@ func (s *repoDetector) Kind() string { return "repository" }
 // It performs a repository scan on the given layer and returns all the RHEL
 // container identifying metadata by using the labels.json file.
 func (s *repoDetector) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Repository, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "rhel/rhcc/repoDetector.Scan")
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -176,5 +173,4 @@ func (s *repoDetector) Scan(ctx context.Context, l *claircore.Layer) ([]*clairco
 			Key:  RepositoryKey,
 		},
 	}, nil
-
 }
