@@ -1,18 +1,17 @@
 package jar
 
 import (
-	"context"
 	"errors"
 	"io/fs"
 	"os"
 	"testing"
 
-	"github.com/quay/zlog"
+	"github.com/quay/claircore/test"
 )
 
 func TestCheckName(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 
 	ms, err := fs.Glob(os.DirFS("testdata"), "*/*.jar")
 	if err != nil {

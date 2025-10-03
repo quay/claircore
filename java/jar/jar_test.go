@@ -5,7 +5,6 @@ import (
 	"archive/zip"
 	"bytes"
 	"compress/gzip"
-	"context"
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
@@ -21,7 +20,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
@@ -31,7 +29,6 @@ import (
 
 func TestParse(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(context.Background(), t)
 	const url = `https://repo1.maven.org/maven2/com/orientechnologies/orientdb-community/3.2.37/orientdb-community-3.2.37.tar.gz`
 	const sha = `101d93340ae17cfdc622ef37e30c8c3993874ab199fd5ff3fc76d466740fefe3`
 	name := fetch(t, url, sha)
@@ -55,7 +52,7 @@ func TestParse(t *testing.T) {
 		}
 		t.Log("found jar:", h.Name)
 		t.Run(filepath.Base(h.Name), func(t *testing.T) {
-			ctx := zlog.Test(ctx, t)
+			ctx := test.Logging(t)
 			buf.Reset()
 			buf.Grow(int(h.Size))
 			n, err := io.Copy(&buf, tr)
@@ -89,7 +86,7 @@ func TestParse(t *testing.T) {
 
 func TestWAR(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	const url = `https://get.jenkins.io/war/2.311/jenkins.war`
 	const sha = `fe21501800c769279699ecf511fd9b495b1cb3ebd226452e01553ff06820910a`
 	name := fetch(t, url, sha)
@@ -174,7 +171,6 @@ func fetch(t testing.TB, u string, ck string) (name string) {
 }
 
 func TestJAR(t *testing.T) {
-	ctx := context.Background()
 	td := os.DirFS("testdata/jar")
 	ls, err := fs.ReadDir(td, ".")
 	if err != nil {
@@ -194,7 +190,7 @@ func TestJAR(t *testing.T) {
 			continue
 		}
 		t.Run(n, func(t *testing.T) {
-			ctx := zlog.Test(ctx, t)
+			ctx := test.Logging(t)
 			f, err := td.Open(ent.Name())
 			if err != nil {
 				t.Error(err)
@@ -232,7 +228,6 @@ func TestJAR(t *testing.T) {
 }
 
 func TestJARBadManifest(t *testing.T) {
-	ctx := context.Background()
 	path := "testdata/malformed-manifests"
 	d := os.DirFS(path)
 	ls, err := fs.ReadDir(d, ".")
@@ -246,7 +241,7 @@ func TestJARBadManifest(t *testing.T) {
 	for _, n := range ls {
 		t.Log(n)
 		t.Run(n.Name(), func(t *testing.T) {
-			ctx := zlog.Test(ctx, t)
+			ctx := test.Logging(t)
 			f, err := os.Open(filepath.Join(path, n.Name()))
 			if err != nil {
 				t.Fatal(err)
@@ -265,7 +260,6 @@ func TestJARBadManifest(t *testing.T) {
 // them gracefully.
 func TestMalformed(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(context.Background(), t)
 
 	t.Run("BadOffset", func(t *testing.T) {
 		const (
@@ -327,6 +321,7 @@ func TestMalformed(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		ctx := test.Logging(t)
 		infos, err := Parse(ctx, jarName, z)
 		t.Logf("returned error: %v", err)
 		switch {
@@ -426,7 +421,6 @@ func TestMalformed(t *testing.T) {
 			t.Fail()
 		}
 	})
-
 }
 
 func TestManifestSectionReader(t *testing.T) {
@@ -487,7 +481,7 @@ func TestInnerJar(t *testing.T) {
 		}
 	})
 
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	got, err := Parse(ctx, name, &rc.Reader)
 	if err != nil {
 		t.Fatal(err)

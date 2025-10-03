@@ -36,13 +36,14 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"log/slog"
 	"net/textproto"
 	"path"
 	"path/filepath"
 	"regexp"
 	"strings"
 
-	"github.com/quay/zlog"
+	"github.com/quay/claircore/toolkit/log"
 )
 
 // MinSize is the absolute minimum size for a jar.
@@ -60,10 +61,7 @@ const MinSize = 22
 // The provided name is expected to be the full path within the layer to the jar
 // file being provided as "z".
 func Parse(ctx context.Context, name string, z *zip.Reader) ([]Info, error) {
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "java/jar/Parse",
-		"jar", name)
-	return parse(ctx, srcPath{name}, z)
+	return parse(log.With(ctx, "jar", name), srcPath{name}, z)
 }
 
 // SrcPath is a helper for tracking where an archive member is.
@@ -90,9 +88,7 @@ func (p *srcPath) Pop() string {
 
 // Parse is the inner function that uses a srcPath to keep track of recursions.
 func parse(ctx context.Context, name srcPath, z *zip.Reader) ([]Info, error) {
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "java/jar/Parse",
-		"name", name.String())
+	ctx = log.With(ctx, "name", name.String())
 
 	// This uses an admittedly non-idiomatic, C-like goto construction. We want
 	// to attempt a few heuristics and keep the results of the first one that
@@ -108,8 +104,7 @@ func parse(ctx context.Context, name srcPath, z *zip.Reader) ([]Info, error) {
 	ret, err = extractProperties(ctx, name, z)
 	switch {
 	case errors.Is(err, nil):
-		zlog.Debug(ctx).
-			Msg("using discovered properties file(s)")
+		slog.DebugContext(ctx, "using discovered properties file(s)")
 		goto Finish
 	case errors.Is(err, errUnpopulated):
 	case strings.HasPrefix(base, "javax") && errors.Is(err, ErrNotAJar):
@@ -120,8 +115,7 @@ func parse(ctx context.Context, name srcPath, z *zip.Reader) ([]Info, error) {
 	i, err = extractManifest(ctx, name, z)
 	switch {
 	case errors.Is(err, nil):
-		zlog.Debug(ctx).
-			Msg("using discovered manifest")
+		slog.DebugContext(ctx, "using discovered manifest")
 		ret = append(ret, i)
 		goto Finish
 	case errors.Is(err, errUnpopulated) || errors.Is(err, errInsaneManifest):
@@ -133,8 +127,7 @@ func parse(ctx context.Context, name srcPath, z *zip.Reader) ([]Info, error) {
 	i, err = checkName(ctx, name.Cur())
 	switch {
 	case errors.Is(err, nil):
-		zlog.Debug(ctx).
-			Msg("using name mangling")
+		slog.DebugContext(ctx, "using name mangling")
 		ret = append(ret, i)
 		goto Finish
 	case errors.Is(err, errUnpopulated):
@@ -154,9 +147,7 @@ Finish:
 		return nil, archiveErr(name, err)
 	}
 	if ct := len(inner); ct != 0 {
-		zlog.Debug(ctx).
-			Int("count", ct).
-			Msg("found embedded jars")
+		slog.DebugContext(ctx, "found embedded jars", "count", ct)
 	}
 	ret = append(ret, inner...)
 
@@ -210,14 +201,12 @@ func extractProperties(ctx context.Context, name srcPath, z *zip.Reader) ([]Info
 		// encoded in the file names.
 		p := normName(f.Name)
 		if path.Base(p) == filename {
-			zlog.Debug(ctx).
-				Str("path", p).
-				Msg("found properties file")
+			slog.DebugContext(ctx, "found properties file", "path", p)
 			pf = append(pf, p)
 		}
 	}
 	if len(pf) == 0 {
-		zlog.Debug(ctx).Msg("properties not found")
+		slog.DebugContext(ctx, "properties not found")
 		return nil, errUnpopulated
 	}
 	ret := make([]Info, len(pf))
@@ -244,7 +233,7 @@ func extractProperties(ctx context.Context, name srcPath, z *zip.Reader) ([]Info
 
 // ExtractInner recurses into anything that looks like a jar in "z".
 func extractInner(ctx context.Context, p srcPath, z *zip.Reader) ([]Info, error) {
-	ctx = zlog.ContextWithValues(ctx, "parent", p.String())
+	ctx = log.With(ctx, "parent", p.String())
 	var ret []Info
 	// Zips need random access, so allocate a buffer for any we find.
 	var buf bytes.Buffer
@@ -258,7 +247,7 @@ func extractInner(ctx context.Context, p srcPath, z *zip.Reader) ([]Info, error)
 		fi := f.FileInfo()
 		// Check size.
 		if fi.Size() < MinSize {
-			zlog.Debug(ctx).Str("member", name).Msg("not actually a jar: too small")
+			slog.DebugContext(ctx, "not actually a jar: too small", "member", name)
 			return nil
 		}
 		rc, err := f.Open()
@@ -286,10 +275,7 @@ func extractInner(ctx context.Context, p srcPath, z *zip.Reader) ([]Info, error)
 			// opening malformed zips.
 			fallthrough
 		case errors.Is(err, zip.ErrFormat):
-			zlog.Debug(ctx).
-				Str("member", name).
-				Err(err).
-				Msg("not actually a jar: invalid zip")
+			slog.DebugContext(ctx, "not actually a jar: invalid zip", "member", name)
 			return nil
 		default:
 			return mkErr("failed opening inner zip", err)
@@ -302,10 +288,7 @@ func extractInner(ctx context.Context, p srcPath, z *zip.Reader) ([]Info, error)
 		case errors.Is(err, nil):
 		case errors.Is(err, ErrNotAJar) ||
 			errors.Is(err, errInsaneManifest):
-			zlog.Debug(ctx).
-				Str("member", name).
-				Err(err).
-				Msg("not actually a jar")
+			slog.DebugContext(ctx, "not actually a jar", "reason", err, "member", name)
 			return nil
 		default:
 			return mkErr("parse error", err)
@@ -326,8 +309,7 @@ func extractInner(ctx context.Context, p srcPath, z *zip.Reader) ([]Info, error)
 	}
 
 	if len(ret) == 0 {
-		zlog.Debug(ctx).
-			Msg("found no bundled jars")
+		slog.DebugContext(ctx, "found no bundled jars")
 	}
 	return ret, nil
 }
@@ -347,8 +329,7 @@ var nameRegexp = regexp.MustCompile(`([[:graph:]]+)-([[:digit:]][\-.[:alnum:]]*(
 func checkName(ctx context.Context, name string) (Info, error) {
 	m := nameRegexp.FindStringSubmatch(filepath.Base(name))
 	if m == nil {
-		zlog.Debug(ctx).
-			Msg("name not useful")
+		slog.DebugContext(ctx, "name not useful")
 		return Info{}, errUnpopulated
 	}
 	return Info{
@@ -414,26 +395,20 @@ func (i *Info) parseManifest(ctx context.Context, r io.Reader) error {
 	tp := textproto.NewReader(bufio.NewReader(newMainSectionReader(r)))
 	hdr, err := tp.ReadMIMEHeader()
 	if err != nil {
-		zlog.Debug(ctx).
-			Err(err).
-			Msg("unable to read manifest")
+		slog.DebugContext(ctx, "unable to read manifest", "reason", err)
 		return errInsaneManifest
 	}
 	// Sanity checks:
 	switch {
 	case len(hdr) == 0:
-		zlog.Debug(ctx).
-			Msg("no headers found")
+		slog.DebugContext(ctx, "no headers found")
 		return errInsaneManifest
 	case !manifestVer.MatchString(hdr.Get("Manifest-Version")):
 		v := hdr.Get("Manifest-Version")
-		zlog.Debug(ctx).
-			Str("manifest_version", v).
-			Msg("invalid manifest version")
+		slog.DebugContext(ctx, "invalid manifest version", "manifest_version", v)
 		return errInsaneManifest
 	case hdr.Get("Name") != "":
-		zlog.Debug(ctx).
-			Msg("martian manifest")
+		slog.DebugContext(ctx, "martian manifest")
 		// This shouldn't be happening in the Main section.
 		return errInsaneManifest
 	}
@@ -494,9 +469,8 @@ func (i *Info) parseManifest(ctx context.Context, r io.Reader) error {
 	}
 
 	if name == "" || version == "" {
-		zlog.Debug(ctx).
-			Strs("attrs", []string{name, version}).
-			Msg("manifest not useful")
+		slog.DebugContext(ctx, "manifest not useful",
+			slog.Group("attrs", "name", name, "version", version))
 		return errUnpopulated
 	}
 	i.Name = name
@@ -640,9 +614,8 @@ func (i *Info) parseProperties(ctx context.Context, r io.Reader) error {
 		return mkErr("properties scanner", err)
 	}
 	if group == "" || artifact == "" || version == "" {
-		zlog.Debug(ctx).
-			Strs("attrs", []string{group, artifact, version}).
-			Msg("properties not useful")
+		slog.DebugContext(ctx, "properties not useful",
+			slog.Group("attrs", "group", group, "artifact", artifact, "version", version))
 		return errUnpopulated
 	}
 
