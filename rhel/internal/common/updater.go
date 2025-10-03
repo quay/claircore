@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"reflect"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	"github.com/quay/zlog"
 	"golang.org/x/time/rate"
 )
 
@@ -44,16 +44,12 @@ func NewUpdater(url string, init any) *Updater {
 // Get returns a pointer to the current copy of the value. The Get call may be
 // hijacked to update the value from the configured endpoint.
 func (u *Updater) Get(ctx context.Context, c *http.Client) (any, error) {
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "rhel/internal/common/Updater.Get")
 	var err error
 	if u.url != "" && u.reqRate.Allow() {
-		zlog.Debug(ctx).Msg("got unlucky, updating mapping file")
+		slog.DebugContext(ctx, "got unlucky, updating mapping file")
 		err = u.Fetch(ctx, c)
 		if err != nil {
-			zlog.Error(ctx).
-				Err(err).
-				Msg("error updating mapping file")
+			slog.ErrorContext(ctx, "error updating mapping file", "reason", err)
 		}
 	}
 
@@ -64,10 +60,8 @@ func (u *Updater) Get(ctx context.Context, c *http.Client) (any, error) {
 //
 // Fetch is safe to call concurrently.
 func (u *Updater) Fetch(ctx context.Context, c *http.Client) error {
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "rhel/internal/common/Updater.Fetch",
-		"url", u.url)
-	zlog.Debug(ctx).Msg("attempting fetch of mapping file")
+	log := slog.With("url", u.url)
+	log.DebugContext(ctx, "attempting fetch of mapping file")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.url, nil)
 	if err != nil {
@@ -87,9 +81,7 @@ func (u *Updater) Fetch(ctx context.Context, c *http.Client) error {
 	switch resp.StatusCode {
 	case http.StatusOK:
 	case http.StatusNotModified:
-		zlog.Debug(ctx).
-			Str("since", u.lastModified).
-			Msg("response not modified; no update necessary")
+		log.DebugContext(ctx, "response not modified; no update necessary", "since", u.lastModified)
 		return nil
 	default:
 		return fmt.Errorf("received status code %d querying mapping url", resp.StatusCode)
@@ -105,6 +97,6 @@ func (u *Updater) Fetch(ctx context.Context, c *http.Client) error {
 	u.mu.Unlock()
 	// atomic store of mapping file
 	u.value.Store(v)
-	zlog.Debug(ctx).Msg("atomic update of local mapping file complete")
+	log.DebugContext(ctx, "atomic update of local mapping file complete")
 	return nil
 }
