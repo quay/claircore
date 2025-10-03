@@ -7,13 +7,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"math"
 	"strings"
 	"unique"
 
 	"github.com/klauspost/compress/snappy"
 	"github.com/package-url/packageurl-go"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/rhctag"
@@ -32,7 +32,6 @@ func (u *Updater) Parse(ctx context.Context, contents io.ReadCloser) ([]*clairco
 
 // DeltaParse implements [driver.DeltaUpdater].
 func (u *Updater) DeltaParse(ctx context.Context, contents io.ReadCloser) ([]*claircore.Vulnerability, []string, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "rhel/vex/Updater.DeltaParse")
 	// This map is needed for deduplication purposes, the compressed CSAF data will include
 	// entries that have been subsequently updated in the changes.
 	out := map[string][]*claircore.Vulnerability{}
@@ -59,7 +58,6 @@ func (u *Updater) DeltaParse(ctx context.Context, contents io.ReadCloser) ([]*cl
 				selfLink = r.URL
 			}
 		}
-		ctx = zlog.ContextWithValues(ctx, "link", selfLink)
 		creator := newCreator(name, selfLink, c, pc, rc)
 		for _, v := range c.Vulnerabilities {
 			// Create vuln here, there should always be one vulnerability
@@ -252,7 +250,8 @@ func extractProductNames(prodRef, relatesToProdRef string, comps []string, c *cs
 func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v csaf.Vulnerability, protoVulnFunc func() *claircore.Vulnerability) ([]*claircore.Vulnerability, error) {
 	ranger := newRanger()
 	unrelatedProductIDs := []string{}
-	debugEnabled := zlog.Debug(ctx).Enabled()
+	log := slog.With("link", c.vulnLink)
+	debugEnabled := log.Enabled(ctx, slog.LevelDebug)
 	out := []*claircore.Vulnerability{}
 	for _, pc := range v.ProductStatus["known_affected"] {
 		pkgName, modName, repoName, err := walkRelationships(pc, c.c)
@@ -272,16 +271,13 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v csaf.Vulne
 
 		repoProd := c.pc.Get(repoName, c.c)
 		if repoProd == nil {
-			zlog.Warn(ctx).
-				Str("prod", repoName).
-				Msg("could not find product in product tree")
+			// Should never get here, error in data
+			log.WarnContext(ctx, "could not find product in product tree", "prod", repoName)
 			continue
 		}
 		cpeHelper, ok := repoProd.IdentificationHelper["cpe"]
 		if !ok {
-			zlog.Warn(ctx).
-				Str("prod", repoName).
-				Msg("could not find cpe helper type in product")
+			log.WarnContext(ctx, "could not find cpe helper type in product", "prod", repoName)
 			continue
 		}
 
@@ -291,10 +287,7 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v csaf.Vulne
 			modProd := c.pc.Get(modName, c.c)
 			modName, err = createPackageModule(modProd)
 			if err != nil {
-				zlog.Warn(ctx).
-					Str("module", modName).
-					Err(err).
-					Msg("could not create package module")
+				log.WarnContext(ctx, "could not create package module", "module", modName, "reason", err)
 			}
 		}
 
@@ -302,9 +295,7 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v csaf.Vulne
 		compProd := c.pc.Get(pkgName, c.c)
 		if compProd == nil {
 			// Should never get here, error in data
-			zlog.Warn(ctx).
-				Str("pkg", pkgName).
-				Msg("could not find package in product tree")
+			log.WarnContext(ctx, "could not find package in product tree", "pkg", pkgName)
 			continue
 		}
 		vuln := protoVulnFunc()
@@ -321,29 +312,22 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v csaf.Vulne
 		if ok {
 			purl, err := packageurl.FromString(purlHelper)
 			if err != nil {
-				zlog.Warn(ctx).
-					Str("purlHelper", purlHelper).
-					Err(err).
-					Msg("could not parse PURL")
+				log.WarnContext(ctx, "could not parse pURL", "reason", err, "purl", purlHelper)
 				continue
 			}
 			if !checkPURL(purl) {
 				continue
 			}
 			if pn, err := extractPackageName(purl); err != nil {
-				zlog.Warn(ctx).
-					Str("purl", purl.String()).
-					Err(err).
-					Msg("could not extract package name from pURL")
+				log.WarnContext(ctx, "error extracting package name from pURL",
+					"reason", err, "purl", purl)
 			} else {
 				pkgName = pn
 			}
 
 			if modName, err = componentPURLToModuleName(purl); err != nil {
-				zlog.Warn(ctx).
-					Str("purl", purl.String()).
-					Err(err).
-					Msg("invalid rpmmod in component pURL")
+				log.WarnContext(ctx, "invalid rpmmod in component pURL",
+					"reason", err, "purl", purl)
 				continue
 			}
 
@@ -351,10 +335,8 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v csaf.Vulne
 				vuln.Repo = c.rc.Get(wfn, rhcc.RepositoryKey)
 				vuln.Range, err = ranger.add(pkgName, vuln.FixedInVersion)
 				if err != nil {
-					zlog.Warn(ctx).
-						Str("FixedInVersion", vuln.FixedInVersion).
-						Err(err).
-						Msg("could not parse version into range")
+					log.WarnContext(ctx, "could not parse version into range",
+						"reason", err, "FixedInVersion", vuln.FixedInVersion)
 					continue
 				}
 			}
@@ -387,9 +369,7 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v csaf.Vulne
 	}
 	ranger.resetLowest()
 	if len(unrelatedProductIDs) > 0 {
-		zlog.Debug(ctx).
-			Strs("product_ids", unrelatedProductIDs).
-			Msg("skipped unrelatable product_ids")
+		log.DebugContext(ctx, "skipped unrelatable product_ids", "product_ids", unrelatedProductIDs)
 	}
 
 	return out, nil
@@ -424,7 +404,7 @@ func newRanger() *ranger {
 // to the fixedInVersion. Add also saves the lowest range per packageName that it's seen.
 // This allows resetLowest() to zero out the lowest values we saw per packageName.
 func (r *ranger) add(packageName, fixedInVersion string) (*claircore.Range, error) {
-	var rng = &claircore.Range{}
+	rng := &claircore.Range{}
 
 	if fixedInVersion == "" {
 		zeroVer := &rhctag.Version{}
@@ -463,7 +443,8 @@ func (r *ranger) resetLowest() {
 func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability, protoVulnFunc func() *claircore.Vulnerability) ([]*claircore.Vulnerability, error) {
 	ranger := newRanger()
 	unrelatedProductIDs := []string{}
-	debugEnabled := zlog.Debug(ctx).Enabled()
+	log := slog.With("link", c.vulnLink)
+	debugEnabled := log.Enabled(ctx, slog.LevelDebug)
 	for _, pc := range v.ProductStatus["fixed"] {
 		pkgName, modName, repoName, err := walkRelationships(pc, c.c)
 		if err != nil {
@@ -478,16 +459,12 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 		repoProd := c.pc.Get(repoName, c.c)
 		if repoProd == nil {
 			// Should never get here, error in data
-			zlog.Warn(ctx).
-				Str("prod", repoName).
-				Msg("could not find product in product tree")
+			log.WarnContext(ctx, "could not find product in product tree", "prod", repoName)
 			continue
 		}
 		cpeHelper, ok := repoProd.IdentificationHelper["cpe"]
 		if !ok {
-			zlog.Warn(ctx).
-				Str("prod", repoName).
-				Msg("could not find cpe helper type in product")
+			log.WarnContext(ctx, "could not find cpe helper type in product", "prod", repoName)
 			continue
 		}
 
@@ -497,33 +474,24 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 			modProd := c.pc.Get(modName, c.c)
 			modName, err = createPackageModule(modProd)
 			if err != nil {
-				zlog.Warn(ctx).
-					Str("module", modName).
-					Err(err).
-					Msg("could not create package module")
+				log.WarnContext(ctx, "could not create package module", "module", modName, "reason", err)
 			}
 		}
 
 		compProd := c.pc.Get(pkgName, c.c)
 		if compProd == nil {
 			// Should never get here, error in data
-			zlog.Warn(ctx).
-				Str("pkg", pkgName).
-				Msg("could not find package in product tree")
+			log.WarnContext(ctx, "could not find package in product tree", "pkg", pkgName)
 			continue
 		}
 		purlHelper, ok := compProd.IdentificationHelper["purl"]
 		if !ok {
-			zlog.Warn(ctx).
-				Str("pkg", pkgName).
-				Msg("could not find purl helper type in product")
+			log.WarnContext(ctx, "could not find purl helper type in product", "pkg", pkgName)
 			continue
 		}
 		purl, err := packageurl.FromString(purlHelper)
 		if err != nil {
-			zlog.Warn(ctx).
-				Str("purl", purlHelper).
-				Msg("could not parse PURL")
+			log.WarnContext(ctx, "could not parse pURL", "reason", err, "purl", purlHelper)
 			continue
 		}
 		if !checkPURL(purl) {
@@ -531,25 +499,19 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 		}
 		fixedIn, err := extractFixedInVersion(purl)
 		if err != nil {
-			zlog.Warn(ctx).
-				Str("purl", purl.String()).
-				Err(err).
-				Msg("error extracting fixed_in version from pURL")
+			log.WarnContext(ctx, "error extracting fixed_in version from pURL",
+				"reason", err, "purl", purl)
 			continue
 		}
 		packageName, err := extractPackageName(purl)
 		if err != nil {
-			zlog.Warn(ctx).
-				Str("purl", purl.String()).
-				Err(err).
-				Msg("error extracting package name from pURL")
+			log.WarnContext(ctx, "error extracting package name from pURL",
+				"reason", err, "purl", purl)
 			continue
 		}
 		if modName, err = componentPURLToModuleName(purl); err != nil {
-			zlog.Warn(ctx).
-				Str("purl", purl.String()).
-				Err(err).
-				Msg("invalid rpmmod in component pURL")
+			log.WarnContext(ctx, "invalid rpmmod in component pURL",
+				"reason", err, "purl", purl)
 			continue
 		}
 
@@ -583,10 +545,8 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 				vuln.Repo = c.rc.Get(wfn, rhcc.RepositoryKey)
 				vuln.Range, err = ranger.add(packageName, vuln.FixedInVersion)
 				if err != nil {
-					zlog.Warn(ctx).
-						Str("FixedInVersion", vuln.FixedInVersion).
-						Err(err).
-						Msg("could not parse version into range")
+					log.WarnContext(ctx, "could not parse version into range",
+						"reason", err, "FixedInVersion", vuln.FixedInVersion)
 					continue
 				}
 			default:
@@ -617,9 +577,7 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 	}
 	ranger.resetLowest()
 	if len(unrelatedProductIDs) > 0 {
-		zlog.Debug(ctx).
-			Strs("product_ids", unrelatedProductIDs).
-			Msg("skipped unrelatable product_ids")
+		log.DebugContext(ctx, "skipped unrelatable product_ids", "product_ids", unrelatedProductIDs)
 	}
 
 	out := make([]*claircore.Vulnerability, len(c.fixedVulns))
