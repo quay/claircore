@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"path"
@@ -18,7 +19,6 @@ import (
 	"time"
 
 	"github.com/klauspost/compress/snappy"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/internal/httputil"
 	"github.com/quay/claircore/internal/zreader"
@@ -36,14 +36,13 @@ var (
 //     - Make a request to discover the latest archive endpoint.
 //     - Make a HEAD request to archive endpoint to get the last-modified header.
 //     - Save the last-modified time in the fingerprint's requestTime.
-//  2. Process the changes.csv file, requesting and appending the entries that changed since the finderprint's requestTime.
-//  3. Process the deletions.csv file, processing the entries that changed since the finderprint's requestTime.
+//  2. Process the changes.csv file, requesting and appending the entries that changed since the fingerprint's requestTime.
+//  3. Process the deletions.csv file, processing the entries that changed since the fingerprint's requestTime.
 //  4. If we need to process entire archive, request the archive data and append the entries that have not been changed or deleted.
 //
 // This helps to ensure that we only persist one copy of an advisory in the worst possible case. In most cases,
 // after the initial load, the number of processed files should be very small.
 func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "rhel/vex/Updater.Fetch")
 	fp, err := parseFingerprint(hint)
 	if err != nil {
 		return nil, hint, err
@@ -59,16 +58,14 @@ func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 	var success bool
 	defer func() {
 		if err := cw.Close(); err != nil {
-			zlog.Warn(ctx).Err(err).Msg("unable to close snappy writer")
+			slog.WarnContext(ctx, "unable to close snappy writer", "reason", err)
 		}
 		if _, err := f.Seek(0, io.SeekStart); err != nil {
-			zlog.Warn(ctx).
-				Err(err).
-				Msg("unable to seek file back to start")
+			slog.WarnContext(ctx, "unable to seek file back to start", "reason", err)
 		}
 		if !success {
 			if err := f.Close(); err != nil {
-				zlog.Warn(ctx).Err(err).Msg("unable to close spool")
+				slog.WarnContext(ctx, "unable to close spool", "reason", err)
 			}
 		}
 	}()
@@ -84,9 +81,7 @@ func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 		if err != nil {
 			return nil, hint, fmt.Errorf("could not get compressed file URL: %w", err)
 		}
-		zlog.Debug(ctx).
-			Str("url", compressedURL.String()).
-			Msg("got compressed URL")
+		slog.DebugContext(ctx, "got compressed URL", "url", compressedURL)
 
 		fp.requestTime, err = u.getLastModified(ctx, compressedURL)
 		if err != nil {
@@ -178,10 +173,9 @@ func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 			return nil, hint, fmt.Errorf("error reading tar contents: %w", err)
 		}
 
-		zlog.Debug(ctx).
-			Str("updater", u.Name()).
-			Int("entries written", entriesWritten).
-			Msg("finished writing compressed data to spool")
+		slog.DebugContext(ctx, "finished writing compressed data to spool",
+			"updater", u.Name(),
+			"entries written", entriesWritten)
 	}
 
 	fp.version = updaterVersion
@@ -353,7 +347,7 @@ func (u *Updater) processChanges(ctx context.Context, w io.Writer, fp *fingerpri
 			if err != nil {
 				return fmt.Errorf("error reading from buffer: %w", err)
 			}
-			zlog.Debug(ctx).Str("url", advisoryURI.String()).Msg("copying body to file")
+			slog.DebugContext(ctx, "copying body to file", "url", advisoryURI)
 			err = json.Compact(&bc, buf.Bytes())
 			if err != nil {
 				return fmt.Errorf("error compressing JSON: %w", err)
@@ -434,7 +428,7 @@ func (u *Updater) processDeletions(ctx context.Context, w io.Writer, fp *fingerp
 
 		deletedJSON, err := createDeletedJSON(cvePath)
 		if err != nil {
-			zlog.Warn(ctx).Err(err).Msg("error creating JSON object denoting deletion")
+			slog.WarnContext(ctx, "error creating JSON object denoting deletion", "reason", err)
 		}
 		bc.Write(deletedJSON)
 		bc.WriteByte('\n')
