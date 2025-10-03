@@ -2,10 +2,10 @@ package rhel
 
 import (
 	"context"
+	"log/slog"
 	"strings"
 
 	version "github.com/knqyf263/go-rpm-version"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
@@ -72,10 +72,7 @@ func (m *Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord,
 	// support the claircore.Vulnerability.Repo.CPE field.
 	vuln.Repo.CPE, err = cpe.Unbind(vuln.Repo.Name)
 	if err != nil {
-		zlog.Warn(ctx).
-			Str("vulnerability name", vuln.Name).
-			Err(err).
-			Msg("unable to unbind repo CPE")
+		slog.WarnContext(ctx, "unable to unbind repo CPE", "reason", err, "vulnerability name", vuln.Name)
 		return false, nil
 	}
 	if !cpe.Compare(vuln.Repo.CPE, record.Repository.CPE).IsSuperset() && !IsCPESubstringMatch(record.Repository.CPE, vuln.Repo.CPE) {

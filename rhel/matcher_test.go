@@ -1,12 +1,10 @@
 package rhel
 
 import (
-	"context"
 	"testing"
 
-	"github.com/quay/zlog"
-
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/toolkit/types/cpe"
 )
 
@@ -155,8 +153,7 @@ func TestVulnerable(t *testing.T) {
 	}
 
 	m := &Matcher{}
-	ctx := context.Background()
-	ctx = zlog.Test(ctx, t)
+	ctx := test.Logging(t)
 	for _, tc := range testCases {
 		got, err := m.Vulnerable(ctx, tc.ir, tc.v)
 		if err != nil {

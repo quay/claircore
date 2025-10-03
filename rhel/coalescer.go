@@ -2,11 +2,11 @@ package rhel
 
 import (
 	"context"
+	"log/slog"
 	"net/url"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
-	"github.com/quay/zlog"
 )
 
 // Coalescer takes individual layer artifacts and coalesces them into a full
@@ -128,10 +128,7 @@ func (*Coalescer) Coalesce(ctx context.Context, artifacts []*indexer.LayerArtifa
 					for _, repo := range layerArtifacts.Repos {
 						uri, err := url.ParseQuery(repo.URI)
 						if err != nil {
-							zlog.Warn(ctx).
-								Err(err).
-								Str("repository", repo.URI).
-								Msg("unable to parse repository URI")
+							slog.WarnContext(ctx, "unable to parse repository URI", "repository", repo.URI)
 							continue
 						}
 						repoRepoid := uri.Get("repoid")
