@@ -10,13 +10,12 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"log/slog"
 	"net/textproto"
 	"path/filepath"
 	"runtime/trace"
 	"slices"
 	"strings"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -60,12 +59,8 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	// Preamble
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	trace.Log(ctx, "layer", layer.Hash.String())
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "dpkg/Scanner.Scan",
-		"version", ps.Version(),
-		"layer", layer.Hash.String())
-	zlog.Debug(ctx).Msg("start")
-	defer zlog.Debug(ctx).Msg("done")
+	slog.DebugContext(ctx, "start")
+	defer slog.DebugContext(ctx, "done")
 
 	sys, err := layer.FS()
 	if err != nil {
@@ -91,7 +86,7 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	if err := fs.WalkDir(sys, ".", walk); err != nil {
 		return nil, err
 	}
-	zlog.Debug(ctx).Msg("scanned for possible databases")
+	slog.DebugContext(ctx, "scanned for possible databases")
 
 	// If we didn't find anything, this loop is completely skipped.
 	var pkgs []*claircore.Package
@@ -109,7 +104,7 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 		switch {
 		case err == nil:
 		case errors.Is(err, errNotDpkgDB):
-			zlog.Info(ctx).AnErr("reason", err).Msg("skipping possible database")
+			slog.InfoContext(ctx, "skipping possible database", "reason", err)
 		default:
 			return nil, err
 		}
@@ -158,7 +153,7 @@ func sortpkg(a, b *claircore.Package) int {
 //
 // "Found"is used for scratch space and results are appended to the slice pointed to by "out".
 func loadDatabase(ctx context.Context, sys fs.FS, dir string, found *packages, out *[]*claircore.Package) error {
-	zlog.Debug(ctx).Msg("examining package database")
+	slog.DebugContext(ctx, "examining package database")
 
 	// We want the "status" file.
 	fn := filepath.Join(dir, "status")
@@ -166,9 +161,7 @@ func loadDatabase(ctx context.Context, sys fs.FS, dir string, found *packages, o
 	switch {
 	case errors.Is(err, nil):
 	case errors.Is(err, fs.ErrNotExist):
-		zlog.Debug(ctx).
-			Str("filename", fn).
-			Msg("false positive")
+		slog.DebugContext(ctx, "false positive", "filename", fn)
 		return err
 	default:
 		return fmt.Errorf("reading status file from layer failed: %w", err)
@@ -195,9 +188,7 @@ func loadDatabase(ctx context.Context, sys fs.FS, dir string, found *packages, o
 		}
 		p, ok := found.bin[k]
 		if !ok {
-			zlog.Debug(ctx).
-				Str("package", k).
-				Msg("extra metadata found, ignoring")
+			slog.DebugContext(ctx, "extra metadata found, ignoring", "package", k)
 			continue
 		}
 		f, err := sys.Open(n)
@@ -208,17 +199,14 @@ func loadDatabase(ctx context.Context, sys fs.FS, dir string, found *packages, o
 		_, err = io.Copy(hash, f)
 		f.Close()
 		if err != nil {
-			zlog.Warn(ctx).
-				Err(err).
-				Str("package", n).
-				Msg("unable to read package metadata")
+			slog.WarnContext(ctx, "unable to read package metadata",
+				"package", n,
+				"reason", err)
 			continue
 		}
 		p.RepositoryHint = hex.EncodeToString(hash.Sum(nil))
 	}
-	zlog.Debug(ctx).
-		Int("count", len(found.bin)).
-		Msg("found packages")
+	slog.DebugContext(ctx, "found packages", "count", len(found.bin))
 
 	for _, pkg := range found.bin {
 		*out = append(*out, pkg)
@@ -322,7 +310,7 @@ Restart:
 	switch {
 	case errors.Is(err, io.EOF):
 	default:
-		zlog.Warn(ctx).Err(err).Msg("unable to read entry")
+		slog.WarnContext(ctx, "unable to read entry", "reason", err)
 		goto Restart
 	}
 	return nil

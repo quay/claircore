@@ -3,7 +3,6 @@ package dpkg
 import (
 	"archive/tar"
 	"bufio"
-	"context"
 	"errors"
 	"io"
 	"net/textproto"
@@ -12,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
@@ -825,7 +823,7 @@ func TestScanner(t *testing.T) {
 		},
 	}
 	slices.SortFunc(want, sortpkg)
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	l := test.RealizeLayer(ctx, t, test.LayerRef{
 		Registry: "docker.io",
 		Name:     "library/ubuntu",
@@ -846,7 +844,7 @@ func TestExtraMetadata(t *testing.T) {
 	t.Parallel()
 	mod := test.Modtime(t, "scanner_test.go")
 	layerfile := test.GenerateFixture(t, `extrametadata.layer`, mod, extraMetadataSetup)
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	var l claircore.Layer
 	var s Scanner
 
@@ -964,7 +962,7 @@ func TestKeyringPackage(t *testing.T) {
 func TestParsedSource(t *testing.T) {
 	t.Parallel()
 	const filename = `testdata/postgresql.status`
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 
 	db, err := os.Open(filename)
 	if err != nil {
@@ -998,7 +996,7 @@ func TestParsedSource(t *testing.T) {
 func TestNotDB(t *testing.T) {
 	t.Parallel()
 	const filename = `testdata/vcpkg.status`
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 
 	db, err := os.Open(filename)
 	if err != nil {
