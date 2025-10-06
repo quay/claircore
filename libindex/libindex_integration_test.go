@@ -12,7 +12,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/quay/zlog"
 	"go.uber.org/mock/gomock"
 
 	"github.com/quay/claircore"
@@ -157,7 +156,7 @@ func (tc testcase) Run(ctx context.Context, check checkFunc) func(*testing.T) {
 	return func(t *testing.T) {
 		t.Parallel()
 		integration.NeedDB(t)
-		ctx := zlog.Test(ctx, t)
+		ctx := test.Logging(t, ctx)
 		pool := pgtest.TestIndexerDB(ctx, t)
 		tc.RunInner(ctx, t, pool, check)
 	}
