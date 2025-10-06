@@ -1,16 +1,15 @@
 package gobin
 
 import (
-	"context"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/Masterminds/semver"
 	"github.com/google/go-cmp/cmp"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/test"
 )
 
 func TestBin(t *testing.T) {
@@ -21,7 +20,7 @@ func TestBin(t *testing.T) {
 	for _, n := range ms {
 		name := filepath.Base(n)
 		t.Run(name, func(t *testing.T) {
-			ctx := zlog.Test(context.Background(), t)
+			ctx := test.Logging(t)
 			f, err := os.Open(n)
 			if err != nil {
 				t.Fatal(err)
