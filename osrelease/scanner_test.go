@@ -2,14 +2,12 @@ package osrelease
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/quay/zlog"
 	"golang.org/x/tools/txtar"
 
 	"github.com/quay/claircore"
@@ -18,14 +16,13 @@ import (
 
 func TestParse(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
 
 	ms, _ := filepath.Glob("testdata/*.txtar")
 	for i := range ms {
 		m := ms[i]
 		name := strings.TrimSuffix(filepath.Base(m), ".txtar")
 		t.Run(name, func(t *testing.T) {
-			ctx := zlog.Test(ctx, t)
+			ctx := test.Logging(t)
 			ar, err := txtar.ParseFile(m)
 			if err != nil {
 				t.Fatal(err)
@@ -99,7 +96,7 @@ type layerspec struct {
 
 func (lc layercase) Test(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	l := test.RealizeLayer(ctx, t, lc.Layer)
 	var s Scanner
 
