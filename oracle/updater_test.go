@@ -1,18 +1,16 @@
 package oracle
 
 import (
-	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/quay/zlog"
-
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/test"
 )
 
 func TestFetch(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "testdata/com.oracle.elsa-2018.xml")
 	}))
