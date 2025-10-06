@@ -2,9 +2,8 @@ package ruby
 
 import (
 	"context"
+	"log/slog"
 	"net/url"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
@@ -41,10 +40,9 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 	// Parse the package first. If it cannot be parsed, it cannot properly be analyzed for vulnerabilities.
 	rv, err := NewVersion(record.Package.Version)
 	if err != nil {
-		zlog.Warn(ctx).
-			Str("package", record.Package.Name).
-			Str("version", record.Package.Version).
-			Msg("unable to parse ruby gem package version")
+		slog.WarnContext(ctx, "unable to parse ruby gem package version",
+			"package", record.Package.Name,
+			"version", record.Package.Version)
 		return false, err
 	}
 
@@ -58,10 +56,9 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 	if introduced != "" {
 		iv, err := NewVersion(introduced)
 		if err != nil {
-			zlog.Warn(ctx).
-				Str("package", vuln.Package.Name).
-				Str("version", introduced).
-				Msg("unable to parse ruby gem introduced version")
+			slog.WarnContext(ctx, "unable to parse ruby gem introduced version",
+				"package", vuln.Package.Name,
+				"version", introduced)
 			return false, err
 		}
 		// If the package's version is less than the introduced version, it's not vulnerable.
@@ -76,10 +73,9 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 	case fixedVersion != "":
 		fv, err := NewVersion(fixedVersion)
 		if err != nil {
-			zlog.Warn(ctx).
-				Str("package", vuln.Package.Name).
-				Str("version", fixedVersion).
-				Msg("unable to parse ruby gem fixed version")
+			slog.WarnContext(ctx, "unable to parse ruby gem fixed version",
+				"package", vuln.Package.Name,
+				"version", fixedVersion)
 			return false, err
 		}
 		// The package is affected if its version is less than the fixed version.
@@ -87,10 +83,9 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 	case lastAffected != "":
 		la, err := NewVersion(lastAffected)
 		if err != nil {
-			zlog.Warn(ctx).
-				Str("package", vuln.Package.Name).
-				Str("version", lastAffected).
-				Msg("unable to parse ruby gem last_affected version")
+			slog.WarnContext(ctx, "unable to parse ruby gem last_affected version",
+				"package", vuln.Package.Name,
+				"version", lastAffected)
 			return false, err
 		}
 		// The package is affected if its version is less than or equal to the last affected version.
