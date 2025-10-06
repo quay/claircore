@@ -7,12 +7,12 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"runtime/trace"
 	"sort"
 	"strings"
 
 	"github.com/quay/claircore/toolkit/types/cpe"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -57,12 +57,8 @@ func (*Scanner) Kind() string { return scannerKind }
 // present in the layer.
 func (s *Scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Distribution, error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "osrelease/Scanner.Scan",
-		"version", s.Version(),
-		"layer", l.Hash.String())
-	zlog.Debug(ctx).Msg("start")
-	defer zlog.Debug(ctx).Msg("done")
+	slog.DebugContext(ctx, "start")
+	defer slog.DebugContext(ctx, "done")
 
 	sys, err := l.FS()
 	if err != nil {
@@ -75,10 +71,7 @@ func (s *Scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Di
 	for _, n := range []string{Path, FallbackPath} {
 		f, err := sys.Open(n)
 		if err != nil {
-			zlog.Debug(ctx).
-				Str("name", n).
-				Err(err).
-				Msg("unable to open file")
+			slog.DebugContext(ctx, "unable to open file", "name", n, "reason", err)
 			continue
 		}
 		defer f.Close()
@@ -86,7 +79,7 @@ func (s *Scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Di
 		break
 	}
 	if rd == nil {
-		zlog.Debug(ctx).Msg("didn't find an os-release file")
+		slog.DebugContext(ctx, "didn't find an os-release file")
 		return nil, nil
 	}
 	d, err := toDist(ctx, rd)
@@ -98,8 +91,6 @@ func (s *Scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Di
 
 // ToDist returns the distribution information from the file contents provided on r.
 func toDist(ctx context.Context, r io.Reader) (*claircore.Distribution, error) {
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "osrelease/parse")
 	defer trace.StartRegion(ctx, "parse").End()
 	m, err := Parse(ctx, r)
 	if err != nil {
@@ -115,48 +106,41 @@ func toDist(ctx context.Context, r io.Reader) (*claircore.Distribution, error) {
 	}
 	sort.Strings(ks)
 	for _, key := range ks {
+		slog.DebugContext(ctx, "found key", "key", key)
 		value := m[key]
 		switch key {
 		case "ID":
-			zlog.Debug(ctx).Msg("found ID")
 			d.DID = value
 		case "VERSION_ID":
-			zlog.Debug(ctx).Msg("found VERSION_ID")
 			d.VersionID = value
 		case "BUILD_ID":
 		case "VARIANT_ID":
 		case "CPE_NAME":
-			zlog.Debug(ctx).Msg("found CPE_NAME")
 			wfn, err := cpe.Unbind(value)
 			if err != nil {
-				zlog.Warn(ctx).
-					Err(err).
-					Str("value", value).
-					Msg("failed to unbind the cpe")
+				slog.WarnContext(ctx, "failed to unbind the cpe", "reason", err, "value", value)
 				break
 			}
 			d.CPE = wfn
 		case "NAME":
-			zlog.Debug(ctx).Msg("found NAME")
 			d.Name = value
 		case "VERSION":
-			zlog.Debug(ctx).Msg("found VERSION")
 			d.Version = value
 		case "ID_LIKE":
 		case "VERSION_CODENAME":
-			zlog.Debug(ctx).Msg("found VERISON_CODENAME")
 			d.VersionCodeName = value
 		case "PRETTY_NAME":
-			zlog.Debug(ctx).Msg("found PRETTY_NAME")
 			d.PrettyName = value
 		case "REDHAT_BUGZILLA_PRODUCT":
-			zlog.Debug(ctx).Msg("using RHEL hack")
+			slog.DebugContext(ctx, "using RHEL hack")
 			// This is a dirty hack because the Red Hat OVAL database and the
 			// CPE contained in the os-release file don't agree.
 			d.PrettyName = value
+		default:
+			continue
 		}
 	}
-	zlog.Debug(ctx).Str("name", d.Name).Msg("found dist")
+	slog.DebugContext(ctx, "found dist", "name", d.Name)
 	return &d, nil
 }
 
@@ -165,7 +149,6 @@ func toDist(ctx context.Context, r io.Reader) (*claircore.Distribution, error) {
 //
 // See comments in the source for edge cases.
 func Parse(ctx context.Context, r io.Reader) (map[string]string, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "osrelease/Parse")
 	defer trace.StartRegion(ctx, "Parse").End()
 	m := make(map[string]string)
 	s := bufio.NewScanner(r)
