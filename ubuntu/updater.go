@@ -6,11 +6,11 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 
 	"github.com/quay/goval-parser/oval"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/xmlutil"
@@ -43,9 +43,6 @@ func (u *updater) Name() string {
 
 // Configure implements [driver.Configurable].
 func (u *updater) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *http.Client) error {
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "ubuntu/Updater.Configure",
-		"updater", u.Name())
 	u.c = c
 
 	var cfg UpdaterConfig
@@ -58,8 +55,7 @@ func (u *updater) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *
 			return err
 		}
 		u.url = cfg.URL
-		zlog.Info(ctx).
-			Msg("configured database URL")
+		slog.InfoContext(ctx, "configured database URL")
 	}
 	if cfg.UseBzip2 != nil {
 		u.useBzip2 = *cfg.UseBzip2
@@ -79,9 +75,7 @@ type UpdaterConfig struct {
 
 // Fetch implements [driver.Updater].
 func (u *updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "ubuntu/Updater.Fetch",
-		"database", u.url)
+	log := slog.With("database", u.url)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.url, nil)
 	if err != nil {
@@ -101,7 +95,7 @@ func (u *updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io
 	switch resp.StatusCode {
 	case http.StatusOK:
 		if fp := string(fingerprint); fp == "" || fp != resp.Header.Get("etag") {
-			zlog.Info(ctx).Msg("fetching latest oval database")
+			log.InfoContext(ctx, "fetching latest oval database")
 			break
 		}
 		fallthrough
@@ -120,7 +114,7 @@ func (u *updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io
 	defer func() {
 		if !success {
 			if err := f.Close(); err != nil {
-				zlog.Warn(ctx).Err(err).Msg("unable to close spool")
+				log.WarnContext(ctx, "unable to close spool", "reason", err)
 			}
 		}
 	}()
@@ -136,15 +130,13 @@ func (u *updater) Fetch(ctx context.Context, fingerprint driver.Fingerprint) (io
 	}
 
 	success = true
-	zlog.Info(ctx).Msg("fetched latest oval database successfully")
+	log.InfoContext(ctx, "fetched latest oval database successfully")
 	return f, driver.Fingerprint(fp), err
 }
 
 // Parse implements [driver.Updater].
 func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "ubuntu/Updater.Parse")
-	zlog.Info(ctx).Msg("starting parse")
+	slog.InfoContext(ctx, "starting parse")
 	defer r.Close()
 	root := oval.Root{}
 	dec := xml.NewDecoder(r)
@@ -152,7 +144,7 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 	if err := dec.Decode(&root); err != nil {
 		return nil, fmt.Errorf("ubuntu: unable to decode OVAL document: %w", err)
 	}
-	zlog.Debug(ctx).Msg("xml decoded")
+	slog.DebugContext(ctx, "xml decoded")
 
 	nameLookupFunc := func(def oval.Definition, name *oval.DpkgName) []string {
 		// if the dpkginfo_object>name field has a var_ref it indicates
@@ -167,7 +159,7 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 		}
 		_, i, err := root.Variables.Lookup(name.Ref)
 		if err != nil {
-			zlog.Error(ctx).Err(err).Msg("could not lookup variable id")
+			slog.WarnContext(ctx, "could not lookup variable id", "reason", err)
 			return ns
 		}
 		consts := root.Variables.ConstantVariables[i]
