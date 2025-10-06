@@ -8,13 +8,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
 	"runtime"
 	"strings"
 
-	"github.com/quay/zlog"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
@@ -154,15 +154,11 @@ func (f closeFunc) Close() error {
 // Because we know we're the only concurrent call that's dealing with this blob,
 // we can be a bit more lax.
 func (a *RemoteFetchArena) fetchFileForCache(ctx context.Context, desc *claircore.LayerDescription) (*os.File, error) {
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "libindex/RemoteFetchArena.fetchFileForCache",
-		"arena", a.root.Name(),
-		"layer", desc.Digest,
-		"uri", desc.URI)
-	ctx, span := tracer.Start(ctx, "RemoteFetchArena.fetchFileForCache")
+	log := slog.With("arena", a.root, "layer", desc.Digest, "uri", desc.URI)
+	ctx, span := tracer.Start(ctx, "RemoteFetchArena.fetchUnlinkedFile")
 	defer span.End()
 	span.SetStatus(codes.Error, "")
-	zlog.Debug(ctx).Msg("layer fetch start")
+	log.DebugContext(ctx, "layer fetch start")
 
 	// Validate the layer input.
 	if desc.URI == "" {
@@ -215,9 +211,7 @@ func (a *RemoteFetchArena) fetchFileForCache(ctx context.Context, desc *claircor
 	defer zr.Close()
 	// Look at the content-type and optionally fix it up.
 	ct := resp.Header.Get("content-type")
-	zlog.Debug(ctx).
-		Str("content-type", ct).
-		Msg("reported content-type")
+	log.DebugContext(ctx, "reported content-type", "content-type", ct)
 	span.SetAttributes(attribute.String("payload.content-type", ct), attribute.Stringer("payload.compression.detected", kind))
 	if ct == "" || ct == "text/plain" || ct == "binary/octet-stream" || ct == "application/octet-stream" {
 		switch kind {
@@ -230,9 +224,7 @@ func (a *RemoteFetchArena) fetchFileForCache(ctx context.Context, desc *claircor
 		default:
 			return nil, fmt.Errorf("fetcher: disallowed compression kind: %q", kind.String())
 		}
-		zlog.Debug(ctx).
-			Str("content-type", ct).
-			Msg("fixed content-type")
+		log.DebugContext(ctx, "fixed content-type", "content-type", ct)
 		span.SetAttributes(attribute.String("payload.content-type.detected", ct))
 	}
 
@@ -275,18 +267,12 @@ func (a *RemoteFetchArena) fetchFileForCache(ctx context.Context, desc *claircor
 			return
 		}
 		if err := f.Close(); err != nil {
-			zlog.Warn(ctx).
-				Err(err).
-				Msg("error closing spoolfile in error return")
+			log.WarnContext(ctx, "error closing spoolfile in error return", "reason", err)
 		}
 	}()
 	buf := bufio.NewWriter(f)
 	n, err := io.Copy(buf, zr)
-	zlog.Debug(ctx).
-		Int64("size", n).
-		Bool("big", n >= bigLayerSize).
-		AnErr("copy_error", err).
-		Msg("wrote file")
+	log.DebugContext(ctx, "wrote file", "size", n, "big", n >= bigLayerSize, "copy_error", err)
 	// TODO(hank) Add a metric for "big files" and a histogram for size.
 	if err != nil {
 		return nil, err
@@ -301,7 +287,7 @@ func (a *RemoteFetchArena) fetchFileForCache(ctx context.Context, desc *claircor
 		return nil, err
 	}
 
-	zlog.Debug(ctx).Msg("layer fetch ok")
+	log.DebugContext(ctx, "layer fetch ok")
 	span.SetStatus(codes.Ok, "")
 	fileOK = true
 	return f, nil
@@ -352,8 +338,6 @@ func (p *FetchProxy) Realize(ctx context.Context, ls []*claircore.Layer) error {
 // RealizeDescriptions returns [claircore.Layer] structs populated according to
 // the passed slice of [claircore.LayerDescription].
 func (p *FetchProxy) RealizeDescriptions(ctx context.Context, descs []claircore.LayerDescription) ([]claircore.Layer, error) {
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "libindex/FetchProxy.RealizeDescriptions")
 	ctx, span := tracer.Start(ctx, "RealizeDescriptions")
 	defer span.End()
 	g, ctx := errgroup.WithContext(ctx)

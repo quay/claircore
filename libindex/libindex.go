@@ -7,11 +7,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"sort"
 	"time"
 
-	"github.com/quay/zlog"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/quay/claircore"
@@ -27,6 +27,7 @@ import (
 	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/quay/claircore/rpm"
 	"github.com/quay/claircore/ruby"
+	"github.com/quay/claircore/toolkit/log"
 	"github.com/quay/claircore/whiteout"
 )
 
@@ -70,7 +71,6 @@ type Libindex struct {
 // The passed http.Client will be used for fetching layers and any HTTP requests
 // made by scanners.
 func New(ctx context.Context, opts *Options, cl *http.Client) (*Libindex, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "libindex/New")
 	// required
 	if opts.Locker == nil {
 		return nil, fmt.Errorf("field Locker cannot be nil")
@@ -142,7 +142,7 @@ func New(ctx context.Context, opts *Options, cl *http.Client) (*Libindex, error)
 		return nil, fmt.Errorf("failed to set the indexer state: %v", err)
 	}
 
-	zlog.Info(ctx).Msg("registered configured scanners")
+	slog.InfoContext(ctx, "registered configured scanners")
 	l.vscnrs = vscnrs
 
 	// create indexer.Options
@@ -176,13 +176,11 @@ func (l *Libindex) Close(ctx context.Context) error {
 // If the index operation cannot start an error will be returned.
 // If an error occurs during scan the error will be propagated inside the IndexReport.
 func (l *Libindex) Index(ctx context.Context, manifest *claircore.Manifest) (*claircore.IndexReport, error) {
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "libindex/Libindex.Index",
-		"manifest", manifest.Hash.String())
-	zlog.Info(ctx).Msg("index request start")
-	defer zlog.Info(ctx).Msg("index request done")
+	ctx = log.With(ctx, "manifest", manifest.Hash)
+	slog.InfoContext(ctx, "index request start")
+	defer slog.InfoContext(ctx, "index request done")
 
-	zlog.Debug(ctx).Msg("locking attempt")
+	slog.DebugContext(ctx, "locking attempt")
 	lc, done := l.locker.Lock(ctx, manifest.Hash.String())
 	defer done()
 	// The process may have waited on the lock, so check that the context is
@@ -190,7 +188,7 @@ func (l *Libindex) Index(ctx context.Context, manifest *claircore.Manifest) (*cl
 	if err := lc.Err(); !errors.Is(err, nil) {
 		return nil, err
 	}
-	zlog.Debug(ctx).Msg("locking OK")
+	slog.DebugContext(ctx, "locking OK")
 	c := l.ControllerFactory(l.indexerOptions)
 	return c.Index(lc, manifest)
 }
@@ -242,7 +240,6 @@ func (l *Libindex) IndexReport(ctx context.Context, hash claircore.Digest) (*cla
 
 // AffectedManifests retrieves a list of affected manifests when provided a list of vulnerabilities.
 func (l *Libindex) AffectedManifests(ctx context.Context, vulns []claircore.Vulnerability) (*claircore.AffectedManifests, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "libindex/Libindex.AffectedManifests")
 	om := omnimatcher.New(nil)
 
 	affected := claircore.NewAffectedManifests()
@@ -285,6 +282,5 @@ V:
 //
 // Providing an unknown digest is not an error.
 func (l *Libindex) DeleteManifests(ctx context.Context, d ...claircore.Digest) ([]claircore.Digest, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "libindex/Libindex.DeleteManifests")
 	return l.store.DeleteManifests(ctx, d...)
 }
