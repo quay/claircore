@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"path"
 	"strings"
 	"sync"
 
-	"github.com/quay/zlog"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/quay/claircore"
@@ -67,8 +67,6 @@ type FactoryConfig struct {
 
 // Configure implements [driver.Configurable].
 func (f *Factory) Configure(ctx context.Context, cf driver.ConfigUnmarshaler, c *http.Client) error {
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "ubuntu/Factory.Configure")
 	var cfg FactoryConfig
 	if err := cf(&cfg); err != nil {
 		return err
@@ -84,8 +82,7 @@ func (f *Factory) Configure(ctx context.Context, cf driver.ConfigUnmarshaler, c 
 		if err != nil {
 			return fmt.Errorf("ubuntu: unable to parse provided URL: %w", err)
 		}
-		zlog.Info(ctx).
-			Msg("configured URL")
+		slog.InfoContext(ctx, "configured URL")
 	}
 	n := defaultName
 	if cfg.Name != "" {
@@ -106,9 +103,6 @@ func (f *Factory) Configure(ctx context.Context, cf driver.ConfigUnmarshaler, c 
 
 // UpdaterSet implements [driver.UpdaterSetFactory]
 func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "ubuntu/Factory.UpdaterSet")
-
 	set := driver.NewUpdaterSet()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, f.api, nil)
 	if err != nil {
@@ -146,7 +140,7 @@ func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
 			e := &series.Entries[i]
 			mkDist(e.Version, e.Name)
 			if !e.Active {
-				zlog.Debug(ctx).Str("release", e.Name).Msg("release not active")
+				slog.DebugContext(ctx, "release not active", "release", e.Name)
 				continue
 			}
 			select {
@@ -175,10 +169,9 @@ func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
 			switch res.StatusCode {
 			case http.StatusOK:
 			case http.StatusNotFound:
-				zlog.Debug(ctx).
-					Str("name", e.Name).
-					Str("version", e.Version).
-					Msg("OVAL database missing, skipping")
+				slog.DebugContext(ctx, "OVAL database missing, skipping",
+					"name", e.Name,
+					"version", e.Version)
 				continue
 			default:
 				return fmt.Errorf("ubuntu: unexpected status requesting %q: %q", url, res.Status)
@@ -210,7 +203,7 @@ func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
 	}
 
 	if len(f.force) != 0 {
-		zlog.Info(ctx).Msg("configuring manually specified updaters")
+		slog.InfoContext(ctx, "configuring manually specified updaters")
 		ns := make([]string, 0, len(f.force))
 		for _, p := range f.force {
 			u := &updater{
@@ -221,12 +214,12 @@ func (f *Factory) UpdaterSet(ctx context.Context) (driver.UpdaterSet, error) {
 			}
 			if err := set.Add(u); err != nil {
 				// Already exists, skip.
-				zlog.Debug(ctx).Err(err).Msg("skipping updater")
+				slog.DebugContext(ctx, "skipping updater", "reason", err)
 				continue
 			}
 			ns = append(ns, u.Name())
 		}
-		zlog.Info(ctx).Strs("updaters", ns).Msg("added specified updaters")
+		slog.InfoContext(ctx, "added specified updaters", "updaters", ns)
 	}
 
 	return set, nil
