@@ -2,9 +2,8 @@ package python
 
 import (
 	"context"
+	"log/slog"
 	"net/url"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
@@ -42,10 +41,9 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 	// Parse the package first. If it cannot be parsed, it cannot properly be analyzed for vulnerabilities.
 	rv, err := pep440.Parse(record.Package.Version)
 	if err != nil {
-		zlog.Warn(ctx).
-			Str("package", record.Package.Name).
-			Stringer("version", &rv).
-			Msg("unable to parse python package version")
+		slog.WarnContext(ctx, "unable to parse python package version",
+			"package", record.Package.Name,
+			"version", &rv)
 		return false, err
 	}
 
@@ -59,10 +57,9 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 	if introduced != "" {
 		iv, err := pep440.Parse(introduced)
 		if err != nil {
-			zlog.Warn(ctx).
-				Str("package", vuln.Package.Name).
-				Str("version", introduced).
-				Msg("unable to parse python introduced version")
+			slog.WarnContext(ctx, "unable to parse python introduced version",
+				"package", vuln.Package.Name,
+				"version", introduced)
 			return false, err
 		}
 		// If the package's version is less than the introduced version, it's not vulnerable.
@@ -77,10 +74,9 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 	case fixedVersion != "":
 		uv, err := pep440.Parse(fixedVersion)
 		if err != nil {
-			zlog.Warn(ctx).
-				Str("package", vuln.Package.Name).
-				Str("version", fixedVersion).
-				Msg("unable to parse python fixed version")
+			slog.WarnContext(ctx, "unable to parse python fixed version",
+				"package", vuln.Package.Name,
+				"version", fixedVersion)
 			return false, err
 		}
 		// The package is affected if its version is less than the fixed version.
@@ -88,10 +84,9 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 	case lastAffected != "":
 		la, err := pep440.Parse(lastAffected)
 		if err != nil {
-			zlog.Warn(ctx).
-				Str("package", vuln.Package.Name).
-				Str("version", lastAffected).
-				Msg("unable to parse python last_affected version")
+			slog.WarnContext(ctx, "unable to parse python last_affected version",
+				"package", vuln.Package.Name,
+				"version", lastAffected)
 			return false, err
 		}
 		// The package is affected if its version is less than or equal to the last affected version.
