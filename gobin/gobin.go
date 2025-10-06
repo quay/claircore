@@ -18,11 +18,10 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"log/slog"
 	"os"
 	"runtime/trace"
 	"sync"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -65,12 +64,8 @@ func (Detector) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Pack
 	}
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	trace.Log(ctx, "layer", l.Hash.String())
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "gobin/Detector.Scan",
-		"version", detectorVersion,
-		"layer", l.Hash.String())
-	zlog.Debug(ctx).Msg("start")
-	defer zlog.Debug(ctx).Msg("done")
+	slog.DebugContext(ctx, "start")
+	defer slog.DebugContext(ctx, "done")
 
 	sys, err := l.FS()
 	if err != nil {
@@ -90,7 +85,7 @@ func (Detector) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Pack
 	}
 
 	walk := func(p string, d fs.DirEntry, err error) error {
-		ctx := zlog.ContextWithValues(ctx, "filename", d.Name())
+		log := slog.With("path", p)
 
 		switch {
 		case err != nil:
@@ -114,9 +109,7 @@ func (Detector) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Pack
 		}
 
 		if set.Contains(p) {
-			zlog.Debug(ctx).
-				Str("path", p).
-				Msg("file path determined to be of RPM origin")
+			log.DebugContext(ctx, "file path determined to be of RPM origin")
 			return nil
 		}
 
@@ -124,7 +117,7 @@ func (Detector) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Pack
 		if err != nil {
 			// TODO(crozzy): Remove log line once controller is in a
 			// position to log all the context when receiving an error.
-			zlog.Warn(ctx).Msg("unable to open file")
+			log.WarnContext(ctx, "unable to open file")
 			return fmt.Errorf("gobin: unable to open %q: %w", p, err)
 		}
 		defer f.Close()
@@ -138,7 +131,7 @@ func (Detector) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Pack
 		default:
 			// TODO(crozzy): Remove log line once controller is in a
 			// position to log all the context when receiving an error.
-			zlog.Warn(ctx).Msg("unable to read file")
+			log.WarnContext(ctx, "unable to read file")
 			return fmt.Errorf("gobin: unable to read %q: %w", p, err)
 		}
 
@@ -158,9 +151,7 @@ func (Detector) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Pack
 			case 2: // big-endian
 				typ = binary.BigEndian.Uint16(peek[0x10:])
 			default:
-				zlog.Warn(ctx).
-					Uint8("endianness", e).
-					Msg("martian ELF")
+				log.WarnContext(ctx, "martian ELF", "endianness", e)
 			}
 			if typ != 0x02 && typ != 0x03 {
 				// AKA [debug/elf.ET_EXEC] and [debug/elf.ET_DYN] -- not imported in this file by convention.

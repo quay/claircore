@@ -2,7 +2,6 @@ package gobin
 
 import (
 	"archive/tar"
-	"context"
 	"io"
 	"os"
 	"os/exec"
@@ -10,14 +9,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/quay/zlog"
-
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
 )
 
 func TestEmptyFile(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 
 	mod := test.Modtime(t, "gobin_test.go") // Needs to be the name of this file.
 	p := test.GenerateFixture(t, "nothing.tar", mod, func(t testing.TB, tf *os.File) {
@@ -74,7 +71,7 @@ func TestEmptyFile(t *testing.T) {
 }
 
 func TestScanner(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 
 	mod := test.Modtime(t, "gobin_test.go") // Needs to be the name of this file.
 	p := test.GenerateFixture(t, t.Name()+".tar", mod, func(t testing.TB, tf *os.File) {
