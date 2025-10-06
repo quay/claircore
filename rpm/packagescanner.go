@@ -6,9 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"runtime/trace"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -56,12 +55,8 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) (out []*cla
 	}
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	trace.Log(ctx, "layer", layer.Hash.String())
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "rpm/Scanner.Scan",
-		"version", ps.Version(),
-		"layer", layer.Hash.String())
-	zlog.Debug(ctx).Msg("start")
-	defer zlog.Debug(ctx).Msg("done")
+	slog.DebugContext(ctx, "start")
+	defer slog.DebugContext(ctx, "done")
 
 	sys, err := layer.FS()
 	if err != nil {
@@ -74,8 +69,7 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) (out []*cla
 	}()
 	for db := range dbs {
 		err = func() error {
-			ctx := zlog.ContextWithValues(ctx, "db", db.String())
-			zlog.Debug(ctx).Msg("examining database")
+			slog.DebugContext(ctx, "examining database", "db", db)
 			db, dbErr := rpm.OpenDB(ctx, sys, db)
 			switch {
 			case dbErr == nil:
