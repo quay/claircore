@@ -8,12 +8,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"path/filepath"
 	"runtime/trace"
 	"strings"
 
 	"github.com/Masterminds/semver"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -67,12 +67,8 @@ type packageJSON struct {
 func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.Package, error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	trace.Log(ctx, "layer", layer.Hash.String())
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "nodejs/Scanner.Scan",
-		"version", s.Version(),
-		"layer", layer.Hash.String())
-	zlog.Debug(ctx).Msg("start")
-	defer zlog.Debug(ctx).Msg("done")
+	slog.DebugContext(ctx, "start")
+	defer slog.DebugContext(ctx, "done")
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -99,9 +95,7 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 
 	for _, p := range pkgs {
 		if set.Contains(p) {
-			zlog.Debug(ctx).
-				Str("path", p).
-				Msg("file path determined to be of RPM origin")
+			slog.DebugContext(ctx, "file path determined to be of RPM origin", "path", p)
 			continue
 		}
 
@@ -128,17 +122,16 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 		if sv, err := semver.NewVersion(pkgJSON.Version); err == nil {
 			pkg.NormalizedVersion = claircore.FromSemver(sv)
 		} else {
-			zlog.Info(ctx).
-				Str("package", pkg.Name).
-				Str("version", pkg.Version).
-				Msg("invalid semantic version")
+			slog.InfoContext(ctx, "invalid semantic version",
+				"package", pkg.Name,
+				"version", pkg.Version)
 		}
 
 		ret = append(ret, pkg)
 	}
 
 	if len(invalidPkgs) > 0 {
-		zlog.Debug(ctx).Strs("paths", invalidPkgs).Msg("unable to decode package.json, skipping")
+		slog.DebugContext(ctx, "unable to decode package.json, skipping", "paths", invalidPkgs)
 	}
 
 	return ret, nil
@@ -146,14 +139,7 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 
 func packages(ctx context.Context, sys fs.FS) (out []string, err error) {
 	return out, fs.WalkDir(sys, ".", func(p string, d fs.DirEntry, err error) error {
-		ev := zlog.Debug(ctx).
-			Str("file", p)
-		var success bool
-		defer func() {
-			if !success {
-				ev.Discard().Send()
-			}
-		}()
+		attrs := []slog.Attr{slog.String("file", p)}
 		switch {
 		case err != nil:
 			return err
@@ -168,12 +154,11 @@ func packages(ctx context.Context, sys fs.FS) (out []string, err error) {
 			// for more information.
 			return nil
 		case strings.HasSuffix(p, "/package.json"):
-			ev = ev.Str("kind", "package.json")
+			attrs = append(attrs, slog.String("kind", "package.json"))
 		default:
 			return nil
 		}
-		ev.Msg("found package")
-		success = true
+		slog.LogAttrs(ctx, slog.LevelDebug, "found package", attrs...)
 		out = append(out, p)
 		return nil
 	})
