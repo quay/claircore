@@ -1,7 +1,5 @@
 # Logging
-All the logging in claircore is done with [zerolog][doc] via `context.Context`
-values. The `zlog` package takes OpenTelemetry labels and attaches them to
-`zerolog` events.
+All the logging in claircore is done with [`log/slog`][doc].
 
 This allows for claircore's logging to be used consistently throughout all the
 packages without having unintended prints to stderr.
@@ -9,20 +7,28 @@ packages without having unintended prints to stderr.
 ## How to Log
 
 ### Adding Context
-In a function, use `zlog` to add key-value pairs of any relevant context:
+
+Within a function, create a `*slog.Logger` to add key-value pairs of any
+relevant context:
 ```go
 {{#include ../logger_test.go:kvs}}
 ```
 
-Alternatively, the `go.opentelemetry.io/otel/baggage` package can be used for
-more explicit control around the baggage values.
+Alternatively, the `github.com/quay/claircore/toolkit/log` package has a helper
+for associating multiple `slog.Attr` values with a `context.Context`.
+```go
+{{#include ../logger_test.go:ctx}}
+```
+
+Programs using claircore should configure their `slog.Handler` to extract the
+values using the key in `github.com/quay/claircore/toolkit/log` or use the
+`Wrap` helper.
 
 ### Logging style
 
 #### Constant Messages
-Zerolog emits lines when the `Msg` or `Msgf` methods are called. Project style
-is to _not_ use `Msgf`. Any variable data should be set as key-value pairs on
-the Event object.
+Project style is to use string constants for all logging calls. Any variable
+data should be passed as additional arguments to the `slog` methods.
 
 For example, don't do this:
 ```go
@@ -66,14 +72,6 @@ times in the logs.
 Claircore attempts to have consistent leveled logging. The rules for figuring
 out what level to use is:
 
-* Panic
-
-  There's some occurrence that means the process won't work correctly.
-
-* Fatal
-
-  Unused, because it prevents defers from running.
-
 * Error
 
   Something unexpected occurred and the process can continue, but a
@@ -96,4 +94,11 @@ out what level to use is:
   and exiting functions, stepping through a function, or specific file paths
   used while work is being done.
 
-[doc]: https://pkg.go.dev/github.com/rs/zerolog@v1.26.0
+In exceptional situations, levels of `slog.LevelDebug-4` or `slog.LevelError+4`
+may be used for "Trace" and "Emergency" logs. There are no predefined constants
+for these.
+
+#### Contexts
+All logging calls should use the "Context" variant whenever possible.
+
+[doc]: https://pkg.go.dev/log/slog
