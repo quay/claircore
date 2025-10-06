@@ -4,9 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/libvuln/driver"
 	_ "github.com/quay/claircore/matchers/defaults"
@@ -30,7 +29,6 @@ type MatchersOption func(m *Matchers)
 // NewMatchers will return a slice of Matcher created based on the provided
 // MatchersOption.
 func NewMatchers(ctx context.Context, client *http.Client, opts ...MatchersOption) ([]driver.Matcher, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "libvuln/matchers/NewMatchers")
 	if client == nil {
 		return nil, errors.New("invalid *http.Client")
 	}
@@ -57,7 +55,7 @@ func NewMatchers(ctx context.Context, client *http.Client, opts ...MatchersOptio
 	for _, factory := range m.factories {
 		matcher, err := factory.Matcher(ctx)
 		if err != nil {
-			zlog.Error(ctx).Err(err).Msg("failed constructing factory, excluding from run")
+			slog.ErrorContext(ctx, "failed constructing factory, excluding from run", "reason", err)
 			continue
 		}
 		matchers = append(matchers, matcher...)
