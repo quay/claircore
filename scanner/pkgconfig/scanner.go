@@ -12,11 +12,10 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"runtime/trace"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -49,12 +48,8 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	}
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	trace.Log(ctx, "layer", layer.Hash.String())
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "scanner/pkgconfig/Scanner.Scan",
-		"version", ps.Version(),
-		"layer", layer.Hash.String())
-	zlog.Debug(ctx).Msg("start")
-	defer zlog.Debug(ctx).Msg("done")
+	slog.DebugContext(ctx, "start")
+	defer slog.DebugContext(ctx, "done")
 
 	sys, err := layer.FS()
 	if err != nil {
@@ -71,9 +66,8 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 		case filepath.Ext(d.Name()) != ".pc":
 			return nil
 		}
-		zlog.Debug(ctx).
-			Str("path", p).
-			Msg("found possible pkg-config file")
+		log := slog.With("path", p)
+		log.DebugContext(ctx, "found possible pkg-config file")
 		f, err := sys.Open(p)
 		if err != nil {
 			return err
@@ -84,9 +78,7 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 		switch {
 		case errors.Is(nil, err):
 		case errors.Is(errInvalid, err): // skip
-			zlog.Info(ctx).
-				Str("path", p).
-				Msg("invalid pkg-config file")
+			slog.InfoContext(ctx, "invalid pkg-config file")
 			return nil
 		default:
 			return err
