@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"regexp"
 
 	"github.com/quay/goval-parser/oval"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 )
@@ -41,17 +41,15 @@ type ProtoVulnsFunc func(def oval.Definition) ([]*claircore.Vulnerability, error
 //
 // Each Criterion encountered with an EVR string will be translated into a claircore.Vulnerability
 func RPMDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulnsFunc) ([]*claircore.Vulnerability, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "ovalutil/RPMDefsToVulns")
 	vulns := make([]*claircore.Vulnerability, 0, 10000)
 	cris := []*oval.Criterion{}
 	for _, def := range root.Definitions.Definitions {
 		// create our prototype vulnerability
 		protoVulns, err := protoVulns(def)
 		if err != nil {
-			zlog.Debug(ctx).
-				Err(err).
-				Str("def_id", def.ID).
-				Msg("could not create prototype vulnerabilities")
+			slog.DebugContext(ctx, "could not create prototype vulnerabilities",
+				"reason", err,
+				"def_id", def.ID)
 			continue
 		}
 		// recursively collect criterions for this definition
@@ -77,7 +75,7 @@ func RPMDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulnsF
 			case errors.Is(err, errTestSkip):
 				continue
 			default:
-				zlog.Debug(ctx).Str("test_ref", criterion.TestRef).Msg("test ref lookup failure. moving to next criterion")
+				slog.DebugContext(ctx, "test ref lookup failure, moving to next criterion", "test_ref", criterion.TestRef)
 				continue
 			}
 
@@ -98,10 +96,9 @@ func RPMDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulnsF
 				// We only handle rpminfo_objects.
 				continue
 			default:
-				zlog.Debug(ctx).
-					Err(err).
-					Str("object_ref", objRef).
-					Msg("failed object lookup. moving to next criterion")
+				slog.DebugContext(ctx, "failed object lookup, moving to next criterion",
+					"reason", err,
+					"object_ref", objRef)
 				continue
 			}
 
@@ -113,10 +110,9 @@ func RPMDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulnsF
 				stateRef := stateRefs[0].StateRef
 				state, err = rpmStateLookup(root, stateRef)
 				if err != nil {
-					zlog.Debug(ctx).
-						Err(err).
-						Str("state_ref", stateRef).
-						Msg("failed state lookup. moving to next criterion")
+					slog.DebugContext(ctx, "failed state lookup, moving to next criterion",
+						"reason", err,
+						"state_ref", stateRef)
 					continue
 				}
 				// if we find a state, but this state does not contain an EVR,

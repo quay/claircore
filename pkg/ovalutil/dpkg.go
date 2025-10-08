@@ -4,12 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"regexp"
 	"strings"
 
 	"github.com/quay/goval-parser/oval"
-	"github.com/quay/zlog"
-	"github.com/rs/zerolog"
 
 	"github.com/quay/claircore"
 )
@@ -23,7 +22,6 @@ type PackageExpansionFunc func(def oval.Definition, name *oval.DpkgName) []strin
 //
 // Each Criterion encountered with an EVR string will be translated into a claircore.Vulnerability
 func DpkgDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulnsFunc, expansionFunc PackageExpansionFunc) ([]*claircore.Vulnerability, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "ovalutil/DpkgDefsToVulns")
 	vulns := make([]*claircore.Vulnerability, 0, 10000)
 	pkgcache := map[string]*claircore.Package{}
 	cris := []*oval.Criterion{}
@@ -36,10 +34,7 @@ func DpkgDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulns
 		// create our prototype vulnerability
 		protoVulns, err := protoVulns(def)
 		if err != nil {
-			zlog.Debug(ctx).
-				Err(err).
-				Str("def_id", def.ID).
-				Msg("could not create prototype vulnerabilities")
+			slog.DebugContext(ctx, "could not create prototype vulnerabilities", "reason", err, "def_id", def.ID)
 			continue
 		}
 		// recursively collect criterions for this definition
@@ -131,19 +126,16 @@ func DpkgDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulns
 			}
 		}
 	}
-	zlog.Debug(ctx).
-		Int("test", stats.Test).
-		Int("object", stats.Obj).
-		Int("state", stats.State).
-		Msg("ref lookup failures")
-	if ev := zlog.Debug(ctx); ev.Enabled() {
-		d := zerolog.Dict()
+	slog.DebugContext(ctx, "ref lookup failures",
+		"test", stats.Test,
+		"object", stats.Obj,
+		"state", stats.State)
+	if slog.Default().Enabled(ctx, slog.LevelDebug) {
+		var bad []slog.Attr
 		for k, v := range badvers {
-			d.Str(k, v)
+			bad = append(bad, slog.String(k, v))
 		}
-		ev.
-			Dict("package-version", d).
-			Msg("bogus versions")
+		slog.DebugContext(ctx, "bogus versions", "package-version", slog.GroupValue(bad...))
 	}
 	return vulns, nil
 }

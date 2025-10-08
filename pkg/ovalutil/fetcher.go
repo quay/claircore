@@ -6,12 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"mime"
 	"net/http"
 	"net/url"
 	"path"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/tmp"
@@ -66,7 +65,6 @@ type Fetcher struct {
 // For users that embed a Fetcher, this provides a configuration hook by
 // default.
 func (f *Fetcher) Configure(ctx context.Context, cf driver.ConfigUnmarshaler, c *http.Client) error {
-	ctx = zlog.ContextWithValues(ctx, "component", "pkg/ovalutil/Fetcher.Configure")
 	var cfg FetcherConfig
 	if err := cf(&cfg); err != nil {
 		return err
@@ -77,8 +75,7 @@ func (f *Fetcher) Configure(ctx context.Context, cf driver.ConfigUnmarshaler, c 
 			return err
 		}
 		f.URL = uri
-		zlog.Info(ctx).
-			Msg("configured database URL")
+		slog.InfoContext(ctx, "configured database URL")
 	}
 	if cfg.Compression != "" {
 		c, err := ParseCompressor(cfg.Compression)
@@ -86,8 +83,7 @@ func (f *Fetcher) Configure(ctx context.Context, cf driver.ConfigUnmarshaler, c 
 			return err
 		}
 		f.Compression = c
-		zlog.Info(ctx).
-			Msg("configured database compression")
+		slog.InfoContext(ctx, "configured database compression")
 	}
 
 	f.Client = c
@@ -112,8 +108,7 @@ type FetcherConfig struct {
 //
 // Tmp.File is used to return a ReadCloser that outlives the passed-in context.
 func (f *Fetcher) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "pkg/ovalutil/Fetcher.Fetch")
-	zlog.Info(ctx).Str("database", f.URL.String()).Msg("starting fetch")
+	slog.InfoContext(ctx, "starting fetch", "database", f.URL)
 	req := http.Request{
 		Method: http.MethodGet,
 		Header: http.Header{
@@ -150,7 +145,7 @@ func (f *Fetcher) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 	default:
 		return nil, hint, fmt.Errorf("ovalutil: fetcher got unexpected HTTP response: %d (%s)", res.StatusCode, res.Status)
 	}
-	zlog.Debug(ctx).Msg("request ok")
+	slog.DebugContext(ctx, "request ok")
 
 	var r io.Reader
 	cmp := f.Compression
@@ -186,11 +181,10 @@ Compression:
 			default:
 				panic("unreachable")
 			}
-			zlog.Debug(ctx).
-				Err(err).
-				Str("header", h).
-				Str("value", v).
-				Msg("failed to parse incoming HTTP header")
+			slog.DebugContext(ctx, "failed to parse incoming HTTP header",
+				"reason", err,
+				"header", h,
+				"value", v)
 		}
 		kind = mime.TypeByExtension(path.Ext(res.Request.URL.Path))
 	Found:
@@ -227,23 +221,19 @@ Compression:
 	default:
 		panic(fmt.Sprintf("ovalutil: programmer error: unknown compression scheme: %v", f.Compression))
 	}
-	zlog.Debug(ctx).
-		Stringer("compression", cmp).
-		Msg("found compression scheme")
+	slog.DebugContext(ctx, "found compression scheme", "compression", cmp)
 
 	tf, err := tmp.NewFile("", "fetcher.")
 	if err != nil {
 		return nil, hint, err
 	}
-	zlog.Debug(ctx).
-		Str("path", tf.Name()).
-		Msg("using tempfile")
+	slog.DebugContext(ctx, "using tempfile", "path", tf.Name())
 	success := false
 	defer func() {
 		if !success {
-			zlog.Debug(ctx).Msg("unsuccessful, cleaning up tempfile")
+			slog.DebugContext(ctx, "unsuccessful, cleaning up tempfile")
 			if err := tf.Close(); err != nil {
-				zlog.Warn(ctx).Err(err).Msg("failed to close tempfile")
+				slog.WarnContext(ctx, "failed to close tempfile", "reason", err)
 			}
 		}
 	}()
@@ -254,7 +244,7 @@ Compression:
 	if o, err := tf.Seek(0, io.SeekStart); err != nil || o != 0 {
 		return nil, hint, err
 	}
-	zlog.Debug(ctx).Msg("decompressed and buffered database")
+	slog.DebugContext(ctx, "decompressed and buffered database")
 
 	fp.From(res.Header)
 	hint = fp.Fingerprint()
