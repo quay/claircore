@@ -1,14 +1,12 @@
 package whiteout
 
 import (
-	"context"
 	"crypto/sha256"
 	"io"
 	"testing"
 
 	"github.com/quay/claircore"
-
-	"github.com/quay/zlog"
+	"github.com/quay/claircore/test"
 )
 
 func Digest(name string) claircore.Digest {
@@ -260,7 +258,7 @@ func TestResolver(t *testing.T) {
 	r := &Resolver{}
 	for _, tc := range tests {
 		t.Run(tc.Name, func(t *testing.T) {
-			ctx := zlog.Test(context.Background(), t)
+			ctx := test.Logging(t)
 			report := r.Resolve(ctx, tc.Report, tc.Layers)
 			if tc.LenPackage != len(report.Packages) {
 				t.Fatalf("wrong number of packages: expected: %d got: %d", tc.LenPackage, len(report.Packages))
@@ -269,7 +267,6 @@ func TestResolver(t *testing.T) {
 				t.Fatalf("wrong number of environments: expected: %d got: %d", tc.LenEnvs, len(report.Environments))
 			}
 		})
-
 	}
 }
 

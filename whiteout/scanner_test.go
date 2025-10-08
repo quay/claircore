@@ -1,11 +1,8 @@
 package whiteout
 
 import (
-	"context"
 	"os"
 	"testing"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
@@ -17,7 +14,7 @@ var testScanner = &Scanner{}
 // layer in "name".
 func checkCount(t testing.TB, name string, ct int) {
 	t.Helper()
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	lf, err := os.Open(name)
 	if err != nil {
 		t.Fatal(err)
