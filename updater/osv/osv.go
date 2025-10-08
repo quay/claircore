@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
+	"github.com/quay/claircore/toolkit/types/cvss"
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
@@ -514,13 +515,23 @@ func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *adviso
 	proto.NormalizedSeverity = claircore.Unknown
 	for _, s := range a.Severity {
 		var err error
+		var q cvss.Qualitative
 		switch s.Type {
+		case `CVSS_V4`:
+			proto.Severity = s.Score
+			var v cvss.V4
+			v, err = cvss.ParseV4(s.Score)
+			q = cvss.QualitativeScore(&v)
 		case `CVSS_V3`:
 			proto.Severity = s.Score
-			proto.NormalizedSeverity, err = fromCVSS3(ctx, s.Score)
+			var v cvss.V3
+			v, err = cvss.ParseV3(s.Score)
+			q = cvss.QualitativeScore(&v)
 		case `CVSS_V2`:
 			proto.Severity = s.Score
-			proto.NormalizedSeverity, err = fromCVSS2(s.Score)
+			var v cvss.V2
+			v, err = cvss.ParseV2(s.Score)
+			q = cvss.QualitativeScore(&v)
 		default:
 			// We didn't get a severity from the CVSS scores
 			continue
@@ -529,6 +540,19 @@ func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *adviso
 			zlog.Info(ctx).
 				Err(err).
 				Msg("odd cvss mangling result")
+			continue
+		}
+		switch q {
+		case cvss.None:
+			proto.NormalizedSeverity = claircore.Negligible // aka None
+		case cvss.Low:
+			proto.NormalizedSeverity = claircore.Low
+		case cvss.Medium:
+			proto.NormalizedSeverity = claircore.Medium
+		case cvss.High:
+			proto.NormalizedSeverity = claircore.High
+		case cvss.Critical:
+			proto.NormalizedSeverity = claircore.Critical
 		}
 	}
 
