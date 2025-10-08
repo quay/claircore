@@ -4,9 +4,8 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"strings"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -32,12 +31,8 @@ func (*Scanner) Version() string { return scannerVersion }
 func (*Scanner) Kind() string { return scannerKind }
 
 func (s *Scanner) Scan(ctx context.Context, l *claircore.Layer) ([]claircore.File, error) {
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "whiteout/Scanner.Scan",
-		"version", s.Version(),
-		"layer", l.Hash.String())
-	zlog.Debug(ctx).Msg("start")
-	defer zlog.Debug(ctx).Msg("done")
+	slog.DebugContext(ctx, "start")
+	defer slog.DebugContext(ctx, "done")
 	sys, err := l.FS()
 	if err != nil {
 		return nil, fmt.Errorf("whiteout: unable to create fs: %w", err)
