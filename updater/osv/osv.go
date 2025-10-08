@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"log/slog"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -20,7 +21,6 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/quay/claircore/toolkit/types/cvss"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
@@ -74,7 +74,6 @@ type FactoryConfig struct {
 
 // Configure implements driver.Configurable.
 func (f *Factory) Configure(ctx context.Context, cf driver.ConfigUnmarshaler, c *http.Client) error {
-	ctx = zlog.ContextWithValues(ctx, "component", "updater/osv/factory.Configure")
 	var err error
 
 	f.c = c
@@ -100,12 +99,11 @@ func (f *Factory) Configure(ctx context.Context, cf driver.ConfigUnmarshaler, c 
 		}
 	}
 
-	zlog.Debug(ctx).Msg("loaded incoming config")
+	slog.DebugContext(ctx, "loaded incoming config")
 	return nil
 }
 
 func (f *Factory) UpdaterSet(ctx context.Context) (s driver.UpdaterSet, err error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "updater/osv/factory.UpdaterSet")
 	s = driver.NewUpdaterSet()
 	if f.root == nil || f.c == nil {
 		return s, errors.New("osv: factory not configured") // Purposely return an unhandleable error.
@@ -117,10 +115,9 @@ func (f *Factory) UpdaterSet(ctx context.Context) (s driver.UpdaterSet, err erro
 	defer func() {
 		// This is an info print so operators can compare their allow list,
 		// if need be.
-		zlog.Info(ctx).
-			Strs("ecosystems", stats.ecosystems).
-			Strs("skipped", stats.skipped).
-			Msg("ecosystems stats")
+		slog.InfoContext(ctx, "ecosystems stats",
+			"ecosystems", stats.ecosystems,
+			"skipped", stats.skipped)
 	}()
 
 	uri := *f.root
@@ -156,9 +153,7 @@ func (f *Factory) UpdaterSet(ctx context.Context) (s driver.UpdaterSet, err erro
 			}
 			seen[e] = struct{}{}
 			if _, ok := ignore[e]; ok {
-				zlog.Debug(ctx).
-					Str("ecosystem", e).
-					Msg("ignoring ecosystem")
+				slog.DebugContext(ctx, "ignoring ecosystem", "ecosystem", e)
 				continue
 			}
 			stats.ecosystems = append(stats.ecosystems, e)
@@ -170,10 +165,9 @@ func (f *Factory) UpdaterSet(ctx context.Context) (s driver.UpdaterSet, err erro
 			uri := (*f.root).JoinPath(k, "all.zip")
 			up := &updater{name: name, ecosystem: e, c: f.c, uri: uri}
 			if err = s.Add(up); err != nil {
-				zlog.Error(ctx).
-					Str("ecosystem", e).
-					Err(err).
-					Msg("Failed to add updater to updaterset")
+				slog.WarnContext(ctx, "failed to add updater to updaterset",
+					"reason", err,
+					"ecosystem", e)
 				continue
 			}
 		}
@@ -188,9 +182,7 @@ func (f *Factory) UpdaterSet(ctx context.Context) (s driver.UpdaterSet, err erro
 		err = fmt.Errorf("osv: unexpected response from %q: %v (request: %q) (body: %q)", res.Request.URL, res.Status, b, buf)
 	}
 	if err := res.Body.Close(); err != nil {
-		zlog.Info(ctx).
-			Err(err).
-			Msg("error closing ecosystems.txt response body")
+		slog.InfoContext(ctx, "error closing ecosystems.txt response body", "reason", err)
 	}
 	if err != nil {
 		return s, err
@@ -236,7 +228,6 @@ type UpdaterConfig struct {
 
 // Configure implements driver.Configurable.
 func (u *updater) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *http.Client) error {
-	ctx = zlog.ContextWithValues(ctx, "component", "updater/osv/updater.Configure")
 	var err error
 
 	u.c = c
@@ -250,28 +241,22 @@ func (u *updater) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *
 			return err
 		}
 	}
-	zlog.Debug(ctx).Msg("loaded incoming config")
+	slog.DebugContext(ctx, "loaded incoming config")
 	return nil
 }
 
 // Fetcher implements driver.Updater.
 func (u *updater) Fetch(ctx context.Context, fp driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "updater/osv/updater.Fetch")
-
 	out, err := tmp.NewFile("", "osv.fetch.*")
 	if err != nil {
 		return nil, fp, err
 	}
 	defer func() {
 		if _, err := out.Seek(0, io.SeekStart); err != nil {
-			zlog.Warn(ctx).
-				Err(err).
-				Msg("unable to seek file back to start")
+			slog.WarnContext(ctx, "unable to seek file back to start", "reason", err)
 		}
 	}()
-	zlog.Debug(ctx).
-		Str("filename", out.Name()).
-		Msg("opened temporary file for output")
+	slog.DebugContext(ctx, "opened temporary file for output", "filename", out.Name())
 	w := zip.NewWriter(out)
 	defer w.Close()
 	var ct int
@@ -282,9 +267,7 @@ func (u *updater) Fetch(ctx context.Context, fp driver.Fingerprint) (io.ReadClos
 	}
 	req.Header.Set(`accept`, `application/zip`)
 	if fp != "" {
-		zlog.Debug(ctx).
-			Str("hint", string(fp)).
-			Msg("using hint")
+		slog.DebugContext(ctx, "using hint", "hint", string(fp))
 		req.Header.Set("if-none-match", string(fp))
 	}
 
@@ -304,26 +287,20 @@ func (u *updater) Fetch(ctx context.Context, fp driver.Fingerprint) (io.ReadClos
 		if err != nil {
 			break
 		}
-		zlog.Debug(ctx).
-			Str("name", n).
-			Msg("wrote zip")
+		slog.DebugContext(ctx, "wrote zip", "name", n)
 		ct++
 	case http.StatusNotModified:
 	default:
 		err = fmt.Errorf("osv: unexpected response from %q: %v", res.Request.URL.String(), res.Status)
 	}
 	if err := res.Body.Close(); err != nil {
-		zlog.Info(ctx).
-			Err(err).
-			Msg("error closing advisory zip response body")
+		slog.InfoContext(ctx, "error closing advisory zip response body", "reason", err)
 	}
 	if err != nil {
 		return nil, fp, err
 	}
 	newEtag := res.Header.Get(`etag`)
-	zlog.Info(ctx).
-		Int("count", ct).
-		Msg("found updates")
+	slog.InfoContext(ctx, "found updates", "count", ct)
 	if ct == 0 {
 		return nil, fp, driver.Unchanged
 	}
@@ -333,11 +310,9 @@ func (u *updater) Fetch(ctx context.Context, fp driver.Fingerprint) (io.ReadClos
 
 // Fetcher implements driver.Updater.
 func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "updater/osv/updater.Parse")
 	ra, ok := r.(io.ReaderAt)
 	if !ok {
-		zlog.Info(ctx).
-			Msg("spooling to disk")
+		slog.InfoContext(ctx, "spooling to disk")
 		tf, err := tmp.NewFile("", `osv.parse.spool.*`)
 		if err != nil {
 			return nil, err
@@ -388,9 +363,8 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 	now := time.Now()
 	ecs := newECS(u.Name())
 	for _, zf := range z.File {
-		ctx := zlog.ContextWithValues(ctx, "dumpfile", zf.Name)
-		zlog.Debug(ctx).
-			Msg("found file")
+		log := slog.With("dumpfile", zf.Name)
+		log.DebugContext(ctx, "found file")
 		r, err := zf.Open()
 		if err != nil {
 			return nil, err
@@ -411,7 +385,6 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 		var skipped stats
 		var ct int
 		for _, zf := range z.File {
-			ctx := zlog.ContextWithValues(ctx, "advisory", strings.TrimSuffix(path.Base(zf.Name), ".json"))
 			ct++
 			var a advisory
 			rc, err := zf.Open()
@@ -434,22 +407,18 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 			default:
 			}
 
-			if err := ecs.Insert(ctx, &skipped, name, &a); err != nil {
+			log := log.With("advisory", strings.TrimSuffix(path.Base(zf.Name), ".json"))
+			if err := ecs.Insert(ctx, log, &skipped, name, &a); err != nil {
 				return nil, err
 			}
 		}
-		zlog.Debug(ctx).
-			Int("count", ct).
-			Msg("processed advisories")
-		zlog.Debug(ctx).
-			Strs("withdrawn", skipped.Withdrawn).
-			Strs("unaffected", skipped.Unaffected).
-			Strs("ignored", skipped.Ignored).
-			Msg("skipped advisories")
+		log.DebugContext(ctx, "processed advisories", "count", ct)
+		log.DebugContext(ctx, "skipped advisories",
+			"withdrawn", skipped.Withdrawn,
+			"unaffected", skipped.Unaffected,
+			"ignored", skipped.Ignored)
 	}
-	zlog.Info(ctx).
-		Int("count", ecs.Len()).
-		Msg("found vulnerabilities")
+	slog.InfoContext(ctx, "found vulnerabilities", "count", ecs.Len())
 
 	return ecs.Finalize(), nil
 }
@@ -502,7 +471,7 @@ type rangeVer struct {
 	ecosystemRange url.Values
 }
 
-func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *advisory) (err error) {
+func (e *ecs) Insert(ctx context.Context, log *slog.Logger, skipped *stats, name string, a *advisory) (err error) {
 	if a.GitOnly() {
 		return nil
 	}
@@ -537,9 +506,7 @@ func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *adviso
 			continue
 		}
 		if err != nil {
-			zlog.Info(ctx).
-				Err(err).
-				Msg("odd cvss mangling result")
+			log.InfoContext(ctx, "odd cvss mangling result", "reason", err)
 			continue
 		}
 		switch q {
@@ -593,9 +560,7 @@ func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *adviso
 				// ignore, not going to fetch source.
 				continue
 			default:
-				zlog.Debug(ctx).
-					Str("type", r.Type).
-					Msg("odd range type")
+				log.DebugContext(ctx, "odd range type", "type", r.Type)
 			}
 			// This does some heavy assumptions about valid inputs.
 			vs := &rangeVer{semverRange: &claircore.Range{}, ecosystemRange: url.Values{}}
@@ -635,11 +600,10 @@ func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *adviso
 						}
 					case ev.LastAffected != "" && len(af.Versions) != 0: // less than equal to
 						// TODO(hank) Should be able to convert this to a "less than."
-						zlog.Info(ctx).
-							Str("which", "last_affected").
-							Str("event", ev.LastAffected).
-							Strs("versions", af.Versions).
-							Msg("unsure how to interpret event")
+						log.InfoContext(ctx, "unsure how to interpret event",
+							"which", "last_affected",
+							"event", ev.LastAffected,
+							"versions", af.Versions)
 					case ev.LastAffected != "": // less than equal to
 						// This is semver, so we should be able to calculate the
 						// "next" version:
@@ -652,10 +616,9 @@ func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *adviso
 						vs.semverRange.Upper.Kind = `semver`
 						vs.semverRange.Upper.V[0] = 65535
 					case ev.Limit != "": // Something arbitrary
-						zlog.Info(ctx).
-							Str("which", "limit").
-							Str("event", ev.Limit).
-							Msg("unsure how to interpret event")
+						log.InfoContext(ctx, "unsure how to interpret event",
+							"which", "limit",
+							"event", ev.Limit)
 					}
 				case `ECOSYSTEM`:
 					switch af.Package.Ecosystem {
@@ -696,7 +659,7 @@ func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *adviso
 					}
 				}
 				if err != nil {
-					zlog.Warn(ctx).Err(err).Msg("event version error")
+					log.WarnContext(ctx, "event version error", "reason", err)
 				}
 				vers = append(vers, vs)
 			}
