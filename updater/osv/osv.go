@@ -72,30 +72,30 @@ type FactoryConfig struct {
 }
 
 // Configure implements driver.Configurable.
-func (u *Factory) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *http.Client) error {
+func (f *Factory) Configure(ctx context.Context, cf driver.ConfigUnmarshaler, c *http.Client) error {
 	ctx = zlog.ContextWithValues(ctx, "component", "updater/osv/factory.Configure")
 	var err error
 
-	u.c = c
-	u.root, err = url.Parse(DefaultURL)
+	f.c = c
+	f.root, err = url.Parse(DefaultURL)
 	if err != nil {
 		panic(fmt.Sprintf("programmer error: %v", err))
 	}
 
 	var cfg FactoryConfig
-	if err := f(&cfg); err != nil {
+	if err := cf(&cfg); err != nil {
 		return err
 	}
 	if cfg.URL != "" {
-		u.root, err = url.Parse(cfg.URL)
+		f.root, err = url.Parse(cfg.URL)
 		if err != nil {
 			return err
 		}
 	}
 	if l := len(cfg.Allowlist); l != 0 {
-		u.allow = make(map[string]bool, l)
+		f.allow = make(map[string]bool, l)
 		for _, a := range cfg.Allowlist {
-			u.allow[strings.ToLower(a)] = true
+			f.allow[strings.ToLower(a)] = true
 		}
 	}
 
