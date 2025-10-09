@@ -9,13 +9,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"sort"
 	"strings"
 	"time"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/enricher"
@@ -110,8 +109,6 @@ func (*Enricher) Name() string { return name }
 
 // FetchEnrichment implements driver.EnrichmentUpdater.
 func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "enricher/cvss/Enricher/FetchEnrichment")
-
 	// year → sha256
 	prev := make(map[int]string)
 	if err := json.Unmarshal([]byte(hint), &prev); err != nil && hint != "" {
@@ -126,10 +123,7 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 		if err != nil {
 			return nil, hint, err
 		}
-		zlog.Debug(ctx).
-			Int("year", y).
-			Stringer("url", u).
-			Msg("fetching meta file")
+		slog.DebugContext(ctx, "fetching meta file", "year", y, "url", u)
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 		if err != nil {
 			return nil, hint, err
@@ -148,20 +142,17 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 		if err := mf.Parse(&buf); err != nil {
 			return nil, hint, err
 		}
-		zlog.Debug(ctx).
-			Int("year", y).
-			Stringer("url", u).
-			Time("mod", mf.LastModified).
-			Msg("parsed meta file")
+		slog.DebugContext(ctx, "parsed meta file",
+			"year", y,
+			"url", u,
+			"mod", mf.LastModified)
 		cur[y] = strings.ToUpper(mf.SHA256)
 	}
 
 	doFetch := false
 	for _, y := range yrs {
 		if prev[y] != cur[y] {
-			zlog.Info(ctx).
-				Int("year", y).
-				Msg("change detected")
+			slog.InfoContext(ctx, "change detected", "year", y)
 			doFetch = true
 			break
 		}
@@ -178,7 +169,7 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 	defer func() {
 		if !success {
 			if err := out.Close(); err != nil {
-				zlog.Warn(ctx).Err(err).Msg("unable to close spool")
+				slog.WarnContext(ctx, "unable to close spool", "reason", err)
 			}
 		}
 	}()
@@ -195,10 +186,7 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 		if err != nil {
 			return nil, hint, fmt.Errorf("unable to create request: %w", err)
 		}
-		zlog.Debug(ctx).
-			Int("year", y).
-			Stringer("url", u).
-			Msg("requesting json")
+		slog.DebugContext(ctx, "requesting json", "year", y, "url", u)
 		res, err := e.c.Do(req)
 		if err != nil {
 			return nil, hint, fmt.Errorf("unable to do request: %w", err)
@@ -232,7 +220,6 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 
 // ParseEnrichment implements driver.EnrichmentUpdater.
 func (e *Enricher) ParseEnrichment(ctx context.Context, rc io.ReadCloser) ([]driver.EnrichmentRecord, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "enricher/cvss/Enricher/ParseEnrichment")
 	// Our Fetch method actually has all the smarts w/r/t to constructing the
 	// records, so this is just decoding in a loop.
 	defer rc.Close()
@@ -244,9 +231,7 @@ func (e *Enricher) ParseEnrichment(ctx context.Context, rc io.ReadCloser) ([]dri
 		ret = append(ret, driver.EnrichmentRecord{})
 		err = dec.Decode(&ret[len(ret)-1])
 	}
-	zlog.Debug(ctx).
-		Int("count", len(ret)).
-		Msg("decoded enrichments")
+	slog.DebugContext(ctx, "decoded enrichments", "count", len(ret))
 	if err != nil && !errors.Is(err, io.EOF) {
 		return nil, err
 	}
@@ -255,8 +240,6 @@ func (e *Enricher) ParseEnrichment(ctx context.Context, rc io.ReadCloser) ([]dri
 
 // Enrich implements driver.Enricher.
 func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *claircore.VulnerabilityReport) (string, []json.RawMessage, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "enricher/cvss/Enricher/Enrich")
-
 	// We return any CVSS blobs for CVEs mentioned in the free-form parts of the
 	// vulnerability.
 	m := make(map[string][]json.RawMessage)
@@ -264,8 +247,7 @@ func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *cla
 	erCache := make(map[string][]driver.EnrichmentRecord)
 	for id, v := range r.Vulnerabilities {
 		t := make(map[string]struct{})
-		ctx := zlog.ContextWithValues(ctx,
-			"vuln", v.Name)
+		log := slog.With("vuln", v.Name)
 		for _, elem := range []string{
 			v.Name,
 			v.Links,
@@ -281,9 +263,7 @@ func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *cla
 		for m := range t {
 			ts = append(ts, m)
 		}
-		zlog.Debug(ctx).
-			Strs("cve", ts).
-			Msg("found CVEs")
+		log.DebugContext(ctx, "found CVEs", "cve", ts)
 
 		sort.Strings(ts)
 		cveKey := strings.Join(ts, "_")
@@ -296,9 +276,7 @@ func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *cla
 			}
 			erCache[cveKey] = rec
 		}
-		zlog.Debug(ctx).
-			Int("count", len(rec)).
-			Msg("found records")
+		log.DebugContext(ctx, "found records", "count", len(rec))
 		for _, r := range rec {
 			m[id] = append(m[id], r.Enrichment)
 		}
