@@ -17,15 +17,15 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/test"
 )
 
 func TestConfigure(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(t.Context(), t)
+	ctx := test.Logging(t)
 	tt := []configTestcase{
 		{
 			Name: "None",
@@ -91,7 +91,7 @@ type configTestcase struct {
 func (tc configTestcase) Run(ctx context.Context) func(*testing.T) {
 	e := &Enricher{}
 	return func(t *testing.T) {
-		ctx := zlog.Test(ctx, t)
+		ctx := test.Logging(t, ctx)
 		f := tc.Config
 		if f == nil {
 			f = noopConfig
@@ -111,7 +111,7 @@ func noopConfig(_ any) error { return nil }
 
 func TestFetch(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(t.Context(), t)
+	ctx := test.Logging(t)
 	srv := mockServer(t)
 	tt := []fetchTestcase{
 		{
@@ -175,7 +175,7 @@ type fetchTestcase struct {
 func (tc fetchTestcase) Run(ctx context.Context, srv *httptest.Server) func(*testing.T) {
 	e := &Enricher{}
 	return func(t *testing.T) {
-		ctx := zlog.Test(ctx, t)
+		ctx := test.Logging(t)
 		f := func(i any) error {
 			cfg, ok := i.(*Config)
 			if !ok {
@@ -234,7 +234,7 @@ func mockServer(t *testing.T) *httptest.Server {
 
 func TestParse(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(t.Context(), t)
+	ctx := test.Logging(t)
 	srv := mockServer(t)
 	tt := []parseTestcase{
 		{
@@ -254,7 +254,7 @@ type parseTestcase struct {
 func (tc parseTestcase) Run(ctx context.Context, srv *httptest.Server) func(*testing.T) {
 	e := &Enricher{}
 	return func(t *testing.T) {
-		ctx := zlog.Test(ctx, t)
+		ctx := test.Logging(t, ctx)
 		f := func(i any) error {
 			cfg, ok := i.(*Config)
 			if !ok {
@@ -285,7 +285,7 @@ func (tc parseTestcase) Run(ctx context.Context, srv *httptest.Server) func(*tes
 
 func TestEnrich(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(t.Context(), t)
+	ctx := test.Logging(t)
 	feedIn, err := os.Open("testdata/feed.json")
 	if err != nil {
 		t.Fatal(err)

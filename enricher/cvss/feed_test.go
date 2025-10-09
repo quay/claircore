@@ -5,11 +5,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/quay/zlog"
+	"github.com/quay/claircore/test"
 )
 
 func TestFeedIngest(t *testing.T) {
-	ctx := zlog.Test(t.Context(), t)
+	ctx := test.Logging(t)
 	in, err := os.Open("testdata/feed.json")
 	if err != nil {
 		t.Fatal(err)
