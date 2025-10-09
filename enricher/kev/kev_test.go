@@ -15,10 +15,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/test"
 )
 
 // Define a static Last-Modified for testing purposes
@@ -28,7 +28,6 @@ func noopConfig(_ any) error { return nil }
 
 func TestConfigure(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(context.Background(), t)
 
 	type configTestcase struct {
 		Config func(any) error
@@ -87,7 +86,7 @@ func TestConfigure(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.Name, func(t *testing.T) {
 			e := &Enricher{}
-			ctx := zlog.Test(ctx, t)
+			ctx := test.Logging(t)
 			f := tc.Config
 			if f == nil {
 				f = noopConfig
@@ -156,7 +155,6 @@ func mockServer(t *testing.T) *httptest.Server {
 
 func TestFetch(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(context.Background(), t)
 	srv := mockServer(t)
 
 	type fetchTestcase struct {
@@ -218,7 +216,7 @@ func TestFetch(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.Name, func(t *testing.T) {
 			e := &Enricher{}
-			ctx := zlog.Test(ctx, t)
+			ctx := test.Logging(t)
 			configFunc := func(i any) error {
 				cfg, ok := i.(*Config)
 				if !ok {
@@ -251,7 +249,7 @@ func TestFetch(t *testing.T) {
 
 func TestParse(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	srv := mockServer(t)
 
 	e := &Enricher{}
@@ -336,7 +334,7 @@ func (g fakeGetter) GetEnrichment(_ context.Context, cves []string) ([]driver.En
 
 func TestEnrich(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	srv := mockServer(t)
 
 	e := &Enricher{}
