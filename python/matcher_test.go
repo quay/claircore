@@ -1,11 +1,9 @@
 package python_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
@@ -23,7 +21,7 @@ type matcherTestcase struct {
 
 func (tc matcherTestcase) Run(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	got, err := tc.Matcher.Vulnerable(ctx, &tc.R, &tc.V)
 	if err != nil {
 		t.Error(err)
@@ -238,7 +236,8 @@ func TestMatcher(t *testing.T) {
 
 	for _, testcase := range testcases {
 		t.Run(testcase.Name, func(t *testing.T) {
-			got, err := testcase.Matcher.Vulnerable(context.Background(), &testcase.R, &testcase.V)
+			ctx := test.Logging(t)
+			got, err := testcase.Matcher.Vulnerable(ctx, &testcase.R, &testcase.V)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -248,5 +247,6 @@ func TestMatcher(t *testing.T) {
 		})
 	}
 
-	test.RunMatcherTests(zlog.Test(context.Background(), t), t, "testdata/matcher", new(python.Matcher))
+	ctx := test.Logging(t)
+	test.RunMatcherTests(ctx, t, "testdata/matcher", new(python.Matcher))
 }

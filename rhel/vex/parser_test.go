@@ -2,7 +2,6 @@ package vex
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -15,10 +14,10 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/klauspost/compress/snappy"
 	"github.com/package-url/packageurl-go"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 
+	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/toolkit/types/cpe"
 	"github.com/quay/claircore/toolkit/types/csaf"
 )
@@ -373,7 +372,6 @@ func TestEscapeCPE(t *testing.T) {
 
 func TestParseCompare(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
 	url, err := url.Parse(BaseURL)
 	if err != nil {
 		t.Error(err)
@@ -415,7 +413,7 @@ func TestParseCompare(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctx := zlog.Test(ctx, t)
+			ctx := test.Logging(t)
 			f, err := os.Open(tc.filename)
 			if err != nil {
 				t.Fatalf("failed to open test data file %s: %v", tc.filename, err)
@@ -458,7 +456,6 @@ func TestParseCompare(t *testing.T) {
 
 func TestParse(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
 	url, err := url.Parse(BaseURL)
 	if err != nil {
 		t.Error(err)
@@ -520,7 +517,7 @@ func TestParse(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctx := zlog.Test(ctx, t)
+			ctx := test.Logging(t)
 
 			// Build a snappy stream consisting of compacted JSON blobs from each file,
 			// newline-separated to simulate JSONL input across multiple files.

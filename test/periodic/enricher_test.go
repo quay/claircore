@@ -6,14 +6,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/quay/zlog"
-
 	"github.com/quay/claircore/enricher/cvss"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/test"
 )
 
 func TestCVSS(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	e := &cvss.Enricher{}
 	err := e.Configure(ctx, func(any) error { return nil }, pkgClient)
 	if err != nil {

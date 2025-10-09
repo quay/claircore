@@ -4,12 +4,12 @@ import (
 	"archive/zip"
 	"bufio"
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"io/fs"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -21,16 +21,16 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/test"
 )
 
 func TestFetch(t *testing.T) {
 	srv := httptest.NewServer(&apiStub{t, ""})
 	defer srv.Close()
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 
 	f := Factory{}
 	cfgFunc := func(v any) error {
@@ -110,7 +110,7 @@ func (a *apiStub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func TestParse(t *testing.T) {
 	srv := httptest.NewServer(&apiStub{t, ""})
 	defer srv.Close()
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 
 	f := Factory{}
 	cfgFunc := func(v any) error {
@@ -615,13 +615,13 @@ var cmpIgnore = cmpopts.IgnoreFields(
 	claircore.Vulnerability{}, "ID", "Updater", "Description", "Severity", "NormalizedSeverity", "Package", "Repo")
 
 func TestInsert(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
-
 	for _, tt := range insertTestCases {
 		t.Run(tt.name, func(t *testing.T) {
+			ctx := test.Logging(t)
 			ecs := newECS("test")
 
-			err := ecs.Insert(ctx, nil, "", tt.ad)
+			log := slog.Default()
+			err := ecs.Insert(ctx, log, nil, "", tt.ad)
 			if err != nil {
 				t.Error("got error Inserting advisory", err)
 			}
@@ -773,13 +773,13 @@ var severityTestCases = []struct {
 }
 
 func TestSeverityParsing(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
-
 	for _, tt := range severityTestCases {
 		t.Run(tt.name, func(t *testing.T) {
+			ctx := test.Logging(t)
 			ecs := newECS("test")
 
-			err := ecs.Insert(ctx, nil, "", tt.a)
+			log := slog.Default()
+			err := ecs.Insert(ctx, log, nil, "", tt.a)
 			if err != nil {
 				t.Error("got error Inserting advisory", err)
 			}
@@ -793,7 +793,6 @@ func TestSeverityParsing(t *testing.T) {
 			if v.Severity != tt.expectedSeverity {
 				t.Errorf("expected severity %q but got %q", tt.expectedSeverity, v.Severity)
 			}
-
 		})
 	}
 }
@@ -875,12 +874,13 @@ func TestInsertLinksAliases(t *testing.T) {
 		},
 	}
 
-	ctx := zlog.Test(context.Background(), t)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			ctx := test.Logging(t)
+			log := slog.Default()
 			e := newECS("osv")
 			var st stats
-			if err := (&e).Insert(ctx, &st, "pkg", &tt.adv); err != nil {
+			if err := (&e).Insert(ctx, log, &st, "pkg", &tt.adv); err != nil {
 				t.Fatalf("Insert() error: %v", err)
 			}
 			if len(e.Vulnerability) == 0 {

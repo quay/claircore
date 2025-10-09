@@ -6,8 +6,7 @@ import (
 	"context"
 	"encoding/binary"
 	"io"
-
-	"github.com/quay/zlog"
+	"log/slog"
 )
 
 // CheckMagic looks at bit of the provided Reader to see if it looks like a
@@ -28,7 +27,7 @@ func CheckMagic(ctx context.Context, r io.Reader) bool {
 	b := make([]byte, 16)
 
 	if _, err := io.ReadFull(r, b); err != nil {
-		zlog.Warn(ctx).Err(err).Msg("unexpected error checking magic")
+		slog.WarnContext(ctx, "unexpected error checking magic", "reason", err)
 		return false
 	}
 	// Look at position 12 for a magic number.

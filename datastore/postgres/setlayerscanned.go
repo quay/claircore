@@ -7,7 +7,6 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -36,7 +35,6 @@ var (
 )
 
 func (s *IndexerStore) SetLayerScanned(ctx context.Context, hash claircore.Digest, vs indexer.VersionedScanner) error {
-	ctx = zlog.ContextWithValues(ctx, "scanner", vs.Name())
 	const query = `
 WITH
 	scanner

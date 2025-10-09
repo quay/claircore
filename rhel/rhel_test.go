@@ -1,7 +1,6 @@
 package rhel
 
 import (
-	"context"
 	"os"
 	"strings"
 	"testing"
@@ -9,12 +8,10 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
-	"github.com/quay/zlog"
 )
 
 func TestGetContentManifest(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(context.Background(), t)
 
 	tests := []struct {
 		name    string
@@ -53,7 +50,7 @@ func TestGetContentManifest(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx := zlog.Test(ctx, t)
+			ctx := test.Logging(t)
 
 			// Create a layer from the test data
 			f, err := os.Open(tt.tarPath)

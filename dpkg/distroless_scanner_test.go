@@ -1,18 +1,16 @@
 package dpkg
 
 import (
-	"context"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
 )
 
 func TestDistrolessLayer(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	want := []*claircore.Package{
 		{
 			Name:           "base-files",

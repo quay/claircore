@@ -1,16 +1,15 @@
 package controller
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/quay/zlog"
 	"go.uber.org/mock/gomock"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/test"
 	indexer "github.com/quay/claircore/test/mock/indexer"
 )
 
@@ -21,7 +20,6 @@ import (
 // call to s.Store.ManifestScanned forcing checkManifest to return an error and
 // evaluate our scanner's state afterwards.
 func TestControllerIndexerError(t *testing.T) {
-	ctx := context.Background()
 	tt := []struct {
 		mock func(t *testing.T) (indexer.Store, indexer.FetchArena)
 		name string
@@ -69,7 +67,7 @@ func TestControllerIndexerError(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			ctx := zlog.Test(ctx, t)
+			ctx := test.Logging(t)
 			store, fa := table.mock(t)
 			c := New(&indexer.Options{
 				Store:      store,
@@ -96,7 +94,6 @@ func TestControllerIndexerError(t *testing.T) {
 // TestControllerIndexFinished tests that our state machine does the correct
 // thing when it reaches ScanFinished terminal state.
 func TestControllerIndexFinished(t *testing.T) {
-	ctx := context.Background()
 	tt := []struct {
 		mock                  func(t *testing.T) (indexer.Store, indexer.FetchArena)
 		name                  string
@@ -126,7 +123,7 @@ func TestControllerIndexFinished(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			ctx := zlog.Test(ctx, t)
+			ctx := test.Logging(t)
 			store, fa := table.mock(t)
 			c := New(&indexer.Options{
 				Store:      store,

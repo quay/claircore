@@ -3,13 +3,12 @@ package libvuln
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"math/rand"
 	"reflect"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/quay/zlog"
-	"github.com/rs/zerolog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore"
@@ -33,7 +32,6 @@ type Libvuln struct {
 	updaters        *updates.Manager
 }
 
-// TODO (crozzy): Find a home for this and stop redefining it.
 // LockSource abstracts over how locks are implemented.
 //
 // An online system needs distributed locks, offline use cases can use
@@ -44,10 +42,10 @@ type LockSource interface {
 	Close(context.Context) error
 }
 
+// TODO (crozzy): Find a home for this and stop redefining it.
+
 // New creates a new instance of the Libvuln library
 func New(ctx context.Context, opts *Options) (*Libvuln, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "libvuln/New")
-
 	// required
 	if opts.Store == nil {
 		return nil, fmt.Errorf("libvuln: must provide a Store")
@@ -97,7 +95,7 @@ func New(ctx context.Context, opts *Options) (*Libvuln, error) {
 		return nil, err
 	}
 
-	zlog.Info(ctx).Array("matchers", matcherLog(l.matchers)).Msg("matchers created")
+	slog.InfoContext(ctx, "matchers created", "matcher", matcherLog(l.matchers))
 
 	l.updaters, err = updates.NewManager(ctx,
 		l.store,
@@ -119,7 +117,7 @@ func New(ctx context.Context, opts *Options) (*Libvuln, error) {
 		go l.updaters.Start(ctx)
 	}
 
-	zlog.Info(ctx).Msg("libvuln initialized")
+	slog.InfoContext(ctx, "libvuln initialized")
 	return l, nil
 }
 
@@ -224,11 +222,12 @@ func (l *Libvuln) Initialized(ctx context.Context) (bool, error) {
 // generated documentation URL.
 type matcherLog []driver.Matcher
 
-func (l matcherLog) MarshalZerologArray(a *zerolog.Array) {
-	for _, m := range l {
+func (l matcherLog) LogValue() slog.Value {
+	as := make([]slog.Attr, len(l))
+	for i, m := range l {
 		t := reflect.ValueOf(m).Elem().Type()
-		a.Dict(zerolog.Dict().
-			Str("name", m.Name()).
-			Str("docs", `https://pkg.go.dev/`+t.PkgPath()))
+		as[i] = slog.String(m.Name(), `https://pkg.go.dev/`+t.PkgPath())
 	}
+
+	return slog.GroupValue(as...)
 }
