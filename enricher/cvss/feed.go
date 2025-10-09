@@ -4,9 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"log/slog"
 	"strings"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/libvuln/driver"
 )
@@ -59,7 +58,6 @@ func newItemFeed(year int, r io.Reader) (*itemFeed, error) {
 // entire serialization in memory.
 
 func (f *itemFeed) WriteCVSS(ctx context.Context, w io.Writer) error {
-	ctx = zlog.ContextWithValues(ctx, "component", "enricher/cvss/itemFeed/WriteCVSS")
 	// Use records directly because our parse step doesn't actually parse
 	// anything -- the Fetch step rips out the relevant JSON.
 	var skip, wrote uint
@@ -104,10 +102,9 @@ func (f *itemFeed) WriteCVSS(ctx context.Context, w io.Writer) error {
 		}
 		wrote++
 	}
-	zlog.Debug(ctx).
-		Int("year", f.year).
-		Uint("skip", skip).
-		Uint("wrote", wrote).
-		Msg("wrote cvss items")
+	slog.DebugContext(ctx, "wrote cvss items",
+		"year", f.year,
+		"skip", skip,
+		"wrote", wrote)
 	return nil
 }
