@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"log/slog"
 	"net/http"
 	"os"
 	"runtime"
@@ -16,9 +17,9 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
-	"github.com/quay/zlog"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/quay/claircore/toolkit/log"
 	driver "github.com/quay/claircore/updater/driver/v1"
 )
 
@@ -54,15 +55,15 @@ func New(ctx context.Context, opts *Options) (*Updater, error) {
 	}
 
 	if opts.Locker == nil {
-		zlog.Warn(ctx).Msg("no locker passed, using process-local locking")
+		slog.WarnContext(ctx, "no locker passed, using process-local locking")
 		u.locker = newLocalLocker()
 	}
 	if opts.Configs == nil {
-		zlog.Info(ctx).Msg("no updater configuration passed")
+		slog.InfoContext(ctx, "no updater configuration passed")
 		u.configs = make(driver.Configs)
 	}
 	if opts.Factories == nil {
-		zlog.Warn(ctx).Msg("no updater factories provided, this may be a misconfiguration")
+		slog.WarnContext(ctx, "no updater factories provided, this may be a misconfiguration")
 	}
 
 	_, file, line, _ := runtime.Caller(1)
@@ -171,16 +172,16 @@ func (u *Updater) Run(ctx context.Context, strict bool) error {
 			defer wg.Done()
 			spool, err := os.CreateTemp(tmpDir, tmpPattern)
 			if err != nil {
-				zlog.Warn(ctx).Err(err).Msg("unable to create spool file")
+				slog.WarnContext(ctx, "unable to create spool file", "reason", err)
 				return err
 			}
 			spoolname := spool.Name()
 			defer func() {
 				if err := os.Remove(spoolname); err != nil {
-					zlog.Warn(ctx).Str("filename", spoolname).Err(err).Msg("unable to remove spool file")
+					slog.WarnContext(ctx, "unable to remove spool file", "filename", spoolname, "reason", err)
 				}
 				if err := spool.Close(); err != nil {
-					zlog.Warn(ctx).Str("filename", spoolname).Err(err).Msg("error closing spool file")
+					slog.WarnContext(ctx, "error closing spool file", "filename", spoolname, "reason", err)
 				}
 			}()
 			var updErr *updaterError
@@ -189,7 +190,7 @@ func (u *Updater) Run(ctx context.Context, strict bool) error {
 				switch {
 				case errors.Is(err, nil):
 				case errors.As(err, &updErr):
-					zlog.Debug(ctx).Err(updErr).Msg("updater error")
+					slog.DebugContext(ctx, "updater error", "reason", updErr)
 					errCh <- updErr.Unwrap()
 				default:
 					return err
@@ -206,7 +207,7 @@ func (u *Updater) Run(ctx context.Context, strict bool) error {
 		if strict {
 			return errors.Join(errs...)
 		}
-		zlog.Info(ctx).Errs("errors", errs).Msg("updater errors")
+		slog.InfoContext(ctx, "updater errors", "errors", errs)
 	}
 	return nil
 }
@@ -229,7 +230,7 @@ func (u *Updater) updaters(ctx context.Context, cfg driver.Configs) ([]taggedUpd
 			set, err = fac.Create(ctx, cfg[key])
 		})
 		if err != nil {
-			zlog.Info(ctx).Err(err).Msg("factory errored")
+			slog.InfoContext(ctx, "factory errored", "reason", err)
 			continue
 		}
 		for _, upd := range set {
@@ -238,11 +239,11 @@ func (u *Updater) updaters(ctx context.Context, cfg driver.Configs) ([]taggedUpd
 				name = upd.Name()
 			})
 			if strings.Contains(name, "/") {
-				zlog.Info(ctx).Str("updater", name).Msg("name contains invalid character: /")
+				slog.InfoContext(ctx, "name contains invalid character: /", "updater", name)
 				continue
 			}
 			if _, ok := dedup[name]; ok {
-				zlog.Info(ctx).Str("updater", name).Msg("updater already exists")
+				slog.InfoContext(ctx, "updater already exists", "updater", name)
 				continue
 			}
 			dedup[name] = struct{}{}
@@ -258,17 +259,16 @@ func (u *Updater) updaters(ctx context.Context, cfg driver.Configs) ([]taggedUpd
 
 func (u *Updater) fetchOne(ctx context.Context, tu taggedUpdater, pfp driver.Fingerprint, out io.Writer) (fp driver.Fingerprint, err error) {
 	name := tu.Name
-	ctx = zlog.ContextWithValues(ctx, "updater", name)
-	zlog.Info(ctx).Msg("fetch start")
-	defer zlog.Info(ctx).Msg("fetch done")
+	slog.InfoContext(ctx, "fetch start")
+	defer slog.InfoContext(ctx, "fetch done")
 	lctx, done := u.locker.TryLock(ctx, name)
 	defer done()
 	if err := lctx.Err(); err != nil {
 		if pErr := ctx.Err(); pErr != nil {
-			zlog.Debug(ctx).Err(err).Msg("parent context canceled")
+			slog.DebugContext(ctx, "parent context canceled", "reason", err)
 			return fp, nil
 		}
-		zlog.Info(ctx).Err(err).Msg("lock acquisition failed, skipping")
+		slog.InfoContext(ctx, "lock acquisition failed, skipping", "reason", err)
 		return fp, err
 	}
 	ctx = lctx
@@ -276,11 +276,11 @@ func (u *Updater) fetchOne(ctx context.Context, tu taggedUpdater, pfp driver.Fin
 	zw := zip.NewWriter(out)
 	defer func() {
 		if err := zw.Close(); err != nil {
-			zlog.Warn(ctx).Err(err).Msg("unable to close zip writer")
+			slog.WarnContext(ctx, "unable to close zip writer", "reason", err)
 		}
 	}()
 	if len(pfp) != 0 {
-		zlog.Debug(ctx).Str("fingerprint", string(pfp)).Msg("found previous fingerprint")
+		slog.DebugContext(ctx, "found previous fingerprint", "fingerprint", string(pfp))
 	}
 	pprof.Do(ctx, pprof.Labels("task", "updater_fetch", "updater", name), func(ctx context.Context) {
 		fp, err = tu.Updater.Fetch(ctx, zw, pfp, u.client)
@@ -295,36 +295,33 @@ func (u *Updater) parseOne(ctx context.Context, tu taggedUpdater, in fs.FS) (*pa
 		err error
 	)
 	name := tu.Name
-	ctx = zlog.ContextWithValues(ctx, "updater", name)
-	zlog.Info(ctx).Msg("parse start")
-	defer zlog.Info(ctx).Msg("parse done")
+	ctx = log.With(ctx, "updater", name)
+	slog.InfoContext(ctx, "parse start")
+	defer slog.InfoContext(ctx, "parse done")
 
 	pprof.Do(ctx, pprof.Labels("task", "updater_parse", "updater", name), func(ctx context.Context) {
-		ctx = zlog.ContextWithValues(ctx, "updater", name)
 		upd := tu.Updater
 		if p, ok := upd.(driver.VulnerabilityParser); ok {
-			zlog.Debug(ctx).Msg("implements VulnerabilityParser")
+			slog.DebugContext(ctx, "implements VulnerabilityParser")
 			any = true
 			res.Vulnerabilities, err = p.ParseVulnerability(ctx, in)
 			if err != nil {
 				return
 			}
-			zlog.Debug(ctx).
-				Err(err).
-				Int("ct", len(res.Vulnerabilities.Vulnerability)).
-				Msg("found vulnerabilities")
+			slog.DebugContext(ctx, "found vulnerabilities",
+				"reason", err,
+				"ct", len(res.Vulnerabilities.Vulnerability))
 		}
 		if p, ok := upd.(driver.EnrichmentParser); ok {
-			zlog.Debug(ctx).Msg("implements EnrichmentParser")
+			slog.DebugContext(ctx, "implements EnrichmentParser")
 			any = true
 			res.Enrichments, err = p.ParseEnrichment(ctx, in)
 			if err != nil {
 				return
 			}
-			zlog.Debug(ctx).
-				Err(err).
-				Int("ct", len(res.Enrichments)).
-				Msg("found enrichments")
+			slog.DebugContext(ctx, "found enrichments",
+				"reason", err,
+				"ct", len(res.Enrichments))
 		}
 	})
 	if !any {
@@ -341,28 +338,27 @@ type parseResult struct {
 func (u *Updater) fetchAndParse(ctx context.Context, spool *os.File, pfps map[string]driver.Fingerprint, tu taggedUpdater) error {
 	spoolname := spool.Name()
 	name := tu.Name
-	ctx = zlog.ContextWithValues(ctx, "updater", name)
 	if _, err := spool.Seek(0, io.SeekStart); err != nil {
-		zlog.Error(ctx).Str("filename", spoolname).Err(err).Msg("unable to seek to start")
+		slog.ErrorContext(ctx, "unable to seek to start", "filename", spoolname, "reason", err)
 		return err
 	}
 	fp, err := u.fetchOne(ctx, tu, pfps[name], spool)
 	switch {
 	case errors.Is(err, nil):
 	case errors.Is(err, driver.ErrUnchanged):
-		zlog.Debug(ctx).Msg("unchanged")
+		slog.DebugContext(ctx, "unchanged")
 		return nil
 	default:
 		return updaterErr(err)
 	}
 	sz, err := spool.Seek(0, io.SeekCurrent)
 	if err != nil {
-		zlog.Error(ctx).Str("filename", spoolname).Err(err).Msg("unable to seek spoolfile")
+		slog.ErrorContext(ctx, "unable to seek spoolfile", "filename", spoolname, "reason", err)
 		return err
 	}
 	z, err := zip.NewReader(spool, sz)
 	if err != nil {
-		zlog.Error(ctx).Str("filename", spoolname).Err(err).Msg("unable to create zip reader")
+		slog.ErrorContext(ctx, "unable to create zip reader", "filename", spoolname, "reason", err)
 		return err
 	}
 	res, err := u.parseOne(ctx, tu, z)
@@ -377,14 +373,14 @@ func (u *Updater) fetchAndParse(ctx context.Context, spool *os.File, pfps map[st
 			if err != nil {
 				return
 			}
-			zlog.Info(ctx).Stringer("ref", ref).Msg("updated vulnerabilites")
+			slog.InfoContext(ctx, "updated vulnerabilites", "ref", ref)
 		}
 		if len(res.Enrichments) != 0 {
 			err = u.store.UpdateEnrichments(ctx, ref, name, fp, res.Enrichments)
 			if err != nil {
 				return
 			}
-			zlog.Info(ctx).Stringer("ref", ref).Msg("updated enrichments")
+			slog.InfoContext(ctx, "updated enrichments", "ref", ref)
 		}
 	})
 	if err != nil {

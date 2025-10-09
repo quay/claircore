@@ -3,7 +3,6 @@ package updater
 import (
 	"archive/zip"
 	"bytes"
-	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -13,16 +12,15 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/quay/zlog"
 	"go.uber.org/mock/gomock"
 
+	"github.com/quay/claircore/test"
 	mock_updater "github.com/quay/claircore/test/mock/updater"
 	mock_driver "github.com/quay/claircore/test/mock/updater/driver/v1"
 	driver "github.com/quay/claircore/updater/driver/v1"
 )
 
 func TestOffline(t *testing.T) {
-	ctx := context.Background()
 	vs := &driver.ParsedVulnerabilities{
 		Updater:       t.Name(),
 		Vulnerability: []driver.Vulnerability{{}},
@@ -40,7 +38,7 @@ func TestOffline(t *testing.T) {
 	defer spool.Close()
 
 	t.Run("Fetch", func(t *testing.T) {
-		ctx := zlog.Test(ctx, t)
+		ctx := test.Logging(t)
 		ctl := gomock.NewController(t)
 		n := path.Dir(t.Name())
 
@@ -76,7 +74,7 @@ func TestOffline(t *testing.T) {
 	})
 
 	t.Run("Parse", func(t *testing.T) {
-		ctx := zlog.Test(ctx, t)
+		ctx := test.Logging(t)
 		ctl := gomock.NewController(t)
 		n := path.Dir(t.Name())
 
@@ -124,7 +122,7 @@ func TestOffline(t *testing.T) {
 	})
 
 	t.Run("Prev", func(t *testing.T) {
-		ctx := zlog.Test(ctx, t)
+		ctx := test.Logging(t)
 		ctl := gomock.NewController(t)
 		n := path.Dir(t.Name())
 		if _, err := spool.Seek(0, io.SeekStart); err != nil {

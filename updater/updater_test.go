@@ -15,18 +15,17 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/quay/zlog"
 	"go.uber.org/mock/gomock"
 
+	"github.com/quay/claircore/test"
 	mock_updater "github.com/quay/claircore/test/mock/updater"
 	mock_driver "github.com/quay/claircore/test/mock/updater/driver/v1"
 	"github.com/quay/claircore/updater/driver/v1"
 )
 
 func TestNew(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
 	t.Run("MissingStore", func(t *testing.T) {
-		ctx := zlog.Test(ctx, t)
+		ctx := test.Logging(t)
 		u, err := New(ctx, &Options{
 			Client: &http.Client{},
 		})
@@ -39,7 +38,7 @@ func TestNew(t *testing.T) {
 		}
 	})
 	t.Run("MissingClient", func(t *testing.T) {
-		ctx := zlog.Test(ctx, t)
+		ctx := test.Logging(t)
 		u, err := New(ctx, &Options{
 			Store: mock_updater.NewMockStore(nil),
 		})
@@ -132,7 +131,7 @@ func parseEnrich(_ context.Context, in fs.FS) (r []driver.EnrichmentRecord, err 
 }
 
 func TestRun(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	ctl := gomock.NewController(t)
 	n := path.Base(t.Name())
 	vs := &driver.ParsedVulnerabilities{
