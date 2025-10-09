@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"path"
@@ -16,8 +17,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/enricher"
@@ -76,7 +75,6 @@ func NewFactory() driver.UpdaterSetFactory {
 }
 
 func (e *Enricher) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *http.Client) error {
-	ctx = zlog.ContextWithValues(ctx, "component", "enricher/epss/Enricher/Configure")
 	var cfg Config
 	e.c = c
 	e.feedPath = currentFeedURL()
@@ -94,7 +92,7 @@ func (e *Enricher) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c 
 
 		// only .gz file is supported
 		if strings.HasSuffix(*cfg.URL, ".gz") {
-			//overwrite feedPath is cfg provides another baseURL path
+			// overwrite feedPath is cfg provides another baseURL path
 			e.feedPath = *cfg.URL
 		} else {
 			return fmt.Errorf("invalid baseURL root: expected a '.gz' file, but got '%q'", *cfg.URL)
@@ -106,8 +104,6 @@ func (e *Enricher) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c 
 
 // FetchEnrichment implements driver.EnrichmentUpdater.
 func (e *Enricher) FetchEnrichment(ctx context.Context, prevFingerprint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "enricher/epss/Enricher/FetchEnrichment")
-
 	out, err := tmp.NewFile("", "epss.")
 	if err != nil {
 		return nil, "", err
@@ -116,7 +112,7 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, prevFingerprint driver.F
 	defer func() {
 		if !success {
 			if err := out.Close(); err != nil {
-				zlog.Warn(ctx).Err(err).Msg("unable to close spool")
+				slog.WarnContext(ctx, "unable to close spool", "reason", err)
 			}
 		}
 	}()
@@ -140,7 +136,7 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, prevFingerprint driver.F
 	if etag := resp.Header.Get("etag"); etag != "" {
 		newFingerprint = driver.Fingerprint(etag)
 		if prevFingerprint == newFingerprint {
-			zlog.Info(ctx).Str("fingerprint", string(newFingerprint)).Msg("file unchanged; skipping processing")
+			slog.InfoContext(ctx, "file unchanged; skipping processing", "fingerprint", string(newFingerprint))
 			return nil, prevFingerprint, nil
 		}
 		newFingerprint = driver.Fingerprint(etag)
@@ -207,7 +203,7 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, prevFingerprint driver.F
 
 		r, err := newItemFeed(record, modelVersion, date)
 		if err != nil {
-			zlog.Warn(ctx).Err(err).Msg("skipping invalid record")
+			slog.WarnContext(ctx, "skipping invalid record", "reason", err)
 			continue
 		}
 
@@ -217,7 +213,7 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, prevFingerprint driver.F
 		totalCVEs++
 	}
 
-	zlog.Info(ctx).Int("totalCVEs", totalCVEs).Msg("processed CVEs")
+	slog.InfoContext(ctx, "processed CVEs", "totalCVEs", totalCVEs)
 	if _, err := out.Seek(0, io.SeekStart); err != nil {
 		return nil, newFingerprint, fmt.Errorf("unable to reset file pointer: %w", err)
 	}
@@ -228,8 +224,6 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, prevFingerprint driver.F
 
 // ParseEnrichment implements driver.EnrichmentUpdater.
 func (e *Enricher) ParseEnrichment(ctx context.Context, rc io.ReadCloser) ([]driver.EnrichmentRecord, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "enricher/epss/Enricher/ParseEnrichment")
-
 	defer rc.Close()
 
 	dec := json.NewDecoder(rc)
@@ -244,9 +238,7 @@ func (e *Enricher) ParseEnrichment(ctx context.Context, rc io.ReadCloser) ([]dri
 		ret = append(ret, record)
 	}
 
-	zlog.Debug(ctx).
-		Int("count", len(ret)).
-		Msg("decoded enrichments")
+	slog.DebugContext(ctx, "decoded enrichments", "count", len(ret))
 
 	if !errors.Is(err, io.EOF) {
 		return nil, fmt.Errorf("error decoding enrichment records: %w", err)
@@ -274,13 +266,12 @@ func currentFeedURL() string {
 }
 
 func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *claircore.VulnerabilityReport) (string, []json.RawMessage, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "enricher/epss/Enricher/Enrich")
 	m := make(map[string][]json.RawMessage)
 	erCache := make(map[string][]driver.EnrichmentRecord)
 
 	for id, v := range r.Vulnerabilities {
 		t := make(map[string]struct{})
-		ctx := zlog.ContextWithValues(ctx, "vuln", v.Name)
+		log := slog.With("vuln", v.Name)
 
 		for _, elem := range []string{
 			v.Name,
@@ -288,13 +279,13 @@ func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *cla
 		} {
 			// Check if the element is non-empty before running the regex
 			if elem == "" {
-				zlog.Debug(ctx).Str("element", elem).Msg("skipping empty element")
+				log.DebugContext(ctx, "skipping empty element", "element", elem)
 				continue
 			}
 
 			matches := enricher.CVERegexp.FindAllString(elem, -1)
 			if len(matches) == 0 {
-				zlog.Debug(ctx).Str("element", elem).Msg("no CVEs found in element")
+				log.DebugContext(ctx, "no CVEs found in element", "element", elem)
 				continue
 			}
 			for _, m := range matches {
@@ -304,7 +295,7 @@ func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *cla
 
 		// Skip if no CVEs were found
 		if len(t) == 0 {
-			zlog.Debug(ctx).Msg("no CVEs found in vulnerability metadata")
+			log.DebugContext(ctx, "no CVEs found in vulnerability metadata")
 			continue
 		}
 
@@ -326,11 +317,11 @@ func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *cla
 			erCache[cveKey] = rec
 		}
 
-		zlog.Debug(ctx).Int("count", len(rec)).Msg("found records")
+		log.DebugContext(ctx, "found records", "count", len(rec))
 
 		// Skip if no enrichment records are found
 		if len(rec) == 0 {
-			zlog.Debug(ctx).Strs("cve", ts).Msg("no enrichment records found for CVEs")
+			log.DebugContext(ctx, "no enrichment records found for CVEs", "cve", ts)
 			continue
 		}
 
