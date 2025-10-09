@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/quay/claircore/toolkit/log"
-	"github.com/quay/zlog"
 )
 
 var (
@@ -118,7 +117,6 @@ func Logging(t testing.TB, parent ...context.Context) context.Context {
 		// they want.
 		ctx = context.Background()
 	}
-	ctx = zlog.Test(ctx, t)
 	start := time.Now()
 	w := logOutput(t)
 	h := slog.NewTextHandler(w, &slog.HandlerOptions{
