@@ -73,3 +73,4 @@ require (
 )
 
 replace github.com/quay/claircore/updater/driver => ./updater/driver
+replace github.com/quay/claircore/toolkit => ./toolkit

@@ -6,9 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"runtime/trace"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -51,13 +50,12 @@ func (*Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.
 	}
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	trace.Log(ctx, "layer", layer.Hash.String())
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "apk/Scanner.Scan",
+	log := slog.With(
 		"version", version,
 		"layer", layer.Hash.String())
 
-	zlog.Debug(ctx).Msg("start")
-	defer zlog.Debug(ctx).Msg("done")
+	log.DebugContext(ctx, "start")
+	defer log.DebugContext(ctx, "done")
 
 	sys, err := layer.FS()
 	if err != nil {
@@ -71,7 +69,7 @@ func (*Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.
 	default:
 		return nil, err
 	}
-	zlog.Debug(ctx).Msg("found database")
+	log.DebugContext(ctx, "found database")
 
 	pkgs := []*claircore.Package{}
 	srcs := make(map[string]*claircore.Package)
@@ -118,7 +116,7 @@ func (*Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.
 		}
 		pkgs = append(pkgs, &p)
 	}
-	zlog.Debug(ctx).Int("count", len(pkgs)).Msg("found packages")
+	log.DebugContext(ctx, "found packages", "count", len(pkgs))
 
 	return pkgs, nil
 }

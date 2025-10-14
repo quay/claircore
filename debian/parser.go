@@ -5,8 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-
-	"github.com/quay/zlog"
+	"log/slog"
 
 	"github.com/quay/claircore"
 )
@@ -34,8 +33,7 @@ type ReleaseData struct {
 
 // Parse implements [driver.Parser].
 func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "debian/Updater.Parse")
-	zlog.Info(ctx).Msg("starting parse")
+	slog.InfoContext(ctx, "starting parse")
 	defer r.Close()
 
 	var vulnsJSON JSONData

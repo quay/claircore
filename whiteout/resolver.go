@@ -2,18 +2,15 @@ package whiteout
 
 import (
 	"context"
+	"log/slog"
 	"path/filepath"
 	"strings"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
 )
 
-var (
-	_ indexer.Resolver = (*Resolver)(nil)
-)
+var _ indexer.Resolver = (*Resolver)(nil)
 
 type Resolver struct{}
 
@@ -40,11 +37,10 @@ func (r *Resolver) Resolve(ctx context.Context, ir *claircore.IndexReport, layer
 			// layer.
 			if f.Kind == claircore.FileKindWhiteout && ls.isChildOf(fileLayer, packageLayer) && fileIsDeleted(pkg.Filepath, f.Path) {
 				packageDeleted = true
-				zlog.Debug(ctx).
-					Str("package name", pkg.Name).
-					Str("package file", pkg.Filepath).
-					Str("whiteout file", f.Path).
-					Msg("package determined to be deleted")
+				slog.DebugContext(ctx, "package determined to be deleted",
+					"package name", pkg.Name,
+					"package file", pkg.Filepath,
+					"whiteout file", f.Path)
 			}
 		}
 		if !packageDeleted {

@@ -4,8 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-
-	"github.com/quay/zlog"
+	"log/slog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
@@ -18,8 +17,8 @@ const (
 var _ driver.Parser = (*updater)(nil)
 
 func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "alpine/Updater.Parse")
-	zlog.Info(ctx).Msg("starting parse")
+	slog.InfoContext(ctx, "parse start")
+	defer slog.InfoContext(ctx, "parse done")
 	defer r.Close()
 
 	var db SecurityDB

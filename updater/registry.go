@@ -3,12 +3,11 @@ package updater
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"maps"
 	"net/http"
 	"strings"
 	"sync"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/libvuln/driver"
 )
@@ -58,11 +57,10 @@ func Configure(ctx context.Context, fs map[string]driver.UpdaterSetFactory, cfg 
 	b.WriteString("updater: errors configuring factories:")
 
 	for name, fac := range fs {
-		ev := zlog.Debug(ctx).
-			Str("factory", name)
+		msg := "factory unconfigurable"
 		f, ok := fac.(driver.Configurable)
 		if ok {
-			ev.Msg("configuring factory")
+			msg = "configuring factory"
 			cf := cfg[name]
 			if cf == nil {
 				cf = noopConfig
@@ -72,9 +70,8 @@ func Configure(ctx context.Context, fs map[string]driver.UpdaterSetFactory, cfg 
 				b.WriteString("\n\t")
 				b.WriteString(err.Error())
 			}
-		} else {
-			ev.Msg("factory unconfigurable")
 		}
+		slog.DebugContext(ctx, msg, "factory", name)
 	}
 
 	if errd {

@@ -1,11 +1,8 @@
 package linux
 
 import (
-	"context"
 	"strconv"
 	"testing"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -13,7 +10,7 @@ import (
 )
 
 func TestCoalescer(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	coalescer := &Coalescer{
 		ir: &claircore.IndexReport{
 			Environments:  map[string][]*claircore.Environment{},

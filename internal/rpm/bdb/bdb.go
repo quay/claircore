@@ -7,8 +7,7 @@ import (
 	"fmt"
 	"io"
 	"iter"
-
-	"github.com/quay/zlog"
+	"log/slog"
 )
 
 // PackageDB is the "pkgdb" a.k.a. "Packages", the raw package data.
@@ -258,10 +257,9 @@ func (db *PackageDB) Headers(ctx context.Context) iter.Seq2[io.ReaderAt, error] 
 				}
 				// Double-check we'll read the intended amount.
 				if got, want := r.Size(), int64(offpg.Length); got != want {
-					zlog.Info(ctx).
-						Int64("got", got).
-						Int64("want", want).
-						Msg("bdb: expected data length botch")
+					slog.InfoContext(ctx, "expected data length botch",
+						"got", got,
+						"want", want)
 				}
 
 				if !yield(&r, nil) {

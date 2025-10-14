@@ -7,13 +7,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"path"
 	"strings"
 	"time"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/aws/internal/alas"
 	"github.com/quay/claircore/internal/xmlutil"
@@ -29,16 +28,17 @@ const (
 // Client is an http for accessing ALAS mirrors.
 type Client struct {
 	c       *http.Client
+	log     *slog.Logger
 	mirrors []*url.URL
 }
 
 func NewClient(ctx context.Context, hc *http.Client, release Release) (*Client, error) {
-	ctx = zlog.ContextWithValues(ctx, "release", string(release))
 	if hc == nil {
 		return nil, errors.New("http.Client not provided")
 	}
 	client := &Client{
 		c:       hc,
+		log:     slog.With("release", string(release)),
 		mirrors: []*url.URL{},
 	}
 	tctx, cancel := context.WithTimeout(ctx, defaultOpTimeout)
@@ -49,22 +49,22 @@ func NewClient(ctx context.Context, hc *http.Client, release Release) (*Client, 
 
 // RepoMD returns a alas.RepoMD containing sha256 information of a repositories contents
 func (c *Client) RepoMD(ctx context.Context) (alas.RepoMD, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "aws/Client.RepoMD")
+	log := c.log
 	for _, mirror := range c.mirrors {
 		m := *mirror
 		m.Path = path.Join(m.Path, repoDataPath)
-		ctx := zlog.ContextWithValues(ctx, "mirror", m.String())
+		log := log.With("mirror", m.String())
 
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, m.String(), nil)
 		if err != nil {
-			zlog.Error(ctx).Err(err).Msg("failed to make request object")
+			log.ErrorContext(ctx, "failed to make request object", "reason", err)
 			continue
 		}
 
-		zlog.Debug(ctx).Msg("attempting repomd download")
+		log.DebugContext(ctx, "attempting repomd download")
 		resp, err := c.c.Do(req)
 		if err != nil {
-			zlog.Error(ctx).Err(err).Msg("failed to retrieve repomd")
+			log.ErrorContext(ctx, "failed to retrieve repomd", "reason", err)
 			continue
 		}
 		defer resp.Body.Close()
@@ -73,10 +73,9 @@ func (c *Client) RepoMD(ctx context.Context) (alas.RepoMD, error) {
 		case http.StatusOK:
 			// break
 		default:
-			zlog.Error(ctx).
-				Int("code", resp.StatusCode).
-				Str("status", resp.Status).
-				Msg("unexpected HTTP response")
+			log.ErrorContext(ctx, "unexpected HTTP response",
+				"code", resp.StatusCode,
+				"status", resp.Status)
 			continue
 		}
 
@@ -84,51 +83,49 @@ func (c *Client) RepoMD(ctx context.Context) (alas.RepoMD, error) {
 		dec := xml.NewDecoder(resp.Body)
 		dec.CharsetReader = xmlutil.CharsetReader
 		if err := dec.Decode(&repoMD); err != nil {
-			zlog.Error(ctx).
-				Err(err).
-				Msg("failed xml unmarshal")
+			log.ErrorContext(ctx, "failed xml unmarshal", "reason", err)
 			continue
 		}
 
-		zlog.Debug(ctx).Msg("success")
+		log.DebugContext(ctx, "success")
 		return repoMD, nil
 	}
 
-	zlog.Error(ctx).Msg("exhausted all mirrors")
+	log.ErrorContext(ctx, "exhausted all mirrors")
 	return alas.RepoMD{}, fmt.Errorf("all mirrors failed to retrieve repo metadata")
 }
 
 // Updates returns the *http.Response of the first mirror to establish a connection
 func (c *Client) Updates(ctx context.Context) (io.ReadCloser, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "aws/Client.Updates")
+	log := c.log
 	for _, mirror := range c.mirrors {
 		m := *mirror
 		m.Path = path.Join(m.Path, updatesPath)
-		ctx := zlog.ContextWithValues(ctx, "mirror", m.String())
+		log := log.With("mirror", m.String())
 
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, m.String(), nil)
 		if err != nil {
-			zlog.Error(ctx).Err(err).Msg("failed to make request object")
+			log.ErrorContext(ctx, "failed to make request object", "reason", err)
 			continue
 		}
 
 		tf, err := tmp.NewFile("", "")
 		if err != nil {
-			zlog.Error(ctx).Err(err).Msg("failed to open temp file")
+			log.ErrorContext(ctx, "failed to open temp file", "reason", err)
 			continue
 		}
 		var success bool
 		defer func() {
 			if !success {
 				if err := tf.Close(); err != nil {
-					zlog.Warn(ctx).Err(err).Msg("unable to close spool")
+					log.WarnContext(ctx, "unable to close spool", "reason", err)
 				}
 			}
 		}()
 
 		resp, err := c.c.Do(req)
 		if err != nil {
-			zlog.Error(ctx).Err(err).Msg("failed to retrieve updates")
+			log.ErrorContext(ctx, "failed to retrieve updates", "reason", err)
 			continue
 		}
 		defer resp.Body.Close()
@@ -137,10 +134,9 @@ func (c *Client) Updates(ctx context.Context) (io.ReadCloser, error) {
 		case http.StatusOK:
 			// break
 		default:
-			zlog.Error(ctx).
-				Int("code", resp.StatusCode).
-				Str("status", resp.Status).
-				Msg("unexpected HTTP response")
+			log.ErrorContext(ctx, "unexpected HTTP response",
+				"code", resp.StatusCode,
+				"status", resp.Status)
 			continue
 		}
 
@@ -155,7 +151,7 @@ func (c *Client) Updates(ctx context.Context) (io.ReadCloser, error) {
 			return nil, fmt.Errorf("failed to create gzip reader: %v", err)
 		}
 
-		zlog.Debug(ctx).Msg("success")
+		log.DebugContext(ctx, "success")
 		success = true
 		return &gzippedFile{
 			Reader: gz,
@@ -163,7 +159,7 @@ func (c *Client) Updates(ctx context.Context) (io.ReadCloser, error) {
 		}, nil
 	}
 
-	zlog.Error(ctx).Msg("exhausted all mirrors")
+	log.ErrorContext(ctx, "exhausted all mirrors")
 	return nil, fmt.Errorf("all update_info mirrors failed to return a response")
 }
 
@@ -176,7 +172,7 @@ type gzippedFile struct {
 }
 
 func (c *Client) getMirrors(ctx context.Context, list string) error {
-	ctx = zlog.ContextWithValues(ctx, "component", "aws/Client.getMirrors")
+	log := c.log
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, list, nil)
 	if err != nil {
@@ -215,7 +211,6 @@ func (c *Client) getMirrors(ctx context.Context, list string) error {
 		c.mirrors = append(c.mirrors, uu)
 	}
 
-	zlog.Debug(ctx).
-		Msg("successfully got list of mirrors")
+	log.DebugContext(ctx, "successfully got list of mirrors")
 	return nil
 }

@@ -1,14 +1,12 @@
 package rhel
 
 import (
-	"context"
 	"net/url"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/quay/claircore"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/rpmtest"
@@ -21,7 +19,7 @@ import (
 
 func TestPackageDetection(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	ms, err := filepath.Glob("testdata/package/*.txtar")
 	if err != nil {
 		panic("programmer error") // static glob
@@ -55,7 +53,6 @@ func TestPackageDetection(t *testing.T) {
 // get repoid information.
 func TestPackageScannerDNFWrapLogic(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(context.Background(), t)
 
 	tests := []struct {
 		name             string
@@ -86,7 +83,7 @@ func TestPackageScannerDNFWrapLogic(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			ctx := zlog.Test(ctx, t)
+			ctx := test.Logging(t)
 
 			// Create layer from tar file
 			f, err := os.Open(tt.layerPath)
@@ -143,7 +140,6 @@ func TestPackageScannerDNFWrapLogic(t *testing.T) {
 
 			if !tt.expectRepoidHint && packagesWithRepoid > 0 {
 				t.Errorf("Expected no packages to have repoid hints, but found %d", packagesWithRepoid)
-
 			}
 		})
 	}

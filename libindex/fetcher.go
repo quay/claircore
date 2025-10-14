@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
@@ -15,7 +16,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/quay/zlog"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
@@ -201,7 +201,7 @@ func (a *RemoteFetchArena) fetchInto(ctx context.Context, l *claircore.Layer, cl
 		switch {
 		case errors.Is(err, nil):
 		case errors.Is(err, errStale):
-			zlog.Debug(ctx).Str("key", key).Msg("managed to get stale ref, retrying")
+			slog.DebugContext(ctx, "managed to get stale ref, retrying", "key", key)
 			return do()
 		default:
 			r.Close()
@@ -231,15 +231,11 @@ func (f closeFunc) Close() error {
 // Because we know we're the only concurrent call that's dealing with this key,
 // we can be a bit more lax.
 func (a *RemoteFetchArena) fetchUnlinkedFile(ctx context.Context, key string, desc *claircore.LayerDescription) (*rc, error) {
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "libindex/fetchArena.fetchUnlinkedFile",
-		"arena", a.root,
-		"layer", desc.Digest,
-		"uri", desc.URI)
+	log := slog.With("arena", a.root, "layer", desc.Digest, "uri", desc.URI)
 	ctx, span := tracer.Start(ctx, "RemoteFetchArena.fetchUnlinkedFile")
 	defer span.End()
 	span.SetStatus(codes.Error, "")
-	zlog.Debug(ctx).Msg("layer fetch start")
+	log.DebugContext(ctx, "layer fetch start")
 
 	// Validate the layer input.
 	if desc.URI == "" {
@@ -302,9 +298,7 @@ func (a *RemoteFetchArena) fetchUnlinkedFile(ctx context.Context, key string, de
 	defer zr.Close()
 	// Look at the content-type and optionally fix it up.
 	ct := resp.Header.Get("content-type")
-	zlog.Debug(ctx).
-		Str("content-type", ct).
-		Msg("reported content-type")
+	log.DebugContext(ctx, "reported content-type", "content-type", ct)
 	span.SetAttributes(attribute.String("payload.content-type", ct), attribute.Stringer("payload.compression.detected", kind))
 	if ct == "" || ct == "text/plain" || ct == "binary/octet-stream" || ct == "application/octet-stream" {
 		switch kind {
@@ -317,9 +311,7 @@ func (a *RemoteFetchArena) fetchUnlinkedFile(ctx context.Context, key string, de
 		default:
 			return nil, fmt.Errorf("fetcher: disallowed compression kind: %q", kind.String())
 		}
-		zlog.Debug(ctx).
-			Str("content-type", ct).
-			Msg("fixed content-type")
+		log.DebugContext(ctx, "fixed content-type", "content-type", ct)
 		span.SetAttributes(attribute.String("payload.content-type.detected", ct))
 	}
 
@@ -350,7 +342,7 @@ func (a *RemoteFetchArena) fetchUnlinkedFile(ctx context.Context, key string, de
 
 	buf := bufio.NewWriter(f)
 	n, err := io.Copy(buf, zr)
-	zlog.Debug(ctx).Int64("size", n).Msg("wrote file")
+	log.DebugContext(ctx, "wrote file", "size", n)
 	if err != nil {
 		return nil, err
 	}
@@ -372,7 +364,7 @@ func (a *RemoteFetchArena) fetchUnlinkedFile(ctx context.Context, key string, de
 		return nil, fmt.Errorf("fetcher: double-store for key %q", key)
 	}
 
-	zlog.Debug(ctx).Msg("layer fetch ok")
+	log.DebugContext(ctx, "layer fetch ok")
 	span.SetStatus(codes.Ok, "")
 	return rc, nil
 }
@@ -381,9 +373,6 @@ func (a *RemoteFetchArena) fetchUnlinkedFile(ctx context.Context, key string, de
 //
 // Any outstanding Layers may cause keys to be forgotten at unpredictable times.
 func (a *RemoteFetchArena) Close(ctx context.Context) error {
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "libindex/fetchArena.Close",
-		"arena", a.root)
 	a.rc.Range(func(k, _ any) bool {
 		a.rc.Delete(k)
 		return true
@@ -423,8 +412,6 @@ func (p *FetchProxy) Realize(ctx context.Context, ls []*claircore.Layer) error {
 // RealizeDesciptions returns [claircore.Layer] structs populated according to
 // the passed slice of [claircore.LayerDescription].
 func (p *FetchProxy) RealizeDescriptions(ctx context.Context, descs []claircore.LayerDescription) ([]claircore.Layer, error) {
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "libindex/FetchProxy.RealizeDescriptions")
 	ctx, span := tracer.Start(ctx, "RealizeDescriptions")
 	defer span.End()
 	g, ctx := errgroup.WithContext(ctx)
