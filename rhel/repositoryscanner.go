@@ -101,7 +101,7 @@ const (
 func (*RepositoryScanner) Name() string { return "rhel-repository-scanner" }
 
 // Version implements [indexer.VersionedScanner].
-func (*RepositoryScanner) Version() string { return "2" }
+func (*RepositoryScanner) Version() string { return "3" }
 
 // Kind implements [indexer.VersionedScanner].
 func (*RepositoryScanner) Kind() string { return "repository" }
@@ -218,11 +218,7 @@ func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) ([]*cl
 	}
 	var repositories []*claircore.Repository
 	for repoid, cpeID := range pairs {
-		r := &claircore.Repository{
-			Name: repoid,
-			Key:  repositoryKey,
-		}
-		r.CPE, err = cpe.Unbind(cpeID)
+		c, err := cpe.Unbind(cpeID)
 		if err != nil {
 			zlog.Warn(ctx).
 				Err(err).
@@ -230,6 +226,16 @@ func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) ([]*cl
 				Str("cpeID", cpeID).
 				Msg("invalid CPE, please report a bug upstream")
 			continue
+		}
+
+		uri := url.Values{
+			"repoid": {repoid},
+		}
+		r := &claircore.Repository{
+			Key:  repositoryKey,
+			Name: c.BindFS(),
+			CPE:  c,
+			URI:  uri.Encode(),
 		}
 
 		repositories = append(repositories, r)
@@ -244,7 +250,7 @@ func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) ([]*cl
 		return 0
 	})
 	repositories = slices.CompactFunc(repositories, func(a, b *claircore.Repository) bool {
-		return a.Name == b.Name && a.CPE.BindFS() == b.CPE.BindFS()
+		return a.Name == b.Name && a.CPE.BindFS() == b.CPE.BindFS() && a.URI == b.URI
 	})
 
 	return repositories, nil
