@@ -120,17 +120,20 @@ func TestCoalescer(t *testing.T) {
 			Fixture: func(t testing.TB) ([]*indexer.LayerArtifacts, *claircore.IndexReport) {
 				repo1 := &claircore.Repository{
 					ID:   "1",
-					Name: "rhel-8-for-x86_64-baseos-rpms",
+					Name: "cpe:/o:redhat:enterprise_linux:8::baseos",
+					URI:  "repoid=rhel-8-for-x86_64-baseos-rpms",
 					Key:  repositoryKey,
 				}
 				repo2 := &claircore.Repository{
 					ID:   "2",
-					Name: "rhel-8-for-x86_64-appstream-rpms",
+					Name: "cpe:/a:redhat:enterprise_linux:8::appstream",
+					URI:  "repoid=rhel-8-for-x86_64-appstream-rpms",
 					Key:  repositoryKey,
 				}
 				repo3 := &claircore.Repository{
 					ID:   "3",
-					Name: "rhel-8-for-x86_64-appstream-rpms",
+					Name: "cpe:/a:redhat:enterprise_linux:8::appstream",
+					URI:  "repoid=rhel-8-for-x86_64-appstream-rpms",
 					Key:  repositoryKey,
 				}
 				pkgs := test.GenUniquePackages(5)
@@ -178,8 +181,9 @@ func TestCoalescer(t *testing.T) {
 						dists[2].ID: dists[2],
 					},
 					Repositories: map[string]*claircore.Repository{
-						repo3.Name: repo3,
-						repo1.Name: repo1,
+						repo3.ID: repo3,
+						repo2.ID: repo2,
+						repo1.ID: repo1,
 					},
 					Environments: map[string][]*claircore.Environment{},
 				}
@@ -192,9 +196,9 @@ func TestCoalescer(t *testing.T) {
 					}
 					switch i {
 					case 0, 1:
-						want.Environments[k][0].RepositoryIDs = []string{repo1.Name, repo2.Name}
+						want.Environments[k][0].RepositoryIDs = []string{repo1.ID, repo2.ID}
 					case 2, 3, 4:
-						want.Environments[k][0].RepositoryIDs = []string{repo3.Name}
+						want.Environments[k][0].RepositoryIDs = []string{repo3.ID}
 					}
 					switch i {
 					case 0, 1, 2, 3:
@@ -214,11 +218,13 @@ func TestCoalescer(t *testing.T) {
 				repo1 := &claircore.Repository{
 					ID:   "1",
 					Name: "cpe:/o:redhat:enterprise_linux:8::baseos",
+					URI:  "repoid=rhel-8-for-x86_64-baseos-rpms",
 					Key:  repositoryKey,
 				}
 				repo2 := &claircore.Repository{
 					ID:   "2",
-					Name: "cpe:/o:redhat:enterprise_linux:8::appstream",
+					Name: "cpe:/a:redhat:enterprise_linux:8::appstream",
+					URI:  "repoid=rhel-8-for-x86_64-appstream-rpms",
 					Key:  repositoryKey,
 				}
 				pkg1 := &claircore.Package{
@@ -260,14 +266,14 @@ func TestCoalescer(t *testing.T) {
 					Packages:      map[string]*claircore.Package{pkg2.ID: pkg2},
 					Distributions: map[string]*claircore.Distribution{},
 					Repositories: map[string]*claircore.Repository{
-						repo2.Name: repo2,
-						repo1.Name: repo1,
+						repo2.ID: repo2,
+						repo1.ID: repo1,
 					},
 					Environments: map[string][]*claircore.Environment{
 						pkg2.ID: {
 							{
 								PackageDB:     pkg2.PackageDB,
-								RepositoryIDs: []string{repo2.Name},
+								RepositoryIDs: []string{repo2.ID},
 							},
 						},
 					},
@@ -282,11 +288,13 @@ func TestCoalescer(t *testing.T) {
 				repo1 := &claircore.Repository{
 					ID:   "1",
 					Name: "cpe:/o:redhat:enterprise_linux:8::baseos",
+					URI:  "repoid=rhel-8-for-x86_64-baseos-rpms",
 					Key:  repositoryKey,
 				}
 				repo2 := &claircore.Repository{
 					ID:   "2",
-					Name: "cpe:/o:redhat:enterprise_linux:8::appstream",
+					Name: "cpe:/a:redhat:enterprise_linux:8::appstream",
+					URI:  "repoid=rhel-8-for-x86_64-appstream-rpms",
 					Key:  repositoryKey,
 				}
 				pkg1 := &claircore.Package{
@@ -328,14 +336,14 @@ func TestCoalescer(t *testing.T) {
 					Packages:      map[string]*claircore.Package{pkg1.ID: pkg1},
 					Distributions: map[string]*claircore.Distribution{},
 					Repositories: map[string]*claircore.Repository{
-						repo2.Name: repo2,
-						repo1.Name: repo1,
+						repo2.ID: repo2,
+						repo1.ID: repo1,
 					},
 					Environments: map[string][]*claircore.Environment{
 						pkg1.ID: {
 							{
 								PackageDB:     pkg1.PackageDB,
-								RepositoryIDs: []string{repo2.Name},
+								RepositoryIDs: []string{repo2.ID},
 							},
 						},
 					},
@@ -350,11 +358,13 @@ func TestCoalescer(t *testing.T) {
 				repo1 := &claircore.Repository{
 					ID:   "1",
 					Name: "cpe:/o:redhat:enterprise_linux:8::baseos",
+					URI:  "repoid=rhel-8-for-x86_64-baseos-rpms",
 					Key:  repositoryKey,
 				}
 				repo2 := &claircore.Repository{
 					ID:   "2",
-					Name: "cpe:/o:redhat:enterprise_linux:8::appstream",
+					Name: "cpe:/a:redhat:enterprise_linux:8::appstream",
+					URI:  "repoid=rhel-8-for-x86_64-appstream-rpms",
 					Key:  repositoryKey,
 				}
 				pkg1 := &claircore.Package{
@@ -396,14 +406,14 @@ func TestCoalescer(t *testing.T) {
 					Packages:      map[string]*claircore.Package{pkg2.ID: pkg2},
 					Distributions: map[string]*claircore.Distribution{},
 					Repositories: map[string]*claircore.Repository{
-						repo2.Name: repo2,
-						repo1.Name: repo1,
+						repo2.ID: repo2,
+						repo1.ID: repo1,
 					},
 					Environments: map[string][]*claircore.Environment{
 						pkg2.ID: {
 							{
 								PackageDB:     pkg2.PackageDB,
-								RepositoryIDs: []string{repo2.Name},
+								RepositoryIDs: []string{repo2.ID},
 							},
 						},
 					},
@@ -417,8 +427,8 @@ func TestCoalescer(t *testing.T) {
 			Fixture: func(t testing.TB) ([]*indexer.LayerArtifacts, *claircore.IndexReport) {
 				repo1 := &claircore.Repository{
 					ID:   "1",
-					Name: "test_1",
-					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8::appstream"),
+					Name: "cpe:/a:redhat:enterprise_linux:8::appstream",
+					URI:  "repoid=rhel-8-for-x86_64-appstream-rpms",
 					Key:  repositoryKey,
 				}
 				pkg1 := &claircore.Package{
@@ -427,7 +437,7 @@ func TestCoalescer(t *testing.T) {
 					Version:   "1.0-1",
 					PackageDB: "fixture:/var/lib/rpm",
 					RepositoryHint: (url.Values{
-						"repoid": {repo1.Name},
+						"repoid": {"rhel-8-for-x86_64-appstream-rpms"},
 					}).Encode(),
 				}
 				input := []*indexer.LayerArtifacts{
@@ -442,12 +452,14 @@ func TestCoalescer(t *testing.T) {
 					Hash:          test.RandomSHA256Digest(t),
 					Packages:      map[string]*claircore.Package{pkg1.ID: pkg1},
 					Distributions: map[string]*claircore.Distribution{},
-					Repositories:  map[string]*claircore.Repository{repo1.Name: repo1},
+					Repositories: map[string]*claircore.Repository{
+						repo1.ID: repo1,
+					},
 					Environments: map[string][]*claircore.Environment{
 						pkg1.ID: {
 							{
 								PackageDB:     pkg1.PackageDB,
-								RepositoryIDs: []string{repo1.Name},
+								RepositoryIDs: []string{repo1.ID},
 							},
 						},
 					},
@@ -460,8 +472,8 @@ func TestCoalescer(t *testing.T) {
 			Fixture: func(t testing.TB) ([]*indexer.LayerArtifacts, *claircore.IndexReport) {
 				repo1 := &claircore.Repository{
 					ID:   "1",
-					Name: "test_1",
-					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8::appstream"),
+					Name: "cpe:/a:redhat:enterprise_linux:8::appstream",
+					URI:  "repoid=rhel-8-for-x86_64-appstream-rpms",
 					Key:  repositoryKey,
 				}
 				pkg1 := &claircore.Package{
@@ -485,12 +497,76 @@ func TestCoalescer(t *testing.T) {
 					Hash:          test.RandomSHA256Digest(t),
 					Packages:      map[string]*claircore.Package{pkg1.ID: pkg1},
 					Distributions: map[string]*claircore.Distribution{},
-					Repositories:  map[string]*claircore.Repository{repo1.Name: repo1},
+					Repositories: map[string]*claircore.Repository{
+						repo1.ID: repo1,
+					},
 					Environments: map[string][]*claircore.Environment{
 						pkg1.ID: {
 							{
 								PackageDB:     pkg1.PackageDB,
 								RepositoryIDs: nil,
+							},
+						},
+					},
+				}
+				return input, want
+			},
+		},
+		{
+			Name: "MultiCPEForOneRepoID",
+			Fixture: func(t testing.TB) ([]*indexer.LayerArtifacts, *claircore.IndexReport) {
+				repo1 := &claircore.Repository{
+					ID:   "1",
+					Name: "cpe:/a:redhat:enterprise_linux:8.0::appstream",
+					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8.0::appstream"),
+					URI:  "repoid=rhel-8-for-x86_64-appstream-rpms",
+					Key:  repositoryKey,
+				}
+				repo2 := &claircore.Repository{
+					ID:   "2",
+					Name: "cpe:/a:redhat:enterprise_linux:8.1::appstream",
+					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8.1::appstream"),
+					URI:  "repoid=rhel-8-for-x86_64-appstream-rpms",
+					Key:  repositoryKey,
+				}
+				repo3 := &claircore.Repository{
+					ID:   "3",
+					Name: "cpe:/a:redhat:enterprise_linux:8.2::appstream",
+					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:8.2::appstream"),
+					URI:  "repoid=rhel-8-for-x86_64-appstream-rpms",
+					Key:  repositoryKey,
+				}
+				pkg1 := &claircore.Package{
+					ID:        "1",
+					Name:      "hello",
+					Version:   "1.0-1",
+					PackageDB: "fixture:/var/lib/rpm",
+					RepositoryHint: (url.Values{
+						"repoid": {"rhel-8-for-x86_64-appstream-rpms"},
+					}).Encode(),
+				}
+				input := []*indexer.LayerArtifacts{
+					{
+						Hash:  test.RandomSHA256Digest(t),
+						Pkgs:  []*claircore.Package{pkg1},
+						Dist:  nil,
+						Repos: []*claircore.Repository{repo1, repo2, repo3},
+					},
+				}
+				want := &claircore.IndexReport{
+					Hash:          test.RandomSHA256Digest(t),
+					Packages:      map[string]*claircore.Package{pkg1.ID: pkg1},
+					Distributions: map[string]*claircore.Distribution{},
+					Repositories: map[string]*claircore.Repository{
+						repo1.ID: repo1,
+						repo2.ID: repo2,
+						repo3.ID: repo3,
+					},
+					Environments: map[string][]*claircore.Environment{
+						pkg1.ID: {
+							{
+								PackageDB:     pkg1.PackageDB,
+								RepositoryIDs: []string{"1", "2", "3"},
 							},
 						},
 					},

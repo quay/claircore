@@ -6,6 +6,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
+	"github.com/quay/zlog"
 )
 
 // Coalescer takes individual layer artifacts and coalesces them into a full
@@ -63,12 +64,9 @@ func (*Coalescer) Coalesce(ctx context.Context, artifacts []*indexer.LayerArtifa
 	}
 	// This dance with copying the product information in both directions means
 	// that if Red Hat product information is found, it "taints" all the layers.
-
-	// Break the key-by-ID convention because we need to talk about the repoid
-	// in the package matching step.
 	for _, a := range artifacts {
 		for _, repo := range a.Repos {
-			ir.Repositories[repo.Name] = repo
+			ir.Repositories[repo.ID] = repo
 		}
 	}
 	// In our coalescing logic if a Distribution is found in layer "n" all packages found
@@ -125,15 +123,28 @@ func (*Coalescer) Coalesce(ctx context.Context, artifacts []*indexer.LayerArtifa
 					IntroducedIn:   layerArtifacts.Hash,
 					DistributionID: distID,
 				}
-				v, _ := url.ParseQuery(pkg.RepositoryHint)
-				if id := v.Get("repoid"); id != "" {
-					if _, ok := ir.Repositories[id]; ok {
-						environment.RepositoryIDs = v["repoid"]
+				pkgRepoHint, _ := url.ParseQuery(pkg.RepositoryHint)
+				if pkgRepoid := pkgRepoHint.Get("repoid"); pkgRepoid != "" {
+					for _, repo := range layerArtifacts.Repos {
+						uri, err := url.ParseQuery(repo.URI)
+						if err != nil {
+							zlog.Warn(ctx).
+								Err(err).
+								Str("repository", repo.URI).
+								Msg("unable to parse repository URI")
+							continue
+						}
+						repoRepoid := uri.Get("repoid")
+						if repoRepoid == pkgRepoid {
+							environment.RepositoryIDs = append(environment.RepositoryIDs, repo.ID)
+						}
 					}
 				} else {
+					// No repoid was found based on the repositoryHint so associate it
+					// to all repositories in the layer.
 					environment.RepositoryIDs = make([]string, len(layerArtifacts.Repos))
 					for i := range layerArtifacts.Repos {
-						environment.RepositoryIDs[i] = layerArtifacts.Repos[i].Name
+						environment.RepositoryIDs[i] = layerArtifacts.Repos[i].ID
 					}
 				}
 				db.packages[pkg.ID] = pkg
