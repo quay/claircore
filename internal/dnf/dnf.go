@@ -263,6 +263,13 @@ func (h *historyDB) AddRepoid(ctx context.Context, pkg *claircore.Package) error
 			Msg("unable to re-parse rpm version")
 		return nil
 	}
+	if ver.Architecture == nil {
+		zlog.Debug(ctx).
+			Err(err).
+			Str("version", v).
+			Msg("unable to parse architecture")
+		return nil
+	}
 
 	var id string
 	err = h.db.
