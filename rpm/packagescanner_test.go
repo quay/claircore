@@ -207,7 +207,7 @@ func TestLayerDoesNotExist(t *testing.T) {
 
 	desc := &claircore.LayerDescription{
 		Digest:    test.RandomSHA256Digest(t).String(),
-		URI:       "doesnotexist",
+		URI:       "file://doesnotexist",
 		MediaType: "application/vnd.claircore.filesystem",
 	}
 

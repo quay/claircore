@@ -54,7 +54,7 @@ func TestLayer(t *testing.T) {
 		desc := claircore.LayerDescription{
 			Digest:    "sha256:" + strings.Repeat("00c0ffee", 8),
 			MediaType: `application/vnd.claircore.filesystem`,
-			URI:       t.TempDir(),
+			URI:       "file://" + t.TempDir(),
 		}
 
 		if err := l.Init(ctx, &desc, nil); err != nil {
@@ -121,6 +121,30 @@ func TestLayer(t *testing.T) {
 				Digest:    "sha256:" + strings.Repeat("00c0ffee", 8),
 				MediaType: `application/vnd.claircore.filesystem`,
 				URI:       "",
+			}
+
+			if err := l.Init(ctx, &desc, nil); err == nil {
+				t.Error("unexpected success")
+			}
+		})
+		t.Run("FilesystemBadURI", func(t *testing.T) {
+			var l claircore.Layer
+			desc := claircore.LayerDescription{
+				Digest:    "sha256:" + strings.Repeat("00c0ffee", 8),
+				MediaType: `application/vnd.claircore.filesystem`,
+				URI:       "bad",
+			}
+
+			if err := l.Init(ctx, &desc, nil); err == nil {
+				t.Error("unexpected success")
+			}
+		})
+		t.Run("FilesystemUnsopportedURI", func(t *testing.T) {
+			var l claircore.Layer
+			desc := claircore.LayerDescription{
+				Digest:    "sha256:" + strings.Repeat("00c0ffee", 8),
+				MediaType: `application/vnd.claircore.filesystem`,
+				URI:       "http://something.com/blah",
 			}
 
 			if err := l.Init(ctx, &desc, nil); err == nil {

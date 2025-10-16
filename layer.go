@@ -2,15 +2,18 @@ package claircore
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
 	"io"
 	"io/fs"
+	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
 
+	"github.com/quay/claircore/internal/filterfs"
 	"github.com/quay/claircore/pkg/tarfs"
 )
 
@@ -116,7 +119,14 @@ func (l *Layer) Init(ctx context.Context, desc *LayerDescription, r io.ReaderAt)
 		if desc.URI == "" {
 			return fmt.Errorf("claircore: layer %v: unable to create fs.FS: no URI provided", desc.Digest)
 		}
-		sys := os.DirFS(desc.URI)
+		u, err := url.Parse(desc.URI)
+		if err != nil {
+			return fmt.Errorf("claircore: layer %v: unable to create fs.FS: %w", desc.Digest, err)
+		}
+		if u.Scheme != "file" {
+			return fmt.Errorf("claircore: layer %v: unable to create fs.FS: unsupported URI scheme %v", desc.Digest, u.Scheme)
+		}
+		sys := filterfs.New(os.DirFS(cmp.Or(u.EscapedPath(), u.Opaque)))
 		l.sys = sys
 		l.rd = nil // The reader cannot be used for a filesystem
 	default:
