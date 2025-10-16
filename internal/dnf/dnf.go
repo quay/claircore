@@ -264,6 +264,14 @@ func (h *historyDB) AddRepoid(ctx context.Context, pkg *claircore.Package) error
 		return nil
 	}
 
+	if ver.Architecture == nil {
+		zlog.Warn(ctx).
+			Err(err).
+			Str("version", v).
+			Msg("unable to parse arch")
+		return nil
+	}
+
 	var id string
 	err = h.db.
 		QueryRowContext(ctx, h.RepoidForPackage,
