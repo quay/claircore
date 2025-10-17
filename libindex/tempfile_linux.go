@@ -9,7 +9,11 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-var tmpMap sync.Map
+var (
+	tmpMap sync.Map
+
+	errStale = errors.New("stale file reference")
+)
 
 func canTmp(dir string) (ok, loaded bool) {
 	v, loaded := tmpMap.Load(dir)
