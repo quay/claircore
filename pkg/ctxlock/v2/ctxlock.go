@@ -2,9 +2,6 @@
 //
 // Contexts derived from a Locker are canceled when the underlying connection to
 // the lock provider is gone, or when a parent context is canceled.
-//
-// This package makes use of "unsafe" to avoid some allocations, but the "safe"
-// build tag can be provided to use allocating versions of the functions.
 package ctxlock
 
 import (
@@ -21,6 +18,8 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/quay/zlog"
+
+	"github.com/quay/claircore/internal/dblock"
 )
 
 // TODO(hank) Specify this algorithm to check its soundness.
@@ -278,7 +277,7 @@ func backoff(w *time.Duration) {
 // release the lock.
 func (l *Locker) try(ctx context.Context, key string, cf context.CancelFunc) (*watcher, error) {
 	const query = `SELECT lock FROM pg_try_advisory_lock($1) lock WHERE lock = true;`
-	kb := keyify(key)
+	kb := dblock.Keyify(key)
 	// Ideally we'd set a profiling label for the key, but labels are not
 	// recorded for user profiles.
 	trace.Logf(ctx, pkgname+".try", "trying lock for %q (%016x)", key, kb)
