@@ -11,6 +11,7 @@ import (
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/dblock"
 )
 
 var (
@@ -34,6 +35,13 @@ var (
 	)
 )
 
+// ErrLockFail signals that lock acquisition failed.
+var errLockFail = errors.New("lock failed")
+
+// DeleteManifests attempts to delete the indicated manifests.
+//
+// The returned slice indicates the successfully deleted manifests. An error is
+// reported if none were able to be deleted.
 func (s *IndexerStore) DeleteManifests(ctx context.Context, ds ...claircore.Digest) ([]claircore.Digest, error) {
 	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/DeleteManifests")
 	const (
@@ -53,6 +61,9 @@ func (s *IndexerStore) DeleteManifests(ctx context.Context, ds ...claircore.Dige
 			l.id = $1
 			AND ml.layer_id IS NULL
 		);`
+		// This is equivalent to the ctxlock command except that it's requesting
+		// a transaction-scoped lock.
+		tryLock = `SELECT lock FROM pg_try_advisory_xact_lock($1) lock WHERE lock = true;`
 	)
 
 	var err error
@@ -60,16 +71,30 @@ func (s *IndexerStore) DeleteManifests(ctx context.Context, ds ...claircore.Dige
 	defer func(e *error) {
 		deleteManifestsCounter.WithLabelValues("deleteManifest", success(*e)).Inc()
 	}(&err)
+	var errs []error
 	deletedManifests := make([]claircore.Digest, 0, len(ds))
 	for _, d := range ds {
-		pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
+		attemptErr := pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
 			defer promTimer(deleteManifestsDuration, "deleteLayers", &err)()
 			defer func(e *error) {
 				deleteManifestsCounter.WithLabelValues("deleteLayers", success(*e)).Inc()
 			}(&err)
+
+			// Obtain the manifest lock:
+			key := dblock.Keyify(d.String())
+			tag, err := tx.Conn().PgConn().ExecParams(ctx, tryLock,
+				[][]byte{key}, nil,
+				[]int16{1}, nil).Close()
+			if err != nil {
+				return err
+			}
+			if tag.RowsAffected() == 0 {
+				return errLockFail
+			}
+
 			// Get manifest ID
 			var manifestID int64
-			err := tx.QueryRow(ctx, getManifestID, d).Scan(&manifestID)
+			err = tx.QueryRow(ctx, getManifestID, d).Scan(&manifestID)
 			switch {
 			case errors.Is(err, nil):
 			case errors.Is(err, pgx.ErrNoRows):
@@ -118,10 +143,27 @@ func (s *IndexerStore) DeleteManifests(ctx context.Context, ds ...claircore.Dige
 			deletedManifests = append(deletedManifests, d)
 			return nil
 		})
+		switch {
+		case attemptErr == nil:
+		case errors.Is(attemptErr, errLockFail):
+			zlog.Debug(ctx).
+				Stringer("manifest", d).
+				Msg("unable to obtain lock")
+		default:
+			errs = append(errs, fmt.Errorf("%s: %w", d, attemptErr))
+		}
 	}
 	zlog.Debug(ctx).
 		Int("count", len(deletedManifests)).
 		Int("nonexistant", len(ds)-len(deletedManifests)).
 		Msg("deleted manifests")
+	if len(deletedManifests) == 0 {
+		err = errors.Join(errs...)
+		return nil, err
+	} else {
+		zlog.Info(ctx).
+			Errs("reason", errs).
+			Msg("unexpected errors")
+	}
 	return deletedManifests, nil
 }

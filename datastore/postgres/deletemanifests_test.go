@@ -9,6 +9,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
+	"github.com/quay/claircore/internal/dblock"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 	pgtest "github.com/quay/claircore/test/postgres"
@@ -66,6 +67,43 @@ func TestDeleteManifests(t *testing.T) {
 		}
 		if !cmp.Equal(got, want, cmpOpts) {
 			t.Error(cmp.Diff(got, want, cmpOpts))
+		}
+	})
+	t.Run("Locked", func(t *testing.T) {
+		ctx := zlog.Test(ctx, t)
+		want := []claircore.Digest{
+			test.RandomSHA256Digest(t),
+			test.RandomSHA256Digest(t),
+			test.RandomSHA256Digest(t),
+		}
+		if _, err := pool.Exec(ctx, insertManifest, digestSlice(want)); err != nil {
+			t.Error(err)
+		}
+
+		// This is similar to the DeleteManifest's locking, but tweaked to act
+		// like the ctxlock package's session locks.
+		key := dblock.Keyify(want[len(want)-1].String())
+		poolconn, err := pool.Acquire(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		conn := poolconn.Hijack()
+		defer conn.Close(ctx)
+		tag, err := conn.PgConn().ExecParams(ctx, `SELECT lock FROM pg_try_advisory_lock($1) lock WHERE lock = true;`,
+			[][]byte{key}, nil,
+			[]int16{1}, nil).Close()
+		if err != nil || tag.RowsAffected() != 1 {
+			t.Errorf("didn't lock: %v", err)
+		}
+
+		// Now test that the locked manifest isn't deleted.
+		got, err := store.DeleteManifests(ctx, want...)
+		if err != nil {
+			t.Error(err)
+		}
+		t.Log(cmp.Diff(got, want, cmpOpts))
+		if want := want[:len(want)-1]; !cmp.Equal(got, want, cmpOpts) {
+			t.Fail()
 		}
 	})
 	t.Run("Subset", func(t *testing.T) {
