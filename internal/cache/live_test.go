@@ -4,60 +4,83 @@ package cache
 
 import (
 	"context"
-	"encoding/binary"
 	"runtime"
 	"testing"
+	"time"
 	"weak"
 )
 
+// TestLive attempts to test the [Live] cache.
+//
+// This is inherently probabilistic and dependent on runtime behavior.
 func TestLive(t *testing.T) {
-	var c Live[uint32, [4]byte]
-	c.Create = func(_ context.Context, key uint32) (*[4]byte, error) {
-		var v [4]byte
-		binary.LittleEndian.PutUint32(v[:], key)
-		return &v, nil
+	// Attempt to minimize the state of the heap.
+	runtime.GC()
+	runtime.Gosched()
+
+	// Value is a type that both has a pointer and is bigger than 16 bytes, in
+	// an effort to avoid the runtime's allocation batching
+	type value struct {
+		key uint32
+		_   [12]byte
+		_   *bool
+	}
+
+	var c Live[uint32, value]
+	c.Create = func(_ context.Context, key uint32) (*value, error) {
+		return &value{key: key}, nil
 	}
 	ctx := t.Context()
+	var wp weak.Pointer[value]
 
-	a, err := c.Get(ctx, 0xF000000F, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	func() {
+		orig, err := c.Get(ctx, 0xF000000F, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	b, err := c.Get(ctx, 0xF000000F, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	wp := weak.Make(b)
+		cached, err := c.Get(ctx, 0xF000000F, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		wp = weak.Make(cached)
 
-	t.Logf("a: %p, b: %p", a, b)
-	if a != b {
-		t.Fail()
-	}
-	a, b = nil, nil
+		t.Logf("values: orig: %p, cached: %p", orig, cached)
+		if orig != cached {
+			t.Fail()
+		}
+	}()
 
-	for range 2 { // Need two cycles:
+	// Spin for up to 10 sec.
+	ctx, done := context.WithTimeout(ctx, 10*time.Second)
+	defer done()
+	var ok bool
+	t.Log("spinning on GC")
+	for n := 0; !ok; n++ {
 		runtime.GC()
-	}
+		runtime.Gosched()
+		ok = true // Assume this worked. Failing checks flip it to false.
 
-	found := false
-	c.m.Range(func(k, _ any) bool {
-		found = true
-		t.Logf("found: %v", k)
-		return true
-	})
-	if found {
-		t.Error("found values in the cache")
-	}
-	if wp.Value() != nil {
-		t.Error("weak pointer still has value")
-	}
+		ct := 0
+		c.m.Range(func(k, _ any) bool {
+			ct++
+			return true
+		})
+		t.Logf("%d: found values in the cache: %d", n, ct)
+		t.Logf("%d: weak pointer has value: %p", n, wp.Value())
 
-	n, err := c.Get(ctx, 0xF000000F, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if np := weak.Make(n); wp == np {
-		t.Error("expected different weak pointer values")
+		nv, err := c.Get(ctx, 0xF000000F, nil)
+		if err != nil {
+			t.Logf("%d: Get: %v", err, n)
+		}
+		np := weak.Make(nv)
+		t.Logf("%d: weak pointers: prev: %p, new: %p", n, wp.Value(), np.Value())
+		ok = ct == 0 && wp.Value() == nil && err == nil && wp != np
+
+		select {
+		case <-ctx.Done():
+			t.Fatal(context.Cause(ctx))
+		default:
+		}
 	}
 }
