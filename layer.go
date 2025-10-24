@@ -116,7 +116,7 @@ func (l *Layer) Init(ctx context.Context, desc *LayerDescription, r io.ReaderAt)
 		if desc.URI == "" {
 			return fmt.Errorf("claircore: layer %v: unable to create fs.FS: no URI provided", desc.Digest)
 		}
-		sys := os.DirFS(desc.URI)
+		sys := NewFilterFS(ctx, os.DirFS(desc.URI))
 		l.sys = sys
 		l.rd = nil // The reader cannot be used for a filesystem
 	default:

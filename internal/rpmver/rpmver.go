@@ -128,6 +128,7 @@ func Parse(v string) (Version, error) {
 // and what's just another version segment.
 var architectures = map[string]struct{}{
 	".aarch64": {},
+	".i386":    {},
 	".i686":    {},
 	".noarch":  {},
 	".ppc64le": {},
