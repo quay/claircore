@@ -14,6 +14,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
+	_ "github.com/quay/claircore/gobin"
+	_ "github.com/quay/claircore/rhel"
+
 	"github.com/quay/claircore"
 )
 
