@@ -15,6 +15,8 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/purl"
+	"github.com/quay/claircore/rhel"
 )
 
 func TestEncoder(t *testing.T) {
@@ -35,6 +37,9 @@ func TestEncoder(t *testing.T) {
 		DocumentNamespace: "Test SPDX encoder namespace",
 		DocumentComment:   "Test SPDX encoder comment",
 	}
+	pr := purl.NewRegistry()
+	pr.RegisterDetector(rhel.PackageScanner{}, rhel.GenerateRPMPURL)
+	WithPURLConverter(pr)(e)
 
 	ctx := context.Background()
 	td := os.DirFS("testdata")

@@ -16,7 +16,8 @@
         "cpe" : ""
       },
       "normalized_version" : "",
-      "cpe" : ""
+      "cpe" : "",
+      "detector" : "urn:claircore:detector:rhel-package-scanner:1:package"
     },
     "456" : {
       "id" : "456",
@@ -24,7 +25,10 @@
       "version" : "v2.0.0",
       "kind" : "binary",
       "normalized_version" : "",
-      "cpe" : ""
+      "cpe" : "",
+      "scanner_name" : "java",
+      "scanner_version" : "8",
+      "detector" : "urn:claircore:detector:java:8:package"
     }
   },
   "distributions" : {

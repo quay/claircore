@@ -16,7 +16,9 @@ import (
 	"github.com/spdx/tools-golang/spdx/v2/v2_3"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/purl"
 	"github.com/quay/claircore/sbom"
+	"github.com/quay/zlog"
 )
 
 // Version describes the SPDX version to target.
@@ -60,6 +62,8 @@ type Encoder struct {
 	DocumentNamespace string
 	// The SPDX document comment field.
 	DocumentComment string
+	// The PURL converter to use.
+	PURLConverter purl.Converter
 }
 
 // NewDefaultEncoder creates an Encoder with default values and sets optional
@@ -81,6 +85,12 @@ func NewDefaultEncoder(options ...Option) *Encoder {
 	}
 
 	return e
+}
+
+func WithPURLConverter(registry purl.Converter) Option {
+	return func(e *Encoder) {
+		e.PURLConverter = registry
+	}
 }
 
 // WithDocumentName is used to set the SPDX document name field.
@@ -195,6 +205,19 @@ func (e *Encoder) parseIndexReport(ctx context.Context, ir *claircore.IndexRepor
 			pkg.PackageFileName = pkgDB
 			pkg.FilesAnalyzed = true
 			pkg.PrimaryPackagePurpose = pkgPurpose
+			if e.PURLConverter != nil {
+				purl, err := e.PURLConverter.Generate(ctx, r)
+				switch {
+				case err != nil:
+					zlog.Warn(ctx).Err(err).Msg("failed to generate PURL")
+				default:
+					pkg.PackageExternalReferences = append(pkg.PackageExternalReferences, &v2_3.PackageExternalReference{
+						Category: "PACKAGE_MANAGER",
+						RefType:  "purl",
+						Locator:  purl.String(),
+					})
+				}
+			}
 
 			pkgs[pkgID] = pkg
 			pkgIDs = append(pkgIDs, pkgID)
