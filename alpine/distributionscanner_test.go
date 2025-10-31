@@ -8,14 +8,13 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/test"
 )
 
 func TestScanFs(t *testing.T) {
-	ctx := context.Background()
-	ctx = zlog.Test(ctx, t)
+	ctx := test.Logging(t)
 
 	td := os.DirFS("testdata")
 	ms, err := fs.Glob(td, "3.*")
@@ -46,7 +45,6 @@ func scanFsTestcase(ctx context.Context, sys fs.FS) func(*testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		ctx := zlog.Test(ctx, t)
 		got, err := s.scanFs(ctx, sys)
 		if err != nil {
 			t.Error(err)

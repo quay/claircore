@@ -13,8 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-
-	"github.com/quay/zlog"
+	"log/slog"
 )
 
 // GetContentManifest reads and parses the content manifest file from the layer.
@@ -35,9 +34,7 @@ func getContentManifest(ctx context.Context, sys fs.FS) (*contentManifest, error
 		return nil, nil
 	}
 	p := ms[0]
-	zlog.Debug(ctx).
-		Str("manifest-path", p).
-		Msg("found content manifest file")
+	slog.DebugContext(ctx, "found content manifest file", "manifest-path", p)
 	b, err := fs.ReadFile(sys, p)
 	if err != nil {
 		return nil, fmt.Errorf("rhel: unable to read %q: %w", p, err)
@@ -48,10 +45,9 @@ func getContentManifest(ctx context.Context, sys fs.FS) (*contentManifest, error
 	switch {
 	case errors.Is(err, nil):
 	case errors.As(err, &syntaxErr):
-		zlog.Warn(ctx).
-			Str("manifest-path", p).
-			Err(err).
-			Msg("could not unmarshal content_manifests file")
+		slog.WarnContext(ctx, "could not unmarshal content_manifests file",
+			"manifest-path", p,
+			"reason", err)
 		return nil, nil
 	default:
 		return nil, err

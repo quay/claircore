@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -26,9 +25,11 @@ type mockScnr struct {
 func (m mockScnr) Name() string {
 	return m.name
 }
+
 func (m mockScnr) Kind() string {
 	return m.kind
 }
+
 func (m mockScnr) Version() string {
 	return m.version
 }
@@ -220,7 +221,7 @@ func (e *indexE2e) Run(t *testing.T) {
 // Manifest and Layer identities so layer code
 // foreign key references do not fail.
 func (e *indexE2e) PersistManifest(t *testing.T) {
-	ctx := zlog.Test(e.ctx, t)
+	ctx := test.Logging(t, e.ctx)
 	err := e.store.PersistManifest(ctx, e.manifest)
 	if err != nil {
 		t.Fatalf("failed to persist manifest: %v", err)
@@ -230,7 +231,7 @@ func (e *indexE2e) PersistManifest(t *testing.T) {
 // RegisterScanner confirms a scanner can be registered
 // and provides this scanner for other subtests to use
 func (e *indexE2e) RegisterScanner(t *testing.T) {
-	ctx := zlog.Test(e.ctx, t)
+	ctx := test.Logging(t, e.ctx)
 	err := e.store.RegisterScanners(ctx, e.scnrs)
 	if err != nil {
 		t.Fatalf("failed to register scnr: %v", err)
@@ -241,7 +242,7 @@ func (e *indexE2e) RegisterScanner(t *testing.T) {
 // selecting packages associated with a layer works
 // correctly.
 func (e *indexE2e) IndexAndRetrievePackages(t *testing.T) {
-	ctx := zlog.Test(e.ctx, t)
+	ctx := test.Logging(t, e.ctx)
 	A := test.GenUniquePackages(e.packageGen)
 
 	for _, scnr := range e.scnrs {
@@ -265,7 +266,7 @@ func (e *indexE2e) IndexAndRetrievePackages(t *testing.T) {
 // selecting distributions associated with a layer works
 // correctly.
 func (e *indexE2e) IndexAndRetrieveDistributions(t *testing.T) {
-	ctx := zlog.Test(e.ctx, t)
+	ctx := test.Logging(t, e.ctx)
 	A := test.GenUniqueDistributions(e.distGen)
 
 	for _, scnr := range e.scnrs {
@@ -289,7 +290,7 @@ func (e *indexE2e) IndexAndRetrieveDistributions(t *testing.T) {
 // selecting repositories associated with a layer works
 // correctly.
 func (e *indexE2e) IndexAndRetrieveRepos(t *testing.T) {
-	ctx := zlog.Test(e.ctx, t)
+	ctx := test.Logging(t, e.ctx)
 	A := test.GenUniqueRepositories(e.repoGen)
 
 	for _, scnr := range e.scnrs {
@@ -312,7 +313,7 @@ func (e *indexE2e) IndexAndRetrieveRepos(t *testing.T) {
 // LayerScanned confirms the book keeping involved in marking a layer
 // scanned works correctly.
 func (e *indexE2e) LayerScanned(t *testing.T) {
-	ctx := zlog.Test(e.ctx, t)
+	ctx := test.Logging(t, e.ctx)
 	for _, scnr := range e.scnrs {
 		err := e.store.SetLayerScanned(ctx, e.manifest.Layers[0].Hash, scnr)
 		if err != nil {
@@ -332,7 +333,7 @@ func (e *indexE2e) LayerScanned(t *testing.T) {
 // LayerScannedNotExists confirms an error is returned when attempting
 // to obtain if a layer was scanned by a non-existent scanner.
 func (e *indexE2e) LayerScannedNotExists(t *testing.T) {
-	ctx := zlog.Test(e.ctx, t)
+	ctx := test.Logging(t, e.ctx)
 	scnr := mockScnr{
 		name:    "invalid",
 		kind:    "invalid",
@@ -348,7 +349,7 @@ func (e *indexE2e) LayerScannedNotExists(t *testing.T) {
 // LayerScannedFalse confirms a false boolean is returned when attempting
 // to obtain if a non-existent layer was scanned by a valid scanner
 func (e *indexE2e) LayerScannedFalse(t *testing.T) {
-	ctx := zlog.Test(e.ctx, t)
+	ctx := test.Logging(t, e.ctx)
 
 	// create a layer that has not been persisted to the store
 	layer := &claircore.Layer{
@@ -367,7 +368,7 @@ func (e *indexE2e) LayerScannedFalse(t *testing.T) {
 // IndexReport confirms the book keeping around index reports works
 // correctly.
 func (e *indexE2e) IndexReport(t *testing.T) {
-	ctx := zlog.Test(e.ctx, t)
+	ctx := test.Logging(t, e.ctx)
 
 	A := &claircore.IndexReport{
 		Hash:  e.manifest.Hash,

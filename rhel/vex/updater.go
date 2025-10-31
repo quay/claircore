@@ -4,12 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
@@ -163,8 +162,6 @@ type UpdaterConfig struct {
 
 // Configure implements driver.Configurable.
 func (u *Updater) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *http.Client) error {
-	ctx = zlog.ContextWithValues(ctx, "component", "rhel/vex/Updater.Configure")
-
 	var cfg UpdaterConfig
 	if err := f(&cfg); err != nil {
 		return err
@@ -178,9 +175,7 @@ func (u *Updater) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *
 		return err
 	}
 	u.url = url
-	zlog.Info(ctx).
-		Str("updater", u.Name()).
-		Msg("configured url")
+	slog.InfoContext(ctx, "configured url", "updater", u.Name())
 
 	u.client = c
 	return nil

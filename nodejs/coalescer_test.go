@@ -1,11 +1,8 @@
 package nodejs
 
 import (
-	"context"
 	"strconv"
 	"testing"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -14,7 +11,7 @@ import (
 
 func TestCoalescer(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	coalescer := &coalescer{}
 	pkgs := test.GenUniquePackages(6)
 	repo := []*claircore.Repository{&Repository}

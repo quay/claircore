@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"runtime/trace"
@@ -18,8 +19,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -82,9 +81,6 @@ func (*Scanner) Kind() string { return "package" }
 
 // Configure implements indexer.RPCScanner.
 func (s *Scanner) Configure(ctx context.Context, f indexer.ConfigDeserializer, c *http.Client) error {
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "java/Scanner.Configure",
-		"version", s.Version())
 	var cfg ScannerConfig
 	s.client = c
 	if err := f(&cfg); err != nil {
@@ -92,7 +88,7 @@ func (s *Scanner) Configure(ctx context.Context, f indexer.ConfigDeserializer, c
 	}
 
 	if cfg.DisableAPI {
-		zlog.Debug(ctx).Msg("search API disabled")
+		slog.DebugContext(ctx, "search API disabled")
 	} else {
 		api := DefaultSearchAPI
 		if cfg.API != "" {
@@ -103,10 +99,9 @@ func (s *Scanner) Configure(ctx context.Context, f indexer.ConfigDeserializer, c
 			requestTimeout = cfg.APIRequestTimeout
 		}
 		s.rootRequestTimeout = requestTimeout
-		zlog.Debug(ctx).
-			Str("api", api).
-			Float64("requestTimeout", requestTimeout.Seconds()).
-			Msg("configured search API URL")
+		slog.DebugContext(ctx, "configured search API URL",
+			"api", api,
+			"requestTimeout", requestTimeout)
 		u, err := url.Parse(api)
 		if err != nil {
 			return err
@@ -124,12 +119,8 @@ func (s *Scanner) Configure(ctx context.Context, f indexer.ConfigDeserializer, c
 func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.Package, error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	trace.Log(ctx, "layer", layer.Hash.String())
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "java/Scanner.Scan",
-		"version", s.Version(),
-		"layer", layer.Hash.String())
-	zlog.Debug(ctx).Msg("start")
-	defer zlog.Debug(ctx).Msg("done")
+	slog.DebugContext(ctx, "start")
+	defer slog.DebugContext(ctx, "done")
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -154,11 +145,9 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 		return nil, fmt.Errorf("java: unable to check RPM db: %w", err)
 	}
 	for _, n := range ars {
-		ctx := zlog.ContextWithValues(ctx, "file", n)
+		log := slog.With("path", n)
 		if set.Contains(n) {
-			zlog.Debug(ctx).
-				Str("path", n).
-				Msg("file path determined to be of RPM origin")
+			log.DebugContext(ctx, "file path determined to be of RPM origin")
 			continue
 		}
 
@@ -192,9 +181,7 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 			// opening malformed zips.
 			fallthrough
 		case errors.Is(err, zip.ErrFormat):
-			zlog.Info(ctx).
-				Err(err).
-				Msg("not actually a jar: invalid zip")
+			log.InfoContext(ctx, "not actually a jar: invalid zip", "reason", err)
 			continue
 		default:
 			return nil, err
@@ -205,9 +192,7 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 		case err == nil:
 		case errors.Is(err, jar.ErrNotAJar):
 			// Could not prove this is really a jar. Skip it and move on.
-			zlog.Info(ctx).
-				AnErr("reason", err).
-				Msg("skipping jar")
+			log.InfoContext(ctx, "skipping jar", "reason", err)
 			continue
 		default:
 			return nil, err
@@ -301,9 +286,7 @@ func (s *Scanner) search(ctx context.Context, i *jar.Info, ck []byte) error {
 	defer done()
 	req, err := http.NewRequestWithContext(tctx, http.MethodGet, s.root.String(), nil)
 	if err != nil {
-		zlog.Warn(ctx).
-			Err(err).
-			Msg("unable to construct request")
+		slog.WarnContext(ctx, "unable to construct request", "reason", err)
 		return errRPC
 	}
 	v := req.URL.Query()
@@ -314,30 +297,24 @@ func (s *Scanner) search(ctx context.Context, i *jar.Info, ck []byte) error {
 	req.URL.RawQuery = v.Encode()
 	res, err := s.client.Do(req)
 	if err != nil {
-		zlog.Warn(ctx).
-			Err(err).
-			Msg("error making request")
+		slog.WarnContext(ctx, "error making request", "reason", err)
 		return errRPC
 	}
 	if res.StatusCode != http.StatusOK {
 		res.Body.Close()
-		zlog.Warn(ctx).
-			Str("status", res.Status).
-			Msg("unexpected response status")
+		slog.WarnContext(ctx, "unexpected response status", "status", res.Status)
 		return errRPC
 	}
 	var sr searchResponse
 	err = json.NewDecoder(res.Body).Decode(&sr)
 	res.Body.Close()
 	if err != nil {
-		zlog.Warn(ctx).
-			Err(err).
-			Msg("error decoding json")
+		slog.WarnContext(ctx, "error decoding json", "reason", err)
 		return errRPC
 	}
 	success = true
 	if len(sr.Response.Doc) == 0 {
-		zlog.Debug(ctx).Msg("no matching artifacts found")
+		slog.DebugContext(ctx, "no matching artifacts found")
 		return nil
 	}
 	// Sort and then take the first one, because apparently the same

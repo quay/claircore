@@ -1,16 +1,15 @@
 package oracle
 
 import (
-	"context"
 	"os"
 	"testing"
 
-	"github.com/quay/zlog"
+	"github.com/quay/claircore/test"
 )
 
 func TestParse(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	u, err := NewUpdater(-1)
 	if err != nil {
 		t.Fatal(err)
