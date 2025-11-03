@@ -65,7 +65,10 @@ SELECT
 	source_package.arch,
 	package_scanartifact.package_db,
 	package_scanartifact.repository_hint,
-	package_scanartifact.filepath
+	package_scanartifact.filepath,
+	scanner.name,
+	scanner.version,
+	scanner.kind
 FROM
 	package_scanartifact
 	LEFT JOIN package ON
@@ -74,6 +77,7 @@ FROM
 			package_scanartifact.source_id
 			= source_package.id
 	JOIN layer ON layer.hash = $1
+	JOIN scanner ON package_scanartifact.scanner_id = scanner.id
 WHERE
 	package_scanartifact.layer_id = layer.id
 	AND package_scanartifact.scanner_id = ANY ($2);
@@ -113,6 +117,7 @@ WHERE
 	for rows.Next() {
 		var pkg claircore.Package
 		var spkg claircore.Package
+		var detector claircore.Detector
 
 		var id, srcID int64
 		var nKind, fPath *string
@@ -136,6 +141,10 @@ WHERE
 			&pkg.PackageDB,
 			&pkg.RepositoryHint,
 			&fPath,
+
+			&detector.Name,
+			&detector.Version,
+			&detector.Kind,
 		)
 		pkg.ID = strconv.FormatInt(id, 10)
 		spkg.ID = strconv.FormatInt(srcID, 10)
@@ -150,6 +159,8 @@ WHERE
 		}
 		// nest source package
 		pkg.Source = &spkg
+		// nest	detector
+		pkg.Detector = &detector
 
 		res = append(res, &pkg)
 	}
