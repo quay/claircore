@@ -17,7 +17,7 @@ require (
 	github.com/knqyf263/go-rpm-version v0.0.0-20170716094938-74609b86c936
 	github.com/package-url/packageurl-go v0.1.3
 	github.com/prometheus/client_golang v1.23.2
-	github.com/quay/claircore/toolkit v1.2.4
+	github.com/quay/claircore/toolkit v1.3.0
 	github.com/quay/claircore/updater/driver v1.0.0
 	github.com/quay/goval-parser v0.8.8
 	github.com/quay/zlog v1.1.9
