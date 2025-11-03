@@ -31,6 +31,8 @@ type Package struct {
 	Arch string `json:"arch,omitempty"`
 	// CPE name for package
 	CPE cpe.WFN `json:"cpe"`
+	// Detector that discovered this package
+	Detector *Detector `json:"detector"`
 }
 
 const (
