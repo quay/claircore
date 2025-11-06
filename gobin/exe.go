@@ -6,12 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"regexp"
 	"strconv"
 	"strings"
 	_ "unsafe" // for error linkname tricks
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 )
@@ -31,21 +30,17 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 	case errors.Is(err, errNotGoExe):
 		return nil
 	default:
-		zlog.Debug(ctx).
-			Err(err).
-			Msg("unable to open executable")
+		slog.DebugContext(ctx, "unable to open executable", "reason", err)
 		return nil
 	}
-	ctx = zlog.ContextWithValues(ctx, "exe", p)
+	log := slog.With("exe", p)
 	pkgdb := "go:" + p
 	badVers := make(map[string]string)
 	defer func() {
 		if len(badVers) == 0 {
 			return
 		}
-		zlog.Warn(ctx).
-			Interface("module_versions", badVers).
-			Msg("invalid semantic versions found in binary")
+		log.WarnContext(ctx, "invalid semantic versions found in binary", "module_versions", badVers)
 	}()
 
 	// TODO(hank) This package could use canonical versions, but the
@@ -80,9 +75,10 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 		NormalizedVersion: runtimeVer,
 	})
 
-	ev := zlog.Debug(ctx)
-	vs := map[string]string{
-		"stdlib": bi.GoVersion,
+	debug := log.Enabled(ctx, slog.LevelDebug)
+	var attrs []slog.Attr
+	if debug {
+		attrs = append(attrs, slog.String("stdlib", bi.GoVersion))
 	}
 
 	// The go main module version is reported differently depending on the go
@@ -147,8 +143,8 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 		NormalizedVersion: mainVer,
 	})
 
-	if ev.Enabled() {
-		vs[bi.Main.Path] = bi.Main.Version
+	if debug && bi.Main.Path != "" {
+		attrs = append(attrs, slog.String(bi.Main.Path, bi.Main.Version))
 	}
 	for _, d := range bi.Deps {
 		// Replacements are only evaluated for the main module and seem to only
@@ -174,18 +170,18 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 			NormalizedVersion: nv,
 		})
 
-		if ev.Enabled() {
-			vs[d.Path] = d.Version
+		if debug {
+			attrs = append(attrs, slog.String(d.Path, d.Version))
 		}
 	}
-	ev.
-		Interface("versions", vs).
-		Msg("analyzed exe")
+	log.DebugContext(ctx, "analyzed exe", "versions", slog.GroupValue(attrs...))
 	return nil
 }
 
-var versionRegex = regexp.MustCompile(`^v?([0-9]+)(\.[0-9]+)?(\.[0-9]+)?(-([0-9A-Za-z\-]+(\.[0-9A-Za-z\-]+)*))?(\+([0-9A-Za-z\-]+(\.[0-9A-Za-z\-]+)*))?$`)
-var ErrInvalidSemVer = errors.New("invalid semantic version")
+var (
+	versionRegex     = regexp.MustCompile(`^v?([0-9]+)(\.[0-9]+)?(\.[0-9]+)?(-([0-9A-Za-z\-]+(\.[0-9A-Za-z\-]+)*))?(\+([0-9A-Za-z\-]+(\.[0-9A-Za-z\-]+)*))?$`)
+	ErrInvalidSemVer = errors.New("invalid semantic version")
+)
 
 // ParseVersion will return a claircore.Version of type semver given
 // a valid semantic version. If the string is not a valid semver it

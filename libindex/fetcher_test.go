@@ -16,8 +16,6 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/quay/zlog"
-
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/wart"
 	"github.com/quay/claircore/test"
@@ -29,7 +27,7 @@ type fetchTestcase struct {
 
 func (tc fetchTestcase) Run(ctx context.Context) func(*testing.T) {
 	return func(t *testing.T) {
-		ctx := zlog.Test(ctx, t)
+		ctx := test.Logging(t, ctx)
 		c, descs := test.ServeLayers(t, tc.N)
 		for _, l := range descs {
 			t.Logf("%+v", l)
@@ -65,7 +63,6 @@ func TestFetchSimple(t *testing.T) {
 
 func TestFetchInvalid(t *testing.T) {
 	// TODO(hank) Rewrite this into unified testcases.
-	ctx := context.Background()
 	tt := []struct {
 		name  string
 		layer []*claircore.Layer
@@ -91,7 +88,7 @@ func TestFetchInvalid(t *testing.T) {
 	tmp := t.TempDir()
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			ctx := zlog.Test(ctx, t)
+			ctx := test.Logging(t)
 			a := NewRemoteFetchArena(http.DefaultClient, tmp)
 			fetcher := a.Realizer(ctx)
 			if err := fetcher.Realize(ctx, table.layer); err == nil {
@@ -103,7 +100,7 @@ func TestFetchInvalid(t *testing.T) {
 
 func TestFetchConcurrent(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	descs, h := commonLayerServer(t, 25)
 	srv := httptest.NewUnstartedServer(h)
 	srv.Start()
@@ -119,8 +116,6 @@ func TestFetchConcurrent(t *testing.T) {
 	})
 
 	t.Run("OldInterface", func(t *testing.T) {
-		ctx := zlog.Test(ctx, t)
-
 		t.Run("Thread", func(t *testing.T) {
 			run := func(a *RemoteFetchArena, ls []claircore.LayerDescription) func(*testing.T) {
 				ps := wart.DescriptionsToLayers(ls)
@@ -132,7 +127,7 @@ func TestFetchConcurrent(t *testing.T) {
 				})
 				return func(t *testing.T) {
 					t.Parallel()
-					ctx := zlog.Test(ctx, t)
+					ctx := test.Logging(t)
 					f := a.Realizer(ctx)
 					t.Cleanup(func() {
 						if err := f.Close(); err != nil {
@@ -151,7 +146,6 @@ func TestFetchConcurrent(t *testing.T) {
 	})
 
 	t.Run("NewInterface", func(t *testing.T) {
-		ctx := zlog.Test(ctx, t)
 		t.Run("Thread", func(t *testing.T) {
 			run := func(a *RemoteFetchArena, descs []claircore.LayerDescription) func(*testing.T) {
 				ds := make([]claircore.LayerDescription, len(descs))
@@ -164,7 +158,7 @@ func TestFetchConcurrent(t *testing.T) {
 				})
 				return func(t *testing.T) {
 					t.Parallel()
-					ctx := zlog.Test(ctx, t)
+					ctx := test.Logging(t)
 					f := a.Realizer(ctx).(*FetchProxy)
 					defer func() {
 						if err := f.Close(); err != nil {
@@ -239,7 +233,6 @@ func commonLayerServer(t testing.TB, ct int) ([]claircore.LayerDescription, http
 		case total < max:
 			t.Logf("prevented %[3]d fetches: %[1]d < %d", total, max, max-total)
 		}
-
 	})
 	inner := http.FileServer(http.Dir(dir))
 	return descs, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

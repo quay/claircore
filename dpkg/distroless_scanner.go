@@ -7,11 +7,10 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"log/slog"
 	"net/textproto"
 	"path/filepath"
 	"runtime/trace"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -55,12 +54,8 @@ func (ps *DistrolessScanner) Kind() string { return distrolessKind }
 func (ps *DistrolessScanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.Package, error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	trace.Log(ctx, "layer", layer.Hash.String())
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "dpkg/DistrolessScanner.Scan",
-		"version", ps.Version(),
-		"layer", layer.Hash.String())
-	zlog.Debug(ctx).Msg("start")
-	defer zlog.Debug(ctx).Msg("done")
+	slog.DebugContext(ctx, "start")
+	defer slog.DebugContext(ctx, "done")
 
 	sys, err := layer.FS()
 	if err != nil {
@@ -73,7 +68,7 @@ func (ps *DistrolessScanner) Scan(ctx context.Context, layer *claircore.Layer) (
 			return err
 		}
 		if d.Name() == "status.d" && d.IsDir() {
-			zlog.Debug(ctx).Str("path", p).Msg("found potential distroless dpkg db directory")
+			slog.DebugContext(ctx, "found potential distroless dpkg db directory", "path", p)
 			dbFiles, err := fs.ReadDir(sys, p)
 			if err != nil {
 				return fmt.Errorf("error reading DB directory: %w", err)
@@ -81,8 +76,8 @@ func (ps *DistrolessScanner) Scan(ctx context.Context, layer *claircore.Layer) (
 			for _, f := range dbFiles {
 				pkgCt := 0
 				fn := filepath.Join(p, f.Name())
-				ctx = zlog.ContextWithValues(ctx, "database-file", fn)
-				zlog.Debug(ctx).Msg("examining package database")
+				log := slog.With("database-file", fn)
+				log.DebugContext(ctx, "examining package database")
 				db, err := sys.Open(fn)
 				if err != nil {
 					return fmt.Errorf("reading database files from layer failed: %w", err)
@@ -124,14 +119,12 @@ func (ps *DistrolessScanner) Scan(ctx context.Context, layer *claircore.Layer) (
 				case errors.Is(err, io.EOF):
 				default:
 					if _, ok := err.(textproto.ProtocolError); ok {
-						zlog.Warn(ctx).Err(err).Msg("unable to read DB entry")
+						log.WarnContext(ctx, "unable to read DB entry", "reason", err)
 						goto Restart
 					}
-					zlog.Warn(ctx).Err(err).Msg("error reading DB file")
+					log.WarnContext(ctx, "error reading DB file", "reason", err)
 				}
-				zlog.Debug(ctx).
-					Int("count", pkgCt).
-					Msg("found packages")
+				slog.DebugContext(ctx, "found packages", "count", pkgCt)
 			}
 		}
 		return nil

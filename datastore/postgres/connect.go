@@ -3,10 +3,10 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/datastore/postgres/types"
 	"github.com/quay/claircore/pkg/poolstats"
@@ -33,7 +33,7 @@ func Connect(ctx context.Context, connString string, applicationName string) (*p
 	}
 
 	if err := prometheus.Register(poolstats.NewCollector(pool, applicationName)); err != nil {
-		zlog.Info(ctx).Msg("pool metrics already registered")
+		slog.InfoContext(ctx, "pool metrics already registered")
 	}
 
 	return pool, nil

@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"hash/fnv"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -21,8 +22,6 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/quay/zlog"
-	"github.com/rs/zerolog"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/quay/claircore"
@@ -217,11 +216,11 @@ func escapeImage(i string) string {
 // Setup does a grip of test setup work, returning a context that will cancel on
 // interrupt and a server set up to serve files from "dir".
 func setup(ctx context.Context, t *testing.T, dir string) (context.Context, *httptest.Server) {
-	l := zerolog.Nop()
+	h := slog.DiscardHandler
 	if stderr {
-		l = zerolog.New(zerolog.NewConsoleWriter())
+		h = slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{})
 	}
-	zlog.Set(&l)
+	slog.SetDefault(slog.New(h))
 
 	for _, v := range []struct {
 		Tmpl **template.Template
@@ -243,7 +242,7 @@ func setup(ctx context.Context, t *testing.T, dir string) (context.Context, *htt
 	ctx, done := signal.NotifyContext(ctx, os.Interrupt)
 	t.Cleanup(done)
 
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	fsrv := http.FileServer(http.Dir(dir))

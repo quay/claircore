@@ -1,11 +1,9 @@
 package ruby_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/ruby"
@@ -13,8 +11,6 @@ import (
 )
 
 func TestScanRemote(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
-
 	type testcase struct {
 		Name   string
 		Ref    test.LayerRef
@@ -138,7 +134,7 @@ func TestScanRemote(t *testing.T) {
 
 	for _, tc := range table {
 		t.Run(tc.Name, func(t *testing.T) {
-			ctx := zlog.Test(ctx, t)
+			ctx := test.Logging(t)
 			l := test.RealizeLayer(ctx, t, tc.Ref)
 			var scanner ruby.Scanner
 

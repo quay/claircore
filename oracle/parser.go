@@ -5,9 +5,9 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
+	"log/slog"
 
 	"github.com/quay/goval-parser/oval"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/xmlutil"
@@ -36,8 +36,7 @@ var platformToDist = map[string]*claircore.Distribution{
 var _ driver.Parser = (*Updater)(nil)
 
 func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "oracle/Updater.Parse")
-	zlog.Info(ctx).Msg("starting parse")
+	slog.InfoContext(ctx, "starting parse")
 	defer r.Close()
 	root := oval.Root{}
 	dec := xml.NewDecoder(r)
@@ -45,7 +44,7 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 	if err := dec.Decode(&root); err != nil {
 		return nil, fmt.Errorf("oracle: unable to decode OVAL document: %w", err)
 	}
-	zlog.Debug(ctx).Msg("xml decoded")
+	slog.DebugContext(ctx, "xml decoded")
 	protoVulns := func(def oval.Definition) ([]*claircore.Vulnerability, error) {
 		// In all oracle databases tested a single
 		// and correct platform string can be found inside a definition
@@ -87,10 +86,9 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 			if err != nil {
 				// Found a CPE but could not parse it. Log a warning and return
 				//  successfully.
-				zlog.Warn(ctx).
-					Str("def_title", def.Title).
-					Str("cpe", affected).
-					Msg("could not parse CPE: there may be a false positive match with a userspace_ksplice package")
+				slog.WarnContext(ctx, "could not parse CPE: there may be a false positive match with a userspace_ksplice package",
+					"def_title", def.Title,
+					"cpe", affected)
 				return vs, nil
 			}
 			if wfn.Attr[cpe.Edition].V == "userspace_ksplice" {
@@ -102,16 +100,14 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 		case kspliceCPEs == 0:
 			// Continue if there are no ksplice CPEs.
 		case cpes == 0:
-			zlog.Warn(ctx).
-				Str("def_title", def.Title).
-				Msg("potential false positives: couldn't find CPEs to check for ksplice packages")
+			slog.WarnContext(ctx, "potential false positives: couldn't find CPEs to check for ksplice packages",
+				"def_title", def.Title)
 		case diff == 0:
-			zlog.Debug(ctx).Msg("skipping userspace_ksplice vulnerabilities")
+			slog.DebugContext(ctx, "skipping userspace_ksplice vulnerabilities")
 			return nil, nil
 		case diff > 0:
-			zlog.Warn(ctx).
-				Str("def_title", def.Title).
-				Msg("potential false positives: OVAL may have a userspace_ksplice CPE which could not be skipped")
+			slog.WarnContext(ctx, "potential false positives: OVAL may have a userspace_ksplice CPE which could not be skipped",
+				"def_title", def.Title)
 		default:
 			panic("programmer error")
 		}

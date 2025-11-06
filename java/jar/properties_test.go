@@ -2,18 +2,17 @@ package jar
 
 import (
 	"bytes"
-	"context"
 	"io"
 	"io/fs"
 	"os"
 	"testing"
 
-	"github.com/quay/zlog"
+	"github.com/quay/claircore/test"
 )
 
 func TestParseProperties(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 
 	md := os.DirFS("testdata/properties")
 	fs, err := fs.ReadDir(md, ".")

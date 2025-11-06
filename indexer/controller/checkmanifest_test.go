@@ -1,20 +1,18 @@
 package controller
 
 import (
-	"context"
 	"testing"
 
-	"github.com/quay/zlog"
 	"go.uber.org/mock/gomock"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/test"
 	indexer "github.com/quay/claircore/test/mock/indexer"
 )
 
 // confirm checkManfest statefunc acts appropriately
 // when manifest has been seen
 func TestCheckManifest(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
 	tt := []struct {
 		// the name of this test
 		name string
@@ -49,7 +47,7 @@ func TestCheckManifest(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			ctx := zlog.Test(ctx, t)
+			ctx := test.Logging(t)
 			// get mock
 			m := table.mock(t)
 

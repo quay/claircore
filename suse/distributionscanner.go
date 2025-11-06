@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"log/slog"
 	"runtime/trace"
 
 	"github.com/Masterminds/semver"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -64,15 +64,11 @@ func (*DistributionScanner) Kind() string { return scannerKind }
 // If the files are found but all regexp fail to match an empty slice is returned.
 func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Distribution, error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "suse/DistributionScanner.Scan",
-		"version", ds.Version(),
-		"layer", l.Hash.String())
-	zlog.Debug(ctx).Msg("start")
-	defer zlog.Debug(ctx).Msg("done")
+	slog.DebugContext(ctx, "start")
+	defer slog.DebugContext(ctx, "done")
 	files, err := l.Files(osReleasePath, suseReleasePath)
 	if err != nil {
-		zlog.Debug(ctx).Msg("didn't find an os-release or SuSE-release")
+		slog.DebugContext(ctx, "didn't find an os-release or SuSE-release")
 		return nil, nil
 	}
 	for _, buff := range files {
@@ -91,7 +87,7 @@ func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]
 func (ds *DistributionScanner) parse(ctx context.Context, buff *bytes.Buffer) *claircore.Distribution {
 	kv, err := osrelease.Parse(ctx, buff)
 	if err != nil {
-		zlog.Warn(ctx).Err(err).Msg("malformed os-release file")
+		slog.WarnContext(ctx, "malformed os-release file", "reason", err)
 		return nil
 	}
 	cpeName, cpeOK := kv["CPE_NAME"]
@@ -101,13 +97,13 @@ func (ds *DistributionScanner) parse(ctx context.Context, buff *bytes.Buffer) *c
 	// Instead of regexing through, we can grab the CPE.
 	c, err := cpe.Unbind(cpeName)
 	if err != nil {
-		zlog.Warn(ctx).Err(err).Msg("could not unbind CPE")
+		slog.WarnContext(ctx, "could not unbind CPE", "reason", err)
 		return nil
 	}
 
 	d, err := cpeToDist(c)
 	if err != nil {
-		zlog.Warn(ctx).Err(err).Msg("error converting cpe to distribution")
+		slog.WarnContext(ctx, "error converting cpe to distribution", "reason", err)
 		return nil
 	}
 

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path"
 	"runtime"
@@ -15,7 +16,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/quay/zlog"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/quay/claircore/updater/driver/v1"
@@ -41,7 +41,7 @@ func (u *Updater) importV1(ctx context.Context, sys fs.FS) error {
 	}
 	defer func() {
 		if err := f.Close(); err != nil {
-			zlog.Warn(ctx).Err(err).Msg("error closing config.json")
+			slog.WarnContext(ctx, "error closing config.json", "reason", err)
 		}
 	}()
 	if err := json.NewDecoder(f).Decode(&cfg); err != nil {
@@ -52,9 +52,7 @@ func (u *Updater) importV1(ctx context.Context, sys fs.FS) error {
 	if err != nil {
 		return err
 	}
-	zlog.Info(ctx).
-		Int("ct", len(us)).
-		Msg("got updaters")
+	slog.InfoContext(ctx, "got updaters", "count", len(us))
 
 	spool, err := os.CreateTemp(tmpDir, tmpPattern)
 	if err != nil {
@@ -63,22 +61,20 @@ func (u *Updater) importV1(ctx context.Context, sys fs.FS) error {
 	defer func() {
 		spoolname := spool.Name()
 		if err := os.Remove(spoolname); err != nil {
-			zlog.Warn(ctx).Str("filename", spoolname).Err(err).Msg("unable to remove spool file")
+			slog.WarnContext(ctx, "unable to remove spool file", "filename", spoolname, "reason", err)
 		}
 		if err := spool.Close(); err != nil {
-			zlog.Warn(ctx).Str("filename", spoolname).Err(err).Msg("error closing spool file")
+			slog.WarnContext(ctx, "error closing spool file", "filename", spoolname, "reason", err)
 		}
 	}()
 
 	for _, upd := range us {
 		name := upd.Name
-		ctx := zlog.ContextWithValues(ctx, "updater", name)
 		fi, err := fs.Stat(sys, name)
 		switch {
 		case errors.Is(err, nil):
 		case errors.Is(err, fs.ErrNotExist):
-			zlog.Info(ctx).
-				Msg("no import, skipping")
+			slog.InfoContext(ctx, "no import, skipping", "updater", name)
 			continue
 		default:
 			return err
@@ -128,13 +124,13 @@ func (u *Updater) importV1(ctx context.Context, sys fs.FS) error {
 			if err := u.store.UpdateVulnerabilities(ctx, ref, name, fp, res.Vulnerabilities); err != nil {
 				return err
 			}
-			zlog.Info(ctx).Stringer("ref", ref).Msg("updated vulnerabilites")
+			slog.InfoContext(ctx, "updated vulnerabilites", "ref", ref)
 		}
 		if len(res.Enrichments) != 0 {
 			if err := u.store.UpdateEnrichments(ctx, ref, name, fp, res.Enrichments); err != nil {
 				return err
 			}
-			zlog.Info(ctx).Stringer("ref", ref).Msg("updated enrichments")
+			slog.InfoContext(ctx, "updated enrichments", "ref", ref)
 		}
 	}
 
@@ -161,9 +157,7 @@ func (u *Updater) exportV1(ctx context.Context, z *zip.Writer, prev fs.FS) error
 	if err != nil {
 		return err
 	}
-	zlog.Info(ctx).
-		Int("ct", len(us)).
-		Msg("got updaters")
+	slog.InfoContext(ctx, "got updaters", "count", len(us))
 
 	// WaitGroup for the worker goroutines.
 	var wg sync.WaitGroup
@@ -218,7 +212,7 @@ func (u *Updater) exportV1(ctx context.Context, z *zip.Writer, prev fs.FS) error
 			defer wg.Done()
 			for upd := range feed {
 				name := upd.Name
-				ctx := zlog.ContextWithValues(ctx, "updater", name)
+				log := slog.With("updater", name)
 				// Zips have to be written serially, so we spool the fetcher
 				// output to disk, then seek back to the start so it's ready to
 				// read.
@@ -229,29 +223,29 @@ func (u *Updater) exportV1(ctx context.Context, z *zip.Writer, prev fs.FS) error
 				// can't do much to recover from.
 				spool, err := os.CreateTemp(tmpDir, tmpPattern)
 				if err != nil {
-					zlog.Warn(ctx).Err(err).Msg("unable to create spool file")
+					log.WarnContext(ctx, "unable to create spool file", "reason", err)
 					continue
 				}
 				spoolname := spool.Name()
 				fp, err := u.fetchOne(ctx, upd, pfps[name], spool)
 				if err != nil {
 					if err := os.Remove(spoolname); err != nil {
-						zlog.Warn(ctx).Str("filename", spoolname).Err(err).Msg("unable to remove spool file")
+						log.WarnContext(ctx, "unable to remove spool file", "filename", spoolname, "reason", err)
 					}
 					if err := spool.Close(); err != nil {
-						zlog.Warn(ctx).Str("filename", spoolname).Err(err).Msg("error closing spool file")
+						log.WarnContext(ctx, "error closing spool file", "filename", spoolname, "reason", err)
 					}
-					zlog.Info(ctx).Err(err).Msg("updater error")
+					log.InfoContext(ctx, "updater error", "reason", err)
 					continue
 				}
 				if _, err := spool.Seek(0, io.SeekStart); err != nil {
 					if err := os.Remove(spoolname); err != nil {
-						zlog.Warn(ctx).Str("filename", spoolname).Err(err).Msg("unable to remove spool file")
+						log.WarnContext(ctx, "unable to remove spool file", "filename", spoolname, "reason", err)
 					}
 					if err := spool.Close(); err != nil {
-						zlog.Warn(ctx).Str("filename", spoolname).Err(err).Msg("error closing spool file")
+						log.WarnContext(ctx, "error closing spool file", "filename", spoolname, "reason", err)
 					}
-					zlog.Warn(ctx).Str("filename", spoolname).Err(err).Msg("unable to seek to start")
+					log.WarnContext(ctx, "unable to seek to start", "filename", spoolname, "reason", err)
 					continue
 				}
 				res <- &result{
@@ -274,10 +268,10 @@ func addUpdater(ctx context.Context, z *zip.Writer, now time.Time, r *result) er
 	defer func() {
 		fn := r.spool.Name()
 		if err := os.Remove(fn); err != nil {
-			zlog.Warn(ctx).Err(err).Str("file", fn).Msg("unable to remove fetch spool")
+			slog.WarnContext(ctx, "unable to remove fetch spool", "reason", err, "file", fn)
 		}
 		if err := r.spool.Close(); err != nil {
-			zlog.Warn(ctx).Err(err).Str("file", fn).Msg("unable to close fetch spool")
+			slog.WarnContext(ctx, "unable to close fetch spool", "reason", err, "file", fn)
 		}
 	}()
 	n := r.name
@@ -327,10 +321,7 @@ func addUpdater(ctx context.Context, z *zip.Writer, now time.Time, r *result) er
 	if _, err := io.Copy(w, r.spool); err != nil {
 		return err
 	}
-	zlog.Debug(ctx).
-		Stringer("ref", ref).
-		Str("name", n).
-		Msg("wrote out fetch results")
+	slog.DebugContext(ctx, "wrote out fetch results", "ref", ref, "name", n)
 	return nil
 }
 

@@ -7,12 +7,11 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"path/filepath"
 	"regexp"
 	"runtime/trace"
 	"strings"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -82,12 +81,8 @@ func (*Scanner) Kind() string { return "package" }
 func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.Package, error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	trace.Log(ctx, "layer", layer.Hash.String())
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "ruby/Scanner.Scan",
-		"version", ps.Version(),
-		"layer", layer.Hash.String())
-	zlog.Debug(ctx).Msg("start")
-	defer zlog.Debug(ctx).Msg("done")
+	slog.DebugContext(ctx, "start")
+	defer slog.DebugContext(ctx, "done")
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -109,9 +104,7 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	}
 	for _, g := range gs {
 		if set.Contains(g) {
-			zlog.Debug(ctx).
-				Str("path", g).
-				Msg("file path determined to be of RPM origin")
+			slog.DebugContext(ctx, "file path determined to be of RPM origin", "path", g)
 			continue
 		}
 		f, err := sys.Open(g)
@@ -132,17 +125,14 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 			}
 		}
 		if err := scanner.Err(); err != nil {
-			zlog.Warn(ctx).
-				Err(err).
-				Str("path", g).
-				Msg("unable to read metadata, skipping")
+			slog.WarnContext(ctx, "unable to read metadata, skipping",
+				"reason", err,
+				"path", g)
 			continue
 		}
 
 		if name == "" || version == "" {
-			zlog.Warn(ctx).
-				Str("path", g).
-				Msg("couldn't parse name or version, skipping")
+			slog.WarnContext(ctx, "couldn't parse name or version, skipping", "path", g)
 			continue
 		}
 
@@ -172,14 +162,7 @@ func trim(s string) string {
 
 func gems(ctx context.Context, sys fs.FS) (out []string, err error) {
 	return out, fs.WalkDir(sys, ".", func(p string, d fs.DirEntry, err error) error {
-		ev := zlog.Debug(ctx).
-			Str("file", p)
-		var success bool
-		defer func() {
-			if !success {
-				ev.Discard().Send()
-			}
-		}()
+		attrs := []slog.Attr{slog.String("file", p)}
 		switch {
 		case err != nil:
 			return err
@@ -189,12 +172,11 @@ func gems(ctx context.Context, sys fs.FS) (out []string, err error) {
 		case strings.HasPrefix(filepath.Base(p), ".wh."):
 			return nil
 		case gemspecPath.MatchString(p):
-			ev = ev.Str("kind", "gem")
+			attrs = append(attrs, slog.String("kind", "gem"))
 		default:
 			return nil
 		}
-		ev.Msg("found package")
-		success = true
+		slog.LogAttrs(ctx, slog.LevelDebug, "found package", attrs...)
 		out = append(out, p)
 		return nil
 	})

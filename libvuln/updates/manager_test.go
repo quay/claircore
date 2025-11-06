@@ -12,20 +12,20 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 
 	"github.com/quay/claircore/datastore/postgres"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/ctxlock/v2"
+	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 	pgtest "github.com/quay/claircore/test/postgres"
 )
 
 func TestDeltaUpdates(t *testing.T) {
 	integration.NeedDB(t)
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	facs := map[string]driver.UpdaterSetFactory{
 		"delta": &Factory{
 			vulnGetter: &vulnGetter{
@@ -81,8 +81,10 @@ func TestDeltaUpdates(t *testing.T) {
 	}
 }
 
-var _ driver.DeltaUpdater = (*testUpdater)(nil)
-var _ driver.Updater = (*testUpdater)(nil)
+var (
+	_ driver.DeltaUpdater = (*testUpdater)(nil)
+	_ driver.Updater      = (*testUpdater)(nil)
+)
 
 type testUpdater struct {
 	vulnGetter *vulnGetter
