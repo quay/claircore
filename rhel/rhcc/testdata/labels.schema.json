@@ -1,27 +1,52 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Red Hat Container Catalog Labels",
-  "description": "Schema for root/buildinfo/labels.json files in Red Hat container images",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://security.access.redhat.com/data/meta/v1/embedded_metadata.v1.schema.json",
   "type": "object",
+  "name": "Red Hat Container Embedded metadata",
+  "description": "This describes necessary metadata to make security determinations about a container image.",
   "properties": {
     "name": {
-      "type": "string",
-      "description": "Container image name"
+      "description": "This defines a canonical name for a container. This is likely to be displayed to an end-user.",
+      "type": "string"
     },
     "org.opencontainers.image.created": {
+      "description": "This is the creation timestamp of the container.\n\nThis MUST be a complete RFC3339 timestamp",
       "type": "string",
-      "format": "date-time",
-      "description": "RFC3339 timestamp when the image was created"
+      "format": "date-time"
     },
     "cpe": {
+      "description": "This is the CPE Name identifying this container.\n\nAny version attributes SHOULD NOT be provided.\nContainers with distinct CPE Names MUST be considered distinct pieces of software with incomparible versions.",
       "type": "string",
-      "description": "Common Platform Enumeration identifier"
+      "format": "uri"
     },
     "architecture": {
-      "type": "string",
-      "description": "Target architecture (e.g., x86_64, aarch64)"
+      "description": "This is the intended architecture of the container.",
+      "$comment": "This is modern(ish) architectures as their golang name. This is how they're referred to in OCI specifications.",
+      "enum": [
+        "amd64",
+        "arm64",
+        "mips64",
+        "mips64le",
+        "ppc64",
+        "ppc64le",
+        "riscv64",
+        "s390x"
+      ]
     }
   },
-  "required": ["name", "org.opencontainers.image.created", "cpe", "architecture"],
-  "additionalProperties": false
-} 
+  "required": [
+    "name",
+    "org.opencontainers.image.created",
+    "cpe",
+    "architecture"
+  ],
+  "examples": [
+    {
+      "name": "openshift-gitops-1/gitops-rhel8-operator",
+      "org.opencontainers.image.created": "2025-04-14T02:14:26Z",
+      "cpe": "cpe:/a:redhat:openshift_gitops:1.16::el8",
+      "architecture": "amd64",
+      "additional": "labels"
+    }
+  ]
+}
