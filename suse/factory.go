@@ -124,26 +124,34 @@ var releases sync.Map
 
 func mkELDist(oURL, ver string) *claircore.Distribution {
 	name := strings.TrimSuffix(oURL, ".xml.gz")
-	v, _ := releases.LoadOrStore(name, &claircore.Distribution{
-		Name:       "SLES",
-		DID:        "sles",
-		Version:    ver,
-		VersionID:  ver,
-		PrettyName: "SUSE Linux Enterprise Server " + ver,
-	})
+	v, _ := releases.LoadOrStore(name, ELDist(ver))
 	return v.(*claircore.Distribution)
 }
 
 func mkLeapDist(oURL, ver string) *claircore.Distribution {
 	name := strings.TrimSuffix(oURL, ".xml.gz")
-	v, _ := releases.LoadOrStore(name, &claircore.Distribution{
+	v, _ := releases.LoadOrStore(name, leapDist(ver))
+	return v.(*claircore.Distribution)
+}
+
+func ELDist(ver string) *claircore.Distribution {
+	return &claircore.Distribution{
+		Name:       "SLES",
+		DID:        "sles",
+		Version:    ver,
+		VersionID:  ver,
+		PrettyName: "SUSE Linux Enterprise Server " + ver,
+	}
+}
+
+func leapDist(ver string) *claircore.Distribution {
+	return &claircore.Distribution{
 		Name:       "openSUSE Leap",
 		DID:        "opensuse-leap",
 		Version:    ver,
 		VersionID:  ver,
 		PrettyName: "openSUSE Leap " + ver,
-	})
-	return v.(*claircore.Distribution)
+	}
 }
 
 // FactoryConfig is the configuration accepted by the Factory.
