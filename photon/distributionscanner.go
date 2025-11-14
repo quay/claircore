@@ -12,9 +12,6 @@ import (
 	"github.com/quay/claircore/indexer"
 )
 
-// Photon provides one security database file per major version. So far, there are 3 versions
-// Photon 1.0, Photon 2.0 and Photon 3.0
-
 const (
 	scannerName    = "photon"
 	scannerVersion = "v0.0.1"
@@ -26,28 +23,9 @@ const (
 	photonReleasePath = `etc/photon-release`
 )
 
-type photonRegex struct {
-	release Release
-	regexp  *regexp.Regexp
-}
-
-var photonRegexes = []photonRegex{
-	{
-		release: Photon1,
-		// regex for /etc/os-release
-		regexp: regexp.MustCompile(`^.*"VMware Photon"\sVERSION="1.0"`),
-	},
-	{
-		release: Photon2,
-		// regex for /etc/os-release
-		regexp: regexp.MustCompile(`^.*"VMware Photon OS"\sVERSION="2.0"`),
-	},
-	{
-		release: Photon3,
-		// regex for /etc/os-release
-		regexp: regexp.MustCompile(`^.*"VMware Photon OS"\sVERSION="3.0"`),
-	},
-}
+var (
+	photonVersionRe = regexp.MustCompile(`VMware Photon(?: OS)?"\s*VERSION="([0-9]+\.[0-9]+)"`)
+)
 
 var (
 	_ indexer.DistributionScanner = (*DistributionScanner)(nil)
@@ -99,10 +77,14 @@ func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]
 //
 // separated into its own method to aid testing.
 func (ds *DistributionScanner) parse(buff *bytes.Buffer) *claircore.Distribution {
-	for _, ur := range photonRegexes {
-		if ur.regexp.Match(buff.Bytes()) {
-			return releaseToDist(ur.release)
-		}
+	b := buff.Bytes()
+	m := photonVersionRe.FindSubmatch(b)
+	if len(m) < 2 {
+		return nil
 	}
-	return nil
+	ver := string(m[1])
+	if ver == "" {
+		return nil
+	}
+	return mkDist(ver)
 }
