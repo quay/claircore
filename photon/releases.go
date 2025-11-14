@@ -49,3 +49,16 @@ func releaseToDist(r Release) *claircore.Distribution {
 		return &claircore.Distribution{}
 	}
 }
+
+func versionToDist(v string) *claircore.Distribution {
+	switch v {
+	case "1.0":
+		return photon1Dist
+	case "2.0":
+		return photon2Dist
+	case "3.0":
+		return photon3Dist
+	default:
+		return nil
+	}
+}
