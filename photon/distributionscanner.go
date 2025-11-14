@@ -46,6 +46,16 @@ var photonRegexes = []photonRegex{
 		// regex for /etc/os-release
 		regexp: regexp.MustCompile(`^.*"VMware Photon OS"\sVERSION="3.0"`),
 	},
+	{
+		release: Photon4,
+		// regex for /etc/os-release
+		regexp: regexp.MustCompile(`^.*"VMware Photon OS"\sVERSION="4.0"`),
+	},
+	{
+		release: Photon5,
+		// regex for /etc/os-release
+		regexp: regexp.MustCompile(`^.*"VMware Photon OS"\sVERSION="5.0"`),
+	},
 }
 
 var (
