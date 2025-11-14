@@ -3,6 +3,7 @@ package photon
 import (
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/ovalutil"
@@ -43,11 +44,21 @@ func NewUpdater(r Release, opts ...Option) (*Updater, error) {
 		}
 	}
 	if u.Fetcher.URL == nil {
+		// Default to gzip-compressed Photon OVAL filenames:
+		// com.vmware.phsa-photon<MAJOR>.xml.gz
+		s := string(u.release)
+		maj := s
+		if i := strings.IndexByte(s, '.'); i >= 0 {
+			maj = s[:i]
+		}
+		filename := "com.vmware.phsa-photon" + maj + ".xml.gz"
 		var err error
-		u.Fetcher.URL, err = upstreamBase.Parse("com.vmware.phsa-" + string(u.release) + ".xml")
+		u.Fetcher.URL, err = upstreamBase.Parse(filename)
 		if err != nil {
 			return nil, err
 		}
+		// Configure default compression to gzip.
+		u.Fetcher.Compression = ovalutil.CompressionGzip
 	}
 	return u, nil
 }
