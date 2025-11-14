@@ -34,6 +34,24 @@ ANSI_COLOR="1;34"
 HOME_URL="https://vmware.github.io/photon/"
 BUG_REPORT_URL="https://github.com/vmware/photon/issues"`)
 
+var photon4OSRelease []byte = []byte(`NAME="VMware Photon OS"
+VERSION="4.0"
+ID=photon
+VERSION_ID="4.0"
+PRETTY_NAME="VMware Photon OS/Linux"
+ANSI_COLOR="1;34"
+HOME_URL="https://vmware.github.io/photon/"
+BUG_REPORT_URL="https://github.com/vmware/photon/issues"`)
+
+var photon5OSRelease []byte = []byte(`NAME="VMware Photon OS"
+VERSION="5.0"
+ID=photon
+VERSION_ID="5.0"
+PRETTY_NAME="VMware Photon OS/Linux"
+ANSI_COLOR="1;34"
+HOME_URL="https://vmware.github.io/photon/"
+BUG_REPORT_URL="https://github.com/vmware/photon/issues"`)
+
 func TestDistributionScanner(t *testing.T) {
 	table := []struct {
 		name      string
@@ -54,6 +72,16 @@ func TestDistributionScanner(t *testing.T) {
 			name:      "photon 3.0",
 			release:   Photon3,
 			osRelease: photon3OSRelease,
+		},
+		{
+			name:      "photon 4.0",
+			release:   Photon4,
+			osRelease: photon4OSRelease,
+		},
+		{
+			name:      "photon 5.0",
+			release:   Photon5,
+			osRelease: photon5OSRelease,
 		},
 	}
 	for _, tt := range table {
