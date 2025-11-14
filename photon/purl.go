@@ -54,6 +54,6 @@ func ParsePURL(ctx context.Context, purl packageurl.PackageURL) ([]*claircore.In
 	if len(distroParts) != 2 {
 		return nil, fmt.Errorf("invalid distro PURL: %s", distroQualifier)
 	}
-	ir.Distribution = versionToDist(distroParts[1])
+	ir.Distribution = releaseToDist(Release(distroParts[1]))
 	return []*claircore.IndexRecord{ir}, nil
 }

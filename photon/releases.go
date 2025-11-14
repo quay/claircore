@@ -7,9 +7,11 @@ type Release string
 
 // These are some known Releases.
 const (
-	Photon1 Release = `photon1`
-	Photon2 Release = `photon2`
-	Photon3 Release = `photon3`
+	Photon1 Release = `1.0`
+	Photon2 Release = `2.0`
+	Photon3 Release = `3.0`
+	Photon4 Release = `4.0`
+	Photon5 Release = `5.0`
 )
 
 var photon1Dist = &claircore.Distribution{
@@ -36,6 +38,22 @@ var photon3Dist = &claircore.Distribution{
 	DID:        "photon",
 }
 
+var photon4Dist = &claircore.Distribution{
+	Name:       "VMware Photon OS",
+	Version:    "4.0",
+	VersionID:  "4.0",
+	PrettyName: "VMware Photon OS/Linux",
+	DID:        "photon",
+}
+
+var photon5Dist = &claircore.Distribution{
+	Name:       "VMware Photon OS",
+	Version:    "5.0",
+	VersionID:  "5.0",
+	PrettyName: "VMware Photon OS/Linux",
+	DID:        "photon",
+}
+
 func releaseToDist(r Release) *claircore.Distribution {
 	switch r {
 	case Photon1:
@@ -44,21 +62,12 @@ func releaseToDist(r Release) *claircore.Distribution {
 		return photon2Dist
 	case Photon3:
 		return photon3Dist
+	case Photon4:
+		return photon4Dist
+	case Photon5:
+		return photon5Dist
 	default:
 		// return empty dist
 		return &claircore.Distribution{}
-	}
-}
-
-func versionToDist(v string) *claircore.Distribution {
-	switch v {
-	case "1.0":
-		return photon1Dist
-	case "2.0":
-		return photon2Dist
-	case "3.0":
-		return photon3Dist
-	default:
-		return nil
 	}
 }
