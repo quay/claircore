@@ -124,8 +124,8 @@ type BookItem interface {
 func (p *Proc) Walk(ctx context.Context, book *Book) error {
 	var b strings.Builder
 	var err error
-	for _, sec := range book.Sections {
-		err = p.section(ctx, &b, sec)
+	for _, it := range book.Items {
+		err = p.item(ctx, &b, it)
 		if err != nil {
 			return err
 		}
@@ -133,8 +133,8 @@ func (p *Proc) Walk(ctx context.Context, book *Book) error {
 	return nil
 }
 
-// Section calls the relevant hooks on the current [Section].
-func (p *Proc) section(ctx context.Context, b *strings.Builder, s Section) (err error) {
+// Item calls the relevant hooks on the current [Item].
+func (p *Proc) item(ctx context.Context, b *strings.Builder, s Item) (err error) {
 	b.Reset()
 	switch {
 	case s.Separator != nil:
@@ -153,7 +153,7 @@ func (p *Proc) section(ctx context.Context, b *strings.Builder, s Section) (err 
 			}
 		}
 		for _, s := range s.Chapter.SubItems {
-			err = p.section(ctx, b, s)
+			err = p.item(ctx, b, s)
 			if err != nil {
 				break
 			}
@@ -192,12 +192,12 @@ type BookConfig struct {
 
 // Book is an mdbook book.
 type Book struct {
-	Sections []Section `json:"sections"`
-	X        *struct{} `json:"__non_exhaustive"`
+	Items []Item    `json:"items"`
+	X     *struct{} `json:"__non_exhaustive"`
 }
 
-// Section is one of a [Chapter], [Separator], or [PartTitle].
-type Section struct {
+// Item is one of a [Chapter], [Separator], or [PartTitle].
+type Item struct {
 	Chapter   *Chapter   `json:",omitempty"`
 	Separator *Separator `json:",omitempty"`
 	PartTitle *PartTitle `json:",omitempty"`
@@ -211,11 +211,11 @@ type PartTitle string
 
 // Chapter is an mdbook chapter.
 type Chapter struct {
-	Name        string    `json:"name"`
-	Content     string    `json:"content"`
-	Number      []int     `json:"number"`
-	SubItems    []Section `json:"sub_items"`
-	Path        *string   `json:"path"`
-	SourcePath  *string   `json:"source_path"`
-	ParentNames []string  `json:"parent_names"`
+	Name        string   `json:"name"`
+	Content     string   `json:"content"`
+	Number      []int    `json:"number"`
+	SubItems    []Item   `json:"sub_items"`
+	Path        *string  `json:"path"`
+	SourcePath  *string  `json:"source_path"`
+	ParentNames []string `json:"parent_names"`
 }
