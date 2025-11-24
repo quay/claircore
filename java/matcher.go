@@ -4,9 +4,11 @@ import (
 	"context"
 	"net/url"
 
-	"github.com/quay/claircore"
-	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/zlog"
+
+	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/maven"
+	"github.com/quay/claircore/libvuln/driver"
 )
 
 // Matcher matches discovered Java Maven packages against advisories provided via OSV.
@@ -36,7 +38,7 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 	}
 
 	// Parse the package first. If it cannot be parsed, it cannot properly be analyzed for vulnerabilities.
-	rv, err := parseMavenVersion(record.Package.Version)
+	rv, err := maven.ParseVersion(record.Package.Version)
 	if err != nil {
 		return false, err
 	}
@@ -49,7 +51,7 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 	introduced := decodedVersions.Get("introduced")
 	// If there is an introduced version, check if the package's version is lower.
 	if introduced != "" {
-		iv, err := parseMavenVersion(introduced)
+		iv, err := maven.ParseVersion(introduced)
 		if err != nil {
 			zlog.Warn(ctx).
 				Str("package", vuln.Package.Name).
@@ -67,7 +69,7 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 	lastAffected := decodedVersions.Get("lastAffected")
 	switch {
 	case fixedVersion != "":
-		fv, err := parseMavenVersion(fixedVersion)
+		fv, err := maven.ParseVersion(fixedVersion)
 		if err != nil {
 			zlog.Warn(ctx).
 				Str("package", vuln.Package.Name).
@@ -78,7 +80,7 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 		// The package is affected if its version is less than the fixed version.
 		return rv.Compare(fv) < 0, nil
 	case lastAffected != "":
-		la, err := parseMavenVersion(lastAffected)
+		la, err := maven.ParseVersion(lastAffected)
 		if err != nil {
 			zlog.Warn(ctx).
 				Str("package", vuln.Package.Name).
