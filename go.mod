@@ -7,6 +7,7 @@ toolchain go1.24.3
 require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/doug-martin/goqu/v8 v8.6.0
+	github.com/ebitengine/purego v0.9.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgconn v1.14.3
