@@ -160,8 +160,9 @@ func (s *IndexerStore) DeleteManifests(ctx context.Context, ds ...claircore.Dige
 	if len(deletedManifests) == 0 {
 		err = errors.Join(errs...)
 		return nil, err
-	} else {
-		zlog.Info(ctx).
+	}
+	if len(errs) > 0 {
+		zlog.Warn(ctx).
 			Errs("reason", errs).
 			Msg("unexpected errors")
 	}
