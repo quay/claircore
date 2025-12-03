@@ -218,6 +218,12 @@ func OpenDB(ctx context.Context, sys fs.FS, found FoundDB) (*Database, error) {
 	case kindSQLite:
 		sdb, err := sqlite.Open(spool.Name())
 		if err != nil {
+			if err := spool.Close(); err != nil {
+				zlog.Warn(ctx).Err(err).Msg("unable to close spool")
+			}
+			if err := os.Remove(spool.Name()); err != nil {
+				zlog.Warn(ctx).Err(err).Msg("unable to remove spool")
+			}
 			return nil, fmt.Errorf("internal/rpm: unable to open sqlite db: %w", err)
 		}
 		db.headers = sdb

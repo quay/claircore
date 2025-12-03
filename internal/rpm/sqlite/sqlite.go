@@ -45,6 +45,7 @@ func Open(f string) (*RPMDB, error) {
 		return nil, err
 	}
 	if err := db.Ping(); err != nil {
+		db.Close()
 		return nil, err
 	}
 	rdb := RPMDB{db: db}
