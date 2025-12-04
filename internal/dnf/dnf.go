@@ -180,7 +180,10 @@ Stat:
 		return nil, fmt.Errorf("internal/dnf: error reading sqlite db: %w", err)
 	}
 	if err := db.PingContext(ctx); err != nil {
-		return nil, fmt.Errorf("internal/dnf: error reading sqlite db: %w", err)
+		if err := db.Close(); err != nil {
+			zlog.Warn(ctx).Err(err).Msg("unable to close sqlite db")
+		}
+		return nil, fmt.Errorf("internal/dnf: error pinging sqlite db: %w", err)
 	}
 	queries, err := pickQueries(ctx, db)
 	if err != nil {
