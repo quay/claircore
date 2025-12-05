@@ -29,7 +29,7 @@ jobs:
       - name: Checkout
         id: checkout
         if: ${{ !cancelled() }}
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
       - name: Check Filenames
@@ -57,7 +57,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
       - name: Setup mdBook
@@ -85,7 +85,7 @@ jobs:
           key: commit-ok-${{ matrix.go }}-${{ github.sha }}
       - name: Checkout
         if: steps.previous.outputs.cache-hit != 'true'
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
       - uses: actions/setup-go@v6

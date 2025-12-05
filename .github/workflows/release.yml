@@ -17,7 +17,7 @@ jobs:
           tag=`basename "${GITHUB_REF}"`
           echo "VERSION=${tag}" >> $GITHUB_ENV
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           persist-credentials: true # Needed to fetch the changelog ref.
@@ -42,7 +42,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
 
