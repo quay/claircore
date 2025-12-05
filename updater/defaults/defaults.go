@@ -60,7 +60,7 @@ func inner(ctx context.Context) error {
 	updater.Register("rhel-vex", new(vex.Factory))
 	updater.Register("aws", driver.UpdaterSetFactoryFunc(aws.UpdaterSet))
 	updater.Register("oracle", driver.UpdaterSetFactoryFunc(oracle.UpdaterSet))
-	updater.Register("photon", driver.UpdaterSetFactoryFunc(photon.UpdaterSet))
+	updater.Register("photon", new(photon.Factory))
 	updater.Register("suse", new(suse.Factory))
 
 	cvssSet := driver.NewUpdaterSet()

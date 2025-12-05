@@ -34,6 +34,24 @@ ANSI_COLOR="1;34"
 HOME_URL="https://vmware.github.io/photon/"
 BUG_REPORT_URL="https://github.com/vmware/photon/issues"`)
 
+var photon4OSRelease []byte = []byte(`NAME="VMware Photon OS"
+VERSION="4.0"
+ID=photon
+VERSION_ID="4.0"
+PRETTY_NAME="VMware Photon OS/Linux"
+ANSI_COLOR="1;34"
+HOME_URL="https://vmware.github.io/photon/"
+BUG_REPORT_URL="https://github.com/vmware/photon/issues"`)
+
+var photon5OSRelease []byte = []byte(`NAME="VMware Photon OS"
+VERSION="5.0"
+ID=photon
+VERSION_ID="5.0"
+PRETTY_NAME="VMware Photon OS/Linux"
+ANSI_COLOR="1;34"
+HOME_URL="https://vmware.github.io/photon/"
+BUG_REPORT_URL="https://github.com/vmware/photon/issues"`)
+
 func TestDistributionScanner(t *testing.T) {
 	table := []struct {
 		name      string
@@ -42,26 +60,36 @@ func TestDistributionScanner(t *testing.T) {
 	}{
 		{
 			name:      "photon 1.0",
-			release:   Photon1,
+			release:   Release("1.0"),
 			osRelease: photon1OSRelease,
 		},
 		{
 			name:      "photon 2.0",
-			release:   Photon2,
+			release:   Release("2.0"),
 			osRelease: photon2OSRelease,
 		},
 		{
 			name:      "photon 3.0",
-			release:   Photon3,
+			release:   Release("3.0"),
 			osRelease: photon3OSRelease,
+		},
+		{
+			name:      "photon 4.0",
+			release:   Release("4.0"),
+			osRelease: photon4OSRelease,
+		},
+		{
+			name:      "photon 5.0",
+			release:   Release("5.0"),
+			osRelease: photon5OSRelease,
 		},
 	}
 	for _, tt := range table {
 		t.Run(tt.name, func(t *testing.T) {
 			scanner := DistributionScanner{}
 			dist := scanner.parse(bytes.NewBuffer(tt.osRelease))
-			if !cmp.Equal(dist, releaseToDist(tt.release)) {
-				t.Fatalf("%v", cmp.Diff(dist, releaseToDist(tt.release)))
+			if !cmp.Equal(dist, mkDist(string(tt.release))) {
+				t.Fatalf("%v", cmp.Diff(dist, mkDist(string(tt.release))))
 			}
 		})
 	}

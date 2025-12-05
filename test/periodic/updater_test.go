@@ -79,7 +79,12 @@ func TestOracle(t *testing.T) {
 
 func TestPhoton(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
-	set, err := photon.UpdaterSet(ctx)
+	fac := new(photon.Factory)
+	err := fac.Configure(ctx, noopConfigure, pkgClient)
+	if err != nil {
+		t.Fatal(err)
+	}
+	set, err := fac.UpdaterSet(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
