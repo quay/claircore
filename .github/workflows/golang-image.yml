@@ -43,7 +43,7 @@ jobs:
         go: ${{ fromJSON(needs.versions.outputs.versions) }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
       - name: Check verisons and dates
