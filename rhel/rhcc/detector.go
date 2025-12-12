@@ -21,7 +21,10 @@ var (
 	_ indexer.PackageScanner    = (*detector)(nil)
 	_ indexer.RepositoryScanner = (*repoDetector)(nil)
 
+	// labelsFilepath is the path to the labels.json file in the layer.
 	labelsFilepath = "root/buildinfo/labels.json"
+	// altLabelsFilepath is the path to the labels.json file used by RHCOS and other images.
+	altLabelsFilepath = "usr/share/buildinfo/labels.json"
 )
 
 type detector struct{}
@@ -49,12 +52,11 @@ func (s *detector) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.P
 		return nil, fmt.Errorf("rhcc: unable to open layer: %w", err)
 	}
 
-	labels, err := findJSONLabels(ctx, sys)
-	switch {
-	case errors.Is(err, nil):
-	case errors.Is(err, errNotFound):
+	labels, labelsPath, err := findLabelsJSON(sys)
+	if errors.Is(err, errNotFound) {
 		return nil, nil
-	default:
+	}
+	if err != nil {
 		return nil, err
 	}
 
@@ -78,7 +80,7 @@ func (s *detector) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.P
 		Name:              labels.Name,
 		Version:           vr,
 		NormalizedVersion: normVer,
-		PackageDB:         labelsFilepath,
+		PackageDB:         labelsPath,
 		Arch:              labels.Architecture,
 		RepositoryHint:    `rhcc`,
 	}
@@ -90,30 +92,33 @@ func (s *detector) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.P
 		Version:           vr,
 		NormalizedVersion: normVer,
 		Source:            &src,
-		PackageDB:         labelsFilepath,
+		PackageDB:         labelsPath,
 		Arch:              labels.Architecture,
 		RepositoryHint:    `rhcc`,
 	})
 	return pkgs, nil
 }
 
-// findJSONLabels reads and parses root/buildinfo/labels.json file.
-// Schema: see testdata/labels.schema.json
-func findJSONLabels(ctx context.Context, sys fs.FS) (*labels, error) {
-	l, err := fs.ReadFile(sys, labelsFilepath)
-	switch {
-	case errors.Is(err, nil):
-	case errors.Is(err, fs.ErrNotExist):
-		return nil, errNotFound
-	default:
-		return nil, err
+// findLabelsJSON tries known locations and returns the first parsed labels
+// along with the path that succeeded.
+// See testdata/labels.schema.json
+func findLabelsJSON(sys fs.FS) (*labels, string, error) {
+	for _, p := range []string{labelsFilepath, altLabelsFilepath} {
+		l, err := fs.ReadFile(sys, p)
+		switch {
+		case errors.Is(err, nil):
+			var lb labels
+			if err := json.Unmarshal(l, &lb); err != nil {
+				return nil, "", err
+			}
+			return &lb, p, nil
+		case errors.Is(err, fs.ErrNotExist):
+			continue
+		default:
+			return nil, "", err
+		}
 	}
-	var labels labels
-	err = json.Unmarshal(l, &labels)
-	if err != nil {
-		return nil, err
-	}
-	return &labels, nil
+	return nil, "", errNotFound
 }
 
 type labels struct {
@@ -149,12 +154,11 @@ func (s *repoDetector) Scan(ctx context.Context, l *claircore.Layer) ([]*clairco
 	if err != nil {
 		return nil, fmt.Errorf("rhcc: unable to open layer: %w", err)
 	}
-	labels, err := findJSONLabels(ctx, sys)
-	switch {
-	case errors.Is(err, nil):
-	case errors.Is(err, errNotFound):
+	labels, _, err := findLabelsJSON(sys)
+	if errors.Is(err, errNotFound) {
 		return nil, nil
-	default:
+	}
+	if err != nil {
 		return nil, err
 	}
 	if labels.CPE == "" {

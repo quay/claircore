@@ -19,30 +19,19 @@ import (
 func TestPackageDetector(t *testing.T) {
 	t.Parallel()
 	ctx := zlog.Test(context.Background(), t)
-	gitopsSourceContainer := &claircore.Package{
-		Name:    "openshift-gitops-1/gitops-rhel8-operator",
-		Version: "1744596866",
-		NormalizedVersion: claircore.Version{
-			Kind: "rhctag",
-			V:    [10]int32{1744596866},
-		},
-		Kind:           claircore.SOURCE,
-		PackageDB:      "root/buildinfo/labels.json",
-		RepositoryHint: "rhcc",
-		Arch:           "x86_64",
-	}
 
 	type testcase struct {
 		Name       string
 		LabelsFile string
+		LabelsPath string
 		Want       []*claircore.Package
 	}
 	table := []testcase{
 		{
 			Name:       "PackageLabelsTest",
 			LabelsFile: "testdata/simple_labels.json",
+			LabelsPath: "root/buildinfo/labels.json",
 			Want: []*claircore.Package{
-				gitopsSourceContainer,
 				{
 					Name:    "openshift-gitops-1/gitops-rhel8-operator",
 					Version: "1744596866",
@@ -50,13 +39,85 @@ func TestPackageDetector(t *testing.T) {
 						Kind: "rhctag",
 						V:    [10]int32{1744596866},
 					},
-					Kind:           claircore.BINARY,
-					Source:         gitopsSourceContainer,
+					Kind:           claircore.SOURCE,
+					PackageDB:      "root/buildinfo/labels.json",
+					RepositoryHint: "rhcc",
+					Arch:           "x86_64",
+				},
+				{
+					Name:    "openshift-gitops-1/gitops-rhel8-operator",
+					Version: "1744596866",
+					NormalizedVersion: claircore.Version{
+						Kind: "rhctag",
+						V:    [10]int32{1744596866},
+					},
+					Kind: claircore.BINARY,
+					Source: &claircore.Package{
+						Name:    "openshift-gitops-1/gitops-rhel8-operator",
+						Version: "1744596866",
+						NormalizedVersion: claircore.Version{
+							Kind: "rhctag",
+							V:    [10]int32{1744596866},
+						},
+						Kind:           claircore.SOURCE,
+						PackageDB:      "root/buildinfo/labels.json",
+						RepositoryHint: "rhcc",
+						Arch:           "x86_64",
+					},
 					PackageDB:      "root/buildinfo/labels.json",
 					RepositoryHint: "rhcc",
 					Arch:           "x86_64",
 				},
 			},
+		},
+		{
+			Name:       "PackageRHCOSLabelsTest",
+			LabelsFile: "testdata/simple_labels.json",
+			LabelsPath: "usr/share/buildinfo/labels.json",
+			Want: []*claircore.Package{
+				{
+					Name:    "openshift-gitops-1/gitops-rhel8-operator",
+					Version: "1744596866",
+					NormalizedVersion: claircore.Version{
+						Kind: "rhctag",
+						V:    [10]int32{1744596866},
+					},
+					Kind:           claircore.SOURCE,
+					PackageDB:      "usr/share/buildinfo/labels.json",
+					RepositoryHint: "rhcc",
+					Arch:           "x86_64",
+				},
+				{
+					Name:    "openshift-gitops-1/gitops-rhel8-operator",
+					Version: "1744596866",
+					NormalizedVersion: claircore.Version{
+						Kind: "rhctag",
+						V:    [10]int32{1744596866},
+					},
+					Kind: claircore.BINARY,
+					Source: &claircore.Package{
+						Name:    "openshift-gitops-1/gitops-rhel8-operator",
+						Version: "1744596866",
+						NormalizedVersion: claircore.Version{
+							Kind: "rhctag",
+							V:    [10]int32{1744596866},
+						},
+						Kind:           claircore.SOURCE,
+						PackageDB:      "usr/share/buildinfo/labels.json",
+						RepositoryHint: "rhcc",
+						Arch:           "x86_64",
+					},
+					PackageDB:      "usr/share/buildinfo/labels.json",
+					RepositoryHint: "rhcc",
+					Arch:           "x86_64",
+				},
+			},
+		},
+		{
+			Name:       "PackageBadPathLabelsTest",
+			LabelsFile: "testdata/simple_labels.json",
+			LabelsPath: "bad/path/labels.json",
+			Want:       nil,
 		},
 	}
 	var cd detector
@@ -71,7 +132,7 @@ func TestPackageDetector(t *testing.T) {
 		t.Run(tt.Name, func(t *testing.T) {
 			ctx := zlog.Test(ctx, t)
 			mod := test.Modtime(t, tt.LabelsFile)
-			a.GenerateLayer(t, tt.Name, mod, genLayerFunc(tt.LabelsFile, "root/buildinfo/labels.json"))
+			a.GenerateLayer(t, tt.Name, mod, genLayerFunc(tt.LabelsFile, tt.LabelsPath))
 
 			r := a.Realizer(ctx).(*test.CachedRealizer)
 			defer func() {
@@ -108,12 +169,14 @@ func TestRepositoryDetector(t *testing.T) {
 	type testcase struct {
 		Name       string
 		LabelsFile string
+		LabelsPath string
 		Want       []*claircore.Repository
 	}
 	table := []testcase{
 		{
 			Name:       "RepositoryLabelsTest",
 			LabelsFile: "testdata/simple_labels.json",
+			LabelsPath: "root/buildinfo/labels.json",
 			Want: []*claircore.Repository{
 				{
 					Name: "cpe:2.3:a:redhat:openshift_gitops:1.16:*:el8:*:*:*:*:*",
@@ -121,6 +184,24 @@ func TestRepositoryDetector(t *testing.T) {
 					CPE:  cpe.MustUnbind("cpe:2.3:a:redhat:openshift_gitops:1.16:*:el8:*:*:*:*:*"),
 				},
 			},
+		},
+		{
+			Name:       "RepositoryRHCOSLabelsTest",
+			LabelsFile: "testdata/simple_labels.json",
+			LabelsPath: "usr/share/buildinfo/labels.json",
+			Want: []*claircore.Repository{
+				{
+					Name: "cpe:2.3:a:redhat:openshift_gitops:1.16:*:el8:*:*:*:*:*",
+					Key:  "rhcc-container-repository",
+					CPE:  cpe.MustUnbind("cpe:2.3:a:redhat:openshift_gitops:1.16:*:el8:*:*:*:*:*"),
+				},
+			},
+		},
+		{
+			Name:       "RepositoryBadLabelsTest",
+			LabelsFile: "testdata/simple_labels.json",
+			LabelsPath: "bad/path/labels.json",
+			Want:       nil,
 		},
 	}
 	var cd repoDetector
@@ -139,7 +220,7 @@ func TestRepositoryDetector(t *testing.T) {
 		t.Run(tt.Name, func(t *testing.T) {
 			ctx := zlog.Test(ctx, t)
 			mod := test.Modtime(t, tt.LabelsFile)
-			a.GenerateLayer(t, tt.Name, mod, genLayerFunc(tt.LabelsFile, "root/buildinfo/labels.json"))
+			a.GenerateLayer(t, tt.Name, mod, genLayerFunc(tt.LabelsFile, tt.LabelsPath))
 
 			r := a.Realizer(ctx).(*test.CachedRealizer)
 			defer func() {
