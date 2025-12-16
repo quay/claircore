@@ -79,7 +79,7 @@ jobs:
     steps:
       - name: Check for Previous Run
         id: previous
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/ok-by-run
           key: commit-ok-${{ matrix.go }}-${{ github.sha }}
@@ -94,7 +94,7 @@ jobs:
           go-version: ${{ matrix.go }}
       - name: Cache Integration Assets
         if: steps.previous.outputs.cache-hit != 'true'
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           key: integration-assets-${{ hashFiles('**/*_test.go') }}
           restore-keys: |
