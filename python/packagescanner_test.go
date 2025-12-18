@@ -13,7 +13,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/python"
@@ -80,7 +79,6 @@ var scanTable = []test.ScannerTestcase{
 
 func TestScanLocal(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(context.Background(), t)
 
 	type testcase struct {
 		Name string
@@ -97,7 +95,7 @@ func TestScanLocal(t *testing.T) {
 
 	for _, tt := range table {
 		t.Run(tt.Name, func(t *testing.T) {
-			ctx := zlog.Test(ctx, t)
+			ctx := test.Logging(t)
 			f, err := os.Open(tt.Path)
 			if err != nil {
 				t.Fatal(err)

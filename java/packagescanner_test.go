@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/quay/zlog"
 	"net/http"
 	"net/http/httptest"
 	"path"
@@ -22,8 +21,7 @@ func TestDisableAPI(t *testing.T) {
 		t.Fatal("external http request invoked when none was expected")
 	}))
 
-	ctx := context.Background()
-	ctx = zlog.Test(ctx, t)
+	ctx := test.Logging(t)
 	scanner := &java.Scanner{}
 	var buf bytes.Buffer
 	cfg := &java.ScannerConfig{

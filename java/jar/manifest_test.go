@@ -2,7 +2,6 @@ package jar
 
 import (
 	"bytes"
-	"context"
 	"errors"
 	"io"
 	"io/fs"
@@ -11,12 +10,12 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/quay/zlog"
+	"github.com/quay/claircore/test"
 )
 
 func TestParseManifest(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 
 	md := os.DirFS("testdata/manifest")
 	fs, err := fs.ReadDir(md, ".")
@@ -49,7 +48,7 @@ func TestParseManifest(t *testing.T) {
 
 func TestParseManifest_JenkinsPlugins(t *testing.T) {
 	var i Info
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	for _, tc := range jenkinsPlugins {
 		t.Run(tc.Name, func(t *testing.T) {
 			err := i.parseManifest(ctx, strings.NewReader(tc.Contents))

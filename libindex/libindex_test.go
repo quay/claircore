@@ -8,10 +8,10 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/quay/zlog"
 	"go.uber.org/mock/gomock"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/test"
 	indexer "github.com/quay/claircore/test/mock/indexer"
 )
 
@@ -45,7 +45,6 @@ func digest(inp string) claircore.Digest {
 }
 
 func TestAffectedManifests(t *testing.T) {
-	ctx := context.Background()
 	tt := []struct {
 		name                 string
 		inputVulns           []claircore.Vulnerability
@@ -94,7 +93,7 @@ func TestAffectedManifests(t *testing.T) {
 
 	for _, table := range tt {
 		t.Run(table.name, func(t *testing.T) {
-			ctx := zlog.Test(ctx, t)
+			ctx := test.Logging(t)
 			s := table.mockStore(t)
 			li := &Libindex{store: s}
 
@@ -115,7 +114,7 @@ func TestAffectedManifests(t *testing.T) {
 	t.Run("CancelledContext", func(t *testing.T) {
 		for _, table := range tt {
 			t.Run(table.name, func(t *testing.T) {
-				ctx := zlog.Test(ctx, t)
+				ctx := test.Logging(t)
 				ctx, cancel := context.WithCancelCause(ctx)
 				want := errors.New("early cancel")
 				cancel(want)
@@ -138,7 +137,6 @@ func TestAffectedManifests(t *testing.T) {
 }
 
 func BenchmarkAffectedManifests(b *testing.B) {
-	ctx := context.Background()
 	// create store
 	ctrl := gomock.NewController(b)
 	s := indexer.NewMockStore(ctrl)
@@ -151,7 +149,7 @@ func BenchmarkAffectedManifests(b *testing.B) {
 		nil,
 	).MaxTimes(100 * b.N)
 
-	ctx = zlog.Test(ctx, b)
+	ctx := test.Logging(b)
 	li := &Libindex{store: s}
 
 	for b.Loop() {

@@ -7,12 +7,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"slices"
 	"strings"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/enricher"
@@ -91,8 +90,6 @@ func (*Enricher) Name() string { return name }
 
 // FetchEnrichment implements driver.EnrichmentUpdater.
 func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "enricher/kev/Enricher.FetchEnrichment")
-
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, e.feed.String(), nil)
 	if err != nil {
 		return nil, hint, fmt.Errorf("kev: unable to create request: %w", err)
@@ -116,12 +113,12 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 		}
 		fallthrough
 	case http.StatusNotModified:
-		zlog.Info(ctx).Msg("database unchanged since last fetch")
+		slog.InfoContext(ctx, "database unchanged since last fetch")
 		return nil, hint, driver.Unchanged
 	default:
 		return nil, hint, fmt.Errorf("http response error: %s %d", res.Status, res.StatusCode)
 	}
-	zlog.Debug(ctx).Msg("successfully requested database")
+	slog.DebugContext(ctx, "successfully requested database")
 
 	out, err := tmp.NewFile("", "kev.")
 	if err != nil {
@@ -131,7 +128,7 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 	defer func() {
 		if !success {
 			if err := out.Close(); err != nil {
-				zlog.Warn(ctx).Err(err).Msg("unable to close spool")
+				slog.WarnContext(ctx, "unable to close spool", "reason", err)
 			}
 		}
 	}()
@@ -149,17 +146,13 @@ func (e *Enricher) FetchEnrichment(ctx context.Context, hint driver.Fingerprint)
 
 	success = true
 	hint = driver.Fingerprint(res.Header.Get("Last-Modified"))
-	zlog.Debug(ctx).
-		Str("hint", string(hint)).
-		Msg("using new hint")
+	slog.DebugContext(ctx, "using new hint", "hint", string(hint))
 
 	return out, hint, nil
 }
 
 // ParseEnrichment implements driver.EnrichmentUpdater.
 func (e *Enricher) ParseEnrichment(ctx context.Context, rc io.ReadCloser) ([]driver.EnrichmentRecord, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "enricher/kev/Enricher.ParseEnrichment")
-
 	var root Root
 	buf := bufio.NewReader(rc)
 	if err := json.NewDecoder(buf).Decode(&root); err != nil {
@@ -196,14 +189,12 @@ func (e *Enricher) ParseEnrichment(ctx context.Context, rc io.ReadCloser) ([]dri
 
 // Enrich implements driver.Enricher.
 func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *claircore.VulnerabilityReport) (string, []json.RawMessage, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "enricher/kev/Enricher.Enrich")
-
 	m := make(map[string][]json.RawMessage)
 	erCache := make(map[string][]driver.EnrichmentRecord)
 
 	for id, v := range r.Vulnerabilities {
 		t := make(map[string]struct{})
-		ctx := zlog.ContextWithValues(ctx, "vuln", v.Name)
+		log := slog.With("vuln", v.Name)
 
 		for _, elem := range []string{
 			v.Name,
@@ -211,13 +202,13 @@ func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *cla
 		} {
 			// Check if the element is non-empty before running the regex
 			if elem == "" {
-				zlog.Debug(ctx).Str("element", elem).Msg("skipping empty element")
+				log.DebugContext(ctx, "skipping empty element", "element", elem)
 				continue
 			}
 
 			matches := enricher.CVERegexp.FindAllString(elem, -1)
 			if len(matches) == 0 {
-				zlog.Debug(ctx).Str("element", elem).Msg("no CVEs found in element")
+				log.DebugContext(ctx, "no CVEs found in element", "element", elem)
 				continue
 			}
 			for _, m := range matches {
@@ -227,7 +218,7 @@ func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *cla
 
 		// Skip if no CVEs were found
 		if len(t) == 0 {
-			zlog.Debug(ctx).Msg("no CVEs found in vulnerability metadata")
+			log.DebugContext(ctx, "no CVEs found in vulnerability metadata")
 			continue
 		}
 
@@ -249,11 +240,11 @@ func (e *Enricher) Enrich(ctx context.Context, g driver.EnrichmentGetter, r *cla
 			erCache[cveKey] = rec
 		}
 
-		zlog.Debug(ctx).Int("count", len(rec)).Msg("found records")
+		log.DebugContext(ctx, "found records", "count", len(rec))
 
 		// Skip if no enrichment records are found
 		if len(rec) == 0 {
-			zlog.Debug(ctx).Strs("cve", ts).Msg("no enrichment records found for CVEs")
+			log.DebugContext(ctx, "no enrichment records found for CVEs", "cve", ts)
 			continue
 		}
 

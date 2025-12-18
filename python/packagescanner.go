@@ -8,13 +8,12 @@ import (
 	"context"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"net/textproto"
 	"path"
 	"path/filepath"
 	"runtime/trace"
 	"strings"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -59,12 +58,8 @@ func (*Scanner) Kind() string { return "package" }
 func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.Package, error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	trace.Log(ctx, "layer", layer.Hash.String())
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "python/Scanner.Scan",
-		"version", ps.Version(),
-		"layer", layer.Hash.String())
-	zlog.Debug(ctx).Msg("start")
-	defer zlog.Debug(ctx).Msg("done")
+	slog.DebugContext(ctx, "start")
+	defer slog.DebugContext(ctx, "done")
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -85,9 +80,7 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 	}
 	for _, n := range ms {
 		if set.Contains(n) {
-			zlog.Debug(ctx).
-				Str("path", n).
-				Msg("file path determined to be of RPM origin")
+			slog.DebugContext(ctx, "file path determined to be of RPM origin", "path", n)
 			continue
 		}
 		b, err := fs.ReadFile(sys, n)
@@ -99,18 +92,12 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 		rd := textproto.NewReader(bufio.NewReader(bytes.NewReader(b)))
 		hdr, err := rd.ReadMIMEHeader()
 		if err != nil && hdr == nil {
-			zlog.Warn(ctx).
-				Err(err).
-				Str("path", n).
-				Msg("unable to read metadata, skipping")
+			slog.WarnContext(ctx, "unable to read metadata, skipping", "reason", err, "path", n)
 			continue
 		}
 		v, err := pep440.Parse(hdr.Get("Version"))
 		if err != nil {
-			zlog.Warn(ctx).
-				Err(err).
-				Str("path", n).
-				Msg("couldn't parse the version, skipping")
+			slog.WarnContext(ctx, "couldn't parse the version, skipping", "reason", err, "path", n)
 			continue
 		}
 		pkgDB := filepath.Join(n, "..", "..")
@@ -172,14 +159,7 @@ func findDeliciousEgg(ctx context.Context, sys fs.FS) (out []string, err error) 
 	}
 
 	return out, fs.WalkDir(sys, ".", func(p string, d fs.DirEntry, err error) error {
-		ev := zlog.Debug(ctx).
-			Str("file", p)
-		var success bool
-		defer func() {
-			if !success {
-				ev.Discard().Send()
-			}
-		}()
+		attrs := []slog.Attr{slog.String("file", p)}
 		switch {
 		case err != nil:
 			return err
@@ -190,15 +170,15 @@ func findDeliciousEgg(ctx context.Context, sys fs.FS) (out []string, err error) 
 			switch {
 			case isRPM:
 				pat = `usr/lib*/python[23].*`
-				ev = ev.Bool("rpm_dir", true)
+				attrs = append(attrs, slog.Bool("rpm_dir", true))
 			case dpkg:
 				pat = `usr/lib*/python[23]`
-				ev = ev.Bool("dpkg_dir", true)
+				attrs = append(attrs, slog.Bool("dpkg_dir", true))
 			default:
 				panic("programmer error: unreachable")
 			}
 			if m, _ := path.Match(pat, p); m {
-				ev.Msg("skipping directory")
+				slog.LogAttrs(ctx, slog.LevelDebug, "skipping directory", attrs...)
 				return fs.SkipDir
 			}
 			fallthrough
@@ -208,29 +188,28 @@ func findDeliciousEgg(ctx context.Context, sys fs.FS) (out []string, err error) 
 		case strings.HasPrefix(filepath.Base(p), ".wh."):
 			return nil
 		case strings.HasSuffix(p, `.egg/EGG-INFO/PKG-INFO`):
-			ev = ev.Str("kind", ".egg")
+			attrs = append(attrs, slog.String("kind", ".egg"))
 		case strings.HasSuffix(p, `.egg-info`):
 			fallthrough
 		case strings.HasSuffix(p, `.egg-info/PKG-INFO`):
-			ev = ev.Str("kind", ".egg-info")
+			attrs = append(attrs, slog.String("kind", ".egg-info"))
 		case strings.HasSuffix(p, `.dist-info/METADATA`):
-			ev = ev.Str("kind", "wheel")
+			attrs = append(attrs, slog.String("kind", "wheel"))
 			// See if we can discern the installer.
 			var installer string
 			ip := path.Join(path.Dir(p), `INSTALLER`)
 			if ic, err := fs.ReadFile(sys, ip); err == nil {
 				installer = string(bytes.TrimSpace(ic))
-				ev = ev.Str("installer", installer)
+				attrs = append(attrs, slog.String("installer", installer))
 			}
 			if _, ok := blocklist[installer]; ok {
-				ev.Msg("skipping package")
+				slog.LogAttrs(ctx, slog.LevelDebug, "skipping package", attrs...)
 				return nil
 			}
 		default:
 			return nil
 		}
-		ev.Msg("found package")
-		success = true
+		slog.LogAttrs(ctx, slog.LevelDebug, "found package", attrs...)
 		out = append(out, p)
 		return nil
 	})

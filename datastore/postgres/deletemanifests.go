@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/dblock"
@@ -43,7 +43,6 @@ var errLockFail = errors.New("lock failed")
 // The returned slice indicates the successfully deleted manifests. An error is
 // reported if none were able to be deleted.
 func (s *IndexerStore) DeleteManifests(ctx context.Context, ds ...claircore.Digest) ([]claircore.Digest, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "datastore/postgres/DeleteManifests")
 	const (
 		getManifestID  = `SELECT id FROM manifest WHERE hash = $1`
 		getLayers      = `SELECT layer_id FROM manifest_layer WHERE manifest_id = $1;`
@@ -135,10 +134,9 @@ func (s *IndexerStore) DeleteManifests(ctx context.Context, ds ...claircore.Dige
 					return fmt.Errorf("unable check layer usage: %w", err)
 				}
 				ra := tag.RowsAffected()
-				zlog.Debug(ctx).
-					Int64("count", ra).
-					Str("manifest", d.String()).
-					Msg("deleted layers for manifest")
+				slog.DebugContext(ctx, "deleted layers for manifest",
+					"count", ra,
+					"manifest", d)
 			}
 			deletedManifests = append(deletedManifests, d)
 			return nil
@@ -146,25 +144,20 @@ func (s *IndexerStore) DeleteManifests(ctx context.Context, ds ...claircore.Dige
 		switch {
 		case attemptErr == nil:
 		case errors.Is(attemptErr, errLockFail):
-			zlog.Debug(ctx).
-				Stringer("manifest", d).
-				Msg("unable to obtain lock")
+			slog.DebugContext(ctx, "unable to obtain lock", "manifest", d)
 		default:
 			errs = append(errs, fmt.Errorf("%s: %w", d, attemptErr))
 		}
 	}
-	zlog.Debug(ctx).
-		Int("count", len(deletedManifests)).
-		Int("nonexistant", len(ds)-len(deletedManifests)).
-		Msg("deleted manifests")
+	slog.DebugContext(ctx, "deleted manifests",
+		"count", len(deletedManifests),
+		"nonexistant", len(ds)-len(deletedManifests))
 	if len(deletedManifests) == 0 {
 		err = errors.Join(errs...)
 		return nil, err
 	}
 	if len(errs) > 0 {
-		zlog.Warn(ctx).
-			Errs("reason", errs).
-			Msg("unexpected errors")
+		slog.WarnContext(ctx, "unexpected errors", "reason", errs)
 	}
 	return deletedManifests, nil
 }

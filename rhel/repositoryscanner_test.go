@@ -2,7 +2,6 @@ package rhel
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -16,7 +15,6 @@ import (
 	"github.com/quay/claircore/pkg/tmp"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
@@ -25,7 +23,6 @@ import (
 
 func TestRepositoryScanner(t *testing.T) {
 	t.Parallel()
-	ctx := zlog.Test(context.Background(), t)
 
 	repoData := `
 	{
@@ -320,7 +317,7 @@ func TestRepositoryScanner(t *testing.T) {
 
 	for _, tt := range table {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx := zlog.Test(ctx, t)
+			ctx := test.Logging(t)
 			f, err := os.Open(tt.layerPath)
 			if err != nil {
 				t.Fatal(err)
@@ -388,7 +385,7 @@ func TestBugURL(t *testing.T) {
 	if err == nil {
 		t.Error("expected error")
 	}
-	got := bugURL(in, err)
+	got := bugURL(in, err).String()
 
 	t.Logf("\ngot:  %s\nwant: %s", got, want)
 	if got != want {

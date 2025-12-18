@@ -13,12 +13,12 @@ import (
 	"io"
 	"io/fs"
 	"iter"
+	"log/slog"
 	"net/url"
 	"os"
 	"runtime"
 	"slices"
 
-	"github.com/quay/zlog"
 	_ "modernc.org/sqlite" // register the sqlite driver
 
 	"github.com/quay/claircore"
@@ -85,7 +85,7 @@ func FindRepoids(ctx context.Context, sys fs.FS) ([]string, error) {
 	}
 	defer func() {
 		if err := rows.Close(); err != nil {
-			zlog.Warn(ctx).Err(err).Msg("error closing returned rows")
+			slog.WarnContext(ctx, "error closing returned rows", "reason", err)
 		}
 	}()
 
@@ -145,7 +145,7 @@ Stat:
 	}
 	defer func() {
 		if err := f.Close(); err != nil {
-			zlog.Warn(ctx).Err(err).Msg("unable to close fs.FS db file")
+			slog.WarnContext(ctx, "unable to close fs.FS db file", "reason", err)
 		}
 	}()
 
@@ -157,17 +157,17 @@ Stat:
 	}
 	defer func() {
 		if err := spool.Close(); err != nil {
-			zlog.Warn(ctx).Err(err).Msg("unable to close sqlite db file")
+			slog.WarnContext(ctx, "unable to close sqlite db file", "reason", err)
 		}
 		// If in an error return, make sure to clean up the spool file.
 		if h == nil {
 			if err := os.Remove(spool.Name()); err != nil {
-				zlog.Warn(ctx).Err(err).Msg("unable to unlink sqlite db file")
+				slog.WarnContext(ctx, "unable to unlink sqlite db file", "reason", err)
 			}
 		}
 	}()
 
-	zlog.Debug(ctx).Str("file", spool.Name()).Msg("copying sqlite db out of tar")
+	slog.DebugContext(ctx, "copying sqlite db out of tar", "file", spool.Name())
 	if _, err := io.Copy(spool, f); err != nil {
 		return nil, fmt.Errorf("internal/dnf: error spooling sqlite db: %w", err)
 	}
@@ -181,7 +181,7 @@ Stat:
 	}
 	if err := db.PingContext(ctx); err != nil {
 		if err := db.Close(); err != nil {
-			zlog.Warn(ctx).Err(err).Msg("unable to close sqlite db")
+			slog.WarnContext(ctx, "unable to close sqlite db", "reason", err)
 		}
 		return nil, fmt.Errorf("internal/dnf: error pinging sqlite db: %w", err)
 	}
@@ -210,7 +210,7 @@ func pickQueries(ctx context.Context, db *sql.DB) (q queries, err error) {
 	if err != nil {
 		return q, err
 	}
-	zlog.Debug(ctx).Strs("tables", names).Msg("found tables in database")
+	slog.DebugContext(ctx, "found tables in database", "tables", names)
 
 	switch {
 	case !slices.Contains(names, `config`):
@@ -260,17 +260,16 @@ func (h *historyDB) AddRepoid(ctx context.Context, pkg *claircore.Package) error
 	v := fmt.Sprintf("%s-%s.%s", pkg.Name, pkg.Version, pkg.Arch) // "Version" contains the EVR.
 	ver, err := rpmver.Parse(v)
 	if err != nil {
-		zlog.Warn(ctx).
-			Err(err).
-			Str("version", v).
-			Msg("unable to re-parse rpm version")
+		slog.WarnContext(ctx, "unable to re-parse rpm version",
+			"version", v,
+			"reason", err,
+		)
 		return nil
 	}
 	if ver.Architecture == nil {
-		zlog.Debug(ctx).
-			Err(err).
-			Str("version", v).
-			Msg("unable to parse architecture")
+		slog.DebugContext(ctx, "unable to parse architecture",
+			"reason", err,
+			"version", v)
 		return nil
 	}
 

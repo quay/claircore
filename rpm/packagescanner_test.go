@@ -1,7 +1,6 @@
 package rpm
 
 import (
-	"context"
 	"os"
 	"path/filepath"
 	"slices"
@@ -9,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/wart"
@@ -25,7 +23,7 @@ import (
 ////go:generate fetch -o testdata/package/ubi9_nodejs.txtar ubi9/nodejs-20
 
 func TestPackageDetection(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	ms, err := filepath.Glob("testdata/package/*.txtar")
 	if err != nil {
 		panic("programmer error") // static glob
@@ -66,7 +64,7 @@ func TestPackageDetection(t *testing.T) {
 					arches[img.Archtecture] = struct{}{}
 
 					t.Run(img.Archtecture, func(t *testing.T) {
-						ctx := zlog.Test(ctx, t)
+						ctx := test.Logging(t)
 						m, err := ar.Manifest(img.ID)
 						if err != nil {
 							t.Fatal(err)
@@ -119,7 +117,7 @@ func TestPackageDetection(t *testing.T) {
 }
 
 func TestDanglingSymlink(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 	desc := claircore.LayerDescription{
 		Digest:    test.RandomSHA256Digest(t).String(),
 		URI:       "file:///dev/null",
@@ -154,7 +152,6 @@ func TestDanglingSymlink(t *testing.T) {
 }
 
 func TestLayer(t *testing.T) {
-	ctx := context.Background()
 	ents, err := os.ReadDir(`testdata/layers`)
 	if err != nil {
 		t.Fatal(err)
@@ -173,7 +170,7 @@ func TestLayer(t *testing.T) {
 			continue
 		}
 		t.Run(n, func(t *testing.T) {
-			ctx := zlog.Test(ctx, t)
+			ctx := test.Logging(t)
 			f, err := os.Open(filepath.Join(`testdata/layers`, n))
 			if err != nil {
 				t.Fatal(err)
@@ -203,7 +200,7 @@ func TestLayer(t *testing.T) {
 }
 
 func TestLayerDoesNotExist(t *testing.T) {
-	ctx := zlog.Test(t.Context(), t)
+	ctx := test.Logging(t)
 
 	desc := &claircore.LayerDescription{
 		Digest:    test.RandomSHA256Digest(t).String(),

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/google/uuid"
@@ -11,7 +12,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore/libvuln/driver"
 )
@@ -80,7 +80,6 @@ func (s *MatcherStore) GetLatestUpdateRef(ctx context.Context, kind driver.Updat
 		queryEnrichment    = `SELECT ref FROM update_operation WHERE kind = 'enrichment' ORDER BY id USING > LIMIT 1;`
 		queryVulnerability = `SELECT ref FROM update_operation WHERE kind = 'vulnerability' ORDER BY id USING > LIMIT 1;`
 	)
-	ctx = zlog.ContextWithValues(ctx, "component", "internal/vulnstore/postgres/getLatestRef")
 
 	var q string
 	var label string
@@ -156,15 +155,12 @@ func (s *MatcherStore) GetLatestUpdateRefs(ctx context.Context, kind driver.Upda
 		}
 		ret[uo.Updater] = ops
 	}
-	zlog.Debug(ctx).
-		Int("count", len(ret)).
-		Msg("found updaters")
+	slog.DebugContext(ctx, "found updaters", "count", len(ret))
 	return ret, nil
 }
 
 func getLatestRefs(ctx context.Context, pool *pgxpool.Pool) (map[string][]driver.UpdateOperation, error) {
 	const query = `SELECT DISTINCT ON (updater) updater, ref, fingerprint, date FROM update_operation ORDER BY updater, id USING >;`
-	ctx = zlog.ContextWithValues(ctx, "component", "internal/vulnstore/postgres/getLatestRefs")
 
 	start := time.Now()
 
@@ -195,9 +191,7 @@ func getLatestRefs(ctx context.Context, pool *pgxpool.Pool) (map[string][]driver
 		}
 		ret[uo.Updater] = ops
 	}
-	zlog.Debug(ctx).
-		Int("count", len(ret)).
-		Msg("found updaters")
+	slog.DebugContext(ctx, "found updaters", "count", len(ret))
 	return ret, nil
 }
 
@@ -208,7 +202,6 @@ func (s *MatcherStore) GetUpdateOperations(ctx context.Context, kind driver.Upda
 		queryEnrichment    = `SELECT ref, updater, fingerprint, date FROM update_operation WHERE updater = ANY($1) AND kind = 'enrichment' ORDER BY id DESC;`
 		getUpdaters        = `SELECT DISTINCT(updater) FROM update_operation;`
 	)
-	ctx = zlog.ContextWithValues(ctx, "component", "internal/vulnstore/postgres/getUpdateOperations")
 
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {

@@ -7,14 +7,13 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/nodejs"
+	"github.com/quay/claircore/test"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/quay/zlog"
 )
 
 func TestScanLocal(t *testing.T) {
 	t.Parallel()
-	ctx := t.Context()
 
 	table := []struct {
 		name      string
@@ -52,7 +51,7 @@ func TestScanLocal(t *testing.T) {
 			}
 			defer file.Close()
 
-			ctx := zlog.Test(ctx, t)
+			ctx := test.Logging(t)
 			scanner := &nodejs.Scanner{}
 			var l claircore.Layer
 			err = l.Init(ctx, &claircore.LayerDescription{

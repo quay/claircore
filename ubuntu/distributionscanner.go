@@ -7,10 +7,9 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"log/slog"
 	"runtime/trace"
 	"strings"
-
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -45,12 +44,8 @@ func (*DistributionScanner) Kind() string { return scannerKind }
 // Scan implements [indexer.DistributionScanner].
 func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Distribution, error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
-	ctx = zlog.ContextWithValues(ctx,
-		"component", "ubuntu/DistributionScanner.Scan",
-		"version", ds.Version(),
-		"layer", l.Hash.String())
-	zlog.Debug(ctx).Msg("start")
-	defer zlog.Debug(ctx).Msg("done")
+	slog.DebugContext(ctx, "start")
+	defer slog.DebugContext(ctx, "done")
 	sys, err := l.FS()
 	if err != nil {
 		return nil, fmt.Errorf("ubuntu: unable to open layer: %w", err)

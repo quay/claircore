@@ -5,9 +5,9 @@ import (
 	"encoding/xml"
 	"fmt"
 	"io"
+	"log/slog"
 
 	"github.com/quay/goval-parser/oval"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/xmlutil"
@@ -18,8 +18,7 @@ import (
 var _ driver.Parser = (*Updater)(nil)
 
 func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vulnerability, error) {
-	ctx = zlog.ContextWithValues(ctx, "component", "photon/Updater.Parse")
-	zlog.Info(ctx).Msg("starting parse")
+	slog.InfoContext(ctx, "starting parse")
 	defer r.Close()
 	root := oval.Root{}
 	dec := xml.NewDecoder(r)
@@ -27,11 +26,11 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 	if err := dec.Decode(&root); err != nil {
 		return nil, fmt.Errorf("photon: unable to decode OVAL document: %w", err)
 	}
-	zlog.Debug(ctx).Msg("xml decoded")
+	slog.DebugContext(ctx, "xml decoded")
 
 	protoVulns := func(def oval.Definition) ([]*claircore.Vulnerability, error) {
 		return []*claircore.Vulnerability{
-			&claircore.Vulnerability{
+			{
 				Updater:            u.Name(),
 				Name:               def.Title,
 				Description:        def.Description,

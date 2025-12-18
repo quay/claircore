@@ -1,15 +1,14 @@
 package postgres
 
 import (
-	"context"
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 	pgtest "github.com/quay/claircore/test/postgres"
 )
@@ -29,7 +28,7 @@ type op struct {
 
 func TestGetLatestVulnerabilities(t *testing.T) {
 	integration.NeedDB(t)
-	ctx := zlog.Test(context.Background(), t)
+	ctx := test.Logging(t)
 
 	cases := []latestVulnTestCase{
 		{
@@ -297,6 +296,7 @@ func TestGetLatestVulnerabilities(t *testing.T) {
 	// run test cases
 	for _, tc := range cases {
 		t.Run(tc.TestName, func(t *testing.T) {
+			ctx := test.Logging(t, ctx)
 			_, err := store.DeltaUpdateVulnerabilities(ctx, tc.Updater, driver.Fingerprint(uuid.New().String()), tc.FirstOp.vulns, tc.FirstOp.deletedVulns)
 			if err != nil {
 				t.Fatalf("failed to perform update for first op: %v", err)
