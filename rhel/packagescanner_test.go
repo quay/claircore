@@ -2,6 +2,8 @@ package rhel
 
 import (
 	"context"
+	"errors"
+	"io/fs"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -146,5 +148,40 @@ func TestPackageScannerDNFWrapLogic(t *testing.T) {
 
 			}
 		})
+	}
+}
+
+// TestPackageScannerPropagatesFindDBErrors ensures filesystem walk errors from FindDBs
+// are surfaced to the caller instead of being swallowed.
+func TestPackageScannerPropagatesFindDBErrors(t *testing.T) {
+	t.Parallel()
+	ctx := zlog.Test(context.Background(), t)
+
+	// Point the layer at a non-existent directory to force WalkDir to fail immediately.
+	missingRoot := filepath.Join(t.TempDir(), "missing-root")
+
+	var l claircore.Layer
+	desc := claircore.LayerDescription{
+		Digest:    `sha256:` + "beefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeef",
+		URI:       `file://` + missingRoot,
+		MediaType: `application/vnd.claircore.filesystem`,
+		Headers:   make(map[string][]string),
+	}
+	if err := l.Init(ctx, &desc, nil); err != nil {
+		t.Fatalf("init layer: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := l.Close(); err != nil {
+			t.Error(err)
+		}
+	})
+
+	scanner := &PackageScanner{}
+	_, err := scanner.Scan(ctx, &l)
+	if err == nil {
+		t.Fatalf("expected error from PackageScanner.Scan")
+	}
+	if !errors.Is(err, fs.ErrNotExist) {
+		t.Fatalf("expected error to wrap fs.ErrNotExist, got %v", err)
 	}
 }

@@ -34,7 +34,7 @@ func (p PackageScanner) Version() string { return "1" }
 //
 // This implementation stores additional information needed to correlate with
 // [claircore.Repository] values in the "RepositoryHint" field.
-func (p PackageScanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.Package, error) {
+func (p PackageScanner) Scan(ctx context.Context, layer *claircore.Layer) (out []*claircore.Package, err error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -59,7 +59,6 @@ func (p PackageScanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*cl
 	}
 	doDNFWrap = cm == nil || cm.FromDNFHint
 
-	var out []*claircore.Package
 	found, errFunc := rpm.FindDBs(ctx, sys)
 	defer func() {
 		err = errors.Join(err, errFunc())
@@ -99,5 +98,5 @@ func (p PackageScanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*cl
 		}
 	}
 
-	return out, nil
+	return
 }
