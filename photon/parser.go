@@ -42,7 +42,7 @@ func (u *Updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 				// each updater is configured to parse a photon release
 				// specific xml database. we'll use the updater's release
 				// to map the parsed vulnerabilities
-				Dist: releaseToDist(u.release),
+				Dist: mkDist(string(u.release)),
 			},
 		}, nil
 	}
