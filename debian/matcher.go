@@ -40,7 +40,7 @@ func (*Matcher) Query() []driver.MatchConstraint {
 	return []driver.MatchConstraint{
 		driver.DistributionDID,
 		driver.DistributionName,
-		driver.DistributionVersion,
+		driver.DistributionVersionID,
 	}
 }
 
