@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"runtime/debug"
 	"slices"
 	"strconv"
@@ -18,7 +19,6 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/purl"
 	"github.com/quay/claircore/sbom"
-	"github.com/quay/zlog"
 )
 
 // Version describes the SPDX version to target.
@@ -209,7 +209,7 @@ func (e *Encoder) parseIndexReport(ctx context.Context, ir *claircore.IndexRepor
 				purl, err := e.PURLConverter.Generate(ctx, r)
 				switch {
 				case err != nil:
-					zlog.Warn(ctx).Err(err).Msg("failed to generate PURL")
+					slog.WarnContext(ctx, "failed to generate PURL", "reason", err)
 				default:
 					pkg.PackageExternalReferences = append(pkg.PackageExternalReferences, &v2_3.PackageExternalReference{
 						Category: "PACKAGE_MANAGER",
