@@ -305,16 +305,13 @@ func matchOne(ctx context.Context,
 	ev := newEvent(m)
 	ev.numRecords = len(records)
 	defer func() {
+		lvl := slog.LevelInfo
 		l := events.Logger(ctx)
 		if err != nil {
-			l.ErrorContext(ctx, "match",
-				name, ev,
-				"reason", err,
-			)
-			return
+			lvl = slog.LevelError
+			l = l.With("reason", err)
 		}
-		l.InfoContext(ctx, "match",
-			name, ev)
+		l.Log(ctx, lvl, "match", name, ev)
 	}()
 	log := slog.With("matcher", name)
 
