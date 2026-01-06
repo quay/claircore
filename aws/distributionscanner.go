@@ -79,7 +79,7 @@ func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]
 		return nil, nil
 	}
 	for _, buff := range files {
-		dist := ds.parse(buff)
+		dist := parse(buff)
 		if dist != nil {
 			return []*claircore.Distribution{dist}, nil
 		}
@@ -87,11 +87,11 @@ func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]
 	return []*claircore.Distribution{}, nil
 }
 
-// parse attempts to match all AWS release regexp and returns the associated
+// Parse attempts to match all AWS release regexp and returns the associated
 // distribution if it exists.
 //
 // separated into its own method to aid testing.
-func (ds *DistributionScanner) parse(buff *bytes.Buffer) *claircore.Distribution {
+func parse(buff *bytes.Buffer) *claircore.Distribution {
 	for _, ur := range awsRegexes {
 		if ur.regexp.Match(buff.Bytes()) {
 			dist := releaseToDist(ur.release)

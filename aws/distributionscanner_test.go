@@ -72,52 +72,51 @@ SUPPORT_END="2028-03-01"`)
 
 func TestDistributionScanner(t *testing.T) {
 	table := []struct {
-		name      string
-		release   Release
-		osRelease []byte
+		name           string
+		release        Release
+		osRelease      []byte
 		prettyDistName string
 	}{
 		{
-			name:      "AL1",
-			release:   AmazonLinux1,
-			osRelease: AL1v201609OSRelease,
+			name:           "AL1",
+			release:        AmazonLinux1,
+			osRelease:      AL1v201609OSRelease,
 			prettyDistName: "Amazon Linux AMI 2018.03",
 		},
 		{
-			name:      "AL1",
-			release:   AmazonLinux1,
-			osRelease: AL1v201703OSRelease,
+			name:           "AL1",
+			release:        AmazonLinux1,
+			osRelease:      AL1v201703OSRelease,
 			prettyDistName: "Amazon Linux AMI 2018.03",
 		},
 		{
-			name:      "AL1",
-			release:   AmazonLinux1,
-			osRelease: AL1v201709OSRelease,
+			name:           "AL1",
+			release:        AmazonLinux1,
+			osRelease:      AL1v201709OSRelease,
 			prettyDistName: "Amazon Linux AMI 2018.03",
 		},
 		{
-			name:      "AL1",
-			release:   AmazonLinux1,
-			osRelease: AL1v201803OSRelease,
+			name:           "AL1",
+			release:        AmazonLinux1,
+			osRelease:      AL1v201803OSRelease,
 			prettyDistName: "Amazon Linux AMI 2018.03",
 		},
 		{
-			name:      "AL2",
-			release:   AmazonLinux2,
-			osRelease: AL2OSRelease,
+			name:           "AL2",
+			release:        AmazonLinux2,
+			osRelease:      AL2OSRelease,
 			prettyDistName: "Amazon Linux 2",
 		},
 		{
-			name:      "AL2023",
-			release:   AmazonLinux2023,
-			osRelease: AL2023OSRelease,
+			name:           "AL2023",
+			release:        AmazonLinux2023,
+			osRelease:      AL2023OSRelease,
 			prettyDistName: "Amazon Linux 2023",
 		},
 	}
 	for _, tt := range table {
 		t.Run(tt.name, func(t *testing.T) {
-			scanner := DistributionScanner{}
-			dist := scanner.parse(bytes.NewBuffer(tt.osRelease))
+			dist := parse(bytes.NewBuffer(tt.osRelease))
 			cmpDist := releaseToDist(tt.release)
 			if !cmp.Equal(dist, cmpDist) {
 				t.Fatalf("%v", cmp.Diff(dist, cmpDist))
