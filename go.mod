@@ -22,6 +22,7 @@ require (
 	github.com/quay/goval-parser v0.8.8
 	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
 	github.com/spdx/tools-golang v0.5.6
+	github.com/tetratelabs/wazero v1.11.0
 	github.com/ulikunitz/xz v0.5.15
 	go.opentelemetry.io/otel v1.39.0
 	go.opentelemetry.io/otel/trace v1.39.0
