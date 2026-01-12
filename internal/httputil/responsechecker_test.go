@@ -24,7 +24,8 @@ func TestLimitedReadResponse(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected an error")
 	}
-	if err.Error() != "unexpected status code: 404 Not Found (body starts: \"Sorry this resource isn't available at the moment, please try again later when the resource might be available\")" {
-		t.Errorf("expected different error message but got: %s", err.Error())
+	wantErrMsg := `unexpected status code: "404 Not Found" for "` + svr.URL + `" (body starts: "Sorry this resource isn't available at the moment, please try again later when the resource might be available")`
+	if err.Error() != wantErrMsg {
+		t.Errorf("expected different error message, got: %q, want %q", err.Error(), wantErrMsg)
 	}
 }

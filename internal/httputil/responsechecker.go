@@ -15,9 +15,9 @@ func CheckResponse(resp *http.Response, acceptableCodes ...int) error {
 	if !acceptable {
 		limitBody, err := io.ReadAll(io.LimitReader(resp.Body, 256))
 		if err == nil {
-			return fmt.Errorf("unexpected status code: %s (body starts: %q)", resp.Status, limitBody)
+			return fmt.Errorf("unexpected status code: %q for %q (body starts: %q)", resp.Status, resp.Request.URL.Redacted(), limitBody)
 		}
-		return fmt.Errorf("unexpected status code: %s", resp.Status)
+		return fmt.Errorf("unexpected status code: %q for %q", resp.Status, resp.Request.URL.Redacted())
 	}
 	return nil
 }
