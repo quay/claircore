@@ -223,15 +223,16 @@ var (
 	// FilePatterns is a regular expression for *any* file that may need to be
 	// recorded alongside a package.
 	//
-	// The tested strings are absolute paths.
+	// The tested strings are paths relative to the rpm root (almost always "/").
 	filePatterns = sync.OnceValue(func() *regexp.Regexp {
 		pat := []string{
 			`^.*/[^/]+\.[ejw]ar$`,                         // Jar files
 			`^.*/site-packages/[^/]+\.egg-info/PKG-INFO$`, // Python packages
 			`^.*/package.json$`,                           // npm packages
 			`^.*/[^/]+\.gemspec$`,                         // ruby gems
-			`^/usr/s?bin/[^/]+$`,                          // any executable
-			`^/usr/libexec/[^/]+/[^/]+$`,                  // sometimes the executables are here too
+			`^usr/s?bin/[^/]+$`,                           // any executable
+			`^usr/libexec/[^/]+/[^/]+$`,                   // sometimes the executables are here too
+			`^usr/lib/golang/(?:[^/]+/)+[^/]+$`,           // golang executables are here for some RH layers
 		}
 		return regexp.MustCompile(strings.Join(pat, `|`))
 	})
