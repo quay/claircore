@@ -154,7 +154,7 @@ func (f closeFunc) Close() error {
 // Because we know we're the only concurrent call that's dealing with this blob,
 // we can be a bit more lax.
 func (a *RemoteFetchArena) fetchFileForCache(ctx context.Context, desc *claircore.LayerDescription) (*os.File, error) {
-	log := slog.With("arena", a.root, "layer", desc.Digest, "uri", desc.URI)
+	log := slog.With("arena", a.root.Name(), "layer", desc.Digest, "uri", desc.URI)
 	ctx, span := tracer.Start(ctx, "RemoteFetchArena.fetchUnlinkedFile")
 	defer span.End()
 	span.SetStatus(codes.Error, "")

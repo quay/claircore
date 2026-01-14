@@ -64,7 +64,7 @@ Loop:
 	if !tmpOK && err == nil {
 		// This is just a best-effort action to keep files from accumulating.
 		// The correct way is to use the kernel feature for this: the O_TMPFILE flag.
-		_ = os.Remove(f.Name())
+		_ = dir.Remove(f.Name())
 	}
 
 	if err != nil {

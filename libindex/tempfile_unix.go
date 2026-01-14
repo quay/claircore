@@ -23,6 +23,6 @@ func openTemp(dir *os.Root) (f *os.File, err error) {
 	if err != nil {
 		return nil, err
 	}
-	runtime.AddCleanup(f, func(n string) { os.Remove(n) }, f.Name())
+	runtime.AddCleanup(f, func(n string) { dir.Remove(n) }, f.Name())
 	return f, nil
 }
