@@ -337,9 +337,17 @@ func (u *Updater) processChanges(ctx context.Context, w io.Writer, fp *fingerpri
 				return fmt.Errorf("error making advisory request %w", err)
 			}
 			defer res.Body.Close()
-			err = httputil.CheckResponse(res, http.StatusOK)
-			if err != nil {
-				return fmt.Errorf("unexpected response: %w", err)
+
+			switch res.StatusCode {
+			case http.StatusOK:
+				break
+			case http.StatusNotFound:
+				// We don't want to fail the entire fetch if an advisory is not found.
+				// It can happen if the advisory has just been deleted.
+				slog.DebugContext(ctx, "advisory not found", "url", advisoryURI)
+				return nil
+			default:
+				return fmt.Errorf("unexpected response: %s", res.Status)
 			}
 
 			// Add compacted JSON to buffer.
