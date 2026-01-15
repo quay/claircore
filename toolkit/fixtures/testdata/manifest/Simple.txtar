@@ -1,0 +1,5 @@
+-- input.csv --
+# Comments are ignored.
+1,1,
+-- want.json --
+["1","1","UNKNOWN"]
