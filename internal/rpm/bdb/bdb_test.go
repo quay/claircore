@@ -2,8 +2,11 @@ package bdb
 
 import (
 	"bytes"
+	"encoding/json"
+	"errors"
 	"io/fs"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/quay/claircore/internal/rpm/rpmdb"
@@ -57,6 +60,31 @@ func TestLoadPackage(t *testing.T) {
 				}
 			}
 			t.Logf("got %d headers", ct)
+
+			wn := strings.Replace(n, ".Packages", ".want.json", 1)
+			switch _, err := fs.Stat(dir, wn); {
+			case err == nil:
+			case errors.Is(err, fs.ErrNotExist):
+				return
+			default:
+				t.Fatalf("unexpected fixture error: %v", err)
+			}
+			b, err = fs.ReadFile(dir, wn)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var checks PackageChecks
+			if err := json.Unmarshal(b, &checks); err != nil {
+				t.Fatal(err)
+			}
+
+			if got, want := ct, checks.Count; got != want {
+				t.Errorf("bad number of packages: got: %d, want: %d", got, want)
+			}
 		})
 	}
+}
+
+type PackageChecks struct {
+	Count int `json:"count"`
 }
