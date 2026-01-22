@@ -490,17 +490,23 @@ func (e *ecs) Insert(ctx context.Context, log *slog.Logger, skipped *stats, name
 			proto.Severity = s.Score
 			var v cvss.V4
 			v, err = cvss.ParseV4(s.Score)
-			q = cvss.QualitativeScore(&v)
+			if err == nil {
+				q = cvss.QualitativeScore(&v)
+			}
 		case `CVSS_V3`:
 			proto.Severity = s.Score
 			var v cvss.V3
 			v, err = cvss.ParseV3(s.Score)
-			q = cvss.QualitativeScore(&v)
+			if err == nil {
+				q = cvss.QualitativeScore(&v)
+			}
 		case `CVSS_V2`:
 			proto.Severity = s.Score
 			var v cvss.V2
 			v, err = cvss.ParseV2(s.Score)
-			q = cvss.QualitativeScore(&v)
+			if err == nil {
+				q = cvss.QualitativeScore(&v)
+			}
 		default:
 			// We didn't get a severity from the CVSS scores
 			continue
