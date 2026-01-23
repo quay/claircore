@@ -110,7 +110,7 @@ jobs:
           printf '%s/%s/actions/runs/%s/attempts/%s\n'\
             "${GITHUB_SERVER_URL}" "${GITHUB_REPOSITORY}" "${GITHUB_RUN_ID}" "${GITHUB_RUN_ATTEMPT}"\
             > ~/ok-by-run
-          find . -name .git -prune -o -name testdata -prune -o -name go.mod -printf '%h\n' |
+          find . -name .git -prune -o -name testdata -prune -o -name go.mod -print | xargs -n1 dirname |
           while read -r dir; do (
             cd "$dir"
             go list -m
@@ -133,3 +133,22 @@ jobs:
           sudo journalctl --unit postgresql.service --boot -0
           ls /var/log/postgresql/postgresql-*.log
           sudo cat /var/log/postgresql/postgresql-*.log
+
+  platform-tests:
+    name: Platform Tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+      - name: Test Fetcher
+        run: go test -race -v -run TestFetch ./libindex/
