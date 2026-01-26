@@ -30,6 +30,7 @@ func TestRoundTripIndexRecordOCI(t *testing.T) {
 					NormalizedVersion: claircore.FromSemver(semver.MustParse("v9.3.1")),
 					Arch:              "x86_64",
 					RepositoryHint:    "rhcc",
+					Source:            &claircore.Package{},
 				},
 				Repository: &GoldRepo,
 			},
@@ -43,6 +44,7 @@ func TestRoundTripIndexRecordOCI(t *testing.T) {
 					NormalizedVersion: claircore.FromSemver(semver.MustParse("v9.3.1")),
 					Arch:              "x86_64",
 					RepositoryHint:    "rhcc",
+					Source:            &claircore.Package{},
 				},
 				Repository: &claircore.Repository{
 					CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:9::baseos"),

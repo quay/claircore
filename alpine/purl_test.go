@@ -28,6 +28,7 @@ func TestRoundTripIndexRecordAlpine(t *testing.T) {
 					Kind:      claircore.BINARY,
 					PackageDB: "apk:/busybox",
 					Filepath:  "/bin/busybox",
+					Source:    &claircore.Package{},
 				},
 				Distribution: &claircore.Distribution{
 					Name:       "Alpine Linux",
@@ -47,6 +48,7 @@ func TestRoundTripIndexRecordAlpine(t *testing.T) {
 					Kind:      claircore.BINARY,
 					PackageDB: "apk:/busybox",
 					Filepath:  "/bin/busybox",
+					Source:    &claircore.Package{},
 				},
 				Distribution: &claircore.Distribution{
 					Name:       "Alpine Linux",

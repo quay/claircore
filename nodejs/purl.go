@@ -39,6 +39,7 @@ func ParsePURL(ctx context.Context, purl packageurl.PackageURL) ([]*claircore.In
 				Kind:              claircore.BINARY,
 				Version:           v.String(),
 				NormalizedVersion: claircore.FromSemver(v),
+				Source:            &claircore.Package{},
 			},
 			Repository: &Repository,
 		},

@@ -27,6 +27,7 @@ func TestRoundTripIndexRecordAWS(t *testing.T) {
 					Version: "7.79.1-2.amzn2.0.2",
 					Arch:    "x86_64",
 					Kind:    claircore.BINARY,
+					Source:  &claircore.Package{},
 				},
 				Distribution: &claircore.Distribution{
 					Name:       "Amazon Linux AMI",
@@ -46,6 +47,7 @@ func TestRoundTripIndexRecordAWS(t *testing.T) {
 					Version: "5.1.16-6.amzn2023.0.4",
 					Arch:    "aarch64",
 					Kind:    claircore.BINARY,
+					Source:  &claircore.Package{},
 				},
 				Distribution: &claircore.Distribution{
 					Name:       "Amazon Linux",

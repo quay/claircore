@@ -28,6 +28,7 @@ func TestRoundTripIndexRecord(t *testing.T) {
 					Version: "1.2.11-150500.59.68.1",
 					Arch:    "x86_64",
 					Kind:    claircore.BINARY,
+					Source:  &claircore.Package{},
 				},
 				Distribution: &claircore.Distribution{
 					CPE:        cpe.MustUnbind("cpe:2.3:o:opensuse:leap:15.5"),
@@ -47,6 +48,7 @@ func TestRoundTripIndexRecord(t *testing.T) {
 					Version: "5.1-150300.51.1",
 					Arch:    "aarch64",
 					Kind:    claircore.BINARY,
+					Source:  &claircore.Package{},
 				},
 				Distribution: &claircore.Distribution{
 					Name:       "SLES",

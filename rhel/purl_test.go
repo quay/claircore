@@ -28,6 +28,7 @@ func TestRoundTripIndexRecordRPM(t *testing.T) {
 					Version: "5.1.8-6",
 					Arch:    "x86_64",
 					Module:  "bash:5.1",
+					Source:  &claircore.Package{},
 				},
 				Repository: &claircore.Repository{
 					CPE:  cpe.MustUnbind("cpe:/a:redhat:enterprise_linux:8"),
@@ -46,6 +47,7 @@ func TestRoundTripIndexRecordRPM(t *testing.T) {
 					Name:    "coreutils",
 					Version: "1:9.1-3",
 					Arch:    "x86_64",
+					Source:  &claircore.Package{},
 				},
 				Repository: &claircore.Repository{
 					CPE:  cpe.MustUnbind("cpe:/a:redhat:enterprise_linux:9::baseos"),
@@ -61,6 +63,7 @@ func TestRoundTripIndexRecordRPM(t *testing.T) {
 					Name:    "openssl",
 					Version: "3.0.7-16",
 					Arch:    "aarch64",
+					Source:  &claircore.Package{},
 				},
 				Repository: &claircore.Repository{
 					CPE:  cpe.MustUnbind("cpe:/a:redhat:enterprise_linux:9::appstream"),

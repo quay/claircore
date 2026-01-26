@@ -84,6 +84,7 @@ func ParseRPMPURL(ctx context.Context, purl packageurl.PackageURL) ([]*claircore
 			Package: &claircore.Package{
 				Name:    purl.Name,
 				Version: v.EVR(),
+				Source:  &claircore.Package{},
 				Module:  purl.Qualifiers.Map()["rpmmod"],
 				Arch:    purl.Qualifiers.Map()["arch"],
 			},

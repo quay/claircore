@@ -163,6 +163,7 @@ func TestRegistryParse(t *testing.T) {
 					Package: &claircore.Package{
 						Name:    "bash",
 						Version: "4.4.20-5.el8",
+						Source:  &claircore.Package{},
 					},
 					Repository: &claircore.Repository{
 						CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:9::baseos"),
@@ -191,6 +192,7 @@ func TestRegistryParse(t *testing.T) {
 					Package: &claircore.Package{
 						Name:    "bash",
 						Version: "4.4.20-5.el8",
+						Source:  &claircore.Package{},
 					},
 					Repository: &claircore.Repository{
 						CPE:  cpe.MustUnbind("cpe:/o:redhat:enterprise_linux:9::baseos"),
@@ -202,6 +204,7 @@ func TestRegistryParse(t *testing.T) {
 					Package: &claircore.Package{
 						Name:    "bash",
 						Version: "4.4.20-5.el8",
+						Source:  &claircore.Package{},
 					},
 					Repository: &claircore.Repository{
 						CPE:  cpe.MustUnbind("cpe:/a:redhat:enterprise_linux:9::appstream"),

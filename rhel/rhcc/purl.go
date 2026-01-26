@@ -49,6 +49,7 @@ func ParseOCIPURL(ctx context.Context, purl packageurl.PackageURL) ([]*claircore
 			Version:        purl.Version,
 			Arch:           purl.Qualifiers.Map()["arch"],
 			RepositoryHint: "rhcc",
+			Source:         &claircore.Package{},
 		},
 	}
 
