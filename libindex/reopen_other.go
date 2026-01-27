@@ -2,8 +2,11 @@
 
 package libindex
 
-import "os"
+import (
+	"os"
+	"path/filepath"
+)
 
 func reopen(dir *os.Root, f *os.File) (*os.File, error) {
-	return dir.OpenFile(f.Name(), os.O_RDONLY, 0o644)
+	return dir.OpenFile(filepath.Base(f.Name()), os.O_RDONLY, 0o644)
 }
