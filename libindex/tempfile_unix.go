@@ -10,7 +10,7 @@ import (
 )
 
 func openTemp(dir *os.Root) (f *os.File, err error) {
-	const flag = os.O_WRONLY
+	const flag = os.O_WRONLY | os.O_CREATE | os.O_EXCL
 	for {
 		name := fetchFilename()
 		f, err = dir.OpenFile(name, flag, 0o644)
