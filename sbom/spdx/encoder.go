@@ -21,31 +21,17 @@ import (
 	"github.com/quay/claircore/sbom"
 )
 
-// Version describes the SPDX version to target.
-type Version string
-
-const (
-	V2_3 Version = "v2.3"
-)
-
-// Format describes the data format for the SPDX document.
-type Format string
-
-const JSONFormat Format = "json"
-
-// Option is a type for setting optional fields for the Encoder.
-type Option func(*Encoder)
+// EncoderOption is a type for configuring an Encoder.
+type EncoderOption func(*Encoder)
 
 // Creator describes the creator of the SPDX document that will be produced from the encoding.
 type Creator struct {
-	// Creator is the value of the [Creator] relationship.
+	// Creator is the value of the Creator relationship.
 	Creator string
-	// CreatorType is the key of the [Creator] relationship.
+	// CreatorType is the key of the Creator relationship.
 	// In accordance to the SPDX v2 spec, CreatorType should be one of "Person", "Organization", or "Tool".
 	CreatorType string
 }
-
-var _ sbom.Encoder = (*Encoder)(nil)
 
 // Encoder defines an SPDX encoder and accepts certain values from the caller
 // to use in the SPDX document.
@@ -66,12 +52,14 @@ type Encoder struct {
 	PURLConverter purl.Converter
 }
 
+var _ sbom.Encoder = (*Encoder)(nil)
+
 // NewDefaultEncoder creates an Encoder with default values and sets optional
 // fields based on the provided options.
-func NewDefaultEncoder(options ...Option) *Encoder {
+func NewDefaultEncoder(options ...EncoderOption) *Encoder {
 	e := &Encoder{
 		Version: V2_3,
-		Format:  JSONFormat,
+		Format:  FormatJSON,
 		Creators: []Creator{
 			{
 				Creator:     "Claircore-" + getVersion(),
@@ -87,28 +75,29 @@ func NewDefaultEncoder(options ...Option) *Encoder {
 	return e
 }
 
-func WithPURLConverter(registry purl.Converter) Option {
+// WithPURLConverter is used to set the purl converter registry.
+func WithPURLConverter(registry purl.Converter) EncoderOption {
 	return func(e *Encoder) {
 		e.PURLConverter = registry
 	}
 }
 
 // WithDocumentName is used to set the SPDX document name field.
-func WithDocumentName(name string) Option {
+func WithDocumentName(name string) EncoderOption {
 	return func(e *Encoder) {
 		e.DocumentName = name
 	}
 }
 
 // WithDocumentNamespace is used to set the SPDX document namespace field.
-func WithDocumentNamespace(namespace string) Option {
+func WithDocumentNamespace(namespace string) EncoderOption {
 	return func(e *Encoder) {
 		e.DocumentNamespace = namespace
 	}
 }
 
 // WithDocumentComment is used to set the SPDX document comment field.
-func WithDocumentComment(comment string) Option {
+func WithDocumentComment(comment string) EncoderOption {
 	return func(e *Encoder) {
 		e.DocumentComment = comment
 	}
@@ -117,7 +106,7 @@ func WithDocumentComment(comment string) Option {
 // Encode encodes a [claircore.IndexReport] that writes to w.
 // We first convert the IndexReport to an SPDX doc of the latest version, then
 // convert that doc to the specified version. We assume there's no data munging
-// going from latest to the specified version.
+// going from the latest to the specified version.
 func (e *Encoder) Encode(ctx context.Context, w io.Writer, ir *claircore.IndexReport) error {
 	spdx, err := e.parseIndexReport(ctx, ir)
 	if err != nil {
@@ -135,7 +124,7 @@ func (e *Encoder) Encode(ctx context.Context, w io.Writer, ir *claircore.IndexRe
 	}
 
 	switch e.Format {
-	case JSONFormat:
+	case FormatJSON:
 		if err := spdxjson.Write(tmpConverterDoc, w); err != nil {
 			return err
 		}
@@ -310,7 +299,7 @@ func (e *Encoder) parseIndexReport(ctx context.Context, ir *claircore.IndexRepor
 
 	// Now that we have all the data necessary to create the SPDX document,
 	// we need to order it since the IndexRecords aren't in a deterministic order.
-	// This is particular helpful for testing, but it wouldn't be unreasonable
+	// This is particularly helpful for testing, but it wouldn't be unreasonable
 	// for a user to want to diff different versions of an SPDX of the same IndexReport.
 	slices.Sort(pkgIDs)
 	for _, id := range pkgIDs {
