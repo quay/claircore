@@ -369,6 +369,22 @@ func (p *FetchProxy) RealizeDescriptions(ctx context.Context, descs []claircore.
 	return ls, nil
 }
 
+func (p *FetchProxy) RealizeDescription(ctx context.Context, desc claircore.LayerDescription) (l claircore.Layer, cl io.Closer, err error) {
+	ctx = zlog.ContextWithValues(ctx,
+		"component", "libindex/FetchProxy.RealizeDescription")
+	ctx, span := tracer.Start(ctx, "RealizeDescription")
+	defer span.End()
+
+	err = p.a.fetchInto(ctx, &l, &cl, &desc)()
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "RealizeDescriptions errored")
+	} else {
+		span.SetStatus(codes.Ok, "")
+	}
+	return
+}
+
 // Close marks all the files backing any returned [claircore.Layer] as unused.
 //
 // This method may delete the backing files, necessitating them being fetched by
