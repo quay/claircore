@@ -20,7 +20,6 @@ require (
 	github.com/quay/claircore/toolkit v1.4.0
 	github.com/quay/claircore/updater/driver v1.0.0
 	github.com/quay/goval-parser v0.8.8
-	github.com/remind101/migrate v0.0.0-20170729031349-52c1edff7319
 	github.com/spdx/tools-golang v0.5.7
 	github.com/ulikunitz/xz v0.5.15
 	go.opentelemetry.io/otel v1.40.0

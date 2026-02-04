@@ -11,9 +11,7 @@ import (
 
 	"github.com/jackc/pgx/v5/log/testingadapter"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/jackc/pgx/v5/tracelog"
-	"github.com/remind101/migrate"
 
 	"github.com/quay/claircore/datastore/postgres/migrations"
 	"github.com/quay/claircore/datastore/postgres/types"
@@ -56,17 +54,13 @@ func testDB(ctx context.Context, t testing.TB, which dbFlavor) *pgxpool.Pool {
 		LogLevel: tracelog.LogLevelError,
 	}
 	cfg.AfterConnect = types.ConnectRegisterTypes
-	mdb := stdlib.OpenDB(*cfg.ConnConfig)
-	defer mdb.Close()
+
 	// run migrations
-	migrator := migrate.NewPostgresMigrator(mdb)
 	switch which {
 	case dbMatcher:
-		migrator.Table = migrations.MatcherMigrationTable
-		err = migrator.Exec(migrate.Up, migrations.MatcherMigrations...)
+		err = migrations.Matcher(ctx, cfg.ConnConfig)
 	case dbIndexer:
-		migrator.Table = migrations.IndexerMigrationTable
-		err = migrator.Exec(migrate.Up, migrations.IndexerMigrations...)
+		err = migrations.Indexer(ctx, cfg.ConnConfig)
 	}
 	if err != nil {
 		t.Fatalf("failed to perform migrations: %v", err)

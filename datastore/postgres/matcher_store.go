@@ -7,8 +7,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/jackc/pgx/v5/stdlib"
-	"github.com/remind101/migrate"
 
 	"github.com/quay/claircore/datastore"
 	"github.com/quay/claircore/datastore/postgres/migrations"
@@ -16,18 +14,14 @@ import (
 )
 
 // InitPostgresMatcherStore initialize a indexer.Store given libindex.Opts
-func InitPostgresMatcherStore(_ context.Context, pool *pgxpool.Pool, doMigration bool) (datastore.MatcherStore, error) {
-	db := stdlib.OpenDB(*pool.Config().ConnConfig)
-	defer db.Close()
-
-	// do migrations if requested
+func InitPostgresMatcherStore(ctx context.Context, pool *pgxpool.Pool, doMigration bool) (datastore.MatcherStore, error) {
 	if doMigration {
-		migrator := migrate.NewPostgresMigrator(db)
-		migrator.Table = migrations.MatcherMigrationTable
-		err := migrator.Exec(migrate.Up, migrations.MatcherMigrations...)
-		if err != nil {
-			return nil, fmt.Errorf("failed to perform migrations: %w", err)
+		if err := migrations.Matcher(ctx, pool.Config().ConnConfig); err != nil {
+			return nil, err
 		}
+		// Potentially added types, make sure any connections pulled from this
+		// pool are configured properly going forward.
+		pool.Reset()
 	}
 
 	store := NewMatcherStore(pool)
