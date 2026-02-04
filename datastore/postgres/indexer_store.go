@@ -16,17 +16,18 @@ import (
 
 // InitPostgresIndexerStore initialize a indexer.Store given the pgxpool.Pool
 func InitPostgresIndexerStore(_ context.Context, pool *pgxpool.Pool, doMigration bool) (indexer.Store, error) {
-	db := stdlib.OpenDB(*pool.Config().ConnConfig)
-	defer db.Close()
-
-	// do migrations if requested
 	if doMigration {
+		db := stdlib.OpenDB(*pool.Config().ConnConfig)
+		defer db.Close()
 		migrator := migrate.NewPostgresMigrator(db)
 		migrator.Table = migrations.IndexerMigrationTable
 		err := migrator.Exec(migrate.Up, migrations.IndexerMigrations...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to perform migrations: %w", err)
 		}
+		// Potentially added types, make sure any connections pulled from this
+		// pool are configured properly going forward.
+		pool.Reset()
 	}
 
 	store := NewIndexerStore(pool)
