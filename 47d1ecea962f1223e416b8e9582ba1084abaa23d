@@ -1,0 +1,6 @@
+logging: claircore now uses `log/slog`
+
+If users were integrating with `zlog`, they should now instead configure
+the `log/slog` package's `Default.`
+
+For additional integration, see the `toolkit/log` package.
