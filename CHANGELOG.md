@@ -1,3 +1,26 @@
+<a name="v1.5.49"></a>
+## [v1.5.49] - 2026-02-05
+[v1.5.49]: https://github.com/quay/claircore/compare/v1.5.48...v1.5.49
+
+- sbom: add SPDX decoding support
+  <details>
+  Claircore can now make use of SPDX documents it generates.
+  The SPDX support is currently limited to claircore-generated documents.
+  </details>
+
+- logging: claircore now uses `log/slog`
+  <details>
+  If users were integrating with `zlog`, they should now instead configure
+  the `log/slog` package's `Default.`
+  
+  For additional integration, see the `toolkit/log` package.
+  </details>
+
+- sbom: add purls to SPDX documents
+  <details>
+  When creating SPDX documents, claircore now generates purls.
+  </details>
+
 <a name="v1.5.48"></a>
 ## [v1.5.48] - 2025-12-05
 [v1.5.48]: https://github.com/quay/claircore/compare/v1.5.47...v1.5.48
