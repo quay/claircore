@@ -1,0 +1,3 @@
+sbom: add purls to SPDX documents
+
+When creating SPDX documents, claircore now generates purls.
