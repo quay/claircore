@@ -41,7 +41,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-d44e071c.js";
+            window.path_to_searchindex_js = "searchindex-f5166da8.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-86a13b75.js"></script>
@@ -1163,8 +1163,8 @@ type Ecosystem struct {
 	Coalescer            func(ctx context.Context) (Coalescer, error)
 	Name                 string
 }
-    Ecosystems group together scanners and a Coalescer which are commonly used
-    together.
+    An Ecosystem groups together scanners and a Coalescer which are commonly
+    used together.
 
     A typical ecosystem is "dpkg" which will use the "dpkg" package indexer,
     the "os-release" distribution scanner and the "apt" repository scanner.
@@ -2626,31 +2626,33 @@ unit-v - runs the unit test suite with verbose
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="logging"><a class="header" href="#logging">Logging</a></h1>
-<p>All the logging in claircore is done with <a href="https://pkg.go.dev/github.com/rs/zerolog@v1.26.0">zerolog</a> via <code>context.Context</code>
-values. The <code>zlog</code> package takes OpenTelemetry labels and attaches them to
-<code>zerolog</code> events.</p>
+<p>All the logging in claircore is done with <a href="https://pkg.go.dev/log/slog"><code>log/slog</code></a>.</p>
 <p>This allows for claircore’s logging to be used consistently throughout all the
 packages without having unintended prints to stderr.</p>
 <h2 id="how-to-log"><a class="header" href="#how-to-log">How to Log</a></h2>
 <h3 id="adding-context"><a class="header" href="#adding-context">Adding Context</a></h3>
-<p>In a function, use <code>zlog</code> to add key-value pairs of any relevant context:</p>
-<pre><code class="language-go">	ctx = zlog.ContextWithValues(ctx,
-		"component", "Example.Logger")
+<p>Within a function, create a <code>*slog.Logger</code> to add key-value pairs of any
+relevant context:</p>
+<pre><code class="language-go">		log := slog.With("contextual", "value")
+		log.DebugContext(ctx, "message")
 </code></pre>
-<p>Alternatively, the <code>go.opentelemetry.io/otel/baggage</code> package can be used for
-more explicit control around the baggage values.</p>
+<p>Alternatively, the <code>github.com/quay/claircore/toolkit/log</code> package has a helper
+for associating multiple <code>slog.Attr</code> values with a <code>context.Context</code>.</p>
+<pre><code class="language-go">		ctx := log.With(ctx, "contextual", "value")
+		slog.DebugContext(ctx, "message")
+</code></pre>
+<p>Programs using claircore should configure their <code>slog.Handler</code> to extract the
+values using the key in <code>github.com/quay/claircore/toolkit/log</code> or use the
+<code>Wrap</code> helper.</p>
 <h3 id="logging-style"><a class="header" href="#logging-style">Logging style</a></h3>
 <h4 id="constant-messages"><a class="header" href="#constant-messages">Constant Messages</a></h4>
-<p>Zerolog emits lines when the <code>Msg</code> or <code>Msgf</code> methods are called. Project style
-is to <em>not</em> use <code>Msgf</code>. Any variable data should be set as key-value pairs on
-the Event object.</p>
+<p>Project style is to use string constants for all logging calls. Any variable
+data should be passed as additional arguments to the <code>slog</code> methods.</p>
 <p>For example, don’t do this:</p>
-<pre><code class="language-go">	zlog.Info(ctx).Msgf("done at: %v", time.Now())
+<pre><code class="language-go">	slog.InfoContext(ctx, fmt.Sprintf("done at: %v", time.Now()))
 </code></pre>
 <p>Do this instead:</p>
-<pre><code class="language-go">	zlog.Info(ctx).
-		Time("time", time.Now()).
-		Msgf("done")
+<pre><code class="language-go">	slog.InfoContext(ctx, "done", "time", time.Now())
 </code></pre>
 <h4 id="grammar"><a class="header" href="#grammar">Grammar</a></h4>
 <p>When noting the change during a chunk of work, make sure that the
@@ -2679,14 +2681,6 @@ times in the logs.</p>
 out what level to use is:</p>
 <ul>
 <li>
-<p>Panic</p>
-<p>There’s some occurrence that means the process won’t work correctly.</p>
-</li>
-<li>
-<p>Fatal</p>
-<p>Unused, because it prevents defers from running.</p>
-</li>
-<li>
 <p>Error</p>
 <p>Something unexpected occurred and the process can continue, but a
 human needs to be notified. An error will be returned for this request.</p>
@@ -2709,6 +2703,11 @@ and exiting functions, stepping through a function, or specific file paths
 used while work is being done.</p>
 </li>
 </ul>
+<p>In exceptional situations, levels of <code>slog.LevelDebug-4</code> or <code>slog.LevelError+4</code>
+may be used for “Trace” and “Emergency” logs. There are no predefined constants
+for these.</p>
+<h4 id="contexts"><a class="header" href="#contexts">Contexts</a></h4>
+<p>All logging calls should use the “Context” variant whenever possible.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="misc"><a href="#misc" class="header">Misc</a></h1>
 <p>Here’s various codebase conventions that don’t have dedicated pages:</p>
