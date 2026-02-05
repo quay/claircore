@@ -17,17 +17,18 @@ import (
 
 // InitPostgresMatcherStore initialize a indexer.Store given libindex.Opts
 func InitPostgresMatcherStore(_ context.Context, pool *pgxpool.Pool, doMigration bool) (datastore.MatcherStore, error) {
-	db := stdlib.OpenDB(*pool.Config().ConnConfig)
-	defer db.Close()
-
-	// do migrations if requested
 	if doMigration {
+		db := stdlib.OpenDB(*pool.Config().ConnConfig)
+		defer db.Close()
 		migrator := migrate.NewPostgresMigrator(db)
 		migrator.Table = migrations.MatcherMigrationTable
 		err := migrator.Exec(migrate.Up, migrations.MatcherMigrations...)
 		if err != nil {
 			return nil, fmt.Errorf("failed to perform migrations: %w", err)
 		}
+		// Potentially added types, make sure any connections pulled from this
+		// pool are configured properly going forward.
+		pool.Reset()
 	}
 
 	store := NewMatcherStore(pool)
