@@ -12,7 +12,7 @@ import (
 func openTemp(dir *os.Root) (f *os.File, err error) {
 	// Copied out of golang.org/x/sys/windows
 	const FILE_FLAG_DELETE_ON_CLOSE = 0x04000000
-	const flag = os.O_WRONLY | FILE_FLAG_DELETE_ON_CLOSE
+	const flag = os.O_WRONLY | os.O_CREATE | os.O_EXCL | FILE_FLAG_DELETE_ON_CLOSE
 	for {
 		name := fetchFilename()
 		f, err = dir.OpenFile(name, flag, 0o644)

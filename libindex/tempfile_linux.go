@@ -46,6 +46,7 @@ Loop:
 		flag := os.O_WRONLY
 		if !tmpOK {
 			name = fetchFilename()
+			flag |= os.O_CREATE | os.O_EXCL // Create new file, fail if exists
 		} else {
 			flag |= unix.O_TMPFILE
 		}
