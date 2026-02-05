@@ -1,0 +1,4 @@
+sbom: add SPDX decoding support
+
+Claircore can now make use of SPDX documents it generates.
+The SPDX support is currently limited to claircore-generated documents.
