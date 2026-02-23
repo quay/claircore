@@ -209,7 +209,7 @@ func (u *Updater) getCompressedFileURL(ctx context.Context) (*url.URL, error) {
 		return nil, err
 	}
 
-	compressedFilename := string(body)
+	compressedFilename := strings.TrimSpace(string(body))
 	compressedURL, err := u.url.Parse(compressedFilename)
 	if err != nil {
 		return nil, err
