@@ -2,7 +2,6 @@ package spdx
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"io/fs"
 	"os"
@@ -12,11 +11,12 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/gobin"
 	"github.com/quay/claircore/purl"
+	"github.com/quay/claircore/test"
 )
 
 // TestRoundTrip tests encoding an IndexReport to SPDX and decoding it back.
 func TestRoundTrip(t *testing.T) {
-	ctx := context.Background()
+	ctx := test.Logging(t)
 
 	// Create a registry for both encoding and decoding.
 	// For golang PURLs, we need to register parsers for all namespaces we might encounter.
@@ -90,7 +90,7 @@ func TestRoundTrip(t *testing.T) {
 
 // TestRoundTripTestdata tests round-tripping the testdata files.
 func TestRoundTripTestdata(t *testing.T) {
-	ctx := context.Background()
+	ctx := test.Logging(t)
 
 	// Read all .ir.json files from testdata/round-trip.
 	td := os.DirFS("testdata/round-trip")

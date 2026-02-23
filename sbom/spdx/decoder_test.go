@@ -7,15 +7,16 @@ import (
 	"testing"
 
 	"github.com/package-url/packageurl-go"
+
 	"github.com/quay/claircore/purl"
 	"github.com/quay/claircore/python"
 	"github.com/quay/claircore/rhel"
+	"github.com/quay/claircore/test"
 )
 
 func TestDecoder(t *testing.T) {
-	ctx := context.Background()
-
 	t.Run("konflux-manifest", func(t *testing.T) {
+		ctx := test.Logging(t)
 		// konflux-manifest.spdx.json contains only OCI PURLs (5 total)
 		// There's no standalone OCI PURL parser in the ecosystem packages,
 		// so this tests that the decoder handles unknown PURL types gracefully.
@@ -39,6 +40,7 @@ func TestDecoder(t *testing.T) {
 	})
 
 	t.Run("konflux-syft+hermeto", func(t *testing.T) {
+		ctx := test.Logging(t)
 		// konflux-syft+hermeto.spdx.json contains:
 		// - rpm/redhat PURLs (requires repository_cpes qualifier to parse)
 		// - pypi PURLs (should parse successfully)
@@ -91,7 +93,7 @@ func TestDecoder(t *testing.T) {
 }
 
 func TestDecoderNoPURLConverter(t *testing.T) {
-	ctx := context.Background()
+	ctx := test.Logging(t)
 
 	// Decoder without a PURL converter should return an empty IndexReport.
 	d := NewDefaultDecoder()

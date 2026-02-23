@@ -2,7 +2,6 @@ package spdx
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"io/fs"
 	"os"
@@ -15,9 +14,11 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/purl"
 	"github.com/quay/claircore/rhel"
+	"github.com/quay/claircore/test"
 )
 
 func TestEncoder(t *testing.T) {
+	ctx := test.Logging(t)
 	e := &Encoder{
 		Version: V2_3,
 		Format:  FormatJSON,
@@ -39,7 +40,6 @@ func TestEncoder(t *testing.T) {
 	pr.RegisterDetector(rhel.PackageScanner{}, rhel.GenerateRPMPURL)
 	WithPURLConverter(pr)(e)
 
-	ctx := context.Background()
 	td := os.DirFS("testdata/round-trip")
 	de, err := fs.ReadDir(td, ".")
 	if err != nil {
