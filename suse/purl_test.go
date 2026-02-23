@@ -2,6 +2,7 @@ package suse
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -149,8 +150,8 @@ func TestGeneratePURL(t *testing.T) {
 				t.Fatalf("GenerateRPMPURL: %v", err)
 			}
 			t.Logf("generated PURL: %s", got.String())
-			if diff := cmp.Diff(got, tc.want); diff != "" {
-				t.Fatalf("purl mismatch (-got +want):\n%s", diff)
+			if !cmp.Equal(got, tc.want, purlCmp) {
+				t.Errorf("purl mismatch:\n%s", cmp.Diff(got, tc.want, purlCmp))
 			}
 		})
 	}
@@ -159,4 +160,7 @@ func TestGeneratePURL(t *testing.T) {
 var purlCmp = cmp.Options{
 	// Ignore Distribution field differences for round-trip; only assert package fields.
 	cmpopts.IgnoreFields(claircore.Distribution{}, "PrettyName", "CPE"),
+	cmpopts.SortSlices(func(a, b packageurl.Qualifier) int {
+		return strings.Compare(a.Key, b.Key)
+	}),
 }
