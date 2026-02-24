@@ -49,15 +49,26 @@ func (tc fetchTestcase) Run(ctx context.Context) func(*testing.T) {
 }
 
 func TestFetchSimple(t *testing.T) {
-	ctx := context.Background()
-	tt := []fetchTestcase{
-		{N: 1},
-		{N: 4},
-		{N: 32},
-	}
+	runTCs := func(t *testing.T) {
+		ctx := t.Context()
+		tt := []fetchTestcase{
+			{N: 1},
+			{N: 4},
+			{N: 32},
+		}
 
-	for _, tc := range tt {
-		t.Run(strconv.Itoa(tc.N), tc.Run(ctx))
+		for _, tc := range tt {
+			t.Run(strconv.Itoa(tc.N), tc.Run(ctx))
+		}
+	}
+	runTCs(t)
+
+	if runtime.GOOS == "linux" {
+		t.Run("NoTMPFILE", func(t *testing.T) {
+			tryTMPFILE = false
+			t.Cleanup(func() { tryTMPFILE = true })
+			runTCs(t)
+		})
 	}
 }
 

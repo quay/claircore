@@ -25,7 +25,7 @@ func canTmp(dir *os.Root) bool {
 	tmpMap.RUnlock()
 	// want the default inverted:
 	if !loaded {
-		ok = true
+		ok = tryTMPFILE
 	}
 	return ok
 }
