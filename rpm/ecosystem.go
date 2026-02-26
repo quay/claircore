@@ -15,7 +15,7 @@ import (
 func NewEcosystem(_ context.Context) *indexer.Ecosystem {
 	return &indexer.Ecosystem{
 		PackageScanners: func(ctx context.Context) ([]indexer.PackageScanner, error) {
-			return []indexer.PackageScanner{&Scanner{}}, nil
+			return []indexer.PackageScanner{}, nil
 		},
 		DistributionScanners: func(ctx context.Context) ([]indexer.DistributionScanner, error) {
 			return []indexer.DistributionScanner{
