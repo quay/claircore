@@ -1,0 +1,23 @@
+{
+	"name": "Claircore",
+	"build": {
+		"dockerfile": "Containerfile",
+		"args": {
+			"FEDORA_VERSION": "39",
+			"GO_VERSION": "1.22",
+			"MDBOOK_VERSION": "0.4.37"
+		}
+	},
+	"mounts": [
+		{
+			"type": "bind",
+			"source": "${localEnv:HOME}/.cache/clair-testing",
+			"target": "/root/.cache/clair-testing"
+		},
+		{
+			"type": "bind",
+			"source": "${localEnv:HOME}/go/pkg/mod",
+			"target": "/root/go/pkg/mod"
+		}
+	]
+}
