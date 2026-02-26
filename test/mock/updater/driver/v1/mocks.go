@@ -24,6 +24,7 @@ import (
 type MockUpdater struct {
 	ctrl     *gomock.Controller
 	recorder *MockUpdaterMockRecorder
+	isgomock struct{}
 }
 
 // MockUpdaterMockRecorder is the mock recorder for MockUpdater.
@@ -76,6 +77,7 @@ func (mr *MockUpdaterMockRecorder) Name() *gomock.Call {
 type MockUpdaterFactory struct {
 	ctrl     *gomock.Controller
 	recorder *MockUpdaterFactoryMockRecorder
+	isgomock struct{}
 }
 
 // MockUpdaterFactoryMockRecorder is the mock recorder for MockUpdaterFactory.
@@ -128,6 +130,7 @@ func (mr *MockUpdaterFactoryMockRecorder) Name() *gomock.Call {
 type MockVulnerabilityParser struct {
 	ctrl     *gomock.Controller
 	recorder *MockVulnerabilityParserMockRecorder
+	isgomock struct{}
 }
 
 // MockVulnerabilityParserMockRecorder is the mock recorder for MockVulnerabilityParser.
@@ -166,6 +169,7 @@ func (mr *MockVulnerabilityParserMockRecorder) ParseVulnerability(arg0, arg1 any
 type MockEnrichmentParser struct {
 	ctrl     *gomock.Controller
 	recorder *MockEnrichmentParserMockRecorder
+	isgomock struct{}
 }
 
 // MockEnrichmentParserMockRecorder is the mock recorder for MockEnrichmentParser.

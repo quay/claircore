@@ -22,6 +22,7 @@ import (
 type MockStore struct {
 	ctrl     *gomock.Controller
 	recorder *MockStoreMockRecorder
+	isgomock struct{}
 }
 
 // MockStoreMockRecorder is the mock recorder for MockStore.
@@ -42,44 +43,44 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 }
 
 // GetLatestUpdateOperations mocks base method.
-func (m *MockStore) GetLatestUpdateOperations(arg0 context.Context) ([]driver.UpdateOperation, error) {
+func (m *MockStore) GetLatestUpdateOperations(ctx context.Context) ([]driver.UpdateOperation, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetLatestUpdateOperations", arg0)
+	ret := m.ctrl.Call(m, "GetLatestUpdateOperations", ctx)
 	ret0, _ := ret[0].([]driver.UpdateOperation)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetLatestUpdateOperations indicates an expected call of GetLatestUpdateOperations.
-func (mr *MockStoreMockRecorder) GetLatestUpdateOperations(arg0 any) *gomock.Call {
+func (mr *MockStoreMockRecorder) GetLatestUpdateOperations(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestUpdateOperations", reflect.TypeOf((*MockStore)(nil).GetLatestUpdateOperations), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestUpdateOperations", reflect.TypeOf((*MockStore)(nil).GetLatestUpdateOperations), ctx)
 }
 
 // UpdateEnrichments mocks base method.
-func (m *MockStore) UpdateEnrichments(arg0 context.Context, arg1 uuid.UUID, arg2 string, arg3 driver.Fingerprint, arg4 []driver.EnrichmentRecord) error {
+func (m *MockStore) UpdateEnrichments(ctx context.Context, ref uuid.UUID, kind string, fp driver.Fingerprint, es []driver.EnrichmentRecord) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateEnrichments", arg0, arg1, arg2, arg3, arg4)
+	ret := m.ctrl.Call(m, "UpdateEnrichments", ctx, ref, kind, fp, es)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateEnrichments indicates an expected call of UpdateEnrichments.
-func (mr *MockStoreMockRecorder) UpdateEnrichments(arg0, arg1, arg2, arg3, arg4 any) *gomock.Call {
+func (mr *MockStoreMockRecorder) UpdateEnrichments(ctx, ref, kind, fp, es any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEnrichments", reflect.TypeOf((*MockStore)(nil).UpdateEnrichments), arg0, arg1, arg2, arg3, arg4)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateEnrichments", reflect.TypeOf((*MockStore)(nil).UpdateEnrichments), ctx, ref, kind, fp, es)
 }
 
 // UpdateVulnerabilities mocks base method.
-func (m *MockStore) UpdateVulnerabilities(arg0 context.Context, arg1 uuid.UUID, arg2 string, arg3 driver.Fingerprint, arg4 *driver.ParsedVulnerabilities) error {
+func (m *MockStore) UpdateVulnerabilities(ctx context.Context, ref uuid.UUID, updater string, fp driver.Fingerprint, vs *driver.ParsedVulnerabilities) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateVulnerabilities", arg0, arg1, arg2, arg3, arg4)
+	ret := m.ctrl.Call(m, "UpdateVulnerabilities", ctx, ref, updater, fp, vs)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateVulnerabilities indicates an expected call of UpdateVulnerabilities.
-func (mr *MockStoreMockRecorder) UpdateVulnerabilities(arg0, arg1, arg2, arg3, arg4 any) *gomock.Call {
+func (mr *MockStoreMockRecorder) UpdateVulnerabilities(ctx, ref, updater, fp, vs any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateVulnerabilities", reflect.TypeOf((*MockStore)(nil).UpdateVulnerabilities), arg0, arg1, arg2, arg3, arg4)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateVulnerabilities", reflect.TypeOf((*MockStore)(nil).UpdateVulnerabilities), ctx, ref, updater, fp, vs)
 }
