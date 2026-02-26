@@ -1,0 +1,30 @@
+{
+  "releases": [
+    {
+      "name": "F36",
+      "long_name": "Fedora 36",
+      "version": "36",
+      "id_prefix": "FEDORA",
+      "branch": "f36",
+      "dist_tag": "f36",
+      "stable_tag": "f36-updates",
+      "testing_tag": "f36-updates-testing",
+      "candidate_tag": "f36-updates-candidate",
+      "pending_signing_tag": "f36-signing-pending",
+      "pending_testing_tag": "f36-updates-testing-pending",
+      "pending_stable_tag": "f36-updates-pending",
+      "override_tag": "f36-override",
+      "mail_template": "fedora_errata_template",
+      "state": "current",
+      "composed_by_bodhi": true,
+      "create_automatic_updates": false,
+      "package_manager": "dnf",
+      "testing_repository": "updates-testing",
+      "eol": null
+    }
+  ],
+  "page": 1,
+  "pages": 1,
+  "rows_per_page": 100,
+  "total": 1
+}
