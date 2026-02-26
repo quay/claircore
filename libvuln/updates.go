@@ -24,7 +24,7 @@ func OfflineImport(ctx context.Context, pool *pgxpool.Pool, in io.Reader) error 
 	// some package namespacing issues. It should get refactored if claircore
 	// gets merged into clair.
 	s := postgres.NewMatcherStore(pool)
-	l, err := jsonblob.Load(ctx, in)
+	l, err := jsonblob.NewLoader(in)
 	if err != nil {
 		return err
 	}
