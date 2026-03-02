@@ -38,6 +38,7 @@ gh run watch "${id}"
 cat <<.
 Now, to merge and release:
 
+	go to github and approve the PR titled "${VERSION} Changelog Bump" and wait for it to be merged.
 	git checkout ${BRANCH}
 	git fetch ${REMOTE}
 	git merge --ff-only ${REMOTE}/ready-${VERSION}
