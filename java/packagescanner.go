@@ -24,6 +24,7 @@ import (
 	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/java/jar"
 	"github.com/quay/claircore/rpm"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 var (
@@ -218,7 +219,7 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 			var pkg claircore.Package
 			pkg.Name = i.Name
 			pkg.Version = i.Version
-			pkg.Kind = claircore.BINARY
+			pkg.Kind = types.BinaryPackage
 			pkg.Filepath = n
 			b := ck
 			if len(i.SHA) != 0 {

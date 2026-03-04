@@ -1,6 +1,9 @@
 package claircore
 
-import "github.com/quay/claircore/pkg/cpe"
+import (
+	"github.com/quay/claircore/pkg/cpe"
+	"github.com/quay/claircore/toolkit/types"
+)
 
 type Package struct {
 	// unique ID of this package. this will be created as discovered by the library
@@ -11,7 +14,7 @@ type Package struct {
 	// the version of the package
 	Version string `json:"version"`
 	// type of package. currently expectations are binary or source
-	Kind string `json:"kind,omitempty"`
+	Kind types.PackageKind `json:"kind,omitempty"`
 	// if type is a binary package a source package maybe present which built this binary package.
 	// must be a pointer to support recursive type:
 	Source *Package `json:"source,omitempty"`
@@ -34,8 +37,3 @@ type Package struct {
 	// Detector that discovered this package
 	Detector *Detector `json:"detector"`
 }
-
-const (
-	BINARY = "binary"
-	SOURCE = "source"
-)

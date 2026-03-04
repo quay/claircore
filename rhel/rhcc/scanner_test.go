@@ -15,6 +15,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 func TestContainerScanner(t *testing.T) {
@@ -27,7 +28,7 @@ func TestContainerScanner(t *testing.T) {
 			Kind: "rhctag",
 			V:    [10]int32{3, 5},
 		},
-		Kind:           claircore.SOURCE,
+		Kind:           types.SourcePackage,
 		PackageDB:      "root/buildinfo/Dockerfile-quay-clair-rhel8-v3.5.5-4",
 		RepositoryHint: "rhcc",
 		Arch:           "x86_64",
@@ -40,7 +41,7 @@ func TestContainerScanner(t *testing.T) {
 			Kind: "rhctag",
 			V:    [10]int32{3, 5},
 		},
-		Kind:           claircore.SOURCE,
+		Kind:           types.SourcePackage,
 		PackageDB:      "root/buildinfo/Dockerfile-quay-quay-rhel8-v3.5.6-4",
 		RepositoryHint: "rhcc",
 		Arch:           "x86_64",
@@ -53,7 +54,7 @@ func TestContainerScanner(t *testing.T) {
 			Kind: "rhctag",
 			V:    [10]int32{4, 6},
 		},
-		Kind:           claircore.SOURCE,
+		Kind:           types.SourcePackage,
 		PackageDB:      "root/buildinfo/Dockerfile-openshift-ose-logging-elasticsearch6-v4.6.0-202112132021.p0.g2a13a81.assembly.stream",
 		RepositoryHint: "rhcc",
 		Arch:           "x86_64",
@@ -65,7 +66,7 @@ func TestContainerScanner(t *testing.T) {
 			Kind: "rhctag",
 			V:    [10]int32{1, 3},
 		},
-		Kind:           claircore.SOURCE,
+		Kind:           types.SourcePackage,
 		PackageDB:      "root/buildinfo/Dockerfile-rhdh-rhdh-hub-rhel9-1.3-100",
 		RepositoryHint: "rhcc",
 		Arch:           "x86_64",
@@ -93,7 +94,7 @@ func TestContainerScanner(t *testing.T) {
 						Kind: "rhctag",
 						V:    [10]int32{3, 5},
 					},
-					Kind:           claircore.BINARY,
+					Kind:           types.BinaryPackage,
 					Source:         quaySourceContainer,
 					PackageDB:      "root/buildinfo/Dockerfile-quay-quay-rhel8-v3.5.6-4",
 					RepositoryHint: "rhcc",
@@ -113,7 +114,7 @@ func TestContainerScanner(t *testing.T) {
 						Kind: "rhctag",
 						V:    [10]int32{3, 5},
 					},
-					Kind:           claircore.BINARY,
+					Kind:           types.BinaryPackage,
 					Source:         clairSourceContainer,
 					PackageDB:      "root/buildinfo/Dockerfile-quay-clair-rhel8-v3.5.5-4",
 					RepositoryHint: "rhcc",
@@ -133,7 +134,7 @@ func TestContainerScanner(t *testing.T) {
 						Kind: "rhctag",
 						V:    [10]int32{4, 6},
 					},
-					Kind:           claircore.BINARY,
+					Kind:           types.BinaryPackage,
 					Source:         loggingSourceContainer,
 					PackageDB:      "root/buildinfo/Dockerfile-openshift-ose-logging-elasticsearch6-v4.6.0-202112132021.p0.g2a13a81.assembly.stream",
 					RepositoryHint: "rhcc",
@@ -153,7 +154,7 @@ func TestContainerScanner(t *testing.T) {
 						Kind: "rhctag",
 						V:    [10]int32{1, 3},
 					},
-					Kind:           claircore.BINARY,
+					Kind:           types.BinaryPackage,
 					Source:         rhdhSourceContainer,
 					PackageDB:      "root/buildinfo/Dockerfile-rhdh-rhdh-hub-rhel9-1.3-100",
 					RepositoryHint: "rhcc",

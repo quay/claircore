@@ -4,6 +4,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/python"
 	"github.com/quay/claircore/test"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 var scanTable = []test.ScannerTestcase{
@@ -16,7 +17,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "appdirs",
 				Version:           "1.4.3",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:usr/local/lib/python3.7/site-packages",
 				Filepath:          "usr/local/lib/python3.7/site-packages/appdirs-1.4.3.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -25,7 +26,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "args",
 				Version:           "0.1.0",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:usr/local/lib/python3.7/site-packages",
 				Filepath:          "usr/local/lib/python3.7/site-packages/args-0.1.0.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -34,7 +35,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "astor",
 				Version:           "0.8.1",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:usr/local/lib/python3.7/site-packages",
 				Filepath:          "usr/local/lib/python3.7/site-packages/astor-0.8.1.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -43,7 +44,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "clint",
 				Version:           "0.5.1",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:usr/local/lib/python3.7/site-packages",
 				Filepath:          "usr/local/lib/python3.7/site-packages/clint-0.5.1.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -52,7 +53,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "funcparserlib",
 				Version:           "0.3.6",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:usr/local/lib/python3.7/site-packages",
 				Filepath:          "usr/local/lib/python3.7/site-packages/funcparserlib-0.3.6.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -61,7 +62,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "hy",
 				Version:           "0.17.0",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:usr/local/lib/python3.7/site-packages",
 				Filepath:          "usr/local/lib/python3.7/site-packages/hy-0.17.0.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -70,7 +71,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "rply",
 				Version:           "0.7.7",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:usr/local/lib/python3.7/site-packages",
 				Filepath:          "usr/local/lib/python3.7/site-packages/rply-0.7.7.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -87,7 +88,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "attrs",
 				Version:           "19.3.0",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:vpy3/lib/python3.7/site-packages",
 				Filepath:          "vpy3/lib/python3.7/site-packages/attrs-19.3.0.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -96,7 +97,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "cffi",
 				Version:           "1.13.2",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:vpy3/lib/python3.7/site-packages",
 				Filepath:          "vpy3/lib/python3.7/site-packages/cffi-1.13.2.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -105,7 +106,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "coverage",
 				Version:           "5.0.3",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:vpy3/lib/python3.7/site-packages",
 				Filepath:          "vpy3/lib/python3.7/site-packages/coverage-5.0.3.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -114,7 +115,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "importlib-metadata",
 				Version:           "1.5.0",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:vpy3/lib/python3.7/site-packages",
 				Filepath:          "vpy3/lib/python3.7/site-packages/importlib_metadata-1.5.0.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -123,7 +124,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "more-itertools",
 				Version:           "8.1.0",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:vpy3/lib/python3.7/site-packages",
 				Filepath:          "vpy3/lib/python3.7/site-packages/more_itertools-8.1.0.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -132,7 +133,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "numpy",
 				Version:           "1.18.1",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:vpy3/lib/python3.7/site-packages",
 				Filepath:          "vpy3/lib/python3.7/site-packages/numpy-1.18.1.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -141,7 +142,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "olefile",
 				Version:           "0.46",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:vpy3/lib/python3.7/site-packages",
 				Filepath:          "vpy3/lib/python3.7/site-packages/olefile-0.46.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -150,7 +151,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "packaging",
 				Version:           "20.1",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:vpy3/lib/python3.7/site-packages",
 				Filepath:          "vpy3/lib/python3.7/site-packages/packaging-20.1.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -159,7 +160,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "pip",
 				Version:           "20.0.2",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:vpy3/lib/python3.7/site-packages",
 				Filepath:          "vpy3/lib/python3.7/site-packages/pip-20.0.2.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -168,7 +169,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "pluggy",
 				Version:           "0.13.1",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:vpy3/lib/python3.7/site-packages",
 				Filepath:          "vpy3/lib/python3.7/site-packages/pluggy-0.13.1.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -177,7 +178,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "py",
 				Version:           "1.8.1",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:vpy3/lib/python3.7/site-packages",
 				Filepath:          "vpy3/lib/python3.7/site-packages/py-1.8.1.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -186,7 +187,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "pycparser",
 				Version:           "2.19",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:vpy3/lib/python3.7/site-packages",
 				Filepath:          "vpy3/lib/python3.7/site-packages/pycparser-2.19.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -195,7 +196,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "pyparsing",
 				Version:           "2.4.6",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:vpy3/lib/python3.7/site-packages",
 				Filepath:          "vpy3/lib/python3.7/site-packages/pyparsing-2.4.6.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -204,7 +205,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "pytest",
 				Version:           "5.3.4",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:vpy3/lib/python3.7/site-packages",
 				Filepath:          "vpy3/lib/python3.7/site-packages/pytest-5.3.4.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -213,7 +214,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "pytest-cov",
 				Version:           "2.8.1",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:vpy3/lib/python3.7/site-packages",
 				Filepath:          "vpy3/lib/python3.7/site-packages/pytest_cov-2.8.1.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -222,7 +223,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "setuptools",
 				Version:           "45.1.0",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:vpy3/lib/python3.7/site-packages",
 				Filepath:          "vpy3/lib/python3.7/site-packages/setuptools-45.1.0.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -231,7 +232,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "six",
 				Version:           "1.14.0",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:vpy3/lib/python3.7/site-packages",
 				Filepath:          "vpy3/lib/python3.7/site-packages/six-1.14.0.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -240,7 +241,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "wcwidth",
 				Version:           "0.1.8",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:vpy3/lib/python3.7/site-packages",
 				Filepath:          "vpy3/lib/python3.7/site-packages/wcwidth-0.1.8.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -249,7 +250,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "wheel",
 				Version:           "0.34.1",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:vpy3/lib/python3.7/site-packages",
 				Filepath:          "vpy3/lib/python3.7/site-packages/wheel-0.34.1.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -258,7 +259,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "zipp",
 				Version:           "2.1.0",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:vpy3/lib/python3.7/site-packages",
 				Filepath:          "vpy3/lib/python3.7/site-packages/zipp-2.1.0.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -275,7 +276,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "aiodns",
 				Version:           "2.0.0",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:usr/local/lib/python3.7/site-packages",
 				Filepath:          "usr/local/lib/python3.7/site-packages/aiodns-2.0.0.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -284,7 +285,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "aiohttp",
 				Version:           "3.5.4",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:usr/local/lib/python3.7/site-packages",
 				Filepath:          "usr/local/lib/python3.7/site-packages/aiohttp-3.5.4.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -293,7 +294,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "arrow",
 				Version:           "0.15.4",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:usr/local/lib/python3.7/site-packages",
 				Filepath:          "usr/local/lib/python3.7/site-packages/arrow-0.15.4.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -302,7 +303,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "async-timeout",
 				Version:           "3.0.1",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:usr/local/lib/python3.7/site-packages",
 				Filepath:          "usr/local/lib/python3.7/site-packages/async_timeout-3.0.1.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -311,7 +312,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "attrs",
 				Version:           "19.3.0",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:usr/local/lib/python3.7/site-packages",
 				Filepath:          "usr/local/lib/python3.7/site-packages/attrs-19.3.0.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -320,7 +321,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "beautifulsoup4",
 				Version:           "4.8.1",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:usr/local/lib/python3.7/site-packages",
 				Filepath:          "usr/local/lib/python3.7/site-packages/beautifulsoup4-4.8.1.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -329,7 +330,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "cffi",
 				Version:           "1.13.2",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:usr/local/lib/python3.7/site-packages",
 				Filepath:          "usr/local/lib/python3.7/site-packages/cffi-1.13.2.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -338,7 +339,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "chardet",
 				Version:           "3.0.4",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:usr/local/lib/python3.7/site-packages",
 				Filepath:          "usr/local/lib/python3.7/site-packages/chardet-3.0.4.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -347,7 +348,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "discord.py",
 				Version:           "1.2.5",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:usr/local/lib/python3.7/site-packages",
 				Filepath:          "usr/local/lib/python3.7/site-packages/discord.py-1.2.5.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -356,7 +357,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "fuzzywuzzy",
 				Version:           "0.17.0",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:usr/local/lib/python3.7/site-packages",
 				Filepath:          "usr/local/lib/python3.7/site-packages/fuzzywuzzy-0.17.0.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -365,7 +366,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "idna",
 				Version:           "2.8",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:usr/local/lib/python3.7/site-packages",
 				Filepath:          "usr/local/lib/python3.7/site-packages/idna-2.8.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -374,7 +375,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "multidict",
 				Version:           "4.6.1",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:usr/local/lib/python3.7/site-packages",
 				Filepath:          "usr/local/lib/python3.7/site-packages/multidict-4.6.1.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -383,7 +384,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "pillow",
 				Version:           "6.2.1",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:usr/local/lib/python3.7/site-packages",
 				Filepath:          "usr/local/lib/python3.7/site-packages/Pillow-6.2.1.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -392,7 +393,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "pycares",
 				Version:           "3.0.0",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:usr/local/lib/python3.7/site-packages",
 				Filepath:          "usr/local/lib/python3.7/site-packages/pycares-3.0.0.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -401,7 +402,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "pycparser",
 				Version:           "2.19",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:usr/local/lib/python3.7/site-packages",
 				Filepath:          "usr/local/lib/python3.7/site-packages/pycparser-2.19.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -410,7 +411,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "python-dateutil",
 				Version:           "2.8.1",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:usr/local/lib/python3.7/site-packages",
 				Filepath:          "usr/local/lib/python3.7/site-packages/python_dateutil-2.8.1.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -419,7 +420,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "pytz",
 				Version:           "2019.3",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:usr/local/lib/python3.7/site-packages",
 				Filepath:          "usr/local/lib/python3.7/site-packages/pytz-2019.3.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -428,7 +429,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "six",
 				Version:           "1.13.0",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:usr/local/lib/python3.7/site-packages",
 				Filepath:          "usr/local/lib/python3.7/site-packages/six-1.13.0.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -437,7 +438,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "soupsieve",
 				Version:           "1.9.5",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:usr/local/lib/python3.7/site-packages",
 				Filepath:          "usr/local/lib/python3.7/site-packages/soupsieve-1.9.5.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -446,7 +447,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "websockets",
 				Version:           "6.0",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:usr/local/lib/python3.7/site-packages",
 				Filepath:          "usr/local/lib/python3.7/site-packages/websockets-6.0.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",
@@ -455,7 +456,7 @@ var scanTable = []test.ScannerTestcase{
 			{
 				Name:              "yarl",
 				Version:           "1.4.1",
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				PackageDB:         "python:usr/local/lib/python3.7/site-packages",
 				Filepath:          "usr/local/lib/python3.7/site-packages/yarl-1.4.1.dist-info/METADATA",
 				RepositoryHint:    "https://pypi.org/simple",

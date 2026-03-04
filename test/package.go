@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 // GenDuplicatePackages creates an array of packages with duplicates.
@@ -45,7 +46,7 @@ func createPackage(i int, ii int, n int) *claircore.Package {
 		Name:           fmt.Sprintf("package-%d", ii),
 		Version:        fmt.Sprintf("version-%d", ii),
 		Arch:           fmt.Sprintf("arch-%d", ii),
-		Kind:           claircore.BINARY,
+		Kind:           types.BinaryPackage,
 		PackageDB:      fmt.Sprintf("package-db-%d", i),
 		RepositoryHint: fmt.Sprintf("repository-hint-%d", i),
 		Module:         fmt.Sprintf("module:%d", ii),
@@ -54,7 +55,7 @@ func createPackage(i int, ii int, n int) *claircore.Package {
 			Name:    fmt.Sprintf("source-package-%d", ii),
 			Version: fmt.Sprintf("source-version-%d", ii),
 			Arch:    fmt.Sprintf("source-arch-%d", ii),
-			Kind:    claircore.SOURCE,
+			Kind:    types.SourcePackage,
 			Module:  fmt.Sprintf("source-module:%d", ii),
 		},
 	}

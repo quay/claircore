@@ -16,6 +16,7 @@ import (
 	"github.com/quay/claircore/internal/rpmver"
 	"github.com/quay/claircore/internal/wart"
 	"github.com/quay/claircore/test/redhat/catalog"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 type (
@@ -64,7 +65,7 @@ func PackagesFromManifest(t *testing.T, items iter.Seq[catalog.RpmsItems]) iter.
 			p := claircore.Package{
 				Name:           it.Name,
 				Version:        pv.EVR(),
-				Kind:           "binary",
+				Kind:           types.BinaryPackage,
 				Arch:           it.Architecture,
 				RepositoryHint: url.Values{"key": {it.GPG}}.Encode(),
 				Module:         it.Module,
@@ -75,7 +76,7 @@ func PackagesFromManifest(t *testing.T, items iter.Seq[catalog.RpmsItems]) iter.
 			} else {
 				idx := len(srcs)
 				srcs = append(srcs, claircore.Package{
-					Kind:    "source",
+					Kind:    types.SourcePackage,
 					Name:    *sv.Name,
 					Version: sv.EVR(),
 					Module:  it.Module,

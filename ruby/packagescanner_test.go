@@ -8,6 +8,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/ruby"
 	"github.com/quay/claircore/test"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 func TestScanRemote(t *testing.T) {
@@ -31,7 +32,7 @@ func TestScanRemote(t *testing.T) {
 				{
 					Name:           "bar",
 					Version:        "0.0.2",
-					Kind:           claircore.BINARY,
+					Kind:           types.BinaryPackage,
 					PackageDB:      "ruby:usr/local/bundle/gems/rubygems-update-3.4.7/test/rubygems/specifications/bar-0.0.2.gemspec",
 					Filepath:       "usr/local/bundle/gems/rubygems-update-3.4.7/test/rubygems/specifications/bar-0.0.2.gemspec",
 					RepositoryHint: "rubygems",
@@ -39,7 +40,7 @@ func TestScanRemote(t *testing.T) {
 				{
 					Name:           "bundler",
 					Version:        "2.4.7",
-					Kind:           claircore.BINARY,
+					Kind:           types.BinaryPackage,
 					PackageDB:      "ruby:usr/local/lib/ruby/gems/3.2.0/specifications/default/bundler-2.4.7.gemspec",
 					Filepath:       "usr/local/lib/ruby/gems/3.2.0/specifications/default/bundler-2.4.7.gemspec",
 					RepositoryHint: "rubygems",
@@ -47,7 +48,7 @@ func TestScanRemote(t *testing.T) {
 				{
 					Name:           "foo",
 					Version:        "0.0.1",
-					Kind:           claircore.BINARY,
+					Kind:           types.BinaryPackage,
 					PackageDB:      "ruby:usr/local/bundle/gems/rubygems-update-3.4.7/test/rubygems/specifications/foo-0.0.1-x86-mswin32.gemspec",
 					Filepath:       "usr/local/bundle/gems/rubygems-update-3.4.7/test/rubygems/specifications/foo-0.0.1-x86-mswin32.gemspec",
 					RepositoryHint: "rubygems",
@@ -55,7 +56,7 @@ func TestScanRemote(t *testing.T) {
 				{
 					Name:           "rake",
 					Version:        "13.0.6",
-					Kind:           claircore.BINARY,
+					Kind:           types.BinaryPackage,
 					PackageDB:      "ruby:usr/local/bundle/specifications/rake-13.0.6.gemspec",
 					Filepath:       "usr/local/bundle/specifications/rake-13.0.6.gemspec",
 					RepositoryHint: "rubygems",
@@ -63,7 +64,7 @@ func TestScanRemote(t *testing.T) {
 				{
 					Name:           "rubyforge",
 					Version:        "0.0.1",
-					Kind:           claircore.BINARY,
+					Kind:           types.BinaryPackage,
 					PackageDB:      "ruby:usr/local/bundle/gems/rubygems-update-3.4.7/test/rubygems/specifications/rubyforge-0.0.1.gemspec",
 					Filepath:       "usr/local/bundle/gems/rubygems-update-3.4.7/test/rubygems/specifications/rubyforge-0.0.1.gemspec",
 					RepositoryHint: "rubygems",
@@ -71,7 +72,7 @@ func TestScanRemote(t *testing.T) {
 				{
 					Name:           "rubygems-update",
 					Version:        "3.4.7",
-					Kind:           claircore.BINARY,
+					Kind:           types.BinaryPackage,
 					PackageDB:      "ruby:usr/local/bundle/specifications/rubygems-update-3.4.7.gemspec",
 					Filepath:       "usr/local/bundle/specifications/rubygems-update-3.4.7.gemspec",
 					RepositoryHint: "rubygems",
@@ -91,7 +92,7 @@ func TestScanRemote(t *testing.T) {
 				{
 					Name:           "actioncable",
 					Version:        "7.0.4.3",
-					Kind:           claircore.BINARY,
+					Kind:           types.BinaryPackage,
 					PackageDB:      "ruby:usr/local/bundle/specifications/actioncable-7.0.4.3.gemspec",
 					Filepath:       "usr/local/bundle/specifications/actioncable-7.0.4.3.gemspec",
 					RepositoryHint: "rubygems",
@@ -99,7 +100,7 @@ func TestScanRemote(t *testing.T) {
 				{
 					Name:           "actionpack",
 					Version:        "7.0.4.3",
-					Kind:           claircore.BINARY,
+					Kind:           types.BinaryPackage,
 					PackageDB:      "ruby:usr/local/bundle/specifications/actionpack-7.0.4.3.gemspec",
 					Filepath:       "usr/local/bundle/specifications/actionpack-7.0.4.3.gemspec",
 					RepositoryHint: "rubygems",
@@ -107,7 +108,7 @@ func TestScanRemote(t *testing.T) {
 				{
 					Name:           "concurrent-ruby",
 					Version:        "1.2.2",
-					Kind:           claircore.BINARY,
+					Kind:           types.BinaryPackage,
 					PackageDB:      "ruby:usr/local/bundle/specifications/concurrent-ruby-1.2.2.gemspec",
 					Filepath:       "usr/local/bundle/specifications/concurrent-ruby-1.2.2.gemspec",
 					RepositoryHint: "rubygems",
@@ -115,7 +116,7 @@ func TestScanRemote(t *testing.T) {
 				{
 					Name:           "rails",
 					Version:        "7.0.4.3",
-					Kind:           claircore.BINARY,
+					Kind:           types.BinaryPackage,
 					PackageDB:      "ruby:usr/local/bundle/specifications/rails-7.0.4.3.gemspec",
 					Filepath:       "usr/local/bundle/specifications/rails-7.0.4.3.gemspec",
 					RepositoryHint: "rubygems",
@@ -123,7 +124,7 @@ func TestScanRemote(t *testing.T) {
 				{
 					Name:           "rails-html-sanitizer",
 					Version:        "1.5.0",
-					Kind:           claircore.BINARY,
+					Kind:           types.BinaryPackage,
 					PackageDB:      "ruby:usr/local/bundle/specifications/rails-html-sanitizer-1.5.0.gemspec",
 					Filepath:       "usr/local/bundle/specifications/rails-html-sanitizer-1.5.0.gemspec",
 					RepositoryHint: "rubygems",

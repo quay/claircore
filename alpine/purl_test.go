@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 func TestRoundTripIndexRecordAlpine(t *testing.T) {
@@ -25,7 +26,7 @@ func TestRoundTripIndexRecordAlpine(t *testing.T) {
 					Name:      "busybox",
 					Version:   "1.36.1-r0",
 					Arch:      "x86_64",
-					Kind:      claircore.BINARY,
+					Kind:      types.BinaryPackage,
 					PackageDB: "apk:/busybox",
 					Filepath:  "/bin/busybox",
 					Source:    &claircore.Package{},
@@ -45,7 +46,7 @@ func TestRoundTripIndexRecordAlpine(t *testing.T) {
 					Name:      "busybox",
 					Version:   "1.36.1-r0",
 					Arch:      "x86_64",
-					Kind:      claircore.BINARY,
+					Kind:      types.BinaryPackage,
 					PackageDB: "apk:/busybox",
 					Filepath:  "/bin/busybox",
 					Source:    &claircore.Package{},

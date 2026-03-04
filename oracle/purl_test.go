@@ -8,6 +8,7 @@ import (
 	"github.com/package-url/packageurl-go"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 func TestRoundTripIndexRecordOracle(t *testing.T) {
@@ -25,7 +26,7 @@ func TestRoundTripIndexRecordOracle(t *testing.T) {
 					Name:    "bash",
 					Version: "5.1.8-6.el9",
 					Arch:    "x86_64",
-					Kind:    claircore.BINARY,
+					Kind:    types.BinaryPackage,
 					Source:  &claircore.Package{},
 				},
 				Distribution: nineDist,
@@ -38,7 +39,7 @@ func TestRoundTripIndexRecordOracle(t *testing.T) {
 					Name:    "coreutils",
 					Version: "8.22-24.oe1",
 					Arch:    "aarch64",
-					Kind:    claircore.BINARY,
+					Kind:    types.BinaryPackage,
 					Source:  &claircore.Package{},
 				},
 				Distribution: sevenDist,

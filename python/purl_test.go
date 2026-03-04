@@ -10,6 +10,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/pep440"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 func TestRoundTripIndexRecordPython(t *testing.T) {
@@ -27,7 +28,7 @@ func TestRoundTripIndexRecordPython(t *testing.T) {
 				Package: &claircore.Package{
 					Name:    "urllib3",
 					Version: "2.2.1",
-					Kind:    claircore.BINARY,
+					Kind:    types.BinaryPackage,
 					Source:  &claircore.Package{},
 				},
 				Repository: &Repository,
@@ -39,7 +40,7 @@ func TestRoundTripIndexRecordPython(t *testing.T) {
 				Package: &claircore.Package{
 					Name:    "django",
 					Version: "1.11.1",
-					Kind:    claircore.BINARY,
+					Kind:    types.BinaryPackage,
 					Source:  &claircore.Package{},
 				},
 				Repository: &Repository,
@@ -51,7 +52,7 @@ func TestRoundTripIndexRecordPython(t *testing.T) {
 				Package: &claircore.Package{
 					Name:    "django",
 					Version: "something-invalid",
-					Kind:    claircore.BINARY,
+					Kind:    types.BinaryPackage,
 					Source:  &claircore.Package{},
 				},
 				Repository: &Repository,

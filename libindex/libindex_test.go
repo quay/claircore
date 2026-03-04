@@ -13,6 +13,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
 	indexer "github.com/quay/claircore/test/mock/indexer"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 func createTestVulns(n int) []claircore.Vulnerability {
@@ -27,7 +28,7 @@ func createTestVulns(n int) []claircore.Vulnerability {
 			NormalizedSeverity: claircore.Unknown,
 			Package: &claircore.Package{
 				Name: "botan",
-				Kind: claircore.BINARY,
+				Kind: types.BinaryPackage,
 			},
 		})
 	}

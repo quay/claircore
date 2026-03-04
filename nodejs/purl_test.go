@@ -10,6 +10,7 @@ import (
 	"github.com/package-url/packageurl-go"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 func TestRoundTripIndexRecordNodeJS(t *testing.T) {
@@ -27,7 +28,7 @@ func TestRoundTripIndexRecordNodeJS(t *testing.T) {
 				Package: &claircore.Package{
 					Name:    "express",
 					Version: "4.18.2",
-					Kind:    claircore.BINARY,
+					Kind:    types.BinaryPackage,
 					Source:  &claircore.Package{},
 				},
 				Repository: &Repository,
@@ -39,7 +40,7 @@ func TestRoundTripIndexRecordNodeJS(t *testing.T) {
 				Package: &claircore.Package{
 					Name:    "lodash",
 					Version: "4.17.21",
-					Kind:    claircore.BINARY,
+					Kind:    types.BinaryPackage,
 					Source:  &claircore.Package{},
 				},
 				Repository: &Repository,
@@ -51,7 +52,7 @@ func TestRoundTripIndexRecordNodeJS(t *testing.T) {
 				Package: &claircore.Package{
 					Name:    "left-pad",
 					Version: "not-a-version",
-					Kind:    claircore.BINARY,
+					Kind:    types.BinaryPackage,
 					Source:  &claircore.Package{},
 				},
 				Repository: &Repository,

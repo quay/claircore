@@ -19,6 +19,7 @@ import (
 	"github.com/quay/claircore/pkg/rhctag"
 	"github.com/quay/claircore/rhel/internal/common"
 	"github.com/quay/claircore/rhel/rhcc"
+	"github.com/quay/claircore/toolkit/types"
 	"github.com/quay/claircore/toolkit/types/cpe"
 	"github.com/quay/claircore/toolkit/types/csaf"
 	"github.com/quay/claircore/toolkit/types/cvss"
@@ -346,7 +347,7 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v csaf.Vulne
 		// That's the plan so far as there's no PURL product ID helper.
 		vuln.Package = &claircore.Package{
 			Name:   pkgName,
-			Kind:   claircore.SOURCE,
+			Kind:   types.SourcePackage,
 			Module: modName,
 		}
 		sc := c.c.FindScore(pc)
@@ -524,7 +525,7 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 			vuln.FixedInVersion = fixedIn
 			vuln.Package = &claircore.Package{
 				Name:   packageName,
-				Kind:   claircore.BINARY,
+				Kind:   types.BinaryPackage,
 				Module: modName,
 			}
 

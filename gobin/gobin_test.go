@@ -11,6 +11,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 func TestEmptyFile(t *testing.T) {
@@ -163,7 +164,7 @@ func TestScanner(t *testing.T) {
 			continue
 		case strings.HasPrefix(v.Version, "(devel)"):
 			continue
-		case v.Kind != claircore.BINARY:
+		case v.Kind != types.BinaryPackage:
 		case v.PackageDB != "go:bin/bisect":
 			t.Errorf("unexpected package DB: %s: %q", v.Name, v.PackageDB)
 		case !versionRegex.MatchString(v.Version):

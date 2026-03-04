@@ -8,6 +8,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/pep440"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 const (
@@ -38,7 +39,7 @@ func ParsePURL(ctx context.Context, purl packageurl.PackageURL) ([]*claircore.In
 				Name:              purl.Name,
 				Version:           v.String(),
 				NormalizedVersion: v.Version(),
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				Source:            &claircore.Package{},
 			},
 			Repository: &Repository,

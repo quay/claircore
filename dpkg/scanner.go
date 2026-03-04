@@ -19,6 +19,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 const (
@@ -268,7 +269,7 @@ Restart:
 		p := &claircore.Package{
 			Name:      name,
 			Version:   v,
-			Kind:      claircore.BINARY,
+			Kind:      types.BinaryPackage,
 			Arch:      arch,
 			PackageDB: fn,
 		}
@@ -287,7 +288,7 @@ Restart:
 			if !ok {
 				srcpkg = &claircore.Package{
 					Name:      name,
-					Kind:      claircore.SOURCE,
+					Kind:      types.SourcePackage,
 					Version:   ver,
 					PackageDB: fn,
 				}
@@ -299,7 +300,7 @@ Restart:
 			// 1-to-1 mapping.
 			p.Source = &claircore.Package{
 				Name:      name,
-				Kind:      claircore.SOURCE,
+				Kind:      types.SourcePackage,
 				Version:   v,
 				PackageDB: fn,
 			}

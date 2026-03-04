@@ -11,6 +11,7 @@ import (
 	"github.com/quay/goval-parser/oval"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 // PackageExpansionFunc allows a caller to expand the inserted vulns. For example
@@ -114,7 +115,7 @@ func DpkgDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulns
 					if pkg, ok := pkgcache[n]; !ok {
 						p := &claircore.Package{
 							Name: n,
-							Kind: claircore.BINARY,
+							Kind: types.BinaryPackage,
 						}
 						pkgcache[n] = p
 						vuln.Package = p

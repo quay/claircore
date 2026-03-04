@@ -12,6 +12,7 @@ import (
 	"github.com/quay/claircore/gobin"
 	"github.com/quay/claircore/purl"
 	"github.com/quay/claircore/test"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 // TestRoundTrip tests encoding an IndexReport to SPDX and decoding it back.
@@ -36,7 +37,7 @@ func TestRoundTrip(t *testing.T) {
 				ID:      "1",
 				Name:    "github.com/example/pkg",
 				Version: "v1.2.3",
-				Kind:    claircore.BINARY,
+				Kind:    types.BinaryPackage,
 				Detector: &claircore.Detector{
 					Name:    "gobin",
 					Version: "1",

@@ -16,6 +16,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/rpm"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 var (
@@ -139,7 +140,7 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 		ret = append(ret, &claircore.Package{
 			Name:           name,
 			Version:        version,
-			Kind:           claircore.BINARY,
+			Kind:           types.BinaryPackage,
 			PackageDB:      "ruby:" + g,
 			Filepath:       g,
 			RepositoryHint: repository,

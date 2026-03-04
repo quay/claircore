@@ -13,6 +13,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/rpm/rpmdb"
 	"github.com/quay/claircore/internal/rpmver"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 // Database is a handle to an RPM database.
@@ -64,7 +65,7 @@ func (db *Database) Packages(ctx context.Context) iter.Seq2[claircore.Package, e
 			}
 
 			pkg := claircore.Package{
-				Kind:           claircore.BINARY,
+				Kind:           types.BinaryPackage,
 				Name:           info.Name,
 				Arch:           info.Arch,
 				Module:         info.ModuleStream(),
@@ -92,7 +93,7 @@ func (db *Database) Packages(ctx context.Context) iter.Seq2[claircore.Package, e
 					break
 				}
 				src := claircore.Package{
-					Kind:    claircore.SOURCE,
+					Kind:    types.SourcePackage,
 					Name:    *v.Name,
 					Version: v.EVR(),
 					// Don't want [Info.Hint] here, as it would encode the

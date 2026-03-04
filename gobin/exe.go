@@ -13,6 +13,7 @@ import (
 	_ "unsafe" // for error linkname tricks
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 //go:linkname errNotGoExe debug/buildinfo.errNotGoExe
@@ -63,7 +64,7 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 	}
 
 	*out = append(*out, &claircore.Package{
-		Kind: claircore.BINARY,
+		Kind: types.BinaryPackage,
 		Name: "stdlib",
 		// This was previously bi.GoVersion,
 		// but it must be changed to ensure an entry
@@ -135,7 +136,7 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 		name = "command-line-arguments"
 	}
 	*out = append(*out, &claircore.Package{
-		Kind:              claircore.BINARY,
+		Kind:              types.BinaryPackage,
 		PackageDB:         pkgdb,
 		Name:              name,
 		Version:           mmv,
@@ -162,7 +163,7 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 		}
 
 		*out = append(*out, &claircore.Package{
-			Kind:              claircore.BINARY,
+			Kind:              types.BinaryPackage,
 			PackageDB:         pkgdb,
 			Name:              d.Path,
 			Version:           d.Version,

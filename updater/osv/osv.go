@@ -21,11 +21,12 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
-	"github.com/quay/claircore/toolkit/types/cvss"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/tmp"
+	"github.com/quay/claircore/toolkit/types"
+	"github.com/quay/claircore/toolkit/types/cvss"
 )
 
 var (
@@ -771,7 +772,7 @@ func (e *ecs) Insert(ctx context.Context, log *slog.Logger, skipped *stats, name
 				v.Package = pkg
 				switch af.Package.Ecosystem {
 				case ecosystemGo, ecosystemMaven, ecosystemNPM, ecosystemPyPI, ecosystemRubyGems:
-					v.Package.Kind = claircore.BINARY
+					v.Package.Kind = types.BinaryPackage
 				}
 				if novel {
 					pkg.RepositoryHint = af.Package.Ecosystem

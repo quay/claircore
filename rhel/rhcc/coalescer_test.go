@@ -7,6 +7,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/test"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 func TestCoalescer(t *testing.T) {
@@ -30,14 +31,14 @@ func TestCoalescer(t *testing.T) {
 					Name:           "ubi8",
 					Version:        "8.4",
 					RepositoryHint: "rhcc",
-					Kind:           claircore.BINARY,
+					Kind:           types.BinaryPackage,
 					Arch:           "x86_64",
 					PackageDB:      "Dockerfile-rhacm",
 					Source: &claircore.Package{
 						ID:        "3",
 						Name:      "ubi8-container",
 						Version:   "8.10-1088",
-						Kind:      claircore.SOURCE,
+						Kind:      types.SourcePackage,
 						Arch:      "x86_64",
 						PackageDB: "Dockerfile-rhacm",
 					},
@@ -56,14 +57,14 @@ func TestCoalescer(t *testing.T) {
 					Name:           "rhacm2/acm-grafana-rhel8",
 					Version:        "v2.9.5-8",
 					RepositoryHint: "rhcc",
-					Kind:           claircore.BINARY,
+					Kind:           types.BinaryPackage,
 					Arch:           "x86_64",
 					PackageDB:      "Dockerfile-rhacm",
 					Source: &claircore.Package{
 						ID:        "4",
 						Name:      "acm-grafana-container",
 						Version:   "v2.9.5-8",
-						Kind:      claircore.SOURCE,
+						Kind:      types.SourcePackage,
 						Arch:      "x86_64",
 						PackageDB: "Dockerfile-rhacm",
 					},

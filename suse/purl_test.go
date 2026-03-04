@@ -10,6 +10,7 @@ import (
 	"github.com/package-url/packageurl-go"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/toolkit/types"
 	"github.com/quay/claircore/toolkit/types/cpe"
 )
 
@@ -28,7 +29,7 @@ func TestRoundTripIndexRecord(t *testing.T) {
 					Name:    "zlib",
 					Version: "1.2.11-150500.59.68.1",
 					Arch:    "x86_64",
-					Kind:    claircore.BINARY,
+					Kind:    types.BinaryPackage,
 					Source:  &claircore.Package{},
 				},
 				Distribution: &claircore.Distribution{
@@ -48,7 +49,7 @@ func TestRoundTripIndexRecord(t *testing.T) {
 					Name:    "bash",
 					Version: "5.1-150300.51.1",
 					Arch:    "aarch64",
-					Kind:    claircore.BINARY,
+					Kind:    types.BinaryPackage,
 					Source:  &claircore.Package{},
 				},
 				Distribution: &claircore.Distribution{

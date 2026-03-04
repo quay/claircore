@@ -19,6 +19,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/purl"
 	"github.com/quay/claircore/sbom"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 // EncoderOption is a type for configuring an Encoder.
@@ -186,7 +187,7 @@ func (e *Encoder) parseIndexReport(ctx context.Context, ir *claircore.IndexRepor
 			}
 
 			pkgPurpose := "APPLICATION"
-			if r.Package.Kind != claircore.BINARY {
+			if r.Package.Kind != types.BinaryPackage {
 				pkgPurpose = "SOURCE"
 			}
 

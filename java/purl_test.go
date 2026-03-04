@@ -9,6 +9,7 @@ import (
 	"github.com/package-url/packageurl-go"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 func TestRoundTripIndexRecordJava(t *testing.T) {
@@ -25,7 +26,7 @@ func TestRoundTripIndexRecordJava(t *testing.T) {
 				Package: &claircore.Package{
 					Name:    "org.apache.commons:commons-lang3",
 					Version: "3.12.0",
-					Kind:    claircore.BINARY,
+					Kind:    types.BinaryPackage,
 					Source:  &claircore.Package{},
 				},
 				Repository: &Repository,
@@ -37,7 +38,7 @@ func TestRoundTripIndexRecordJava(t *testing.T) {
 				Package: &claircore.Package{
 					Name:    "com.fasterxml.jackson.core:jackson-databind",
 					Version: "2.17.1",
-					Kind:    claircore.BINARY,
+					Kind:    types.BinaryPackage,
 					Source:  &claircore.Package{},
 				},
 				Repository: &Repository,

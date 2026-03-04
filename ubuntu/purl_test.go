@@ -7,7 +7,9 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 func TestRoundTripIndexRecordDebian(t *testing.T) {
@@ -25,7 +27,7 @@ func TestRoundTripIndexRecordDebian(t *testing.T) {
 					Name:      "bash",
 					Version:   "5.1.8-6",
 					Arch:      "x86_64",
-					Kind:      claircore.BINARY,
+					Kind:      types.BinaryPackage,
 					PackageDB: "deb:/var/lib/dpkg/status",
 					Source:    &claircore.Package{},
 				},

@@ -8,6 +8,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 const (
@@ -40,7 +41,7 @@ func (u *updater) parse(ctx context.Context, sdb *SecurityDB) ([]*claircore.Vuln
 			NormalizedSeverity: claircore.Unknown,
 			Package: &claircore.Package{
 				Name: pkg.Pkg.Name,
-				Kind: claircore.SOURCE,
+				Kind: types.SourcePackage,
 			},
 			Dist: u.release.Distribution(),
 		}

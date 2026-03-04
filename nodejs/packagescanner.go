@@ -18,6 +18,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/rpm"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 const repository = "npm"
@@ -114,7 +115,7 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 		pkg := &claircore.Package{
 			Name:           pkgJSON.Name,
 			Version:        pkgJSON.Version,
-			Kind:           claircore.BINARY,
+			Kind:           types.BinaryPackage,
 			PackageDB:      "nodejs:" + p,
 			Filepath:       p,
 			RepositoryHint: repository,

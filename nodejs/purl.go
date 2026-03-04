@@ -8,6 +8,7 @@ import (
 	"github.com/package-url/packageurl-go"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 const (
@@ -36,7 +37,7 @@ func ParsePURL(ctx context.Context, purl packageurl.PackageURL) ([]*claircore.In
 		{
 			Package: &claircore.Package{
 				Name:              purl.Name,
-				Kind:              claircore.BINARY,
+				Kind:              types.BinaryPackage,
 				Version:           v.String(),
 				NormalizedVersion: claircore.FromSemver(v),
 				Source:            &claircore.Package{},

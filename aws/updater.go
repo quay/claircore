@@ -13,6 +13,7 @@ import (
 	"github.com/quay/claircore/aws/internal/alas"
 	"github.com/quay/claircore/internal/xmlutil"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 var _ driver.Updater = (*Updater)(nil)
@@ -111,7 +112,7 @@ func (u *Updater) unpack(partial *claircore.Vulnerability, packages []alas.Packa
 
 		v.Package = &claircore.Package{
 			Name: alasPKG.Name,
-			Kind: claircore.BINARY,
+			Kind: types.BinaryPackage,
 			Arch: alasPKG.Arch,
 		}
 		v.FixedInVersion = versionString(&b, alasPKG)

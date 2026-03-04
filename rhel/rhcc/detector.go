@@ -13,6 +13,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/pkg/rhctag"
+	"github.com/quay/claircore/toolkit/types"
 	"github.com/quay/claircore/toolkit/types/cpe"
 )
 
@@ -74,7 +75,7 @@ func (s *detector) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.P
 
 	normVer := rhctagVersion.Version(true)
 	src := claircore.Package{
-		Kind:              claircore.SOURCE,
+		Kind:              types.SourcePackage,
 		Name:              labels.Name,
 		Version:           vr,
 		NormalizedVersion: normVer,
@@ -85,7 +86,7 @@ func (s *detector) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.P
 	pkgs := []*claircore.Package{&src}
 
 	pkgs = append(pkgs, &claircore.Package{
-		Kind:              claircore.BINARY,
+		Kind:              types.BinaryPackage,
 		Name:              labels.Name,
 		Version:           vr,
 		NormalizedVersion: normVer,

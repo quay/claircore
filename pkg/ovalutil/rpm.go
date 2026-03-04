@@ -10,6 +10,7 @@ import (
 	"github.com/quay/goval-parser/oval"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 type DefinitionType string
@@ -128,7 +129,7 @@ func RPMDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulnsF
 					vuln.Package = &claircore.Package{
 						Name:   object.Name,
 						Module: module,
-						Kind:   claircore.BINARY,
+						Kind:   types.BinaryPackage,
 					}
 					if state != nil {
 						vuln.FixedInVersion = state.EVR.Body

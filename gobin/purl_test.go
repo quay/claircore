@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 func TestRoundTripIndexRecordGobin(t *testing.T) {
@@ -25,7 +26,7 @@ func TestRoundTripIndexRecordGobin(t *testing.T) {
 					Name:      "github.com/example/app",
 					Version:   "v1.2.3",
 					Arch:      "x86_64",
-					Kind:      claircore.BINARY,
+					Kind:      types.BinaryPackage,
 					PackageDB: "go:/usr/local/bin/app",
 					Source:    &claircore.Package{},
 				},
@@ -39,7 +40,7 @@ func TestRoundTripIndexRecordGobin(t *testing.T) {
 					Name:      "github.com/example/agent",
 					Version:   "v0.9.0",
 					Arch:      "aarch64",
-					Kind:      claircore.BINARY,
+					Kind:      types.BinaryPackage,
 					PackageDB: "go:/opt/agent/agent",
 					Source:    &claircore.Package{},
 				},
@@ -53,7 +54,7 @@ func TestRoundTripIndexRecordGobin(t *testing.T) {
 					Name:      "stdlib",
 					Version:   "v1.0.0",
 					Arch:      "x86_64",
-					Kind:      claircore.BINARY,
+					Kind:      types.BinaryPackage,
 					PackageDB: "go:/usr/local/bin/go",
 					Source:    &claircore.Package{},
 				},
@@ -68,7 +69,7 @@ func TestRoundTripIndexRecordGobin(t *testing.T) {
 					Name:      "go.opentelemetry.io/otel/exporters/jaeger",
 					Version:   "v1.15.1",
 					Arch:      "x86_64",
-					Kind:      claircore.BINARY,
+					Kind:      types.BinaryPackage,
 					PackageDB: "go:/usr/local/bin/app",
 					Source:    &claircore.Package{},
 				},

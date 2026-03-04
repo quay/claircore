@@ -8,6 +8,7 @@ import (
 	"github.com/package-url/packageurl-go"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/toolkit/types"
 	"github.com/quay/claircore/toolkit/types/cpe"
 )
 
@@ -26,7 +27,7 @@ func TestRoundTripIndexRecordAWS(t *testing.T) {
 					Name:    "curl",
 					Version: "7.79.1-2.amzn2.0.2",
 					Arch:    "x86_64",
-					Kind:    claircore.BINARY,
+					Kind:    types.BinaryPackage,
 					Source:  &claircore.Package{},
 				},
 				Distribution: &claircore.Distribution{
@@ -46,7 +47,7 @@ func TestRoundTripIndexRecordAWS(t *testing.T) {
 					Name:    "bash",
 					Version: "5.1.16-6.amzn2023.0.4",
 					Arch:    "aarch64",
-					Kind:    claircore.BINARY,
+					Kind:    types.BinaryPackage,
 					Source:  &claircore.Package{},
 				},
 				Distribution: &claircore.Distribution{

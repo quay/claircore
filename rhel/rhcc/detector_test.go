@@ -11,6 +11,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
+	"github.com/quay/claircore/toolkit/types"
 	"github.com/quay/claircore/toolkit/types/cpe"
 )
 
@@ -37,7 +38,7 @@ func TestPackageDetector(t *testing.T) {
 						Kind: "rhctag",
 						V:    [10]int32{1744596866},
 					},
-					Kind:           claircore.SOURCE,
+					Kind:           types.SourcePackage,
 					PackageDB:      "root/buildinfo/labels.json",
 					RepositoryHint: "rhcc",
 					Arch:           "x86_64",
@@ -49,7 +50,7 @@ func TestPackageDetector(t *testing.T) {
 						Kind: "rhctag",
 						V:    [10]int32{1744596866},
 					},
-					Kind: claircore.BINARY,
+					Kind: types.BinaryPackage,
 					Source: &claircore.Package{
 						Name:    "openshift-gitops-1/gitops-rhel8-operator",
 						Version: "1744596866",
@@ -57,7 +58,7 @@ func TestPackageDetector(t *testing.T) {
 							Kind: "rhctag",
 							V:    [10]int32{1744596866},
 						},
-						Kind:           claircore.SOURCE,
+						Kind:           types.SourcePackage,
 						PackageDB:      "root/buildinfo/labels.json",
 						RepositoryHint: "rhcc",
 						Arch:           "x86_64",
@@ -80,7 +81,7 @@ func TestPackageDetector(t *testing.T) {
 						Kind: "rhctag",
 						V:    [10]int32{1744596866},
 					},
-					Kind:           claircore.SOURCE,
+					Kind:           types.SourcePackage,
 					PackageDB:      "usr/share/buildinfo/labels.json",
 					RepositoryHint: "rhcc",
 					Arch:           "x86_64",
@@ -92,7 +93,7 @@ func TestPackageDetector(t *testing.T) {
 						Kind: "rhctag",
 						V:    [10]int32{1744596866},
 					},
-					Kind: claircore.BINARY,
+					Kind: types.BinaryPackage,
 					Source: &claircore.Package{
 						Name:    "openshift-gitops-1/gitops-rhel8-operator",
 						Version: "1744596866",
@@ -100,7 +101,7 @@ func TestPackageDetector(t *testing.T) {
 							Kind: "rhctag",
 							V:    [10]int32{1744596866},
 						},
-						Kind:           claircore.SOURCE,
+						Kind:           types.SourcePackage,
 						PackageDB:      "usr/share/buildinfo/labels.json",
 						RepositoryHint: "rhcc",
 						Arch:           "x86_64",

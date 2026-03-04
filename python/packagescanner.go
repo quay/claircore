@@ -19,6 +19,7 @@ import (
 	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/pkg/pep440"
 	"github.com/quay/claircore/rpm"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 var (
@@ -112,7 +113,7 @@ func (ps *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*clairco
 			Version:           v.String(),
 			PackageDB:         "python:" + pkgDB,
 			Filepath:          n,
-			Kind:              claircore.BINARY,
+			Kind:              types.BinaryPackage,
 			NormalizedVersion: v.Version(),
 			// TODO Is there some way to pick up on where a wheel or egg was
 			// found?

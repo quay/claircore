@@ -15,6 +15,7 @@ import (
 	"github.com/quay/claircore/gobin"
 	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/rhel"
+	"github.com/quay/claircore/toolkit/types"
 	"github.com/quay/claircore/toolkit/types/cpe"
 )
 
@@ -48,7 +49,7 @@ func TestRegistryGenerate(t *testing.T) {
 			},
 			ir: &claircore.IndexRecord{
 				Package: &claircore.Package{
-					Kind:     claircore.BINARY,
+					Kind:     types.BinaryPackage,
 					Name:     "pkg",
 					Version:  "1.0.0",
 					Detector: &claircore.Detector{Name: "fake-scanner"},

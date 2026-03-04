@@ -14,6 +14,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 const (
@@ -97,14 +98,14 @@ func (ps *DistrolessScanner) Scan(ctx context.Context, layer *claircore.Layer) (
 					p := &claircore.Package{
 						Name:      name,
 						Version:   v,
-						Kind:      claircore.BINARY,
+						Kind:      types.BinaryPackage,
 						Arch:      hdr.Get("Architecture"),
 						PackageDB: fn,
 					}
 					if src := hdr.Get("Source"); src != "" {
 						p.Source = &claircore.Package{
 							Name: src,
-							Kind: claircore.SOURCE,
+							Kind: types.SourcePackage,
 							// Right now, this is an assumption that discovered source
 							// packages relate to their binary versions. We see this in
 							// Debian.

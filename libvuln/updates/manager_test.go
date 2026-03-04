@@ -14,13 +14,13 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/quay/claircore"
-
 	"github.com/quay/claircore/datastore/postgres"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/ctxlock/v2"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 	pgtest "github.com/quay/claircore/test/postgres"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 func TestDeltaUpdates(t *testing.T) {
@@ -159,6 +159,7 @@ var testVulns = []*fetchedVulns{
 				NormalizedSeverity: claircore.Medium,
 				Package: &claircore.Package{
 					Name: "blah",
+					Kind: types.BinaryPackage,
 				},
 			},
 		},
@@ -177,6 +178,7 @@ var testVulns = []*fetchedVulns{
 				NormalizedSeverity: claircore.Medium,
 				Package: &claircore.Package{
 					Name: "blah",
+					Kind: types.BinaryPackage,
 				},
 			},
 		},
@@ -195,6 +197,7 @@ var testVulns = []*fetchedVulns{
 				NormalizedSeverity: claircore.Medium,
 				Package: &claircore.Package{
 					Name: "blah",
+					Kind: types.BinaryPackage,
 				},
 			},
 			{
@@ -207,6 +210,7 @@ var testVulns = []*fetchedVulns{
 				NormalizedSeverity: claircore.Medium,
 				Package: &claircore.Package{
 					Name: "blah",
+					Kind: types.BinaryPackage,
 				},
 			},
 		},
@@ -225,6 +229,7 @@ var testVulns = []*fetchedVulns{
 				NormalizedSeverity: claircore.Medium,
 				Package: &claircore.Package{
 					Name: "blah",
+					Kind: types.BinaryPackage,
 				},
 			},
 			{
@@ -237,6 +242,7 @@ var testVulns = []*fetchedVulns{
 				NormalizedSeverity: claircore.Medium,
 				Package: &claircore.Package{
 					Name: "blah",
+					Kind: types.BinaryPackage,
 				},
 			},
 			{
@@ -249,6 +255,7 @@ var testVulns = []*fetchedVulns{
 				NormalizedSeverity: claircore.Medium,
 				Package: &claircore.Package{
 					Name: "blah",
+					Kind: types.BinaryPackage,
 				},
 			},
 		},
@@ -267,6 +274,7 @@ var finalVulns = []*claircore.Vulnerability{
 		NormalizedSeverity: claircore.Medium,
 		Package: &claircore.Package{
 			Name: "blah",
+			Kind: types.BinaryPackage,
 		},
 		Dist: &claircore.Distribution{},
 		Repo: &claircore.Repository{},
@@ -281,6 +289,7 @@ var finalVulns = []*claircore.Vulnerability{
 		NormalizedSeverity: claircore.Medium,
 		Package: &claircore.Package{
 			Name: "blah",
+			Kind: types.BinaryPackage,
 		},
 		Dist: &claircore.Distribution{},
 		Repo: &claircore.Repository{},
@@ -295,6 +304,7 @@ var finalVulns = []*claircore.Vulnerability{
 		NormalizedSeverity: claircore.Medium,
 		Package: &claircore.Package{
 			Name: "blah",
+			Kind: types.BinaryPackage,
 		},
 		Dist: &claircore.Distribution{},
 		Repo: &claircore.Repository{},
@@ -309,6 +319,7 @@ var finalVulns = []*claircore.Vulnerability{
 		NormalizedSeverity: claircore.Medium,
 		Package: &claircore.Package{
 			Name: "blah",
+			Kind: types.BinaryPackage,
 		},
 		Dist: &claircore.Distribution{},
 		Repo: &claircore.Repository{},

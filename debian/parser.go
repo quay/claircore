@@ -8,6 +8,7 @@ import (
 	"log/slog"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 const linkPrefix = `https://security-tracker.debian.org/tracker/`
@@ -64,7 +65,7 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 					FixedInVersion:     releaseData.FixedVersion,
 					Package: &claircore.Package{
 						Name: src,
-						Kind: claircore.SOURCE,
+						Kind: types.SourcePackage,
 					},
 				}
 				vs = append(vs, &v)

@@ -11,6 +11,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 const (
@@ -84,7 +85,7 @@ func (*Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.
 			continue
 		}
 		p := claircore.Package{
-			Kind:      claircore.BINARY,
+			Kind:      types.BinaryPackage,
 			PackageDB: installedFile,
 		}
 		r := bytes.NewBuffer(entry)
@@ -105,7 +106,7 @@ func (*Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.
 				} else {
 					p.Source = &claircore.Package{
 						Name: l,
-						Kind: claircore.SOURCE,
+						Kind: types.SourcePackage,
 					}
 					if p.Version != "" {
 						p.Source.Version = p.Version

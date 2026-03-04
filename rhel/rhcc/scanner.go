@@ -18,6 +18,7 @@ import (
 	"github.com/quay/claircore/pkg/rhctag"
 	"github.com/quay/claircore/rhel/dockerfile"
 	"github.com/quay/claircore/rhel/internal/common"
+	"github.com/quay/claircore/toolkit/types"
 )
 
 var (
@@ -164,7 +165,7 @@ func (s *scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Pa
 
 	minorRange := rhctagVersion.MinorStart()
 	src := claircore.Package{
-		Kind:              claircore.SOURCE,
+		Kind:              types.SourcePackage,
 		Name:              buildName,
 		Version:           vr,
 		NormalizedVersion: minorRange.Version(true),
@@ -198,7 +199,7 @@ func (s *scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Pa
 		// ["rhel8/toolbox", "ubi8/toolbox"]`. Therefore, we want a binary
 		// package entry for each.
 		pkgs = append(pkgs, &claircore.Package{
-			Kind:              claircore.BINARY,
+			Kind:              types.BinaryPackage,
 			Name:              name,
 			Version:           vr,
 			NormalizedVersion: minorRange.Version(true),
