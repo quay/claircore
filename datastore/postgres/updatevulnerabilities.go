@@ -17,6 +17,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore"
+	"github.com/quay/claircore/internal/wart"
 	"github.com/quay/claircore/libvuln/driver"
 )
 
@@ -329,7 +330,7 @@ func md5Vuln(v *claircore.Vulnerability) (string, []byte) {
 		b.WriteString(v.Package.Version)
 		b.WriteString(v.Package.Module)
 		b.WriteString(v.Package.Arch)
-		b.WriteString(v.Package.Kind)
+		b.WriteString(wart.StringFromPackageKind(v.Package.Kind))
 	}
 	if v.Dist != nil {
 		b.WriteString(v.Dist.DID)
