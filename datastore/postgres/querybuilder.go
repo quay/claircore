@@ -26,7 +26,7 @@ func buildGetQuery(record *claircore.IndexRecord, opts *datastore.GetOpts) (stri
 	}
 	packageQuery := goqu.And(
 		goqu.Ex{"package_name": record.Package.Name},
-		goqu.Ex{"package_kind": record.Package.Kind},
+		goqu.Ex{"package_kind": record.Package.Kind.String()},
 	)
 	exps = append(exps, packageQuery)
 
@@ -34,7 +34,7 @@ func buildGetQuery(record *claircore.IndexRecord, opts *datastore.GetOpts) (stri
 	if record.Package.Source.Name != "" {
 		sourcePackageQuery := goqu.And(
 			goqu.Ex{"package_name": record.Package.Source.Name},
-			goqu.Ex{"package_kind": record.Package.Source.Kind},
+			goqu.Ex{"package_kind": record.Package.Source.Kind.String()},
 		)
 		or := goqu.Or(
 			packageQuery,

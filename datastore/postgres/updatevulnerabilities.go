@@ -329,7 +329,7 @@ func md5Vuln(v *claircore.Vulnerability) (string, []byte) {
 		b.WriteString(v.Package.Version)
 		b.WriteString(v.Package.Module)
 		b.WriteString(v.Package.Arch)
-		b.WriteString(v.Package.Kind)
+		b.WriteString(v.Package.Kind.String())
 	}
 	if v.Dist != nil {
 		b.WriteString(v.Dist.DID)
