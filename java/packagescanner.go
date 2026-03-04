@@ -218,7 +218,7 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 			var pkg claircore.Package
 			pkg.Name = i.Name
 			pkg.Version = i.Version
-			pkg.Kind = claircore.BINARY
+			pkg.Kind = claircore.PackageBinary
 			pkg.Filepath = n
 			b := ck
 			if len(i.SHA) != 0 {

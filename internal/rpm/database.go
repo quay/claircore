@@ -64,7 +64,7 @@ func (db *Database) Packages(ctx context.Context) iter.Seq2[claircore.Package, e
 			}
 
 			pkg := claircore.Package{
-				Kind:           claircore.BINARY,
+				Kind:           claircore.PackageBinary,
 				Name:           info.Name,
 				Arch:           info.Arch,
 				Module:         info.ModuleStream(),
@@ -92,7 +92,7 @@ func (db *Database) Packages(ctx context.Context) iter.Seq2[claircore.Package, e
 					break
 				}
 				src := claircore.Package{
-					Kind:    claircore.SOURCE,
+					Kind:    claircore.PackageSource,
 					Name:    *v.Name,
 					Version: v.EVR(),
 					// Don't want [Info.Hint] here, as it would encode the

@@ -159,6 +159,7 @@ var testVulns = []*fetchedVulns{
 				NormalizedSeverity: claircore.Medium,
 				Package: &claircore.Package{
 					Name: "blah",
+					Kind: claircore.PackageBinary,
 				},
 			},
 		},
@@ -177,6 +178,7 @@ var testVulns = []*fetchedVulns{
 				NormalizedSeverity: claircore.Medium,
 				Package: &claircore.Package{
 					Name: "blah",
+					Kind: claircore.PackageBinary,
 				},
 			},
 		},
@@ -195,6 +197,7 @@ var testVulns = []*fetchedVulns{
 				NormalizedSeverity: claircore.Medium,
 				Package: &claircore.Package{
 					Name: "blah",
+					Kind: claircore.PackageBinary,
 				},
 			},
 			{
@@ -207,6 +210,7 @@ var testVulns = []*fetchedVulns{
 				NormalizedSeverity: claircore.Medium,
 				Package: &claircore.Package{
 					Name: "blah",
+					Kind: claircore.PackageBinary,
 				},
 			},
 		},
@@ -225,6 +229,7 @@ var testVulns = []*fetchedVulns{
 				NormalizedSeverity: claircore.Medium,
 				Package: &claircore.Package{
 					Name: "blah",
+					Kind: claircore.PackageBinary,
 				},
 			},
 			{
@@ -237,6 +242,7 @@ var testVulns = []*fetchedVulns{
 				NormalizedSeverity: claircore.Medium,
 				Package: &claircore.Package{
 					Name: "blah",
+					Kind: claircore.PackageBinary,
 				},
 			},
 			{
@@ -249,6 +255,7 @@ var testVulns = []*fetchedVulns{
 				NormalizedSeverity: claircore.Medium,
 				Package: &claircore.Package{
 					Name: "blah",
+					Kind: claircore.PackageBinary,
 				},
 			},
 		},
@@ -267,6 +274,7 @@ var finalVulns = []*claircore.Vulnerability{
 		NormalizedSeverity: claircore.Medium,
 		Package: &claircore.Package{
 			Name: "blah",
+			Kind: claircore.PackageBinary,
 		},
 		Dist: &claircore.Distribution{},
 		Repo: &claircore.Repository{},
@@ -281,6 +289,7 @@ var finalVulns = []*claircore.Vulnerability{
 		NormalizedSeverity: claircore.Medium,
 		Package: &claircore.Package{
 			Name: "blah",
+			Kind: claircore.PackageBinary,
 		},
 		Dist: &claircore.Distribution{},
 		Repo: &claircore.Repository{},
@@ -295,6 +304,7 @@ var finalVulns = []*claircore.Vulnerability{
 		NormalizedSeverity: claircore.Medium,
 		Package: &claircore.Package{
 			Name: "blah",
+			Kind: claircore.PackageBinary,
 		},
 		Dist: &claircore.Distribution{},
 		Repo: &claircore.Repository{},
@@ -309,6 +319,7 @@ var finalVulns = []*claircore.Vulnerability{
 		NormalizedSeverity: claircore.Medium,
 		Package: &claircore.Package{
 			Name: "blah",
+			Kind: claircore.PackageBinary,
 		},
 		Dist: &claircore.Distribution{},
 		Repo: &claircore.Repository{},

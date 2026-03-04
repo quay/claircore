@@ -36,7 +36,7 @@ func TestRoundTrip(t *testing.T) {
 				ID:      "1",
 				Name:    "github.com/example/pkg",
 				Version: "v1.2.3",
-				Kind:    claircore.BINARY,
+				Kind:    claircore.PackageBinary,
 				Detector: &claircore.Detector{
 					Name:    "gobin",
 					Version: "1",

@@ -186,7 +186,7 @@ func (e *Encoder) parseIndexReport(ctx context.Context, ir *claircore.IndexRepor
 			}
 
 			pkgPurpose := "APPLICATION"
-			if r.Package.Kind != claircore.BINARY {
+			if r.Package.Kind != claircore.PackageBinary {
 				pkgPurpose = "SOURCE"
 			}
 

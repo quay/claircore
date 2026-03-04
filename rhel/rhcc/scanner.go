@@ -164,7 +164,7 @@ func (s *scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Pa
 
 	minorRange := rhctagVersion.MinorStart()
 	src := claircore.Package{
-		Kind:              claircore.SOURCE,
+		Kind:              claircore.PackageSource,
 		Name:              buildName,
 		Version:           vr,
 		NormalizedVersion: minorRange.Version(true),
@@ -198,7 +198,7 @@ func (s *scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Pa
 		// ["rhel8/toolbox", "ubi8/toolbox"]`. Therefore, we want a binary
 		// package entry for each.
 		pkgs = append(pkgs, &claircore.Package{
-			Kind:              claircore.BINARY,
+			Kind:              claircore.PackageBinary,
 			Name:              name,
 			Version:           vr,
 			NormalizedVersion: minorRange.Version(true),

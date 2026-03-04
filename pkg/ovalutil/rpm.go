@@ -128,7 +128,7 @@ func RPMDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulnsF
 					vuln.Package = &claircore.Package{
 						Name:   object.Name,
 						Module: module,
-						Kind:   claircore.BINARY,
+						Kind:   claircore.PackageBinary,
 					}
 					if state != nil {
 						vuln.FixedInVersion = state.EVR.Body

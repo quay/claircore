@@ -74,7 +74,7 @@ func (s *detector) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.P
 
 	normVer := rhctagVersion.Version(true)
 	src := claircore.Package{
-		Kind:              claircore.SOURCE,
+		Kind:              claircore.PackageSource,
 		Name:              labels.Name,
 		Version:           vr,
 		NormalizedVersion: normVer,
@@ -85,7 +85,7 @@ func (s *detector) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.P
 	pkgs := []*claircore.Package{&src}
 
 	pkgs = append(pkgs, &claircore.Package{
-		Kind:              claircore.BINARY,
+		Kind:              claircore.PackageBinary,
 		Name:              labels.Name,
 		Version:           vr,
 		NormalizedVersion: normVer,

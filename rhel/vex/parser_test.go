@@ -394,7 +394,7 @@ func TestParseCompare(t *testing.T) {
 					Links:              "https://access.redhat.com/security/cve/CVE-2024-24786 https://bugzilla.redhat.com/show_bug.cgi?id=2268046 https://www.cve.org/CVERecord?id=CVE-2024-24786 https://nvd.nist.gov/vuln/detail/CVE-2024-24786 https://go.dev/cl/569356 https://groups.google.com/g/golang-announce/c/ArQ6CDgtEjY/ https://pkg.go.dev/vuln/GO-2024-2611 https://security.access.redhat.com/data/csaf/v2/vex/2024/cve-2024-24786.json",
 					Severity:           "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H",
 					NormalizedSeverity: claircore.Medium,
-					Package:            &claircore.Package{Name: "cri-tools", Kind: "binary", Arch: "aarch64"},
+					Package:            &claircore.Package{Name: "cri-tools", Kind: claircore.PackageBinary, Arch: "aarch64"},
 					FixedInVersion:     "0:1.29.0-3.1.el9",
 					Repo: &claircore.Repository{
 						Name: "cpe:2.3:a:redhat:openshift:4.16:*:el9:*:*:*:*:*",

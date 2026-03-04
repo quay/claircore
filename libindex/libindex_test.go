@@ -27,7 +27,7 @@ func createTestVulns(n int) []claircore.Vulnerability {
 			NormalizedSeverity: claircore.Unknown,
 			Package: &claircore.Package{
 				Name: "botan",
-				Kind: claircore.BINARY,
+				Kind: claircore.PackageBinary,
 			},
 		})
 	}

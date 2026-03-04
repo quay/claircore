@@ -709,7 +709,7 @@ func (e *ecs) Insert(ctx context.Context, log *slog.Logger, skipped *stats, name
 				v.Package = pkg
 				switch af.Package.Ecosystem {
 				case ecosystemGo, ecosystemMaven, ecosystemNPM, ecosystemPyPI, ecosystemRubyGems:
-					v.Package.Kind = claircore.BINARY
+					v.Package.Kind = claircore.PackageBinary
 				}
 				if novel {
 					pkg.RepositoryHint = af.Package.Ecosystem

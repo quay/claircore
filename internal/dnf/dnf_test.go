@@ -53,7 +53,7 @@ func TestWrap(t *testing.T) {
 				Package: claircore.Package{
 					Name:           "apr-util-bdb",
 					Version:        "1.6.1-23.el9",
-					Kind:           claircore.BINARY,
+					Kind:           claircore.PackageBinary,
 					Arch:           "x86_64",
 					RepositoryHint: "something=nothing",
 				},
@@ -65,7 +65,7 @@ func TestWrap(t *testing.T) {
 				Package: claircore.Package{
 					Name:           "apr-util-bdb",
 					Version:        "1.7.1-23.el9", // different version
-					Kind:           claircore.BINARY,
+					Kind:           claircore.PackageBinary,
 					Arch:           "x86_64",
 					RepositoryHint: "something=nothing",
 				},
@@ -87,7 +87,7 @@ func TestWrap(t *testing.T) {
 				Package: claircore.Package{
 					Name:           "dnf5",
 					Version:        "5.2.12.0-1.fc42",
-					Kind:           claircore.BINARY,
+					Kind:           claircore.PackageBinary,
 					Arch:           "x86_64",
 					RepositoryHint: "something=nothing",
 				},
@@ -99,7 +99,7 @@ func TestWrap(t *testing.T) {
 				Package: claircore.Package{
 					Name:           "dnf5",
 					Version:        "5.2.12.0-1.fc42.local1", // different version
-					Kind:           claircore.BINARY,
+					Kind:           claircore.PackageBinary,
 					Arch:           "x86_64",
 					RepositoryHint: "something=nothing",
 				},

@@ -25,7 +25,7 @@ func TestVulnerable(t *testing.T) {
 				Package: &claircore.Package{
 					Name:    "bootstrap",
 					Version: "3.2.9",
-					Kind:    "binary",
+					Kind:    claircore.PackageBinary,
 				},
 			},
 			vuln: &claircore.Vulnerability{
@@ -46,7 +46,7 @@ func TestVulnerable(t *testing.T) {
 				Package: &claircore.Package{
 					Name:    "bootstrap",
 					Version: "4.1.2",
-					Kind:    "binary",
+					Kind:    claircore.PackageBinary,
 				},
 			},
 			vuln: &claircore.Vulnerability{
@@ -67,7 +67,7 @@ func TestVulnerable(t *testing.T) {
 				Package: &claircore.Package{
 					Name:    "openshift-origin-node",
 					Version: "1.3.2",
-					Kind:    "binary",
+					Kind:    claircore.PackageBinary,
 				},
 			},
 			vuln: &claircore.Vulnerability{
@@ -88,7 +88,7 @@ func TestVulnerable(t *testing.T) {
 				Package: &claircore.Package{
 					Name:    "openshift-origin-node",
 					Version: "1.3.3",
-					Kind:    "binary",
+					Kind:    claircore.PackageBinary,
 				},
 			},
 			vuln: &claircore.Vulnerability{
@@ -109,7 +109,7 @@ func TestVulnerable(t *testing.T) {
 				Package: &claircore.Package{
 					Name:    "dependabot-omnibus",
 					Version: "0.120.0.beta2",
-					Kind:    "binary",
+					Kind:    claircore.PackageBinary,
 				},
 			},
 			vuln: &claircore.Vulnerability{
@@ -130,7 +130,7 @@ func TestVulnerable(t *testing.T) {
 				Package: &claircore.Package{
 					Name:    "dependabot-omnibus",
 					Version: "0.119.0-alpha3",
-					Kind:    "binary",
+					Kind:    claircore.PackageBinary,
 				},
 			},
 			vuln: &claircore.Vulnerability{
@@ -151,7 +151,7 @@ func TestVulnerable(t *testing.T) {
 				Package: &claircore.Package{
 					Name:    "dependabot-omnibus",
 					Version: "0.119.0",
-					Kind:    "binary",
+					Kind:    claircore.PackageBinary,
 				},
 			},
 			vuln: &claircore.Vulnerability{

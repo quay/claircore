@@ -111,7 +111,7 @@ func (u *Updater) unpack(partial *claircore.Vulnerability, packages []alas.Packa
 
 		v.Package = &claircore.Package{
 			Name: alasPKG.Name,
-			Kind: claircore.BINARY,
+			Kind: claircore.PackageBinary,
 			Arch: alasPKG.Arch,
 		}
 		v.FixedInVersion = versionString(&b, alasPKG)

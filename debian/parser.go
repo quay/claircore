@@ -64,7 +64,7 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 					FixedInVersion:     releaseData.FixedVersion,
 					Package: &claircore.Package{
 						Name: src,
-						Kind: claircore.SOURCE,
+						Kind: claircore.PackageSource,
 					},
 				}
 				vs = append(vs, &v)

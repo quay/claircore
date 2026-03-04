@@ -25,7 +25,7 @@ func TestVulnerable(t *testing.T) {
 				Package: &claircore.Package{
 					Name:    "org.apache.openmeetings:openmeetings-parent",
 					Version: "3.2.9",
-					Kind:    "binary",
+					Kind:    claircore.PackageBinary,
 				},
 			},
 			vuln: &claircore.Vulnerability{
@@ -46,7 +46,7 @@ func TestVulnerable(t *testing.T) {
 				Package: &claircore.Package{
 					Name:    "org.apache.openmeetings:openmeetings-parent",
 					Version: "3.3.0",
-					Kind:    "binary",
+					Kind:    claircore.PackageBinary,
 				},
 			},
 			vuln: &claircore.Vulnerability{
@@ -67,7 +67,7 @@ func TestVulnerable(t *testing.T) {
 				Package: &claircore.Package{
 					Name:    "com.jfinal:jfinal",
 					Version: "4.9.0",
-					Kind:    "binary",
+					Kind:    claircore.PackageBinary,
 				},
 			},
 			vuln: &claircore.Vulnerability{
@@ -88,7 +88,7 @@ func TestVulnerable(t *testing.T) {
 				Package: &claircore.Package{
 					Name:    "com.gitblit:gitblit",
 					Version: "1.9.3",
-					Kind:    "binary",
+					Kind:    claircore.PackageBinary,
 				},
 			},
 			vuln: &claircore.Vulnerability{
@@ -109,7 +109,7 @@ func TestVulnerable(t *testing.T) {
 				Package: &claircore.Package{
 					Name:    "com.gitblit:gitblit",
 					Version: "1.9.4",
-					Kind:    "binary",
+					Kind:    claircore.PackageBinary,
 				},
 			},
 			vuln: &claircore.Vulnerability{
@@ -130,7 +130,7 @@ func TestVulnerable(t *testing.T) {
 				Package: &claircore.Package{
 					Name:    "org.apache.openmeetings:openmeetings-parent",
 					Version: "3.3.0",
-					Kind:    "binary",
+					Kind:    claircore.PackageBinary,
 				},
 			},
 			vuln: &claircore.Vulnerability{
@@ -151,7 +151,7 @@ func TestVulnerable(t *testing.T) {
 				Package: &claircore.Package{
 					Name:    "org.apache.openmeetings:openmeetings-parent",
 					Version: "3.1.9",
-					Kind:    "binary",
+					Kind:    claircore.PackageBinary,
 				},
 			},
 			vuln: &claircore.Vulnerability{
@@ -172,7 +172,7 @@ func TestVulnerable(t *testing.T) {
 				Package: &claircore.Package{
 					Name:    "org.apache.tiles:tiles-core",
 					Version: "3.0.7",
-					Kind:    "binary",
+					Kind:    claircore.PackageBinary,
 				},
 			},
 			vuln: &claircore.Vulnerability{

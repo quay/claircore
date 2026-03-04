@@ -27,7 +27,7 @@ func TestRoundTripIndexRecordNodeJS(t *testing.T) {
 				Package: &claircore.Package{
 					Name:    "express",
 					Version: "4.18.2",
-					Kind:    claircore.BINARY,
+					Kind:    claircore.PackageBinary,
 					Source:  &claircore.Package{},
 				},
 				Repository: &Repository,
@@ -39,7 +39,7 @@ func TestRoundTripIndexRecordNodeJS(t *testing.T) {
 				Package: &claircore.Package{
 					Name:    "lodash",
 					Version: "4.17.21",
-					Kind:    claircore.BINARY,
+					Kind:    claircore.PackageBinary,
 					Source:  &claircore.Package{},
 				},
 				Repository: &Repository,
@@ -51,7 +51,7 @@ func TestRoundTripIndexRecordNodeJS(t *testing.T) {
 				Package: &claircore.Package{
 					Name:    "left-pad",
 					Version: "not-a-version",
-					Kind:    claircore.BINARY,
+					Kind:    claircore.PackageBinary,
 					Source:  &claircore.Package{},
 				},
 				Repository: &Repository,
