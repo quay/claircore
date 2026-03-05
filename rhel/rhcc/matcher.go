@@ -2,11 +2,11 @@ package rhcc
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 
-	rpmVersion "github.com/knqyf263/go-rpm-version"
-
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/rpmver"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/rhel"
 	"github.com/quay/claircore/toolkit/types/cpe"
@@ -50,9 +50,17 @@ func (*matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 			return false, nil
 		}
 	}
-	pkgVer, fixedInVer := rpmVersion.NewVersion(record.Package.Version), rpmVersion.NewVersion(vuln.FixedInVersion)
+
 	slog.DebugContext(ctx, "comparing versions", "record", record.Package.Version, "vulnerability", vuln.FixedInVersion)
-	return pkgVer.LessThan(fixedInVer), nil
+	pkgVer, err := rpmver.Parse(record.Package.Version)
+	if err != nil {
+		return false, fmt.Errorf("rhcc: unable to parse version %q: %w", record.Package.Version, err)
+	}
+	fixedVer, err := rpmver.Parse(vuln.FixedInVersion)
+	if err != nil {
+		return false, fmt.Errorf("rhcc: unable to parse version %q: %w", vuln.FixedInVersion, err)
+	}
+	return rpmver.Compare(&pkgVer, &fixedVer) == -1, nil
 }
 
 // Implement version filtering to have the database only return results for the

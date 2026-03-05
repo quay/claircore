@@ -5,9 +5,8 @@ import (
 	"log/slog"
 	"strings"
 
-	version "github.com/knqyf263/go-rpm-version"
-
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/rpm"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/toolkit/types/cpe"
 )
@@ -79,21 +78,5 @@ func (m *Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord,
 		return false, nil
 	}
 
-	// TODO(hank) Switch to the [rpmver] package.
-	pkgVer := version.NewVersion(record.Package.Version)
-	var vulnVer version.Version
-	// Assume the vulnerability record we have is for the last known vulnerable
-	// version, so greater versions aren't vulnerable.
-	cmp := func(i int) bool { return i != version.GREATER }
-	// But if it's explicitly marked as a fixed-in version, it's only vulnerable
-	// if less than that version.
-	if vuln.FixedInVersion != "" {
-		vulnVer = version.NewVersion(vuln.FixedInVersion)
-		cmp = func(i int) bool { return i == version.LESS }
-	} else {
-		// If a vulnerability doesn't have FixedInVersion, assume it is unfixed.
-		vulnVer = version.NewVersion("65535:0")
-	}
-	// compare version and architecture
-	return cmp(pkgVer.Compare(vulnVer)) && vuln.ArchOperation.Cmp(record.Package.Arch, vuln.Package.Arch), nil
+	return rpm.MatchVulnerable(ctx, record, vuln)
 }

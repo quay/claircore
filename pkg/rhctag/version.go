@@ -3,33 +3,39 @@
 package rhctag
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"strconv"
 	"strings"
 
-	rpmVersion "github.com/knqyf263/go-rpm-version"
-
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/internal/rpmver"
 )
 
-// Allows extracting the Major and Minor versions so that we don't compare container tags from different minor versions.
+// Version allows extracting the "major" and "minor" versions so that we don't compare container tags from different minor versions.
+//
 // This is a workaround for another problem where not all minor releases of containers have a unique CPE.
-// Take for example ocs4/rook-ceph-rhel8-operator, it shipped at least 2 minor releases into the same container repository.
-// Both those major versions use the same CPE "cpe:/a:redhat:openshift_container_storage:4"
-// Here are 2 example tags which fixed CVE-2020-8565
-// 4.7 minor: 4.7-140.49a6fcf.release_4.7
-// 4.8 minor: 4.8-167.9a9db5f.release_4.8
-
-// This class also handles container tags which have a 'v' prefix, for example openshift4/ose-metering-hive
-// 4.6 minor: v4.6.0-202112140546.p0.g8b9da97.assembly.stream
-// 4.7 minor: v4.7.0-202112140553.p0.g091bb99.assembly.stream
+//
+// For example, take "ocs4/rook-ceph-rhel8-operator": it shipped at least 2 minor releases into the same container repository.
+// Both those major versions use the same CPE: "cpe:/a:redhat:openshift_container_storage:4".
+// Here are 2 example tags which fixed CVE-2020-8565:
+//   - 4.7-140.49a6fcf.release_4.7
+//   - 4.8-167.9a9db5f.release_4.8
+//
+// This type also handles container tags which have a 'v' prefix (e.g. "openshift4/ose-metering-hive").
+//   - v4.6.0-202112140546.p0.g8b9da97.assembly.stream
+//   - v4.7.0-202112140553.p0.g091bb99.assembly.stream
 type Version struct {
 	Original string
 	Major    int
 	Minor    int
 }
 
+// Version turns the reciever into a [claircore.Version].
+//
+// "Min" controls whether the returned version is the minimum within the minor
+// series or the maximum.
 func (v *Version) Version(min bool) (c claircore.Version) {
 	const (
 		major = 0
@@ -64,7 +70,7 @@ func upToDot(s string) (value int, remainder string, err error) {
 	if err == nil {
 		return value, remainder, nil
 	}
-	return value, remainder, fmt.Errorf("Could not parse %s as an int", s)
+	return value, remainder, fmt.Errorf("could not parse %q as int", s)
 }
 
 // Parse attempts to extract a Red Hat container registry tag version string
@@ -75,7 +81,7 @@ func Parse(s string) (v Version, err error) {
 		// remove the leading "v" prefix
 		canonical = s[1:]
 	}
-	//strip revision
+	// strip revision
 	dashIndex := strings.Index(canonical, "-")
 	if dashIndex > 0 {
 		canonical = canonical[:dashIndex]
@@ -105,13 +111,26 @@ func (v *Version) MinorStart() (start Version) {
 	return start
 }
 
+// Compare is a comparison for the provided [Version]s.
 func (v *Version) Compare(x *Version) int {
-	thisRpmVersion := rpmVersion.NewVersion(v.Original)
-	otherRpmVersion := rpmVersion.NewVersion(x.Original)
-	return thisRpmVersion.Compare(otherRpmVersion)
+	a, aErr := rpmver.Parse(v.toEVR())
+	b, bErr := rpmver.Parse(x.toEVR())
+	if err := errors.Join(aErr, bErr); err != nil {
+		panic(fmt.Errorf("unable to compare versions: %w", err))
+	}
+	return rpmver.Compare(&a, &b)
 }
 
-// Versions implements sort.Interface.
+func (v *Version) toEVR() string {
+	s := v.Original
+	s = strings.TrimPrefix(s, "v")
+	if !strings.Contains(s, "-") {
+		s = s + "-0"
+	}
+	return s
+}
+
+// Versions implements [sort.Interface].
 type Versions []Version
 
 func (vs Versions) Len() int {
