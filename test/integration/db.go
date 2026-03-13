@@ -69,6 +69,8 @@ const (
 //
 // DBSetup and NeedDB are expected to have been called correctly.
 func NewDB(ctx context.Context, t testing.TB) (*DB, error) {
+	ctx, span := tracer.Start(ctx, "NewDB")
+	defer span.End()
 	dbid, roleid := mkIDs()
 	database := fmt.Sprintf("db%x", dbid)
 	role := fmt.Sprintf("role%x", roleid)
@@ -96,6 +98,8 @@ func NewDB(ctx context.Context, t testing.TB) (*DB, error) {
 }
 
 func configureDatabase(ctx context.Context, t testing.TB, root *pgxpool.Config, database, role string) *pgxpool.Config {
+	ctx, span := tracer.Start(ctx, "configureDatabase")
+	defer span.End()
 	var cfg *pgxpool.Config
 	// First, connect as the superuser to create the new database and role.
 	cfg = root.Copy()
@@ -231,8 +235,14 @@ func (db *DB) Close(ctx context.Context, t testing.TB) {
 // have been fetched.
 //
 // See the example for usage.
-func NeedDB(t testing.TB) {
+func NeedDB(t testing.TB, v ...context.Context) {
 	t.Helper()
+	ctx := context.Background()
+	if len(v) != 0 {
+		ctx = v[0]
+	}
+	ctx, span := tracer.Start(ctx, "NeedDB")
+	defer span.End()
 	if testing.Short() {
 		t.Skip(`skipping integration test: short tests`)
 	}
@@ -243,6 +253,8 @@ func NeedDB(t testing.TB) {
 	if externalDB {
 		t.Log("using preconfigured external database")
 		up.Do(func() {
+			_, span := tracer.Start(ctx, "useExternal")
+			defer span.End()
 			cfg, err := pgxpool.ParseConfig(os.Getenv(EnvPGConnString))
 			if err != nil {
 				t.Fatal(err)
@@ -255,8 +267,8 @@ func NeedDB(t testing.TB) {
 	}
 
 	t.Log("using embedded database")
-	embedDB.DiscoverVersion(t)
-	up.Do(startEmbedded(t))
+	embedDB.DiscoverVersion(ctx, t)
+	up.Do(startEmbedded(ctx, t))
 }
 
 // DBSetup queues setup and teardown for a postgres engine instance. If the
