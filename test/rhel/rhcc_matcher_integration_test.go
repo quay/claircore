@@ -19,6 +19,7 @@ import (
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 	testpostgres "github.com/quay/claircore/test/postgres"
+	testvex "github.com/quay/claircore/test/vex"
 )
 
 func TestMain(m *testing.M) {
@@ -57,7 +58,7 @@ func TestRHCCMatcherIntegration(t *testing.T) {
 			match:       false,
 		},
 		{
-			Name:        "Clair labels",
+			Name:        "ClairLabels",
 			indexReport: "clair-rhel8-v3.5.5-4-labels",
 			cveID:       "CVE-2021-3762",
 			match:       true,
@@ -74,7 +75,7 @@ func TestRHCCMatcherIntegration(t *testing.T) {
 	}
 	defer locks.Close(ctx)
 
-	root, c := vex.ServeSecDB(t, "testdata/server.txtar")
+	root, c := testvex.ServeSecDB(ctx, t, "testdata/server.txtar")
 	fac := &vex.Factory{}
 	cfg := updates.Configs{
 		"rhel-vex": func(v any) error {

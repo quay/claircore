@@ -9,12 +9,13 @@ import (
 
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/test"
+	testvex "github.com/quay/claircore/test/vex"
 	"github.com/quay/claircore/toolkit/types/csaf"
 )
 
 func TestFactory(t *testing.T) {
 	ctx := test.Logging(t)
-	root, c := ServeSecDB(t, "testdata/server.txtar")
+	root, c := testvex.ServeSecDB(ctx, t, "testdata/server.txtar")
 	fac := &Factory{}
 	err := fac.Configure(ctx, func(v any) error {
 		cf := v.(*FactoryConfig)
