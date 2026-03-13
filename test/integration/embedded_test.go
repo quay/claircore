@@ -12,5 +12,5 @@ func TestDiscover(t *testing.T) {
 		Arch:    "amd64",
 		Version: "15",
 	}
-	f.DiscoverVersion(t)
+	f.DiscoverVersion(t.Context(), t)
 }
