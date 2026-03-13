@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"go.opentelemetry.io/otel/codes"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore/postgres"
 	match_engine "github.com/quay/claircore/internal/matcher"
@@ -19,6 +21,7 @@ import (
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 	testpostgres "github.com/quay/claircore/test/postgres"
+	vextest "github.com/quay/claircore/test/vex"
 )
 
 func TestMain(m *testing.M) {
@@ -27,6 +30,15 @@ func TestMain(m *testing.M) {
 
 func TestRHCCMatcherIntegration(t *testing.T) {
 	t.Parallel()
+	ctx, span := tracer.Start(test.RootContext(t), t.Name())
+	defer func() {
+		code := codes.Ok
+		if t.Failed() {
+			code--
+		}
+		span.SetStatus(code, "")
+		span.End()
+	}()
 
 	type testcase struct {
 		Name        string
@@ -54,15 +66,14 @@ func TestRHCCMatcherIntegration(t *testing.T) {
 			match:       false,
 		},
 		{
-			Name:        "Clair labels",
+			Name:        "ClairLabels",
 			indexReport: "clair-rhel8-v3.5.5-4-labels",
 			cveID:       "CVE-2021-3762",
 			match:       true,
 		},
 	}
 
-	integration.NeedDB(t)
-	ctx := test.Logging(t)
+	integration.NeedDB(t, ctx)
 	pool := testpostgres.TestMatcherDB(ctx, t)
 	store := postgres.NewMatcherStore(pool)
 	locks, err := ctxlock.New(ctx, pool)
@@ -71,7 +82,7 @@ func TestRHCCMatcherIntegration(t *testing.T) {
 	}
 	defer locks.Close(ctx)
 
-	root, c := vex.ServeSecDB(t, "testdata/server.txtar")
+	root, c := vextest.ServeSecDB(ctx, t, "testdata/server.txtar")
 	fac := &vex.Factory{}
 	cfg := updates.Configs{
 		"rhel-vex": func(v any) error {
@@ -103,6 +114,16 @@ func TestRHCCMatcherIntegration(t *testing.T) {
 	for _, tt := range table {
 		t.Run(tt.Name, func(t *testing.T) {
 			t.Parallel()
+			ctx, span := tracer.Start(ctx, tt.Name)
+			defer func() {
+				code := codes.Ok
+				if t.Failed() {
+					code--
+				}
+				span.SetStatus(code, "")
+				span.End()
+			}()
+
 			m := rhcc.Matcher
 
 			f, err := os.Open(filepath.Join("testdata", fmt.Sprintf("%s-indexreport.json", tt.indexReport)))
