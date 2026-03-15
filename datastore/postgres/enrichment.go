@@ -235,7 +235,7 @@ select
 	tags,
 	data
 from
-	public.enrichment
+	enrichment
 where
 	tags && $2::text[] )
 select
@@ -243,9 +243,9 @@ select
 	e.data
 from
 	e
-join public.uo_enrich uo on
+join uo_enrich uo on
 	uo.enrich = e.id
-join public.latest_update_operations l on
+join latest_update_operations l on
 	l.id = uo.uo
 where
 	l.updater = $1
