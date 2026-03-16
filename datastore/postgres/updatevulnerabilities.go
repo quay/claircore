@@ -12,11 +12,17 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore"
+	dsmetrics "github.com/quay/claircore/datastore/metrics"
 	"github.com/quay/claircore/libvuln/driver"
 )
 
@@ -48,7 +54,27 @@ var (
 
 // UpdateVulnerabilitiesIter implements vulnstore.Updater.
 func (s *MatcherStore) UpdateVulnerabilitiesIter(ctx context.Context, updater string, fp driver.Fingerprint, it datastore.VulnerabilityIter) (uuid.UUID, error) {
-	return s.updateVulnerabilities(ctx, updater, fp, it, nil)
+	const op = `MatcherStore.UpdateVulnerabilitiesIter`
+	var id uuid.UUID
+	var err error
+	ctx, span := tracer.Start(ctx, op)
+	start := time.Now()
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, "")
+		} else {
+			span.SetStatus(codes.Ok, "")
+			span.SetAttributes(attribute.Stringer("ref", &id))
+		}
+		span.End()
+		metrics.UpdateVulnerabilities.CallDuration.Record(ctx, time.Since(start).Seconds(),
+			metric.WithAttributes(dsmetrics.Operation(op), dsmetrics.Failed(err)),
+		)
+	}()
+
+	id, err = s.updateVulnerabilities(ctx, updater, fp, it, nil)
+	return id, err
 }
 
 // UpdateVulnerabilities implements vulnstore.Updater.
@@ -57,6 +83,25 @@ func (s *MatcherStore) UpdateVulnerabilitiesIter(ctx context.Context, updater st
 // provided vulnerabilities and computes a diff comprising the removed
 // and added vulnerabilities for this UpdateOperation.
 func (s *MatcherStore) UpdateVulnerabilities(ctx context.Context, updater string, fp driver.Fingerprint, vulns []*claircore.Vulnerability) (uuid.UUID, error) {
+	const op = `MatcherStore.UpdateVulnerabilities`
+	var id uuid.UUID
+	var err error
+	ctx, span := tracer.Start(ctx, op)
+	start := time.Now()
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, "")
+		} else {
+			span.SetStatus(codes.Ok, "")
+			span.SetAttributes(attribute.Stringer("ref", &id))
+		}
+		span.End()
+		metrics.UpdateVulnerabilities.CallDuration.Record(ctx, time.Since(start).Seconds(),
+			metric.WithAttributes(dsmetrics.Operation(op), dsmetrics.Failed(err)),
+		)
+	}()
+
 	iterVulns := func(yield func(*claircore.Vulnerability, error) bool) {
 		for i := range vulns {
 			if !yield(vulns[i], nil) {
@@ -64,7 +109,8 @@ func (s *MatcherStore) UpdateVulnerabilities(ctx context.Context, updater string
 			}
 		}
 	}
-	return s.updateVulnerabilities(ctx, updater, fp, iterVulns, nil)
+	id, err = s.updateVulnerabilities(ctx, updater, fp, iterVulns, nil)
+	return id, err
 }
 
 // DeltaUpdateVulnerabilities implements vulnstore.Updater.
@@ -79,6 +125,25 @@ func (s *MatcherStore) UpdateVulnerabilities(ctx context.Context, updater string
 //   - Insert the new vulnerabilities
 //   - Associate new vulnerabilities with new updateOperation
 func (s *MatcherStore) DeltaUpdateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulns []*claircore.Vulnerability, deletedVulns []string) (uuid.UUID, error) {
+	const op = `MatcherStore.DeltaUpdateVulnerabilities`
+	var id uuid.UUID
+	var err error
+	ctx, span := tracer.Start(ctx, op)
+	start := time.Now()
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, "")
+		} else {
+			span.SetStatus(codes.Ok, "")
+			span.SetAttributes(attribute.Stringer("ref", &id))
+		}
+		span.End()
+		metrics.UpdateVulnerabilities.CallDuration.Record(ctx, time.Since(start).Seconds(),
+			metric.WithAttributes(dsmetrics.Operation(op), dsmetrics.Failed(err)),
+		)
+	}()
+
 	iterVulns := func(yield func(*claircore.Vulnerability, error) bool) {
 		for i := range vulns {
 			if !yield(vulns[i], nil) {
@@ -93,7 +158,8 @@ func (s *MatcherStore) DeltaUpdateVulnerabilities(ctx context.Context, updater s
 			}
 		}
 	}
-	return s.updateVulnerabilities(ctx, updater, fingerprint, iterVulns, delVulns)
+	id, err = s.updateVulnerabilities(ctx, updater, fingerprint, iterVulns, delVulns)
+	return id, err
 }
 
 func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulnIter datastore.VulnerabilityIter, delIter datastore.Iter[string]) (uuid.UUID, error) {
@@ -148,11 +214,15 @@ func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string
 		ON CONFLICT DO NOTHING;`
 		refreshView = `REFRESH MATERIALIZED VIEW CONCURRENTLY latest_update_operations;`
 	)
+	delta := delIter != nil
+	deltaAttr := attribute.Bool("delta", delta)
+	ctx, span := tracer.Start(ctx, "MatcherStore.updateVulnerabilities",
+		trace.WithAttributes(deltaAttr),
+	)
+	defer span.End()
 
 	var uoID uint64
 	var ref uuid.UUID
-
-	start := time.Now()
 
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
@@ -160,15 +230,29 @@ func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string
 	}
 	defer tx.Rollback(ctx)
 
-	if err := tx.QueryRow(ctx, create, updater, string(fingerprint)).Scan(&uoID, &ref); err != nil {
+	err = func() error {
+		start := time.Now()
+		set := attribute.NewSet(deltaAttr, attribute.String("query", "create"))
+
+		err := tx.QueryRow(ctx, create, updater, string(fingerprint)).Scan(&uoID, &ref)
+		metrics.UpdateVulnerabilities.QueryCounter.Add(ctx, 1, metric.WithAttributeSet(set))
+		metrics.UpdateVulnerabilities.QueryDuration.Record(ctx, time.Since(start).Seconds(), metric.WithAttributeSet(set))
+		updateVulnerabilitiesCounter.WithLabelValues("create", strconv.FormatBool(delta)).Add(1)
+		updateVulnerabilitiesDuration.WithLabelValues("create", strconv.FormatBool(delta)).Observe(time.Since(start).Seconds())
+
+		if err != nil {
+			return err
+		}
+		return nil
+	}()
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "")
 		return uuid.Nil, fmt.Errorf("failed to create update_operation: %w", err)
 	}
 
-	delta := delIter != nil
-	updateVulnerabilitiesCounter.WithLabelValues("create", strconv.FormatBool(delta)).Add(1)
-	updateVulnerabilitiesDuration.WithLabelValues("create", strconv.FormatBool(delta)).Observe(time.Since(start).Seconds())
-
 	log := slog.With("ref", ref)
+	span.SetAttributes(attribute.Stringer("ref", &ref))
 	log.DebugContext(ctx, "update_operation created")
 
 	if delta {
@@ -177,32 +261,45 @@ func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string
 		// The reason this still works even though the new update_operation
 		// is already created is because the latest_update_operation view isn't updated until
 		// the end of this function.
-		start = time.Now()
-		rows, err := s.pool.Query(ctx, selectExisting, updater)
-		if err != nil {
-			return uuid.Nil, fmt.Errorf("failed to get existing vulns: %w", err)
-		}
-		defer rows.Close()
-		updateVulnerabilitiesCounter.WithLabelValues("selectExisting", strconv.FormatBool(delta)).Add(1)
-		updateVulnerabilitiesDuration.WithLabelValues("selectExisting", strconv.FormatBool(delta)).Observe(time.Since(start).Seconds())
-
 		oldVulns := make(map[string][]string)
-		for rows.Next() {
-			var tmpID int64
-			var ID, name string
-			err := rows.Scan(
-				&name,
-				&tmpID,
-			)
-
-			ID = strconv.FormatInt(tmpID, 10)
+		err = s.pool.AcquireFunc(ctx, func(c *pgxpool.Conn) error {
+			start := time.Now()
+			set := attribute.NewSet(deltaAttr, attribute.String("query", "selectExisting"))
+			defer func() {
+				updateVulnerabilitiesDuration.WithLabelValues("selectExisting", strconv.FormatBool(delta)).Observe(time.Since(start).Seconds())
+				metrics.UpdateVulnerabilities.QueryDuration.Record(ctx, time.Since(start).Seconds(), metric.WithAttributeSet(set))
+			}()
+			rows, err := c.Query(ctx, selectExisting, updater)
+			updateVulnerabilitiesCounter.WithLabelValues("selectExisting", strconv.FormatBool(delta)).Add(1)
+			metrics.UpdateVulnerabilities.QueryCounter.Add(ctx, 1, metric.WithAttributeSet(set))
 			if err != nil {
-				return uuid.Nil, fmt.Errorf("failed to scan vulnerability: %w", err)
+				return fmt.Errorf("failed to get existing vulns: %w", err)
 			}
-			oldVulns[name] = append(oldVulns[name], ID)
-		}
-		if err := rows.Err(); err != nil {
-			return uuid.Nil, fmt.Errorf("error reading existing vulnerabilities: %w", err)
+			defer rows.Close()
+
+			for rows.Next() {
+				var tmpID int64
+				var ID, name string
+				err := rows.Scan(
+					&name,
+					&tmpID,
+				)
+
+				ID = strconv.FormatInt(tmpID, 10)
+				if err != nil {
+					return fmt.Errorf("failed to scan vulnerability: %w", err)
+				}
+				oldVulns[name] = append(oldVulns[name], ID)
+			}
+			if err := rows.Err(); err != nil {
+				return fmt.Errorf("error reading existing vulnerabilities: %w", err)
+			}
+			return nil
+		})
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, "")
+			return uuid.Nil, err
 		}
 
 		if len(oldVulns) > 0 {
@@ -221,25 +318,42 @@ func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string
 				return true
 			})
 		}
-		start = time.Now()
-		// Associate already existing vulnerabilities with new update_operation.
-		for _, vs := range oldVulns {
-			for _, vID := range vs {
-				_, err := tx.Exec(ctx, assocExisting, uoID, vID)
-				if err != nil {
-					return uuid.Nil, fmt.Errorf("could not update old vulnerability with new UO: %w", err)
+
+		err = s.pool.AcquireFunc(ctx, func(c *pgxpool.Conn) error {
+			start := time.Now()
+			set := attribute.NewSet(deltaAttr, attribute.String("query", "assocExisting"))
+			var ct int64
+			defer func() {
+				metrics.UpdateVulnerabilities.QueryCounter.Add(ctx, ct, metric.WithAttributeSet(set))
+				metrics.UpdateVulnerabilities.QueryDuration.Record(ctx, time.Since(start).Seconds(), metric.WithAttributeSet(set))
+				updateVulnerabilitiesCounter.WithLabelValues("assocExisting", strconv.FormatBool(delta)).Add(float64(ct))
+				updateVulnerabilitiesDuration.WithLabelValues("assocExisting", strconv.FormatBool(delta)).Observe(time.Since(start).Seconds())
+			}()
+
+			// Associate already existing vulnerabilities with new update_operation.
+			for _, vs := range oldVulns {
+				for _, vID := range vs {
+					_, err := tx.Exec(ctx, assocExisting, uoID, vID)
+					if err != nil {
+						return err
+					}
+					ct++
 				}
 			}
+			return nil
+		})
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, "")
+			return uuid.Nil, fmt.Errorf("could not update old vulnerability with new UO: %w", err)
 		}
-		updateVulnerabilitiesCounter.WithLabelValues("assocExisting", strconv.FormatBool(delta)).Add(float64(len(oldVulns)))
-		updateVulnerabilitiesDuration.WithLabelValues("assocExisting", strconv.FormatBool(delta)).Observe(time.Since(start).Seconds())
-
 	}
 
 	// batch insert vulnerabilities
 	skipCt := 0
 	vulnCt := 0
-	start = time.Now()
+	start := time.Now()
+	set := attribute.NewSet(deltaAttr, attribute.String("query", "insert_batch"))
 
 	var batch pgx.Batch
 	flush := func() (err error) {
@@ -292,25 +406,44 @@ func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string
 		return true
 	})
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "")
 		return uuid.Nil, fmt.Errorf("iterating on vulnerabilities: %w", err)
 	}
 	if err := flush(); err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "")
 		return uuid.Nil, fmt.Errorf("failed to finish batch vulnerability insert: %w", err)
 	}
 
+	metrics.UpdateVulnerabilities.QueryCounter.Add(ctx, 1, metric.WithAttributeSet(set))
+	metrics.UpdateVulnerabilities.QueryDuration.Record(ctx, time.Since(start).Seconds(), metric.WithAttributeSet(set))
 	updateVulnerabilitiesCounter.WithLabelValues("insert_batch", strconv.FormatBool(delta)).Add(1)
 	updateVulnerabilitiesDuration.WithLabelValues("insert_batch", strconv.FormatBool(delta)).Observe(time.Since(start).Seconds())
 
 	if err := tx.Commit(ctx); err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "")
 		return uuid.Nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
-	if _, err = s.pool.Exec(ctx, refreshView); err != nil {
+	err = s.pool.AcquireFunc(ctx, func(c *pgxpool.Conn) error {
+		start := time.Now()
+		set := attribute.NewSet(deltaAttr, attribute.String("query", "refreshView"))
+		_, err := c.Exec(ctx, refreshView)
+		metrics.UpdateVulnerabilities.QueryCounter.Add(ctx, 1, metric.WithAttributeSet(set))
+		metrics.UpdateVulnerabilities.QueryDuration.Record(ctx, time.Since(start).Seconds(), metric.WithAttributeSet(set))
+		return err
+	})
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "")
 		return uuid.Nil, fmt.Errorf("could not refresh latest_update_operations: %w", err)
 	}
 
 	log.DebugContext(ctx, "update_operation committed",
 		"skipped", skipCt,
 		"inserted", vulnCt-skipCt)
+	span.SetStatus(codes.Ok, "")
 	return ref, nil
 }
 
