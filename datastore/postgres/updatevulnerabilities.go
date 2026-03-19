@@ -132,14 +132,16 @@ func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string
 			package_name, package_version, package_module, package_arch, package_kind,
 			dist_id, dist_name, dist_version, dist_version_code_name, dist_version_id, dist_arch, dist_cpe, dist_pretty_name,
 			repo_name, repo_key, repo_uri,
-			fixed_in_version, arch_operation, version_kind, vulnerable_range
+			fixed_in_version, arch_operation, version_kind, vulnerable_range,
+			not_vulnerable
 		) VALUES (
 		  $1, $2,
 		  $3, $4, $5, $6, $7, $8, $9,
 		  $10, $11, $12, $13, $14,
 		  $15, $16, $17, $18, $19, $20, $21, $22,
 		  $23, $24, $25,
-		  $26, $27, $28, COALESCE($29, VersionRange('{}', '{}', '()'))
+		  $26, $27, $28, COALESCE($29, VersionRange('{}', '{}', '()')),
+		  $30
 		)
 		ON CONFLICT (hash_kind, hash) DO NOTHING;`
 		// Assoc associates an update operation and a vulnerability. It fails
@@ -312,6 +314,7 @@ ON CONFLICT DO NOTHING`
 			dist.DID, dist.Name, dist.Version, dist.VersionCodeName, dist.VersionID, dist.Arch, dist.CPE, dist.PrettyName,
 			repo.Name, repo.Key, repo.URI,
 			vuln.FixedInVersion, vuln.ArchOperation, vKind, vuln.Range,
+			vuln.Invert,
 		)
 		batch.Queue(assoc, hashKind, hash, uoID)
 
