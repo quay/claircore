@@ -23,7 +23,7 @@ func TestGetQueryBuilderDeterministicArgs(t *testing.T) {
 		"vuln"."id", "name", "description", "issued", "links", "severity", "normalized_severity", "package_name", "package_version",
 		"package_module", "package_arch", "package_kind", "dist_id", "dist_name", "dist_version", "dist_version_code_name",
 		"dist_version_id", "dist_arch", "dist_cpe", "dist_pretty_name", "arch_operation", "repo_name", "repo_key",
-		"repo_uri", "fixed_in_version", "vuln"."updater"
+		"repo_uri", "fixed_in_version", "vuln"."updater", "vuln"."not_vulnerable"
 		FROM "vuln" INNER JOIN "uo_vuln" ON ("vuln"."id" = "uo_vuln"."vuln")
 		INNER JOIN "latest_update_operations" ON ("latest_update_operations"."id" = "uo_vuln"."uo")
 		WHERE `
