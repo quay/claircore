@@ -101,5 +101,6 @@ func runMigrations(ctx context.Context, cfg *pgx.ConnConfig, table pgx.Identifie
 	return nil
 }
 
+//go:generate find . -name *.sql -exec go run github.com/wasilibs/go-sql-formatter/v15/cmd/sql-formatter@latest --language postgresql --fix {} ;
 //go:embed */*.sql
 var sys embed.FS
