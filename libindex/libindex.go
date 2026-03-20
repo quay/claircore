@@ -21,7 +21,6 @@ import (
 	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/indexer/controller"
 	"github.com/quay/claircore/java"
-	"github.com/quay/claircore/pkg/omnimatcher"
 	"github.com/quay/claircore/python"
 	"github.com/quay/claircore/rhel"
 	"github.com/quay/claircore/rhel/rhcc"
@@ -240,8 +239,6 @@ func (l *Libindex) IndexReport(ctx context.Context, hash claircore.Digest) (*cla
 
 // AffectedManifests retrieves a list of affected manifests when provided a list of vulnerabilities.
 func (l *Libindex) AffectedManifests(ctx context.Context, vulns []claircore.Vulnerability) (*claircore.AffectedManifests, error) {
-	om := omnimatcher.New(nil)
-
 	affected := claircore.NewAffectedManifests()
 	g, ctx := errgroup.WithContext(ctx)
 	// TODO(hank) Look in the git history and see if there's any hint where this
@@ -254,7 +251,7 @@ func (l *Libindex) AffectedManifests(ctx context.Context, vulns []claircore.Vuln
 				return context.Cause(ctx)
 			default:
 			}
-			hashes, err := l.store.AffectedManifests(ctx, vulns[i], om.Vulnerable)
+			hashes, err := l.store.AffectedManifests(ctx, vulns[i])
 			if err != nil {
 				return err
 			}
