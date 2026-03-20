@@ -28,7 +28,7 @@ func TestMain(m *testing.M) {
 	c = m.Run()
 }
 
-func TestMatcherIntegration(t *testing.T) {
+func TestRHCCMatcherIntegration(t *testing.T) {
 	t.Parallel()
 
 	type testcase struct {
