@@ -41,7 +41,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-f5166da8.js";
+            window.path_to_searchindex_js = "searchindex-531b6844.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-86a13b75.js"></script>
@@ -1380,7 +1380,7 @@ type Querier interface {
 	IndexReport(ctx context.Context, hash claircore.Digest) (*claircore.IndexReport, bool, error)
 	// AffectedManifests returns a list of manifest digests which the target vulnerability
 	// affects.
-	AffectedManifests(ctx context.Context, v claircore.Vulnerability, f claircore.CheckVulnernableFunc) ([]claircore.Digest, error)
+	AffectedManifests(ctx context.Context, v claircore.Vulnerability) ([]claircore.Digest, error)
 }
     Querier interface provides the method set to ascertain indexed artifacts and
     query whether a layer or manifest has been scanned.
@@ -1452,7 +1452,7 @@ type Querier interface {
 	IndexReport(ctx context.Context, hash claircore.Digest) (*claircore.IndexReport, bool, error)
 	// AffectedManifests returns a list of manifest digests which the target vulnerability
 	// affects.
-	AffectedManifests(ctx context.Context, v claircore.Vulnerability, f claircore.CheckVulnernableFunc) ([]claircore.Digest, error)
+	AffectedManifests(ctx context.Context, v claircore.Vulnerability) ([]claircore.Digest, error)
 }
     Querier interface provides the method set to ascertain indexed artifacts and
     query whether a layer or manifest has been scanned.
