@@ -1,3 +1,15 @@
+<a name="v1.5.51"></a>
+## [v1.5.51] - 2026-03-24
+[v1.5.51]: https://github.com/quay/claircore/compare/v1.5.49...v1.5.51
+
+- indexer: align affectedManifests call with matcher definitions
+  <details>
+  Make the matching process consistent across both the vulnerability
+  matching and the manifest matching that is performed by the
+  affectedManifests logic. It reduces the number of queries to 1 per
+  matcher per vulnerability.
+  </details>
+
 <a name="v1.5.50"></a>
 ## [v1.5.50] - 2026-03-02
 [v1.5.50]: https://github.com/quay/claircore/compare/v1.5.49...v1.5.50
