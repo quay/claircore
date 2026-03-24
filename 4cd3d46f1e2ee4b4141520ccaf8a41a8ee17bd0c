@@ -1,0 +1,6 @@
+indexer: align affectedManifests call with matcher definitions
+
+Make the matching process consistent across both the vulnerability
+matching and the manifest matching that is performed by the
+affectedManifests logic. It reduces the number of queries to 1 per
+matcher per vulnerability.
