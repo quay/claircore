@@ -16,24 +16,31 @@ import (
 	"log/slog"
 )
 
+var contentManifestBlobs = []string{
+	`root/buildinfo/content_manifests/*.json`,
+	`usr/share/buildinfo/content_manifests/*.json`,
+	`usr/share/buildinfo/*.json`,
+}
+
 // GetContentManifest reads and parses the content manifest file from the layer.
-// Content manifest files are stored in /root/buildinfo/content_manifests/ or
-// /usr/share/buildinfo/ (for RHCOS) and contain information about how the container
-// should be processed.
+// Content manifest files are stored in /root/buildinfo/content_manifests/,
+// /usr/share/buildinfo/ (for RHCOS) or /usr/share/buildinfo/content_manifests/
+// (for other images) and contain information about how the container should be processed.
 func getContentManifest(ctx context.Context, sys fs.FS) (*contentManifest, error) {
-	ms, err := fs.Glob(sys, `root/buildinfo/content_manifests/*.json`)
-	if err != nil {
-		panic("programmer error: " + err.Error())
+	var p string
+	for _, g := range contentManifestBlobs {
+		ms, err := fs.Glob(sys, g)
+		if err != nil {
+			panic("programmer error: " + err.Error())
+		}
+		if len(ms) > 0 {
+			p = ms[0]
+			break
+		}
 	}
-	ms2, err := fs.Glob(sys, `usr/share/buildinfo/*.json`)
-	if err != nil {
-		panic("programmer error: " + err.Error())
-	}
-	ms = append(ms, ms2...)
-	if ms == nil {
+	if p == "" {
 		return nil, nil
 	}
-	p := ms[0]
 	slog.DebugContext(ctx, "found content manifest file", "manifest-path", p)
 	b, err := fs.ReadFile(sys, p)
 	if err != nil {
