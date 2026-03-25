@@ -18,11 +18,23 @@ updates:
       include: "scope"
     groups:
       otel:
+        # All the otel modules.
+        # These basically all move together.
         patterns:
-          - "go.opentelemetry.io/otel/*"
+          - "go.opentelemetry.io/*"
       golang-x:
+        # All the "stdlib extensions".
+        # These basically all move together.
         patterns:
           - "golang.org/x/*"
+      dev:
+        # All the modules that are only used in tests and tooling.
+        patterns:
+          - "github.com/google/go-cmp"
+          - "github.com/pganalyze/pg_query_go/v6"
+          - "github.com/wasilibs/go-pgquery"
+          - "go.uber.org/mock"
+          - "google.golang.org/protobuf"
   - package-ecosystem: "gomod"
     directory: "/toolkit"
     schedule:
@@ -33,7 +45,7 @@ updates:
     groups:
       otel:
         patterns:
-        - "go.opentelemetry.io/otel/*"
+          - "go.opentelemetry.io/*"
       golang-x:
         patterns:
           - "golang.org/x/*"
@@ -47,7 +59,7 @@ updates:
     groups:
       otel:
         patterns:
-        - "go.opentelemetry.io/otel/*"
+          - "go.opentelemetry.io/*"
       golang-x:
         patterns:
           - "golang.org/x/*"
