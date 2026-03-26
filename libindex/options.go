@@ -7,7 +7,11 @@ import (
 )
 
 const (
-	DefaultScanLockRetry        = 5 * time.Second
+	// DefaultScanLockRetry is the default time to wait between attempting to
+	// acquire the "scan lock".
+	DefaultScanLockRetry = 5 * time.Second
+	// DefaultLayerScanConcurrency is the default number of concurrent layer
+	// "scans".
 	DefaultLayerScanConcurrency = 10
 )
 
