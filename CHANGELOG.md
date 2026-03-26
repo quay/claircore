@@ -1,6 +1,12 @@
+<a name="v1.5.52"></a>
+## [v1.5.52] - 2026-03-26
+[v1.5.52]: https://github.com/quay/claircore/compare/v1.5.51...v1.5.52
+
+Nothing interesting happened this release.
+
 <a name="v1.5.51"></a>
 ## [v1.5.51] - 2026-03-24
-[v1.5.51]: https://github.com/quay/claircore/compare/v1.5.49...v1.5.51
+[v1.5.51]: https://github.com/quay/claircore/compare/v1.5.50...v1.5.51
 
 - indexer: align affectedManifests call with matcher definitions
   <details>
