@@ -94,3 +94,18 @@ func (c *Live[K, V]) Get(ctx context.Context, key K, create CreateFunc[K, V]) (*
 // No additional calls are made for individual values; the cache simply drops
 // any references it has.
 func (c *Live[K, V]) Clear() { c.m.Clear() }
+
+// Len reports the approximate number of entries in the cache.
+//
+// The count is approximate because concurrent removals and additions may not be
+// seen. If a caller wants an accurate count, it must arrange to prevent
+// concurrent modifications.
+func (c *Live[K, V]) Len() (n int) {
+	c.m.Range(func(_, value any) bool {
+		if v := value.(weak.Pointer[V]).Value(); v != nil {
+			n++
+		}
+		return true
+	})
+	return n
+}
