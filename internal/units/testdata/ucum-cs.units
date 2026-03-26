@@ -1,0 +1,364 @@
+#
+# Copyright (c) 1998-2024 Regenstrief Institute.  All rights reserved.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+#
+#######################################################################
+#
+# The Unified Code for Units of Measure (UCUM)
+#
+# This file is generated automatically. Please refer to the original
+# UCUM specification at
+#
+#               https://ucum.org
+#
+case sensitive
+prefix Y 1e24
+prefix Z 1e21
+prefix E 1e18
+prefix P 1e15
+prefix T 1e12
+prefix G 1e9
+prefix M 1e6
+prefix k 1e3
+prefix h 1e2
+prefix da 1e1
+prefix d 1e-1
+prefix c 1e-2
+prefix m 1e-3
+prefix u 1e-6
+prefix n 1e-9
+prefix p 1e-12
+prefix f 1e-15
+prefix a 1e-18
+prefix z 1e-21
+prefix y 1e-24
+prefix Ki 1024
+prefix Mi 1048576
+prefix Gi 1073741824
+prefix Ti 1099511627776
+dimensions 7
+base m
+base s
+base g
+base rad
+base K
+base C
+base cd
+10* = 10 1 nonmetric  # the number ten for arbitrary powers
+10^ = 10 1 nonmetric  # the number ten for arbitrary powers
+[pi] = 3.1415926535897932384626433832795028841971693993751058209749445923 1 nonmetric  # the number pi
+% = 1 10*-2 nonmetric  # percent
+[ppth] = 1 10*-3 nonmetric  # parts per thousand
+[ppm] = 1 10*-6 nonmetric  # parts per million
+[ppb] = 1 10*-9 nonmetric  # parts per billion
+[pptr] = 1 10*-12 nonmetric  # parts per trillion
+mol = 6.02214076 10*23 metric  # mole
+sr = 1 rad2 metric  # steradian
+Hz = 1 s-1 metric  # hertz
+N = 1 kg.m/s2 metric  # newton
+Pa = 1 N/m2 metric  # pascal
+J = 1 N.m metric  # joule
+W = 1 J/s metric  # watt
+A = 1 C/s metric  # ampère
+V = 1 J/C metric  # volt
+F = 1 C/V metric  # farad
+Ohm = 1 V/A metric  # ohm
+S = 1 Ohm-1 metric  # siemens
+Wb = 1 V.s metric  # weber
+Cel =  cel(1 K) metric  # degree Celsius
+T = 1 Wb/m2 metric  # tesla
+H = 1 Wb/A metric  # henry
+lm = 1 cd.sr metric  # lumen
+lx = 1 lm/m2 metric  # lux
+Bq = 1 s-1 metric  # becquerel
+Gy = 1 J/kg metric  # gray
+Sv = 1 J/kg metric  # sievert
+gon = 0.9 deg nonmetric  # gon
+deg = 2 [pi].rad/360 nonmetric  # degree
+' = 1 deg/60 nonmetric  # minute
+'' = 1 '/60 nonmetric  # second
+l = 1 dm3 metric  # liter
+L = 1 l metric  # liter
+ar = 100 m2 metric  # are
+min = 60 s nonmetric  # minute
+h = 60 min nonmetric  # hour
+d = 24 h nonmetric  # day
+a_t = 365.24219 d nonmetric  # tropical year
+a_j = 365.25 d nonmetric  # mean Julian year
+a_g = 365.2425 d nonmetric  # mean Gregorian year
+a = 1 a_j nonmetric  # year
+wk = 7 d nonmetric  # week
+mo_s = 29.53059 d nonmetric  # synodal month
+mo_j = 1 a_j/12 nonmetric  # mean Julian month
+mo_g = 1 a_g/12 nonmetric  # mean Gregorian month
+mo = 1 mo_j nonmetric  # month
+t = 1e3 kg metric  # tonne
+bar = 1e5 Pa metric  # bar
+u = 1.66053906660e-24 g metric  # unified atomic mass unit
+eV = 1 [e].V metric  # electronvolt
+AU = 149597.870691 Mm nonmetric  # astronomic unit
+pc = 3.085678e16 m metric  # parsec
+[c] = 299792458 m/s metric  # velocity of light
+[h] = 6.62607015e-34 J.s metric  # Planck constant
+[k] = 1.380649e-23 J/K metric  # Boltzmann constant
+[eps_0] = 8.854187817e-12 F/m metric  # permittivity of vacuum
+[mu_0] = 1 4.[pi].10*-7.N/A2 metric  # permeability of vacuum
+[e] = 1.602176634e-19 C metric  # elementary charge
+[m_e] = 9.1093837139e-31 kg metric  # electron mass
+[m_p] = 1.67262192595e-27 kg metric  # proton mass
+[G] = 6.67430e-11 m3.kg-1.s-2 metric  # Newtonian constant of gravitation
+[g] = 980665e-5 m/s2 metric  # standard acceleration of free fall
+atm = 101325 Pa nonmetric  # standard atmosphere
+[ly] = 1 [c].a_j metric  # light-year
+gf = 1 g.[g] metric  # gram-force
+[lbf_av] = 1 [lb_av].[g] nonmetric  # pound force
+Ky = 1 cm-1 metric  # Kayser
+Gal = 1 cm/s2 metric  # Gal
+dyn = 1 g.cm/s2 metric  # dyne
+erg = 1 dyn.cm metric  # erg
+P = 1 dyn.s/cm2 metric  # Poise
+Bi = 10 A metric  # Biot
+St = 1 cm2/s metric  # Stokes
+Mx = 1e-8 Wb metric  # Maxwell
+G = 1e-4 T metric  # Gauss
+Oe = 250 /[pi].A/m metric  # Oersted
+Gb = 1 Oe.cm metric  # Gilbert
+sb = 1 cd/cm2 metric  # stilb
+Lmb = 1 cd/cm2/[pi] metric  # Lambert
+ph = 1e-4 lx metric  # phot
+Ci = 37e9 Bq metric  # Curie
+R = 2.58e-4 C/kg metric  # Roentgen
+RAD = 100 erg/g metric  # radiation absorbed dose
+REM = 1 RAD metric  # radiation equivalent man
+[in_i] = 254e-2 cm nonmetric  # inch
+[ft_i] = 12 [in_i] nonmetric  # foot
+[yd_i] = 3 [ft_i] nonmetric  # yard
+[mi_i] = 5280 [ft_i] nonmetric  # mile
+[fth_i] = 6 [ft_i] nonmetric  # fathom
+[nmi_i] = 1852 m nonmetric  # nautical mile
+[kn_i] = 1 [nmi_i]/h nonmetric  # knot
+[sin_i] = 1 [in_i]2 nonmetric  # square inch
+[sft_i] = 1 [ft_i]2 nonmetric  # square foot
+[syd_i] = 1 [yd_i]2 nonmetric  # square yard
+[cin_i] = 1 [in_i]3 nonmetric  # cubic inch
+[cft_i] = 1 [ft_i]3 nonmetric  # cubic foot
+[cyd_i] = 1 [yd_i]3 nonmetric  # cubic yard
+[bf_i] = 144 [in_i]3 nonmetric  # board foot
+[cr_i] = 128 [ft_i]3 nonmetric  # cord
+[mil_i] = 1e-3 [in_i] nonmetric  # mil
+[cml_i] = 1 [pi]/4.[mil_i]2 nonmetric  # circular mil
+[hd_i] = 4 [in_i] nonmetric  # hand
+[ft_us] = 1200 m/3937 nonmetric  # foot
+[yd_us] = 3 [ft_us] nonmetric  # yard
+[in_us] = 1 [ft_us]/12 nonmetric  # inch
+[rd_us] = 16.5 [ft_us] nonmetric  # rod
+[ch_us] = 4 [rd_us] nonmetric  # Gunter's chain
+[lk_us] = 1 [ch_us]/100 nonmetric  # link for Gunter's chain
+[rch_us] = 100 [ft_us] nonmetric  # Ramden's chain
+[rlk_us] = 1 [rch_us]/100 nonmetric  # link for Ramden's chain
+[fth_us] = 6 [ft_us] nonmetric  # fathom
+[fur_us] = 40 [rd_us] nonmetric  # furlong
+[mi_us] = 8 [fur_us] nonmetric  # mile
+[acr_us] = 160 [rd_us]2 nonmetric  # acre
+[srd_us] = 1 [rd_us]2 nonmetric  # square rod
+[smi_us] = 1 [mi_us]2 nonmetric  # square mile
+[sct] = 1 [mi_us]2 nonmetric  # section
+[twp] = 36 [sct] nonmetric  # township
+[mil_us] = 1e-3 [in_us] nonmetric  # mil
+[in_br] = 2.539998 cm nonmetric  # inch
+[ft_br] = 12 [in_br] nonmetric  # foot
+[rd_br] = 16.5 [ft_br] nonmetric  # rod
+[ch_br] = 4 [rd_br] nonmetric  # Gunter's chain
+[lk_br] = 1 [ch_br]/100 nonmetric  # link for Gunter's chain
+[fth_br] = 6 [ft_br] nonmetric  # fathom
+[pc_br] = 2.5 [ft_br] nonmetric  # pace
+[yd_br] = 3 [ft_br] nonmetric  # yard
+[mi_br] = 5280 [ft_br] nonmetric  # mile
+[nmi_br] = 6080 [ft_br] nonmetric  # nautical mile
+[kn_br] = 1 [nmi_br]/h nonmetric  # knot
+[acr_br] = 4840 [yd_br]2 nonmetric  # acre
+[gal_us] = 231 [in_i]3 nonmetric  # Queen Anne's wine gallon
+[bbl_us] = 42 [gal_us] nonmetric  # barrel
+[qt_us] = 1 [gal_us]/4 nonmetric  # quart
+[pt_us] = 1 [qt_us]/2 nonmetric  # pint
+[gil_us] = 1 [pt_us]/4 nonmetric  # gill
+[foz_us] = 1 [gil_us]/4 nonmetric  # fluid ounce
+[fdr_us] = 1 [foz_us]/8 nonmetric  # fluid dram
+[min_us] = 1 [fdr_us]/60 nonmetric  # minim
+[crd_us] = 128 [ft_i]3 nonmetric  # cord
+[bu_us] = 2150.42 [in_i]3 nonmetric  # bushel
+[gal_wi] = 1 [bu_us]/8 nonmetric  # historical winchester gallon
+[pk_us] = 1 [bu_us]/4 nonmetric  # peck
+[dqt_us] = 1 [pk_us]/8 nonmetric  # dry quart
+[dpt_us] = 1 [dqt_us]/2 nonmetric  # dry pint
+[tbs_us] = 1 [foz_us]/2 nonmetric  # tablespoon
+[tsp_us] = 1 [tbs_us]/3 nonmetric  # teaspoon
+[cup_us] = 16 [tbs_us] nonmetric  # cup
+[foz_m] = 30 mL nonmetric  # metric fluid ounce
+[cup_m] = 240 mL nonmetric  # metric cup
+[tsp_m] = 5 mL nonmetric  # metric teaspoon
+[tbs_m] = 15 mL nonmetric  # metric tablespoon
+[gal_br] = 4.54609 l nonmetric  # gallon
+[pk_br] = 2 [gal_br] nonmetric  # peck
+[bu_br] = 4 [pk_br] nonmetric  # bushel
+[qt_br] = 1 [gal_br]/4 nonmetric  # quart
+[pt_br] = 1 [qt_br]/2 nonmetric  # pint
+[gil_br] = 1 [pt_br]/4 nonmetric  # gill
+[foz_br] = 1 [gil_br]/5 nonmetric  # fluid ounce
+[fdr_br] = 1 [foz_br]/8 nonmetric  # fluid dram
+[min_br] = 1 [fdr_br]/60 nonmetric  # minim
+[gr] = 64.79891 mg nonmetric  # grain
+[lb_av] = 7000 [gr] nonmetric  # pound
+[oz_av] = 1 [lb_av]/16 nonmetric  # ounce
+[dr_av] = 1 [oz_av]/16 nonmetric  # dram
+[scwt_av] = 100 [lb_av] nonmetric  # short hundredweight
+[lcwt_av] = 112 [lb_av] nonmetric  # long hundredweight
+[ston_av] = 20 [scwt_av] nonmetric  # short ton
+[lton_av] = 20 [lcwt_av] nonmetric  # long ton
+[stone_av] = 14 [lb_av] nonmetric  # stone
+[pwt_tr] = 24 [gr] nonmetric  # pennyweight
+[oz_tr] = 20 [pwt_tr] nonmetric  # ounce
+[lb_tr] = 12 [oz_tr] nonmetric  # pound
+[sc_ap] = 20 [gr] nonmetric  # scruple
+[dr_ap] = 3 [sc_ap] nonmetric  # dram
+[oz_ap] = 8 [dr_ap] nonmetric  # ounce
+[lb_ap] = 12 [oz_ap] nonmetric  # pound
+[oz_m] = 28 g nonmetric  # metric ounce
+[lne] = 1 [in_i]/12 nonmetric  # line
+[pnt] = 1 [lne]/6 nonmetric  # point
+[pca] = 12 [pnt] nonmetric  # pica
+[pnt_pr] = 0.013837 [in_i] nonmetric  # Printer's point
+[pca_pr] = 12 [pnt_pr] nonmetric  # Printer's pica
+[pied] = 32.48 cm nonmetric  # pied
+[pouce] = 1 [pied]/12 nonmetric  # pouce
+[ligne] = 1 [pouce]/12 nonmetric  # ligne
+[didot] = 1 [ligne]/6 nonmetric  # didot
+[cicero] = 12 [didot] nonmetric  # cicero
+[degF] =  degf(5 K/9) nonmetric  # degree Fahrenheit
+[degR] = 5 K/9 nonmetric  # degree Rankine
+[degRe] =  degre(5 K/4) nonmetric  # degree Réaumur
+cal_[15] = 4.18580 J metric  # calorie at 15 °C
+cal_[20] = 4.18190 J metric  # calorie at 20 °C
+cal_m = 4.19002 J metric  # mean calorie
+cal_IT = 4.1868 J metric  # international table calorie
+cal_th = 4.184 J metric  # thermochemical calorie
+cal = 1 cal_th metric  # calorie
+[Cal] = 1 kcal_th nonmetric  # nutrition label Calories
+[Btu_39] = 1.05967 kJ nonmetric  # British thermal unit at 39 °F
+[Btu_59] = 1.05480 kJ nonmetric  # British thermal unit at 59 °F
+[Btu_60] = 1.05468 kJ nonmetric  # British thermal unit at 60 °F
+[Btu_m] = 1.05587 kJ nonmetric  # mean British thermal unit
+[Btu_IT] = 1.05505585262 kJ nonmetric  # international table British thermal unit
+[Btu_th] = 1.054350 kJ nonmetric  # thermochemical British thermal unit
+[Btu] = 1 [Btu_th] nonmetric  # British thermal unit
+[HP] = 550 [ft_i].[lbf_av]/s nonmetric  # horsepower
+tex = 1 g/km metric  # tex
+[den] = 1 g/9/km nonmetric  # Denier
+m[H2O] = 980665e-5 kPa metric  # meter of water column
+m[Hg] = 133.3220 kPa metric  # meter of mercury column
+[in_i'H2O] = 1 m[H2O].[in_i]/m nonmetric  # inch of water column
+[in_i'Hg] = 1 m[Hg].[in_i]/m nonmetric  # inch of mercury column
+[PRU] = 1 mm[Hg].s/ml nonmetric  # peripheral vascular resistance unit
+[wood'U] = 1 mm[Hg].min/L nonmetric  # Wood unit
+[diop] = 1 /m nonmetric  # diopter
+[p'diop] =  100tan(1 rad) nonmetric  # prism diopter
+%[slope] =  100tan(1 rad) nonmetric  # percent of slope
+[mesh_i] = 1 /[in_i] nonmetric  # mesh
+[Ch] = 1 mm/3 nonmetric  # Charrière
+[drp] = 1 ml/20 nonmetric  # drop
+[hnsf'U] = 1 1 nonmetric  # Hounsfield unit
+[MET] = 3.5 mL/min/kg nonmetric  # metabolic equivalent
+[hp'_X] =  hpX(1 1) nonmetric  # homeopathic potency of decimal series (retired)
+[hp'_C] =  hpC(1 1) nonmetric  # homeopathic potency of centesimal series (retired)
+[hp'_M] =  hpM(1 1) nonmetric  # homeopathic potency of millesimal series (retired)
+[hp'_Q] =  hpQ(1 1) nonmetric  # homeopathic potency of quintamillesimal series (retired)
+[hp_X] = 1 1 nonmetric  #  arbitrary homeopathic potency of decimal hahnemannian series
+[hp_C] = 1 1 nonmetric  #  arbitrary homeopathic potency of centesimal hahnemannian series
+[hp_M] = 1 1 nonmetric  #  arbitrary homeopathic potency of millesimal hahnemannian series
+[hp_Q] = 1 1 nonmetric  #  arbitrary homeopathic potency of quintamillesimal hahnemannian series
+[kp_X] = 1 1 nonmetric  #  arbitrary homeopathic potency of decimal korsakovian series
+[kp_C] = 1 1 nonmetric  #  arbitrary homeopathic potency of centesimal korsakovian series
+[kp_M] = 1 1 nonmetric  #  arbitrary homeopathic potency of millesimal korsakovian series
+[kp_Q] = 1 1 nonmetric  #  arbitrary homeopathic potency of quintamillesimal korsakovian series
+eq = 1 mol metric  # equivalents
+osm = 1 mol metric  # osmole
+[pH] =  pH(1 mol/l) nonmetric  # pH
+g% = 1 g/dl metric  # gram percent
+[S] = 1 10*-13.s nonmetric  # Svedberg unit
+[HPF] = 1 1 nonmetric  # high power field
+[LPF] = 100 1 nonmetric  # low power field
+kat = 1 mol/s metric  # katal
+U = 1 umol/min metric  # Unit
+[iU] = 1 1 metric  #  arbitrary international unit
+[IU] = 1 [iU] metric  #  arbitrary international unit
+[arb'U] = 1 1 nonmetric  #  arbitrary arbitrary unit
+[USP'U] = 1 1 nonmetric  #  arbitrary United States Pharmacopeia unit
+[GPL'U] = 1 1 nonmetric  #  arbitrary GPL unit
+[MPL'U] = 1 1 nonmetric  #  arbitrary MPL unit
+[APL'U] = 1 1 nonmetric  #  arbitrary APL unit
+[beth'U] = 1 1 nonmetric  #  arbitrary Bethesda unit
+[anti'Xa'U] = 1 1 nonmetric  #  arbitrary anti factor Xa unit
+[todd'U] = 1 1 nonmetric  #  arbitrary Todd unit
+[dye'U] = 1 1 nonmetric  #  arbitrary Dye unit
+[smgy'U] = 1 1 nonmetric  #  arbitrary Somogyi unit
+[bdsk'U] = 1 1 nonmetric  #  arbitrary Bodansky unit
+[ka'U] = 1 1 nonmetric  #  arbitrary King-Armstrong unit
+[knk'U] = 1 1 nonmetric  #  arbitrary Kunkel unit
+[mclg'U] = 1 1 nonmetric  #  arbitrary Mac Lagan unit
+[tb'U] = 1 1 nonmetric  #  arbitrary tuberculin unit
+[CCID_50] = 1 1 nonmetric  #  arbitrary 50% cell culture infectious dose
+[TCID_50] = 1 1 nonmetric  #  arbitrary 50% tissue culture infectious dose
+[EID_50] = 1 1 nonmetric  #  arbitrary 50% embryo infectious dose
+[PFU] = 1 1 nonmetric  #  arbitrary plaque forming units
+[FFU] = 1 1 nonmetric  #  arbitrary focus forming units
+[CFU] = 1 1 nonmetric  #  arbitrary colony forming units
+[IR] = 1 1 nonmetric  #  arbitrary index of reactivity
+[BAU] = 1 1 nonmetric  #  arbitrary bioequivalent allergen unit
+[AU] = 1 1 nonmetric  #  arbitrary allergen unit
+[Amb'a'1'U] = 1 1 nonmetric  #  arbitrary allergen unit for Ambrosia artemisiifolia
+[PNU] = 1 1 nonmetric  #  arbitrary protein nitrogen unit
+[Lf] = 1 1 nonmetric  #  arbitrary Limit of flocculation
+[D'ag'U] = 1 1 nonmetric  #  arbitrary D-antigen unit
+[FEU] = 1 1 nonmetric  #  arbitrary fibrinogen equivalent unit
+[ELU] = 1 1 nonmetric  #  arbitrary ELISA unit
+[EU] = 1 1 nonmetric  #  arbitrary Ehrlich unit
+Np =  ln(1 1) metric  # neper
+B =  lg(1 1) metric  # bel
+B[SPL] =  2lg(2 10*-5.Pa) metric  # bel sound pressure
+B[V] =  2lg(1 V) metric  # bel volt
+B[mV] =  2lg(1 mV) metric  # bel millivolt
+B[uV] =  2lg(1 uV) metric  # bel microvolt
+B[10.nV] =  2lg(10 nV) metric  # bel 10 nanovolt
+B[W] =  lg(1 W) metric  # bel watt
+B[kW] =  lg(1 kW) metric  # bel kilowatt
+st = 1 m3 metric  # stere
+Ao = 0.1 nm nonmetric  # Ångström
+b = 100 fm2 nonmetric  # barn
+att = 1 kgf/cm2 nonmetric  # technical atmosphere
+mho = 1 S metric  # mho
+[psi] = 1 [lbf_av]/[in_i]2 nonmetric  # pound per square inch
+circ = 2 [pi].rad nonmetric  # circle
+sph = 4 [pi].sr nonmetric  # sphere
+[car_m] = 2e-1 g nonmetric  # metric carat
+[car_Au] = 1 /24 nonmetric  # carat of gold alloys
+[smoot] = 67 [in_i] nonmetric  # Smoot
+[m/s2/Hz^(1/2)] =  sqrt(1 m2/s4/Hz) nonmetric  # meter per square seconds per square root of hertz
+[NTU] = 1 1 nonmetric  # Nephelometric Turbidity Unit
+[FNU] = 1 1 nonmetric  # Formazin Nephelometric Unit
+bit_s =  ld(1 1) nonmetric  # bit
+bit = 1 1 metric  # bit
+By = 8 bit metric  # byte
+Bd = 1 /s metric  # baud
