@@ -231,18 +231,18 @@ func commonLayerServer(t testing.TB, ct int) ([]claircore.LayerDescription, http
 
 	t.Cleanup(func() {
 		// We know we're doing 2 sets of fetches.
-		max := ct * 2 * runtime.GOMAXPROCS(0)
+		limit := ct * 2 * runtime.GOMAXPROCS(0)
 		var total int
 		for _, v := range fetch {
 			total += int(*v)
 		}
 		switch {
-		case total > max:
-			t.Errorf("more fetches than should be possible: %d > %d", total, max)
-		case total == max:
-			t.Errorf("prevented no fetches: %d == %d", total, max)
-		case total < max:
-			t.Logf("prevented %[3]d fetches: %[1]d < %d", total, max, max-total)
+		case total > limit:
+			t.Errorf("more fetches than should be possible: %d > %d", total, limit)
+		case total == limit:
+			t.Errorf("prevented no fetches: %d == %d", total, limit)
+		case total < limit:
+			t.Logf("prevented %[3]d fetches: %[1]d < %d", total, limit, limit-total)
 		}
 	})
 	inner := http.FileServer(http.Dir(dir))

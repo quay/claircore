@@ -104,10 +104,14 @@ func (tc testcase) RunInner(ctx context.Context, t *testing.T, pool *pgxpool.Poo
 	}
 
 	// create libindex instance
+	a, err := CreateRemoteFetchArena(c, t.TempDir())
+	if err != nil {
+		t.Fatalf("failed to create RemoteFetchArena: %v", err)
+	}
 	opts := &Options{
 		Store:                store,
 		Locker:               ctxLocker,
-		FetchArena:           NewRemoteFetchArena(c, t.TempDir()),
+		FetchArena:           a,
 		ScanLockRetry:        2 * time.Second,
 		LayerScanConcurrency: 1,
 		Ecosystems: []*indexer.Ecosystem{
@@ -125,7 +129,7 @@ func (tc testcase) RunInner(ctx context.Context, t *testing.T, pool *pgxpool.Poo
 				RepositoryScanners: func(_ context.Context) ([]indexer.RepositoryScanner, error) {
 					return nil, nil
 				},
-				FileScanners: func(ctx context.Context) ([]indexer.FileScanner, error) {
+				FileScanners: func(_ context.Context) ([]indexer.FileScanner, error) {
 					return []indexer.FileScanner{&whiteout.Scanner{}}, nil
 				},
 				Coalescer: func(_ context.Context) (indexer.Coalescer, error) {

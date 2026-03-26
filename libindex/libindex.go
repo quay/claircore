@@ -197,7 +197,7 @@ func (l *Libindex) Index(ctx context.Context, manifest *claircore.Manifest) (*cl
 //
 // If the identifier has changed, clients should arrange for layers to be
 // re-indexed.
-func (l *Libindex) State(ctx context.Context) (string, error) {
+func (l *Libindex) State(_ context.Context) (string, error) {
 	return l.state, nil
 }
 
@@ -207,7 +207,7 @@ func (l *Libindex) State(ctx context.Context) (string, error) {
 // Indexers running different scanner versions will produce different state strings.
 // Thus this state value can be used as a cue for clients to re-index their manifests
 // and obtain a new IndexReport.
-func (l *Libindex) setState(ctx context.Context, vscnrs indexer.VersionedScanners) error {
+func (l *Libindex) setState(_ context.Context, vscnrs indexer.VersionedScanners) error {
 	h := md5.New()
 	var ns []string
 	m := make(map[string][]byte)
