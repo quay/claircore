@@ -11,6 +11,8 @@ var photonReleases = []Release{
 	Photon1,
 	Photon2,
 	Photon3,
+	Photon4,
+	Photon5,
 }
 
 func UpdaterSet(_ context.Context) (driver.UpdaterSet, error) {

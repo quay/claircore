@@ -3,6 +3,7 @@ package photon
 import (
 	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/ovalutil"
@@ -44,7 +45,7 @@ func NewUpdater(r Release, opts ...Option) (*Updater, error) {
 	}
 	if u.Fetcher.URL == nil {
 		var err error
-		u.Fetcher.URL, err = upstreamBase.Parse("com.vmware.phsa-" + string(u.release) + ".xml")
+		u.Fetcher.URL, err = upstreamBase.Parse("com.vmware.phsa-photon" + strings.TrimSuffix(string(u.release), ".0") + ".xml")
 		if err != nil {
 			return nil, err
 		}
