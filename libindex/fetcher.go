@@ -37,7 +37,8 @@ var (
 // RemoteFetchArena uses disk space to track fetched layers, removing them once
 // all users are done with the layers.
 type RemoteFetchArena struct {
-	wc *http.Client
+	metrics arenaMetrics
+	wc      *http.Client
 
 	// The string is a layer digest.
 	files cache.Live[string, os.File]
@@ -45,6 +46,21 @@ type RemoteFetchArena struct {
 }
 
 // NewRemoteFetchArena returns an initialized RemoteFetchArena.
+//
+// Deprecated: Use [CreateRemoteFetchArena].
+//
+//go:fix inline
+func NewRemoteFetchArena(wc *http.Client, root string) *RemoteFetchArena {
+	a, err := CreateRemoteFetchArena(wc, root)
+	if err != nil {
+		// Backed ourselves into a corner on this API 🙃
+		panic(err)
+	}
+	return a
+}
+
+// CreateRemoteFetchArena returns an initialized RemoteFetchArena or an error
+// encountered while creating it.
 //
 // If the "root" parameter is "", the advice in [file-hierarchy(7)] and ["Using
 // /tmp/ and /var/tmp/ Safely"] is followed. Specifically, "/var/tmp" is used
@@ -70,18 +86,21 @@ type RemoteFetchArena struct {
 // ["Using /tmp/ and /var/tmp/ Safely"]: https://systemd.io/TEMPORARY_DIRECTORIES/
 // [O_TMPFILE]: https://man7.org/linux/man-pages/man2/open.2.html
 // [systemd-tmpfiles(8)]: https://www.freedesktop.org/software/systemd/man/latest/systemd-tmpfiles.html
-func NewRemoteFetchArena(wc *http.Client, root string) *RemoteFetchArena {
+func CreateRemoteFetchArena(wc *http.Client, root string) (*RemoteFetchArena, error) {
 	name := fixTemp(root)
 	dir, err := os.OpenRoot(name)
 	if err != nil {
-		// Backed ourselves into a corner on this API 🙃
-		panic(fmt.Errorf("fetcher: unable to OpenRoot(%q): %w", root, err))
+		return nil, fmt.Errorf("fetcher: unable to OpenRoot(%q): %w", root, err)
 	}
 	a := &RemoteFetchArena{
 		wc:   wc,
 		root: dir,
 	}
-	return a
+	if err := a.setupMetrics(name); err != nil {
+		return nil, fmt.Errorf("fetcher: unable to construct metrics: %w", err)
+	}
+
+	return a, nil
 }
 
 // FetchInto populates "l" and "cl" via a cache.
@@ -91,8 +110,10 @@ func (a *RemoteFetchArena) fetchInto(ctx context.Context, l *claircore.Layer, cl
 	key := desc.Digest
 
 	return func() (err error) {
-		ctx, span := tracer.Start(ctx, "RemoteFetchArena.fetchInto", trace.WithAttributes(attribute.String("key", key)))
-		defer span.End()
+		cacheHit := true
+		ctx, span := tracer.Start(ctx, "RemoteFetchArena.fetchInto",
+			trace.WithAttributes(attribute.String("key", key)))
+		req := a.metrics.Request()
 		defer func() {
 			span.RecordError(err)
 			if err == nil {
@@ -100,6 +121,8 @@ func (a *RemoteFetchArena) fetchInto(ctx context.Context, l *claircore.Layer, cl
 			} else {
 				span.SetStatus(codes.Error, "fetchInto error")
 			}
+			req(ctx, err != nil, cacheHit)
+			span.End()
 		}()
 
 		// NB This is not closed on purpose. The [io.Closer] populated by this
@@ -111,6 +134,7 @@ func (a *RemoteFetchArena) fetchInto(ctx context.Context, l *claircore.Layer, cl
 		// [reopen] helper.
 		var spool *os.File
 		spool, err = a.files.Get(ctx, key, func(ctx context.Context, _ string) (*os.File, error) {
+			cacheHit = false
 			return a.fetchFileForCache(ctx, desc)
 		})
 		if err != nil {
@@ -155,7 +179,7 @@ func (f closeFunc) Close() error {
 // we can be a bit more lax.
 func (a *RemoteFetchArena) fetchFileForCache(ctx context.Context, desc *claircore.LayerDescription) (*os.File, error) {
 	log := slog.With("arena", a.root.Name(), "layer", desc.Digest, "uri", desc.URI)
-	ctx, span := tracer.Start(ctx, "RemoteFetchArena.fetchUnlinkedFile")
+	ctx, span := tracer.Start(ctx, "RemoteFetchArena.fetchFileForCache")
 	defer span.End()
 	span.SetStatus(codes.Error, "")
 	log.DebugContext(ctx, "layer fetch start")
@@ -196,7 +220,8 @@ func (a *RemoteFetchArena) fetchFileForCache(ctx context.Context, desc *claircor
 	if err != nil {
 		return nil, err
 	}
-	tr := io.TeeReader(resp.Body, vh)
+	var cmpSz writeCounter
+	tr := io.TeeReader(resp.Body, io.MultiWriter(&cmpSz, vh))
 
 	// TODO(hank) All this decompression code could go away, but that would mean
 	// that a buffer file would have to be allocated later, adding additional
@@ -212,7 +237,7 @@ func (a *RemoteFetchArena) fetchFileForCache(ctx context.Context, desc *claircor
 	// Look at the content-type and optionally fix it up.
 	ct := resp.Header.Get("content-type")
 	log.DebugContext(ctx, "reported content-type", "content-type", ct)
-	span.SetAttributes(attribute.String("payload.content-type", ct), attribute.Stringer("payload.compression.detected", kind))
+	span.SetAttributes(payloadType(ct), payloadCompression(kind))
 	if ct == "" || ct == "text/plain" || ct == "binary/octet-stream" || ct == "application/octet-stream" {
 		switch kind {
 		case zreader.KindGzip:
@@ -225,7 +250,7 @@ func (a *RemoteFetchArena) fetchFileForCache(ctx context.Context, desc *claircor
 			return nil, fmt.Errorf("fetcher: disallowed compression kind: %q", kind.String())
 		}
 		log.DebugContext(ctx, "fixed content-type", "content-type", ct)
-		span.SetAttributes(attribute.String("payload.content-type.detected", ct))
+		span.AddEvent("FixedContentType", trace.WithAttributes(payloadTypeFixed(ct)))
 	}
 
 	var wantZ zreader.Compression
@@ -273,10 +298,11 @@ func (a *RemoteFetchArena) fetchFileForCache(ctx context.Context, desc *claircor
 	buf := bufio.NewWriter(f)
 	n, err := io.Copy(buf, zr)
 	log.DebugContext(ctx, "wrote file", "size", n, "big", n >= bigLayerSize, "copy_error", err)
-	// TODO(hank) Add a metric for "big files" and a histogram for size.
 	if err != nil {
 		return nil, err
 	}
+	a.metrics.CompressedSize(ctx, int64(cmpSz))
+	a.metrics.UncompressedSize(ctx, n)
 	if err := buf.Flush(); err != nil {
 		return nil, err
 	}
@@ -295,13 +321,25 @@ func (a *RemoteFetchArena) fetchFileForCache(ctx context.Context, desc *claircor
 
 const bigLayerSize = 1024 * 1024 * 1024 // 1 GiB
 
+// WriteCounter is a helper that just counts the bytes passed to it.
+//
+// Useful in an [io.MultiWriter].
+type writeCounter int64
+
+func (c *writeCounter) Write(p []byte) (int, error) {
+	n := len(p)
+	*(*int64)(c) += int64(n)
+	return n, nil
+}
+
 // Close forgets all references in the arena.
 //
 // Any outstanding Layers may cause keys to be forgotten at unpredictable times.
 func (a *RemoteFetchArena) Close(_ context.Context) error {
 	a.files.Clear()
-	if err := a.root.Close(); err != nil {
-		return fmt.Errorf("fetcher: RemoteFetchArena: unable to close os.Root: %w", err)
+	err := errors.Join(a.metrics.entries.Unregister(), a.root.Close())
+	if err != nil {
+		return fmt.Errorf("fetcher: RemoteFetchArena: closing: %w", err)
 	}
 	return nil
 }
