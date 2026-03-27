@@ -17,6 +17,18 @@ type Matcher struct {
 	ignoreUnpatched bool
 }
 
+// BUG(hank) [Dynamic modules] are unsupported.
+//
+// Modules are identified by a Name-Stream-Version-Context (NSVC) string. In
+// standard static modules, the "Name" and "Stream" values form a namespace for
+// one lineage of rpm packages. In a dynamic module, there are instead multiple
+// lineages in the same stream, and one must inspect the module metadata and use
+// dependency solving information to construct these lineages.
+//
+// This is not possible within the constraints of a [driver.Matcher] implementation.
+//
+// [Dynamic modules]: https://docs.fedoraproject.org/en-US/modularity/core-concepts/upgrade-paths/#_dynamic_context
+
 var _ driver.Matcher = (*Matcher)(nil)
 
 // Name implements [driver.Matcher].
