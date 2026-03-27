@@ -25,7 +25,8 @@ func readMakefile(ctx context.Context) {
 	cmd := exec.CommandContext(ctx, `git`, `rev-parse`, `--show-toplevel`)
 	out, err := cmd.Output()
 	if err != nil {
-		log.Panic(err)
+		// Assume it's being run from the root, then:
+		out = []byte(".")
 	}
 	n := filepath.Join(string(bytes.TrimSpace(out)), `Makefile`)
 	makefile, err = os.ReadFile(n)
