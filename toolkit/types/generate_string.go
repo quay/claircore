@@ -53,11 +53,13 @@ func _() {
 	_ = x[UnknownPackage-0]
 	_ = x[SourcePackage-1]
 	_ = x[BinaryPackage-2]
+	_ = x[LayerPackage-3]
+	_ = x[AncestryPackage-4]
 }
 
-const _PackageKind_name = "unknownsourcebinary"
+const _PackageKind_name = "unknownsourcebinarylayerancestry"
 
-var _PackageKind_index = [...]uint8{0, 7, 13, 19}
+var _PackageKind_index = [...]uint8{0, 7, 13, 19, 24, 32}
 
 func (i PackageKind) String() string {
 	if i >= PackageKind(len(_PackageKind_index)-1) {
