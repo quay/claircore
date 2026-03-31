@@ -19,8 +19,9 @@ const _ArchOp_name = "invalidequalsnot equalspattern match"
 var _ArchOp_index = [...]uint8{0, 7, 13, 23, 36}
 
 func (i ArchOp) String() string {
-	if i >= ArchOp(len(_ArchOp_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_ArchOp_index)-1 {
 		return "ArchOp(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _ArchOp_name[_ArchOp_index[i]:_ArchOp_index[i+1]]
+	return _ArchOp_name[_ArchOp_index[idx]:_ArchOp_index[idx+1]]
 }

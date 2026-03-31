@@ -167,7 +167,7 @@ var architectures = map[string]struct{}{
 // [int] return.
 type cmp int
 
-//go:generate go run golang.org/x/tools/cmd/stringer -type cmp -linecomment -output cmp_string_test.go
+//go:generate go tool stringer -type cmp -linecomment -output cmp_string_test.go
 
 const (
 	cmpLT cmp = iota - 1 // <

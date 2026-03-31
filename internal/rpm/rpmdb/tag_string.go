@@ -419,8 +419,9 @@ const _Kind_name = "TypeNullTypeCharTypeInt8TypeInt16TypeInt32TypeInt64TypeStrin
 var _Kind_index = [...]uint8{0, 8, 16, 24, 33, 42, 51, 61, 68, 83, 97}
 
 func (i Kind) String() string {
-	if i >= Kind(len(_Kind_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_Kind_index)-1 {
 		return "Kind(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _Kind_name[_Kind_index[i]:_Kind_index[i+1]]
+	return _Kind_name[_Kind_index[idx]:_Kind_index[idx+1]]
 }

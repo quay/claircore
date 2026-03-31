@@ -20,8 +20,9 @@ const _Compressor_name = "autononegzipbzip2zstd"
 var _Compressor_index = [...]uint8{0, 4, 8, 12, 17, 21}
 
 func (i Compressor) String() string {
-	if i >= Compressor(len(_Compressor_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_Compressor_index)-1 {
 		return "Compressor(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _Compressor_name[_Compressor_index[i]:_Compressor_index[i+1]]
+	return _Compressor_name[_Compressor_index[idx]:_Compressor_index[idx+1]]
 }

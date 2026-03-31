@@ -119,7 +119,7 @@ type component struct {
 // A "null" kind is defined but shouldn't be present in normalized versions.
 type componentKind int
 
-//go:generate go run golang.org/x/tools/cmd/stringer@latest -type=componentKind -linecomment
+//go:generate go tool stringer -type=componentKind -linecomment
 
 const (
 	kindNull   componentKind = iota // null

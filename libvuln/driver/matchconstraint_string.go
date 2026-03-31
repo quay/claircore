@@ -20,16 +20,18 @@ func _() {
 	_ = x[DistributionCPE-10]
 	_ = x[DistributionPrettyName-11]
 	_ = x[RepositoryName-12]
+	_ = x[RepositoryKey-13]
+	_ = x[HasFixedInVersion-14]
 }
 
-const _MatchConstraint_name = "PackageSourceNamePackageNamePackageModuleDistributionDIDDistributionNameDistributionVersionDistributionVersionCodeNameDistributionVersionIDDistributionArchDistributionCPEDistributionPrettyNameRepositoryName"
+const _MatchConstraint_name = "PackageSourceNamePackageNamePackageModuleDistributionDIDDistributionNameDistributionVersionDistributionVersionCodeNameDistributionVersionIDDistributionArchDistributionCPEDistributionPrettyNameRepositoryNameRepositoryKeyHasFixedInVersion"
 
-var _MatchConstraint_index = [...]uint8{0, 17, 28, 41, 56, 72, 91, 118, 139, 155, 170, 192, 206}
+var _MatchConstraint_index = [...]uint8{0, 17, 28, 41, 56, 72, 91, 118, 139, 155, 170, 192, 206, 219, 236}
 
 func (i MatchConstraint) String() string {
-	i -= 1
-	if i < 0 || i >= MatchConstraint(len(_MatchConstraint_index)-1) {
-		return "MatchConstraint(" + strconv.FormatInt(int64(i+1), 10) + ")"
+	idx := int(i) - 1
+	if i < 1 || idx >= len(_MatchConstraint_index)-1 {
+		return "MatchConstraint(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _MatchConstraint_name[_MatchConstraint_index[i]:_MatchConstraint_index[i+1]]
+	return _MatchConstraint_name[_MatchConstraint_index[idx]:_MatchConstraint_index[idx+1]]
 }

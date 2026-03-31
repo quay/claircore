@@ -21,9 +21,9 @@ const _op_name = "==!=<=>=<>"
 var _op_index = [...]uint8{0, 2, 4, 6, 8, 9, 10}
 
 func (i op) String() string {
-	i -= 1
-	if i < 0 || i >= op(len(_op_index)-1) {
-		return "op(" + strconv.FormatInt(int64(i+1), 10) + ")"
+	idx := int(i) - 1
+	if i < 1 || idx >= len(_op_index)-1 {
+		return "op(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _op_name[_op_index[i]:_op_index[i+1]]
+	return _op_name[_op_index[idx]:_op_index[idx+1]]
 }

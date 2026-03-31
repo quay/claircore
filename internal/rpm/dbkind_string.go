@@ -18,9 +18,9 @@ const _dbKind_name = "bdbsqlitendb"
 var _dbKind_index = [...]uint8{0, 3, 9, 12}
 
 func (i dbKind) String() string {
-	i -= 1
-	if i >= dbKind(len(_dbKind_index)-1) {
-		return "dbKind(" + strconv.FormatInt(int64(i+1), 10) + ")"
+	idx := int(i) - 1
+	if i < 1 || idx >= len(_dbKind_index)-1 {
+		return "dbKind(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _dbKind_name[_dbKind_index[i]:_dbKind_index[i+1]]
+	return _dbKind_name[_dbKind_index[idx]:_dbKind_index[idx+1]]
 }

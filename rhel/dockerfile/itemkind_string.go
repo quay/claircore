@@ -22,8 +22,9 @@ const _itemKind_name = "itemErroritemCommentitemInstructionitemLabelitemArgitemE
 var _itemKind_index = [...]uint8{0, 9, 20, 35, 44, 51, 58, 65}
 
 func (i itemKind) String() string {
-	if i < 0 || i >= itemKind(len(_itemKind_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_itemKind_index)-1 {
 		return "itemKind(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _itemKind_name[_itemKind_index[i]:_itemKind_index[i+1]]
+	return _itemKind_name[_itemKind_index[idx]:_itemKind_index[idx+1]]
 }

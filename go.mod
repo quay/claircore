@@ -63,4 +63,7 @@ require (
 
 replace github.com/quay/claircore/updater/driver => ./updater/driver
 
-tool github.com/quay/claircore/internal/cmd/prepare-release
+tool (
+	github.com/quay/claircore/internal/cmd/prepare-release
+	golang.org/x/tools/cmd/stringer
+)

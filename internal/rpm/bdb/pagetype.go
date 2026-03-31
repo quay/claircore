@@ -1,6 +1,6 @@
 package bdb
 
-//go:generate go run golang.org/x/tools/cmd/stringer@latest -linecomment -type=PageType,HashPageType
+//go:generate go tool stringer -linecomment -type=PageType,HashPageType
 
 // PageType is the type of a page.
 //

@@ -13,7 +13,7 @@ import (
 	"github.com/klauspost/compress/zstd"
 )
 
-//go:generate go run golang.org/x/tools/cmd/stringer -type Compression
+//go:generate go tool stringer -type Compression
 
 // Compression marks the scheme that the original Reader contains.
 type Compression int

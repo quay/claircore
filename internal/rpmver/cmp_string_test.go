@@ -18,9 +18,9 @@ const _cmp_name = "<==>"
 var _cmp_index = [...]uint8{0, 1, 3, 4}
 
 func (i cmp) String() string {
-	i -= -1
-	if i < 0 || i >= cmp(len(_cmp_index)-1) {
-		return "cmp(" + strconv.FormatInt(int64(i+-1), 10) + ")"
+	idx := int(i) - -1
+	if i < -1 || idx >= len(_cmp_index)-1 {
+		return "cmp(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _cmp_name[_cmp_index[i]:_cmp_index[i+1]]
+	return _cmp_name[_cmp_index[idx]:_cmp_index[idx+1]]
 }
