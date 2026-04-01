@@ -80,6 +80,10 @@ func (ps *DistrolessScanner) Scan(ctx context.Context, layer *claircore.Layer) (
 				log.DebugContext(ctx, "examining package database")
 				db, err := sys.Open(fn)
 				if err != nil {
+					if errors.Is(err, fs.ErrNotExist) {
+						log.WarnContext(ctx, "skipping missing database file", "reason", err)
+						continue
+					}
 					return fmt.Errorf("reading database files from layer failed: %w", err)
 				}
 
