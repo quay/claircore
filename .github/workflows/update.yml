@@ -2,6 +2,7 @@
 name: Deploy Main
 
 on:
+  workflow_call:
   push:
     branches:
       - main
@@ -20,7 +21,7 @@ jobs:
       - name: Setup mdBook
         uses: peaceiris/actions-mdbook@v2
         with:
-          mdbook-version: 'latest'
+          mdbook-version: "latest"
 
       - name: mdBook Build
         run: mdbook build
