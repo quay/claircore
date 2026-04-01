@@ -62,3 +62,5 @@ require (
 )
 
 replace github.com/quay/claircore/updater/driver => ./updater/driver
+
+tool github.com/quay/claircore/internal/cmd/prepare-release

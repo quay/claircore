@@ -14,7 +14,7 @@ On rare occasions when a fix is time-sensitive, it is possible to create a relea
 
 ```sh
 NEW_VERSION=v0.999.999
-.github/scripts/prepare-release -b main -r upstream "$NEW_VERSION"
+go tool prepare-release -remote=upstream -branch=main "$NEW_VERSION"
 ```
 
 Follow the `prepare-release` command's instructions to merge changelog updates and release the tag.
@@ -42,7 +42,7 @@ Finally, prepare the release specifying the release branch.
 LAST_MINOR=v0.999.0
 NEW_VERSION=v0.999.1
 BRANCH=release-${LAST_MINOR%.*} # e.g. release-v0.999
-.github/scripts/prepare-release -b $BRANCH -r upstream $NEW_VERSION
+go tool prepare-release -remote=upstream -branch=$BRANCH $NEW_VERSION
 ```
 
 Follow the `prepare-release` command's instructions to merge changelog updates and release the tag.
