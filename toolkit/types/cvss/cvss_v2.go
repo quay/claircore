@@ -172,7 +172,7 @@ func (v *V2) Environmental() (ok bool) {
 	return ok
 }
 
-//go:generate go run golang.org/x/tools/cmd/stringer@latest -type=V2Metric,v2Valid -linecomment
+//go:generate go tool stringer -type=V2Metric,v2Valid -linecomment
 
 // V2Metric is a metric in a v2 vector.
 type V2Metric int
