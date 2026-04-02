@@ -47,10 +47,11 @@ const _V4Metric_name = "AVACATPRUIVCVIVASCSISAECRIRARMAVMACMATMPRMUIMVCMVIMVAMSC
 var _V4Metric_index = [...]uint8{0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 23, 25, 27, 29, 32, 35, 38, 41, 44, 47, 50, 53, 56, 59, 62, 63, 65, 66, 67, 69, 70}
 
 func (i V4Metric) String() string {
-	if i < 0 || i >= V4Metric(len(_V4Metric_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_V4Metric_index)-1 {
 		return "V4Metric(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _V4Metric_name[_V4Metric_index[i]:_V4Metric_index[i+1]]
+	return _V4Metric_name[_V4Metric_index[idx]:_V4Metric_index[idx+1]]
 }
 func _() {
 	// An "invalid array index" compiler error signifies that the constant values have changed.
@@ -95,8 +96,9 @@ const _v4Valid_name = "NALPLHNPNLHNPAHLNHLNHLNHLNHLNHLNXAPUXHMLXHMLXHMLXNALPXLHX
 var _v4Valid_index = [...]uint8{0, 4, 6, 8, 11, 14, 17, 20, 23, 26, 29, 32, 36, 40, 44, 48, 53, 56, 59, 63, 67, 71, 75, 79, 83, 88, 93, 96, 99, 103, 106, 110, 129}
 
 func (i v4Valid) String() string {
-	if i < 0 || i >= v4Valid(len(_v4Valid_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_v4Valid_index)-1 {
 		return "v4Valid(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _v4Valid_name[_v4Valid_index[i]:_v4Valid_index[i+1]]
+	return _v4Valid_name[_v4Valid_index[idx]:_v4Valid_index[idx+1]]
 }

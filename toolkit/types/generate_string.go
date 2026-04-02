@@ -21,10 +21,11 @@ const _Severity_name = "UnknownNegligibleLowMediumHighCritical"
 var _Severity_index = [...]uint8{0, 7, 17, 20, 26, 30, 38}
 
 func (i Severity) String() string {
-	if i >= Severity(len(_Severity_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_Severity_index)-1 {
 		return "Severity(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _Severity_name[_Severity_index[i]:_Severity_index[i+1]]
+	return _Severity_name[_Severity_index[idx]:_Severity_index[idx+1]]
 }
 func _() {
 	// An "invalid array index" compiler error signifies that the constant values have changed.
@@ -41,10 +42,11 @@ const _ArchOp_name = "invalidequalsnot equalspattern match"
 var _ArchOp_index = [...]uint8{0, 7, 13, 23, 36}
 
 func (i ArchOp) String() string {
-	if i >= ArchOp(len(_ArchOp_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_ArchOp_index)-1 {
 		return "ArchOp(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _ArchOp_name[_ArchOp_index[i]:_ArchOp_index[i+1]]
+	return _ArchOp_name[_ArchOp_index[idx]:_ArchOp_index[idx+1]]
 }
 func _() {
 	// An "invalid array index" compiler error signifies that the constant values have changed.
@@ -60,8 +62,9 @@ const _PackageKind_name = "unknownsourcebinary"
 var _PackageKind_index = [...]uint8{0, 7, 13, 19}
 
 func (i PackageKind) String() string {
-	if i >= PackageKind(len(_PackageKind_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_PackageKind_index)-1 {
 		return "PackageKind(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _PackageKind_name[_PackageKind_index[i]:_PackageKind_index[i+1]]
+	return _PackageKind_name[_PackageKind_index[idx]:_PackageKind_index[idx+1]]
 }

@@ -20,8 +20,9 @@ const _Relation_name = "∅⊃⊂=≠"
 var _Relation_index = [...]uint8{0, 3, 6, 9, 10, 13}
 
 func (i Relation) String() string {
-	if i >= Relation(len(_Relation_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_Relation_index)-1 {
 		return "Relation(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _Relation_name[_Relation_index[i]:_Relation_index[i+1]]
+	return _Relation_name[_Relation_index[idx]:_Relation_index[idx+1]]
 }

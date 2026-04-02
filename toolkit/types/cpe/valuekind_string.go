@@ -19,8 +19,9 @@ const _ValueKind_name = "ValueUnsetValueAnyValueNAValueSet"
 var _ValueKind_index = [...]uint8{0, 10, 18, 25, 33}
 
 func (i ValueKind) String() string {
-	if i >= ValueKind(len(_ValueKind_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_ValueKind_index)-1 {
 		return "ValueKind(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _ValueKind_name[_ValueKind_index[i]:_ValueKind_index[i+1]]
+	return _ValueKind_name[_ValueKind_index[idx]:_ValueKind_index[idx+1]]
 }
