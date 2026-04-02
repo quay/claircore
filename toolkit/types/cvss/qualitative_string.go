@@ -20,9 +20,9 @@ const _Qualitative_name = "NoneLowMediumHighCritical"
 var _Qualitative_index = [...]uint8{0, 4, 7, 13, 17, 25}
 
 func (i Qualitative) String() string {
-	i -= 1
-	if i < 0 || i >= Qualitative(len(_Qualitative_index)-1) {
-		return "Qualitative(" + strconv.FormatInt(int64(i+1), 10) + ")"
+	idx := int(i) - 1
+	if i < 1 || idx >= len(_Qualitative_index)-1 {
+		return "Qualitative(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _Qualitative_name[_Qualitative_index[i]:_Qualitative_index[i+1]]
+	return _Qualitative_name[_Qualitative_index[idx]:_Qualitative_index[idx+1]]
 }
