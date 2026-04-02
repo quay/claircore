@@ -36,7 +36,14 @@ CREATE TABLE IF NOT EXISTS update_operation (
 CREATE INDEX IF NOT EXISTS uo_updater_idx ON update_operation (updater);
 
 -- Create the type used as a column later.
-CREATE TYPE VersionRange AS RANGE (SUBTYPE = integer[10]);
+--
+-- Wrap in an existence check in case someone is trying to reuse a database.
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'versionrange') THEN
+        CREATE TYPE VersionRange AS RANGE ( SUBTYPE = integer[10]);
+    END IF;
+END $$;
 
 -- Vuln is a write-once table of vulnerabilities.
 --
