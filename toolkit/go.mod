@@ -11,6 +11,7 @@ require (
 )
 
 tool (
+	github.com/quay/claircore/toolkit/internal/cmd/cpedict
 	github.com/quay/claircore/toolkit/internal/cmd/mkragel
 	github.com/quay/claircore/toolkit/types/cvss/internal/cmd/revlookup
 	github.com/quay/claircore/toolkit/types/cvss/internal/cmd/v4data
