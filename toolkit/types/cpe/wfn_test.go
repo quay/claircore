@@ -422,19 +422,19 @@ func TestDictionary(t *testing.T) {
 
 	s := bufio.NewScanner(gz)
 	for i := 1; s.Scan(); i++ {
-		fs := strings.Split(s.Text(), "\t")
-		want := fs[1]
-		for _, in := range fs {
-			wfn, err := Unbind(in)
-			if err != nil {
-				t.Fatal(err)
-				t.Fatalf("%v: %#q", err, in)
-			}
-			if got := wfn.BindFS(); got != want {
-				t.Logf(fmt, i, in, got, want)
-				t.Logf("wfn: %#v", wfn)
-				t.Fail()
-			}
+		in := s.Text()
+		if len(in) == 0 || strings.HasPrefix(in, "#") {
+			continue
+		}
+		wfn, err := Unbind(in)
+		if err != nil {
+			t.Fatal(err)
+			t.Fatalf("%v: %#q", err, in)
+		}
+		if got, want := wfn.BindFS(), s.Text(); got != want {
+			t.Logf(fmt, i, in, got, want)
+			t.Logf("wfn: %#v", wfn)
+			t.Fail()
 		}
 	}
 	if err := s.Err(); err != nil {
