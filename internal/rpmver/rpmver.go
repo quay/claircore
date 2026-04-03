@@ -4,6 +4,7 @@
 package rpmver
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"unicode/utf8"
@@ -87,7 +88,7 @@ func Parse(v string) (Version, error) {
 	switch strings.Count(v, "-") {
 	case 0:
 		// Missing something: can't be `version-release`.
-		return Version{}, fmt.Errorf("rpmver: %s: missing separators", v)
+		return Version{}, &parseError{input: v, reason: "missing separators"}
 	case 1:
 		// `version-release(.arch)`
 	default:
@@ -121,6 +122,29 @@ func Parse(v string) (Version, error) {
 
 	return ret, nil
 }
+
+var _ error = (*parseError)(nil)
+
+// ParseError is the concrete type of errors from [Parse].
+//
+// Callers can compare with [ErrParse].
+type parseError struct {
+	input  string
+	reason string
+}
+
+// Error implements [error].
+func (p *parseError) Error() string {
+	return fmt.Sprintf("rpmver: %s: %s", p.input, p.reason)
+}
+
+// Is implements [errors.Is].
+func (p *parseError) Is(tgt error) bool {
+	return tgt == ErrParse
+}
+
+// ErrParse is reported by [Parse].
+var ErrParse = errors.New("rpmver: parse error")
 
 // Architectures is known architecture strings.
 //
