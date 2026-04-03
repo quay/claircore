@@ -48,7 +48,7 @@ func TestRegistryGenerate(t *testing.T) {
 			},
 			ir: &claircore.IndexRecord{
 				Package: &claircore.Package{
-					Kind:     claircore.BINARY,
+					Kind:     claircore.PackageBinary,
 					Name:     "pkg",
 					Version:  "1.0.0",
 					Detector: &claircore.Detector{Name: "fake-scanner"},

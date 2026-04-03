@@ -346,7 +346,7 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v csaf.Vulne
 		// That's the plan so far as there's no PURL product ID helper.
 		vuln.Package = &claircore.Package{
 			Name:   pkgName,
-			Kind:   claircore.SOURCE,
+			Kind:   claircore.PackageSource,
 			Module: modName,
 		}
 		sc := c.c.FindScore(pc)
@@ -524,7 +524,7 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 			vuln.FixedInVersion = fixedIn
 			vuln.Package = &claircore.Package{
 				Name:   packageName,
-				Kind:   claircore.BINARY,
+				Kind:   claircore.PackageBinary,
 				Module: modName,
 			}
 

@@ -64,7 +64,7 @@ func PackagesFromManifest(t *testing.T, items iter.Seq[catalog.RpmsItems]) iter.
 			p := claircore.Package{
 				Name:           it.Name,
 				Version:        pv.EVR(),
-				Kind:           "binary",
+				Kind:           claircore.PackageBinary,
 				Arch:           it.Architecture,
 				RepositoryHint: url.Values{"key": {it.GPG}}.Encode(),
 				Module:         it.Module,
@@ -75,7 +75,7 @@ func PackagesFromManifest(t *testing.T, items iter.Seq[catalog.RpmsItems]) iter.
 			} else {
 				idx := len(srcs)
 				srcs = append(srcs, claircore.Package{
-					Kind:    "source",
+					Kind:    claircore.PackageSource,
 					Name:    *sv.Name,
 					Version: sv.EVR(),
 					Module:  it.Module,

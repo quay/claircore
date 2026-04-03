@@ -268,7 +268,7 @@ Restart:
 		p := &claircore.Package{
 			Name:      name,
 			Version:   v,
-			Kind:      claircore.BINARY,
+			Kind:      claircore.PackageBinary,
 			Arch:      arch,
 			PackageDB: fn,
 		}
@@ -287,7 +287,7 @@ Restart:
 			if !ok {
 				srcpkg = &claircore.Package{
 					Name:      name,
-					Kind:      claircore.SOURCE,
+					Kind:      claircore.PackageSource,
 					Version:   ver,
 					PackageDB: fn,
 				}
@@ -299,7 +299,7 @@ Restart:
 			// 1-to-1 mapping.
 			p.Source = &claircore.Package{
 				Name:      name,
-				Kind:      claircore.SOURCE,
+				Kind:      claircore.PackageSource,
 				Version:   v,
 				PackageDB: fn,
 			}

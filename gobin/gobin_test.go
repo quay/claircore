@@ -163,7 +163,7 @@ func TestScanner(t *testing.T) {
 			continue
 		case strings.HasPrefix(v.Version, "(devel)"):
 			continue
-		case v.Kind != claircore.BINARY:
+		case v.Kind != claircore.PackageBinary:
 		case v.PackageDB != "go:bin/bisect":
 			t.Errorf("unexpected package DB: %s: %q", v.Name, v.PackageDB)
 		case !versionRegex.MatchString(v.Version):

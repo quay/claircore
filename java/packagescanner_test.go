@@ -58,7 +58,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "org.apache.tinkerpop:gremlin-groovy",
 			Version:        "3.4.8",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/ext/gremlin-groovy/lib/gremlin-groovy-3.4.8.jar",
 			RepositoryHint: "sha1:9ae4c997e7b38ef6f6bc72c53412434743705866",
 			Filepath:       "opt/gremlin-console/ext/gremlin-groovy/lib/gremlin-groovy-3.4.8.jar",
@@ -66,7 +66,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "org.apache.tinkerpop:gremlin-groovy",
 			Version:        "3.4.8",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/ext/gremlin-groovy/plugin/gremlin-groovy-3.4.8.jar",
 			RepositoryHint: "sha1:9ae4c997e7b38ef6f6bc72c53412434743705866",
 			Filepath:       "opt/gremlin-console/ext/gremlin-groovy/plugin/gremlin-groovy-3.4.8.jar",
@@ -74,7 +74,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "org.apache.tinkerpop:tinkergraph-gremlin",
 			Version:        "3.4.8",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/ext/tinkergraph-gremlin/lib/tinkergraph-gremlin-3.4.8.jar",
 			RepositoryHint: "sha1:b438353c7514e468f983370a909328aa5957813a",
 			Filepath:       "opt/gremlin-console/ext/tinkergraph-gremlin/lib/tinkergraph-gremlin-3.4.8.jar",
@@ -82,7 +82,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "org.apache.tinkerpop:tinkergraph-gremlin",
 			Version:        "3.4.8",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/ext/tinkergraph-gremlin/plugin/tinkergraph-gremlin-3.4.8.jar",
 			RepositoryHint: "sha1:b438353c7514e468f983370a909328aa5957813a",
 			Filepath:       "opt/gremlin-console/ext/tinkergraph-gremlin/plugin/tinkergraph-gremlin-3.4.8.jar",
@@ -90,7 +90,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "com.github.ben-manes.caffeine",
 			Version:        "2.3.1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:opt/gremlin-console/lib/caffeine-2.3.1.jar",
 			RepositoryHint: "sha1:d6aec5cbd26313a341ee7c034bd56d604f68bebe",
 			Filepath:       "opt/gremlin-console/lib/caffeine-2.3.1.jar",
@@ -98,7 +98,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "commons-codec:commons-codec",
 			Version:        "1.14",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/lib/commons-codec-1.14.jar",
 			RepositoryHint: "sha1:3cb1181b2141a7e752f5bdc998b7ef1849f726cf",
 			Filepath:       "opt/gremlin-console/lib/commons-codec-1.14.jar",
@@ -106,7 +106,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "commons-collections:commons-collections",
 			Version:        "3.2.2",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/lib/commons-collections-3.2.2.jar",
 			RepositoryHint: "sha1:8ad72fe39fa8c91eaaf12aadb21e0c3661fe26d5",
 			Filepath:       "opt/gremlin-console/lib/commons-collections-3.2.2.jar",
@@ -114,7 +114,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "commons-configuration:commons-configuration",
 			Version:        "1.10",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/lib/commons-configuration-1.10.jar",
 			RepositoryHint: "sha1:2b36e4adfb66d966c5aef2d73deb6be716389dc9",
 			Filepath:       "opt/gremlin-console/lib/commons-configuration-1.10.jar",
@@ -122,7 +122,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "commons-lang:commons-lang",
 			Version:        "2.6",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/lib/commons-lang-2.6.jar",
 			RepositoryHint: "sha1:0ce1edb914c94ebc388f086c6827e8bdeec71ac2",
 			Filepath:       "opt/gremlin-console/lib/commons-lang-2.6.jar",
@@ -130,7 +130,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "org.apache.commons:commons-lang3",
 			Version:        "3.8.1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/lib/commons-lang3-3.8.1.jar",
 			RepositoryHint: "sha1:6505a72a097d9270f7a9e7bf42c4238283247755",
 			Filepath:       "opt/gremlin-console/lib/commons-lang3-3.8.1.jar",
@@ -138,7 +138,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "commons-logging:commons-logging",
 			Version:        "1.2",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/lib/commons-logging-1.2.jar",
 			RepositoryHint: "sha1:4bfc12adfe4842bf07b657f0369c4cb522955686",
 			Filepath:       "opt/gremlin-console/lib/commons-logging-1.2.jar",
@@ -146,7 +146,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "net.objecthunter:exp4j",
 			Version:        "0.4.8",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/lib/exp4j-0.4.8.jar",
 			RepositoryHint: "sha1:cf1cfc0f958077d86ac7452c7e36d944689b2ec4",
 			Filepath:       "opt/gremlin-console/lib/exp4j-0.4.8.jar",
@@ -154,7 +154,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "org.apache.tinkerpop:gremlin-console",
 			Version:        "3.4.8",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/lib/gremlin-console-3.4.8.jar",
 			RepositoryHint: "sha1:f001a2644ca44cf60fdde8dbd271e919168ec208",
 			Filepath:       "opt/gremlin-console/lib/gremlin-console-3.4.8.jar",
@@ -162,7 +162,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "org.apache.tinkerpop:gremlin-core",
 			Version:        "3.4.8",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/lib/gremlin-core-3.4.8.jar",
 			RepositoryHint: "sha1:7d6074aa75fc8e219fd7456fa94312ba52922dac",
 			Filepath:       "opt/gremlin-console/lib/gremlin-core-3.4.8.jar",
@@ -170,7 +170,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "org.apache.tinkerpop:gremlin-driver",
 			Version:        "3.4.8",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/lib/gremlin-driver-3.4.8.jar",
 			RepositoryHint: "sha1:53a55a34441c49ad7b933a7ddb4276d3e81dbe72",
 			Filepath:       "opt/gremlin-console/lib/gremlin-driver-3.4.8.jar",
@@ -178,7 +178,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "org.apache.tinkerpop:gremlin-shaded",
 			Version:        "3.4.8",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/lib/gremlin-shaded-3.4.8.jar",
 			RepositoryHint: "sha1:eecca88aa8b7e6ca0d85821a0b7df9f9b873e95b",
 			Filepath:       "opt/gremlin-console/lib/gremlin-shaded-3.4.8.jar",
@@ -186,7 +186,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "com.esotericsoftware:kryo-shaded",
 			Version:        "3.0.3",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/lib/gremlin-shaded-3.4.8.jar",
 			RepositoryHint: "sha1:eecca88aa8b7e6ca0d85821a0b7df9f9b873e95b",
 			Filepath:       "opt/gremlin-console/lib/gremlin-shaded-3.4.8.jar",
@@ -194,7 +194,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "com.esotericsoftware:reflectasm",
 			Version:        "1.10.1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/lib/gremlin-shaded-3.4.8.jar",
 			RepositoryHint: "sha1:eecca88aa8b7e6ca0d85821a0b7df9f9b873e95b",
 			Filepath:       "opt/gremlin-console/lib/gremlin-shaded-3.4.8.jar",
@@ -202,7 +202,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "com.esotericsoftware:minlog",
 			Version:        "1.3.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/lib/gremlin-shaded-3.4.8.jar",
 			RepositoryHint: "sha1:eecca88aa8b7e6ca0d85821a0b7df9f9b873e95b",
 			Filepath:       "opt/gremlin-console/lib/gremlin-shaded-3.4.8.jar",
@@ -210,7 +210,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "com.fasterxml.jackson.core:jackson-databind",
 			Version:        "2.9.10.5",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/lib/gremlin-shaded-3.4.8.jar",
 			RepositoryHint: "sha1:eecca88aa8b7e6ca0d85821a0b7df9f9b873e95b",
 			Filepath:       "opt/gremlin-console/lib/gremlin-shaded-3.4.8.jar",
@@ -218,7 +218,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "com.fasterxml.jackson.core:jackson-annotations",
 			Version:        "2.9.10",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/lib/gremlin-shaded-3.4.8.jar",
 			RepositoryHint: "sha1:eecca88aa8b7e6ca0d85821a0b7df9f9b873e95b",
 			Filepath:       "opt/gremlin-console/lib/gremlin-shaded-3.4.8.jar",
@@ -226,7 +226,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "com.fasterxml.jackson.core:jackson-core",
 			Version:        "2.9.10",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/lib/gremlin-shaded-3.4.8.jar",
 			RepositoryHint: "sha1:eecca88aa8b7e6ca0d85821a0b7df9f9b873e95b",
 			Filepath:       "opt/gremlin-console/lib/gremlin-shaded-3.4.8.jar",
@@ -234,7 +234,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "groovy",
 			Version:        "2.5.11",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:opt/gremlin-console/lib/groovy-2.5.11-indy.jar",
 			RepositoryHint: "sha1:1d90cbcff0947aaf43f31741b48839e5fe190f13",
 			Filepath:       "opt/gremlin-console/lib/groovy-2.5.11-indy.jar",
@@ -242,7 +242,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "groovy-cli-picocli",
 			Version:        "2.5.11",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:opt/gremlin-console/lib/groovy-cli-picocli-2.5.11.jar",
 			RepositoryHint: "sha1:d612d63d4ef1083bc05fcadc233b3d8f201d10f2",
 			Filepath:       "opt/gremlin-console/lib/groovy-cli-picocli-2.5.11.jar",
@@ -250,7 +250,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "groovy-console",
 			Version:        "2.5.11",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:opt/gremlin-console/lib/groovy-console-2.5.11.jar",
 			RepositoryHint: "sha1:3db61e9f5806dbf999bbeb44bf6c532540abc731",
 			Filepath:       "opt/gremlin-console/lib/groovy-console-2.5.11.jar",
@@ -258,7 +258,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "groovy-groovysh",
 			Version:        "2.5.11",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:opt/gremlin-console/lib/groovy-groovysh-2.5.11-indy.jar",
 			RepositoryHint: "sha1:c4c372f662fdfb5f298aee7484553379ef207d1b",
 			Filepath:       "opt/gremlin-console/lib/groovy-groovysh-2.5.11-indy.jar",
@@ -266,7 +266,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "groovy-json",
 			Version:        "2.5.11",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:opt/gremlin-console/lib/groovy-json-2.5.11-indy.jar",
 			RepositoryHint: "sha1:50233b0100cdb17a90a49a8aaaa9f0d020608600",
 			Filepath:       "opt/gremlin-console/lib/groovy-json-2.5.11-indy.jar",
@@ -274,7 +274,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "groovy-jsr223",
 			Version:        "2.5.11",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:opt/gremlin-console/lib/groovy-jsr223-2.5.11-indy.jar",
 			RepositoryHint: "sha1:c95ee910c2e74cfc37c73a6510b8476b146f3d10",
 			Filepath:       "opt/gremlin-console/lib/groovy-jsr223-2.5.11-indy.jar",
@@ -282,7 +282,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "groovy-swing",
 			Version:        "2.5.11",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:opt/gremlin-console/lib/groovy-swing-2.5.11.jar",
 			RepositoryHint: "sha1:bcb2614685279e845f075cd1a22fe6950ce960b2",
 			Filepath:       "opt/gremlin-console/lib/groovy-swing-2.5.11.jar",
@@ -290,7 +290,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "groovy-templates",
 			Version:        "2.5.11",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:opt/gremlin-console/lib/groovy-templates-2.5.11.jar",
 			RepositoryHint: "sha1:941001acfda010320e2426a3b8fe056d6a1eb8f1",
 			Filepath:       "opt/gremlin-console/lib/groovy-templates-2.5.11.jar",
@@ -298,7 +298,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "groovy-xml",
 			Version:        "2.5.11",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:opt/gremlin-console/lib/groovy-xml-2.5.11.jar",
 			RepositoryHint: "sha1:3b1e713e805d7ea354a83d1c9e17a0754ea74132",
 			Filepath:       "opt/gremlin-console/lib/groovy-xml-2.5.11.jar",
@@ -306,7 +306,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "com.carrotsearch:hppc",
 			Version:        "0.7.1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/lib/hppc-0.7.1.jar",
 			RepositoryHint: "sha1:8b5057f74ea378c0150a1860874a3ebdcb713767",
 			Filepath:       "opt/gremlin-console/lib/hppc-0.7.1.jar",
@@ -314,7 +314,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "org.apache.httpcomponents:httpclient",
 			Version:        "4.5.8",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/lib/httpclient-4.5.8.jar",
 			RepositoryHint: "sha1:c27c9d6f15435dc2b6947112027b418b0eef32b9",
 			Filepath:       "opt/gremlin-console/lib/httpclient-4.5.8.jar",
@@ -322,7 +322,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "org.apache.httpcomponents:httpcore",
 			Version:        "4.4.11",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/lib/httpcore-4.4.11.jar",
 			RepositoryHint: "sha1:de748cf874e4e193b42eceea9fe5574fabb9d4df",
 			Filepath:       "opt/gremlin-console/lib/httpcore-4.4.11.jar",
@@ -330,7 +330,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "org.apache.ivy",
 			Version:        "2.3.0.final_20130110142753",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:opt/gremlin-console/lib/ivy-2.3.0.jar",
 			RepositoryHint: "sha1:c5ebf1c253ad4959a29f4acfe696ee48cdd9f473",
 			Filepath:       "opt/gremlin-console/lib/ivy-2.3.0.jar",
@@ -338,7 +338,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "com.squareup:javapoet",
 			Version:        "1.8.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/lib/javapoet-1.8.0.jar",
 			RepositoryHint: "sha1:e858dc62ef484048540d27d36f3ec2177a3fa9b1",
 			Filepath:       "opt/gremlin-console/lib/javapoet-1.8.0.jar",
@@ -346,7 +346,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "org.javatuples:javatuples",
 			Version:        "1.2",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/lib/javatuples-1.2.jar",
 			RepositoryHint: "sha1:507312ac4b601204a72a83380badbca82683dd36",
 			Filepath:       "opt/gremlin-console/lib/javatuples-1.2.jar",
@@ -354,7 +354,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "org.mindrot:jbcrypt",
 			Version:        "0.4",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/lib/jbcrypt-0.4.jar",
 			RepositoryHint: "sha1:af7e61017f73abb18ac4e036954f9f28c6366c07",
 			Filepath:       "opt/gremlin-console/lib/jbcrypt-0.4.jar",
@@ -362,7 +362,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "com.jcabi:jcabi-log",
 			Version:        "0.14",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/lib/jcabi-log-0.14.jar",
 			RepositoryHint: "sha1:819a57348f2448f01d74f8a317dab61d6a90cac2",
 			Filepath:       "opt/gremlin-console/lib/jcabi-log-0.14.jar",
@@ -370,7 +370,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "com.jcabi:jcabi-manifests",
 			Version:        "1.1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/lib/jcabi-manifests-1.1.jar",
 			RepositoryHint: "sha1:e4f4488c0e3905c6fab287aca2569928fe1712df",
 			Filepath:       "opt/gremlin-console/lib/jcabi-manifests-1.1.jar",
@@ -378,7 +378,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "org.slf4j:jcl-over-slf4j",
 			Version:        "1.7.25",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/lib/jcl-over-slf4j-1.7.25.jar",
 			RepositoryHint: "sha1:f8c32b13ff142a513eeb5b6330b1588dcb2c0461",
 			Filepath:       "opt/gremlin-console/lib/jcl-over-slf4j-1.7.25.jar",
@@ -386,7 +386,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "jline:jline",
 			Version:        "2.14.6",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/lib/jline-2.14.6.jar",
 			RepositoryHint: "sha1:c3aeac59c022bdc497c8c48ed86fa50450e4896a",
 			Filepath:       "opt/gremlin-console/lib/jline-2.14.6.jar",
@@ -394,7 +394,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "log4j:log4j",
 			Version:        "1.2.17",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/lib/log4j-1.2.17.jar",
 			RepositoryHint: "sha1:5af35056b4d257e4b64b9e8069c0746e8b08629f",
 			Filepath:       "opt/gremlin-console/lib/log4j-1.2.17.jar",
@@ -402,7 +402,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "io.netty:netty-all",
 			Version:        "4.1.49.Final",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/lib/netty-all-4.1.49.Final.jar",
 			RepositoryHint: "sha1:ffe903492be79f5bd8348b04c958de3734a22c6b",
 			Filepath:       "opt/gremlin-console/lib/netty-all-4.1.49.Final.jar",
@@ -410,7 +410,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "picocli",
 			Version:        "4.0.1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:opt/gremlin-console/lib/picocli-4.0.1.jar",
 			RepositoryHint: "sha1:282c164057d55e6b6af2de49e8930f3c760439da",
 			Filepath:       "opt/gremlin-console/lib/picocli-4.0.1.jar",
@@ -418,7 +418,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "org.slf4j:slf4j-api",
 			Version:        "1.7.25",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/lib/slf4j-api-1.7.25.jar",
 			RepositoryHint: "sha1:da76ca59f6a57ee3102f8f9bd9cee742973efa8a",
 			Filepath:       "opt/gremlin-console/lib/slf4j-api-1.7.25.jar",
@@ -426,7 +426,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "org.slf4j:slf4j-log4j12",
 			Version:        "1.7.25",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/lib/slf4j-log4j12-1.7.25.jar",
 			RepositoryHint: "sha1:110cefe2df103412849d72ef7a67e4e91e4266b4",
 			Filepath:       "opt/gremlin-console/lib/slf4j-log4j12-1.7.25.jar",
@@ -434,7 +434,7 @@ var tinkerpop = test.ScannerTestcase{
 		{
 			Name:           "org.yaml:snakeyaml",
 			Version:        "1.15",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:opt/gremlin-console/lib/snakeyaml-1.15.jar",
 			RepositoryHint: "sha1:3b132bea69e8ee099f416044970997bde80f4ea6",
 			Filepath:       "opt/gremlin-console/lib/snakeyaml-1.15.jar",
@@ -451,7 +451,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.main:jenkins-war",
 			Version:        "2.316",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war",
 			RepositoryHint: "sha1:f9f22bab538db3c075251ae693a524204efdc32b",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -459,7 +459,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci:winstone",
 			Version:        "5.21",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
 			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -467,7 +467,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.eclipse.jetty:jetty-server",
 			Version:        "9.4.43.v20210629",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
 			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -475,7 +475,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "javax.servlet:javax.servlet-api",
 			Version:        "3.1.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
 			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -483,7 +483,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.eclipse.jetty:jetty-http",
 			Version:        "9.4.43.v20210629",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
 			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -491,7 +491,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.eclipse.jetty:jetty-io",
 			Version:        "9.4.43.v20210629",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
 			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -499,7 +499,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.eclipse.jetty:jetty-util",
 			Version:        "9.4.43.v20210629",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
 			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -507,7 +507,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.eclipse.jetty:jetty-servlet",
 			Version:        "9.4.43.v20210629",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
 			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -515,7 +515,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.eclipse.jetty:jetty-security",
 			Version:        "9.4.43.v20210629",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
 			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -523,7 +523,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.eclipse.jetty:jetty-util-ajax",
 			Version:        "9.4.43.v20210629",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
 			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -531,7 +531,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.eclipse.jetty:jetty-webapp",
 			Version:        "9.4.43.v20210629",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
 			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -539,7 +539,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.eclipse.jetty:jetty-xml",
 			Version:        "9.4.43.v20210629",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
 			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -547,7 +547,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.eclipse.jetty.http2:http2-server",
 			Version:        "9.4.43.v20210629",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
 			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -555,7 +555,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.eclipse.jetty.http2:http2-common",
 			Version:        "9.4.43.v20210629",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
 			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -563,7 +563,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.eclipse.jetty.http2:http2-hpack",
 			Version:        "9.4.43.v20210629",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
 			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -571,7 +571,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.eclipse.jetty:jetty-alpn-server",
 			Version:        "9.4.43.v20210629",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
 			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -579,7 +579,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.eclipse.jetty.alpn:alpn-api",
 			Version:        "1.1.3.v20160715",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
 			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -587,7 +587,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.eclipse.jetty:jetty-jmx",
 			Version:        "9.4.43.v20210629",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
 			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -595,7 +595,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.eclipse.jetty.websocket:websocket-server",
 			Version:        "9.4.43.v20210629",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
 			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -603,7 +603,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.eclipse.jetty.websocket:websocket-common",
 			Version:        "9.4.43.v20210629",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
 			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -611,7 +611,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.eclipse.jetty.websocket:websocket-api",
 			Version:        "9.4.43.v20210629",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
 			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -619,7 +619,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.eclipse.jetty.websocket:websocket-client",
 			Version:        "9.4.43.v20210629",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
 			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -627,7 +627,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.eclipse.jetty:jetty-client",
 			Version:        "9.4.43.v20210629",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
 			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -635,7 +635,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.eclipse.jetty.websocket:websocket-servlet",
 			Version:        "9.4.43.v20210629",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
 			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -643,7 +643,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "io.jenkins.lib:support-log-formatter",
 			Version:        "1.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
 			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -651,7 +651,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.plugins.workflow:workflow-step-api",
 			Version:        "2.23",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/workflow-step-api.hpi:WEB-INF/lib/workflow-step-api.jar",
 			RepositoryHint: "sha1:b3eb4f90b8fcccba673cecb3b34cb9a19fa39772",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -659,7 +659,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.plugins.workflow:workflow-step-api",
 			Version:        "2.23",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/workflow-step-api.hpi:WEB-INF/lib/workflow-step-api.jar",
 			RepositoryHint: "sha1:b3eb4f90b8fcccba673cecb3b34cb9a19fa39772",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -667,7 +667,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.plugins:junit",
 			Version:        "1.29",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/junit.hpi:WEB-INF/lib/junit.jar",
 			RepositoryHint: "sha1:cb91bfc6d9833495462b82a95d937599ef11c1a9",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -675,7 +675,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.plugins:junit",
 			Version:        "1.29",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/junit.hpi:WEB-INF/lib/junit.jar",
 			RepositoryHint: "sha1:cb91bfc6d9833495462b82a95d937599ef11c1a9",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -683,7 +683,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.plugins:bouncycastle-api",
 			Version:        "2.20",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/bouncycastle-api.hpi:WEB-INF/lib/bouncycastle-api.jar",
 			RepositoryHint: "sha1:1b22775d6f258b5be61d855d5cedb9cf935e2d1b",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -691,7 +691,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "bcprov",
 			Version:        "1.68",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/bouncycastle-api.hpi:WEB-INF/lib/bcprov-jdk15on-1.68.jar",
 			RepositoryHint: "sha1:1b22775d6f258b5be61d855d5cedb9cf935e2d1b",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -699,7 +699,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "bcpkix",
 			Version:        "1.68",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/bouncycastle-api.hpi:WEB-INF/lib/bcpkix-jdk15on-1.68.jar",
 			RepositoryHint: "sha1:1b22775d6f258b5be61d855d5cedb9cf935e2d1b",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -707,7 +707,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.plugins:bouncycastle-api",
 			Version:        "2.20",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/bouncycastle-api.hpi:WEB-INF/lib/bouncycastle-api.jar",
 			RepositoryHint: "sha1:1b22775d6f258b5be61d855d5cedb9cf935e2d1b",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -715,7 +715,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.plugins:matrix-project",
 			Version:        "1.18",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/matrix-project.hpi:WEB-INF/lib/matrix-project.jar",
 			RepositoryHint: "sha1:cffd146e62b20db3aaad544acca543bda9381903",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -723,7 +723,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.plugins:matrix-project",
 			Version:        "1.18",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/matrix-project.hpi:WEB-INF/lib/matrix-project.jar",
 			RepositoryHint: "sha1:cffd146e62b20db3aaad544acca543bda9381903",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -731,7 +731,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.plugins:matrix-auth",
 			Version:        "2.6.6",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/matrix-auth.hpi:WEB-INF/lib/matrix-auth.jar",
 			RepositoryHint: "sha1:060cd7df64ae6ece1805e4626efc97709aed61b9",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -739,7 +739,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.plugins:matrix-auth",
 			Version:        "2.6.6",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/matrix-auth.hpi:WEB-INF/lib/matrix-auth.jar",
 			RepositoryHint: "sha1:060cd7df64ae6ece1805e4626efc97709aed61b9",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -747,7 +747,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.plugins:script-security",
 			Version:        "1.75",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/script-security.hpi:WEB-INF/lib/script-security.jar",
 			RepositoryHint: "sha1:346cb1183d04bf076ffcb05ff0663eeda8075182",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -755,7 +755,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.kohsuke:groovy-sandbox",
 			Version:        "1.27",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/script-security.hpi:WEB-INF/lib/groovy-sandbox-1.27.jar",
 			RepositoryHint: "sha1:346cb1183d04bf076ffcb05ff0663eeda8075182",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -763,7 +763,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "checker-qual",
 			Version:        "3.3.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/script-security.hpi:WEB-INF/lib/checker-qual-3.3.0.jar",
 			RepositoryHint: "sha1:346cb1183d04bf076ffcb05ff0663eeda8075182",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -771,7 +771,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "com.github.ben-manes.caffeine",
 			Version:        "2.8.2",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/script-security.hpi:WEB-INF/lib/caffeine-2.8.2.jar",
 			RepositoryHint: "sha1:346cb1183d04bf076ffcb05ff0663eeda8075182",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -779,7 +779,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "com.google.errorprone:error_prone_annotations",
 			Version:        "2.3.4",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/script-security.hpi:WEB-INF/lib/error_prone_annotations-2.3.4.jar",
 			RepositoryHint: "sha1:346cb1183d04bf076ffcb05ff0663eeda8075182",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -787,7 +787,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.plugins:script-security",
 			Version:        "1.75",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/script-security.hpi:WEB-INF/lib/script-security.jar",
 			RepositoryHint: "sha1:346cb1183d04bf076ffcb05ff0663eeda8075182",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -795,7 +795,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.plugins:mailer",
 			Version:        "1.32.1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/mailer.hpi:WEB-INF/lib/mailer.jar",
 			RepositoryHint: "sha1:07026888e4b109a66685364111229ab7b99ee4e8",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -803,7 +803,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.plugins:mailer",
 			Version:        "1.32.1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/mailer.hpi:WEB-INF/lib/mailer.jar",
 			RepositoryHint: "sha1:07026888e4b109a66685364111229ab7b99ee4e8",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -811,7 +811,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.plugins:display-url-api",
 			Version:        "2.3.1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/display-url-api.hpi:WEB-INF/lib/display-url-api.jar",
 			RepositoryHint: "sha1:dc5918a37ef530866f6aeb84fe5b6afb177c1ac5",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -819,7 +819,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.plugins:display-url-api",
 			Version:        "2.3.1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/display-url-api.hpi:WEB-INF/lib/display-url-api.jar",
 			RepositoryHint: "sha1:dc5918a37ef530866f6aeb84fe5b6afb177c1ac5",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -827,7 +827,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.plugins:antisamy-markup-formatter",
 			Version:        "1.1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/antisamy-markup-formatter.hpi:WEB-INF/lib/antisamy-markup-formatter.jar",
 			RepositoryHint: "sha1:61c4d370eec0566835f452cdcfdbb185b002c67e",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -835,7 +835,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.plugins:antisamy-markup-formatter",
 			Version:        "1.1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/antisamy-markup-formatter.hpi:WEB-INF/lib/antisamy-markup-formatter.jar",
 			RepositoryHint: "sha1:61c4d370eec0566835f452cdcfdbb185b002c67e",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -843,7 +843,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.plugins:scm-api",
 			Version:        "2.6.5",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/scm-api.hpi:WEB-INF/lib/scm-api.jar",
 			RepositoryHint: "sha1:9ef1275c52b988af9da4fc491cb0894fa241bd14",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -851,7 +851,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.plugins:scm-api",
 			Version:        "2.6.5",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/scm-api.hpi:WEB-INF/lib/scm-api.jar",
 			RepositoryHint: "sha1:9ef1275c52b988af9da4fc491cb0894fa241bd14",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -859,7 +859,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.plugins:trilead-api",
 			Version:        "1.0.4",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/trilead-api.hpi:WEB-INF/lib/trilead-api.jar",
 			RepositoryHint: "sha1:fa907c54fe14861b2170d4b463fd07df84a1551d",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -867,7 +867,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "net.i2p.crypto:eddsa",
 			Version:        "0.3.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/trilead-api.hpi:WEB-INF/lib/eddsa-0.3.0.jar",
 			RepositoryHint: "sha1:fa907c54fe14861b2170d4b463fd07df84a1551d",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -875,7 +875,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.kohsuke:trilead-putty-extension",
 			Version:        "1.2",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/trilead-api.hpi:WEB-INF/lib/trilead-putty-extension-1.2.jar",
 			RepositoryHint: "sha1:fa907c54fe14861b2170d4b463fd07df84a1551d",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -883,7 +883,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "jbcrypt",
 			Version:        "1.0.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "file:usr/share/jenkins/jenkins.war",
 			RepositoryHint: "sha1:fa907c54fe14861b2170d4b463fd07df84a1551d",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -891,7 +891,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci:trilead-ssh2",
 			Version:        "build-217-jenkins-16",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/trilead-api.hpi:WEB-INF/lib/trilead-ssh2-build-217-jenkins-16.jar",
 			RepositoryHint: "sha1:fa907c54fe14861b2170d4b463fd07df84a1551d",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -899,7 +899,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.plugins:trilead-api",
 			Version:        "1.0.4",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/trilead-api.hpi:WEB-INF/lib/trilead-api.jar",
 			RepositoryHint: "sha1:fa907c54fe14861b2170d4b463fd07df84a1551d",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -907,7 +907,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.modules:sshd",
 			Version:        "3.0.3",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/sshd.hpi:WEB-INF/lib/sshd.jar",
 			RepositoryHint: "sha1:e8be0e1230293cdb97252480eaba93d1b3663be3",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -915,7 +915,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "net.i2p.crypto:eddsa",
 			Version:        "0.3.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/sshd.hpi:WEB-INF/lib/eddsa-0.3.0.jar",
 			RepositoryHint: "sha1:e8be0e1230293cdb97252480eaba93d1b3663be3",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -923,7 +923,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.slf4j:slf4j-api",
 			Version:        "1.7.30",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/sshd.hpi:WEB-INF/lib/slf4j-api-1.7.30.jar",
 			RepositoryHint: "sha1:e8be0e1230293cdb97252480eaba93d1b3663be3",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -931,7 +931,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.modules:sshd",
 			Version:        "3.0.3",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/sshd.hpi:WEB-INF/lib/sshd.jar",
 			RepositoryHint: "sha1:e8be0e1230293cdb97252480eaba93d1b3663be3",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -939,7 +939,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "io.github.stephenc.crypto:self-signed-cert-generator",
 			Version:        "1.0.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/sshd.hpi:WEB-INF/lib/self-signed-cert-generator-1.0.0.jar",
 			RepositoryHint: "sha1:e8be0e1230293cdb97252480eaba93d1b3663be3",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -947,7 +947,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.apache.sshd:sshd-core",
 			Version:        "1.7.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/sshd.hpi:WEB-INF/lib/sshd-core-1.7.0.jar",
 			RepositoryHint: "sha1:e8be0e1230293cdb97252480eaba93d1b3663be3",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -955,7 +955,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.modules:instance-identity",
 			Version:        "2.2",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/sshd.hpi:WEB-INF/lib/instance-identity-2.2.jar",
 			RepositoryHint: "sha1:e8be0e1230293cdb97252480eaba93d1b3663be3",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -963,7 +963,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.plugins:jdk-tool",
 			Version:        "1.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/jdk-tool.hpi:WEB-INF/lib/jdk-tool.jar",
 			RepositoryHint: "sha1:e063550e164157d6ee90d78090860adc13961c9b",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -971,7 +971,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.plugins:jdk-tool",
 			Version:        "1.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/jdk-tool.hpi:WEB-INF/lib/jdk-tool.jar",
 			RepositoryHint: "sha1:e063550e164157d6ee90d78090860adc13961c9b",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -979,7 +979,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.plugins:structs",
 			Version:        "1.23",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/structs.hpi:WEB-INF/lib/structs.jar",
 			RepositoryHint: "sha1:37b98115acc372cbdc517217ad45c74bd965e570",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -987,7 +987,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.plugins:structs",
 			Version:        "1.23",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/structs.hpi:WEB-INF/lib/structs.jar",
 			RepositoryHint: "sha1:37b98115acc372cbdc517217ad45c74bd965e570",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -995,7 +995,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci:symbol-annotation",
 			Version:        "1.23",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/structs.hpi:WEB-INF/lib/symbol-annotation-1.23.jar",
 			RepositoryHint: "sha1:37b98115acc372cbdc517217ad45c74bd965e570",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1003,7 +1003,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "io.jenkins.plugins:jaxb",
 			Version:        "2.3.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/jaxb.hpi:WEB-INF/lib/jaxb.jar",
 			RepositoryHint: "sha1:a3c9925e9eafdcadebaae750c523b7690cc0c890",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1011,7 +1011,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "com.sun.istack:istack-commons-runtime",
 			Version:        "3.0.5",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/jaxb.hpi:WEB-INF/lib/jaxb-core-2.3.0.jar",
 			RepositoryHint: "sha1:a3c9925e9eafdcadebaae750c523b7690cc0c890",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1019,7 +1019,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.glassfish.jaxb:txw2",
 			Version:        "2.3.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/jaxb.hpi:WEB-INF/lib/jaxb-core-2.3.0.jar",
 			RepositoryHint: "sha1:a3c9925e9eafdcadebaae750c523b7690cc0c890",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1027,7 +1027,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.glassfish.jaxb:jaxb-core",
 			Version:        "2.3.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/jaxb.hpi:WEB-INF/lib/jaxb-core-2.3.0.jar",
 			RepositoryHint: "sha1:a3c9925e9eafdcadebaae750c523b7690cc0c890",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1035,7 +1035,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "com.sun.xml.bind:jaxb-core",
 			Version:        "2.3.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/jaxb.hpi:WEB-INF/lib/jaxb-core-2.3.0.jar",
 			RepositoryHint: "sha1:a3c9925e9eafdcadebaae750c523b7690cc0c890",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1043,7 +1043,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "io.jenkins.plugins:jaxb",
 			Version:        "2.3.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/jaxb.hpi:WEB-INF/lib/jaxb.jar",
 			RepositoryHint: "sha1:a3c9925e9eafdcadebaae750c523b7690cc0c890",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1051,7 +1051,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.glassfish.jaxb:jaxb-runtime",
 			Version:        "2.3.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/jaxb.hpi:WEB-INF/lib/jaxb-impl-2.3.0.jar",
 			RepositoryHint: "sha1:a3c9925e9eafdcadebaae750c523b7690cc0c890",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1059,7 +1059,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "com.sun.xml.bind:jaxb-impl",
 			Version:        "2.3.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/jaxb.hpi:WEB-INF/lib/jaxb-impl-2.3.0.jar",
 			RepositoryHint: "sha1:a3c9925e9eafdcadebaae750c523b7690cc0c890",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1067,7 +1067,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "javax.xml.bind:jaxb-api",
 			Version:        "2.3.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/jaxb.hpi:WEB-INF/lib/jaxb-api-2.3.0.jar",
 			RepositoryHint: "sha1:a3c9925e9eafdcadebaae750c523b7690cc0c890",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1075,7 +1075,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.plugins.workflow:workflow-api",
 			Version:        "2.42",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/workflow-api.hpi:WEB-INF/lib/workflow-api.jar",
 			RepositoryHint: "sha1:9f1b255ba430a7d4210a23d0ae510f7c48600ffd",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1083,7 +1083,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.plugins.workflow:workflow-api",
 			Version:        "2.42",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/workflow-api.hpi:WEB-INF/lib/workflow-api.jar",
 			RepositoryHint: "sha1:9f1b255ba430a7d4210a23d0ae510f7c48600ffd",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1091,7 +1091,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.plugins:windows-slaves",
 			Version:        "1.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/windows-slaves.hpi:WEB-INF/lib/windows-slaves.jar",
 			RepositoryHint: "sha1:15d036e22a49ffa7b0cdb6c9777ce40d584e40ec",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1099,7 +1099,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jvnet:tiger-types",
 			Version:        "1.1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/windows-slaves.hpi:WEB-INF/lib/tiger-types-1.1.jar",
 			RepositoryHint: "sha1:15d036e22a49ffa7b0cdb6c9777ce40d584e40ec",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1107,7 +1107,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.samba.jcifs:jcifs",
 			Version:        "1.3.17-kohsuke-1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/windows-slaves.hpi:WEB-INF/lib/jcifs-1.3.17-kohsuke-1.jar",
 			RepositoryHint: "sha1:15d036e22a49ffa7b0cdb6c9777ce40d584e40ec",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1115,7 +1115,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.kohsuke.jinterop:jinterop-proxy",
 			Version:        "1.1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/windows-slaves.hpi:WEB-INF/lib/jinterop-proxy-1.1.jar",
 			RepositoryHint: "sha1:15d036e22a49ffa7b0cdb6c9777ce40d584e40ec",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1123,7 +1123,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.kohsuke.jinterop:j-interopdeps",
 			Version:        "2.0.6-kohsuke-1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/windows-slaves.hpi:WEB-INF/lib/j-interopdeps-2.0.6-kohsuke-1.jar",
 			RepositoryHint: "sha1:15d036e22a49ffa7b0cdb6c9777ce40d584e40ec",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1131,7 +1131,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.kohsuke.jinterop:j-interop",
 			Version:        "2.0.6-kohsuke-1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/windows-slaves.hpi:WEB-INF/lib/j-interop-2.0.6-kohsuke-1.jar",
 			RepositoryHint: "sha1:15d036e22a49ffa7b0cdb6c9777ce40d584e40ec",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1139,7 +1139,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.plugins:windows-slaves",
 			Version:        "1.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/windows-slaves.hpi:WEB-INF/lib/windows-slaves.jar",
 			RepositoryHint: "sha1:15d036e22a49ffa7b0cdb6c9777ce40d584e40ec",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1147,7 +1147,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci:windows-remote-command",
 			Version:        "1.4",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/windows-slaves.hpi:WEB-INF/lib/windows-remote-command-1.4.jar",
 			RepositoryHint: "sha1:15d036e22a49ffa7b0cdb6c9777ce40d584e40ec",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1155,7 +1155,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci:jinterop-wmi",
 			Version:        "1.1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/windows-slaves.hpi:WEB-INF/lib/jinterop-wmi-1.1.jar",
 			RepositoryHint: "sha1:15d036e22a49ffa7b0cdb6c9777ce40d584e40ec",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1163,7 +1163,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.plugins:command-launcher",
 			Version:        "1.2",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/command-launcher.hpi:WEB-INF/lib/command-launcher.jar",
 			RepositoryHint: "sha1:4dd02e91f003be14b949b314636858b22741a2b8",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1171,7 +1171,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.plugins:command-launcher",
 			Version:        "1.2",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/command-launcher.hpi:WEB-INF/lib/command-launcher.jar",
 			RepositoryHint: "sha1:4dd02e91f003be14b949b314636858b22741a2b8",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1179,7 +1179,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "ant",
 			Version:        "1.10.11",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "file:usr/share/jenkins/jenkins.war",
 			RepositoryHint: "sha1:b875cd48a0bc955ae9c5c477ad991e1f26fb24d2",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1187,7 +1187,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "commons-fileupload:commons-fileupload",
 			Version:        "1.4",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/commons-fileupload-1.4.jar",
 			RepositoryHint: "sha1:f95188e3d372e20e7328706c37ef366e5d7859b0",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1195,7 +1195,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "com.sun.xml.txw2:txw2",
 			Version:        "20110809",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/txw2-20110809.jar",
 			RepositoryHint: "sha1:46afa3f3c468680875adb8f2a26086a126c89902",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1203,7 +1203,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "args4j:args4j",
 			Version:        "2.33",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/args4j-2.33.jar",
 			RepositoryHint: "sha1:bd87a75374a6d6523de82fef51fc3cfe9baf9fc9",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1211,7 +1211,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "spring-expression",
 			Version:        "5.3.9",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/spring-expression-5.3.9.jar",
 			RepositoryHint: "sha1:f5ca763cfb9d62d196efd5d25e8daca7d555ed75",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1219,7 +1219,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.slf4j:log4j-over-slf4j",
 			Version:        "1.7.32",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/log4j-over-slf4j-1.7.32.jar",
 			RepositoryHint: "sha1:152d3b5e2470bb8e898bd82886fc783361e2c32b",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1227,7 +1227,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "com.github.jnr:jnr-a64asm",
 			Version:        "1.0.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jnr-a64asm-1.0.0.jar",
 			RepositoryHint: "sha1:0a1cb8dbe71b5a6a0288043c3ba3ca64545be165",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1235,7 +1235,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.modules:upstart-slave-installer",
 			Version:        "1.1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/upstart-slave-installer-1.1.jar",
 			RepositoryHint: "sha1:a2ce1f49745d63c8520d50a0c6430afd377ece48",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1243,7 +1243,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "groovy-all:groovy",
 			Version:        "2.4.12",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/groovy-all-2.4.12.jar",
 			RepositoryHint: "sha1:760afc568cbd94c09d78f801ce51aed1326710af",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1251,7 +1251,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.kohsuke.stapler:stapler",
 			Version:        "1593.v0e838714faae",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/stapler-1593.v0e838714faae.jar",
 			RepositoryHint: "sha1:fc5431d95cd9602a9ef20dd8d0da9e6903b8b98d",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1259,7 +1259,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "jline:jline",
 			Version:        "2.14.6",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jline-2.14.6.jar",
 			RepositoryHint: "sha1:c3aeac59c022bdc497c8c48ed86fa50450e4896a",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1267,7 +1267,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci:commons-jelly",
 			Version:        "1.1-jenkins-20120928",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/commons-jelly-1.1-jenkins-20120928.jar",
 			RepositoryHint: "sha1:2720a0d54b7f32479b08970d7738041362e1f410",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1275,7 +1275,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "commons-codec:commons-codec",
 			Version:        "1.15",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/commons-codec-1.15.jar",
 			RepositoryHint: "sha1:49d94806b6e3dc933dacbd8acb0fdbab8ebd1e5d",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1283,7 +1283,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jvnet.hudson:commons-jelly-tags-define",
 			Version:        "1.0.1-hudson-20071021",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/commons-jelly-tags-define-1.0.1-hudson-20071021.jar",
 			RepositoryHint: "sha1:8b952d0e504ee505d234853119e5648441894234",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1291,7 +1291,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.kohsuke:windows-package-checker",
 			Version:        "1.2",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/windows-package-checker-1.2.jar",
 			RepositoryHint: "sha1:86b5d2f9023633808d65dbcfdfd50dc5ad3ca31f",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1299,7 +1299,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "com.github.jnr:jnr-x86asm",
 			Version:        "1.0.2",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jnr-x86asm-1.0.2.jar",
 			RepositoryHint: "sha1:006936bbd6c5b235665d87bd450f5e13b52d4b48",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1307,7 +1307,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.kohsuke.jinterop:j-interop",
 			Version:        "2.0.8-kohsuke-1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/j-interop-2.0.8-kohsuke-1.jar",
 			RepositoryHint: "sha1:7bcd527550b8415ba14c33a8ff00658c43d0c78e",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1315,7 +1315,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "commons-beanutils:commons-beanutils",
 			Version:        "1.9.4",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/commons-beanutils-1.9.4.jar",
 			RepositoryHint: "sha1:d52b9abcd97f38c81342bb7e7ae1eee9b73cba51",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1323,7 +1323,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "javax.annotation:javax.annotation-api",
 			Version:        "1.3.2",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/javax.annotation-api-1.3.2.jar",
 			RepositoryHint: "sha1:934c04d3cfef185a8008e7bf34331b79730a9d43",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1331,7 +1331,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jfree:jcommon",
 			Version:        "1.0.23",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jcommon-1.0.23.jar",
 			RepositoryHint: "sha1:a316f336ca996e0c6bec4e4fbd49be8f5e1c3968",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1339,7 +1339,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "com.github.jnr.jffi.native:jffi",
 			Version:        "1.3.5",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/jffi-1.3.5-native.jar",
 			RepositoryHint: "sha1:38602067b8cd1ed3dca6cbfcb3273fb24ab09a3f",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1347,7 +1347,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "com.google.inject:guice",
 			Version:        "4.0.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/guice-4.0.jar",
 			RepositoryHint: "sha1:0f990a43d3725781b6db7cd0acf0a8b62dfd1649",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1355,7 +1355,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.samba.jcifs:jcifs",
 			Version:        "1.3.18-kohsuke-1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jcifs-1.3.18-kohsuke-1.jar",
 			RepositoryHint: "sha1:35711c36411d962d7228b7e01ab2567ec213a9d3",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1363,7 +1363,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jvnet.localizer:localizer",
 			Version:        "1.31",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/localizer-1.31.jar",
 			RepositoryHint: "sha1:aa7560693502015b7747697fa5a4fd1da9a95ccd",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1371,7 +1371,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.apache.commons.jelly.tags.fmt",
 			Version:        "1.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/commons-jelly-tags-fmt-1.0.jar",
 			RepositoryHint: "sha1:2107da38fdd287ab78a4fa65c1300b5ad9999274",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1379,7 +1379,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "relaxngDatatype",
 			Version:        "20020414",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "file:usr/share/jenkins/jenkins.war",
 			RepositoryHint: "sha1:de7952cecd05b65e0e4370cc93fc03035175eef5",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1387,7 +1387,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.slf4j:jcl-over-slf4j",
 			Version:        "1.7.32",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jcl-over-slf4j-1.7.32.jar",
 			RepositoryHint: "sha1:32c060250bcc5282cdbc1fd7008c12eb4ebad00e",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1395,7 +1395,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.kohsuke.stapler:stapler-groovy",
 			Version:        "1593.v0e838714faae",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/stapler-groovy-1593.v0e838714faae.jar",
 			RepositoryHint: "sha1:700d2b6e99d7d8fb46746907105839dba51b1a20",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1403,7 +1403,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "com.github.jnr:jffi",
 			Version:        "1.3.5",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jffi-1.3.5.jar",
 			RepositoryHint: "sha1:1dadd62fc8434d4ba6e3c78ed42e4852d79d3a46",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1411,7 +1411,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci:memory-monitor",
 			Version:        "1.9",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/memory-monitor-1.9.jar",
 			RepositoryHint: "sha1:1935bfb46474e3043ee2310a9bb790d42dde2ed7",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1419,7 +1419,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jvnet:tiger-types",
 			Version:        "2.2",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/tiger-types-2.2.jar",
 			RepositoryHint: "sha1:7ddc6bbc8ca59be8879d3a943bf77517ec190f39",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1427,7 +1427,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.slf4j:slf4j-api",
 			Version:        "1.7.32",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/slf4j-api-1.7.32.jar",
 			RepositoryHint: "sha1:cdcff33940d9f2de763bc41ea05a0be5941176c3",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1435,7 +1435,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "io.jenkins.stapler:jenkins-stapler-support",
 			Version:        "1.1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jenkins-stapler-support-1.1.jar",
 			RepositoryHint: "sha1:95127e05b589288439684304a75474bb1261a11c",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1443,7 +1443,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jvnet.robust-http-client:robust-http-client",
 			Version:        "1.2",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/robust-http-client-1.2.jar",
 			RepositoryHint: "sha1:dee9fda92ad39a94a77ec6cf88300d4dd6db8a4d",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1451,7 +1451,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "commons-io:commons-io",
 			Version:        "2.11.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/commons-io-2.11.0.jar",
 			RepositoryHint: "sha1:a2503f302b11ebde7ebc3df41daebe0e4eea3689",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1459,7 +1459,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "io.github.x-stream:mxparser",
 			Version:        "1.2.2",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/mxparser-1.2.2.jar",
 			RepositoryHint: "sha1:476fb3b3bb3716cad797cd054ce45f89445794e9",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1467,7 +1467,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "spring-core",
 			Version:        "5.3.9",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/spring-core-5.3.9.jar",
 			RepositoryHint: "sha1:cfef19d1dfa41d56f8de66238dc015334997d573",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1475,7 +1475,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "dom4j",
 			Version:        "2.1.3",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "file:usr/share/jenkins/jenkins.war",
 			RepositoryHint: "sha1:a75914155a9f5808963170ec20653668a2ffd2fd",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1483,7 +1483,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.modules:windows-slave-installer",
 			Version:        "2.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/windows-slave-installer-2.0.jar",
 			RepositoryHint: "sha1:7dec945c7b97096c6bcd7ad06f43767c544bb66e",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1491,7 +1491,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.kohsuke.stapler:stapler-adjunct-timeline",
 			Version:        "1.5",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/stapler-adjunct-timeline-1.5.jar",
 			RepositoryHint: "sha1:3fa806cbb94679ceab9c1ecaaf5fea8207390cb7",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1499,7 +1499,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.fusesource.hawtjni:hawtjni-runtime",
 			Version:        "1.8",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jansi-1.11.jar",
 			RepositoryHint: "sha1:655c643309c2f45a56a747fda70e3fadf57e9f11",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1507,7 +1507,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.fusesource.jansi:jansi-native",
 			Version:        "1.5",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jansi-1.11.jar",
 			RepositoryHint: "sha1:655c643309c2f45a56a747fda70e3fadf57e9f11",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1515,7 +1515,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.fusesource.jansi:jansi",
 			Version:        "1.11",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jansi-1.11.jar",
 			RepositoryHint: "sha1:655c643309c2f45a56a747fda70e3fadf57e9f11",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1523,7 +1523,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.objectweb.asm.tree.analysis",
 			Version:        "9.2.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/asm-analysis-9.2.jar",
 			RepositoryHint: "sha1:7487dd756daf96cab9986e44b9d7bcb796a61c10",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1531,7 +1531,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "com.sun.solaris:embedded_su4j",
 			Version:        "1.1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/embedded_su4j-1.1.jar",
 			RepositoryHint: "sha1:9404130cc4e60670429f1ab8dbf94d669012725d",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1539,7 +1539,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "com.github.jnr:jnr-posix",
 			Version:        "3.1.10",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jnr-posix-3.1.10.jar",
 			RepositoryHint: "sha1:18f1ebd53c4a6d7d23487f8f73c3e6adc4cd6716",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1547,7 +1547,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "com.github.jnr:jnr-constants",
 			Version:        "0.10.2",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jnr-constants-0.10.2.jar",
 			RepositoryHint: "sha1:11a081b5482f415443d5e4b860b7a3cb62e319d3",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1555,7 +1555,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.kohsuke:access-modifier-annotation",
 			Version:        "1.25",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/access-modifier-annotation-1.25.jar",
 			RepositoryHint: "sha1:fab291c4249c077b9bcc48db313a2255df7408b8",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1563,7 +1563,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "spring-beans",
 			Version:        "5.3.9",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/spring-beans-5.3.9.jar",
 			RepositoryHint: "sha1:48600db2cb1abc0f7ef2b073f0c1abd78a83bcfc",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1571,7 +1571,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci:version-number",
 			Version:        "1.7",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/version-number-1.7.jar",
 			RepositoryHint: "sha1:e2cb3f1d3e296adf74463b046bf79f498cc9b937",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1579,7 +1579,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "commons-lang:commons-lang",
 			Version:        "2.6",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/commons-lang-2.6.jar",
 			RepositoryHint: "sha1:0ce1edb914c94ebc388f086c6827e8bdeec71ac2",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1587,7 +1587,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "jbcrypt",
 			Version:        "1.0.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "file:usr/share/jenkins/jenkins.war",
 			RepositoryHint: "sha1:f37bba2b8b78fcc8111bb932318b621dcc6c5194",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1595,7 +1595,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "com.github.jnr:jnr-ffi",
 			Version:        "2.2.7",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jnr-ffi-2.2.7.jar",
 			RepositoryHint: "sha1:73987a1153030a3f1fd6c304531235ad5a0abc74",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1603,7 +1603,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.modules:instance-identity",
 			Version:        "2.2",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/instance-identity-2.2.jar",
 			RepositoryHint: "sha1:986e58370b11287dfa73a8fb2eac74e2dc4e2a23",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1611,7 +1611,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "kxml2",
 			Version:        "2.3.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "file:usr/share/jenkins/jenkins.war",
 			RepositoryHint: "sha1:ccbc77a5fd907ef863c29f3596c6f54ffa4e9442",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1619,7 +1619,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "jaxen:jaxen",
 			Version:        "1.2.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jaxen-1.2.0.jar",
 			RepositoryHint: "sha1:c10535a925bd35129a4329bc75065cc6b5293f2c",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1627,7 +1627,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci:commons-jexl",
 			Version:        "1.1-jenkins-20111212",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/commons-jexl-1.1-jenkins-20111212.jar",
 			RepositoryHint: "sha1:0a990a77bea8c5a400d58a6f5d98122236300f7d",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1635,7 +1635,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "net.sf.ezmorph:ezmorph",
 			Version:        "1.0.6",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/ezmorph-1.0.6.jar",
 			RepositoryHint: "sha1:01e55d2a0253ea37745d33062852fd2c90027432",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1643,7 +1643,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "spring-context",
 			Version:        "5.3.9",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/spring-context-5.3.9.jar",
 			RepositoryHint: "sha1:887f4579ade4f47cf0102856f4f4c88eda8ec9d7",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1651,7 +1651,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.kohsuke.stapler:json-lib",
 			Version:        "2.4-jenkins-3",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/json-lib-2.4-jenkins-3.jar",
 			RepositoryHint: "sha1:83f848493c09c735861a90e91591499fb88d7fbb",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1659,7 +1659,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "com.sun.jna",
 			Version:        "5.9.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/jna-5.9.0.jar",
 			RepositoryHint: "sha1:8f503e6d9b500ceff299052d6be75b38c7257758",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1667,7 +1667,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "spring-web",
 			Version:        "5.3.9",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/spring-web-5.3.9.jar",
 			RepositoryHint: "sha1:88c920ec1bda67fea04daa8e16165777440df473",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1675,7 +1675,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "spring-security-core",
 			Version:        "5.5.2",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/spring-security-core-5.5.2.jar",
 			RepositoryHint: "sha1:cbb11a2fd6e86c45249562b980ba532476d9cae6",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1683,7 +1683,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.objectweb.asm.util",
 			Version:        "9.2.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/asm-util-9.2.jar",
 			RepositoryHint: "sha1:fbc178fc5ba3dab50fd7e8a5317b8b647c8e8946",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1691,7 +1691,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "com.sun.mail:jakarta.mail",
 			Version:        "1.6.5",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jakarta.mail-1.6.5.jar",
 			RepositoryHint: "sha1:d08124137cf42397d00b71b5985fd1dc248ac07f",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1699,7 +1699,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.modules:slave-installer",
 			Version:        "1.7",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/slave-installer-1.7.jar",
 			RepositoryHint: "sha1:921d195a7a3d2b8af9f0847099dbb9eb652c7bd8",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1707,7 +1707,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.main:jenkins-core",
 			Version:        "2.316",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jenkins-core-2.316.jar",
 			RepositoryHint: "sha1:4b047f12b03840fb7bee61d84c7f2678afb9e86a",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1715,7 +1715,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.objectweb.asm.commons",
 			Version:        "9.2.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/asm-commons-9.2.jar",
 			RepositoryHint: "sha1:f4d7f0fc9054386f2893b602454d48e07d4fbead",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1723,7 +1723,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "com.jcraft:jzlib",
 			Version:        "1.1.3-kohsuke-1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jzlib-1.1.3-kohsuke-1.jar",
 			RepositoryHint: "sha1:af5d27e1de29df05db95da5d76b546d075bc1bc5",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1731,7 +1731,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.apache.commons.jelly.tags.xml",
 			Version:        "1.1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/commons-jelly-tags-xml-1.1.jar",
 			RepositoryHint: "sha1:cc0efc2ae0ff81ef7737afc786a0ce16a8540efc",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1739,7 +1739,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.objectweb.asm.tree",
 			Version:        "9.2.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/asm-tree-9.2.jar",
 			RepositoryHint: "sha1:d96c99a30f5e1a19b0e609dbb19a44d8518ac01e",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1747,7 +1747,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.kohsuke.stapler:stapler-jelly",
 			Version:        "1593.v0e838714faae",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/stapler-jelly-1593.v0e838714faae.jar",
 			RepositoryHint: "sha1:ce9a4f0f5c3eed64165c5915cf1fc2811448fc83",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1755,7 +1755,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.objectweb.asm",
 			Version:        "9.2.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/asm-9.2.jar",
 			RepositoryHint: "sha1:81a03f76019c67362299c40e0ba13405f5467bff",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1763,7 +1763,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "commons-collections:commons-collections",
 			Version:        "3.2.2",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/commons-collections-3.2.2.jar",
 			RepositoryHint: "sha1:8ad72fe39fa8c91eaaf12aadb21e0c3661fe26d5",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1771,7 +1771,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "spring-security-crypto",
 			Version:        "5.5.2",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/spring-security-crypto-5.5.2.jar",
 			RepositoryHint: "sha1:83d2198c12e74dc78a6516563dcc3e989f134b54",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1779,7 +1779,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "spring-aop",
 			Version:        "5.3.9",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/spring-aop-5.3.9.jar",
 			RepositoryHint: "sha1:9bcad31a74e60d205500dd67d2220bd0195c63f8",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1787,7 +1787,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.apache.commons:commons-compress",
 			Version:        "1.21",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/commons-compress-1.21.jar",
 			RepositoryHint: "sha1:4ec95b60d4e86b5c95a0e919cb172a0af98011ef",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1795,7 +1795,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci:crypto-util",
 			Version:        "1.5",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/crypto-util-1.5.jar",
 			RepositoryHint: "sha1:432ba8058e9a653fa191cdda3ed5fe4bb4fc4e53",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1803,7 +1803,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "com.sun.activation:jakarta.activation",
 			Version:        "1.2.1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jakarta.activation-1.2.1.jar",
 			RepositoryHint: "sha1:8013606426a73d8ba6b568370877251e91a38b89",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1811,7 +1811,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "jakarta.servlet.jsp.jstl:jakarta.servlet.jsp.jstl-api",
 			Version:        "1.2.7",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jakarta.servlet.jsp.jstl-api-1.2.7.jar",
 			RepositoryHint: "sha1:34a035507f0270f1c6b7722d728bd7b5a9bbac4c",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1819,7 +1819,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "asm5",
 			Version:        "5.0.1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "file:usr/share/jenkins/jenkins.war",
 			RepositoryHint: "sha1:71ab0620a41ed37f626b96d80c2a7c58165550df",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1827,7 +1827,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.kohsuke.stapler:stapler-adjunct-codemirror",
 			Version:        "1.3",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/stapler-adjunct-codemirror-1.3.jar",
 			RepositoryHint: "sha1:fd1d45544400d2a4da6dfee9e60edd4ec3368806",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1835,7 +1835,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.main:remoting",
 			Version:        "4.10",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/remoting-4.10.jar",
 			RepositoryHint: "sha1:c9016b2501e2a3849e8bd14aa7866b3a5385b330",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1843,7 +1843,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.glassfish.tyrus.bundles:tyrus-standalone-client-jdk",
 			Version:        "1.17",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/remoting-4.10.jar",
 			RepositoryHint: "sha1:c9016b2501e2a3849e8bd14aa7866b3a5385b330",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1851,7 +1851,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.glassfish.tyrus:tyrus-client",
 			Version:        "1.17",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/remoting-4.10.jar",
 			RepositoryHint: "sha1:c9016b2501e2a3849e8bd14aa7866b3a5385b330",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1859,7 +1859,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.glassfish.tyrus:tyrus-core",
 			Version:        "1.17",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/remoting-4.10.jar",
 			RepositoryHint: "sha1:c9016b2501e2a3849e8bd14aa7866b3a5385b330",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1867,7 +1867,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.glassfish.tyrus:tyrus-spi",
 			Version:        "1.17",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/remoting-4.10.jar",
 			RepositoryHint: "sha1:c9016b2501e2a3849e8bd14aa7866b3a5385b330",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1875,7 +1875,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "javax.websocket:javax.websocket-api",
 			Version:        "1.1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/remoting-4.10.jar",
 			RepositoryHint: "sha1:c9016b2501e2a3849e8bd14aa7866b3a5385b330",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1883,7 +1883,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.glassfish.tyrus:tyrus-container-jdk-client",
 			Version:        "1.17",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/remoting-4.10.jar",
 			RepositoryHint: "sha1:c9016b2501e2a3849e8bd14aa7866b3a5385b330",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1891,7 +1891,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "javax.websocket:javax.websocket-client-api",
 			Version:        "1.1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/remoting-4.10.jar",
 			RepositoryHint: "sha1:c9016b2501e2a3849e8bd14aa7866b3a5385b330",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1899,7 +1899,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "args4j:args4j",
 			Version:        "2.33",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/remoting-4.10.jar",
 			RepositoryHint: "sha1:c9016b2501e2a3849e8bd14aa7866b3a5385b330",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1907,7 +1907,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci:constant-pool-scanner",
 			Version:        "1.2",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/remoting-4.10.jar",
 			RepositoryHint: "sha1:c9016b2501e2a3849e8bd14aa7866b3a5385b330",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1915,7 +1915,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci:symbol-annotation",
 			Version:        "1.1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/symbol-annotation-1.1.jar",
 			RepositoryHint: "sha1:14fe06e7287a8aff81434a2fe8226744183fe955",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1923,7 +1923,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jfree:jfreechart",
 			Version:        "1.0.19",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jfreechart-1.0.19.jar",
 			RepositoryHint: "sha1:ba9ee7dbb2e4c57a6901c79f614ed2dea9cc0e20",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1931,7 +1931,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "com.infradna.tool:bridge-method-annotation",
 			Version:        "1.21",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/bridge-method-annotation-1.21.jar",
 			RepositoryHint: "sha1:f380b42653f21c503036a31ff87c6970eeaad080",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1939,7 +1939,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci:annotation-indexer",
 			Version:        "1.15",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/annotation-indexer-1.15.jar",
 			RepositoryHint: "sha1:b5e9548356e53060e7844b2e7fd235f112a6fb8f",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1947,7 +1947,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "javax.inject",
 			Version:        "1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "file:usr/share/jenkins/jenkins.war",
 			RepositoryHint: "sha1:6975da39a7040257bd51d21a231b76c915872d38",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1955,7 +1955,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "spotbugs-annotations",
 			Version:        "4.4.1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/spotbugs-annotations-4.4.1.jar",
 			RepositoryHint: "sha1:a409167be27a1b197c0432ebfc421f8f79f9bf41",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1963,7 +1963,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.main:cli",
 			Version:        "2.316",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
 			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1971,7 +1971,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci:annotation-indexer",
 			Version:        "1.15",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
 			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1979,7 +1979,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "commons-io:commons-io",
 			Version:        "2.11.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
 			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1987,7 +1987,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jvnet.localizer:localizer",
 			Version:        "1.31",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
 			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -1995,7 +1995,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.apache.sshd:sshd-core",
 			Version:        "2.7.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
 			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -2003,7 +2003,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.apache.sshd:sshd-common",
 			Version:        "2.7.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
 			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -2011,7 +2011,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.slf4j:slf4j-api",
 			Version:        "1.7.32",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
 			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -2019,7 +2019,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.slf4j:jcl-over-slf4j",
 			Version:        "1.7.32",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
 			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -2027,7 +2027,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "net.i2p.crypto:eddsa",
 			Version:        "0.3.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
 			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -2035,7 +2035,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.slf4j:slf4j-jdk14",
 			Version:        "1.7.32",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
 			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -2043,7 +2043,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.glassfish.tyrus.bundles:tyrus-standalone-client-jdk",
 			Version:        "2.0.1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
 			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -2051,7 +2051,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.glassfish.tyrus:tyrus-client",
 			Version:        "2.0.1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
 			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -2059,7 +2059,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.glassfish.tyrus:tyrus-core",
 			Version:        "2.0.1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
 			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -2067,7 +2067,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.glassfish.tyrus:tyrus-spi",
 			Version:        "2.0.1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
 			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -2075,7 +2075,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "jakarta.websocket:jakarta.websocket-api",
 			Version:        "2.0.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
 			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -2083,7 +2083,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "jakarta.xml.bind:jakarta.xml.bind-api",
 			Version:        "3.0.1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
 			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -2091,7 +2091,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "com.sun.activation:jakarta.activation",
 			Version:        "2.0.1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
 			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -2099,7 +2099,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.glassfish.tyrus:tyrus-container-jdk-client",
 			Version:        "2.0.1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
 			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -2107,7 +2107,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "jakarta.websocket:jakarta.websocket-client-api",
 			Version:        "2.0.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
 			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -2115,7 +2115,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "commons-lang:commons-lang",
 			Version:        "2.6",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
 			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -2123,7 +2123,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "spring-security-web",
 			Version:        "5.5.2",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/spring-security-web-5.5.2.jar",
 			RepositoryHint: "sha1:aa1b6fe3c48fbfbf47992633ff63b02208757d3a",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -2131,7 +2131,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "com.google.guava:guava",
 			Version:        "11.0.1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/guava-11.0.1.jar",
 			RepositoryHint: "sha1:57b40a943725d43610c898ac0169adf1b2d55742",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -2139,7 +2139,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "com.thoughtworks.xstream:xstream",
 			Version:        "1.4.18",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/xstream-1.4.18.jar",
 			RepositoryHint: "sha1:12eb80b4c4b83b184b669866f510a0eae13f9475",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -2147,7 +2147,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.modules:launchd-slave-installer",
 			Version:        "1.2",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/launchd-slave-installer-1.2.jar",
 			RepositoryHint: "sha1:8ef06fc2a3d9436aa214e318c66cb6dc274440b8",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -2155,7 +2155,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci:task-reactor",
 			Version:        "1.5",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/task-reactor-1.5.jar",
 			RepositoryHint: "sha1:62964c07bb64457bbbb5711482e9c79bab720f20",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -2163,7 +2163,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.kohsuke.jinterop:j-interopdeps",
 			Version:        "2.0.8-kohsuke-1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/j-interopdeps-2.0.8-kohsuke-1.jar",
 			RepositoryHint: "sha1:0c6ae17b2cbb5e07e62fddab1cebadaf351a97c0",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -2171,7 +2171,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "commons-httpclient:commons-httpclient",
 			Version:        "3.1-jenkins-3",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/commons-httpclient-3.1-jenkins-3.jar",
 			RepositoryHint: "sha1:56110dc7f655c56c4e2ae8ae2bb055bf2282ba99",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -2179,7 +2179,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.slf4j:slf4j-jdk14",
 			Version:        "1.7.32",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/slf4j-jdk14-1.7.32.jar",
 			RepositoryHint: "sha1:4d5bdc7da49cd69c25f7eed5ae0b259358c7edeb",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -2187,7 +2187,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.kohsuke:libpam4j",
 			Version:        "1.11",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/libpam4j-1.11.jar",
 			RepositoryHint: "sha1:82cfca73e813c165c83b5d6b1d16808cb5291fe7",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -2195,7 +2195,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "ant-launcher",
 			Version:        "1.10.11",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "file:usr/share/jenkins/jenkins.war",
 			RepositoryHint: "sha1:ea0a0475fb6dfcdcf48b30410fd9d4f5c80df07e",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -2203,7 +2203,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "commons-discovery:commons-discovery",
 			Version:        "0.5",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/commons-discovery-0.5.jar",
 			RepositoryHint: "sha1:3a8ac816bbe02d2f88523ef22cbf2c4abd71d6a8",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -2211,7 +2211,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "net.java.sezpoz:sezpoz",
 			Version:        "1.13",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/sezpoz-1.13.jar",
 			RepositoryHint: "sha1:822ac382900587d0a7d6aaec7b1859f1cf5de2fb",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -2219,7 +2219,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "xpp3",
 			Version:        "1.1.4c",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "file:usr/share/jenkins/jenkins.war",
 			RepositoryHint: "sha1:9b988ea84b9e4e9f1874e390ce099b8ac12cfff5",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -2227,7 +2227,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "antlr",
 			Version:        "2.7.7",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "file:usr/share/jenkins/jenkins.war",
 			RepositoryHint: "sha1:83cd2cd674a217ade95a4bb83a8a14f351f48bd0",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -2235,7 +2235,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "io.github.stephenc.crypto:self-signed-cert-generator",
 			Version:        "1.0.0",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/self-signed-cert-generator-1.0.0.jar",
 			RepositoryHint: "sha1:45542f10d259405b42bf537afe30342575d37b18",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -2243,7 +2243,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jenkins-ci.modules:systemd-slave-installer",
 			Version:        "1.1",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/systemd-slave-installer-1.1.jar",
 			RepositoryHint: "sha1:a9a4adb0480ec8942d031b0fff9005077b889875",
 			Filepath:       "usr/share/jenkins/jenkins.war",
@@ -2251,7 +2251,7 @@ var jenkins = test.ScannerTestcase{
 		{
 			Name:           "org.jvnet.winp:winp",
 			Version:        "1.28",
-			Kind:           "binary",
+			Kind:           claircore.PackageBinary,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/winp-1.28.jar",
 			RepositoryHint: "sha1:8dcfcc7214e73a906786b80704784d90fb593e75",
 			Filepath:       "usr/share/jenkins/jenkins.war",

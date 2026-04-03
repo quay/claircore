@@ -15,7 +15,7 @@ func TestDistrolessLayer(t *testing.T) {
 		{
 			Name:           "base-files",
 			Version:        "11.1+deb11u5",
-			Kind:           claircore.BINARY,
+			Kind:           claircore.PackageBinary,
 			Arch:           "amd64",
 			Source:         nil,
 			PackageDB:      "var/lib/dpkg/status.d/base",
@@ -24,7 +24,7 @@ func TestDistrolessLayer(t *testing.T) {
 		{
 			Name:           "netbase",
 			Version:        "6.3",
-			Kind:           claircore.BINARY,
+			Kind:           claircore.PackageBinary,
 			Arch:           "all",
 			Source:         nil,
 			PackageDB:      "var/lib/dpkg/status.d/netbase",
@@ -33,7 +33,7 @@ func TestDistrolessLayer(t *testing.T) {
 		{
 			Name:           "tzdata",
 			Version:        "2021a-1+deb11u8",
-			Kind:           claircore.BINARY,
+			Kind:           claircore.PackageBinary,
 			Arch:           "all",
 			Source:         nil,
 			PackageDB:      "var/lib/dpkg/status.d/tzdata",

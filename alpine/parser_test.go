@@ -24,7 +24,7 @@ var v3_10CommunityTruncatedVulns = []*claircore.Vulnerability{
 		NormalizedSeverity: claircore.Unknown,
 		Package: &claircore.Package{
 			Name: "botan",
-			Kind: claircore.SOURCE,
+			Kind: claircore.PackageSource,
 		},
 		Dist: dist310,
 	},
@@ -36,7 +36,7 @@ var v3_10CommunityTruncatedVulns = []*claircore.Vulnerability{
 		NormalizedSeverity: claircore.Unknown,
 		Package: &claircore.Package{
 			Name: "botan",
-			Kind: claircore.SOURCE,
+			Kind: claircore.PackageSource,
 		},
 		Dist: dist310,
 	},
@@ -48,7 +48,7 @@ var v3_10CommunityTruncatedVulns = []*claircore.Vulnerability{
 		NormalizedSeverity: claircore.Unknown,
 		Package: &claircore.Package{
 			Name: "botan",
-			Kind: claircore.SOURCE,
+			Kind: claircore.PackageSource,
 		},
 		Dist: dist310,
 	},
@@ -60,7 +60,7 @@ var v3_10CommunityTruncatedVulns = []*claircore.Vulnerability{
 		NormalizedSeverity: claircore.Unknown,
 		Package: &claircore.Package{
 			Name: "botan",
-			Kind: claircore.SOURCE,
+			Kind: claircore.PackageSource,
 		},
 		Dist: dist310,
 	},
@@ -72,7 +72,7 @@ var v3_10CommunityTruncatedVulns = []*claircore.Vulnerability{
 		NormalizedSeverity: claircore.Unknown,
 		Package: &claircore.Package{
 			Name: "cfengine",
-			Kind: claircore.SOURCE,
+			Kind: claircore.PackageSource,
 		},
 		Dist: dist310,
 	},
@@ -84,7 +84,7 @@ var v3_10CommunityTruncatedVulns = []*claircore.Vulnerability{
 		NormalizedSeverity: claircore.Unknown,
 		Package: &claircore.Package{
 			Name: "chicken",
-			Kind: claircore.SOURCE,
+			Kind: claircore.PackageSource,
 		},
 		Dist: dist310,
 	},
@@ -96,7 +96,7 @@ var v3_10CommunityTruncatedVulns = []*claircore.Vulnerability{
 		NormalizedSeverity: claircore.Unknown,
 		Package: &claircore.Package{
 			Name: "chicken",
-			Kind: claircore.SOURCE,
+			Kind: claircore.PackageSource,
 		},
 		Dist: dist310,
 	},
@@ -108,7 +108,7 @@ var v3_10CommunityTruncatedVulns = []*claircore.Vulnerability{
 		NormalizedSeverity: claircore.Unknown,
 		Package: &claircore.Package{
 			Name: "chicken",
-			Kind: claircore.SOURCE,
+			Kind: claircore.PackageSource,
 		},
 		Dist: dist310,
 	},
@@ -120,7 +120,7 @@ var v3_10CommunityTruncatedVulns = []*claircore.Vulnerability{
 		NormalizedSeverity: claircore.Unknown,
 		Package: &claircore.Package{
 			Name: "chicken",
-			Kind: claircore.SOURCE,
+			Kind: claircore.PackageSource,
 		},
 		Dist: dist310,
 	},

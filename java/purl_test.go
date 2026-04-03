@@ -25,7 +25,7 @@ func TestRoundTripIndexRecordJava(t *testing.T) {
 				Package: &claircore.Package{
 					Name:    "org.apache.commons:commons-lang3",
 					Version: "3.12.0",
-					Kind:    claircore.BINARY,
+					Kind:    claircore.PackageBinary,
 					Source:  &claircore.Package{},
 				},
 				Repository: &Repository,
@@ -37,7 +37,7 @@ func TestRoundTripIndexRecordJava(t *testing.T) {
 				Package: &claircore.Package{
 					Name:    "com.fasterxml.jackson.core:jackson-databind",
 					Version: "2.17.1",
-					Kind:    claircore.BINARY,
+					Kind:    claircore.PackageBinary,
 					Source:  &claircore.Package{},
 				},
 				Repository: &Repository,

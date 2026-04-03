@@ -25,7 +25,7 @@ func TestRoundTripIndexRecordDebian(t *testing.T) {
 					Name:      "bash",
 					Version:   "5.1.8-6",
 					Arch:      "x86_64",
-					Kind:      claircore.BINARY,
+					Kind:      claircore.PackageBinary,
 					PackageDB: "deb:/var/lib/dpkg/status",
 					Source:    &claircore.Package{},
 				},

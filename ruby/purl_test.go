@@ -25,7 +25,7 @@ func TestRoundTripIndexRecordRuby(t *testing.T) {
 				Package: &claircore.Package{
 					Name:    "rails",
 					Version: "6.1.0",
-					Kind:    claircore.BINARY,
+					Kind:    claircore.PackageBinary,
 					Source:  &claircore.Package{},
 				},
 				Repository: &Repository,
@@ -37,7 +37,7 @@ func TestRoundTripIndexRecordRuby(t *testing.T) {
 				Package: &claircore.Package{
 					Name:    "rack",
 					Version: "2.2.8",
-					Kind:    claircore.BINARY,
+					Kind:    claircore.PackageBinary,
 					Source:  &claircore.Package{},
 				},
 				Repository: &Repository,

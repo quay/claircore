@@ -27,7 +27,7 @@ func TestRoundTripIndexRecordPython(t *testing.T) {
 				Package: &claircore.Package{
 					Name:    "urllib3",
 					Version: "2.2.1",
-					Kind:    claircore.BINARY,
+					Kind:    claircore.PackageBinary,
 					Source:  &claircore.Package{},
 				},
 				Repository: &Repository,
@@ -39,7 +39,7 @@ func TestRoundTripIndexRecordPython(t *testing.T) {
 				Package: &claircore.Package{
 					Name:    "django",
 					Version: "1.11.1",
-					Kind:    claircore.BINARY,
+					Kind:    claircore.PackageBinary,
 					Source:  &claircore.Package{},
 				},
 				Repository: &Repository,
@@ -51,7 +51,7 @@ func TestRoundTripIndexRecordPython(t *testing.T) {
 				Package: &claircore.Package{
 					Name:    "django",
 					Version: "something-invalid",
-					Kind:    claircore.BINARY,
+					Kind:    claircore.PackageBinary,
 					Source:  &claircore.Package{},
 				},
 				Repository: &Repository,

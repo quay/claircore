@@ -63,7 +63,7 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 	}
 
 	*out = append(*out, &claircore.Package{
-		Kind: claircore.BINARY,
+		Kind: claircore.PackageBinary,
 		Name: "stdlib",
 		// This was previously bi.GoVersion,
 		// but it must be changed to ensure an entry
@@ -135,7 +135,7 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 		name = "command-line-arguments"
 	}
 	*out = append(*out, &claircore.Package{
-		Kind:              claircore.BINARY,
+		Kind:              claircore.PackageBinary,
 		PackageDB:         pkgdb,
 		Name:              name,
 		Version:           mmv,
@@ -162,7 +162,7 @@ func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.R
 		}
 
 		*out = append(*out, &claircore.Package{
-			Kind:              claircore.BINARY,
+			Kind:              claircore.PackageBinary,
 			PackageDB:         pkgdb,
 			Name:              d.Path,
 			Version:           d.Version,
