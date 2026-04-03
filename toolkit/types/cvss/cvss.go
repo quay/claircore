@@ -216,7 +216,7 @@ const (
 	Critical
 )
 
-//go:generate go run golang.org/x/tools/cmd/stringer@latest -type=Qualitative
+//go:generate go tool stringer -type=Qualitative
 
 // QualitativeScore returns the qualitative severity of the provided Vector "v".
 //

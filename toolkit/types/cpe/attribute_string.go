@@ -26,8 +26,9 @@ const _Attribute_name = "partvendorproductversionupdateeditionlanguagesw_edition
 var _Attribute_index = [...]uint8{0, 4, 10, 17, 24, 30, 37, 45, 55, 64, 73, 78}
 
 func (i Attribute) String() string {
-	if i < 0 || i >= Attribute(len(_Attribute_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_Attribute_index)-1 {
 		return "Attribute(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _Attribute_name[_Attribute_index[i]:_Attribute_index[i+1]]
+	return _Attribute_name[_Attribute_index[idx]:_Attribute_index[idx+1]]
 }

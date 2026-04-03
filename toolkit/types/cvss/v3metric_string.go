@@ -37,10 +37,11 @@ const _V3Metric_name = "AVACPRUISCIAERLRCCRIRARMAVMACMPRMUIMSMCMIMA"
 var _V3Metric_index = [...]uint8{0, 2, 4, 6, 8, 9, 10, 11, 12, 13, 15, 17, 19, 21, 23, 26, 29, 32, 35, 37, 39, 41, 43}
 
 func (i V3Metric) String() string {
-	if i < 0 || i >= V3Metric(len(_V3Metric_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_V3Metric_index)-1 {
 		return "V3Metric(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _V3Metric_name[_V3Metric_index[i]:_V3Metric_index[i+1]]
+	return _V3Metric_name[_V3Metric_index[idx]:_V3Metric_index[idx+1]]
 }
 func _() {
 	// An "invalid array index" compiler error signifies that the constant values have changed.
@@ -75,8 +76,9 @@ const _v3Valid_name = "NALPLHNLHNRUCHLNHLNHLNXHFPUXUWTOXCRUXHMLXHMLXHMLXNALPXLHX
 var _v3Valid_index = [...]uint8{0, 4, 6, 9, 11, 13, 16, 19, 22, 27, 32, 36, 40, 44, 48, 53, 56, 60, 63, 66, 70, 74, 78}
 
 func (i v3Valid) String() string {
-	if i < 0 || i >= v3Valid(len(_v3Valid_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_v3Valid_index)-1 {
 		return "v3Valid(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _v3Valid_name[_v3Valid_index[i]:_v3Valid_index[i+1]]
+	return _v3Valid_name[_v3Valid_index[idx]:_v3Valid_index[idx+1]]
 }

@@ -108,7 +108,7 @@ func (v *V3) Environmental() (ok bool) {
 	return false
 }
 
-//go:generate go run golang.org/x/tools/cmd/stringer@latest -type=V3Metric,v3Valid -linecomment
+//go:generate go tool stringer -type=V3Metric,v3Valid -linecomment
 
 // V3Metric is a metric in a v3 vector.
 type V3Metric int

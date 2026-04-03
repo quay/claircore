@@ -135,7 +135,7 @@ func (v *V4) groups(yield func([2]int) bool) {
 	yield(b)
 }
 
-//go:generate go run golang.org/x/tools/cmd/stringer@latest -type=V4Metric,v4Valid -linecomment
+//go:generate go tool stringer -type=V4Metric,v4Valid -linecomment
 
 // V4Metric is a metric in a v4 vector.
 type V4Metric int

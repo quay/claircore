@@ -29,10 +29,11 @@ const _V2Metric_name = "AVACAuCIAERLRCCDPTDCRIRAR"
 var _V2Metric_index = [...]uint8{0, 2, 4, 6, 7, 8, 9, 10, 12, 14, 17, 19, 21, 23, 25}
 
 func (i V2Metric) String() string {
-	if i < 0 || i >= V2Metric(len(_V2Metric_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_V2Metric_index)-1 {
 		return "V2Metric(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _V2Metric_name[_V2Metric_index[i]:_V2Metric_index[i+1]]
+	return _V2Metric_name[_V2Metric_index[idx]:_V2Metric_index[idx+1]]
 }
 func _() {
 	// An "invalid array index" compiler error signifies that the constant values have changed.
@@ -59,8 +60,9 @@ const _v2Valid_name = "LANHMLMSNNPCNPCNPCUPOCFHNDOFTFWUNDUCURCNDNLLMMHHNDNLMHNDL
 var _v2Valid_index = [...]uint8{0, 3, 6, 9, 12, 15, 18, 26, 34, 41, 50, 56, 61, 66, 71}
 
 func (i v2Valid) String() string {
-	if i < 0 || i >= v2Valid(len(_v2Valid_index)-1) {
+	idx := int(i) - 0
+	if i < 0 || idx >= len(_v2Valid_index)-1 {
 		return "v2Valid(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
-	return _v2Valid_name[_v2Valid_index[i]:_v2Valid_index[i+1]]
+	return _v2Valid_name[_v2Valid_index[idx]:_v2Valid_index[idx+1]]
 }
