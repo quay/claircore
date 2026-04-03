@@ -1,0 +1,5 @@
+postgres: add existence check to type in all cases
+
+Having both matcher and indexer tables in the same database isn't
+explicitly allowed or disallowed. This makes it order independent
+anyway and avoids migration conflict errors.
