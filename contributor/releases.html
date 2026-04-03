@@ -40,10 +40,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-531b6844.js";
+            window.path_to_searchindex_js = "../searchindex-39c8c578.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-86a13b75.js"></script>
+        <script src="../toc-9846e920.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -193,7 +193,7 @@ On rare occasions when a fix is time-sensitive, it is possible to create a relea
 </blockquote>
 <h3 id="from-main"><a class="header" href="#from-main">From main</a></h3>
 <pre><code class="language-sh">NEW_VERSION=v0.999.999
-.github/scripts/prepare-release -b main -r upstream "$NEW_VERSION"
+go tool prepare-release -remote=upstream -branch=main "$NEW_VERSION"
 </code></pre>
 <p>Follow the <code>prepare-release</code> command’s instructions to merge changelog updates and release the tag.</p>
 <h3 id="from-release-branch"><a class="header" href="#from-release-branch">From release branch</a></h3>
@@ -213,7 +213,7 @@ git push upstream $BRANCH
 <pre><code class="language-sh">LAST_MINOR=v0.999.0
 NEW_VERSION=v0.999.1
 BRANCH=release-${LAST_MINOR%.*} # e.g. release-v0.999
-.github/scripts/prepare-release -b $BRANCH -r upstream $NEW_VERSION
+go tool prepare-release -remote=upstream -branch=$BRANCH $NEW_VERSION
 </code></pre>
 <p>Follow the <code>prepare-release</code> command’s instructions to merge changelog updates and release the tag.</p>
 

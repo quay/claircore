@@ -41,10 +41,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-531b6844.js";
+            window.path_to_searchindex_js = "searchindex-39c8c578.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-86a13b75.js"></script>
+        <script src="toc-9846e920.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -2731,7 +2731,7 @@ On rare occasions when a fix is time-sensitive, it is possible to create a relea
 </blockquote>
 <h3 id="from-main"><a class="header" href="#from-main">From main</a></h3>
 <pre><code class="language-sh">NEW_VERSION=v0.999.999
-.github/scripts/prepare-release -b main -r upstream "$NEW_VERSION"
+go tool prepare-release -remote=upstream -branch=main "$NEW_VERSION"
 </code></pre>
 <p>Follow the <code>prepare-release</code> command’s instructions to merge changelog updates and release the tag.</p>
 <h3 id="from-release-branch"><a class="header" href="#from-release-branch">From release branch</a></h3>
@@ -2751,7 +2751,7 @@ git push upstream $BRANCH
 <pre><code class="language-sh">LAST_MINOR=v0.999.0
 NEW_VERSION=v0.999.1
 BRANCH=release-${LAST_MINOR%.*} # e.g. release-v0.999
-.github/scripts/prepare-release -b $BRANCH -r upstream $NEW_VERSION
+go tool prepare-release -remote=upstream -branch=$BRANCH $NEW_VERSION
 </code></pre>
 <p>Follow the <code>prepare-release</code> command’s instructions to merge changelog updates and release the tag.</p>
 <div style="break-before: page; page-break-before: always;"></div>
@@ -2846,6 +2846,63 @@ are expected to conform to:</p>
   ]
 }
 </code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="red-hat-built-linux"><a class="header" href="#red-hat-built-linux">Red Hat-built Linux</a></h1>
+<p><code>Rhel</code> is our term for container images made from Linux distributions made by
+Red Hat, such as Enterprise Linux, Universal Base Image, CoreOS, and Hardened
+Images.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th style="text-align: left"></th><th style="text-align: left"></th></tr>
+</thead>
+<tbody>
+<tr><td style="text-align: left">Indexer Type</td><td style="text-align: left"><code>package</code></td></tr>
+<tr><td style="text-align: left">Indexer Name</td><td style="text-align: left"><code>rhel-package-scanner</code></td></tr>
+<tr><td style="text-align: left">Updater Name</td><td style="text-align: left"><code>rhel-vex</code></td></tr>
+<tr><td style="text-align: left">Matcher Name</td><td style="text-align: left"><code>rhel</code></td></tr>
+</tbody>
+</table>
+</div>
+<blockquote class="blockquote-tag blockquote-tag-warning">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Warning</p>
+<p>Claircore does not support <a href="https://docs.fedoraproject.org/en-US/modularity/core-concepts/upgrade-paths/#_dynamic_context">dynamic modules</a> because doing so would require
+online access to the <code>dnf</code> repository a package came from every time a
+VulnerabilityReport is requested.</p>
+</blockquote>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th style="text-align: left"></th><th style="text-align: left"></th></tr>
+</thead>
+<tbody>
+<tr><td style="text-align: left">Indexer Type</td><td style="text-align: left"><code>repository</code></td></tr>
+<tr><td style="text-align: left">Indexer Name</td><td style="text-align: left"><code>rhel-repository-scanner</code></td></tr>
+<tr><td style="text-align: left">Updater Name</td><td style="text-align: left">N/A</td></tr>
+<tr><td style="text-align: left">Matcher Name</td><td style="text-align: left"><code>rhel</code></td></tr>
+</tbody>
+</table>
+</div>
+<blockquote class="blockquote-tag blockquote-tag-warning">
+<p class="blockquote-tag-title"><svg viewbox="0 0 16 16" width="18" height="18"><path d="M6.457 1.047c.659-1.234 2.427-1.234 3.086 0l6.082 11.378A1.75 1.75 0 0 1 14.082 15H1.918a1.75 1.75 0 0 1-1.543-2.575Zm1.763.707a.25.25 0 0 0-.44 0L1.698 13.132a.25.25 0 0 0 .22.368h12.164a.25.25 0 0 0 .22-.368Zm.53 3.996v2.5a.75.75 0 0 1-1.5 0v-2.5a.75.75 0 0 1 1.5 0ZM9 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z"></path></svg>Warning</p>
+<p>Repository support requires additional metadata loaded into the indexer
+process. See the <a href="https://pkg.go.dev/github.com/quay/claircore/rhel"><code>github.com/quay/claircore/rhel</code></a> package documentation for
+more information.</p>
+</blockquote>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th style="text-align: left"></th><th style="text-align: left"></th></tr>
+</thead>
+<tbody>
+<tr><td style="text-align: left">Indexer Type</td><td style="text-align: left"><code>distribution</code></td></tr>
+<tr><td style="text-align: left">Indexer Name</td><td style="text-align: left"><code>rhel</code></td></tr>
+<tr><td style="text-align: left">Updater Name</td><td style="text-align: left">N/A</td></tr>
+<tr><td style="text-align: left">Matcher Name</td><td style="text-align: left">N/A</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>Rhel</code> images are supported by examining <code>rpm</code> and <code>dnf</code> databases as needed.</p>
 
                     </main>
 
