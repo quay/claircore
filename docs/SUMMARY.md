@@ -11,6 +11,7 @@
   - [Severity Mapping](./concepts/severity_mapping.md)
   - [Updater Defaults](./concepts/updater_defaults.md)
 - [How Tos](./howto.md)
+  - [Acceptance Testing](./howto/acceptance_testing.md)
   - [Adding Distribution Or Language Support](./howto/add_dist.md)
 - [Reference](./reference.md)
   - [Coalescer](./reference/coalescer.md)
