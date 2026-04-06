@@ -178,15 +178,18 @@ func TestWalkRelationships(t *testing.T) {
 		err                                                bool
 	}{
 		{
+			// When no relationship exists, WalkRelationships returns the productID
+			// as the package (permissive behaviour). RHEL's calling code checks for
+			// empty repoName and skips such products.
 			c: &csaf.CSAF{
 				ProductTree: csaf.ProductBranch{},
 			},
 			in:               "EAP 7.4 log4j async",
-			expectedPkgName:  "",
+			expectedPkgName:  "EAP 7.4 log4j async",
 			expectedModName:  "",
 			expectedRepoName: "",
 			name:             "no_relationship",
-			err:              true,
+			err:              false,
 		},
 		{
 			c: &csaf.CSAF{
@@ -315,7 +318,7 @@ func TestWalkRelationships(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			pkgName, modName, repoName, err := walkRelationships(tc.in, tc.c)
+			pkgName, modName, repoName, err := tc.c.WalkRelationships(tc.in)
 			if err != nil && !tc.err {
 				t.Errorf("expected no error but got %q", err)
 			}
@@ -391,7 +394,7 @@ func TestParseCompare(t *testing.T) {
 					Name:               "CVE-2024-24786",
 					Description:        "A flaw was found in Golang's protobuf module, where the unmarshal function can enter an infinite loop when processing certain invalid inputs. This issue occurs during unmarshaling into a message that includes a google.protobuf.Any or when the UnmarshalOptions.DiscardUnknown option is enabled. This flaw allows an attacker to craft malicious input tailored to trigger the identified flaw in the unmarshal function. By providing carefully constructed invalid inputs, they could potentially cause the function to enter an infinite loop, resulting in a denial of service condition or other unintended behaviors in the affected system.",
 					Issued:             time.Date(2024, time.March, 5, 0, 0, 0, 0, time.UTC),
-					Links:              "https://access.redhat.com/security/cve/CVE-2024-24786 https://bugzilla.redhat.com/show_bug.cgi?id=2268046 https://www.cve.org/CVERecord?id=CVE-2024-24786 https://nvd.nist.gov/vuln/detail/CVE-2024-24786 https://go.dev/cl/569356 https://groups.google.com/g/golang-announce/c/ArQ6CDgtEjY/ https://pkg.go.dev/vuln/GO-2024-2611 https://security.access.redhat.com/data/csaf/v2/vex/2024/cve-2024-24786.json",
+					Links:              "https://access.redhat.com/security/cve/CVE-2024-24786 https://bugzilla.redhat.com/show_bug.cgi?id=2268046 https://www.cve.org/CVERecord?id=CVE-2024-24786 https://nvd.nist.gov/vuln/detail/CVE-2024-24786 https://go.dev/cl/569356 https://groups.google.com/g/golang-announce/c/ArQ6CDgtEjY/ https://pkg.go.dev/vuln/GO-2024-2611 https://security.access.redhat.com/data/csaf/v2/vex/2024/cve-2024-24786.json#9Base-RHOSE-4.16:cri-tools-0:1.29.0-3.1.el9.aarch64",
 					Severity:           "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H",
 					NormalizedSeverity: claircore.Medium,
 					Package:            &claircore.Package{Name: "cri-tools", Kind: types.BinaryPackage, Arch: "aarch64"},

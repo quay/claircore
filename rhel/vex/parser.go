@@ -9,6 +9,7 @@ import (
 	"io"
 	"log/slog"
 	"math"
+	"net/url"
 	"strings"
 	"unique"
 
@@ -116,6 +117,90 @@ func (u *Updater) DeltaParse(ctx context.Context, contents io.ReadCloser) ([]*cl
 	return vulns, deleted, nil
 }
 
+// Parser parses individual RHEL CSAF/VEX documents into claircore vulnerabilities.
+// It maintains internal caches for repository and product lookups, so reusing
+// the same Parser instance across multiple documents is more efficient than
+// creating a new one for each document.
+type Parser struct {
+	pc *productCache
+	rc *repoCache
+}
+
+// NewParser creates a new Parser with initialised caches.
+func NewParser() *Parser {
+	return &Parser{
+		pc: newProductCache(),
+		rc: newRepoCache(),
+	}
+}
+
+// Parse parses a single RHEL CSAF/VEX document and returns vulnerabilities.
+// The Parser's internal caches are reused across calls, so parsing multiple
+// documents with the same Parser instance avoids redundant allocations for
+// shared CPEs and repositories.
+func (p *Parser) Parse(ctx context.Context, doc []byte) ([]*claircore.Vulnerability, error) {
+	c, err := csaf.Parse(bytes.NewReader(doc))
+	if err != nil {
+		return nil, fmt.Errorf("error parsing CSAF: %w", err)
+	}
+
+	name := c.Document.Tracking.ID
+	if c.Document.Tracking.Status == "deleted" {
+		return nil, nil
+	}
+
+	var selfLink string
+	for _, r := range c.Document.References {
+		if r.Category == "self" {
+			selfLink = r.URL
+		}
+	}
+
+	creator := newCreator(name, selfLink, c, p.pc, p.rc)
+
+	var out []*claircore.Vulnerability
+	for _, v := range c.Vulnerabilities {
+		links := []string{}
+		for _, r := range v.References {
+			links = append(links, r.URL)
+		}
+		links = append(links, selfLink)
+
+		var desc string
+		for _, n := range v.Notes {
+			if n.Category == "description" {
+				desc = n.Text
+			}
+		}
+
+		protoVuln := func() *claircore.Vulnerability {
+			return &claircore.Vulnerability{
+				Updater:            "rhel-vex",
+				Name:               name,
+				Description:        desc,
+				Issued:             v.ReleaseDate,
+				Links:              strings.Join(links, " "),
+				Severity:           "Unknown",
+				NormalizedSeverity: claircore.Unknown,
+			}
+		}
+
+		fixedVulns, err := creator.fixedVulnerabilities(ctx, v, protoVuln)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, fixedVulns...)
+
+		knownAffectedVulns, err := creator.knownAffectedVulnerabilities(ctx, v, protoVuln)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, knownAffectedVulns...)
+	}
+
+	return out, nil
+}
+
 // repoCacheKey is a unique identifier for a repository, it is made
 // to be used as a unique.Handle, hence the string fields.
 type repoCacheKey struct {
@@ -201,50 +286,9 @@ type creator struct {
 	rc                 *repoCache
 }
 
-// WalkRelationships attempts to resolve a relationship until we have a package product_id,
-// a repo product_id and possibly a package module product_id. Relationships can be nested.
-// If we don't get an initial relationship or we don't get two component parts we cannot
-// create a vulnerability. We never see more than 3 components in the wild but if we did
-// we'd assume the component next to the repo product_id is the package module product_id.
-func walkRelationships(productID string, doc *csaf.CSAF) (string, string, string, error) {
-	prodRel := doc.FindRelationship(productID, "default_component_of")
-	if prodRel == nil {
-		return "", "", "", fmt.Errorf("cannot determine initial relationship for %q", productID)
-	}
-	comps := extractProductNames(prodRel.ProductRef, prodRel.RelatesToProductRef, []string{}, doc)
-	switch {
-	case len(comps) == 2:
-		// We have a package and repo
-		return comps[0], "", comps[1], nil
-	case len(comps) > 2:
-		// We have a package, module and repo
-		return comps[0], comps[len(comps)-2], comps[len(comps)-1], nil
-	default:
-		return "", "", "", fmt.Errorf("cannot determine relationships for %q", productID)
-	}
-}
-
-// ExtractProductNames recursively looks up product_id relationships and adds them to a
-// component slice in order. prodRef (and it's potential children) are leftmost in the return
-// slice and relatesToProdRef (and it's potential children) are rightmost.
-// For example: prodRef=a_pkg and relatesToProdRef=a_repo:a_module and a Relationship where
-// Relationship.ProductRef=a_module and Relationship.RelatesToProductRef=a_repo the return
-// slice would be: ["a_pkg", "a_module", "a_repo"].
-func extractProductNames(prodRef, relatesToProdRef string, comps []string, c *csaf.CSAF) []string {
-	prodRel := c.FindRelationship(prodRef, "default_component_of")
-	if prodRel != nil {
-		comps = extractProductNames(prodRel.ProductRef, prodRel.RelatesToProductRef, comps, c)
-	} else {
-		comps = append(comps, prodRef)
-	}
-	repoRel := c.FindRelationship(relatesToProdRef, "default_component_of")
-	if repoRel != nil {
-		comps = extractProductNames(repoRel.ProductRef, repoRel.RelatesToProductRef, comps, c)
-	} else {
-		comps = append(comps, relatesToProdRef)
-	}
-	return comps
-}
+// Note: Relationship walking is now handled by csaf.CSAF.WalkRelationships().
+// RHEL VEX requires products to have relationships (package -> repo), so callers
+// must check for empty repoProductID after calling WalkRelationships.
 
 // KnownAffectedVulnerabilities processes the "known_affected" array of products
 // in the VEX object.
@@ -255,10 +299,10 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v csaf.Vulne
 	debugEnabled := log.Enabled(ctx, slog.LevelDebug)
 	out := []*claircore.Vulnerability{}
 	for _, pc := range v.ProductStatus["known_affected"] {
-		pkgName, modName, repoName, err := walkRelationships(pc, c.c)
-		if err != nil {
+		pkgName, modName, repoName, err := c.c.WalkRelationships(pc)
+		if err != nil || repoName == "" {
 			// It's possible to get here due to middleware not having a defined component:package
-			// relationship.
+			// relationship. RHEL VEX requires products to have relationships.
 			if debugEnabled {
 				unrelatedProductIDs = append(unrelatedProductIDs, pc)
 			}
@@ -366,6 +410,10 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v csaf.Vulne
 				continue
 			}
 		}
+		// Append VEX product ID as URL fragment to the last link for downstream comparison.
+		if vuln.Links != "" {
+			vuln.Links = vuln.Links + "#" + url.PathEscape(pc)
+		}
 		out = append(out, vuln)
 	}
 	ranger.resetLowest()
@@ -447,10 +495,10 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 	log := slog.With("link", c.vulnLink)
 	debugEnabled := log.Enabled(ctx, slog.LevelDebug)
 	for _, pc := range v.ProductStatus["fixed"] {
-		pkgName, modName, repoName, err := walkRelationships(pc, c.c)
-		if err != nil {
+		pkgName, modName, repoName, err := c.c.WalkRelationships(pc)
+		if err != nil || repoName == "" {
 			// It's possible to get here due to middleware not having a defined component:package
-			// relationship.
+			// relationship. RHEL VEX requires products to have relationships.
 			if debugEnabled {
 				unrelatedProductIDs = append(unrelatedProductIDs, pc)
 			}
@@ -573,6 +621,10 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 					// This has no threat object and a 0.0 baseScore, disregard.
 					continue
 				}
+			}
+			// Append VEX product ID as URL fragment to the last link for downstream comparison.
+			if vuln.Links != "" {
+				vuln.Links = vuln.Links + "#" + url.PathEscape(pc)
 			}
 		}
 	}
