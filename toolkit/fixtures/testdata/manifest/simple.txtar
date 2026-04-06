@@ -1,0 +1,9 @@
+-- input.csv --
+# Comments are ignored.
+CVE-2024-1234,glibc@2.28,affected
+CVE-2024-5678,openssl@1.1.1,not_affected
+CVE-2024-9999,curl@7.88,absent
+-- want.json --
+["CVE-2024-1234","glibc@2.28","AFFECTED"]
+["CVE-2024-5678","openssl@1.1.1","NOT_AFFECTED"]
+["CVE-2024-9999","curl@7.88","ABSENT"]
