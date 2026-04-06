@@ -40,7 +40,9 @@ func ParsePURL(ctx context.Context, purl packageurl.PackageURL) ([]*claircore.In
 		return nil, err
 	}
 	fullName := purl.Name
-	if purl.Namespace != "" {
+	// When called via purl.Registry, empty namespaces are converted to "none"
+	// for lookup purposes. Treat "none" as empty to preserve original behaviour.
+	if purl.Namespace != "" && purl.Namespace != "none" {
 		fullName = purl.Namespace + "/" + fullName
 	}
 	if purl.Subpath != "" {
