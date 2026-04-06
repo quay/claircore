@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"time"
+
+	"github.com/package-url/packageurl-go"
 )
 
 func Parse(r io.Reader) (*CSAF, error) {
@@ -384,4 +386,116 @@ func (rs *Relationships) FindRelationship(productID, category string) *Relations
 		}
 	}
 	return nil
+}
+
+// SelfLink returns the URL of the "self" reference from the document metadata,
+// or an empty string if not present.
+func (csafDoc *CSAF) SelfLink() string {
+	for _, ref := range csafDoc.Document.References {
+		if ref.Category == "self" {
+			return ref.URL
+		}
+	}
+	return ""
+}
+
+// Description returns the first note with category "description",
+// or an empty string if not present.
+func (v *Vulnerability) Description() string {
+	for _, n := range v.Notes {
+		if n.Category == "description" {
+			return n.Text
+		}
+	}
+	return ""
+}
+
+// ReferenceURLs returns a slice of all reference URLs for the vulnerability.
+func (v *Vulnerability) ReferenceURLs() []string {
+	urls := make([]string, 0, len(v.References))
+	for _, ref := range v.References {
+		urls = append(urls, ref.URL)
+	}
+	return urls
+}
+
+// WalkRelationships resolves a product_id's relationships to find package, module,
+// and repository components. Returns (packageProductID, moduleProductID, repoProductID, error).
+//
+// If the productID has no relationships, it is assumed to be a package itself and
+// returned as the packageProductID with empty module and repo.
+//
+// Relationships can be nested. The function walks the "default_component_of" chain
+// to extract:
+//   - Package product ID (leftmost component)
+//   - Module product ID (if 3+ components, second from right)
+//   - Repository product ID (rightmost component)
+func (csafDoc *CSAF) WalkRelationships(productID string) (pkgProductID, modProductID, repoProductID string, err error) {
+	rel := csafDoc.FindRelationship(productID, "default_component_of")
+	if rel == nil {
+		// No relationship - productID is the package itself.
+		return productID, "", "", nil
+	}
+
+	// Extract component chain by walking relationships recursively.
+	comps := csafDoc.extractProductNames(rel.ProductRef, rel.RelatesToProductRef, nil)
+	switch len(comps) {
+	case 2:
+		// Package and repo.
+		return comps[0], "", comps[1], nil
+	case 3:
+		// Package, module, and repo.
+		return comps[0], comps[1], comps[2], nil
+	default:
+		if len(comps) > 3 {
+			// More than 3 components: package is first, module is second-to-last, repo is last.
+			return comps[0], comps[len(comps)-2], comps[len(comps)-1], nil
+		}
+		return "", "", "", fmt.Errorf("unexpected relationship structure for %q: %d components", productID, len(comps))
+	}
+}
+
+// ExtractProductNames recursively resolves relationships and collects product IDs.
+// prodRef (and its children) are leftmost; relatesToProdRef (and its children) are rightmost.
+func (csafDoc *CSAF) extractProductNames(prodRef, relatesToProdRef string, comps []string) []string {
+	prodRel := csafDoc.FindRelationship(prodRef, "default_component_of")
+	if prodRel != nil {
+		comps = csafDoc.extractProductNames(prodRel.ProductRef, prodRel.RelatesToProductRef, comps)
+	} else {
+		comps = append(comps, prodRef)
+	}
+
+	repoRel := csafDoc.FindRelationship(relatesToProdRef, "default_component_of")
+	if repoRel != nil {
+		comps = csafDoc.extractProductNames(repoRel.ProductRef, repoRel.RelatesToProductRef, comps)
+	} else {
+		comps = append(comps, relatesToProdRef)
+	}
+
+	return comps
+}
+
+// ExtractFixedVersion extracts the fixed version string from a pURL.
+// For "fixed" products in CSAF, the pURL version represents the fixed version.
+//
+// Handling by pURL type:
+//   - OCI: Returns the "tag" qualifier if present, otherwise the version.
+//   - RPM: Returns "epoch:version" format, defaulting epoch to "0" if not specified.
+//   - Other types: Returns the version as-is.
+func ExtractFixedVersion(pu packageurl.PackageURL) string {
+	switch pu.Type {
+	case packageurl.TypeOCI:
+		if tag, ok := pu.Qualifiers.Map()["tag"]; ok {
+			return tag
+		}
+		return pu.Version
+	case packageurl.TypeRPM:
+		epoch := "0"
+		if e, ok := pu.Qualifiers.Map()["epoch"]; ok {
+			epoch = e
+		}
+		return epoch + ":" + pu.Version
+	default:
+		return pu.Version
+	}
 }
