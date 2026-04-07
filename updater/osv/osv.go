@@ -16,6 +16,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"path"
+	"slices"
 	"strings"
 	"time"
 
@@ -382,7 +383,7 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 		}
 		name := strings.TrimSuffix(path.Base(zf.Name), ".zip")
 
-		var skipped stats
+		skipped := newStats()
 		var ct int
 		for _, zf := range z.File {
 			ct++
@@ -399,10 +400,10 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 
 			switch {
 			case !a.Withdrawn.IsZero() && now.After(a.Withdrawn):
-				skipped.Withdrawn = append(skipped.Withdrawn, a.ID)
+				skipped.Withdrawn(a.ID)
 				continue
 			case len(a.Affected) == 0:
-				skipped.Unaffected = append(skipped.Unaffected, a.ID)
+				skipped.Unaffected(a.ID)
 				continue
 			default:
 			}
@@ -413,10 +414,7 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 			}
 		}
 		log.DebugContext(ctx, "processed advisories", "count", ct)
-		log.DebugContext(ctx, "skipped advisories",
-			"withdrawn", skipped.Withdrawn,
-			"unaffected", skipped.Unaffected,
-			"ignored", skipped.Ignored)
+		log.DebugContext(ctx, "skipped advisories", "skipped", &skipped)
 	}
 	slog.InfoContext(ctx, "found vulnerabilities", "count", ecs.Len())
 
@@ -426,13 +424,77 @@ func (u *updater) Parse(ctx context.Context, r io.ReadCloser) ([]*claircore.Vuln
 type (
 	fileStat interface{ Stat() (fs.FileInfo, error) }
 	sizer    interface{ Size() int64 }
-
-	stats struct {
-		Withdrawn  []string
-		Unaffected []string
-		Ignored    []string
-	}
 )
+
+var _ slog.LogValuer = (*stats)(nil)
+
+// Stats is a helper for collecting OSV stats.
+//
+// This records an accurate count and has a ringbuffer of IDs.
+type stats struct {
+	withdrawn    []string
+	unaffected   []string
+	ignored      []string
+	withdrawnCt  int64
+	unaffectedCt int64
+	ignoredCt    int64
+}
+
+// Return an initialized [stats].
+func newStats() stats {
+	return stats{
+		withdrawn:  make([]string, 16),
+		unaffected: make([]string, 16),
+		ignored:    make([]string, 16),
+	}
+}
+
+// Withdrawn records a "withdrawn" ID.
+func (s *stats) Withdrawn(id string) {
+	updateStats(s.withdrawn, &s.withdrawnCt, id)
+}
+
+// Unaffected records an "unaffected" ID.
+func (s *stats) Unaffected(id string) {
+	updateStats(s.unaffected, &s.unaffectedCt, id)
+}
+
+// Ignored records an "ignored" ID.
+func (s *stats) Ignored(id string) {
+	updateStats(s.ignored, &s.ignoredCt, id)
+}
+
+// UpdateStats implements the actual updating logic for a [stats] object.
+func updateStats(s []string, ct *int64, id string) {
+	i := int(*ct) % len(s)
+	s[i] = id
+	*ct = (*ct) + 1
+}
+
+// LogValue implements [slog.LogValuer].
+func (s *stats) LogValue() slog.Value {
+	emptyString := func(s string) bool {
+		return len(s) == 0
+	}
+	wAttrs, uAttrs, iAttrs := make([]slog.Attr, 1, 2), make([]slog.Attr, 1, 2), make([]slog.Attr, 1, 2)
+	wAttrs[0] = slog.Int64("count", s.withdrawnCt)
+	if s.withdrawnCt > 0 {
+		wAttrs = append(wAttrs, slog.Any("examples", slices.DeleteFunc(s.withdrawn, emptyString)))
+	}
+	uAttrs[0] = slog.Int64("count", s.unaffectedCt)
+	if s.unaffectedCt > 0 {
+		uAttrs = append(uAttrs, slog.Any("examples", slices.DeleteFunc(s.unaffected, emptyString)))
+	}
+	iAttrs[0] = slog.Int64("count", s.ignoredCt)
+	if s.ignoredCt > 0 {
+		iAttrs = append(iAttrs, slog.Any("examples", slices.DeleteFunc(s.ignored, emptyString)))
+	}
+	return slog.GroupValue(
+		slog.GroupAttrs("withdrawn", wAttrs...),
+		slog.GroupAttrs("unaffected", uAttrs...),
+		slog.GroupAttrs("ignored", iAttrs...),
+	)
+}
 
 // Ecs is an entity-component system for vulnerabilities.
 //
@@ -691,7 +753,7 @@ func (e *ecs) Insert(ctx context.Context, log *slog.Logger, skipped *stats, name
 					}
 					if r.Lower.Compare(&r.Upper) == 1 {
 						e.RemoveVulnerability(v)
-						skipped.Ignored = append(skipped.Ignored, fmt.Sprintf("%s(%s,%s)", a.ID, r.Lower.String(), r.Upper.String()))
+						skipped.Ignored(fmt.Sprintf("%s(%s,%s)", a.ID, r.Lower.String(), r.Upper.String()))
 						continue
 					}
 				}
