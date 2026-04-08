@@ -75,8 +75,8 @@ github.com/prometheus/common v0.66.1 h1:h5E0h5/Y8niHc5DlaLlWLArTQI7tMrsfQjHV+d9Z
 github.com/prometheus/common v0.66.1/go.mod h1:gcaUsgf3KfRSwHY4dIMXLPV0K/Wg1oZ8+SbZk/HH/dA=
 github.com/prometheus/procfs v0.16.1 h1:hZ15bTNuirocR6u0JZ6BAHHmwS1p8B4P6MRqxtzMyRg=
 github.com/prometheus/procfs v0.16.1/go.mod h1:teAbpZRB1iIAJYREa1LsoWUXykVXA1KlTmWl8x/U+Is=
-github.com/quay/claircore/toolkit v1.4.0 h1:ygHG1pLAOTSk7r2Wmo/UbIz9WHJb+K3hhQnNIvLrBSQ=
-github.com/quay/claircore/toolkit v1.4.0/go.mod h1:0cQXEt/BIYSxo/Wq6ItyAJOJzdvD6ty1wPZJ9xR3b6E=
+github.com/quay/claircore/toolkit v1.6.0 h1:NZ0NCfV/H26y0NCbADwA+c2yBrOJvZ2v66Wkn6tPpPU=
+github.com/quay/claircore/toolkit v1.6.0/go.mod h1:i7JAbOOpIzbhKiopTuqqvMinx54yJiYEBIN6/9nqH7c=
 github.com/quay/goval-parser v0.8.8 h1:Uf+f9iF2GIR5GPUY2pGoa9il2+4cdES44ZlM0mWm4cA=
 github.com/quay/goval-parser v0.8.8/go.mod h1:Y0NTNfPYOC7yxsYKzJOrscTWUPq1+QbtHw4XpPXWPMc=
 github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec h1:W09IVJc94icq4NjY3clb7Lk8O1qJ8BdBEF8z0ibU0rE=
