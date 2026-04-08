@@ -1,4 +1,5 @@
-// Mdbook-mermaid is a helper meant to slip-stream mermaid diagrams.
+// Package mermaid is an mdbook preprocessor meant to slip-stream mermaid
+// diagrams.
 //
 // The diagram will get built and slip-streamed where there's a codeblock of the
 // "mermaid" type. For example:
@@ -7,7 +8,7 @@
 //	graph LR
 //		x --> y
 //	```
-package main
+package mermaid
 
 import (
 	"context"
@@ -29,19 +30,15 @@ var (
 	)
 )
 
-func main() {
-	mdbook.Main("mermaid", newProc)
+// Register registers the preprocessor.
+func Register(_ context.Context, _ *mdbook.Context, p *mdbook.Proc) error {
+	p.Chapter(chapter)
+	return nil
 }
 
-func newProc(ctx context.Context, cfg *mdbook.Context) (*mdbook.Proc, error) {
-	proc := mdbook.Proc{
-		Chapter: func(ctx context.Context, b *strings.Builder, c *mdbook.Chapter) error {
-			c.Content = marker.ReplaceAllStringFunc(c.Content, func(m string) string {
-				out := repl.Replace(m)
-				return out
-			})
-			return nil
-		},
-	}
-	return &proc, nil
+func chapter(_ context.Context, _ *strings.Builder, c *mdbook.Chapter) error {
+	c.Content = marker.ReplaceAllStringFunc(c.Content, func(m string) string {
+		return repl.Replace(m)
+	})
+	return nil
 }

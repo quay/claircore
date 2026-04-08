@@ -10,18 +10,8 @@ build-dir = "book"
 create-missing = true
 
 [output.html]
-git-repository-url= "https://github.com/quay/claircore"
+git-repository-url = "https://github.com/quay/claircore"
 additional-js = ["docs/mermaid.min.js"]
 
-[preprocessor.godoc]
-command = "go run github.com/quay/claircore/internal/cmd/mdbook-godoc"
-
-[preprocessor.make_target]
-command = "go run github.com/quay/claircore/internal/cmd/mdbook-make_target"
-
-[preprocessor.injecturls]
-command = "go run github.com/quay/claircore/internal/cmd/mdbook-injecturls"
-
-[preprocessor.mermaid]
-command = "go run github.com/quay/claircore/internal/cmd/mdbook-mermaid"
-after = ["links"]
+[preprocessor.doctool]
+command = "go tool doctool"

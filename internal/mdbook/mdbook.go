@@ -4,72 +4,27 @@ package mdbook
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
-	"log"
-	"os"
-	"os/signal"
 	"strings"
 )
 
-// Main is a simple replacement main for mdbook preprocessors.
-func Main(name string, pf ProcFunc) {
-	log.SetFlags(log.LstdFlags | log.Lmsgprefix)
-	log.SetPrefix(name + ": ")
-	Args(os.Args)
-
-	err := func() error {
-		ctx := context.Background()
-		ctx, cancel := signal.NotifyContext(ctx, os.Interrupt, os.Kill)
-		defer cancel()
-
-		cfg, book, err := Decode(os.Stdin)
-		if err != nil {
-			return err
-		}
-		proc, err := pf(ctx, cfg)
-		if err != nil {
-			return err
-		}
-
-		if err := proc.Walk(ctx, book); err != nil {
-			return err
-		}
-
-		if err := json.NewEncoder(os.Stdout).Encode(&book); err != nil {
-			return err
-		}
-		return nil
-	}()
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-// ProcFunc is a hook for creating a new Proc.
-type ProcFunc func(context.Context, *Context) (*Proc, error)
-
-// Args implements handling the expected CLI arguments.
+// RegisterFunc is the type for arranging to have a preprocessor's hooks called.
 //
-// This function calls [os.Exit] under the right circumstances.
-func Args(argv []string) {
-	// Handle when called with "supports $renderer".
-	if len(argv) != 3 {
-		return
-	}
-	switch argv[1] {
-	case "supports":
-		switch argv[2] {
-		case "html":
-		default:
-			log.Printf("unsupported renderer: %q", argv[2])
-			os.Exit(1)
+// Implmentations should use the passed [context.Context] and [Context], then
+// call functions to register hooks in the [Proc] as needed.
+type RegisterFunc func(context.Context, *Context, *Proc) error
+
+// NewProc returns a [Proc] with the provided [RegisterFunc]s called on it.
+func NewProc(ctx context.Context, cfg *Context, fs ...RegisterFunc) (*Proc, error) {
+	var p Proc
+	for _, f := range fs {
+		if err := f(ctx, cfg, &p); err != nil {
+			return nil, err
 		}
-	default:
-		log.Printf("unknown subcommand: %q", argv[1])
-		os.Exit(1)
 	}
-	os.Exit(0)
+	return &p, nil
 }
 
 // Decode reads the [Context] and [Book] JSON objects from the passed
@@ -106,9 +61,9 @@ func Decode(r io.Reader) (*Context, *Book, error) {
 
 // Proc is a helper for modifying a [Book].
 type Proc struct {
-	Chapter   Hook[Chapter]
-	Separator Hook[Separator]
-	PartTitle Hook[PartTitle]
+	chapter   []Hook[Chapter]
+	separator []Hook[Separator]
+	partTitle []Hook[PartTitle]
 }
 
 // Hook is a hook function to modify a BookItem in-place.
@@ -117,6 +72,21 @@ type Hook[I BookItem] func(ctx context.Context, b *strings.Builder, item *I) err
 // BookItem is one of [Chapter], [Separator], or [PartTitle].
 type BookItem interface {
 	Chapter | Separator | PartTitle
+}
+
+// Chapter registers a [Chapter] [Hook].
+func (p *Proc) Chapter(h Hook[Chapter]) {
+	p.chapter = append(p.chapter, h)
+}
+
+// Separator registers a [Separator] [Hook].
+func (p *Proc) Separator(h Hook[Separator]) {
+	p.separator = append(p.separator, h)
+}
+
+// PartTitle registers a [PartTitle] [Hook].
+func (p *Proc) PartTitle(h Hook[PartTitle]) {
+	p.partTitle = append(p.partTitle, h)
 }
 
 // Walk walks the provided [Book], calling the [Hook]s in the member fields as
@@ -134,32 +104,35 @@ func (p *Proc) Walk(ctx context.Context, book *Book) error {
 }
 
 // Item calls the relevant hooks on the current [Item].
-func (p *Proc) item(ctx context.Context, b *strings.Builder, s Item) (err error) {
-	b.Reset()
+func (p *Proc) item(ctx context.Context, b *strings.Builder, s Item) error {
+	var errs []error
 	switch {
 	case s.Separator != nil:
-		if p.Separator != nil {
-			err = p.Separator(ctx, b, s.Separator)
+		for _, f := range p.separator {
+			b.Reset()
+			errs = append(errs, f(ctx, b, s.Separator))
 		}
 	case s.PartTitle != nil:
-		if p.PartTitle != nil {
-			err = p.PartTitle(ctx, b, s.PartTitle)
+		for _, f := range p.partTitle {
+			b.Reset()
+			errs = append(errs, f(ctx, b, s.PartTitle))
 		}
 	case s.Chapter != nil:
-		if p.Chapter != nil {
-			err = p.Chapter(ctx, b, s.Chapter)
-			if err != nil {
-				break
-			}
+		for _, f := range p.chapter {
+			b.Reset()
+			errs = append(errs, f(ctx, b, s.Chapter))
+		}
+		if err := errors.Join(errs...); err != nil {
+			return err
 		}
 		for _, s := range s.Chapter.SubItems {
-			err = p.item(ctx, b, s)
-			if err != nil {
+			if err := p.item(ctx, b, s); err != nil {
+				errs = append(errs, err)
 				break
 			}
 		}
 	}
-	if err != nil {
+	if err := errors.Join(errs...); err != nil {
 		return err
 	}
 	if err := ctx.Err(); err != nil {

@@ -64,6 +64,7 @@ require (
 replace github.com/quay/claircore/updater/driver => ./updater/driver
 
 tool (
+	github.com/quay/claircore/internal/cmd/doctool
 	github.com/quay/claircore/internal/cmd/prepare-release
 	go.uber.org/mock/mockgen
 	golang.org/x/tools/cmd/file2fuzz
