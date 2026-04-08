@@ -9,12 +9,14 @@ import (
 	"runtime"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"golang.org/x/sync/errgroup"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/toolkit/events"
 )
 
 // BUG(hank) Match and EnrichedMatch have different semantics for errors
@@ -46,7 +48,7 @@ func Match(ctx context.Context, ir *claircore.IndexReport, matchers []driver.Mat
 	ctrlC := make(chan map[string][]*claircore.Vulnerability, lim)
 	var errMu sync.Mutex
 	errs := make([]error, 0, lim)
-	// fan out all controllers, write their output to ctrlC, close ctrlC once all writers finish
+	// fan out all workers, write their output to ctrlC, close ctrlC once all writers finish
 	go func() {
 		defer close(ctrlC)
 		var wg sync.WaitGroup
@@ -55,8 +57,7 @@ func Match(ctx context.Context, ir *claircore.IndexReport, matchers []driver.Mat
 			m := matchers[i]
 			go func() {
 				defer wg.Done()
-				mc := NewController(m, store)
-				vulns, err := mc.Match(ctx, records)
+				vulns, err := matchOne(ctx, store, m, records)
 				if err != nil {
 					errMu.Lock()
 					errs = append(errs, err)
@@ -119,7 +120,7 @@ func EnrichedMatch(ctx context.Context, ir *claircore.IndexReport, ms []driver.M
 					return mctx.Err()
 				default:
 				}
-				vs, err := NewController(m, s).Match(mctx, records)
+				vs, err := matchOne(ctx, s, m, records)
 				if err != nil {
 					return fmt.Errorf("matcher error: %w", err)
 				}
@@ -243,4 +244,169 @@ var _ driver.EnrichmentGetter = (*enrichmentGetter)(nil)
 
 func (e *enrichmentGetter) GetEnrichment(ctx context.Context, tags []string) ([]driver.EnrichmentRecord, error) {
 	return e.s.GetEnrichment(ctx, e.name, tags)
+}
+
+type event struct {
+	remote                bool
+	dbfilter              bool
+	dbfilterAuthoritative bool
+	numRecords            int
+	numInterested         int
+	numVulnerabilities    int
+	numMatched            int
+}
+
+func newEvent(m driver.Matcher) *event {
+	_, remote := m.(driver.RemoteMatcher)
+	var dbfilterAuthoritative bool
+	f, dbfilter := m.(driver.VersionFilter)
+	if dbfilter {
+		dbfilterAuthoritative = f.VersionAuthoritative()
+	}
+	return &event{
+		remote:                remote,
+		dbfilter:              dbfilter,
+		dbfilterAuthoritative: dbfilterAuthoritative,
+		numRecords:            -1,
+		numInterested:         -1,
+		numVulnerabilities:    -1,
+		numMatched:            -1,
+	}
+}
+
+func (ev *event) LogValue() slog.Value {
+	as := make([]slog.Attr, 3, 7) // Capacity for the number of fields in [event].
+	as[0] = slog.Bool("remote", ev.remote)
+	as[1] = slog.Bool("dbfilter", ev.dbfilter)
+	as[2] = slog.Bool("dbfilter_authoritative", ev.dbfilterAuthoritative)
+	if ev.numRecords >= 0 {
+		as = append(as, slog.Int("records", ev.numRecords))
+	}
+	if ev.numInterested >= 0 {
+		as = append(as, slog.Int("interested", ev.numInterested))
+	}
+	if ev.numVulnerabilities >= 0 {
+		as = append(as, slog.Int("vulnerabilities", ev.numVulnerabilities))
+	}
+	if ev.numMatched >= 0 {
+		as = append(as, slog.Int("matched", ev.numMatched))
+	}
+	return slog.GroupValue(as...)
+}
+
+// MatchOne uses the passed [driver.Matcher] to find vulnerabilities affecting
+// the recorded packages.
+func matchOne(ctx context.Context,
+	store datastore.Vulnerability,
+	m driver.Matcher,
+	records []*claircore.IndexRecord,
+) (out map[string][]*claircore.Vulnerability, err error) {
+	name := m.Name()
+	ev := newEvent(m)
+	ev.numRecords = len(records)
+	defer func() {
+		lvl := slog.LevelInfo
+		l := events.Logger(ctx)
+		if err != nil {
+			lvl = slog.LevelError
+			l = l.With("reason", err)
+		}
+		l.Log(ctx, lvl, "match", name, ev)
+	}()
+	log := slog.With("matcher", name)
+
+	// Find the packages the matcher is interested in.
+	interested := make([]*claircore.IndexRecord, 0, len(records))
+	for _, record := range records {
+		if record.Package.NormalizedVersion.Kind == claircore.UnmatchableKind {
+			continue
+		}
+		if m.Filter(record) {
+			interested = append(interested, record)
+		}
+	}
+	ev.numInterested = len(interested)
+	log.DebugContext(ctx, "interest",
+		"interested", len(interested),
+		"records", len(records))
+
+	// Early return; do not call DB at all.
+	if len(interested) == 0 {
+		return map[string][]*claircore.Vulnerability{}, nil
+	}
+
+	// Attempt "remote" matching if relevant.
+	if f, ok := m.(driver.RemoteMatcher); ok {
+		// TODO(hank) Remove/modify this timeout?
+		tctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+		defer cancel()
+		out, err = f.QueryRemoteMatcher(tctx, interested)
+		if err != nil {
+			log.ErrorContext(ctx, "remote matcher error, returning empty results", "reason", err)
+			return map[string][]*claircore.Vulnerability{}, nil
+		}
+		return out, nil
+	}
+
+	// Check whether the db-side version filtering can be used and whether it's authoritative.
+	var authoritative bool
+	vf, dbSide := m.(driver.VersionFilter)
+	if dbSide {
+		authoritative = vf.VersionAuthoritative()
+	}
+	log.DebugContext(ctx, "version filter compatible?",
+		"opt-in", dbSide,
+		"authoritative", authoritative)
+
+	// Query the Vulnerability database.
+	out, err = store.Get(ctx, interested, datastore.GetOpts{
+		Matchers:         m.Query(),
+		VersionFiltering: dbSide,
+	})
+	if err != nil {
+		return nil, err
+	}
+	ev.numVulnerabilities = len(out)
+	log.DebugContext(ctx, "query", "count", len(out))
+
+	// If the DB filtering is authoritative, this process is done.
+	if authoritative {
+		ev.numMatched = len(out)
+		return out, nil
+	}
+	// Filter the vulnerabilities locally:
+	vulns := out
+	out = make(map[string][]*claircore.Vulnerability)
+	ev.numMatched = 0
+	for _, r := range interested {
+		var match []*claircore.Vulnerability
+		match, err = selectVulnerabilities(ctx, m, r, vulns[r.Package.ID])
+		if err != nil {
+			return nil, err
+		}
+		if len(match) == 0 {
+			continue
+		}
+		ev.numMatched++
+		out[r.Package.ID] = append(out[r.Package.ID], match...)
+	}
+	log.DebugContext(ctx, "filtered", "count", len(out))
+
+	return out, nil
+}
+
+// SelectVulnerabilities returns only the vulnerabilities affected by the
+// provided package.
+func selectVulnerabilities(ctx context.Context, m driver.Matcher, r *claircore.IndexRecord, vs []*claircore.Vulnerability) ([]*claircore.Vulnerability, error) {
+	out := []*claircore.Vulnerability{}
+	for _, vuln := range vs {
+		match, err := m.Vulnerable(ctx, r, vuln)
+		if err != nil {
+			return nil, err
+		}
+		if match {
+			out = append(out, vuln)
+		}
+	}
+	return out, nil
 }
