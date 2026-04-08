@@ -106,7 +106,7 @@ type ManifestRecord struct {
 	Status  VulnerabilityStatus
 }
 
-//go:generate go run golang.org/x/tools/cmd/stringer@latest -linecomment -type=VulnerabilityStatus
+//go:generate go tool stringer -linecomment -type=VulnerabilityStatus
 
 // VulnerabilityStatus represents the expected vulnerability status for a product
 // in acceptance test fixtures.
