@@ -12,6 +12,10 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+// StripCodeBlocks removes fenced code blocks from markdown content.
+// The .*? is non-greedy to stop at the first closing ``` rather than the last.
+var stripCodeBlocks = regexp.MustCompile("(?s)```.*?```")
+
 func TestStyleguide(t *testing.T) {
 	eg, ctx := errgroup.WithContext(context.Background())
 	names := make(chan string)
@@ -69,9 +73,12 @@ func TestStyleguide(t *testing.T) {
 				return err
 			}
 
+			// Strip code blocks before applying rules
+			prose := stripCodeBlocks.ReplaceAll(b, nil)
+
 			for _, rule := range rules {
-				for _, idx := range rule.Regexp.FindAllIndex(b, -1) {
-					t.Errorf("%s:%d: %q\t[%s: %s]", fn, idx[0], string(b[idx[0]:idx[1]]), rule.Name, rule.Explanation)
+				for _, idx := range rule.Regexp.FindAllIndex(prose, -1) {
+					t.Errorf("%s:%d: %q\t[%s: %s]", fn, idx[0], string(prose[idx[0]:idx[1]]), rule.Name, rule.Explanation)
 				}
 			}
 
