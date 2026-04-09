@@ -108,13 +108,14 @@ func (l *Layer) Init(ctx context.Context, desc *LayerDescription, r io.ReaderAt)
 		`application/vnd.oci.image.layer.nondistributable.v1.tar`,
 		`application/vnd.oci.image.layer.nondistributable.v1.tar+gzip`,
 		`application/vnd.oci.image.layer.nondistributable.v1.tar+zstd`:
-		sys, err := tarfs.New(r)
+		sys, err := tarfs.New(ctx, r, -1, nil)
 		switch {
 		case errors.Is(err, nil):
 		default:
 			return fmt.Errorf("claircore: layer %v: unable to create fs.FS: %w", desc.Digest, err)
 		}
 		l.sys = sys
+		l.cleanup = append(l.cleanup, sys)
 	case `application/vnd.claircore.filesystem`:
 		if desc.URI == "" {
 			return fmt.Errorf("claircore: layer %v: unable to create fs.FS: no URI provided", desc.Digest)
@@ -177,6 +178,7 @@ var errUnsupported = &unsupported{}
 func (*unsupported) Error() string {
 	return "unsupported operation"
 }
+
 func (*unsupported) Is(tgt error) bool {
 	// Hack for forwards compatibility: In go1.21, [errors.ErrUnsupported] was
 	// added and ideally we'd just use that. However, we're supporting go1.20
