@@ -51,6 +51,16 @@ jobs:
           trap 'echo "::error file=go.mod,title=Tidy Check::Commit would leave go.mod untidy"' ERR
           go mod tidy
           git diff --exit-code
+      - name: Go Generate
+        if: ${{ !cancelled() && steps.checkout.conclusion == 'success' && steps.setupgo.conclusion == 'success' }}
+        run: | # Only run generation for deterministic data.
+          trap 'echo "::error Generate Check::Generated files are out of date. Run go generate and commit the changes"' ERR
+          find . -name .git -prune -o -name testdata -prune -o -name vendor -prune -o -name go.mod -printf '%h\n' |
+          while read -r dir; do (
+            cd "$dir"
+            go generate -run 'stringer|mockgen|sql-formatter' ./...
+          ); done
+          git diff --exit-code
 
   build-documentation:
     name: Build Docs
