@@ -11,53 +11,78 @@ import (
 )
 
 func TestDistrolessLayer(t *testing.T) {
-	ctx := test.Logging(t)
-	want := []*claircore.Package{
+	tt := []struct {
+		name string
+		ref  test.LayerRef
+		want []*claircore.Package
+	}{
 		{
-			Name:           "base-files",
-			Version:        "11.1+deb11u5",
-			Kind:           types.BinaryPackage,
-			Arch:           "amd64",
-			Source:         nil,
-			PackageDB:      "var/lib/dpkg/status.d/base",
-			RepositoryHint: "",
+			name: "debian11",
+			ref: test.LayerRef{
+				Registry: "gcr.io",
+				Name:     "distroless/static-debian11",
+				Digest:   `sha256:8fdb1fc20e240e9cae976518305db9f9486caa155fd5fc53e7b3a3285fe8a990`,
+			},
+			want: []*claircore.Package{
+				{
+					Name:      "base-files",
+					Version:   "11.1+deb11u5",
+					Kind:      types.BinaryPackage,
+					Arch:      "amd64",
+					PackageDB: "var/lib/dpkg/status.d/base",
+				},
+				{
+					Name:      "netbase",
+					Version:   "6.3",
+					Kind:      types.BinaryPackage,
+					Arch:      "all",
+					PackageDB: "var/lib/dpkg/status.d/netbase",
+				},
+				{
+					Name:      "tzdata",
+					Version:   "2021a-1+deb11u8",
+					Kind:      types.BinaryPackage,
+					Arch:      "all",
+					PackageDB: "var/lib/dpkg/status.d/tzdata",
+				},
+			},
 		},
 		{
-			Name:           "netbase",
-			Version:        "6.3",
-			Kind:           types.BinaryPackage,
-			Arch:           "all",
-			Source:         nil,
-			PackageDB:      "var/lib/dpkg/status.d/netbase",
-			RepositoryHint: "",
-		},
-		{
-			Name:           "tzdata",
-			Version:        "2021a-1+deb11u8",
-			Kind:           types.BinaryPackage,
-			Arch:           "all",
-			Source:         nil,
-			PackageDB:      "var/lib/dpkg/status.d/tzdata",
-			RepositoryHint: "",
+			name: "debian12",
+			ref: test.LayerRef{
+				Registry: "gcr.io",
+				Name:     "distroless/static-debian12",
+				Digest:   `sha256:ef49c20a7b35aa995683f311510d35d77e203a2204f84de14a71a6d726e6af73`,
+			},
+			want: []*claircore.Package{
+				{
+					Name:      "tzdata",
+					Version:   "2025b-0+deb12u2",
+					Kind:      types.BinaryPackage,
+					Arch:      "all",
+					PackageDB: "var/lib/dpkg/status.d/tzdata",
+				},
+			},
 		},
 	}
-	l := test.RealizeLayer(ctx, t, test.LayerRef{
-		Registry: "gcr.io",
-		Name:     "distroless/static-debian11",
-		Digest:   `sha256:8fdb1fc20e240e9cae976518305db9f9486caa155fd5fc53e7b3a3285fe8a990`,
-	})
-	var s DistrolessScanner
 
-	t.Parallel()
-	ps, err := s.Scan(ctx, l)
-	if err != nil {
-		t.Error(err)
-	}
-	if got, want := len(ps), 3; got != want {
-		t.Errorf("checking length, got: %d, want: %d", got, want)
-	}
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := test.Logging(t)
+			l := test.RealizeLayer(ctx, t, tc.ref)
+			var s DistrolessScanner
 
-	if !cmp.Equal(ps, want) {
-		t.Fatal(cmp.Diff(ps, want))
+			ps, err := s.Scan(ctx, l)
+			if err != nil {
+				t.Error(err)
+			}
+			if got, want := len(ps), len(tc.want); got != want {
+				t.Errorf("checking length, got: %d, want: %d", got, want)
+			}
+
+			if !cmp.Equal(ps, tc.want) {
+				t.Fatal(cmp.Diff(ps, tc.want))
+			}
+		})
 	}
 }

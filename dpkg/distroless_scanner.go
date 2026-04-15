@@ -11,6 +11,7 @@ import (
 	"net/textproto"
 	"path/filepath"
 	"runtime/trace"
+	"strings"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -75,6 +76,9 @@ func (ps *DistrolessScanner) Scan(ctx context.Context, layer *claircore.Layer) (
 				return fmt.Errorf("error reading DB directory: %w", err)
 			}
 			for _, f := range dbFiles {
+				if f.IsDir() || strings.HasSuffix(f.Name(), ".md5sums") {
+					continue
+				}
 				pkgCt := 0
 				fn := filepath.Join(p, f.Name())
 				log := slog.With("database-file", fn)
