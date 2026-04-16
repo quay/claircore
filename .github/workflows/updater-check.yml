@@ -37,7 +37,7 @@ jobs:
               (.steps[] | select(.name == "Check") | "#step:\(.number):0")
             )' >> "$GITHUB_OUTPUT"
       - name: Create Issue
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         if: failure()
         env:
           LOGS_URL: ${{ steps.url.outputs.LOGS_URL }}
