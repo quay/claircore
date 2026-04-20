@@ -118,8 +118,14 @@ func (u *Updater) DeltaParse(ctx context.Context, contents io.ReadCloser) ([]*cl
 }
 
 // Parser parses individual RHEL CSAF/VEX documents into claircore vulnerabilities.
-// It maintains internal caches for repository and product lookups, so reusing
-// the same Parser instance across multiple documents is more efficient than
+//
+// It maintains internal caches for claircore objects (Repositories, Packages) that
+// are derived from CPE and product tree data. These caches avoid redundant
+// allocations when the same CPE or product appears across multiple CSAF documents.
+// The CSAF documents themselves are not cached - each document is parsed
+// independently.
+//
+// Reusing the same Parser instance across multiple documents is more efficient than
 // creating a new one for each document.
 type Parser struct {
 	pc *productCache
@@ -134,10 +140,9 @@ func NewParser() *Parser {
 	}
 }
 
-// Parse parses a single RHEL CSAF/VEX document and returns vulnerabilities.
-// The Parser's internal caches are reused across calls, so parsing multiple
-// documents with the same Parser instance avoids redundant allocations for
-// shared CPEs and repositories.
+// Parse parses a single RHEL CSAF/VEX document and returns claircore vulnerabilities.
+// The Parser's internal caches for claircore objects are reused, so parsing multiple
+// documents avoids redundant allocations for shared CPEs and repositories.
 func (p *Parser) Parse(ctx context.Context, doc []byte) ([]*claircore.Vulnerability, error) {
 	c, err := csaf.Parse(bytes.NewReader(doc))
 	if err != nil {
