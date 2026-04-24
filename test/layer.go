@@ -83,7 +83,7 @@ func ServeLayers(t *testing.T, n int) (*http.Client, []claircore.LayerDescriptio
 			Typeflag: tar.TypeReg,
 			Name:     "./randomfile",
 			Size:     filesize,
-			Mode:     0755,
+			Mode:     0o755,
 			Uid:      1000,
 			Gid:      1000,
 			ModTime:  lsrv.now,
@@ -112,13 +112,20 @@ func ServeLayers(t *testing.T, n int) (*http.Client, []claircore.LayerDescriptio
 //
 // Any needed cleanup is handled via the passed [testing.T].
 func RealizeLayers(ctx context.Context, t *testing.T, refs ...LayerRef) []claircore.Layer {
+	defer func() {
+		// Propagate "Skip" and "Fail" calls from the goroutines.
+		switch {
+		case t.Failed():
+			t.FailNow()
+		case t.Skipped():
+			t.SkipNow()
+		}
+	}()
 	ret := make([]claircore.Layer, len(refs))
 	fetchCh := make(chan int)
 	var wg sync.WaitGroup
 	for range 3 {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			for n := range fetchCh {
 				id, err := claircore.ParseDigest(refs[n].Digest)
 				if err != nil {
@@ -153,7 +160,7 @@ func RealizeLayers(ctx context.Context, t *testing.T, refs ...LayerRef) []clairc
 					}
 				})
 			}
-		}()
+		})
 	}
 	for n := range refs {
 		fetchCh <- n
