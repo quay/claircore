@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Commit Style - Claircore Documentation</title>
+        <title>Acceptance Testing - Claircore Documentation</title>
 
 
         <!-- Custom HTML head -->
@@ -182,38 +182,253 @@
 
                 <div id="mdbook-content" class="content">
                     <main>
-                        <h1 id="commit-style"><a class="header" href="#commit-style">Commit Style</a></h1>
-<p>The Claircore project utilizes well structured commits to keep the history useful and help with release automation.
-We suggest signing off on your commits as well.</p>
-<p>A typical commit will take on the following structure:</p>
-<pre><code>&lt;scope&gt;: &lt;subject&gt;
-
-&lt;body&gt;
-Fixes #1
-Pull Request #2
-
-Signed-Off By: &lt;email&gt;
+                        <h1 id="acceptance-testing-framework"><a class="header" href="#acceptance-testing-framework">Acceptance Testing Framework</a></h1>
+<p>This package provides a testing framework for validating vulnerability analyzers
+against known fixtures. It enables teams to verify that their analyzer correctly
+identifies vulnerabilities in container images using VEX documents.</p>
+<h2 id="table-of-contents"><a class="header" href="#table-of-contents">Table of Contents</a></h2>
+<ul>
+<li><a href="#acceptance-testing-framework">Acceptance Testing Framework</a>
+<ul>
+<li><a href="#table-of-contents">Table of Contents</a></li>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#prerequisites">Prerequisites</a></li>
+<li><a href="#quick-start">Quick Start</a></li>
+<li><a href="#creating-fixtures">Creating Fixtures</a>
+<ul>
+<li><a href="#vex-document-format">VEX Document Format</a></li>
+<li><a href="#expected-results-csv">Expected Results CSV</a></li>
+<li><a href="#uploading-fixtures">Uploading Fixtures</a>
+<ul>
+<li><a href="#create-options">Create Options</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#running-tests">Running Tests</a>
+<ul>
+<li><a href="#running-integration-tests">Running Integration Tests</a></li>
+<li><a href="#using-local-oci-layout">Using Local OCI Layout</a></li>
+</ul>
+</li>
+<li><a href="#testing-with-claircore">Testing with Claircore</a></li>
+<li><a href="#implementing-a-custom-auditor">Implementing a Custom Auditor</a></li>
+<li><a href="#media-types">Media Types</a></li>
+</ul>
+</li>
+</ul>
+<h2 id="overview"><a class="header" href="#overview">Overview</a></h2>
+<p>The acceptance testing framework works by:</p>
+<ol>
+<li>Loading test <strong>fixtures</strong> from an OCI registry (images with VEX documents and
+expected results attached as OCI referrers)</li>
+<li>Running an <strong>analyzer</strong> (wrapped by the <code>Auditor</code> interface) against each fixture</li>
+<li>Comparing the analyzer’s output against the expected results</li>
+</ol>
+<p>This approach allows reproducible, automated testing of vulnerability detection
+without requiring access to the analyzer’s internal implementation.</p>
+<h2 id="prerequisites"><a class="header" href="#prerequisites">Prerequisites</a></h2>
+<ul>
+<li><strong>Go 1.25+</strong> installed</li>
+<li><strong>Container registry access</strong> with push permissions (for creating fixtures)</li>
+</ul>
+<p>Note: The integration tests use embedded PostgreSQL binaries that are downloaded
+automatically - no database installation required.</p>
+<h2 id="quick-start"><a class="header" href="#quick-start">Quick Start</a></h2>
+<p>If you just want to run the existing tests against the default fixtures repository:</p>
+<pre><code class="language-bash">go test -tags=integration -v ./test/acceptance/...
 </code></pre>
-<p>The header of the commit is regexp checked before commit and your commit will be kicked back if it does not conform.</p>
-<h2 id="scope"><a class="header" href="#scope">Scope</a></h2>
-<p>This is the section of code this commit influences.</p>
-<p>You will often see scopes such as “notifier”, “auth”, “chore”, “cicd”.</p>
-<h2 id="subject"><a class="header" href="#subject">Subject</a></h2>
-<p>Subject is a short and concise summary of the change the commit is introducing. It should be a sentence fragment without starting capitalization and ending punctuation and limited to about 60 characters, to allow for the scope prefix and decoration in the git log.</p>
-<h2 id="body"><a class="header" href="#body">Body</a></h2>
-<p>Body should be full of detail.</p>
-<p>Explain what this commit is doing and why it is necessary.</p>
-<p>You may include references to issues and pull requests as well.</p>
+<p>The tests will automatically pull fixtures from <code>quay.io/projectquay/clair-fixtures</code>.</p>
+<h2 id="creating-fixtures"><a class="header" href="#creating-fixtures">Creating Fixtures</a></h2>
+<p>A fixture consists of three parts:</p>
+<ol>
+<li>A container image (the thing being analyzed)</li>
+<li>One or more VEX documents describing vulnerabilities</li>
+<li>An expected results CSV defining what the analyzer should find</li>
+</ol>
+<h3 id="vex-document-format"><a class="header" href="#vex-document-format">VEX Document Format</a></h3>
+<p>VEX documents must be valid <a href="https://docs.oasis-open.org/csaf/csaf/v2.0/csaf-v2.0.html">CSAF 2.0</a>
+with <code>category: csaf_vex</code>. Here’s a minimal example:</p>
+<pre><code class="language-json">{
+  "document": {
+    "category": "csaf_vex",
+    "csaf_version": "2.0",
+    "publisher": {
+      "category": "vendor",
+      "name": "Your Organization",
+      "namespace": "https://example.com"
+    },
+    "title": "CVE-2024-1234: Example vulnerability",
+    "tracking": {
+      "current_release_date": "2024-01-01T00:00:00Z",
+      "id": "CVE-2024-1234",
+      "initial_release_date": "2024-01-01T00:00:00Z",
+      "revision_history": [
+        {"date": "2024-01-01T00:00:00Z", "number": "1", "summary": "Initial"}
+      ],
+      "status": "final",
+      "version": "1"
+    }
+  },
+  "product_tree": {
+    "branches": [
+      {
+        "category": "product_version",
+        "name": "mypackage-1.2.3",
+        "product": {
+          "name": "My Package 1.2.3",
+          "product_id": "mypackage-1.2.3",
+          "product_identification_helper": {
+            "purl": "pkg:pypi/mypackage@1.2.3"
+          }
+        }
+      }
+    ]
+  },
+  "vulnerabilities": [
+    {
+      "cve": "CVE-2024-1234",
+      "product_status": {
+        "known_affected": ["mypackage-1.2.3"]
+      }
+    }
+  ]
+}
+</code></pre>
+<p>Key fields:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>document.tracking.id</code></td><td>The CVE/tracking ID (must match CSV)</td></tr>
+<tr><td><code>product_tree.branches[].product.product_id</code></td><td>Product identifier (must match CSV)</td></tr>
+<tr><td><code>product_tree.branches[].product.product_identification_helper.purl</code></td><td>Package URL for matching</td></tr>
+<tr><td><code>vulnerabilities[].product_status.known_affected</code></td><td>List of affected product IDs</td></tr>
+<tr><td><code>vulnerabilities[].product_status.known_not_affected</code></td><td>List of not-affected product IDs</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="expected-results-csv"><a class="header" href="#expected-results-csv">Expected Results CSV</a></h3>
+<p>The expected results file is a CSV with three columns (no header row):</p>
+<pre><code class="language-csv">tracking_id,product_id,status
+</code></pre>
+<p>Example:</p>
+<pre><code class="language-csv">CVE-2024-1234,mypackage-1.2.3,affected
+CVE-2024-5678,otherpackage-2.0.0,not_affected
+CVE-2024-9999,fixedpackage-3.0.0,absent
+</code></pre>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Status</th><th>Meaning</th><th>Test Behavior</th></tr>
+</thead>
+<tbody>
+<tr><td><code>affected</code></td><td>Product is vulnerable</td><td>MUST appear in analyzer results as affected</td></tr>
+<tr><td><code>not_affected</code></td><td>Product is known to not be affected</td><td>MUST appear in analyzer results as not-affected</td></tr>
+<tr><td><code>absent</code></td><td>Product should not appear (fixed/filtered)</td><td>MUST NOT appear in analyzer results</td></tr>
+</tbody>
+</table>
+</div>
+<p>Lines starting with <code>#</code> are treated as comments.</p>
+<h3 id="uploading-fixtures"><a class="header" href="#uploading-fixtures">Uploading Fixtures</a></h3>
+<p>Use the <code>test/acceptance/cmd/fixture</code> tool to create fixtures:</p>
+<pre><code class="language-bash"># Create a fixture
+go run ./test/acceptance/cmd/fixture create \
+    -image registry.io/namespace/image@sha256:abc123... \
+    -tag my-fixture-name \
+    -vex path/to/vex.json \
+    -manifest path/to/expected.csv \
+    -repo your.registry.io/namespace/your-repo
+
+# You can attach multiple VEX documents
+go run ./test/acceptance/cmd/fixture create \
+    -image registry.io/namespace/image@sha256:abc123... \
+    -tag multi-vex-fixture \
+    -vex vex1.json \
+    -vex vex2.json \
+    -vex vex3.json \
+    -manifest expected.csv \
+    -repo your.registry.io/your-repo
+
+# Verify the fixture was created
+go run ./test/acceptance/cmd/fixture list -image your.registry.io/your-repo:my-fixture-name
+</code></pre>
+<h4 id="create-options"><a class="header" href="#create-options">Create Options</a></h4>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Flag</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>-image</code></td><td>(required)</td><td>Source image reference with digest</td></tr>
+<tr><td><code>-tag</code></td><td>(required)</td><td>Tag name for the fixture</td></tr>
+<tr><td><code>-vex</code></td><td>(required)</td><td>Path to VEX document (repeatable)</td></tr>
+<tr><td><code>-manifest</code></td><td>(required)</td><td>Path to expected results CSV</td></tr>
+<tr><td><code>-repo</code></td><td><code>quay.io/projectquay/clair-fixtures</code></td><td>Target repository</td></tr>
+<tr><td><code>-platform</code></td><td><code>linux/amd64</code></td><td>Platform to copy (use <code>all</code> for multi-arch)</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="running-tests"><a class="header" href="#running-tests">Running Tests</a></h2>
+<h3 id="running-integration-tests"><a class="header" href="#running-integration-tests">Running Integration Tests</a></h3>
+<p>The integration tests automatically download and run embedded PostgreSQL
+binaries - no database setup required:</p>
+<pre><code class="language-bash">go test -tags=integration -v ./test/acceptance/...
+</code></pre>
+<h3 id="using-local-oci-layout"><a class="header" href="#using-local-oci-layout">Using Local OCI Layout</a></h3>
+<p>For testing without a registry, fixtures can be loaded from local OCI Layout
+directories:</p>
+<pre><code class="language-go">acceptance.Run(ctx, t, auditor, []string{
+    "ocidir:///path/to/local/fixture",
+})
+</code></pre>
+<h2 id="testing-with-claircore"><a class="header" href="#testing-with-claircore">Testing with Claircore</a></h2>
+<p>Most teams will use the built-in claircore auditor to test their images.
+See <a href="../../test/acceptance/integration_test.go"><code>integration_test.go</code></a> for a
+complete example showing how to set up and run acceptance tests with the
+<code>ClaircoreAuditor</code>.</p>
+<p>To run:</p>
+<pre><code class="language-bash">go test -tags=integration -v ./test/acceptance/...
+</code></pre>
+<p>The test will:</p>
+<ol>
+<li>Pull each fixture from the registry</li>
+<li>Index the image with claircore</li>
+<li>Load the VEX documents attached to the image</li>
+<li>Match vulnerabilities against the indexed packages</li>
+<li>Compare results to the expected results CSV</li>
+<li>Report any mismatches or missing vulnerabilities</li>
+</ol>
+<h2 id="implementing-a-custom-auditor"><a class="header" href="#implementing-a-custom-auditor">Implementing a Custom Auditor</a></h2>
+<p>If you’re building your own vulnerability analyzer (not using claircore), implement
+the <code>Auditor</code> interface:</p>
+<p>See the <a href="https://pkg.go.dev/github.com/quay/claircore/test/acceptance#Auditor"><code>Auditor</code></a> interface and <a href="https://pkg.go.dev/github.com/quay/claircore/test/acceptance#Result"><code>Result</code></a> type documentation.</p>
+<p>See <a href="../../test/acceptance/example_test.go"><code>example_test.go</code></a> for a complete, type-checked example implementation.</p>
+<h2 id="media-types"><a class="header" href="#media-types">Media Types</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Type</th><th>Media Type</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>VEX</td><td><code>application/csaf+json</code></td><td>CSAF/VEX vulnerability document</td></tr>
+<tr><td>Expected Results</td><td><code>application/vnd.com.redhat.container.acceptancetest.v1+csv</code></td><td>Test expectations CSV</td></tr>
+</tbody>
+</table>
+</div>
+<p>Compressed variants (<code>...+zstd</code>) are also supported.</p>
 
                     </main>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../contributor/changelog.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../howto.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../contributor/iter.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../howto/add_dist.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -223,11 +438,11 @@ Signed-Off By: &lt;email&gt;
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../contributor/changelog.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../howto.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../contributor/iter.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../howto/add_dist.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>
