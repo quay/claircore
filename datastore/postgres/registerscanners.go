@@ -7,6 +7,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/quay/claircore/indexer"
 )
 
@@ -16,7 +17,7 @@ var (
 			Namespace: "claircore",
 			Subsystem: "indexer",
 			Name:      "registerscanners_total",
-			Help:      "Total number of database queries issued in the RegiterScanners method.",
+			Help:      "Total number of database queries issued in the RegisterScanners method.",
 		},
 		[]string{"query"},
 	)
@@ -26,7 +27,7 @@ var (
 			Namespace: "claircore",
 			Subsystem: "indexer",
 			Name:      "registerscanners_duration_seconds",
-			Help:      "The duration of all queries issued in the RegiterScanners method",
+			Help:      "The duration of all queries issued in the RegisterScanners method",
 		},
 		[]string{"query"},
 	)
@@ -82,5 +83,63 @@ SELECT
 		registerScannerDuration.WithLabelValues("insert").Observe(time.Since(start).Seconds())
 	}
 
+	return s.populateScanners(ctx)
+}
+
+const selectAllScanner = `
+SELECT
+	id, name, version, kind
+FROM
+	scanner;
+`
+
+func (s *IndexerStore) populateScanners(ctx context.Context) error {
+	rows, err := s.pool.Query(ctx, selectAllScanner)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve scanners: %w", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id int64
+		var name, version, kind string
+		err := rows.Scan(
+			&id,
+			&name,
+			&version,
+			&kind,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to scan scanners: %w", err)
+		}
+		s.scanners.Store(makeScannerKey(name, version, kind), id)
+	}
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("error iterating scanners: %w", err)
+	}
 	return nil
+}
+
+func (s *IndexerStore) selectScanners(vs indexer.VersionedScanners) ([]int64, error) {
+	ids := make([]int64, len(vs))
+	for i, v := range vs {
+		id, ok := s.scanners.Load(makeScannerKey(v.Name(), v.Version(), v.Kind()))
+		if !ok {
+			return nil, fmt.Errorf("failed to retrieve id for scanner %q", v.Name())
+		}
+		ids[i] = id.(int64)
+	}
+
+	return ids, nil
+}
+
+func (s *IndexerStore) selectScanner(v indexer.VersionedScanner) (int64, error) {
+	id, ok := s.scanners.Load(makeScannerKey(v.Name(), v.Version(), v.Kind()))
+	if !ok {
+		return 0, fmt.Errorf("failed to retrieve id for scanner %q", v.Name())
+	}
+	return id.(int64), nil
+}
+
+func makeScannerKey(name, version, kind string) string {
+	return name + "_" + version + "_" + kind
 }
