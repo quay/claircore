@@ -114,7 +114,8 @@ const (
 //
 // All methods are safe to call on a nil receiver.
 type historyDB struct {
-	db *sql.DB
+	db   *sql.DB
+	path string
 	queries
 }
 
@@ -188,11 +189,15 @@ Stat:
 	queries, err := pickQueries(ctx, db)
 	if err != nil {
 		// Error should be annotated already, just return it.
+		if cErr := db.Close(); cErr != nil {
+			slog.WarnContext(ctx, "unable to close sqlite db", "reason", cErr)
+		}
 		return nil, err
 	}
 
 	h = &historyDB{
 		db:      db,
+		path:    spool.Name(),
 		queries: queries,
 	}
 	// This is an internal function, so add an extra caller frame.
@@ -308,12 +313,17 @@ func (h *historyDB) AddRepoid(ctx context.Context, pkg *claircore.Package) error
 	return nil
 }
 
-// Close releases held resources.
+// Close releases held resources and removes the temp spool file.
 func (h *historyDB) Close() error {
 	if h == nil {
 		return nil
 	}
 
 	runtime.SetFinalizer(h, nil)
-	return h.db.Close()
+	cErr := h.db.Close()
+	var rErr error
+	if h.path != "" {
+		rErr = os.Remove(h.path)
+	}
+	return errors.Join(cErr, rErr)
 }
