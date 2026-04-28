@@ -5,7 +5,7 @@ import (
 	"io/fs"
 )
 
-// A ReadDirFile wrapper for fs.File
+// DirFile is a ReadDirFile wrapper for [fs.File].
 type DirFile struct {
 	fdir    fs.File
 	fsys    *FS
