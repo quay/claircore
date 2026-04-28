@@ -226,7 +226,7 @@ func OpenDB(ctx context.Context, sys fs.FS, found FoundDB) (*Database, error) {
 			return nil, fmt.Errorf("internal/rpm: unable to open sqlite db: %w", err)
 		}
 		db.headers = sdb
-		cleanup.close = sdb.Close
+		cleanup.close = sqliteCleanup(spool.Name(), sdb.Close)
 	case kindBDB:
 		var bpdb bdb.PackageDB
 		if err := bpdb.Parse(spool); err != nil {
@@ -259,16 +259,23 @@ type databaseCleanup struct {
 }
 
 func (c *databaseCleanup) Close() (err error) {
-	// Close the database handle before unlinking the spool. SQLite's shutdown
-	// sequence (WAL checkpoint, -wal/-shm removal) relies on the main DB file
-	// still being on disk; unlinking first leaks the side files on some
-	// platform/filesystem combinations.
 	if c.close != nil {
 		err = errors.Join(err, c.close())
 	}
 	if c.spool != nil {
 		name := c.spool.Name()
 		err = errors.Join(err, c.spool.Close(), os.Remove(name))
+	}
+	return err
+}
+
+func sqliteCleanup(name string, close func() error) func() error {
+	return func() (err error) {
+		// Close the SQLite handle while the spooled DB file still exists. WAL
+		// checkpointing and sidecar cleanup rely on the main DB pathname.
+		if close != nil {
+			err = errors.Join(err, close())
+		}
 		// Belt-and-suspenders: SQLite normally removes these during clean
 		// shutdown, but some driver versions leave them behind.
 		for _, suffix := range []string{"-wal", "-shm"} {
@@ -276,6 +283,6 @@ func (c *databaseCleanup) Close() (err error) {
 				err = errors.Join(err, rmErr)
 			}
 		}
+		return err
 	}
-	return err
 }
