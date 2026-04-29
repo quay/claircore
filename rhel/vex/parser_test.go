@@ -738,3 +738,93 @@ func TestCheckKernelPackage(t *testing.T) {
 		})
 	}
 }
+
+func TestCreatorDocLink(t *testing.T) {
+	const name = "CVE-2023-4911"
+	selfURL := "https://security.access.redhat.com/data/csaf/v2/vex/2023/cve-2023-4911.json"
+	betaBase, err := url.Parse("https://security.access.redhat.com/data/csaf/v2/vex-feed/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	betaURL := "https://security.access.redhat.com/data/csaf/v2/vex-feed/2023/cve-2023-4911.json"
+
+	t.Run("constructs from default base when self missing", func(t *testing.T) {
+		doc := &csaf.CSAF{}
+		doc.Document.Tracking.ID = name
+		c := NewParser().creator(name, doc)
+		if c.docLink != selfURL {
+			t.Fatalf("got docLink %q, want %q", c.docLink, selfURL)
+		}
+	})
+
+	t.Run("constructs from configured base when self missing", func(t *testing.T) {
+		doc := &csaf.CSAF{}
+		doc.Document.Tracking.ID = name
+		c := NewParser(WithBaseURL(betaBase)).creator(name, doc)
+		if c.docLink != betaURL {
+			t.Fatalf("got docLink %q, want %q", c.docLink, betaURL)
+		}
+	})
+
+	t.Run("prefers document self reference", func(t *testing.T) {
+		doc := &csaf.CSAF{}
+		doc.Document.Tracking.ID = name
+		doc.Document.References = []csaf.Reference{{
+			Category: "self",
+			URL:      selfURL,
+		}}
+		c := NewParser(WithBaseURL(betaBase)).creator(name, doc)
+		if c.docLink != selfURL {
+			t.Fatalf("got docLink %q, want %q", c.docLink, selfURL)
+		}
+	})
+
+	t.Run("empty when base nil and self missing", func(t *testing.T) {
+		doc := &csaf.CSAF{}
+		doc.Document.Tracking.ID = name
+		c := NewParser(WithBaseURL(nil)).creator(name, doc)
+		if c.docLink != "" {
+			t.Fatalf("got docLink %q, want empty", c.docLink)
+		}
+	})
+}
+
+func TestDocLinkFromBase(t *testing.T) {
+	t.Parallel()
+	base, err := url.Parse(BaseURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tests := []struct {
+		name string
+		id   string
+		want string
+	}{
+		{
+			name: "cve",
+			id:   "CVE-2023-4911",
+			want: "https://security.access.redhat.com/data/csaf/v2/vex/2023/cve-2023-4911.json",
+		},
+		{
+			name: "non-cve",
+			id:   "RHSA-2023:1234",
+			want: "",
+		},
+		{
+			name: "empty",
+			id:   "",
+			want: "",
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := docLinkFromBase(base, tc.id)
+			if got != tc.want {
+				t.Fatalf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	if got := docLinkFromBase(nil, "CVE-2023-4911"); got != "" {
+		t.Fatalf("nil base: got %q, want empty", got)
+	}
+}
