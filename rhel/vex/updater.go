@@ -175,6 +175,9 @@ func (u *Updater) parserOpts() []ParserOption {
 		prog := u.fixedInCEL
 		opts = append(opts, func(p *Parser) { p.fixedInCEL = prog })
 	}
+	if u.url != nil {
+		opts = append(opts, WithBaseURL(u.url))
+	}
 	return opts
 }
 
