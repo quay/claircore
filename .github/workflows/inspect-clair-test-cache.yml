@@ -1,0 +1,68 @@
+# Manual job to list ~/.cache/clair-testing after the same restore rules as CI.
+# Run: Actions -> Inspect clair test cache -> Run workflow.
+---
+name: Inspect clair test cache
+permissions:
+  contents: read
+on:
+  workflow_dispatch: {}
+
+concurrency:
+  group: inspect-clair-cache
+  cancel-in-progress: true
+
+jobs:
+  inspect:
+    name: List integration-assets tree
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Cache Integration Assets (same as CI)
+        id: integ
+        uses: actions/cache@v5
+        with:
+          key: integration-assets-v2-${{ runner.os }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            integration-assets-v2-${{ runner.os }}-
+            integration-assets-
+          path: |
+            ~/.cache/clair-testing
+
+      - name: Report cache action metadata
+        run: |
+          echo "cache_hit (true = exact key only): ${{ steps.integ.outputs.cache-hit }}"
+          echo "primary key would be: integration-assets-v2-${{ runner.os }}-${{ hashFiles('**/go.sum') }}"
+
+      - name: Inspect tree
+        run: |
+          set -e
+          C="${HOME}/.cache/clair-testing"
+          if ! test -d "$C"; then
+            echo "::error::$C is missing; restore found nothing to unpack"
+            exit 1
+          fi
+          echo "=== top level ==="
+          du -h -d1 "$C" 2>/dev/null | sort -h
+          echo
+          echo "=== totals ==="
+          echo "bytes (du -sb clair-testing):"
+          du -sb "$C" | awk '{print $1}'
+          echo "file count:"
+          find "$C" -type f 2>/dev/null | wc -l
+          echo
+          if test -d "$C/layer"; then
+            echo "=== sample layer/ (first 30 files) ==="
+            find "$C/layer" -type f 2>/dev/null | head -n 30
+            echo
+            echo "=== layer/ file count ==="
+            find "$C/layer" -type f 2>/dev/null | wc -l
+          else
+            echo "No layer/ subdir (unexpected if integration tests have run before)."
+          fi
+          echo
+          echo "=== sample non-layer paths (up to 40) ==="
+          find "$C" -type f 2>/dev/null | grep -v '/layer/' | head -n 40

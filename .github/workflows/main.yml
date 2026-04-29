@@ -81,6 +81,10 @@ jobs:
   tests:
     name: Tests
     runs-on: ubuntu-latest
+    # Job-level permissions: unspecified scopes default to none when this block exists.
+    permissions:
+      actions: read
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -103,7 +107,24 @@ jobs:
         if: steps.previous.outputs.cache-hit != 'true'
         with:
           go-version: ${{ matrix.go }}
+      - name: List Actions caches (before integration restore)
+        if: steps.previous.outputs.cache-hit != 'true'
+        run: |
+          echo "::group::REST: caches whose keys start with integration-assets (first 100)"
+          resp="$(curl -fsS -H "Accept: application/vnd.github+json" -H "Authorization: Bearer ${{ github.token }}" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/caches?per_page=100")"
+          echo "$resp" | jq -r '
+            (.actions_caches // [])
+            | map(select(.key | startswith("integration-assets")))
+            | sort_by(.last_accessed_at)
+            | reverse
+            | .[]
+            | "\(.key)\tsize_bytes=\(.size_in_bytes)\tref=\(.ref // "")\tlast_access=\(.last_accessed_at)"
+          ' | head -n 50 || echo "(no matching rows or jq parse failed)"
+          echo "First page: total_count=$(echo "$resp" | jq -r ".total_count // 0") rows=$(echo "$resp" | jq ".actions_caches | length")"
+          echo "::endgroup::"
       - name: Cache Integration Assets
+        id: integ
         if: steps.previous.outputs.cache-hit != 'true'
         uses: actions/cache@v5
         with:
@@ -112,6 +133,23 @@ jobs:
             integration-assets-
           path: |
             ~/.cache/clair-testing
+      - name: Runner and layer cache stats
+        if: steps.previous.outputs.cache-hit != 'true'
+        run: |
+          echo "::group::Runner and clair-testing cache (after restore)"
+          uname -a
+          echo "nproc=$(nproc)"
+          go version
+          echo "GITHUB_REF=$GITHUB_REF GITHUB_REF_NAME=$GITHUB_REF_NAME GITHUB_HEAD_REF=$GITHUB_HEAD_REF GITHUB_EVENT_NAME=$GITHUB_EVENT_NAME"
+          echo "integration-assets primary key for this checkout: integration-assets-${{ hashFiles('**/*_test.go') }}"
+          echo "actions/cache outputs.cache-hit (true = exact primary key only): ${{ steps.integ.outputs.cache-hit }}"
+          if test -d "${HOME}/.cache/clair-testing"; then
+            du -sh "${HOME}/.cache/clair-testing"
+            find "${HOME}/.cache/clair-testing/layer" -type f 2>/dev/null | wc -l | xargs echo 'layer file count:'
+          else
+            echo 'no ~/.cache/clair-testing yet: cache miss with no matching restore-key tarball, or restore did not unpack (directory is created when tests first write layers).'
+          fi
+          echo "::endgroup::"
       - name: Tests
         run: |
           if test -f ~/ok-by-run; then
@@ -126,7 +164,7 @@ jobs:
             cd "$dir"
             go list -m
             go mod download
-            GOMAXPROCS=2 go test -race ${RUNNER_DEBUG:+-v} "-coverprofile=${{ runner.temp }}/$(go list -m | tr / _).codecov.out" -covermode=atomic ./...
+            GOMAXPROCS=2 go test -race -v "-coverprofile=${{ runner.temp }}/$(go list -m | tr / _).codecov.out" -covermode=atomic ./...
           ); done
       - name: Codecov
         if: >-
