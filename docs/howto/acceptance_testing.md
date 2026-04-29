@@ -18,7 +18,9 @@ identifies vulnerabilities in container images using VEX documents.
       - [Create Options](#create-options)
   - [Running Tests](#running-tests)
     - [Running Integration Tests](#running-integration-tests)
+    - [Using Alternative Repository](#using-alternative-repository)
     - [Using Local OCI Layout](#using-local-oci-layout)
+    - [Building Fixtures from Live VEX URLs](#building-fixtures-from-live-vex-urls)
   - [Testing with Claircore](#testing-with-claircore)
   - [Implementing a Custom Auditor](#implementing-a-custom-auditor)
   - [Media Types](#media-types)
@@ -216,6 +218,22 @@ acceptance.Run(ctx, t, auditor, []string{
     "ocidir:///path/to/local/fixture",
 })
 ```
+
+### Building Fixtures from Live VEX URLs
+
+If you already have VEX documents hosted at known URLs (e.g. from a security
+advisory feed), you can supply them directly without storing them as OCI referrers.
+Use `FetchVEXDocs` to download the documents, populate a `Fixture` directly, and
+pass it to `Run` via `WithFixture`. The image `Reference` is still pulled from a
+registry for indexing.
+
+See [`example_test.go`](../../test/acceptance/example_test.go) for an example
+(`ExampleWithFixture`).
+
+This approach is useful for:
+
+- Rapid iteration during development without pushing VEX documents to a registry
+- Testing regressions in a live advisory feed
 
 ## Testing with Claircore
 
