@@ -183,9 +183,6 @@ func (a *ClaircoreAuditor) Audit(ctx context.Context, t testing.TB, reference st
 		return nil, fmt.Errorf("parse CSAF: %w", err)
 	}
 	slog.DebugContext(ctx, "parsed CSAF documents", "vuln_count", len(vulns))
-	for i, v := range vulns {
-		slog.DebugContext(ctx, "parsed vulnerability", "idx", i, "name", v.Name, "pkg_name", v.Package.Name, "pkg_version", v.Package.Version)
-	}
 	if len(vulns) > 0 {
 		_, err = a.store.UpdateVulnerabilities(ctx, "acceptance-test", "csaf", vulns)
 		if err != nil {

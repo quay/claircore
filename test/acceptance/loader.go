@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"slices"
 
 	"github.com/klauspost/compress/zstd"
@@ -41,6 +42,10 @@ type loaderConfig struct {
 // provided. The same fixture is returned for all references, ignoring which
 // reference was requested. For testing multiple fixtures, use real registry
 // fixtures with OCI referrers or call [Run] multiple times.
+//
+// To build a fixture from live VEX URLs rather than OCI referrers, use
+// [FetchVEXDocs] to populate [Fixture.VEXDocuments] and set [Fixture.Expected]
+// inline, then pass the result to [Run].
 func WithFixture(f *Fixture) LoaderOption {
 	return func(c *loaderConfig) {
 		c.fixture = f
@@ -184,6 +189,32 @@ func processReferrer(ctx context.Context, rc *regclient.RegClient, r ref.Ref, de
 	}
 
 	return nil
+}
+
+// FetchVEXDocs fetches CSAF/VEX documents from the given URLs using client.
+// The returned slice can be assigned directly to [Fixture.VEXDocuments].
+func FetchVEXDocs(ctx context.Context, client *http.Client, urls []string) ([][]byte, error) {
+	docs := make([][]byte, 0, len(urls))
+	for _, u := range urls {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			return nil, err
+		}
+		data, readErr := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if readErr != nil {
+			return nil, readErr
+		}
+		if resp.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf("fetch %s: unexpected response: %s", u, resp.Status)
+		}
+		docs = append(docs, data)
+	}
+	return docs, nil
 }
 
 // FetchBlob retrieves a blob from the registry, decompressing if needed.
