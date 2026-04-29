@@ -226,7 +226,18 @@ func OpenDB(ctx context.Context, sys fs.FS, found FoundDB) (*Database, error) {
 			return nil, fmt.Errorf("internal/rpm: unable to open sqlite db: %w", err)
 		}
 		db.headers = sdb
-		cleanup.close = sdb.Close
+		spoolPath := spool.Name()
+		cleanup.close = func() error {
+			err := sdb.Close()
+			// Belt-and-braces: SQLite normally removes these during clean
+			// shutdown, but some driver versions leave them behind.
+			for _, suffix := range [2]string{"-wal", "-shm"} {
+				if rmErr := os.Remove(spoolPath + suffix); rmErr != nil && !errors.Is(rmErr, os.ErrNotExist) {
+					err = errors.Join(err, rmErr)
+				}
+			}
+			return err
+		}
 	case kindBDB:
 		var bpdb bdb.PackageDB
 		if err := bpdb.Parse(spool); err != nil {
@@ -259,11 +270,12 @@ type databaseCleanup struct {
 }
 
 func (c *databaseCleanup) Close() (err error) {
-	if c.spool != nil {
-		err = errors.Join(err, c.spool.Close(), os.Remove(c.spool.Name()))
-	}
 	if c.close != nil {
 		err = errors.Join(err, c.close())
+	}
+	if c.spool != nil {
+		name := c.spool.Name()
+		err = errors.Join(err, c.spool.Close(), os.Remove(name))
 	}
 	return err
 }
