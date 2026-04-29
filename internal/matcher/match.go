@@ -110,23 +110,24 @@ func EnrichedMatch(ctx context.Context, ir *claircore.IndexReport, ms []driver.M
 	mCh := make(chan driver.Matcher)
 	vCh := make(chan map[string][]*claircore.Vulnerability, lim)
 	mg, mctx := errgroup.WithContext(ctx) // match group, match context
-	for range lim {
-		mg.Go(func() error { // Worker
-			var m driver.Matcher
-			for m = range mCh {
-				select {
-				case <-mctx.Done():
-					return mctx.Err()
-				default:
-				}
-				vs, err := NewController(m, s).Match(mctx, records)
-				if err != nil {
-					return fmt.Errorf("matcher error: %w", err)
-				}
-				vCh <- vs
+	worker := func() error {
+		var m driver.Matcher
+		for m = range mCh {
+			select {
+			case <-mctx.Done():
+				return mctx.Err()
+			default:
 			}
-			return nil
-		})
+			vs, err := NewController(m, s).Match(mctx, records)
+			if err != nil {
+				return fmt.Errorf("matcher error: %w", err)
+			}
+			vCh <- vs
+		}
+		return nil
+	}
+	mg.SetLimit(lim)
+	for mg.TryGo(worker) {
 	}
 	// Set up a pool to watch the matchers and attach results to the report.
 	var vg errgroup.Group // Used for easy grouping. Does cancellation on a previous Context.
@@ -151,7 +152,11 @@ func EnrichedMatch(ctx context.Context, ir *claircore.IndexReport, ms []driver.M
 			for pkg, vs := range pkgVuln {
 				for _, v := range vs {
 					vr.Vulnerabilities[v.ID] = v
-					vr.PackageVulnerabilities[pkg] = append(vr.PackageVulnerabilities[pkg], v.ID)
+					if !v.Invert {
+						vr.PackageVulnerabilities[pkg] = append(vr.PackageVulnerabilities[pkg], v.ID)
+					} else {
+						vr.PackageNotVulnerable[pkg] = append(vr.PackageNotVulnerable[pkg], v.ID)
+					}
 				}
 			}
 		}
@@ -169,6 +174,7 @@ func EnrichedMatch(ctx context.Context, ir *claircore.IndexReport, ms []driver.M
 	}
 	rCh := make(chan *entry, lim)
 	eg, ectx := errgroup.WithContext(ctx)
+	eg.SetLimit(lim + 2) // Account for the static workers.
 	eg.Go(func() error { // Sender
 	Send:
 		for _, e := range es {
@@ -191,36 +197,36 @@ func EnrichedMatch(ctx context.Context, ir *claircore.IndexReport, ms []driver.M
 	})
 	// Use an atomic to track closing the results channel.
 	ct := uint32(lim)
-	for range lim {
-		eg.Go(func() error { // Worker
-			defer func() {
-				if atomic.AddUint32(&ct, ^uint32(0)) == 0 {
-					close(rCh)
-				}
-			}()
-			var e driver.Enricher
-			for e = range eCh {
-				kind, msg, err := e.Enrich(ectx, getter(s, e.Name()), vr)
-				if err != nil {
-					slog.ErrorContext(ctx, "enrichment error", "reason", err)
-					continue
-				}
-				if len(msg) == 0 {
-					slog.DebugContext(ctx, "enricher reported nothing, skipping", "name", e.Name())
-					continue
-				}
-				res := entry{
-					msg:  msg,
-					kind: kind,
-				}
-				select {
-				case rCh <- &res:
-				case <-ectx.Done():
-					return ectx.Err()
-				}
+	enrichWorker := func() error { // Worker
+		defer func() {
+			if atomic.AddUint32(&ct, ^uint32(0)) == 0 {
+				close(rCh)
 			}
-			return nil
-		})
+		}()
+		var e driver.Enricher
+		for e = range eCh {
+			kind, msg, err := e.Enrich(ectx, getter(s, e.Name()), vr)
+			if err != nil {
+				slog.ErrorContext(ctx, "enrichment error", "reason", err)
+				continue
+			}
+			if len(msg) == 0 {
+				slog.DebugContext(ctx, "enricher reported nothing, skipping", "name", e.Name())
+				continue
+			}
+			res := entry{
+				msg:  msg,
+				kind: kind,
+			}
+			select {
+			case rCh <- &res:
+			case <-ectx.Done():
+				return ectx.Err()
+			}
+		}
+		return nil
+	}
+	for eg.TryGo(enrichWorker) {
 	}
 	if err := eg.Wait(); err != nil {
 		return nil, err
@@ -229,7 +235,7 @@ func EnrichedMatch(ctx context.Context, ir *claircore.IndexReport, ms []driver.M
 	return vr, nil
 }
 
-// Getter returns a type implementing driver.EnrichmentGetter.
+// Getter returns a type implementing [driver.EnrichmentGetter].
 func getter(s datastore.Enrichment, name string) *enrichmentGetter {
 	return &enrichmentGetter{s: s, name: name}
 }
