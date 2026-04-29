@@ -109,6 +109,7 @@ func runOne(ctx context.Context, t *testing.T, a Auditor, ref string, opts ...Lo
 			}
 		}
 	}
+
 	results, err := a.Audit(ctx, t, fix.Reference, csafReaders)
 	if err != nil {
 		t.Fatalf("audit: %v", err)
@@ -116,7 +117,7 @@ func runOne(ctx context.Context, t *testing.T, a Auditor, ref string, opts ...Lo
 	t.Logf("auditor returned %d results", len(results))
 
 	cmp := Compare(fix.Expected, results)
-	cmp.Fixture = ref
+	cmp.Fixture = fix.Reference
 
 	for _, m := range cmp.Mismatches {
 		t.Errorf("MISMATCH %s/%s: got %s, want %s",
@@ -125,7 +126,6 @@ func runOne(ctx context.Context, t *testing.T, a Auditor, ref string, opts ...Lo
 	for _, m := range cmp.Misses {
 		t.Errorf("MISSING %s/%s: expected %s", m.ID, m.Product, m.Status)
 	}
-
 	if len(cmp.Extras) > 0 {
 		t.Logf("note: scanner reported %d results not in fixture", len(cmp.Extras))
 		for _, e := range cmp.Extras {
