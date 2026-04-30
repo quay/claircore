@@ -17,11 +17,6 @@ import (
 	"github.com/quay/claircore/toolkit/fixtures"
 )
 
-// FixturesRepo is the OCI repository containing acceptance test fixtures.
-// Each image in this repo has VEX documents and expected results attached
-// via OCI referrers.
-const FixturesRepo = "quay.io/projectquay/clair-fixtures"
-
 // ReadVEX reads a VEX file from testdata directory.
 func readVEX(t *testing.T, name string) []byte {
 	t.Helper()
@@ -203,7 +198,6 @@ func TestAcceptanceRun(t *testing.T) {
 		}
 		Run(ctx, t, auditor, []string{testFixture.Reference}, WithFixture(testFixture))
 	})
-
 }
 
 // TestFixturesRepo runs acceptance tests against all images in the fixtures repository.

@@ -155,24 +155,24 @@ Use the `test/acceptance/cmd/fixture` tool to create fixtures:
 ```bash
 # Create a fixture
 go run ./test/acceptance/cmd/fixture create \
-    -image registry.io/namespace/image@sha256:abc123... \
-    -tag my-fixture-name \
+    -image registry.example.com/namespace/image@sha256:abc123... \
+    -tag fixture-name \
     -vex path/to/vex.json \
     -manifest path/to/expected.csv \
-    -repo your.registry.io/namespace/your-repo
+    -repo registry.example.com/namespace/fixtures
 
 # You can attach multiple VEX documents
 go run ./test/acceptance/cmd/fixture create \
-    -image registry.io/namespace/image@sha256:abc123... \
+    -image registry.example.com/namespace/image@sha256:abc123... \
     -tag multi-vex-fixture \
     -vex vex1.json \
     -vex vex2.json \
     -vex vex3.json \
     -manifest expected.csv \
-    -repo your.registry.io/your-repo
+    -repo registry.example.com/namespace/fixtures
 
 # Verify the fixture was created
-go run ./test/acceptance/cmd/fixture list -image your.registry.io/your-repo:my-fixture-name
+go run ./test/acceptance/cmd/fixture list -image registry.example.com/namespace/fixtures:fixture-name
 ```
 
 #### Create Options
@@ -191,10 +191,19 @@ go run ./test/acceptance/cmd/fixture list -image your.registry.io/your-repo:my-f
 ### Running Integration Tests
 
 The integration tests automatically download and run embedded PostgreSQL
-binaries - no database setup required:
+binaries; no database setup required:
 
 ```bash
 go test -tags=integration -v ./test/acceptance/...
+```
+
+### Using Alternative Repository
+
+The `fixtures-repo` flag can be passed to the test to run against an alternative
+repository of fixtures.
+
+```bash
+go test -tags=integration -v ./test/acceptance -fixtures-repo registry.example.com/namespace/fixtures:fixture-name
 ```
 
 ### Using Local OCI Layout
