@@ -1,6 +1,7 @@
 package rhel
 
 import (
+	"context"
 	"io/fs"
 	"os"
 	"path"
@@ -22,7 +23,7 @@ func TestDistributionScanner(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			d, err := findDistribution(sys)
+			d, err := findDistribution(context.Background(), sys)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -30,6 +31,19 @@ func TestDistributionScanner(t *testing.T) {
 			case strings.HasPrefix(n, "oracle-"):
 				if d != nil {
 					t.Fatalf("incorrect distribution: %s:%s", d.DID, d.VersionID)
+				}
+			case n == "hummingbird":
+				if d == nil {
+					t.Fatal("missing distribution")
+				}
+				if got, want := d.DID, "hummingbird"; got != want {
+					t.Errorf("DID: got %q, want %q", got, want)
+				}
+				if got, want := d.VersionID, "20251124"; got != want {
+					t.Errorf("VersionID: got %q, want %q", got, want)
+				}
+				if got, want := d.Name, "Hummingbird OS"; got != want {
+					t.Errorf("Name: got %q, want %q", got, want)
 				}
 			default:
 				if d == nil {
