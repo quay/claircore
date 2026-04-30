@@ -1,12 +1,13 @@
 package rhel
 
 import (
-	"context"
 	"io/fs"
 	"os"
 	"path"
 	"strings"
 	"testing"
+
+	"github.com/quay/claircore/test"
 )
 
 func TestDistributionScanner(t *testing.T) {
@@ -23,7 +24,7 @@ func TestDistributionScanner(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			d, err := findDistribution(context.Background(), sys)
+			d, err := findDistribution(test.Logging(t), sys)
 			if err != nil {
 				t.Fatal(err)
 			}

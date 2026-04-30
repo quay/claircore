@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"runtime/trace"
 	"strconv"
+	"strings"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -24,8 +25,8 @@ var (
 	releaseRegexp = regexp.MustCompile(`Red Hat Enterprise Linux (?:Server|Atomic Host)?\s*(?:release)?\s*(\d+)(?:\.\d)?`)
 )
 
-// DistributionScanner implements distribution detection logic for RHEL by looking for
-// an `etc/os-release` file in the layer and failing that, an `etc/redhat-release` file.
+// DistributionScanner implements distribution detection logic for RHEL using os-release
+// files (`etc/os-release`, then `usr/lib/os-release` if the former is absent).
 //
 // The DistributionScanner can be used concurrently.
 type DistributionScanner struct{}
@@ -53,43 +54,15 @@ func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]
 		return nil, fmt.Errorf("rhel: unexpected error reading files: %w", err)
 	}
 	if d == nil {
-		slog.DebugContext(ctx, "didn't find an os-release or redhat-release file")
+		slog.DebugContext(ctx, "didn't find an os-release file")
 		return nil, nil
 	}
 	return []*claircore.Distribution{d}, nil
 }
 
 func findDistribution(ctx context.Context, sys fs.FS) (*claircore.Distribution, error) {
-	// TODO(ross): It is not ideal to special-case Oracle Linux like this here.
-	// Ideally, each distribution scanner does it own work and does not know about the existence
-	// of other distribution scanners.
-	// It would be great to solely use etc/os-release; however, ClairCore still supports
-	// RHEL 6 which does not ship with etc/os-release, so this function must continue to rely on
-	// etc/redhat-release.
-	// Oracle Linux ships with etc/oracle-release as well as an unmodified etc/redhat-release, which means
-	// this function may accidentally claim the distribution is RHEL when it is actually Oracle Linux.
-	// For example: Oracle Linux 9 (as of writing) contains the following contents in the etc/redhat-release file:
-	// Red Hat Enterprise Linux release 9.3 (Plow)
-	// For now, special case Oracle Linux until RHEL 6 support is dropped.
-	const oracleReleasePath = `etc/oracle-release`
-	_, err := fs.Stat(sys, oracleReleasePath)
-	switch {
-	case errors.Is(err, nil):
-		// The etc/oracle-release file exists, so this is an Oracle Linux distribution,
-		// and not RHEL.
-		return nil, nil
-	case !errors.Is(err, fs.ErrNotExist):
-		return nil, fmt.Errorf("rhel: unexpected error reading files: %w", err)
-	default:
-		// OK.
-	}
-
-	const (
-		osReleasePath = `etc/os-release`
-		rhReleasePath = `etc/redhat-release`
-	)
-	for _, n := range []string{rhReleasePath, osReleasePath} {
-		b, err := fs.ReadFile(sys, n)
+	for _, p := range []string{osrelease.Path, osrelease.FallbackPath} {
+		b, err := fs.ReadFile(sys, p)
 		switch {
 		case errors.Is(err, nil):
 		case errors.Is(err, fs.ErrNotExist):
@@ -104,14 +77,11 @@ func findDistribution(ctx context.Context, sys fs.FS) (*claircore.Distribution, 
 			}
 			return mkRelease(num), nil
 		}
-		if n != osReleasePath {
-			continue
-		}
 		m, err := osrelease.Parse(ctx, bytes.NewReader(b))
 		if err != nil {
 			continue
 		}
-		if m["ID"] == "hummingbird" {
+		if strings.EqualFold(m["ID"], "hummingbird") {
 			d := &claircore.Distribution{
 				Name:       m["NAME"],
 				DID:        m["ID"],
@@ -120,9 +90,12 @@ func findDistribution(ctx context.Context, sys fs.FS) (*claircore.Distribution, 
 				PrettyName: m["PRETTY_NAME"],
 			}
 			if s := m["CPE_NAME"]; s != "" {
-				if wfn, err := cpe.Unbind(s); err == nil {
+				if wfn, err := cpe.Unbind(s); err != nil {
+					slog.WarnContext(ctx, "failed to unbind CPE", "reason", err, "cpe_string", s)
+				} else {
 					d.CPE = wfn
 				}
+
 			}
 			return d, nil
 		}
