@@ -31,7 +31,7 @@ jobs:
           merge: true
           comment: on-error
   deploy-docs:
-    if: ${{ success() && github.base_ref == 'main' }}
+    if: ${{ success() && github.event.issue.pull_request }}
     permissions:
       contents: write
     needs: fast-forward
