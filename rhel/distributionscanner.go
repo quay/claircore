@@ -1,6 +1,7 @@
 package rhel
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -12,6 +13,8 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
+	"github.com/quay/claircore/osrelease"
+	"github.com/quay/claircore/toolkit/types/cpe"
 )
 
 var (
@@ -31,7 +34,7 @@ type DistributionScanner struct{}
 func (*DistributionScanner) Name() string { return "rhel" }
 
 // Version implements [indexer.VersionedScanner].
-func (*DistributionScanner) Version() string { return "2" }
+func (*DistributionScanner) Version() string { return "3" }
 
 // Kind implements [indexer.VersionedScanner].
 func (*DistributionScanner) Kind() string { return "distribution" }
@@ -45,7 +48,7 @@ func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]
 	if err != nil {
 		return nil, fmt.Errorf("rhel: unable to open layer: %w", err)
 	}
-	d, err := findDistribution(sys)
+	d, err := findDistribution(ctx, sys)
 	if err != nil {
 		return nil, fmt.Errorf("rhel: unexpected error reading files: %w", err)
 	}
@@ -56,7 +59,7 @@ func (ds *DistributionScanner) Scan(ctx context.Context, l *claircore.Layer) ([]
 	return []*claircore.Distribution{d}, nil
 }
 
-func findDistribution(sys fs.FS) (*claircore.Distribution, error) {
+func findDistribution(ctx context.Context, sys fs.FS) (*claircore.Distribution, error) {
 	// TODO(ross): It is not ideal to special-case Oracle Linux like this here.
 	// Ideally, each distribution scanner does it own work and does not know about the existence
 	// of other distribution scanners.
@@ -94,15 +97,35 @@ func findDistribution(sys fs.FS) (*claircore.Distribution, error) {
 		default:
 			return nil, fmt.Errorf("rhel: unexpected error reading files: %w", err)
 		}
-		ms := releaseRegexp.FindSubmatch(b)
-		if ms == nil {
+		if ms := releaseRegexp.FindSubmatch(b); ms != nil {
+			num, err := strconv.ParseInt(string(ms[1]), 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("rhel: unexpected error reading files: %w", err)
+			}
+			return mkRelease(num), nil
+		}
+		if n != osReleasePath {
 			continue
 		}
-		num, err := strconv.ParseInt(string(ms[1]), 10, 64)
+		m, err := osrelease.Parse(ctx, bytes.NewReader(b))
 		if err != nil {
-			return nil, fmt.Errorf("rhel: unexpected error reading files: %w", err)
+			continue
 		}
-		return mkRelease(num), nil
+		if m["ID"] == "hummingbird" {
+			d := &claircore.Distribution{
+				Name:       m["NAME"],
+				DID:        m["ID"],
+				VersionID:  m["VERSION_ID"],
+				Version:    m["VERSION"],
+				PrettyName: m["PRETTY_NAME"],
+			}
+			if s := m["CPE_NAME"]; s != "" {
+				if wfn, err := cpe.Unbind(s); err == nil {
+					d.CPE = wfn
+				}
+			}
+			return d, nil
+		}
 	}
 	return nil, nil
 }
