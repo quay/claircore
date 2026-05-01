@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/google/go-cmp v0.7.0
-	github.com/package-url/packageurl-go v0.1.5
+	github.com/package-url/packageurl-go v0.1.6
 	golang.org/x/tools v0.44.0
 )
 
