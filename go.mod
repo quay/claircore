@@ -17,7 +17,7 @@ require (
 	github.com/quay/claircore/toolkit v1.6.0
 	github.com/quay/claircore/updater/driver v1.0.0
 	github.com/quay/goval-parser v0.8.8
-	github.com/regclient/regclient v0.11.2
+	github.com/regclient/regclient v0.11.3
 	github.com/spdx/tools-golang v0.5.7
 	github.com/ulikunitz/xz v0.5.15
 	go.opentelemetry.io/otel v1.43.0
