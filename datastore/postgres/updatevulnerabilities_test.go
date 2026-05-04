@@ -27,6 +27,7 @@ type op struct {
 }
 
 func TestGetLatestVulnerabilities(t *testing.T) {
+	// this is soemtibneitneitn
 	integration.NeedDB(t)
 	ctx := test.Logging(t)
 
