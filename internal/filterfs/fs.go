@@ -1,11 +1,17 @@
+// Package filterfs provides a wrapper around an [fs.FS] that only presents
+// regular files and directories to the user.
+//
+// This wrapper has some overhead, as it attempts to open files to ensure that
+// "invisible" permissions (SELinux, etc.) are also valid.
 package filterfs
 
 import (
 	"io/fs"
 	"path"
+	"slices"
 )
 
-// FS wraps an fs.FS and hides inaccessible files and directories
+// FS wraps an [fs.FS] and hides inaccessible files and directories
 // by returning appropriate "not found" errors or filtering them from listings.
 type FS struct {
 	fsys fs.FS
@@ -52,23 +58,22 @@ func (f *FS) ReadDir(name string) ([]fs.DirEntry, error) {
 	if err != nil {
 		return nil, fs.SkipDir
 	}
-
-	var filtered []fs.DirEntry
-	// Filter out entries that are inaccessible
-	for _, entry := range entries {
-		// Try to stat the entry to check if it's accessible
-		path := path.Join(name, entry.Name())
-		fi, err := fs.Stat(f.fsys, path)
-		if err == nil {
-			// Accessible, include it
-			if fi.Mode().IsRegular() || fi.Mode().IsDir() {
-				if file, err := f.fsys.Open(path); err == nil {
-					file.Close()
-					filtered = append(filtered, entry)
-				}
-			}
+	entries = slices.DeleteFunc(entries, func(d fs.DirEntry) bool {
+		p := path.Join(name, d.Name())
+		fi, err := fs.Stat(f.fsys, p)
+		if err != nil {
+			return true
 		}
-	}
+		if m := fi.Mode(); !m.IsDir() && !m.IsRegular() {
+			return true
+		}
+		t, err := f.fsys.Open(p)
+		if err != nil {
+			return true
+		}
+		t.Close()
+		return false
+	})
 
-	return filtered, nil
+	return entries, nil
 }
