@@ -6,9 +6,11 @@ import (
 	"crypto/md5"
 	"fmt"
 	"log/slog"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
+	"unique"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -130,14 +132,16 @@ func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string
 			package_name, package_version, package_module, package_arch, package_kind,
 			dist_id, dist_name, dist_version, dist_version_code_name, dist_version_id, dist_arch, dist_cpe, dist_pretty_name,
 			repo_name, repo_key, repo_uri,
-			fixed_in_version, arch_operation, version_kind, vulnerable_range
+			fixed_in_version, arch_operation, version_kind, vulnerable_range,
+			not_vulnerable
 		) VALUES (
 		  $1, $2,
 		  $3, $4, $5, $6, $7, $8, $9,
 		  $10, $11, $12, $13, $14,
 		  $15, $16, $17, $18, $19, $20, $21, $22,
 		  $23, $24, $25,
-		  $26, $27, $28, COALESCE($29, VersionRange('{}', '{}', '()'))
+		  $26, $27, $28, COALESCE($29, VersionRange('{}', '{}', '()')),
+		  $30
 		)
 		ON CONFLICT (hash_kind, hash) DO NOTHING;`
 		// Assoc associates an update operation and a vulnerability. It fails
@@ -147,7 +151,32 @@ func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string
 			$3,
 			(SELECT id FROM vuln WHERE hash_kind = $1 AND hash = $2))
 		ON CONFLICT DO NOTHING;`
-		refreshView = `REFRESH MATERIALIZED VIEW CONCURRENTLY latest_update_operations;`
+		refreshView           = `REFRESH MATERIALIZED VIEW CONCURRENTLY latest_update_operations;`
+		insertAliasNamespaces = `INSERT INTO alias_namespace (namespace) VALUES (unnest($1)) ON CONFLICT DO NOTHING;`
+		insertAliases         = `INSERT INTO alias (namespace, name)
+	SELECT ns.id, input.name
+	FROM
+		(SELECT unnest($1) AS space, unnest($2) AS name) AS input
+	JOIN
+		alias_namespace AS ns ON input.space = ns.namespace
+ON CONFLICT DO NOTHING;`
+		insertSelfAlias = `INSERT INTO vulnerability_self (vulnerability, self) VALUES (
+	(SELECT id FROM vuln WHERE hash_kind = $1 AND hash = $2),
+	(SELECT a.id FROM alias AS a JOIN alias_namespace AS ns ON a.namespace = ns.id WHERE ns.namespace = $3 AND a.name = $4)
+) ON CONFLICT DO NOTHING;`
+		insertVulnerabilityAliases = `INSERT INTO vulnerability_alias
+	SELECT vuln.id, alias.id
+	FROM
+		(SELECT id FROM vuln WHERE hash_kind = $1 AND hash = $2) AS vuln,
+		(SELECT a.id
+		FROM
+			(SELECT unnest($3) AS space, unnest($4) AS name) AS input,
+		JOIN
+			alias_namespace AS ns ON ns.namespace = input.space
+		JOIN
+			alias AS a ON a.name = input.name AND a.namespace = ns.id
+		) AS alias
+ON CONFLICT DO NOTHING`
 	)
 
 	var uoID uint64
@@ -242,6 +271,11 @@ func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string
 	vulnCt := 0
 	start = time.Now()
 
+	// Keep track of the alias namespaces seen in this transaction.
+	//
+	// There's a limited set of namespaces, but it's either do this book keeping
+	// or issue a LOT of pointless inserts.
+	seenSpace := make(map[unique.Handle[string]]struct{})
 	var batch pgx.Batch
 	flush := func() (err error) {
 		err = tx.SendBatch(ctx, &batch).Close()
@@ -256,7 +290,7 @@ func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string
 			return false
 		}
 		vulnCt++
-		if vuln.Package == nil || vuln.Package.Name == "" {
+		if skipVulnerability(vuln) {
 			skipCt++
 			return true
 		}
@@ -280,8 +314,58 @@ func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string
 			dist.DID, dist.Name, dist.Version, dist.VersionCodeName, dist.VersionID, dist.Arch, dist.CPE, dist.PrettyName,
 			repo.Name, repo.Key, repo.URI,
 			vuln.FixedInVersion, vuln.ArchOperation, vKind, vuln.Range,
+			vuln.Invert,
 		)
 		batch.Queue(assoc, hashKind, hash, uoID)
+
+		// TODO(hank) Switch the fail-open validity checks to errors.
+		aliases := append(vuln.Aliases, vuln.Self)
+		spaces := slices.Collect(func(yield func(string) bool) {
+			for _, a := range aliases {
+				if !a.Valid() {
+					continue
+				}
+				if !yield(a.Space.Value()) {
+					return
+				}
+			}
+		})
+		names := slices.Collect(func(yield func(string) bool) {
+			for _, a := range aliases {
+				if !a.Valid() {
+					continue
+				}
+				if !yield(a.Name) {
+					return
+				}
+			}
+		})
+		uniq := slices.Collect(func(yield func(string) bool) {
+			for _, a := range aliases {
+				if !a.Valid() {
+					continue
+				}
+				s := a.Space
+				if _, ok := seenSpace[s]; !ok {
+					if !yield(s.Value()) {
+						return
+					}
+					seenSpace[s] = struct{}{}
+				}
+			}
+		})
+		if len(uniq) > 0 {
+			batch.Queue(insertAliasNamespaces, uniq)
+		}
+		// TODO(hank) Remove these conditionals and assume that aliases are
+		// always present.
+		if vuln.Self.Valid() {
+			batch.Queue(insertSelfAlias, hashKind, hash, vuln.Self.Space.Value(), vuln.Self.Name)
+		}
+		if len(names) > 0 {
+			batch.Queue(insertAliases, spaces, names)
+			batch.Queue(insertVulnerabilityAliases, hashKind, hash, spaces, names)
+		}
 
 		if ct := batch.Len(); ct < 1000 {
 			return true
@@ -313,6 +397,14 @@ func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string
 		"skipped", skipCt,
 		"inserted", vulnCt-skipCt)
 	return ref, nil
+}
+
+// SkipVulnerability reports if the provided [claircore.Vulnerability] should
+// not be uploaded to the database.
+func skipVulnerability(v *claircore.Vulnerability) bool {
+	// TODO(hank) Check the vulnerability aliases. This requires *all* the
+	// updaters being touched.
+	return v.Package == nil || v.Package.Name == ""
 }
 
 // Md5Vuln creates an md5 hash from the members of the passed-in Vulnerability,
