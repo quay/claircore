@@ -41,7 +41,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-4aae1b67.js";
+            window.path_to_searchindex_js = "searchindex-6e4f8990.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-c6f1cca0.js"></script>
@@ -1051,24 +1051,24 @@ CVE-2024-9999,fixedpackage-3.0.0,absent
 <p>Use the <code>test/acceptance/cmd/fixture</code> tool to create fixtures:</p>
 <pre><code class="language-bash"># Create a fixture
 go run ./test/acceptance/cmd/fixture create \
-    -image registry.io/namespace/image@sha256:abc123... \
-    -tag my-fixture-name \
+    -image registry.example.com/namespace/image@sha256:abc123... \
+    -tag fixture-name \
     -vex path/to/vex.json \
     -manifest path/to/expected.csv \
-    -repo your.registry.io/namespace/your-repo
+    -repo registry.example.com/namespace/fixtures
 
 # You can attach multiple VEX documents
 go run ./test/acceptance/cmd/fixture create \
-    -image registry.io/namespace/image@sha256:abc123... \
+    -image registry.example.com/namespace/image@sha256:abc123... \
     -tag multi-vex-fixture \
     -vex vex1.json \
     -vex vex2.json \
     -vex vex3.json \
     -manifest expected.csv \
-    -repo your.registry.io/your-repo
+    -repo registry.example.com/namespace/fixtures
 
 # Verify the fixture was created
-go run ./test/acceptance/cmd/fixture list -image your.registry.io/your-repo:my-fixture-name
+go run ./test/acceptance/cmd/fixture list -image registry.example.com/namespace/fixtures:fixture-name
 </code></pre>
 <h4 id="create-options"><a class="header" href="#create-options">Create Options</a></h4>
 <div class="table-wrapper">
@@ -1089,8 +1089,13 @@ go run ./test/acceptance/cmd/fixture list -image your.registry.io/your-repo:my-f
 <h2 id="running-tests"><a class="header" href="#running-tests">Running Tests</a></h2>
 <h3 id="running-integration-tests"><a class="header" href="#running-integration-tests">Running Integration Tests</a></h3>
 <p>The integration tests automatically download and run embedded PostgreSQL
-binaries - no database setup required:</p>
+binaries; no database setup required:</p>
 <pre><code class="language-bash">go test -tags=integration -v ./test/acceptance/...
+</code></pre>
+<h3 id="using-alternative-repository"><a class="header" href="#using-alternative-repository">Using Alternative Repository</a></h3>
+<p>The <code>fixtures-repo</code> flag can be passed to the test to run against an alternative
+repository of fixtures.</p>
+<pre><code class="language-bash">go test -tags=integration -v ./test/acceptance -fixtures-repo registry.example.com/namespace/fixtures:fixture-name
 </code></pre>
 <h3 id="using-local-oci-layout"><a class="header" href="#using-local-oci-layout">Using Local OCI Layout</a></h3>
 <p>For testing without a registry, fixtures can be loaded from local OCI Layout
