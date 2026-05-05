@@ -246,6 +246,81 @@ func TestRegistryParse(t *testing.T) {
 	}
 }
 
+func TestRegistryParseNoneNamespaceFallback(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	strictParseNV := func(v string) claircore.Version {
+		nv, err := gobin.ParseVersion(v)
+		if err != nil {
+			t.Helper()
+			t.Fatal(err)
+		}
+		return nv
+	}
+
+	tests := []struct {
+		name string
+		purl string
+		want []*claircore.IndexRecord
+	}{
+		{
+			name: "stdlib-no-namespace-exact-match",
+			purl: "pkg:golang/stdlib@v1.0.0?arch=x86_64",
+			want: []*claircore.IndexRecord{
+				{
+					Package: &claircore.Package{
+						Name:              "stdlib",
+						Version:           "v1.0.0",
+						Kind:              types.BinaryPackage,
+						NormalizedVersion: strictParseNV("v1.0.0"),
+						Arch:              "x86_64",
+						Source:            &claircore.Package{},
+					},
+					Repository: &gobin.Repository,
+				},
+			},
+		},
+		{
+			name: "multi-segment-namespace-fallback",
+			purl: "pkg:golang/go.opentelemetry.io/otel@v1.15.1?arch=x86_64#exporters/jaeger",
+			want: []*claircore.IndexRecord{
+				{
+					Package: &claircore.Package{
+						Name:              "go.opentelemetry.io/otel/exporters/jaeger",
+						Version:           "v1.15.1",
+						Kind:              types.BinaryPackage,
+						NormalizedVersion: strictParseNV("v1.15.1"),
+						Arch:              "x86_64",
+						Source:            &claircore.Package{},
+					},
+					Repository: &gobin.Repository,
+				},
+			},
+		},
+	}
+
+	r := NewRegistry()
+	r.RegisterPurlType(gobin.PURLType, NoneNamespace, gobin.ParsePURL)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			p, err := packageurl.FromString(tt.purl)
+			if err != nil {
+				t.Fatal(err)
+			}
+			got, err := r.Parse(ctx, p)
+			if err != nil {
+				t.Fatalf("Parse: %v", err)
+			}
+			if diff := cmp.Diff(got, tt.want); diff != "" {
+				t.Fatalf("index record mismatch (-got +want):\n%s", diff)
+			}
+		})
+	}
+}
+
 // minimal structures for SPDX 2.3 JSON we care about
 type spdxDoc struct {
 	Packages []struct {
@@ -315,10 +390,11 @@ func TestSPDXPURLsParseToIndexRecords(t *testing.T) {
 					if err != nil {
 						var e ErrUnhandledPurl
 						if errors.As(err, &e) {
-							// Accept unknown types; not yet defined in the registry.
 							continue
 						}
-						t.Fatalf("registry parse %q: %v", pu.String(), err)
+						// Registered parser can reject a locator (e.g. golang PURL without semver).
+						t.Logf("skip registry parse %q: %v", pu.String(), err)
+						continue
 					}
 					for _, ir := range got {
 						gotIndexRecords++

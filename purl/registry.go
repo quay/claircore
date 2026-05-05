@@ -101,6 +101,10 @@ func (r *Registry) Generate(ctx context.Context, ir *claircore.IndexRecord) (pac
 
 // Parse finds a registered parser and transform functions by the PURL's namespace and type.
 // It then runs all transform functions and returns the parsed IndexRecords.
+//
+// If no parser is registered for the exact (type, namespace) pair, Parse tries again with
+// [NoneNamespace]. A single registration under [NoneNamespace] can then serve every
+// namespace for that type.
 func (r *Registry) Parse(ctx context.Context, purl packageurl.PackageURL) ([]*claircore.IndexRecord, error) {
 	if purl.Namespace == "" {
 		purl.Namespace = NoneNamespace
@@ -108,17 +112,19 @@ func (r *Registry) Parse(ctx context.Context, purl packageurl.PackageURL) ([]*cl
 
 	r.mu.RLock()
 	pt, ok := r.parseRegistry[createPurlKey(purl.Type, purl.Namespace)]
-	r.mu.RUnlock()
-	if ok {
-		for _, tf := range pt.TransformFuncs {
-			err := tf(ctx, &purl)
-			if err != nil {
-				return nil, fmt.Errorf("purl transform error: %w", err)
-			}
-		}
+	if !ok && purl.Namespace != NoneNamespace {
+		pt, ok = r.parseRegistry[createPurlKey(purl.Type, NoneNamespace)]
 	}
+	r.mu.RUnlock()
 	if !ok {
 		return nil, newErrUnhandledPurl(purl)
+	}
+
+	for _, tf := range pt.TransformFuncs {
+		err := tf(ctx, &purl)
+		if err != nil {
+			return nil, fmt.Errorf("purl transform error: %w", err)
+		}
 	}
 
 	return pt.ParseFunc(ctx, purl)
