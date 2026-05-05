@@ -11,6 +11,7 @@ import (
 	"github.com/package-url/packageurl-go"
 )
 
+// Parse decodes the contents of "r" as a JSON CSAF document.
 func Parse(r io.Reader) (*CSAF, error) {
 	csafDoc := &CSAF{}
 	if err := json.NewDecoder(r).Decode(csafDoc); err != nil {
@@ -55,9 +56,13 @@ type DocumentMetadata struct {
 	AggregateSeverity AggregateSeverity `json:"aggregate_severity"`
 }
 
-// Document references holds a list of references associated with the whole document.
+// Reference holds any reference to conferences, papers, advisories, and other
+// resources that are related and considered related to either a surrounding
+// part of or the entire document and to be of value to the document consumer.
 //
-// https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html#3219-document-property---references
+// A reference object MAY provide an optional category.
+//
+// https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html#3110-references-type
 type Reference struct {
 	Category string `json:"category"`
 	Summary  string `json:"summary"`
@@ -143,10 +148,24 @@ type Vulnerability struct {
 	Scores []Score `json:"scores"`
 }
 
+// The "ProductStatus" constants are the enumerated statues for
+// [Vulnerability.ProductStatus].
+//
+// See also: https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html#3239-vulnerabilities-property---product-status
+const (
+	ProductStatusFirstAffected      = `first_affected`
+	ProductStatusFirstFixed         = `first_fixed`
+	ProductStatusFixed              = `fixed`
+	ProductStatusKnownAffected      = `known_affected`
+	ProductStatusKnownNotAffected   = `known_not_affected`
+	ProductStatusLastAffected       = `last_affected`
+	ProductStatusRecommended        = `recommended`
+	ProductStatusUnderInvestigation = `under_investigation`
+)
+
 // Score contains score information tied to the listed products.
 //
 // https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html#32313-vulnerabilities-property---scores
-
 type Score struct {
 	// Currently RH only supports V3.
 	CVSSV2     *CVSSV2  `json:"cvss_v2"`
@@ -196,7 +215,7 @@ type Note struct {
 	Audience string `json:"audience"`
 }
 
-// Every ID item with the two mandatory properties System Name (system_name) and Text (text) contains a single unique label or tracking ID for the vulnerability.
+// TrackingID is a unique label or tracking ID for the vulnerability.
 //
 // https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html#3236-vulnerabilities-property---ids
 type TrackingID struct {
@@ -227,7 +246,7 @@ type RemediationData struct {
 	URL          string      `json:"url"`
 }
 
-// Remediation instructions for restart of affected software.
+// RestartData is the remediation instructions for restart of affected software.
 //
 // https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html#323127-vulnerabilities-property---remediations---restart-required
 type RestartData struct {
@@ -235,7 +254,7 @@ type RestartData struct {
 	Details  string `json:"details"`
 }
 
-// Machine readable flags for products related to the Vulnerability
+// Flag describes machine readable flags for products related to the Vulnerability
 //
 // https://docs.oasis-open.org/csaf/csaf/v2.0/os/csaf-v2.0-os.html#3235-vulnerabilities-property---flags
 type Flag struct {
