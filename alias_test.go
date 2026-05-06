@@ -13,10 +13,16 @@ func alias(space, name string) Alias {
 	}
 }
 
-func ExampleAlias_uri() {
+func ExampleAlias_uri_slash() {
 	fmt.Println(alias("https://example.com/", "CVE-2014-0160"))
 	// Output:
-	// https://example.com/#CVE-2014-0160
+	// https://example.com/CVE-2014-0160
+}
+
+func ExampleAlias_uri_anchor() {
+	fmt.Println(alias("https://example.com/cve", "CVE-2014-0160"))
+	// Output:
+	// https://example.com/cve#CVE-2014-0160
 }
 
 func ExampleAlias_cve() {
