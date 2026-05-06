@@ -27,7 +27,9 @@ func (a Alias) String() string {
 	var b strings.Builder
 	b.WriteString(space)
 	if strings.Contains(space, "://") { // If URI-ish:
-		b.WriteByte('#')
+		if !strings.HasSuffix(space, "/") { // If not a "directory":
+			b.WriteByte('#')
+		}
 	} else {
 		b.WriteByte('-')
 	}
