@@ -14,7 +14,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/package-url/packageurl-go v0.1.6
 	github.com/prometheus/client_golang v1.23.2
-	github.com/quay/claircore/toolkit v1.6.0
+	github.com/quay/claircore/toolkit v1.6.1
 	github.com/quay/claircore/updater/driver v1.0.0
 	github.com/quay/goval-parser v0.8.8
 	github.com/regclient/regclient v0.11.3
