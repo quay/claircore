@@ -27,7 +27,7 @@ import (
 )
 
 // Parse implements [driver.Updater].
-func (u *Updater) Parse(ctx context.Context, contents io.ReadCloser) ([]*claircore.Vulnerability, error) {
+func (u *Updater) Parse(_ context.Context, _ io.ReadCloser) ([]*claircore.Vulnerability, error) {
 	// NOOP
 	return nil, errors.ErrUnsupported
 }
@@ -39,81 +39,30 @@ func (u *Updater) DeltaParse(ctx context.Context, contents io.ReadCloser) ([]*cl
 	out := map[string][]*claircore.Vulnerability{}
 	deleted := []string{}
 
-	pc := newProductCache()
-	rc := newRepoCache()
-
+	p := NewParser()
 	r := bufio.NewReader(snappy.NewReader(contents))
+	sz := 0
 	for b, err := r.ReadBytes('\n'); err == nil; b, err = r.ReadBytes('\n') {
-		c, err := csaf.Parse(bytes.NewReader(b))
-		if err != nil {
-			return nil, nil, fmt.Errorf("error parsing CSAF: %w", err)
-		}
-		name := c.Document.Tracking.ID
-		if c.Document.Tracking.Status == "deleted" {
+		name, vs, err := p.parseDoc(ctx, b)
+		switch {
+		case err == nil && len(vs) != 0:
+			out[name] = vs
+			sz += len(vs)
+		case err == nil && len(vs) == 0:
+			fallthrough
+		case err == errDeleted:
+			sz -= len(out[name])
+			delete(out, name)
 			deleted = append(deleted, name)
-			continue
-		}
-
-		var selfLink string
-		for _, r := range c.Document.References {
-			if r.Category == "self" {
-				selfLink = r.URL
-			}
-		}
-		creator := newCreator(name, selfLink, c, pc, rc)
-		for _, v := range c.Vulnerabilities {
-			// Create vuln here, there should always be one vulnerability
-			// here in the case of RH VEX but the spec allows multiple.
-			links := []string{}
-			for _, r := range v.References {
-				links = append(links, r.URL)
-			}
-			// Useful for debugging
-			links = append(links, selfLink)
-			var desc string
-			for _, n := range v.Notes {
-				if n.Category == "description" {
-					desc = n.Text
-				}
-			}
-
-			protoVuln := func() *claircore.Vulnerability {
-				v := &claircore.Vulnerability{
-					Updater:            u.Name(),
-					Name:               name,
-					Description:        desc,
-					Issued:             v.ReleaseDate,
-					Links:              strings.Join(links, " "),
-					Severity:           "Unknown",
-					NormalizedSeverity: claircore.Unknown,
-				}
-				return v
-			}
-			// We're only bothered about known_affected and fixed,
-			// not_affected and under_investigation are ignored.
-			fixedVulns, err := creator.fixedVulnerabilities(ctx, v, protoVuln)
-			if err != nil {
-				return nil, nil, err
-			}
-			out[name] = fixedVulns
-			knownAffectedVulns, err := creator.knownAffectedVulnerabilities(ctx, v, protoVuln)
-			if err != nil {
-				return nil, nil, err
-			}
-			out[name] = append(out[name], knownAffectedVulns...)
+		default:
+			return nil, nil, err
 		}
 	}
-	vulns := []*claircore.Vulnerability{}
-	for n, vs := range out {
-		if len(vs) == 0 {
-			// If there are no vulns for this CVE make sure we signal that
-			// it is deleted in case it once had vulns.
-			deleted = append(deleted, n)
-			continue
-		}
+
+	vulns := make([]*claircore.Vulnerability, 0, sz)
+	for _, vs := range out {
 		vulns = append(vulns, vs...)
 	}
-
 	return vulns, deleted, nil
 }
 
@@ -144,14 +93,33 @@ func NewParser() *Parser {
 // The Parser's internal caches for claircore objects are reused, so parsing multiple
 // documents avoids redundant allocations for shared CPEs and repositories.
 func (p *Parser) Parse(ctx context.Context, doc []byte) ([]*claircore.Vulnerability, error) {
+	_, vs, err := p.parseDoc(ctx, doc)
+	switch err {
+	case nil, errDeleted:
+	default:
+		return nil, err
+	}
+	return vs, nil
+}
+
+// ErrDeleted is used to signal that a document has been set to status
+// "deleted".
+var errDeleted = errors.New("deleted")
+
+// ParseDoc is the common code for [Parser.Parse] and [Updater.DeltaParse].
+//
+// This function always reports the document's tracking ID, if known.
+//
+// Is the documented is marked as "deleted", [errDeleted] is reported.
+func (p *Parser) parseDoc(ctx context.Context, doc []byte) (string, []*claircore.Vulnerability, error) {
 	c, err := csaf.Parse(bytes.NewReader(doc))
 	if err != nil {
-		return nil, fmt.Errorf("error parsing CSAF: %w", err)
+		return "", nil, fmt.Errorf("error parsing CSAF: %w", err)
 	}
 
 	name := c.Document.Tracking.ID
 	if c.Document.Tracking.Status == "deleted" {
-		return nil, nil
+		return name, nil, errDeleted
 	}
 
 	var selfLink string
@@ -192,18 +160,18 @@ func (p *Parser) Parse(ctx context.Context, doc []byte) ([]*claircore.Vulnerabil
 
 		fixedVulns, err := creator.fixedVulnerabilities(ctx, v, protoVuln)
 		if err != nil {
-			return nil, err
+			return name, nil, err
 		}
 		out = append(out, fixedVulns...)
 
 		knownAffectedVulns, err := creator.knownAffectedVulnerabilities(ctx, v, protoVuln)
 		if err != nil {
-			return nil, err
+			return name, nil, err
 		}
 		out = append(out, knownAffectedVulns...)
 	}
 
-	return out, nil
+	return name, out, nil
 }
 
 // repoCacheKey is a unique identifier for a repository, it is made
