@@ -6,11 +6,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"hash/maphash"
 	"io"
+	"iter"
 	"log/slog"
 	"math"
 	"net/url"
 	"strings"
+	"sync"
 	"unique"
 
 	"github.com/klauspost/compress/snappy"
@@ -257,6 +260,217 @@ type creator struct {
 	c                  *csaf.CSAF
 	pc                 *productCache
 	rc                 *repoCache
+}
+
+// Status returns an iterator over the products in "v" with the status "which".
+//
+// Entries that are "structurally malformed" (e.g. has an invalid CPE Name or
+// has a dangling "product_id" reference) cause the iterator to yield an error.
+// Entries that are not usable but not malformed are silently skipped.
+func (c *creator) Status(ctx context.Context, v *csaf.Vulnerability, which string) iter.Seq2[status, error] {
+	unrelatedProductIDs := []string{}
+	log := slog.With("link", c.vulnLink)
+	debugEnabled := log.Enabled(ctx, slog.LevelDebug)
+
+	return func(yield func(status, error) bool) {
+		productIDs := v.ProductStatus[which]
+		for _, id := range productIDs {
+			log := log.With("id", id)
+			// RHEL VEX requires products to have relationships (package -> repo), so callers
+			// must check for and empty repoID after calling WalkRelationships.
+			pkgID, _, repoID, err := c.c.WalkRelationships(id)
+			if err != nil {
+				if !yield(status{}, err) {
+					return
+				}
+				continue
+			}
+			if repoID == "" {
+				// It's possible to get here due to middleware not having a defined component:package
+				// relationship. RHEL VEX requires products to have relationships.
+				if debugEnabled {
+					unrelatedProductIDs = append(unrelatedProductIDs, id)
+				}
+				continue
+			}
+
+			pkg := c.pc.Get(pkgID, c.c)
+			repo := c.pc.Get(repoID, c.c)
+			if repo == nil || pkg == nil {
+				// Should never get here, error in data.
+				log.WarnContext(ctx, "could not find product(s) in product tree",
+					slog.Group("package", "id", pkgID, "found", pkg != nil),
+					slog.Group("repo", "id", repoID, "found", repo != nil),
+				)
+				continue
+			}
+
+			var purl *packageurl.PackageURL
+			var wfn *cpe.WFN
+			if s, ok := repo.IdentificationHelper["cpe"]; ok {
+				v, err := cpe.Unbind(s)
+				if err != nil {
+					if !yield(status{}, err) {
+						return
+					}
+					continue
+				}
+				wfn = &v
+			}
+			if s, ok := pkg.IdentificationHelper["purl"]; ok {
+				v, err := packageurl.FromString(s)
+				if err != nil {
+					if !yield(status{}, err) {
+						return
+					}
+					continue
+				}
+				purl = &v
+			}
+			if purl == nil || wfn == nil {
+				// Should never get here, error in data.
+				log.WarnContext(ctx, "could not find needed identification helpers",
+					slog.Group("package", "id", pkgID, "helper", "purl", "found", purl != nil),
+					slog.Group("repo", "id", repoID, "helper", "cpe", "found", wfn != nil),
+				)
+				continue
+			}
+			if !checkPURL(*purl) {
+				continue
+			}
+
+			score := c.c.FindScore(id)
+			threat := c.c.FindThreat(id, "impact")
+			if threat == nil && score != nil && cvssBaseScoreFromScore(score) == 0.0 {
+				// This has no threat object and a 0.0 Base score: disregard.
+				continue
+			}
+			remediation := c.c.FindRemediation(id)
+
+			// Do fixups for specific statuses:
+			switch which {
+			case csaf.ProductStatusKnownNotAffected:
+				purl.Version = ""
+				purl.Qualifiers = slices.DeleteFunc(purl.Qualifiers, func(q packageurl.Qualifier) bool {
+					return q.Key == "epoch" || q.Key == "tag"
+				})
+			}
+			st := status{
+				ID:           id,
+				PackageID:    pkgID,
+				RepositoryID: repoID,
+				PURL:         *purl,
+				WFN:          *wfn,
+				Score:        score,
+				Threat:       threat,
+				Remediation:  remediation,
+			}
+			if !yield(st, nil) {
+				return
+			}
+		}
+	}
+}
+
+// Status is an individual "product status" that's well-formed according to Red
+// Hat's guidelines.
+type status struct {
+	ID           string
+	PackageID    string
+	RepositoryID string
+	PURL         packageurl.PackageURL
+	WFN          cpe.WFN
+	Score        *csaf.Score
+	Threat       *csaf.ThreatData
+	Remediation  *csaf.RemediationData
+}
+
+// PacakgeName reports the package name and any error encountered while trying
+// to determine it.
+//
+// Will not be an empty string if the returned [error] is nil.
+func (s *status) PackageName() (string, error) {
+	return extractPackageName(s.PURL)
+}
+
+// FixedInVersion reports the "fixed in" version and any error encountered while
+// trying to determine it.
+//
+// May be an empty string even if the returned [error] is nil.
+func (s *status) FixedInVersion() (string, error) {
+	return extractFixedInVersion(s.PURL)
+}
+
+// Module reports the module name and any error encountered while trying to
+// determine it.
+//
+// May be an empty string even if the returned [error] is nil.
+func (s *status) Module() (string, error) {
+	return componentPURLToModuleName(s.PURL)
+}
+
+// Key returns a local-process-only unique integer.
+func (s *status) Key() uint64 {
+	h := getHasher()
+	defer putHasher(h)
+
+	// The purl is normalized when constructed, so this should all be stable:
+	h.WriteString(s.PURL.Type)
+	h.WriteString(s.PURL.Name)
+	h.WriteString(s.PURL.Namespace)
+	h.WriteString(s.PURL.Subpath)
+	// Type specific shenanigans around the Version:
+	switch s.PURL.Type {
+	case packageurl.TypeOCI: // Skip
+	default:
+		h.WriteString(s.PURL.Version)
+	}
+	for _, q := range s.PURL.Qualifiers {
+		switch q.Key {
+		case "arch":
+			continue
+		default:
+		}
+		h.WriteString(q.Key)
+		h.WriteString(q.Value)
+	}
+
+	// A little ad-hoc hashing scheme for the WFN.
+	for _, a := range s.WFN.Attr {
+		switch a.Kind {
+		case cpe.ValueUnset:
+			h.WriteByte(0x00)
+		case cpe.ValueNA:
+			h.WriteByte(0x01)
+		case cpe.ValueAny:
+			h.WriteByte(0x02)
+		case cpe.ValueSet:
+			h.WriteByte(0xFF)
+			h.WriteString(a.V)
+		}
+	}
+
+	return h.Sum64()
+}
+
+var (
+	seed     = maphash.MakeSeed()
+	hashPool = sync.Pool{}
+)
+
+func getHasher() *maphash.Hash {
+	v := hashPool.Get()
+	if v == nil {
+		h := new(maphash.Hash)
+		h.SetSeed(seed)
+		return h
+	}
+	return v.(*maphash.Hash)
+}
+
+func putHasher(h *maphash.Hash) {
+	h.Reset()
+	hashPool.Put(h)
 }
 
 // Note: Relationship walking is now handled by csaf.CSAF.WalkRelationships().
