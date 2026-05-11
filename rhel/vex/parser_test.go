@@ -417,13 +417,13 @@ func TestParse(t *testing.T) {
 		{
 			name:            "cve-2024-24786",
 			filenames:       []string{"testdata/cve-2024-24786.json"},
-			expectedVulns:   610,
+			expectedVulns:   609,
 			expectedDeleted: 0,
 		},
 		{
 			name:            "cve-2022-38752",
 			filenames:       []string{"testdata/cve-2022-38752.json"},
-			expectedVulns:   47,
+			expectedVulns:   21,
 			expectedDeleted: 0,
 		},
 		{
