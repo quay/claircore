@@ -580,16 +580,6 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v csaf.Vulne
 			continue
 		}
 
-		// This path is deprecated as the VEX data should no longer define modules in the relationship.
-		// Deal with modules if we found one.
-		if modName != "" {
-			modProd := c.pc.Get(modName, c.c)
-			modName, err = createPackageModule(modProd)
-			if err != nil {
-				log.WarnContext(ctx, "could not create package module", "module", modName, "reason", err)
-			}
-		}
-
 		// pkgName will be overridden if we find a valid pURL
 		compProd := c.pc.Get(pkgName, c.c)
 		if compProd == nil {
@@ -749,7 +739,7 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 	log := slog.With("link", c.vulnLink)
 	debugEnabled := log.Enabled(ctx, slog.LevelDebug)
 	for _, pc := range v.ProductStatus["fixed"] {
-		pkgName, modName, repoName, err := c.c.WalkRelationships(pc)
+		pkgName, _, repoName, err := c.c.WalkRelationships(pc)
 		if err != nil || repoName == "" {
 			// It's possible to get here due to middleware not having a defined component:package
 			// relationship. RHEL VEX requires products to have relationships.
@@ -769,16 +759,6 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 		if !ok {
 			log.WarnContext(ctx, "could not find cpe helper type in product", "prod", repoName)
 			continue
-		}
-
-		// This path is deprecated as the VEX data should no longer define modules in the relationship.
-		// Deal with modules if we found one.
-		if modName != "" {
-			modProd := c.pc.Get(modName, c.c)
-			modName, err = createPackageModule(modProd)
-			if err != nil {
-				log.WarnContext(ctx, "could not create package module", "module", modName, "reason", err)
-			}
 		}
 
 		compProd := c.pc.Get(pkgName, c.c)
@@ -812,7 +792,8 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 				"reason", err, "purl", purl)
 			continue
 		}
-		if modName, err = componentPURLToModuleName(purl); err != nil {
+		modName, err := componentPURLToModuleName(purl)
+		if err != nil {
 			log.WarnContext(ctx, "invalid rpmmod in component pURL",
 				"reason", err, "purl", purl)
 			continue
@@ -966,36 +947,6 @@ func componentPURLToModuleName(purl packageurl.PackageURL) (string, error) {
 		return "", fmt.Errorf("invalid module stream in pURL qualifiers %s", purl.String())
 	}
 	return name + ":" + stream, nil
-}
-
-// DEPRECATED: createPackageModule shouldn't be used anymore when VEX files
-// are updated to use the new module format.
-func createPackageModule(p *csaf.Product) (string, error) {
-	modPURLHelper, ok := p.IdentificationHelper["purl"]
-	if !ok {
-		return "", nil
-	}
-	purl, err := packageurl.FromString(modPURLHelper)
-	if err != nil {
-		return "", err
-	}
-	if purl.Type != "rpmmod" {
-		return "", fmt.Errorf("invalid RPM module PURL: %q", purl.String())
-	}
-	var modName string
-	switch {
-	case purl.Namespace == "redhat":
-		version, _, _ := strings.Cut(purl.Version, ":")
-		modName = purl.Name + ":" + version
-	case strings.HasPrefix(purl.Namespace, "redhat/"):
-		// Account for the case where the PURL is unconventional
-		// e.g. pkg:rpmmod/redhat/postgresql:15/postgresql
-		_, modName, _ = strings.Cut(purl.Namespace, "/")
-	default:
-		// We never see this in the wild but account for it just in case.
-		return "", fmt.Errorf("non-Red Hat PURL")
-	}
-	return modName, nil
 }
 
 // ExtractFixedInVersion deals with 2 pURL types, TypeRPM and TypeOCI
