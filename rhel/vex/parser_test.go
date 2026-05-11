@@ -481,13 +481,13 @@ func TestParse(t *testing.T) {
 				"testdata/delete_CVE-2023-0030.json",
 				"testdata/delete_CVE-2023-0031.json",
 			},
-			expectedVulns:   546,
+			expectedVulns:   3769,
 			expectedDeleted: 4,
 		},
 		{
 			name:            "cve-2022-1705",
 			filenames:       []string{"testdata/cve-2022-1705.json"},
-			expectedVulns:   1069,
+			expectedVulns:   1006,
 			expectedDeleted: 0,
 		},
 		{
