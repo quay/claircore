@@ -7,9 +7,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"iter"
 	"log/slog"
 	"math"
 	"net/url"
+	"slices"
 	"strings"
 	"unique"
 
@@ -130,7 +132,6 @@ func (p *Parser) parseDoc(ctx context.Context, doc []byte) (string, []*claircore
 	}
 
 	creator := newCreator(name, selfLink, c, p.pc, p.rc)
-
 	var out []*claircore.Vulnerability
 	for _, v := range c.Vulnerabilities {
 		links := []string{}
@@ -259,6 +260,128 @@ type creator struct {
 	rc                 *repoCache
 }
 
+func (c *creator) Status(ctx context.Context, v *csaf.Vulnerability, which string) iter.Seq2[status, error] {
+	unrelatedProductIDs := []string{}
+	log := slog.With("link", c.vulnLink)
+	debugEnabled := log.Enabled(ctx, slog.LevelDebug)
+
+	return func(yield func(status, error) bool) {
+		productIDs := v.ProductStatus[which]
+		for _, id := range productIDs {
+			log := log.With("id", id)
+			pkgID, _, repoID, err := c.c.WalkRelationships(id)
+			if err != nil {
+				if !yield(status{}, err) {
+					return
+				}
+				continue
+			}
+			if repoID == "" {
+				// It's possible to get here due to middleware not having a defined component:package
+				// relationship. RHEL VEX requires products to have relationships.
+				if debugEnabled {
+					unrelatedProductIDs = append(unrelatedProductIDs, id)
+				}
+				continue
+			}
+
+			pkg := c.pc.Get(pkgID, c.c)
+			repo := c.pc.Get(repoID, c.c)
+			if repo == nil || pkg == nil {
+				// Should never get here, error in data
+				log.WarnContext(ctx, "could not find product(s) in product tree",
+					slog.Group("package", "id", pkgID, "found", pkg != nil),
+					slog.Group("repo", "id", repoID, "found", repo != nil),
+				)
+				continue
+			}
+
+			var purl *packageurl.PackageURL
+			var wfn *cpe.WFN
+			if s, ok := repo.IdentificationHelper["cpe"]; ok {
+				v, err := cpe.Unbind(s)
+				if err != nil {
+					if !yield(status{}, err) {
+						return
+					}
+					continue
+				}
+				wfn = &v
+			}
+			if s, ok := pkg.IdentificationHelper["purl"]; ok {
+				v, err := packageurl.FromString(s)
+				if err != nil {
+					if !yield(status{}, err) {
+						return
+					}
+					continue
+				}
+				purl = &v
+			}
+			if purl == nil || wfn == nil {
+				// Should never get here, error in data
+				log.WarnContext(ctx, "could not find needed identification helpers",
+					slog.Group("package", "id", pkgID, "helper", "purl", "found", purl != nil),
+					slog.Group("repo", "id", repoID, "helper", "cpe", "found", wfn != nil),
+				)
+				continue
+			}
+			if !checkPURL(*purl) {
+				continue
+			}
+
+			score := c.c.FindScore(id)
+			threat := c.c.FindThreat(id, "impact")
+			if threat == nil && score != nil && cvssBaseScoreFromScore(score) == 0.0 {
+				// This has no threat object and a 0.0 Base score: disregard.
+				continue
+			}
+
+			switch which {
+			case csaf.ProductStatusKnownNotAffected:
+				purl.Version = ""
+				purl.Qualifiers = slices.DeleteFunc(purl.Qualifiers, func(q packageurl.Qualifier) bool {
+					return q.Key == "epoch" || q.Key == "tag"
+				})
+			}
+			st := status{
+				ID:           id,
+				PackageID:    pkgID,
+				RepositoryID: repoID,
+				PURL:         *purl,
+				WFN:          *wfn,
+				Score:        score,
+				Threat:       threat,
+			}
+			if !yield(st, nil) {
+				return
+			}
+		}
+	}
+}
+
+type status struct {
+	ID           string
+	PackageID    string
+	RepositoryID string
+	PURL         packageurl.PackageURL
+	WFN          cpe.WFN
+	Score        *csaf.Score
+	Threat       *csaf.ThreatData
+}
+
+func (s *status) PackageName() (string, error) {
+	return extractPackageName(s.PURL)
+}
+
+func (s *status) FixedInVersion() (string, error) {
+	return extractFixedInVersion(s.PURL)
+}
+
+func (s *status) Module() (string, error) {
+	return componentPURLToModuleName(s.PURL)
+}
+
 // Note: Relationship walking is now handled by csaf.CSAF.WalkRelationships().
 // RHEL VEX requires products to have relationships (package -> repo), so callers
 // must check for empty repoProductID after calling WalkRelationships.
@@ -266,132 +389,54 @@ type creator struct {
 // KnownAffectedVulnerabilities processes the "known_affected" array of products
 // in the VEX object.
 func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v csaf.Vulnerability, protoVulnFunc func() *claircore.Vulnerability) ([]*claircore.Vulnerability, error) {
-	ranger := newRanger()
-	unrelatedProductIDs := []string{}
-	log := slog.With("link", c.vulnLink)
-	debugEnabled := log.Enabled(ctx, slog.LevelDebug)
 	out := []*claircore.Vulnerability{}
-	for _, pc := range v.ProductStatus["known_affected"] {
-		pkgName, modName, repoName, err := c.c.WalkRelationships(pc)
-		if err != nil || repoName == "" {
-			// It's possible to get here due to middleware not having a defined component:package
-			// relationship. RHEL VEX requires products to have relationships.
-			if debugEnabled {
-				unrelatedProductIDs = append(unrelatedProductIDs, pc)
-			}
-			continue
-		}
-		if strings.HasPrefix(pkgName, "kernel") {
-			// We don't want to ingest kernel advisories as
-			// containers have no say in the kernel.
-			continue
-		}
-
-		repoProd := c.pc.Get(repoName, c.c)
-		if repoProd == nil {
-			// Should never get here, error in data
-			log.WarnContext(ctx, "could not find product in product tree", "prod", repoName)
-			continue
-		}
-		cpeHelper, ok := repoProd.IdentificationHelper["cpe"]
-		if !ok {
-			log.WarnContext(ctx, "could not find cpe helper type in product", "prod", repoName)
-			continue
-		}
-
-		// This path is deprecated as the VEX data should no longer define modules in the relationship.
-		// Deal with modules if we found one.
-		if modName != "" {
-			modProd := c.pc.Get(modName, c.c)
-			modName, err = createPackageModule(modProd)
-			if err != nil {
-				log.WarnContext(ctx, "could not create package module", "module", modName, "reason", err)
-			}
-		}
-
-		// pkgName will be overridden if we find a valid pURL
-		compProd := c.pc.Get(pkgName, c.c)
-		if compProd == nil {
-			// Should never get here, error in data
-			log.WarnContext(ctx, "could not find package in product tree", "pkg", pkgName)
-			continue
-		}
-		vuln := protoVulnFunc()
-
-		ch := escapeCPE(cpeHelper)
-		wfn, err := cpe.Unbind(ch)
+	for st, err := range c.Status(ctx, &v, csaf.ProductStatusKnownAffected) {
 		if err != nil {
-			return nil, fmt.Errorf("could not unbind cpe: %s %w", ch, err)
-		}
-		vuln.Repo = c.rc.Get(wfn, repoKey)
-		// It is possible that we will not find a pURL, in that case
-		// the package.Name will be reported as-is.
-		purlHelper, ok := compProd.IdentificationHelper["purl"]
-		if ok {
-			purl, err := packageurl.FromString(purlHelper)
-			if err != nil {
-				log.WarnContext(ctx, "could not parse pURL", "reason", err, "purl", purlHelper)
-				continue
-			}
-			if !checkPURL(purl) {
-				continue
-			}
-			if pn, err := extractPackageName(purl); err != nil {
-				log.WarnContext(ctx, "error extracting package name from pURL",
-					"reason", err, "purl", purl)
-			} else {
-				pkgName = pn
-			}
-
-			if modName, err = componentPURLToModuleName(purl); err != nil {
-				log.WarnContext(ctx, "invalid rpmmod in component pURL",
-					"reason", err, "purl", purl)
-				continue
-			}
-
-			if purl.Type == packageurl.TypeOCI {
-				vuln.Repo = c.rc.Get(wfn, rhcc.RepositoryKey)
-				vuln.Range, err = ranger.add(pkgName, vuln.FixedInVersion)
-				if err != nil {
-					log.WarnContext(ctx, "could not parse version into range",
-						"reason", err, "FixedInVersion", vuln.FixedInVersion)
-					continue
-				}
-			}
+			return nil, err
 		}
 
-		// What is the deal here? Just stick the package name in and f-it?
-		// That's the plan so far as there's no PURL product ID helper.
+		vuln := protoVulnFunc()
+		pkgName, err := st.PackageName()
+		if err != nil {
+			return nil, err
+		}
+		modName, err := st.Module()
+		if err != nil {
+			return nil, err
+		}
 		vuln.Package = &claircore.Package{
 			Name:   pkgName,
-			Kind:   types.SourcePackage,
+			Kind:   types.SourcePackage, // Always source?
 			Module: modName,
 		}
-		sc := c.c.FindScore(pc)
-		if sc != nil {
-			var err error
+		if sc := st.Score; sc != nil {
 			vuln.Severity, err = cvssVectorFromScore(sc)
 			if err != nil {
 				return nil, fmt.Errorf("could not parse CVSS score: %w, file: %s", err, c.vulnLink)
 			}
 		}
-		if t := c.c.FindThreat(pc, "impact"); t != nil {
+		if t := st.Threat; t != nil {
 			vuln.NormalizedSeverity = common.NormalizeSeverity(t.Details)
-		} else {
-			if sc != nil && cvssBaseScoreFromScore(sc) == 0.0 {
-				// This has no threat object and a 0.0 baseScore, disregard.
-				continue
-			}
 		}
+
+		switch st.PURL.Type {
+		case packageurl.TypeOCI:
+			vuln.Repo = c.rc.Get(st.WFN, rhcc.RepositoryKey)
+			vuln.Range = &claircore.Range{
+				Lower: new(rhctag.Version).Version(true),
+				Upper: (&rhctag.Version{
+					Major: math.MaxInt32, // Everything is vulnerable
+				}).Version(true),
+			}
+		case packageurl.TypeRPM:
+			vuln.Repo = c.rc.Get(st.WFN, st.RepositoryID)
+		}
+
 		// Append VEX product ID as URL fragment to the last link for downstream comparison.
 		if vuln.Links != "" {
-			vuln.Links = vuln.Links + "#" + url.PathEscape(pc)
+			vuln.Links = vuln.Links + "#" + url.PathEscape(st.ID)
 		}
 		out = append(out, vuln)
-	}
-	ranger.resetLowest()
-	if len(unrelatedProductIDs) > 0 {
-		log.DebugContext(ctx, "skipped unrelatable product_ids", "product_ids", unrelatedProductIDs)
 	}
 
 	return out, nil
@@ -468,7 +513,7 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 	log := slog.With("link", c.vulnLink)
 	debugEnabled := log.Enabled(ctx, slog.LevelDebug)
 	for _, pc := range v.ProductStatus["fixed"] {
-		pkgName, modName, repoName, err := c.c.WalkRelationships(pc)
+		pkgName, _, repoName, err := c.c.WalkRelationships(pc)
 		if err != nil || repoName == "" {
 			// It's possible to get here due to middleware not having a defined component:package
 			// relationship. RHEL VEX requires products to have relationships.
@@ -488,16 +533,6 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 		if !ok {
 			log.WarnContext(ctx, "could not find cpe helper type in product", "prod", repoName)
 			continue
-		}
-
-		// This path is deprecated as the VEX data should no longer define modules in the relationship.
-		// Deal with modules if we found one.
-		if modName != "" {
-			modProd := c.pc.Get(modName, c.c)
-			modName, err = createPackageModule(modProd)
-			if err != nil {
-				log.WarnContext(ctx, "could not create package module", "module", modName, "reason", err)
-			}
 		}
 
 		compProd := c.pc.Get(pkgName, c.c)
@@ -531,7 +566,8 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 				"reason", err, "purl", purl)
 			continue
 		}
-		if modName, err = componentPURLToModuleName(purl); err != nil {
+		modName, err := componentPURLToModuleName(purl)
+		if err != nil {
 			log.WarnContext(ctx, "invalid rpmmod in component pURL",
 				"reason", err, "purl", purl)
 			continue
@@ -687,36 +723,6 @@ func componentPURLToModuleName(purl packageurl.PackageURL) (string, error) {
 	return name + ":" + stream, nil
 }
 
-// DEPRECATED: createPackageModule shouldn't be used anymore when VEX files
-// are updated to use the new module format.
-func createPackageModule(p *csaf.Product) (string, error) {
-	modPURLHelper, ok := p.IdentificationHelper["purl"]
-	if !ok {
-		return "", nil
-	}
-	purl, err := packageurl.FromString(modPURLHelper)
-	if err != nil {
-		return "", err
-	}
-	if purl.Type != "rpmmod" {
-		return "", fmt.Errorf("invalid RPM module PURL: %q", purl.String())
-	}
-	var modName string
-	switch {
-	case purl.Namespace == "redhat":
-		version, _, _ := strings.Cut(purl.Version, ":")
-		modName = purl.Name + ":" + version
-	case strings.HasPrefix(purl.Namespace, "redhat/"):
-		// Account for the case where the PURL is unconventional
-		// e.g. pkg:rpmmod/redhat/postgresql:15/postgresql
-		_, modName, _ = strings.Cut(purl.Namespace, "/")
-	default:
-		// We never see this in the wild but account for it just in case.
-		return "", fmt.Errorf("non-Red Hat PURL")
-	}
-	return modName, nil
-}
-
 // ExtractFixedInVersion deals with 2 pURL types, TypeRPM and TypeOCI
 //   - TypeOCI: return the tag qualifier.
 //   - TypeRPM: check for an epoch qualifier and prepend it to the purl.Version.
@@ -730,6 +736,9 @@ func extractFixedInVersion(purl packageurl.PackageURL) (string, error) {
 		}
 		return t, nil
 	case packageurl.TypeRPM:
+		if purl.Version == "" {
+			return "", nil
+		}
 		epoch := "0"
 		if e, ok := purl.Qualifiers.Map()["epoch"]; ok {
 			epoch = e

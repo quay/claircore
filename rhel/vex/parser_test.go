@@ -93,82 +93,6 @@ func TestComponentPURLToModuleName(t *testing.T) {
 	}
 }
 
-// TestCreatePackageModule tests the createPackageModule function. This function is deprecated.
-func TestCreatePackageModule(t *testing.T) {
-	testcases := []struct {
-		name           string
-		in             *csaf.Product
-		expectedModule string
-		err            bool
-	}{
-		{
-			name: "simple",
-			in: &csaf.Product{
-				IdentificationHelper: map[string]string{
-					"purl": "pkg:rpmmod/redhat/postgresql@13:8060020240903094008:ad008a3a",
-				},
-			},
-			expectedModule: "postgresql:13",
-		},
-		{
-			name: "with minor",
-			in: &csaf.Product{
-				IdentificationHelper: map[string]string{
-					"purl": "pkg:rpmmod/redhat/postgresql@9.2:8060020240903094008:ad008a3a",
-				},
-			},
-			expectedModule: "postgresql:9.2",
-		},
-		{
-			name: "no colon",
-			in: &csaf.Product{
-				IdentificationHelper: map[string]string{
-					"purl": "pkg:rpmmod/redhat/postgresql@9",
-				},
-			},
-			expectedModule: "postgresql:9",
-		},
-		{
-			name: "unconventional",
-			in: &csaf.Product{
-				IdentificationHelper: map[string]string{
-					"purl": "pkg:rpmmod/redhat/postgresql:15/postgresql",
-				},
-			},
-			expectedModule: "postgresql:15",
-		},
-		{
-			name: "invalid purl",
-			in: &csaf.Product{
-				IdentificationHelper: map[string]string{
-					"purl": "invalid",
-				},
-			},
-			err: true,
-		},
-		{
-			name: "non Red Hat PURL",
-			in: &csaf.Product{
-				IdentificationHelper: map[string]string{
-					"purl": "pkg:rpmmod/oracle/postgresql@9",
-				},
-			},
-			err: true,
-		},
-	}
-	for _, tc := range testcases {
-		t.Run(tc.name, func(t *testing.T) {
-			modName, err := createPackageModule(tc.in)
-			if err != nil && !tc.err {
-				t.Errorf("expected no error but got %q", err)
-			}
-			if modName != tc.expectedModule {
-				t.Errorf("expected %s but got %s", tc.expectedModule, modName)
-			}
-		})
-	}
-}
-
 func TestWalkRelationships(t *testing.T) {
 	testcases := []struct {
 		name                                               string
@@ -493,13 +417,13 @@ func TestParse(t *testing.T) {
 		{
 			name:            "cve-2024-24786",
 			filenames:       []string{"testdata/cve-2024-24786.json"},
-			expectedVulns:   610,
+			expectedVulns:   609,
 			expectedDeleted: 0,
 		},
 		{
 			name:            "cve-2022-38752",
 			filenames:       []string{"testdata/cve-2022-38752.json"},
-			expectedVulns:   47,
+			expectedVulns:   21,
 			expectedDeleted: 0,
 		},
 		{
