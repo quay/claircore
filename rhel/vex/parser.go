@@ -10,6 +10,7 @@ import (
 	"io"
 	"iter"
 	"log/slog"
+	"maps"
 	"math"
 	"net/url"
 	"slices"
@@ -245,13 +246,12 @@ func (pc *productCache) Get(productID string, c *csaf.CSAF) *csaf.Product {
 // and returning claircore.Vulnerabilities.
 func newCreator(vulnName, vulnLink string, c *csaf.CSAF, pc *productCache, rc *repoCache) *creator {
 	return &creator{
-		vulnName:       vulnName,
-		vulnLink:       vulnLink,
-		uniqueVulnsIdx: make(map[string]int),
-		c:              c,
-		pc:             pc,
-		rc:             rc,
-		skip:           make(map[string]skipReason),
+		vulnName: vulnName,
+		vulnLink: vulnLink,
+		c:        c,
+		pc:       pc,
+		rc:       rc,
+		skip:     make(map[string]skipReason),
 	}
 }
 
@@ -259,8 +259,6 @@ func newCreator(vulnName, vulnLink string, c *csaf.CSAF, pc *productCache, rc *r
 // by caching objects that are used multiple times during prcessing.
 type creator struct {
 	vulnName, vulnLink string
-	uniqueVulnsIdx     map[string]int
-	fixedVulns         []claircore.Vulnerability
 	skip               map[string]skipReason
 	c                  *csaf.CSAF
 	pc                 *productCache
@@ -601,21 +599,6 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v csaf.Vulne
 	return out, nil
 }
 
-func (c *creator) lookupVulnerability(vulnKey string, protoVulnFunc func() *claircore.Vulnerability) (*claircore.Vulnerability, bool) {
-	idx, ok := c.uniqueVulnsIdx[vulnKey]
-	if !ok {
-		idx = len(c.fixedVulns)
-		if cap(c.fixedVulns) > idx {
-			c.fixedVulns = c.fixedVulns[:idx+1]
-		} else {
-			c.fixedVulns = append(c.fixedVulns, claircore.Vulnerability{})
-		}
-		c.fixedVulns[idx] = *protoVulnFunc()
-		c.uniqueVulnsIdx[vulnKey] = idx
-	}
-	return &c.fixedVulns[idx], ok
-}
-
 type ranger struct {
 	lowest map[string]*claircore.Range
 }
@@ -656,7 +639,7 @@ func (r *ranger) add(packageName, fixedInVersion string) (*claircore.Range, erro
 	return rng, nil
 }
 
-// ResetLowest Zeros out all the lowest versions' lower bounds
+// ResetLowest zeros out all the lowest versions' lower bounds
 func (r *ranger) resetLowest() {
 	zeroVer := &rhctag.Version{}
 	for _, r := range r.lowest {
@@ -668,143 +651,89 @@ func (r *ranger) resetLowest() {
 // VEX object.
 func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability, protoVulnFunc func() *claircore.Vulnerability) ([]*claircore.Vulnerability, error) {
 	ranger := newRanger()
-	unrelatedProductIDs := []string{}
 	log := slog.With("link", c.vulnLink)
-	debugEnabled := log.Enabled(ctx, slog.LevelDebug)
-	for _, pc := range v.ProductStatus["fixed"] {
-		pkgName, _, repoName, err := c.c.WalkRelationships(pc)
-		if err != nil || repoName == "" {
-			// It's possible to get here due to middleware not having a defined component:package
-			// relationship. RHEL VEX requires products to have relationships.
-			if debugEnabled {
-				unrelatedProductIDs = append(unrelatedProductIDs, pc)
-			}
-			continue
+	vmap := make(map[uint64]*claircore.Vulnerability)
+
+	for st, err := range c.Status(ctx, &v, csaf.ProductStatusFixed) {
+		if err != nil {
+			return nil, err
 		}
 
-		repoProd := c.pc.Get(repoName, c.c)
-		if repoProd == nil {
-			// Should never get here, error in data
-			log.WarnContext(ctx, "could not find product in product tree", "prod", repoName)
-			continue
-		}
-		cpeHelper, ok := repoProd.IdentificationHelper["cpe"]
-		if !ok {
-			log.WarnContext(ctx, "could not find cpe helper type in product", "prod", repoName)
-			continue
-		}
-
-		compProd := c.pc.Get(pkgName, c.c)
-		if compProd == nil {
-			// Should never get here, error in data
-			log.WarnContext(ctx, "could not find package in product tree", "pkg", pkgName)
-			continue
-		}
-		purlHelper, ok := compProd.IdentificationHelper["purl"]
-		if !ok {
-			log.WarnContext(ctx, "could not find purl helper type in product", "pkg", pkgName)
-			continue
-		}
-		purl, err := packageurl.FromString(purlHelper)
-		if err != nil {
-			log.WarnContext(ctx, "could not parse pURL", "reason", err, "purl", purlHelper)
-			continue
-		}
-		if !checkPURL(purl) {
-			continue
-		}
-		fixedIn, err := extractFixedInVersion(purl)
-		if err != nil {
-			log.WarnContext(ctx, "error extracting fixed_in version from pURL",
-				"reason", err, "purl", purl)
-			continue
-		}
-		packageName, err := extractPackageName(purl)
-		if err != nil {
-			log.WarnContext(ctx, "error extracting package name from pURL",
-				"reason", err, "purl", purl)
-			continue
-		}
-		modName, err := componentPURLToModuleName(purl)
-		if err != nil {
-			log.WarnContext(ctx, "invalid rpmmod in component pURL",
-				"reason", err, "purl", purl)
-			continue
-		}
-
-		vulnKey := createPackageKey(repoName, modName, purl.Name, fixedIn)
-		arch := extractArch(purl)
-		if vuln, ok := c.lookupVulnerability(vulnKey, protoVulnFunc); ok && arch != "" {
-			// We've already found this package, just append the arch
-			vuln.Package.Arch = vuln.Package.Arch + "|" + arch
-		} else {
-			vuln.FixedInVersion = fixedIn
-			vuln.Package = &claircore.Package{
-				Name:   packageName,
-				Kind:   types.BinaryPackage,
-				Module: modName,
-			}
-
-			if arch != "" {
-				vuln.Package.Arch = arch
-				vuln.ArchOperation = claircore.OpPatternMatch
-			}
-			ch := escapeCPE(cpeHelper)
-			wfn, err := cpe.Unbind(ch)
+		key := st.Key()
+		vuln, exists := vmap[key]
+		if !exists {
+			fixedIn, err := st.FixedInVersion()
 			if err != nil {
-				return nil, fmt.Errorf("could not unbind cpe: %s %w", cpeHelper, err)
+				log.WarnContext(ctx, "bad purl", "reason", err, "purl", &st.PURL, "missing", "FixedInVersion")
+				continue
 			}
-
-			switch purl.Type {
-			case packageurl.TypeRPM:
-				vuln.Repo = c.rc.Get(wfn, repoKey)
-			case packageurl.TypeOCI:
-				vuln.Repo = c.rc.Get(wfn, rhcc.RepositoryKey)
-				vuln.Range, err = ranger.add(packageName, vuln.FixedInVersion)
-				if err != nil {
-					log.WarnContext(ctx, "could not parse version into range",
-						"reason", err, "FixedInVersion", vuln.FixedInVersion)
-					continue
-				}
-			default:
+			pkgName, err := st.PackageName()
+			if err != nil {
+				log.WarnContext(ctx, "bad purl", "reason", err, "purl", &st.PURL, "missing", "PackageName")
+				continue
+			}
+			modName, err := st.Module()
+			if err != nil {
+				log.WarnContext(ctx, "bad purl", "reason", err, "purl", &st.PURL, "missing", "ModuleName")
+				continue
+			}
+			sev, err := cvssVectorFromScore(st.Score)
+			if err != nil {
+				log.WarnContext(ctx, "bad score", "reason", err, "found", st.Score != nil)
 				continue
 			}
 
-			// Find remediations and add RHSA URL to links
-			rem := c.c.FindRemediation(pc)
-			if rem != nil {
-				vuln.Links = vuln.Links + " " + rem.URL
+			vuln = protoVulnFunc()
+			vuln.FixedInVersion = fixedIn
+			vuln.Package = &claircore.Package{
+				Name:   pkgName,
+				Kind:   types.BinaryPackage,
+				Module: modName,
 			}
-			sc := c.c.FindScore(pc)
-			if sc != nil {
-				vuln.Severity, err = cvssVectorFromScore(sc)
-				if err != nil {
-					return nil, fmt.Errorf("could not parse CVSS score: %w, file: %s", err, c.vulnLink)
-				}
-			}
-			if t := c.c.FindThreat(pc, "impact"); t != nil {
+			vuln.Severity = sev
+			if t := st.Threat; t != nil {
 				vuln.NormalizedSeverity = common.NormalizeSeverity(t.Details)
-			} else {
-				if sc != nil && cvssBaseScoreFromScore(sc) == 0.0 {
-					// This has no threat object and a 0.0 baseScore, disregard.
+			}
+			switch st.PURL.Type {
+			case packageurl.TypeRPM:
+				vuln.Repo = c.rc.Get(st.WFN, repoKey)
+			case packageurl.TypeOCI:
+				vuln.Repo = c.rc.Get(st.WFN, rhcc.RepositoryKey)
+				vuln.Range, err = ranger.add(st.PURL.Name, vuln.FixedInVersion)
+				if err != nil {
+					log.WarnContext(ctx, "could not parse version into range",
+						"reason", err, "version", vuln.FixedInVersion)
 					continue
 				}
+			default:
+				panic("unreachable")
+			}
+			// Find remediations and add RHSA URL to links
+			if rem := st.Remediation; rem != nil {
+				vuln.Links = vuln.Links + " " + rem.URL
 			}
 			// Append VEX product ID as URL fragment to the last link for downstream comparison.
 			if vuln.Links != "" {
-				vuln.Links = vuln.Links + "#" + url.PathEscape(pc)
+				vuln.Links = vuln.Links + "#" + url.PathEscape(st.ID)
+			}
+
+			vmap[key] = vuln
+		}
+		if arch := extractArch(st.PURL); arch != "" {
+			if vuln.Package.Arch == "" {
+				vuln.Package.Arch = arch
+				vuln.ArchOperation = claircore.OpPatternMatch
+			} else {
+				vuln.Package.Arch = vuln.Package.Arch + "|" + arch
 			}
 		}
 	}
 	ranger.resetLowest()
-	if len(unrelatedProductIDs) > 0 {
-		log.DebugContext(ctx, "skipped unrelatable product_ids", "product_ids", unrelatedProductIDs)
-	}
 
-	out := make([]*claircore.Vulnerability, len(c.fixedVulns))
-	for i := range c.fixedVulns {
-		out[i] = &c.fixedVulns[i]
-	}
+	out := slices.Collect(maps.Values(vmap))
+	slices.SortFunc(out, func(a, b *claircore.Vulnerability) int {
+		return strings.Compare(a.Links, b.Links)
+	})
 	return out, nil
 }
 
@@ -851,15 +780,6 @@ func cvssVectorFromScore(sc *csaf.Score) (vec string, err error) {
 		err = errors.New("could not find a valid CVSS object")
 	}
 	return
-}
-
-// CreatePackageKey creates a unique key to describe an arch agnostic
-// package for deduplication purposes.
-// i.e. AppStream-8.2.0.Z.TUS:a_module:python3-idle-0:3.6.8-24.el8_2.2
-func createPackageKey(repo, mod, name, fixedIn string) string {
-	// The other option here is just to use repo + PURL string
-	// w/o the qualifiers I suppose instead of repo + NEVR.
-	return repo + ":" + mod + ":" + name + "-" + fixedIn
 }
 
 // componentPURLToModuleName extracts the module name from the component PURL.
