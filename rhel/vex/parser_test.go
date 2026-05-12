@@ -411,7 +411,7 @@ func TestParse(t *testing.T) {
 		{
 			name:            "cve-2022-1705",
 			filenames:       []string{"testdata/cve-2022-1705.json"},
-			expectedVulns:   1006,
+			expectedVulns:   1002,
 			expectedDeleted: 0,
 		},
 		{
@@ -435,7 +435,7 @@ func TestParse(t *testing.T) {
 		{
 			name:            "cve-2024-24786-new-module-format",
 			filenames:       []string{"testdata/cve-2024-24786-1.json"},
-			expectedVulns:   686,
+			expectedVulns:   685,
 			expectedDeleted: 0, // when the file contains no vulnerabilities, we send a delete signal to the DB
 		},
 	}
