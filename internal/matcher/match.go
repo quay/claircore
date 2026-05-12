@@ -8,7 +8,6 @@ import (
 	"log/slog"
 	"runtime"
 	"sync"
-	"sync/atomic"
 
 	"golang.org/x/sync/errgroup"
 
@@ -195,14 +194,9 @@ func EnrichedMatch(ctx context.Context, ir *claircore.IndexReport, ms []driver.M
 		vr.Enrichments = em
 		return nil
 	})
-	// Use an atomic to track closing the results channel.
-	ct := uint32(lim)
+	var workerWg sync.WaitGroup
 	enrichWorker := func() error { // Worker
-		defer func() {
-			if atomic.AddUint32(&ct, ^uint32(0)) == 0 {
-				close(rCh)
-			}
-		}()
+		defer workerWg.Done()
 		var e driver.Enricher
 		for e = range eCh {
 			kind, msg, err := e.Enrich(ectx, getter(s, e.Name()), vr)
@@ -226,8 +220,15 @@ func EnrichedMatch(ctx context.Context, ir *claircore.IndexReport, ms []driver.M
 		}
 		return nil
 	}
-	for eg.TryGo(enrichWorker) {
+	for {
+		workerWg.Add(1)
+		if !eg.TryGo(enrichWorker) {
+			workerWg.Done()
+			break
+		}
 	}
+	workerWg.Wait()
+	close(rCh)
 	if err := eg.Wait(); err != nil {
 		return nil, err
 	}
