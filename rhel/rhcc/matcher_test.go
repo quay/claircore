@@ -47,6 +47,14 @@ func TestMatcherVulnerable(t *testing.T) {
 			want:           false,
 		},
 		{
+			name:           "TimestampUnfixed",
+			packageVersion: "1742843776",
+			fixedInVersion: "",
+			repo:           cpeRepo("cpe:/a:redhat:openshift_gitops:1.16::el8"),
+			vulnRepo:       cpeRepo("cpe:/a:redhat:openshift_gitops:1.16::el8"),
+			want:           true,
+		},
+		{
 			name:           "TagOlder",
 			packageVersion: "v3.5.5-4",
 			fixedInVersion: "v3.5.7-8",
@@ -77,6 +85,22 @@ func TestMatcherVulnerable(t *testing.T) {
 			repo:           &GoldRepo,
 			vulnRepo:       &GoldRepo,
 			want:           false,
+		},
+		{
+			name:           "TagUnfixed",
+			packageVersion: "v3.5.9-2",
+			fixedInVersion: "",
+			repo:           cpeRepo("cpe:/a:redhat:quay:3::el8"),
+			vulnRepo:       cpeRepo("cpe:/a:redhat:quay:3::el8"),
+			want:           true,
+		},
+		{
+			name:           "GoldenRepoTagUnfixed",
+			packageVersion: "v3.5.9-2",
+			fixedInVersion: "",
+			repo:           &GoldRepo,
+			vulnRepo:       &GoldRepo,
+			want:           true,
 		},
 		{
 			name:           "TagCPEMismatch",
