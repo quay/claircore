@@ -10,7 +10,6 @@ import (
 	"io"
 	"iter"
 	"log/slog"
-	"maps"
 	"math"
 	"net/url"
 	"slices"
@@ -138,7 +137,9 @@ func (p *Parser) parseDoc(ctx context.Context, doc []byte) (string, []*claircore
 
 	creator := newCreator(name, selfLink, c, p.pc, p.rc)
 	var out []*claircore.Vulnerability
-	for _, v := range c.Vulnerabilities {
+	for i := range c.Vulnerabilities {
+		v := &c.Vulnerabilities[i]
+		issued := v.ReleaseDate
 		links := []string{}
 		for _, r := range v.References {
 			links = append(links, r.URL)
@@ -152,25 +153,24 @@ func (p *Parser) parseDoc(ctx context.Context, doc []byte) (string, []*claircore
 			}
 		}
 
-		protoVuln := func() *claircore.Vulnerability {
-			return &claircore.Vulnerability{
-				Updater:            "rhel-vex",
-				Name:               name,
-				Description:        desc,
-				Issued:             v.ReleaseDate,
-				Links:              strings.Join(links, " "),
-				Severity:           "Unknown",
-				NormalizedSeverity: claircore.Unknown,
-			}
+		initVuln := func(_ context.Context, v *claircore.Vulnerability) error {
+			v.Updater = "rhel-vex"
+			v.Name = name
+			v.Description = desc
+			v.Issued = issued
+			v.Links = strings.Join(links, " ")
+			v.Severity = "Unknown"
+			v.NormalizedSeverity = claircore.Unknown
+			return nil
 		}
 
-		fixedVulns, err := creator.fixedVulnerabilities(ctx, v, protoVuln)
+		fixedVulns, err := creator.fixedVulnerabilities(ctx, v, initVuln)
 		if err != nil {
 			return name, nil, err
 		}
 		out = append(out, fixedVulns...)
 
-		knownAffectedVulns, err := creator.knownAffectedVulnerabilities(ctx, v, protoVuln)
+		knownAffectedVulns, err := creator.knownAffectedVulnerabilities(ctx, v, initVuln)
 		if err != nil {
 			return name, nil, err
 		}
@@ -202,14 +202,14 @@ func newRepoCache() *repoCache {
 
 // Get attempts to find a repo in the cache identified by a WFN and
 // the repoKey. If it isn't found a repo is created and returned.
-func (rc *repoCache) Get(cpe cpe.WFN, repoKey string) *claircore.Repository {
+func (rc *repoCache) Get(cpe *cpe.WFN, repoKey string) *claircore.Repository {
 	rck := repoCacheKey{CPEString: cpe.String(), RepoKey: repoKey}
 	k := unique.Make(rck)
 	if r, ok := rc.cache[k]; ok {
 		return r
 	}
 	r := &claircore.Repository{
-		CPE:  cpe,
+		CPE:  *cpe,
 		Name: cpe.String(),
 		Key:  repoKey,
 	}
@@ -401,7 +401,7 @@ func (c *creator) Status(ctx context.Context, v *csaf.Vulnerability, which strin
 				}
 				continue
 			}
-			if !checkPURL(*purl) {
+			if !checkPURL(purl) { // Not a usable purl.
 				continue
 			}
 
@@ -425,8 +425,8 @@ func (c *creator) Status(ctx context.Context, v *csaf.Vulnerability, which strin
 				ID:           id,
 				PackageID:    pkgID,
 				RepositoryID: repoID,
-				PURL:         *purl,
-				WFN:          *wfn,
+				PURL:         purl,
+				WFN:          wfn,
 				Score:        score,
 				Threat:       threat,
 				Remediation:  remediation,
@@ -440,12 +440,15 @@ func (c *creator) Status(ctx context.Context, v *csaf.Vulnerability, which strin
 
 // Status is an individual "product status" that's well-formed according to Red
 // Hat's guidelines.
+//
+// [Score], [Threat], and [Remediation] may be nil, but [PURL] and [WFN] will
+// not be.
 type status struct {
 	ID           string
 	PackageID    string
 	RepositoryID string
-	PURL         packageurl.PackageURL
-	WFN          cpe.WFN
+	PURL         *packageurl.PackageURL
+	WFN          *cpe.WFN
 	Score        *csaf.Score
 	Threat       *csaf.ThreatData
 	Remediation  *csaf.RemediationData
@@ -539,20 +542,107 @@ func putHasher(h *maphash.Hash) {
 	hashPool.Put(h)
 }
 
-// Note: Relationship walking is now handled by csaf.CSAF.WalkRelationships().
-// RHEL VEX requires products to have relationships (package -> repo), so callers
-// must check for empty repoProductID after calling WalkRelationships.
+// VulnHook is the type used to modify the passed [*claircore.Vulnerability].
+//
+// Reporting an error should cause the calling function to error immediately.
+type vulnHook func(context.Context, *claircore.Vulnerability) error
+
+// VulnCmp is used to sort slices of [claircore.Vulnerability].
+func vulnCmp(a, b *claircore.Vulnerability) int {
+	return strings.Compare(a.Links, b.Links)
+}
+
+// Rope provides an ordered collection of E values with minimal copying.
+//
+// This is done by building a slice of slices and only returning pointers into
+// it. This implementation only allows the "tail" of the rope to be modified. To
+// iterate over the values, use the [All] method.
+type rope[E any] [][]E
+
+// New returns a pointer to value at the "end" of the rope.
+func (r *rope[E]) New() *E {
+	sp := (*[][]E)(r)
+	// Make the zero value useful:
+	if (*sp) == nil {
+		*sp = make([][]E, 0, 64)
+	}
+	// Need to handle the initial segment specifically:
+	if len(*sp) == 0 {
+		*sp = append(*sp, make([]E, 0, 64))
+	}
+	// Make sure the segment has capacity:
+GetSeg:
+	cur := &(*sp)[len(*sp)-1]
+	if len(*cur) == cap(*cur) {
+		// Need to append a new segment.
+		*sp = append(*sp, make([]E, 0, 64))
+		goto GetSeg
+	}
+	// Extend by one element.
+	i := len(*cur)
+	*cur = (*cur)[:i+1]
+	// Return the new element.
+	return &(*cur)[i]
+}
+
+// Drop removes the element at the "end" of the rope by zeroing the value and
+// manipulating the internal slices.
+//
+// SAFETY(hank) It's possible that this method can zero out values that still
+// have live pointers. Be careful with a pointer from New until you're sure
+// Drop won't be called.
+func (r *rope[E]) Drop() {
+	sp := (*[][]E)(r)
+
+	sl := len(*sp)
+	if sl == 0 {
+		panic("programmer error: drop from empty rope")
+	}
+	cur := &(*sp)[sl-1]
+	cl := len(*cur)
+	if cl == 0 {
+		panic("programmer error: empty segment")
+	}
+	// Zero the value:
+	clear((*cur)[cl-1 : cl])
+	// Slice off the last value.
+	*cur = (*cur)[:cl-1]
+	// Now check to see if the current segment is empty and needs to be sliced
+	// off:
+	if cl-1 == 0 {
+		*sp = (*sp)[:sl-1]
+	}
+}
+
+// All returns an iterator over all the elements in the rope.
+func (r *rope[E]) All() iter.Seq[*E] {
+	return func(yield func(*E) bool) {
+		for _, seg := range *(*[][]E)(r) {
+			for i := range seg {
+				if !yield(&seg[i]) {
+					return
+				}
+			}
+		}
+	}
+}
 
 // KnownAffectedVulnerabilities processes the "known_affected" array of products
 // in the VEX object.
-func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v csaf.Vulnerability, protoVulnFunc func() *claircore.Vulnerability) ([]*claircore.Vulnerability, error) {
-	out := []*claircore.Vulnerability{}
-	for st, err := range c.Status(ctx, &v, csaf.ProductStatusKnownAffected) {
+func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v *csaf.Vulnerability, init vulnHook) ([]*claircore.Vulnerability, error) {
+	var backing rope[claircore.Vulnerability]
+	for st, err := range c.Status(ctx, v, csaf.ProductStatusKnownAffected) {
 		if err != nil {
 			return nil, err
 		}
 
-		vuln := protoVulnFunc()
+		// This loop never skips returned [status] values, so we can always just
+		// append a new [claircore.Vulnerability].
+		vuln := backing.New()
+
+		if err := init(ctx, vuln); err != nil {
+			return nil, err
+		}
 		pkgName, err := st.PackageName()
 		if err != nil {
 			return nil, err
@@ -593,9 +683,10 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v csaf.Vulne
 		if vuln.Links != "" {
 			vuln.Links = vuln.Links + "#" + url.PathEscape(st.ID)
 		}
-		out = append(out, vuln)
 	}
 
+	out := slices.Collect(backing.All())
+	slices.SortFunc(out, vulnCmp)
 	return out, nil
 }
 
@@ -649,19 +740,40 @@ func (r *ranger) resetLowest() {
 
 // FixedVulnerabilities processes the "fixed" array of products in the
 // VEX object.
-func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability, protoVulnFunc func() *claircore.Vulnerability) ([]*claircore.Vulnerability, error) {
+func (c *creator) fixedVulnerabilities(ctx context.Context, v *csaf.Vulnerability, init vulnHook) ([]*claircore.Vulnerability, error) {
+	// This "ranger" indirection works because the [claircore.Vulnerability]
+	// values contain pointers to [claircore.Range] values "owned" by the
+	// ranger.
 	ranger := newRanger()
 	log := slog.With("link", c.vulnLink)
+	var backing rope[claircore.Vulnerability]
+	var doDrop bool
 	vmap := make(map[uint64]*claircore.Vulnerability)
+	lookup := func(key uint64) (*claircore.Vulnerability, bool) {
+		if doDrop {
+			backing.Drop()
+			doDrop = false
+		}
+		v, exists := vmap[key]
+		if !exists {
+			v = backing.New()
+			doDrop = true
+		}
+		return v, !exists
+	}
+	commit := func(key uint64, v *claircore.Vulnerability) {
+		doDrop = false
+		vmap[key] = v
+	}
 
-	for st, err := range c.Status(ctx, &v, csaf.ProductStatusFixed) {
+	for st, err := range c.Status(ctx, v, csaf.ProductStatusFixed) {
 		if err != nil {
 			return nil, err
 		}
 
 		key := st.Key()
-		vuln, exists := vmap[key]
-		if !exists {
+		vuln, created := lookup(key)
+		if created {
 			fixedIn, err := st.FixedInVersion()
 			if err != nil {
 				log.WarnContext(ctx, "bad purl", "reason", err, "purl", &st.PURL, "missing", "FixedInVersion")
@@ -683,7 +795,9 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 				continue
 			}
 
-			vuln = protoVulnFunc()
+			if err := init(ctx, vuln); err != nil {
+				return nil, err
+			}
 			vuln.FixedInVersion = fixedIn
 			vuln.Package = &claircore.Package{
 				Name:   pkgName,
@@ -708,7 +822,7 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 			default:
 				panic("unreachable")
 			}
-			// Find remediations and add RHSA URL to links
+			// Find remediations and add RHSA URL to links.
 			if rem := st.Remediation; rem != nil {
 				vuln.Links = vuln.Links + " " + rem.URL
 			}
@@ -717,7 +831,7 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 				vuln.Links = vuln.Links + "#" + url.PathEscape(st.ID)
 			}
 
-			vmap[key] = vuln
+			commit(key, vuln)
 		}
 		if arch := extractArch(st.PURL); arch != "" {
 			if vuln.Package.Arch == "" {
@@ -728,12 +842,15 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v csaf.Vulnerability
 			}
 		}
 	}
+	// Catch if the last status bailed.
+	if doDrop {
+		backing.Drop()
+	}
+	// Modify ranges for the rhcc matcher.
 	ranger.resetLowest()
 
-	out := slices.Collect(maps.Values(vmap))
-	slices.SortFunc(out, func(a, b *claircore.Vulnerability) int {
-		return strings.Compare(a.Links, b.Links)
-	})
+	out := slices.Collect(backing.All())
+	slices.SortFunc(out, vulnCmp)
 	return out, nil
 }
 
@@ -782,22 +899,40 @@ func cvssVectorFromScore(sc *csaf.Score) (vec string, err error) {
 	return
 }
 
+// Qualifier returns the value of the indicated qualifier and whether it was
+// found.
+//
+// Using this rather than the [packageurl.Qualifiers.Map] method exploits the
+// fact that the [packageurl.Qualifiers] is sorted, so we don't need to
+// construct a new map to do an efficient lookup.
+func qualifier(p *packageurl.PackageURL, key string) (string, bool) {
+	qs := p.Qualifiers
+	cmp := func(q packageurl.Qualifier, key string) int {
+		return strings.Compare(q.Key, key)
+	}
+	i, ok := slices.BinarySearchFunc(qs, key, cmp)
+	if !ok {
+		return "", false
+	}
+	return qs[i].Value, true
+}
+
 // componentPURLToModuleName extracts the module name from the component PURL.
-func componentPURLToModuleName(purl packageurl.PackageURL) (string, error) {
-	v, ok := purl.Qualifiers.Map()["rpmmod"]
+func componentPURLToModuleName(p *packageurl.PackageURL) (string, error) {
+	v, ok := qualifier(p, "rpmmod")
 	if !ok {
 		return "", nil
 	}
 	if v == "" {
-		return "", fmt.Errorf("empty rpmmod in pURL qualifiers %s", purl.String())
+		return "", fmt.Errorf("empty rpmmod in purl qualifiers: %q", p.String())
 	}
 	name, rest, ok := strings.Cut(v, ":")
 	if !ok || rest == "" {
-		return "", fmt.Errorf("invalid module name in pURL qualifiers %s", purl.String())
+		return "", fmt.Errorf("invalid module name in purl qualifiers: %q", p.String())
 	}
 	stream, _, _ := strings.Cut(rest, ":")
 	if stream == "" {
-		return "", fmt.Errorf("invalid module stream in pURL qualifiers %s", purl.String())
+		return "", fmt.Errorf("invalid module stream in purl qualifiers: %q", p.String())
 	}
 	return name + ":" + stream, nil
 }
@@ -806,25 +941,25 @@ func componentPURLToModuleName(purl packageurl.PackageURL) (string, error) {
 //   - TypeOCI: return the tag qualifier.
 //   - TypeRPM: check for an epoch qualifier and prepend it to the purl.Version.
 //     If no epoch qualifier, default to 0.
-func extractFixedInVersion(purl packageurl.PackageURL) (string, error) {
-	switch purl.Type {
+func extractFixedInVersion(p *packageurl.PackageURL) (string, error) {
+	switch p.Type {
 	case packageurl.TypeOCI:
-		t, ok := purl.Qualifiers.Map()["tag"]
+		t, ok := qualifier(p, "tag")
 		if !ok {
-			return "", fmt.Errorf("could not find tag qualifier for OCI purl type %s", purl.String())
+			return "", fmt.Errorf("could not find tag qualifier for OCI purl: %q", p.String())
 		}
 		return t, nil
 	case packageurl.TypeRPM:
-		if purl.Version == "" {
+		if p.Version == "" {
 			return "", nil
 		}
 		epoch := "0"
-		if e, ok := purl.Qualifiers.Map()["epoch"]; ok {
+		if e, ok := qualifier(p, "epoch"); ok {
 			epoch = e
 		}
-		return epoch + ":" + purl.Version, nil
+		return epoch + ":" + p.Version, nil
 	default:
-		return "", fmt.Errorf("unexpected purl type %s", purl.Type)
+		return "", fmt.Errorf("unexpected purl type: %q", p.Type)
 	}
 }
 
@@ -834,26 +969,26 @@ func extractFixedInVersion(purl packageurl.PackageURL) (string, error) {
 //     repository_url exists then use the namespace/name part, if not, use
 //     the purl.Name.
 //   - TypeRPM: Just return the purl.Name.
-func extractPackageName(purl packageurl.PackageURL) (string, error) {
-	switch purl.Type {
+func extractPackageName(p *packageurl.PackageURL) (string, error) {
+	switch p.Type {
 	case packageurl.TypeOCI:
-		if purl.Namespace != "" {
-			return purl.Namespace + "/" + purl.Name, nil
+		if p.Namespace != "" {
+			return p.Namespace + "/" + p.Name, nil
 		}
 		// Try finding an image name from the tag qualifier
-		ru, ok := purl.Qualifiers.Map()["repository_url"]
+		ru, ok := qualifier(p, "repository_url")
 		if !ok {
-			return purl.Name, nil
+			return p.Name, nil
 		}
 		_, image, found := strings.Cut(ru, "/")
 		if !found {
-			return "", fmt.Errorf("invalid repository_url for OCI pURL type %s", purl.String())
+			return "", fmt.Errorf("invalid repository_url for OCI purl: %q", p.String())
 		}
 		return image, nil
 	case packageurl.TypeRPM:
-		return purl.Name, nil
+		return p.Name, nil
 	default:
-		return "", fmt.Errorf("unexpected purl type %s", purl.Type)
+		return "", fmt.Errorf("unexpected purl type: %q", p.Type)
 	}
 }
 
@@ -866,24 +1001,24 @@ var acceptedTypes = map[string]bool{
 //  1. Check the purl.Type is in the acceptable types.
 //  2. Check if an advisory related to the kernel.
 //  3. Check that all RPMs are in the "redhat" namespace.
-func checkPURL(purl packageurl.PackageURL) bool {
-	if ok := acceptedTypes[purl.Type]; !ok {
+func checkPURL(p *packageurl.PackageURL) bool {
+	if ok := acceptedTypes[p.Type]; !ok {
 		return false
 	}
-	if strings.HasPrefix(purl.Name, "kernel") {
+	if strings.HasPrefix(p.Name, "kernel") {
 		// We don't want to ingest kernel advisories as
 		// containers have no say in the kernel.
 		return false
 	}
-	if purl.Type == packageurl.TypeRPM && purl.Namespace != "redhat" {
+	if p.Type == packageurl.TypeRPM && p.Namespace != "redhat" {
 		// Not Red Hat rpm content.
 		return false
 	}
 	return true
 }
 
-func extractArch(purl packageurl.PackageURL) string {
-	arch := purl.Qualifiers.Map()["arch"]
+func extractArch(p *packageurl.PackageURL) string {
+	arch, _ := qualifier(p, "arch")
 	switch arch {
 	case "amd64", "x86_64":
 		return "amd64|x86_64"

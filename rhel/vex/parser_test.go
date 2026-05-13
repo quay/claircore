@@ -76,7 +76,7 @@ func TestComponentPURLToModuleName(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := componentPURLToModuleName(tc.in)
+			got, err := componentPURLToModuleName(&tc.in)
 			if tc.err {
 				if err == nil {
 					t.Fatalf("expected error, got nil")
@@ -534,7 +534,7 @@ func TestExtractVersion(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			v, err := extractFixedInVersion(tc.purl)
+			v, err := extractFixedInVersion(&tc.purl)
 			if !errors.Is(err, nil) && !tc.expectedErr {
 				t.Fatalf("expected no err but got %v", err)
 			}
@@ -641,7 +641,7 @@ func TestExtractPackageName(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			v, err := extractPackageName(tc.purl)
+			v, err := extractPackageName(&tc.purl)
 			if !errors.Is(err, nil) && !tc.expectedErr {
 				t.Fatalf("expected no err but got %v", err)
 			}
