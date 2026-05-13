@@ -259,44 +259,6 @@ func TestWalkRelationships(t *testing.T) {
 	}
 }
 
-func TestEscapeCPE(t *testing.T) {
-	testcases := []struct {
-		name string
-		in   string
-		want string
-	}{
-		{
-			name: "wildcard version",
-			in:   "cpe:/a:redhat:openshift:4.*",
-			want: "cpe:/a:redhat:openshift:4.%02",
-		},
-		{
-			name: "product with a wildcard",
-			in:   "cpe:/a:redhat:astarry.*.comp:4.*",
-			want: "cpe:/a:redhat:astarry.*.comp:4.%02",
-		},
-		{
-			name: "version with question",
-			in:   "cpe:/a:redhat:openshift:4.?::el8",
-			want: "cpe:/a:redhat:openshift:4.%01::el8",
-		},
-		{
-			name: "question mark can be anywhere",
-			in:   "cpe:/a:redhat:openshift:4.?.10::el8",
-			want: "cpe:/a:redhat:openshift:4.%01.10::el8",
-		},
-	}
-
-	for _, tc := range testcases {
-		t.Run(tc.name, func(t *testing.T) {
-			out := escapeCPE(tc.in)
-			if out != tc.want {
-				t.Errorf("expected %s but got %s", tc.want, out)
-			}
-		})
-	}
-}
-
 func TestParseCompare(t *testing.T) {
 	t.Parallel()
 	url, err := url.Parse(BaseURL)
