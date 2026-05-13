@@ -57,13 +57,16 @@ func (*matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 	if record.Package.Version == "" {
 		return false, errors.New("rhcc: unable to parse package version: empty version")
 	}
+	if vuln.FixedInVersion == "" {
+		return true, nil
+	}
 	pkgVer, err := rpmver.Parse(ensureEVR(record.Package.Version))
 	if err != nil {
 		return false, fmt.Errorf("rhcc: unable to parse version %q: %w", record.Package.Version, err)
 	}
 	fixedVer, err := rpmver.Parse(ensureEVR(vuln.FixedInVersion))
 	if err != nil {
-		return false, fmt.Errorf("rhcc: unable to parse version %q: %w", vuln.FixedInVersion, err)
+		return false, fmt.Errorf("rhcc: unable to parse vulnerability version %q: %w", vuln.FixedInVersion, err)
 	}
 	return rpmver.Compare(&pkgVer, &fixedVer) == -1, nil
 }
