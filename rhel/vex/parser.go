@@ -801,14 +801,3 @@ func extractArch(purl packageurl.PackageURL) string {
 		return arch
 	}
 }
-
-func escapeCPE(ch string) string {
-	c := strings.Split(ch, ":")
-	for i := range c {
-		if strings.HasSuffix(c[i], "*") {
-			c[i] = c[i][:len(c[i])-1] + `%02`
-		}
-		c[i] = strings.ReplaceAll(c[i], "?", "%01")
-	}
-	return strings.Join(c, ":")
-}
