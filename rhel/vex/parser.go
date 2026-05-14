@@ -12,6 +12,7 @@ import (
 	"log/slog"
 	"math"
 	"net/url"
+	"slices"
 	"strings"
 	"sync"
 	"unique"
@@ -173,6 +174,7 @@ func (p *Parser) parseDoc(ctx context.Context, doc []byte) (string, []*claircore
 		}
 		out = append(out, knownAffectedVulns...)
 	}
+	creator.SkipLog(ctx)
 
 	return name, out, nil
 }
@@ -248,6 +250,7 @@ func newCreator(vulnName, vulnLink string, c *csaf.CSAF, pc *productCache, rc *r
 		c:              c,
 		pc:             pc,
 		rc:             rc,
+		skip:           make(map[string]skipReason),
 	}
 }
 
@@ -257,9 +260,57 @@ type creator struct {
 	vulnName, vulnLink string
 	uniqueVulnsIdx     map[string]int
 	fixedVulns         []claircore.Vulnerability
+	skip               map[string]skipReason
 	c                  *csaf.CSAF
 	pc                 *productCache
 	rc                 *repoCache
+}
+
+// SkipReason records the reason a "product_id" is going to be skipped for the
+// rest of a run.
+type skipReason byte
+
+const (
+	_ skipReason = iota
+	// No such "relationship", or it doesn't resolve correctly.
+	skipBadRelation
+	// The CSAF "product" is not suitable to interpret as a "package".
+	skipBadPackage
+	// The CSAF "product" is not suitable to interpret as a "repository".
+	skipBadRepository
+)
+
+// SkipLog logs information about skipped product_ids.
+func (c *creator) SkipLog(ctx context.Context) {
+	log := slog.With("link", c.vulnLink)
+	if !log.Enabled(ctx, slog.LevelDebug) || len(c.skip) == 0 {
+		return
+	}
+	sz := len(c.skip)
+	rel, pkg, repo := make([]string, 0, sz), make([]string, 0, sz), make([]string, 0, sz)
+	for id, k := range c.skip {
+		switch k {
+		case skipBadRelation:
+			rel = append(rel, id)
+		case skipBadPackage:
+			pkg = append(pkg, id)
+		case skipBadRepository:
+			repo = append(repo, id)
+		default:
+			panic("unreachable")
+		}
+	}
+	attrs := make([]slog.Attr, 0, 3)
+	if len(rel) != 0 {
+		attrs = append(attrs, slog.Any("relation", rel))
+	}
+	if len(pkg) != 0 {
+		attrs = append(attrs, slog.Any("package", pkg))
+	}
+	if len(repo) != 0 {
+		attrs = append(attrs, slog.Any("repository", repo))
+	}
+	log.LogAttrs(ctx, slog.LevelDebug, "skipped product_ids", attrs...)
 }
 
 // Status returns an iterator over the products in "v" with the status "which".
@@ -268,13 +319,13 @@ type creator struct {
 // has a dangling "product_id" reference) cause the iterator to yield an error.
 // Entries that are not usable but not malformed are silently skipped.
 func (c *creator) Status(ctx context.Context, v *csaf.Vulnerability, which string) iter.Seq2[status, error] {
-	unrelatedProductIDs := []string{}
 	log := slog.With("link", c.vulnLink)
-	debugEnabled := log.Enabled(ctx, slog.LevelDebug)
-
 	return func(yield func(status, error) bool) {
 		productIDs := v.ProductStatus[which]
 		for _, id := range productIDs {
+			if _, ok := c.skip[id]; ok {
+				continue
+			}
 			log := log.With("id", id)
 			// RHEL VEX requires products to have relationships (package -> repo), so callers
 			// must check for and empty repoID after calling WalkRelationships.
@@ -288,9 +339,13 @@ func (c *creator) Status(ctx context.Context, v *csaf.Vulnerability, which strin
 			if repoID == "" {
 				// It's possible to get here due to middleware not having a defined component:package
 				// relationship. RHEL VEX requires products to have relationships.
-				if debugEnabled {
-					unrelatedProductIDs = append(unrelatedProductIDs, id)
-				}
+				c.skip[id] = skipBadRelation
+				continue
+			}
+			if _, ok := c.skip[pkgID]; ok {
+				continue
+			}
+			if _, ok := c.skip[repoID]; ok {
 				continue
 			}
 
@@ -302,6 +357,12 @@ func (c *creator) Status(ctx context.Context, v *csaf.Vulnerability, which strin
 					slog.Group("package", "id", pkgID, "found", pkg != nil),
 					slog.Group("repo", "id", repoID, "found", repo != nil),
 				)
+				if pkg == nil {
+					c.skip[pkgID] = skipBadPackage
+				}
+				if repo == nil {
+					c.skip[repoID] = skipBadRepository
+				}
 				continue
 			}
 
@@ -333,6 +394,12 @@ func (c *creator) Status(ctx context.Context, v *csaf.Vulnerability, which strin
 					slog.Group("package", "id", pkgID, "helper", "purl", "found", purl != nil),
 					slog.Group("repo", "id", repoID, "helper", "cpe", "found", wfn != nil),
 				)
+				if purl == nil {
+					c.skip[pkgID] = skipBadPackage
+				}
+				if wfn == nil {
+					c.skip[repoID] = skipBadRepository
+				}
 				continue
 			}
 			if !checkPURL(*purl) {
