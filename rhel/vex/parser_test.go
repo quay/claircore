@@ -291,6 +291,12 @@ func TestParseCompare(t *testing.T) {
 						CPE:  cpe.MustUnbind("cpe:2.3:a:redhat:openshift:4.16::el9"),
 					},
 					ArchOperation: claircore.OpPatternMatch,
+					Self:          claircore.Alias{Space: spaceRedHat, Name: "CVE-2024-24786"},
+					Aliases: []claircore.Alias{
+						{Space: spaceCVE, Name: "2024-24786"},
+						{Space: spaceRHBZ, Name: "2268046"},
+						{Space: spaceGo, Name: "2024-2611"},
+					},
 				},
 			},
 		},
@@ -367,25 +373,25 @@ func TestParse(t *testing.T) {
 				"testdata/delete_CVE-2023-0030.json",
 				"testdata/delete_CVE-2023-0031.json",
 			},
-			expectedVulns:   3769,
-			expectedDeleted: 4,
+			expectedVulns:   4143,
+			expectedDeleted: 2,
 		},
 		{
 			name:            "cve-2022-1705",
 			filenames:       []string{"testdata/cve-2022-1705.json"},
-			expectedVulns:   1002,
+			expectedVulns:   2004,
 			expectedDeleted: 0,
 		},
 		{
 			name:            "cve-2024-24786",
 			filenames:       []string{"testdata/cve-2024-24786.json"},
-			expectedVulns:   609,
+			expectedVulns:   1828,
 			expectedDeleted: 0,
 		},
 		{
 			name:            "cve-2022-38752",
 			filenames:       []string{"testdata/cve-2022-38752.json"},
-			expectedVulns:   21,
+			expectedVulns:   1788,
 			expectedDeleted: 0,
 		},
 		{
@@ -397,8 +403,14 @@ func TestParse(t *testing.T) {
 		{
 			name:            "cve-2024-24786-new-module-format",
 			filenames:       []string{"testdata/cve-2024-24786-1.json"},
-			expectedVulns:   685,
-			expectedDeleted: 0, // when the file contains no vulnerabilities, we send a delete signal to the DB
+			expectedVulns:   2722,
+			expectedDeleted: 0,
+		},
+		{
+			name:            "cve-2023-38545",
+			filenames:       []string{"testdata/cve-2023-38545.json"},
+			expectedVulns:   269,
+			expectedDeleted: 0,
 		},
 	}
 
