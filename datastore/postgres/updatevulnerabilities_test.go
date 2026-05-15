@@ -27,8 +27,10 @@ type op struct {
 }
 
 func TestGetLatestVulnerabilities(t *testing.T) {
-	integration.NeedDB(t)
-	ctx := test.Logging(t)
+	ctx := test.RootContext(t)
+	ctx, span := tracer.Start(ctx, t.Name())
+	defer span.End()
+	integration.NeedDB(t, ctx)
 
 	cases := []latestVulnTestCase{
 		{
@@ -296,7 +298,9 @@ func TestGetLatestVulnerabilities(t *testing.T) {
 	// run test cases
 	for _, tc := range cases {
 		t.Run(tc.TestName, func(t *testing.T) {
-			ctx := test.Logging(t, ctx)
+			ctx, span := tracer.Start(ctx, t.Name())
+			defer span.End()
+			ctx = test.Logging(t, ctx)
 			_, err := store.DeltaUpdateVulnerabilities(ctx, tc.Updater, driver.Fingerprint(uuid.New().String()), tc.FirstOp.vulns, tc.FirstOp.deletedVulns)
 			if err != nil {
 				t.Fatalf("failed to perform update for first op: %v", err)

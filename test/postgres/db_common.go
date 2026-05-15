@@ -23,6 +23,8 @@ import (
 //
 // If any errors are encountered, the test is failed and exited.
 func TestMatcherDB(ctx context.Context, t testing.TB) *pgxpool.Pool {
+	ctx, span := tracer.Start(ctx, "TestMatcherDB")
+	defer span.End()
 	return testDB(ctx, t, dbMatcher)
 }
 
@@ -31,6 +33,8 @@ func TestMatcherDB(ctx context.Context, t testing.TB) *pgxpool.Pool {
 //
 // If any errors are encountered, the test is failed and exited.
 func TestIndexerDB(ctx context.Context, t testing.TB) *pgxpool.Pool {
+	ctx, span := tracer.Start(ctx, "TestIndexerDB")
+	defer span.End()
 	return testDB(ctx, t, dbIndexer)
 }
 
