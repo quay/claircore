@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"unique"
 
 	"github.com/Masterminds/semver"
 	"github.com/google/go-cmp/cmp"
@@ -154,6 +155,8 @@ func TestParse(t *testing.T) {
 	}
 }
 
+var test1Alias = claircore.Alias{Space: unique.Make(`TEST`), Name: `1`}
+
 var insertTestCases = []struct {
 	name          string
 	ad            *advisory
@@ -162,7 +165,7 @@ var insertTestCases = []struct {
 	{
 		name: "normal",
 		ad: &advisory{
-			ID: "test1",
+			ID: "TEST-1",
 			Affected: []affected{
 				{
 					Package: _package{
@@ -187,8 +190,9 @@ var insertTestCases = []struct {
 		},
 		expectedVulns: []claircore.Vulnerability{
 			{
-				Name:    "test1",
+				Name:    "TEST-1",
 				Updater: "test",
+				Self:    test1Alias,
 				Range: &claircore.Range{
 					Lower: claircore.FromSemver(semver.MustParse("0.0.0")),
 					Upper: claircore.FromSemver(semver.MustParse("0.4.0")),
@@ -200,7 +204,7 @@ var insertTestCases = []struct {
 	{
 		name: "unfixed",
 		ad: &advisory{
-			ID: "test1",
+			ID: "TEST-1",
 			Affected: []affected{
 				{
 					Package: _package{
@@ -222,8 +226,9 @@ var insertTestCases = []struct {
 		},
 		expectedVulns: []claircore.Vulnerability{
 			{
-				Name:    "test1",
+				Name:    "TEST-1",
 				Updater: "test",
+				Self:    test1Alias,
 				Range: &claircore.Range{
 					Lower: claircore.FromSemver(semver.MustParse("0.0.0")),
 					Upper: claircore.Version{
@@ -238,7 +243,7 @@ var insertTestCases = []struct {
 	{
 		name: "two_affected",
 		ad: &advisory{
-			ID: "test1",
+			ID: "TEST-1",
 			Affected: []affected{
 				{
 					Package: _package{
@@ -282,8 +287,9 @@ var insertTestCases = []struct {
 		},
 		expectedVulns: []claircore.Vulnerability{
 			{
-				Name:    "test1",
+				Name:    "TEST-1",
 				Updater: "test",
+				Self:    test1Alias,
 				Range: &claircore.Range{
 					Lower: claircore.FromSemver(semver.MustParse("0.0.0")),
 					Upper: claircore.FromSemver(semver.MustParse("0.4.10")),
@@ -291,8 +297,9 @@ var insertTestCases = []struct {
 				FixedInVersion: "0.4.10",
 			},
 			{
-				Name:    "test1",
+				Name:    "TEST-1",
 				Updater: "test",
+				Self:    test1Alias,
 				Range: &claircore.Range{
 					Lower: claircore.FromSemver(semver.MustParse("0.5.0")),
 					Upper: claircore.FromSemver(semver.MustParse("0.5.3")),
@@ -304,7 +311,7 @@ var insertTestCases = []struct {
 	{
 		name: "three_fixes",
 		ad: &advisory{
-			ID: "test1",
+			ID: "TEST-1",
 			Affected: []affected{
 				{
 					Package: _package{
@@ -341,8 +348,9 @@ var insertTestCases = []struct {
 		},
 		expectedVulns: []claircore.Vulnerability{
 			{
-				Name:    "test1",
+				Name:    "TEST-1",
 				Updater: "test",
+				Self:    test1Alias,
 				Range: &claircore.Range{
 					Lower: claircore.FromSemver(semver.MustParse("0.0.0")),
 					Upper: claircore.FromSemver(semver.MustParse("2.1.16")),
@@ -350,8 +358,9 @@ var insertTestCases = []struct {
 				FixedInVersion: "2.1.16",
 			},
 			{
-				Name:    "test1",
+				Name:    "TEST-1",
 				Updater: "test",
+				Self:    test1Alias,
 				Range: &claircore.Range{
 					Lower: claircore.FromSemver(semver.MustParse("2.2.0")),
 					Upper: claircore.FromSemver(semver.MustParse("2.2.10")),
@@ -359,8 +368,9 @@ var insertTestCases = []struct {
 				FixedInVersion: "2.2.10",
 			},
 			{
-				Name:    "test1",
+				Name:    "TEST-1",
 				Updater: "test",
+				Self:    test1Alias,
 				Range: &claircore.Range{
 					Lower: claircore.FromSemver(semver.MustParse("2.3.0")),
 					Upper: claircore.FromSemver(semver.MustParse("2.3.5")),
@@ -372,7 +382,7 @@ var insertTestCases = []struct {
 	{
 		name: "two_fixes_one_unfixed",
 		ad: &advisory{
-			ID: "test1",
+			ID: "TEST-1",
 			Affected: []affected{
 				{
 					Package: _package{
@@ -406,8 +416,9 @@ var insertTestCases = []struct {
 		},
 		expectedVulns: []claircore.Vulnerability{
 			{
-				Name:    "test1",
+				Name:    "TEST-1",
 				Updater: "test",
+				Self:    test1Alias,
 				Range: &claircore.Range{
 					Lower: claircore.FromSemver(semver.MustParse("0.0.0")),
 					Upper: claircore.FromSemver(semver.MustParse("2.1.16")),
@@ -415,8 +426,9 @@ var insertTestCases = []struct {
 				FixedInVersion: "2.1.16",
 			},
 			{
-				Name:    "test1",
+				Name:    "TEST-1",
 				Updater: "test",
+				Self:    test1Alias,
 				Range: &claircore.Range{
 					Lower: claircore.FromSemver(semver.MustParse("2.2.0")),
 					Upper: claircore.FromSemver(semver.MustParse("2.2.10")),
@@ -424,8 +436,9 @@ var insertTestCases = []struct {
 				FixedInVersion: "2.2.10",
 			},
 			{
-				Name:    "test1",
+				Name:    "TEST-1",
 				Updater: "test",
+				Self:    test1Alias,
 				Range: &claircore.Range{
 					Lower: claircore.FromSemver(semver.MustParse("2.3.0")),
 					Upper: claircore.Version{
@@ -441,7 +454,7 @@ var insertTestCases = []struct {
 		// In this situation we're just expecting the last one.
 		name: "two_consecutive_introduced_invalid",
 		ad: &advisory{
-			ID: "test1",
+			ID: "TEST-1",
 			Affected: []affected{
 				{
 					Package: _package{
@@ -466,8 +479,9 @@ var insertTestCases = []struct {
 		},
 		expectedVulns: []claircore.Vulnerability{
 			{
-				Name:    "test1",
+				Name:    "TEST-1",
 				Updater: "test",
+				Self:    test1Alias,
 				Range: &claircore.Range{
 					Lower: claircore.FromSemver(semver.MustParse("2.3.0")),
 					Upper: claircore.Version{
@@ -482,7 +496,7 @@ var insertTestCases = []struct {
 	{
 		name: "ecosystem_multi",
 		ad: &advisory{
-			ID: "test1",
+			ID: "TEST-1",
 			Affected: []affected{
 				{
 					Package: _package{
@@ -513,14 +527,16 @@ var insertTestCases = []struct {
 		},
 		expectedVulns: []claircore.Vulnerability{
 			{
-				Name:           "test1",
+				Name:           "TEST-1",
 				Updater:        "test",
+				Self:           test1Alias,
 				Range:          nil,
 				FixedInVersion: "fixed=2.1.1",
 			},
 			{
-				Name:           "test1",
+				Name:           "TEST-1",
 				Updater:        "test",
+				Self:           test1Alias,
 				Range:          nil,
 				FixedInVersion: "fixed=3.0.2&introduced=3.0",
 			},
@@ -529,7 +545,8 @@ var insertTestCases = []struct {
 	{
 		name: "ecosystem_unfixed",
 		ad: &advisory{
-			ID: "test1",
+			ID:      "TEST-1",
+			Aliases: []string{"CVE-1970-0001"},
 			Affected: []affected{
 				{
 					Package: _package{
@@ -551,8 +568,13 @@ var insertTestCases = []struct {
 		},
 		expectedVulns: []claircore.Vulnerability{
 			{
-				Name:           "test1",
-				Updater:        "test",
+				Name:    "TEST-1",
+				Updater: "test",
+				Self:    test1Alias,
+				Aliases: []claircore.Alias{
+					{Space: unique.Make(`CVE`), Name: "1970-0001"},
+				},
+				Links:          "https://osv.dev/vulnerability/CVE-1970-0001",
 				Range:          nil,
 				FixedInVersion: "introduced=3.0",
 			},
@@ -561,7 +583,7 @@ var insertTestCases = []struct {
 	{
 		name: "same package different ranges",
 		ad: &advisory{
-			ID: "test1",
+			ID: "TEST-1",
 			Affected: []affected{
 				{
 					Package: _package{
@@ -597,13 +619,15 @@ var insertTestCases = []struct {
 		},
 		expectedVulns: []claircore.Vulnerability{
 			{
-				Name:           "test1",
+				Name:           "TEST-1",
 				Updater:        "test",
+				Self:           test1Alias,
 				FixedInVersion: "fixed=0.4.0",
 			},
 			{
-				Name:           "test1",
+				Name:           "TEST-1",
 				Updater:        "test",
+				Self:           test1Alias,
 				FixedInVersion: "fixed=1.2.0&introduced=1.0.0",
 			},
 		},
@@ -645,7 +669,7 @@ var severityTestCases = []struct {
 	{
 		name: "CVSS V3 HIGH",
 		a: &advisory{
-			ID: "test1",
+			ID: "TEST-1",
 			Severity: []severity{
 				{
 					Type:  "CVSS_V3",
@@ -678,7 +702,7 @@ var severityTestCases = []struct {
 	{
 		name: "CVSS V2 MEDIUM",
 		a: &advisory{
-			ID: "test2",
+			ID: "TEST-2",
 			Severity: []severity{
 				{
 					Type:  "CVSS_V2",
@@ -711,7 +735,7 @@ var severityTestCases = []struct {
 	{
 		name: "database_specific moderate",
 		a: &advisory{
-			ID: "test2",
+			ID: "TEST-2",
 			Affected: []affected{
 				{
 					Package: _package{
@@ -739,7 +763,7 @@ var severityTestCases = []struct {
 	{
 		name: "CVSS V3 HIGH and database_specific moderate",
 		a: &advisory{
-			ID: "test2",
+			ID: "TEST-2",
 			Severity: []severity{
 				{
 					Type:  "CVSS_V3",
@@ -806,6 +830,7 @@ func TestInsertLinksAliases(t *testing.T) {
 		{
 			name: "only refs",
 			adv: advisory{
+				ID: "TEST-1",
 				References: []reference{
 					{URL: "https://example.com/ref1"},
 					{URL: "https://example.com/ref2"},
@@ -820,6 +845,7 @@ func TestInsertLinksAliases(t *testing.T) {
 		{
 			name: "only aliases single",
 			adv: advisory{
+				ID:      "TEST-1",
 				Aliases: []string{"CVE-2023-0001"},
 				Affected: []affected{{
 					Package: _package{Ecosystem: ecosystemGo, Name: "pkg"},
@@ -831,6 +857,7 @@ func TestInsertLinksAliases(t *testing.T) {
 		{
 			name: "only aliases multiple",
 			adv: advisory{
+				ID:      "TEST-1",
 				Aliases: []string{"CVE-2023-0001", "GHSA-xxxx-yyyy"},
 				Affected: []affected{{
 					Package: _package{Ecosystem: ecosystemGo, Name: "pkg"},
@@ -842,6 +869,7 @@ func TestInsertLinksAliases(t *testing.T) {
 		{
 			name: "refs then aliases",
 			adv: advisory{
+				ID:         "TEST-1",
 				References: []reference{{URL: "https://example.com/ref1"}, {URL: "https://example.com/ref2"}},
 				Aliases:    []string{"CVE-2023-0001", "GHSA-xxxx-yyyy"},
 				Affected: []affected{{
@@ -854,6 +882,7 @@ func TestInsertLinksAliases(t *testing.T) {
 		{
 			name: "single ref",
 			adv: advisory{
+				ID:         "TEST-1",
 				References: []reference{{URL: "https://example.com/ref1"}},
 				Affected: []affected{{
 					Package: _package{Ecosystem: ecosystemGo, Name: "pkg"},
@@ -865,6 +894,7 @@ func TestInsertLinksAliases(t *testing.T) {
 		{
 			name: "empty",
 			adv: advisory{
+				ID: "TEST-1",
 				Affected: []affected{{
 					Package: _package{Ecosystem: ecosystemGo, Name: "pkg"},
 					Ranges:  []_range{{Type: "SEMVER", Events: []rangeEvent{{Introduced: "0"}}}},

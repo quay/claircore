@@ -19,6 +19,7 @@ import (
 	"slices"
 	"strings"
 	"time"
+	"unique"
 
 	"github.com/Masterminds/semver"
 
@@ -541,6 +542,10 @@ func (e *ecs) Insert(ctx context.Context, log *slog.Logger, skipped *stats, name
 	var b strings.Builder
 	var proto claircore.Vulnerability
 	proto.Name = a.ID
+	proto.Self, err = idToAlias(a.ID)
+	if err != nil {
+		return err
+	}
 	proto.Description = a.Summary
 	proto.Issued = a.Published
 	proto.Updater = e.Updater
@@ -615,6 +620,11 @@ func (e *ecs) Insert(ctx context.Context, log *slog.Logger, skipped *stats, name
 			b.WriteByte(' ')
 		}
 		b.WriteString(aliasBaseURL + alias)
+		a, err := idToAlias(alias)
+		if err != nil {
+			return err
+		}
+		proto.Aliases = append(proto.Aliases, a)
 	}
 	proto.Links = b.String()
 	for i := range a.Affected {
@@ -785,6 +795,35 @@ func (e *ecs) Insert(ctx context.Context, log *slog.Logger, skipped *stats, name
 		}
 	}
 	return nil
+}
+
+// IdToAlias turns an OSV identifier into a [claircore.Alias].
+func idToAlias(id string) (claircore.Alias, error) {
+	space, name, ok := strings.Cut(id, "-")
+	if !ok {
+		return claircore.Alias{}, invalidIdentifier(id)
+	}
+	return claircore.Alias{
+		Space: unique.Make(space),
+		Name:  name,
+	}, nil
+}
+
+// ErrInvalidIdentifier is a sentinel error for an invalid identifier being
+// passed to [idToAlias].
+var errInvalidIdentifier = errors.New("invalid identifier")
+
+// InvalidIdentifier is an identifier that is invalid, per OSV spec.
+type invalidIdentifier string
+
+// Error implements [error].
+func (e invalidIdentifier) Error() string {
+	return fmt.Sprintf("osv: invalid identifier: %q", string(e))
+}
+
+// Is enables [errors.Is].
+func (invalidIdentifier) Is(tgt error) bool {
+	return tgt == errInvalidIdentifier
 }
 
 // severityFromDBString takes a severity string defined in the
