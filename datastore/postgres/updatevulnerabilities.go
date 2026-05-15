@@ -359,12 +359,12 @@ ON CONFLICT DO NOTHING`
 		}
 		// TODO(hank) Remove these conditionals and assume that aliases are
 		// always present.
-		if vuln.Self.Valid() {
-			batch.Queue(insertSelfAlias, hashKind, hash, vuln.Self.Space.Value(), vuln.Self.Name)
-		}
 		if len(names) > 0 {
 			batch.Queue(insertAliases, spaces, names)
 			batch.Queue(insertVulnerabilityAliases, hashKind, hash, spaces, names)
+		}
+		if vuln.Self.Valid() {
+			batch.Queue(insertSelfAlias, hashKind, hash, vuln.Self.Space.Value(), vuln.Self.Name)
 		}
 
 		if ct := batch.Len(); ct < 1000 {
