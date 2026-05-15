@@ -170,7 +170,7 @@ ON CONFLICT DO NOTHING;`
 		(SELECT id FROM vuln WHERE hash_kind = $1 AND hash = $2) AS vuln,
 		(SELECT a.id
 		FROM
-			(SELECT unnest($3::TEXT[]) AS space, unnest($4::TEXT[]) AS name) AS input,
+			(SELECT unnest($3::TEXT[]) AS space, unnest($4::TEXT[]) AS name) AS input
 		JOIN
 			alias_namespace AS ns ON ns.namespace = input.space
 		JOIN
