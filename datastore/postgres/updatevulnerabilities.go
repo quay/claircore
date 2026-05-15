@@ -152,11 +152,11 @@ func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string
 			(SELECT id FROM vuln WHERE hash_kind = $1 AND hash = $2))
 		ON CONFLICT DO NOTHING;`
 		refreshView           = `REFRESH MATERIALIZED VIEW CONCURRENTLY latest_update_operations;`
-		insertAliasNamespaces = `INSERT INTO alias_namespace (namespace) VALUES (unnest($1)) ON CONFLICT DO NOTHING;`
+		insertAliasNamespaces = `INSERT INTO alias_namespace (namespace) VALUES (unnest($1::TEXT[])) ON CONFLICT DO NOTHING;`
 		insertAliases         = `INSERT INTO alias (namespace, name)
 	SELECT ns.id, input.name
 	FROM
-		(SELECT unnest($1) AS space, unnest($2) AS name) AS input
+		(SELECT unnest($1::TEXT[]) AS space, unnest($2::TEXT[]) AS name) AS input
 	JOIN
 		alias_namespace AS ns ON input.space = ns.namespace
 ON CONFLICT DO NOTHING;`
@@ -170,7 +170,7 @@ ON CONFLICT DO NOTHING;`
 		(SELECT id FROM vuln WHERE hash_kind = $1 AND hash = $2) AS vuln,
 		(SELECT a.id
 		FROM
-			(SELECT unnest($3) AS space, unnest($4) AS name) AS input,
+			(SELECT unnest($3::TEXT[]) AS space, unnest($4::TEXT[]) AS name) AS input,
 		JOIN
 			alias_namespace AS ns ON ns.namespace = input.space
 		JOIN
