@@ -82,15 +82,23 @@ func (u *Updater) DeltaParse(ctx context.Context, contents io.ReadCloser) ([]*cl
 // Reusing the same Parser instance across multiple documents is more efficient than
 // creating a new one for each document.
 type Parser struct {
-	pc *productCache
-	rc *repoCache
+	product          *productIndex
+	rc               *repoCache
+	score            *scoreIndex
+	threatImpact     *threatImpactIndex
+	remediation      *remediationIndex
+	defaultComponent *defaultComponentIndex
 }
 
 // NewParser creates a new Parser with initialised caches.
 func NewParser() *Parser {
 	return &Parser{
-		pc: newProductCache(),
-		rc: newRepoCache(),
+		product:          newProductIndex(),
+		rc:               newRepoCache(),
+		score:            newScoreIndex(),
+		threatImpact:     newThreatImpactIndex(),
+		remediation:      newRemediationIndex(),
+		defaultComponent: newDefaultComponentIndex(),
 	}
 }
 
@@ -129,14 +137,7 @@ func (p *Parser) parseDoc(ctx context.Context, doc []byte) (string, []*claircore
 		return name, nil, errDeleted
 	}
 
-	var selfLink string
-	for _, r := range c.Document.References {
-		if r.Category == "self" {
-			selfLink = r.URL
-		}
-	}
-
-	creator := newCreator(name, selfLink, c, p.pc, p.rc)
+	creator := p.creator(name, c)
 	var out []*claircore.Vulnerability
 	for i := range c.Vulnerabilities {
 		v := &c.Vulnerabilities[i]
@@ -170,7 +171,7 @@ func (p *Parser) parseDoc(ctx context.Context, doc []byte) (string, []*claircore
 				}
 			}
 		}
-		links = append(links, selfLink)
+		links = append(links, creator.docLink)
 
 		var desc string
 		for _, n := range v.Notes {
@@ -271,52 +272,44 @@ func (rc *repoCache) Get(cpe *cpe.WFN, repoKey string) *claircore.Repository {
 	return r
 }
 
-// productCache keeps a cache of all seen csaf.Products.
-type productCache struct {
-	cache map[string]*csaf.Product
-}
-
-// NewProductCache returns a productCache with the backing
-// map instantiated.
-func newProductCache() *productCache {
-	return &productCache{
-		cache: make(map[string]*csaf.Product),
+func (p *Parser) creator(name string, doc *csaf.CSAF) *creator {
+	p.product.Reset(doc)
+	p.score.Reset(doc)
+	p.threatImpact.Reset(doc)
+	p.remediation.Reset(doc)
+	p.defaultComponent.Reset(doc)
+	var selfLink string
+	for _, r := range doc.Document.References {
+		if r.Category == "self" {
+			selfLink = r.URL
+		}
 	}
-}
-
-// Get is a wrapper around the FindProductByID method that
-// attempts to return from the cache before traversing the
-// CSAF object.
-func (pc *productCache) Get(productID string, c *csaf.CSAF) *csaf.Product {
-	if p, ok := pc.cache[productID]; ok {
-		return p
-	}
-	p := c.ProductTree.FindProductByID(productID)
-	pc.cache[productID] = p
-	return p
-}
-
-// NewCreator returns a creator object used for processing parts of a VEX file
-// and returning claircore.Vulnerabilities.
-func newCreator(vulnName, vulnLink string, c *csaf.CSAF, pc *productCache, rc *repoCache) *creator {
 	return &creator{
-		vulnName: vulnName,
-		vulnLink: vulnLink,
-		c:        c,
-		pc:       pc,
-		rc:       rc,
-		skip:     make(map[string]skipReason),
+		docName:          name,
+		docLink:          selfLink,
+		c:                doc,
+		product:          p.product,
+		rc:               p.rc,
+		score:            p.score,
+		threatImpact:     p.threatImpact,
+		remediation:      p.remediation,
+		defaultComponent: p.defaultComponent,
+		skip:             make(map[string]skipReason),
 	}
 }
 
-// creator attempts to lessen the memory burden when creating vulnerability objects
-// by caching objects that are used multiple times during prcessing.
+// Creator attempts to lessen the memory burden when creating vulnerability objects
+// by caching objects that are used multiple times during processing.
 type creator struct {
-	vulnName, vulnLink string
-	skip               map[string]skipReason
-	c                  *csaf.CSAF
-	pc                 *productCache
-	rc                 *repoCache
+	docName, docLink string
+	skip             map[string]skipReason
+	c                *csaf.CSAF
+	product          *productIndex
+	rc               *repoCache
+	score            *scoreIndex
+	threatImpact     *threatImpactIndex
+	remediation      *remediationIndex
+	defaultComponent *defaultComponentIndex
 }
 
 // SkipReason records the reason a "product_id" is going to be skipped for the
@@ -335,7 +328,7 @@ const (
 
 // SkipLog logs information about skipped product_ids.
 func (c *creator) SkipLog(ctx context.Context) {
-	log := slog.With("link", c.vulnLink)
+	log := slog.With("link", c.docLink)
 	if !log.Enabled(ctx, slog.LevelDebug) || len(c.skip) == 0 {
 		return
 	}
@@ -372,7 +365,7 @@ func (c *creator) SkipLog(ctx context.Context) {
 // has a dangling "product_id" reference) cause the iterator to yield an error.
 // Entries that are not usable but not malformed are silently skipped.
 func (c *creator) Status(ctx context.Context, v *csaf.Vulnerability, which string) iter.Seq2[status, error] {
-	log := slog.With("link", c.vulnLink)
+	log := slog.With("link", c.docLink)
 	return func(yield func(status, error) bool) {
 		productIDs := v.ProductStatus[which]
 		for _, id := range productIDs {
@@ -380,20 +373,30 @@ func (c *creator) Status(ctx context.Context, v *csaf.Vulnerability, which strin
 				continue
 			}
 			log := log.With("id", id)
-			// RHEL VEX requires products to have relationships (package -> repo), so callers
-			// must check for and empty repoID after calling WalkRelationships.
-			pkgID, _, repoID, err := c.c.WalkRelationships(id)
-			if err != nil {
-				if !yield(status{}, err) {
-					return
-				}
-				continue
-			}
-			if repoID == "" {
-				// It's possible to get here due to middleware not having a defined component:package
-				// relationship. RHEL VEX requires products to have relationships.
+			rel := c.defaultComponent.Get(id)
+			if rel == nil {
+				// It's possible to get here due to middleware not having a
+				// defined component-to-package relationship. RHEL VEX requires
+				// products to have relationships.
 				c.skip[id] = skipBadRelation
 				continue
+			}
+			const relMax = 5
+			var relDepth int
+			var pkgID, repoID string
+			for pkgID, relDepth = rel.ProductRef, 0; relDepth < relMax; relDepth++ {
+				r := c.defaultComponent.Get(pkgID)
+				if r == nil {
+					break
+				}
+				pkgID = r.ProductRef
+			}
+			for repoID, relDepth = rel.RelatesToProductRef, 0; relDepth < relMax; relDepth++ {
+				r := c.defaultComponent.Get(repoID)
+				if r == nil {
+					break
+				}
+				repoID = r.RelatesToProductRef
 			}
 			if _, ok := c.skip[pkgID]; ok {
 				continue
@@ -402,8 +405,8 @@ func (c *creator) Status(ctx context.Context, v *csaf.Vulnerability, which strin
 				continue
 			}
 
-			pkg := c.pc.Get(pkgID, c.c)
-			repo := c.pc.Get(repoID, c.c)
+			pkg := c.product.Get(pkgID)
+			repo := c.product.Get(repoID)
 			if repo == nil || pkg == nil {
 				// Should never get here, error in data.
 				log.WarnContext(ctx, "could not find product(s) in product tree",
@@ -459,13 +462,13 @@ func (c *creator) Status(ctx context.Context, v *csaf.Vulnerability, which strin
 				continue
 			}
 
-			score := c.c.FindScore(id)
-			threat := c.c.FindThreat(id, "impact")
+			score := c.score.Get(id)
+			threat := c.threatImpact.Get(id)
 			if threat == nil && score != nil && cvssBaseScoreFromScore(score) == 0.0 {
 				// This has no threat object and a 0.0 Base score: disregard.
 				continue
 			}
-			remediation := c.c.FindRemediation(id)
+			remediation := c.remediation.Get(id)
 
 			// Do fixups for specific statuses:
 			switch which {
@@ -713,7 +716,7 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v *csaf.Vuln
 		if sc := st.Score; sc != nil {
 			vuln.Severity, err = cvssVectorFromScore(sc)
 			if err != nil {
-				return nil, fmt.Errorf("could not parse CVSS score: %w, file: %s", err, c.vulnLink)
+				return nil, fmt.Errorf("could not parse CVSS score: %w, file: %s", err, c.docLink)
 			}
 		}
 		if t := st.Threat; t != nil {
@@ -799,7 +802,7 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v *csaf.Vulnerabilit
 	// values contain pointers to [claircore.Range] values "owned" by the
 	// ranger.
 	ranger := newRanger()
-	log := slog.With("link", c.vulnLink)
+	log := slog.With("link", c.docLink)
 	var backing rope[claircore.Vulnerability]
 	var doDrop bool
 	vmap := make(map[uint64]*claircore.Vulnerability)
@@ -911,7 +914,7 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v *csaf.Vulnerabilit
 // KnownNotAffectedVulnerabilities processes the "known_not_affected" array of products
 // in the VEX object.
 func (c *creator) knownNotAffectedVulnerabilities(ctx context.Context, v *csaf.Vulnerability, init vulnHook) ([]*claircore.Vulnerability, error) {
-	log := slog.With("link", c.vulnLink)
+	log := slog.With("link", c.docLink)
 	var backing rope[claircore.Vulnerability]
 	var doDrop bool
 	vmap := make(map[uint64]*claircore.Vulnerability)
