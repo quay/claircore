@@ -2,8 +2,10 @@ package rhcc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/rpmver"
@@ -52,13 +54,19 @@ func (*matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 	}
 
 	slog.DebugContext(ctx, "comparing versions", "record", record.Package.Version, "vulnerability", vuln.FixedInVersion)
-	pkgVer, err := rpmver.Parse(record.Package.Version)
+	if record.Package.Version == "" {
+		return false, errors.New("rhcc: unable to parse package version: empty version")
+	}
+	if vuln.FixedInVersion == "" {
+		return true, nil
+	}
+	pkgVer, err := rpmver.Parse(ensureEVR(record.Package.Version))
 	if err != nil {
 		return false, fmt.Errorf("rhcc: unable to parse version %q: %w", record.Package.Version, err)
 	}
-	fixedVer, err := rpmver.Parse(vuln.FixedInVersion)
+	fixedVer, err := rpmver.Parse(ensureEVR(vuln.FixedInVersion))
 	if err != nil {
-		return false, fmt.Errorf("rhcc: unable to parse version %q: %w", vuln.FixedInVersion, err)
+		return false, fmt.Errorf("rhcc: unable to parse vulnerability version %q: %w", vuln.FixedInVersion, err)
 	}
 	return rpmver.Compare(&pkgVer, &fixedVer) == -1, nil
 }
@@ -70,3 +78,15 @@ func (*matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 func (*matcher) VersionFilter() {}
 
 func (*matcher) VersionAuthoritative() bool { return false }
+
+// ensureEVR appends a "-0" release suffix to version strings that lack a
+// dash (i.e., release), making them valid EVR strings for rpmver.Parse.
+// Timestamp-based versions from labels.json (e.g., "1744596866") and timestamp
+// tags from VEX pURLs have no dash; tag-based versions (e.g., "v3.5.7-8")
+// already do and are returned unchanged.
+func ensureEVR(s string) string {
+	if !strings.Contains(s, "-") {
+		return s + "-0"
+	}
+	return s
+}
