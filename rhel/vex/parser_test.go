@@ -76,7 +76,7 @@ func TestComponentPURLToModuleName(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := componentPURLToModuleName(tc.in)
+			got, err := componentPURLToModuleName(&tc.in)
 			if tc.err {
 				if err == nil {
 					t.Fatalf("expected error, got nil")
@@ -88,82 +88,6 @@ func TestComponentPURLToModuleName(t *testing.T) {
 			}
 			if got != tc.want {
 				t.Errorf("expected %s but got %s", tc.want, got)
-			}
-		})
-	}
-}
-
-// TestCreatePackageModule tests the createPackageModule function. This function is deprecated.
-func TestCreatePackageModule(t *testing.T) {
-	testcases := []struct {
-		name           string
-		in             *csaf.Product
-		expectedModule string
-		err            bool
-	}{
-		{
-			name: "simple",
-			in: &csaf.Product{
-				IdentificationHelper: map[string]string{
-					"purl": "pkg:rpmmod/redhat/postgresql@13:8060020240903094008:ad008a3a",
-				},
-			},
-			expectedModule: "postgresql:13",
-		},
-		{
-			name: "with minor",
-			in: &csaf.Product{
-				IdentificationHelper: map[string]string{
-					"purl": "pkg:rpmmod/redhat/postgresql@9.2:8060020240903094008:ad008a3a",
-				},
-			},
-			expectedModule: "postgresql:9.2",
-		},
-		{
-			name: "no colon",
-			in: &csaf.Product{
-				IdentificationHelper: map[string]string{
-					"purl": "pkg:rpmmod/redhat/postgresql@9",
-				},
-			},
-			expectedModule: "postgresql:9",
-		},
-		{
-			name: "unconventional",
-			in: &csaf.Product{
-				IdentificationHelper: map[string]string{
-					"purl": "pkg:rpmmod/redhat/postgresql:15/postgresql",
-				},
-			},
-			expectedModule: "postgresql:15",
-		},
-		{
-			name: "invalid purl",
-			in: &csaf.Product{
-				IdentificationHelper: map[string]string{
-					"purl": "invalid",
-				},
-			},
-			err: true,
-		},
-		{
-			name: "non Red Hat PURL",
-			in: &csaf.Product{
-				IdentificationHelper: map[string]string{
-					"purl": "pkg:rpmmod/oracle/postgresql@9",
-				},
-			},
-			err: true,
-		},
-	}
-	for _, tc := range testcases {
-		t.Run(tc.name, func(t *testing.T) {
-			modName, err := createPackageModule(tc.in)
-			if err != nil && !tc.err {
-				t.Errorf("expected no error but got %q", err)
-			}
-			if modName != tc.expectedModule {
-				t.Errorf("expected %s but got %s", tc.expectedModule, modName)
 			}
 		})
 	}
@@ -335,44 +259,6 @@ func TestWalkRelationships(t *testing.T) {
 	}
 }
 
-func TestEscapeCPE(t *testing.T) {
-	testcases := []struct {
-		name string
-		in   string
-		want string
-	}{
-		{
-			name: "wildcard version",
-			in:   "cpe:/a:redhat:openshift:4.*",
-			want: "cpe:/a:redhat:openshift:4.%02",
-		},
-		{
-			name: "product with a wildcard",
-			in:   "cpe:/a:redhat:astarry.*.comp:4.*",
-			want: "cpe:/a:redhat:astarry.*.comp:4.%02",
-		},
-		{
-			name: "version with question",
-			in:   "cpe:/a:redhat:openshift:4.?::el8",
-			want: "cpe:/a:redhat:openshift:4.%01::el8",
-		},
-		{
-			name: "question mark can be anywhere",
-			in:   "cpe:/a:redhat:openshift:4.?.10::el8",
-			want: "cpe:/a:redhat:openshift:4.%01.10::el8",
-		},
-	}
-
-	for _, tc := range testcases {
-		t.Run(tc.name, func(t *testing.T) {
-			out := escapeCPE(tc.in)
-			if out != tc.want {
-				t.Errorf("expected %s but got %s", tc.want, out)
-			}
-		})
-	}
-}
-
 func TestParseCompare(t *testing.T) {
 	t.Parallel()
 	url, err := url.Parse(BaseURL)
@@ -405,6 +291,12 @@ func TestParseCompare(t *testing.T) {
 						CPE:  cpe.MustUnbind("cpe:2.3:a:redhat:openshift:4.16::el9"),
 					},
 					ArchOperation: claircore.OpPatternMatch,
+					Self:          claircore.Alias{Space: spaceRedHat, Name: "CVE-2024-24786"},
+					Aliases: []claircore.Alias{
+						{Space: spaceCVE, Name: "2024-24786"},
+						{Space: spaceRHBZ, Name: "2268046"},
+						{Space: spaceGo, Name: "2024-2611"},
+					},
 				},
 			},
 		},
@@ -481,25 +373,25 @@ func TestParse(t *testing.T) {
 				"testdata/delete_CVE-2023-0030.json",
 				"testdata/delete_CVE-2023-0031.json",
 			},
-			expectedVulns:   546,
-			expectedDeleted: 4,
+			expectedVulns:   4143,
+			expectedDeleted: 2,
 		},
 		{
 			name:            "cve-2022-1705",
 			filenames:       []string{"testdata/cve-2022-1705.json"},
-			expectedVulns:   1069,
+			expectedVulns:   2004,
 			expectedDeleted: 0,
 		},
 		{
 			name:            "cve-2024-24786",
 			filenames:       []string{"testdata/cve-2024-24786.json"},
-			expectedVulns:   610,
+			expectedVulns:   1828,
 			expectedDeleted: 0,
 		},
 		{
 			name:            "cve-2022-38752",
 			filenames:       []string{"testdata/cve-2022-38752.json"},
-			expectedVulns:   47,
+			expectedVulns:   1788,
 			expectedDeleted: 0,
 		},
 		{
@@ -511,8 +403,14 @@ func TestParse(t *testing.T) {
 		{
 			name:            "cve-2024-24786-new-module-format",
 			filenames:       []string{"testdata/cve-2024-24786-1.json"},
-			expectedVulns:   686,
-			expectedDeleted: 0, // when the file contains no vulnerabilities, we send a delete signal to the DB
+			expectedVulns:   2722,
+			expectedDeleted: 0,
+		},
+		{
+			name:            "cve-2023-38545",
+			filenames:       []string{"testdata/cve-2023-38545.json"},
+			expectedVulns:   269,
+			expectedDeleted: 0,
 		},
 	}
 
@@ -648,7 +546,7 @@ func TestExtractVersion(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			v, err := extractFixedInVersion(tc.purl)
+			v, err := extractFixedInVersion(&tc.purl)
 			if !errors.Is(err, nil) && !tc.expectedErr {
 				t.Fatalf("expected no err but got %v", err)
 			}
@@ -755,7 +653,7 @@ func TestExtractPackageName(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			v, err := extractPackageName(tc.purl)
+			v, err := extractPackageName(&tc.purl)
 			if !errors.Is(err, nil) && !tc.expectedErr {
 				t.Fatalf("expected no err but got %v", err)
 			}
