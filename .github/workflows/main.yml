@@ -104,8 +104,9 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
       - name: Cache Integration Assets
+        id: integ
         if: steps.previous.outputs.cache-hit != 'true'
-        uses: actions/cache@v5
+        uses: actions/cache/restore@v5
         with:
           key: integration-assets-${{ hashFiles('**/*_test.go') }}
           restore-keys: |
@@ -128,6 +129,19 @@ jobs:
             go mod download
             GOMAXPROCS=2 go test -race ${RUNNER_DEBUG:+-v} "-coverprofile=${{ runner.temp }}/$(go list -m | tr / _).codecov.out" -covermode=atomic ./...
           ); done
+      # Pull requests restore ~/.cache/clair-testing but do not upload it.
+      # Only pushes to main refresh the integration-assets cache (one matrix leg).
+      - name: Save integration assets cache
+        if: >-
+          github.event_name == 'push' &&
+          github.ref == 'refs/heads/main' &&
+          matrix.go == 'stable' &&
+          steps.previous.outputs.cache-hit != 'true' &&
+          steps.integ.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          key: integration-assets-${{ hashFiles('**/*_test.go') }}
+          path: ~/.cache/clair-testing
       - name: Codecov
         if: >-
           steps.previous.outputs.cache-hit != 'true' &&
