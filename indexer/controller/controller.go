@@ -42,7 +42,7 @@ func New(options *indexer.Options) *Controller {
 		Environments:  map[string][]*claircore.Environment{},
 		Distributions: map[string]*claircore.Distribution{},
 		Repositories:  map[string]*claircore.Repository{},
-		Files:         map[string]claircore.File{},
+		Files:         map[string]map[string]claircore.FileKind{},
 	}
 
 	s := &Controller{

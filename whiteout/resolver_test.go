@@ -49,10 +49,9 @@ func TestResolver(t *testing.T) {
 					"1": {{IntroducedIn: firstLayerHash}},
 					"2": {{IntroducedIn: firstLayerHash}},
 				},
-				Files: map[string]claircore.File{
-					secondLayerHash.String(): {
-						Path: "a/path/to/some/file/site-packages/.wh.a_package",
-						Kind: claircore.FileKindWhiteout,
+				Files: map[string]map[string]claircore.FileKind{
+					secondLayerHash.String(): map[string]claircore.FileKind{
+						"a/path/to/some/file/site-packages/.wh.a_package": claircore.FileKindWhiteout,
 					},
 				},
 			},
@@ -80,18 +79,11 @@ func TestResolver(t *testing.T) {
 					"1": {{IntroducedIn: firstLayerHash}},
 					"2": {{IntroducedIn: firstLayerHash}},
 				},
-				Files: map[string]claircore.File{
-					secondLayerHash.String(): {
-						Path: "a/path/to/some/different_file/site-packages/.wh.a_package",
-						Kind: claircore.FileKindWhiteout,
-					},
-					secondLayerHash.String(): {
-						Path: "a/path/to/some/different_file/.wh.site-packages",
-						Kind: claircore.FileKindWhiteout,
-					},
-					secondLayerHash.String(): {
-						Path: "a/path/to/some/.wh.different_file",
-						Kind: claircore.FileKindWhiteout,
+				Files: map[string]map[string]claircore.FileKind{
+					secondLayerHash.String(): map[string]claircore.FileKind{
+						"a/path/to/some/different_file/site-packages/.wh.a_package": claircore.FileKindWhiteout,
+						"a/path/to/some/different_file/.wh.site-packages":           claircore.FileKindWhiteout,
+						"a/path/to/some/.wh.different_file":                         claircore.FileKindWhiteout,
 					},
 				},
 			},
@@ -119,10 +111,9 @@ func TestResolver(t *testing.T) {
 					"1": {{IntroducedIn: firstLayerHash}},
 					"2": {{IntroducedIn: firstLayerHash}},
 				},
-				Files: map[string]claircore.File{
-					secondLayerHash.String(): {
-						Path: "a/path/to/some/file/.wh.site-packages",
-						Kind: claircore.FileKindWhiteout,
+				Files: map[string]map[string]claircore.FileKind{
+					secondLayerHash.String(): map[string]claircore.FileKind{
+						"a/path/to/some/file/.wh.site-packages": claircore.FileKindWhiteout,
 					},
 				},
 			},
@@ -150,10 +141,9 @@ func TestResolver(t *testing.T) {
 					"1": {{IntroducedIn: firstLayerHash}},
 					"2": {{IntroducedIn: firstLayerHash}},
 				},
-				Files: map[string]claircore.File{
-					firstLayerHash.String(): { // whiteout is in the same layer as packages
-						Path: "a/path/to/some/file/site-packages/.wh.b_package",
-						Kind: claircore.FileKindWhiteout,
+				Files: map[string]map[string]claircore.FileKind{
+					firstLayerHash.String(): map[string]claircore.FileKind{ // whiteout is in the same layer as packages
+						"a/path/to/some/file/site-packages/.wh.b_package": claircore.FileKindWhiteout,
 					},
 				},
 			},
@@ -181,10 +171,9 @@ func TestResolver(t *testing.T) {
 					"1": {{IntroducedIn: firstLayerHash}},
 					"2": {{IntroducedIn: firstLayerHash}},
 				},
-				Files: map[string]claircore.File{
-					secondLayerHash.String(): {
-						Path: "a/path/to/some/file/site/.wh..wh..opq",
-						Kind: claircore.FileKindWhiteout,
+				Files: map[string]map[string]claircore.FileKind{
+					secondLayerHash.String(): map[string]claircore.FileKind{
+						"a/path/to/some/file/site/.wh..wh..opq": claircore.FileKindWhiteout,
 					},
 				},
 			},
@@ -212,10 +201,9 @@ func TestResolver(t *testing.T) {
 					"1": {{IntroducedIn: firstLayerHash}},
 					"2": {{IntroducedIn: firstLayerHash}},
 				},
-				Files: map[string]claircore.File{
-					secondLayerHash.String(): {
-						Path: "a/path/to/some/file/site-packages/.wh..wh..opq",
-						Kind: claircore.FileKindWhiteout,
+				Files: map[string]map[string]claircore.FileKind{
+					secondLayerHash.String(): map[string]claircore.FileKind{
+						"a/path/to/some/file/site-packages/.wh..wh..opq": claircore.FileKindWhiteout,
 					},
 				},
 			},
@@ -238,10 +226,9 @@ func TestResolver(t *testing.T) {
 				Environments: map[string][]*claircore.Environment{
 					"1": {{IntroducedIn: firstLayerHash}, {IntroducedIn: thirdLayerHash}},
 				},
-				Files: map[string]claircore.File{
-					secondLayerHash.String(): { // whiteout is sandwiched
-						Path: "a/path/to/some/file/site-packages/.wh.a_package",
-						Kind: claircore.FileKindWhiteout,
+				Files: map[string]map[string]claircore.FileKind{
+					secondLayerHash.String(): map[string]claircore.FileKind{ // whiteout is sandwiched
+						"a/path/to/some/file/site-packages/.wh.a_package": claircore.FileKindWhiteout,
 					},
 				},
 			},
@@ -249,6 +236,48 @@ func TestResolver(t *testing.T) {
 				{Hash: firstLayerHash},
 				{Hash: secondLayerHash},
 				{Hash: thirdLayerHash},
+			},
+			LenPackage: 1,
+			LenEnvs:    1,
+		},
+		{
+			Name: "MultipleWhiteoutFiles",
+			Report: &claircore.IndexReport{
+				Packages: map[string]*claircore.Package{
+					"1": {
+						Name:     "package a",
+						Filepath: "a/path/to/some/file/site-packages/a_package/METADATA",
+					},
+					"2": {
+						Name:     "package b",
+						Filepath: "a/path/to/some/file/site-packages/b_package/METADATA",
+					},
+					"3": {
+						Name:     "package c",
+						Filepath: "a/path/to/some/file/site2-packages/c_package/METADATA",
+					},
+					"4": {
+						Name:     "package d",
+						Filepath: "a/path/to/some/file/site-packages/d_package/METADATA",
+					},
+				},
+				Environments: map[string][]*claircore.Environment{
+					"1": {{IntroducedIn: firstLayerHash}},
+					"2": {{IntroducedIn: firstLayerHash}},
+					"3": {{IntroducedIn: firstLayerHash}},
+					"4": {{IntroducedIn: firstLayerHash}},
+				},
+				Files: map[string]map[string]claircore.FileKind{
+					secondLayerHash.String(): map[string]claircore.FileKind{
+						"a/path/to/some/file/site-packages/.wh.a_package": claircore.FileKindWhiteout,
+						"a/path/to/some/file/site-packages/.wh.b_package": claircore.FileKindWhiteout,
+						"a/path/to/some/file/site2-packages/.wh..wh..opq": claircore.FileKindWhiteout,
+					},
+				},
+			},
+			Layers: []*claircore.Layer{
+				{Hash: firstLayerHash},
+				{Hash: secondLayerHash},
 			},
 			LenPackage: 1,
 			LenEnvs:    1,

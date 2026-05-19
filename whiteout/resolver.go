@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/quay/claircore"
@@ -18,6 +19,16 @@ func (r *Resolver) Resolve(ctx context.Context, ir *claircore.IndexReport, layer
 	// Here we need to check if any of the packages
 	// found are moot due to whiteouts.
 	ls := newLayerSorter(layers)
+
+	whiteouts := make(map[string][]string)
+	for layer, files := range ir.Files {
+		for path, kind := range files {
+			if kind == claircore.FileKindWhiteout {
+				whiteouts[layer] = append(whiteouts[layer], path)
+			}
+		}
+	}
+
 	finalPackages := map[string]*claircore.Package{}
 	finalEnvironments := map[string][]*claircore.Environment{}
 	for pkgID, pkg := range ir.Packages {
@@ -29,24 +40,26 @@ func (r *Resolver) Resolve(ctx context.Context, ir *claircore.IndexReport, layer
 				packageLayer = ir.Environments[pkgID][i].IntroducedIn.String()
 			}
 		}
-		for fileLayer, f := range ir.Files {
-			// Check if it's a whiteout file, if it applies to the package's
-			// filepath and if the layer the whiteout file came from came after.
-			// The spec states: "Whiteout files MUST only apply to resources in
-			// lower/parent layers" hence why we don't check if they're in the same
-			// layer.
-			if f.Kind == claircore.FileKindWhiteout && ls.isChildOf(fileLayer, packageLayer) && fileIsDeleted(pkg.Filepath, f.Path) {
+		// Check if it's a whiteout file, if it applies to the package's
+		// filepath and if the layer the whiteout file came from came after.
+		// The spec states: "Whiteout files MUST only apply to resources in
+		// lower/parent layers" hence why we don't check if they're in the same
+		// layer.
+		for layer, paths := range whiteouts {
+			if ls.isChildOf(layer, packageLayer) && slices.ContainsFunc(paths, func(p string) bool {
+				return fileIsDeleted(pkg.Filepath, p)
+			}) {
 				packageDeleted = true
-				slog.DebugContext(ctx, "package determined to be deleted",
-					"package name", pkg.Name,
-					"package file", pkg.Filepath,
-					"whiteout file", f.Path)
+				break
 			}
 		}
-		if !packageDeleted {
+		if packageDeleted {
+			slog.DebugContext(ctx, "package determined to be deleted",
+				"package name", pkg.Name,
+				"package file", pkg.Filepath)
+		} else {
 			finalPackages[pkgID] = pkg
 			finalEnvironments[pkgID] = ir.Environments[pkgID]
-
 		}
 	}
 	ir.Packages = finalPackages
