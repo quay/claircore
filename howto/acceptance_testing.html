@@ -20,8 +20,8 @@
         <link rel="icon" href="../favicon-de23e50b.svg">
         <link rel="shortcut icon" href="../favicon-8114d1fc.png">
         <link rel="stylesheet" href="../css/variables-8adf115d.css">
-        <link rel="stylesheet" href="../css/general-2459343d.css">
-        <link rel="stylesheet" href="../css/chrome-ae938929.css">
+        <link rel="stylesheet" href="../css/general-0392ca55.css">
+        <link rel="stylesheet" href="../css/chrome-fc474251.css">
         <link rel="stylesheet" href="../css/print-9e4910d8.css" media="print">
 
         <!-- Fonts -->
@@ -40,10 +40,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-af04c585.js";
+            window.path_to_searchindex_js = "../searchindex-764345fa.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-c6f1cca0.js"></script>
+        <script src="../toc-2d15e7bd.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -208,7 +208,9 @@ identifies vulnerabilities in container images using VEX documents.</p>
 <li><a href="#running-tests">Running Tests</a>
 <ul>
 <li><a href="#running-integration-tests">Running Integration Tests</a></li>
+<li><a href="#using-alternative-repository">Using Alternative Repository</a></li>
 <li><a href="#using-local-oci-layout">Using Local OCI Layout</a></li>
+<li><a href="#building-fixtures-from-live-vex-urls">Building Fixtures from Live VEX URLs</a></li>
 </ul>
 </li>
 <li><a href="#testing-with-claircore">Testing with Claircore</a></li>
@@ -389,6 +391,19 @@ directories:</p>
     "ocidir:///path/to/local/fixture",
 })
 </code></pre>
+<h3 id="building-fixtures-from-live-vex-urls"><a class="header" href="#building-fixtures-from-live-vex-urls">Building Fixtures from Live VEX URLs</a></h3>
+<p>If you already have VEX documents hosted at known URLs (e.g. from a security
+advisory feed), you can supply them directly without storing them as OCI referrers.
+Use <code>FetchVEXDocs</code> to download the documents, populate a <code>Fixture</code> directly, and
+pass it to <code>Run</code> via <code>WithFixture</code>. The image <code>Reference</code> is still pulled from a
+registry for indexing.</p>
+<p>See <a href="../../test/acceptance/example_test.go"><code>example_test.go</code></a> for an example
+(<code>ExampleWithFixture</code>).</p>
+<p>This approach is useful for:</p>
+<ul>
+<li>Rapid iteration during development without pushing VEX documents to a registry</li>
+<li>Testing regressions in a live advisory feed</li>
+</ul>
 <h2 id="testing-with-claircore"><a class="header" href="#testing-with-claircore">Testing with Claircore</a></h2>
 <p>Most teams will use the built-in claircore auditor to test their images.
 See <a href="../../test/acceptance/integration_test.go"><code>integration_test.go</code></a> for a
@@ -469,11 +484,11 @@ the <code>Auditor</code> interface:</p>
 
         <script src="../elasticlunr-ef4e11c1.min.js"></script>
         <script src="../mark-09e88c2c.min.js"></script>
-        <script src="../searcher-c2a407aa.js"></script>
+        <script src="../searcher-09f2665d.js"></script>
 
         <script src="../clipboard-1626706a.min.js"></script>
         <script src="../highlight-abc7f01d.js"></script>
-        <script src="../book-a0b12cfe.js"></script>
+        <script src="../book-c22b7243.js"></script>
 
         <!-- Custom JS scripts -->
         <script src="../docs/mermaid-2cf7bb6c.min.js"></script>
