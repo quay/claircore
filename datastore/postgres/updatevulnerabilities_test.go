@@ -1,9 +1,15 @@
 package postgres
 
 import (
+	"iter"
+	"slices"
+	"strconv"
+	"sync"
 	"testing"
+	"unique"
 
 	"github.com/google/uuid"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore"
@@ -253,6 +259,10 @@ func TestGetLatestVulnerabilities(t *testing.T) {
 						Package: &claircore.Package{
 							Name: "jq",
 						},
+						Self: claircore.Alias{
+							Space: unique.Make("CVE"),
+							Name:  "000",
+						},
 					},
 				},
 			},
@@ -265,12 +275,20 @@ func TestGetLatestVulnerabilities(t *testing.T) {
 						Package: &claircore.Package{
 							Name: "jq-libs",
 						},
+						Self: claircore.Alias{
+							Space: unique.Make("CVE"),
+							Name:  "456",
+						},
 					},
 					{
 						Updater: updater,
 						Name:    "CVE-789",
 						Package: &claircore.Package{
 							Name: "jq-docs",
+						},
+						Self: claircore.Alias{
+							Space: unique.Make("CVE"),
+							Name:  "789",
 						},
 					},
 				},
@@ -319,5 +337,80 @@ func TestGetLatestVulnerabilities(t *testing.T) {
 				t.Fatalf("got %d vulns, want %d", ct, tc.VulnCount)
 			}
 		})
+	}
+}
+
+func TestConcurrentUpdateVulnerabilities(t *testing.T) {
+	integration.NeedDB(t)
+	ctx := test.Logging(t)
+
+	pool := pgtest.TestMatcherDB(ctx, t)
+	store := NewMatcherStore(pool)
+	eg, ctx := errgroup.WithContext(ctx)
+
+	mkVuln := func(tn int) iter.Seq[*claircore.Vulnerability] {
+		return func(yield func(*claircore.Vulnerability) bool) {
+			const sz = 500
+			for n := range sz {
+				seq := func(yield func(claircore.Alias) bool) {
+					for i := range 100 {
+						if i == n {
+							continue
+						}
+						a := claircore.Alias{
+							Space: unique.Make("TEST"),
+							Name:  strconv.Itoa(i),
+						}
+						if !yield(a) {
+							return
+						}
+					}
+				}
+				s := claircore.Alias{
+					Space: unique.Make("TEST"),
+					Name:  strconv.Itoa(n),
+				}
+				v := claircore.Vulnerability{
+					Updater:     t.Name() + strconv.Itoa(tn),
+					Name:        s.String(),
+					Description: t.Name() + strconv.Itoa(tn) + strconv.Itoa(n),
+					Package: &claircore.Package{
+						Name: "test",
+					},
+					Self:    s,
+					Aliases: slices.Collect(seq),
+				}
+				if !yield(&v) {
+					return
+				}
+			}
+		}
+	}
+	start := make(chan struct{})
+	var ready sync.WaitGroup
+	runfunc := func(n int, start chan struct{}) func() error {
+		fp := driver.Fingerprint(uuid.New().String())
+		vulns := slices.Collect(mkVuln(n))
+		if n%2 == 0 {
+			slices.Reverse(vulns)
+		}
+		ready.Done()
+		return func() error {
+			<-start
+			_, err := store.UpdateVulnerabilities(ctx, t.Name()+strconv.Itoa(n), fp, vulns)
+			return err
+		}
+	}
+
+	const n = 2
+	ready.Add(n)
+	for n := range n {
+		eg.Go(runfunc(n, start))
+	}
+
+	ready.Wait()
+	close(start)
+	if err := eg.Wait(); err != nil {
+		t.Error(err)
 	}
 }
