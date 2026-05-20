@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"testing"
+	"unique"
 
 	"github.com/google/uuid"
 
@@ -253,6 +254,10 @@ func TestGetLatestVulnerabilities(t *testing.T) {
 						Package: &claircore.Package{
 							Name: "jq",
 						},
+						Self: claircore.Alias{
+							Space: unique.Make("CVE"),
+							Name:  "000",
+						},
 					},
 				},
 			},
@@ -265,12 +270,20 @@ func TestGetLatestVulnerabilities(t *testing.T) {
 						Package: &claircore.Package{
 							Name: "jq-libs",
 						},
+						Self: claircore.Alias{
+							Space: unique.Make("CVE"),
+							Name:  "456",
+						},
 					},
 					{
 						Updater: updater,
 						Name:    "CVE-789",
 						Package: &claircore.Package{
 							Name: "jq-docs",
+						},
+						Self: claircore.Alias{
+							Space: unique.Make("CVE"),
+							Name:  "789",
 						},
 					},
 				},
