@@ -544,6 +544,7 @@ func (e *ecs) Insert(ctx context.Context, log *slog.Logger, skipped *stats, name
 	proto.Name = a.ID
 	proto.Self, err = idToAlias(a.ID)
 	if err != nil {
+		// If the main Identifier is wrong, hard error.
 		return err
 	}
 	proto.Description = a.Summary
@@ -620,11 +621,17 @@ func (e *ecs) Insert(ctx context.Context, log *slog.Logger, skipped *stats, name
 			b.WriteByte(' ')
 		}
 		b.WriteString(aliasBaseURL + alias)
-		a, err := idToAlias(alias)
-		if err != nil {
+		aka, err := idToAlias(alias)
+		switch {
+		case err == nil:
+		case errors.Is(err, errInvalidIdentifier):
+			// If an alias is malformed, bail.
+			skipped.Ignored(a.ID)
+			return nil
+		default:
 			return err
 		}
-		proto.Aliases = append(proto.Aliases, a)
+		proto.Aliases = append(proto.Aliases, aka)
 	}
 	proto.Links = b.String()
 	for i := range a.Affected {
