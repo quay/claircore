@@ -98,6 +98,7 @@ func EnrichedMatch(ctx context.Context, ir *claircore.IndexReport, ms []driver.M
 		Repositories:           ir.Repositories,
 		Vulnerabilities:        map[string]*claircore.Vulnerability{},
 		PackageVulnerabilities: map[string][]string{},
+		PackageNotVulnerable:   map[string][]string{},
 		// The Enrichments member isn't constructed here because it's
 		// constructed separately and then added.
 	}
