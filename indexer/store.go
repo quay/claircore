@@ -2,6 +2,7 @@ package indexer
 
 import (
 	"context"
+	"time"
 
 	"github.com/quay/claircore"
 )
@@ -48,6 +49,17 @@ type Setter interface {
 	// Also a call to Querier.IndexReport with the manifest hash represted in the provided IndexReport must return the IndexReport
 	// in finished state.
 	SetIndexFinished(ctx context.Context, sr *claircore.IndexReport, scnrs VersionedScanners) error
+	// SetIndexPartial marks a scan completed with degraded data.
+	//
+	// After this method returns ManifestScanned must return true, so callers do
+	// not immediately retry the same manifest. Implementations should preserve
+	// enough state for RequeueIndexPartials to make the manifest eligible for a
+	// later retry.
+	SetIndexPartial(ctx context.Context, sr *claircore.IndexReport, scnrs VersionedScanners) error
+	// RequeueIndexPartials makes up to limit IndexPartial manifests eligible for
+	// re-indexing when their persisted report has not been updated within
+	// minAge.
+	RequeueIndexPartials(ctx context.Context, minAge time.Duration, limit int) (int64, error)
 }
 
 // Querier interface provides the method set to ascertain indexed artifacts and query whether a layer
