@@ -106,7 +106,7 @@ func (s *scanner) Configure(ctx context.Context, f indexer.ConfigDeserializer, c
 func (s *scanner) Name() string { return "rhel_containerscanner" }
 
 // Version implements [indexer.VersionedScanner].
-func (s *scanner) Version() string { return "1" }
+func (s *scanner) Version() string { return "2" }
 
 // Kind implements [indexer.VersionedScanner].
 func (s *scanner) Kind() string { return "package" }
@@ -200,6 +200,17 @@ func (s *scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Pa
 		// package entry for each.
 		pkgs = append(pkgs, &claircore.Package{
 			Kind:              types.BinaryPackage,
+			Name:              name,
+			Version:           vr,
+			NormalizedVersion: minorRange.Version(true),
+			Source:            &src,
+			PackageDB:         p,
+			Arch:              arch,
+			RepositoryHint:    `rhcc`,
+		})
+		// Add ancestry package to match VEX "not affected" assertions.
+		pkgs = append(pkgs, &claircore.Package{
+			Kind:              types.AncestryPackage,
 			Name:              name,
 			Version:           vr,
 			NormalizedVersion: minorRange.Version(true),
