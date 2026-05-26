@@ -980,6 +980,16 @@ func (c *creator) knownNotAffectedVulnerabilities(ctx context.Context, v *csaf.V
 			case packageurl.TypeOCI:
 				vuln.Repo = c.rc.Get(st.WFN, rhcc.RepositoryKey)
 				vuln.Package.Kind = types.AncestryPackage
+				// Use a flood-gates range that matches all versions. For
+				// known_not_affected assertions, the package name match is
+				// sufficient; the matcher skips version comparison when
+				// Invert is true.
+				vuln.Range = &claircore.Range{
+					Lower: new(rhctag.Version).Version(true),
+					Upper: (&rhctag.Version{
+						Major: math.MaxInt32,
+					}).Version(true),
+				}
 			default:
 				panic("unreachable")
 			}

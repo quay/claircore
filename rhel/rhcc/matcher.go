@@ -27,8 +27,7 @@ func (*matcher) Name() string { return "rhel-container-matcher" }
 
 // Filter implements [driver.Matcher].
 func (*matcher) Filter(r *claircore.IndexRecord) bool {
-	return r.Repository != nil &&
-		r.Repository.Key == RepositoryKey
+	return r.Repository != nil && r.Repository.Key == RepositoryKey
 }
 
 // Query implements [driver.Matcher].
@@ -52,6 +51,14 @@ func (*matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 	}
 
 	slog.DebugContext(ctx, "comparing versions", "record", record.Package.Version, "vulnerability", vuln.FixedInVersion)
+
+	// For known_not_affected assertions (Invert == true), the package name match
+	// from the DB query is sufficient. No version comparison is needed because the
+	// VEX assertion covers the entire container, not a specific version.
+	if vuln.Invert {
+		return true, nil
+	}
+
 	pkgVer, err := rpmver.Parse(record.Package.Version)
 	if err != nil {
 		return false, fmt.Errorf("rhcc: unable to parse version %q: %w", record.Package.Version, err)

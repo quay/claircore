@@ -357,10 +357,11 @@ func TestParse(t *testing.T) {
 	}
 
 	testcases := []struct {
-		name            string
-		filenames       []string
-		expectedVulns   int
-		expectedDeleted int
+		name             string
+		filenames        []string
+		expectedVulns    int
+		expectedDeleted  int
+		expectedAncestry int
 	}{
 		{
 			name: "five_advisories_four_deletions",
@@ -383,10 +384,11 @@ func TestParse(t *testing.T) {
 			expectedDeleted: 0,
 		},
 		{
-			name:            "cve-2024-24786",
-			filenames:       []string{"testdata/cve-2024-24786.json"},
-			expectedVulns:   1828,
-			expectedDeleted: 0,
+			name:             "cve-2024-24786",
+			filenames:        []string{"testdata/cve-2024-24786.json"},
+			expectedVulns:    1828,
+			expectedDeleted:  0,
+			expectedAncestry: 732,
 		},
 		{
 			name:            "cve-2022-38752",
@@ -461,6 +463,24 @@ func TestParse(t *testing.T) {
 			}
 			if len(deleted) != tc.expectedDeleted {
 				t.Fatalf("expected %d deleted but got %d", tc.expectedDeleted, len(deleted))
+			}
+			if tc.expectedAncestry > 0 {
+				var ancestryCount int
+				for _, v := range vulns {
+					if v.Package.Kind != types.AncestryPackage {
+						continue
+					}
+					ancestryCount++
+					if !v.Invert {
+						t.Errorf("ancestry vuln %q: expected Invert=true", v.Name)
+					}
+					if v.Range == nil {
+						t.Errorf("ancestry vuln %q: expected Range to be set", v.Name)
+					}
+				}
+				if ancestryCount != tc.expectedAncestry {
+					t.Errorf("expected %d ancestry vulns but got %d", tc.expectedAncestry, ancestryCount)
+				}
 			}
 		})
 	}
@@ -666,3 +686,4 @@ func TestExtractPackageName(t *testing.T) {
 		})
 	}
 }
+
