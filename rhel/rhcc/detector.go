@@ -33,7 +33,7 @@ type detector struct{}
 func (s *detector) Name() string { return "rhel_package_container_detector" }
 
 // Version implements [indexer.VersionedScanner].
-func (s *detector) Version() string { return "1" }
+func (s *detector) Version() string { return "2" }
 
 // Kind implements [indexer.VersionedScanner].
 func (s *detector) Kind() string { return "package" }
@@ -87,6 +87,17 @@ func (s *detector) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.P
 
 	pkgs = append(pkgs, &claircore.Package{
 		Kind:              types.BinaryPackage,
+		Name:              labels.Name,
+		Version:           vr,
+		NormalizedVersion: normVer,
+		Source:            &src,
+		PackageDB:         labelsPath,
+		Arch:              labels.Architecture,
+		RepositoryHint:    `rhcc`,
+	})
+	// Add ancestry package to match VEX "not affected" assertions.
+	pkgs = append(pkgs, &claircore.Package{
+		Kind:              types.AncestryPackage,
 		Name:              labels.Name,
 		Version:           vr,
 		NormalizedVersion: normVer,

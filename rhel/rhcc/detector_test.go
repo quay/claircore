@@ -67,6 +67,30 @@ func TestPackageDetector(t *testing.T) {
 					RepositoryHint: "rhcc",
 					Arch:           "x86_64",
 				},
+				{
+					Name:    "openshift-gitops-1/gitops-rhel8-operator",
+					Version: "1744596866",
+					NormalizedVersion: claircore.Version{
+						Kind: "rhctag",
+						V:    [10]int32{1744596866},
+					},
+					Kind: types.AncestryPackage,
+					Source: &claircore.Package{
+						Name:    "openshift-gitops-1/gitops-rhel8-operator",
+						Version: "1744596866",
+						NormalizedVersion: claircore.Version{
+							Kind: "rhctag",
+							V:    [10]int32{1744596866},
+						},
+						Kind:           types.SourcePackage,
+						PackageDB:      "root/buildinfo/labels.json",
+						RepositoryHint: "rhcc",
+						Arch:           "x86_64",
+					},
+					PackageDB:      "root/buildinfo/labels.json",
+					RepositoryHint: "rhcc",
+					Arch:           "x86_64",
+				},
 			},
 		},
 		{
@@ -94,6 +118,30 @@ func TestPackageDetector(t *testing.T) {
 						V:    [10]int32{1744596866},
 					},
 					Kind: types.BinaryPackage,
+					Source: &claircore.Package{
+						Name:    "openshift-gitops-1/gitops-rhel8-operator",
+						Version: "1744596866",
+						NormalizedVersion: claircore.Version{
+							Kind: "rhctag",
+							V:    [10]int32{1744596866},
+						},
+						Kind:           types.SourcePackage,
+						PackageDB:      "usr/share/buildinfo/labels.json",
+						RepositoryHint: "rhcc",
+						Arch:           "x86_64",
+					},
+					PackageDB:      "usr/share/buildinfo/labels.json",
+					RepositoryHint: "rhcc",
+					Arch:           "x86_64",
+				},
+				{
+					Name:    "openshift-gitops-1/gitops-rhel8-operator",
+					Version: "1744596866",
+					NormalizedVersion: claircore.Version{
+						Kind: "rhctag",
+						V:    [10]int32{1744596866},
+					},
+					Kind: types.AncestryPackage,
 					Source: &claircore.Package{
 						Name:    "openshift-gitops-1/gitops-rhel8-operator",
 						Version: "1744596866",
