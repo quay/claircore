@@ -615,8 +615,6 @@ func (a *ClaircoreAuditor) fetchOCIManifest(ctx context.Context, t testing.TB, r
 }
 
 // ConvertVulnReport converts a VulnerabilityReport to Result slice.
-// TODO(crozzy): This should be expanded once known_not_affected advisories
-// are added to the results.
 func convertVulnReport(vr *claircore.VulnerabilityReport) []Result {
 	var results []Result
 
@@ -624,11 +622,23 @@ func convertVulnReport(vr *claircore.VulnerabilityReport) []Result {
 		pkg := vr.Packages[pkgID]
 		for _, vulnID := range vulnIDs {
 			vuln := vr.Vulnerabilities[vulnID]
-
 			results = append(results, Result{
 				TrackingID: vuln.Name,
 				ProductID:  extractProductIDFromLinks(vuln.Links),
 				Status:     fixtures.StatusAffected,
+				Package:    fmt.Sprintf("%s@%s", pkg.Name, pkg.Version),
+			})
+		}
+	}
+
+	for pkgID, vulnIDs := range vr.PackageNotVulnerable {
+		pkg := vr.Packages[pkgID]
+		for _, vulnID := range vulnIDs {
+			vuln := vr.Vulnerabilities[vulnID]
+			results = append(results, Result{
+				TrackingID: vuln.Name,
+				ProductID:  extractProductIDFromLinks(vuln.Links),
+				Status:     fixtures.StatusNotAffected,
 				Package:    fmt.Sprintf("%s@%s", pkg.Name, pkg.Version),
 			})
 		}
