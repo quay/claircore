@@ -20,9 +20,9 @@ require (
 	github.com/regclient/regclient v0.11.4
 	github.com/spdx/tools-golang v0.5.7
 	github.com/ulikunitz/xz v0.5.15
-	go.opentelemetry.io/otel v1.43.0
-	go.opentelemetry.io/otel/metric v1.43.0
-	go.opentelemetry.io/otel/trace v1.43.0
+	go.opentelemetry.io/otel v1.44.0
+	go.opentelemetry.io/otel/metric v1.44.0
+	go.opentelemetry.io/otel/trace v1.44.0
 	go.uber.org/mock v0.6.0
 	golang.org/x/crypto v0.51.0
 	golang.org/x/net v0.54.0
