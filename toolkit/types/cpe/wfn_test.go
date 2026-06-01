@@ -275,6 +275,11 @@ func TestUnbinding(t *testing.T) {
 				valueAny(),
 			}},
 		},
+		// Too many components.
+		{
+			Bound: `cpe:2.3:0:000000:00:0:0:0:0:0:0:0:0:0`,
+			Error: true,
+		},
 	}
 
 	// This table is made from the URI unbinding examples in the standards document.

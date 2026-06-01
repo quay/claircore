@@ -156,11 +156,15 @@ var valueURI = strings.NewReplacer(
 func UnbindFS(s string) (WFN, error) {
 	r := WFN{}
 	if !strings.HasPrefix(s, cpe23Prefix) {
-		return r, fmt.Errorf("cpe: malformed CPE formatted string")
+		return r, fmt.Errorf("cpe: malformed CPE formatted string: bad prefix")
 	}
 	fs := splitFS(s)
+	if l := len(fs); l != 13 {
+		return r, fmt.Errorf("cpe: malformed CPE formatted string: bad components: %d != 13", l)
+	}
+	fs = fs[2:13] // Skip the first two segments, "cpe" and "2.3".
 	var b strings.Builder
-	for i, c := range fs[2:] { // Skip the first two segments, "cpe" and "2.3".
+	for i, c := range fs {
 		r.Attr[i].unbindFS(&b, c)
 	}
 	return r, r.Valid()
