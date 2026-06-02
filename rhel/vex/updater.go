@@ -98,6 +98,9 @@ func (f *Factory) Configure(ctx context.Context, cf driver.ConfigUnmarshaler, c 
 	if cfg.CompressedFileTimeout != 0 {
 		f.compressedFileTimeout = time.Duration(cfg.CompressedFileTimeout)
 	}
+	slog.InfoContext(ctx, "vex factory configured",
+		"base_url", f.base.String(),
+		"compressed_file_timeout", f.compressedFileTimeout)
 	return nil
 }
 
