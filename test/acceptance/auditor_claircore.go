@@ -638,23 +638,24 @@ func convertVulnReport(vr *claircore.VulnerabilityReport) []Result {
 }
 
 // ExtractProductIDFromLinks extracts the VEX product ID from the URL fragment
-// appended to the last link in the Links string.
+// in the Links string. The product ID is encoded as a fragment on the VEX
+// self-link, which may be followed by a remediation URL without a fragment.
+// All links are scanned and all fragments are collected; only one product ID
+// fragment is expected, so the first one found is returned.
 func extractProductIDFromLinks(links string) string {
 	if links == "" {
 		return ""
 	}
-	parts := strings.Split(links, " ")
-	lastLink := parts[len(parts)-1]
-	u, err := url.Parse(lastLink)
-	if err != nil {
-		return ""
+	for _, link := range strings.Fields(links) {
+		u, err := url.Parse(link)
+		if err != nil || u.Fragment == "" {
+			continue
+		}
+		productID, err := url.PathUnescape(u.Fragment)
+		if err != nil {
+			continue
+		}
+		return productID
 	}
-	if u.Fragment == "" {
-		return ""
-	}
-	productID, err := url.PathUnescape(u.Fragment)
-	if err != nil {
-		return ""
-	}
-	return productID
+	return ""
 }
