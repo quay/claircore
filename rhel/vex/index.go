@@ -108,13 +108,20 @@ func newRemediationIndex() *remediationIndex {
 }
 
 // PopulateRemediations is the populate function for a remediationIndex.
+//
+// Only vendor_fix remediations are indexed, as these are the entries that carry
+// RHSA URLs.
 func populateRemediations(m map[string]*csaf.RemediationData, doc *csaf.CSAF) {
 	for i := range doc.Vulnerabilities {
-		v := &doc.Vulnerabilities[i]
-		for i := range v.Remediations {
-			r := &v.Remediations[i]
+		for j := range doc.Vulnerabilities[i].Remediations {
+			r := &doc.Vulnerabilities[i].Remediations[j]
+			if r.Category != "vendor_fix" {
+				continue
+			}
 			for _, id := range r.ProductIDs {
-				m[id] = r
+				if _, exists := m[id]; !exists {
+					m[id] = r
+				}
 			}
 		}
 	}
