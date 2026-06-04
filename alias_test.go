@@ -1,6 +1,7 @@
 package claircore
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 	"unique"
@@ -70,5 +71,45 @@ func TestAlias(t *testing.T) {
 				t.Errorf("got: %v, want: %v", got, want)
 			}
 		})
+	})
+
+	t.Run("JSON", func(t *testing.T) {
+		a := Alias{Space: unique.Make("CVE"), Name: "2024-24786"}
+		data, err := json.Marshal(a)
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := `{"space":"CVE","name":"2024-24786"}`
+		if got := string(data); got != want {
+			t.Fatalf("marshal: got %s, want %s", got, want)
+		}
+
+		var b Alias
+		if err := json.Unmarshal(data, &b); err != nil {
+			t.Fatal(err)
+		}
+		if !a.Equal(b) {
+			t.Errorf("unmarshal: got %v, want %v", b, a)
+		}
+	})
+
+	t.Run("JSONZero", func(t *testing.T) {
+		a := Alias{}
+		data, err := json.Marshal(a)
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := `{"space":"","name":""}`
+		if got := string(data); got != want {
+			t.Errorf("marshal: got %s, want %s", got, want)
+		}
+
+		var b Alias
+		if err := json.Unmarshal(data, &b); err != nil {
+			t.Fatal(err)
+		}
+		if b.Valid() {
+			t.Errorf("unmarshal zero: expected invalid alias, got valid: %v", b)
+		}
 	})
 }
