@@ -18,6 +18,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Masterminds/semver"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/quay/zlog"
 
 	"github.com/quay/claircore"
@@ -30,7 +33,7 @@ func TestFetch(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
 
 	f := Factory{}
-	cfgFunc := func(v interface{}) error {
+	cfgFunc := func(v any) error {
 		cfg := v.(*FactoryConfig)
 		cfg.URL = srv.URL
 		return nil
@@ -110,7 +113,7 @@ func TestParse(t *testing.T) {
 	ctx := zlog.Test(context.Background(), t)
 
 	f := Factory{}
-	cfgFunc := func(v interface{}) error {
+	cfgFunc := func(v any) error {
 		cfg := v.(*FactoryConfig)
 		cfg.URL = srv.URL
 		return nil
@@ -138,15 +141,289 @@ func TestParse(t *testing.T) {
 		}
 		t.Logf("parsed %d vulnerabilities", len(vs))
 		if len(vs) != 0 {
-			t.Log("first one:")
-			var buf bytes.Buffer
-			enc := json.NewEncoder(&buf)
-			enc.SetIndent("", "\t")
-			if err := enc.Encode(vs[0]); err != nil {
-				t.Error(err)
+			for _, v := range vs {
+				var buf bytes.Buffer
+				enc := json.NewEncoder(&buf)
+				enc.SetIndent("", "\t")
+				if err := enc.Encode(v); err != nil {
+					t.Error(err)
+				}
+				t.Log(buf.String())
 			}
-			t.Log(buf.String())
 		}
+	}
+}
+
+
+var insertTestCases = []struct {
+	name          string
+	ad            *advisory
+	expectedVulns []claircore.Vulnerability
+}{
+	{
+		name: "normal",
+		ad: &advisory{
+			ID: "TEST-1",
+			Affected: []affected{
+				{
+					Package: _package{
+						Ecosystem: "go",
+						Name:      "something",
+					},
+					Ranges: []_range{
+						{
+							Type: "SEMVER",
+							Events: []rangeEvent{
+								{
+									Introduced: "0",
+								},
+								{
+									Fixed: "0.4.0",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		expectedVulns: []claircore.Vulnerability{
+			{
+				Name:    "TEST-1",
+				Updater: "test",
+				Range: &claircore.Range{
+					Lower: claircore.FromSemver(semver.MustParse("0.0.0")),
+					Upper: claircore.FromSemver(semver.MustParse("0.4.0")),
+				},
+				FixedInVersion: "0.4.0",
+			},
+		},
+	},
+	{
+		name: "unfixed",
+		ad: &advisory{
+			ID: "TEST-1",
+			Affected: []affected{
+				{
+					Package: _package{
+						Ecosystem: "go",
+						Name:      "something",
+					},
+					Ranges: []_range{
+						{
+							Type: "SEMVER",
+							Events: []rangeEvent{
+								{
+									Introduced: "0",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		expectedVulns: []claircore.Vulnerability{
+			{
+				Name:    "TEST-1",
+				Updater: "test",
+				Range: &claircore.Range{
+					Lower: claircore.FromSemver(semver.MustParse("0.0.0")),
+					Upper: claircore.Version{
+						Kind: "semver",
+						V:    [10]int32{65535, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+					},
+				},
+				FixedInVersion: "",
+			},
+		},
+	},
+	{
+		name: "two_affected",
+		ad: &advisory{
+			ID: "TEST-1",
+			Affected: []affected{
+				{
+					Package: _package{
+						Ecosystem: "go",
+						Name:      "something",
+					},
+					Ranges: []_range{
+						{
+							Type: "SEMVER",
+							Events: []rangeEvent{
+								{
+									Introduced: "0",
+								},
+								{
+									Fixed: "0.4.10",
+								},
+							},
+						},
+					},
+				},
+				{
+					Package: _package{
+						Ecosystem: "go",
+						Name:      "something",
+					},
+					Ranges: []_range{
+						{
+							Type: "SEMVER",
+							Events: []rangeEvent{
+								{
+									Introduced: "0.5.0",
+								},
+								{
+									Fixed: "0.5.3",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		expectedVulns: []claircore.Vulnerability{
+			{
+				Name:    "TEST-1",
+				Updater: "test",
+				Range: &claircore.Range{
+					Lower: claircore.FromSemver(semver.MustParse("0.0.0")),
+					Upper: claircore.FromSemver(semver.MustParse("0.4.10")),
+				},
+				FixedInVersion: "0.4.10",
+			},
+			{
+				Name:    "TEST-1",
+				Updater: "test",
+				Range: &claircore.Range{
+					Lower: claircore.FromSemver(semver.MustParse("0.5.0")),
+					Upper: claircore.FromSemver(semver.MustParse("0.5.3")),
+				},
+				FixedInVersion: "0.5.3",
+			},
+		},
+	},
+	{
+		// In this situation we're just expecting the last one.
+		name: "two_consecutive_introduced_invalid",
+		ad: &advisory{
+			ID: "TEST-1",
+			Affected: []affected{
+				{
+					Package: _package{
+						Ecosystem: "go",
+						Name:      "something",
+					},
+					Ranges: []_range{
+						{
+							Type: "SEMVER",
+							Events: []rangeEvent{
+								{
+									Introduced: "2.2.0",
+								},
+								{
+									Introduced: "2.3.0",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		expectedVulns: []claircore.Vulnerability{
+			{
+				Name:    "TEST-1",
+				Updater: "test",
+				Range: &claircore.Range{
+					Lower: claircore.FromSemver(semver.MustParse("2.3.0")),
+					Upper: claircore.Version{
+						Kind: "semver",
+						V:    [10]int32{65535, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+					},
+				},
+				FixedInVersion: "",
+			},
+		},
+	},
+	{
+		name: "npm_ecosystem_range_skipped",
+		ad: &advisory{
+			ID: "GHSA-test-npm-1",
+			Affected: []affected{
+				{
+					Package: _package{
+						Ecosystem: "npm",
+						Name:      "nocodb",
+					},
+					Ranges: []_range{
+						{
+							Type: "ECOSYSTEM",
+							Events: []rangeEvent{
+								{
+									Introduced: "0",
+								},
+								{
+									Fixed: "2026.04.1",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		expectedVulns: []claircore.Vulnerability{},
+	},
+	{
+		name: "go_ecosystem_range_skipped",
+		ad: &advisory{
+			ID: "GHSA-test-go-1",
+			Affected: []affected{
+				{
+					Package: _package{
+						Ecosystem: "Go",
+						Name:      "example.com/module",
+					},
+					Ranges: []_range{
+						{
+							Type: "ECOSYSTEM",
+							Events: []rangeEvent{
+								{
+									Introduced: "0",
+								},
+								{
+									Fixed: "1.2.3",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		expectedVulns: []claircore.Vulnerability{},
+	},
+}
+
+// cmpIgnore will ignore everything expect the Name, Updater, Range and FixedInVersion.
+var cmpIgnore = cmpopts.IgnoreFields(
+	claircore.Vulnerability{}, "ID", "Updater", "Description", "Severity", "NormalizedSeverity", "Package", "Repo")
+
+func TestInsert(t *testing.T) {
+	for _, tt := range insertTestCases {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := zlog.Test(context.Background(), t)
+			ecs := newECS("test")
+
+			var st stats; err := ecs.Insert(ctx, &st, "", tt.ad)
+			if err != nil {
+				t.Error("got error Inserting advisory", err)
+			}
+			if len(ecs.Vulnerability) != len(tt.expectedVulns) {
+				t.Fatalf("should have %d vulnerability but got %d", len(tt.expectedVulns), len(ecs.Vulnerability))
+			}
+
+			if !cmp.Equal(ecs.Vulnerability, tt.expectedVulns, cmpIgnore) {
+				t.Error(cmp.Diff(ecs.Vulnerability, tt.expectedVulns, cmpIgnore))
+			}
+		})
 	}
 }
 
@@ -159,7 +436,7 @@ var severityTestCases = []struct {
 	{
 		name: "CVSS V3 HIGH",
 		a: &advisory{
-			ID: "test1",
+			ID: "TEST-1",
 			Severity: []severity{
 				{
 					Type:  "CVSS_V3",
@@ -192,7 +469,7 @@ var severityTestCases = []struct {
 	{
 		name: "CVSS V2 MEDIUM",
 		a: &advisory{
-			ID: "test2",
+			ID: "TEST-2",
 			Severity: []severity{
 				{
 					Type:  "CVSS_V2",
@@ -225,7 +502,7 @@ var severityTestCases = []struct {
 	{
 		name: "database_specific moderate",
 		a: &advisory{
-			ID: "test2",
+			ID: "TEST-2",
 			Affected: []affected{
 				{
 					Package: _package{
@@ -253,7 +530,7 @@ var severityTestCases = []struct {
 	{
 		name: "CVSS V3 HIGH and database_specific moderate",
 		a: &advisory{
-			ID: "test2",
+			ID: "TEST-2",
 			Severity: []severity{
 				{
 					Type:  "CVSS_V3",
@@ -287,13 +564,12 @@ var severityTestCases = []struct {
 }
 
 func TestSeverityParsing(t *testing.T) {
-	ctx := zlog.Test(context.Background(), t)
-
 	for _, tt := range severityTestCases {
 		t.Run(tt.name, func(t *testing.T) {
+			ctx := zlog.Test(context.Background(), t)
 			ecs := newECS("test")
 
-			err := ecs.Insert(ctx, nil, "", tt.a)
+			var st stats; err := ecs.Insert(ctx, &st, "", tt.a)
 			if err != nil {
 				t.Error("got error Inserting advisory", err)
 			}
@@ -307,7 +583,7 @@ func TestSeverityParsing(t *testing.T) {
 			if v.Severity != tt.expectedSeverity {
 				t.Errorf("expected severity %q but got %q", tt.expectedSeverity, v.Severity)
 			}
-
 		})
 	}
 }
+
