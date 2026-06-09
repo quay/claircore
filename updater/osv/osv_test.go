@@ -632,6 +632,62 @@ var insertTestCases = []struct {
 			},
 		},
 	},
+	{
+		name: "npm_ecosystem_range_skipped",
+		ad: &advisory{
+			ID: "GHSA-test-npm-1",
+			Affected: []affected{
+				{
+					Package: _package{
+						Ecosystem: "npm",
+						Name:      "nocodb",
+					},
+					Ranges: []_range{
+						{
+							Type: "ECOSYSTEM",
+							Events: []rangeEvent{
+								{
+									Introduced: "0",
+								},
+								{
+									Fixed: "2026.04.1",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		expectedVulns: nil,
+	},
+	{
+		name: "go_ecosystem_range_skipped",
+		ad: &advisory{
+			ID: "GHSA-test-go-1",
+			Affected: []affected{
+				{
+					Package: _package{
+						Ecosystem: "Go",
+						Name:      "example.com/module",
+					},
+					Ranges: []_range{
+						{
+							Type: "ECOSYSTEM",
+							Events: []rangeEvent{
+								{
+									Introduced: "0",
+								},
+								{
+									Fixed: "1.2.3",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		expectedVulns: nil,
+	},
 }
 
 // cmpIgnore will ignore everything expect the Name, Updater, Range and FixedInVersion.
