@@ -564,6 +564,17 @@ func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *adviso
 			switch r.Type {
 			case `SEMVER`:
 			case `ECOSYSTEM`:
+				switch af.Package.Ecosystem {
+				case ecosystemGo, ecosystemNPM:
+					zlog.Warn(ctx).
+						Str("ecosystem", string(af.Package.Ecosystem)).
+						Str("advisory", a.ID).
+						Msg("unexpected ECOSYSTEM range, skipping")
+					if skipped != nil {
+						skipped.Ignored = append(skipped.Ignored, a.ID)
+					}
+					continue
+				}
 				b.Reset()
 			case `GIT`:
 				// ignore, not going to fetch source.
@@ -657,8 +668,6 @@ func (e *ecs) Insert(ctx context.Context, skipped *stats, name string, a *adviso
 						case ev.LastAffected != "":
 							vs.ecosystemRange.Add("lastAffected", ev.LastAffected)
 						}
-					case ecosystemGo, ecosystemNPM:
-						return fmt.Errorf(`unexpected "ECOSYSTEM" entry for %q ecosystem: %s`, af.Package.Ecosystem, a.ID)
 					default:
 						switch {
 						case ev.Introduced == "0": // -Inf
