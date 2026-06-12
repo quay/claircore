@@ -171,7 +171,9 @@ func (p *Parser) parseDoc(ctx context.Context, doc []byte) (string, []*claircore
 				}
 			}
 		}
-		links = append(links, creator.docLink)
+		if creator.docLink != "" {
+			links = append(links, creator.docLink)
+		}
 
 		var desc string
 		for _, n := range v.Notes {
@@ -736,9 +738,9 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v *csaf.Vuln
 			vuln.Repo = c.rc.Get(st.WFN, repoKey)
 		}
 
-		// Append VEX product ID as URL fragment to the last link for downstream comparison.
-		if vuln.Links != "" {
-			vuln.Links = vuln.Links + "#" + url.PathEscape(st.ID)
+		// Embed VEX product ID as a URL fragment on the VEX document self-link for downstream comparison.
+		if c.docLink != "" {
+			vuln.Links = strings.Replace(vuln.Links, c.docLink, c.docLink+"#"+url.PathEscape(st.ID), 1)
 		}
 	}
 
@@ -879,13 +881,13 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v *csaf.Vulnerabilit
 			default:
 				panic("unreachable")
 			}
-			// Find remediations and add RHSA URL to links.
+			// Embed VEX product ID as a URL fragment on the VEX document self-link for downstream comparison.
+			if c.docLink != "" {
+				vuln.Links = strings.Replace(vuln.Links, c.docLink, c.docLink+"#"+url.PathEscape(st.ID), 1)
+			}
+			// Append RHSA URL after the VEX self-link.
 			if rem := st.Remediation; rem != nil {
 				vuln.Links = vuln.Links + " " + rem.URL
-			}
-			// Append VEX product ID as URL fragment to the last link for downstream comparison.
-			if vuln.Links != "" {
-				vuln.Links = vuln.Links + "#" + url.PathEscape(st.ID)
 			}
 
 			commit(key, vuln)
@@ -993,13 +995,13 @@ func (c *creator) knownNotAffectedVulnerabilities(ctx context.Context, v *csaf.V
 			default:
 				panic("unreachable")
 			}
-			// Find remediations and add RHSA URL to links.
+			// Embed VEX product ID as a URL fragment on the VEX document self-link for downstream comparison.
+			if c.docLink != "" {
+				vuln.Links = strings.Replace(vuln.Links, c.docLink, c.docLink+"#"+url.PathEscape(st.ID), 1)
+			}
+			// Append RHSA URL after the VEX self-link.
 			if rem := st.Remediation; rem != nil {
 				vuln.Links = vuln.Links + " " + rem.URL
-			}
-			// Append VEX product ID as URL fragment to the last link for downstream comparison.
-			if vuln.Links != "" {
-				vuln.Links = vuln.Links + "#" + url.PathEscape(st.ID)
 			}
 
 			commit(key, vuln)
