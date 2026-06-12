@@ -10,6 +10,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/python"
+	"github.com/quay/claircore/test"
 )
 
 type matcherTestcase struct {
@@ -246,4 +247,6 @@ func TestMatcher(t *testing.T) {
 			}
 		})
 	}
+
+	test.RunMatcherTests(zlog.Test(context.Background(), t), t, "testdata/matcher", new(python.Matcher))
 }

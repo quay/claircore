@@ -1,0 +1,827 @@
+-- Database --
+{
+  "records": [
+    {
+      "Package": {
+        "$ref": "file:package/1302.json"
+      },
+      "Repository": {
+        "$ref": "file:repository/1.json"
+      }
+    },
+    {
+      "Package": {
+        "$ref": "file:package/1046.json"
+      },
+      "Repository": {
+        "$ref": "file:repository/1.json"
+      }
+    },
+    {
+      "Package": {
+        "$ref": "file:package/1146.json"
+      },
+      "Repository": {
+        "$ref": "file:repository/1.json"
+      }
+    },
+    {
+      "Package": {
+        "$ref": "file:package/1362.json"
+      },
+      "Repository": {
+        "$ref": "file:repository/1.json"
+      }
+    }
+  ],
+  "vulnerabilities": {
+    "1146": [
+      {
+        "$ref": "file:vulnerability/34357.json"
+      },
+      {
+        "$ref": "file:vulnerability/34667.json"
+      },
+      {
+        "$ref": "file:vulnerability/37559.json"
+      },
+      {
+        "$ref": "file:vulnerability/40234.json"
+      },
+      {
+        "$ref": "file:vulnerability/40613.json"
+      },
+      {
+        "$ref": "file:vulnerability/45284.json"
+      },
+      {
+        "$ref": "file:vulnerability/46011.json"
+      },
+      {
+        "$ref": "file:vulnerability/46125.json"
+      },
+      {
+        "$ref": "file:vulnerability/47203.json"
+      },
+      {
+        "$ref": "file:vulnerability/48343.json"
+      },
+      {
+        "$ref": "file:vulnerability/53677.json"
+      },
+      {
+        "$ref": "file:vulnerability/54016.json"
+      },
+      {
+        "$ref": "file:vulnerability/55339.json"
+      },
+      {
+        "$ref": "file:vulnerability/56904.json"
+      },
+      {
+        "$ref": "file:vulnerability/58075.json"
+      },
+      {
+        "$ref": "file:vulnerability/59073.json"
+      },
+      {
+        "$ref": "file:vulnerability/60698.json"
+      },
+      {
+        "$ref": "file:vulnerability/61541.json"
+      },
+      {
+        "$ref": "file:vulnerability/64830.json"
+      }
+    ],
+    "1046": [
+      {
+        "$ref": "file:vulnerability/45451.json"
+      },
+      {
+        "$ref": "file:vulnerability/59936.json"
+      }
+    ],
+    "1302": [
+      {
+        "$ref": "file:vulnerability/46452.json"
+      },
+      {
+        "$ref": "file:vulnerability/52337.json"
+      }
+    ],
+    "1362": [
+      {
+        "$ref": "file:vulnerability/46799.json"
+      }
+    ]
+  }
+}
+-- IndexReport --
+{
+  "manifest_hash": "sha256:2324b83cece0e992cef8734c8203ac23445d21d6ff806e19d6da0bef894668fb",
+  "packages": {
+    "1302": {
+      "$ref": "file:package/1302.json"
+    },
+    "1046": {
+      "$ref": "file:package/1046.json"
+    },
+    "1146": {
+      "$ref": "file:package/1146.json"
+    },
+    "1362": {
+      "$ref": "file:package/1362.json"
+    }
+  },
+  "distributions": {
+    "2": {
+      "$ref": "file:distribution/2.json"
+    }
+  },
+  "repository": {
+    "1": {
+      "$ref": "file:repository/1.json"
+    }
+  },
+  "environments": {
+    "1302": [
+      {
+        "package_db": "maven:workspace/BOOT-INF/lib/spark-core_2.12-3.1.2.jar",
+        "introduced_in": "sha256:feebbf97159e90950f76a50f3b4a98532b3d903539590d5af5210beb6a30fdbb",
+        "distribution_id": "",
+        "repository_ids": [
+          "1"
+        ]
+      }
+    ],
+    "1046": [
+      {
+        "package_db": "maven:workspace/BOOT-INF/lib/jackson-mapper-asl-1.9.8.jar",
+        "introduced_in": "sha256:feebbf97159e90950f76a50f3b4a98532b3d903539590d5af5210beb6a30fdbb",
+        "distribution_id": "",
+        "repository_ids": [
+          "1"
+        ]
+      }
+    ],
+    "1146": [
+      {
+        "package_db": "maven:workspace/BOOT-INF/lib/keycloak-core-11.0.2.jar",
+        "introduced_in": "sha256:feebbf97159e90950f76a50f3b4a98532b3d903539590d5af5210beb6a30fdbb",
+        "distribution_id": "",
+        "repository_ids": [
+          "1"
+        ]
+      }
+    ],
+    "1362": [
+      {
+        "package_db": "maven:workspace/BOOT-INF/lib/spring-kafka-2.8.11.jar",
+        "introduced_in": "sha256:feebbf97159e90950f76a50f3b4a98532b3d903539590d5af5210beb6a30fdbb",
+        "distribution_id": "",
+        "repository_ids": [
+          "1"
+        ]
+      }
+    ]
+  }
+}
+-- Want --
+{
+  "manifest_hash": "sha256:2324b83cece0e992cef8734c8203ac23445d21d6ff806e19d6da0bef894668fb",
+  "packages": {
+    "1046": {
+      "$ref": "file:package/1046.json"
+    },
+    "1146": {
+      "$ref": "file:package/1146.json"
+    },
+    "1302": {
+      "$ref": "file:package/1302.json"
+    },
+    "1362": {
+      "$ref": "file:package/1362.json"
+    }
+  },
+  "distributions": {
+    "2": {
+      "$ref": "file:distribution/2.json"
+    }
+  },
+  "repository": {
+    "1": {
+      "$ref": "file:repository/1.json"
+    }
+  },
+  "environments": {
+    "1046": [
+      {
+        "package_db": "maven:workspace/BOOT-INF/lib/jackson-mapper-asl-1.9.8.jar",
+        "introduced_in": "sha256:feebbf97159e90950f76a50f3b4a98532b3d903539590d5af5210beb6a30fdbb",
+        "repository_ids": [
+          "1"
+        ]
+      }
+    ],
+    "1146": [
+      {
+        "package_db": "maven:workspace/BOOT-INF/lib/keycloak-core-11.0.2.jar",
+        "introduced_in": "sha256:feebbf97159e90950f76a50f3b4a98532b3d903539590d5af5210beb6a30fdbb",
+        "repository_ids": [
+          "1"
+        ]
+      }
+    ],
+    "1302": [
+      {
+        "package_db": "maven:workspace/BOOT-INF/lib/spark-core_2.12-3.1.2.jar",
+        "introduced_in": "sha256:feebbf97159e90950f76a50f3b4a98532b3d903539590d5af5210beb6a30fdbb",
+        "repository_ids": [
+          "1"
+        ]
+      }
+    ],
+    "1362": [
+      {
+        "package_db": "maven:workspace/BOOT-INF/lib/spring-kafka-2.8.11.jar",
+        "introduced_in": "sha256:feebbf97159e90950f76a50f3b4a98532b3d903539590d5af5210beb6a30fdbb",
+        "repository_ids": [
+          "1"
+        ]
+      }
+    ]
+  },
+  "vulnerabilities": {
+    "34357": {
+      "$ref": "file:vulnerability/34357.json"
+    },
+    "34667": {
+      "$ref": "file:vulnerability/34667.json"
+    },
+    "37559": {
+      "$ref": "file:vulnerability/37559.json"
+    },
+    "40234": {
+      "$ref": "file:vulnerability/40234.json"
+    },
+    "40613": {
+      "$ref": "file:vulnerability/40613.json"
+    },
+    "45284": {
+      "$ref": "file:vulnerability/45284.json"
+    },
+    "45451": {
+      "$ref": "file:vulnerability/45451.json"
+    },
+    "46011": {
+      "$ref": "file:vulnerability/46011.json"
+    },
+    "46125": {
+      "$ref": "file:vulnerability/46125.json"
+    },
+    "46452": {
+      "$ref": "file:vulnerability/46452.json"
+    },
+    "46799": {
+      "$ref": "file:vulnerability/46799.json"
+    },
+    "47203": {
+      "$ref": "file:vulnerability/47203.json"
+    },
+    "48343": {
+      "$ref": "file:vulnerability/48343.json"
+    },
+    "52337": {
+      "$ref": "file:vulnerability/52337.json"
+    },
+    "53677": {
+      "$ref": "file:vulnerability/53677.json"
+    },
+    "54016": {
+      "$ref": "file:vulnerability/54016.json"
+    },
+    "55339": {
+      "$ref": "file:vulnerability/55339.json"
+    },
+    "56904": {
+      "$ref": "file:vulnerability/56904.json"
+    },
+    "58075": {
+      "$ref": "file:vulnerability/58075.json"
+    },
+    "59073": {
+      "$ref": "file:vulnerability/59073.json"
+    },
+    "59936": {
+      "$ref": "file:vulnerability/59936.json"
+    },
+    "60698": {
+      "$ref": "file:vulnerability/60698.json"
+    },
+    "61541": {
+      "$ref": "file:vulnerability/61541.json"
+    },
+    "64830": {
+      "$ref": "file:vulnerability/64830.json"
+    }
+  },
+  "package_vulnerabilities": {
+    "1046": [
+      "45451",
+      "59936"
+    ],
+    "1146": [
+      "34357",
+      "34667",
+      "37559",
+      "40234",
+      "40613",
+      "45284",
+      "46011",
+      "46125",
+      "47203",
+      "48343",
+      "53677",
+      "54016",
+      "55339",
+      "56904",
+      "58075",
+      "59073",
+      "60698",
+      "61541",
+      "64830"
+    ],
+    "1302": [
+      "46452",
+      "52337"
+    ],
+    "1362": [
+      "46799"
+    ]
+  }
+}
+-- package/1046.json --
+{
+  "id": "1046",
+  "name": "org.codehaus.jackson:jackson-mapper-asl",
+  "version": "1.9.8",
+  "kind": "binary",
+  "source": {
+    "id": "1"
+  }
+}
+-- package/1146.json --
+{
+  "id": "1146",
+  "name": "org.keycloak:keycloak-core",
+  "version": "11.0.2",
+  "kind": "binary",
+  "source": {
+    "id": "1"
+  }
+}
+-- package/1302.json --
+{
+  "id": "1302",
+  "name": "org.eclipse.jetty:jetty-http",
+  "version": "9.4.40.v20210413",
+  "kind": "binary",
+  "source": {
+    "id": "1"
+  }
+}
+-- package/1362.json --
+{
+  "id": "1362",
+  "name": "org.springframework.kafka:spring-kafka",
+  "version": "2.8.11",
+  "kind": "binary",
+  "source": {
+    "id": "1"
+  }
+}
+-- vulnerability/46799.json --
+{
+  "id": "46799",
+  "updater": "osv/maven",
+  "name": "GHSA-crqf-q9fp-hwjw",
+  "description": "Spring-Kafka has Java Deserialization vulnerability When Improperly Configured",
+  "issued": "2023-08-24T10:31:10-05:00",
+  "links": "https://nvd.nist.gov/vuln/detail/CVE-2023-34040 https://github.com/spring-projects/spring-kafka/commit/25ac793a78725e2ca4a3a2888a1506a4bfcf0c9d https://github.com/spring-projects/spring-kafka/commit/eb779679812f61a8553ced3d0e4069dca65560ed https://github.com/spring-projects/spring-kafka https://spring.io/security/cve-2023-34040",
+  "severity": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+  "normalized_severity": "High",
+  "package": {
+    "name": "org.springframework.kafka:spring-kafka",
+    "kind": "binary"
+  },
+  "repository": {"$ref":"file:repository/1.json"},
+  "fixed_in_version": "fixed=2.9.11&introduced=2.8.0"
+}
+-- vulnerability/52337.json --
+{
+  "id": "52337",
+  "updater": "osv/maven",
+  "name": "GHSA-hmr7-m48g-48f6",
+  "description": "Jetty accepts \"+\" prefixed value in Content-Length",
+  "issued": "2023-09-14T11:17:27-05:00",
+  "links": "https://github.com/eclipse/jetty.project/security/advisories/GHSA-hmr7-m48g-48f6 https://nvd.nist.gov/vuln/detail/CVE-2023-40167 https://github.com/eclipse/jetty.project https://lists.debian.org/debian-lts-announce/2023/09/msg00039.html https://www.debian.org/security/2023/dsa-5507 https://www.rfc-editor.org/rfc/rfc9110#section-8.6",
+  "severity": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N",
+  "normalized_severity": "Medium",
+  "package": {
+    "name": "org.eclipse.jetty:jetty-http",
+    "kind": "binary"
+  },
+  "repository": {"$ref":"file:repository/1.json"},
+  "fixed_in_version": "fixed=9.4.52&introduced=9.0.0"
+}
+-- vulnerability/46452.json --
+{
+  "id": "46452",
+  "updater": "osv/maven",
+  "name": "GHSA-cj7v-27pg-wf7q",
+  "description": "Jetty invalid URI parsing may produce invalid HttpURI.authority",
+  "issued": "2022-07-07T15:55:34-05:00",
+  "links": "https://github.com/eclipse/jetty.project/security/advisories/GHSA-cj7v-27pg-wf7q https://nvd.nist.gov/vuln/detail/CVE-2022-2047 https://github.com/eclipse/jetty.project https://lists.debian.org/debian-lts-announce/2022/08/msg00011.html https://security.netapp.com/advisory/ntap-20220901-0006 https://www.debian.org/security/2022/dsa-5198",
+  "severity": "CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:N/I:L/A:N",
+  "normalized_severity": "Low",
+  "package": {
+    "name": "org.eclipse.jetty:jetty-http",
+    "kind": "binary"
+  },
+  "repository": {"$ref":"file:repository/1.json"},
+  "fixed_in_version": "fixed=9.4.47"
+}
+-- vulnerability/34357.json --
+{
+  "id": "34357",
+  "updater": "osv/maven",
+  "name": "GHSA-3hrr-xwvg-hxvr",
+  "description": "Keycloak DoS via account lockout",
+  "issued": "2024-02-28T21:33:17-06:00",
+  "links": "https://nvd.nist.gov/vuln/detail/CVE-2024-1722 https://github.com/keycloak/keycloak/issues/29603 https://github.com/keycloak/keycloak/issues/29603#issuecomment-2127499627 https://access.redhat.com/security/cve/CVE-2024-1722 https://bugzilla.redhat.com/show_bug.cgi?id=2265389 https://github.com/keycloak/keycloak",
+  "severity": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:L",
+  "normalized_severity": "Low",
+  "package": {
+    "name": "org.keycloak:keycloak-core",
+    "kind": "binary"
+  },
+  "repository": {"$ref":"file:repository/1.json"},
+  "fixed_in_version": "fixed=24.0.0"
+}
+-- vulnerability/34667.json --
+{
+  "id": "34667",
+  "updater": "osv/maven",
+  "name": "GHSA-3w4v-rvc4-2xpw",
+  "description": "Keycloak has Files or Directories Accessible to External Parties",
+  "issued": "2022-08-26T19:00:45-05:00",
+  "links": "https://nvd.nist.gov/vuln/detail/CVE-2021-3856 https://github.com/keycloak/keycloak/pull/8588 https://github.com/keycloak/keycloak/commit/73f0474008e1bebd0733e62a22aceda9e5de6743 https://access.redhat.com/security/cve/CVE-2021-3856 https://bugzilla.redhat.com/show_bug.cgi?id=2010164 https://github.com/keycloak/keycloak https://issues.redhat.com/browse/KEYCLOAK-19422",
+  "severity": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N",
+  "normalized_severity": "Medium",
+  "package": {
+    "name": "org.keycloak:keycloak-core",
+    "kind": "binary"
+  },
+  "repository": {"$ref":"file:repository/1.json"},
+  "fixed_in_version": "fixed=15.1.0"
+}
+-- vulnerability/37559.json --
+{
+  "id": "37559",
+  "updater": "osv/maven",
+  "name": "GHSA-5cc8-pgp5-7mpm",
+  "description": "Keycloak Untrusted Certificate Validation vulnerability",
+  "issued": "2023-06-30T15:30:30-05:00",
+  "links": "https://github.com/keycloak/keycloak/security/advisories/GHSA-5cc8-pgp5-7mpm https://nvd.nist.gov/vuln/detail/CVE-2023-1664 https://access.redhat.com/security/cve/CVE-2023-1664 https://bugzilla.redhat.com/show_bug.cgi?id=2182196&comment#0 https://github.com/keycloak/keycloak",
+  "severity": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N",
+  "normalized_severity": "Medium",
+  "package": {
+    "name": "org.keycloak:keycloak-core",
+    "kind": "binary"
+  },
+  "repository": {"$ref":"file:repository/1.json"},
+  "fixed_in_version": "fixed=21.1.2"
+}
+-- vulnerability/40234.json --
+{
+  "id": "40234",
+  "updater": "osv/maven",
+  "name": "GHSA-6xp6-fmc8-pmmr",
+  "description": "Temporary Directory Hijacking Vulnerability in Keycloak",
+  "issued": "2022-03-18T12:50:45-05:00",
+  "links": "https://github.com/JLLeitschuh/security-research/security/advisories/GHSA-7gf3-89f6-823j https://nvd.nist.gov/vuln/detail/CVE-2021-20202 https://bugzilla.redhat.com/show_bug.cgi?id=1922128 https://issues.redhat.com/browse/KEYCLOAK-17000",
+  "severity": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:L",
+  "normalized_severity": "High",
+  "package": {
+    "name": "org.keycloak:keycloak-core",
+    "kind": "binary"
+  },
+  "repository": {"$ref":"file:repository/1.json"},
+  "fixed_in_version": "fixed=13.0.0"
+}
+-- vulnerability/40613.json --
+{
+  "id": "40613",
+  "updater": "osv/maven",
+  "name": "GHSA-755v-r4x4-qf7m",
+  "description": "Stored Cross-Site Scripting (XSS) in Keycloak via groups dropdown",
+  "issued": "2022-11-29T17:55:23-06:00",
+  "links": "https://github.com/keycloak/keycloak/security/advisories/GHSA-755v-r4x4-qf7m https://github.com/keycloak/keycloak",
+  "severity": "MODERATE",
+  "normalized_severity": "Medium",
+  "package": {
+    "name": "org.keycloak:keycloak-core",
+    "kind": "binary"
+  },
+  "repository": {"$ref":"file:repository/1.json"},
+  "fixed_in_version": "fixed=20.0.0"
+}
+-- vulnerability/45284.json --
+{
+  "id": "45284",
+  "updater": "osv/maven",
+  "name": "GHSA-9vm7-v8wj-3fqw",
+  "description": "keycloak-core: open redirect via \"form_post.jwt\" JARM response mode",
+  "issued": "2024-01-23T08:43:50-06:00",
+  "links": "https://github.com/keycloak/keycloak/security/advisories/GHSA-9vm7-v8wj-3fqw https://github.com/keycloak/keycloak",
+  "severity": "MODERATE",
+  "normalized_severity": "Medium",
+  "package": {
+    "name": "org.keycloak:keycloak-core",
+    "kind": "binary"
+  },
+  "repository": {"$ref":"file:repository/1.json"},
+  "fixed_in_version": "fixed=23.0.4"
+}
+-- vulnerability/46011.json --
+{
+  "id": "46011",
+  "updater": "osv/maven",
+  "name": "GHSA-c7xw-p58w-h6fj",
+  "description": "Keycloak: Impersonation and lockout possible through incorrect handling of email trust",
+  "issued": "2023-07-18T14:12:28-05:00",
+  "links": "https://github.com/keycloak/keycloak/security/advisories/GHSA-c7xw-p58w-h6fj https://github.com/keycloak/keycloak/commit/87a50d3ba790b049e436c9925874f9b418af7988 https://access.redhat.com/security/cve/CVE-2023-0105 https://bugzilla.redhat.com/show_bug.cgi?id=2158910 https://github.com/keycloak/keycloak",
+  "severity": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:L",
+  "normalized_severity": "Medium",
+  "package": {
+    "name": "org.keycloak:keycloak-core",
+    "kind": "binary"
+  },
+  "repository": {"$ref":"file:repository/1.json"},
+  "fixed_in_version": "fixed=22.0.1"
+}
+-- vulnerability/46125.json --
+{
+  "id": "46125",
+  "updater": "osv/maven",
+  "name": "GHSA-c9x9-xv66-xp3v",
+  "description": "Improper privilege management in Keycloak",
+  "issued": "2021-11-10T09:30:36-06:00",
+  "links": "https://nvd.nist.gov/vuln/detail/CVE-2020-14389 https://access.redhat.com/security/cve/cve-2020-14389",
+  "severity": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N",
+  "normalized_severity": "High",
+  "package": {
+    "name": "org.keycloak:keycloak-core",
+    "kind": "binary"
+  },
+  "repository": {"$ref":"file:repository/1.json"},
+  "fixed_in_version": "fixed=12.0.0"
+}
+-- vulnerability/47203.json --
+{
+  "id": "47203",
+  "updater": "osv/maven",
+  "name": "GHSA-f32v-vf79-p29q",
+  "description": "Improper authorization in Keycloak",
+  "issued": "2022-04-26T19:00:19-05:00",
+  "links": "https://nvd.nist.gov/vuln/detail/CVE-2022-1466 https://bugzilla.redhat.com/show_bug.cgi?id=2050228 https://github.com/keycloak/keycloak https://www.syss.de/fileadmin/dokumente/Publikationen/Advisories/SYSS-2021-076.txt https://www.syss.de/pentest-blog/fehlerhafte-autorisierung-bei-red-hat-single-sign-on-750ga-syss-2021-076",
+  "severity": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:N",
+  "normalized_severity": "Medium",
+  "package": {
+    "name": "org.keycloak:keycloak-core",
+    "kind": "binary"
+  },
+  "repository": {"$ref":"file:repository/1.json"},
+  "fixed_in_version": "fixed=17.0.1"
+}
+-- vulnerability/48343.json --
+{
+  "id": "48343",
+  "updater": "osv/maven",
+  "name": "GHSA-fqc7-5xxc-ph7r",
+  "description": "Keycloak XSS via use of malicious payload as group name when creating new group from admin console",
+  "issued": "2022-08-26T19:00:44-05:00",
+  "links": "https://github.com/keycloak/keycloak/security/advisories/GHSA-755v-r4x4-qf7m https://nvd.nist.gov/vuln/detail/CVE-2022-0225 https://bugzilla.redhat.com/show_bug.cgi?id=2040268 https://github.com/keycloak/keycloak",
+  "severity": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:C/C:L/I:L/A:N",
+  "normalized_severity": "Medium",
+  "package": {
+    "name": "org.keycloak:keycloak-core",
+    "kind": "binary"
+  },
+  "repository": {"$ref":"file:repository/1.json"},
+  "fixed_in_version": "lastAffected=16.1.0"
+}
+-- vulnerability/53677.json --
+{
+  "id": "53677",
+  "updater": "osv/maven",
+  "name": "GHSA-j9xq-j329-2xvg",
+  "description": "Keycloak user may register themselves with same email ID of any existing user",
+  "issued": "2022-08-26T19:00:45-05:00",
+  "links": "https://nvd.nist.gov/vuln/detail/CVE-2021-3754 https://access.redhat.com/security/cve/CVE-2021-3754 https://bugzilla.redhat.com/show_bug.cgi?id=1999196 https://github.com/keycloak/keycloak",
+  "severity": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+  "normalized_severity": "Medium",
+  "package": {
+    "name": "org.keycloak:keycloak-core",
+    "kind": "binary"
+  },
+  "repository": {"$ref":"file:repository/1.json"},
+  "fixed_in_version": "lastAffected=19.0.1"
+}
+-- vulnerability/54016.json --
+{
+  "id": "54016",
+  "updater": "osv/maven",
+  "name": "GHSA-jh7q-5mwf-qvhw",
+  "description": "Keycloak vulnerable to Server-Side Request Forgery",
+  "issued": "2022-05-24T12:36:27-05:00",
+  "links": "https://nvd.nist.gov/vuln/detail/CVE-2020-10770 https://github.com/keycloak/keycloak-documentation/pull/1086 https://github.com/keycloak/keycloak/pull/7714 https://bugzilla.redhat.com/show_bug.cgi?id=1846270 https://github.com/keycloak/keycloak https://issues.redhat.com/browse/KEYCLOAK-14019 https://issues.redhat.com/browse/KEYCLOAK-3426 http://packetstormsecurity.com/files/164499/Keycloak-12.0.1-Server-Side-Request-Forgery.html",
+  "severity": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N",
+  "normalized_severity": "Medium",
+  "package": {
+    "name": "org.keycloak:keycloak-core",
+    "kind": "binary"
+  },
+  "repository": {"$ref":"file:repository/1.json"},
+  "fixed_in_version": "fixed=13.0.0"
+}
+-- vulnerability/55339.json --
+{
+  "id": "55339",
+  "updater": "osv/maven",
+  "name": "GHSA-m9cj-v55f-8x26",
+  "description": "Authentication Bypass in keycloak",
+  "issued": "2022-03-18T12:55:26-05:00",
+  "links": "https://nvd.nist.gov/vuln/detail/CVE-2020-27826 https://github.com/keycloak/keycloak/commit/dae4a3eaf26590b8d441b8e4bec3b700ee303b72 https://access.redhat.com/security/cve/cve-2020-27826 https://bugzilla.redhat.com/show_bug.cgi?id=1905089",
+  "severity": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+  "normalized_severity": "High",
+  "package": {
+    "name": "org.keycloak:keycloak-core",
+    "kind": "binary"
+  },
+  "repository": {"$ref":"file:repository/1.json"},
+  "fixed_in_version": "fixed=12.0.0"
+}
+-- vulnerability/56904.json --
+{
+  "id": "56904",
+  "updater": "osv/maven",
+  "name": "GHSA-pcv5-m2wh-66j3",
+  "description": "Keycloak discloses information without authentication",
+  "issued": "2022-05-24T12:43:50-05:00",
+  "links": "https://nvd.nist.gov/vuln/detail/CVE-2020-27838 https://github.com/keycloak/keycloak/pull/7790 https://github.com/keycloak/keycloak/commit/9356843c6c3d7097d010b3bb6f91e25fcaba378c https://bugzilla.redhat.com/show_bug.cgi?id=1906797",
+  "severity": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:H/I:N/A:N",
+  "normalized_severity": "Medium",
+  "package": {
+    "name": "org.keycloak:keycloak-core",
+    "kind": "binary"
+  },
+  "repository": {"$ref":"file:repository/1.json"},
+  "fixed_in_version": "fixed=13.0.0"
+}
+-- vulnerability/58075.json --
+{
+  "id": "58075",
+  "updater": "osv/maven",
+  "name": "GHSA-q6w2-89hq-hq27",
+  "description": "keycloak Self Stored Cross-site Scripting vulnerability",
+  "issued": "2021-06-08T18:02:43-05:00",
+  "links": "https://nvd.nist.gov/vuln/detail/CVE-2021-20195 https://github.com/keycloak/keycloak/commit/717d9515fa131e3d8c8936e41b2e52270fdec976 https://bugzilla.redhat.com/show_bug.cgi?id=1919143",
+  "severity": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:H/I:H/A:H",
+  "normalized_severity": "Critical",
+  "package": {
+    "name": "org.keycloak:keycloak-core",
+    "kind": "binary"
+  },
+  "repository": {"$ref":"file:repository/1.json"},
+  "fixed_in_version": "fixed=13.0.0"
+}
+-- vulnerability/59073.json --
+{
+  "id": "59073",
+  "updater": "osv/maven",
+  "name": "GHSA-qpq9-jpv4-6gwr",
+  "description": "Keycloak allows anyone to register new security device or key for any user by using WebAuthn password-less login flow",
+  "issued": "2022-08-26T19:00:45-05:00",
+  "links": "https://nvd.nist.gov/vuln/detail/CVE-2021-3632 https://github.com/keycloak/keycloak/pull/8203 https://github.com/keycloak/keycloak/commit/65480cb5a11630909c086f79d396004499fbd1e4 https://access.redhat.com/security/cve/CVE-2021-3632 https://bugzilla.redhat.com/show_bug.cgi?id=1978196 https://github.com/keycloak/keycloak https://issues.redhat.com/browse/KEYCLOAK-18500",
+  "severity": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:H/A:H",
+  "normalized_severity": "High",
+  "package": {
+    "name": "org.keycloak:keycloak-core",
+    "kind": "binary"
+  },
+  "repository": {"$ref":"file:repository/1.json"},
+  "fixed_in_version": "fixed=15.1.0"
+}
+-- vulnerability/60698.json --
+{
+  "id": "60698",
+  "updater": "osv/maven",
+  "name": "GHSA-rpj2-w6fr-79hc",
+  "description": "Keycloak vulnerable to Improper Certificate Validation",
+  "issued": "2022-08-23T19:00:29-05:00",
+  "links": "https://nvd.nist.gov/vuln/detail/CVE-2020-35509 https://github.com/keycloak/keycloak/pull/6330 https://github.com/keycloak/keycloak/pull/8067 https://github.com/keycloak/keycloak/commit/478319348bdfdb9b6d39122f41edf2af79f679bb https://access.redhat.com/security/cve/cve-2020-35509 https://bugzilla.redhat.com/show_bug.cgi?id=1912427 https://github.com/keycloak/keycloak https://github.com/keycloak/keycloak/blob/4f330f4a57cbfcf6202b60546518261c66e59a35/services/src/main/java/org/keycloak/authentication/authenticators/x509/ValidateX509CertificateUsername.java#L74-L76",
+  "severity": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:L/A:N",
+  "normalized_severity": "Medium",
+  "package": {
+    "name": "org.keycloak:keycloak-core",
+    "kind": "binary"
+  },
+  "repository": {"$ref":"file:repository/1.json"},
+  "fixed_in_version": "fixed=14.0.0"
+}
+-- vulnerability/61541.json --
+{
+  "id": "61541",
+  "updater": "osv/maven",
+  "name": "GHSA-v436-q368-hvgg",
+  "description": "Keycloak has lack of validation of access token on client registrations endpoint",
+  "issued": "2023-01-12T17:39:39-06:00",
+  "links": "https://github.com/keycloak/keycloak/security/advisories/GHSA-v436-q368-hvgg https://nvd.nist.gov/vuln/detail/CVE-2023-0091 https://access.redhat.com/security/cve/CVE-2023-0091 https://github.com/keycloak/keycloak",
+  "severity": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N",
+  "normalized_severity": "Medium",
+  "package": {
+    "name": "org.keycloak:keycloak-core",
+    "kind": "binary"
+  },
+  "repository": {"$ref":"file:repository/1.json"},
+  "fixed_in_version": "fixed=20.0.3"
+}
+-- vulnerability/64830.json --
+{
+  "id": "64830",
+  "updater": "osv/maven",
+  "name": "GHSA-xf46-8vvp-4hxx",
+  "description": "Keycloak Missing authentication for critical function",
+  "issued": "2021-03-12T15:33:42-06:00",
+  "links": "https://nvd.nist.gov/vuln/detail/CVE-2021-20262 https://bugzilla.redhat.com/show_bug.cgi?id=1933639",
+  "severity": "CVSS:3.1/AV:P/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+  "normalized_severity": "Medium",
+  "package": {
+    "name": "org.keycloak:keycloak-core",
+    "kind": "binary"
+  },
+  "repository": {"$ref":"file:repository/1.json"},
+  "fixed_in_version": "lastAffected=12.0.4"
+}
+-- vulnerability/45451.json --
+{
+  "id": "45451",
+  "updater": "osv/maven",
+  "name": "GHSA-c27h-mcmw-48hv",
+  "description": "Deserialization of Untrusted Data in org.codehaus.jackson:jackson-mapper-asl",
+  "issued": "2022-05-24T11:57:28-05:00",
+  "links": "https://nvd.nist.gov/vuln/detail/CVE-2019-10202 https://lists.apache.org/thread.html/refea6018a2c4e9eb7838cab567ed219c3f726dcd83a5472fbb80d8d9@%3Cissues.flume.apache.org%3E https://lists.apache.org/thread.html/refea6018a2c4e9eb7838cab567ed219c3f726dcd83a5472fbb80d8d9%40%3Cissues.flume.apache.org%3E https://lists.apache.org/thread.html/rce00a1c60f7df4b10e72fa87827c102f55b074bb91993631df2c21f9@%3Cdev.hive.apache.org%3E https://lists.apache.org/thread.html/rce00a1c60f7df4b10e72fa87827c102f55b074bb91993631df2c21f9%40%3Cdev.hive.apache.org%3E https://lists.apache.org/thread.html/r6dea2a887f5eb1d68f124d64b14cd1a04f682f06de8cd01b7e4214e0@%3Cissues.hive.apache.org%3E https://lists.apache.org/thread.html/r6dea2a887f5eb1d68f124d64b14cd1a04f682f06de8cd01b7e4214e0%40%3Cissues.hive.apache.org%3E https://lists.apache.org/thread.html/r5f16a1bd31a7e94ca78eda686179930781aa3a4a990cd55986703581@%3Cdev.hive.apache.org%3E https://lists.apache.org/thread.html/r5f16a1bd31a7e94ca78eda686179930781aa3a4a990cd55986703581%40%3Cdev.hive.apache.org%3E https://lists.apache.org/thread.html/r500867b74f42230a3d65b8aec31fc93ac390eeae737c91a759ab94cb@%3Cissues.hive.apache.org%3E https://lists.apache.org/thread.html/r500867b74f42230a3d65b8aec31fc93ac390eeae737c91a759ab94cb%40%3Cissues.hive.apache.org%3E https://lists.apache.org/thread.html/r356592d9874ab4bc9da4754592f8aa6edc894c95e17e58484bc2af7a@%3Cissues.hive.apache.org%3E https://lists.apache.org/thread.html/r356592d9874ab4bc9da4754592f8aa6edc894c95e17e58484bc2af7a%40%3Cissues.hive.apache.org%3E https://lists.apache.org/thread.html/r1edabcfacdad42d3c830464e9cf07a9a489059a7b7a8642cf055542d@%3Cissues.hive.apache.org%3E https://lists.apache.org/thread.html/r1edabcfacdad42d3c830464e9cf07a9a489059a7b7a8642cf055542d%40%3Cissues.hive.apache.org%3E https://lists.apache.org/thread.html/r0fbf2c60967bc9f73d7f5a62ad3b955789f9a14b950f42e99fca9b4e@%3Cissues.hive.apache.org%3E https://lists.apache.org/thread.html/r0fbf2c60967bc9f73d7f5a62ad3b955789f9a14b950f42e99fca9b4e%40%3Cissues.hive.apache.org%3E https://bugzilla.redhat.com/show_bug.cgi?id=CVE-2019-10202",
+  "severity": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+  "normalized_severity": "Critical",
+  "package": {
+    "name": "org.codehaus.jackson:jackson-mapper-asl",
+    "kind": "binary"
+  },
+  "repository": {"$ref":"file:repository/1.json"},
+  "fixed_in_version": "lastAffected=1.9.13"
+}
+-- vulnerability/59936.json --
+{
+  "id": "59936",
+  "updater": "osv/maven",
+  "name": "GHSA-r6j9-8759-g62w",
+  "description": "Improper Restriction of XML External Entity Reference in jackson-mapper-asl",
+  "issued": "2020-02-04T16:39:19-06:00",
+  "links": "https://nvd.nist.gov/vuln/detail/CVE-2019-10172 https://lists.debian.org/debian-lts-announce/2020/08/msg00039.html https://lists.apache.org/thread.html/ra37700b842790883b9082e6b281fb7596f571b13078a4856cd38f2c2@%3Ccommits.cassandra.apache.org%3E https://lists.apache.org/thread.html/ra37700b842790883b9082e6b281fb7596f571b13078a4856cd38f2c2%40%3Ccommits.cassandra.apache.org%3E https://lists.apache.org/thread.html/r80e8882c86c9c17a57396a5ef7c4f08878d629a0291243411be0de3a@%3Ccommits.cassandra.apache.org%3E https://lists.apache.org/thread.html/r80e8882c86c9c17a57396a5ef7c4f08878d629a0291243411be0de3a%40%3Ccommits.cassandra.apache.org%3E https://lists.apache.org/thread.html/r6dea2a887f5eb1d68f124d64b14cd1a04f682f06de8cd01b7e4214e0@%3Cissues.hive.apache.org%3E https://lists.apache.org/thread.html/r6dea2a887f5eb1d68f124d64b14cd1a04f682f06de8cd01b7e4214e0%40%3Cissues.hive.apache.org%3E https://lists.apache.org/thread.html/r68acf97f4526ba59a33cc6e592261ea4f85d890f99e79c82d57dd589@%3Cissues.spark.apache.org%3E https://lists.apache.org/thread.html/r68acf97f4526ba59a33cc6e592261ea4f85d890f99e79c82d57dd589%40%3Cissues.spark.apache.org%3E https://lists.apache.org/thread.html/r634468eb3218ab02713128ff6f4818c618622b2b3de4d958138dde49@%3Ccommits.cassandra.apache.org%3E https://lists.apache.org/thread.html/r634468eb3218ab02713128ff6f4818c618622b2b3de4d958138dde49%40%3Ccommits.cassandra.apache.org%3E https://lists.apache.org/thread.html/r5f16a1bd31a7e94ca78eda686179930781aa3a4a990cd55986703581@%3Cdev.hive.apache.org%3E https://lists.apache.org/thread.html/r5f16a1bd31a7e94ca78eda686179930781aa3a4a990cd55986703581%40%3Cdev.hive.apache.org%3E https://lists.apache.org/thread.html/r500867b74f42230a3d65b8aec31fc93ac390eeae737c91a759ab94cb@%3Cissues.hive.apache.org%3E https://lists.apache.org/thread.html/r500867b74f42230a3d65b8aec31fc93ac390eeae737c91a759ab94cb%40%3Cissues.hive.apache.org%3E https://lists.apache.org/thread.html/r4bbfa1439d7a4e1712e260bfc3d90f7cf997abfd641cccde6432d4ab@%3Ccommits.cassandra.apache.org%3E https://lists.apache.org/thread.html/r4bbfa1439d7a4e1712e260bfc3d90f7cf997abfd641cccde6432d4ab%40%3Ccommits.cassandra.apache.org%3E https://lists.apache.org/thread.html/r48a32f2dd6976d33f7a12b7e09ec7ea1895f8facba82b565587c28ac@%3Ccommon-issues.hadoop.apache.org%3E https://lists.debian.org/debian-lts-announce/2020/01/msg00037.html https://lists.apache.org/thread.html/re646dcc2739d92117bf9a76a33c600ed3b65e8b4e9b6f441e366b72b@%3Ccommits.cassandra.apache.org%3E https://lists.apache.org/thread.html/re646dcc2739d92117bf9a76a33c600ed3b65e8b4e9b6f441e366b72b%40%3Ccommits.cassandra.apache.org%3E https://lists.apache.org/thread.html/re07c51a8026c11e6e5513bfdc66d52d1c1027053e480fb8073356257@%3Ccommits.cassandra.apache.org%3E https://lists.apache.org/thread.html/re07c51a8026c11e6e5513bfdc66d52d1c1027053e480fb8073356257%40%3Ccommits.cassandra.apache.org%3E https://lists.apache.org/thread.html/rd3a34d663e2a25b9ab1e8a1a94712cd5f100f098578aec79af48161e@%3Ccommon-dev.hadoop.apache.org%3E https://lists.apache.org/thread.html/rd3a34d663e2a25b9ab1e8a1a94712cd5f100f098578aec79af48161e%40%3Ccommon-dev.hadoop.apache.org%3E https://lists.apache.org/thread.html/rd27730cfc3066dfcf15927c8e800603728d5dedf17eee1f8c6e3507c@%3Ccommon-issues.hadoop.apache.org%3E https://lists.apache.org/thread.html/rd27730cfc3066dfcf15927c8e800603728d5dedf17eee1f8c6e3507c%40%3Ccommon-issues.hadoop.apache.org%3E https://lists.apache.org/thread.html/rce00a1c60f7df4b10e72fa87827c102f55b074bb91993631df2c21f9@%3Cdev.hive.apache.org%3E https://lists.apache.org/thread.html/rce00a1c60f7df4b10e72fa87827c102f55b074bb91993631df2c21f9%40%3Cdev.hive.apache.org%3E https://lists.apache.org/thread.html/rb8c09b14fd57d855dc21e0a037dc29258c2cbe9c1966bfff453a02e4@%3Ccommon-issues.hadoop.apache.org%3E https://lists.apache.org/thread.html/rb8c09b14fd57d855dc21e0a037dc29258c2cbe9c1966bfff453a02e4%40%3Ccommon-issues.hadoop.apache.org%3E https://lists.apache.org/thread.html/rb47911c179c9f3e8ea3f134b5645e63cd20c6fc63bd0b43ab5864bd1@%3Ccommits.cassandra.apache.org%3E https://lists.apache.org/thread.html/rb47911c179c9f3e8ea3f134b5645e63cd20c6fc63bd0b43ab5864bd1%40%3Ccommits.cassandra.apache.org%3E https://lists.apache.org/thread.html/rb036bf32e4dacc49335e3bdc1be8e53d6f54df692ac8e2251a6884bd@%3Ccommon-issues.hadoop.apache.org%3E https://lists.apache.org/thread.html/rb036bf32e4dacc49335e3bdc1be8e53d6f54df692ac8e2251a6884bd%40%3Ccommon-issues.hadoop.apache.org%3E https://lists.apache.org/thread.html/r21ac3570ce865b8f1e5d26e492aeb714a6aaa53a0c9a6f72ef181556%40%3Ccommits.cassandra.apache.org%3E https://lists.apache.org/thread.html/r1f07e61b3ebabd3e5b4aa97bf1b26d98b793fdfa29a23dac60633f55@%3Ccommon-issues.hadoop.apache.org%3E https://lists.apache.org/thread.html/r1f07e61b3ebabd3e5b4aa97bf1b26d98b793fdfa29a23dac60633f55%40%3Ccommon-issues.hadoop.apache.org%3E https://lists.apache.org/thread.html/r1edabcfacdad42d3c830464e9cf07a9a489059a7b7a8642cf055542d@%3Cissues.hive.apache.org%3E https://lists.apache.org/thread.html/r1edabcfacdad42d3c830464e9cf07a9a489059a7b7a8642cf055542d%40%3Cissues.hive.apache.org%3E https://lists.apache.org/thread.html/r1cc8bce2cf3dfce08a64c4fa20bf38d33b56ad995cee2e382f522f83@%3Ccommon-issues.hadoop.apache.org%3E https://lists.apache.org/thread.html/r1cc8bce2cf3dfce08a64c4fa20bf38d33b56ad995cee2e382f522f83%40%3Ccommon-issues.hadoop.apache.org%3E https://lists.apache.org/thread.html/r0fbf2c60967bc9f73d7f5a62ad3b955789f9a14b950f42e99fca9b4e@%3Cissues.hive.apache.org%3E https://lists.apache.org/thread.html/r0fbf2c60967bc9f73d7f5a62ad3b955789f9a14b950f42e99fca9b4e%40%3Cissues.hive.apache.org%3E https://lists.apache.org/thread.html/r0d8c3e32a0a2d8a0b6118f5b3487d363afdda80c996d7b930097383d@%3Ccommon-issues.hadoop.apache.org%3E https://lists.apache.org/thread.html/r0d8c3e32a0a2d8a0b6118f5b3487d363afdda80c996d7b930097383d%40%3Ccommon-issues.hadoop.apache.org%3E https://lists.apache.org/thread.html/r08e1b73fabd986dcd2ddd7d09480504d1472264bed2f19b1d2002a9c@%3Ccommon-issues.hadoop.apache.org%3E https://lists.apache.org/thread.html/r08e1b73fabd986dcd2ddd7d09480504d1472264bed2f19b1d2002a9c%40%3Ccommon-issues.hadoop.apache.org%3E https://lists.apache.org/thread.html/r04ecadefb27cda84b699130b11b96427f1d8a7a4066d8292f7f15ed8@%3Ccommon-issues.hadoop.apache.org%3E https://lists.apache.org/thread.html/r04ecadefb27cda84b699130b11b96427f1d8a7a4066d8292f7f15ed8%40%3Ccommon-issues.hadoop.apache.org%3E https://lists.apache.org/thread.html/r0066c1e862613de402fee04e81cbe00bcd64b64a2711beb9a13c3b25@%3Ccommits.cassandra.apache.org%3E https://lists.apache.org/thread.html/r0066c1e862613de402fee04e81cbe00bcd64b64a2711beb9a13c3b25%40%3Ccommits.cassandra.apache.org%3E https://bugzilla.redhat.com/show_bug.cgi?id=CVE-2019-10172 https://lists.apache.org/thread.html/r48a32f2dd6976d33f7a12b7e09ec7ea1895f8facba82b565587c28ac%40%3Ccommon-issues.hadoop.apache.org%3E https://lists.apache.org/thread.html/r43c6f75d203b8afc4fbd6c3200db0384a18a11c59d085b1a9bb0ccfe@%3Cuser.hadoop.apache.org%3E https://lists.apache.org/thread.html/r43c6f75d203b8afc4fbd6c3200db0384a18a11c59d085b1a9bb0ccfe%40%3Cuser.hadoop.apache.org%3E https://lists.apache.org/thread.html/r4176155240cdc36aad7869932d9c29551742c7fa630f209fb4a8e649@%3Ccommon-issues.hadoop.apache.org%3E https://lists.apache.org/thread.html/r4176155240cdc36aad7869932d9c29551742c7fa630f209fb4a8e649%40%3Ccommon-issues.hadoop.apache.org%3E https://lists.apache.org/thread.html/r386966780034aadee69ffd82d44555117c9339545b9ce990fe490a3e@%3Ccommits.cassandra.apache.org%3E https://lists.apache.org/thread.html/r386966780034aadee69ffd82d44555117c9339545b9ce990fe490a3e%40%3Ccommits.cassandra.apache.org%3E https://lists.apache.org/thread.html/r385c35a7c6f4acaacf37fe22922bb8e2aed9d322d0fa6dc1d45acddb@%3Ccommits.cassandra.apache.org%3E https://lists.apache.org/thread.html/r385c35a7c6f4acaacf37fe22922bb8e2aed9d322d0fa6dc1d45acddb%40%3Ccommits.cassandra.apache.org%3E https://lists.apache.org/thread.html/r37eb6579fa0bf94a72b6c978e2fee96f68a2b1b3ac1b1ce60aee86cf@%3Ccommits.cassandra.apache.org%3E https://lists.apache.org/thread.html/r37eb6579fa0bf94a72b6c978e2fee96f68a2b1b3ac1b1ce60aee86cf%40%3Ccommits.cassandra.apache.org%3E https://lists.apache.org/thread.html/r356592d9874ab4bc9da4754592f8aa6edc894c95e17e58484bc2af7a@%3Cissues.hive.apache.org%3E https://lists.apache.org/thread.html/r356592d9874ab4bc9da4754592f8aa6edc894c95e17e58484bc2af7a%40%3Cissues.hive.apache.org%3E https://lists.apache.org/thread.html/r33d25a342af84102903cd9dec8338a5bcba3ecfce10505bdfe793b92@%3Ccommon-issues.hadoop.apache.org%3E https://lists.apache.org/thread.html/r33d25a342af84102903cd9dec8338a5bcba3ecfce10505bdfe793b92%40%3Ccommon-issues.hadoop.apache.org%3E https://lists.apache.org/thread.html/r25e25973e9577c62fd0221b4b52990851adf11cbe33036bd67d4b13d@%3Ccommits.cassandra.apache.org%3E https://lists.apache.org/thread.html/r25e25973e9577c62fd0221b4b52990851adf11cbe33036bd67d4b13d%40%3Ccommits.cassandra.apache.org%3E https://lists.apache.org/thread.html/r21ac3570ce865b8f1e5d26e492aeb714a6aaa53a0c9a6f72ef181556@%3Ccommits.cassandra.apache.org%3E",
+  "severity": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:N",
+  "normalized_severity": "High",
+  "package": {
+    "name": "org.codehaus.jackson:jackson-mapper-asl",
+    "kind": "binary"
+  },
+  "repository": {"$ref":"file:repository/1.json"},
+  "fixed_in_version": "lastAffected=1.9.13"
+}
+-- repository/1.json --
+{
+  "id": "1",
+  "name": "maven",
+  "uri": "https://repo1.maven.apache.org/maven2"
+}
+-- distribution/2.json --
+{
+  "id": "2",
+  "did": "ubuntu",
+  "name": "Ubuntu",
+  "version": "18.04 (Bionic)",
+  "version_code_name": "bionic",
+  "version_id": "18.04",
+  "pretty_name": "Ubuntu 18.04"
+}
