@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"strconv"
 	"time"
+	"unique"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/prometheus/client_golang/prometheus"
@@ -172,8 +173,101 @@ func (s *MatcherStore) Get(ctx context.Context, records []*claircore.IndexRecord
 	getVulnerabilitiesCounter.WithLabelValues("query_batch").Add(1)
 	getVulnerabilitiesDuration.WithLabelValues("query_batch").Observe(time.Since(start).Seconds())
 
+	if err := populateAliases(ctx, tx, results); err != nil {
+		return nil, fmt.Errorf("populating aliases: %w", err)
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		return nil, fmt.Errorf("failed to commit tx: %v", err)
 	}
 	return results, nil
+}
+
+// populateAliases fetches aliases and self references for all vulnerabilities
+// in the results map and populates the Aliases and Self fields.
+func populateAliases(ctx context.Context, tx pgx.Tx, results map[string][]*claircore.Vulnerability) error {
+	vulnByID := make(map[string]*claircore.Vulnerability)
+	for _, vulns := range results {
+		for _, v := range vulns {
+			vulnByID[v.ID] = v
+		}
+	}
+	if len(vulnByID) == 0 {
+		return nil
+	}
+
+	ids := make([]int64, 0, len(vulnByID))
+	for id := range vulnByID {
+		n, err := strconv.ParseInt(id, 10, 64)
+		if err != nil {
+			continue
+		}
+		ids = append(ids, n)
+	}
+
+	const aliasQuery = `
+		SELECT va.vulnerability, ns.namespace, a.name
+		FROM vulnerability_alias va
+		JOIN alias a ON va.alias = a.id
+		JOIN alias_namespace ns ON a.namespace = ns.id
+		WHERE va.vulnerability = ANY($1)
+	`
+	aliasRows, err := tx.Query(ctx, aliasQuery, ids)
+	if err != nil {
+		return fmt.Errorf("querying aliases: %w", err)
+	}
+	defer aliasRows.Close()
+
+	for aliasRows.Next() {
+		var vulnID int64
+		var namespace, name string
+		if err := aliasRows.Scan(&vulnID, &namespace, &name); err != nil {
+			return fmt.Errorf("scanning alias row: %w", err)
+		}
+		v := vulnByID[strconv.FormatInt(vulnID, 10)]
+		if v == nil {
+			continue
+		}
+		v.Aliases = append(v.Aliases, claircore.Alias{
+			Space: unique.Make(namespace),
+			Name:  name,
+		})
+	}
+	if err := aliasRows.Err(); err != nil {
+		return fmt.Errorf("iterating alias rows: %w", err)
+	}
+
+	const selfQuery = `
+		SELECT vs.vulnerability, ns.namespace, a.name
+		FROM vulnerability_self vs
+		JOIN alias a ON vs.self = a.id
+		JOIN alias_namespace ns ON a.namespace = ns.id
+		WHERE vs.vulnerability = ANY($1)
+	`
+	selfRows, err := tx.Query(ctx, selfQuery, ids)
+	if err != nil {
+		return fmt.Errorf("querying self aliases: %w", err)
+	}
+	defer selfRows.Close()
+
+	for selfRows.Next() {
+		var vulnID int64
+		var namespace, name string
+		if err := selfRows.Scan(&vulnID, &namespace, &name); err != nil {
+			return fmt.Errorf("scanning self row: %w", err)
+		}
+		v := vulnByID[strconv.FormatInt(vulnID, 10)]
+		if v == nil {
+			continue
+		}
+		v.Self = claircore.Alias{
+			Space: unique.Make(namespace),
+			Name:  name,
+		}
+	}
+	if err := selfRows.Err(); err != nil {
+		return fmt.Errorf("iterating self rows: %w", err)
+	}
+
+	return nil
 }
