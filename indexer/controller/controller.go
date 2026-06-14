@@ -26,6 +26,8 @@ type Controller struct {
 	report *claircore.IndexReport
 	// a fatal error halting the scanning process
 	err error
+	// partial records whether the scan completed with degraded scanner data.
+	partial bool
 	// the current state of the controller
 	currentState State
 	// Realizer is scoped to a single request

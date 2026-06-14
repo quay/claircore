@@ -39,6 +39,9 @@ const (
 	// to the caller of Scan()
 	// Transitions: Terminal
 	IndexFinished
+	// IndexPartial is a terminal state indicating indexing completed with
+	// degraded scanner data and should be retried later.
+	IndexPartial
 )
 
 func (ss State) String() string {
@@ -51,6 +54,7 @@ func (ss State) String() string {
 		"IndexManifest",
 		"IndexError",
 		"IndexFinished",
+		"IndexPartial",
 	}
 	return names[ss]
 }
@@ -73,6 +77,8 @@ func (ss *State) FromString(state string) {
 		*ss = IndexError
 	case "IndexFinished":
 		*ss = IndexFinished
+	case "IndexPartial":
+		*ss = IndexPartial
 	}
 }
 
