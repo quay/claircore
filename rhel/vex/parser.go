@@ -88,11 +88,24 @@ type Parser struct {
 	threatImpact     *threatImpactIndex
 	remediation      *remediationIndex
 	defaultComponent *defaultComponentIndex
+	productIDInLinks bool
+}
+
+// ParserOption is a functional option for [Parser].
+type ParserOption func(*Parser)
+
+// WithProductIDInLinks makes the parser embed the VEX product ID as a URL
+// fragment on the self-link of each produced [claircore.Vulnerability].
+//
+// This is intended for use in acceptance tests, where the product ID is needed
+// to correlate matcher results back to expected fixture entries.
+func WithProductIDInLinks() ParserOption {
+	return func(p *Parser) { p.productIDInLinks = true }
 }
 
 // NewParser creates a new Parser with initialised caches.
-func NewParser() *Parser {
-	return &Parser{
+func NewParser(opts ...ParserOption) *Parser {
+	p := &Parser{
 		product:          newProductIndex(),
 		rc:               newRepoCache(),
 		score:            newScoreIndex(),
@@ -100,6 +113,10 @@ func NewParser() *Parser {
 		remediation:      newRemediationIndex(),
 		defaultComponent: newDefaultComponentIndex(),
 	}
+	for _, o := range opts {
+		o(p)
+	}
+	return p
 }
 
 // Parse parses a single RHEL CSAF/VEX document and returns claircore vulnerabilities.
@@ -297,6 +314,7 @@ func (p *Parser) creator(name string, doc *csaf.CSAF) *creator {
 		remediation:      p.remediation,
 		defaultComponent: p.defaultComponent,
 		skip:             make(map[string]skipReason),
+		productIDInLinks: p.productIDInLinks,
 	}
 }
 
@@ -312,6 +330,7 @@ type creator struct {
 	threatImpact     *threatImpactIndex
 	remediation      *remediationIndex
 	defaultComponent *defaultComponentIndex
+	productIDInLinks bool
 }
 
 // SkipReason records the reason a "product_id" is going to be skipped for the
@@ -738,8 +757,7 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v *csaf.Vuln
 			vuln.Repo = c.rc.Get(st.WFN, repoKey)
 		}
 
-		// Embed VEX product ID as a URL fragment on the VEX document self-link for downstream comparison.
-		if c.docLink != "" {
+		if c.productIDInLinks && c.docLink != "" {
 			vuln.Links = strings.Replace(vuln.Links, c.docLink, c.docLink+"#"+url.PathEscape(st.ID), 1)
 		}
 	}
@@ -881,8 +899,7 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v *csaf.Vulnerabilit
 			default:
 				panic("unreachable")
 			}
-			// Embed VEX product ID as a URL fragment on the VEX document self-link for downstream comparison.
-			if c.docLink != "" {
+			if c.productIDInLinks && c.docLink != "" {
 				vuln.Links = strings.Replace(vuln.Links, c.docLink, c.docLink+"#"+url.PathEscape(st.ID), 1)
 			}
 			// Append RHSA URL after the VEX self-link.
@@ -995,8 +1012,7 @@ func (c *creator) knownNotAffectedVulnerabilities(ctx context.Context, v *csaf.V
 			default:
 				panic("unreachable")
 			}
-			// Embed VEX product ID as a URL fragment on the VEX document self-link for downstream comparison.
-			if c.docLink != "" {
+			if c.productIDInLinks && c.docLink != "" {
 				vuln.Links = strings.Replace(vuln.Links, c.docLink, c.docLink+"#"+url.PathEscape(st.ID), 1)
 			}
 			// Append RHSA URL after the VEX self-link.
