@@ -260,7 +260,7 @@ func (a *ClaircoreAuditor) parseCSAFDocuments(ctx context.Context, csafDocs iter
 
 	// Create RHEL VEX parser once - it maintains caches for repository and product
 	// lookups that are reused across documents.
-	rhelParser := rhelvex.NewParser()
+	rhelParser := rhelvex.NewParser(rhelvex.WithProductIDInLinks())
 
 	for _, doc := range docs {
 		c, err := csaf.Parse(bytes.NewReader(doc))
