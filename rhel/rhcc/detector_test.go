@@ -161,6 +161,73 @@ func TestPackageDetector(t *testing.T) {
 			},
 		},
 		{
+			Name:       "PackageQuotedLabelsTest",
+			LabelsFile: "testdata/quoted_labels.json",
+			LabelsPath: "root/buildinfo/labels.json",
+			Want: []*claircore.Package{
+				{
+					Name:    "openshift-gitops-1/gitops-rhel8-operator",
+					Version: "1744596866",
+					NormalizedVersion: claircore.Version{
+						Kind: "rhctag",
+						V:    [10]int32{1744596866},
+					},
+					Kind:           types.SourcePackage,
+					PackageDB:      "root/buildinfo/labels.json",
+					RepositoryHint: "rhcc",
+					Arch:           "x86_64",
+				},
+				{
+					Name:    "openshift-gitops-1/gitops-rhel8-operator",
+					Version: "1744596866",
+					NormalizedVersion: claircore.Version{
+						Kind: "rhctag",
+						V:    [10]int32{1744596866},
+					},
+					Kind: types.BinaryPackage,
+					Source: &claircore.Package{
+						Name:    "openshift-gitops-1/gitops-rhel8-operator",
+						Version: "1744596866",
+						NormalizedVersion: claircore.Version{
+							Kind: "rhctag",
+							V:    [10]int32{1744596866},
+						},
+						Kind:           types.SourcePackage,
+						PackageDB:      "root/buildinfo/labels.json",
+						RepositoryHint: "rhcc",
+						Arch:           "x86_64",
+					},
+					PackageDB:      "root/buildinfo/labels.json",
+					RepositoryHint: "rhcc",
+					Arch:           "x86_64",
+				},
+				{
+					Name:    "openshift-gitops-1/gitops-rhel8-operator",
+					Version: "1744596866",
+					NormalizedVersion: claircore.Version{
+						Kind: "rhctag",
+						V:    [10]int32{1744596866},
+					},
+					Kind: types.AncestryPackage,
+					Source: &claircore.Package{
+						Name:    "openshift-gitops-1/gitops-rhel8-operator",
+						Version: "1744596866",
+						NormalizedVersion: claircore.Version{
+							Kind: "rhctag",
+							V:    [10]int32{1744596866},
+						},
+						Kind:           types.SourcePackage,
+						PackageDB:      "root/buildinfo/labels.json",
+						RepositoryHint: "rhcc",
+						Arch:           "x86_64",
+					},
+					PackageDB:      "root/buildinfo/labels.json",
+					RepositoryHint: "rhcc",
+					Arch:           "x86_64",
+				},
+			},
+		},
+		{
 			Name:       "PackageBadPathLabelsTest",
 			LabelsFile: "testdata/simple_labels.json",
 			LabelsPath: "bad/path/labels.json",
@@ -236,6 +303,18 @@ func TestRepositoryDetector(t *testing.T) {
 			Name:       "RepositoryRHCOSLabelsTest",
 			LabelsFile: "testdata/simple_labels.json",
 			LabelsPath: "usr/share/buildinfo/labels.json",
+			Want: []*claircore.Repository{
+				{
+					Name: "cpe:2.3:a:redhat:openshift_gitops:1.16:*:el8:*:*:*:*:*",
+					Key:  "rhcc-container-repository",
+					CPE:  cpe.MustUnbind("cpe:2.3:a:redhat:openshift_gitops:1.16:*:el8:*:*:*:*:*"),
+				},
+			},
+		},
+		{
+			Name:       "RepositoryQuotedLabelsTest",
+			LabelsFile: "testdata/quoted_labels.json",
+			LabelsPath: "root/buildinfo/labels.json",
 			Want: []*claircore.Repository{
 				{
 					Name: "cpe:2.3:a:redhat:openshift_gitops:1.16:*:el8:*:*:*:*:*",

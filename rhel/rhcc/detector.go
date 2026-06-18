@@ -121,6 +121,14 @@ func findLabelsJSON(sys fs.FS) (*labels, string, error) {
 			if err := json.Unmarshal(l, &lb); err != nil {
 				return nil, "", err
 			}
+			// A build tooling bug caused some images to be published with label
+			// values wrapped in an extra layer of JSON string quoting (e.g.
+			// `"\"rhacs-main-container\""` instead of `"rhacs-main-container"`).
+			for _, p := range []*string{&lb.Name, &lb.Architecture, &lb.CPE} {
+				if u, err := strconv.Unquote(*p); err == nil {
+					*p = u
+				}
+			}
 			return &lb, p, nil
 		case errors.Is(err, fs.ErrNotExist):
 			continue
