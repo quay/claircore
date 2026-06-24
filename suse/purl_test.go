@@ -33,8 +33,8 @@ func TestRoundTripIndexRecord(t *testing.T) {
 					Source:  &claircore.Package{},
 				},
 				Distribution: &claircore.Distribution{
-					CPE:        cpe.MustUnbind("cpe:2.3:o:opensuse:leap:15.5"),
-					Name:       "openSUSE Leap",
+				CPE:        cpe.MustUnbind("cpe:2.3:o:opensuse:leap:15.5:*:*:*:*:*:*:*"),
+				Name:       "openSUSE Leap",
 					VersionID:  "15.5",
 					Version:    "15.5",
 					DID:        "opensuse-leap",
@@ -100,8 +100,8 @@ func TestGeneratePURL(t *testing.T) {
 					Arch:    "x86_64",
 				},
 				Distribution: &claircore.Distribution{
-					CPE:       cpe.MustUnbind("cpe:2.3:o:opensuse:leap:15.5"),
-					Name:      "openSUSE Leap",
+				CPE:       cpe.MustUnbind("cpe:2.3:o:opensuse:leap:15.5:*:*:*:*:*:*:*"),
+				Name:      "openSUSE Leap",
 					VersionID: "15.5",
 					DID:       "opensuse",
 				},

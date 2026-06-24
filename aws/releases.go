@@ -50,7 +50,7 @@ var AL2Dist = &claircore.Distribution{
 	Version:    "2",
 	VersionID:  "2",
 	PrettyName: "Amazon Linux 2",
-	CPE:        cpe.MustUnbind("cpe:2.3:o:amazon:amazon_linux:2"),
+	CPE:        cpe.MustUnbind("cpe:2.3:o:amazon:amazon_linux:2:*:*:*:*:*:*:*"),
 }
 
 var AL2023Dist = &claircore.Distribution{
@@ -59,7 +59,7 @@ var AL2023Dist = &claircore.Distribution{
 	Version:    "2023",
 	VersionID:  "2023",
 	PrettyName: "Amazon Linux 2023",
-	CPE:        cpe.MustUnbind("cpe:2.3:o:amazon:amazon_linux:2023"),
+	CPE:        cpe.MustUnbind("cpe:2.3:o:amazon:amazon_linux:2023:*:*:*:*:*:*:*"),
 }
 
 func releaseToDist(release Release) *claircore.Distribution {

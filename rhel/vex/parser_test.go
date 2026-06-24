@@ -288,7 +288,7 @@ func TestParseCompare(t *testing.T) {
 					Repo: &claircore.Repository{
 						Name: "cpe:2.3:a:redhat:openshift:4.16:*:el9:*:*:*:*:*",
 						Key:  "rhel-cpe-repository",
-						CPE:  cpe.MustUnbind("cpe:2.3:a:redhat:openshift:4.16::el9"),
+						CPE:  cpe.MustUnbind("cpe:2.3:a:redhat:openshift:4.16:*:el9:*:*:*:*:*"),
 					},
 					ArchOperation: claircore.OpPatternMatch,
 					Self:          claircore.Alias{Space: spaceRedHat, Name: "CVE-2024-24786"},
