@@ -151,9 +151,8 @@ func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string
 			$3,
 			(SELECT id FROM vuln WHERE hash_kind = $1 AND hash = $2))
 		ON CONFLICT DO NOTHING;`
-		refreshView           = `REFRESH MATERIALIZED VIEW CONCURRENTLY latest_update_operations;`
-		insertAliasNamespaces = `INSERT INTO alias_namespace (namespace) VALUES (unnest($1::TEXT[])) ON CONFLICT DO NOTHING;`
-		insertAliases         = `INSERT INTO alias (namespace, name)
+		refreshView   = `REFRESH MATERIALIZED VIEW CONCURRENTLY latest_update_operations;`
+		insertAliases = `INSERT INTO alias (namespace, name)
 	SELECT ns.id, input.name
 	FROM
 		(SELECT unnest($1::TEXT[]) AS space, unnest($2::TEXT[]) AS name) AS input
@@ -178,6 +177,10 @@ ON CONFLICT DO NOTHING;`
 		) AS alias
 ON CONFLICT DO NOTHING`
 	)
+
+	if err := s.insertAliases(ctx, vulnIter); err != nil {
+		return uuid.Nil, err
+	}
 
 	var uoID uint64
 	var ref uuid.UUID
@@ -270,12 +273,6 @@ ON CONFLICT DO NOTHING`
 	skipCt := 0
 	vulnCt := 0
 	start = time.Now()
-
-	// Keep track of the alias namespaces seen in this transaction.
-	//
-	// There's a limited set of namespaces, but it's either do this book keeping
-	// or issue a LOT of pointless inserts.
-	seenSpace := make(map[unique.Handle[string]]struct{})
 	var batch pgx.Batch
 	flush := func() (err error) {
 		err = tx.SendBatch(ctx, &batch).Close()
@@ -340,27 +337,9 @@ ON CONFLICT DO NOTHING`
 				}
 			}
 		})
-		uniq := slices.Collect(func(yield func(string) bool) {
-			for _, a := range aliases {
-				if !a.Valid() {
-					continue
-				}
-				s := a.Space
-				if _, ok := seenSpace[s]; !ok {
-					if !yield(s.Value()) {
-						return
-					}
-					seenSpace[s] = struct{}{}
-				}
-			}
-		})
-		if len(uniq) > 0 {
-			batch.Queue(insertAliasNamespaces, uniq)
-		}
 		// TODO(hank) Remove these conditionals and assume that aliases are
 		// always present.
 		if len(names) > 0 {
-			batch.Queue(insertAliases, spaces, names)
 			batch.Queue(insertVulnerabilityAliases, hashKind, hash, spaces, names)
 		}
 		if vuln.Self.Valid() {
@@ -483,4 +462,62 @@ func rangefmt(r *claircore.Range) (kind *string, lower, upper string) {
 	upper = buf.String()
 
 	return kind, lower, upper
+}
+
+// InsertAliases creates all needed aliases in the [MatcherStore].
+func (s *MatcherStore) insertAliases(ctx context.Context, vulnIter datastore.VulnerabilityIter) error {
+	const (
+		insertAliasNamespace = `INSERT INTO alias_namespace (namespace) VALUES ($1::TEXT) ON CONFLICT DO NOTHING;`
+		insertAlias          = `INSERT INTO alias (namespace, name)
+	SELECT ns.id, $2::TEXT
+	FROM alias_namespace AS ns
+	WHERE ns.namespace = $1::TEXT
+ON CONFLICT DO NOTHING;`
+	)
+
+	// Keep track of the alias namespaces seen in this update.
+	//
+	// There's a limited set of namespaces, but it's either do this book keeping
+	// or issue a LOT of pointless inserts.
+	//
+	// TODO(hank) These should have some associated metrics.
+	//
+	// BUG(hank) The alias insertion code does not remove aliases in the
+	// case of a failure during the update operation.
+	seenSpace := make(map[unique.Handle[string]]struct{})
+	seenAlias := make(map[claircore.Alias]struct{})
+	conn, err := s.pool.Acquire(ctx)
+	if err != nil {
+		return fmt.Errorf("acquiring connection for aliases: %w", err)
+	}
+	defer conn.Release()
+	vulnIter(func(vuln *claircore.Vulnerability, iterErr error) bool {
+		if iterErr != nil {
+			err = iterErr
+			return false
+		}
+		aliases := append(vuln.Aliases, vuln.Self)
+		for _, a := range aliases {
+			if !a.Valid() {
+				continue
+			}
+			s := a.Space
+			if _, ok := seenSpace[s]; !ok {
+				seenSpace[s] = struct{}{}
+				if _, e := conn.Exec(ctx, insertAliasNamespace, s.Value()); e != nil {
+					err = fmt.Errorf("failed to insert namespace: %w", e)
+					return false
+				}
+			}
+			if _, ok := seenAlias[a]; !ok {
+				seenAlias[a] = struct{}{}
+				if _, e := conn.Exec(ctx, insertAlias, s.Value(), a.Name); e != nil {
+					err = fmt.Errorf("failed to insert alias: %w", e)
+					return false
+				}
+			}
+		}
+		return true
+	})
+	return err
 }
