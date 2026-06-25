@@ -210,7 +210,7 @@ func populateAliases(ctx context.Context, tx pgx.Tx, results map[string][]*clair
 		FROM vulnerability_alias va
 		JOIN alias a ON va.alias = a.id
 		JOIN alias_namespace ns ON a.namespace = ns.id
-		WHERE va.vulnerability = ANY($1)
+		WHERE va.vulnerability = ANY($1::bigint[])
 	`
 	aliasRows, err := tx.Query(ctx, aliasQuery, ids)
 	if err != nil {
@@ -242,7 +242,7 @@ func populateAliases(ctx context.Context, tx pgx.Tx, results map[string][]*clair
 		FROM vulnerability_self vs
 		JOIN alias a ON vs.self = a.id
 		JOIN alias_namespace ns ON a.namespace = ns.id
-		WHERE vs.vulnerability = ANY($1)
+		WHERE vs.vulnerability = ANY($1::bigint[])
 	`
 	selfRows, err := tx.Query(ctx, selfQuery, ids)
 	if err != nil {
