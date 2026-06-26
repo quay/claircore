@@ -12,6 +12,7 @@ package mock_indexer
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	claircore "github.com/quay/claircore"
 	indexer "github.com/quay/claircore/indexer"
@@ -295,6 +296,21 @@ func (mr *MockStoreMockRecorder) RepositoriesByLayer(ctx, hash, scnrs any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RepositoriesByLayer", reflect.TypeOf((*MockStore)(nil).RepositoriesByLayer), ctx, hash, scnrs)
 }
 
+// RequeueIndexPartials mocks base method.
+func (m *MockStore) RequeueIndexPartials(ctx context.Context, minAge time.Duration, limit int) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RequeueIndexPartials", ctx, minAge, limit)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// RequeueIndexPartials indicates an expected call of RequeueIndexPartials.
+func (mr *MockStoreMockRecorder) RequeueIndexPartials(ctx, minAge, limit any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RequeueIndexPartials", reflect.TypeOf((*MockStore)(nil).RequeueIndexPartials), ctx, minAge, limit)
+}
+
 // SetIndexFinished mocks base method.
 func (m *MockStore) SetIndexFinished(ctx context.Context, sr *claircore.IndexReport, scnrs indexer.VersionedScanners) error {
 	m.ctrl.T.Helper()
@@ -307,6 +323,20 @@ func (m *MockStore) SetIndexFinished(ctx context.Context, sr *claircore.IndexRep
 func (mr *MockStoreMockRecorder) SetIndexFinished(ctx, sr, scnrs any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetIndexFinished", reflect.TypeOf((*MockStore)(nil).SetIndexFinished), ctx, sr, scnrs)
+}
+
+// SetIndexPartial mocks base method.
+func (m *MockStore) SetIndexPartial(ctx context.Context, sr *claircore.IndexReport, scnrs indexer.VersionedScanners) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetIndexPartial", ctx, sr, scnrs)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SetIndexPartial indicates an expected call of SetIndexPartial.
+func (mr *MockStoreMockRecorder) SetIndexPartial(ctx, sr, scnrs any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetIndexPartial", reflect.TypeOf((*MockStore)(nil).SetIndexPartial), ctx, sr, scnrs)
 }
 
 // SetIndexReport mocks base method.

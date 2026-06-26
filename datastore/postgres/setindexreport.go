@@ -47,16 +47,18 @@ WITH
 		)
 INSERT
 INTO
-	indexreport (manifest_id, scan_result)
+	indexreport (manifest_id, state, scan_result, updated_at)
 VALUES
-	((SELECT manifest_id FROM manifests), $2)
+	((SELECT manifest_id FROM manifests), $2, $3, now())
 ON CONFLICT
 	(manifest_id)
 DO
-	UPDATE SET scan_result = excluded.scan_result;
+	UPDATE SET state = excluded.state,
+	scan_result = excluded.scan_result,
+	updated_at = excluded.updated_at;
 `
 	start := time.Now()
-	_, err := s.pool.Exec(ctx, query, ir.Hash, ir)
+	_, err := s.pool.Exec(ctx, query, ir.Hash, ir.State, ir)
 	if err != nil {
 		return fmt.Errorf("failed to upsert index report: %w", err)
 	}

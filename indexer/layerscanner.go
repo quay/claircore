@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net"
 	"runtime"
+	"sync/atomic"
 
 	"github.com/quay/claircore/toolkit/log"
 	"golang.org/x/sync/errgroup"
@@ -116,6 +117,7 @@ func (ls *LayerScanner) Scan(ctx context.Context, manifest claircore.Digest, lay
 	ctx = log.With(ctx, "manifest", manifest)
 
 	g, ctx := errgroup.WithContext(ctx)
+	var partial atomic.Bool
 	// Using the goroutine's built-in limit is worst-case the same as using an
 	// external semaphore (spawn N goroutines and immediately wait on M of them,
 	// waits canceling when the first error is returned) but putting the
@@ -131,7 +133,7 @@ func (ls *LayerScanner) Scan(ctx context.Context, manifest claircore.Digest, lay
 				return context.Cause(ctx)
 			default:
 			}
-			if err := ls.scanLayer(ctx, l, s); err != nil {
+			if err := ls.scanLayer(ctx, l, s, &partial); err != nil {
 				return fmt.Errorf("layer %q: %w", l.Hash, err)
 			}
 			return nil
@@ -163,12 +165,18 @@ Layers:
 		}
 	}
 
-	return g.Wait()
+	if err := g.Wait(); err != nil {
+		return err
+	}
+	if partial.Load() {
+		return ErrScanPartial
+	}
+	return nil
 }
 
 // ScanLayer (along with the result type) handles an individual (scanner, layer)
 // pair.
-func (ls *LayerScanner) scanLayer(ctx context.Context, l *claircore.Layer, s VersionedScanner) error {
+func (ls *LayerScanner) scanLayer(ctx context.Context, l *claircore.Layer, s VersionedScanner, partial *atomic.Bool) error {
 	ctx = log.With(ctx, "scanner", s.Name(), "kind", s.Kind(), "layer", l.Hash)
 	slog.DebugContext(ctx, "scan start")
 	defer slog.DebugContext(ctx, "scan done")
@@ -184,7 +192,12 @@ func (ls *LayerScanner) scanLayer(ctx context.Context, l *claircore.Layer, s Ver
 
 	var result result
 	if err := result.Do(ctx, s, l); err != nil {
-		return err
+		if errors.Is(err, ErrScanPartial) {
+			partial.Store(true)
+			slog.WarnContext(ctx, "scanner returned partial results", "reason", err)
+		} else {
+			return err
+		}
 	}
 
 	if err = result.Store(ctx, ls.store, s, l); err != nil {
@@ -232,6 +245,8 @@ func (r *result) Do(ctx context.Context, s VersionedScanner, l *claircore.Layer)
 	var addrErr *net.AddrError
 	switch {
 	case errors.Is(err, nil):
+	case errors.Is(err, ErrScanPartial):
+		slog.WarnContext(ctx, "scanner produced degraded results", "scanner", s.Name(), "reason", err)
 	case errors.As(err, &addrErr):
 		slog.WarnContext(ctx, "scanner not able to access resources", "scanner", s.Name(), "reason", err)
 		return nil

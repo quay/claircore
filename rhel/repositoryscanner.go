@@ -172,11 +172,14 @@ func (r *RepositoryScanner) Scan(ctx context.Context, l *claircore.Layer) ([]*cl
 	defer done()
 	cmi, err := r.upd.Get(tctx, r.client)
 	if err != nil && cmi == nil {
-		return []*claircore.Repository{}, err
+		slog.WarnContext(ctx, "rhel: unable to fetch mapping file, skipping repository enrichment", "error", err)
+		return []*claircore.Repository{}, indexer.Partial(err)
 	}
 	cm, ok := cmi.(*mappingFile)
 	if !ok || cm == nil {
-		return []*claircore.Repository{}, fmt.Errorf("rhel: unable to create a mappingFile object")
+		err := fmt.Errorf("rhel: unable to create a mappingFile object")
+		slog.WarnContext(ctx, "rhel: unable to create mappingFile object, skipping repository enrichment")
+		return []*claircore.Repository{}, indexer.Partial(err)
 	}
 
 	var repoids []string

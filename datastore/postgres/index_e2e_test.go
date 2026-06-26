@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -59,6 +60,118 @@ func TestIndexE2E(t *testing.T) {
 			e.RunAll(t)
 		})
 	}
+}
+
+func TestRequeueIndexPartialsBatchAndSharedLayers(t *testing.T) {
+	integration.NeedDB(t)
+	ctx := test.Logging(t)
+	pool := pgtest.TestIndexerDB(ctx, t)
+	store := NewIndexerStore(pool)
+	scnr := mockScnr{name: "test-scanner", kind: "test", version: "v0.0.1"}
+	scnrs := indexer.VersionedScanners{scnr}
+	if err := store.RegisterScanners(ctx, scnrs); err != nil {
+		t.Fatalf("failed to register scanner: %v", err)
+	}
+
+	partialOnlyA := &claircore.Layer{Hash: test.RandomSHA256Digest(t)}
+	sharedWithFinished := &claircore.Layer{Hash: test.RandomSHA256Digest(t)}
+	partialOnlyB := &claircore.Layer{Hash: test.RandomSHA256Digest(t)}
+	partialOnlyC := &claircore.Layer{Hash: test.RandomSHA256Digest(t)}
+
+	partialA := claircore.Manifest{
+		Hash:   test.RandomSHA256Digest(t),
+		Layers: []*claircore.Layer{partialOnlyA, sharedWithFinished},
+	}
+	finished := claircore.Manifest{
+		Hash:   test.RandomSHA256Digest(t),
+		Layers: []*claircore.Layer{sharedWithFinished},
+	}
+	partialB := claircore.Manifest{
+		Hash:   test.RandomSHA256Digest(t),
+		Layers: []*claircore.Layer{partialOnlyB},
+	}
+	partialC := claircore.Manifest{
+		Hash:   test.RandomSHA256Digest(t),
+		Layers: []*claircore.Layer{partialOnlyC},
+	}
+
+	for _, m := range []claircore.Manifest{partialA, finished, partialB, partialC} {
+		if err := store.PersistManifest(ctx, m); err != nil {
+			t.Fatalf("failed to persist manifest %s: %v", m.Hash, err)
+		}
+		for _, l := range m.Layers {
+			if err := store.SetLayerScanned(ctx, l.Hash, scnr); err != nil {
+				t.Fatalf("failed to set layer %s scanned: %v", l.Hash, err)
+			}
+		}
+	}
+
+	for _, m := range []claircore.Manifest{partialA, partialB, partialC} {
+		ir := &claircore.IndexReport{Hash: m.Hash, State: "IndexPartial"}
+		if err := store.SetIndexPartial(ctx, ir, scnrs); err != nil {
+			t.Fatalf("failed to set partial index report %s: %v", m.Hash, err)
+		}
+		if err := ageIndexReport(ctx, pool, m.Hash, 2*time.Hour); err != nil {
+			t.Fatalf("failed to age partial index report %s: %v", m.Hash, err)
+		}
+	}
+	ir := &claircore.IndexReport{Hash: finished.Hash, State: "IndexFinished"}
+	if err := store.SetIndexFinished(ctx, ir, scnrs); err != nil {
+		t.Fatalf("failed to set finished index report: %v", err)
+	}
+
+	n, err := store.RequeueIndexPartials(ctx, time.Hour, 2)
+	if err != nil {
+		t.Fatalf("failed to requeue partial index reports: %v", err)
+	}
+	if n != 2 {
+		t.Fatalf("requeued %d partial index reports, want 2", n)
+	}
+
+	assertManifestScanned := func(m claircore.Manifest, want bool) {
+		t.Helper()
+		got, err := store.ManifestScanned(ctx, m.Hash, scnrs)
+		if err != nil {
+			t.Fatalf("failed to query manifest %s scanned: %v", m.Hash, err)
+		}
+		if got != want {
+			t.Fatalf("manifest %s scanned = %v, want %v", m.Hash, got, want)
+		}
+	}
+	assertLayerScanned := func(l *claircore.Layer, want bool) {
+		t.Helper()
+		got, err := store.LayerScanned(ctx, l.Hash, scnr)
+		if err != nil {
+			t.Fatalf("failed to query layer %s scanned: %v", l.Hash, err)
+		}
+		if got != want {
+			t.Fatalf("layer %s scanned = %v, want %v", l.Hash, got, want)
+		}
+	}
+
+	assertManifestScanned(partialA, false)
+	assertManifestScanned(partialB, false)
+	assertManifestScanned(partialC, true)
+	assertManifestScanned(finished, true)
+
+	assertLayerScanned(partialOnlyA, false)
+	assertLayerScanned(partialOnlyB, false)
+	assertLayerScanned(partialOnlyC, true)
+	assertLayerScanned(sharedWithFinished, true)
+}
+
+func ageIndexReport(ctx context.Context, pool *pgxpool.Pool, hash claircore.Digest, age time.Duration) error {
+	const query = `
+UPDATE indexreport ir
+SET
+	updated_at = now() - $2::interval
+FROM manifest m
+WHERE
+	ir.manifest_id = m.id
+	AND m.hash = $1;
+`
+	_, err := pool.Exec(ctx, query, hash, age)
+	return err
 }
 
 // RunAll executes all test steps in sequence

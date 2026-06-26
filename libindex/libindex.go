@@ -63,6 +63,8 @@ type Libindex struct {
 	// indexerOptions hold construction context for the layerScanner and the
 	// controller factory.
 	indexerOptions *indexer.Options
+	// partialRetryCancel stops the background IndexPartial retry scheduler.
+	partialRetryCancel context.CancelFunc
 }
 
 // New creates a new instance of libindex.
@@ -87,6 +89,12 @@ func New(ctx context.Context, opts *Options, cl *http.Client) (*Libindex, error)
 	}
 	if opts.LayerScanConcurrency == 0 {
 		opts.LayerScanConcurrency = DefaultLayerScanConcurrency
+	}
+	if opts.IndexPartialRetryInterval == 0 {
+		opts.IndexPartialRetryInterval = DefaultIndexPartialRetryInterval
+	}
+	if opts.IndexPartialRetryLimit == 0 {
+		opts.IndexPartialRetryLimit = DefaultIndexPartialRetryLimit
 	}
 	if opts.ControllerFactory == nil {
 		opts.ControllerFactory = controller.New
@@ -159,15 +167,47 @@ func New(ctx context.Context, opts *Options, cl *http.Client) (*Libindex, error)
 		return nil, err
 	}
 
+	if opts.IndexPartialRetryInterval > 0 {
+		l.startPartialRetryScheduler(opts.IndexPartialRetryInterval, opts.IndexPartialRetryLimit)
+	}
+
 	return l, nil
 }
 
 // Close releases held resources.
 func (l *Libindex) Close(ctx context.Context) error {
+	if l.partialRetryCancel != nil {
+		l.partialRetryCancel()
+	}
 	l.locker.Close(ctx)
 	l.store.Close(ctx)
 	l.fa.Close(ctx)
 	return nil
+}
+
+func (l *Libindex) startPartialRetryScheduler(interval time.Duration, limit int) {
+	ctx := log.With(context.Background(), "component", "index-partial-retry")
+	ctx, cancel := context.WithCancel(ctx)
+	l.partialRetryCancel = cancel
+	go func() {
+		t := time.NewTicker(interval)
+		defer t.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-t.C:
+				n, err := l.store.RequeueIndexPartials(ctx, interval, limit)
+				if err != nil {
+					slog.WarnContext(ctx, "failed to requeue partial index reports", "reason", err)
+					continue
+				}
+				if n > 0 {
+					slog.InfoContext(ctx, "requeued partial index reports", "count", n)
+				}
+			}
+		}
+	}()
 }
 
 // Index performs a scan and index of each layer within the provided Manifest.

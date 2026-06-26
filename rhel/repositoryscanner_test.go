@@ -2,6 +2,7 @@ package rhel
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -11,8 +12,11 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/pkg/tmp"
+	"github.com/quay/claircore/rhel/internal/common"
 
 	"github.com/google/go-cmp/cmp"
 
@@ -366,6 +370,51 @@ func TestRepositoryScanner(t *testing.T) {
 	}
 }
 
+func TestRepositoryScannerPartialMappingFileFailure(t *testing.T) {
+	t.Parallel()
+
+	table := []struct {
+		name    string
+		scanner *RepositoryScanner
+		client  *http.Client
+	}{
+		{
+			name: "fetch error with no cached mapping",
+			scanner: &RepositoryScanner{
+				upd: common.NewUpdater("://bad-url", (*mappingFile)(nil)),
+				cfg: RepositoryScannerConfig{Timeout: time.Second},
+			},
+			client: http.DefaultClient,
+		},
+		{
+			name: "unexpected mapping object",
+			scanner: &RepositoryScanner{
+				upd: common.NewUpdater("", (*struct{})(nil)),
+				cfg: RepositoryScannerConfig{Timeout: time.Second},
+			},
+			client: http.DefaultClient,
+		},
+	}
+
+	for _, tt := range table {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			ctx := test.Logging(t)
+			layer := repositoryScannerTestLayer(t, ctx, "testdata/layer-with-embedded-cs.tar")
+			tt.scanner.client = tt.client
+
+			got, err := tt.scanner.Scan(ctx, layer)
+			if !errors.Is(err, indexer.ErrScanPartial) {
+				t.Fatalf("Scan error = %v, want %v", err, indexer.ErrScanPartial)
+			}
+			if len(got) != 0 {
+				t.Fatalf("Scan returned %d repositories, want 0", len(got))
+			}
+		})
+	}
+}
+
 func TestLabelError(t *testing.T) {
 	err := missingLabel("test")
 	t.Log(err)
@@ -391,4 +440,35 @@ func TestBugURL(t *testing.T) {
 	if got != want {
 		t.Fail()
 	}
+}
+
+func repositoryScannerTestLayer(t *testing.T, ctx context.Context, layerPath string) *claircore.Layer {
+	t.Helper()
+
+	f, err := os.Open(layerPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := f.Close(); err != nil {
+			t.Error(err)
+		}
+	})
+
+	var l claircore.Layer
+	desc := claircore.LayerDescription{
+		Digest:    `sha256:` + strings.Repeat(`beef`, 16),
+		URI:       `file:///dev/null`,
+		MediaType: test.MediaType,
+		Headers:   make(map[string][]string),
+	}
+	if err := l.Init(ctx, &desc, f); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := l.Close(); err != nil {
+			t.Error(err)
+		}
+	})
+	return &l
 }

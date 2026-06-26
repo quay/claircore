@@ -13,6 +13,12 @@ const (
 	// DefaultLayerScanConcurrency is the default number of concurrent layer
 	// "scans".
 	DefaultLayerScanConcurrency = 10
+	// DefaultIndexPartialRetryInterval is the default interval between attempts
+	// to make partial index reports eligible for re-indexing.
+	DefaultIndexPartialRetryInterval = 24 * time.Hour
+	// DefaultIndexPartialRetryLimit is the default maximum number of partial
+	// index reports to requeue per retry scheduler tick.
+	DefaultIndexPartialRetryLimit = 100
 )
 
 // Options are dependencies and options for constructing an instance of libindex
@@ -33,6 +39,12 @@ type Options struct {
 	LayerScanConcurrency int
 	// LayerFetchOpt is unused and kept here for backwards compatibility.
 	LayerFetchOpt any
+	// IndexPartialRetryInterval specifies how often IndexPartial reports should
+	// be made eligible for re-indexing. A negative value disables the scheduler.
+	IndexPartialRetryInterval time.Duration
+	// IndexPartialRetryLimit specifies the maximum number of IndexPartial
+	// reports made eligible for re-indexing on each scheduler tick.
+	IndexPartialRetryLimit int
 	// NoLayerValidation controls whether layers are checked to actually be
 	// content-addressed. With this option toggled off, callers can trigger
 	// layers to be indexed repeatedly by changing the identifier in the
