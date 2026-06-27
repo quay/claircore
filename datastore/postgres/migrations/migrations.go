@@ -1,131 +1,105 @@
+// Package migrations holds PostgreSQL migrations for databases to back
+// `datastore` implementations.
 package migrations
 
 import (
-	"database/sql"
+	"context"
 	"embed"
+	"fmt"
+	"hash/crc32"
+	"io/fs"
 
-	"github.com/remind101/migrate"
+	"github.com/jackc/pgx/v5"
 )
 
-const (
-	IndexerMigrationTable = "libindex_migrations"
-	MatcherMigrationTable = "libvuln_migrations"
+// These are the tables used to track migrations.
+//
+// Deprecated: use the [Indexer] and [Matcher] functions.
+var (
+	IndexerMigrationTable = pgx.Identifier{"libindex_migrations"}
+	MatcherMigrationTable = pgx.Identifier{"libvuln_migrations"}
 )
+
+// Indexer runs migrations for an indexer database using the provided
+// configuration.
+func Indexer(ctx context.Context, cfg *pgx.ConnConfig) error {
+	sys, err := fs.Sub(sys, "indexer")
+	if err != nil {
+		return fmt.Errorf("programmer error: %w", err)
+	}
+	return runMigrations(ctx, cfg, IndexerMigrationTable, sys)
+}
+
+// Matcher runs migrations for a matcher database using the provided
+// configuration.
+func Matcher(ctx context.Context, cfg *pgx.ConnConfig) error {
+	sys, err := fs.Sub(sys, "matcher")
+	if err != nil {
+		return fmt.Errorf("programmer error: %w", err)
+	}
+	return runMigrations(ctx, cfg, MatcherMigrationTable, sys)
+}
+
+// RunMigrations does what it says on the tin.
+func runMigrations(ctx context.Context, cfg *pgx.ConnConfig, table pgx.Identifier, sys fs.FS) error {
+	conn, err := pgx.ConnectConfig(ctx, cfg)
+	if err != nil {
+		return fmt.Errorf("unable to connect to database: %w", err)
+	}
+	defer conn.Close(ctx)
+
+	queryCreateTable := fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s (version INTEGER PRIMARY KEY NOT NULL);`, table.Sanitize())
+	queryCheckMigration := fmt.Sprintf(`SELECT EXISTS(SELECT 1 FROM %s WHERE version = $1);`, table.Sanitize())
+	querySetMigration := fmt.Sprintf(`INSERT INTO %s (version) VALUES ($1);`, table.Sanitize())
+
+	key := crc32.ChecksumIEEE([]byte("migrations"))
+	// Advisory lock is dropped when the connection (session) is closed.
+	if _, err := conn.Exec(ctx, `SELECT pg_advisory_lock($1);`, key); err != nil {
+		return fmt.Errorf("unable to obtain migration lock %x: %w", key, err)
+	}
+	if _, err := conn.Exec(ctx, queryCreateTable); err != nil {
+		return fmt.Errorf("unable to create migration table %s: %w", table.Sanitize(), err)
+	}
+
+	ents, err := fs.ReadDir(sys, ".")
+	if err != nil {
+		panic("programmer error: unable to readdir")
+	}
+	for i, ent := range ents {
+		// Our migrations are 1-based, for no particular reason.
+		id := i + 1
+		b, err := fs.ReadFile(sys, ent.Name())
+		if err != nil {
+			return fmt.Errorf("failed to perform migrations: %w", err)
+		}
+
+		err = pgx.BeginFunc(ctx, conn, func(tx pgx.Tx) error {
+			var ok bool
+			err := tx.QueryRow(ctx, queryCheckMigration, id).Scan(&ok)
+			if err != nil {
+				return err
+			}
+			if ok {
+				return nil
+			}
+
+			if _, err := tx.Exec(ctx, string(b)); err != nil {
+				return err
+			}
+
+			if _, err := tx.Exec(ctx, querySetMigration, id); err != nil {
+				return err
+			}
+
+			return nil
+		})
+		if err != nil {
+			return fmt.Errorf("failed to perform migrations: %w", err)
+		}
+	}
+
+	return nil
+}
 
 //go:embed */*.sql
-var fs embed.FS
-
-func runFile(n string) func(*sql.Tx) error {
-	b, err := fs.ReadFile(n)
-	return func(tx *sql.Tx) error {
-		if err != nil {
-			return err
-		}
-		if _, err := tx.Exec(string(b)); err != nil {
-			return err
-		}
-		return nil
-	}
-}
-
-var IndexerMigrations = []migrate.Migration{
-	{
-		ID: 1,
-		Up: runFile("indexer/01-init.sql"),
-	},
-	{
-		ID: 2,
-		Up: runFile("indexer/02-digests.sql"),
-	},
-	{
-		ID: 3,
-		Up: runFile("indexer/03-unique-manifest_index.sql"),
-	},
-	{
-		ID: 4,
-		Up: runFile("indexer/04-foreign-key-cascades.sql"),
-	},
-	{
-		ID: 5,
-		Up: runFile("indexer/05-delete-manifest-index-index.sql"),
-	},
-	{
-		ID: 6,
-		Up: runFile("indexer/06-file-artifacts.sql"),
-	},
-	{
-		ID: 7,
-		Up: runFile("indexer/07-index-manifest_index.sql"),
-	},
-	{
-		ID: 8,
-		Up: runFile("indexer/08-index-manifest_layer.sql"),
-	},
-}
-
-var MatcherMigrations = []migrate.Migration{
-	{
-		ID: 1,
-		Up: runFile("matcher/01-init.sql"),
-	},
-	{
-		ID: 2,
-		Up: runFile("matcher/02-indexes.sql"),
-	},
-	{
-		ID: 3,
-		Up: runFile("matcher/03-pyup-fingerprint.sql"),
-	},
-	{
-		ID: 4,
-		Up: runFile("matcher/04-enrichments.sql"),
-	},
-	{
-		ID: 5,
-		Up: runFile("matcher/05-uo_enrich-fkey.sql"),
-	},
-	{
-		ID: 6,
-		Up: runFile("matcher/06-delete-debian-update_operation.sql"),
-	},
-	{
-		ID: 7,
-		Up: runFile("matcher/07-force-alpine-update.sql"),
-	},
-	{
-		ID: 8,
-		Up: runFile("matcher/08-updater-status.sql"),
-	},
-	{
-		ID: 9,
-		Up: runFile("matcher/09-delete-pyupio.sql"),
-	},
-	{
-		ID: 10,
-		Up: runFile("matcher/10-delete-osv.sql"),
-	},
-	{
-		ID: 11,
-		Up: runFile("matcher/11-add-update_operation-mv.sql"),
-	},
-	{
-		ID: 12,
-		Up: runFile("matcher/12-add-latest_update_operation-index.sql"),
-	},
-	{
-		ID: 13,
-		Up: runFile("matcher/13-delete-rhel-oval.sql"),
-	},
-	{
-		ID: 14,
-		Up: runFile("matcher/14-delete-rhcc-vulns.sql"),
-	},
-	{
-		ID: 15,
-		Up: runFile("matcher/15-enrichment-indexes.sql"),
-	},
-	{
-		ID: 16,
-		Up: runFile("matcher/16-delete-cvss-enrichments.sql"),
-	},
-}
+var sys embed.FS

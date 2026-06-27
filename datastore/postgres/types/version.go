@@ -34,7 +34,14 @@ func registerVersionRange(ctx context.Context, c *pgx.Conn) error {
 		t.Codec = &pgtype.RangeCodec{ElementType: at}
 		tm.RegisterType(t)
 	case errors.As(err, &pgErr):
-		if pgErr.Code == "42704" { // OK: "no such type"
+		if pgErr.Code == "42704" {
+			// OK: "no such type"
+			//
+			// This error probably caused an "ERROR" message in the PostgreSQL
+			// log, so follow it up with a "NOTICE" saying that's it's probably
+			// fine. Ignore the returned error because this is just a
+			// best-effort.
+			c.Exec(ctx, `DO $$ BEGIN RAISE NOTICE USING MESSAGE = 'type error expected', DETAIL = 'running migrations should create needed types'; END; $$;`)
 			break
 		}
 		fallthrough

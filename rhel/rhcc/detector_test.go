@@ -58,6 +58,26 @@ func TestPackageDetector(t *testing.T) {
 				},
 			},
 		},
+		{
+			Name:       "PackageQuotedLabelsTest",
+			LabelsFile: "testdata/quoted_labels.json",
+			Want: []*claircore.Package{
+				gitopsSourceContainer,
+				{
+					Name:    "openshift-gitops-1/gitops-rhel8-operator",
+					Version: "1744596866",
+					NormalizedVersion: claircore.Version{
+						Kind: "rhctag",
+						V:    [10]int32{1744596866},
+					},
+					Kind:           claircore.BINARY,
+					Source:         gitopsSourceContainer,
+					PackageDB:      "root/buildinfo/labels.json",
+					RepositoryHint: "rhcc",
+					Arch:           "x86_64",
+				},
+			},
+		},
 	}
 	var cd detector
 
@@ -114,6 +134,17 @@ func TestRepositoryDetector(t *testing.T) {
 		{
 			Name:       "RepositoryLabelsTest",
 			LabelsFile: "testdata/simple_labels.json",
+			Want: []*claircore.Repository{
+				{
+					Name: "cpe:2.3:a:redhat:openshift_gitops:1.16:*:el8:*:*:*:*:*",
+					Key:  "rhcc-container-repository",
+					CPE:  cpe.MustUnbind("cpe:2.3:a:redhat:openshift_gitops:1.16:*:el8:*:*:*:*:*"),
+				},
+			},
+		},
+		{
+			Name:       "RepositoryQuotedLabelsTest",
+			LabelsFile: "testdata/quoted_labels.json",
 			Want: []*claircore.Repository{
 				{
 					Name: "cpe:2.3:a:redhat:openshift_gitops:1.16:*:el8:*:*:*:*:*",
