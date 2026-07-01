@@ -414,6 +414,12 @@ func TestParse(t *testing.T) {
 			expectedVulns:   269,
 			expectedDeleted: 0,
 		},
+		{
+			name:            "errortesting",
+			filenames:       []string{"testdata/error_CVE-2026-7323.json"},
+			expectedVulns:   193,
+			expectedDeleted: 0,
+		},
 	}
 
 	u := &Updater{url: url, client: http.DefaultClient}
@@ -686,4 +692,3 @@ func TestExtractPackageName(t *testing.T) {
 		})
 	}
 }
-
