@@ -51,7 +51,8 @@ INSERT
 INTO
 	scanned_manifest (manifest_id, scanner_id)
 VALUES
-	((SELECT manifest_id FROM manifests), $2);
+	((SELECT manifest_id FROM manifests), $2)
+ON CONFLICT DO NOTHING;
 `
 		upsertIndexReport = `
 WITH
@@ -66,13 +67,15 @@ WITH
 		)
 INSERT
 INTO
-	indexreport (manifest_id, scan_result)
+	indexreport (manifest_id, state, scan_result, updated_at)
 VALUES
-	((SELECT manifest_id FROM manifests), $2)
+	((SELECT manifest_id FROM manifests), $2, $3, now())
 ON CONFLICT
 	(manifest_id)
 DO
-	UPDATE SET scan_result = excluded.scan_result;
+	UPDATE SET state = excluded.state,
+	scan_result = excluded.scan_result,
+	updated_at = excluded.updated_at;
 `
 	)
 
@@ -99,7 +102,7 @@ DO
 	}
 
 	start := time.Now()
-	_, err = tx.Exec(ctx, upsertIndexReport, ir.Hash, ir)
+	_, err = tx.Exec(ctx, upsertIndexReport, ir.Hash, ir.State, ir)
 	if err != nil {
 		return fmt.Errorf("failed to upsert scan result: %w", err)
 	}

@@ -179,11 +179,14 @@ func (s *scanner) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Pa
 	defer done()
 	vi, err := s.upd.Get(tctx, s.client)
 	if err != nil && vi == nil {
-		return nil, err
+		slog.WarnContext(ctx, "rhcc: unable to fetch mapping file, skipping RHCC mapping enrichment", "error", err)
+		return pkgs, indexer.Partial(err)
 	}
 	v, ok := vi.(*mappingFile)
 	if !ok || v == nil {
-		return nil, fmt.Errorf("rhcc: unable to create a mappingFile object")
+		err := fmt.Errorf("rhcc: unable to create a mappingFile object")
+		slog.WarnContext(ctx, "rhcc: unable to create mappingFile object, skipping RHCC mapping enrichment")
+		return pkgs, indexer.Partial(err)
 	}
 	repos, ok := v.Data[name]
 	if ok {
