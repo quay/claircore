@@ -181,11 +181,18 @@ func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string
 		JOIN
 			alias a ON a.name = input.self_name AND a.namespace = ns.id
 		ON CONFLICT DO NOTHING`
+		// insertAliasNamespaces creates all needed namespace rows outside any
+		// transaction so concurrent updaters do not deadlock.
+		insertAliasNamespaces = `INSERT INTO alias_namespace (namespace) VALUES (unnest($1::TEXT[])) ON CONFLICT DO NOTHING;`
+		// insertAliases creates all needed alias rows outside any transaction.
+		insertAliases = `INSERT INTO alias (namespace, name)
+	SELECT ns.id, input.name
+	FROM
+		(SELECT unnest($1::TEXT[]) AS space, unnest($2::TEXT[]) AS name) AS input
+	JOIN
+		alias_namespace AS ns ON input.space = ns.namespace
+ON CONFLICT DO NOTHING;`
 	)
-
-	if err := s.insertAliases(ctx, vulnIter); err != nil {
-		return uuid.Nil, err
-	}
 
 	var uoID uint64
 	var ref uuid.UUID
@@ -295,6 +302,8 @@ func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string
 		vaSpaces, vsSpaces       []string
 		vaNames, vsNames         []string
 	)
+	seenSpace := make(map[unique.Handle[string]]struct{})
+	seenAlias := make(map[claircore.Alias]struct{})
 
 	vulnIter(func(vuln *claircore.Vulnerability, iterErr error) bool {
 		if iterErr != nil {
@@ -338,12 +347,16 @@ func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string
 			if !a.Valid() {
 				continue
 			}
+			seenSpace[a.Space] = struct{}{}
+			seenAlias[a] = struct{}{}
 			vaHashKinds = append(vaHashKinds, hashKind)
 			vaHashes = append(vaHashes, hash)
 			vaSpaces = append(vaSpaces, a.Space.Value())
 			vaNames = append(vaNames, a.Name)
 		}
 		if vuln.Self.Valid() {
+			seenSpace[vuln.Self.Space] = struct{}{}
+			seenAlias[vuln.Self] = struct{}{}
 			vsHashKinds = append(vsHashKinds, hashKind)
 			vsHashes = append(vsHashes, hash)
 			vsSpaces = append(vsSpaces, vuln.Self.Space.Value())
@@ -368,6 +381,34 @@ func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string
 
 	updateVulnerabilitiesCounter.WithLabelValues("insert_batch", strconv.FormatBool(delta)).Add(1)
 	updateVulnerabilitiesDuration.WithLabelValues("insert_batch", strconv.FormatBool(delta)).Observe(time.Since(start).Seconds())
+
+	// Insert alias namespaces and aliases outside the transaction to avoid
+	// deadlocks when concurrent updaters race to insert the same namespaces.
+	if len(seenSpace) > 0 {
+		spaces := make([]string, 0, len(seenSpace))
+		for h := range seenSpace {
+			spaces = append(spaces, h.Value())
+		}
+		aliasSpaces := make([]string, 0, len(seenAlias))
+		aliasNames := make([]string, 0, len(seenAlias))
+		for a := range seenAlias {
+			aliasSpaces = append(aliasSpaces, a.Space.Value())
+			aliasNames = append(aliasNames, a.Name)
+		}
+
+		conn, err := s.pool.Acquire(ctx)
+		if err != nil {
+			return uuid.Nil, fmt.Errorf("acquiring connection for aliases: %w", err)
+		}
+		defer conn.Release()
+
+		if _, err := conn.Exec(ctx, insertAliasNamespaces, spaces); err != nil {
+			return uuid.Nil, fmt.Errorf("failed to insert alias namespaces: %w", err)
+		}
+		if _, err := conn.Exec(ctx, insertAliases, aliasSpaces, aliasNames); err != nil {
+			return uuid.Nil, fmt.Errorf("failed to insert aliases: %w", err)
+		}
+	}
 
 	// Bulk-link aliases and self references. Two single statements replace the
 	// former per-vulnerability hash-lookup subqueries queued in the batch above.
@@ -482,86 +523,4 @@ func rangefmt(r *claircore.Range) (kind *string, lower, upper string) {
 	upper = buf.String()
 
 	return kind, lower, upper
-}
-
-// InsertAliases creates all needed alias namespaces and aliases outside of any
-// transaction.
-//
-// Running outside a transaction avoids the deadlock that arises when concurrent
-// updaters race to insert the same alias namespaces inside a serialised
-// transaction. Each statement here auto-commits immediately, so no row-level
-// locks are held between them.
-//
-// BUG(hank) The alias insertion code does not remove aliases in the case of a
-// failure during the update operation.
-func (s *MatcherStore) insertAliases(ctx context.Context, vulnIter datastore.VulnerabilityIter) error {
-	const (
-		insertAliasNamespaces = `INSERT INTO alias_namespace (namespace) VALUES (unnest($1::TEXT[])) ON CONFLICT DO NOTHING;`
-		insertAliases         = `INSERT INTO alias (namespace, name)
-	SELECT ns.id, input.name
-	FROM
-		(SELECT unnest($1::TEXT[]) AS space, unnest($2::TEXT[]) AS name) AS input
-	JOIN
-		alias_namespace AS ns ON input.space = ns.namespace
-ON CONFLICT DO NOTHING;`
-	)
-
-	// Collect unique namespaces and aliases in one pass using only the dedup
-	// maps, then derive the slices the bulk statements need from the maps after
-	// iteration. This avoids holding the maps and parallel slices in memory at
-	// the same time.
-	seenSpace := make(map[unique.Handle[string]]struct{})
-	seenAlias := make(map[claircore.Alias]struct{})
-	var iterErr error
-	vulnIter(func(vuln *claircore.Vulnerability, err error) bool {
-		if err != nil {
-			iterErr = err
-			return false
-		}
-		for _, a := range vuln.Aliases {
-			if !a.Valid() {
-				continue
-			}
-			seenSpace[a.Space] = struct{}{}
-			seenAlias[a] = struct{}{}
-		}
-		if vuln.Self.Valid() {
-			seenSpace[vuln.Self.Space] = struct{}{}
-			seenAlias[vuln.Self] = struct{}{}
-		}
-		return true
-	})
-	if iterErr != nil {
-		return iterErr
-	}
-	if len(seenSpace) == 0 {
-		return nil
-	}
-
-	spaces := make([]string, 0, len(seenSpace))
-	for h := range seenSpace {
-		spaces = append(spaces, h.Value())
-	}
-	// aliasSpaces and aliasNames are parallel: aliasSpaces[i] is the namespace
-	// for aliasNames[i], matching what the unnest query expects.
-	aliasSpaces := make([]string, 0, len(seenAlias))
-	aliasNames := make([]string, 0, len(seenAlias))
-	for a := range seenAlias {
-		aliasSpaces = append(aliasSpaces, a.Space.Value())
-		aliasNames = append(aliasNames, a.Name)
-	}
-
-	conn, err := s.pool.Acquire(ctx)
-	if err != nil {
-		return fmt.Errorf("acquiring connection for aliases: %w", err)
-	}
-	defer conn.Release()
-
-	if _, err := conn.Exec(ctx, insertAliasNamespaces, spaces); err != nil {
-		return fmt.Errorf("failed to insert alias namespaces: %w", err)
-	}
-	if _, err := conn.Exec(ctx, insertAliases, aliasSpaces, aliasNames); err != nil {
-		return fmt.Errorf("failed to insert aliases: %w", err)
-	}
-	return nil
 }

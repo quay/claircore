@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"sync"
 	"testing"
 	"unique"
 
@@ -333,4 +334,68 @@ func TestGetLatestVulnerabilities(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestUpdateVulnerabilitiesIterSinglePass(t *testing.T) {
+	integration.NeedDB(t)
+	ctx := test.Logging(t)
+
+	pool := pgtest.TestMatcherDB(ctx, t)
+	store := NewMatcherStore(pool)
+
+	vulns := []*claircore.Vulnerability{
+		{
+			Updater: t.Name(),
+			Name:    "CVE-2024-0001",
+			Package: &claircore.Package{Name: "test-pkg"},
+			Self:    claircore.Alias{Space: unique.Make("CVE"), Name: "CVE-2024-0001"},
+			Aliases: []claircore.Alias{
+				{Space: unique.Make("GHSA"), Name: "GHSA-xxxx-yyyy-zzzz"},
+			},
+		},
+		{
+			Updater: t.Name(),
+			Name:    "CVE-2024-0002",
+			Package: &claircore.Package{Name: "test-pkg-2"},
+			Self:    claircore.Alias{Space: unique.Make("CVE"), Name: "CVE-2024-0002"},
+			Aliases: []claircore.Alias{
+				{Space: unique.Make("GHSA"), Name: "GHSA-aaaa-bbbb-cccc"},
+			},
+		},
+	}
+
+	// Single-pass iterator: yields data only on the first call, mimicking
+	// jsonblob.RecordIter which streams from a compressed file.
+	var once sync.Once
+	singlePass := datastore.VulnerabilityIter(func(yield func(*claircore.Vulnerability, error) bool) {
+		once.Do(func() {
+			for _, v := range vulns {
+				if !yield(v, nil) {
+					return
+				}
+			}
+		})
+	})
+
+	_, err := store.UpdateVulnerabilitiesIter(ctx, t.Name(), driver.Fingerprint(uuid.New().String()), singlePass)
+	if err != nil {
+		t.Fatalf("UpdateVulnerabilitiesIter: %v", err)
+	}
+
+	var vulnCount int
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM vuln WHERE updater = $1`, t.Name()).Scan(&vulnCount); err != nil {
+		t.Fatalf("counting vulns: %v", err)
+	}
+	if vulnCount != len(vulns) {
+		t.Fatalf("vuln table has %d rows, want %d; single-pass iterator was likely exhausted before the main insertion loop", vulnCount, len(vulns))
+	}
+
+	var aliasCount int
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM alias`).Scan(&aliasCount); err != nil {
+		t.Fatalf("counting aliases: %v", err)
+	}
+	if aliasCount == 0 {
+		t.Fatal("alias table has 0 rows")
+	}
+	t.Logf("vuln rows: %d, alias rows: %d", vulnCount, aliasCount)
 }
