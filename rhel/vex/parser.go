@@ -708,26 +708,31 @@ func (r *rope[E]) All() iter.Seq[*E] {
 // KnownAffectedVulnerabilities processes the "known_affected" array of products
 // in the VEX object.
 func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v *csaf.Vulnerability, init vulnHook) ([]*claircore.Vulnerability, error) {
+	log := slog.With("link", c.docLink)
 	var backing rope[claircore.Vulnerability]
+	var doDrop bool
 	for st, err := range c.Status(ctx, v, csaf.ProductStatusKnownAffected) {
 		if err != nil {
 			return nil, err
 		}
 
-		// This loop never skips returned [status] values, so we can always just
-		// append a new [claircore.Vulnerability].
+		// This loop may skip returned [status] values on validation errors,
+		// so we need to manage when to commit a new [claircore.Vulnerability].
 		vuln := backing.New()
+		doDrop = true
 
 		if err := init(ctx, vuln); err != nil {
 			return nil, err
 		}
 		pkgName, err := st.PackageName()
 		if err != nil {
-			return nil, err
+			log.WarnContext(ctx, "bad purl", "reason", err, "purl", st.PURL, "missing", "PackageName")
+			continue
 		}
 		modName, err := st.Module()
 		if err != nil {
-			return nil, err
+			log.WarnContext(ctx, "bad purl", "reason", err, "purl", st.PURL, "missing", "ModuleName")
+			continue
 		}
 		vuln.Package = &claircore.Package{
 			Name:   pkgName,
@@ -737,7 +742,8 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v *csaf.Vuln
 		if sc := st.Score; sc != nil {
 			vuln.Severity, err = cvssVectorFromScore(sc)
 			if err != nil {
-				return nil, fmt.Errorf("could not parse CVSS score: %w, file: %s", err, c.docLink)
+				log.WarnContext(ctx, "bad score", "reason", err, "found", true)
+				continue
 			}
 		}
 		if t := st.Threat; t != nil {
@@ -760,6 +766,11 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v *csaf.Vuln
 		if c.productIDInLinks && c.docLink != "" {
 			vuln.Links = strings.Replace(vuln.Links, c.docLink, c.docLink+"#"+url.PathEscape(st.ID), 1)
 		}
+		doDrop = false
+	}
+	// Catch if the last status bailed.
+	if doDrop {
+		backing.Drop()
 	}
 
 	out := slices.Collect(backing.All())
