@@ -73,3 +73,138 @@ func TestCoalescer(t *testing.T) {
 		t.Error("expected last package to be excluded (no repo in its layer)")
 	}
 }
+
+func TestCoalescerPackageOverwrite(t *testing.T) {
+	t.Parallel()
+	ctx := test.Logging(t)
+	coalescer := &coalescer{}
+	repo := []*claircore.Repository{{
+		ID:   "1",
+		Name: "npm",
+		URI:  "https://www.npmjs.com/",
+	}}
+	hashes := []claircore.Digest{
+		test.RandomSHA256Digest(t),
+		test.RandomSHA256Digest(t),
+		test.RandomSHA256Digest(t),
+		test.RandomSHA256Digest(t),
+	}
+	layerArtifacts := []*indexer.LayerArtifacts{
+		{
+			Hash: hashes[0],
+			Pkgs: []*claircore.Package{
+				{
+					ID:        "0",
+					Name:      "semver",
+					Version:   "7.3.8",
+					PackageDB: "nodejs:usr/local/lib/node_modules/npm/node_modules/semver/package.json",
+				},
+			},
+			Repos: repo,
+		},
+		{
+			Hash: hashes[1],
+		},
+		{
+			Hash: hashes[2],
+			Pkgs: []*claircore.Package{
+				{
+					ID:        "1",
+					Name:      "semver",
+					Version:   "7.5.2",
+					PackageDB: "nodejs:usr/local/lib/node_modules/npm/node_modules/semver/package.json",
+				},
+			},
+			Repos: repo,
+		},
+		{
+			Hash: hashes[3],
+			Pkgs: []*claircore.Package{
+				{
+					ID:        "2",
+					Name:      "semver",
+					Version:   "7.5.2",
+					PackageDB: "nodejs:usr/local/lib/node_modules/npm/node_modules/semver/package.json",
+				},
+			},
+			Repos: repo,
+		},
+	}
+	ir, err := coalescer.Coalesce(ctx, layerArtifacts)
+	if err != nil {
+		t.Fatalf("received error from coalesce method: %v", err)
+	}
+	if got, want := len(ir.Packages), 1; got != want {
+		t.Errorf("got %d packages, want %d", got, want)
+	}
+	pkg, ok := ir.Packages["1"]
+	if !ok {
+		t.Error("expected package 1 to exist")
+	}
+	if got, want := pkg.Version, "7.5.2"; got != want {
+		t.Errorf("got version %s, want %s", got, want)
+	}
+	envs, ok := ir.Environments["1"]
+	if !ok {
+		t.Error("expected environment for package 1")
+	}
+	if got, want := len(envs), 1; got != want {
+		t.Errorf("got %d environments, want %d", got, want)
+	}
+	if got, want := envs[0].IntroducedIn.String(), hashes[2].String(); got != want {
+		t.Errorf("introduced in %s, want %s", got, want)
+	}
+}
+
+func TestCoalescerSharedPackageDB(t *testing.T) {
+	t.Parallel()
+	ctx := test.Logging(t)
+	coalescer := &coalescer{}
+	repo := []*claircore.Repository{{
+		ID:   "1",
+		Name: "go",
+		URI:  "https://pkg.go.dev/",
+	}}
+	hash := test.RandomSHA256Digest(t)
+	layerArtifacts := []*indexer.LayerArtifacts{
+		{
+			Hash: hash,
+			Pkgs: []*claircore.Package{
+				{
+					ID:        "0",
+					Name:      "stdlib",
+					Version:   "1.21.0",
+					PackageDB: "go:/usr/local/bin/app",
+				},
+				{
+					ID:        "1",
+					Name:      "github.com/foo/bar",
+					Version:   "v1.2.3",
+					PackageDB: "go:/usr/local/bin/app",
+				},
+				{
+					ID:        "2",
+					Name:      "github.com/baz/qux",
+					Version:   "v0.5.0",
+					PackageDB: "go:/usr/local/bin/app",
+				},
+			},
+			Repos: repo,
+		},
+	}
+	ir, err := coalescer.Coalesce(ctx, layerArtifacts)
+	if err != nil {
+		t.Fatalf("received error from coalesce method: %v", err)
+	}
+	if got, want := len(ir.Packages), 3; got != want {
+		t.Errorf("got %d packages, want %d", got, want)
+	}
+	for _, id := range []string{"0", "1", "2"} {
+		if _, ok := ir.Packages[id]; !ok {
+			t.Errorf("expected package %s", id)
+		}
+		if _, ok := ir.Environments[id]; !ok {
+			t.Errorf("expected environment for package %s", id)
+		}
+	}
+}
