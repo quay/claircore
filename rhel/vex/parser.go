@@ -708,25 +708,34 @@ func (r *rope[E]) All() iter.Seq[*E] {
 // KnownAffectedVulnerabilities processes the "known_affected" array of products
 // in the VEX object.
 func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v *csaf.Vulnerability, init vulnHook) ([]*claircore.Vulnerability, error) {
+	log := slog.With("link", c.docLink)
 	var backing rope[claircore.Vulnerability]
 	for st, err := range c.Status(ctx, v, csaf.ProductStatusKnownAffected) {
 		if err != nil {
 			return nil, err
 		}
 
-		// This loop never skips returned [status] values, so we can always just
-		// append a new [claircore.Vulnerability].
-		vuln := backing.New()
-
-		if err := init(ctx, vuln); err != nil {
-			return nil, err
-		}
 		pkgName, err := st.PackageName()
 		if err != nil {
-			return nil, err
+			log.WarnContext(ctx, "bad purl", "reason", err, "purl", st.PURL, "missing", "PackageName")
+			continue
 		}
 		modName, err := st.Module()
 		if err != nil {
+			log.WarnContext(ctx, "bad purl", "reason", err, "purl", st.PURL, "missing", "ModuleName")
+			continue
+		}
+		var sev string
+		if sc := st.Score; sc != nil {
+			sev, err = cvssVectorFromScore(sc)
+			if err != nil {
+				log.WarnContext(ctx, "bad score", "reason", err, "found", true)
+				continue
+			}
+		}
+
+		vuln := backing.New()
+		if err := init(ctx, vuln); err != nil {
 			return nil, err
 		}
 		vuln.Package = &claircore.Package{
@@ -734,12 +743,7 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v *csaf.Vuln
 			Kind:   types.SourcePackage, // Always source?
 			Module: modName,
 		}
-		if sc := st.Score; sc != nil {
-			vuln.Severity, err = cvssVectorFromScore(sc)
-			if err != nil {
-				return nil, fmt.Errorf("could not parse CVSS score: %w, file: %s", err, c.docLink)
-			}
-		}
+		vuln.Severity = sev
 		if t := st.Threat; t != nil {
 			vuln.NormalizedSeverity = common.NormalizeSeverity(t.Details)
 		}
