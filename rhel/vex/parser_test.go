@@ -73,6 +73,17 @@ func TestComponentPURLToModuleName(t *testing.T) {
 			},
 			err: true,
 		},
+		{
+			// rpmmod=rhel10 has no stream component — seen in CVE-2026-7323.
+			name: "rpmmod missing stream",
+			in: packageurl.PackageURL{
+				Type:       packageurl.TypeRPM,
+				Namespace:  "redhat",
+				Name:       "firefox-flatpak",
+				Qualifiers: packageurl.QualifiersFromMap(map[string]string{"arch": "src", "rpmmod": "rhel10"}),
+			},
+			err: true,
+		},
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -412,6 +423,15 @@ func TestParse(t *testing.T) {
 			name:            "cve-2023-38545",
 			filenames:       []string{"testdata/cve-2023-38545.json"},
 			expectedVulns:   269,
+			expectedDeleted: 0,
+		},
+		{
+			// Products with a malformed rpmmod qualifier (e.g. "rhel10" with no
+			// stream component) should be skipped with a warning, not cause the
+			// parser to fail.
+			name:            "bad-rpmmod-is-skipped",
+			filenames:       []string{"testdata/cve-2026-7323-bad-rpmmod.json"},
+			expectedVulns:   1,
 			expectedDeleted: 0,
 		},
 	}

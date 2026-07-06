@@ -708,14 +708,13 @@ func (r *rope[E]) All() iter.Seq[*E] {
 // KnownAffectedVulnerabilities processes the "known_affected" array of products
 // in the VEX object.
 func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v *csaf.Vulnerability, init vulnHook) ([]*claircore.Vulnerability, error) {
+	log := slog.With("link", c.docLink)
 	var backing rope[claircore.Vulnerability]
 	for st, err := range c.Status(ctx, v, csaf.ProductStatusKnownAffected) {
 		if err != nil {
 			return nil, err
 		}
 
-		// This loop never skips returned [status] values, so we can always just
-		// append a new [claircore.Vulnerability].
 		vuln := backing.New()
 
 		if err := init(ctx, vuln); err != nil {
@@ -727,7 +726,9 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v *csaf.Vuln
 		}
 		modName, err := st.Module()
 		if err != nil {
-			return nil, err
+			log.WarnContext(ctx, "bad purl", "reason", err, "purl", st.PURL, "missing", "ModuleName")
+			backing.Drop()
+			continue
 		}
 		vuln.Package = &claircore.Package{
 			Name:   pkgName,
