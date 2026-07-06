@@ -236,18 +236,15 @@ func (a *RemoteFetchArena) inspect(ctx context.Context, desc *claircore.LayerDes
 	}()
 	span.SetStatus(codes.Error, "")
 
-	var req *http.Request
-	var res *http.Response
-	req, err = http.NewRequestWithContext(ctx, http.MethodGet, desc.URI, nil)
+	u, err := url.Parse(desc.URI)
 	if err != nil {
-		return d, fmt.Errorf("fetcher: failed to construct request: %w", err)
+		return d, fmt.Errorf("fetcher: failed to parse URL: %w", err)
 	}
-	req.Header = http.Header(desc.Headers).Clone()
-	if req.Header == nil {
-		req.Header = make(http.Header)
-	}
+	req := newRequest(ctx, u, desc.Headers)
 	req.Header.Set(`claircore-reason`, `inspect`)
 	req.Header.Set(`range`, `bytes=0-15`)
+
+	var res *http.Response
 	res, err = a.wc.Do(req)
 	if err != nil {
 		return d, fmt.Errorf("fetcher: request failed: %w", err)
@@ -327,7 +324,7 @@ func (a *RemoteFetchArena) logger(desc *claircore.LayerDescription) *slog.Logger
 //
 // Because we know we're the only concurrent call that's dealing with this blob,
 // we can be a bit more lax.
-func (a *RemoteFetchArena) fetchFileForCache(ctx context.Context, desc *claircore.LayerDescription, _ details) (*os.File, error) {
+func (a *RemoteFetchArena) fetchFileForCache(ctx context.Context, desc *claircore.LayerDescription, deets details) (*os.File, error) {
 	log := a.logger(desc)
 	ctx, span := tracer.Start(ctx, "RemoteFetchArena.fetchFileForCache")
 	defer span.End()
@@ -351,15 +348,7 @@ func (a *RemoteFetchArena) fetchFileForCache(ctx context.Context, desc *claircor
 	// It'd be nice to be able to pre-allocate our file on disk, but we can't
 	// because of decompression.
 
-	req := (&http.Request{
-		ProtoMajor: 1,
-		ProtoMinor: 1,
-		Proto:      "HTTP/1.1",
-		Host:       url.Host,
-		Method:     http.MethodGet,
-		URL:        url,
-		Header:     http.Header(desc.Headers).Clone(),
-	}).WithContext(ctx)
+	req := newRequest(ctx, url, desc.Headers)
 	req.Header.Set(`claircore-reason`, `fetch`)
 	resp, err := a.wc.Do(req)
 	if err != nil {
@@ -436,6 +425,21 @@ func (a *RemoteFetchArena) fetchFileForCache(ctx context.Context, desc *claircor
 	if err != nil {
 		return nil, err
 	}
+	if deets.RangeOK {
+		var sz int64
+		switch kind {
+		case zreader.KindGzip:
+			sz = gzipDecompressedSize(ctx, log, a.wc, resp)
+		default:
+			// Nothing to do.
+		}
+		if sz > 0 {
+			if err := f.Truncate(sz); err != nil {
+				return nil, fmt.Errorf("fetcher: unable to pre-allocate layer (%d): %w", sz, err)
+			}
+		}
+	}
+
 	// Track whether the file was fully populated.
 	// Doing this (instead of waiting for GC to clean up the fd associated with
 	// the [*os.File]) allows the system to eagerly reclaim disk space and
