@@ -414,6 +414,12 @@ func TestParse(t *testing.T) {
 			expectedVulns:   269,
 			expectedDeleted: 0,
 		},
+		{
+			name:            "bad_rpmmod_in_known_affected",
+			filenames:       []string{"testdata/cve-2024-24786-bad-rpmmod.json"},
+			expectedVulns:   2,
+			expectedDeleted: 0,
+		},
 	}
 
 	u := &Updater{url: url, client: http.DefaultClient}
@@ -686,4 +692,3 @@ func TestExtractPackageName(t *testing.T) {
 		})
 	}
 }
-
