@@ -1,0 +1,106 @@
+#!/usr/bin/zsh
+set -euo pipefail
+
+printhelp() {
+	if (( ${#*} )); then
+		print ${(F)*}
+		print
+	fi
+	cat <<-. >&2
+	usage: investigate-jar [<flags>] IMAGE-REF
+
+	Flags:
+	  --ocidir:  Output directory for OCI image.                                         (default: temporary directory)
+	  --tmpdir:  Directory for temporary OCI image output.                               (default: /var/tmp)
+	  --pkgdir:  Directory containing the 'github.com/quay/claircore/java/jar' package.  (default: .)         
+
+.
+	if (( ${#*} )); then exit 2; else exit 0; fi
+}
+
+typeset -a cleanups
+cleanup() {
+	if (( ${#cleanups} )); then
+		print 
+		print Removing: ${(@qq)cleanups:a}
+	fi
+	for p in "${(@)cleanups:a}"; do
+		rm -rf "$p"
+	done
+}
+trap cleanup EXIT
+
+# Option handling.
+typeset -A opts
+opts[--tmpdir]=/var/tmp
+opts[--pkgdir]=.
+zmodload zsh/zutil
+zparseopts -E -D -K -A opts -ocidir:- -tmpdir:- -pkgdir:- h -help
+: opts: "${(@k)opts}"
+: opts: "${(@v)opts}"
+: args: "$@"
+[[ -v opts[-h] || -v opts[--help] ]] && printhelp
+local imageref=${1:-}
+[[ -n "$imageref" ]] || printhelp "Missing 'IMAGE-REF' argument."
+[[ -d ${opts[--pkgdir]}/testdata/jar ]] || printhelp "Bad 'pkgdir' flag."
+
+# Handle creating a temporary directory for the image.
+if ! [[ -v opts[--ocidir] ]]; then
+	opts[--ocidir]=$(mktemp --directory "--tmpdir=$opts[--tmpdir]" investigate-jar.oci.XXXXXXXX)
+	cleanups+=($opts[--ocidir])
+fi
+
+# Normalize paths.
+opts[--tmpdir]=${opts[--tmpdir]:a}
+opts[--pkgdir]=${opts[--pkgdir]:a}
+opts[--ocidir]=${opts[--ocidir]:a}
+
+# Fetch the image locally.
+print Copying image ${(qq)imageref} to ${(qq)opts[--ocidir]}
+skopeo copy --quiet "docker://$imageref" "oci:$opts[--ocidir]"
+
+# Get the list of layers.
+jq -r '.manifests|map(select(.mediaType=="application/vnd.oci.image.manifest.v1+json")|.digest)|first' < "${opts[--ocidir]}/index.json" | read -r manifestjson
+local manifestpath="${opts[--ocidir]}/blobs/${manifestjson/://}"
+local layers=(${(f@)$(jq -r '.layers|map(.digest)|reverse|.[]' <$manifestpath)})
+
+# Find the jars across all the layers.
+#
+# Keeping an array and a map means when the list is presented in the next step,
+# they're in the "correct" order: newer layers first.
+local -a jarlist
+local -A jarlayer
+for l in $layers; do
+	tar taf ${opts[--ocidir]}/blobs/${l/://} |
+	grep -E '\.[jwe]ar$' |
+	while read -r n; do
+		jarlist+=($n)
+		jarlayer[$n]=$l
+	done
+done
+
+# Select a jar file.
+print
+print 'Discovered jar files:'
+local PS3="Select jar: "
+local seljar
+select file in ${(@)jarlist}; do
+	if [[ -n "$file" ]]; then
+		seljar="$file"
+		break
+	fi
+done
+local seltar=${opts[--ocidir]}/blobs/${jarlayer[$seljar]/://}
+local tgt=${opts[--pkgdir]}/testdata/jar/${seljar:t}
+print
+print Extracting ${(qq)seljar} from ${(qq)jarlayer[$seljar]} to ${(qq)tgt}
+tar -xaOf ${seltar} ${seljar} >${tgt}
+cleanups+=($tgt)
+
+# Run the "test" on the newly extracted file.
+(
+	print
+	print Running test
+	cd ${opts[--pkgdir]}
+	go test -v -run 'TestJAR$/'${seljar:t}
+)
