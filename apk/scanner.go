@@ -90,6 +90,11 @@ func (*Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.
 		}
 		r := bytes.NewBuffer(entry)
 		for line, err := r.ReadBytes('\n'); err == nil; line, err = r.ReadBytes('\n') {
+			// Every well-formed line is a one byte key, a ":", then the value.
+			// Anything shorter can't be one, so skip it.
+			if len(line) < 2 {
+				continue
+			}
 			l := string(bytes.TrimSpace(line[2:]))
 			switch line[0] {
 			case 'P':

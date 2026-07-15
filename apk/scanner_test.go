@@ -1,6 +1,8 @@
 package apk
 
 import (
+	"archive/tar"
+	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -157,5 +159,76 @@ func TestScan(t *testing.T) {
 	t.Logf("found %d packages", len(got))
 	if !cmp.Equal(want, got) {
 		t.Fatal(cmp.Diff(want, got))
+	}
+}
+
+// TestBlankLine checks that an "installed" database with a stray blank line in
+// a record doesn't crash the scanner.
+func TestBlankLine(t *testing.T) {
+	t.Parallel()
+	mod := test.Modtime(t, "scanner_test.go")
+	layerfile := test.GenerateFixture(t, `blankline.layer`, mod, blankLineSetup)
+	ctx := test.Logging(t)
+	var l claircore.Layer
+	var s Scanner
+
+	f, err := os.Open(layerfile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	if err := l.Init(ctx, &test.AnyDescription, f); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := l.Close(); err != nil {
+			t.Error(err)
+		}
+	})
+
+	got, err := s.Scan(ctx, &l)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []*claircore.Package{
+		{
+			Name:      "foo",
+			Version:   "1.0",
+			Arch:      "x86_64",
+			Kind:      types.BinaryPackage,
+			PackageDB: "lib/apk/db/installed",
+		},
+		{
+			Name:      "bar",
+			Version:   "2.0",
+			Arch:      "x86_64",
+			Kind:      types.BinaryPackage,
+			PackageDB: "lib/apk/db/installed",
+		},
+	}
+	if !cmp.Equal(want, got) {
+		t.Error(cmp.Diff(want, got))
+	}
+}
+
+// BlankLineSetup writes a layer with an "installed" database that has an extra
+// blank line between the two records.
+func blankLineSetup(t testing.TB, f *os.File) {
+	const installed = "P:foo\nV:1.0\nA:x86_64\nF:usr\n\n\nP:bar\nV:2.0\nA:x86_64\nF:usr\n"
+	w := tar.NewWriter(f)
+	defer func() {
+		if err := w.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
+	if err := w.WriteHeader(&tar.Header{
+		Name: "lib/apk/db/installed",
+		Size: int64(len(installed)),
+		Mode: 0o644,
+	}); err != nil {
+		t.Error(err)
+	}
+	if _, err := w.Write([]byte(installed)); err != nil {
+		t.Error(err)
 	}
 }
