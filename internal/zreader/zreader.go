@@ -89,9 +89,9 @@ var (
 // DetectCompression reports the compression type indicated based on the header
 // contained in the passed byte slice.
 //
-// "CmpNone" is returned if all detectors report false, but it's possible that
+// [KindNone] is returned if all detectors report false, but it's possible that
 // it's just a scheme unsupported by this package.
-func detectCompression(b []byte) Compression {
+func DetectCompression(b []byte) Compression {
 	t := make([]byte, len(b))
 	for c, d := range detectors {
 		n, l := copy(t, b), len(d.Mask)
@@ -153,7 +153,7 @@ func detect(r io.Reader) (io.ReadCloser, Compression, error) {
 	//
 	// All the return types are a little different, so they're handled in the
 	// switch arms.
-	switch c := detectCompression(b); c {
+	switch c := DetectCompression(b); c {
 	case KindGzip:
 		z, err := gzip.NewReader(br)
 		return z, c, err
