@@ -2,19 +2,25 @@ package libindex
 
 import (
 	"archive/tar"
+	"archive/zip"
+	"bytes"
+	"compress/gzip"
 	"context"
 	"crypto/sha256"
 	"fmt"
 	"io"
+	"io/fs"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path/filepath"
+	"path"
 	"runtime"
+	"slices"
 	"strconv"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/wart"
@@ -111,144 +117,198 @@ func TestFetchInvalid(t *testing.T) {
 
 func TestFetchConcurrent(t *testing.T) {
 	t.Parallel()
-	ctx := test.Logging(t)
-	descs, h := commonLayerServer(t, 25)
-	srv := httptest.NewUnstartedServer(h)
-	srv.Start()
-	for i := range descs {
-		descs[i].URI = srv.URL + descs[i].URI
-	}
-	t.Cleanup(srv.Close)
-	a := NewRemoteFetchArena(srv.Client(), t.TempDir())
-	t.Cleanup(func() {
-		if err := a.Close(ctx); err != nil {
-			t.Error(err)
+	setup := func(t *testing.T, ct int, gz bool) (*RemoteFetchArena, []claircore.LayerDescription) {
+		t.Helper()
+		stamp := test.Modtime(t, ".")
+		name := test.GenerateFixture(t, fmt.Sprintf("layers_%02d_%v.zip", ct, gz), stamp, generateTarballs(ct, gz))
+		f, err := os.Open(name)
+		if err != nil {
+			t.Fatal(err)
 		}
-	})
-
-	t.Run("OldInterface", func(t *testing.T) {
-		t.Run("Thread", func(t *testing.T) {
-			run := func(a *RemoteFetchArena, ls []claircore.LayerDescription) func(*testing.T) {
-				ps := wart.DescriptionsToLayers(ls)
-				// Leave the bottom half the same, shuffle the top half.
-				off := len(ps) / 2
-				rand.Shuffle(off, func(i, j int) {
-					i, j = i+off, j+off
-					ps[i], ps[j] = ps[j], ps[i]
-				})
-				return func(t *testing.T) {
-					t.Parallel()
-					ctx := test.Logging(t)
-					f := a.Realizer(ctx)
-					t.Cleanup(func() {
-						if err := f.Close(); err != nil {
-							t.Error(err)
-						}
-					})
-					if err := f.Realize(ctx, ps); err != nil {
-						t.Error(err)
-					}
-				}
-			}
-			for i := 0; i < runtime.GOMAXPROCS(0); i++ {
-				t.Run(strconv.Itoa(i), run(a, descs))
+		t.Cleanup(func() {
+			if err := f.Close(); err != nil {
+				t.Fatal(err)
 			}
 		})
-	})
-
-	t.Run("NewInterface", func(t *testing.T) {
-		t.Run("Thread", func(t *testing.T) {
-			run := func(a *RemoteFetchArena, descs []claircore.LayerDescription) func(*testing.T) {
-				ds := make([]claircore.LayerDescription, len(descs))
-				copy(ds, descs)
-				// Leave the bottom half the same, shuffle the top half.
-				off := len(ds) / 2
-				rand.Shuffle(off, func(i, j int) {
-					i, j = i+off, j+off
-					ds[i], ds[j] = ds[j], ds[i]
-				})
-				return func(t *testing.T) {
-					t.Parallel()
-					ctx := test.Logging(t)
-					f := a.Realizer(ctx).(*FetchProxy)
-					defer func() {
-						if err := f.Close(); err != nil {
-							t.Error(err)
-						}
-					}()
-					ls, err := f.RealizeDescriptions(ctx, ds)
-					if err != nil {
-						t.Errorf("RealizeDescriptions error: %v", err)
-					}
-					t.Logf("layers: %v", ls)
-				}
+		fi, err := f.Stat()
+		if err != nil {
+			t.Fatal(err)
+		}
+		z, err := zip.NewReader(f, fi.Size())
+		if err != nil {
+			t.Fatal(err)
+		}
+		desc := make([]claircore.LayerDescription, len(z.File))
+		reqCt := make(map[string]*uint64)
+		contentType := `application/vnd.oci.image.layer.nondistributable.v1.tar`
+		if gz {
+			contentType += `+gzip`
+		}
+		now := time.Now()
+		h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			n := path.Base(r.URL.EscapedPath())
+			ct := reqCt[n]
+			atomic.AddUint64(ct, 1)
+			w.Header().Set(`content-type`, contentType)
+			b, err := fs.ReadFile(z, n)
+			if err != nil {
+				t.Error(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
 			}
-			for i := 0; i < runtime.GOMAXPROCS(0); i++ {
-				t.Run(strconv.Itoa(i), run(a, descs))
+			http.ServeContent(w, r, n, now, bytes.NewReader(b))
+		})
+
+		srv := httptest.NewUnstartedServer(h)
+		srv.EnableHTTP2 = true
+		srv.StartTLS()
+		for i, zf := range z.File {
+			reqCt[zf.Name] = new(uint64)
+			d := &desc[i]
+			d.URI = srv.URL + "/" + zf.Name
+			d.Digest = zf.Comment
+			d.Headers = make(http.Header)
+			d.MediaType = contentType
+		}
+
+		t.Cleanup(srv.Close)
+		a := NewRemoteFetchArena(srv.Client(), t.TempDir())
+		ctx := test.Logging(t)
+		t.Cleanup(func() {
+			if err := a.Close(ctx); err != nil {
+				t.Error(err)
 			}
 		})
+		return a, desc
+	}
+	oldInterface := func(a *RemoteFetchArena, ls []claircore.LayerDescription) func(*testing.T) {
+		ps := wart.DescriptionsToLayers(ls)
+		shuffleSlice(ps)
+		return func(t *testing.T) {
+			t.Parallel()
+			ctx := test.Logging(t)
+			f := a.Realizer(ctx)
+			t.Cleanup(func() {
+				if err := f.Close(); err != nil {
+					t.Error(err)
+				}
+			})
+			if err := f.Realize(ctx, ps); err != nil {
+				t.Error(err)
+			}
+		}
+	}
+	newInterface := func(a *RemoteFetchArena, descs []claircore.LayerDescription) func(*testing.T) {
+		ds := slices.Clone(descs)
+		shuffleSlice(ds)
+		return func(t *testing.T) {
+			t.Parallel()
+			ctx := test.Logging(t)
+			f := a.Realizer(ctx).(*FetchProxy)
+			defer func() {
+				if err := f.Close(); err != nil {
+					t.Error(err)
+				}
+			}()
+			ls, err := f.RealizeDescriptions(ctx, ds)
+			if err != nil {
+				t.Errorf("RealizeDescriptions error: %v", err)
+			}
+			t.Logf("layers: %v", ls)
+		}
+	}
+
+	for i := range 2 {
+		gz := i == 1
+		n := `Uncompressed`
+		if gz {
+			n = `Compressed`
+		}
+		t.Run(n, func(t *testing.T) {
+			t.Parallel()
+			a, descs := setup(t, 25, gz)
+			t.Run("OldInterface", func(t *testing.T) {
+				for i := 0; i < runtime.GOMAXPROCS(0); i++ {
+					t.Run(strconv.Itoa(i), oldInterface(a, descs))
+				}
+			})
+
+			t.Run("NewInterface", func(t *testing.T) {
+				for i := 0; i < runtime.GOMAXPROCS(0); i++ {
+					t.Run(strconv.Itoa(i), newInterface(a, descs))
+				}
+			})
+		})
+	}
+}
+
+// Leave the bottom half the same, shuffle the top half.
+func shuffleSlice[S ~[]E, E any](s S) {
+	off := len(s) / 2
+	rand.Shuffle(off, func(i, j int) {
+		i, j = i+off, j+off
+		s[i], s[j] = s[j], s[i]
 	})
 }
 
-func commonLayerServer(t testing.TB, ct int) ([]claircore.LayerDescription, http.Handler) {
-	// TODO(hank) Cache all this? The contents are basically static.
-	t.Helper()
-	dir := t.TempDir()
-	descs := make([]claircore.LayerDescription, ct)
-	fetch := make(map[string]*uint64, ct)
-	for i := range ct {
-		n := strconv.Itoa(i)
-		f, err := os.Create(filepath.Join(dir, strconv.Itoa(i)))
-		if err != nil {
-			t.Fatal(err)
-		}
-		h := sha256.New()
-		w := tar.NewWriter(io.MultiWriter(f, h))
-		if err := w.WriteHeader(&tar.Header{
-			Name: n,
-			Size: 33,
-		}); err != nil {
-			t.Fatal(err)
-		}
-		fmt.Fprintf(w, "%032d\n", i)
+func generateTarballs(count int, compressed bool) func(testing.TB, *os.File) {
+	return func(t testing.TB, f *os.File) {
+		defer f.Close()
+		defer f.Sync()
+		t.Attr("count", strconv.Itoa(count))
+		t.Attr("compressed", strconv.FormatBool(compressed))
+		stamp := test.Modtime(t, ".")
+		z := zip.NewWriter(f)
+		defer z.Close()
 
-		if err := w.Close(); err != nil {
-			t.Fatal(err)
-		}
-		if err := f.Close(); err != nil {
-			t.Fatal(err)
-		}
-		l := &descs[i]
-		l.URI = "/" + strconv.Itoa(i)
-		fetch[l.URI] = new(uint64)
-		l.Digest = fmt.Sprintf("sha256:%x", h.Sum(nil))
-		l.Headers = make(http.Header)
-		l.MediaType = `application/vnd.oci.image.layer.nondistributable.v1.tar`
-		if err != nil {
-			t.Fatal(err)
+		var buf bytes.Buffer
+		buf.Grow(2048)
+		h := sha256.New()
+		for i := range count {
+			h.Reset()
+			buf.Reset()
+			n := fmt.Sprintf("%04d", i)
+			w := io.MultiWriter(&buf, h)
+			var gz *gzip.Writer
+			var tw *tar.Writer
+			if compressed {
+				gz = gzip.NewWriter(w)
+				tw = tar.NewWriter(gz)
+			} else {
+				tw = tar.NewWriter(w)
+			}
+
+			err := tw.WriteHeader(&tar.Header{
+				Name: n,
+				Size: 33,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			fmt.Fprintf(tw, "%032d\n", i)
+
+			if err := tw.Close(); err != nil {
+				t.Fatal(err)
+			}
+			if gz != nil {
+				if err := gz.Close(); err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			fh := &zip.FileHeader{
+				Name:               n,
+				Comment:            fmt.Sprintf("sha256:%x", h.Sum(nil)),
+				Modified:           stamp,
+				UncompressedSize64: uint64(buf.Len()),
+			}
+			zw, err := z.CreateHeader(fh)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := io.Copy(zw, &buf); err != nil {
+				t.Fatal(err)
+			}
 		}
 	}
-
-	t.Cleanup(func() {
-		// We know we're doing 2 sets of fetches.
-		limit := ct * 2 * runtime.GOMAXPROCS(0)
-		var total int
-		for _, v := range fetch {
-			total += int(*v)
-		}
-		switch {
-		case total > limit:
-			t.Errorf("more fetches than should be possible: %d > %d", total, limit)
-		case total == limit:
-			t.Errorf("prevented no fetches: %d == %d", total, limit)
-		case total < limit:
-			t.Logf("prevented %[3]d fetches: %[1]d < %d", total, limit, limit-total)
-		}
-	})
-	inner := http.FileServer(http.Dir(dir))
-	return descs, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ct := fetch[r.URL.Path]
-		atomic.AddUint64(ct, 1)
-		inner.ServeHTTP(w, r)
-	})
 }
