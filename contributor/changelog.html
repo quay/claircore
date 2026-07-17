@@ -40,7 +40,7 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-976e716e.js";
+            window.path_to_searchindex_js = "../searchindex-c94b4248.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-2d15e7bd.js"></script>
@@ -200,11 +200,8 @@ more information.</p>
 <p>The primary helper script is <code>changelog-edit</code>. It allows a user to sync down
 notes, edit an entry, or both. See the output of the <code>h</code> flag for more
 information.</p>
-<p>The other script of interest is <code>changelog-render</code>, which can be used to render
-out the changelog on demand, assuming the changelog notes have been pulled
-locally.</p>
-<p>The <code>changelog-update</code> script uses <code>changelog-render</code> to add to the
-<code>CHANGELOG.md</code> file in the repository root.</p>
+<p>To turn notes into a <code>CHANGELOG.md</code> section and open a release PR, use
+<code>go tool prepare-release</code> (see <a href="./releases.html">Releases</a>).</p>
 <h3 id="formatting"><a class="header" href="#formatting">Formatting</a></h3>
 <p>Broadly, changelog entries should be formatted like commit messages without any
 trailers. Entries are turned into list items, with the subject being the bullet
