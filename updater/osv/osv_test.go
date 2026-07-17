@@ -159,11 +159,13 @@ var test1Alias = claircore.Alias{Space: unique.Make(`TEST`), Name: `1`}
 
 var insertTestCases = []struct {
 	name          string
+	dump          string
 	ad            *advisory
 	expectedVulns []claircore.Vulnerability
 }{
 	{
 		name: "normal",
+		dump: "go",
 		ad: &advisory{
 			ID: "TEST-1",
 			Affected: []affected{
@@ -203,6 +205,7 @@ var insertTestCases = []struct {
 	},
 	{
 		name: "unfixed",
+		dump: "go",
 		ad: &advisory{
 			ID: "TEST-1",
 			Affected: []affected{
@@ -242,6 +245,7 @@ var insertTestCases = []struct {
 	},
 	{
 		name: "two_affected",
+		dump: "go",
 		ad: &advisory{
 			ID: "TEST-1",
 			Affected: []affected{
@@ -310,6 +314,7 @@ var insertTestCases = []struct {
 	},
 	{
 		name: "three_fixes",
+		dump: "go",
 		ad: &advisory{
 			ID: "TEST-1",
 			Affected: []affected{
@@ -381,6 +386,7 @@ var insertTestCases = []struct {
 	},
 	{
 		name: "two_fixes_one_unfixed",
+		dump: "go",
 		ad: &advisory{
 			ID: "TEST-1",
 			Affected: []affected{
@@ -453,6 +459,7 @@ var insertTestCases = []struct {
 	{
 		// In this situation we're just expecting the last one.
 		name: "two_consecutive_introduced_invalid",
+		dump: "go",
 		ad: &advisory{
 			ID: "TEST-1",
 			Affected: []affected{
@@ -495,6 +502,7 @@ var insertTestCases = []struct {
 	},
 	{
 		name: "ecosystem_multi",
+		dump: "pypi",
 		ad: &advisory{
 			ID: "TEST-1",
 			Affected: []affected{
@@ -544,6 +552,7 @@ var insertTestCases = []struct {
 	},
 	{
 		name: "ecosystem_unfixed",
+		dump: "pypi",
 		ad: &advisory{
 			ID:      "TEST-1",
 			Aliases: []string{"CVE-1970-0001"},
@@ -582,6 +591,7 @@ var insertTestCases = []struct {
 	},
 	{
 		name: "same package different ranges",
+		dump: "maven",
 		ad: &advisory{
 			ID: "TEST-1",
 			Affected: []affected{
@@ -634,6 +644,7 @@ var insertTestCases = []struct {
 	},
 	{
 		name: "npm_ecosystem_range_skipped",
+		dump: "npm",
 		ad: &advisory{
 			ID: "GHSA-test-npm-1",
 			Affected: []affected{
@@ -662,6 +673,7 @@ var insertTestCases = []struct {
 	},
 	{
 		name: "go_ecosystem_range_skipped",
+		dump: "go",
 		ad: &advisory{
 			ID: "GHSA-test-go-1",
 			Affected: []affected{
@@ -688,6 +700,65 @@ var insertTestCases = []struct {
 		},
 		expectedVulns: nil,
 	},
+	{
+		name: "skip_other_ecosystems",
+		dump: "pypi",
+		ad: &advisory{
+			ID: "GHSA-3644-q5cj-c5c7",
+			Affected: []affected{
+				{
+					Package: _package{
+						Ecosystem: "PyPI",
+						Name:      "langsmith",
+					},
+					Ranges: []_range{
+						{
+							Type: "ECOSYSTEM",
+							Events: []rangeEvent{
+								{
+									Introduced: "0",
+								},
+								{
+									Fixed: "0.8.0",
+								},
+							},
+						},
+					},
+				},
+				{
+					Package: _package{
+						Ecosystem: "npm",
+						Name:      "langsmith",
+					},
+					Ranges: []_range{
+						{
+							Type: "SEMVER",
+							Events: []rangeEvent{
+								{
+									Introduced: "0",
+								},
+								{
+									Fixed: "0.6.0",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		expectedVulns: []claircore.Vulnerability{
+			{
+				Name: "GHSA-3644-q5cj-c5c7",
+				Self: claircore.Alias{
+					Space: unique.Make(`GHSA`),
+					Name:  "3644-q5cj-c5c7",
+				},
+				Updater:        "test",
+				Range:          nil,
+				FixedInVersion: "fixed=0.8.0",
+			},
+		},
+	},
 }
 
 // cmpIgnore will ignore everything expect the Name, Updater, Range and FixedInVersion.
@@ -701,7 +772,7 @@ func TestInsert(t *testing.T) {
 			ecs := newECS("test")
 
 			log := slog.Default()
-			err := ecs.Insert(ctx, log, nil, "", tt.ad)
+			err := ecs.Insert(ctx, log, nil, tt.dump, tt.ad)
 			if err != nil {
 				t.Error("got error Inserting advisory", err)
 			}
@@ -859,7 +930,7 @@ func TestSeverityParsing(t *testing.T) {
 			ecs := newECS("test")
 
 			log := slog.Default()
-			err := ecs.Insert(ctx, log, nil, "", tt.a)
+			err := ecs.Insert(ctx, log, nil, "go", tt.a)
 			if err != nil {
 				t.Error("got error Inserting advisory", err)
 			}
@@ -966,7 +1037,7 @@ func TestInsertLinksAliases(t *testing.T) {
 			log := slog.Default()
 			e := newECS("osv")
 			var st stats
-			if err := (&e).Insert(ctx, log, &st, "pkg", &tt.adv); err != nil {
+			if err := (&e).Insert(ctx, log, &st, "go", &tt.adv); err != nil {
 				t.Fatalf("Insert() error: %v", err)
 			}
 			if len(e.Vulnerability) == 0 {

@@ -145,11 +145,7 @@ func (f *Factory) UpdaterSet(ctx context.Context) (s driver.UpdaterSet, err erro
 		scr := bufio.NewScanner(res.Body)
 		for scr.Scan() {
 			k := scr.Text()
-			e := strings.ToLower(k)
-			// Currently, there's some versioned ecosystems. This branch removes the versioning.
-			if idx := strings.Index(e, ":"); idx != -1 {
-				e = e[:idx]
-			}
+			e := normalizeEcosystem(k)
 			// Check for duplicates, removing the version will create some.
 			if _, ok := seen[e]; ok {
 				continue
@@ -521,6 +517,23 @@ const (
 	ecosystemRubyGems = `RubyGems`
 )
 
+// normalizeEcosystem lowercases an OSV ecosystem name and strips any colon
+// suffix (e.g. "Debian:11" → "debian", "Alpine:v3.17" → "alpine").
+//
+// This matches how OSV derives per-ecosystem dump directory names from
+// package.ecosystem values: dumps are keyed by the ecosystem prefix without
+// the ":.*" suffix, and the canonical list is ecosystems.txt. See:
+//   - https://google.github.io/osv.dev/data/#ecosystem-naming
+//   - https://osv-vulnerabilities.storage.googleapis.com/ecosystems.txt
+//   - https://ossf.github.io/osv-schema/#affectedpackage-field
+func normalizeEcosystem(e string) string {
+	e = strings.ToLower(e)
+	if idx := strings.Index(e, ":"); idx != -1 {
+		e = e[:idx]
+	}
+	return e
+}
+
 func newECS(u string) ecs {
 	return ecs{
 		Updater:   u,
@@ -634,8 +647,16 @@ func (e *ecs) Insert(ctx context.Context, log *slog.Logger, skipped *stats, name
 		proto.Aliases = append(proto.Aliases, aka)
 	}
 	proto.Links = b.String()
+	dumpEcosystem := normalizeEcosystem(name)
 	for i := range a.Affected {
 		af := &a.Affected[i]
+		// Per-ecosystem dumps still embed full multi-ecosystem advisories.
+		// Compare normalized package.ecosystem to the dump name (see
+		// normalizeEcosystem) so foreign entries (e.g. npm in a PyPI dump)
+		// are not attached to the wrong repo.
+		if normalizeEcosystem(af.Package.Ecosystem) != dumpEcosystem {
+			continue
+		}
 		for _, r := range af.Ranges {
 			vers := []*rangeVer{}
 			switch r.Type {
