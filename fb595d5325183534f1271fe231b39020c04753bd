@@ -1,0 +1,9 @@
+claircore: support "not affected" vulnerability assertions
+
+Vulnerability reports can now surface explicit "not vulnerable"
+assertions via PackageNotVulnerable. Matching records with
+Vulnerability.Invert set are kept out of PackageVulnerabilities.
+The matcher DB persists this as vuln.not_vulnerable.
+
+The Red Hat VEX updater now ingests known_not_affected product status
+as inverted vulnerabilities.
