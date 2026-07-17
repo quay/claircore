@@ -20,11 +20,19 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
-          persist-credentials: true # Needed to fetch the changelog ref.
       - name: Changelog
+        # The CHANGELOG.md section for this tag is the source of truth; it was
+        # written by prepare-release before the tag was cut.
         run: |
-          git fetch origin refs/notes/changelog:refs/notes/changelog
-          .github/scripts/changelog-render "${VERSION}" > "${GITHUB_WORKSPACE}/changelog"
+          awk -v ver="${VERSION}" '
+            index($0, "<a name=\"" ver "\"></a>") == 1 { found = 1 }
+            found && /^<a name="/ && index($0, ver) == 0 { exit }
+            found { print }
+          ' CHANGELOG.md > "${GITHUB_WORKSPACE}/changelog"
+          if ! grep -q . "${GITHUB_WORKSPACE}/changelog"; then
+            echo "::error::no CHANGELOG.md section found for ${VERSION}"
+            exit 1
+          fi
       - name: Create Release
         uses: actions/create-release@latest
         env:

@@ -22,12 +22,8 @@ The primary helper script is `changelog-edit`. It allows a user to sync down
 notes, edit an entry, or both. See the output of the `h` flag for more
 information.
 
-The other script of interest is `changelog-render`, which can be used to render
-out the changelog on demand, assuming the changelog notes have been pulled
-locally.
-
-The `changelog-update` script uses `changelog-render` to add to the
-`CHANGELOG.md` file in the repository root.
+To turn notes into a `CHANGELOG.md` section and open a release PR, use
+`go tool prepare-release` (see [Releases](./releases.md)).
 
 ### Formatting
 
