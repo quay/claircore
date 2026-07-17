@@ -1,3 +1,34 @@
+<a name="v1.5.53"></a>
+## [v1.5.53] - 2026-07-17
+[v1.5.53]: https://github.com/quay/claircore/compare/v1.5.52...v1.5.53
+
+- claircore: support "not affected" vulnerability assertions
+  <details>
+  Vulnerability reports can now surface explicit "not vulnerable"
+  assertions via PackageNotVulnerable. Matching records with
+  Vulnerability.Invert set are kept out of PackageVulnerabilities.
+  The matcher DB persists this as vuln.not_vulnerable.
+  
+  The Red Hat VEX updater now ingests known_not_affected product status
+  as inverted vulnerabilities.
+  </details>
+
+- acceptance: add the acceptance testing framework
+  <details>
+  The acceptance testing framework allows users to hook into claircore's
+  integration testing by calling acceptance.Run() and providing an
+  Auditor. A claircore Auditor is provided and it allows users to test
+  expected claircore results against real results using fixed inputs: VEX
+  data and container images.
+  </details>
+
+- postgres: add existence check to type in all cases
+  <details>
+  Having both matcher and indexer tables in the same database isn't
+  explicitly allowed or disallowed. This makes it order independent
+  anyway and avoids migration conflict errors.
+  </details>
+
 <a name="v1.5.52"></a>
 ## [v1.5.52] - 2026-03-26
 [v1.5.52]: https://github.com/quay/claircore/compare/v1.5.51...v1.5.52
