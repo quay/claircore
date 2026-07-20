@@ -1,3 +1,19 @@
+<a name="v1.5.54"></a>
+## [v1.5.54] - 2026-07-20
+[v1.5.54]: https://github.com/quay/claircore/compare/v1.5.53...v1.5.54
+
+- apk: guard against short lines in installed database
+  <details>
+  The record parser slices every line as line[2:] to get the value, which
+  assumes each line is at least a one byte key plus a ":". A line that's
+  just a newline is 1 byte, so it would panic with "slice bounds out of range
+  [2:1]".
+  
+  An installed database with a stray blank line inside a record produces
+  exactly that: the "\n\n" split leaves the extra newline at the head of
+  the next record. This patch skips lines too short to hold a key and a value.
+  </details>
+
 <a name="v1.5.53"></a>
 ## [v1.5.53] - 2026-07-17
 [v1.5.53]: https://github.com/quay/claircore/compare/v1.5.52...v1.5.53
