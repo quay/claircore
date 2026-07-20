@@ -1,0 +1,10 @@
+apk: guard against short lines in installed database
+
+The record parser slices every line as line[2:] to get the value, which
+assumes each line is at least a one byte key plus a ":". A line that's
+just a newline is 1 byte, so it would panic with "slice bounds out of range
+[2:1]".
+
+An installed database with a stray blank line inside a record produces
+exactly that: the "\n\n" split leaves the extra newline at the head of
+the next record. This patch skips lines too short to hold a key and a value.
