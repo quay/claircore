@@ -1192,15 +1192,13 @@ var acceptedTypes = map[string]bool{
 
 // CheckPURL checks if purl is something we're interested in.
 //  1. Check the purl.Type is in the acceptable types.
-//  2. Check if an advisory related to the kernel.
+//  2. Check if an advisory related to the kernel is allowed.
 //  3. Check that all RPMs are in the "redhat" namespace.
 func checkPURL(p *packageurl.PackageURL) bool {
 	if ok := acceptedTypes[p.Type]; !ok {
 		return false
 	}
-	if strings.HasPrefix(p.Name, "kernel") {
-		// We don't want to ingest kernel advisories as
-		// containers have no say in the kernel.
+	if !checkKernelPackage(p.Name) {
 		return false
 	}
 	if p.Type == packageurl.TypeRPM && p.Namespace != "redhat" {
@@ -1208,6 +1206,37 @@ func checkPURL(p *packageurl.PackageURL) bool {
 		return false
 	}
 	return true
+}
+
+// AllowedKernelPackages are kernel RPM names that may appear in containers and
+// should be ingested. Other kernel-* packages (headers, docs, debuginfo, etc.)
+// are skipped because they either do not represent a runnable kernel or are
+// commonly present in userspace images without implying kernel vulnerability.
+//
+// TODO(crozzy): Revisit (and likely remove) this allowlist once claircore
+// switches from the current VEX feed (/vex/) to the new feed (/vex-feed/). The
+// old feed puts packages like kernel-headers and kernel-doc into fixed and
+// known_affected for many CVEs; the new feed largely moves those to
+// known_not_affected (kernel-headers: zero fixed/known_affected in the archive).
+// Until that switch, the allowlist avoids flooding images that ship
+// headers/docs with kernel findings from the old feed.
+var allowedKernelPackages = []string{
+	"kernel",
+	"kernel-core",
+	"kernel-modules",
+	"kernel-modules-core",
+	"kernel-modules-extra",
+	"kernel-devel",
+}
+
+// CheckKernelPackage reports whether a package name should be ingested.
+// Non-kernel packages are always allowed. Kernel-prefixed names are allowed
+// only when present in allowedKernelPackages.
+func checkKernelPackage(name string) bool {
+	if !strings.HasPrefix(name, "kernel") {
+		return true
+	}
+	return slices.Contains(allowedKernelPackages, name)
 }
 
 func extractArch(p *packageurl.PackageURL) string {

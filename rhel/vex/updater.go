@@ -34,7 +34,7 @@ const (
 	deletionsFile                = "deletions.csv"
 	lookBackToYear               = 2015
 	repoKey                      = "rhel-cpe-repository"
-	updaterVersion               = "6"
+	updaterVersion               = "7"
 )
 
 // Factory creates an Updater to process all of the Red Hat VEX data.

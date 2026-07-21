@@ -386,7 +386,7 @@ func TestParse(t *testing.T) {
 		{
 			name:             "cve-2024-24786",
 			filenames:        []string{"testdata/cve-2024-24786.json"},
-			expectedVulns:    1828,
+			expectedVulns:    1833,
 			expectedDeleted:  0,
 			expectedAncestry: 732,
 		},
@@ -405,7 +405,7 @@ func TestParse(t *testing.T) {
 		{
 			name:            "cve-2024-24786-new-module-format",
 			filenames:       []string{"testdata/cve-2024-24786-1.json"},
-			expectedVulns:   2722,
+			expectedVulns:   2727,
 			expectedDeleted: 0,
 		},
 		{
@@ -688,6 +688,34 @@ func TestExtractPackageName(t *testing.T) {
 			}
 			if v != tc.want {
 				t.Fatalf("expected name %v but got %v", tc.want, v)
+			}
+		})
+	}
+}
+
+func TestCheckKernelPackage(t *testing.T) {
+	testcases := []struct {
+		name string
+		want bool
+	}{
+		{name: "glibc", want: true},
+		{name: "openssl-libs", want: true},
+		{name: "kernel", want: true},
+		{name: "kernel-core", want: true},
+		{name: "kernel-modules", want: true},
+		{name: "kernel-modules-core", want: true},
+		{name: "kernel-modules-extra", want: true},
+		{name: "kernel-devel", want: true},
+		{name: "kernel-headers", want: false},
+		{name: "kernel-doc", want: false},
+		{name: "kernel-debuginfo", want: false},
+		{name: "kernel-rt", want: false},
+		{name: "kernel-tools", want: false},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := checkKernelPackage(tc.name); got != tc.want {
+				t.Fatalf("checkKernelPackage(%q) = %v, want %v", tc.name, got, tc.want)
 			}
 		})
 	}
