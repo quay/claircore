@@ -25,7 +25,7 @@ import (
 // file in this package *will* cause tests to fail once. Make sure to run tests
 // twice if the Checksum tests fail.
 func TestFS(t *testing.T) {
-	var name = filepath.Join(integration.PackageCacheDir(t), `fstest.tar`)
+	name := filepath.Join(integration.PackageCacheDir(t), `fstest.tar`)
 	checktar(t, name)
 	fileset := []string{
 		"file.go",
@@ -616,5 +616,29 @@ func TestInvalidName(t *testing.T) {
 		if got, want := n, strings.Repeat("_", 100)+`bad\xfdname`; got != want {
 			t.Fatalf("unexpected name: got: %q, want: %q", got, want)
 		}
+	}
+}
+
+//go:generate sh testdata/create_paxsize.sh
+func TestPAXSize(t *testing.T) {
+	f, err := os.Open(`testdata/paxsize.tar`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+
+	segs, err := findSegments(f)
+	if err != nil {
+		t.Error(err)
+	}
+	if got, want := len(segs), 1; got != want {
+		t.Errorf("wrong number of segments: got: %d, want: %d", got, want)
+	}
+	seg := segs[0]
+	if got, want := seg.start, int64(0); got != want {
+		t.Errorf("wrong segment start: got: %d, want: %d", got, want)
+	}
+	if got, want := seg.size, int64(512+512 /*PAX header*/ +512+1024 /*"real" file*/); got != want {
+		t.Errorf("wrong segment size: got: %d, want: %d", got, want)
 	}
 }
