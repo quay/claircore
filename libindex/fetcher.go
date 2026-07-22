@@ -17,12 +17,14 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
+	semconv "go.opentelemetry.io/otel/semconv/v1.41.0"
 	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/internal/cache"
+	"github.com/quay/claircore/internal/httpreader"
 	"github.com/quay/claircore/internal/httputil"
 	"github.com/quay/claircore/internal/wart"
 	"github.com/quay/claircore/internal/zreader"
@@ -125,6 +127,43 @@ func (a *RemoteFetchArena) fetchInto(ctx context.Context, l *claircore.Layer, cl
 			span.End()
 		}()
 
+		var d details
+		d, err = a.inspect(ctx, desc)
+		if err != nil {
+			return err
+		}
+
+	HTTPReader:
+		switch { // Switch for a single case to be able to break.
+		case d.Uncompressed:
+			var opts []httpreader.Option
+			if d.ContentLength > 0 {
+				opts = append(opts, httpreader.WithSize(d.ContentLength))
+			}
+			if len(desc.Headers) != 0 {
+				opts = append(opts, httpreader.WithHeaders(desc.Headers))
+			}
+			var rd *httpreader.Reader
+			rd, err = httpreader.New(ctx, a.wc, desc.URI, opts...)
+			switch {
+			case err == nil:
+				if err = l.Init(ctx, desc, rd); err != nil {
+					return err
+				}
+				*cl = closeFunc(func() (err error) {
+					err = errors.Join(l.Close(), rd.Close())
+					return err
+				})
+				a.logger(desc).DebugContext(ctx, "using httpreader")
+				return nil
+			case errors.Is(err, errors.ErrUnsupported):
+				err = nil
+				break HTTPReader
+			default:
+				return err
+			}
+		}
+
 		// NB This is not closed on purpose. The [io.Closer] populated by this
 		// function holds the pointer until that function is cleaned up. Once
 		// nothing has a copy of this [*os.File], the runtime will run all the
@@ -135,19 +174,20 @@ func (a *RemoteFetchArena) fetchInto(ctx context.Context, l *claircore.Layer, cl
 		var spool *os.File
 		spool, err = a.files.Get(ctx, key, func(ctx context.Context, _ string) (*os.File, error) {
 			cacheHit = false
-			return a.fetchFileForCache(ctx, desc)
+			return a.fetchFileForCache(ctx, desc, d)
 		})
 		if err != nil {
 			return err
 		}
+		var f *os.File
 		// This is an owned, independent descriptor for the passed [*os.File].
-		f, err := reopen(a.root, spool)
+		f, err = reopen(a.root, spool)
 		if err != nil {
 			return err
 		}
 
 		// If this succeeds, "f" is now owned by "l"
-		if err := l.Init(ctx, desc, f); err != nil {
+		if err = l.Init(ctx, desc, f); err != nil {
 			return errors.Join(err, f.Close())
 		}
 		*cl = closeFunc(func() (err error) {
@@ -173,12 +213,105 @@ func (f closeFunc) Close() error {
 	return f()
 }
 
+// Inspect makes a request to the layer's URI and examines the response for
+// useful information.
+func (a *RemoteFetchArena) inspect(ctx context.Context, desc *claircore.LayerDescription) (d details, err error) {
+	ctx, span := tracer.Start(ctx, "RemoteFetchArena.inspect")
+	defer func() {
+		a.logger(desc).DebugContext(ctx, "inspected resource", "ok", err == nil, "details", &d)
+		span.RecordError(err)
+		span.End()
+	}()
+	span.SetStatus(codes.Error, "")
+
+	var req *http.Request
+	var res *http.Response
+	req, err = http.NewRequestWithContext(ctx, http.MethodGet, desc.URI, nil)
+	req.Header = http.Header(desc.Headers).Clone()
+	req.Header.Set(`claircore-reason`, `inspect`)
+	req.Header.Set(`range`, `bytes=0-15`)
+	if err != nil {
+		return d, fmt.Errorf("fetcher: failed to construct request: %w", err)
+	}
+	res, err = a.wc.Do(req)
+	if err != nil {
+		return d, fmt.Errorf("fetcher: request failed: %w", err)
+	}
+	err = httputil.CheckResponse(res, http.StatusOK, http.StatusPartialContent)
+	if err != nil {
+		return d, fmt.Errorf("fetcher: %w", err)
+	}
+	head := make([]byte, 16)
+	_, err = io.ReadFull(res.Body, head)
+	_ = res.Body.Close()
+	if err != nil {
+		return d, fmt.Errorf("fetcher: unexpected read: %w", err)
+	}
+
+	const (
+		ctKey = `content-type`
+		arKey = `accept-ranges`
+	)
+	ct := res.Header.Get(ctKey)
+	span.SetAttributes(
+		semconv.HTTPResponseStatusCode(res.StatusCode),
+		semconv.HTTPResponseBodySize(int(res.ContentLength)),
+		semconv.HTTPResponseHeader(ctKey, ct),
+		semconv.HTTPResponseHeader(arKey, res.Header.Get(arKey)),
+	)
+	if ct == `application/octet-stream` {
+		if zreader.DetectCompression(head) == zreader.KindNone {
+			ct = `application/x-tar`
+		}
+	}
+	switch res.StatusCode {
+	case http.StatusOK:
+		d.ContentLength = res.ContentLength
+	case http.StatusPartialContent:
+		var cr httpreader.ContentRange
+		if err := cr.Parse(res.Header.Get(`content-range`)); err == nil {
+			d.ContentLength = cr.Length
+		}
+	}
+	d.Uncompressed = ct == "application/x-tar" || strings.HasSuffix(ct, ".tar")
+	d.RangeOK = res.Header.Get(arKey) == `bytes` || res.StatusCode == http.StatusPartialContent
+
+	span.SetStatus(codes.Ok, "")
+	return d, nil
+}
+
+var _ slog.LogValuer = (*details)(nil)
+
+// Details is the useful information reported by [RemoteFetchArena.inspect].
+type details struct {
+	// The content length, if known.
+	ContentLength int64
+	// The resource reports to be known non-compressed contents.
+	Uncompressed bool
+	// The server reports supporting "bytes" via the "Accept-Ranges" header.
+	RangeOK bool
+}
+
+// LogValue implements [slog.LogValuer].
+func (d *details) LogValue() slog.Value {
+	return slog.GroupValue(
+		slog.Int64("content-length", d.ContentLength),
+		slog.Bool("uncompressed", d.Uncompressed),
+		slog.Bool("range-ok", d.RangeOK),
+	)
+}
+
+// Logger returns a [*slog.Logger] with predefined attributes.
+func (a *RemoteFetchArena) logger(desc *claircore.LayerDescription) *slog.Logger {
+	return slog.With("arena", a.root.Name(), "layer", desc.Digest, "uri", desc.URI)
+}
+
 // FetchFileForCache is the inner function used inside the [cache.Live].
 //
 // Because we know we're the only concurrent call that's dealing with this blob,
 // we can be a bit more lax.
-func (a *RemoteFetchArena) fetchFileForCache(ctx context.Context, desc *claircore.LayerDescription) (*os.File, error) {
-	log := slog.With("arena", a.root.Name(), "layer", desc.Digest, "uri", desc.URI)
+func (a *RemoteFetchArena) fetchFileForCache(ctx context.Context, desc *claircore.LayerDescription, _ details) (*os.File, error) {
+	log := a.logger(desc)
 	ctx, span := tracer.Start(ctx, "RemoteFetchArena.fetchFileForCache")
 	defer span.End()
 	span.SetStatus(codes.Error, "")
@@ -210,6 +343,7 @@ func (a *RemoteFetchArena) fetchFileForCache(ctx context.Context, desc *claircor
 		URL:        url,
 		Header:     http.Header(desc.Headers).Clone(),
 	}).WithContext(ctx)
+	req.Header.Set(`claircore-reason`, `fetch`)
 	resp, err := a.wc.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("fetcher: request failed: %w", err)
