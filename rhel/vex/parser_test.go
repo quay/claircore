@@ -380,13 +380,13 @@ func TestParse(t *testing.T) {
 		{
 			name:            "cve-2022-1705",
 			filenames:       []string{"testdata/cve-2022-1705.json"},
-			expectedVulns:   2004,
+			expectedVulns:   2009,
 			expectedDeleted: 0,
 		},
 		{
 			name:             "cve-2024-24786",
 			filenames:        []string{"testdata/cve-2024-24786.json"},
-			expectedVulns:    1828,
+			expectedVulns:    1837,
 			expectedDeleted:  0,
 			expectedAncestry: 732,
 		},
@@ -405,7 +405,7 @@ func TestParse(t *testing.T) {
 		{
 			name:            "cve-2024-24786-new-module-format",
 			filenames:       []string{"testdata/cve-2024-24786-1.json"},
-			expectedVulns:   2722,
+			expectedVulns:   2731,
 			expectedDeleted: 0,
 		},
 		{
@@ -688,6 +688,52 @@ func TestExtractPackageName(t *testing.T) {
 			}
 			if v != tc.want {
 				t.Fatalf("expected name %v but got %v", tc.want, v)
+			}
+		})
+	}
+}
+
+func TestCheckKernelPackage(t *testing.T) {
+	testcases := []struct {
+		name   string
+		ignore bool
+		want   bool
+	}{
+		{name: "glibc", want: true},
+		{name: "openssl-libs", want: true},
+		{name: "kernel", want: true},
+		{name: "kernel-core", want: true},
+		{name: "kernel-modules", want: true},
+		{name: "kernel-modules-core", want: true},
+		{name: "kernel-modules-extra", want: true},
+		{name: "kernel-uki-virt", want: true},
+		{name: "kernel-uki-virt-addons", want: true},
+		{name: "kernel-rt", want: true},
+		{name: "kernel-rt-core", want: true},
+		{name: "kernel-rt-modules", want: true},
+		{name: "kernel-64k", want: true},
+		{name: "kernel-64k-core", want: true},
+		{name: "kernel-rt-64k", want: true},
+		{name: "kernel-rt-64k-modules-extra", want: true},
+		{name: "kernel-devel", want: false},
+		{name: "kernel-headers", want: false},
+		{name: "kernel-doc", want: false},
+		{name: "kernel-debuginfo", want: false},
+		{name: "kernel-tools", want: false},
+		{name: "kernel", ignore: true, want: false},
+		{name: "kernel-core", ignore: true, want: false},
+		{name: "kernel-rt", ignore: true, want: false},
+		{name: "glibc", ignore: true, want: true},
+	}
+	for _, tc := range testcases {
+		name := tc.name
+		if tc.ignore {
+			name += "/ignore"
+		}
+		t.Run(name, func(t *testing.T) {
+			c := &creator{ignoreKernelPackages: tc.ignore}
+			if got := c.checkKernelPackage(tc.name); got != tc.want {
+				t.Fatalf("checkKernelPackage(%q) = %v, want %v", tc.name, got, tc.want)
 			}
 		})
 	}
