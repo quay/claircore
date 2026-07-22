@@ -2,6 +2,7 @@ package libindex
 
 import (
 	"archive/tar"
+	"compress/gzip"
 	"context"
 	"crypto/sha256"
 	"fmt"
@@ -203,7 +204,8 @@ func commonLayerServer(t testing.TB, ct int) ([]claircore.LayerDescription, http
 			t.Fatal(err)
 		}
 		h := sha256.New()
-		w := tar.NewWriter(io.MultiWriter(f, h))
+		zw := gzip.NewWriter(io.MultiWriter(f, h))
+		w := tar.NewWriter(zw)
 		if err := w.WriteHeader(&tar.Header{
 			Name: n,
 			Size: 33,
@@ -215,6 +217,9 @@ func commonLayerServer(t testing.TB, ct int) ([]claircore.LayerDescription, http
 		if err := w.Close(); err != nil {
 			t.Fatal(err)
 		}
+		if err := zw.Close(); err != nil {
+			t.Fatal(err)
+		}
 		if err := f.Close(); err != nil {
 			t.Fatal(err)
 		}
@@ -223,15 +228,16 @@ func commonLayerServer(t testing.TB, ct int) ([]claircore.LayerDescription, http
 		fetch[l.URI] = new(uint64)
 		l.Digest = fmt.Sprintf("sha256:%x", h.Sum(nil))
 		l.Headers = make(http.Header)
-		l.MediaType = `application/vnd.oci.image.layer.nondistributable.v1.tar`
+		l.MediaType = `application/vnd.oci.image.layer.nondistributable.v1.tar+gzip`
 		if err != nil {
 			t.Fatal(err)
 		}
 	}
 
 	t.Cleanup(func() {
-		// We know we're doing 2 sets of fetches.
-		limit := ct * 2 * runtime.GOMAXPROCS(0)
+		// We know we're doing 2 sets of fetches, and uncompressed layers can
+		// use a probe request plus a follow-up range-backed fetch.
+		limit := ct * 2 * 2 * runtime.GOMAXPROCS(0)
 		var total int
 		for _, v := range fetch {
 			total += int(*v)
