@@ -2,13 +2,13 @@
 -- affected entries to the dump's ecosystem. Multi-ecosystem advisories
 -- previously produced cross-ecosystem vulnerability rows (e.g. npm ranges
 -- under osv/pypi).
-DELETE FROM update_operation
+--
+-- Clear fingerprints rather than deleting update_operations so matching keeps
+-- serving the existing (possibly imperfect) set until the next successful
+-- update, instead of a vulns → empty → vulns gap. Stale cross-ecosystem rows
+-- drop off once the new update_operation becomes latest; GC removes them later.
+UPDATE update_operation
+SET
+  fingerprint = ''
 WHERE
   updater LIKE 'osv/%';
-
-DELETE FROM vuln v1 USING vuln v2
-LEFT JOIN uo_vuln uvl ON v2.id = uvl.vuln
-WHERE
-  uvl.vuln IS NULL
-  AND v2.updater LIKE 'osv/%'
-  AND v1.id = v2.id;
