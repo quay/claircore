@@ -72,7 +72,7 @@ func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 
 	var compressedURL *url.URL
 	// Is this the first run or has the updater changed since the last run?
-	processArchive := fp.changesEtag == "" || fp.version != updaterVersion
+	processArchive := fp.changesEtag == "" || fp.version != u.fingerprintVersion()
 	if processArchive {
 		// We need to go after the full corpus of vulnerabilities
 		// First we target the archive_latest.txt file.
@@ -178,7 +178,7 @@ func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 			"entries written", entriesWritten)
 	}
 
-	fp.version = updaterVersion
+	fp.version = u.fingerprintVersion()
 	fp.requestTime = time.Now()
 	success = true
 	return f, driver.Fingerprint(fp.String()), nil

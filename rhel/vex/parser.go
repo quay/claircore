@@ -44,7 +44,11 @@ func (u *Updater) DeltaParse(ctx context.Context, contents io.ReadCloser) ([]*cl
 	out := map[string][]*claircore.Vulnerability{}
 	deleted := []string{}
 
-	p := NewParser()
+	var opts []ParserOption
+	if u.ignoreKernelPackages {
+		opts = append(opts, WithIgnoreKernelPackages())
+	}
+	p := NewParser(opts...)
 	r := bufio.NewReader(snappy.NewReader(contents))
 	sz := 0
 	for b, err := r.ReadBytes('\n'); err == nil; b, err = r.ReadBytes('\n') {
@@ -82,13 +86,14 @@ func (u *Updater) DeltaParse(ctx context.Context, contents io.ReadCloser) ([]*cl
 // Reusing the same Parser instance across multiple documents is more efficient than
 // creating a new one for each document.
 type Parser struct {
-	product          *productIndex
-	rc               *repoCache
-	score            *scoreIndex
-	threatImpact     *threatImpactIndex
-	remediation      *remediationIndex
-	defaultComponent *defaultComponentIndex
-	productIDInLinks bool
+	product              *productIndex
+	rc                   *repoCache
+	score                *scoreIndex
+	threatImpact         *threatImpactIndex
+	remediation          *remediationIndex
+	defaultComponent     *defaultComponentIndex
+	productIDInLinks     bool
+	ignoreKernelPackages bool
 }
 
 // ParserOption is a functional option for [Parser].
@@ -101,6 +106,12 @@ type ParserOption func(*Parser)
 // to correlate matcher results back to expected fixture entries.
 func WithProductIDInLinks() ParserOption {
 	return func(p *Parser) { p.productIDInLinks = true }
+}
+
+// WithIgnoreKernelPackages makes the parser skip all packages whose name has a
+// "kernel" prefix, including allowlisted ones. See [FactoryConfig.IgnoreKernelPackages].
+func WithIgnoreKernelPackages() ParserOption {
+	return func(p *Parser) { p.ignoreKernelPackages = true }
 }
 
 // NewParser creates a new Parser with initialised caches.
@@ -304,33 +315,35 @@ func (p *Parser) creator(name string, doc *csaf.CSAF) *creator {
 		}
 	}
 	return &creator{
-		docName:          name,
-		docLink:          selfLink,
-		c:                doc,
-		product:          p.product,
-		rc:               p.rc,
-		score:            p.score,
-		threatImpact:     p.threatImpact,
-		remediation:      p.remediation,
-		defaultComponent: p.defaultComponent,
-		skip:             make(map[string]skipReason),
-		productIDInLinks: p.productIDInLinks,
+		docName:              name,
+		docLink:              selfLink,
+		c:                    doc,
+		product:              p.product,
+		rc:                   p.rc,
+		score:                p.score,
+		threatImpact:         p.threatImpact,
+		remediation:          p.remediation,
+		defaultComponent:     p.defaultComponent,
+		skip:                 make(map[string]skipReason),
+		productIDInLinks:     p.productIDInLinks,
+		ignoreKernelPackages: p.ignoreKernelPackages,
 	}
 }
 
 // Creator attempts to lessen the memory burden when creating vulnerability objects
 // by caching objects that are used multiple times during processing.
 type creator struct {
-	docName, docLink string
-	skip             map[string]skipReason
-	c                *csaf.CSAF
-	product          *productIndex
-	rc               *repoCache
-	score            *scoreIndex
-	threatImpact     *threatImpactIndex
-	remediation      *remediationIndex
-	defaultComponent *defaultComponentIndex
-	productIDInLinks bool
+	docName, docLink     string
+	skip                 map[string]skipReason
+	c                    *csaf.CSAF
+	product              *productIndex
+	rc                   *repoCache
+	score                *scoreIndex
+	threatImpact         *threatImpactIndex
+	remediation          *remediationIndex
+	defaultComponent     *defaultComponentIndex
+	productIDInLinks     bool
+	ignoreKernelPackages bool
 }
 
 // SkipReason records the reason a "product_id" is going to be skipped for the
@@ -479,7 +492,7 @@ func (c *creator) Status(ctx context.Context, v *csaf.Vulnerability, which strin
 				}
 				continue
 			}
-			if !checkPURL(purl) { // Not a usable purl.
+			if !c.checkPURL(purl) { // Not a usable purl.
 				continue
 			}
 
@@ -1194,14 +1207,14 @@ var acceptedTypes = map[string]bool{
 //  1. Check the purl.Type is in the acceptable types.
 //  2. Check if an advisory related to the kernel is allowed.
 //  3. Check that all RPMs are in the "redhat" namespace.
-func checkPURL(p *packageurl.PackageURL) bool {
-	if ok := acceptedTypes[p.Type]; !ok {
+func (c *creator) checkPURL(purl *packageurl.PackageURL) bool {
+	if ok := acceptedTypes[purl.Type]; !ok {
 		return false
 	}
-	if !checkKernelPackage(p.Name) {
+	if !c.checkKernelPackage(purl.Name) {
 		return false
 	}
-	if p.Type == packageurl.TypeRPM && p.Namespace != "redhat" {
+	if purl.Type == packageurl.TypeRPM && purl.Namespace != "redhat" {
 		// Not Red Hat rpm content.
 		return false
 	}
@@ -1220,6 +1233,9 @@ func checkPURL(p *packageurl.PackageURL) bool {
 // known_not_affected (kernel-headers: zero fixed/known_affected in the archive).
 // Until that switch, the allowlist avoids flooding images that ship
 // headers/docs with kernel findings from the old feed.
+//
+// Operators who need the historical skip-all-kernel behaviour can set
+// ignore_kernel_packages on the rhel-vex updater config.
 var allowedKernelPackages = []string{
 	"kernel",
 	"kernel-core",
@@ -1230,11 +1246,15 @@ var allowedKernelPackages = []string{
 }
 
 // CheckKernelPackage reports whether a package name should be ingested.
-// Non-kernel packages are always allowed. Kernel-prefixed names are allowed
-// only when present in allowedKernelPackages.
-func checkKernelPackage(name string) bool {
+// Non-kernel packages are always allowed. When IgnoreKernelPackages is set,
+// all kernel-prefixed names are rejected. Otherwise kernel-prefixed names are
+// allowed only when present in AllowedKernelPackages.
+func (c *creator) checkKernelPackage(name string) bool {
 	if !strings.HasPrefix(name, "kernel") {
 		return true
+	}
+	if c.ignoreKernelPackages {
+		return false
 	}
 	return slices.Contains(allowedKernelPackages, name)
 }

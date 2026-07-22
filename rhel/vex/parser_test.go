@@ -695,8 +695,9 @@ func TestExtractPackageName(t *testing.T) {
 
 func TestCheckKernelPackage(t *testing.T) {
 	testcases := []struct {
-		name string
-		want bool
+		name   string
+		ignore bool
+		want   bool
 	}{
 		{name: "glibc", want: true},
 		{name: "openssl-libs", want: true},
@@ -711,10 +712,18 @@ func TestCheckKernelPackage(t *testing.T) {
 		{name: "kernel-debuginfo", want: false},
 		{name: "kernel-rt", want: false},
 		{name: "kernel-tools", want: false},
+		{name: "kernel", ignore: true, want: false},
+		{name: "kernel-core", ignore: true, want: false},
+		{name: "glibc", ignore: true, want: true},
 	}
 	for _, tc := range testcases {
-		t.Run(tc.name, func(t *testing.T) {
-			if got := checkKernelPackage(tc.name); got != tc.want {
+		name := tc.name
+		if tc.ignore {
+			name += "/ignore"
+		}
+		t.Run(name, func(t *testing.T) {
+			c := &creator{ignoreKernelPackages: tc.ignore}
+			if got := c.checkKernelPackage(tc.name); got != tc.want {
 				t.Fatalf("checkKernelPackage(%q) = %v, want %v", tc.name, got, tc.want)
 			}
 		})
