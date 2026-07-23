@@ -19,7 +19,7 @@ require (
 	github.com/quay/goval-parser v0.8.8
 	github.com/regclient/regclient v0.11.5
 	github.com/spdx/tools-golang v0.5.7
-	github.com/ulikunitz/xz v0.5.15
+	github.com/ulikunitz/xz v0.5.16
 	go.opentelemetry.io/otel v1.44.0
 	go.opentelemetry.io/otel/metric v1.44.0
 	go.opentelemetry.io/otel/trace v1.44.0
