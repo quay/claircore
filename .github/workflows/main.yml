@@ -42,7 +42,7 @@ jobs:
       - name: Setup Go
         id: 'setupgo'
         if: ${{ !cancelled() && steps.checkout.conclusion == 'success' }}
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           go-version-file: ./go.mod
       - name: Go Tidy
@@ -99,7 +99,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         if: steps.previous.outputs.cache-hit != 'true'
         with:
           go-version: ${{ matrix.go }}
