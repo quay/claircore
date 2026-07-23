@@ -34,7 +34,7 @@ const (
 	deletionsFile                = "deletions.csv"
 	lookBackToYear               = 2015
 	repoKey                      = "rhel-cpe-repository"
-	updaterVersion               = "6"
+	updaterVersion               = "7"
 )
 
 // Factory creates an Updater to process all of the Red Hat VEX data.
@@ -44,6 +44,7 @@ type Factory struct {
 	c                     *http.Client
 	base                  *url.URL
 	compressedFileTimeout time.Duration
+	ignoreKernelPackages  bool
 }
 
 // UpdaterSet constructs one Updater
@@ -53,6 +54,7 @@ func (f *Factory) UpdaterSet(_ context.Context) (driver.UpdaterSet, error) {
 		url:                   f.base,
 		client:                f.c,
 		compressedFileTimeout: f.compressedFileTimeout,
+		ignoreKernelPackages:  f.ignoreKernelPackages,
 	}
 	err := us.Add(u)
 	if err != nil {
@@ -72,6 +74,13 @@ type FactoryConfig struct {
 	URL string `json:"url" yaml:"url"`
 	// CompressedFileTimeout sets the timeout for downloading the compressed VEX file.
 	CompressedFileTimeout claircore.Duration `json:"compressed_file_timeout" yaml:"compressed_file_timeout"`
+	// IgnoreKernelPackages skips all RPM names with a "kernel" prefix, including
+	// the allowlisted packages that may appear in containers (kernel, kernel-core,
+	// etc.). This restores the historical skip-all-kernel behaviour and is intended
+	// as a last-resort opt-out when the extra vulnerability rows are unacceptable.
+	//
+	// Defaults to false. Toggling this forces a full archive re-ingest.
+	IgnoreKernelPackages bool `json:"ignore_kernel_packages" yaml:"ignore_kernel_packages"`
 }
 
 // Configure implements driver.Configurable
@@ -98,9 +107,11 @@ func (f *Factory) Configure(ctx context.Context, cf driver.ConfigUnmarshaler, c 
 	if cfg.CompressedFileTimeout != 0 {
 		f.compressedFileTimeout = time.Duration(cfg.CompressedFileTimeout)
 	}
+	f.ignoreKernelPackages = cfg.IgnoreKernelPackages
 	slog.InfoContext(ctx, "vex factory configured",
 		"base_url", f.base.String(),
-		"compressed_file_timeout", f.compressedFileTimeout)
+		"compressed_file_timeout", f.compressedFileTimeout,
+		"ignore_kernel_packages", f.ignoreKernelPackages)
 	return nil
 }
 
@@ -110,6 +121,7 @@ type Updater struct {
 	url                   *url.URL
 	client                *http.Client
 	compressedFileTimeout time.Duration
+	ignoreKernelPackages  bool
 }
 
 // fingerprint is used to track the state of the changes.csv and deletions.csv endpoints.
@@ -161,6 +173,8 @@ func (u *Updater) Name() string {
 type UpdaterConfig struct {
 	// URL overrides any discovered URL for the JSON file.
 	URL string `json:"url" yaml:"url"`
+	// IgnoreKernelPackages is documented on [FactoryConfig].
+	IgnoreKernelPackages bool `json:"ignore_kernel_packages" yaml:"ignore_kernel_packages"`
 }
 
 // Configure implements driver.Configurable.
@@ -178,8 +192,21 @@ func (u *Updater) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *
 		return err
 	}
 	u.url = url
-	slog.InfoContext(ctx, "configured url", "updater", u.Name())
+	u.ignoreKernelPackages = cfg.IgnoreKernelPackages
+	slog.InfoContext(ctx, "configured url",
+		"updater", u.Name(),
+		"ignore_kernel_packages", u.ignoreKernelPackages)
 
 	u.client = c
 	return nil
+}
+
+// FingerprintVersion returns the updater version encoded in a fingerprint.
+func (u *Updater) fingerprintVersion() string {
+	if u.ignoreKernelPackages {
+		// IgnoreKernelPackages is included so toggling that setting forces a full
+		// archive re-fetch and re-parse.
+		return updaterVersion + "+ignore_kernel"
+	}
+	return updaterVersion
 }
