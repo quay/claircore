@@ -1,9 +1,9 @@
-package nodejs
+package language
 
 import (
 	"context"
-	"github.com/quay/claircore"
 
+	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
 )
 
@@ -21,10 +21,9 @@ func (c *coalescer) Coalesce(_ context.Context, ls []*indexer.LayerArtifacts) (*
 		Packages:     map[string]*claircore.Package{},
 		Repositories: map[string]*claircore.Repository{},
 	}
-
 	for _, l := range ls {
-		// If we didn't find at least one npm repo in this layer
-		// no point in searching for packages.
+		// If we didn't find at least one repo in this layer,
+		// there's no point in searching for packages.
 		if len(l.Repos) == 0 {
 			continue
 		}
