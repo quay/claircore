@@ -88,7 +88,7 @@ jobs:
           context: etc
           tags: |
             quay.io/${{ env.QUAY_ORG }}/${{ env.QUAY_REPO }}:${{ matrix.go }}
-      - uses: redhat-actions/podman-login@v1
+      - uses: redhat-actions/podman-login@v2
         if: env.BUILD_IMAGE == 1
         with:
           registry: quay.io
