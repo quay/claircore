@@ -18,6 +18,7 @@ import (
 	"sync"
 	"unique"
 
+	"github.com/google/cel-go/cel"
 	"github.com/klauspost/compress/snappy"
 	"github.com/package-url/packageurl-go"
 
@@ -44,11 +45,7 @@ func (u *Updater) DeltaParse(ctx context.Context, contents io.ReadCloser) ([]*cl
 	out := map[string][]*claircore.Vulnerability{}
 	deleted := []string{}
 
-	var opts []ParserOption
-	if u.ignoreKernelPackages {
-		opts = append(opts, WithIgnoreKernelPackages())
-	}
-	p := NewParser(opts...)
+	p := NewParser(u.parserOpts()...)
 	r := bufio.NewReader(snappy.NewReader(contents))
 	sz := 0
 	for b, err := r.ReadBytes('\n'); err == nil; b, err = r.ReadBytes('\n') {
@@ -94,6 +91,7 @@ type Parser struct {
 	defaultComponent     *defaultComponentIndex
 	productIDInLinks     bool
 	ignoreKernelPackages bool
+	fixedInCEL           cel.Program
 }
 
 // ParserOption is a functional option for [Parser].
@@ -112,6 +110,16 @@ func WithProductIDInLinks() ParserOption {
 // "kernel" prefix, including allowlisted ones. See [FactoryConfig.IgnoreKernelPackages].
 func WithIgnoreKernelPackages() ParserOption {
 	return func(p *Parser) { p.ignoreKernelPackages = true }
+}
+
+// WithFixedInVersionCEL compiles expr and installs it as the FixedInVersion
+// rewrite program. See [FactoryConfig.FixedInVersionCEL] for the CEL variables.
+func WithFixedInVersionCEL(expr string) (ParserOption, error) {
+	prog, err := CompileFixedInVersionCEL(expr)
+	if err != nil {
+		return nil, err
+	}
+	return func(p *Parser) { p.fixedInCEL = prog }, nil
 }
 
 // NewParser creates a new Parser with initialised caches.
@@ -327,6 +335,7 @@ func (p *Parser) creator(name string, doc *csaf.CSAF) *creator {
 		skip:                 make(map[string]skipReason),
 		productIDInLinks:     p.productIDInLinks,
 		ignoreKernelPackages: p.ignoreKernelPackages,
+		fixedInCEL:           p.fixedInCEL,
 	}
 }
 
@@ -344,6 +353,7 @@ type creator struct {
 	defaultComponent     *defaultComponentIndex
 	productIDInLinks     bool
 	ignoreKernelPackages bool
+	fixedInCEL           cel.Program
 }
 
 // SkipReason records the reason a "product_id" is going to be skipped for the
@@ -553,12 +563,16 @@ func (s *status) PackageName() (string, error) {
 	return extractPackageName(s.PURL)
 }
 
-// FixedInVersion reports the "fixed in" version and any error encountered while
-// trying to determine it.
+// FixedInVersion reports the "fixed in" version for p, applying any configured
+// CEL rewrite on the creator.
 //
 // May be an empty string even if the returned [error] is nil.
-func (s *status) FixedInVersion() (string, error) {
-	return extractFixedInVersion(s.PURL)
+func (c *creator) FixedInVersion(p *packageurl.PackageURL) (string, error) {
+	v, err := extractFixedInVersion(p)
+	if err != nil || c.fixedInCEL == nil {
+		return v, err
+	}
+	return EvalFixedInVersionCEL(c.fixedInCEL, p, v)
 }
 
 // Module reports the module name and any error encountered while trying to
@@ -868,7 +882,7 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v *csaf.Vulnerabilit
 		key := st.Key()
 		vuln, created := lookup(key)
 		if created {
-			fixedIn, err := st.FixedInVersion()
+			fixedIn, err := c.FixedInVersion(st.PURL)
 			if err != nil {
 				log.WarnContext(ctx, "bad purl", "reason", err, "purl", st.PURL, "missing", "FixedInVersion")
 				continue
@@ -1147,6 +1161,8 @@ func componentPURLToModuleName(p *packageurl.PackageURL) (string, error) {
 //   - TypeOCI: return the tag qualifier.
 //   - TypeRPM: check for an epoch qualifier and prepend it to the purl.Version.
 //     If no epoch qualifier, default to 0.
+//
+// Embedders may rewrite the result via [FactoryConfig.FixedInVersionCEL].
 func extractFixedInVersion(p *packageurl.PackageURL) (string, error) {
 	switch p.Type {
 	case packageurl.TypeOCI:

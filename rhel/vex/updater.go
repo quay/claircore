@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/cel-go/cel"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 )
@@ -45,6 +47,8 @@ type Factory struct {
 	base                  *url.URL
 	compressedFileTimeout time.Duration
 	ignoreKernelPackages  bool
+	fixedInCEL            cel.Program
+	fixedInCELDigest      string
 }
 
 // UpdaterSet constructs one Updater
@@ -55,6 +59,8 @@ func (f *Factory) UpdaterSet(_ context.Context) (driver.UpdaterSet, error) {
 		client:                f.c,
 		compressedFileTimeout: f.compressedFileTimeout,
 		ignoreKernelPackages:  f.ignoreKernelPackages,
+		fixedInCEL:            f.fixedInCEL,
+		fixedInCELDigest:      f.fixedInCELDigest,
 	}
 	err := us.Add(u)
 	if err != nil {
@@ -81,6 +87,18 @@ type FactoryConfig struct {
 	//
 	// Defaults to false. Toggling this forces a full archive re-ingest.
 	IgnoreKernelPackages bool `json:"ignore_kernel_packages" yaml:"ignore_kernel_packages"`
+	// FixedInVersionCEL is a CEL expression that must evaluate to a string and may
+	// rewrite the stock FixedInVersion extracted from a PURL. Empty means stock
+	// extraction only. Production expressions are defined by embedders.
+	// Changing this value forces a full archive re-ingest.
+	//
+	// Configured on the Factory and copied to the Updater by [Factory.UpdaterSet].
+	//
+	// Available variables: type, namespace, name, version, qualifiers, fixed_in.
+	// The CEL strings and bindings extensions are enabled (for example
+	// startsWith, substring, split, cel.bind). Use [CompileFixedInVersionCEL]
+	// and [EvalFixedInVersionCEL] to enable testing of expressions on client side.
+	FixedInVersionCEL string `json:"fixed_in_version_cel" yaml:"fixed_in_version_cel"`
 }
 
 // Configure implements driver.Configurable
@@ -108,10 +126,16 @@ func (f *Factory) Configure(ctx context.Context, cf driver.ConfigUnmarshaler, c 
 		f.compressedFileTimeout = time.Duration(cfg.CompressedFileTimeout)
 	}
 	f.ignoreKernelPackages = cfg.IgnoreKernelPackages
+	f.fixedInCEL, err = CompileFixedInVersionCEL(cfg.FixedInVersionCEL)
+	if err != nil {
+		return err
+	}
+	f.fixedInCELDigest = celExprFingerprintDigest(cfg.FixedInVersionCEL)
 	slog.InfoContext(ctx, "vex factory configured",
 		"base_url", f.base.String(),
 		"compressed_file_timeout", f.compressedFileTimeout,
-		"ignore_kernel_packages", f.ignoreKernelPackages)
+		"ignore_kernel_packages", f.ignoreKernelPackages,
+		"fixed_in_version_cel", f.fixedInCEL != nil)
 	return nil
 }
 
@@ -122,6 +146,36 @@ type Updater struct {
 	client                *http.Client
 	compressedFileTimeout time.Duration
 	ignoreKernelPackages  bool
+	fixedInCEL            cel.Program
+	fixedInCELDigest      string
+}
+
+// FingerprintVersion returns the updater version encoded in a fingerprint.
+// Special cases that affect the data ingestion are encoded in the version.
+func (u *Updater) fingerprintVersion() string {
+	v := updaterVersion
+	if u.ignoreKernelPackages {
+		// IgnoreKernelPackages is included so toggling that setting forces a full
+		// archive re-fetch and re-parse.
+		v += "+ignore_kernel"
+	}
+	if u.fixedInCELDigest != "" {
+		v += "+cel:" + u.fixedInCELDigest
+	}
+	return v
+}
+
+// ParserOpts returns [ParserOption] values reflecting the updater configuration.
+func (u *Updater) parserOpts() []ParserOption {
+	var opts []ParserOption
+	if u.ignoreKernelPackages {
+		opts = append(opts, WithIgnoreKernelPackages())
+	}
+	if u.fixedInCEL != nil {
+		prog := u.fixedInCEL
+		opts = append(opts, func(p *Parser) { p.fixedInCEL = prog })
+	}
+	return opts
 }
 
 // fingerprint is used to track the state of the changes.csv and deletions.csv endpoints.
@@ -199,14 +253,4 @@ func (u *Updater) Configure(ctx context.Context, f driver.ConfigUnmarshaler, c *
 
 	u.client = c
 	return nil
-}
-
-// FingerprintVersion returns the updater version encoded in a fingerprint.
-func (u *Updater) fingerprintVersion() string {
-	if u.ignoreKernelPackages {
-		// IgnoreKernelPackages is included so toggling that setting forces a full
-		// archive re-fetch and re-parse.
-		return updaterVersion + "+ignore_kernel"
-	}
-	return updaterVersion
 }
