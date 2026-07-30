@@ -78,7 +78,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y qemu-user-static
       - name: Build
-        uses: redhat-actions/buildah-build@v2
+        uses: redhat-actions/buildah-build@v3
         if: env.BUILD_IMAGE == 1
         with:
           platforms: linux/amd64,linux/arm64,linux/ppc64le,linux/s390x
