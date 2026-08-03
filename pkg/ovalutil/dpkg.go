@@ -64,6 +64,11 @@ func DpkgDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulns
 			//
 			// thus we *should* only need to care about a single dpkginfo_object and optionally a state object providing the package's fixed-in version.
 
+			if len(objRefs) == 0 {
+				stats.Obj++
+				continue
+			}
+
 			objRef := objRefs[0].ObjectRef
 			object, err := dpkgObjectLookup(root, objRef)
 			switch {
