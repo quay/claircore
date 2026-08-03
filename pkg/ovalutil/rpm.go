@@ -89,6 +89,11 @@ func RPMDefsToVulns(ctx context.Context, root *oval.Root, protoVulns ProtoVulnsF
 			//
 			// thus we *should* only need to care about a single rpminfo_object and optionally a state object providing the package's fixed-in version.
 
+			if len(objRefs) == 0 {
+				slog.DebugContext(ctx, "test has no object reference, moving to next criterion", "test_ref", criterion.TestRef)
+				continue
+			}
+
 			objRef := objRefs[0].ObjectRef
 			object, err := rpmObjectLookup(root, objRef)
 			switch {
