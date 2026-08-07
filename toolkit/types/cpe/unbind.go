@@ -3,6 +3,7 @@ package cpe
 import (
 	"fmt"
 	"strings"
+	"unicode"
 )
 
 const (
@@ -154,20 +155,38 @@ var valueURI = strings.NewReplacer(
 
 // UnbindFS attempts to unbind a string as CPE 2.3 formatted string into a WFN.
 func UnbindFS(s string) (WFN, error) {
-	r := WFN{}
+	wfn := WFN{}
 	if !strings.HasPrefix(s, cpe23Prefix) {
-		return r, fmt.Errorf("cpe: malformed CPE formatted string: bad prefix")
+		return wfn, fmt.Errorf("cpe: malformed CPE formatted string: bad prefix")
 	}
-	fs := splitFS(s)
-	if l := len(fs); l != 13 {
-		return r, fmt.Errorf("cpe: malformed CPE formatted string: bad components: %d != 13", l)
-	}
-	fs = fs[2:13] // Skip the first two segments, "cpe" and "2.3".
+	s = s[len(cpe23Prefix):]
 	var b strings.Builder
-	for i, c := range fs {
-		r.Attr[i].unbindFS(&b, c)
+	a := 0
+	prev, esc := 0, false
+	for i, r := range s {
+		switch {
+		case r >= unicode.MaxASCII:
+			return wfn, fmt.Errorf("cpe: malformed CPE formatted string: invalid character %q @ %d", r, i)
+		case r == '\\':
+			esc = true
+			continue
+		case r == ':':
+			if esc {
+				break
+			}
+			wfn.Attr[a].unbindFS(&b, s[prev:i])
+			a++
+			if a == NumAttr {
+				return wfn, fmt.Errorf("cpe: malformed CPE formatted string: bad components: >13")
+			}
+			prev = i + 1
+		default:
+		}
+		esc = false
 	}
-	return r, r.Valid()
+	wfn.Attr[a].unbindFS(&b, s[prev:])
+
+	return wfn, wfn.Valid()
 }
 
 // UnbindFS undoes the FS binding and assigns it to v.
@@ -185,34 +204,14 @@ func (v *Value) unbindFS(b *strings.Builder, s string) {
 	}
 }
 
-// SplitFS splits a string in to unquoted-colon separated segments.
-func splitFS(s string) []string {
-	var fs []string
-	prev, esc := 0, false
-	for i, r := range s {
-		switch r {
-		case '\\':
-			esc = true
-			continue
-		case ':':
-			if esc {
-				break
-			}
-			fs = append(fs, s[prev:i])
-			prev = i + 1
-		default:
-		}
-		esc = false
-	}
-	fs = append(fs, s[prev:])
-	return fs
-}
-
 // UnbindFSValue does what it says on the tin.
 //
 // Caller provides scratch space for the return construction via the passed
 // strings.Builder.
 func unbindFSValue(b *strings.Builder, s string) string {
+	if !strings.ContainsFunc(s, reserved) {
+		return s
+	}
 	b.Reset()
 	esc := false
 	for _, r := range s {
@@ -221,14 +220,14 @@ func unbindFSValue(b *strings.Builder, s string) string {
 		switch {
 		case r == '\\':
 			esc = true
-			b.WriteRune('\\')
+			b.WriteByte('\\')
 			continue
 		case r == '*' || r == '?':
 			fallthrough
 		case esc || !reserved(r):
 			b.WriteRune(r)
 		default:
-			b.WriteRune('\\')
+			b.WriteByte('\\')
 			b.WriteRune(r)
 		}
 		esc = false
