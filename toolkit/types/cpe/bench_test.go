@@ -11,23 +11,6 @@ const (
 	cpeEscapeFS = `cpe:2.3:a:hp:insight_diagnostics:7.4.0.1570:-:*:*:online:win2003:x64:*`
 )
 
-func BenchmarkUnbindFS(b *testing.B) {
-	inner := func(in string) func(*testing.B) {
-		return func(b *testing.B) {
-			b.ReportAllocs()
-			for b.Loop() {
-				out, err := UnbindFS(in)
-				if err != nil {
-					b.Error(err)
-				}
-				_ = out
-			}
-		}
-	}
-	b.Run("Simple", inner(cpeFS))
-	b.Run("Escape", inner(cpeEscapeFS))
-}
-
 func BenchmarkUnmarshalFS(b *testing.B) {
 	inner := func(in string) func(*testing.B) {
 		return func(b *testing.B) {

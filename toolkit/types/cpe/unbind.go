@@ -3,7 +3,6 @@ package cpe
 import (
 	"fmt"
 	"strings"
-	"unicode"
 )
 
 const (
@@ -18,7 +17,8 @@ func Unbind(s string) (WFN, error) {
 	case strings.HasPrefix(s, cpe22Prefix):
 		return UnbindURI(s)
 	case strings.HasPrefix(s, cpe23Prefix):
-		return UnbindFS(s)
+		var wfn WFN
+		return wfn, wfn.UnmarshalFS(s)
 	default:
 	}
 	return WFN{}, fmt.Errorf("cpe: string does not appear to be a bound WFN: %q", s)
@@ -154,83 +154,10 @@ var valueURI = strings.NewReplacer(
 )
 
 // UnbindFS attempts to unbind a string as CPE 2.3 formatted string into a WFN.
-func UnbindFS(s string) (WFN, error) {
-	wfn := WFN{}
-	if !strings.HasPrefix(s, cpe23Prefix) {
-		return wfn, fmt.Errorf("cpe: malformed CPE formatted string: bad prefix")
-	}
-	s = s[len(cpe23Prefix):]
-	var b strings.Builder
-	a := 0
-	prev, esc := 0, false
-	for i, r := range s {
-		switch {
-		case r >= unicode.MaxASCII:
-			return wfn, fmt.Errorf("cpe: malformed CPE formatted string: invalid character %q @ %d", r, i)
-		case r == '\\':
-			esc = true
-			continue
-		case r == ':':
-			if esc {
-				break
-			}
-			wfn.Attr[a].unbindFS(&b, s[prev:i])
-			a++
-			if a == NumAttr {
-				return wfn, fmt.Errorf("cpe: malformed CPE formatted string: bad components: >13")
-			}
-			prev = i + 1
-		default:
-		}
-		esc = false
-	}
-	wfn.Attr[a].unbindFS(&b, s[prev:])
-
-	return wfn, wfn.Valid()
-}
-
-// UnbindFS undoes the FS binding and assigns it to v.
-func (v *Value) unbindFS(b *strings.Builder, s string) {
-	switch s {
-	case ``:
-		v.Kind = ValueUnset
-	case `-`:
-		v.Kind = ValueNA
-	case `*`:
-		v.Kind = ValueAny
-	default:
-		v.Kind = ValueSet
-		v.V = unbindFSValue(b, s)
-	}
-}
-
-// UnbindFSValue does what it says on the tin.
 //
-// Caller provides scratch space for the return construction via the passed
-// strings.Builder.
-func unbindFSValue(b *strings.Builder, s string) string {
-	if !strings.ContainsFunc(s, reserved) {
-		return s
-	}
-	b.Reset()
-	esc := false
-	for _, r := range s {
-		// We need to re-escape any reserved characters that aren't
-		// special.
-		switch {
-		case r == '\\':
-			esc = true
-			b.WriteByte('\\')
-			continue
-		case r == '*' || r == '?':
-			fallthrough
-		case esc || !reserved(r):
-			b.WriteRune(r)
-		default:
-			b.WriteByte('\\')
-			b.WriteRune(r)
-		}
-		esc = false
-	}
-	return b.String()
+// Deprecated: Use [WFN.UnmarshalFS].
+//
+//go:fix inline
+func UnbindFS(s string) (wfn WFN, err error) {
+	return wfn, wfn.UnmarshalFS(s)
 }

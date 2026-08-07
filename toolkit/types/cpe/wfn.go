@@ -165,8 +165,7 @@ type WFN struct {
 
 // Valid reports an error if a WFN is not, in fact, well-formed.
 //
-// Functions returning a WFN call this before returning, but if a WFN is
-// constructed in code, the user should check it via this method.
+// If a WFN is constructed in code, the user should check it via this method.
 func (w WFN) Valid() error {
 	unset := 0
 	for i := range NumAttr {
