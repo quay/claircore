@@ -27,3 +27,19 @@ func BenchmarkUnbindFS(b *testing.B) {
 	b.Run("Simple", inner(cpeFS))
 	b.Run("Escape", inner(cpeEscapeFS))
 }
+
+func BenchmarkUnmarshalFS(b *testing.B) {
+	inner := func(in string) func(*testing.B) {
+		return func(b *testing.B) {
+			b.ReportAllocs()
+			for b.Loop() {
+				var out WFN
+				if err := out.UnmarshalFS(in); err != nil {
+					b.Error(err)
+				}
+			}
+		}
+	}
+	b.Run("Simple", inner(cpeFS))
+	b.Run("Escape", inner(cpeEscapeFS))
+}
