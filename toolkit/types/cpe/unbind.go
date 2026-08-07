@@ -18,7 +18,8 @@ func Unbind(s string) (WFN, error) {
 	case strings.HasPrefix(s, cpe22Prefix):
 		return UnbindURI(s)
 	case strings.HasPrefix(s, cpe23Prefix):
-		return UnbindFS(s)
+		var wfn WFN
+		return wfn, wfn.UnmarshalFS(s)
 	default:
 	}
 	return WFN{}, fmt.Errorf("cpe: string does not appear to be a bound WFN: %q", s)
@@ -154,6 +155,8 @@ var valueURI = strings.NewReplacer(
 )
 
 // UnbindFS attempts to unbind a string as CPE 2.3 formatted string into a WFN.
+//
+// Deprecated: Use [WFN.UnmarshalFS].
 func UnbindFS(s string) (WFN, error) {
 	wfn := WFN{}
 	if !strings.HasPrefix(s, cpe23Prefix) {
