@@ -13,6 +13,7 @@ func ConnectRegisterTypes(ctx context.Context, c *pgx.Conn) error {
 	for _, f := range []func(context.Context, *pgx.Conn) error{
 		registerVersionRange,
 		registerPackageKind,
+		registerUniqueString,
 	} {
 		if err := f(ctx, c); err != nil {
 			return err
