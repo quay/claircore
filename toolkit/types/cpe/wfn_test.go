@@ -433,7 +433,6 @@ func TestDictionary(t *testing.T) {
 		}
 		wfn, err := Unbind(in)
 		if err != nil {
-			t.Fatal(err)
 			t.Fatalf("%v: %#q", err, in)
 		}
 		if got, want := wfn.BindFS(), s.Text(); got != want {
