@@ -1,9 +1,7 @@
 package postgres
 
 import (
-	"bytes"
 	"context"
-	"crypto/md5"
 	"fmt"
 	"log/slog"
 	"strconv"
@@ -18,7 +16,6 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore"
-	"github.com/quay/claircore/internal/wart"
 	"github.com/quay/claircore/libvuln/driver"
 )
 
@@ -445,49 +442,6 @@ func skipVulnerability(v *claircore.Vulnerability) bool {
 	// TODO(hank) Check the vulnerability aliases. This requires *all* the
 	// updaters being touched.
 	return v.Package == nil || v.Package.Name == ""
-}
-
-// Md5Vuln creates an md5 hash from the members of the passed-in Vulnerability,
-// giving us a stable, context-free identifier for this revision of the
-// Vulnerability.
-func md5Vuln(v *claircore.Vulnerability) (string, []byte) {
-	var b bytes.Buffer
-	b.WriteString(v.Name)
-	b.WriteString(v.Description)
-	b.WriteString(v.Issued.String())
-	b.WriteString(v.Links)
-	b.WriteString(v.Severity)
-	if v.Package != nil {
-		b.WriteString(v.Package.Name)
-		b.WriteString(v.Package.Version)
-		b.WriteString(v.Package.Module)
-		b.WriteString(v.Package.Arch)
-		b.WriteString(wart.StringFromPackageKind(v.Package.Kind))
-	}
-	if v.Dist != nil {
-		b.WriteString(v.Dist.DID)
-		b.WriteString(v.Dist.Name)
-		b.WriteString(v.Dist.Version)
-		b.WriteString(v.Dist.VersionCodeName)
-		b.WriteString(v.Dist.VersionID)
-		b.WriteString(v.Dist.Arch)
-		b.WriteString(v.Dist.CPE.BindFS())
-		b.WriteString(v.Dist.PrettyName)
-	}
-	if v.Repo != nil {
-		b.WriteString(v.Repo.Name)
-		b.WriteString(v.Repo.Key)
-		b.WriteString(v.Repo.URI)
-	}
-	b.WriteString(v.ArchOperation.String())
-	b.WriteString(v.FixedInVersion)
-	if k, l, u := rangefmt(v.Range); k != nil {
-		b.WriteString(*k)
-		b.WriteString(l)
-		b.WriteString(u)
-	}
-	s := md5.Sum(b.Bytes())
-	return "md5", s[:]
 }
 
 func rangefmt(r *claircore.Range) (kind *string, lower, upper string) {
