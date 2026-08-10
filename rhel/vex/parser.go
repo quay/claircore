@@ -920,6 +920,12 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v *csaf.Vulnerabilit
 		if err != nil {
 			return nil, err
 		}
+		// Skip source RPMs: they share a Key with no-arch binary siblings when
+		// arch is ignored, and would otherwise set Arch=src (no binary match)
+		// or, if ignored in extractArch, emit duplicate binary vulns.
+		if isSourceArch(st.PURL) {
+			continue
+		}
 
 		key := st.Key()
 		vuln, created := lookup(key)
@@ -1030,6 +1036,9 @@ func (c *creator) knownNotAffectedVulnerabilities(ctx context.Context, v *csaf.V
 	for st, err := range c.Status(ctx, v, csaf.ProductStatusKnownNotAffected) {
 		if err != nil {
 			return nil, err
+		}
+		if isSourceArch(st.PURL) {
+			continue
 		}
 
 		key := st.Key()
@@ -1347,4 +1356,12 @@ func extractArch(p *packageurl.PackageURL) string {
 	default:
 		return arch
 	}
+}
+
+// IsSourceArch reports whether the pURL names a source RPM (arch=src/nosrc).
+// Those are not installable binary arches and must not create or reshape
+// binary-package vulnerabilities.
+func isSourceArch(p *packageurl.PackageURL) bool {
+	arch, _ := qualifier(p, "arch")
+	return arch == "src" || arch == "nosrc"
 }
