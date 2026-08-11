@@ -84,3 +84,25 @@ func BenchmarkMD5Vuln(b *testing.B) {
 	b.Run("Baseline", run(md5Baseline))
 	b.Run("Current", run(md5Vuln))
 }
+
+func BenchmarkVulnerabilityHash(b *testing.B) {
+	vs := test.GenUniqueVulnerabilities(1, "test")
+	b.Run("MD5", func(b *testing.B) {
+		b.ReportAllocs()
+		for b.Loop() {
+			kind, hash := md5Vuln(vs[0])
+			if kind != hashMD5 || len(hash) != 16 {
+				b.Fatal("???")
+			}
+		}
+	})
+	b.Run("XXH64", func(b *testing.B) {
+		b.ReportAllocs()
+		for b.Loop() {
+			kind, hash := xxhVuln(vs[0])
+			if kind != hashXXH64 || len(hash) != 8 {
+				b.Fatal("???")
+			}
+		}
+	})
+}

@@ -7,6 +7,8 @@ import (
 	"sync"
 	"unsafe"
 
+	"github.com/cespare/xxhash/v2"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/internal/wart"
 )
@@ -65,10 +67,14 @@ func writeString(w io.Writer, s string) (int, error) {
 }
 
 const (
-	hashMD5 = `md5`
+	hashMD5   = `md5`
+	hashXXH64 = `xxh64`
 )
 
-var md5Pool sync.Pool
+var (
+	md5Pool sync.Pool
+	xxhPool sync.Pool
+)
 
 func getMD5() hash.Hash {
 	if v := md5Pool.Get(); v != nil {
@@ -90,4 +96,23 @@ func md5Vuln(v *claircore.Vulnerability) (string, []byte) {
 	defer putMD5(h)
 	doHash(h, v)
 	return hashMD5, h.Sum(nil)
+}
+
+func getXXH() *xxhash.Digest {
+	if v := xxhPool.Get(); v != nil {
+		return v.(*xxhash.Digest)
+	}
+	return xxhash.New()
+}
+
+func putXXH(d *xxhash.Digest) {
+	d.Reset()
+	xxhPool.Put(d)
+}
+
+func xxhVuln(v *claircore.Vulnerability) (string, []byte) {
+	h := getXXH()
+	defer putXXH(h)
+	doHash(h, v)
+	return hashXXH64, h.Sum(nil)
 }
