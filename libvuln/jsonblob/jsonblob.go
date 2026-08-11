@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"iter"
 	"os"
 	"sort"
 	"sync"
@@ -45,7 +46,17 @@ type Store struct {
 }
 
 // Load reads in all the records serialized in the provided [io.Reader].
+//
+// Deprecated: This just calls [NewLoader].
+//
+//go:fix inline
 func Load(ctx context.Context, r io.Reader) (*Loader, error) {
+	return NewLoader(ctx, r)
+}
+
+// NewLoader returns a loader configured to read the records serialized in the
+// provided [io.Reader].
+func NewLoader(ctx context.Context, r io.Reader) (*Loader, error) {
 	l := Loader{
 		dec: json.NewDecoder(r),
 		cur: uuid.Nil,
@@ -53,21 +64,25 @@ func Load(ctx context.Context, r io.Reader) (*Loader, error) {
 	return &l, nil
 }
 
-// Loader is an iterator that returns a series of [Entry].
+// Loader is an iterator over serialized records.
 //
-// Users should call [*Loader.Next] until it reports false, then check for
-// errors via [*Loader.Err].
+// Users should consume the [Loader.All] iterator, then check for errors via
+// [Loader.Err].
 type Loader struct {
-	err error
-	e   *Entry
+	err     error
+	dec     *json.Decoder
+	started bool
 
-	dec  *json.Decoder
+	// Used in the deprecated [Loader.Next]+[Loader.Entry] flow.
+	e    *Entry
 	next *Entry
 	de   diskEntry
 	cur  uuid.UUID
 }
 
 // Next reports whether there's an [Entry] to be processed.
+//
+// Deprecated: Use the [Loader.All] iterator.
 func (l *Loader) Next() bool {
 	if l.err != nil {
 		return false
@@ -113,8 +128,76 @@ func (l *Loader) Next() bool {
 }
 
 // Entry returns the latest loaded [Entry].
+//
+// Deprecated: Use the [Loader.All] iterator.
 func (l *Loader) Entry() *Entry {
 	return l.e
+}
+
+// All returns an iterator-of-iterators yielding all entries in the Loader.
+//
+// The inner iterator returns zero or one of the two values. If both pointers
+// are nil, the caller must check [Loader.Err].
+func (l *Loader) All() iter.Seq2[*Entry, iter.Seq2[*claircore.Vulnerability, *driver.EnrichmentRecord]] {
+	// These are shared across the two iterators:
+	cur := uuid.Nil
+	var de diskEntry
+
+	// The inner iterator decodes every entry after the first one, stopping
+	// iteration and passing control to the outer iterator when the Ref
+	// changes.
+	inner := func(yield func(*claircore.Vulnerability, *driver.EnrichmentRecord) bool) {
+		for ; l.err == nil && cur == de.Ref; l.err = l.dec.Decode(&de) {
+			var v *claircore.Vulnerability
+			var e *driver.EnrichmentRecord
+			switch de.Kind {
+			case driver.VulnerabilityKind:
+				v = getVulnerability()
+				l.err = json.Unmarshal(de.Vuln.buf, v)
+			case driver.EnrichmentKind:
+				e = getEnrichment()
+				l.err = json.Unmarshal(de.Enrichment.buf, e)
+			}
+			if l.err != nil {
+				yield(nil, nil)
+				return
+			}
+			if !yield(v, e) {
+				return
+			}
+		}
+		if l.err != nil && !errors.Is(l.err, io.EOF) {
+			yield(nil, nil)
+		}
+	}
+	// Outer reads the first entry and handles when the Ref changes.
+	outer := func(yield func(*Entry, iter.Seq2[*claircore.Vulnerability, *driver.EnrichmentRecord]) bool) {
+		if l.started {
+			l.err = errors.Join(l.err, fmt.Errorf("attempted to re-use a Loader"))
+			return
+		}
+		l.started = true
+
+		for l.err = l.dec.Decode(&de); l.err == nil; {
+			ent := &Entry{
+				CommonEntry: CommonEntry{
+					Updater:     de.Updater,
+					Fingerprint: de.Fingerprint,
+					Date:        de.Date,
+					Kind:        de.Kind,
+				},
+			}
+			cur = de.Ref
+			if !yield(ent, inner) {
+				return
+			}
+			for ; l.err == nil && cur == de.Ref; l.err = l.dec.Decode(&de) {
+				// Skip entries if the inner iterator was not fully consumed.
+			}
+		}
+	}
+
+	return outer
 }
 
 // Err is the latest encountered error.
@@ -148,10 +231,10 @@ func (s *Store) Store(w io.Writer) error {
 			shim := newBufShim(f)
 			defer shim.Close()
 			for range ct {
+				e.Kind = k
 				dent := diskEntry{
 					CommonEntry: e,
 					Ref:         id,
-					Kind:        k,
 				}
 				switch k {
 				case driver.EnrichmentKind:
@@ -237,6 +320,7 @@ type CommonEntry struct {
 	Updater     string
 	Fingerprint driver.Fingerprint
 	Date        time.Time
+	Kind        driver.UpdateKind
 }
 
 // DiskEntry is a single vulnerability or enrichment. It's made from unpacking an
@@ -249,7 +333,6 @@ type diskEntry struct {
 	Ref        uuid.UUID
 	Vuln       *bufShim `json:",omitempty"`
 	Enrichment *bufShim `json:",omitempty"`
-	Kind       driver.UpdateKind
 }
 
 // Entries returns a map containing all the Entries stored by calls to
@@ -477,6 +560,7 @@ func getBuf() []byte {
 	}
 	return b
 }
+
 func putBuf(b []byte) {
 	bufPool.Put(b)
 }
