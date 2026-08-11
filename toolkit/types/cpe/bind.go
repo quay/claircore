@@ -3,41 +3,22 @@ package cpe
 import (
 	"encoding"
 	"errors"
-	"strings"
 	"unsafe"
 )
 
 // BindFS returns the WFN bound as CPE 2.3 formatted string.
+//
+// Deprecated: use [WFN.AppendText].
+//
+//go:fix inline
 func (w WFN) BindFS() string {
-	b := strings.Builder{}
-	b.WriteString(`cpe:2.3`)
-	for i := range NumAttr {
-		b.WriteByte(':')
-		w.Attr[i].bind(&b)
+	b := make([]byte, 0, 64)
+	b, err := w.AppendText(b)
+	if err != nil {
+		panic(err)
 	}
-	return b.String()
+	return string(b)
 }
-
-// Bind binds the value to a formatted string, writing it into the provided
-// strings.Builder.
-func (v *Value) bind(b *strings.Builder) (err error) {
-	switch v.Kind {
-	case ValueUnset, ValueAny:
-		_, err = b.WriteRune('*')
-	case ValueNA:
-		_, err = b.WriteRune('-')
-	case ValueSet:
-		_, err = valueString.WriteString(b, v.V)
-	}
-	return err
-}
-
-// ValueString does FS character replacing.
-var valueString = strings.NewReplacer(
-	`\.`, `.`,
-	`\-`, `-`,
-	`\_`, `_`,
-)
 
 var (
 	_ encoding.TextAppender = (*Value)(nil)

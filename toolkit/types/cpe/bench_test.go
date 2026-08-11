@@ -27,24 +27,6 @@ func BenchmarkUnmarshalFS(b *testing.B) {
 	b.Run("Escape", inner(cpeEscapeFS))
 }
 
-func BenchmarkBindFS(b *testing.B) {
-	inner := func(in string) func(*testing.B) {
-		return func(b *testing.B) {
-			var out WFN
-			if err := out.UnmarshalFS(in); err != nil {
-				b.Fatal(err)
-			}
-			b.ReportAllocs()
-			for b.Loop() {
-				s := out.BindFS()
-				_ = s
-			}
-		}
-	}
-	b.Run("Simple", inner(cpeFS))
-	b.Run("Escape", inner(cpeEscapeFS))
-}
-
 func BenchmarkAppendText(b *testing.B) {
 	inner := func(in string) func(*testing.B) {
 		return func(b *testing.B) {
