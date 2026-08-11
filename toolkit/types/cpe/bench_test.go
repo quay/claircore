@@ -61,3 +61,24 @@ func BenchmarkBindFS(b *testing.B) {
 	b.Run("Simple", inner(cpeFS))
 	b.Run("Escape", inner(cpeEscapeFS))
 }
+
+func BenchmarkAppendText(b *testing.B) {
+	inner := func(in string) func(*testing.B) {
+		return func(b *testing.B) {
+			var out WFN
+			if err := out.UnmarshalFS(in); err != nil {
+				b.Fatal(err)
+			}
+			b.ReportAllocs()
+			// Is it cheating to make this properly sized? Dunno.
+			tmp := make([]byte, 0, len(in))
+			for b.Loop() {
+				if _, err := out.AppendText(tmp); err != nil {
+					b.Error(err)
+				}
+			}
+		}
+	}
+	b.Run("Simple", inner(cpeFS))
+	b.Run("Escape", inner(cpeEscapeFS))
+}
