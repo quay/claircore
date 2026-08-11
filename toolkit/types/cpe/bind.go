@@ -8,6 +8,8 @@ import (
 )
 
 // BindFS returns the WFN bound as CPE 2.3 formatted string.
+//
+// Deprecated: use [WFN.AppendText].
 func (w WFN) BindFS() string {
 	b := strings.Builder{}
 	b.WriteString(`cpe:2.3`)
