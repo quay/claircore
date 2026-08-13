@@ -49,4 +49,22 @@ func TestV2(t *testing.T) {
 			})
 		}
 	})
+
+	t.Run("Append", func(t *testing.T) {
+		const (
+			in   = "AV:N/AC:L/Au:N/C:N/I:N/A:C"
+			want = "append=" + in
+		)
+		v, err := ParseV2(in)
+		if err != nil {
+			t.Fatal(err)
+		}
+		b, err := v.AppendText([]byte("append="))
+		if err != nil {
+			t.Error(err)
+		}
+		if got := string(b); got != want {
+			t.Errorf("got: %q, want: %q", got, want)
+		}
+	})
 }

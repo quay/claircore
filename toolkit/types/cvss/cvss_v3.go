@@ -13,6 +13,7 @@ type V3 struct {
 }
 
 var (
+	_ encoding.TextAppender    = (*V3)(nil)
 	_ encoding.TextMarshaler   = (*V3)(nil)
 	_ encoding.TextUnmarshaler = (*V3)(nil)
 	_ fmt.Stringer             = (*V3)(nil)
@@ -25,7 +26,22 @@ func ParseV3(s string) (v V3, err error) {
 
 // MarshalText implements [encoding.TextMarshaler].
 func (v *V3) MarshalText() (text []byte, err error) {
-	return marshalVector[V3Metric](fmt.Sprintf("CVSS:3.%d", v.ver), v)
+	b := make([]byte, 0, marshalSize)
+	return v.AppendText(b)
+}
+
+// AppendText implements [encoding.TextAppender].
+func (v *V3) AppendText(b []byte) ([]byte, error) {
+	switch v.ver {
+	case 0:
+		return appendVector(b, `CVSS:3.0`, v)
+	case 1:
+		return appendVector(b, `CVSS:3.1`, v)
+	default:
+		// For anything else, fall back to constructing a string on the fly.
+	}
+	pre := fmt.Sprintf(`CVSS:3.%d`, v.ver)
+	return appendVector(b, pre, v)
 }
 
 // String implements [fmt.Stringer].
@@ -39,13 +55,13 @@ func (v *V3) String() string {
 	return string(t)
 }
 
-// GetString implements [Vector].
-func (v *V3) getString(m V3Metric) (string, error) {
-	b := v.mv[int(m)]
-	if b == 0 {
-		return "", errValueUnset
+// AppendValue implements [Vector].
+func (v *V3) appendValue(b []byte, m V3Metric) ([]byte, error) {
+	c := v.mv[int(m)]
+	if c == 0 {
+		return b, errValueUnset
 	}
-	return string(b), nil
+	return append(b, c), nil
 }
 
 // GetScore implements [Vector].
@@ -58,20 +74,6 @@ func (v *V3) getScore(m V3Metric) byte {
 		b = 'X'
 	}
 	return b
-}
-
-func (v *V3) groups(yield func([2]int) bool) {
-	var b [2]int
-	b[0], b[1] = int(V3AttackVector), int(V3Availability)+1
-	if !yield(b) {
-		return
-	}
-	b[0], b[1] = int(V3ExploitMaturity), int(V3ReportConfidence)+1
-	if !yield(b) {
-		return
-	}
-	b[0], b[1] = int(V3ReportConfidence), int(V3ModifiedAvailability)+1
-	yield(b)
 }
 
 // Get implements [Vector].
@@ -106,6 +108,16 @@ func (v *V3) Environmental() (ok bool) {
 		}
 	}
 	return false
+}
+
+func (*V3) meta() *vectorMetadata { return &v3VectorMeta }
+
+var v3VectorMeta = vectorMetadata{
+	Groups: []int{
+		int(V3AttackVector), int(V3Availability) + 1,
+		int(V3ExploitMaturity), int(V3ReportConfidence) + 1,
+		int(V3ReportConfidence), int(V3ModifiedAvailability) + 1,
+	},
 }
 
 //go:generate go tool stringer -type=V3Metric,v3Valid -linecomment
@@ -146,6 +158,15 @@ func (m V3Metric) validValues() string { return v3Valid(m).String() }
 
 // Num implements [Metric].
 func (V3Metric) num() int { return numV3Metrics }
+
+// AppendText implements [encoding.TextAppender].
+func (m V3Metric) AppendText(b []byte) ([]byte, error) {
+	idx := int(m) - 0
+	if m < 0 || idx >= len(_V3Metric_index)-1 {
+		return nil, fmt.Errorf("invalid V3Metric: %d", idx)
+	}
+	return append(b, _V3Metric_name[_V3Metric_index[idx]:_V3Metric_index[idx+1]]...), nil
+}
 
 // V3value is the internal-only type that's used to look up valid values for a
 // given [V3Metric].

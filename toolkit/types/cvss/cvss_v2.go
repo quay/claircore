@@ -12,6 +12,7 @@ type V2 struct {
 }
 
 var (
+	_ encoding.TextAppender    = (*V2)(nil)
 	_ encoding.TextMarshaler   = (*V2)(nil)
 	_ encoding.TextUnmarshaler = (*V2)(nil)
 	_ fmt.Stringer             = (*V2)(nil)
@@ -24,8 +25,15 @@ func ParseV2(s string) (v V2, err error) {
 
 // MarshalText implements [encoding.TextMarshaler].
 func (v *V2) MarshalText() (text []byte, err error) {
+	b := make([]byte, 0, marshalSize)
 	// CVSSv2 vectors are not prefixed.
-	return marshalVector[V2Metric]("", v)
+	return appendVector(b, ``, v)
+}
+
+// AppendText implements [encoding.TextAppender].
+func (v *V2) AppendText(b []byte) ([]byte, error) {
+	// CVSSv2 vectors are not prefixed.
+	return appendVector(b, ``, v)
 }
 
 func v2Unparse(m V2Metric, c byte) string {
@@ -76,6 +84,54 @@ func v2Unparse(m V2Metric, c byte) string {
 	return string(c)
 }
 
+func v2UnparseAppend(b []byte, m V2Metric, c byte) []byte {
+	switch m {
+	case V2Exploitability:
+		switch c {
+		case 'P':
+			return append(b, "POC"...)
+		case 'N':
+			return append(b, "ND"...)
+		}
+	case V2RemediationLevel:
+		switch c {
+		case 'O':
+			return append(b, "OF"...)
+		case 'T':
+			return append(b, "TF"...)
+		case 'N':
+			return append(b, "ND"...)
+		}
+	case V2ReportConfidence:
+		switch c {
+		case 'U':
+			return append(b, "UC"...)
+		case 'u':
+			return append(b, "UR"...)
+		case 'N':
+			return append(b, "ND"...)
+		}
+	case V2CollateralDamagePotential:
+		switch c {
+		case 'M':
+			return append(b, "MH"...)
+		case 'l':
+			return append(b, "LM"...)
+		case 'X':
+			return append(b, "ND"...)
+		}
+	case V2TargetDistribution:
+		if c == 'X' {
+			return append(b, "ND"...)
+		}
+	case V2ConfidentialityRequirement, V2IntegrityRequirement, V2AvailabilityRequirement:
+		if c == 'N' {
+			return append(b, "ND"...)
+		}
+	}
+	return append(b, c)
+}
+
 // UnparseV2Value unpacks the Value v into the specification's abbreviation.
 //
 // Invalid values are returned as-is.
@@ -94,16 +150,16 @@ func (v *V2) String() string {
 	return string(t)
 }
 
-// GetString implements [Vector].
-func (v *V2) getString(m V2Metric) (string, error) {
-	b := v.mv[int(m)]
+// AppendValue implements [Vector].
+func (v *V2) appendValue(b []byte, m V2Metric) ([]byte, error) {
+	c := v.mv[int(m)]
 	switch {
-	case b == 0 && m <= V2Availability:
-		return "", errValueUnset
-	case b == 0:
-		return "ND", errValueUnset
+	case c == 0 && m <= V2Availability:
+		return b, errValueUnset
+	case c == 0:
+		return append(b, "ND"...), errValueDefault
 	}
-	return v2Unparse(m, b), nil
+	return v2UnparseAppend(b, m, c), nil
 }
 
 // GetScore implements [Vector].
@@ -122,20 +178,6 @@ func (v *V2) getScore(m V2Metric) byte {
 		}
 	}
 	return b
-}
-
-func (v *V2) groups(yield func([2]int) bool) {
-	var b [2]int
-	b[0], b[1] = int(V2AccessVector), int(V2Availability)+1
-	if !yield(b) {
-		return
-	}
-	b[0], b[1] = int(V2Exploitability), int(V2ReportConfidence)+1
-	if !yield(b) {
-		return
-	}
-	b[0], b[1] = int(V2CollateralDamagePotential), int(V2AvailabilityRequirement)+1
-	yield(b)
 }
 
 // Get implements [Vector].
@@ -172,6 +214,16 @@ func (v *V2) Environmental() (ok bool) {
 	return ok
 }
 
+func (*V2) meta() *vectorMetadata { return &v2VectorMeta }
+
+var v2VectorMeta = vectorMetadata{
+	Groups: []int{
+		int(V2AccessVector), int(V2Availability) + 1,
+		int(V2Exploitability), int(V2ReportConfidence) + 1,
+		int(V2CollateralDamagePotential), int(V2AvailabilityRequirement) + 1,
+	},
+}
+
 //go:generate go tool stringer -type=V2Metric,v2Valid -linecomment
 
 // V2Metric is a metric in a v2 vector.
@@ -202,6 +254,15 @@ func (m V2Metric) validValues() string { return v2Valid(m).String() }
 
 // Num implements [Metric].
 func (V2Metric) num() int { return numV2Metrics }
+
+// AppendText implements [encoding.TextAppender].
+func (m V2Metric) AppendText(b []byte) ([]byte, error) {
+	idx := int(m) - 0
+	if m < 0 || idx >= len(_V2Metric_index)-1 {
+		return nil, fmt.Errorf("invalid V2Metric: %d", idx)
+	}
+	return append(b, _V2Metric_name[_V2Metric_index[idx]:_V2Metric_index[idx+1]]...), nil
+}
 
 type v2Valid int
 

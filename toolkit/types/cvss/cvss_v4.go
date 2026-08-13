@@ -12,6 +12,7 @@ type V4 struct {
 }
 
 var (
+	_ encoding.TextAppender    = (*V4)(nil)
 	_ encoding.TextMarshaler   = (*V4)(nil)
 	_ encoding.TextUnmarshaler = (*V4)(nil)
 	_ fmt.Stringer             = (*V4)(nil)
@@ -24,7 +25,13 @@ func ParseV4(s string) (v V4, err error) {
 
 // MarshalText implements [encoding.TextMarshaler].
 func (v *V4) MarshalText() (text []byte, err error) {
-	return marshalVector[V4Metric](`CVSS:4.0`, v)
+	b := make([]byte, 0, marshalSize)
+	return appendVector(b, `CVSS:4.0`, v)
+}
+
+// AppendText implements [encoding.TextAppender].
+func (v *V4) AppendText(b []byte) ([]byte, error) {
+	return appendVector(b, `CVSS:4.0`, v)
 }
 
 // String implements [fmt.Stringer].
@@ -38,25 +45,25 @@ func (v *V4) String() string {
 	return string(t)
 }
 
-// GetString implements [Vector].
-func (v *V4) getString(m V4Metric) (string, error) {
-	b := v.mv[int(m)]
-	if b == 0 {
-		return "", errValueUnset
+// AppendValue implements [Vector].
+func (v *V4) appendValue(b []byte, m V4Metric) ([]byte, error) {
+	c := v.mv[int(m)]
+	if c == 0 {
+		return b, errValueUnset
 	}
 	if m == V4ProviderUrgency {
-		switch b {
+		switch c {
 		case 'C':
-			return "Clear", nil
+			return append(b, "Clear"...), nil
 		case 'G':
-			return "Green", nil
+			return append(b, "Green"...), nil
 		case 'A':
-			return "Amber", nil
+			return append(b, "Amber"...), nil
 		case 'R':
-			return "Red", nil
+			return append(b, "Red"...), nil
 		}
 	}
-	return string(b), nil
+	return append(b, c), nil
 }
 
 // GetScore implements [Vector].
@@ -117,22 +124,15 @@ func (v *V4) Supplemental() (ok bool) {
 	return ok
 }
 
-func (v *V4) groups(yield func([2]int) bool) {
-	var b [2]int
-	b[0], b[1] = int(V4AttackVector), int(V4SubsequentSystemAvailability)+1
-	if !yield(b) {
-		return
-	}
-	b[0], b[1] = int(V4ExploitMaturity), int(V4ExploitMaturity)+1
-	if !yield(b) {
-		return
-	}
-	b[0], b[1] = int(V4ConfidentialityRequirement), int(V4ModifiedSubsequentSystemAvailability)+1
-	if !yield(b) {
-		return
-	}
-	b[0], b[1] = int(V4Safety), int(V4ProviderUrgency)+1
-	yield(b)
+func (*V4) meta() *vectorMetadata { return &v4VectorMeta }
+
+var v4VectorMeta = vectorMetadata{
+	Groups: []int{
+		int(V4AttackVector), int(V4SubsequentSystemAvailability) + 1,
+		int(V4ExploitMaturity), int(V4ExploitMaturity) + 1,
+		int(V4ConfidentialityRequirement), int(V4ModifiedSubsequentSystemAvailability) + 1,
+		int(V4Safety), int(V4ProviderUrgency) + 1,
+	},
 }
 
 //go:generate go tool stringer -type=V4Metric,v4Valid -linecomment
@@ -183,6 +183,15 @@ func (m V4Metric) validValues() string { return v4Valid(m).String() }
 
 // Num implements [Metric].
 func (V4Metric) num() int { return numV4Metrics }
+
+// AppendText implements [encoding.TextAppender].
+func (m V4Metric) AppendText(b []byte) ([]byte, error) {
+	idx := int(m) - 0
+	if m < 0 || idx >= len(_V4Metric_index)-1 {
+		return nil, fmt.Errorf("invalid V4Metric: %d", idx)
+	}
+	return append(b, _V4Metric_name[_V4Metric_index[idx]:_V4Metric_index[idx+1]]...), nil
+}
 
 type v4Valid int
 

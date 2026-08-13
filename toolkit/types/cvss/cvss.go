@@ -38,6 +38,7 @@ import (
 	"encoding"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 )
 
@@ -59,9 +60,20 @@ var internalDoc = struct{}{}
 // ErrMalformedVector is reported when a vector is invalid in some way.
 var ErrMalformedVector = errors.New("malformed vector")
 
-// ErrValueUnset is used by [Vector.getString] implementations to signal a
-// metric's value is unset.
+// ErrValueUnset is used by [Vector] implementations to signal a metric's value
+// is unset.
 var errValueUnset = errors.New("unset")
+
+// ErrValueDefault is used by [Vector] implementations to signal a metric's value
+// is unset, but a default value was used for the requested operation.
+var errValueDefault = fmt.Errorf("default: %w", errValueUnset)
+
+// MarshalSize is the initial size of the backing slice for
+// [encoding.TextMarshaler] implementations.
+//
+// This was arrived at by trying sizes until [BenchmarkMarshal] reported a
+// single allocation for all but the longest V4 vectors.
+const marshalSize = 128
 
 // Value is a "packed" representation of the value of a metric.
 //
@@ -107,48 +119,54 @@ func Version(vec string) (v int) {
 	return v
 }
 
-// MarshalVector is a generic function to marshal vectors.
-//
-// The [Vector.getString] method is used here.
-func marshalVector[M Metric, V Vector[M]](prefix string, v V) ([]byte, error) {
-	text := append(make([]byte, 0, 64), prefix...) // Guess at an initial capacity.
+// AppendVector is a generic function to marshal vectors via appending to the
+// provided byte slice.
+func appendVector[M Metric, V Vector[M]](b []byte, prefix string, v V) ([]byte, error) {
+	start := len(b)
+	b = append(b, prefix...)
 	var err error
-	// This is a rangefunc-style iterator.
-	v.groups(func(b [2]int) bool {
+	meta := v.meta()
+	g := meta.Groups
+	for s, e := 0, 1; e < len(g); s, e = s+2, e+2 {
 		var set bool
-		orig := len(text)
-		for i := b[0]; i < b[1]; i++ {
+		i, lim := g[s], g[e]
+		skipGroup := len(b)
+		for ; i < lim; i++ {
+			skipMetric := len(b)
 			m := M(i)
-			val, err := v.getString(m)
+
+			b = append(b, '/')
+			b, err = m.AppendText(b)
+			if err != nil {
+				return nil, fmt.Errorf("invalid cvss vector: %w", err)
+			}
+			b = append(b, ':')
+
+			b, err = v.appendValue(b, m)
 			switch {
 			case errors.Is(err, nil):
 				set = true
-			case errors.Is(err, errValueUnset) && val == "":
-				continue
+			case errors.Is(err, errValueDefault):
 			case errors.Is(err, errValueUnset):
+				b = b[:skipMetric]
 			default:
-				err = errors.New("invalid cvss vector")
-				return false
+				return nil, fmt.Errorf("invalid cvss vector: %w", err)
 			}
-
-			text = append(text, '/')
-			text = append(text, m.String()...)
-			text = append(text, ':')
-			text = append(text, val...)
 		}
 		if !set {
-			text = text[:orig]
+			b = b[:skipGroup]
 		}
-		return true
-	})
-	if err != nil {
-		return nil, err
 	}
-	// v2 hack
-	if prefix == "" {
-		text = text[1:]
+	// v2 hack: remove the leading slash.
+	switch {
+	case prefix == "" && start == 0:
+		b = b[1:]
+	case prefix == "" && start != 0:
+		// Handle the case where this function was passed a slice with a
+		// non-zero length.
+		b = slices.Delete(b, start, start+1)
 	}
-	return text, nil
+	return b, nil
 }
 
 // Metric is a CVSS metric.
@@ -156,6 +174,7 @@ func marshalVector[M Metric, V Vector[M]](prefix string, v V) ([]byte, error) {
 // The set of types this describes is namespaced per-version.
 type Metric interface {
 	~int
+	encoding.TextAppender
 	fmt.Stringer
 
 	// Valid returns the concatenation of valid values for the metric.
@@ -166,6 +185,7 @@ type Metric interface {
 
 // Vector is a CVSS vector of any version.
 type Vector[M Metric] interface {
+	encoding.TextAppender
 	encoding.TextUnmarshaler
 	encoding.TextMarshaler
 	fmt.Stringer
@@ -181,20 +201,16 @@ type Vector[M Metric] interface {
 	// Environmental reports if the vector contains environmental metrics.
 	Environmental() bool
 
-	// GetString is a hook for returning the stringified version of the metric
-	// value. If the value is unset, implementations should return err
-	// [errValueUnset] rather than a specified default, as defaults are omitted
-	// from the string representation.
-	//
-	// CVSSv2 notably does not use names that are identifiable by a single byte,
-	// so they need to be packed and unpacked.
-	getString(M) (string, error)
+	// AppendValue is a hook for appending the stringified version of the metric
+	// value. If the value is unset, implementations should return the input
+	// slice and err == [errValueUnset] rather than a specified default, as
+	// defaults are omitted from the string representation.
+	appendValue([]byte, M) ([]byte, error)
 	// GetScore returns the "packed" value representation after any default
 	// rules are applied.
 	getScore(M) byte
-	// Groups is a rangefunc-style iterator returning the bounds for groups of metrics.
-	// For a returned value "b", it represents the interval "[b[0], b[1])".
-	groups(func([2]int) bool)
+	// Meta returns the static metadata for this vector.
+	meta() *vectorMetadata
 }
 
 var (
@@ -202,6 +218,14 @@ var (
 	_ Vector[V3Metric] = (*V3)(nil)
 	_ Vector[V2Metric] = (*V2)(nil)
 )
+
+// VectorMetadata is static metadata about a vector.
+type vectorMetadata struct {
+	// Groups is a slice of boundaries for the groups of the vector.
+	//
+	// The pairs of ints are [lower, upper).
+	Groups []int
+}
 
 // Qualitative is the "Qualitative Severity" of a Vector.
 type Qualitative int
