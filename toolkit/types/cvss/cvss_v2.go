@@ -144,7 +144,7 @@ func (v *V2) Get(m V2Metric) Value {
 	if b == 0 {
 		return ValueUnset
 	}
-	if strings.Index(m.validValues(), v2Unparse(m, b)) == -1 {
+	if !strings.Contains(m.validValues(), v2Unparse(m, b)) {
 		return ValueInvalid
 	}
 	return Value(b)

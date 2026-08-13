@@ -29,7 +29,7 @@ type scorecalc struct {
 // ForEach is a helper for iterating over all equivalence classes and
 // calculating the correct index for lookups.
 func (c *scorecalc) ForEach(cur *macrovector, f func(int, int)) {
-	for i := 0; i < numEquivalenceClass; i++ {
+	for i := range numEquivalenceClass {
 		if i == eq3 {
 			continue
 		}
@@ -297,7 +297,7 @@ type macrovector [numEquivalenceClass]uint8
 // String implements [fmt.Stringer].
 func (m *macrovector) String() string {
 	b := make([]byte, 0, numEquivalenceClass)
-	for i := 0; i < numEquivalenceClass; i++ {
+	for i := range numEquivalenceClass {
 		b = strconv.AppendUint(b, uint64(m[i]), 10)
 	}
 	return string(b)

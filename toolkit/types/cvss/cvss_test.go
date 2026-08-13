@@ -127,7 +127,7 @@ func Score[T any, M Metric, P VectorImpl[M, T]](t *testing.T, tcs []ScoreTestcas
 				t.Logf("🆗\t%4.1f %v", tc.Score, QualitativeScore[M](p))
 			}
 			v := reflect.ValueOf(x)
-			typ := reflect.TypeOf(x)
+			typ := reflect.TypeFor[*T]()
 			for i := 0; i < v.NumMethod(); i++ {
 				mt := typ.Method(i)
 				if mt.Type.NumOut() == 1 && mt.Type.Out(0).Kind() == reflect.Bool {

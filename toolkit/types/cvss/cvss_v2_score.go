@@ -34,7 +34,7 @@ var v2Weights = [numV2Metrics][]float64{
 // The reported score is always an "Environmental" score.
 func (v *V2) Score() float64 {
 	var vals [numV2Metrics]float64
-	for i := 0; i < numV2Metrics; i++ {
+	for i := range numV2Metrics {
 		m := V2Metric(i)
 		b := v.getScore(m)
 		vi := strings.Index(v2Valid(i).String(), v2Unparse(m, b))

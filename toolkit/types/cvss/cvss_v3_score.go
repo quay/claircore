@@ -39,7 +39,7 @@ var v3Weights = [numV3Metrics][]float64{
 // equations when Environmental metrics are present.
 func (v *V3) Score() float64 {
 	var vals [numV3Metrics]float64
-	for i := 0; i < numV3Metrics; i++ {
+	for i := range numV3Metrics {
 		m := V3Metric(i)
 		b := v.getScore(m)
 		vi := strings.IndexByte(m.validValues(), b)
