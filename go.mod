@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/Masterminds/semver v1.5.0
-	github.com/doug-martin/goqu/v8 v8.6.0
+	github.com/doug-martin/goqu/v9 v9.19.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.10.0
