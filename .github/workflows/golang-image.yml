@@ -95,7 +95,7 @@ jobs:
           username: ${{ env.QUAY_USER }}
           password: ${{ secrets.QUAY_TOKEN }}
       - name: Publish
-        uses: redhat-actions/push-to-registry@v2
+        uses: redhat-actions/push-to-registry@v3
         if: env.BUILD_IMAGE == 1
         with:
           #extra-args: |
