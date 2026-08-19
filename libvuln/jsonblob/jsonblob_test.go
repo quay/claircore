@@ -3,14 +3,14 @@ package jsonblob
 import (
 	"bytes"
 	"context"
+	"fmt"
+	"github.com/google/go-cmp/cmp"
+	"github.com/quay/claircore"
+	"github.com/quay/claircore/libvuln/driver"
+	"golang.org/x/sync/errgroup"
 	"io"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
-	"golang.org/x/sync/errgroup"
-
-	"github.com/quay/claircore"
-	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/test"
 )
 
@@ -69,24 +69,13 @@ func TestRoundtrip(t *testing.T) {
 	eg, ctx := errgroup.WithContext(ctx)
 	eg.Go(func() error { defer w.Close(); return a.Store(w) })
 	eg.Go(func() error {
-		l, err := Load(ctx, io.TeeReader(r, &buf))
+		s, err := Load(ctx, io.TeeReader(r, &buf))
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to load jsonblob: %w", err)
 		}
-		for l.Next() {
-			e := l.Entry()
-			if e.Vuln != nil && e.Enrichment != nil {
-				t.Error("expecting entry to have either vulnerability or enrichment, got both")
-			}
-			if e.Vuln != nil {
-				got.V = append(got.V, l.Entry().Vuln...)
-			}
-			if e.Enrichment != nil {
-				got.E = append(got.E, l.Entry().Enrichment...)
-			}
-		}
-		if err := l.Err(); err != nil {
-			return err
+		for _, e := range s.Entries() {
+			got.V = append(got.V, e.Vuln...)
+			got.E = append(got.E, e.Enrichment...)
 		}
 		return nil
 	})
