@@ -22,9 +22,9 @@ require (
 	github.com/regclient/regclient v0.11.5
 	github.com/spdx/tools-golang v0.5.7
 	github.com/ulikunitz/xz v0.5.15
-	go.opentelemetry.io/otel v1.44.0
-	go.opentelemetry.io/otel/metric v1.44.0
-	go.opentelemetry.io/otel/trace v1.44.0
+	go.opentelemetry.io/otel v1.45.0
+	go.opentelemetry.io/otel/metric v1.45.0
+	go.opentelemetry.io/otel/trace v1.45.0
 	go.uber.org/mock v0.6.0
 	golang.org/x/crypto v0.54.0
 	golang.org/x/net v0.57.0
@@ -43,7 +43,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
-	github.com/go-logr/logr v1.4.3 // indirect
+	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
