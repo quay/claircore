@@ -2,11 +2,13 @@ package tarfs
 
 import (
 	"archive/tar"
+	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 )
 
 // The value we should find in the "magic" position of the tar header.
@@ -52,6 +54,8 @@ func findSegments(r io.ReaderAt) ([]segment, error) {
 	var blk int64
 	// Has the parser seen a zeroes block.
 	var zeroes bool
+	// Size carried over from pax headers.
+	var xSize int64
 
 Scan:
 	for {
@@ -112,10 +116,16 @@ Scan:
 		case !bytes.Equal(b[versionOff:][:2], []byte("00")):
 			return nil, parseErr("bad block at %d: got version %+q", off, b[versionOff:][:2])
 		}
+		typ := b[typeflag]
 		encSz := b[sizeOff:][:12]
 		sz, err := parseNumber(encSz)
 		if err != nil {
 			return nil, parseErr("invalid number: %024x: %v", encSz, err)
+		}
+		// If this this is "real" file and there's a size from a previous
+		// extended header, adjust the size value.
+		if typ < tar.TypeCont && xSize != 0 {
+			sz = xSize
 		}
 		nBlk := sz / blockSz
 		if sz%blockSz != 0 {
@@ -123,16 +133,62 @@ Scan:
 		}
 		blk++       // Current header block
 		blk += nBlk // File contents
-		switch b[typeflag] {
-		case tar.TypeXHeader, tar.TypeGNULongLink, tar.TypeGNULongName, tar.TypeGNUSparse:
+		switch typ {
+		case tar.TypeGNULongLink, tar.TypeGNULongName, tar.TypeGNUSparse:
 			// All these are prepended to a "real" entry.
+		case tar.TypeXHeader:
+			// Handle pax header to keep the ultimate file size correct.
+
+			// This is just the "file" data, which is why this is different from
+			// the [segment] math below.
+			sr := io.NewSectionReader(r, (blk-nBlk)*blockSz, sz)
+			// Per spec:
+			// 	An extended header shall consist of one or more records, each
+			// 	constructed as follows:
+			// 		"%d %s=%s\n", <length>, <keyword>, <value>
+			//
+			// This code lets the [bufio.Scanner] take care of line length
+			// considerations and ignores the "length" record.
+			s := bufio.NewScanner(sr)
+		Read:
+			for s.Scan() {
+				fs := strings.FieldsFunc(s.Text(), func(r rune) bool { return r == ' ' || r == '=' })
+				switch {
+				case len(fs) != 3:
+					// Malformed record, skip.
+				case fs[1] == "size" && fs[2] == "":
+					// Per spec:
+					// 	If the <value> field is zero length, it shall delete any
+					// 	header block field, previously entered extended header
+					// 	value, or global extended header value of the same name.
+					xSize = 0
+					break Read
+				case fs[1] == "size" && fs[2] != "":
+					// This is *not* the stringified octal madness of a real header.
+					xSize, err = strconv.ParseInt(fs[2], 10, 64)
+					if err != nil {
+						return nil, parseErr("bad block at %d: weird PAX header: bad size: %v", off, err)
+					}
+					break Read
+				default:
+				}
+			}
+			if err := s.Err(); err != nil {
+				return nil, parseErr("bad block at %d: weird PAX header: %v", off, err)
+			}
 		case tar.TypeBlock, tar.TypeChar, tar.TypeCont, tar.TypeDir, tar.TypeFifo, tar.TypeLink, tar.TypeReg, tar.TypeRegA, tar.TypeSymlink:
 			// Found a data block, emit it:
 			ret = append(ret, segment{start: cur * blockSz, size: (blk - cur) * blockSz})
 			fallthrough
 		default:
-			// any blocks not enumerated are not handled.
+			// Any blocks not enumerated are not handled.
+			//
+			// The pax global headers are yielded as individual headers by the
+			// stdlib's [tar.Reader]. That code cannot set a "global size" and
+			// have it applied to files correctly. As the member size is all we
+			// care about, don't bother handling them.
 			cur = blk
+			xSize = 0
 		}
 	}
 	return ret, nil
