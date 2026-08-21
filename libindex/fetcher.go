@@ -125,6 +125,21 @@ func (a *RemoteFetchArena) fetchInto(ctx context.Context, l *claircore.Layer, cl
 			span.End()
 		}()
 
+		// Try HTTP range fetch for uncompressed layers.
+		if ra, ok, err := a.tryNewRangeReaderAt(ctx, desc); err != nil {
+			return err
+		} else if ok {
+			cacheHit = false
+			if err := l.Init(ctx, desc, ra); err != nil {
+				return err
+			}
+			*cl = closeFunc(func() error {
+				runtime.KeepAlive(ra)
+				return l.Close()
+			})
+			return nil
+		}
+
 		// NB This is not closed on purpose. The [io.Closer] populated by this
 		// function holds the pointer until that function is cleaned up. Once
 		// nothing has a copy of this [*os.File], the runtime will run all the
@@ -223,12 +238,8 @@ func (a *RemoteFetchArena) fetchFileForCache(ctx context.Context, desc *claircor
 	var cmpSz writeCounter
 	tr := io.TeeReader(resp.Body, io.MultiWriter(&cmpSz, vh))
 
-	// TODO(hank) All this decompression code could go away, but that would mean
-	// that a buffer file would have to be allocated later, adding additional
-	// disk usage.
-	//
-	// The ultimate solution is to move to a fetcher that proxies to HTTP range
-	// requests.
+	// Compressed layers are fully downloaded and spooled here. Uncompressed
+	// layers use HTTP range requests via fetchInto and [httputil.RangeReaderAt].
 	zr, kind, err := zreader.Detect(tr)
 	if err != nil {
 		return nil, fmt.Errorf("fetcher: error determining compression: %w", err)
@@ -342,6 +353,56 @@ func (a *RemoteFetchArena) Close(_ context.Context) error {
 		return fmt.Errorf("fetcher: RemoteFetchArena: closing: %w", err)
 	}
 	return nil
+}
+
+const rangeProbeSize = 16
+
+func (a *RemoteFetchArena) tryNewRangeReaderAt(ctx context.Context, desc *claircore.LayerDescription) (*httputil.RangeReaderAt, bool, error) {
+	if desc.URI == "" {
+		return nil, false, fmt.Errorf("empty uri for layer %v", desc.Digest)
+	}
+	url, err := url.ParseRequestURI(desc.URI)
+	if err != nil {
+		return nil, false, fmt.Errorf("failed to parse remote path uri: %v", err)
+	}
+
+	req := (&http.Request{
+		ProtoMajor: 1,
+		ProtoMinor: 1,
+		Proto:      "HTTP/1.1",
+		Host:       url.Host,
+		Method:     http.MethodGet,
+		URL:        url,
+		Header:     http.Header(desc.Headers).Clone(),
+	}).WithContext(ctx)
+	req.Header.Set("Range", fmt.Sprintf("bytes=0-%d", rangeProbeSize-1))
+
+	resp, err := a.wc.Do(req)
+	if err != nil {
+		return nil, false, nil
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusPartialContent {
+		return nil, false, nil
+	}
+
+	probe, err := io.ReadAll(io.LimitReader(resp.Body, rangeProbeSize))
+	if err != nil {
+		return nil, false, nil
+	}
+	if zreader.DetectCompression(probe) != zreader.KindNone {
+		return nil, false, nil
+	}
+
+	size, err := httputil.ParseContentRangeTotal(resp.Header.Get("Content-Range"))
+	if err != nil {
+		return nil, false, nil
+	}
+
+	// Range mode trusts the registry digest; full verification would require
+	// downloading the entire blob.
+	return httputil.NewRangeReaderAt(a.wc, desc.URI, desc.Headers, size), true, nil
 }
 
 // Realizer returns an indexer.Realizer.
