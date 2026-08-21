@@ -6,7 +6,7 @@ import "strings"
 func (w WFN) BindFS() string {
 	b := strings.Builder{}
 	b.WriteString(`cpe:2.3`)
-	for i := 0; i < NumAttr; i++ {
+	for i := range NumAttr {
 		b.WriteByte(':')
 		w.Attr[i].bind(&b)
 	}

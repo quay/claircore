@@ -31,14 +31,13 @@ func (w *WFN) UnmarshalText(b []byte) (err error) {
 // Scan implements [sql.Scanner].
 //
 // Passing an empty string does not error and leaves the WFN in its current state.
-func (w *WFN) Scan(src interface{}) (err error) {
+func (w *WFN) Scan(src any) (err error) {
 	var s string
-	switch src.(type) {
+	switch src := src.(type) {
 	case []byte:
-		s = string(src.([]byte))
-		s = strings.ToValidUTF8(s, "�")
+		s = strings.ToValidUTF8(string(src), "�")
 	case string:
-		s = src.(string)
+		s = src
 	default:
 		return fmt.Errorf("cpe: unable to Scan from type %T", src)
 	}
