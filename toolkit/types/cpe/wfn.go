@@ -169,7 +169,7 @@ type WFN struct {
 // constructed in code, the user should check it via this method.
 func (w WFN) Valid() error {
 	unset := 0
-	for i := 0; i < NumAttr; i++ {
+	for i := range NumAttr {
 		if err := validate(w.Attr[i].V); err != nil {
 			return fmt.Errorf("cpe: wfn attribute %q is invalid: %w", Attribute(i), err)
 		}
@@ -185,7 +185,7 @@ func (w WFN) Valid() error {
 		os  = `o`
 		hw  = `h`
 	)
-	if p := w.Attr[int(Part)]; p.Kind == ValueSet {
+	if p := &w.Attr[int(Part)]; p.Kind == ValueSet {
 		if len(p.V) != 1 ||
 			(p.V != app && p.V != os && p.V != hw) {
 			return fmt.Errorf("cpe: wfn attribute %q is invalid: %q is a disallowed value", Part, p.V)
@@ -204,14 +204,18 @@ func (w WFN) String() string {
 	case errors.Is(err, ErrUnset):
 		return ""
 	}
-	return w.BindFS()
+	b, _ := w.AppendText(make([]byte, 0, 64))
+	if len(b) == 0 {
+		return ""
+	}
+	return string(b)
 }
 
 // GoString implements [fmt.GoStringer].
 func (w WFN) GoString() string {
 	var b strings.Builder
 	b.WriteString(`WFN{Attr:[NumAttr]Value{`)
-	for i := 0; i < NumAttr; i++ {
+	for i := range NumAttr {
 		if i != 0 {
 			b.WriteString(", ")
 		}

@@ -9,14 +9,13 @@ import (
 
 // MarshalText implements [encoding.TextMarshaler].
 func (w *WFN) MarshalText() ([]byte, error) {
-	switch err := w.Valid(); {
-	case err == nil:
-	case errors.Is(err, ErrUnset):
-		return []byte{}, nil
-	default:
-		return nil, err
-	}
-	return []byte(w.BindFS()), nil
+	// Guess at a good initial size. Calculated via finding the mean size across
+	// the CPE Name dictionary and then rounding it up.
+	//
+	// 	zcat testdata/dictionary.list.gz | awk '/^#/{next}/^$/{next}{ct++;sum+=length($0)}END{print sum/ct}'
+	// 	55.9444 = 64
+	b := make([]byte, 0, 64)
+	return w.AppendText(b)
 }
 
 // UnmarshalText implements [encoding.TextUnmarshaler].
@@ -31,14 +30,13 @@ func (w *WFN) UnmarshalText(b []byte) (err error) {
 // Scan implements [sql.Scanner].
 //
 // Passing an empty string does not error and leaves the WFN in its current state.
-func (w *WFN) Scan(src interface{}) (err error) {
+func (w *WFN) Scan(src any) (err error) {
 	var s string
-	switch src.(type) {
+	switch src := src.(type) {
 	case []byte:
-		s = string(src.([]byte))
-		s = strings.ToValidUTF8(s, "�")
+		s = strings.ToValidUTF8(string(src), "�")
 	case string:
-		s = src.(string)
+		s = src
 	default:
 		return fmt.Errorf("cpe: unable to Scan from type %T", src)
 	}

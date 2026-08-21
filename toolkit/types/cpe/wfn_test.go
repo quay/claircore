@@ -2,7 +2,10 @@ package cpe
 
 import (
 	"bufio"
+	"bytes"
 	"compress/gzip"
+	"errors"
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -277,7 +280,7 @@ func TestUnbinding(t *testing.T) {
 		},
 		// Too many components.
 		{
-			Bound: `cpe:2.3:0:000000:00:0:0:0:0:0:0:0:0:0`,
+			Bound: `cpe:2.3:o:000000:00:0:0:0:0:0:0:0:0:0`,
 			Error: true,
 		},
 	}
@@ -407,11 +410,34 @@ func TestUnbinding(t *testing.T) {
 		},
 	}
 
-	t.Run("FS", inner(fsTable, UnbindFS))
+	t.Run("FS", inner(fsTable, func(in string) (out WFN, err error) {
+		err = out.UnmarshalFS(in)
+		return
+	}))
 	t.Run("URI", inner(uriTable, UnbindURI))
+	if !testing.Short() {
+		t.Run("Comparison", func(t *testing.T) {
+			t.Run(
+				"FS",
+				inner(fsTable, func(in string) (out WFN, err error) {
+					a, aErr := UnbindFS(in)
+					var b WFN
+					bErr := b.UnmarshalFS(in)
+					var cmpErr error
+					if !cmp.Equal(&b, &a) {
+						cmpErr = fmt.Errorf("implementations disagree:\n%s", cmp.Diff(&b, &a))
+					}
+					return b, errors.Join(bErr, aErr, cmpErr)
+				}),
+			)
+		})
+	}
 }
 
 func TestDictionary(t *testing.T) {
+	if testing.Short() {
+		t.Skip("short tests requested")
+	}
 	const fmt = "line #%02d:\nin:\t%+q\ngot:\t%q\nwant:\t%q"
 	t.Parallel()
 	f, err := os.Open("testdata/dictionary.list.gz")
@@ -426,23 +452,31 @@ func TestDictionary(t *testing.T) {
 	defer gz.Close()
 
 	s := bufio.NewScanner(gz)
+	defer func() {
+		if err := s.Err(); err != nil {
+			t.Error(err)
+		}
+	}()
+	back := make([]byte, 0, 128)
 	for i := 1; s.Scan(); i++ {
 		in := s.Text()
 		if len(in) == 0 || strings.HasPrefix(in, "#") {
 			continue
 		}
-		wfn, err := Unbind(in)
-		if err != nil {
-			t.Fatal(err)
+
+		var wfn WFN
+		if err := wfn.UnmarshalFS(in); err != nil {
 			t.Fatalf("%v: %#q", err, in)
 		}
-		if got, want := wfn.BindFS(), s.Text(); got != want {
-			t.Logf(fmt, i, in, got, want)
+		b, err := wfn.AppendText(back[:0])
+		if err != nil {
+			t.Fatalf("%v: %#q", err, in)
+		}
+
+		if got, want := b, s.Bytes(); !bytes.Equal(got, want) {
+			t.Logf(fmt, i, in, string(got), string(want))
 			t.Logf("wfn: %#v", wfn)
 			t.Fail()
 		}
-	}
-	if err := s.Err(); err != nil {
-		t.Error(err)
 	}
 }
