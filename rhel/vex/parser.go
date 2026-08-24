@@ -152,7 +152,7 @@ func docLinkFromBase(base *url.URL, name string) string {
 // NewParser creates a new Parser with initialised caches.
 //
 // The default base URL is [BaseURL]. Callers that ingest a different feed
-// (for example the beta vex-feed) should pass [WithBaseURL].
+// should pass [WithBaseURL].
 func NewParser(opts ...ParserOption) *Parser {
 	base, err := url.Parse(BaseURL)
 	if err != nil {
@@ -1293,13 +1293,12 @@ func (c *creator) checkPURL(purl *packageurl.PackageURL) bool {
 // are skipped because they either do not represent a runnable kernel or are
 // commonly present in userspace images without implying kernel vulnerability.
 //
-// TODO(crozzy): Revisit (and likely remove) this allowlist once claircore
-// switches from the current VEX feed (/vex/) to the new feed (/vex-feed/). The
-// old feed puts packages like kernel-headers and kernel-doc into fixed and
-// known_affected for many CVEs; the new feed largely moves those to
-// known_not_affected (kernel-headers: zero fixed/known_affected in the archive).
-// Until that switch, the allowlist avoids flooding images that ship
-// headers/docs with kernel findings from the old feed.
+// TODO(crozzy): Revisit (and likely remove) this allowlist now that the default
+// feed is /vex-feed/, which largely moves packages like kernel-headers and
+// kernel-doc to known_not_affected (kernel-headers: zero fixed/known_affected
+// in the archive). The allowlist remains for operators still pointing at the
+// legacy /vex/ feed via config, where those packages appear in fixed and
+// known_affected.
 //
 // Operators who need the historical skip-all-kernel behaviour can set
 // ignore_kernel_packages on the rhel-vex updater config.

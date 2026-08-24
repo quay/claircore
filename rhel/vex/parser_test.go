@@ -741,28 +741,28 @@ func TestCheckKernelPackage(t *testing.T) {
 
 func TestCreatorDocLink(t *testing.T) {
 	const name = "CVE-2023-4911"
-	selfURL := "https://security.access.redhat.com/data/csaf/v2/vex/2023/cve-2023-4911.json"
-	betaBase, err := url.Parse("https://security.access.redhat.com/data/csaf/v2/vex-feed/")
+	defaultURL := "https://security.access.redhat.com/data/csaf/v2/vex-feed/2023/cve-2023-4911.json"
+	legacyBase, err := url.Parse("https://security.access.redhat.com/data/csaf/v2/vex/")
 	if err != nil {
 		t.Fatal(err)
 	}
-	betaURL := "https://security.access.redhat.com/data/csaf/v2/vex-feed/2023/cve-2023-4911.json"
+	legacyURL := "https://security.access.redhat.com/data/csaf/v2/vex/2023/cve-2023-4911.json"
 
 	t.Run("constructs from default base when self missing", func(t *testing.T) {
 		doc := &csaf.CSAF{}
 		doc.Document.Tracking.ID = name
 		c := NewParser().creator(name, doc)
-		if c.docLink != selfURL {
-			t.Fatalf("got docLink %q, want %q", c.docLink, selfURL)
+		if c.docLink != defaultURL {
+			t.Fatalf("got docLink %q, want %q", c.docLink, defaultURL)
 		}
 	})
 
 	t.Run("constructs from configured base when self missing", func(t *testing.T) {
 		doc := &csaf.CSAF{}
 		doc.Document.Tracking.ID = name
-		c := NewParser(WithBaseURL(betaBase)).creator(name, doc)
-		if c.docLink != betaURL {
-			t.Fatalf("got docLink %q, want %q", c.docLink, betaURL)
+		c := NewParser(WithBaseURL(legacyBase)).creator(name, doc)
+		if c.docLink != legacyURL {
+			t.Fatalf("got docLink %q, want %q", c.docLink, legacyURL)
 		}
 	})
 
@@ -771,11 +771,11 @@ func TestCreatorDocLink(t *testing.T) {
 		doc.Document.Tracking.ID = name
 		doc.Document.References = []csaf.Reference{{
 			Category: "self",
-			URL:      selfURL,
+			URL:      legacyURL,
 		}}
-		c := NewParser(WithBaseURL(betaBase)).creator(name, doc)
-		if c.docLink != selfURL {
-			t.Fatalf("got docLink %q, want %q", c.docLink, selfURL)
+		c := NewParser().creator(name, doc)
+		if c.docLink != legacyURL {
+			t.Fatalf("got docLink %q, want %q", c.docLink, legacyURL)
 		}
 	})
 
@@ -803,7 +803,7 @@ func TestDocLinkFromBase(t *testing.T) {
 		{
 			name: "cve",
 			id:   "CVE-2023-4911",
-			want: "https://security.access.redhat.com/data/csaf/v2/vex/2023/cve-2023-4911.json",
+			want: "https://security.access.redhat.com/data/csaf/v2/vex-feed/2023/cve-2023-4911.json",
 		},
 		{
 			name: "non-cve",
