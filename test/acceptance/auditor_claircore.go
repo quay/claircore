@@ -419,8 +419,7 @@ func (a *ClaircoreAuditor) createVulnerabilitiesFromProduct(
 	records, err := a.purlRegistry.Parse(ctx, pu)
 	if err != nil {
 		// If registry doesn't handle this purl type, create a basic vulnerability
-		var unhandled purl.ErrUnhandledPurl
-		if !errors.As(err, &unhandled) {
+		if _, ok := errors.AsType[purl.ErrUnhandledPurl](err); !ok {
 			return nil, fmt.Errorf("parse purl: %w", err)
 		}
 		// Fall back to basic vulnerability without proper IndexRecord
@@ -646,7 +645,7 @@ func extractProductIDFromLinks(links string) string {
 	if links == "" {
 		return ""
 	}
-	for _, link := range strings.Fields(links) {
+	for link := range strings.FieldsSeq(links) {
 		u, err := url.Parse(link)
 		if err != nil || u.Fragment == "" {
 			continue

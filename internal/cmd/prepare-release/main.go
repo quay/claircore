@@ -112,7 +112,7 @@ func run() error {
 			return fmt.Errorf("detecting remote: %v", err)
 		}
 		remote = "origin"
-		for _, r := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+		for r := range strings.SplitSeq(strings.TrimSpace(string(out)), "\n") {
 			if r == "upstream" {
 				remote = "upstream"
 				break
