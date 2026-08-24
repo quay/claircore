@@ -44,7 +44,7 @@ func marshalDigestPointer(d *claircore.Digest) string { return d.String() }
 
 func isVulnerabilityReportField(n string) func(cmp.Path) bool {
 	return func(p cmp.Path) bool {
-		if len(p) >= 2 && p.Index(-2).Type() == reflect.TypeOf(claircore.VulnerabilityReport{}) {
+		if len(p) >= 2 && p.Index(-2).Type() == reflect.TypeFor[claircore.VulnerabilityReport]() {
 			sf, ok := p.Index(-1).(cmp.StructField)
 			return ok && sf.Name() == n
 		}

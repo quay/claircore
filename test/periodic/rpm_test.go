@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"slices"
 	"testing"
 	"time"
 
@@ -224,8 +225,8 @@ func (doc hydraDoc) Run(dir string) func(*testing.T) {
 		s := &rhel.PackageScanner{}
 		pkgMap := map[string]*claircore.Package{}
 		var which claircore.Digest
-		for i := len(image.Data[0].Parsed.Layers) - 1; i >= 0; i-- {
-			ld := image.Data[0].Parsed.Layers[i]
+		for _, ld := range slices.Backward(image.Data[0].Parsed.Layers) {
+
 			// TODO(hank) Need a way to use the nicer API, but pass the
 			// Integration bypass.
 			n, err := fetch.Layer(ctx, t, doc.Registry, doc.Repository, ld, fetch.IgnoreIntegration)

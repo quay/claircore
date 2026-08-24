@@ -76,8 +76,7 @@ func TestRegistryGenerate(t *testing.T) {
 				if err == nil {
 					t.Fatalf("expected error, got nil")
 				}
-				var eud ErrUnknownDetector
-				if !errors.As(err, &eud) {
+				if _, ok := errors.AsType[ErrUnknownDetector](err); !ok {
 					t.Fatalf("expected ErrUnPurlable, got %v", err)
 				}
 				return
@@ -230,8 +229,7 @@ func TestRegistryParse(t *testing.T) {
 				if err == nil {
 					t.Fatalf("expected error, got nil")
 				}
-				var eup ErrUnhandledPurl
-				if !errors.As(err, &eup) {
+				if _, ok := errors.AsType[ErrUnhandledPurl](err); !ok {
 					t.Fatalf("expected ErrUnknownPurlType, got %v", err)
 				}
 				return
@@ -388,8 +386,7 @@ func TestSPDXPURLsParseToIndexRecords(t *testing.T) {
 					}
 					got, err := reg.Parse(ctx, pu)
 					if err != nil {
-						var e ErrUnhandledPurl
-						if errors.As(err, &e) {
+						if _, ok := errors.AsType[ErrUnhandledPurl](err); ok {
 							continue
 						}
 						// Registered parser can reject a locator (e.g. golang PURL without semver).
