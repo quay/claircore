@@ -196,7 +196,11 @@ ON CONFLICT DO NOTHING;`
 
 	start := time.Now()
 
-	tx, err := s.pool.Begin(ctx)
+	// The isolation level must be pinned to "read committed" (rather than
+	// inheriting default_transaction_isolation) because some INSERT ... SELECT
+	// statements need to see alias rows committed outside this transaction
+	// after it began.
+	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("unable to start transaction: %w", err)
 	}
