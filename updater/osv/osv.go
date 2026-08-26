@@ -178,7 +178,7 @@ func (f *Factory) UpdaterSet(ctx context.Context) (s driver.UpdaterSet, err erro
 		var buf bytes.Buffer
 		buf.ReadFrom(io.LimitReader(res.Body, 256))
 		b, _ := httputil.DumpRequest(req, false)
-		err = fmt.Errorf("osv: unexpected response from %q: %v (request: %q) (body: %q)", res.Request.URL, res.Status, b, buf)
+		err = fmt.Errorf("osv: unexpected response from %q: %v (request: %q) (body: %q)", res.Request.URL, res.Status, b, buf.String())
 	}
 	if err := res.Body.Close(); err != nil {
 		slog.InfoContext(ctx, "error closing ecosystems.txt response body", "reason", err)
