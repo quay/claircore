@@ -328,13 +328,16 @@ ON CONFLICT DO NOTHING;`
 				return fmt.Errorf("failed to insert aliases: %w", err)
 			}
 		}
+		// Enforce using uncached plans because with more than a few chunks,
+		// the generic plan (built for unnest's default row estimate) is
+		// chosen and is far slower for the actual array sizes.
 		if len(va.hashKinds) > 0 {
-			if _, err := tx.Exec(ctx, bulkLinkAliases, va.hashKinds, va.hashes, va.spaces, va.names); err != nil {
+			if _, err := tx.Exec(ctx, bulkLinkAliases, pgx.QueryExecModeExec, va.hashKinds, va.hashes, va.spaces, va.names); err != nil {
 				return fmt.Errorf("failed to bulk link vulnerability aliases: %w", err)
 			}
 		}
 		if len(vs.hashKinds) > 0 {
-			if _, err := tx.Exec(ctx, bulkLinkSelf, vs.hashKinds, vs.hashes, vs.spaces, vs.names); err != nil {
+			if _, err := tx.Exec(ctx, bulkLinkSelf, pgx.QueryExecModeExec, vs.hashKinds, vs.hashes, vs.spaces, vs.names); err != nil {
 				return fmt.Errorf("failed to bulk link vulnerability self aliases: %w", err)
 			}
 		}
