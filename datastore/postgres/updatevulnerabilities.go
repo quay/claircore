@@ -2,6 +2,8 @@ package postgres
 
 import (
 	"context"
+	_ "embed" // for queries
+	"errors"
 	"fmt"
 	"log/slog"
 	"strconv"
@@ -95,6 +97,27 @@ func (s *MatcherStore) DeltaUpdateVulnerabilities(ctx context.Context, updater s
 	return s.updateVulnerabilities(ctx, updater, fingerprint, iterVulns, delVulns)
 }
 
+var (
+	//go:embed query/updatevulnerabilities_associate_update_operation_vuln.sql
+	updateVulnerabilitiesAssociateUpdateOperationVuln string
+	//go:embed query/updatevulnerabilities_select_vuln_by_hash.sql
+	updateVulnerabilitiesSelectVulnByHash string
+	//go:embed query/updatevulnerabilities_insert_alias_namespace.sql
+	updateVulnerabilitiesInsertAliasNamespace string
+	//go:embed query/updatevulnerabilities_insert_alias.sql
+	updateVulnerabilitiesInsertAlias string
+	//go:embed query/updatevulnerabilities_select_alias.sql
+	updateVulnerabilitiesSelectAlias string
+	//go:embed query/updatevulnerabilities_insert_vulnerability_alias.sql
+	updateVulnerabilitiesInsertVulnerabilityAlias string
+	//go:embed query/updatevulnerabilities_insert_vulnerability_self.sql
+	updateVulnerabilitiesInsertVulnerabilitySelf string
+	// Insert attempts to create a new vulnerability. It fails silently.
+	//
+	//go:embed query/updatevulnerabilities_insert_vuln.sql
+	updateVulnerabilitiesInsertVuln string
+)
+
 func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulnIter datastore.VulnerabilityIter, delIter datastore.Iter[string]) (uuid.UUID, error) {
 	const (
 		// Create makes a new update operation and returns the reference and ID.
@@ -120,75 +143,7 @@ func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string
 			)`
 		// assocExisting associates existing vulnerabilities with new update operations
 		assocExisting = `INSERT INTO uo_vuln (uo, vuln) VALUES ($1, $2) ON CONFLICT DO NOTHING;`
-		// Insert attempts to create a new vulnerability. It fails silently.
-		insert = `
-		INSERT INTO vuln (
-			hash_kind, hash,
-			name, updater, description, issued, links, severity, normalized_severity,
-			package_name, package_version, package_module, package_arch, package_kind,
-			dist_id, dist_name, dist_version, dist_version_code_name, dist_version_id, dist_arch, dist_cpe, dist_pretty_name,
-			repo_name, repo_key, repo_uri,
-			fixed_in_version, arch_operation, version_kind, vulnerable_range,
-			not_vulnerable
-		) VALUES (
-		  $1, $2,
-		  $3, $4, $5, $6, $7, $8, $9,
-		  $10, $11, $12, $13, $14,
-		  $15, $16, $17, $18, $19, $20, $21, $22,
-		  $23, $24, $25,
-		  $26, $27, $28, COALESCE($29, VersionRange('{}', '{}', '()')),
-		  $30
-		)
-		ON CONFLICT (hash_kind, hash) DO NOTHING;`
-		// Assoc associates an update operation and a vulnerability. It fails
-		// silently.
-		assoc = `
-		INSERT INTO uo_vuln (uo, vuln) VALUES (
-			$3,
-			(SELECT id FROM vuln WHERE hash_kind = $1 AND hash = $2))
-		ON CONFLICT DO NOTHING;`
-		refreshView = `REFRESH MATERIALIZED VIEW CONCURRENTLY latest_update_operations;`
-		// bulkLinkAliases links all vulnerability→alias rows in one statement by
-		// joining the flattened (hash_kind, hash, alias_space, alias_name) arrays
-		// against the already-populated vuln and alias tables.
-		bulkLinkAliases = `
-		INSERT INTO vulnerability_alias (vulnerability, alias)
-		SELECT v.id, a.id
-		FROM
-			unnest($1::TEXT[], $2::BYTEA[], $3::TEXT[], $4::TEXT[])
-				AS input(hash_kind, hash, alias_space, alias_name)
-		JOIN
-			vuln v ON v.hash_kind = input.hash_kind AND v.hash = input.hash
-		JOIN
-			alias_namespace ns ON ns.namespace = input.alias_space
-		JOIN
-			alias a ON a.name = input.alias_name AND a.namespace = ns.id
-		ON CONFLICT DO NOTHING`
-		// bulkLinkSelf links all vulnerability→self rows in one statement.
-		bulkLinkSelf = `
-		INSERT INTO vulnerability_self (vulnerability, self)
-		SELECT v.id, a.id
-		FROM
-			unnest($1::TEXT[], $2::BYTEA[], $3::TEXT[], $4::TEXT[])
-				AS input(hash_kind, hash, self_space, self_name)
-		JOIN
-			vuln v ON v.hash_kind = input.hash_kind AND v.hash = input.hash
-		JOIN
-			alias_namespace ns ON ns.namespace = input.self_space
-		JOIN
-			alias a ON a.name = input.self_name AND a.namespace = ns.id
-		ON CONFLICT DO NOTHING`
-		// insertAliasNamespaces creates all needed namespace rows outside any
-		// transaction so concurrent updaters do not deadlock.
-		insertAliasNamespaces = `INSERT INTO alias_namespace (namespace) VALUES (unnest($1::TEXT[])) ON CONFLICT DO NOTHING;`
-		// insertAliases creates all needed alias rows outside any transaction.
-		insertAliases = `INSERT INTO alias (namespace, name)
-	SELECT ns.id, input.name
-	FROM
-		(SELECT unnest($1::TEXT[]) AS space, unnest($2::TEXT[]) AS name) AS input
-	JOIN
-		alias_namespace AS ns ON input.space = ns.namespace
-ON CONFLICT DO NOTHING;`
+		refreshView   = `REFRESH MATERIALIZED VIEW CONCURRENTLY latest_update_operations;`
 	)
 
 	var uoID uint64
@@ -252,20 +207,18 @@ ON CONFLICT DO NOTHING;`
 		}
 
 		if len(oldVulns) > 0 {
-			vulnIter(func(v *claircore.Vulnerability, _ error) bool {
+			for v := range vulnIter {
 				// If we have an existing vuln in the new batch
 				// delete it from the oldVulns map so it doesn't
 				// get associated with the new update_operation.
 				delete(oldVulns, v.Name)
-				return true
-			})
-			delIter(func(delName string, _ error) bool {
+			}
+			for delName := range delIter {
 				// If we have an existing vuln that has been signaled
 				// as deleted by the updater then delete it so it doesn't
 				// get associated with the new update_operation.
 				delete(oldVulns, delName)
-				return true
-			})
+			}
 		}
 		start = time.Now()
 		// Associate already existing vulnerabilities with new update_operation.
@@ -279,42 +232,116 @@ ON CONFLICT DO NOTHING;`
 		}
 		updateVulnerabilitiesCounter.WithLabelValues("assocExisting", strconv.FormatBool(delta)).Add(float64(len(oldVulns)))
 		updateVulnerabilitiesDuration.WithLabelValues("assocExisting", strconv.FormatBool(delta)).Observe(time.Since(start).Seconds())
-
 	}
 
 	// batch insert vulnerabilities
+	const batchLim = 1000
 	skipCt := 0
 	vulnCt := 0
 	start = time.Now()
-	var batch pgx.Batch
+	// This is an annoying way to go about this, but c'est la vie.
+	//
+	// These batches are chains of statements smeared across two database
+	// connections that are all connected via callbacks.
+	conn, err := s.pool.Acquire(ctx)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("unable to acquire alias connection: %w", err)
+	}
+	defer conn.Release()
+	// These are the batches used in the callback chain. The results of one are
+	// used to enqueue queries into the next batch.
+	//
+	// They MUST be sent in this order, and [aliasBatch] MUST be sent outside
+	// the transaction.
+	var insertBatch, aliasBatch, assocBatch pgx.Batch
+	// Some guesses at initial sizing. These should always level off, but
+	// avoiding allocations and copies is always welcome.
+	insertBatch.QueuedQueries = make([]*pgx.QueuedQuery, 0, batchLim+1)
+	aliasBatch.QueuedQueries = make([]*pgx.QueuedQuery, 0, batchLim*4)
+	assocBatch.QueuedQueries = make([]*pgx.QueuedQuery, 0, batchLim*5)
+	// Flush sends the batches in the correct order, then resets the batches'
+	// query slices.
 	flush := func() (err error) {
-		err = tx.SendBatch(ctx, &batch).Close()
-		clear(batch.QueuedQueries)
-		batch.QueuedQueries = batch.QueuedQueries[:0]
+		err = errors.Join(
+			tx.SendBatch(ctx, &insertBatch).Close(),
+			conn.SendBatch(ctx, &aliasBatch).Close(),
+			tx.SendBatch(ctx, &assocBatch).Close(),
+		)
+		for _, b := range []*pgx.Batch{&insertBatch, &aliasBatch, &assocBatch} {
+			clear(b.QueuedQueries)
+			b.QueuedQueries = b.QueuedQueries[:0]
+		}
 		return err
 	}
 
-	// Flattened parallel arrays for the bulk alias-linking statements run after
-	// all vuln inserts are done. Each entry in va* corresponds to one
-	// (vuln, alias) pair; each entry in vs* to one (vuln, self) pair.
-	var (
-		vaHashKinds, vsHashKinds []string
-		vaHashes, vsHashes       [][]byte
-		vaSpaces, vsSpaces       []string
-		vaNames, vsNames         []string
-	)
+	// SeenSpace tracks alias namespaces, to avoid sending a lot of redundant
+	// namespace creation statements.
 	seenSpace := make(map[unique.Handle[string]]struct{})
-	seenAlias := make(map[claircore.Alias]struct{})
+	// This whole function is a giant callback hell. Don't do this. I was backed
+	// into a corner. This function makes my son cry and actively saps joy from
+	// the world.
+	vulnIDCallback := func(vuln *claircore.Vulnerability) func(pgx.Row) error {
+		// VulnID is where the id for the passed-in vulnerability will be
+		// stored.
+		var vulnID uint64
+		// DoAlias is a closure that enqueues the Alias insertion statements.
+		doAlias := func(a claircore.Alias, assoc string) {
+			if !a.Valid() {
+				return
+			}
+			if _, ok := seenSpace[a.Space]; !ok {
+				seenSpace[a.Space] = struct{}{}
+				aliasBatch.Queue(updateVulnerabilitiesInsertAliasNamespace, a.Space)
+			}
+			// It might be possible to collapse these two statements, at the
+			// cost of making it more complicated: INSERT ... RETURNING only
+			// works if an insertion happened.
+			aliasBatch.Queue(updateVulnerabilitiesInsertAlias, a.Space, a.Name)
+			aliasBatch.
+				Queue(updateVulnerabilitiesSelectAlias, a.Space, a.Name).
+				QueryRow(func(row pgx.Row) error {
+					// This closure enqueues the statement to associate the
+					// alias and the vulnerability via the correct pivot table.
+					var aliasID uint64
+					if err := row.Scan(&aliasID); err != nil {
+						return err
+					}
+					if vulnID != 0 {
+						assocBatch.Queue(assoc, vulnID, aliasID)
+					}
+					return nil
+				})
+		}
+		for _, a := range vuln.Aliases {
+			doAlias(a, updateVulnerabilitiesInsertVulnerabilityAlias)
+		}
+		doAlias(vuln.Self, updateVulnerabilitiesInsertVulnerabilitySelf)
+		// All the above should make it so that the [*claircore.Vulnerability]
+		// isn't pinned in memory until the batch is processed. Only the string
+		// backing storage and the [unique.Handle] backing storage should be
+		// unreclaimable while this batch is in flight.
 
-	vulnIter(func(vuln *claircore.Vulnerability, iterErr error) bool {
+		// As long as [insertBatch] is submitted first, [vulnID] is populated in
+		// this callback and the [aliasBatch] callbacks have the value to use to
+		// populate the [assocBatch].
+		return func(row pgx.Row) error {
+			if err := row.Scan(&vulnID); err != nil {
+				return err
+			}
+			assocBatch.Queue(updateVulnerabilitiesAssociateUpdateOperationVuln, uoID, vulnID)
+			return nil
+		}
+	}
+
+	for vuln, iterErr := range vulnIter {
 		if iterErr != nil {
 			err = iterErr
-			return false
+			break
 		}
 		vulnCt++
 		if skipVulnerability(vuln) {
 			skipCt++
-			return true
+			continue
 		}
 
 		pkg := vuln.Package
@@ -327,52 +354,26 @@ ON CONFLICT DO NOTHING;`
 			repo = &zeroRepo
 		}
 		hashKind, hash := md5Vuln(vuln)
-		vKind, _, _ := rangefmt(vuln.Range)
 
-		batch.Queue(
-			insert,
+		insertBatch.Queue(
+			updateVulnerabilitiesInsertVuln,
 			hashKind, hash,
 			vuln.Name, vuln.Updater, vuln.Description, vuln.Issued, vuln.Links, vuln.Severity, vuln.NormalizedSeverity,
 			pkg.Name, pkg.Version, pkg.Module, pkg.Arch, pkg.Kind,
 			dist.DID, dist.Name, dist.Version, dist.VersionCodeName, dist.VersionID, dist.Arch, dist.CPE, dist.PrettyName,
 			repo.Name, repo.Key, repo.URI,
-			vuln.FixedInVersion, vuln.ArchOperation, vKind, vuln.Range,
+			vuln.FixedInVersion, vuln.ArchOperation, rangekind(vuln.Range), vuln.Range,
 			vuln.Invert,
 		)
-		batch.Queue(assoc, hashKind, hash, uoID)
+		insertBatch.Queue(updateVulnerabilitiesSelectVulnByHash, hashKind, hash).QueryRow(vulnIDCallback(vuln))
 
-		// Accumulate alias links for the bulk statements below. The hash is
-		// repeated once per alias so the unnest join can match each row to its
-		// vuln.
-		for _, a := range vuln.Aliases {
-			if !a.Valid() {
-				continue
+		if ct := insertBatch.Len(); ct >= batchLim {
+			if err = flush(); err != nil {
+				err = fmt.Errorf("failed batching: %w", err)
+				break
 			}
-			seenSpace[a.Space] = struct{}{}
-			seenAlias[a] = struct{}{}
-			vaHashKinds = append(vaHashKinds, hashKind)
-			vaHashes = append(vaHashes, hash)
-			vaSpaces = append(vaSpaces, a.Space.Value())
-			vaNames = append(vaNames, a.Name)
 		}
-		if vuln.Self.Valid() {
-			seenSpace[vuln.Self.Space] = struct{}{}
-			seenAlias[vuln.Self] = struct{}{}
-			vsHashKinds = append(vsHashKinds, hashKind)
-			vsHashes = append(vsHashes, hash)
-			vsSpaces = append(vsSpaces, vuln.Self.Space.Value())
-			vsNames = append(vsNames, vuln.Self.Name)
-		}
-
-		if ct := batch.Len(); ct < 1000 {
-			return true
-		}
-		if err = flush(); err != nil {
-			err = fmt.Errorf("failed batching: %w", err)
-			return false
-		}
-		return true
-	})
+	}
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("iterating on vulnerabilities: %w", err)
 	}
@@ -382,51 +383,6 @@ ON CONFLICT DO NOTHING;`
 
 	updateVulnerabilitiesCounter.WithLabelValues("insert_batch", strconv.FormatBool(delta)).Add(1)
 	updateVulnerabilitiesDuration.WithLabelValues("insert_batch", strconv.FormatBool(delta)).Observe(time.Since(start).Seconds())
-
-	// Insert alias namespaces and aliases outside the transaction to avoid
-	// deadlocks when concurrent updaters race to insert the same namespaces.
-	if len(seenSpace) > 0 {
-		spaces := make([]string, 0, len(seenSpace))
-		for h := range seenSpace {
-			spaces = append(spaces, h.Value())
-		}
-		aliasSpaces := make([]string, 0, len(seenAlias))
-		aliasNames := make([]string, 0, len(seenAlias))
-		for a := range seenAlias {
-			aliasSpaces = append(aliasSpaces, a.Space.Value())
-			aliasNames = append(aliasNames, a.Name)
-		}
-
-		conn, err := s.pool.Acquire(ctx)
-		if err != nil {
-			return uuid.Nil, fmt.Errorf("acquiring connection for aliases: %w", err)
-		}
-		defer conn.Release()
-
-		if _, err := conn.Exec(ctx, insertAliasNamespaces, spaces); err != nil {
-			return uuid.Nil, fmt.Errorf("failed to insert alias namespaces: %w", err)
-		}
-		if _, err := conn.Exec(ctx, insertAliases, aliasSpaces, aliasNames); err != nil {
-			return uuid.Nil, fmt.Errorf("failed to insert aliases: %w", err)
-		}
-	}
-
-	// Bulk-link aliases and self references. Two single statements replace the
-	// former per-vulnerability hash-lookup subqueries queued in the batch above.
-	start = time.Now()
-	if len(vaHashKinds) > 0 {
-		if _, err := tx.Exec(ctx, bulkLinkAliases, vaHashKinds, vaHashes, vaSpaces, vaNames); err != nil {
-			return uuid.Nil, fmt.Errorf("failed to bulk link vulnerability aliases: %w", err)
-		}
-	}
-	if len(vsHashKinds) > 0 {
-		if _, err := tx.Exec(ctx, bulkLinkSelf, vsHashKinds, vsHashes, vsSpaces, vsNames); err != nil {
-			return uuid.Nil, fmt.Errorf("failed to bulk link vulnerability self aliases: %w", err)
-		}
-	}
-	updateVulnerabilitiesCounter.WithLabelValues("link_aliases", strconv.FormatBool(delta)).Add(1)
-	updateVulnerabilitiesDuration.WithLabelValues("link_aliases", strconv.FormatBool(delta)).Observe(time.Since(start).Seconds())
-
 	if err := tx.Commit(ctx); err != nil {
 		return uuid.Nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
@@ -446,6 +402,13 @@ func skipVulnerability(v *claircore.Vulnerability) bool {
 	// TODO(hank) Check the vulnerability aliases. This requires *all* the
 	// updaters being touched.
 	return v.Package == nil || v.Package.Name == ""
+}
+
+func rangekind(r *claircore.Range) (kind string) {
+	if r == nil || r.Lower.Kind != r.Upper.Kind {
+		return ""
+	}
+	return r.Lower.Kind
 }
 
 func rangefmt(r *claircore.Range) (kind *string, lower, upper string) {
