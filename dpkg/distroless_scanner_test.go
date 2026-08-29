@@ -1,6 +1,8 @@
 package dpkg
 
 import (
+	"archive/tar"
+	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -84,5 +86,75 @@ func TestDistrolessLayer(t *testing.T) {
 				t.Fatal(cmp.Diff(ps, tc.want))
 			}
 		})
+	}
+}
+
+func TestDistrolessMissingListFile(t *testing.T) {
+	t.Parallel()
+	mod := test.Modtime(t, "distroless_scanner_test.go")
+	layerfile := test.GenerateFixture(t, "distroless-missing-list.tar", mod, missingListSetup)
+	ctx := test.Logging(t)
+	var l claircore.Layer
+	var s DistrolessScanner
+
+	f, err := os.Open(layerfile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	if err := l.Init(ctx, &test.AnyDescription, f); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := l.Close(); err != nil {
+			t.Error(err)
+		}
+	})
+
+	ps, err := s.Scan(ctx, &l)
+	if err != nil {
+		t.Fatalf("scan should not fail with missing .list file: %v", err)
+	}
+	if got := len(ps); got != 1 {
+		t.Fatalf("got %d packages, want 1", got)
+	}
+	if ps[0].Name != "gcc-14-base" {
+		t.Errorf("got package name %q, want %q", ps[0].Name, "gcc-14-base")
+	}
+}
+
+func missingListSetup(t testing.TB, f *os.File) {
+	w := tar.NewWriter(f)
+	defer func() {
+		if err := w.Close(); err != nil {
+			t.Error(err)
+		}
+	}()
+	for _, dir := range []string{
+		"var/lib/dpkg/",
+		"var/lib/dpkg/status.d/",
+	} {
+		if err := w.WriteHeader(&tar.Header{
+			Name: dir,
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	const controlData = "Package: gcc-14-base\nVersion: 14.2.0-19\nArchitecture: amd64\nSource: gcc-14\n\n"
+	if err := w.WriteHeader(&tar.Header{
+		Name: "var/lib/dpkg/status.d/gcc-14-base",
+		Size: int64(len(controlData)),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := w.Write([]byte(controlData)); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.WriteHeader(&tar.Header{
+		Typeflag: tar.TypeSymlink,
+		Name:     "var/lib/dpkg/status.d/gcc-14-base.list",
+		Linkname: "../info/gcc-14-base.list",
+	}); err != nil {
+		t.Fatal(err)
 	}
 }
