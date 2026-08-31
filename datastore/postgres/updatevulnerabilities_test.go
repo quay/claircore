@@ -29,12 +29,14 @@ type op struct {
 }
 
 func TestGetLatestVulnerabilities(t *testing.T) {
-	integration.NeedDB(t)
-	ctx := test.Logging(t)
+	t.Parallel()
+	ctx, span := tracer.Start(test.RootContext(t), t.Name())
+	defer span.End()
+	integration.NeedDB(t, ctx)
 
 	cases := []latestVulnTestCase{
 		{
-			TestName:  "test initial op vuln still relevant",
+			TestName:  "InitialOpVulnStillRelevant",
 			Updater:   updater,
 			VulnCount: 1,
 			FirstOp: &op{
@@ -81,7 +83,7 @@ func TestGetLatestVulnerabilities(t *testing.T) {
 			},
 		},
 		{
-			TestName:  "test vuln is overwritten not duped",
+			TestName:  "VulnOverwrittenNotDuped",
 			Updater:   updater,
 			VulnCount: 1,
 			FirstOp: &op{
@@ -130,7 +132,7 @@ func TestGetLatestVulnerabilities(t *testing.T) {
 			},
 		},
 		{
-			TestName:  "test multiple vulns from same CVE",
+			TestName:  "MultipleVulnsFromSameCVE",
 			Updater:   updater,
 			VulnCount: 1,
 			FirstOp: &op{
@@ -187,9 +189,8 @@ func TestGetLatestVulnerabilities(t *testing.T) {
 				},
 			},
 		},
-
 		{
-			TestName:  "test two vulns same package different uo",
+			TestName:  "TwoVulnsSamePackageDifferentOp",
 			Updater:   updater,
 			VulnCount: 2,
 			FirstOp: &op{
@@ -243,7 +244,7 @@ func TestGetLatestVulnerabilities(t *testing.T) {
 			},
 		},
 		{
-			TestName:  "test deleting vuln",
+			TestName:  "DeletingVuln",
 			Updater:   updater,
 			VulnCount: 0,
 			FirstOp: &op{
@@ -310,7 +311,8 @@ func TestGetLatestVulnerabilities(t *testing.T) {
 	// run test cases
 	for _, tc := range cases {
 		t.Run(tc.TestName, func(t *testing.T) {
-			ctx := test.Logging(t, ctx)
+			ctx, span := tracer.Start(test.Logging(t, ctx), t.Name())
+			defer span.End()
 			_, err := store.DeltaUpdateVulnerabilities(ctx, tc.Updater, driver.Fingerprint(uuid.New().String()), tc.FirstOp.vulns, tc.FirstOp.deletedVulns)
 			if err != nil {
 				t.Fatalf("failed to perform update for first op: %v", err)
@@ -337,8 +339,10 @@ func TestGetLatestVulnerabilities(t *testing.T) {
 }
 
 func TestUpdateVulnerabilitiesIterSinglePass(t *testing.T) {
-	integration.NeedDB(t)
-	ctx := test.Logging(t)
+	t.Parallel()
+	ctx, span := tracer.Start(test.RootContext(t), t.Name())
+	defer span.End()
+	integration.NeedDB(t, ctx)
 
 	pool := pgtest.TestMatcherDB(ctx, t)
 	store := NewMatcherStore(pool)

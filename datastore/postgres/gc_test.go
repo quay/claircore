@@ -65,7 +65,10 @@ func (e enricherMock) ParseEnrichment(ctx context.Context, contents io.ReadClose
 // TestGC confirms the garbage collection of
 // vulnerabilities works correctly.
 func TestGC(t *testing.T) {
-	integration.NeedDB(t)
+	t.Parallel()
+	ctx, span := tracer.Start(test.RootContext(t), t.Name())
+	defer span.End()
+	integration.NeedDB(t, ctx)
 
 	// mock returns exactly one random vuln each time its Parse method is called.
 	// each update operation will be associated with a single vuln.
@@ -144,7 +147,8 @@ func TestGC(t *testing.T) {
 
 	for _, tt := range table {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx := test.Logging(t)
+			ctx, span := tracer.Start(test.Logging(t, ctx), t.Name())
+			defer span.End()
 			pool := pgtest.TestMatcherDB(ctx, t)
 			store := NewMatcherStore(pool)
 			locks, err := ctxlock.New(ctx, pool)
