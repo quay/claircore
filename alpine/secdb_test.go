@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
+	"github.com/quay/claircore/test"
 )
 
 var v3_10CommunityTruncatedSecDB = SecurityDB{
@@ -48,6 +50,8 @@ var v3_10CommunityTruncatedSecDB = SecurityDB{
 }
 
 func TestSecDBParse(t *testing.T) {
+	ctx, span := tracer.Start(test.RootContext(t), t.Name())
+	defer span.End()
 	table := []struct {
 		testFile string
 		expected SecurityDB
@@ -58,11 +62,13 @@ func TestSecDBParse(t *testing.T) {
 		},
 	}
 
-	for _, test := range table {
-		path := filepath.Join("testdata", test.testFile)
-		want := test.expected
-		t.Run(test.testFile, func(t *testing.T) {
+	for _, tc := range table {
+		path := filepath.Join("testdata", tc.testFile)
+		want := tc.expected
+		t.Run(tc.testFile, func(t *testing.T) {
 			t.Parallel()
+			_, span := tracer.Start(test.Logging(t, ctx), t.Name())
+			defer span.End()
 
 			f, err := os.Open(path)
 			if err != nil {
