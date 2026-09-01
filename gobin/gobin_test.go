@@ -16,7 +16,8 @@ import (
 )
 
 func TestEmptyFile(t *testing.T) {
-	ctx := test.RootContext(t)
+	ctx, span := tracer.Start(test.RootContext(t), t.Name())
+	defer span.End()
 
 	mod := test.Modtime(t, "gobin_test.go") // Needs to be the name of this file.
 	p := test.GenerateFixture(t, ctx, "nothing.tar", mod, genEmptyFile)
@@ -48,7 +49,8 @@ func TestEmptyFile(t *testing.T) {
 }
 
 func TestScanner(t *testing.T) {
-	ctx := test.RootContext(t)
+	ctx, span := tracer.Start(test.RootContext(t), t.Name())
+	defer span.End()
 
 	mod := test.Modtime(t, "gobin_test.go") // Needs to be the name of this file.
 	p := test.GenerateFixture(t, ctx, t.Name()+".tar", mod, genScanner)
@@ -104,6 +106,8 @@ func TestScanner(t *testing.T) {
 }
 
 func genEmptyFile(t testing.TB, _ context.Context, tf *os.File) {
+	_, span := tracer.Start(ctx, `genEmptyFile`)
+	defer span.End()
 	tmpdir := t.TempDir()
 	f, err := os.Create(filepath.Join(tmpdir, "nothing"))
 	if err != nil {
@@ -131,6 +135,8 @@ func genEmptyFile(t testing.TB, _ context.Context, tf *os.File) {
 }
 
 func genScanner(t testing.TB, ctx context.Context, tf *os.File) {
+	ctx, span := tracer.Start(ctx, `genScanner`)
+	defer span.End()
 	tmpdir := t.TempDir()
 
 	// Build a go binary.

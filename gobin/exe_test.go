@@ -13,14 +13,20 @@ import (
 )
 
 func TestBin(t *testing.T) {
+	ctx, span := tracer.Start(test.RootContext(t), t.Name())
+	defer span.End()
 	ms, err := filepath.Glob("testdata/bin/*")
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, n := range ms {
 		name := filepath.Base(n)
+		if name == ".gitignore" || name == "README.md" {
+			continue
+		}
 		t.Run(name, func(t *testing.T) {
-			ctx := test.Logging(t)
+			ctx, span := tracer.Start(test.Logging(t, ctx), t.Name())
+			defer span.End()
 			f, err := os.Open(n)
 			if err != nil {
 				t.Fatal(err)
@@ -95,11 +101,16 @@ var versionTestcases = []struct {
 }
 
 func TestParseVersion(t *testing.T) {
+	ctx, span := tracer.Start(test.RootContext(t), t.Name())
+	defer span.End()
 	// Run testcases on the legacy and new parsing logic
 	// to test symmetry.
 
 	for _, tt := range versionTestcases {
 		t.Run(tt.name, func(t *testing.T) {
+			_, span := tracer.Start(test.Logging(t, ctx), t.Name())
+			defer span.End()
+
 			if !tt.skipLegacy {
 				// legacy
 				ver, err := semver.NewVersion(tt.versionIn)
