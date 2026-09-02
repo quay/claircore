@@ -58,11 +58,13 @@ func (Detector) Kind() string { return detectorKind }
 
 // Scan implements [indexer.PackageScanner].
 func (Detector) Scan(ctx context.Context, l *claircore.Layer) ([]*claircore.Package, error) {
+	ctx, span := tracer.Start(ctx, "Detector.Scan")
+	defer span.End()
 	const peekSz = 18
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	defer trace.StartRegion(ctx, "Scanner.Scan").End()
+	defer trace.StartRegion(ctx, "Detector.Scan").End()
 	trace.Log(ctx, "layer", l.Hash.String())
 	slog.DebugContext(ctx, "start")
 	defer slog.DebugContext(ctx, "done")
