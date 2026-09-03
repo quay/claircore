@@ -1,5 +1,3 @@
-// Package migrations holds PostgreSQL migrations for databases to back
-// `datastore` implementations.
 package migrations
 
 import (
