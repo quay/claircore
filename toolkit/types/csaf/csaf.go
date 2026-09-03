@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"slices"
 	"time"
 
 	"github.com/package-url/packageurl-go"
@@ -302,10 +303,8 @@ type Product struct {
 func (csafDoc *CSAF) FindRemediation(productID string) *RemediationData {
 	for _, v := range csafDoc.Vulnerabilities {
 		for _, r := range v.Remediations {
-			for _, p := range r.ProductIDs {
-				if p == productID {
-					return &r
-				}
+			if slices.Contains(r.ProductIDs, productID) {
+				return &r
 			}
 		}
 	}
@@ -316,10 +315,8 @@ func (csafDoc *CSAF) FindRemediation(productID string) *RemediationData {
 func (csafDoc *CSAF) FindScore(productID string) *Score {
 	for _, v := range csafDoc.Vulnerabilities {
 		for _, s := range v.Scores {
-			for _, p := range s.ProductIDs {
-				if p == productID {
-					return &s
-				}
+			if slices.Contains(s.ProductIDs, productID) {
+				return &s
 			}
 		}
 	}
