@@ -196,7 +196,11 @@ ON CONFLICT DO NOTHING;`
 
 	start := time.Now()
 
-	tx, err := s.pool.Begin(ctx)
+	// The isolation level must be pinned to "read committed" (rather than
+	// inheriting default_transaction_isolation) because linkFlush's
+	// INSERT..SELECT statements need to see alias rows committed outside this
+	// transaction after it began.
+	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("unable to start transaction: %w", err)
 	}
@@ -285,22 +289,65 @@ ON CONFLICT DO NOTHING;`
 	var batch pgx.Batch
 	flush := func() (err error) {
 		err = tx.SendBatch(ctx, &batch).Close()
-		clear(batch.QueuedQueries)
-		batch.QueuedQueries = batch.QueuedQueries[:0]
+		resetSlices(&batch.QueuedQueries)
 		return err
 	}
 
-	// Flattened parallel arrays for the bulk alias-linking statements run after
-	// all vuln inserts are done. Each entry in va* corresponds to one
-	// (vuln, alias) pair; each entry in vs* to one (vuln, self) pair.
+	// Columns for the bulk alias-linking statements, flushed alongside the
+	// vulnerability insert batch to bound memory usage. Each entry in va
+	// corresponds to one (vuln, alias) pair; each entry in vs to one
+	// (vuln, self) pair.
+	var va, vs linkCols
+	// Namespaces and aliases not yet inserted, i.e., first seen in the
+	// current chunk.
 	var (
-		vaHashKinds, vsHashKinds []string
-		vaHashes, vsHashes       [][]byte
-		vaSpaces, vsSpaces       []string
-		vaNames, vsNames         []string
+		newSpaces                     []string
+		newAliasSpaces, newAliasNames []string
 	)
 	seenSpace := make(map[unique.Handle[string]]struct{})
 	seenAlias := make(map[claircore.Alias]struct{})
+
+	// linkDur accumulates time spent in linkFlush so the link_aliases metric
+	// covers the per-chunk flushes and insert_batch excludes them.
+	var linkDur time.Duration
+
+	// linkFlush inserts the alias namespaces and aliases first seen in the
+	// current chunk (outside the transaction to avoid deadlocks between
+	// concurrent updaters), then links the current chunk's (vuln, alias) and
+	// (vuln, self) pairs inside the transaction. The vulnerability rows of
+	// the chunk must have been flushed to the transaction already.
+	linkFlush := func() error {
+		defer func(t time.Time) { linkDur += time.Since(t) }(time.Now())
+		if len(newSpaces) > 0 {
+			if _, err := s.pool.Exec(ctx, insertAliasNamespaces, newSpaces); err != nil {
+				return fmt.Errorf("failed to insert alias namespaces: %w", err)
+			}
+		}
+		if len(newAliasNames) > 0 {
+			if _, err := s.pool.Exec(ctx, insertAliases, newAliasSpaces, newAliasNames); err != nil {
+				return fmt.Errorf("failed to insert aliases: %w", err)
+			}
+		}
+		// Enforce using uncached plans because with more than a few chunks,
+		// the generic plan (built for unnest's default row estimate) is
+		// chosen and is far slower for the actual array sizes.
+		if len(va.hashKinds) > 0 {
+			if _, err := tx.Exec(ctx, bulkLinkAliases, pgx.QueryExecModeExec, va.hashKinds, va.hashes, va.spaces, va.names); err != nil {
+				return fmt.Errorf("failed to bulk link vulnerability aliases: %w", err)
+			}
+		}
+		if len(vs.hashKinds) > 0 {
+			if _, err := tx.Exec(ctx, bulkLinkSelf, pgx.QueryExecModeExec, vs.hashKinds, vs.hashes, vs.spaces, vs.names); err != nil {
+				return fmt.Errorf("failed to bulk link vulnerability self aliases: %w", err)
+			}
+		}
+		clear(seenSpace)
+		clear(seenAlias)
+		resetSlices(&newSpaces, &newAliasSpaces, &newAliasNames)
+		va.reset()
+		vs.reset()
+		return nil
+	}
 
 	vulnIter(func(vuln *claircore.Vulnerability, iterErr error) bool {
 		if iterErr != nil {
@@ -337,27 +384,28 @@ ON CONFLICT DO NOTHING;`
 		)
 		batch.Queue(assoc, hashKind, hash, uoID)
 
-		// Accumulate alias links for the bulk statements below. The hash is
-		// repeated once per alias so the unnest join can match each row to its
-		// vuln.
+		// Accumulate alias links for the bulk statements below.
+		stage := func(a claircore.Alias) {
+			if _, ok := seenSpace[a.Space]; !ok {
+				seenSpace[a.Space] = struct{}{}
+				newSpaces = append(newSpaces, a.Space.Value())
+			}
+			if _, ok := seenAlias[a]; !ok {
+				seenAlias[a] = struct{}{}
+				newAliasSpaces = append(newAliasSpaces, a.Space.Value())
+				newAliasNames = append(newAliasNames, a.Name)
+			}
+		}
 		for _, a := range vuln.Aliases {
 			if !a.Valid() {
 				continue
 			}
-			seenSpace[a.Space] = struct{}{}
-			seenAlias[a] = struct{}{}
-			vaHashKinds = append(vaHashKinds, hashKind)
-			vaHashes = append(vaHashes, hash)
-			vaSpaces = append(vaSpaces, a.Space.Value())
-			vaNames = append(vaNames, a.Name)
+			stage(a)
+			va.add(hashKind, hash, a)
 		}
 		if vuln.Self.Valid() {
-			seenSpace[vuln.Self.Space] = struct{}{}
-			seenAlias[vuln.Self] = struct{}{}
-			vsHashKinds = append(vsHashKinds, hashKind)
-			vsHashes = append(vsHashes, hash)
-			vsSpaces = append(vsSpaces, vuln.Self.Space.Value())
-			vsNames = append(vsNames, vuln.Self.Name)
+			stage(vuln.Self)
+			vs.add(hashKind, hash, vuln.Self)
 		}
 
 		if ct := batch.Len(); ct < 1000 {
@@ -365,6 +413,9 @@ ON CONFLICT DO NOTHING;`
 		}
 		if err = flush(); err != nil {
 			err = fmt.Errorf("failed batching: %w", err)
+			return false
+		}
+		if err = linkFlush(); err != nil {
 			return false
 		}
 		return true
@@ -377,51 +428,14 @@ ON CONFLICT DO NOTHING;`
 	}
 
 	updateVulnerabilitiesCounter.WithLabelValues("insert_batch", strconv.FormatBool(delta)).Add(1)
-	updateVulnerabilitiesDuration.WithLabelValues("insert_batch", strconv.FormatBool(delta)).Observe(time.Since(start).Seconds())
+	updateVulnerabilitiesDuration.WithLabelValues("insert_batch", strconv.FormatBool(delta)).Observe((time.Since(start) - linkDur).Seconds())
 
-	// Insert alias namespaces and aliases outside the transaction to avoid
-	// deadlocks when concurrent updaters race to insert the same namespaces.
-	if len(seenSpace) > 0 {
-		spaces := make([]string, 0, len(seenSpace))
-		for h := range seenSpace {
-			spaces = append(spaces, h.Value())
-		}
-		aliasSpaces := make([]string, 0, len(seenAlias))
-		aliasNames := make([]string, 0, len(seenAlias))
-		for a := range seenAlias {
-			aliasSpaces = append(aliasSpaces, a.Space.Value())
-			aliasNames = append(aliasNames, a.Name)
-		}
-
-		conn, err := s.pool.Acquire(ctx)
-		if err != nil {
-			return uuid.Nil, fmt.Errorf("acquiring connection for aliases: %w", err)
-		}
-		defer conn.Release()
-
-		if _, err := conn.Exec(ctx, insertAliasNamespaces, spaces); err != nil {
-			return uuid.Nil, fmt.Errorf("failed to insert alias namespaces: %w", err)
-		}
-		if _, err := conn.Exec(ctx, insertAliases, aliasSpaces, aliasNames); err != nil {
-			return uuid.Nil, fmt.Errorf("failed to insert aliases: %w", err)
-		}
-	}
-
-	// Bulk-link aliases and self references. Two single statements replace the
-	// former per-vulnerability hash-lookup subqueries queued in the batch above.
-	start = time.Now()
-	if len(vaHashKinds) > 0 {
-		if _, err := tx.Exec(ctx, bulkLinkAliases, vaHashKinds, vaHashes, vaSpaces, vaNames); err != nil {
-			return uuid.Nil, fmt.Errorf("failed to bulk link vulnerability aliases: %w", err)
-		}
-	}
-	if len(vsHashKinds) > 0 {
-		if _, err := tx.Exec(ctx, bulkLinkSelf, vsHashKinds, vsHashes, vsSpaces, vsNames); err != nil {
-			return uuid.Nil, fmt.Errorf("failed to bulk link vulnerability self aliases: %w", err)
-		}
+	// Link any remainder not covered by the periodic flushes above.
+	if err := linkFlush(); err != nil {
+		return uuid.Nil, err
 	}
 	updateVulnerabilitiesCounter.WithLabelValues("link_aliases", strconv.FormatBool(delta)).Add(1)
-	updateVulnerabilitiesDuration.WithLabelValues("link_aliases", strconv.FormatBool(delta)).Observe(time.Since(start).Seconds())
+	updateVulnerabilitiesDuration.WithLabelValues("link_aliases", strconv.FormatBool(delta)).Observe(linkDur.Seconds())
 
 	if err := tx.Commit(ctx); err != nil {
 		return uuid.Nil, fmt.Errorf("failed to commit transaction: %w", err)
@@ -434,6 +448,38 @@ ON CONFLICT DO NOTHING;`
 		"skipped", skipCt,
 		"inserted", vulnCt-skipCt)
 	return ref, nil
+}
+
+// LinkCols is the set of flattened parallel arrays passed to one of the bulk
+// alias-linking statements: one entry per (vuln, alias) pair. The hash is
+// repeated once per alias so the unnest join can match each row to its vuln.
+type linkCols struct {
+	hashKinds []string
+	hashes    [][]byte
+	spaces    []string
+	names     []string
+}
+
+func (l *linkCols) add(hashKind string, hash []byte, a claircore.Alias) {
+	l.hashKinds = append(l.hashKinds, hashKind)
+	l.hashes = append(l.hashes, hash)
+	l.spaces = append(l.spaces, a.Space.Value())
+	l.names = append(l.names, a.Name)
+}
+
+func (l *linkCols) reset() {
+	resetSlices(&l.hashKinds, &l.spaces, &l.names)
+	resetSlices(&l.hashes)
+}
+
+// ResetSlices truncates the passed slices, keeping their backing arrays for
+// reuse but clearing the elements so anything they reference can be
+// collected.
+func resetSlices[T any](slices ...*[]T) {
+	for _, s := range slices {
+		clear(*s)
+		*s = (*s)[:0]
+	}
 }
 
 // SkipVulnerability reports if the provided [claircore.Vulnerability] should
