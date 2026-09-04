@@ -145,9 +145,8 @@ const (
 
 // String implements [fmt.Stringer].
 func (v *Value) String() string {
-	var b strings.Builder
-	v.bind(&b)
-	return b.String()
+	b, _ := v.AppendText(nil)
+	return string(b[1:]) // Remove leading ":"
 }
 
 // GoString implements [fmt.GoStringer].
@@ -203,7 +202,11 @@ func (w WFN) String() string {
 	case errors.Is(err, ErrUnset):
 		return ""
 	}
-	return w.BindFS()
+	b, _ := w.AppendText(make([]byte, 0, 64))
+	if len(b) == 0 {
+		return ""
+	}
+	return string(b)
 }
 
 // GoString implements [fmt.GoStringer].

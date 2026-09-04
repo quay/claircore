@@ -8,7 +8,7 @@ import (
 
 func TestMarshal(t *testing.T) {
 	t.Parallel()
-	var names = []string{
+	names := []string{
 		`cpe:2.3:a:foo\\bar:big\$money:2010:*:*:*:special:ipod_touch:80gb:*`,
 		`cpe:2.3:a:foo\\bar:big\$money_2010:*:*:*:*:special:ipod_touch:80gb:*`,
 		`cpe:2.3:a:hp:insight:7.4.0.1570:-:*:*:online:win2003:x64:*`,
@@ -121,6 +121,25 @@ func TestMarshal(t *testing.T) {
 				t.Error(err)
 			}
 			if got, want := wfn.String(), n; got != want {
+				t.Error(cmp.Diff(got, want))
+			}
+		}
+	})
+	t.Run("Equivalent", func(t *testing.T) {
+		for _, n := range names {
+			if n == "" {
+				continue
+			}
+			var wfn WFN
+			if err := wfn.UnmarshalFS(n); err != nil {
+				t.Error(err)
+			}
+			s := wfn.BindFS()
+			b, err := wfn.AppendText(nil)
+			if err != nil {
+				t.Error(err)
+			}
+			if got, want := string(b), s; got != want {
 				t.Error(cmp.Diff(got, want))
 			}
 		}

@@ -9,14 +9,13 @@ import (
 
 // MarshalText implements [encoding.TextMarshaler].
 func (w *WFN) MarshalText() ([]byte, error) {
-	switch err := w.Valid(); {
-	case err == nil:
-	case errors.Is(err, ErrUnset):
-		return []byte{}, nil
-	default:
-		return nil, err
-	}
-	return []byte(w.BindFS()), nil
+	// Guess at a good initial size. Calculated via finding the mean size across
+	// the CPE Name dictionary and then rounding it up.
+	//
+	// 	zcat testdata/dictionary.list.gz | awk '/^#/{next}/^$/{next}{ct++;sum+=length($0)}END{print sum/ct}'
+	// 	55.9444 = 64
+	b := make([]byte, 0, 64)
+	return w.AppendText(b)
 }
 
 // UnmarshalText implements [encoding.TextUnmarshaler].

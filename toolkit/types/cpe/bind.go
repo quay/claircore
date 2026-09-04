@@ -1,35 +1,75 @@
 package cpe
 
-import "strings"
+import (
+	"encoding"
+	"errors"
+	"unsafe"
+)
 
 // BindFS returns the WFN bound as CPE 2.3 formatted string.
+//
+// Deprecated: use [WFN.AppendText].
+//
+//go:fix inline
 func (w WFN) BindFS() string {
-	b := strings.Builder{}
-	b.WriteString(`cpe:2.3`)
-	for i := range NumAttr {
-		b.WriteByte(':')
-		w.Attr[i].bind(&b)
+	b := make([]byte, 0, 64)
+	b, err := w.AppendText(b)
+	if err != nil {
+		panic(err)
 	}
-	return b.String()
+	return string(b)
 }
 
-// Bind binds the value to a formatted string, writing it into the provided
-// strings.Builder.
-func (v *Value) bind(b *strings.Builder) (err error) {
+var (
+	_ encoding.TextAppender = (*Value)(nil)
+	_ encoding.TextAppender = (*WFN)(nil)
+)
+
+// AppendText implements [encoding.TextAppender].
+func (w *WFN) AppendText(b []byte) ([]byte, error) {
+	switch err := w.Valid(); {
+	case err == nil:
+	case errors.Is(err, ErrUnset):
+		return []byte{}, nil
+	default:
+		return nil, err
+	}
+	b = append(b, 'c', 'p', 'e', ':', '2', '.', '3')
+	for i := range NumAttr {
+		// Cannot error
+		b, _ = (&w.Attr[i]).AppendText(b)
+	}
+	return b, nil
+}
+
+// AppendText implements [encoding.TextAppender].
+func (v *Value) AppendText(b []byte) ([]byte, error) {
+	b = append(b, ':')
 	switch v.Kind {
 	case ValueUnset, ValueAny:
-		_, err = b.WriteRune('*')
+		return append(b, '*'), nil
 	case ValueNA:
-		_, err = b.WriteRune('-')
+		return append(b, '-'), nil
 	case ValueSet:
-		_, err = valueString.WriteString(b, v.V)
+	default:
+		panic("unreachable")
 	}
-	return err
-}
 
-// ValueString does FS character replacing.
-var valueString = strings.NewReplacer(
-	`\.`, `.`,
-	`\-`, `-`,
-	`\_`, `_`,
-)
+	esc := false
+	// SAFETY: This is all read-only.
+	for _, c := range unsafe.Slice(unsafe.StringData(v.V), len(v.V)) {
+		switch {
+		case !esc && c == '\\':
+			esc = true
+			continue
+		case esc && (c != '.' && c != '-' && c != '_'):
+			b = append(b, '\\')
+			fallthrough
+		case esc:
+			esc = false
+		default:
+		}
+		b = append(b, c)
+	}
+	return b, nil
+}
