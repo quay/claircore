@@ -7,11 +7,25 @@ import (
 	"log/slog"
 	"net/http"
 
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/pkg/tmp"
 )
 
 func (u *updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCloser, driver.Fingerprint, error) {
+	var success bool
+	ctx, span := tracer.Start(ctx, "updater.Fetch", trace.WithAttributes(attribute.String("database", u.url)))
+	defer func() {
+		if !success {
+			span.SetStatus(codes.Error, "")
+		} else {
+			span.SetStatus(codes.Ok, "")
+		}
+		span.End()
+	}()
 	slog.InfoContext(ctx, "starting fetch", "database", u.url)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.url, nil)
 	if err != nil {
@@ -39,6 +53,7 @@ func (u *updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 		fallthrough
 	case http.StatusNotModified:
 		slog.InfoContext(ctx, "database unchanged since last fetch")
+		span.AddEvent("NotModified")
 		return nil, hint, driver.Unchanged
 	default:
 		return nil, hint, fmt.Errorf("alpine: http response error: %s %d", res.Status, res.StatusCode)
@@ -52,7 +67,6 @@ func (u *updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 	slog.DebugContext(ctx,
 		"created tempfile",
 		"name", tf.Name())
-	var success bool
 	defer func() {
 		if !success {
 			if err := tf.Close(); err != nil {

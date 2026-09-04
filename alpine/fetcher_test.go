@@ -17,7 +17,8 @@ func serveSecDB(t *testing.T) (string, *http.Client) {
 }
 
 func TestFactory(t *testing.T) {
-	ctx := test.Logging(t)
+	ctx, span := tracer.Start(test.RootContext(t), t.Name())
+	defer span.End()
 
 	root, c := serveSecDB(t)
 	fac := &Factory{}

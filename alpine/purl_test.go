@@ -1,19 +1,20 @@
 package alpine
 
 import (
-	"context"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/toolkit/types"
 )
 
 func TestRoundTripIndexRecordAlpine(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
+	ctx, span := tracer.Start(test.RootContext(t), t.Name())
+	defer span.End()
 
 	tests := []struct {
 		name string
