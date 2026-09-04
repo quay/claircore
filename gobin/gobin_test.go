@@ -15,10 +15,13 @@ import (
 )
 
 func TestEmptyFile(t *testing.T) {
-	ctx := test.Logging(t)
+	ctx, span := tracer.Start(test.RootContext(t), t.Name())
+	defer span.End()
 
 	mod := test.Modtime(t, "gobin_test.go") // Needs to be the name of this file.
 	p := test.GenerateFixture(t, "nothing.tar", mod, func(t testing.TB, tf *os.File) {
+		_, span := tracer.Start(ctx, `GenerateFixture`)
+		defer span.End()
 		tmpdir := t.TempDir()
 		f, err := os.Create(filepath.Join(tmpdir, "nothing"))
 		if err != nil {
@@ -72,10 +75,13 @@ func TestEmptyFile(t *testing.T) {
 }
 
 func TestScanner(t *testing.T) {
-	ctx := test.Logging(t)
+	ctx, span := tracer.Start(test.RootContext(t), t.Name())
+	defer span.End()
 
 	mod := test.Modtime(t, "gobin_test.go") // Needs to be the name of this file.
 	p := test.GenerateFixture(t, t.Name()+".tar", mod, func(t testing.TB, tf *os.File) {
+		ctx, span := tracer.Start(ctx, `GenerateFixture`)
+		defer span.End()
 		tmpdir := t.TempDir()
 
 		// Build a go binary.
