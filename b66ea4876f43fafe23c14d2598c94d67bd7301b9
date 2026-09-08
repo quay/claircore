@@ -1,0 +1,5 @@
+jsonblob: add an iterator interface
+
+Loader.All streams entries instead of buffering them, lowering peak
+memory. Next/Entry/Load are deprecated; callers can return Vulnerability
+and EnrichmentRecord values to a shared pool.
