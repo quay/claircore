@@ -1,0 +1,8 @@
+vex: Ingest certain kernel vulnerabilities from Red Hat VEX data
+
+There is now an allowList of kernel packages that the VEX parser will ingest.
+The config also gives the operator the ability to restore previous behaviour
+of the RHEL VEX parser to ignore kernel vulnerabilities. Setting the
+ignore_kernel_packages flag to true will change the updater
+fingerprint and force a full update (as will subsequently removing
+it/setting it to false).
