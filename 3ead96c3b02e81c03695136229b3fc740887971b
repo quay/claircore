@@ -1,0 +1,5 @@
+vex: update Red Hat VEX URL to the new feed
+
+Red Hat Product Security now produces a new security feed with some data
+improvements. This release changes the default VEX URL, this URL can be
+changed via the updater config if desired.
