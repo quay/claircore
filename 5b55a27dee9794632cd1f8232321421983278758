@@ -1,0 +1,6 @@
+postgres: batch alias linking instead of giant slices
+
+Vulnerability inserts were already flushed in batches. Alias and self
+links were not: every pair was accumulated, then written in bulk.
+Those links now run in the per-batch callback chain, so peak memory
+drops in exchange for more round-trips and added latency.
