@@ -4,10 +4,11 @@ import (
 	"context"
 
 	"github.com/quay/claircore/indexer"
+	"github.com/quay/claircore/language"
 )
 
 // NewEcosystem provides the set of scanners for the java ecosystem.
-func NewEcosystem(ctx context.Context) *indexer.Ecosystem {
+func NewEcosystem(_ context.Context) *indexer.Ecosystem {
 	return &indexer.Ecosystem{
 		PackageScanners: func(_ context.Context) ([]indexer.PackageScanner, error) {
 			return []indexer.PackageScanner{&Scanner{}}, nil
@@ -16,8 +17,6 @@ func NewEcosystem(ctx context.Context) *indexer.Ecosystem {
 		RepositoryScanners: func(_ context.Context) ([]indexer.RepositoryScanner, error) {
 			return nil, nil
 		},
-		Coalescer: func(_ context.Context) (indexer.Coalescer, error) {
-			return (*coalescer)(nil), nil
-		},
+		Coalescer: language.NewCoalescer,
 	}
 }
