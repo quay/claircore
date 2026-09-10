@@ -125,15 +125,15 @@ func (p *labelParser) handleAssign(val string, f func(k, v string)) error {
 			return err
 		}
 		for _, kv := range pairs {
-			idx := strings.IndexByte(kv, '=')
-			if idx == -1 {
+			before, after, ok := strings.Cut(kv, "=")
+			if !ok {
 				return fmt.Errorf(`invalid assignment syntax: %+#q`, val)
 			}
-			k, _, err := transform.String(p.unquote, kv[:idx])
+			k, _, err := transform.String(p.unquote, before)
 			if err != nil {
 				return err
 			}
-			v, _, err := transform.String(transform.Chain(p.unquote, p.vars), kv[idx+1:])
+			v, _, err := transform.String(transform.Chain(p.unquote, p.vars), after)
 			if err != nil {
 				return err
 			}
