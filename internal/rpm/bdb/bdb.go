@@ -381,8 +381,11 @@ func (db *PackageDB) readHashpage(pg *io.SectionReader) (hashpage, error) {
 	if got, want := h.LSN, db.m.LSN; got != want {
 		return h, fmt.Errorf("bdb: stale lsn: %016x != %016x", got, want)
 	}
-	if got, want := h.Type, PageTypeHash; got != want {
-		return h, fmt.Errorf("bdb: unexpected page type: %v != %v", got, want)
+	switch typ := h.Type; typ {
+	case PageTypeHash: // OK
+	case PageTypeHashUnsorted: // OK
+	default:
+		return h, fmt.Errorf("bdb: unexpected page type: %v", typ)
 	}
 	return h, nil
 }
