@@ -9,7 +9,7 @@ import (
 	pgtest "github.com/quay/claircore/test/postgres"
 )
 
-func Benchmark_IndexPackages(b *testing.B) {
+func BenchmarkIndexPackages(b *testing.B) {
 	integration.NeedDB(b)
 	benchmarks := []struct {
 		// the name of this benchmark
