@@ -9,12 +9,6 @@ import (
 	"github.com/quay/claircore/pkg/ovalutil"
 )
 
-const (
-	allDB = `https://linux.oracle.com/security/oval/com.oracle.elsa-all.xml.bz2`
-	//doc:url updater
-	baseURL = `https://linux.oracle.com/security/oval/com.oracle.elsa-%d.xml.bz2`
-)
-
 // Updater implements driver.Updater for Oracle Linux.
 type Updater struct {
 	year             int
@@ -26,21 +20,11 @@ type Option func(*Updater) error
 
 // NewUpdater returns an updater configured according to the provided Options.
 //
-// If year is -1, the "all" database will be pulled.
+// The URL and compression are expected to be set via WithURL by the UpdaterSet.
 func NewUpdater(year int, opts ...Option) (*Updater, error) {
-	uri := allDB
-	if year != -1 {
-		uri = fmt.Sprintf(baseURL, year)
-	}
 	u := Updater{
 		year: year,
 	}
-	var err error
-	u.Fetcher.URL, err = url.Parse(uri)
-	if err != nil {
-		return nil, err
-	}
-	u.Fetcher.Compression = ovalutil.CompressionBzip2
 	for _, o := range opts {
 		if err := o(&u); err != nil {
 			return nil, err
