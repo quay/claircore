@@ -374,26 +374,26 @@ func TestParse(t *testing.T) {
 				"testdata/delete_CVE-2023-0030.json",
 				"testdata/delete_CVE-2023-0031.json",
 			},
-			expectedVulns:   4143,
-			expectedDeleted: 2,
+			expectedVulns:   3769,
+			expectedDeleted: 4,
 		},
 		{
 			name:            "cve-2022-1705",
 			filenames:       []string{"testdata/cve-2022-1705.json"},
-			expectedVulns:   1641,
+			expectedVulns:   1009,
 			expectedDeleted: 0,
 		},
 		{
 			name:             "cve-2024-24786",
 			filenames:        []string{"testdata/cve-2024-24786.json"},
-			expectedVulns:    1764,
+			expectedVulns:    1337,
 			expectedDeleted:  0,
 			expectedAncestry: 732,
 		},
 		{
 			name:            "cve-2022-38752",
 			filenames:       []string{"testdata/cve-2022-38752.json"},
-			expectedVulns:   1494,
+			expectedVulns:   22,
 			expectedDeleted: 0,
 		},
 		{
@@ -405,13 +405,13 @@ func TestParse(t *testing.T) {
 		{
 			name:            "cve-2024-24786-new-module-format",
 			filenames:       []string{"testdata/cve-2024-24786-1.json"},
-			expectedVulns:   2661,
+			expectedVulns:   2179,
 			expectedDeleted: 0,
 		},
 		{
 			name:            "cve-2023-38545",
 			filenames:       []string{"testdata/cve-2023-38545.json"},
-			expectedVulns:   265,
+			expectedVulns:   75,
 			expectedDeleted: 0,
 		},
 		{
@@ -486,6 +486,11 @@ func TestParse(t *testing.T) {
 				}
 				if ancestryCount != tc.expectedAncestry {
 					t.Errorf("expected %d ancestry vulns but got %d", tc.expectedAncestry, ancestryCount)
+				}
+			}
+			for _, v := range vulns {
+				if v.Invert && v.Package != nil && v.Package.Kind != types.AncestryPackage {
+					t.Errorf("RPM known_not_affected should be skipped, got invert vuln for %q kind %q", v.Package.Name, v.Package.Kind)
 				}
 			}
 		})

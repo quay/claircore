@@ -1009,8 +1009,9 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v *csaf.Vulnerabilit
 	return out, nil
 }
 
-// KnownNotAffectedVulnerabilities processes the "known_not_affected" array of products
-// in the VEX object.
+// KnownNotAffectedVulnerabilities processes the "known_not_affected" array of
+// products in the VEX object. Only OCI (container) assertions are ingested;
+// RPM known_not_affected rows are skipped.
 func (c *creator) knownNotAffectedVulnerabilities(ctx context.Context, v *csaf.Vulnerability, init vulnHook) ([]*claircore.Vulnerability, error) {
 	log := slog.With("link", c.docLink)
 	var backing rope[claircore.Vulnerability]
@@ -1038,6 +1039,10 @@ func (c *creator) knownNotAffectedVulnerabilities(ctx context.Context, v *csaf.V
 			return nil, err
 		}
 		if isSourceArch(st.PURL) {
+			continue
+		}
+
+		if st.PURL.Type == packageurl.TypeRPM {
 			continue
 		}
 
@@ -1075,24 +1080,17 @@ func (c *creator) knownNotAffectedVulnerabilities(ctx context.Context, v *csaf.V
 			if t := st.Threat; t != nil {
 				vuln.NormalizedSeverity = common.NormalizeSeverity(t.Details)
 			}
-			switch st.PURL.Type {
-			case packageurl.TypeRPM:
-				vuln.Repo = c.rc.Get(st.WFN, repoKey)
-			case packageurl.TypeOCI:
-				vuln.Repo = c.rc.Get(st.WFN, rhcc.RepositoryKey)
-				vuln.Package.Kind = types.AncestryPackage
-				// Use a flood-gates range that matches all versions. For
-				// known_not_affected assertions, the package name match is
-				// sufficient; the matcher skips version comparison when
-				// Invert is true.
-				vuln.Range = &claircore.Range{
-					Lower: new(rhctag.Version).Version(true),
-					Upper: (&rhctag.Version{
-						Major: math.MaxInt32,
-					}).Version(true),
-				}
-			default:
-				panic("unreachable")
+			vuln.Repo = c.rc.Get(st.WFN, rhcc.RepositoryKey)
+			vuln.Package.Kind = types.AncestryPackage
+			// Use a flood-gates range that matches all versions. For
+			// known_not_affected assertions, the package name match is
+			// sufficient; the matcher skips version comparison when
+			// Invert is true.
+			vuln.Range = &claircore.Range{
+				Lower: new(rhctag.Version).Version(true),
+				Upper: (&rhctag.Version{
+					Major: math.MaxInt32,
+				}).Version(true),
 			}
 			if c.productIDInLinks && c.docLink != "" {
 				vuln.Links = strings.Replace(vuln.Links, c.docLink, c.docLink+"#"+url.PathEscape(st.ID), 1)
