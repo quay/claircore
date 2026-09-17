@@ -175,7 +175,7 @@ func loadDatastoreVulnerabilityMock(t testing.TB, sys fs.FS, mock *mock_datastor
 	}
 }
 
-var ctxType = reflect.TypeOf((*context.Context)(nil)).Elem()
+var ctxType = reflect.TypeFor[context.Context]()
 
 func cmpIndexRecord(a, b *claircore.IndexRecord) int {
 	return stdcmp.Compare(a.Package.ID, b.Package.ID)

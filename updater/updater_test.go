@@ -64,11 +64,11 @@ const (
 )
 
 var (
-	matchCtx    = gomock.AssignableToTypeOf(reflect.TypeOf((*context.Context)(nil)).Elem())
-	matchFp     = gomock.AssignableToTypeOf(reflect.TypeOf(driver.Fingerprint("")))
-	matchZip    = gomock.AssignableToTypeOf(reflect.TypeOf((*zip.Writer)(nil)))
-	matchClient = gomock.AssignableToTypeOf(reflect.TypeOf((*http.Client)(nil)))
-	matchFS     = gomock.AssignableToTypeOf(reflect.TypeOf((*fs.FS)(nil)).Elem())
+	matchCtx    = gomock.AssignableToTypeOf(reflect.TypeFor[context.Context]())
+	matchFp     = gomock.AssignableToTypeOf(reflect.TypeFor[driver.Fingerprint]())
+	matchZip    = gomock.AssignableToTypeOf(reflect.TypeFor[*zip.Writer]())
+	matchClient = gomock.AssignableToTypeOf(reflect.TypeFor[*http.Client]())
+	matchFS     = gomock.AssignableToTypeOf(reflect.TypeFor[fs.FS]())
 	matchUUID   = gomock.AssignableToTypeOf(reflect.TypeOf(uuid.Nil))
 )
 

@@ -30,7 +30,7 @@ func (v *Version) MarshalText() ([]byte, error) {
 	b := make([]byte, 0, 16) // 16 byte wide scratch buffer
 	buf.WriteString(v.Kind)
 	buf.WriteByte(':')
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		if i != 0 {
 			buf.WriteByte('.')
 		}
@@ -41,16 +41,16 @@ func (v *Version) MarshalText() ([]byte, error) {
 
 // UnmarshalText implments encoding.TextUnmarshaler.
 func (v *Version) UnmarshalText(text []byte) (err error) {
-	idx := bytes.IndexByte(text, ':')
-	if idx == -1 {
+	before, after, ok := bytes.Cut(text, []byte{':'})
+	if !ok {
 		return nil
 	}
 	if v == nil {
 		*v = Version{}
 	}
-	v.Kind = string(text[:idx])
+	v.Kind = string(before)
 	var n int64
-	for i, b := range bytes.Split(text[idx+1:], []byte(".")) {
+	for i, b := range bytes.Split(after, []byte(".")) {
 		n, err = strconv.ParseInt(string(b), 10, 32)
 		if err != nil {
 			return err
@@ -103,7 +103,7 @@ func (v *Version) Compare(x *Version) int {
 	if v.Kind != x.Kind {
 		return strings.Compare(v.Kind, x.Kind)
 	}
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		if v.V[i] > x.V[i] {
 			return 1
 		}
