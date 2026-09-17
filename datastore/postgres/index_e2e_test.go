@@ -38,7 +38,6 @@ func (m mockScnr) Version() string {
 type indexE2e struct {
 	name       string
 	store      indexer.Store
-	ctx        context.Context
 	manifest   claircore.Manifest
 	scnrs      indexer.VersionedScanners
 	packageGen int
@@ -47,35 +46,39 @@ type indexE2e struct {
 }
 
 func TestIndexE2E(t *testing.T) {
-	integration.NeedDB(t)
-	ctx := context.Background()
+	t.Parallel()
+	ctx, span := tracer.Start(test.RootContext(t), t.Name())
+	defer span.End()
+	integration.NeedDB(t, ctx)
 
 	for _, scenario := range testScenarios {
 		t.Run(scenario.name, func(t *testing.T) {
+			ctx, span := tracer.Start(test.Logging(t, ctx), t.Name())
+			defer span.End()
 			pool := pgtest.TestIndexerDB(ctx, t)
 			defer pool.Close()
 
-			e := setupIndexE2E(ctx, pool, scenario, t)
-			e.RunAll(t)
+			e := setupIndexE2E(pool, scenario, t)
+			e.RunAll(ctx, t)
 		})
 	}
 }
 
 // RunAll executes all test steps in sequence
-func (e *indexE2e) RunAll(t testing.TB) {
+func (e *indexE2e) RunAll(ctx context.Context, t testing.TB) {
 	steps := []struct {
 		name string
 		fn   func(testing.TB)
 	}{
-		{"RegisterScanner", e.RegisterScanner},
-		{"PersistManifest", e.PersistManifest},
-		{"IndexAndRetrievePackages", e.IndexAndRetrievePackages},
-		{"IndexAndRetrieveDistributions", e.IndexAndRetrieveDistributions},
-		{"IndexAndRetrieveRepos", e.IndexAndRetrieveRepos},
-		{"LayerScanned", e.LayerScanned},
-		{"LayerScannedNotExists", e.LayerScannedNotExists},
-		{"LayerScannedFalse", e.LayerScannedFalse},
-		{"IndexReport", e.IndexReport},
+		{"RegisterScanner", e.RegisterScanner(ctx)},
+		{"PersistManifest", e.PersistManifest(ctx)},
+		{"IndexAndRetrievePackages", e.IndexAndRetrievePackages(ctx)},
+		{"IndexAndRetrieveDistributions", e.IndexAndRetrieveDistributions(ctx)},
+		{"IndexAndRetrieveRepos", e.IndexAndRetrieveRepos(ctx)},
+		{"LayerScanned", e.LayerScanned(ctx)},
+		{"LayerScannedNotExists", e.LayerScannedNotExists(ctx)},
+		{"LayerScannedFalse", e.LayerScannedFalse(ctx)},
+		{"IndexReport", e.IndexReport(ctx)},
 	}
 	if _, isBenchmark := t.(*testing.B); isBenchmark {
 		for _, step := range steps {
@@ -97,225 +100,252 @@ func (e *indexE2e) RunAll(t testing.TB) {
 // PersistManifest confirms we create the necessary
 // Manifest and Layer identities so layer code
 // foreign key references do not fail.
-func (e *indexE2e) PersistManifest(t testing.TB) {
-	ctx := test.Logging(t, e.ctx)
-	err := e.store.PersistManifest(ctx, e.manifest)
-	if err != nil {
-		t.Fatalf("failed to persist manifest: %v", err)
+func (e *indexE2e) PersistManifest(ctx context.Context) func(testing.TB) {
+	return func(t testing.TB) {
+		ctx, span := tracer.Start(test.Logging(t, ctx), t.Name())
+		defer span.End()
+		err := e.store.PersistManifest(ctx, e.manifest)
+		if err != nil {
+			t.Fatalf("failed to persist manifest: %v", err)
+		}
 	}
 }
 
 // RegisterScanner confirms a scanner can be registered
 // and provides this scanner for other subtests to use
-func (e *indexE2e) RegisterScanner(t testing.TB) {
-	ctx := test.Logging(t, e.ctx)
-	err := e.store.RegisterScanners(ctx, e.scnrs)
-	if err != nil {
-		t.Fatalf("failed to register scnr: %v", err)
+func (e *indexE2e) RegisterScanner(ctx context.Context) func(testing.TB) {
+	return func(t testing.TB) {
+		ctx, span := tracer.Start(test.Logging(t, ctx), t.Name())
+		defer span.End()
+		err := e.store.RegisterScanners(ctx, e.scnrs)
+		if err != nil {
+			t.Fatalf("failed to register scnr: %v", err)
+		}
 	}
 }
 
 // IndexAndRetrievePackages confirms inserting and
 // selecting packages associated with a layer works
 // correctly.
-func (e *indexE2e) IndexAndRetrievePackages(t testing.TB) {
-	ctx := test.Logging(t, e.ctx)
-	A := test.GenUniquePackages(e.packageGen)
+func (e *indexE2e) IndexAndRetrievePackages(ctx context.Context) func(testing.TB) {
+	return func(t testing.TB) {
+		ctx, span := tracer.Start(test.Logging(t, ctx), t.Name())
+		defer span.End()
+		A := test.GenUniquePackages(e.packageGen)
 
-	for _, scnr := range e.scnrs {
-		err := e.store.IndexPackages(ctx, A, e.manifest.Layers[0], scnr)
-		if err != nil {
-			t.Fatalf("failed to index package: %v", err)
+		for _, scnr := range e.scnrs {
+			err := e.store.IndexPackages(ctx, A, e.manifest.Layers[0], scnr)
+			if err != nil {
+				t.Fatalf("failed to index package: %v", err)
+			}
 		}
-	}
 
-	B, err := e.store.PackagesByLayer(ctx, e.manifest.Layers[0].Hash, e.scnrs)
-	if err != nil {
-		t.Fatalf("failed to retrieve packages by layer: %v", err)
-	}
+		B, err := e.store.PackagesByLayer(ctx, e.manifest.Layers[0].Hash, e.scnrs)
+		if err != nil {
+			t.Fatalf("failed to retrieve packages by layer: %v", err)
+		}
 
-	if len(e.scnrs)*e.packageGen != len(B) {
-		t.Fatalf("wanted len: %v got: %v", len(e.scnrs)*e.packageGen, len(B))
+		if len(e.scnrs)*e.packageGen != len(B) {
+			t.Fatalf("wanted len: %v got: %v", len(e.scnrs)*e.packageGen, len(B))
+		}
 	}
 }
 
 // IndexAndRetrieveDistributions confirms inserting and
 // selecting distributions associated with a layer works
 // correctly.
-func (e *indexE2e) IndexAndRetrieveDistributions(t testing.TB) {
-	ctx := test.Logging(t, e.ctx)
-	A := test.GenUniqueDistributions(e.distGen)
+func (e *indexE2e) IndexAndRetrieveDistributions(ctx context.Context) func(testing.TB) {
+	return func(t testing.TB) {
+		ctx, span := tracer.Start(test.Logging(t, ctx), t.Name())
+		defer span.End()
+		A := test.GenUniqueDistributions(e.distGen)
 
-	for _, scnr := range e.scnrs {
-		err := e.store.IndexDistributions(ctx, A, e.manifest.Layers[0], scnr)
-		if err != nil {
-			t.Fatalf("failed to index distributions: %v", err)
+		for _, scnr := range e.scnrs {
+			err := e.store.IndexDistributions(ctx, A, e.manifest.Layers[0], scnr)
+			if err != nil {
+				t.Fatalf("failed to index distributions: %v", err)
+			}
 		}
-	}
 
-	B, err := e.store.DistributionsByLayer(ctx, e.manifest.Layers[0].Hash, e.scnrs)
-	if err != nil {
-		t.Fatalf("failed to retrieve distributions by layer: %v", err)
-	}
+		B, err := e.store.DistributionsByLayer(ctx, e.manifest.Layers[0].Hash, e.scnrs)
+		if err != nil {
+			t.Fatalf("failed to retrieve distributions by layer: %v", err)
+		}
 
-	if len(e.scnrs)*e.distGen != len(B) {
-		t.Fatalf("wanted len: %v got: %v", len(e.scnrs)*e.distGen, len(B))
+		if len(e.scnrs)*e.distGen != len(B) {
+			t.Fatalf("wanted len: %v got: %v", len(e.scnrs)*e.distGen, len(B))
+		}
 	}
 }
 
 // IndexAndRetrieveRepos confirms inserting and
 // selecting repositories associated with a layer works
 // correctly.
-func (e *indexE2e) IndexAndRetrieveRepos(t testing.TB) {
-	ctx := test.Logging(t, e.ctx)
-	A := test.GenUniqueRepositories(e.repoGen)
+func (e *indexE2e) IndexAndRetrieveRepos(ctx context.Context) func(testing.TB) {
+	return func(t testing.TB) {
+		ctx, span := tracer.Start(test.Logging(t, ctx), t.Name())
+		defer span.End()
+		A := test.GenUniqueRepositories(e.repoGen)
 
-	for _, scnr := range e.scnrs {
-		err := e.store.IndexRepositories(ctx, A, e.manifest.Layers[0], scnr)
-		if err != nil {
-			t.Fatalf("failed to index repos: %v", err)
+		for _, scnr := range e.scnrs {
+			err := e.store.IndexRepositories(ctx, A, e.manifest.Layers[0], scnr)
+			if err != nil {
+				t.Fatalf("failed to index repos: %v", err)
+			}
 		}
-	}
 
-	B, err := e.store.RepositoriesByLayer(ctx, e.manifest.Layers[0].Hash, e.scnrs)
-	if err != nil {
-		t.Fatalf("failed to retrieve repos by layer: %v", err)
-	}
+		B, err := e.store.RepositoriesByLayer(ctx, e.manifest.Layers[0].Hash, e.scnrs)
+		if err != nil {
+			t.Fatalf("failed to retrieve repos by layer: %v", err)
+		}
 
-	if len(e.scnrs)*e.repoGen != len(B) {
-		t.Fatalf("wanted len: %v got: %v", len(e.scnrs)*e.repoGen, len(B))
+		if len(e.scnrs)*e.repoGen != len(B) {
+			t.Fatalf("wanted len: %v got: %v", len(e.scnrs)*e.repoGen, len(B))
+		}
 	}
 }
 
 // LayerScanned confirms the book keeping involved in marking a layer
 // scanned works correctly.
-func (e *indexE2e) LayerScanned(t testing.TB) {
-	ctx := test.Logging(t, e.ctx)
-	for _, scnr := range e.scnrs {
-		err := e.store.SetLayerScanned(ctx, e.manifest.Layers[0].Hash, scnr)
-		if err != nil {
-			t.Fatalf("failed to set layer scanned: %v", err)
-		}
+func (e *indexE2e) LayerScanned(ctx context.Context) func(testing.TB) {
+	return func(t testing.TB) {
+		ctx, span := tracer.Start(test.Logging(t, ctx), t.Name())
+		defer span.End()
+		for _, scnr := range e.scnrs {
+			err := e.store.SetLayerScanned(ctx, e.manifest.Layers[0].Hash, scnr)
+			if err != nil {
+				t.Fatalf("failed to set layer scanned: %v", err)
+			}
 
-		b, err := e.store.LayerScanned(ctx, e.manifest.Layers[0].Hash, scnr)
-		if err != nil {
-			t.Fatalf("failed to query if layer is scanned: %v", err)
-		}
-		if !b {
-			t.Fatalf("expected layer to be scanned")
+			b, err := e.store.LayerScanned(ctx, e.manifest.Layers[0].Hash, scnr)
+			if err != nil {
+				t.Fatalf("failed to query if layer is scanned: %v", err)
+			}
+			if !b {
+				t.Fatalf("expected layer to be scanned")
+			}
 		}
 	}
 }
 
 // LayerScannedNotExists confirms an error is returned when attempting
 // to obtain if a layer was scanned by a non-existent scanner.
-func (e *indexE2e) LayerScannedNotExists(t testing.TB) {
-	ctx := test.Logging(t, e.ctx)
-	scnr := mockScnr{
-		name:    "invalid",
-		kind:    "invalid",
-		version: "invalid",
-	}
+func (e *indexE2e) LayerScannedNotExists(ctx context.Context) func(testing.TB) {
+	return func(t testing.TB) {
+		ctx, span := tracer.Start(test.Logging(t, ctx), t.Name())
+		defer span.End()
+		scnr := mockScnr{
+			name:    "invalid",
+			kind:    "invalid",
+			version: "invalid",
+		}
 
-	_, err := e.store.LayerScanned(ctx, e.manifest.Layers[0].Hash, scnr)
-	if err == nil {
-		t.Fatalf("expected error scnr not found error condition")
+		_, err := e.store.LayerScanned(ctx, e.manifest.Layers[0].Hash, scnr)
+		if err == nil {
+			t.Fatalf("expected error scnr not found error condition")
+		}
 	}
 }
 
 // LayerScannedFalse confirms a false boolean is returned when attempting
 // to obtain if a non-existent layer was scanned by a valid scanner
-func (e *indexE2e) LayerScannedFalse(t testing.TB) {
-	ctx := test.Logging(t, e.ctx)
+func (e *indexE2e) LayerScannedFalse(ctx context.Context) func(testing.TB) {
+	return func(t testing.TB) {
+		ctx, span := tracer.Start(test.Logging(t, ctx), t.Name())
+		defer span.End()
 
-	// create a layer that has not been persisted to the store
-	layer := &claircore.Layer{
-		Hash: claircore.MustParseDigest(`sha256:5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03`),
-	}
+		// create a layer that has not been persisted to the store
+		layer := &claircore.Layer{
+			Hash: claircore.MustParseDigest(`sha256:5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03`),
+		}
 
-	b, err := e.store.LayerScanned(ctx, layer.Hash, e.scnrs[0])
-	if err != nil {
-		t.Fatalf("failed to query if layer is scanned: %v", err)
-	}
-	if b {
-		t.Fatalf("expected layer not to be scanned")
+		b, err := e.store.LayerScanned(ctx, layer.Hash, e.scnrs[0])
+		if err != nil {
+			t.Fatalf("failed to query if layer is scanned: %v", err)
+		}
+		if b {
+			t.Fatalf("expected layer not to be scanned")
+		}
 	}
 }
 
 // IndexReport confirms the book keeping around index reports works
 // correctly.
-func (e *indexE2e) IndexReport(t testing.TB) {
-	ctx := test.Logging(t, e.ctx)
+func (e *indexE2e) IndexReport(ctx context.Context) func(testing.TB) {
+	return func(t testing.TB) {
+		ctx, span := tracer.Start(test.Logging(t, ctx), t.Name())
+		defer span.End()
 
-	A := &claircore.IndexReport{
-		Hash:  e.manifest.Hash,
-		State: "Testing",
-	}
+		A := &claircore.IndexReport{
+			Hash:  e.manifest.Hash,
+			State: "Testing",
+		}
 
-	err := e.store.SetIndexReport(ctx, A)
-	if err != nil {
-		t.Fatalf("failed to set index report: %v", err)
-	}
-	B, ok, err := e.store.IndexReport(ctx, e.manifest.Hash)
-	if err != nil {
-		t.Fatalf("failed to retrieve index report: %v", err)
-	}
-	if !ok {
-		t.Fatalf("no index report found")
-	}
-	if !cmp.Equal(A.Hash.String(), B.Hash.String()) {
-		t.Fatalf("%v", cmp.Diff(A.Hash.String(), B.Hash.String()))
-	}
-	if !cmp.Equal(A.State, B.State) {
-		t.Fatalf("%v", cmp.Diff(A.Hash.String(), B.Hash.String()))
-	}
+		err := e.store.SetIndexReport(ctx, A)
+		if err != nil {
+			t.Fatalf("failed to set index report: %v", err)
+		}
+		B, ok, err := e.store.IndexReport(ctx, e.manifest.Hash)
+		if err != nil {
+			t.Fatalf("failed to retrieve index report: %v", err)
+		}
+		if !ok {
+			t.Fatalf("no index report found")
+		}
+		if !cmp.Equal(A.Hash.String(), B.Hash.String()) {
+			t.Fatalf("%v", cmp.Diff(A.Hash.String(), B.Hash.String()))
+		}
+		if !cmp.Equal(A.State, B.State) {
+			t.Fatalf("%v", cmp.Diff(A.Hash.String(), B.Hash.String()))
+		}
 
-	A.State = "IndexFinished"
-	err = e.store.SetIndexFinished(ctx, A, e.scnrs)
-	if err != nil {
-		t.Fatalf("failed to set index as finished: %v", err)
-	}
+		A.State = "IndexFinished"
+		err = e.store.SetIndexFinished(ctx, A, e.scnrs)
+		if err != nil {
+			t.Fatalf("failed to set index as finished: %v", err)
+		}
 
-	b, err := e.store.ManifestScanned(ctx, e.manifest.Hash, e.scnrs)
-	if err != nil {
-		t.Fatalf("failed to query if manifest was scanned: %v", err)
-	}
-	if !b {
-		t.Fatalf("expected manifest to be scanned")
-	}
+		b, err := e.store.ManifestScanned(ctx, e.manifest.Hash, e.scnrs)
+		if err != nil {
+			t.Fatalf("failed to query if manifest was scanned: %v", err)
+		}
+		if !b {
+			t.Fatalf("expected manifest to be scanned")
+		}
 
-	B, ok, err = e.store.IndexReport(ctx, e.manifest.Hash)
-	if err != nil {
-		t.Fatalf("failed to retrieve index report: %v", err)
-	}
-	if !ok {
-		t.Fatalf("no index report found")
-	}
-	if !cmp.Equal(A.Hash.String(), B.Hash.String()) {
-		t.Fatalf("%v", cmp.Diff(A.Hash.String(), B.Hash.String()))
-	}
-	if !cmp.Equal(A.State, B.State) {
-		t.Fatalf("%v", cmp.Diff(A.Hash.String(), B.Hash.String()))
-	}
+		B, ok, err = e.store.IndexReport(ctx, e.manifest.Hash)
+		if err != nil {
+			t.Fatalf("failed to retrieve index report: %v", err)
+		}
+		if !ok {
+			t.Fatalf("no index report found")
+		}
+		if !cmp.Equal(A.Hash.String(), B.Hash.String()) {
+			t.Fatalf("%v", cmp.Diff(A.Hash.String(), B.Hash.String()))
+		}
+		if !cmp.Equal(A.State, B.State) {
+			t.Fatalf("%v", cmp.Diff(A.Hash.String(), B.Hash.String()))
+		}
 
-	cDigest := claircore.MustParseDigest(`sha256:` + strings.Repeat(`c`, 64))
-	c, err := e.store.ManifestScanned(ctx, cDigest, e.scnrs)
-	if err != nil {
-		t.Fatalf("failed to query if manifest was scanned: %v", err)
-	}
-	if c {
-		t.Fatalf("expected manifest to not exist")
-	}
+		cDigest := claircore.MustParseDigest(`sha256:` + strings.Repeat(`c`, 64))
+		c, err := e.store.ManifestScanned(ctx, cDigest, e.scnrs)
+		if err != nil {
+			t.Fatalf("failed to query if manifest was scanned: %v", err)
+		}
+		if c {
+			t.Fatalf("expected manifest to not exist")
+		}
 
-	C, ok, err := e.store.IndexReport(ctx, cDigest)
-	if err != nil {
-		t.Fatalf("failed to retrieve index report: %v", err)
-	}
-	if ok {
-		t.Fatalf("non-existent index report shouldn't be ok")
-	}
-	if C != nil {
-		t.Fatalf("non-existent index report should be nil")
+		C, ok, err := e.store.IndexReport(ctx, cDigest)
+		if err != nil {
+			t.Fatalf("failed to retrieve index report: %v", err)
+		}
+		if ok {
+			t.Fatalf("non-existent index report shouldn't be ok")
+		}
+		if C != nil {
+			t.Fatalf("non-existent index report should be nil")
+		}
 	}
 }
 
@@ -328,10 +358,10 @@ func BenchmarkIndexE2E(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				b.StopTimer()
 				pool := pgtest.TestIndexerDB(ctx, b)
-				e := setupIndexE2E(ctx, pool, scenario, b)
+				e := setupIndexE2E(pool, scenario, b)
 				b.StartTimer()
 
-				e.RunAll(b)
+				e.RunAll(ctx, b)
 
 				b.StopTimer()
 				pool.Close()
@@ -396,7 +426,7 @@ var testScenarios = []indexE2e{
 }
 
 // setupIndexE2E creates and configures an indexE2e instance
-func setupIndexE2E(ctx context.Context, pool *pgxpool.Pool, scenario indexE2e, t testing.TB) *indexE2e {
+func setupIndexE2E(pool *pgxpool.Pool, scenario indexE2e, t testing.TB) *indexE2e {
 	store := NewIndexerStore(pool)
 
 	layer := &claircore.Layer{
@@ -410,7 +440,6 @@ func setupIndexE2E(ctx context.Context, pool *pgxpool.Pool, scenario indexE2e, t
 	return &indexE2e{
 		name:       scenario.name,
 		store:      store,
-		ctx:        ctx,
 		manifest:   manifest,
 		scnrs:      scenario.scnrs,
 		packageGen: scenario.packageGen,
