@@ -25,6 +25,8 @@ var errNotGoExe error
 // which will break loudly if the error is renamed or built differently.
 
 func toPackages(ctx context.Context, out *[]*claircore.Package, p string, r io.ReaderAt) error {
+	ctx, span := tracer.Start(ctx, "toPackages")
+	defer span.End()
 	bi, err := buildinfo.Read(r)
 	switch {
 	case errors.Is(err, nil):
