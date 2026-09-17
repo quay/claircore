@@ -50,31 +50,36 @@ func (i *Info) Load(ctx context.Context, h *rpmdb.Header) error {
 		}
 		switch e.Tag {
 		case rpmdb.TagName:
-			i.Name = v.(string)
+			i.Name, err = tagString(e, v)
 		case rpmdb.TagEpoch:
-			i.Epoch = int(v.([]int32)[0])
+			i.Epoch, err = tagInt(e, v)
 		case rpmdb.TagVersion:
-			i.Version = v.(string)
+			i.Version, err = tagString(e, v)
 		case rpmdb.TagRelease:
-			i.Release = v.(string)
+			i.Release, err = tagString(e, v)
 		case rpmdb.TagSourceRPM:
-			i.SourceRPM = v.(string)
+			i.SourceRPM, err = tagString(e, v)
 		case rpmdb.TagModularityLabel:
-			i.Module = v.(string)
+			i.Module, err = tagString(e, v)
 		case rpmdb.TagArch:
-			i.Arch = v.(string)
+			i.Arch, err = tagString(e, v)
 		case rpmdb.TagPayloadDigestAlgo:
-			i.DigestAlgo = int(v.([]int32)[0])
+			i.DigestAlgo, err = tagInt(e, v)
 		case rpmdb.TagPayloadDigest:
-			i.Digest = v.([]string)[0]
+			i.Digest, err = tagString(e, v)
 		case rpmdb.TagSigPGP:
-			i.Signature = v.([]byte)
+			b, ok := v.([]byte)
+			if !ok {
+				err = badTagType(e, v)
+				break
+			}
+			i.Signature = b
 		case rpmdb.TagDirnames: // v5-only
-			i.dirname = v.([]string)
+			i.dirname, err = tagStrings(e, v)
 		case rpmdb.TagDirindexes: // v5-only
-			i.dirindex = v.([]int32)
+			i.dirindex, err = tagInt32s(e, v)
 		case rpmdb.TagBasenames: // v5-only
-			i.basename = v.([]string)
+			i.basename, err = tagStrings(e, v)
 		case rpmdb.TagFilenames:
 			// Filenames is the tag used in rpm4 -- this is a best-effort for
 			// supporting it. This should be exclusive with the
@@ -82,7 +87,11 @@ func (i *Info) Load(ctx context.Context, h *rpmdb.Header) error {
 			//
 			// This takes the whole filenames value and splits it into an
 			// rpm5-style dir+base.
-			names := v.([]string)
+			names, nerr := tagStrings(e, v)
+			if nerr != nil {
+				err = nerr
+				break
+			}
 			slices.Sort(names)
 			i.dirname = make([]string, 0)
 			i.dirindex = make([]int32, 0, len(names))
@@ -100,6 +109,9 @@ func (i *Info) Load(ctx context.Context, h *rpmdb.Header) error {
 		default:
 			panic(fmt.Sprintf("programmer error: unhandled tag: %v", e.Tag))
 		}
+		if err != nil {
+			return err
+		}
 	}
 
 	if b, d := len(i.basename), len(i.dirindex); b != d {
@@ -112,6 +124,80 @@ func (i *Info) Load(ctx context.Context, h *rpmdb.Header) error {
 	}
 
 	return nil
+}
+
+// The header verifier accepts an entry whose type merely shares a class with
+// the type named in the tag table, because, as checkTagType says, "Some
+// versions of string are typed incorrectly in a compatible way". ReadData
+// hands back whatever the entry declared, so the helpers below accept every
+// member of the relevant class rather than one concrete Go type. A value
+// outside the class is reported instead of panicking, which lets the caller
+// skip the one package and carry on reading the database.
+
+func badTagType(e *rpmdb.EntryInfo, v any) error {
+	return fmt.Errorf("internal/rpm: Info: tag %v: unexpected type %v (%T)", e.Tag, e.Type, v)
+}
+
+// tagString returns the string value of a string-class entry.
+func tagString(e *rpmdb.EntryInfo, v any) (string, error) {
+	switch v := v.(type) {
+	case string:
+		return v, nil
+	case []string:
+		if len(v) == 0 {
+			return "", fmt.Errorf("internal/rpm: Info: tag %v: empty string array", e.Tag)
+		}
+		return v[0], nil
+	}
+	return "", badTagType(e, v)
+}
+
+// tagStrings returns the string slice of a string-class entry.
+func tagStrings(e *rpmdb.EntryInfo, v any) ([]string, error) {
+	switch v := v.(type) {
+	case string:
+		return []string{v}, nil
+	case []string:
+		return v, nil
+	}
+	return nil, badTagType(e, v)
+}
+
+// tagInt32s returns the int32 slice of a numeric-class entry.
+func tagInt32s(e *rpmdb.EntryInfo, v any) ([]int32, error) {
+	switch v := v.(type) {
+	case []int32:
+		return v, nil
+	case []int16:
+		return widen(v), nil
+	case []int8:
+		return widen(v), nil
+	case []byte:
+		return widen(v), nil
+	case []uint64:
+		return widen(v), nil
+	}
+	return nil, badTagType(e, v)
+}
+
+// tagInt returns the first integer of a numeric-class entry.
+func tagInt(e *rpmdb.EntryInfo, v any) (int, error) {
+	ns, err := tagInt32s(e, v)
+	if err != nil {
+		return 0, err
+	}
+	if len(ns) == 0 {
+		return 0, fmt.Errorf("internal/rpm: Info: tag %v: empty numeric array", e.Tag)
+	}
+	return int(ns[0]), nil
+}
+
+func widen[S ~[]E, E ~int8 | ~int16 | ~uint8 | ~uint64](s S) []int32 {
+	out := make([]int32, len(s))
+	for i, v := range s {
+		out[i] = int32(v)
+	}
+	return out
 }
 
 // Path reconstructs the j-th path.
