@@ -242,11 +242,7 @@ func (a *RemoteFetchArena) inspect(ctx context.Context, desc *claircore.LayerDes
 	if err != nil {
 		return d, fmt.Errorf("fetcher: failed to construct request: %w", err)
 	}
-	req.Header = http.Header(desc.Headers).Clone()
-	if req.Header == nil {
-		req.Header = make(http.Header)
-	}
-	req.Header.Set(`claircore-reason`, `inspect`)
+	req.Header = requestHeaders(desc.Headers, `inspect`)
 	req.Header.Set(`range`, `bytes=0-15`)
 	res, err = a.wc.Do(req)
 	if err != nil {
@@ -323,6 +319,16 @@ func (a *RemoteFetchArena) logger(desc *claircore.LayerDescription) *slog.Logger
 	return slog.With("arena", a.root.Name(), "layer", desc.Digest, "uri", desc.URI)
 }
 
+// RequestHeaders returns an independent header map with the request reason set.
+func requestHeaders(headers http.Header, reason string) http.Header {
+	h := headers.Clone()
+	if h == nil {
+		h = make(http.Header)
+	}
+	h.Set(`claircore-reason`, reason)
+	return h
+}
+
 // FetchFileForCache is the inner function used inside the [cache.Live].
 //
 // Because we know we're the only concurrent call that's dealing with this blob,
@@ -358,9 +364,8 @@ func (a *RemoteFetchArena) fetchFileForCache(ctx context.Context, desc *claircor
 		Host:       url.Host,
 		Method:     http.MethodGet,
 		URL:        url,
-		Header:     http.Header(desc.Headers).Clone(),
+		Header:     requestHeaders(desc.Headers, `fetch`),
 	}).WithContext(ctx)
-	req.Header.Set(`claircore-reason`, `fetch`)
 	resp, err := a.wc.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("fetcher: request failed: %w", err)
@@ -386,7 +391,7 @@ func (a *RemoteFetchArena) fetchFileForCache(ctx context.Context, desc *claircor
 	}
 	defer zr.Close()
 	// Look at the content-type and optionally fix it up.
-	ct, _, err := mime.ParseMediaType(resp.Header.Get("content-type"))
+	ct, _, err := mime.ParseMediaType(cmp.Or(resp.Header.Get("content-type"), "application/octet-stream"))
 	if err != nil {
 		return nil, fmt.Errorf("fetcher: %w", err)
 	}
