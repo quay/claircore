@@ -1,3 +1,17 @@
+<a name="v1.5.55"></a>
+## [v1.5.55] - 2026-09-18
+[v1.5.55]: https://github.com/quay/claircore/compare/v1.5.54...v1.5.55
+
+- httpreader: random access over an HTTP resource
+  <details>
+  Added package internal/httpreader that implements io.ReaderAt over HTTP requests.
+  It incorporates remediations for dealing with RFC7233 non- and selectively- compliant servers.
+  The fetcher package gains the capability to use an httpreader.Reader when it notices that a
+  layer is uncompressed.
+  
+  Future work may involve the tarfs layer doing transparent caching and being able to handle compressed layers directly.
+  </details>
+
 <a name="v1.5.54"></a>
 ## [v1.5.54] - 2026-07-20
 [v1.5.54]: https://github.com/quay/claircore/compare/v1.5.53...v1.5.54
