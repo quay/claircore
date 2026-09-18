@@ -3,13 +3,15 @@ package postgres
 import (
 	"context"
 	_ "embed" // for queries
-	"errors"
 	"fmt"
 	"log/slog"
+	"os"
+	"runtime"
 	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
-	"unique"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -118,6 +120,104 @@ var (
 	updateVulnerabilitiesInsertVuln string
 )
 
+// Staging column lists and SQL used by the COPY-based bulk insert path in
+// [MatcherStore.updateVulnerabilities]. The tmp_vuln column order MUST match the
+// order values are appended in the insert loop and the SELECT in
+// stagingInsertVuln.
+var (
+	tmpVulnColumns = []string{
+		"hash_kind", "hash",
+		"name", "updater", "description", "issued", "links", "severity", "normalized_severity",
+		"package_name", "package_version", "package_module", "package_arch", "package_kind",
+		"dist_id", "dist_name", "dist_version", "dist_version_code_name", "dist_version_id",
+		"dist_arch", "dist_cpe", "dist_pretty_name",
+		"repo_name", "repo_key", "repo_uri",
+		"fixed_in_version", "arch_operation", "version_kind", "vulnerable_range", "not_vulnerable",
+	}
+	tmpAliasColumns = []string{"hash_kind", "hash", "namespace", "name", "is_self"}
+)
+
+const (
+	// createStagingTables creates the per-transaction staging tables. ON COMMIT
+	// DROP removes them automatically when the enclosing transaction ends.
+	createStagingTables = `
+CREATE TEMP TABLE tmp_vuln (
+  hash_kind TEXT, hash BYTEA,
+  name TEXT, updater TEXT, description TEXT, issued timestamptz, links TEXT,
+  severity TEXT, normalized_severity TEXT,
+  package_name TEXT, package_version TEXT, package_module TEXT, package_arch TEXT, package_kind TEXT,
+  dist_id TEXT, dist_name TEXT, dist_version TEXT, dist_version_code_name TEXT, dist_version_id TEXT,
+  dist_arch TEXT, dist_cpe TEXT, dist_pretty_name TEXT,
+  repo_name TEXT, repo_key TEXT, repo_uri TEXT,
+  fixed_in_version TEXT, arch_operation TEXT, version_kind TEXT,
+  vulnerable_range VersionRange, not_vulnerable BOOL
+) ON COMMIT DROP;
+CREATE TEMP TABLE tmp_alias (
+  hash_kind TEXT, hash BYTEA, namespace TEXT, name TEXT, is_self BOOL
+) ON COMMIT DROP;`
+
+	// stagingInsertVuln inserts the staged vulnerabilities. Duplicate
+	// (hash_kind, hash) rows within the batch and rows already present are
+	// silently ignored via ON CONFLICT DO NOTHING, matching the previous
+	// per-row insert semantics.
+	stagingInsertVuln = `
+INSERT INTO vuln (
+  hash_kind, hash, name, updater, description, issued, links, severity, normalized_severity,
+  package_name, package_version, package_module, package_arch, package_kind,
+  dist_id, dist_name, dist_version, dist_version_code_name, dist_version_id, dist_arch, dist_cpe, dist_pretty_name,
+  repo_name, repo_key, repo_uri, fixed_in_version, arch_operation, version_kind, vulnerable_range, not_vulnerable)
+SELECT
+  hash_kind, hash, name, updater, description, issued, links, severity, normalized_severity,
+  package_name, package_version, package_module, package_arch, package_kind,
+  dist_id, dist_name, dist_version, dist_version_code_name, dist_version_id, dist_arch, dist_cpe, dist_pretty_name,
+  repo_name, repo_key, repo_uri, fixed_in_version, arch_operation, version_kind,
+  COALESCE(vulnerable_range, VersionRange('{}', '{}', '()')), not_vulnerable
+FROM tmp_vuln
+ON CONFLICT (hash_kind, hash) DO NOTHING;`
+
+	// stagingAssocVuln associates every staged vulnerability with the current
+	// update operation ($1).
+	stagingAssocVuln = `
+INSERT INTO uo_vuln (uo, vuln)
+SELECT $1, v.id
+FROM vuln v
+JOIN (SELECT DISTINCT hash_kind, hash FROM tmp_vuln) t
+  ON v.hash_kind = t.hash_kind AND v.hash = t.hash
+ON CONFLICT DO NOTHING;`
+
+	stagingInsertAliasNamespace = `
+INSERT INTO alias_namespace (namespace)
+SELECT DISTINCT namespace FROM tmp_alias
+ON CONFLICT DO NOTHING;`
+
+	stagingInsertAlias = `
+INSERT INTO alias (namespace, name)
+SELECT DISTINCT ns.id, t.name
+FROM tmp_alias t
+JOIN alias_namespace ns ON ns.namespace = t.namespace
+ON CONFLICT DO NOTHING;`
+
+	stagingInsertVulnerabilityAlias = `
+INSERT INTO vulnerability_alias (vulnerability, alias)
+SELECT DISTINCT v.id, a.id
+FROM tmp_alias t
+JOIN vuln v ON v.hash_kind = t.hash_kind AND v.hash = t.hash
+JOIN alias_namespace ns ON ns.namespace = t.namespace
+JOIN alias a ON a.namespace = ns.id AND a.name = t.name
+WHERE NOT t.is_self
+ON CONFLICT DO NOTHING;`
+
+	stagingInsertVulnerabilitySelf = `
+INSERT INTO vulnerability_self (vulnerability, self)
+SELECT DISTINCT v.id, a.id
+FROM tmp_alias t
+JOIN vuln v ON v.hash_kind = t.hash_kind AND v.hash = t.hash
+JOIN alias_namespace ns ON ns.namespace = t.namespace
+JOIN alias a ON a.namespace = ns.id AND a.name = t.name
+WHERE t.is_self
+ON CONFLICT (vulnerability) DO NOTHING;`
+)
+
 func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string, fingerprint driver.Fingerprint, vulnIter datastore.VulnerabilityIter, delIter datastore.Iter[string]) (uuid.UUID, error) {
 	const (
 		// Create makes a new update operation and returns the reference and ID.
@@ -151,10 +251,14 @@ func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string
 
 	start := time.Now()
 
-	// The isolation level must be pinned to "read committed" (rather than
-	// inheriting default_transaction_isolation) because some INSERT ... SELECT
-	// statements need to see alias rows committed outside this transaction
-	// after it began.
+	// Pin the isolation level to "read committed" rather than inheriting
+	// default_transaction_isolation. All vulnerability and alias writes now
+	// happen inside this single transaction (via COPY into staging tables plus
+	// set-based INSERT ... SELECT), so we no longer rely on cross-connection
+	// visibility the way the previous out-of-transaction alias inserts did; but
+	// the staging INSERT ... SELECT statements are still simplest to reason
+	// about at READ COMMITTED, and pinning it keeps behaviour stable regardless
+	// of the server's configured default.
 	tx, err := s.pool.BeginTx(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted})
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("unable to start transaction: %w", err)
@@ -234,152 +338,165 @@ func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string
 		updateVulnerabilitiesDuration.WithLabelValues("assocExisting", strconv.FormatBool(delta)).Observe(time.Since(start).Seconds())
 	}
 
-	// batch insert vulnerabilities
-	const batchLim = 1000
+	// Bulk-load vulnerabilities and their aliases via COPY into per-transaction
+	// TEMP staging tables, then set-based INSERT ... SELECT statements.
+	//
+	// This replaces a previous design that issued, per vulnerability, an
+	// individual INSERT + SELECT-by-hash plus a callback-chain of per-alias
+	// INSERT/SELECT/associate statements smeared across two connections. For a
+	// full vulnerability bundle that meant tens of millions of round-trip-bound
+	// statements, which left most CPU idle waiting on the network and made an
+	// initial load take the better part of an hour. COPY + a handful of
+	// set-based statements per batch keeps the same on-disk result while doing
+	// the work in bulk. See ROX-XXXXX.
 	skipCt := 0
 	vulnCt := 0
 	start = time.Now()
-	// This is an annoying way to go about this, but c'est la vie.
-	//
-	// These batches are chains of statements smeared across two database
-	// connections that are all connected via callbacks.
-	conn, err := s.pool.Acquire(ctx)
-	if err != nil {
-		return uuid.Nil, fmt.Errorf("unable to acquire alias connection: %w", err)
-	}
-	defer conn.Release()
-	// These are the batches used in the callback chain. The results of one are
-	// used to enqueue queries into the next batch.
-	//
-	// They MUST be sent in this order, and [aliasBatch] MUST be sent outside
-	// the transaction.
-	var insertBatch, aliasBatch, assocBatch pgx.Batch
-	// Some guesses at initial sizing. These should always level off, but
-	// avoiding allocations and copies is always welcome.
-	insertBatch.QueuedQueries = make([]*pgx.QueuedQuery, 0, batchLim+1)
-	aliasBatch.QueuedQueries = make([]*pgx.QueuedQuery, 0, batchLim*4)
-	assocBatch.QueuedQueries = make([]*pgx.QueuedQuery, 0, batchLim*5)
-	// Flush sends the batches in the correct order, then resets the batches'
-	// query slices.
-	flush := func() (err error) {
-		err = errors.Join(
-			tx.SendBatch(ctx, &insertBatch).Close(),
-			conn.SendBatch(ctx, &aliasBatch).Close(),
-			tx.SendBatch(ctx, &assocBatch).Close(),
-		)
-		for _, b := range []*pgx.Batch{&insertBatch, &aliasBatch, &assocBatch} {
-			clear(b.QueuedQueries)
-			b.QueuedQueries = b.QueuedQueries[:0]
-		}
-		return err
+
+	if _, err := tx.Exec(ctx, createStagingTables); err != nil {
+		return uuid.Nil, fmt.Errorf("creating staging tables: %w", err)
 	}
 
-	// SeenSpace tracks alias namespaces, to avoid sending a lot of redundant
-	// namespace creation statements.
-	seenSpace := make(map[unique.Handle[string]]struct{})
-	// This whole function is a giant callback hell. Don't do this. I was backed
-	// into a corner. This function makes my son cry and actively saps joy from
-	// the world.
-	vulnIDCallback := func(vuln *claircore.Vulnerability) func(pgx.Row) error {
-		// VulnID is where the id for the passed-in vulnerability will be
-		// stored.
-		var vulnID uint64
-		// DoAlias is a closure that enqueues the Alias insertion statements.
-		doAlias := func(a claircore.Alias, assoc string) {
-			if !a.Valid() {
-				return
-			}
-			if _, ok := seenSpace[a.Space]; !ok {
-				seenSpace[a.Space] = struct{}{}
-				aliasBatch.Queue(updateVulnerabilitiesInsertAliasNamespace, a.Space)
-			}
-			// It might be possible to collapse these two statements, at the
-			// cost of making it more complicated: INSERT ... RETURNING only
-			// works if an insertion happened.
-			aliasBatch.Queue(updateVulnerabilitiesInsertAlias, a.Space, a.Name)
-			aliasBatch.
-				Queue(updateVulnerabilitiesSelectAlias, a.Space, a.Name).
-				QueryRow(func(row pgx.Row) error {
-					// This closure enqueues the statement to associate the
-					// alias and the vulnerability via the correct pivot table.
-					var aliasID uint64
-					if err := row.Scan(&aliasID); err != nil {
-						return err
-					}
-					if vulnID != 0 {
-						assocBatch.Queue(assoc, vulnID, aliasID)
-					}
-					return nil
-				})
-		}
-		for _, a := range vuln.Aliases {
-			doAlias(a, updateVulnerabilitiesInsertVulnerabilityAlias)
-		}
-		doAlias(vuln.Self, updateVulnerabilitiesInsertVulnerabilitySelf)
-		// All the above should make it so that the [*claircore.Vulnerability]
-		// isn't pinned in memory until the batch is processed. Only the string
-		// backing storage and the [unique.Handle] backing storage should be
-		// unreclaimable while this batch is in flight.
+	// copyBatchLim bounds how many vulnerabilities are buffered in memory (and
+	// held in the staging tables) before being flushed with COPY + set-based
+	// inserts. Keeping batches modest bounds memory/temp usage (the matcher runs
+	// under a tight memory budget and has OOMed on this workload) while staying
+	// large enough that per-batch statement overhead and round-trips amortise.
+	copyBatchLim := copyBatchSize()
+	vulnRows := make([][]any, 0, copyBatchLim)
+	aliasRows := make([][]any, 0, copyBatchLim*4)
 
-		// As long as [insertBatch] is submitted first, [vulnID] is populated in
-		// this callback and the [aliasBatch] callbacks have the value to use to
-		// populate the [assocBatch].
-		return func(row pgx.Row) error {
-			if err := row.Scan(&vulnID); err != nil {
-				return err
-			}
-			assocBatch.Queue(updateVulnerabilitiesAssociateUpdateOperationVuln, uoID, vulnID)
+	flush := func() error {
+		if len(vulnRows) == 0 {
 			return nil
 		}
+		if _, err := tx.CopyFrom(ctx, pgx.Identifier{"tmp_vuln"}, tmpVulnColumns, pgx.CopyFromRows(vulnRows)); err != nil {
+			return fmt.Errorf("copying into tmp_vuln: %w", err)
+		}
+		if len(aliasRows) > 0 {
+			if _, err := tx.CopyFrom(ctx, pgx.Identifier{"tmp_alias"}, tmpAliasColumns, pgx.CopyFromRows(aliasRows)); err != nil {
+				return fmt.Errorf("copying into tmp_alias: %w", err)
+			}
+		}
+		for _, q := range []struct {
+			name string
+			sql  string
+			args []any
+		}{
+			{"insert_vuln", stagingInsertVuln, nil},
+			{"assoc_vuln", stagingAssocVuln, []any{uoID}},
+			{"insert_alias_namespace", stagingInsertAliasNamespace, nil},
+			{"insert_alias", stagingInsertAlias, nil},
+			{"insert_vulnerability_alias", stagingInsertVulnerabilityAlias, nil},
+			{"insert_vulnerability_self", stagingInsertVulnerabilitySelf, nil},
+		} {
+			if _, err := tx.Exec(ctx, q.sql, q.args...); err != nil {
+				return fmt.Errorf("staging %s: %w", q.name, err)
+			}
+		}
+		if _, err := tx.Exec(ctx, `TRUNCATE tmp_vuln, tmp_alias;`); err != nil {
+			return fmt.Errorf("truncating staging tables: %w", err)
+		}
+		vulnRows = vulnRows[:0]
+		aliasRows = aliasRows[:0]
+		return nil
 	}
 
-	for vuln, iterErr := range vulnIter {
-		if iterErr != nil {
-			err = iterErr
-			break
-		}
-		vulnCt++
-		if skipVulnerability(vuln) {
-			skipCt++
-			continue
-		}
+	// md5 hashing and building the COPY row values are pure per-record CPU work
+	// and dominate a large initial load. Fan them out across workers while a
+	// single collector owns the transaction and performs the COPY + set-based
+	// inserts, so the DB side stays sequential and the operation remains a single
+	// transaction. Record order does not matter: the result is a content-
+	// deduplicated set (ON CONFLICT + set-based inserts).
+	workers := copyWorkers()
 
-		pkg := vuln.Package
-		dist := vuln.Dist
-		repo := vuln.Repo
-		if dist == nil {
-			dist = &zeroDist
-		}
-		if repo == nil {
-			repo = &zeroRepo
-		}
-		hashKind, hash := md5Vuln(vuln)
+	type built struct {
+		vuln  []any
+		alias [][]any
+	}
+	// Buffers are sized so workers can run ahead while the collector is blocked on
+	// a batch flush (COPY + set-based inserts).
+	// Small, bounded buffers: the DB write is the bottleneck, so letting the
+	// build workers race far ahead of the collector would only accumulate built
+	// rows in memory without improving throughput.
+	jobCh := make(chan *claircore.Vulnerability, workers*4)
+	resCh := make(chan built, workers*16)
 
-		insertBatch.Queue(
-			updateVulnerabilitiesInsertVuln,
-			hashKind, hash,
-			vuln.Name, vuln.Updater, vuln.Description, vuln.Issued, vuln.Links, vuln.Severity, vuln.NormalizedSeverity,
-			pkg.Name, pkg.Version, pkg.Module, pkg.Arch, pkg.Kind,
-			dist.DID, dist.Name, dist.Version, dist.VersionCodeName, dist.VersionID, dist.Arch, dist.CPE, dist.PrettyName,
-			repo.Name, repo.Key, repo.URI,
-			vuln.FixedInVersion, vuln.ArchOperation, rangekind(vuln.Range), vuln.Range,
-			vuln.Invert,
-		)
-		insertBatch.Queue(updateVulnerabilitiesSelectVulnByHash, hashKind, hash).QueryRow(vulnIDCallback(vuln))
+	wctx, wcancel := context.WithCancel(ctx)
+	defer wcancel()
+	var (
+		firstErr atomic.Pointer[error]
+		vc, sc   atomic.Int64
+	)
+	setErr := func(e error) {
+		firstErr.CompareAndSwap(nil, &e)
+		wcancel()
+	}
 
-		if ct := insertBatch.Len(); ct >= batchLim {
-			if err = flush(); err != nil {
-				err = fmt.Errorf("failed batching: %w", err)
+	// Workers: build rows.
+	var workerWG sync.WaitGroup
+	for i := 0; i < workers; i++ {
+		workerWG.Add(1)
+		go func() {
+			defer workerWG.Done()
+			for v := range jobCh {
+				vr, ar := buildCopyRows(v)
+				select {
+				case resCh <- built{vr, ar}:
+				case <-wctx.Done():
+					return
+				}
+			}
+		}()
+	}
+	go func() {
+		workerWG.Wait()
+		close(resCh)
+	}()
+
+	// Dispatcher: pull vulnerabilities from the iterator and hand them to workers.
+	go func() {
+		defer close(jobCh)
+		for vuln, iterErr := range vulnIter {
+			if iterErr != nil {
+				setErr(fmt.Errorf("iterating on vulnerabilities: %w", iterErr))
+				return
+			}
+			vc.Add(1)
+			if skipVulnerability(vuln) {
+				sc.Add(1)
+				continue
+			}
+			select {
+			case jobCh <- vuln:
+			case <-wctx.Done():
+				return
+			}
+		}
+	}()
+
+	// Collector: owns tx, buffers built rows, and flushes in batches.
+	for b := range resCh {
+		vulnRows = append(vulnRows, b.vuln)
+		aliasRows = append(aliasRows, b.alias...)
+		if len(vulnRows) >= copyBatchLim {
+			if err := flush(); err != nil {
+				setErr(err)
 				break
 			}
 		}
 	}
-	if err != nil {
-		return uuid.Nil, fmt.Errorf("iterating on vulnerabilities: %w", err)
+	// Drain any results still in flight after an error so workers can exit.
+	for range resCh { //nolint:revive // intentional drain
+	}
+	if ep := firstErr.Load(); ep != nil {
+		return uuid.Nil, *ep
 	}
 	if err := flush(); err != nil {
-		return uuid.Nil, fmt.Errorf("failed to finish batch vulnerability insert: %w", err)
+		return uuid.Nil, fmt.Errorf("failed to finish bulk vulnerability insert: %w", err)
 	}
+	vulnCt = int(vc.Load())
+	skipCt = int(sc.Load())
 
 	updateVulnerabilitiesCounter.WithLabelValues("insert_batch", strconv.FormatBool(delta)).Add(1)
 	updateVulnerabilitiesDuration.WithLabelValues("insert_batch", strconv.FormatBool(delta)).Observe(time.Since(start).Seconds())
@@ -394,6 +511,89 @@ func (s *MatcherStore) updateVulnerabilities(ctx context.Context, updater string
 		"skipped", skipCt,
 		"inserted", vulnCt-skipCt)
 	return ref, nil
+}
+
+// buildCopyRows computes the vulnerability's content hash and builds the COPY row
+// values for the staging tables. It is a pure function of its input so it can be
+// run concurrently from multiple workers. The returned vulnerability row's column
+// order MUST match tmpVulnColumns; the alias rows' order MUST match
+// tmpAliasColumns.
+func buildCopyRows(vuln *claircore.Vulnerability) (vulnRow []any, aliasRows [][]any) {
+	pkg := vuln.Package
+	dist := vuln.Dist
+	repo := vuln.Repo
+	if dist == nil {
+		dist = &zeroDist
+	}
+	if repo == nil {
+		repo = &zeroRepo
+	}
+	hashKind, hash := md5Vuln(vuln)
+
+	vulnRow = []any{
+		hashKind, hash,
+		vuln.Name, vuln.Updater, vuln.Description, vuln.Issued, vuln.Links, vuln.Severity, vuln.NormalizedSeverity,
+		pkg.Name, pkg.Version, pkg.Module, pkg.Arch, pkg.Kind,
+		dist.DID, dist.Name, dist.Version, dist.VersionCodeName, dist.VersionID, dist.Arch, dist.CPE, dist.PrettyName,
+		repo.Name, repo.Key, repo.URI,
+		vuln.FixedInVersion, vuln.ArchOperation, rangekind(vuln.Range), vuln.Range,
+		vuln.Invert,
+	}
+	if n := len(vuln.Aliases); n > 0 {
+		aliasRows = make([][]any, 0, n+1)
+	}
+	for _, a := range vuln.Aliases {
+		if !a.Valid() {
+			continue
+		}
+		aliasRows = append(aliasRows, []any{hashKind, hash, a.Space.Value(), a.Name, false})
+	}
+	if vuln.Self.Valid() {
+		aliasRows = append(aliasRows, []any{hashKind, hash, vuln.Self.Space.Value(), vuln.Self.Name, true})
+	}
+	return vulnRow, aliasRows
+}
+
+// defaultCopyWorkers is 1: row-building runs on the collector goroutine by
+// default. Parallel row-building is opt-in because (a) the workload is ultimately
+// bottlenecked on the single database connection doing the writes, so it buys
+// little, and (b) parallel building assigns vuln ids in a non-deterministic order,
+// which is fine for matching (results are a content-deduplicated set) but changes
+// the row order observed by order-sensitive consumers such as GetUpdateDiff.
+const defaultCopyWorkers = 1
+
+// copyWorkers returns the number of workers used to build COPY rows. It defaults
+// to defaultCopyWorkers and can be raised with CLAIRCORE_COPY_WORKERS on
+// CPU-bound, high-latency-database deployments where parallel row-building helps.
+// A value <= 1 keeps row-building on the collector goroutine (deterministic
+// order).
+func copyWorkers() int {
+	if v := os.Getenv("CLAIRCORE_COPY_WORKERS"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			return n
+		}
+	}
+	n := runtime.GOMAXPROCS(0)
+	if n > defaultCopyWorkers {
+		n = defaultCopyWorkers
+	}
+	if n < 1 {
+		n = 1
+	}
+	return n
+}
+
+// copyBatchSize returns the number of vulnerabilities buffered per COPY flush.
+// It can be overridden with CLAIRCORE_COPY_BATCH to trade memory for fewer, larger
+// batches (e.g. against a high-latency remote database).
+func copyBatchSize() int {
+	const def = 10000
+	if v := os.Getenv("CLAIRCORE_COPY_BATCH"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			return n
+		}
+	}
+	return def
 }
 
 // SkipVulnerability reports if the provided [claircore.Vulnerability] should
