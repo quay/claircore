@@ -1,3 +1,9 @@
+<a name="v1.5.55"></a>
+## [v1.5.55] - 2026-09-18
+[v1.5.55]: https://github.com/quay/claircore/compare/v1.5.54...v1.5.55
+
+Nothing interesting happened this release.
+
 <a name="v1.5.54"></a>
 ## [v1.5.54] - 2026-07-20
 [v1.5.54]: https://github.com/quay/claircore/compare/v1.5.53...v1.5.54
