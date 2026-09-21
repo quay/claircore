@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
 	"log/slog"
 	"strconv"
@@ -80,6 +81,10 @@ func (s *MatcherStore) Get(ctx context.Context, records []*claircore.IndexRecord
 	// gather all the returned vulns for each queued select statement
 	results := make(map[string][]*claircore.Vulnerability)
 	vulnSet := make(map[string]map[string]struct{})
+	// intern shares decoded Vulnerability objects by vuln.id across queries
+	// in this Get. Later hits skip Scan so overlapping source-name rows are
+	// not fully decoded again.
+	intern := map[int64]*claircore.Vulnerability{}
 	for _, rq := range rqs {
 		rid := rq.record.Package.ID
 		vulns, ok := resCache[rq.query]
@@ -87,14 +92,8 @@ func (s *MatcherStore) Get(ctx context.Context, records []*claircore.IndexRecord
 			return nil, fmt.Errorf("unexpected vulnerability query: %s", rq.query)
 		}
 		if vulns != nil { // We already have results we don't need to go back to the DB.
-			if _, ok := vulnSet[rid]; !ok {
-				vulnSet[rid] = make(map[string]struct{})
-			}
 			for _, v := range vulns {
-				if _, ok := vulnSet[rid][v.ID]; !ok {
-					vulnSet[rid][v.ID] = struct{}{}
-					results[rid] = append(results[rid], v)
-				}
+				addVuln(results, vulnSet, rid, v)
 			}
 			continue
 		}
@@ -106,17 +105,22 @@ func (s *MatcherStore) Get(ctx context.Context, records []*claircore.IndexRecord
 				return fmt.Errorf("error getting rows: %w", err)
 			}
 			defer rows.Close()
-			// unpack all returned rows into claircore.Vulnerability structs
 			for rows.Next() {
-				// fully allocate vuln struct
+				id, err := peekInt8(rows)
+				if err != nil {
+					res.Close()
+					return fmt.Errorf("failed to read vulnerability id: %w", err)
+				}
+				if v, ok := intern[id]; ok {
+					addVuln(results, vulnSet, rid, v)
+					continue
+				}
 				v := &claircore.Vulnerability{
 					Package: &claircore.Package{},
 					Dist:    &claircore.Distribution{},
 					Repo:    &claircore.Repository{},
 				}
-
-				var id int64
-				err := rows.Scan(
+				err = rows.Scan(
 					&id,
 					&v.Name,
 					&v.Description,
@@ -145,19 +149,17 @@ func (s *MatcherStore) Get(ctx context.Context, records []*claircore.IndexRecord
 					&v.Updater,
 					&v.Invert,
 				)
-				v.ID = strconv.FormatInt(id, 10)
 				if err != nil {
 					res.Close()
 					return fmt.Errorf("failed to scan vulnerability: %w", err)
 				}
-
-				if _, ok := vulnSet[rid]; !ok {
-					vulnSet[rid] = make(map[string]struct{})
-				}
-				if _, ok := vulnSet[rid][v.ID]; !ok {
-					vulnSet[rid][v.ID] = struct{}{}
-					results[rid] = append(results[rid], v)
-				}
+				v.ID = strconv.FormatInt(id, 10)
+				intern[id] = v
+				addVuln(results, vulnSet, rid, v)
+			}
+			if err := rows.Err(); err != nil {
+				res.Close()
+				return fmt.Errorf("failed to iterate vulnerabilities: %w", err)
 			}
 			return nil
 		}()
@@ -181,6 +183,41 @@ func (s *MatcherStore) Get(ctx context.Context, records []*claircore.IndexRecord
 		return nil, fmt.Errorf("failed to commit tx: %v", err)
 	}
 	return results, nil
+}
+
+func addVuln(results map[string][]*claircore.Vulnerability, vulnSet map[string]map[string]struct{}, rid string, v *claircore.Vulnerability) {
+	if _, ok := vulnSet[rid]; !ok {
+		vulnSet[rid] = make(map[string]struct{})
+	}
+	if _, ok := vulnSet[rid][v.ID]; ok {
+		return
+	}
+	vulnSet[rid][v.ID] = struct{}{}
+	results[rid] = append(results[rid], v)
+}
+
+// peekInt8 returns column 0 as int64 without decoding the rest of the row.
+// Scan can only be called once per row, so intern hits must skip via RawValues.
+func peekInt8(rows pgx.Rows) (int64, error) {
+	raw := rows.RawValues()
+	if len(raw) == 0 || raw[0] == nil {
+		return 0, fmt.Errorf("missing id")
+	}
+	format := int16(pgx.TextFormatCode)
+	if fds := rows.FieldDescriptions(); len(fds) > 0 {
+		format = fds[0].Format
+	}
+	return decodeInt8(raw[0], format)
+}
+
+func decodeInt8(src []byte, format int16) (int64, error) {
+	if format == pgx.BinaryFormatCode {
+		if len(src) != 8 {
+			return 0, fmt.Errorf("binary int8: %d bytes", len(src))
+		}
+		return int64(binary.BigEndian.Uint64(src)), nil
+	}
+	return strconv.ParseInt(string(src), 10, 64)
 }
 
 // populateAliases fetches aliases and self references for all vulnerabilities
