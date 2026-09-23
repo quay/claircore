@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -13,10 +14,17 @@ import (
 	"github.com/quay/claircore/datastore"
 	"github.com/quay/claircore/internal/wart"
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/toolkit/types/cpe"
 )
 
 // getQueryBuilder validates a IndexRecord and creates a query string for vulnerability matching
 func buildGetQuery(record *claircore.IndexRecord, opts *datastore.GetOpts) (string, error) {
+	return buildGetQueryCPEs(record, opts, recordCPEs(record))
+}
+
+// buildGetQueryCPEs is [buildGetQuery] with an explicit set of record CPEs.
+// Each record CPE is OR'd into one attribute comparison.
+func buildGetQueryCPEs(record *claircore.IndexRecord, opts *datastore.GetOpts, cpes []cpe.WFN) (string, error) {
 	matchers := opts.Matchers
 	psql := goqu.Dialect("postgres")
 	exps := []goqu.Expression{}
@@ -32,7 +40,7 @@ func buildGetQuery(record *claircore.IndexRecord, opts *datastore.GetOpts) (stri
 	exps = append(exps, packageQuery)
 
 	// If the package has a source, convert the first expression to an OR.
-	if record.Package.Source.Name != "" {
+	if record.Package.Source != nil && record.Package.Source.Name != "" {
 		sourcePackageQuery := goqu.And(
 			goqu.Ex{"package_name": record.Package.Source.Name},
 			goqu.Ex{"package_kind": wart.StringFromPackageKind(record.Package.Source.Kind)},
@@ -76,6 +84,10 @@ func buildGetQuery(record *claircore.IndexRecord, opts *datastore.GetOpts) (stri
 			ex = goqu.Ex{"repo_key": record.Repository.Key}
 		case driver.HasFixedInVersion:
 			ex = goqu.Ex{"fixed_in_version": goqu.Op{exp.NeqOp.String(): ""}}
+		case driver.CPECompare:
+			exps = append(exps, cpeCompareWFNs(cpes)...)
+			seen[m] = struct{}{}
+			continue
 		default:
 			return "", fmt.Errorf("was provided unknown matcher: %v", m)
 		}
@@ -139,4 +151,80 @@ func buildGetQuery(record *claircore.IndexRecord, opts *datastore.GetOpts) (stri
 		return "", err
 	}
 	return sql, nil
+}
+
+func recordCPEs(record *claircore.IndexRecord) []cpe.WFN {
+	if record == nil || record.Repository == nil {
+		return nil
+	}
+	if record.Repository.CPE.String() == "" {
+		return nil
+	}
+	return []cpe.WFN{record.Repository.CPE}
+}
+
+// cpeCompareExpressions filters repo_name for one record CPE.
+func cpeCompareExpressions(record *claircore.IndexRecord) []goqu.Expression {
+	return cpeCompareWFNs(recordCPEs(record))
+}
+
+// cpeCompareWFNs filters repo_name to the record CPEs.
+//
+// Each CPE contributes one attribute comparison, OR'd with the others.
+// A field matches when it is "*", equal to the record ignoring case, or
+// contains a "*" or "?" glob. The version field also matches when the record
+// version starts with the stored version, which is how VEX writes "4" for
+// "4.13". The matcher still runs Compare, which drops globs this predicate
+// keeps. Quoted colons still break split_part.
+func cpeCompareWFNs(wfns []cpe.WFN) []goqu.Expression {
+	var kept []cpe.WFN
+	seenFS := map[string]struct{}{}
+	for _, w := range wfns {
+		fs := w.String()
+		if fs == "" {
+			continue
+		}
+		if _, ok := seenFS[fs]; ok {
+			continue
+		}
+		seenFS[fs] = struct{}{}
+		kept = append(kept, w)
+	}
+	if len(kept) == 0 {
+		return nil
+	}
+	slices.SortFunc(kept, func(a, b cpe.WFN) int {
+		return strings.Compare(a.String(), b.String())
+	})
+	arms := make([]goqu.Expression, len(kept))
+	for i, w := range kept {
+		arms[i] = cpeAttrSuperset(w)
+	}
+	return []goqu.Expression{goqu.Or(arms...)}
+}
+
+// cpeAttrSuperset matches when every repo_name attribute is "*", equal to w
+// ignoring case, or a "*" / "?" glob. The version attribute also matches when
+// the record version starts with the stored version. Globs are kept for the matcher.
+func cpeAttrSuperset(w cpe.WFN) goqu.Expression {
+	terms := make([]goqu.Expression, cpe.NumAttr)
+	for a := range cpe.NumAttr {
+		n := a + 3 // "cpe" and "2.3" occupy split_part indexes 1 and 2.
+		field := "split_part(repo_name, ':', " + strconv.Itoa(n) + ")"
+		val := strings.ToLower(w.Attr[a].String())
+		match := goqu.L("lower("+field+") IN (?, '*')", val)
+		if val == "*" {
+			match = goqu.L("lower(" + field + ") IN ('*')")
+		}
+		term := []goqu.Expression{
+			match,
+			goqu.L("strpos(" + field + ", '*') > 0"),
+			goqu.L("strpos(" + field + ", '?') > 0"),
+		}
+		if a == int(cpe.Version) {
+			term = append(term, goqu.L("starts_with(?, "+field+")", w.Attr[cpe.Version].String()))
+		}
+		terms[a] = goqu.Or(term...)
+	}
+	return goqu.And(terms...)
 }

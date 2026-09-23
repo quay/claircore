@@ -15,6 +15,7 @@ import (
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 	pgtest "github.com/quay/claircore/test/postgres"
+	"github.com/quay/claircore/toolkit/types/cpe"
 )
 
 func TestGetQueryBuilderDeterministicArgs(t *testing.T) {
@@ -238,6 +239,83 @@ func TestGetQueryBuilderDeterministicArgs(t *testing.T) {
 				t.Fatalf("%v", cmp.Diff(tt.expectedQuery, query, normalizeWhitespace))
 			}
 		})
+	}
+}
+
+func TestBuildGetQueryCPECompare(t *testing.T) {
+	pkgs := test.GenUniquePackages(1)
+	pkgs[0].Source = &claircore.Package{}
+	dists := test.GenUniqueDistributions(1)
+	w := cpe.MustUnbind("cpe:2.3:o:redhat:enterprise_linux:8:*:baseos:*:*:*:*:*")
+	mustCPEFS(t, w.String())
+	ir := &claircore.IndexRecord{
+		Package:      pkgs[0],
+		Distribution: dists[0],
+		Repository: &claircore.Repository{
+			Key: "rhel-cpe-repository",
+			CPE: w,
+		},
+	}
+	query, err := buildGetQuery(ir, &datastore.GetOpts{
+		Matchers: []driver.MatchConstraint{driver.RepositoryKey, driver.CPECompare},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(query, "LIKE") || strings.Contains(query, "rtrim") || strings.Contains(query, "IN ('*', '*')") {
+		t.Fatalf("CPE filter is attribute comparisons, got:\n%s", query)
+	}
+	for _, frag := range []string{
+		`lower(split_part(repo_name, ':', 3)) IN ('o', '*')`,
+		`lower(split_part(repo_name, ':', 5)) IN ('enterprise_linux', '*')`,
+		`lower(split_part(repo_name, ':', 6)) IN ('8', '*')`,
+		`starts_with('8', split_part(repo_name, ':', 6))`,
+		`lower(split_part(repo_name, ':', 8)) IN ('baseos', '*')`,
+		`strpos(split_part(repo_name, ':', 6), '*') > 0`,
+		`strpos(split_part(repo_name, ':', 6), '?') > 0`,
+	} {
+		if !strings.Contains(query, frag) {
+			t.Fatalf("missing %s\n%s", frag, query)
+		}
+	}
+}
+
+func TestBuildGetQueryCPECompareORsRecordCPEs(t *testing.T) {
+	pkgs := test.GenUniquePackages(1)
+	pkgs[0].Source = &claircore.Package{}
+	ir := &claircore.IndexRecord{
+		Package: pkgs[0],
+		Repository: &claircore.Repository{
+			Key: "rhel-cpe-repository",
+			CPE: cpe.MustUnbind("cpe:2.3:o:redhat:enterprise_linux:10:*:baseos:*:*:*:*:*"),
+		},
+	}
+	mustCPEFS(t, ir.Repository.CPE.String())
+	cpes := []cpe.WFN{
+		cpe.MustUnbind("cpe:2.3:o:redhat:enterprise_linux:10.1:*:*:*:*:*:*:*"),
+		cpe.MustUnbind("cpe:2.3:o:redhat:enterprise_linux:10:*:baseos:*:*:*:*:*"),
+		cpe.MustUnbind("cpe:2.3:a:redhat:enterprise_linux:10:*:appstream:*:*:*:*:*"),
+	}
+	for _, w := range cpes {
+		mustCPEFS(t, w.String())
+	}
+	query, err := buildGetQueryCPEs(ir, &datastore.GetOpts{
+		Matchers: []driver.MatchConstraint{driver.RepositoryKey, driver.CPECompare},
+	}, cpes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, ver := range []string{"10.1", "10"} {
+		frag := "starts_with('" + ver + "', split_part(repo_name, ':', 6))"
+		if strings.Count(query, frag) == 0 {
+			t.Fatalf("missing %s\n%s", frag, query)
+		}
+	}
+	if strings.Count(query, "starts_with('10', split_part(repo_name, ':', 6))") != 2 {
+		t.Fatalf("want a version prefix check per CPE whose version is 10, got:\n%s", query)
+	}
+	if !strings.Contains(query, " OR ") {
+		t.Fatalf("record CPEs should share one OR, got:\n%s", query)
 	}
 }
 

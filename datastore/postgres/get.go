@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"log/slog"
+	"slices"
 	"strconv"
 	"time"
 	"unique"
@@ -15,6 +16,8 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore"
+	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/toolkit/types/cpe"
 )
 
 var (
@@ -53,24 +56,9 @@ func (s *MatcherStore) Get(ctx context.Context, records []*claircore.IndexRecord
 	defer tx.Rollback(ctx)
 
 	batch := &pgx.Batch{}
-	bySQL := map[string]*getQuery{}
-	var queries []*getQuery
-	for _, record := range records {
-		sql, err := buildGetQuery(record, &opts)
-		if err != nil {
-			slog.DebugContext(ctx, "could not build query for record",
-				"reason", err,
-				"record", record)
-			continue
-		}
-		q, ok := bySQL[sql]
-		if !ok {
-			q = &getQuery{sql: sql}
-			bySQL[sql] = q
-			queries = append(queries, q)
-			batch.Queue(sql)
-		}
-		q.pkgIDs = append(q.pkgIDs, record.Package.ID)
+	queries := planGetQueries(ctx, records, &opts)
+	for _, q := range queries {
+		batch.Queue(q.sql)
 	}
 
 	start := time.Now()
@@ -134,6 +122,97 @@ func (s *MatcherStore) Get(ctx context.Context, records []*claircore.IndexRecord
 		return nil, fmt.Errorf("failed to commit tx: %v", err)
 	}
 	return results, nil
+}
+
+// planGetQueries builds one SELECT per distinct package lookup.
+//
+// Records that differ only by repository CPE share a statement: the package,
+// module, and repo key predicates stay as they are, and each record CPE is
+// OR'd into the CPE comparison. Records with no CPE keep the unfiltered
+// statement so they are not narrowed by a sibling's CPE.
+func planGetQueries(ctx context.Context, records []*claircore.IndexRecord, opts *datastore.GetOpts) []*getQuery {
+	baseOpts := *opts
+	filterCPE := slices.Contains(opts.Matchers, driver.CPECompare)
+	if filterCPE {
+		baseOpts.Matchers = slices.DeleteFunc(slices.Clone(opts.Matchers), func(m driver.MatchConstraint) bool {
+			return m == driver.CPECompare
+		})
+	}
+
+	// noCPE keeps a record with an empty CPE out of the bucket whose statement
+	// is narrowed by the CPEs collected from its siblings.
+	type queryKey struct {
+		sql   string
+		noCPE bool
+	}
+	type bucket struct {
+		record  *claircore.IndexRecord
+		base    string
+		cpes    []cpe.WFN
+		seenFS  map[string]struct{}
+		pkgIDs  []string
+		seenPkg map[string]struct{}
+	}
+	var order []*bucket
+	byKey := map[queryKey]*bucket{}
+	add := func(key queryKey, record *claircore.IndexRecord, base string, w *cpe.WFN) {
+		b, ok := byKey[key]
+		if !ok {
+			b = &bucket{
+				record:  record,
+				base:    base,
+				seenFS:  map[string]struct{}{},
+				seenPkg: map[string]struct{}{},
+			}
+			byKey[key] = b
+			order = append(order, b)
+		}
+		if w != nil {
+			fs := w.String()
+			if _, ok := b.seenFS[fs]; !ok && fs != "" {
+				b.seenFS[fs] = struct{}{}
+				b.cpes = append(b.cpes, *w)
+			}
+		}
+		id := record.Package.ID
+		if _, ok := b.seenPkg[id]; ok {
+			return
+		}
+		b.seenPkg[id] = struct{}{}
+		b.pkgIDs = append(b.pkgIDs, id)
+	}
+
+	for _, record := range records {
+		base, err := buildGetQuery(record, &baseOpts)
+		if err != nil {
+			slog.DebugContext(ctx, "could not build query for record",
+				"reason", err,
+				"record", record)
+			continue
+		}
+		var w *cpe.WFN
+		if filterCPE && record.Repository != nil && record.Repository.CPE.String() != "" {
+			w = &record.Repository.CPE
+		}
+		add(queryKey{sql: base, noCPE: w == nil}, record, base, w)
+	}
+
+	queries := make([]*getQuery, 0, len(order))
+	for _, b := range order {
+		sql := b.base
+		if len(b.cpes) > 0 {
+			var err error
+			sql, err = buildGetQueryCPEs(b.record, opts, b.cpes)
+			if err != nil {
+				slog.DebugContext(ctx, "could not build query for record",
+					"reason", err,
+					"record", b.record)
+				continue
+			}
+		}
+		queries = append(queries, &getQuery{sql: sql, pkgIDs: b.pkgIDs})
+	}
+	return queries
 }
 
 // vulnIntern stores one Vulnerability per database id for a single Get call.

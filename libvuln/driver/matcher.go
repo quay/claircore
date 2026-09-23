@@ -45,6 +45,11 @@ const (
 	RepositoryKey
 	// should match claircore.Vulnerability.FixedInVersion != ""
 	HasFixedInVersion
+	// should constrain Vulnerability.Repo.Name against IndexRecord.Repository.CPE
+	// by attribute. This is wider than cpe.Compare: a glob is kept for the
+	// matcher, and the version also matches when the record version starts
+	// with the stored version.
+	CPECompare
 )
 
 // Matcher is an interface which a Controller uses to query the vulnstore for vulnerabilities.
