@@ -17,6 +17,7 @@ import (
 	"github.com/quay/claircore/test/integration"
 	pgtest "github.com/quay/claircore/test/postgres"
 	"github.com/quay/claircore/toolkit/types"
+	"github.com/quay/claircore/toolkit/types/cpe"
 )
 
 func TestDecodeInt8(t *testing.T) {
@@ -215,4 +216,147 @@ func vulnByName(vs []*claircore.Vulnerability, name string) *claircore.Vulnerabi
 		}
 	}
 	return nil
+}
+
+func TestGetCPESubstring(t *testing.T) {
+	integration.NeedDB(t)
+	ctx := test.Logging(t)
+
+	pool := pgtest.TestMatcherDB(ctx, t)
+	store := NewMatcherStore(pool)
+
+	srcKind := types.SourcePackage
+	binKind := types.BinaryPackage
+	vuln := func(name, fs string) *claircore.Vulnerability {
+		t.Helper()
+		mustCPEFS(t, fs)
+		return &claircore.Vulnerability{
+			Updater: "test-updater",
+			Name:    name,
+			Package: &claircore.Package{Name: "kernel", Kind: srcKind},
+			Repo:    &claircore.Repository{Name: fs, Key: "rhel-cpe-repository"},
+		}
+	}
+	_, err := store.UpdateVulnerabilities(ctx, "test-updater", driver.Fingerprint(uuid.New().String()), []*claircore.Vulnerability{
+		vuln("EL8-BASEOS", "cpe:2.3:o:redhat:enterprise_linux:8:*:baseos:*:*:*:*:*"),
+		vuln("EL8-SHORT", "cpe:2.3:o:redhat:enterprise_linux:8:*:*:*:*:*:*:*"),
+		vuln("EL9-BASEOS", "cpe:2.3:o:redhat:enterprise_linux:9:*:baseos:*:*:*:*:*"),
+		vuln("EL9-APPSTREAM", "cpe:2.3:a:redhat:enterprise_linux:9:*:appstream:*:*:*:*:*"),
+		vuln("EL9-A-SHORT", "cpe:2.3:a:redhat:enterprise_linux:9:*:*:*:*:*:*:*"),
+		vuln("EUS-94", "cpe:2.3:o:redhat:rhel_eus:9.4:*:baseos:*:*:*:*:*"),
+		vuln("OCP-4", "cpe:2.3:a:redhat:openshift:4:*:*:*:*:*:*:*"),
+		vuln("OCP-413-EL8", "cpe:2.3:a:redhat:openshift:4.13:*:el8:*:*:*:*:*"),
+		vuln("OCP-3", "cpe:2.3:a:redhat:openshift:3:*:*:*:*:*:*:*"),
+		vuln("OCP-AI", "cpe:2.3:a:redhat:openshift_ai:2.16:*:el8:*:*:*:*:*"),
+		vuln("AAP", "cpe:2.3:a:redhat:ansible_automation_platform:*:*:*:*:*:*:*:*"),
+		vuln("AAP-23", "cpe:2.3:a:redhat:ansible_automation_platform:2.3:*:el8:*:*:*:*:*"),
+		vuln("AAP-DEV", "cpe:2.3:a:redhat:ansible_automation_platform_developer:2.3:*:el8:*:*:*:*:*"),
+	})
+	if err != nil {
+		t.Fatalf("update: %v", err)
+	}
+
+	opts := datastore.GetOpts{
+		Matchers: []driver.MatchConstraint{driver.PackageModule, driver.RepositoryKey, driver.CPESubstring},
+	}
+	get := func(fs string) []string {
+		t.Helper()
+		mustCPEFS(t, fs)
+		rec := &claircore.IndexRecord{
+			Package: &claircore.Package{
+				ID:     "core",
+				Name:   "kernel-core",
+				Kind:   binKind,
+				Source: &claircore.Package{Name: "kernel", Kind: srcKind},
+			},
+			Repository: &claircore.Repository{
+				Key: "rhel-cpe-repository",
+				CPE: cpe.MustUnbind(fs),
+			},
+		}
+		res, err := store.Get(ctx, []*claircore.IndexRecord{rec}, opts)
+		if err != nil {
+			t.Fatalf("get %s: %v", fs, err)
+		}
+		return vulnNames(res["core"])
+	}
+
+	tests := []struct {
+		record string
+		want   []string
+	}{
+		{"cpe:2.3:o:redhat:enterprise_linux:8:*:baseos:*:*:*:*:*", []string{"EL8-BASEOS", "EL8-SHORT"}},
+		{"cpe:2.3:a:redhat:enterprise_linux:9:*:appstream:*:*:*:*:*", []string{"EL9-A-SHORT", "EL9-APPSTREAM"}},
+		{"cpe:2.3:a:redhat:openshift:4.13:*:el8:*:*:*:*:*", []string{"OCP-4", "OCP-413-EL8"}},
+		{"cpe:2.3:o:redhat:rhel_eus:9.4:*:baseos:*:*:*:*:*", []string{"EUS-94"}},
+		{"cpe:2.3:a:redhat:ansible_automation_platform_developer:2.3:*:el8:*:*:*:*:*", []string{"AAP-DEV"}},
+		{"cpe:2.3:a:redhat:ansible_automation_platform:2.3:*:el8:*:*:*:*:*", []string{"AAP", "AAP-23"}},
+	}
+	for _, tt := range tests {
+		if diff := cmp.Diff(tt.want, get(tt.record)); diff != "" {
+			t.Errorf("%s: %s", tt.record, diff)
+		}
+	}
+}
+
+func TestGetMergesCPESubstringQueriesForSamePackage(t *testing.T) {
+	integration.NeedDB(t)
+	ctx := test.Logging(t)
+
+	pool := pgtest.TestMatcherDB(ctx, t)
+	store := NewMatcherStore(pool)
+
+	srcKind := types.SourcePackage
+	binKind := types.BinaryPackage
+	fs := "cpe:2.3:a:redhat:enterprise_linux:9:*:*:*:*:*:*:*"
+	mustCPEFS(t, fs)
+	_, err := store.UpdateVulnerabilities(ctx, "test-updater", driver.Fingerprint(uuid.New().String()), []*claircore.Vulnerability{
+		{
+			Updater: "test-updater",
+			Name:    "CVE-2025-11468",
+			Package: &claircore.Package{Name: "python3.9", Kind: srcKind},
+			Repo:    &claircore.Repository{Name: fs, Key: "rhel-cpe-repository"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("update: %v", err)
+	}
+
+	pkg := func() *claircore.Package {
+		return &claircore.Package{
+			ID:     "python3",
+			Name:   "python3",
+			Kind:   binKind,
+			Source: &claircore.Package{Name: "python3.9", Kind: srcKind},
+		}
+	}
+	rec := func(fs string) *claircore.IndexRecord {
+		t.Helper()
+		mustCPEFS(t, fs)
+		return &claircore.IndexRecord{
+			Package: pkg(),
+			Repository: &claircore.Repository{
+				Key: "rhel-cpe-repository",
+				CPE: cpe.MustUnbind(fs),
+			},
+		}
+	}
+	opts := datastore.GetOpts{
+		Matchers: []driver.MatchConstraint{driver.PackageModule, driver.RepositoryKey, driver.CPESubstring},
+	}
+
+	// UBI9 indexes both a: and o: BaseOS on the same binary. CPESubstring
+	// makes those distinct SQL queries; Get used to keep only the last.
+	for _, records := range [][]*claircore.IndexRecord{
+		{rec("cpe:2.3:a:redhat:enterprise_linux:9:*:baseos:*:*:*:*:*"), rec("cpe:2.3:o:redhat:enterprise_linux:9:*:baseos:*:*:*:*:*")},
+		{rec("cpe:2.3:o:redhat:enterprise_linux:9:*:baseos:*:*:*:*:*"), rec("cpe:2.3:a:redhat:enterprise_linux:9:*:baseos:*:*:*:*:*")},
+	} {
+		res, err := store.Get(ctx, records, opts)
+		if err != nil {
+			t.Fatalf("get: %v", err)
+		}
+		if diff := cmp.Diff([]string{"CVE-2025-11468"}, vulnNames(res["python3"])); diff != "" {
+			t.Fatalf("merged get: %s", diff)
+		}
+	}
 }

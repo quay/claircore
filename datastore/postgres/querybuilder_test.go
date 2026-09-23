@@ -15,6 +15,7 @@ import (
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/test/integration"
 	pgtest "github.com/quay/claircore/test/postgres"
+	"github.com/quay/claircore/toolkit/types/cpe"
 )
 
 func TestGetQueryBuilderDeterministicArgs(t *testing.T) {
@@ -238,6 +239,63 @@ func TestGetQueryBuilderDeterministicArgs(t *testing.T) {
 				t.Fatalf("%v", cmp.Diff(tt.expectedQuery, query, normalizeWhitespace))
 			}
 		})
+	}
+}
+
+func TestBuildGetQueryCPESubstring(t *testing.T) {
+	pkgs := test.GenUniquePackages(1)
+	pkgs[0].Source = &claircore.Package{}
+	dists := test.GenUniqueDistributions(1)
+	w := cpe.MustUnbind("cpe:2.3:o:redhat:enterprise_linux:8:*:baseos:*:*:*:*:*")
+	mustCPEFS(t, w.String())
+	ir := &claircore.IndexRecord{
+		Package:      pkgs[0],
+		Distribution: dists[0],
+		Repository: &claircore.Repository{
+			Key: "rhel-cpe-repository",
+			CPE: w,
+		},
+	}
+	query, err := buildGetQuery(ir, &datastore.GetOpts{
+		Matchers: []driver.MatchConstraint{driver.RepositoryKey, driver.CPESubstring},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantStart := "starts_with('" + w.String() + "', rtrim(repo_name, ':*'))"
+	if !strings.Contains(query, wantStart) {
+		t.Fatalf("missing substring predicate, got:\n%s", query)
+	}
+	wantLike := `"repo_name" LIKE 'cpe:2.3:o:redhat:enterprise\_linux:%'`
+	if !strings.Contains(query, wantLike) {
+		t.Fatalf("missing product prefix LIKE, got:\n%s", query)
+	}
+	if strings.Index(query, wantLike) > strings.Index(query, wantStart) {
+		t.Fatalf("LIKE should precede starts_with, got:\n%s", query)
+	}
+}
+
+func TestCPEProductPrefix(t *testing.T) {
+	tests := []struct {
+		in, want string
+	}{
+		{"cpe:2.3:o:redhat:enterprise_linux:8:*:baseos:*:*:*:*:*", "cpe:2.3:o:redhat:enterprise_linux:"},
+		{"cpe:2.3:a:redhat:enterprise_linux:9:*:appstream:*:*:*:*:*", "cpe:2.3:a:redhat:enterprise_linux:"},
+		{"cpe:2.3:a:redhat:openshift:4.13:*:el8:*:*:*:*:*", "cpe:2.3:a:redhat:openshift:"},
+		{"cpe:2.3:a:redhat:openshift:4:*:*:*:*:*:*:*", "cpe:2.3:a:redhat:openshift:"},
+		{"cpe:2.3:o:redhat:rhel_eus:9.4:*:baseos:*:*:*:*:*", "cpe:2.3:o:redhat:rhel_eus:"},
+		{"cpe:2.3:a:redhat:ansible_automation_platform:*:*:*:*:*:*:*:*", "cpe:2.3:a:redhat:ansible_automation_platform:"},
+		{"cpe:2.3:a:redhat:ansible_automation_platform_developer:2.3:*:el8:*:*:*:*:*", "cpe:2.3:a:redhat:ansible_automation_platform_developer:"},
+		{"cpe:2.3:a:redhat:a_mq_clients:2:*:el7:*:*:*:*:*", "cpe:2.3:a:redhat:a_mq_clients:"},
+		{"cpe:2.3:o:redhat:enterprise_linux:10.1:*:*:*:*:*:*:*", "cpe:2.3:o:redhat:enterprise_linux:"},
+		{"cpe:2.3:o:redhat:*:*:*:*:*:*:*:*:*", "cpe:2.3:o:redhat:"},
+	}
+	for _, tt := range tests {
+		mustCPEFS(t, tt.in)
+		got := cpeProductPrefix(cpe.MustUnbind(tt.in))
+		if got != tt.want {
+			t.Errorf("%s: got %q want %q", tt.in, got, tt.want)
+		}
 	}
 }
 
