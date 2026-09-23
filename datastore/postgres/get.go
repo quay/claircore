@@ -38,9 +38,10 @@ var (
 	)
 )
 
-type recordQuery struct {
-	record *claircore.IndexRecord
-	query  string
+// getQuery is one unique SELECT and the package IDs that should receive its rows.
+type getQuery struct {
+	sql    string
+	pkgIDs []string
 }
 
 // Get implements vulnstore.Vulnerability.
@@ -50,54 +51,47 @@ func (s *MatcherStore) Get(ctx context.Context, records []*claircore.IndexRecord
 		return nil, err
 	}
 	defer tx.Rollback(ctx)
-	// start a batch
+
 	batch := &pgx.Batch{}
-	resCache := map[string][]*claircore.Vulnerability{}
-	rqs := []*recordQuery{}
+	bySQL := map[string]*getQuery{}
+	var queries []*getQuery
 	for _, record := range records {
-		query, err := buildGetQuery(record, &opts)
+		sql, err := buildGetQuery(record, &opts)
 		if err != nil {
-			// if we cannot build a query for an individual record continue to the next
 			slog.DebugContext(ctx, "could not build query for record",
 				"reason", err,
 				"record", record)
 			continue
 		}
-		rqs = append(rqs, &recordQuery{query: query, record: record})
-		if _, ok := resCache[query]; ok {
-			continue
+		q, ok := bySQL[sql]
+		if !ok {
+			q = &getQuery{sql: sql}
+			bySQL[sql] = q
+			queries = append(queries, q)
+			batch.Queue(sql)
 		}
-		// queue the select query
-		batch.Queue(query)
-		resCache[query] = nil
+		q.pkgIDs = append(q.pkgIDs, record.Package.ID)
 	}
-	// send the batch
+
 	start := time.Now()
 	res := tx.SendBatch(ctx, batch)
-	// Can't just defer the close, because the batch must be fully handled
-	// before resolving the transaction. Maybe we can move this result handling
-	// into its own function to be able to just defer it.
+	// The batch must be fully consumed before the transaction can resolve.
 
-	// gather all the returned vulns for each queued select statement
+	intern := vulnIntern{}
 	results := make(map[string][]*claircore.Vulnerability)
-	vulnSet := make(map[string]map[string]struct{})
-	// intern shares decoded Vulnerability objects by vuln.id across queries
-	// in this Get. Later hits skip Scan so overlapping source-name rows are
-	// not fully decoded again.
-	intern := map[int64]*claircore.Vulnerability{}
-	for _, rq := range rqs {
-		rid := rq.record.Package.ID
-		vulns, ok := resCache[rq.query]
-		if !ok {
-			return nil, fmt.Errorf("unexpected vulnerability query: %s", rq.query)
+	seen := make(map[string]map[string]struct{})
+	add := func(pkgID string, v *claircore.Vulnerability) {
+		if seen[pkgID] == nil {
+			seen[pkgID] = make(map[string]struct{})
 		}
-		if vulns != nil { // We already have results we don't need to go back to the DB.
-			for _, v := range vulns {
-				addVuln(results, vulnSet, rid, v)
-			}
-			continue
+		if _, ok := seen[pkgID][v.ID]; ok {
+			return
 		}
-		results[rid] = []*claircore.Vulnerability{}
+		seen[pkgID][v.ID] = struct{}{}
+		results[pkgID] = append(results[pkgID], v)
+	}
+
+	for _, q := range queries {
 		err := func() error {
 			rows, err := res.Query()
 			if err != nil {
@@ -106,56 +100,14 @@ func (s *MatcherStore) Get(ctx context.Context, records []*claircore.IndexRecord
 			}
 			defer rows.Close()
 			for rows.Next() {
-				id, err := peekInt8(rows)
+				v, err := intern.Scan(rows)
 				if err != nil {
 					res.Close()
-					return fmt.Errorf("failed to read vulnerability id: %w", err)
+					return err
 				}
-				if v, ok := intern[id]; ok {
-					addVuln(results, vulnSet, rid, v)
-					continue
+				for _, pkgID := range q.pkgIDs {
+					add(pkgID, v)
 				}
-				v := &claircore.Vulnerability{
-					Package: &claircore.Package{},
-					Dist:    &claircore.Distribution{},
-					Repo:    &claircore.Repository{},
-				}
-				err = rows.Scan(
-					&id,
-					&v.Name,
-					&v.Description,
-					&v.Issued,
-					&v.Links,
-					&v.Severity,
-					&v.NormalizedSeverity,
-					&v.Package.Name,
-					&v.Package.Version,
-					&v.Package.Module,
-					&v.Package.Arch,
-					&v.Package.Kind,
-					&v.Dist.DID,
-					&v.Dist.Name,
-					&v.Dist.Version,
-					&v.Dist.VersionCodeName,
-					&v.Dist.VersionID,
-					&v.Dist.Arch,
-					&v.Dist.CPE,
-					&v.Dist.PrettyName,
-					&v.ArchOperation,
-					&v.Repo.Name,
-					&v.Repo.Key,
-					&v.Repo.URI,
-					&v.FixedInVersion,
-					&v.Updater,
-					&v.Invert,
-				)
-				if err != nil {
-					res.Close()
-					return fmt.Errorf("failed to scan vulnerability: %w", err)
-				}
-				v.ID = strconv.FormatInt(id, 10)
-				intern[id] = v
-				addVuln(results, vulnSet, rid, v)
 			}
 			if err := rows.Err(); err != nil {
 				res.Close()
@@ -166,7 +118,6 @@ func (s *MatcherStore) Get(ctx context.Context, records []*claircore.IndexRecord
 		if err != nil {
 			return nil, err
 		}
-		resCache[rq.query] = results[rid]
 	}
 	if err := res.Close(); err != nil {
 		return nil, fmt.Errorf("some weird batch error: %v", err)
@@ -175,7 +126,7 @@ func (s *MatcherStore) Get(ctx context.Context, records []*claircore.IndexRecord
 	getVulnerabilitiesCounter.WithLabelValues("query_batch").Add(1)
 	getVulnerabilitiesDuration.WithLabelValues("query_batch").Observe(time.Since(start).Seconds())
 
-	if err := populateAliases(ctx, tx, results); err != nil {
+	if err := populateAliases(ctx, tx, intern); err != nil {
 		return nil, fmt.Errorf("populating aliases: %w", err)
 	}
 
@@ -185,15 +136,59 @@ func (s *MatcherStore) Get(ctx context.Context, records []*claircore.IndexRecord
 	return results, nil
 }
 
-func addVuln(results map[string][]*claircore.Vulnerability, vulnSet map[string]map[string]struct{}, rid string, v *claircore.Vulnerability) {
-	if _, ok := vulnSet[rid]; !ok {
-		vulnSet[rid] = make(map[string]struct{})
+// vulnIntern stores one Vulnerability per database id for a single Get call.
+type vulnIntern map[int64]*claircore.Vulnerability
+
+// Scan returns the row's Vulnerability, sharing one object per vuln.id so
+// overlapping source-name rows are not fully decoded again.
+func (in vulnIntern) Scan(rows pgx.Rows) (*claircore.Vulnerability, error) {
+	id, err := peekInt8(rows)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read vulnerability id: %w", err)
 	}
-	if _, ok := vulnSet[rid][v.ID]; ok {
-		return
+	if v, ok := in[id]; ok {
+		return v, nil
 	}
-	vulnSet[rid][v.ID] = struct{}{}
-	results[rid] = append(results[rid], v)
+	v := &claircore.Vulnerability{
+		Package: &claircore.Package{},
+		Dist:    &claircore.Distribution{},
+		Repo:    &claircore.Repository{},
+	}
+	err = rows.Scan(
+		&id,
+		&v.Name,
+		&v.Description,
+		&v.Issued,
+		&v.Links,
+		&v.Severity,
+		&v.NormalizedSeverity,
+		&v.Package.Name,
+		&v.Package.Version,
+		&v.Package.Module,
+		&v.Package.Arch,
+		&v.Package.Kind,
+		&v.Dist.DID,
+		&v.Dist.Name,
+		&v.Dist.Version,
+		&v.Dist.VersionCodeName,
+		&v.Dist.VersionID,
+		&v.Dist.Arch,
+		&v.Dist.CPE,
+		&v.Dist.PrettyName,
+		&v.ArchOperation,
+		&v.Repo.Name,
+		&v.Repo.Key,
+		&v.Repo.URI,
+		&v.FixedInVersion,
+		&v.Updater,
+		&v.Invert,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to scan vulnerability: %w", err)
+	}
+	v.ID = strconv.FormatInt(id, 10)
+	in[id] = v
+	return v, nil
 }
 
 // peekInt8 returns column 0 as int64 without decoding the rest of the row.
@@ -220,26 +215,17 @@ func decodeInt8(src []byte, format int16) (int64, error) {
 	return strconv.ParseInt(string(src), 10, 64)
 }
 
-// populateAliases fetches aliases and self references for all vulnerabilities
-// in the results map and populates the Aliases and Self fields.
-func populateAliases(ctx context.Context, tx pgx.Tx, results map[string][]*claircore.Vulnerability) error {
-	vulnByID := make(map[string]*claircore.Vulnerability)
-	for _, vulns := range results {
-		for _, v := range vulns {
-			vulnByID[v.ID] = v
-		}
-	}
-	if len(vulnByID) == 0 {
+// populateAliases fetches aliases and self references for the vulnerabilities
+// in vulns and populates the Aliases and Self fields. Those pointers are the
+// same objects returned in the Get results.
+func populateAliases(ctx context.Context, tx pgx.Tx, vulns vulnIntern) error {
+	if len(vulns) == 0 {
 		return nil
 	}
 
-	ids := make([]int64, 0, len(vulnByID))
-	for id := range vulnByID {
-		n, err := strconv.ParseInt(id, 10, 64)
-		if err != nil {
-			continue
-		}
-		ids = append(ids, n)
+	ids := make([]int64, 0, len(vulns))
+	for id := range vulns {
+		ids = append(ids, id)
 	}
 
 	const aliasQuery = `
@@ -261,7 +247,7 @@ func populateAliases(ctx context.Context, tx pgx.Tx, results map[string][]*clair
 		if err := aliasRows.Scan(&vulnID, &namespace, &name); err != nil {
 			return fmt.Errorf("scanning alias row: %w", err)
 		}
-		v := vulnByID[strconv.FormatInt(vulnID, 10)]
+		v := vulns[vulnID]
 		if v == nil {
 			continue
 		}
@@ -293,7 +279,7 @@ func populateAliases(ctx context.Context, tx pgx.Tx, results map[string][]*clair
 		if err := selfRows.Scan(&vulnID, &namespace, &name); err != nil {
 			return fmt.Errorf("scanning self row: %w", err)
 		}
-		v := vulnByID[strconv.FormatInt(vulnID, 10)]
+		v := vulns[vulnID]
 		if v == nil {
 			continue
 		}
