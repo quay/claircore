@@ -137,13 +137,6 @@ func onlyDigits(s string) bool {
 	return true
 }
 
-func max(a, b int) int {
-	if b > a {
-		return b
-	}
-	return a
-}
-
 // Segment is a part of a RubyGem version.
 type Segment interface {
 	Compare(other Segment) int

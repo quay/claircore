@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"maps"
+	"slices"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -44,8 +45,8 @@ func (c *Coalescer) Coalesce(ctx context.Context, layerArtifacts []*indexer.Laye
 	// at the end of this loop we have searched all layers for the newest occurrence of a
 	// package database.
 	dbs := make(map[string][]*claircore.Package)
-	for i := len(layerArtifacts) - 1; i >= 0; i-- {
-		artifacts := layerArtifacts[i]
+	for _, artifacts := range slices.Backward(layerArtifacts) {
+
 		if len(artifacts.Pkgs) == 0 {
 			continue
 		}

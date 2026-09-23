@@ -32,8 +32,8 @@ func (g *Group) Finish(_ context.Context) error {
 //
 // Deprecated: This was never used.
 type Log interface {
-	Printf(format string, v ...interface{})
-	Errorf(format string, v ...interface{})
+	Printf(format string, v ...any)
+	Errorf(format string, v ...any)
 	// Finish should be called in a defer, right after FromContext.
 	Finish()
 }
@@ -63,9 +63,9 @@ func FromContext(_ context.Context, _ string) Log {
 // Noop is an implementer of Log that does nothing.
 type noop struct{}
 
-func (noop) Printf(_ string, _ ...interface{}) {}
-func (noop) Errorf(_ string, _ ...interface{}) {}
-func (noop) Finish()                           {}
+func (noop) Printf(_ string, _ ...any) {}
+func (noop) Errorf(_ string, _ ...any) {}
+func (noop) Finish()                   {}
 
 // Sink is the interface that event sinks must implement.
 //
