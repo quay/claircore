@@ -115,6 +115,10 @@ func queryBuilder(v *claircore.Vulnerability, m driver.Matcher) (string, error) 
 				// No unpatched vulnerabilities wanted, vulnerability is not applicable.
 				return "", ErrVulnNotApplicable
 			}
+		case driver.CPESubstring:
+			if v.Repo == nil || v.Repo.Name == "" {
+				return "", ErrVulnNotApplicable
+			}
 		default:
 			return "", fmt.Errorf("was provided unknown matcher: %v", m)
 		}

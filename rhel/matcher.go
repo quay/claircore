@@ -42,7 +42,7 @@ func (*Matcher) Filter(record *claircore.IndexRecord) bool {
 
 // Query implements [driver.Matcher].
 func (m *Matcher) Query() []driver.MatchConstraint {
-	mcs := []driver.MatchConstraint{driver.PackageModule, driver.RepositoryKey}
+	mcs := []driver.MatchConstraint{driver.PackageModule, driver.RepositoryKey, driver.CPESubstring}
 	if m.ignoreUnpatched {
 		mcs = append(mcs, driver.HasFixedInVersion)
 	}
