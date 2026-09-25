@@ -94,14 +94,12 @@ func Main(m *testing.M, options ...Option) {
 		}
 	}
 
-	ctx, span := otel.
-		Tracer("github.com/quay/claircore/test").
-		Start(
-			ctx, "Main",
-			trace.WithNewRoot(),
-			trace.WithSpanKind(trace.SpanKindConsumer),
-			trace.WithTimestamp(start),
-		)
+	ctx, span := tracer.Start(
+		ctx, "Main",
+		trace.WithNewRoot(),
+		trace.WithSpanKind(trace.SpanKindConsumer),
+		trace.WithTimestamp(start),
+	)
 	mainSetup.RootSpan = span
 
 	code = m.Run()

@@ -117,10 +117,12 @@ func TestFetchInvalid(t *testing.T) {
 
 func TestFetchConcurrent(t *testing.T) {
 	t.Parallel()
-	setup := func(t *testing.T, ct int, gz bool) (*RemoteFetchArena, []claircore.LayerDescription) {
+	ctx := test.RootContext(t)
+
+	setup := func(t *testing.T, ctx context.Context, ct int, gz bool) (*RemoteFetchArena, []claircore.LayerDescription) {
 		t.Helper()
 		stamp := test.Modtime(t, ".")
-		name := test.GenerateFixture(t, fmt.Sprintf("layers_%02d_%v.zip", ct, gz), stamp, generateTarballs(ct, gz))
+		name := test.GenerateFixture(t, ctx, fmt.Sprintf("layers_%02d_%v.zip", ct, gz), stamp, generateTarballs(ct, gz))
 		f, err := os.Open(name)
 		if err != nil {
 			t.Fatal(err)
@@ -173,7 +175,6 @@ func TestFetchConcurrent(t *testing.T) {
 
 		t.Cleanup(srv.Close)
 		a := NewRemoteFetchArena(srv.Client(), t.TempDir())
-		ctx := test.Logging(t)
 		t.Cleanup(func() {
 			if err := a.Close(ctx); err != nil {
 				t.Error(err)
@@ -226,7 +227,8 @@ func TestFetchConcurrent(t *testing.T) {
 		}
 		t.Run(n, func(t *testing.T) {
 			t.Parallel()
-			a, descs := setup(t, 25, gz)
+			ctx := test.Logging(t, ctx)
+			a, descs := setup(t, ctx, 25, gz)
 			t.Run("OldInterface", func(t *testing.T) {
 				for i := 0; i < runtime.GOMAXPROCS(0); i++ {
 					t.Run(strconv.Itoa(i), oldInterface(a, descs))
@@ -251,8 +253,8 @@ func shuffleSlice[S ~[]E, E any](s S) {
 	})
 }
 
-func generateTarballs(count int, compressed bool) func(testing.TB, *os.File) {
-	return func(t testing.TB, f *os.File) {
+func generateTarballs(count int, compressed bool) func(testing.TB, context.Context, *os.File) {
+	return func(t testing.TB, _ context.Context, f *os.File) {
 		defer f.Close()
 		defer f.Sync()
 		t.Attr("count", strconv.Itoa(count))
