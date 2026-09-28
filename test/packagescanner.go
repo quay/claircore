@@ -2,6 +2,7 @@ package test
 
 import (
 	"context"
+	"hash/maphash"
 	"sort"
 	"strings"
 	"testing"
@@ -24,6 +25,7 @@ type ScannerTestcase struct {
 	Hash    string
 	Want    []*claircore.Package
 	Scanner indexer.PackageScanner
+	Cmpopts []cmp.Option
 }
 
 // Digest reports the digest in the Hash member.
@@ -54,8 +56,8 @@ func (tc ScannerTestcase) Run(ctx context.Context) func(*testing.T) {
 		}
 		sort.Slice(got, pkgSort(got))
 		t.Logf("found %d packages", len(got))
-		if !cmp.Equal(tc.Want, got) {
-			t.Error(cmp.Diff(tc.Want, got))
+		if !cmp.Equal(tc.Want, got, tc.Cmpopts...) {
+			t.Error(cmp.Diff(tc.Want, got, tc.Cmpopts...))
 		}
 	}
 }
@@ -67,6 +69,9 @@ func (tc ScannerTestcase) Run(ctx context.Context) func(*testing.T) {
 // n is the total number of expected packages, ie len(got).
 func (tc ScannerTestcase) RunSubset(ctx context.Context, n int) func(*testing.T) {
 	sort.Slice(tc.Want, pkgSort(tc.Want))
+	seed := maphash.MakeSeed()
+	var h maphash.Hash
+	h.SetSeed(seed)
 	return func(t *testing.T) {
 		ctx := Logging(t, ctx)
 		l := tc.getLayer(ctx, t)
@@ -81,29 +86,28 @@ func (tc ScannerTestcase) RunSubset(ctx context.Context, n int) func(*testing.T)
 			t.Error(cmp.Diff(n, len(got)))
 		}
 
-		type key struct {
-			name, hint string
-		}
-		gotMap := make(map[key]*claircore.Package, len(got))
+		gotMap := make(map[uint64]*claircore.Package, len(got))
 		for _, p := range got {
-			gotMap[key{
-				name: p.Name,
-				hint: p.RepositoryHint,
-			}] = p
+			h.Reset()
+			maphash.WriteComparable(&h, *p)
+			k := h.Sum64()
+
+			gotMap[k] = p
+			t.Log(p.Name, p.PackageDB, p.RepositoryHint)
 		}
 
 		for _, p := range tc.Want {
-			g, exists := gotMap[key{
-				name: p.Name,
-				hint: p.RepositoryHint,
-			}]
+			h.Reset()
+			maphash.WriteComparable(&h, *p)
+			k := h.Sum64()
+			g, exists := gotMap[k]
 			if !exists {
 				t.Errorf("\"got\" is missing package %s with hint %s", p.Name, p.RepositoryHint)
 				continue
 			}
 
 			if !cmp.Equal(p, g) {
-				t.Errorf("%v-%v-%v: %v", p.Name, p.RepositoryHint, p.Filepath, cmp.Diff(p, g))
+				t.Errorf("%v-%v-%v:\n%v", p.Name, p.RepositoryHint, p.Filepath, cmp.Diff(p, g))
 			}
 		}
 	}
