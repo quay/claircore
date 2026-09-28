@@ -18,6 +18,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/CycloneDX/cyclonedx-go"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
@@ -512,4 +513,131 @@ func TestInnerJar(t *testing.T) {
 	if !cmp.Equal(got, want, cmpopts.IgnoreFields(Info{}, "SHA1", "SHA256")) {
 		t.Error(cmp.Diff(got, want))
 	}
+}
+
+func TestExtractSBOM(t *testing.T) {
+	t.Parallel()
+	ctx := test.Logging(t)
+
+	t.Run("gz", func(t *testing.T) {
+		var raw bytes.Buffer
+		zw := gzip.NewWriter(&raw)
+		if _, err := zw.Write([]byte("{")); err != nil {
+			t.Fatal(err)
+		}
+		if err := zw.Close(); err != nil {
+			t.Fatal(err)
+		}
+		z := zipMember(t, "META-INF/sbom/app.cdx.json.gz", raw.Bytes())
+		_, err := extractSBOM(ctx, srcPath{"app.jar"}, z)
+		if errors.Is(err, errUnpopulated) {
+			t.Fatal("gz member was skipped")
+		}
+	})
+
+	t.Run("gzipSuffix", func(t *testing.T) {
+		z := zipMember(t, "META-INF/sbom/app.cdx.json.gzip", []byte("{}"))
+		_, err := extractSBOM(ctx, srcPath{"app.jar"}, z)
+		if !errors.Is(err, errUnpopulated) {
+			t.Fatalf("got %v, want unpopulated", err)
+		}
+	})
+
+	t.Run("declaredSize", func(t *testing.T) {
+		z := zipMember(t, "META-INF/sbom/app.cdx.json", []byte("{}"))
+		z.File[0].UncompressedSize64 = 1 << 62
+		_, err := extractSBOM(ctx, srcPath{"app.jar"}, z)
+		if !errors.Is(err, errSBOMTooLarge) {
+			t.Fatalf("got %v", err)
+		}
+	})
+
+	t.Run("gzipExpansion", func(t *testing.T) {
+		var raw bytes.Buffer
+		zw := gzip.NewWriter(&raw)
+		if _, err := zw.Write(bytes.Repeat([]byte{0}, maxEmbeddedSBOM+1)); err != nil {
+			t.Fatal(err)
+		}
+		if err := zw.Close(); err != nil {
+			t.Fatal(err)
+		}
+		z := zipMember(t, "META-INF/sbom/app.cdx.json.gz", raw.Bytes())
+		_, err := extractSBOM(ctx, srcPath{"app.jar"}, z)
+		if !errors.Is(err, errSBOMTooLarge) {
+			t.Fatalf("got %v", err)
+		}
+	})
+
+	t.Run("xml", func(t *testing.T) {
+		doc := cyclonedx.NewBOM()
+		doc.Metadata = &cyclonedx.Metadata{
+			Component: &cyclonedx.Component{
+				Type:   cyclonedx.ComponentTypeApplication,
+				Name:   "app",
+				BOMRef: "app",
+				CPE:    "cpe:/a:redhat:quarkus:3",
+			},
+		}
+		comps := []cyclonedx.Component{{
+			Type:       cyclonedx.ComponentTypeLibrary,
+			BOMRef:     "pkg:maven/a/b@1",
+			Name:       "b",
+			PackageURL: "pkg:maven/a/b@1",
+		}}
+		doc.Components = &comps
+		deps := []cyclonedx.Dependency{{
+			Ref:          "app",
+			Dependencies: &[]string{"pkg:maven/a/b@1"},
+		}}
+		doc.Dependencies = &deps
+		var plain bytes.Buffer
+		if err := cyclonedx.NewBOMEncoder(&plain, cyclonedx.BOMFileFormatXML).Encode(doc); err != nil {
+			t.Fatal(err)
+		}
+		var gz bytes.Buffer
+		zw := gzip.NewWriter(&gz)
+		if _, err := zw.Write(plain.Bytes()); err != nil {
+			t.Fatal(err)
+		}
+		if err := zw.Close(); err != nil {
+			t.Fatal(err)
+		}
+		for _, tc := range []struct {
+			name string
+			body []byte
+		}{
+			{"META-INF/sbom/app.cdx.xml", plain.Bytes()},
+			{"META-INF/sbom/app.cdx.xml.gz", gz.Bytes()},
+		} {
+			z := zipMember(t, tc.name, tc.body)
+			got, err := extractSBOM(ctx, srcPath{"app.jar"}, z)
+			if err != nil {
+				t.Fatalf("%s: %v", tc.name, err)
+			}
+			if len(got) != 1 || got[0].Version != "1" || got[0].Name == "" {
+				t.Fatalf("%s: %+v", tc.name, got)
+			}
+		}
+	})
+}
+
+func zipMember(t *testing.T, name string, body []byte) *zip.Reader {
+	t.Helper()
+	var buf bytes.Buffer
+	w := zip.NewWriter(&buf)
+	fw, err := w.Create(name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := fw.Write(body); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	r, err := zip.NewReader(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return r
 }
