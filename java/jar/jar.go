@@ -31,6 +31,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -237,7 +238,8 @@ func extractInner(ctx context.Context, p srcPath, z *zip.Reader) ([]Info, error)
 	var ret []Info
 	// Zips need random access, so allocate a buffer for any we find.
 	var buf bytes.Buffer
-	h := sha1.New()
+	h1, h256 := sha1.New(), sha256.New()
+	hs := io.MultiWriter(h1, h256)
 	checkFile := func(ctx context.Context, f *zip.File) error {
 		name := normName(f.Name)
 		// Check name.
@@ -257,8 +259,9 @@ func extractInner(ctx context.Context, p srcPath, z *zip.Reader) ([]Info, error)
 		defer rc.Close()
 		buf.Reset()
 		buf.Grow(int(fi.Size()))
-		h.Reset()
-		sz, err := buf.ReadFrom(io.TeeReader(rc, h))
+		h1.Reset()
+		h256.Reset()
+		sz, err := buf.ReadFrom(io.TeeReader(rc, hs))
 		if err != nil {
 			return mkErr("failed buffering file", err)
 		}
@@ -293,10 +296,14 @@ func extractInner(ctx context.Context, p srcPath, z *zip.Reader) ([]Info, error)
 		default:
 			return mkErr("parse error", err)
 		}
-		c := make([]byte, sha1.Size)
-		h.Sum(c[:0])
+		ck1, ck256 := h1.Sum(make([]byte, 0, sha1.Size)), h256.Sum(make([]byte, 0, sha256.Size))
 		for i := range ps {
-			ps[i].SHA = c
+			if len(ps[i].SHA1) == 0 {
+				ps[i].SHA1 = ck1
+			}
+			if len(ps[i].SHA256) == 0 {
+				ps[i].SHA256 = ck256
+			}
 		}
 		ret = append(ret, ps...)
 		return nil
@@ -355,9 +362,12 @@ type Info struct {
 	// If this jar is embedded inside another jar or series of jars,
 	// each jar file will be included and separated via ":".
 	Source string
-	// SHA is populated with the SHA1 of the file if this entry was discovered
+	// SHA1 is populated with the SHA1 of the file if this entry was discovered
 	// inside another archive.
-	SHA []byte
+	SHA1 []byte
+	// SHA256 is populated with the SHA256 of the file if this entry was
+	// discovered inside another archive.
+	SHA256 []byte
 }
 
 func (i *Info) String() string {
@@ -365,9 +375,14 @@ func (i *Info) String() string {
 	b.WriteString(i.Name)
 	b.WriteByte('/')
 	b.WriteString(i.Version)
-	if len(i.SHA) != 0 {
+	if len(i.SHA1) != 0 {
 		b.WriteString("(sha1:")
-		hex.NewEncoder(&b).Write(i.SHA)
+		hex.NewEncoder(&b).Write(i.SHA1)
+		b.WriteByte(')')
+	}
+	if len(i.SHA256) != 0 {
+		b.WriteString("(sha256:")
+		hex.NewEncoder(&b).Write(i.SHA256)
 		b.WriteByte(')')
 	}
 	b.WriteString(" [")

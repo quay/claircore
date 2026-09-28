@@ -509,7 +509,7 @@ func TestInnerJar(t *testing.T) {
 		},
 	}
 
-	if !cmp.Equal(got, want, cmpopts.IgnoreFields(Info{}, "SHA")) {
+	if !cmp.Equal(got, want, cmpopts.IgnoreFields(Info{}, "SHA1", "SHA256")) {
 		t.Error(cmp.Diff(got, want))
 	}
 }
