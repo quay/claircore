@@ -36,24 +36,39 @@ var (
 		},
 		[]string{"query"},
 	)
+	getVulnerabilitiesCandidateRows = promauto.NewCounter(
+		prometheus.CounterOpts{
+			Namespace: "claircore",
+			Subsystem: "vulnstore",
+			Name:      "getvulnerabilities_candidate_rows_total",
+			Help:      "Total number of vulnerability rows read by Get.",
+		},
+	)
+	getVulnerabilitiesAssociations = promauto.NewCounter(
+		prometheus.CounterOpts{
+			Namespace: "claircore",
+			Subsystem: "vulnstore",
+			Name:      "getvulnerabilities_accepted_associations_total",
+			Help:      "Total number of vulnerability associations retained by Get.",
+		},
+	)
 )
 
-type recordQuery struct {
-	record *claircore.IndexRecord
-	query  string
-}
-
-// Get implements vulnstore.Vulnerability.
+// Get implements [datastore.Vulnerability].
+//
+// If opts.Vulnerable is set, it is called for each candidate row while the
+// transaction and query batch are still open.
 func (s *MatcherStore) Get(ctx context.Context, records []*claircore.IndexRecord, opts datastore.GetOpts) (map[string][]*claircore.Vulnerability, error) {
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer tx.Rollback(ctx)
-	// start a batch
+	// Queue each distinct SELECT once. Records that render the same SQL are
+	// kept on that statement so each scanned row can be offered to all of them.
 	batch := &pgx.Batch{}
-	resCache := map[string][]*claircore.Vulnerability{}
-	rqs := []*recordQuery{}
+	bySQL := make(map[string][]*claircore.IndexRecord)
+	var queries []string
 	for _, record := range records {
 		query, err := buildGetQuery(record, &opts)
 		if err != nil {
@@ -63,13 +78,11 @@ func (s *MatcherStore) Get(ctx context.Context, records []*claircore.IndexRecord
 				"record", record)
 			continue
 		}
-		rqs = append(rqs, &recordQuery{query: query, record: record})
-		if _, ok := resCache[query]; ok {
-			continue
+		if _, ok := bySQL[query]; !ok {
+			queries = append(queries, query)
+			batch.Queue(query)
 		}
-		// queue the select query
-		batch.Queue(query)
-		resCache[query] = nil
+		bySQL[query] = append(bySQL[query], record)
 	}
 	// send the batch
 	start := time.Now()
@@ -82,22 +95,16 @@ func (s *MatcherStore) Get(ctx context.Context, records []*claircore.IndexRecord
 	results := make(map[string][]*claircore.Vulnerability)
 	vulnSet := make(map[string]map[string]struct{})
 	// intern shares decoded Vulnerability objects by vuln.id across queries
-	// in this Get. Later hits skip Scan so overlapping source-name rows are
-	// not fully decoded again.
+	// in this Get. A row is interned only after Vulnerable accepts it, so
+	// later hits skip Scan and rejected rows are not retained.
 	intern := map[int64]*claircore.Vulnerability{}
-	for _, rq := range rqs {
-		rid := rq.record.Package.ID
-		vulns, ok := resCache[rq.query]
-		if !ok {
-			return nil, fmt.Errorf("unexpected vulnerability query: %s", rq.query)
-		}
-		if vulns != nil { // We already have results we don't need to go back to the DB.
-			for _, v := range vulns {
-				addVuln(results, vulnSet, rid, v)
-			}
-			continue
-		}
-		results[rid] = []*claircore.Vulnerability{}
+	var candidates, accepted int
+	defer func() {
+		getVulnerabilitiesCandidateRows.Add(float64(candidates))
+		getVulnerabilitiesAssociations.Add(float64(accepted))
+	}()
+	for _, query := range queries {
+		recs := bySQL[query]
 		err := func() error {
 			rows, err := res.Query()
 			if err != nil {
@@ -106,56 +113,69 @@ func (s *MatcherStore) Get(ctx context.Context, records []*claircore.IndexRecord
 			}
 			defer rows.Close()
 			for rows.Next() {
+				candidates++
 				id, err := peekInt8(rows)
 				if err != nil {
 					res.Close()
 					return fmt.Errorf("failed to read vulnerability id: %w", err)
 				}
-				if v, ok := intern[id]; ok {
-					addVuln(results, vulnSet, rid, v)
-					continue
+				v, ok := intern[id]
+				if !ok {
+					v = &claircore.Vulnerability{
+						Package: &claircore.Package{},
+						Dist:    &claircore.Distribution{},
+						Repo:    &claircore.Repository{},
+					}
+					err = rows.Scan(
+						&id,
+						&v.Name,
+						&v.Description,
+						&v.Issued,
+						&v.Links,
+						&v.Severity,
+						&v.NormalizedSeverity,
+						&v.Package.Name,
+						&v.Package.Version,
+						&v.Package.Module,
+						&v.Package.Arch,
+						&v.Package.Kind,
+						&v.Dist.DID,
+						&v.Dist.Name,
+						&v.Dist.Version,
+						&v.Dist.VersionCodeName,
+						&v.Dist.VersionID,
+						&v.Dist.Arch,
+						&v.Dist.CPE,
+						&v.Dist.PrettyName,
+						&v.ArchOperation,
+						&v.Repo.Name,
+						&v.Repo.Key,
+						&v.Repo.URI,
+						&v.FixedInVersion,
+						&v.Updater,
+						&v.Invert,
+					)
+					if err != nil {
+						res.Close()
+						return fmt.Errorf("failed to scan vulnerability: %w", err)
+					}
+					v.ID = strconv.FormatInt(id, 10)
 				}
-				v := &claircore.Vulnerability{
-					Package: &claircore.Package{},
-					Dist:    &claircore.Distribution{},
-					Repo:    &claircore.Repository{},
+				for _, record := range recs {
+					if opts.Vulnerable != nil {
+						ok, err := opts.Vulnerable(ctx, record, v)
+						if err != nil {
+							res.Close()
+							return err
+						}
+						if !ok {
+							continue
+						}
+					}
+					intern[id] = v
+					addVuln(results, vulnSet, record.Package.ID, v)
+					accepted++
 				}
-				err = rows.Scan(
-					&id,
-					&v.Name,
-					&v.Description,
-					&v.Issued,
-					&v.Links,
-					&v.Severity,
-					&v.NormalizedSeverity,
-					&v.Package.Name,
-					&v.Package.Version,
-					&v.Package.Module,
-					&v.Package.Arch,
-					&v.Package.Kind,
-					&v.Dist.DID,
-					&v.Dist.Name,
-					&v.Dist.Version,
-					&v.Dist.VersionCodeName,
-					&v.Dist.VersionID,
-					&v.Dist.Arch,
-					&v.Dist.CPE,
-					&v.Dist.PrettyName,
-					&v.ArchOperation,
-					&v.Repo.Name,
-					&v.Repo.Key,
-					&v.Repo.URI,
-					&v.FixedInVersion,
-					&v.Updater,
-					&v.Invert,
-				)
-				if err != nil {
-					res.Close()
-					return fmt.Errorf("failed to scan vulnerability: %w", err)
-				}
-				v.ID = strconv.FormatInt(id, 10)
-				intern[id] = v
-				addVuln(results, vulnSet, rid, v)
 			}
 			if err := rows.Err(); err != nil {
 				res.Close()
@@ -166,7 +186,6 @@ func (s *MatcherStore) Get(ctx context.Context, records []*claircore.IndexRecord
 		if err != nil {
 			return nil, err
 		}
-		resCache[rq.query] = results[rid]
 	}
 	if err := res.Close(); err != nil {
 		return nil, fmt.Errorf("some weird batch error: %v", err)
