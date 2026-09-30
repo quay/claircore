@@ -11,17 +11,44 @@ import (
 
 type stubMatcher struct{}
 
-func (stubMatcher) Name() string                          { return "stub" }
-func (stubMatcher) Filter(*claircore.IndexRecord) bool    { return true }
-func (stubMatcher) Query() []driver.MatchConstraint       { return nil }
+func (stubMatcher) Name() string                       { return "stub" }
+func (stubMatcher) Filter(*claircore.IndexRecord) bool { return true }
+func (stubMatcher) Query() []driver.MatchConstraint    { return nil }
 func (stubMatcher) Vulnerable(context.Context, *claircore.IndexRecord, *claircore.Vulnerability) (bool, error) {
 	return true, nil
 }
 
-type stubStore struct{ vulns map[string][]*claircore.Vulnerability }
+type stubStore struct {
+	vulns map[string][]*claircore.Vulnerability
+}
 
-func (s stubStore) Get(context.Context, []*claircore.IndexRecord, datastore.GetOpts) (map[string][]*claircore.Vulnerability, error) {
-	return s.vulns, nil
+func (s stubStore) Get(ctx context.Context, records []*claircore.IndexRecord, opts datastore.GetOpts) (map[string][]*claircore.Vulnerability, error) {
+	if opts.Vulnerable == nil {
+		return s.vulns, nil
+	}
+	out := make(map[string][]*claircore.Vulnerability)
+	seen := make(map[string]map[string]struct{})
+	for _, record := range records {
+		id := record.Package.ID
+		for _, vuln := range s.vulns[id] {
+			ok, err := opts.Vulnerable(ctx, record, vuln)
+			if err != nil {
+				return nil, err
+			}
+			if !ok {
+				continue
+			}
+			if seen[id] == nil {
+				seen[id] = make(map[string]struct{})
+			}
+			if _, dup := seen[id][vuln.ID]; dup {
+				continue
+			}
+			seen[id][vuln.ID] = struct{}{}
+			out[id] = append(out[id], vuln)
+		}
+	}
+	return out, nil
 }
 func (stubStore) GetEnrichment(context.Context, string, []string) ([]driver.EnrichmentRecord, error) {
 	return nil, nil
