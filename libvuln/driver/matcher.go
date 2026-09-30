@@ -58,6 +58,8 @@ type Matcher interface {
 	Query() []MatchConstraint
 	// Vulnerable informs the Controller if the given package is affected by the given vulnerability.
 	// for example checking the "FixedInVersion" field.
+	//
+	// The Controller may pass this to Get, which can call it while producing results.
 	Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error)
 }
 
