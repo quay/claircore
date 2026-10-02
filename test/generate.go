@@ -1,6 +1,7 @@
 package test
 
 import (
+	"context"
 	"errors"
 	"io/fs"
 	"os"
@@ -10,15 +11,23 @@ import (
 	"time"
 
 	"github.com/quay/claircore/test/integration"
+
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 )
+
+// GenerateFunc is the user-supplied code to be used with [GenerateFixture].
+type GenerateFunc func(testing.TB, context.Context, *os.File)
 
 // GenerateFixture is a helper for generating a test fixture. A path that can be
 // used to open the file is returned.
 //
 // If the test fails, the cached file is removed.
 // It is the caller's responsibility to ensure that "name" is unique per-package.
-func GenerateFixture(t testing.TB, name string, stamp time.Time, gen func(testing.TB, *os.File)) string {
+func GenerateFixture(t testing.TB, ctx context.Context, name string, stamp time.Time, gen GenerateFunc) string {
 	t.Helper()
+	ctx, span := tracer.Start(ctx, "GenerateFixture")
+	defer span.End()
 	if !fs.ValidPath(name) || strings.Contains(name, "/") {
 		t.Fatalf(`can't use "name" as a filename: %q`, name)
 	}
@@ -30,6 +39,7 @@ func GenerateFixture(t testing.TB, name string, stamp time.Time, gen func(testin
 	if err != nil {
 		t.Fatal(err)
 	}
+	span.SetAttributes(attribute.String("cache.root", root), attribute.String("cache.dir", n))
 	t.Cleanup(func() {
 		if t.Failed() {
 			t.Logf("generated file %q: removing due to failed test", n)
@@ -41,21 +51,30 @@ func GenerateFixture(t testing.TB, name string, stamp time.Time, gen func(testin
 	fi, err := os.Stat(p)
 	switch {
 	case err == nil && !fi.ModTime().Before(stamp): // not before to get ">="
+		span.AddEvent("fixture up to date")
 		t.Logf("generated file %q: up to date", n)
+		span.SetStatus(codes.Ok, "")
 		return p
 	case err == nil && fi.ModTime().Before(stamp):
+		span.AddEvent("fixture out of date")
 	case errors.Is(err, os.ErrNotExist):
+		span.AddEvent("fixture does not exist")
 	default:
+		span.SetStatus(codes.Error, "stat error")
 		t.Fatalf("generated file %q: unexpected stat error: %v", n, err)
 	}
 
 	f, err := os.Create(p)
 	if err != nil {
+		span.SetStatus(codes.Error, "create error")
 		t.Fatalf("generated file %q: unexpected create error: %v", n, err)
 	}
 	defer f.Close()
 
-	gen(t, f)
+	ctx, span = tracer.Start(ctx, "GenerateFunc")
+	gen(t, ctx, f)
+	span.SetAttributes(attribute.Bool("failed", t.Failed()))
+	span.End()
 	return p
 }
 
