@@ -69,9 +69,9 @@ type LayerRef struct {
 // "file:layer.tar".
 //
 // It is the caller's responsibility to ensure that "name" is unique per-package.
-func (a *CachedArena) GenerateLayer(t testing.TB, name string, stamp time.Time, gen func(testing.TB, *os.File)) {
+func (a *CachedArena) GenerateLayer(t testing.TB, ctx context.Context, name string, stamp time.Time, gen GenerateFunc) {
 	t.Helper()
-	GenerateFixture(t, name, stamp, gen)
+	GenerateFixture(t, ctx, name, stamp, gen)
 }
 
 // Realizer implements [indexer.FetchArena].
