@@ -40,10 +40,3 @@ func (d *DirFile) ReadDir(n int) ([]fs.DirEntry, error) {
 	d.pos += end
 	return es[:end], nil
 }
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
