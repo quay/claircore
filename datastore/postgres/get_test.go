@@ -1,7 +1,9 @@
 package postgres
 
 import (
+	"context"
 	"encoding/binary"
+	"errors"
 	"slices"
 	"testing"
 
@@ -120,6 +122,153 @@ func TestGetInternsOverlappingRows(t *testing.T) {
 	if srcCore != srcMod {
 		t.Fatal("expected interned source vuln to be the same pointer")
 	}
+}
+
+func TestGetVulnerable(t *testing.T) {
+	integration.NeedDB(t)
+	ctx := test.Logging(t)
+
+	pool := pgtest.TestMatcherDB(ctx, t)
+	store := NewMatcherStore(pool)
+
+	srcKind := types.SourcePackage
+	binKind := types.BinaryPackage
+	_, err := store.UpdateVulnerabilities(ctx, "test-updater", driver.Fingerprint(uuid.New().String()), []*claircore.Vulnerability{
+		{Updater: "test-updater", Name: "CVE-YES", Package: &claircore.Package{Name: "bash", Kind: binKind}},
+		{Updater: "test-updater", Name: "CVE-NO", Package: &claircore.Package{Name: "bash", Kind: binKind}},
+		{Updater: "test-updater", Name: "CVE-SRC", Package: &claircore.Package{Name: "kernel", Kind: srcKind}},
+		{Updater: "test-updater", Name: "CVE-CORE", Package: &claircore.Package{Name: "kernel-core", Kind: binKind}},
+		{Updater: "test-updater", Name: "CVE-MOD", Package: &claircore.Package{Name: "kernel-modules", Kind: binKind}},
+		{Updater: "test-updater", Name: "CVE-EXTRA", Package: &claircore.Package{Name: "kernel-extra", Kind: binKind}},
+	})
+	if err != nil {
+		t.Fatalf("update: %v", err)
+	}
+
+	bash := &claircore.Package{ID: "bash", Name: "bash", Kind: binKind, Source: &claircore.Package{}}
+	t.Run("nil", func(t *testing.T) {
+		res, err := store.Get(ctx, []*claircore.IndexRecord{{Package: bash}}, datastore.GetOpts{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if diff := cmp.Diff([]string{"CVE-NO", "CVE-YES"}, vulnNames(res["bash"])); diff != "" {
+			t.Fatal(diff)
+		}
+	})
+	t.Run("drops", func(t *testing.T) {
+		res, err := store.Get(ctx, []*claircore.IndexRecord{{Package: bash}}, datastore.GetOpts{
+			Vulnerable: func(context.Context, *claircore.IndexRecord, *claircore.Vulnerability) (bool, error) {
+				return false, nil
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(res["bash"]) != 0 {
+			t.Fatalf("kept %s", vulnNames(res["bash"]))
+		}
+	})
+	t.Run("either record", func(t *testing.T) {
+		res, err := store.Get(ctx, []*claircore.IndexRecord{
+			{Package: bash, Repository: &claircore.Repository{Name: "no"}},
+			{Package: bash, Repository: &claircore.Repository{Name: "yes"}},
+		}, datastore.GetOpts{
+			Vulnerable: func(_ context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
+				return record.Repository.Name == "yes" && vuln.Name == "CVE-YES", nil
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if diff := cmp.Diff([]string{"CVE-YES"}, vulnNames(res["bash"])); diff != "" {
+			t.Fatal(diff)
+		}
+		if len(res["bash"]) != 1 {
+			t.Fatalf("got %d rows", len(res["bash"]))
+		}
+	})
+	t.Run("both records once", func(t *testing.T) {
+		res, err := store.Get(ctx, []*claircore.IndexRecord{
+			{Package: bash, Repository: &claircore.Repository{Name: "a"}},
+			{Package: bash, Repository: &claircore.Repository{Name: "b"}},
+		}, datastore.GetOpts{
+			Vulnerable: func(_ context.Context, _ *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
+				return vuln.Name == "CVE-YES", nil
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if diff := cmp.Diff([]string{"CVE-YES"}, vulnNames(res["bash"])); diff != "" {
+			t.Fatal(diff)
+		}
+		if len(res["bash"]) != 1 {
+			t.Fatalf("got %d rows", len(res["bash"]))
+		}
+	})
+	t.Run("two statements", func(t *testing.T) {
+		a := &claircore.Package{ID: "pkg", Name: "twostmt", Kind: binKind, Module: "a", Source: &claircore.Package{}}
+		b := &claircore.Package{ID: "pkg", Name: "twostmt", Kind: binKind, Module: "b", Source: &claircore.Package{}}
+		_, err := store.UpdateVulnerabilities(ctx, "test-updater-mod", driver.Fingerprint(uuid.New().String()), []*claircore.Vulnerability{
+			{Updater: "test-updater-mod", Name: "CVE-MOD-A", Package: &claircore.Package{Name: "twostmt", Kind: binKind, Module: "a"}},
+			{Updater: "test-updater-mod", Name: "CVE-MOD-B", Package: &claircore.Package{Name: "twostmt", Kind: binKind, Module: "b"}},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		res, err := store.Get(ctx, []*claircore.IndexRecord{{Package: a}, {Package: b}}, datastore.GetOpts{
+			Matchers: []driver.MatchConstraint{driver.PackageModule},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if diff := cmp.Diff([]string{"CVE-MOD-A", "CVE-MOD-B"}, vulnNames(res["pkg"])); diff != "" {
+			t.Fatal(diff)
+		}
+	})
+	t.Run("error", func(t *testing.T) {
+		_, err := store.Get(ctx, []*claircore.IndexRecord{{Package: bash}}, datastore.GetOpts{
+			Vulnerable: func(context.Context, *claircore.IndexRecord, *claircore.Vulnerability) (bool, error) {
+				return false, errors.New("vulnerable failed")
+			},
+		})
+		if err == nil {
+			t.Fatal("expected Vulnerable error")
+		}
+	})
+
+	src := &claircore.Package{Name: "kernel", Kind: srcKind}
+	t.Run("shared row stays interned", func(t *testing.T) {
+		res, err := store.Get(ctx, []*claircore.IndexRecord{
+			{Package: &claircore.Package{ID: "core", Name: "kernel-core", Kind: binKind, Source: src}},
+			{Package: &claircore.Package{ID: "mod", Name: "kernel-modules", Kind: binKind, Source: src}},
+			{Package: &claircore.Package{ID: "extra", Name: "kernel-extra", Kind: binKind, Source: src}},
+		}, datastore.GetOpts{
+			Vulnerable: func(_ context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
+				if record.Package.Name == "kernel-modules" {
+					return vuln.Name == "CVE-MOD", nil
+				}
+				return vuln.Name != "CVE-MOD", nil
+			},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if diff := cmp.Diff([]string{"CVE-CORE", "CVE-SRC"}, vulnNames(res["core"])); diff != "" {
+			t.Fatal(diff)
+		}
+		if diff := cmp.Diff([]string{"CVE-MOD"}, vulnNames(res["mod"])); diff != "" {
+			t.Fatal(diff)
+		}
+		if diff := cmp.Diff([]string{"CVE-EXTRA", "CVE-SRC"}, vulnNames(res["extra"])); diff != "" {
+			t.Fatal(diff)
+		}
+		srcCore := vulnByName(res["core"], "CVE-SRC")
+		srcExtra := vulnByName(res["extra"], "CVE-SRC")
+		if srcCore == nil || srcExtra == nil || srcCore != srcExtra {
+			t.Fatal("expected kernel-core and kernel-extra to share CVE-SRC")
+		}
+	})
 }
 
 func vulnNames(vs []*claircore.Vulnerability) []string {
