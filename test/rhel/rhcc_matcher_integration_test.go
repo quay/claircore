@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"go.opentelemetry.io/otel/codes"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/datastore/postgres"
 	match_engine "github.com/quay/claircore/internal/matcher"
@@ -23,14 +25,20 @@ import (
 )
 
 func TestMain(m *testing.M) {
-	var c int
-	defer func() { os.Exit(c) }()
-	defer integration.DBSetup()()
-	c = m.Run()
+	test.Main(m, test.DBSetup)
 }
 
 func TestRHCCMatcherIntegration(t *testing.T) {
 	t.Parallel()
+	ctx, span := tracer.Start(test.RootContext(t), t.Name())
+	defer func() {
+		code := codes.Ok
+		if t.Failed() {
+			code--
+		}
+		span.SetStatus(code, "")
+		span.End()
+	}()
 
 	type testcase struct {
 		Name        string
@@ -65,8 +73,7 @@ func TestRHCCMatcherIntegration(t *testing.T) {
 		},
 	}
 
-	integration.NeedDB(t)
-	ctx := test.Logging(t)
+	integration.NeedDB(t, ctx)
 	pool := testpostgres.TestMatcherDB(ctx, t)
 	store := postgres.NewMatcherStore(pool)
 	locks, err := ctxlock.New(ctx, pool)
@@ -107,6 +114,16 @@ func TestRHCCMatcherIntegration(t *testing.T) {
 	for _, tt := range table {
 		t.Run(tt.Name, func(t *testing.T) {
 			t.Parallel()
+			ctx, span := tracer.Start(ctx, tt.Name)
+			defer func() {
+				code := codes.Ok
+				if t.Failed() {
+					code--
+				}
+				span.SetStatus(code, "")
+				span.End()
+			}()
+
 			m := rhcc.Matcher
 
 			f, err := os.Open(filepath.Join("testdata", fmt.Sprintf("%s-indexreport.json", tt.indexReport)))
