@@ -1,0 +1,47 @@
+ARG FEDORA_VERSION="39"
+FROM --platform=$TARGETPLATFORM registry.fedoraproject.org/fedora-toolbox:${FEDORA_VERSION}
+
+ARG TARGETOS
+ARG TARGETARCH
+
+COPY gh-cli.repo /etc/yum.repos.d/gh-cli.repo
+RUN dnf install -y \
+		curl \
+		gh \
+		jq \
+		neovim \
+		ragel \
+		shellcheck \
+		tree-sitter-cli \
+		yamllint \
+		zsh \
+	&& \
+	dnf clean all
+
+ARG MDBOOK_VERSION="0.4.37"
+RUN case "$TARGETARCH" in amd64) export arch=x86_64;; *) echo "unknown arch: $TARGETARCH"; exit 0;; esac; \
+	test "$TARGETOS" = linux || { echo "unknown os: $TARGETOS"; exit 0; }; \
+	curl -sSfL "https://github.com/rust-lang/mdBook/releases/download/v${MDBOOK_VERSION}/mdbook-v${MDBOOK_VERSION}-${arch}-unknown-linux-gnu.tar.gz" | \
+	tar xzC /usr/local/bin
+
+ARG GO_VERSION="1.22"
+COPY go_download.jq /root/go_download.jq
+RUN curl -sSfL 'https://golang.org/dl/?mode=json&include=all' | \
+	jq -r -f /root/go_download.jq | \
+	sh -ex
+
+ENV GOBIN=/usr/local/bin
+RUN go=/usr/local/go/bin/go; \
+	for exe in \
+		github.com/go-delve/delve/cmd/dlv@latest \
+		github.com/mgechev/revive@latest \
+		github.com/wagoodman/dive@latest \
+		golang.org/x/tools/cmd/deadcode@latest \
+		golang.org/x/tools/gopls@latest \
+	; do \
+		echo ": $exe" ; \
+		$go install "$exe"; \
+	done; \
+	rm -rf $($go env GOCACHE GOPATH)
+
+COPY profile.sh /etc/profile.d/claircore.sh
