@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/url"
 	"path"
-	"strings"
 	"unique"
 
 	"github.com/package-url/packageurl-go"
@@ -31,11 +30,10 @@ func PopulatePackage(pkg *claircore.Package, bp Package, sbomFile string) error 
 		vs = append(vs, fmt.Sprintf(`%s:%x`, k.Value(), b))
 	}
 
-	group, artifact, ok := strings.Cut(bp.PURL.Name, "/")
-	if !ok {
+	if bp.PURL.Namespace == "" {
 		pkg.Name = bp.PURL.Name
 	} else {
-		pkg.Name = group + ":" + artifact
+		pkg.Name = bp.PURL.Namespace + ":" + bp.PURL.Name
 	}
 	pkg.Version = bp.PURL.Version
 	pkg.Kind = types.BinaryPackage

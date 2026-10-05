@@ -552,11 +552,10 @@ func (i *Info) parseSBOM(ctx context.Context, pkg bom.Package) error {
 			i.SHA256 = v
 		}
 	}
-	group, artifact, ok := strings.Cut(pkg.PURL.Name, "/")
-	if !ok {
+	if pkg.PURL.Namespace == "" {
 		i.Name = pkg.PURL.Name
 	} else {
-		i.Name = group + ":" + artifact
+		i.Name = pkg.PURL.Namespace + ":" + pkg.PURL.Name
 	}
 	i.Version = pkg.PURL.Version
 	i.CPE = pkg.CPE
