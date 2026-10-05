@@ -5,7 +5,6 @@ import (
 	"net/url"
 	"path"
 	"slices"
-	"strings"
 	"unique"
 
 	"github.com/package-url/packageurl-go"
@@ -33,11 +32,10 @@ func PopulatePackage(pkg *claircore.Package, bp Package, sbomFile string) error 
 	}
 	slices.Sort(vs)
 
-	group, artifact, ok := strings.Cut(bp.PURL.Name, "/")
-	if !ok {
+	if bp.PURL.Namespace == "" {
 		pkg.Name = bp.PURL.Name
 	} else {
-		pkg.Name = group + ":" + artifact
+		pkg.Name = bp.PURL.Namespace + ":" + bp.PURL.Name
 	}
 	pkg.Version = bp.PURL.Version
 	pkg.Kind = types.BinaryPackage
