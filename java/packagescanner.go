@@ -46,6 +46,11 @@ var (
 	}
 )
 
+// RedHatCPERepositoryKey is the repository key for a Red Hat product CPE
+// attributed to a Java component. It is distinct from the Maven Central
+// repository and from the RPM CPE repository.
+const RedHatCPERepositoryKey = "redhat-java-cpe-repository"
+
 // DefaultSearchAPI is a maven-like REST API that may be used to do
 // reverse lookups based on an archive's sha1 sum.
 //
@@ -79,7 +84,7 @@ type Scanner struct {
 func (*Scanner) Name() string { return "java" }
 
 // Version implements scanner.VersionedScanner.
-func (*Scanner) Version() string { return "8" }
+func (*Scanner) Version() string { return "9" }
 
 // Kind implements scanner.VersionedScanner.
 func (*Scanner) Kind() string { return "package" }
@@ -153,167 +158,222 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 	}
 
 	seq, walkErr := walkInteresting(ctx, sys)
+	type foundFile struct {
+		k fileKind
+		p string
+	}
+	var found []foundFile
 	for k, p := range seq {
-		log := slog.With("path", p)
 		if set.Contains(p) {
-			log.DebugContext(ctx, "file from an rpm")
+			slog.DebugContext(ctx, "file from an rpm", "path", p)
 			continue
 		}
-
-		h1.Reset()
-		h256.Reset()
-		buf.Reset()
-		f, err := sys.Open(p)
-		if err != nil {
-			return nil, err
-		}
-		fStat, err := f.Stat()
-		if err == nil {
-			buf.Grow(int(fStat.Size()))
-		}
-		sz, err := buf.ReadFrom(io.TeeReader(f, hs))
-		f.Close()
-		if err != nil {
-			return nil, err
-		}
-		rd := bytes.NewReader(buf.Bytes())
-
-		switch k {
-		case fileSBoM:
-			dir := path.Dir(p)
-			// Don't consume both compressed and uncompressed versions.
-			//
-			// This code doesn't prefer one or the other and assumes they're
-			// equivalent.
-			k := maphash.String(seed, dir)
-			if _, ok := sbomDup[k]; ok {
-				log.DebugContext(ctx, "skipping (assumed) duplicate SBoM")
-				continue
-			}
-			sbomDup[k] = struct{}{}
-
-			seq, err := bom.LoadCDX(ctx, rd)
-			if err != nil {
-				return nil, err
-			}
-			for bp, err := range seq {
-				if err != nil {
-					return nil, err
-				}
-				n := path.Join(dir, bp.Location)
-				sbomPath[maphash.String(seed, n)] = struct{}{}
-				for k, b := range bp.Hashes {
-					h, ok := sbomHash[k]
-					if !ok {
-						continue
-					}
-					h[maphash.Bytes(seed, b)] = struct{}{}
-				}
-				var pkg claircore.Package
-				if err := bom.PopulatePackage(&pkg, bp, p); err != nil {
-					return nil, err
-				}
-				ret = append(ret, &pkg)
-			}
-		case fileJAR:
-			// Let the zip reader determine if this is actually a valid zip file.
-			// We cannot just check the header, as it's possible the jar file
-			// starts off with a script. This scenario is explicitly mentioned in
-			// the standard library: https://cs.opensource.google/go/go/+/refs/tags/go1.24.3:src/archive/zip/reader.go;l=41.
-			z, err := zip.NewReader(rd, sz)
-			switch {
-			case errors.Is(err, nil):
-			case errors.Is(err, zip.ErrFormat):
-				log.InfoContext(ctx, "not actually a jar: invalid zip", "reason", err)
-				continue
-			default:
-				return nil, err
-			}
-
-			infos, err := jar.Parse(ctx, p, z)
-			switch {
-			case err == nil:
-			case errors.Is(err, jar.ErrNotAJar):
-				// Could not prove this is really a jar. Skip it and move on.
-				log.InfoContext(ctx, "skipping jar", "reason", err)
-				continue
-			default:
-				return nil, err
-			}
-			ck1 := h1.Sum(ck1)
-			ck256 := h256.Sum(ck256)
-			hex1, hex256 := hex.EncodeToString(ck1), hex.EncodeToString(ck256)
-			ps := make([]*claircore.Package, len(infos))
-			for j := range infos {
-				i := &infos[j]
-				// If we discovered a pom file, don't bother talking to the network.
-				// If not, talk to the network if configured to do so.
-				if !strings.HasSuffix(i.Source, "pom.properties") && doSearch {
-					switch err := s.search(ctx, i, ck1); {
-					case errors.Is(err, nil): // OK
-					case errors.Is(err, errRPC):
-					// BUG(hank) There's no way for a scanner that makes RPC calls
-					// to signal "the call failed, these are best-effort results,
-					// and please retry."
-					default:
-						return nil, err
-					}
-				}
-
-				var pkg claircore.Package
-				pkg.Name = i.Name
-				pkg.Version = i.Version
-				pkg.Kind = types.BinaryPackage
-				pkg.Filepath = p
-				pkg.RepositoryHint = (url.Values{
-					"hash": {
-						"sha1:" + cmp.Or(hex.EncodeToString(i.SHA1), hex1),
-						"sha256:" + cmp.Or(hex.EncodeToString(i.SHA256), hex256),
-					},
-				}).Encode()
-				if i.CPE != nil {
-					pkg.CPE = *i.CPE
-				}
-				// BUG(hank) There's probably some bugs lurking in the jar.Info →
-				// claircore.Package mapping code around embedded jars. There's a
-				// testcase to be written, there.
-
-				idx := strings.LastIndex(i.Source, ":")
-				// If the top-level JAR file can only be identified by its name,
-				// i.Source will just be `.`
-				// In this case, PackageDB should just be the filepath, n.
-				// Otherwise, use i.Source.
-				pkgDB := p
-				if idx != -1 {
-					pkgDB = i.Source[:idx]
-				}
-				// Only examine anything after the last colon (or the entire path if there is no colon).
-				switch l := i.Source[idx+1:]; {
-				case strings.HasSuffix(l, "pom.properties"):
-					fallthrough
-				case s.root != nil && i.Source == s.root.String():
-					// Populate as a maven artifact.
-					pkg.PackageDB = `maven:` + pkgDB
-				case l == "META-INF/MANIFEST.MF":
-					// information pulled from a manifest file
-					pkg.PackageDB = `jar:` + pkgDB
-				case l == ".":
-					// Name guess.
-					pkg.PackageDB = `file:` + pkgDB
-				default:
-					return nil, fmt.Errorf("java: martian Info: %+v", i)
-				}
-				ps[j] = &pkg
-			}
-			ret = append(ret, ps...)
-		default:
-			panic("unreachable")
-		}
+		found = append(found, foundFile{k, p})
 	}
 	if err := walkErr(); err != nil {
 		return nil, fmt.Errorf("java: walking fs: %w", err)
 	}
+	// Layer SBOMs are indexed first so a jar they already describe can be skipped
+	// even when the walk visits the jar first.
+	for _, pass := range []fileKind{fileSBoM, fileJAR} {
+		for _, file := range found {
+			if file.k != pass {
+				continue
+			}
+			k, p := file.k, file.p
+			log := slog.With("path", p)
+			if k == fileJAR && coveredSBOMPath(seed, p, sbomPath) {
+				log.DebugContext(ctx, "skipping jar covered by sbom path")
+				continue
+			}
+
+			h1.Reset()
+			h256.Reset()
+			buf.Reset()
+			f, err := sys.Open(p)
+			if err != nil {
+				return nil, err
+			}
+			fStat, err := f.Stat()
+			if err == nil {
+				buf.Grow(int(fStat.Size()))
+			}
+			sz, err := buf.ReadFrom(io.TeeReader(f, hs))
+			f.Close()
+			if err != nil {
+				return nil, err
+			}
+			rd := bytes.NewReader(buf.Bytes())
+			if k == fileJAR && coveredSBOMHash(seed, h1.Sum(nil), h256.Sum(nil), sbomHash) {
+				log.DebugContext(ctx, "skipping jar covered by sbom hash")
+				continue
+			}
+
+			switch k {
+			case fileSBoM:
+				dir := path.Dir(p)
+				// Don't consume both compressed and uncompressed versions.
+				//
+				// This code doesn't prefer one or the other and assumes they're
+				// equivalent.
+				k := maphash.String(seed, dir)
+				if _, ok := sbomDup[k]; ok {
+					log.DebugContext(ctx, "skipping (assumed) duplicate SBoM")
+					continue
+				}
+				sbomDup[k] = struct{}{}
+
+				seq, err := bom.LoadCDX(ctx, rd)
+				if err != nil {
+					return nil, err
+				}
+				for bp, err := range seq {
+					if err != nil {
+						return nil, err
+					}
+					n := path.Join(dir, bp.Location)
+					sbomPath[maphash.String(seed, n)] = struct{}{}
+					for k, b := range bp.Hashes {
+						h, ok := sbomHash[k]
+						if !ok {
+							continue
+						}
+						h[maphash.Bytes(seed, b)] = struct{}{}
+					}
+					var pkg claircore.Package
+					if err := bom.PopulatePackage(&pkg, bp, p); err != nil {
+						return nil, err
+					}
+					ret = append(ret, &pkg)
+				}
+			case fileJAR:
+				// Let the zip reader determine if this is actually a valid zip file.
+				// We cannot just check the header, as it's possible the jar file
+				// starts off with a script. This scenario is explicitly mentioned in
+				// the standard library: https://cs.opensource.google/go/go/+/refs/tags/go1.24.3:src/archive/zip/reader.go;l=41.
+				z, err := zip.NewReader(rd, sz)
+				switch {
+				case errors.Is(err, nil):
+				case errors.Is(err, zip.ErrFormat):
+					log.InfoContext(ctx, "not actually a jar: invalid zip", "reason", err)
+					continue
+				default:
+					return nil, err
+				}
+
+				infos, err := jar.Parse(ctx, p, z)
+				switch {
+				case err == nil:
+				case errors.Is(err, jar.ErrNotAJar):
+					// Could not prove this is really a jar. Skip it and move on.
+					log.InfoContext(ctx, "skipping jar", "reason", err)
+					continue
+				default:
+					return nil, err
+				}
+				ck1 := h1.Sum(ck1)
+				ck256 := h256.Sum(ck256)
+				hex1, hex256 := hex.EncodeToString(ck1), hex.EncodeToString(ck256)
+				ps := make([]*claircore.Package, len(infos))
+				for j := range infos {
+					i := &infos[j]
+					// If we discovered a pom file, don't bother talking to the network.
+					// If not, talk to the network if configured to do so.
+					if !strings.HasSuffix(i.Source, "pom.properties") && doSearch {
+						switch err := s.search(ctx, i, ck1); {
+						case errors.Is(err, nil): // OK
+						case errors.Is(err, errRPC):
+						// BUG(hank) There's no way for a scanner that makes RPC calls
+						// to signal "the call failed, these are best-effort results,
+						// and please retry."
+						default:
+							return nil, err
+						}
+					}
+
+					var pkg claircore.Package
+					pkg.Name = i.Name
+					pkg.Version = i.Version
+					pkg.Kind = types.BinaryPackage
+					pkg.Filepath = p
+					hint := url.Values{
+						"hash": {
+							"sha1:" + cmp.Or(hex.EncodeToString(i.SHA1), hex1),
+							"sha256:" + cmp.Or(hex.EncodeToString(i.SHA256), hex256),
+						},
+					}
+					if i.CPE != nil {
+						hint.Set("cpe", i.CPE.String())
+					}
+					pkg.RepositoryHint = hint.Encode()
+					if i.CPE != nil {
+						pkg.CPE = *i.CPE
+					}
+					// BUG(hank) There's probably some bugs lurking in the jar.Info →
+					// claircore.Package mapping code around embedded jars. There's a
+					// testcase to be written, there.
+
+					idx := strings.LastIndex(i.Source, ":")
+					// If the top-level JAR file can only be identified by its name,
+					// i.Source will just be `.`
+					// In this case, PackageDB should just be the filepath, n.
+					// Otherwise, use i.Source.
+					pkgDB := p
+					if idx != -1 {
+						pkgDB = i.Source[:idx]
+					}
+					// Only examine anything after the last colon (or the entire path if there is no colon).
+					switch l := i.Source[idx+1:]; {
+					case strings.HasSuffix(l, "pom.properties"):
+						fallthrough
+					case s.root != nil && i.Source == s.root.String():
+						// Populate as a maven artifact.
+						pkg.PackageDB = `maven:` + pkgDB
+					case l == "META-INF/MANIFEST.MF":
+						// information pulled from a manifest file
+						pkg.PackageDB = `jar:` + pkgDB
+					case l == ".":
+						// Name guess.
+						pkg.PackageDB = `file:` + pkgDB
+					case isSBOMMember(l):
+						pkg.PackageDB = `sbom:` + i.Source
+					default:
+						return nil, fmt.Errorf("java: martian Info: %+v", i)
+					}
+					ps[j] = &pkg
+				}
+				ret = append(ret, ps...)
+			default:
+				panic("unreachable")
+			}
+		}
+	}
 	return ret, nil
+}
+
+func coveredSBOMPath(seed maphash.Seed, p string, paths map[uint64]struct{}) bool {
+	_, ok := paths[maphash.String(seed, p)]
+	return ok
+}
+
+func coveredSBOMHash(seed maphash.Seed, sha1Sum, sha256Sum []byte, hashes map[unique.Handle[string]]map[uint64]struct{}) bool {
+	if _, ok := hashes[bom.HashSHA1][maphash.Bytes(seed, sha1Sum)]; ok {
+		return true
+	}
+	_, ok := hashes[bom.HashSHA256][maphash.Bytes(seed, sha256Sum)]
+	return ok
+}
+
+// isSBOMMember reports whether an archive member is a CycloneDX document
+// under META-INF/sbom/.
+func isSBOMMember(name string) bool {
+	if !strings.Contains(name, "META-INF/sbom/") {
+		return false
+	}
+	base := path.Base(name)
+	return strings.HasSuffix(base, ".cdx.json") ||
+		strings.HasSuffix(base, ".cdx.json.gz") ||
+		strings.HasSuffix(base, ".cdx.json.gzip")
 }
 
 // DefaultRepository implements [indexer.DefaultRepoScanner].

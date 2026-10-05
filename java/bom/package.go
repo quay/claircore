@@ -41,7 +41,13 @@ func PopulatePackage(pkg *claircore.Package, bp Package, sbomFile string) error 
 	pkg.Kind = types.BinaryPackage
 	pkg.Filepath = n
 	pkg.CPE = *bp.CPE
-	pkg.RepositoryHint = (url.Values{"hash": vs}).Encode()
+	hint := url.Values{"hash": vs}
+	if bp.CPE != nil {
+		// Package.CPE is not stored. The coalescer reads this back when it
+		// chooses the product repository.
+		hint.Set("cpe", bp.CPE.String())
+	}
+	pkg.RepositoryHint = hint.Encode()
 	pkg.PackageDB = `sbom:` + sbomFile
 
 	return nil

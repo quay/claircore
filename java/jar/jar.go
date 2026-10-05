@@ -178,6 +178,33 @@ Finish:
 
 // TODO(hank) All these functions that return a slice should return an iterator.
 
+// ProductCPEs returns product CPEs from CycloneDX documents under META-INF/sbom/.
+// A jar with no such document returns a nil slice.
+func ProductCPEs(ctx context.Context, z *zip.Reader) ([]cpe.WFN, error) {
+	infos, err := extractSBOM(ctx, srcPath{"."}, z)
+	switch {
+	case errors.Is(err, nil):
+	case errors.Is(err, errUnpopulated):
+		return nil, nil
+	default:
+		return nil, err
+	}
+	var out []cpe.WFN
+	seen := make(map[string]struct{})
+	for _, info := range infos {
+		if info.CPE == nil {
+			continue
+		}
+		s := info.CPE.String()
+		if _, ok := seen[s]; ok {
+			continue
+		}
+		seen[s] = struct{}{}
+		out = append(out, *info.CPE)
+	}
+	return out, nil
+}
+
 // ExtractSBOM looks for CycloneDX JSON files underneath "META-INF/sbom/" and
 // attempts to read them using the Red Hat-flavored rules in the "bom" package.
 //
