@@ -35,7 +35,7 @@ func TestSBOMPackageName(t *testing.T) {
 		if err := bom.PopulatePackage(&pkg, bp, "sbom.cdx.json"); err != nil {
 			t.Fatal(err)
 		}
-		if pkg.Name != "jackson-databind" {
+		if pkg.Name != "com.fasterxml.jackson.core:jackson-databind" {
 			t.Fatalf("name: got %q", pkg.Name)
 		}
 		if pkg.Version != "2.18.4.redhat-00002" {
