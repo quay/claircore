@@ -279,6 +279,7 @@ func extractSBOM(ctx context.Context, name srcPath, z *zip.Reader) ([]Info, erro
 				return nil, mkErr("parsing SBoM package", err)
 			}
 			name.Push(f.Name)
+			out[i].Kind = SourceSBOM
 			out[i].Source = name.String()
 			name.Pop()
 		}
@@ -311,6 +312,7 @@ func extractManifest(ctx context.Context, name srcPath, z *zip.Reader) (Info, er
 		return Info{}, mkErr("parsing manifest", err)
 	}
 	name.Push(manifestPath)
+	i.Kind = SourceManifest
 	i.Source = name.String()
 	return i, nil
 }
@@ -361,6 +363,7 @@ func extractProperties(ctx context.Context, name srcPath, z *zip.Reader) ([]Info
 			return nil, mkErr("failed parsing properties", err)
 		}
 		name.Push(p)
+		ret[i].Kind = SourceProperties
 		ret[i].Source = name.String()
 		name.Pop()
 	}
@@ -477,9 +480,21 @@ func checkName(ctx context.Context, name string) (Info, error) {
 	return Info{
 		Name:    m[1],
 		Version: m[2],
+		Kind:    SourceName,
 		Source:  ".",
 	}, nil
 }
+
+// SourceKind records which producer filled an [Info].
+type SourceKind uint8
+
+const (
+	SourceUnknown SourceKind = iota
+	SourceSBOM
+	SourceProperties
+	SourceManifest
+	SourceName
+)
 
 // Info reports the discovered information for a jar file.
 //
@@ -497,6 +512,8 @@ type Info struct {
 	// If this jar is embedded inside another jar or series of jars,
 	// each jar file will be included and separated via ":".
 	Source string
+	// Kind is the producer that filled this Info.
+	Kind SourceKind
 	// CPE Name, if known.
 	//
 	// Currently only populated if the info source is an embedded SBoM.

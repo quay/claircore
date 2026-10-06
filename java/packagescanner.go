@@ -277,9 +277,10 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 				ps := make([]*claircore.Package, len(infos))
 				for j := range infos {
 					i := &infos[j]
-					// If we discovered a pom file, don't bother talking to the network.
-					// If not, talk to the network if configured to do so.
-					if !strings.HasSuffix(i.Source, "pom.properties") && doSearch {
+					// pom.properties and an embedded CycloneDX document already name
+					// the artifact. Ask Maven Central only when the producer was
+					// a manifest or the archive name.
+					if doSearch && (i.Kind == jar.SourceManifest || i.Kind == jar.SourceName) {
 						switch err := s.search(ctx, i, ck1); {
 						case errors.Is(err, nil): // OK
 						case errors.Is(err, errRPC):
@@ -322,20 +323,14 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 					if idx != -1 {
 						pkgDB = i.Source[:idx]
 					}
-					// Only examine anything after the last colon (or the entire path if there is no colon).
-					switch l := i.Source[idx+1:]; {
-					case strings.HasSuffix(l, "pom.properties"):
-						fallthrough
-					case s.root != nil && i.Source == s.root.String():
-						// Populate as a maven artifact.
+					switch i.Kind {
+					case jar.SourceProperties:
 						pkg.PackageDB = `maven:` + pkgDB
-					case l == "META-INF/MANIFEST.MF":
-						// information pulled from a manifest file
+					case jar.SourceManifest:
 						pkg.PackageDB = `jar:` + pkgDB
-					case l == ".":
-						// Name guess.
+					case jar.SourceName:
 						pkg.PackageDB = `file:` + pkgDB
-					case isSBOMMember(l):
+					case jar.SourceSBOM:
 						pkg.PackageDB = `sbom:` + i.Source
 					default:
 						return nil, fmt.Errorf("java: martian Info: %+v", i)
@@ -362,18 +357,6 @@ func coveredSBOMHash(seed maphash.Seed, sha1Sum, sha256Sum []byte, hashes map[un
 	}
 	_, ok := hashes[bom.HashSHA256][maphash.Bytes(seed, sha256Sum)]
 	return ok
-}
-
-// isSBOMMember reports whether an archive member is a CycloneDX document
-// under META-INF/sbom/.
-func isSBOMMember(name string) bool {
-	if !strings.Contains(name, "META-INF/sbom/") {
-		return false
-	}
-	base := path.Base(name)
-	return strings.HasSuffix(base, ".cdx.json") ||
-		strings.HasSuffix(base, ".cdx.json.gz") ||
-		strings.HasSuffix(base, ".cdx.json.gzip")
 }
 
 // DefaultRepository implements [indexer.DefaultRepoScanner].
@@ -437,6 +420,7 @@ func (s *Scanner) search(ctx context.Context, i *jar.Info, ck []byte) error {
 	sort.SliceStable(sr.Response.Doc, func(i, j int) bool {
 		return sr.Response.Doc[i].ID < sr.Response.Doc[j].ID
 	})
+	i.Kind = jar.SourceProperties
 	i.Source = s.root.String()
 	d := &sr.Response.Doc[0]
 	i.Version = d.Version
