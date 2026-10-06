@@ -495,16 +495,19 @@ func TestInnerJar(t *testing.T) {
 		{
 			Name:    "jackson-annotations",
 			Version: "2.13.0",
+			Kind:    SourceName,
 			Source:  ".",
 		},
 		{
 			Name:    "log4j-api",
 			Version: "2.14",
+			Kind:    SourceName,
 			Source:  ".",
 		},
 		{
 			Name:    "log4j",
 			Version: "2.14.0",
+			Kind:    SourceName,
 			Source:  ".",
 		},
 	}

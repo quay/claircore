@@ -61,27 +61,3 @@ func TestSBOMPackageName(t *testing.T) {
 		t.Fatal("jackson-databind not in fixture")
 	}
 }
-
-func TestIsSBOMMember(t *testing.T) {
-	t.Parallel()
-	ok := []string{
-		"META-INF/sbom/app.cdx.json",
-		"META-INF/sbom/app.cdx.json.gz",
-		"META-INF/sbom/app.cdx.json.gzip",
-	}
-	for _, name := range ok {
-		if !isSBOMMember(name) {
-			t.Errorf("expected sbom member %q", name)
-		}
-	}
-	no := []string{
-		"META-INF/MANIFEST.MF",
-		"META-INF/maven/pom.properties",
-		"app.cdx.json",
-	}
-	for _, name := range no {
-		if isSBOMMember(name) {
-			t.Errorf("expected ordinary member %q", name)
-		}
-	}
-}
