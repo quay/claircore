@@ -60,20 +60,33 @@ func sbomRepositoryIDs(ctx context.Context, pkg *claircore.Package, repos []*cla
 		slog.DebugContext(ctx, "sbom repository hint", "reason", err)
 		return nil
 	}
-	want := q.Get("cpe")
-	if want == "" {
+	wants := q["cpe"]
+	if len(wants) == 0 {
 		return nil
 	}
-	for _, r := range repos {
-		if r.Key != RedHatCPERepositoryKey {
-			continue
+	var ids []string
+	seen := make(map[string]struct{}, len(wants))
+	for _, want := range wants {
+		var matched bool
+		for _, r := range repos {
+			if r.Key != RedHatCPERepositoryKey {
+				continue
+			}
+			if r.Name != want && r.CPE.String() != want {
+				continue
+			}
+			matched = true
+			if _, ok := seen[r.ID]; ok {
+				continue
+			}
+			seen[r.ID] = struct{}{}
+			ids = append(ids, r.ID)
 		}
-		if r.Name == want || r.CPE.String() == want {
-			return []string{r.ID}
+		if !matched {
+			slog.DebugContext(ctx, "sbom package has no product repository", "package", pkg.Name, "cpe", want)
 		}
 	}
-	slog.DebugContext(ctx, "sbom package has no product repository", "package", pkg.Name, "cpe", want)
-	return nil
+	return ids
 }
 
 func repositoryByID(repos []*claircore.Repository, id string) *claircore.Repository {

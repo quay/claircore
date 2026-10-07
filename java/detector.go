@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -79,6 +80,10 @@ func (*Detector) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore
 				return nil, err
 			}
 			pkgs, err := bom.LoadCDX(ctx, bytes.NewReader(buf), format)
+			if errors.Is(err, bom.ErrNoProduct) {
+				slog.DebugContext(ctx, "skipping SBOM with no product CPE", "path", p)
+				continue
+			}
 			if err != nil {
 				return nil, err
 			}
@@ -86,8 +91,8 @@ func (*Detector) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore
 				if err != nil {
 					return nil, err
 				}
-				if bp.CPE != nil {
-					add(*bp.CPE)
+				for _, w := range bp.CPEs {
+					add(w)
 				}
 			}
 		case fileJAR:

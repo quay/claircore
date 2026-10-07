@@ -219,16 +219,20 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 					log.DebugContext(ctx, "skipping (assumed) duplicate SBoM")
 					continue
 				}
-				sbomDup[k] = struct{}{}
 
 				format, err := bom.FormatFromName(p)
 				if err != nil {
 					return nil, err
 				}
 				seq, err := bom.LoadCDX(ctx, rd, format)
+				if errors.Is(err, bom.ErrNoProduct) {
+					log.DebugContext(ctx, "skipping SBOM with no product CPE")
+					continue
+				}
 				if err != nil {
 					return nil, err
 				}
+				sbomDup[k] = struct{}{}
 				for bp, err := range seq {
 					if err != nil {
 						return nil, err
@@ -297,17 +301,21 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 					pkg.Version = i.Version
 					pkg.Kind = types.BinaryPackage
 					pkg.Filepath = p
-					if i.CPE != nil {
+					if i.Kind == jar.SourceSBOM {
 						hint := url.Values{}
-						hint.Set("cpe", i.CPE.String())
+						for _, w := range i.CPEs {
+							hint.Add("cpe", w.String())
+						}
 						pkg.RepositoryHint = hint.Encode()
-						pkg.CPE = *i.CPE
 					} else {
 						b := ck1
 						if len(i.SHA1) != 0 {
 							b = i.SHA1
 						}
 						pkg.RepositoryHint = fmt.Sprintf(`sha1:%40x`, b)
+					}
+					if len(i.CPEs) == 1 {
+						pkg.CPE = i.CPEs[0]
 					}
 					// BUG(hank) There's probably some bugs lurking in the jar.Info →
 					// claircore.Package mapping code around embedded jars. There's a
@@ -331,6 +339,9 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 						pkg.PackageDB = `file:` + pkgDB
 					case jar.SourceSBOM:
 						pkg.PackageDB = `sbom:` + i.Source
+						if i.Location != "" {
+							pkg.PackageDB += ":" + i.Location
+						}
 					default:
 						return nil, fmt.Errorf("java: martian Info: %+v", i)
 					}
