@@ -12,6 +12,7 @@ import (
 	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/java/bom"
 	"github.com/quay/claircore/java/jar"
+	rheljava "github.com/quay/claircore/rhel/java"
 	"github.com/quay/claircore/rpm"
 	"github.com/quay/claircore/toolkit/types/cpe"
 )
@@ -53,7 +54,7 @@ func (*Detector) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore
 		}
 		seen[s] = &claircore.Repository{
 			Name: s,
-			Key:  RedHatCPERepositoryKey,
+			Key:  rheljava.RepositoryKey,
 			CPE:  w,
 		}
 	}

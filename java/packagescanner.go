@@ -46,11 +46,6 @@ var (
 	}
 )
 
-// RedHatCPERepositoryKey is the repository key for a Red Hat product CPE
-// attributed to a Java component. It is distinct from the Maven Central
-// repository and from the RPM CPE repository.
-const RedHatCPERepositoryKey = "redhat-java-cpe-repository"
-
 // DefaultSearchAPI is a maven-like REST API that may be used to do
 // reverse lookups based on an archive's sha1 sum.
 //
