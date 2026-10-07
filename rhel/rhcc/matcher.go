@@ -47,7 +47,7 @@ func (*matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 			slog.WarnContext(ctx, "unable to unbind repo CPE", "reason", err, "vulnerability name", vuln.Name)
 			return false, nil
 		}
-		if !cpe.Compare(vuln.Repo.CPE, record.Repository.CPE).IsSuperset() && !rhel.IsCPESubstringMatch(record.Repository.CPE, vuln.Repo.CPE) {
+		if !rhel.IsCPESubstringMatch(record.Repository.CPE, vuln.Repo.CPE) {
 			return false, nil
 		}
 	}

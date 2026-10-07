@@ -185,6 +185,72 @@ func TestIsCPEStringSubsetMatch(t *testing.T) {
 			vulnCPE:   cpe.MustUnbind("cpe:/a:redhat:openshift:4.1::el8"),
 			match:     false,
 		},
+		{
+			name:      "DigitPrefix",
+			recordCPE: cpe.MustUnbind("cpe:/a:redhat:quarkus:10"),
+			vulnCPE:   cpe.MustUnbind("cpe:/a:redhat:quarkus:1"),
+			match:     false,
+		},
+		{
+			name:      "MinorDigitPrefix",
+			recordCPE: cpe.MustUnbind("cpe:/a:redhat:quarkus:3.33"),
+			vulnCPE:   cpe.MustUnbind("cpe:/a:redhat:quarkus:3.3"),
+			match:     false,
+		},
+		{
+			name:      "VersionPatch",
+			recordCPE: cpe.MustUnbind("cpe:/a:redhat:quarkus:4.13.1"),
+			vulnCPE:   cpe.MustUnbind("cpe:/a:redhat:quarkus:4.13"),
+			match:     true,
+		},
+		{
+			name:      "ProductDot",
+			recordCPE: cpe.MustUnbind("cpe:/a:redhat:node.js:1"),
+			vulnCPE:   cpe.MustUnbind("cpe:/a:redhat:node:1"),
+			match:     false,
+		},
+		{
+			name:      "EditionMismatch",
+			recordCPE: cpe.MustUnbind("cpe:/a:redhat:openshift:4.13::el8"),
+			vulnCPE:   cpe.MustUnbind("cpe:/a:redhat:openshift:4::el9"),
+			match:     false,
+		},
+		{
+			name:      "ExactVersion",
+			recordCPE: cpe.MustUnbind("cpe:/a:redhat:openshift:4::el8"),
+			vulnCPE:   cpe.MustUnbind("cpe:/a:redhat:openshift:4::el8"),
+			match:     true,
+		},
+		{
+			name:      "RecordVersionShorter",
+			recordCPE: cpe.MustUnbind("cpe:/a:redhat:openshift:4"),
+			vulnCPE:   cpe.MustUnbind("cpe:/a:redhat:openshift:4.13"),
+			match:     false,
+		},
+		{
+			name:      "HyphenSuffix",
+			recordCPE: cpe.MustUnbind("cpe:/a:redhat:openshift:4-13"),
+			vulnCPE:   cpe.MustUnbind("cpe:/a:redhat:openshift:4"),
+			match:     false,
+		},
+		{
+			name:      "AnyVersion",
+			recordCPE: cpe.MustUnbind("cpe:/a:redhat:openshift:4.13::el8"),
+			vulnCPE:   cpe.MustUnbind("cpe:/a:redhat:openshift"),
+			match:     true,
+		},
+		{
+			name:      "WildcardVersion",
+			recordCPE: cpe.MustUnbind("cpe:/a:redhat:openshift:4.13::el8"),
+			vulnCPE:   cpe.MustUnbind("cpe:/a:redhat:openshift:4.%02::el8"),
+			match:     true,
+		},
+		{
+			name:      "WildcardWrongMajor",
+			recordCPE: cpe.MustUnbind("cpe:/a:redhat:openshift:5.1::el8"),
+			vulnCPE:   cpe.MustUnbind("cpe:/a:redhat:openshift:4.%02::el8"),
+			match:     false,
+		},
 	}
 
 	for _, tc := range testcases {

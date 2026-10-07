@@ -56,13 +56,24 @@ func (m *Matcher) Query() []driver.MatchConstraint {
 // "cpe:/a:redhat:openshift:4.13::el8".
 //
 // This is defined (citation needed) to be a substring match on the "pattern"
-// and "target" CPEs. Since we always normalize CPEs into v2.3 "Formatted
-// String" form, we need to trim the added "ANY" attributes from the pattern.
+// and "target" CPEs. Attributes other than version use the normal superset
+// comparison. The version matches when it is equal or the record continues
+// with ".", so version 4 matches 4.13 and version 1 does not match 10. A dot
+// in another attribute, such as a product node.js, does not match.
 //
 // TODO(crozzy) Remove once RH VEX data updates CPEs with standard matching
 // expressions.
 func IsCPESubstringMatch(recordCPE cpe.WFN, vulnCPE cpe.WFN) bool {
-	return strings.HasPrefix(recordCPE.String(), strings.TrimRight(vulnCPE.String(), ":*"))
+	p := vulnCPE.Attr[cpe.Version]
+	r := recordCPE.Attr[cpe.Version]
+	// A dotted extension of the pattern version is the same version for this hack.
+	if p.Kind == cpe.ValueSet && r.Kind == cpe.ValueSet {
+		rest, ok := strings.CutPrefix(strings.ToLower(r.String()), strings.ToLower(p.String()))
+		if ok && strings.HasPrefix(rest, ".") {
+			vulnCPE.Attr[cpe.Version] = r
+		}
+	}
+	return cpe.Compare(vulnCPE, recordCPE).IsSuperset()
 }
 
 // Vulnerable implements [driver.Matcher].
@@ -86,7 +97,7 @@ func (m *Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord,
 		slog.WarnContext(ctx, "unable to unbind repo CPE", "reason", err, "vulnerability name", vuln.Name)
 		return false, nil
 	}
-	if !cpe.Compare(vuln.Repo.CPE, record.Repository.CPE).IsSuperset() && !IsCPESubstringMatch(record.Repository.CPE, vuln.Repo.CPE) {
+	if !IsCPESubstringMatch(record.Repository.CPE, vuln.Repo.CPE) {
 		return false, nil
 	}
 

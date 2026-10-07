@@ -32,10 +32,12 @@ func (*RedHatMatcher) Query() []driver.MatchConstraint {
 
 // Vulnerable implements [driver.Matcher].
 //
-// The vulnerability repository name is a normalized CPE. It must be a
-// superset of the indexed CPE, or match it with the Red Hat substring
-// check. An empty FixedInVersion matches any installed version. Otherwise
-// the installed Maven version is vulnerable when it is strictly older.
+// The vulnerability repository name is a normalized CPE. It must match
+// the indexed CPE, including the Red Hat version-stream rule. An empty
+// FixedInVersion matches any installed version. An empty installed version
+// is not compared when a fix exists: a Maven null version is older than
+// every real fix. Otherwise the installed Maven version is vulnerable when
+// it is strictly older.
 func (*RedHatMatcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
 	if vuln.Repo == nil || record.Repository == nil || vuln.Repo.Key != RepositoryKey {
 		return false, nil
@@ -47,11 +49,17 @@ func (*RedHatMatcher) Vulnerable(ctx context.Context, record *claircore.IndexRec
 		slog.WarnContext(ctx, "unable to unbind repo CPE", "reason", err, "vulnerability name", vuln.Name)
 		return false, nil
 	}
-	if !cpe.Compare(vuln.Repo.CPE, record.Repository.CPE).IsSuperset() && !rhel.IsCPESubstringMatch(record.Repository.CPE, vuln.Repo.CPE) {
+	if !rhel.IsCPESubstringMatch(record.Repository.CPE, vuln.Repo.CPE) {
 		return false, nil
 	}
 	if vuln.FixedInVersion == "" {
 		return true, nil
+	}
+	// An empty version parses as a Maven null version, which compares older
+	// than every real fix. There is no installed version to compare.
+	if record.Package == nil || record.Package.Version == "" {
+		slog.WarnContext(ctx, "empty package version", "vulnerability name", vuln.Name)
+		return false, nil
 	}
 	installed, err := maven.ParseVersion(record.Package.Version)
 	if err != nil {

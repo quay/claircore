@@ -83,6 +83,11 @@ func TestRedHatMatcherVulnerable(t *testing.T) {
 			record: record("1.0", quarkus),
 			vuln:   vuln("", eapMajor.String()),
 		},
+		{
+			name:   "empty package version",
+			record: record("", quarkus),
+			vuln:   vuln("4.1.115.Final-redhat-00002", quarkus.String()),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
