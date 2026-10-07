@@ -1,10 +1,8 @@
 package bom
 
 import (
-	"fmt"
 	"net/url"
 	"path"
-	"slices"
 	"unique"
 
 	"github.com/package-url/packageurl-go"
@@ -14,9 +12,11 @@ import (
 	"github.com/quay/claircore/toolkit/types/cpe"
 )
 
-// Package is an extracted (CPE Name, purl) pair and relevant other metadata.
+// Package is an extracted purl and the product CPEs that provide it.
+// CPEs is empty when the purl is part of the application but no product
+// provides it.
 type Package struct {
-	CPE      *cpe.WFN
+	CPEs     []cpe.WFN
 	PURL     packageurl.PackageURL
 	Hashes   map[unique.Handle[string]][]byte
 	Location string
@@ -26,11 +26,6 @@ type Package struct {
 func PopulatePackage(pkg *claircore.Package, bp Package, sbomFile string) error {
 	dir := path.Dir(sbomFile)
 	n := path.Join(dir, bp.Location)
-	var vs []string
-	for k, b := range bp.Hashes {
-		vs = append(vs, fmt.Sprintf(`%s:%x`, k.Value(), b))
-	}
-	slices.Sort(vs)
 
 	if bp.PURL.Namespace == "" {
 		pkg.Name = bp.PURL.Name
@@ -40,15 +35,22 @@ func PopulatePackage(pkg *claircore.Package, bp Package, sbomFile string) error 
 	pkg.Version = bp.PURL.Version
 	pkg.Kind = types.BinaryPackage
 	pkg.Filepath = n
-	pkg.CPE = *bp.CPE
-	hint := url.Values{"hash": vs}
-	if bp.CPE != nil {
-		// Package.CPE is not stored. The coalescer reads this back when it
-		// chooses the product repository.
-		hint.Set("cpe", bp.CPE.String())
+	// Package.CPE is not stored, and it only holds one name. The coalescer
+	// reads every cpe value back when it chooses product repositories.
+	hint := url.Values{}
+	for _, w := range bp.CPEs {
+		hint.Add("cpe", w.String())
+	}
+	if len(bp.CPEs) == 1 {
+		pkg.CPE = bp.CPEs[0]
 	}
 	pkg.RepositoryHint = hint.Encode()
+	// package_scanartifact is keyed by package_db. The component location
+	// keeps two copies of one coordinate in the same document as two rows.
 	pkg.PackageDB = `sbom:` + sbomFile
+	if bp.Location != "" {
+		pkg.PackageDB += ":" + bp.Location
+	}
 
 	return nil
 }
