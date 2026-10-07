@@ -17,6 +17,7 @@ import (
 	"github.com/quay/claircore/photon"
 	"github.com/quay/claircore/python"
 	"github.com/quay/claircore/rhel"
+	rheljava "github.com/quay/claircore/rhel/java"
 	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/quay/claircore/ruby"
 	"github.com/quay/claircore/suse"
@@ -52,6 +53,7 @@ var defaultMatchers = []driver.Matcher{
 	&oracle.Matcher{},
 	&photon.Matcher{},
 	&python.Matcher{},
+	&rheljava.RedHatMatcher{},
 	rhcc.Matcher,
 	&ruby.Matcher{},
 	&suse.Matcher{},

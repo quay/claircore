@@ -101,7 +101,7 @@ func TestCoalescerDropsCoveredJars(t *testing.T) {
 	cpeRepo := &claircore.Repository{
 		ID:   "1",
 		Name: w.String(),
-		Key:  RedHatCPERepositoryKey,
+		Key:  rheljava.RepositoryKey,
 		CPE:  w,
 	}
 	maven := Repository
