@@ -192,15 +192,14 @@ func ProductCPEs(ctx context.Context, z *zip.Reader) ([]cpe.WFN, error) {
 	var out []cpe.WFN
 	seen := make(map[string]struct{})
 	for _, info := range infos {
-		if info.CPE == nil {
-			continue
+		for _, w := range info.CPEs {
+			s := w.String()
+			if _, ok := seen[s]; ok {
+				continue
+			}
+			seen[s] = struct{}{}
+			out = append(out, w)
 		}
-		s := info.CPE.String()
-		if _, ok := seen[s]; ok {
-			continue
-		}
-		seen[s] = struct{}{}
-		out = append(out, *info.CPE)
 	}
 	return out, nil
 }
@@ -282,6 +281,9 @@ func extractSBOM(ctx context.Context, name srcPath, z *zip.Reader) ([]Info, erro
 			return nil, mkErr("loading SBoM", err)
 		}
 		pkgs, err := bom.LoadCDX(ctx, bytes.NewReader(buf.Bytes()), format)
+		if errors.Is(err, bom.ErrNoProduct) {
+			continue
+		}
 		if err != nil {
 			return nil, mkErr("loading SBoM", err)
 		}
@@ -531,16 +533,18 @@ type Info struct {
 	Source string
 	// Kind is the producer that filled this Info.
 	Kind SourceKind
-	// CPE Name, if known.
+	// CPEs are product names that provide this artifact.
 	//
 	// Currently only populated if the info source is an embedded SBoM.
-	CPE *cpe.WFN
+	CPEs []cpe.WFN
 	// SHA1 is populated with the SHA1 of the file if this entry was discovered
 	// inside another archive.
 	SHA1 []byte
 	// SHA256 is populated with the SHA256 of the file if this entry was
 	// discovered inside another archive.
 	SHA256 []byte
+	// Location is the component path from an embedded SBOM, when one is recorded.
+	Location string
 }
 
 func (i *Info) String() string {
@@ -596,7 +600,8 @@ func (i *Info) parseSBOM(ctx context.Context, pkg bom.Package) error {
 		i.Name = pkg.PURL.Namespace + ":" + pkg.PURL.Name
 	}
 	i.Version = pkg.PURL.Version
-	i.CPE = pkg.CPE
+	i.CPEs = pkg.CPEs
+	i.Location = pkg.Location
 	return nil
 }
 

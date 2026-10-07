@@ -52,10 +52,17 @@ func TestSBOMPackageName(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if hint.Get("cpe") != bp.CPE.String() {
-			t.Fatalf("cpe hint: got %q", hint.Get("cpe"))
+		if len(bp.CPEs) != 1 || hint.Get("cpe") != bp.CPEs[0].String() {
+			t.Fatalf("cpe hint: got %q", hint["cpe"])
 		}
-		if pkg.PackageDB != "sbom:sbom.cdx.json" {
+		if hint.Has("hash") {
+			t.Fatalf("hash hint: got %q", hint["hash"])
+		}
+		wantDB := "sbom:sbom.cdx.json"
+		if bp.Location != "" {
+			wantDB += ":" + bp.Location
+		}
+		if pkg.PackageDB != wantDB {
 			t.Fatalf("package db: got %q", pkg.PackageDB)
 		}
 		found = true

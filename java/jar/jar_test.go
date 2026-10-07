@@ -546,6 +546,23 @@ func TestExtractSBOM(t *testing.T) {
 		}
 	})
 
+	t.Run("noProduct", func(t *testing.T) {
+		const doc = `{
+		  "bomFormat": "CycloneDX",
+		  "specVersion": "1.6",
+		  "metadata": {"component": {"type": "library", "name": "lib", "bom-ref": "lib"}},
+		  "components": [
+		    {"type": "library", "bom-ref": "pkg:maven/a/b@1", "name": "b", "purl": "pkg:maven/a/b@1"}
+		  ],
+		  "dependencies": [{"ref": "lib", "dependsOn": ["pkg:maven/a/b@1"]}]
+		}`
+		z := zipMember(t, "META-INF/sbom/app.cdx.json", []byte(doc))
+		_, err := extractSBOM(ctx, srcPath{"app.jar"}, z)
+		if !errors.Is(err, errUnpopulated) {
+			t.Fatalf("got %v, want unpopulated", err)
+		}
+	})
+
 	t.Run("declaredSize", func(t *testing.T) {
 		z := zipMember(t, "META-INF/sbom/app.cdx.json", []byte("{}"))
 		z.File[0].UncompressedSize64 = 1 << 62
