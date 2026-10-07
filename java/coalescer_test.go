@@ -6,6 +6,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
+	rheljava "github.com/quay/claircore/rhel/java"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/toolkit/types/cpe"
 )
@@ -17,7 +18,7 @@ func TestCoalescerSplitsRepositories(t *testing.T) {
 	cpeRepo := &claircore.Repository{
 		ID:   "1",
 		Name: w.String(),
-		Key:  RedHatCPERepositoryKey,
+		Key:  rheljava.RepositoryKey,
 		CPE:  w,
 	}
 	maven := Repository
@@ -63,8 +64,8 @@ func TestCoalescerMultipleProductCPEs(t *testing.T) {
 	ctx := test.Logging(t)
 	q := cpe.MustUnbind("cpe:/a:redhat:quarkus:3.33")
 	c := cpe.MustUnbind("cpe:/a:redhat:apache_camel_quarkus:3.33")
-	quarkus := &claircore.Repository{ID: "1", Name: q.String(), Key: RedHatCPERepositoryKey, CPE: q}
-	camel := &claircore.Repository{ID: "2", Name: c.String(), Key: RedHatCPERepositoryKey, CPE: c}
+	quarkus := &claircore.Repository{ID: "1", Name: q.String(), Key: rheljava.RepositoryKey, CPE: q}
+	camel := &claircore.Repository{ID: "2", Name: c.String(), Key: rheljava.RepositoryKey, CPE: c}
 	maven := Repository
 	maven.ID = "3"
 	pkg := &claircore.Package{

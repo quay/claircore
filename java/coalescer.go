@@ -8,6 +8,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
+	rheljava "github.com/quay/claircore/rhel/java"
 )
 
 type coalescer struct{}
@@ -69,7 +70,7 @@ func sbomRepositoryIDs(ctx context.Context, pkg *claircore.Package, repos []*cla
 	for _, want := range wants {
 		var matched bool
 		for _, r := range repos {
-			if r.Key != RedHatCPERepositoryKey {
+			if r.Key != rheljava.RepositoryKey {
 				continue
 			}
 			if r.Name != want && r.CPE.String() != want {
