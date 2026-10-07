@@ -158,190 +158,186 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 	}
 
 	seq, walkErr := walkInteresting(ctx, sys)
-	type foundFile struct {
-		k fileKind
-		p string
-	}
-	var found []foundFile
+	var sboms, jars []string
 	for k, p := range seq {
 		if set.Contains(p) {
 			slog.DebugContext(ctx, "file from an rpm", "path", p)
 			continue
 		}
-		found = append(found, foundFile{k, p})
+		switch k {
+		case fileSBoM:
+			sboms = append(sboms, p)
+		case fileJAR:
+			jars = append(jars, p)
+		default:
+			panic("unreachable")
+		}
 	}
 	if err := walkErr(); err != nil {
 		return nil, fmt.Errorf("java: walking fs: %w", err)
 	}
-	// Layer SBOMs are indexed first so a jar they already describe can be skipped
-	// even when the walk visits the jar first.
-	for _, pass := range []fileKind{fileSBoM, fileJAR} {
-		for _, file := range found {
-			if file.k != pass {
-				continue
-			}
-			k, p := file.k, file.p
-			log := slog.With("path", p)
-			if k == fileJAR && coveredSBOMPath(seed, p, sbomPath) {
-				log.DebugContext(ctx, "skipping jar covered by sbom path")
-				continue
-			}
-
-			h1.Reset()
-			h256.Reset()
-			buf.Reset()
-			f, err := sys.Open(p)
-			if err != nil {
-				return nil, err
-			}
-			fStat, err := f.Stat()
-			if err == nil {
-				buf.Grow(int(fStat.Size()))
-			}
-			sz, err := buf.ReadFrom(io.TeeReader(f, hs))
-			f.Close()
-			if err != nil {
-				return nil, err
-			}
-			rd := bytes.NewReader(buf.Bytes())
-			if k == fileJAR && coveredSBOMHash(seed, h1.Sum(nil), h256.Sum(nil), sbomHash) {
-				log.DebugContext(ctx, "skipping jar covered by sbom hash")
-				continue
-			}
-
-			switch k {
-			case fileSBoM:
-				dir := path.Dir(p)
-				// Don't consume both compressed and uncompressed versions.
-				//
-				// This code doesn't prefer one or the other and assumes they're
-				// equivalent.
-				k := maphash.String(seed, dir)
-				if _, ok := sbomDup[k]; ok {
-					log.DebugContext(ctx, "skipping (assumed) duplicate SBoM")
-					continue
-				}
-				sbomDup[k] = struct{}{}
-
-				seq, err := bom.LoadCDX(ctx, rd)
-				if err != nil {
-					return nil, err
-				}
-				for bp, err := range seq {
-					if err != nil {
-						return nil, err
-					}
-					n := path.Join(dir, bp.Location)
-					sbomPath[maphash.String(seed, n)] = struct{}{}
-					for k, b := range bp.Hashes {
-						h, ok := sbomHash[k]
-						if !ok {
-							continue
-						}
-						h[maphash.Bytes(seed, b)] = struct{}{}
-					}
-					var pkg claircore.Package
-					if err := bom.PopulatePackage(&pkg, bp, p); err != nil {
-						return nil, err
-					}
-					ret = append(ret, &pkg)
-				}
-			case fileJAR:
-				// Let the zip reader determine if this is actually a valid zip file.
-				// We cannot just check the header, as it's possible the jar file
-				// starts off with a script. This scenario is explicitly mentioned in
-				// the standard library: https://cs.opensource.google/go/go/+/refs/tags/go1.24.3:src/archive/zip/reader.go;l=41.
-				z, err := zip.NewReader(rd, sz)
-				switch {
-				case errors.Is(err, nil):
-				case errors.Is(err, zip.ErrFormat):
-					log.InfoContext(ctx, "not actually a jar: invalid zip", "reason", err)
-					continue
-				default:
-					return nil, err
-				}
-
-				infos, err := jar.Parse(ctx, p, z)
-				switch {
-				case err == nil:
-				case errors.Is(err, jar.ErrNotAJar):
-					// Could not prove this is really a jar. Skip it and move on.
-					log.InfoContext(ctx, "skipping jar", "reason", err)
-					continue
-				default:
-					return nil, err
-				}
-				ck1 := h1.Sum(ck1)
-				ck256 := h256.Sum(ck256)
-				hex1, hex256 := hex.EncodeToString(ck1), hex.EncodeToString(ck256)
-				ps := make([]*claircore.Package, len(infos))
-				for j := range infos {
-					i := &infos[j]
-					// pom.properties and an embedded CycloneDX document already name
-					// the artifact. Ask Maven Central only when the producer was
-					// a manifest or the archive name.
-					if doSearch && (i.Kind == jar.SourceManifest || i.Kind == jar.SourceName) {
-						switch err := s.search(ctx, i, ck1); {
-						case errors.Is(err, nil): // OK
-						case errors.Is(err, errRPC):
-						// BUG(hank) There's no way for a scanner that makes RPC calls
-						// to signal "the call failed, these are best-effort results,
-						// and please retry."
-						default:
-							return nil, err
-						}
-					}
-
-					var pkg claircore.Package
-					pkg.Name = i.Name
-					pkg.Version = i.Version
-					pkg.Kind = types.BinaryPackage
-					pkg.Filepath = p
-					hint := url.Values{
-						"hash": {
-							"sha1:" + cmp.Or(hex.EncodeToString(i.SHA1), hex1),
-							"sha256:" + cmp.Or(hex.EncodeToString(i.SHA256), hex256),
-						},
-					}
-					for _, w := range i.CPEs {
-						hint.Add("cpe", w.String())
-					}
-					pkg.RepositoryHint = hint.Encode()
-					if len(i.CPEs) == 1 {
-						pkg.CPE = i.CPEs[0]
-					}
-					// BUG(hank) There's probably some bugs lurking in the jar.Info →
-					// claircore.Package mapping code around embedded jars. There's a
-					// testcase to be written, there.
-
-					idx := strings.LastIndex(i.Source, ":")
-					// If the top-level JAR file can only be identified by its name,
-					// i.Source will just be `.`
-					// In this case, PackageDB should just be the filepath, n.
-					// Otherwise, use i.Source.
-					pkgDB := p
-					if idx != -1 {
-						pkgDB = i.Source[:idx]
-					}
-					switch i.Kind {
-					case jar.SourceProperties:
-						pkg.PackageDB = `maven:` + pkgDB
-					case jar.SourceManifest:
-						pkg.PackageDB = `jar:` + pkgDB
-					case jar.SourceName:
-						pkg.PackageDB = `file:` + pkgDB
-					case jar.SourceSBOM:
-						pkg.PackageDB = `sbom:` + i.Source
-					default:
-						return nil, fmt.Errorf("java: martian Info: %+v", i)
-					}
-					ps[j] = &pkg
-				}
-				ret = append(ret, ps...)
-			default:
-				panic("unreachable")
-			}
+	// Read the file at p into buf, hashing it as it is copied.
+	read := func(p string) (int64, error) {
+		h1.Reset()
+		h256.Reset()
+		buf.Reset()
+		f, err := sys.Open(p)
+		if err != nil {
+			return 0, err
 		}
+		defer f.Close()
+		if fStat, err := f.Stat(); err == nil {
+			buf.Grow(int(fStat.Size()))
+		}
+		return buf.ReadFrom(io.TeeReader(f, hs))
+	}
+
+	for _, p := range sboms {
+		log := slog.With("path", p)
+		if _, err := read(p); err != nil {
+			return nil, err
+		}
+		dir := path.Dir(p)
+		// Don't consume both compressed and uncompressed versions.
+		//
+		// This code doesn't prefer one or the other and assumes they're
+		// equivalent.
+		k := maphash.String(seed, dir)
+		if _, ok := sbomDup[k]; ok {
+			log.DebugContext(ctx, "skipping (assumed) duplicate SBoM")
+			continue
+		}
+		sbomDup[k] = struct{}{}
+
+		seq, err := bom.LoadCDX(ctx, bytes.NewReader(buf.Bytes()))
+		if err != nil {
+			return nil, err
+		}
+		for bp, err := range seq {
+			if err != nil {
+				return nil, err
+			}
+			n := path.Join(dir, bp.Location)
+			sbomPath[maphash.String(seed, n)] = struct{}{}
+			for k, b := range bp.Hashes {
+				h, ok := sbomHash[k]
+				if !ok {
+					continue
+				}
+				h[maphash.Bytes(seed, b)] = struct{}{}
+			}
+			var pkg claircore.Package
+			if err := bom.PopulatePackage(&pkg, bp, p); err != nil {
+				return nil, err
+			}
+			ret = append(ret, &pkg)
+		}
+	}
+	for _, p := range jars {
+		log := slog.With("path", p)
+		if coveredSBOMPath(seed, p, sbomPath) {
+			log.DebugContext(ctx, "skipping jar covered by sbom path")
+			continue
+		}
+		sz, err := read(p)
+		if err != nil {
+			return nil, err
+		}
+		if coveredSBOMHash(seed, h1.Sum(nil), h256.Sum(nil), sbomHash) {
+			log.DebugContext(ctx, "skipping jar covered by sbom hash")
+			continue
+		}
+		// Let the zip reader determine if this is actually a valid zip file.
+		// We cannot just check the header, as it's possible the jar file
+		// starts off with a script. This scenario is explicitly mentioned in
+		// the standard library: https://cs.opensource.google/go/go/+/refs/tags/go1.24.3:src/archive/zip/reader.go;l=41.
+		z, err := zip.NewReader(bytes.NewReader(buf.Bytes()), sz)
+		switch {
+		case errors.Is(err, nil):
+		case errors.Is(err, zip.ErrFormat):
+			log.InfoContext(ctx, "not actually a jar: invalid zip", "reason", err)
+			continue
+		default:
+			return nil, err
+		}
+
+		infos, err := jar.Parse(ctx, p, z)
+		switch {
+		case err == nil:
+		case errors.Is(err, jar.ErrNotAJar):
+			// Could not prove this is really a jar. Skip it and move on.
+			log.InfoContext(ctx, "skipping jar", "reason", err)
+			continue
+		default:
+			return nil, err
+		}
+		ck1 := h1.Sum(ck1)
+		ck256 := h256.Sum(ck256)
+		hex1, hex256 := hex.EncodeToString(ck1), hex.EncodeToString(ck256)
+		ps := make([]*claircore.Package, len(infos))
+		for j := range infos {
+			i := &infos[j]
+			// pom.properties and an embedded CycloneDX document already name
+			// the artifact. Ask Maven Central only when the producer was
+			// a manifest or the archive name.
+			if doSearch && (i.Kind == jar.SourceManifest || i.Kind == jar.SourceName) {
+				switch err := s.search(ctx, i, ck1); {
+				case errors.Is(err, nil): // OK
+				case errors.Is(err, errRPC):
+				// BUG(hank) There's no way for a scanner that makes RPC calls
+				// to signal "the call failed, these are best-effort results,
+				// and please retry."
+				default:
+					return nil, err
+				}
+			}
+
+			var pkg claircore.Package
+			pkg.Name = i.Name
+			pkg.Version = i.Version
+			pkg.Kind = types.BinaryPackage
+			pkg.Filepath = p
+			hint := url.Values{
+				"hash": {
+					"sha1:" + cmp.Or(hex.EncodeToString(i.SHA1), hex1),
+					"sha256:" + cmp.Or(hex.EncodeToString(i.SHA256), hex256),
+				},
+			}
+			for _, w := range i.CPEs {
+				hint.Add("cpe", w.String())
+			}
+			pkg.RepositoryHint = hint.Encode()
+			if len(i.CPEs) == 1 {
+				pkg.CPE = i.CPEs[0]
+			}
+			// BUG(hank) There's probably some bugs lurking in the jar.Info →
+			// claircore.Package mapping code around embedded jars. There's a
+			// testcase to be written, there.
+
+			idx := strings.LastIndex(i.Source, ":")
+			// If the top-level JAR file can only be identified by its name,
+			// i.Source will just be `.`
+			// In this case, PackageDB should just be the filepath, n.
+			// Otherwise, use i.Source.
+			pkgDB := p
+			if idx != -1 {
+				pkgDB = i.Source[:idx]
+			}
+			switch i.Kind {
+			case jar.SourceProperties:
+				pkg.PackageDB = `maven:` + pkgDB
+			case jar.SourceManifest:
+				pkg.PackageDB = `jar:` + pkgDB
+			case jar.SourceName:
+				pkg.PackageDB = `file:` + pkgDB
+			case jar.SourceSBOM:
+				pkg.PackageDB = `sbom:` + i.Source
+			default:
+				return nil, fmt.Errorf("java: martian Info: %+v", i)
+			}
+			ps[j] = &pkg
+		}
+		ret = append(ret, ps...)
 	}
 	return ret, nil
 }
