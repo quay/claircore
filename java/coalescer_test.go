@@ -57,3 +57,38 @@ func TestCoalescerSplitsRepositories(t *testing.T) {
 		t.Fatal("missing cpe repository")
 	}
 }
+
+func TestCoalescerMultipleProductCPEs(t *testing.T) {
+	t.Parallel()
+	ctx := test.Logging(t)
+	q := cpe.MustUnbind("cpe:/a:redhat:quarkus:3.33")
+	c := cpe.MustUnbind("cpe:/a:redhat:apache_camel_quarkus:3.33")
+	quarkus := &claircore.Repository{ID: "1", Name: q.String(), Key: RedHatCPERepositoryKey, CPE: q}
+	camel := &claircore.Repository{ID: "2", Name: c.String(), Key: RedHatCPERepositoryKey, CPE: c}
+	maven := Repository
+	maven.ID = "3"
+	pkg := &claircore.Package{
+		ID:        "10",
+		Name:      "io.smallrye:smallrye-graphql",
+		PackageDB: "sbom:dependency.cdx.json",
+		RepositoryHint: url.Values{
+			"cpe": {q.String(), c.String()},
+		}.Encode(),
+	}
+	ir, err := (*coalescer)(nil).Coalesce(ctx, []*indexer.LayerArtifacts{{
+		Hash:  test.RandomSHA256Digest(t),
+		Pkgs:  []*claircore.Package{pkg},
+		Repos: []*claircore.Repository{quarkus, camel, &maven},
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := ir.Environments[pkg.ID][0].RepositoryIDs
+	want := []string{quarkus.ID, camel.ID}
+	if len(got) != len(want) || got[0] != want[0] || got[1] != want[1] {
+		t.Fatalf("repositories: got %v", got)
+	}
+	if _, ok := ir.Repositories[maven.ID]; ok {
+		t.Fatal("sbom package recorded Maven Central")
+	}
+}

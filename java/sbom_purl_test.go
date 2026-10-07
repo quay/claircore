@@ -48,8 +48,8 @@ func TestSBOMPackageName(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if hint.Get("cpe") != bp.CPE.String() {
-			t.Fatalf("cpe hint: got %q", hint.Get("cpe"))
+		if len(bp.CPEs) != 1 || hint.Get("cpe") != bp.CPEs[0].String() {
+			t.Fatalf("cpe hint: got %q", hint["cpe"])
 		}
 		if pkg.PackageDB != "sbom:sbom.cdx.json" {
 			t.Fatalf("package db: got %q", pkg.PackageDB)

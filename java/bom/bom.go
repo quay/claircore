@@ -59,12 +59,53 @@ func LoadCDX(ctx context.Context, r io.ReaderAt) (iter.Seq2[Package, error], err
 	if doc.Dependencies == nil || len(*doc.Dependencies) == 0 {
 		return nil, formatError("no dependencies")
 	}
-	wfn, err := cpe.Unbind(root.CPE)
-	if err != nil {
-		return nil, fmt.Errorf("java/bom: root component %q: %w", root.BOMRef, err)
-	}
 	cmps := *doc.Components
 	deps := *doc.Dependencies
+	depidx := slices.IndexFunc(deps, func(d cyclonedx.Dependency) bool {
+		return d.Ref == root.BOMRef
+	})
+	if depidx == -1 {
+		return nil, fmt.Errorf("java/bom: missing dependencies of root component %q", root.BOMRef)
+	}
+
+	// Product frameworks (scope excluded, with a CPE) attribute Maven purls
+	// through their provides lists. A document with none of those keeps the
+	// single root CPE on each direct dependency.
+	frameworks := make(map[string][]cpe.WFN)
+	for i := range cmps {
+		cm := &cmps[i]
+		if !excludedFramework(cm) {
+			continue
+		}
+		wfns, err := productWFNs(cm)
+		if err != nil {
+			return nil, fmt.Errorf("java/bom: framework %q: %w", cm.BOMRef, err)
+		}
+		if len(wfns) == 0 {
+			continue
+		}
+		frameworks[cm.BOMRef] = wfns
+	}
+	var rootWFNs []cpe.WFN
+	attr := map[string][]cpe.WFN{}
+	if len(frameworks) == 0 {
+		wfn, err := cpe.Unbind(root.CPE)
+		if err != nil {
+			return nil, fmt.Errorf("java/bom: root component %q: %w", root.BOMRef, err)
+		}
+		rootWFNs = []cpe.WFN{wfn}
+	} else {
+		for i := range deps {
+			d := &deps[i]
+			wfns, ok := frameworks[d.Ref]
+			if !ok || d.Provides == nil {
+				continue
+			}
+			for _, ref := range *d.Provides {
+				attr[ref] = appendWFNs(attr[ref], wfns)
+			}
+		}
+	}
 
 	seq := func(yield func(Package, error) bool) {
 		var skip skipPurls
@@ -79,29 +120,17 @@ func LoadCDX(ctx context.Context, r io.ReaderAt) (iter.Seq2[Package, error], err
 			r := &cmps[i]
 			c[r.BOMRef] = r
 		}
-		depidx := slices.IndexFunc(deps, func(d cyclonedx.Dependency) bool {
-			return d.Ref == root.BOMRef
-		})
-		if depidx == -1 {
-			err := fmt.Errorf("java/bom: missing dependencies of root component %q", root.BOMRef)
-			yield(Package{}, err)
-			return
-		}
-		dep := &deps[depidx]
-	YieldPackages:
-		for _, ref := range *dep.Dependencies {
-			if strings.HasPrefix(ref, `pkg:generic/`) {
-				skip.Add(ref)
-				continue
+		emit := func(cm *cyclonedx.Component, cpes []cpe.WFN) bool {
+			if cm == nil {
+				return yield(Package{}, errors.New("java/bom: missing component"))
 			}
-			cm := c[ref]
+			if strings.HasPrefix(cm.PackageURL, `pkg:generic/`) || strings.HasPrefix(cm.BOMRef, `pkg:generic/`) {
+				skip.Add(cm.PackageURL)
+				return true
+			}
 			purl, err := packageurl.FromString(cm.PackageURL)
 			if err != nil {
-				err := fmt.Errorf("java/bom: component %q: %w", cm.BOMRef, err)
-				if !yield(Package{}, err) {
-					return
-				}
-				continue
+				return yield(Package{}, fmt.Errorf("java/bom: component %q: %w", cm.BOMRef, err))
 			}
 			var hashes map[unique.Handle[string]][]byte
 			if cm.Hashes != nil {
@@ -115,11 +144,7 @@ func LoadCDX(ctx context.Context, r io.ReaderAt) (iter.Seq2[Package, error], err
 					// Assume everything is encoded as hex:
 					v, err := hex.DecodeString(h.Value)
 					if err != nil {
-						err := fmt.Errorf("java/bom: component %q: %w", cm.BOMRef, err)
-						if !yield(Package{}, err) {
-							return
-						}
-						continue YieldPackages
+						return yield(Package{}, fmt.Errorf("java/bom: component %q: %w", cm.BOMRef, err))
 					}
 					hashes[k] = v
 				}
@@ -127,33 +152,118 @@ func LoadCDX(ctx context.Context, r io.ReaderAt) (iter.Seq2[Package, error], err
 			var loc string
 			if ev := cm.Evidence; ev != nil {
 				if ocs := ev.Occurrences; ocs != nil {
-				Occurrence:
 					for _, oc := range *ocs {
 						if oc.Location != "" {
 							loc = oc.Location
-							break Occurrence
+							break
 						}
 					}
 				}
 			}
-
-			pkg := Package{
-				CPE:      &wfn,
+			ok := yield(Package{
+				CPEs:     cpes,
 				PURL:     purl,
 				Hashes:   hashes,
 				Location: loc,
-			}
-			if !yield(pkg, nil) {
-				return
+			}, nil)
+			if !ok {
+				return false
 			}
 			if err := ctx.Err(); err != nil {
 				yield(Package{}, context.Cause(ctx))
+				return false
+			}
+			return true
+		}
+
+		if len(frameworks) == 0 {
+			dep := &deps[depidx]
+			if dep.Dependencies == nil {
+				return
+			}
+			for _, ref := range *dep.Dependencies {
+				if strings.HasPrefix(ref, `pkg:generic/`) {
+					skip.Add(ref)
+					continue
+				}
+				if !emit(c[ref], rootWFNs) {
+					return
+				}
+			}
+			return
+		}
+		for i := range cmps {
+			cm := &cmps[i]
+			if cm.BOMRef == root.BOMRef || excludedFramework(cm) {
+				continue
+			}
+			if !emit(cm, attr[cm.BOMRef]) {
 				return
 			}
 		}
 	}
 
 	return seq, nil
+}
+
+func excludedFramework(cm *cyclonedx.Component) bool {
+	return cm.Type == cyclonedx.ComponentTypeFramework && cm.Scope == cyclonedx.ScopeExcluded
+}
+
+// productWFNs returns the product CPEs on a framework component.
+// component.cpe is first. Additional CPEs come from evidence.identity.
+func productWFNs(cm *cyclonedx.Component) ([]cpe.WFN, error) {
+	var out []cpe.WFN
+	add := func(s string) error {
+		if s == "" {
+			return nil
+		}
+		w, err := cpe.Unbind(s)
+		if err != nil {
+			return err
+		}
+		out = appendWFNs(out, []cpe.WFN{w})
+		return nil
+	}
+	if err := add(cm.CPE); err != nil {
+		return nil, err
+	}
+	if cm.Evidence == nil || cm.Evidence.Identity == nil {
+		return out, nil
+	}
+	id := cm.Evidence.Identity
+	var ids []cyclonedx.EvidenceIdentity
+	if id.Identities != nil {
+		ids = append(ids, (*id.Identities)...)
+	}
+	if id.Identity != nil {
+		ids = append(ids, *id.Identity)
+	}
+	for _, ident := range ids {
+		if ident.Field != cyclonedx.EvidenceIdentityFieldTypeCPE {
+			continue
+		}
+		if err := add(ident.ConcludedValue); err != nil {
+			return nil, err
+		}
+	}
+	return out, nil
+}
+
+func appendWFNs(dst, src []cpe.WFN) []cpe.WFN {
+	seen := make(map[string]struct{}, len(dst)+len(src))
+	for _, w := range dst {
+		seen[w.String()] = struct{}{}
+	}
+	for _, w := range src {
+		s := w.String()
+		if _, ok := seen[s]; ok {
+			continue
+		}
+		seen[s] = struct{}{}
+		dst = append(dst, w)
+	}
+	return dst
 }
 
 var _ slog.LogValuer = (*skipPurls)(nil)

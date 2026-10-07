@@ -192,15 +192,14 @@ func ProductCPEs(ctx context.Context, z *zip.Reader) ([]cpe.WFN, error) {
 	var out []cpe.WFN
 	seen := make(map[string]struct{})
 	for _, info := range infos {
-		if info.CPE == nil {
-			continue
+		for _, w := range info.CPEs {
+			s := w.String()
+			if _, ok := seen[s]; ok {
+				continue
+			}
+			seen[s] = struct{}{}
+			out = append(out, w)
 		}
-		s := info.CPE.String()
-		if _, ok := seen[s]; ok {
-			continue
-		}
-		seen[s] = struct{}{}
-		out = append(out, *info.CPE)
 	}
 	return out, nil
 }
@@ -514,10 +513,10 @@ type Info struct {
 	Source string
 	// Kind is the producer that filled this Info.
 	Kind SourceKind
-	// CPE Name, if known.
+	// CPEs are product names that provide this artifact.
 	//
 	// Currently only populated if the info source is an embedded SBoM.
-	CPE *cpe.WFN
+	CPEs []cpe.WFN
 	// SHA1 is populated with the SHA1 of the file if this entry was discovered
 	// inside another archive.
 	SHA1 []byte
@@ -575,7 +574,7 @@ func (i *Info) parseSBOM(ctx context.Context, pkg bom.Package) error {
 		i.Name = pkg.PURL.Namespace + ":" + pkg.PURL.Name
 	}
 	i.Version = pkg.PURL.Version
-	i.CPE = pkg.CPE
+	i.CPEs = pkg.CPEs
 	return nil
 }
 

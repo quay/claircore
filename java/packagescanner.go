@@ -303,12 +303,12 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 							"sha256:" + cmp.Or(hex.EncodeToString(i.SHA256), hex256),
 						},
 					}
-					if i.CPE != nil {
-						hint.Set("cpe", i.CPE.String())
+					for _, w := range i.CPEs {
+						hint.Add("cpe", w.String())
 					}
 					pkg.RepositoryHint = hint.Encode()
-					if i.CPE != nil {
-						pkg.CPE = *i.CPE
+					if len(i.CPEs) == 1 {
+						pkg.CPE = i.CPEs[0]
 					}
 					// BUG(hank) There's probably some bugs lurking in the jar.Info →
 					// claircore.Package mapping code around embedded jars. There's a

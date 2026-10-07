@@ -82,8 +82,8 @@ func (*Detector) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore
 				if err != nil {
 					return nil, err
 				}
-				if bp.CPE != nil {
-					add(*bp.CPE)
+				for _, w := range bp.CPEs {
+					add(w)
 				}
 			}
 		case fileJAR:
