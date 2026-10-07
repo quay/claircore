@@ -16,6 +16,7 @@ import (
 	"github.com/package-url/packageurl-go"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/rhel/java"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/toolkit/types"
 	"github.com/quay/claircore/toolkit/types/cpe"
@@ -497,6 +498,53 @@ func TestParse(t *testing.T) {
 	}
 }
 
+func TestParseMaven(t *testing.T) {
+	ctx := test.Logging(t)
+	b, err := os.ReadFile("testdata/cve-2026-maven.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	vulns, err := NewParser().Parse(ctx, b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	quarkus := cpe.MustUnbind("cpe:/a:redhat:quarkus:3.33")
+	eap := cpe.MustUnbind("cpe:/a:redhat:jboss_enterprise_application_platform:8")
+
+	var sawFixed, sawAffected bool
+	for _, v := range vulns {
+		if v.Package == nil {
+			t.Fatalf("missing package: %+v", v)
+		}
+		if v.Package.Kind != types.BinaryPackage {
+			t.Errorf("%s kind: got %s, want binary", v.Package.Name, v.Package.Kind)
+		}
+		if v.Repo == nil || v.Repo.Key != java.RepositoryKey {
+			t.Errorf("%s repo: %+v", v.Package.Name, v.Repo)
+		}
+		if v.Package.Arch != "" {
+			t.Errorf("%s arch: got %q", v.Package.Name, v.Package.Arch)
+		}
+		switch {
+		case v.Package.Name == "io.netty:netty-codec" && v.FixedInVersion == "4.1.115.Final-redhat-00002":
+			sawFixed = true
+			if v.Repo.Name != quarkus.String() {
+				t.Errorf("fixed repo name: got %q, want %q", v.Repo.Name, quarkus.String())
+			}
+		case v.Package.Name == "io.netty:netty-codec" && v.FixedInVersion == "":
+			sawAffected = true
+			if v.Repo.Name != eap.String() {
+				t.Errorf("affected repo name: got %q, want %q", v.Repo.Name, eap.String())
+			}
+		default:
+			t.Errorf("unexpected vulnerability %s %s %q", v.Name, v.Package.Name, v.FixedInVersion)
+		}
+	}
+	if !sawFixed || !sawAffected {
+		t.Fatalf("missing maven rows: fixed=%v affected=%v (%d vulns)", sawFixed, sawAffected, len(vulns))
+	}
+}
+
 func TestExtractVersion(t *testing.T) {
 	testcases := []struct {
 		name        string
@@ -561,6 +609,29 @@ func TestExtractVersion(t *testing.T) {
 			expectedErr: true,
 		},
 
+		{
+			name: "maven_version",
+			purl: packageurl.PackageURL{
+				Type:      packageurl.TypeMaven,
+				Namespace: "io.netty",
+				Name:      "netty-codec",
+				Version:   "4.1.115.Final-redhat-00002",
+				Qualifiers: packageurl.QualifiersFromMap(map[string]string{
+					"repository_url": "https://maven.repository.redhat.com/ga/",
+					"type":           "jar",
+				}),
+			},
+			want: "4.1.115.Final-redhat-00002",
+		},
+		{
+			name: "maven_without_version",
+			purl: packageurl.PackageURL{
+				Type:      packageurl.TypeMaven,
+				Namespace: "io.netty",
+				Name:      "netty-codec",
+			},
+			want: "",
+		},
 		{
 			name: "unsupported_type",
 			purl: packageurl.PackageURL{
@@ -669,6 +740,28 @@ func TestExtractPackageName(t *testing.T) {
 			want: "something/keepalived-rhel9",
 		},
 		{
+			name: "maven_namespace",
+			purl: packageurl.PackageURL{
+				Type:      packageurl.TypeMaven,
+				Namespace: "io.netty",
+				Name:      "netty-codec",
+				Version:   "4.1.115.Final-redhat-00002",
+				Qualifiers: packageurl.QualifiersFromMap(map[string]string{
+					"repository_url": "https://maven.repository.redhat.com/ga/",
+					"type":           "jar",
+				}),
+			},
+			want: "io.netty:netty-codec",
+		},
+		{
+			name: "maven_without_namespace",
+			purl: packageurl.PackageURL{
+				Type: packageurl.TypeMaven,
+				Name: "netty-codec",
+			},
+			want: "netty-codec",
+		},
+		{
 			name: "unsupported_type",
 			purl: packageurl.PackageURL{
 				Type:      packageurl.TypeApk,
@@ -746,7 +839,7 @@ func TestCheckKernelPackage(t *testing.T) {
 
 func TestCreatorDocLink(t *testing.T) {
 	const name = "CVE-2023-4911"
-	defaultURL := "https://security.access.redhat.com/data/csaf/v2/vex-feed/2023/cve-2023-4911.json"
+	defaultURL := BaseURL + "2023/cve-2023-4911.json"
 	legacyBase, err := url.Parse("https://security.access.redhat.com/data/csaf/v2/vex/")
 	if err != nil {
 		t.Fatal(err)
@@ -808,7 +901,7 @@ func TestDocLinkFromBase(t *testing.T) {
 		{
 			name: "cve",
 			id:   "CVE-2023-4911",
-			want: "https://security.access.redhat.com/data/csaf/v2/vex-feed/2023/cve-2023-4911.json",
+			want: BaseURL + "2023/cve-2023-4911.json",
 		},
 		{
 			name: "non-cve",
