@@ -26,9 +26,10 @@ var (
 
 const (
 	// BaseURL is the base url for the Red Hat VEX security data.
+	// Staging is used until Maven PURL data is published on the production feed.
 	//
 	//doc:url updater
-	BaseURL = "https://security.access.redhat.com/data/csaf/v2/vex-feed/"
+	BaseURL = "https://security.access.stage.redhat.com/data/csaf/v2/vex-feed/"
 
 	defaultCompressedFileTimeout = 5 * time.Minute
 	latestFile                   = "archive_latest.txt"
@@ -36,7 +37,7 @@ const (
 	deletionsFile                = "deletions.csv"
 	lookBackToYear               = 2015
 	repoKey                      = "rhel-cpe-repository"
-	updaterVersion               = "8"
+	updaterVersion               = "9"
 )
 
 // Factory creates an Updater to process all of the Red Hat VEX data.

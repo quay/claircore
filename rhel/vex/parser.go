@@ -25,6 +25,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/pkg/rhctag"
 	"github.com/quay/claircore/rhel/internal/common"
+	"github.com/quay/claircore/rhel/java"
 	"github.com/quay/claircore/rhel/rhcc"
 	"github.com/quay/claircore/toolkit/types"
 	"github.com/quay/claircore/toolkit/types/cpe"
@@ -783,6 +784,12 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v *csaf.Vuln
 		if err != nil {
 			return nil, err
 		}
+		// A version on a Maven known_affected purl is not a match rule yet.
+		// Leave those rows out. An unversioned purl matches any installed version.
+		if st.PURL.Type == packageurl.TypeMaven && st.PURL.Version != "" {
+			log.DebugContext(ctx, "skipping versioned maven known_affected", "purl", st.PURL)
+			continue
+		}
 
 		pkgName, err := st.PackageName()
 		if err != nil {
@@ -828,6 +835,10 @@ func (c *creator) knownAffectedVulnerabilities(ctx context.Context, v *csaf.Vuln
 			}
 		case packageurl.TypeRPM:
 			vuln.Repo = c.rc.Get(st.WFN, repoKey)
+		case packageurl.TypeMaven:
+			// The Java indexer records binary packages and does not set Source.
+			vuln.Package.Kind = types.BinaryPackage
+			vuln.Repo = c.rc.Get(st.WFN, java.RepositoryKey)
 		}
 
 		if c.productIDInLinks && c.docLink != "" {
@@ -975,6 +986,8 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v *csaf.Vulnerabilit
 						"reason", err, "version", vuln.FixedInVersion)
 					continue
 				}
+			case packageurl.TypeMaven:
+				vuln.Repo = c.rc.Get(st.WFN, java.RepositoryKey)
 			default:
 				panic("unreachable")
 			}
@@ -987,6 +1000,10 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v *csaf.Vulnerabilit
 			}
 
 			commit(key, vuln)
+		}
+		// Maven has no arch check. repository_url and type are not coordinates.
+		if st.PURL.Type == packageurl.TypeMaven {
+			continue
 		}
 		if arch := extractArch(st.PURL); arch != "" {
 			if vuln.Package.Arch == "" {
@@ -1010,8 +1027,8 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v *csaf.Vulnerabilit
 }
 
 // KnownNotAffectedVulnerabilities processes the "known_not_affected" array of
-// products in the VEX object. Only OCI (container) assertions are ingested;
-// RPM known_not_affected rows are skipped.
+// products in the VEX object. Only OCI (container) assertions are ingested.
+// RPM and Maven known_not_affected rows are skipped.
 func (c *creator) knownNotAffectedVulnerabilities(ctx context.Context, v *csaf.Vulnerability, init vulnHook) ([]*claircore.Vulnerability, error) {
 	log := slog.With("link", c.docLink)
 	var backing rope[claircore.Vulnerability]
@@ -1042,7 +1059,7 @@ func (c *creator) knownNotAffectedVulnerabilities(ctx context.Context, v *csaf.V
 			continue
 		}
 
-		if st.PURL.Type == packageurl.TypeRPM {
+		if st.PURL.Type == packageurl.TypeRPM || st.PURL.Type == packageurl.TypeMaven {
 			continue
 		}
 
@@ -1206,10 +1223,11 @@ func componentPURLToModuleName(p *packageurl.PackageURL) (string, error) {
 	return name + ":" + stream, nil
 }
 
-// ExtractFixedInVersion deals with 2 pURL types, TypeRPM and TypeOCI
+// ExtractFixedInVersion deals with pURL types TypeRPM, TypeOCI, and TypeMaven.
 //   - TypeOCI: return the tag qualifier.
 //   - TypeRPM: check for an epoch qualifier and prepend it to the purl.Version.
 //     If no epoch qualifier, default to 0.
+//   - TypeMaven: return the purl version, with no epoch. Qualifiers are ignored.
 //
 // Embedders may rewrite the result via [FactoryConfig.FixedInVersionCEL].
 func extractFixedInVersion(p *packageurl.PackageURL) (string, error) {
@@ -1229,17 +1247,20 @@ func extractFixedInVersion(p *packageurl.PackageURL) (string, error) {
 			epoch = e
 		}
 		return epoch + ":" + p.Version, nil
+	case packageurl.TypeMaven:
+		return p.Version, nil
 	default:
 		return "", fmt.Errorf("unexpected purl type: %q", p.Type)
 	}
 }
 
-// ExtractPackageName deals with 2 pURL types, TypeRPM and TypeOCI
+// ExtractPackageName deals with pURL types TypeRPM, TypeOCI, and TypeMaven.
 //   - TypeOCI: check if there is Namespace and Name i.e. rhel7/rhel-atomic
 //     and return that, if not, check for a repository_url qualifier. If the
 //     repository_url exists then use the namespace/name part, if not, use
 //     the purl.Name.
 //   - TypeRPM: Just return the purl.Name.
+//   - TypeMaven: return namespace:name. repository_url and type are ignored.
 func extractPackageName(p *packageurl.PackageURL) (string, error) {
 	switch p.Type {
 	case packageurl.TypeOCI:
@@ -1258,14 +1279,20 @@ func extractPackageName(p *packageurl.PackageURL) (string, error) {
 		return image, nil
 	case packageurl.TypeRPM:
 		return p.Name, nil
+	case packageurl.TypeMaven:
+		if p.Namespace == "" {
+			return p.Name, nil
+		}
+		return p.Namespace + ":" + p.Name, nil
 	default:
 		return "", fmt.Errorf("unexpected purl type: %q", p.Type)
 	}
 }
 
 var acceptedTypes = map[string]bool{
-	packageurl.TypeOCI: true,
-	packageurl.TypeRPM: true,
+	packageurl.TypeOCI:   true,
+	packageurl.TypeRPM:   true,
+	packageurl.TypeMaven: true,
 }
 
 // CheckPURL checks if purl is something we're interested in.
