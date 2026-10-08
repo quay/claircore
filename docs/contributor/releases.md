@@ -46,3 +46,7 @@ go tool prepare-release -remote=upstream -branch=$BRANCH $NEW_VERSION
 ```
 
 Follow the `prepare-release` command's instructions to merge changelog updates and release the tag.
+
+After the GitHub release is published, check the [Releases page](https://github.com/quay/claircore/releases).
+If the new release from this branch has replaced a higher stable version as **Latest**, edit the release for the highest stable version, select **Set as latest release**, and click **Update release**.
+Confirm that [releases/latest](https://github.com/quay/claircore/releases/latest) points to that version.
