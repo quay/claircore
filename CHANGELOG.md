@@ -1,3 +1,16 @@
+<a name="v1.6.1"></a>
+## [v1.6.1] - 2026-10-08
+[v1.6.1]: https://github.com/quay/claircore/compare/v1.6.0...v1.6.1
+
+- datastore: intern vulnerabilities by ID by pre-peeking at results
+  <details>
+  It is fairly common for different queries to pull overlapping vulnerability results
+  when they share a source package (i.e. "kernel"). This means every package with a
+  common source will likely be leading to a vast majority of duplicate vulnerabilities.
+  By interning these vulnerabilities the matching process can avoid the memory consumption
+  caused by duplicates.
+  </details>
+
 <a name="v1.6.0"></a>
 ## [v1.6.0] - 2026-09-08
 [v1.6.0]: https://github.com/quay/claircore/compare/v1.5.54...v1.6.0
