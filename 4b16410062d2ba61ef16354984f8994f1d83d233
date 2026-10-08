@@ -1,0 +1,7 @@
+datastore: intern vulnerabilities by ID by pre-peeking at results
+
+It is fairly common for different queries to pull overlapping vulnerability results
+when they share a source package (i.e. "kernel"). This means every package with a
+common source will likely be leading to a vast majority of duplicate vulnerabilities.
+By interning these vulnerabilities the matching process can avoid the memory consumption
+caused by duplicates.
