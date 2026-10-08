@@ -41,7 +41,7 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-747d6fb3.js";
+            window.path_to_searchindex_js = "searchindex-304279ab.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-2d15e7bd.js"></script>
@@ -3021,6 +3021,9 @@ BRANCH=release-${LAST_MINOR%.*} # e.g. release-v0.999
 go tool prepare-release -remote=upstream -branch=$BRANCH $NEW_VERSION
 </code></pre>
 <p>Follow the <code>prepare-release</code> command’s instructions to merge changelog updates and release the tag.</p>
+<p>After the GitHub release is published, check the <a href="https://github.com/quay/claircore/releases">Releases page</a>.
+If the new release from this branch has replaced a higher stable version as <strong>Latest</strong>, edit the release for the highest stable version, select <strong>Set as latest release</strong>, and click <strong>Update release</strong>.
+Confirm that <a href="https://github.com/quay/claircore/releases/latest">releases/latest</a> points to that version.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="tests-1"><a class="header" href="#tests-1">Tests</a></h1>
 <p>Tests in the claircore module may use various helpers underneath the <code>test</code> directory.
