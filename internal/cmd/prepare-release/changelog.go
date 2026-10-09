@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 )
@@ -23,7 +24,7 @@ func getPreviousTag() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("listing tags: %w", err)
 	}
-	for _, line := range strings.Split(string(out), "\n") {
+	for line := range strings.SplitSeq(string(out), "\n") {
 		if strings.HasPrefix(line, "v") {
 			return line, nil
 		}
@@ -46,7 +47,7 @@ func renderChangelog(w io.Writer, prevTag, nextTag, branch string) error {
 	}
 
 	hasNotes := false
-	for _, commit := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+	for commit := range strings.SplitSeq(strings.TrimSpace(string(out)), "\n") {
 		if commit == "" {
 			continue
 		}
@@ -83,13 +84,7 @@ func formatNote(note string) string {
 	var sb strings.Builder
 	lines := strings.Split(strings.TrimSpace(note), "\n")
 
-	hasEmptyLine := false
-	for _, line := range lines {
-		if line == "" {
-			hasEmptyLine = true
-			break
-		}
-	}
+	hasEmptyLine := slices.Contains(lines, "")
 
 	if hasEmptyLine {
 		// Do the details thing
