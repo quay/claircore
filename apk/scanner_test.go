@@ -2,6 +2,7 @@ package apk
 
 import (
 	"archive/tar"
+	"context"
 	"os"
 	"testing"
 
@@ -166,9 +167,9 @@ func TestScan(t *testing.T) {
 // a record doesn't crash the scanner.
 func TestBlankLine(t *testing.T) {
 	t.Parallel()
+	ctx := test.RootContext(t)
 	mod := test.Modtime(t, "scanner_test.go")
-	layerfile := test.GenerateFixture(t, `blankline.layer`, mod, blankLineSetup)
-	ctx := test.Logging(t)
+	layerfile := test.GenerateFixture(t, ctx, `blankline.layer`, mod, blankLineSetup)
 	var l claircore.Layer
 	var s Scanner
 
@@ -213,7 +214,7 @@ func TestBlankLine(t *testing.T) {
 
 // BlankLineSetup writes a layer with an "installed" database that has an extra
 // blank line between the two records.
-func blankLineSetup(t testing.TB, f *os.File) {
+func blankLineSetup(t testing.TB, _ context.Context, f *os.File) {
 	const installed = "P:foo\nV:1.0\nA:x86_64\nF:usr\n\n\nP:bar\nV:2.0\nA:x86_64\nF:usr\n"
 	w := tar.NewWriter(f)
 	defer func() {
