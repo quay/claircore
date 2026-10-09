@@ -24,8 +24,10 @@ type diffTestCase struct {
 // their diff. This flow is also tested in TestE2E. However, not all the cases
 // are captured there, e.g. if there's no difference between the two operations.
 func TestGetUpdateDiff(t *testing.T) {
-	integration.NeedDB(t)
-	ctx := test.Logging(t)
+	t.Parallel()
+	ctx, span := tracer.Start(test.RootContext(t), t.Name())
+	defer span.End()
+	integration.NeedDB(t, ctx)
 
 	cases := []diffTestCase{
 		// second op adds two new vulns

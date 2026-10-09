@@ -14,14 +14,17 @@ import (
 )
 
 func TestDeleteManifests(t *testing.T) {
-	integration.NeedDB(t)
-	ctx := test.Logging(t)
+	t.Parallel()
+	ctx, span := tracer.Start(test.RootContext(t), t.Name())
+	defer span.End()
+	integration.NeedDB(t, ctx)
 	pool := pgtest.TestIndexerDB(ctx, t)
 	store := NewIndexerStore(pool)
 	defer store.Close(ctx)
 
 	t.Run("Nonexistent", func(t *testing.T) {
-		ctx := test.Logging(t, ctx)
+		ctx, span := tracer.Start(test.Logging(t, ctx), t.Name())
+		defer span.End()
 		in := []claircore.Digest{
 			test.RandomSHA256Digest(t),
 		}
@@ -34,7 +37,8 @@ func TestDeleteManifests(t *testing.T) {
 		}
 	})
 	t.Run("NonexistentMulti", func(t *testing.T) {
-		ctx := test.Logging(t, ctx)
+		ctx, span := tracer.Start(test.Logging(t, ctx), t.Name())
+		defer span.End()
 		in := []claircore.Digest{
 			test.RandomSHA256Digest(t),
 			test.RandomSHA256Digest(t),
@@ -52,7 +56,8 @@ func TestDeleteManifests(t *testing.T) {
 	})
 	const insertManifest = `INSERT INTO manifest (hash) SELECT unnest($1::TEXT[]);`
 	t.Run("One", func(t *testing.T) {
-		ctx := test.Logging(t, ctx)
+		ctx, span := tracer.Start(test.Logging(t, ctx), t.Name())
+		defer span.End()
 		want := []claircore.Digest{
 			test.RandomSHA256Digest(t),
 		}
@@ -68,7 +73,8 @@ func TestDeleteManifests(t *testing.T) {
 		}
 	})
 	t.Run("Locked", func(t *testing.T) {
-		ctx := test.Logging(t)
+		ctx, span := tracer.Start(test.Logging(t, ctx), t.Name())
+		defer span.End()
 		want := []claircore.Digest{
 			test.RandomSHA256Digest(t),
 			test.RandomSHA256Digest(t),
@@ -105,7 +111,8 @@ func TestDeleteManifests(t *testing.T) {
 		}
 	})
 	t.Run("Subset", func(t *testing.T) {
-		ctx := test.Logging(t, ctx)
+		ctx, span := tracer.Start(test.Logging(t, ctx), t.Name())
+		defer span.End()
 		in := make([]claircore.Digest, 8)
 		for i := range in {
 			in[i] = test.RandomSHA256Digest(t)
@@ -137,7 +144,8 @@ INSERT INTO manifest_layer (i, manifest_id, layer_id)
 			nManifests = 8
 			layersPer  = 4
 		)
-		ctx := test.Logging(t, ctx)
+		ctx, span := tracer.Start(test.Logging(t, ctx), t.Name())
+		defer span.End()
 		ms := make([]claircore.Digest, nManifests)
 		for i := range ms {
 			ms[i] = test.RandomSHA256Digest(t)
@@ -205,7 +213,8 @@ INSERT INTO manifest_layer (i, manifest_id, layer_id)
 			nManifests       = 8
 			nonBaseLayersPer = 3
 		)
-		ctx := test.Logging(t, ctx)
+		ctx, span := tracer.Start(test.Logging(t, ctx), t.Name())
+		defer span.End()
 		ms := make([]claircore.Digest, nManifests)
 		for i := range ms {
 			ms[i] = test.RandomSHA256Digest(t)
@@ -287,7 +296,8 @@ INSERT INTO manifest_layer (i, manifest_id, layer_id)
 			packageN   = 10
 		)
 		s := NewIndexerStore(pool)
-		ctx := test.Logging(t, ctx)
+		ctx, span := tracer.Start(test.Logging(t, ctx), t.Name())
+		defer span.End()
 		toDelete := make([]claircore.Digest, manifestsN)
 		for i := range manifestsN {
 			ir := &claircore.IndexReport{}
