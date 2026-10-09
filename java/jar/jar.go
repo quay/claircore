@@ -29,8 +29,10 @@ import (
 	"archive/zip"
 	"bufio"
 	"bytes"
+	"compress/gzip"
 	"context"
 	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -43,7 +45,9 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/quay/claircore/java/bom"
 	"github.com/quay/claircore/toolkit/log"
+	"github.com/quay/claircore/toolkit/types/cpe"
 )
 
 // MinSize is the absolute minimum size for a jar.
@@ -54,9 +58,10 @@ const MinSize = 22
 // Parse returns Info structs describing all of the discovered "artifacts" in
 // the jar.
 //
-// POM properties are a preferred source of information, falling back to
-// examining the jar manifest and then looking at the name. Anything that looks
-// like a jar bundled into the archive is also examined.
+// An embedded SBoM is the preferred source of information. When one is
+// found, it is assumed correct for the archive and bundled jars are not
+// examined. Otherwise, POM properties are used, falling back to the jar
+// manifest and then the archive name, and bundled jars are examined.
 //
 // The provided name is expected to be the full path within the layer to the jar
 // file being provided as "z".
@@ -99,7 +104,24 @@ func parse(ctx context.Context, name srcPath, z *zip.Reader) ([]Info, error) {
 	var i Info
 	var err error
 	base := filepath.Base(name.Cur())
-	// Try the pom.properties files first. Fatjars hopefully have the multiple
+	// TODO(hank) It may be worth reworking this to process the jar manifest
+	// first, to be able to make use of keys like "Sbom-Location" and
+	// "Sbom-Format".
+
+	// First, check an embedded SBoM.
+	//
+	// If found, assume it's correct for its entire tree of jars.
+	ret, err = extractSBOM(ctx, name, z)
+	switch {
+	case errors.Is(err, nil):
+		slog.DebugContext(ctx, "using discovered SBoM file(s); skipping examining jars")
+		return ret, nil
+	case errors.Is(err, errUnpopulated):
+	default:
+		return nil, archiveErr(name, err)
+	}
+
+	// Then, try the pom.properties files. Fatjars hopefully have the multiple
 	// properties files preserved.
 	ret, err = extractProperties(ctx, name, z)
 	switch {
@@ -154,6 +176,120 @@ Finish:
 	return ret, nil
 }
 
+// TODO(hank) All these functions that return a slice should return an iterator.
+
+// ProductCPEs returns product CPEs from CycloneDX documents under META-INF/sbom/.
+// A jar with no such document returns a nil slice.
+func ProductCPEs(ctx context.Context, z *zip.Reader) ([]cpe.WFN, error) {
+	infos, err := extractSBOM(ctx, srcPath{"."}, z)
+	switch {
+	case errors.Is(err, nil):
+	case errors.Is(err, errUnpopulated):
+		return nil, nil
+	default:
+		return nil, err
+	}
+	var out []cpe.WFN
+	seen := make(map[string]struct{})
+	for _, info := range infos {
+		for _, w := range info.CPEs {
+			s := w.String()
+			if _, ok := seen[s]; ok {
+				continue
+			}
+			seen[s] = struct{}{}
+			out = append(out, w)
+		}
+	}
+	return out, nil
+}
+
+// ExtractSBOM looks for CycloneDX JSON files underneath "META-INF/sbom/" and
+// attempts to read them using the Red Hat-flavored rules in the "bom" package.
+//
+// This function should transparently handle the file being gzipped in addition
+// to the zip compression.
+func extractSBOM(ctx context.Context, name srcPath, z *zip.Reader) ([]Info, error) {
+	// Avoid using the fs interface for the odd (but observed) case where
+	// intermediate directories are not present.
+	dup := make(map[string]struct{})
+	files := func(yield func(*zip.File, bool) bool) {
+		for _, f := range z.File {
+			ok, _ := path.Match(`META-INF/sbom/*.cdx.json*`, f.Name) // Can only report bad pattern, and it's static.
+			if !ok {
+				continue
+			}
+			norm, after, isGz := strings.Cut(f.Name, ".gzip")
+			if after != "" { // Unknown name.
+				continue
+			}
+			if _, ok := dup[norm]; ok {
+				continue
+			}
+			dup[norm] = struct{}{}
+			if !yield(f, isGz) {
+				return
+			}
+		}
+	}
+	var out []Info
+	var buf bytes.Buffer
+	var zr *gzip.Reader
+	for f, isGz := range files {
+		buf.Reset()
+		buf.Grow(int(f.UncompressedSize64))
+		rc, err := f.Open()
+		if err != nil {
+			return nil, mkErr("opening SBoM", err)
+		}
+		// Odd control flow to avoid extra open zip members.
+		switch {
+		case !isGz:
+			_, err = buf.ReadFrom(rc)
+		case isGz && zr == nil:
+			zr = new(gzip.Reader)
+			fallthrough
+		case isGz && zr != nil:
+			err = zr.Reset(rc)
+			if err != nil {
+				break
+			}
+			_, err = buf.ReadFrom(zr)
+		default:
+			panic("unreachable")
+		}
+		rc.Close()
+		if err != nil {
+			return nil, mkErr("opening SBoM", err)
+		}
+
+		pkgs, err := bom.LoadCDX(ctx, bytes.NewReader(buf.Bytes()))
+		if err != nil {
+			return nil, mkErr("loading SBoM", err)
+		}
+		for pkg, err := range pkgs {
+			if err != nil {
+				return nil, mkErr("reading SBoM", err)
+			}
+			i := len(out)
+			out = append(out, Info{})
+			err = out[i].parseSBOM(ctx, pkg)
+			if err != nil {
+				return nil, mkErr("parsing SBoM package", err)
+			}
+			name.Push(f.Name)
+			out[i].Kind = SourceSBOM
+			out[i].Source = name.String()
+			name.Pop()
+		}
+	}
+
+	if len(out) == 0 {
+		return nil, errUnpopulated
+	}
+	return out, nil
+}
+
 // ExtractManifest attempts to open the manifest file at the well-known path.
 //
 // Reports NotAJar if the file doesn't exist.
@@ -175,6 +311,7 @@ func extractManifest(ctx context.Context, name srcPath, z *zip.Reader) (Info, er
 		return Info{}, mkErr("parsing manifest", err)
 	}
 	name.Push(manifestPath)
+	i.Kind = SourceManifest
 	i.Source = name.String()
 	return i, nil
 }
@@ -225,6 +362,7 @@ func extractProperties(ctx context.Context, name srcPath, z *zip.Reader) ([]Info
 			return nil, mkErr("failed parsing properties", err)
 		}
 		name.Push(p)
+		ret[i].Kind = SourceProperties
 		ret[i].Source = name.String()
 		name.Pop()
 	}
@@ -237,7 +375,8 @@ func extractInner(ctx context.Context, p srcPath, z *zip.Reader) ([]Info, error)
 	var ret []Info
 	// Zips need random access, so allocate a buffer for any we find.
 	var buf bytes.Buffer
-	h := sha1.New()
+	h1, h256 := sha1.New(), sha256.New()
+	hs := io.MultiWriter(h1, h256)
 	checkFile := func(ctx context.Context, f *zip.File) error {
 		name := normName(f.Name)
 		// Check name.
@@ -257,8 +396,9 @@ func extractInner(ctx context.Context, p srcPath, z *zip.Reader) ([]Info, error)
 		defer rc.Close()
 		buf.Reset()
 		buf.Grow(int(fi.Size()))
-		h.Reset()
-		sz, err := buf.ReadFrom(io.TeeReader(rc, h))
+		h1.Reset()
+		h256.Reset()
+		sz, err := buf.ReadFrom(io.TeeReader(rc, hs))
 		if err != nil {
 			return mkErr("failed buffering file", err)
 		}
@@ -293,10 +433,14 @@ func extractInner(ctx context.Context, p srcPath, z *zip.Reader) ([]Info, error)
 		default:
 			return mkErr("parse error", err)
 		}
-		c := make([]byte, sha1.Size)
-		h.Sum(c[:0])
+		ck1, ck256 := h1.Sum(make([]byte, 0, sha1.Size)), h256.Sum(make([]byte, 0, sha256.Size))
 		for i := range ps {
-			ps[i].SHA = c
+			if len(ps[i].SHA1) == 0 {
+				ps[i].SHA1 = ck1
+			}
+			if len(ps[i].SHA256) == 0 {
+				ps[i].SHA256 = ck256
+			}
 		}
 		ret = append(ret, ps...)
 		return nil
@@ -335,9 +479,21 @@ func checkName(ctx context.Context, name string) (Info, error) {
 	return Info{
 		Name:    m[1],
 		Version: m[2],
+		Kind:    SourceName,
 		Source:  ".",
 	}, nil
 }
+
+// SourceKind records which producer filled an [Info].
+type SourceKind uint8
+
+const (
+	SourceUnknown SourceKind = iota
+	SourceSBOM
+	SourceProperties
+	SourceManifest
+	SourceName
+)
 
 // Info reports the discovered information for a jar file.
 //
@@ -355,9 +511,18 @@ type Info struct {
 	// If this jar is embedded inside another jar or series of jars,
 	// each jar file will be included and separated via ":".
 	Source string
-	// SHA is populated with the SHA1 of the file if this entry was discovered
+	// Kind is the producer that filled this Info.
+	Kind SourceKind
+	// CPEs are product names that provide this artifact.
+	//
+	// Currently only populated if the info source is an embedded SBoM.
+	CPEs []cpe.WFN
+	// SHA1 is populated with the SHA1 of the file if this entry was discovered
 	// inside another archive.
-	SHA []byte
+	SHA1 []byte
+	// SHA256 is populated with the SHA256 of the file if this entry was
+	// discovered inside another archive.
+	SHA256 []byte
 }
 
 func (i *Info) String() string {
@@ -365,9 +530,14 @@ func (i *Info) String() string {
 	b.WriteString(i.Name)
 	b.WriteByte('/')
 	b.WriteString(i.Version)
-	if len(i.SHA) != 0 {
+	if len(i.SHA1) != 0 {
 		b.WriteString("(sha1:")
-		hex.NewEncoder(&b).Write(i.SHA)
+		hex.NewEncoder(&b).Write(i.SHA1)
+		b.WriteByte(')')
+	}
+	if len(i.SHA256) != 0 {
+		b.WriteString("(sha256:")
+		hex.NewEncoder(&b).Write(i.SHA256)
 		b.WriteByte(')')
 	}
 	b.WriteString(" [")
@@ -383,6 +553,30 @@ var errUnpopulated = errors.New("unpopulated")
 // ErrInsaneManifest is returned by the parse* method when it the expected sanity
 // checks fail.
 var errInsaneManifest = errors.New("jar manifest does not pass sanity checks")
+
+// ParseSBOM does what it says on the tin.
+//
+// This attempts to make the [bom.Package] → [Info] → [claircore.Package]
+// transformations equivalent to the [bom.Package] → [claircore.Package]
+// transformation.
+func (i *Info) parseSBOM(ctx context.Context, pkg bom.Package) error {
+	for k, v := range pkg.Hashes {
+		switch k {
+		case bom.HashSHA1:
+			i.SHA1 = v
+		case bom.HashSHA256:
+			i.SHA256 = v
+		}
+	}
+	if pkg.PURL.Namespace == "" {
+		i.Name = pkg.PURL.Name
+	} else {
+		i.Name = pkg.PURL.Namespace + ":" + pkg.PURL.Name
+	}
+	i.Version = pkg.PURL.Version
+	i.CPEs = pkg.CPEs
+	return nil
+}
 
 // ParseManifest does what it says on the tin.
 //

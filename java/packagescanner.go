@@ -5,23 +5,30 @@ package java
 import (
 	"archive/zip"
 	"bytes"
+	"cmp"
 	"context"
 	"crypto/sha1"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"hash/maphash"
 	"io"
 	"log/slog"
 	"net/http"
 	"net/url"
+	"path"
 	"runtime/trace"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+	"unique"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
+	"github.com/quay/claircore/java/bom"
 	"github.com/quay/claircore/java/jar"
 	"github.com/quay/claircore/rpm"
 	"github.com/quay/claircore/toolkit/types"
@@ -38,6 +45,11 @@ var (
 		URI:  "https://repo1.maven.apache.org/maven2",
 	}
 )
+
+// RedHatCPERepositoryKey is the repository key for a Red Hat product CPE
+// attributed to a Java component. It is distinct from the Maven Central
+// repository and from the RPM CPE repository.
+const RedHatCPERepositoryKey = "redhat-java-cpe-repository"
 
 // DefaultSearchAPI is a maven-like REST API that may be used to do
 // reverse lookups based on an archive's sha1 sum.
@@ -72,7 +84,7 @@ type Scanner struct {
 func (*Scanner) Name() string { return "java" }
 
 // Version implements scanner.VersionedScanner.
-func (*Scanner) Version() string { return "8" }
+func (*Scanner) Version() string { return "9" }
 
 // Kind implements scanner.VersionedScanner.
 func (*Scanner) Kind() string { return "package" }
@@ -117,8 +129,6 @@ func (s *Scanner) Configure(ctx context.Context, f indexer.ConfigDeserializer, c
 func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore.Package, error) {
 	defer trace.StartRegion(ctx, "Scanner.Scan").End()
 	trace.Log(ctx, "layer", layer.Hash.String())
-	slog.DebugContext(ctx, "start")
-	defer slog.DebugContext(ctx, "done")
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -127,57 +137,123 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 		return nil, fmt.Errorf("java: unable to open layer: %w", err)
 	}
 
-	ars, err := archives(ctx, sys)
-	if err != nil {
-		return nil, err
-	}
 	// All used in the loop below.
 	var ret []*claircore.Package
 	buf := getBuf()
-	sh := sha1.New()
-	ck := make([]byte, sha1.Size)
+	h1, h256 := sha1.New(), sha256.New()
+	hs := io.MultiWriter(h1, h256)
+	ck1, ck256 := make([]byte, 0, sha1.Size), make([]byte, 0, sha256.Size)
 	doSearch := s.root != nil
 	defer putBuf(buf)
 	set, err := rpm.NewPathSet(ctx, layer)
 	if err != nil {
 		return nil, fmt.Errorf("java: unable to check RPM db: %w", err)
 	}
-	for _, n := range ars {
-		log := slog.With("path", n)
-		if set.Contains(n) {
-			log.DebugContext(ctx, "file path determined to be of RPM origin")
+	seed := maphash.MakeSeed()
+	sbomDup := make(map[uint64]struct{})
+	sbomPath := make(map[uint64]struct{})
+	sbomHash := map[unique.Handle[string]]map[uint64]struct{}{
+		bom.HashSHA1:   make(map[uint64]struct{}),
+		bom.HashSHA256: make(map[uint64]struct{}),
+	}
+
+	seq, walkErr := walkInteresting(ctx, sys)
+	var sboms, jars []string
+	for k, p := range seq {
+		if set.Contains(p) {
+			slog.DebugContext(ctx, "file from an rpm", "path", p)
 			continue
 		}
-
-		sh.Reset()
-		buf.Reset()
-		// Calculate the SHA1 as it's buffered, since it may be needed for
-		// searching later.
-		f, err := sys.Open(n)
-		if err != nil {
-			return nil, err
+		switch k {
+		case fileSBoM:
+			sboms = append(sboms, p)
+		case fileJAR:
+			jars = append(jars, p)
+		default:
+			panic("unreachable")
 		}
-		fStat, err := f.Stat()
-		if err == nil {
+	}
+	if err := walkErr(); err != nil {
+		return nil, fmt.Errorf("java: walking fs: %w", err)
+	}
+	// Read the file at p into buf, hashing it as it is copied.
+	read := func(p string) (int64, error) {
+		h1.Reset()
+		h256.Reset()
+		buf.Reset()
+		f, err := sys.Open(p)
+		if err != nil {
+			return 0, err
+		}
+		defer f.Close()
+		if fStat, err := f.Stat(); err == nil {
 			buf.Grow(int(fStat.Size()))
 		}
-		sz, err := buf.ReadFrom(io.TeeReader(f, sh))
-		f.Close()
+		return buf.ReadFrom(io.TeeReader(f, hs))
+	}
+
+	for _, p := range sboms {
+		log := slog.With("path", p)
+		if _, err := read(p); err != nil {
+			return nil, err
+		}
+		dir := path.Dir(p)
+		// Don't consume both compressed and uncompressed versions.
+		//
+		// This code doesn't prefer one or the other and assumes they're
+		// equivalent.
+		k := maphash.String(seed, dir)
+		if _, ok := sbomDup[k]; ok {
+			log.DebugContext(ctx, "skipping (assumed) duplicate SBoM")
+			continue
+		}
+		sbomDup[k] = struct{}{}
+
+		seq, err := bom.LoadCDX(ctx, bytes.NewReader(buf.Bytes()))
 		if err != nil {
 			return nil, err
 		}
-		zb := buf.Bytes()
+		for bp, err := range seq {
+			if err != nil {
+				return nil, err
+			}
+			n := path.Join(dir, bp.Location)
+			sbomPath[maphash.String(seed, n)] = struct{}{}
+			for k, b := range bp.Hashes {
+				h, ok := sbomHash[k]
+				if !ok {
+					continue
+				}
+				h[maphash.Bytes(seed, b)] = struct{}{}
+			}
+			var pkg claircore.Package
+			if err := bom.PopulatePackage(&pkg, bp, p); err != nil {
+				return nil, err
+			}
+			ret = append(ret, &pkg)
+		}
+	}
+	for _, p := range jars {
+		log := slog.With("path", p)
+		if coveredSBOMPath(seed, p, sbomPath) {
+			log.DebugContext(ctx, "skipping jar covered by sbom path")
+			continue
+		}
+		sz, err := read(p)
+		if err != nil {
+			return nil, err
+		}
+		if coveredSBOMHash(seed, h1.Sum(nil), h256.Sum(nil), sbomHash) {
+			log.DebugContext(ctx, "skipping jar covered by sbom hash")
+			continue
+		}
 		// Let the zip reader determine if this is actually a valid zip file.
 		// We cannot just check the header, as it's possible the jar file
 		// starts off with a script. This scenario is explicitly mentioned in
 		// the standard library: https://cs.opensource.google/go/go/+/refs/tags/go1.24.3:src/archive/zip/reader.go;l=41.
-		z, err := zip.NewReader(bytes.NewReader(zb), sz)
+		z, err := zip.NewReader(bytes.NewReader(buf.Bytes()), sz)
 		switch {
 		case errors.Is(err, nil):
-		case errors.Is(err, io.EOF):
-			// BUG(go1.21) Older versions of the stdlib can report io.EOF when
-			// opening malformed zips.
-			fallthrough
 		case errors.Is(err, zip.ErrFormat):
 			log.InfoContext(ctx, "not actually a jar: invalid zip", "reason", err)
 			continue
@@ -185,7 +261,7 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 			return nil, err
 		}
 
-		infos, err := jar.Parse(ctx, n, z)
+		infos, err := jar.Parse(ctx, p, z)
 		switch {
 		case err == nil:
 		case errors.Is(err, jar.ErrNotAJar):
@@ -195,14 +271,17 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 		default:
 			return nil, err
 		}
-		sh.Sum(ck[:0])
+		ck1 := h1.Sum(ck1)
+		ck256 := h256.Sum(ck256)
+		hex1, hex256 := hex.EncodeToString(ck1), hex.EncodeToString(ck256)
 		ps := make([]*claircore.Package, len(infos))
 		for j := range infos {
 			i := &infos[j]
-			// If we discovered a pom file, don't bother talking to the network.
-			// If not, talk to the network if configured to do so.
-			if !strings.HasSuffix(i.Source, "pom.properties") && doSearch {
-				switch err := s.search(ctx, i, ck); {
+			// pom.properties and an embedded CycloneDX document already name
+			// the artifact. Ask Maven Central only when the producer was
+			// a manifest or the archive name.
+			if doSearch && (i.Kind == jar.SourceManifest || i.Kind == jar.SourceName) {
+				switch err := s.search(ctx, i, ck1); {
 				case errors.Is(err, nil): // OK
 				case errors.Is(err, errRPC):
 				// BUG(hank) There's no way for a scanner that makes RPC calls
@@ -217,12 +296,20 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 			pkg.Name = i.Name
 			pkg.Version = i.Version
 			pkg.Kind = types.BinaryPackage
-			pkg.Filepath = n
-			b := ck
-			if len(i.SHA) != 0 {
-				b = i.SHA
+			pkg.Filepath = p
+			hint := url.Values{
+				"hash": {
+					"sha1:" + cmp.Or(hex.EncodeToString(i.SHA1), hex1),
+					"sha256:" + cmp.Or(hex.EncodeToString(i.SHA256), hex256),
+				},
 			}
-			pkg.RepositoryHint = fmt.Sprintf(`sha1:%40x`, b)
+			for _, w := range i.CPEs {
+				hint.Add("cpe", w.String())
+			}
+			pkg.RepositoryHint = hint.Encode()
+			if len(i.CPEs) == 1 {
+				pkg.CPE = i.CPEs[0]
+			}
 			// BUG(hank) There's probably some bugs lurking in the jar.Info →
 			// claircore.Package mapping code around embedded jars. There's a
 			// testcase to be written, there.
@@ -232,23 +319,19 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 			// i.Source will just be `.`
 			// In this case, PackageDB should just be the filepath, n.
 			// Otherwise, use i.Source.
-			pkgDB := n
+			pkgDB := p
 			if idx != -1 {
 				pkgDB = i.Source[:idx]
 			}
-			// Only examine anything after the last colon (or the entire path if there is no colon).
-			switch l := i.Source[idx+1:]; {
-			case strings.HasSuffix(l, "pom.properties"):
-				fallthrough
-			case s.root != nil && i.Source == s.root.String():
-				// Populate as a maven artifact.
+			switch i.Kind {
+			case jar.SourceProperties:
 				pkg.PackageDB = `maven:` + pkgDB
-			case l == "META-INF/MANIFEST.MF":
-				// information pulled from a manifest file
+			case jar.SourceManifest:
 				pkg.PackageDB = `jar:` + pkgDB
-			case l == ".":
-				// Name guess.
+			case jar.SourceName:
 				pkg.PackageDB = `file:` + pkgDB
+			case jar.SourceSBOM:
+				pkg.PackageDB = `sbom:` + i.Source
 			default:
 				return nil, fmt.Errorf("java: martian Info: %+v", i)
 			}
@@ -257,6 +340,19 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 		ret = append(ret, ps...)
 	}
 	return ret, nil
+}
+
+func coveredSBOMPath(seed maphash.Seed, p string, paths map[uint64]struct{}) bool {
+	_, ok := paths[maphash.String(seed, p)]
+	return ok
+}
+
+func coveredSBOMHash(seed maphash.Seed, sha1Sum, sha256Sum []byte, hashes map[unique.Handle[string]]map[uint64]struct{}) bool {
+	if _, ok := hashes[bom.HashSHA1][maphash.Bytes(seed, sha1Sum)]; ok {
+		return true
+	}
+	_, ok := hashes[bom.HashSHA256][maphash.Bytes(seed, sha256Sum)]
+	return ok
 }
 
 // DefaultRepository implements [indexer.DefaultRepoScanner].
@@ -273,8 +369,8 @@ func (Scanner) DefaultRepository(ctx context.Context) *claircore.Repository {
 // ErrRPC is reported if anything went wrong making the request or reading the
 // response.
 func (s *Scanner) search(ctx context.Context, i *jar.Info, ck []byte) error {
-	if i.SHA != nil {
-		ck = i.SHA
+	if i.SHA1 != nil {
+		ck = i.SHA1
 	}
 	success := false
 	defer func() {
@@ -320,6 +416,7 @@ func (s *Scanner) search(ctx context.Context, i *jar.Info, ck []byte) error {
 	sort.SliceStable(sr.Response.Doc, func(i, j int) bool {
 		return sr.Response.Doc[i].ID < sr.Response.Doc[j].ID
 	})
+	i.Kind = jar.SourceProperties
 	i.Source = s.root.String()
 	d := &sr.Response.Doc[0]
 	i.Version = d.Version

@@ -61,7 +61,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "3.4.8",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/ext/gremlin-groovy/lib/gremlin-groovy-3.4.8.jar",
-			RepositoryHint: "sha1:9ae4c997e7b38ef6f6bc72c53412434743705866",
+			RepositoryHint: "hash=sha1%3A9ae4c997e7b38ef6f6bc72c53412434743705866&hash=sha256%3Afad6dd2ab378d1558800070023569210863cab9acb9946994925879db59f4249",
 			Filepath:       "opt/gremlin-console/ext/gremlin-groovy/lib/gremlin-groovy-3.4.8.jar",
 		},
 		{
@@ -69,7 +69,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "3.4.8",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/ext/gremlin-groovy/plugin/gremlin-groovy-3.4.8.jar",
-			RepositoryHint: "sha1:9ae4c997e7b38ef6f6bc72c53412434743705866",
+			RepositoryHint: "hash=sha1%3A9ae4c997e7b38ef6f6bc72c53412434743705866&hash=sha256%3Afad6dd2ab378d1558800070023569210863cab9acb9946994925879db59f4249",
 			Filepath:       "opt/gremlin-console/ext/gremlin-groovy/plugin/gremlin-groovy-3.4.8.jar",
 		},
 		{
@@ -77,7 +77,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "3.4.8",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/ext/tinkergraph-gremlin/lib/tinkergraph-gremlin-3.4.8.jar",
-			RepositoryHint: "sha1:b438353c7514e468f983370a909328aa5957813a",
+			RepositoryHint: "hash=sha1%3Ab438353c7514e468f983370a909328aa5957813a&hash=sha256%3A9524af330e2b9c7afd1427a095a27fbd9ce530ffed5cbca25a8d07dedefa0529",
 			Filepath:       "opt/gremlin-console/ext/tinkergraph-gremlin/lib/tinkergraph-gremlin-3.4.8.jar",
 		},
 		{
@@ -85,7 +85,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "3.4.8",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/ext/tinkergraph-gremlin/plugin/tinkergraph-gremlin-3.4.8.jar",
-			RepositoryHint: "sha1:b438353c7514e468f983370a909328aa5957813a",
+			RepositoryHint: "hash=sha1%3Ab438353c7514e468f983370a909328aa5957813a&hash=sha256%3A9524af330e2b9c7afd1427a095a27fbd9ce530ffed5cbca25a8d07dedefa0529",
 			Filepath:       "opt/gremlin-console/ext/tinkergraph-gremlin/plugin/tinkergraph-gremlin-3.4.8.jar",
 		},
 		{
@@ -93,7 +93,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "2.3.1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:opt/gremlin-console/lib/caffeine-2.3.1.jar",
-			RepositoryHint: "sha1:d6aec5cbd26313a341ee7c034bd56d604f68bebe",
+			RepositoryHint: "hash=sha1%3Ad6aec5cbd26313a341ee7c034bd56d604f68bebe&hash=sha256%3Af0343c767eb8d2ac5627106366b777dca3ce21863992ea2e693ba1099bf39f66",
 			Filepath:       "opt/gremlin-console/lib/caffeine-2.3.1.jar",
 		},
 		{
@@ -101,7 +101,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "1.14",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/lib/commons-codec-1.14.jar",
-			RepositoryHint: "sha1:3cb1181b2141a7e752f5bdc998b7ef1849f726cf",
+			RepositoryHint: "hash=sha1%3A3cb1181b2141a7e752f5bdc998b7ef1849f726cf&hash=sha256%3Aa128e4f93fabe5381ded64cf2873019e06030b718eb43ceeae0b0e5d17ad33e9",
 			Filepath:       "opt/gremlin-console/lib/commons-codec-1.14.jar",
 		},
 		{
@@ -109,7 +109,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "3.2.2",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/lib/commons-collections-3.2.2.jar",
-			RepositoryHint: "sha1:8ad72fe39fa8c91eaaf12aadb21e0c3661fe26d5",
+			RepositoryHint: "hash=sha1%3A8ad72fe39fa8c91eaaf12aadb21e0c3661fe26d5&hash=sha256%3Aeeeae917917144a68a741d4c0dff66aa5c5c5fd85593ff217bced3fc8ca783b8",
 			Filepath:       "opt/gremlin-console/lib/commons-collections-3.2.2.jar",
 		},
 		{
@@ -117,7 +117,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "1.10",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/lib/commons-configuration-1.10.jar",
-			RepositoryHint: "sha1:2b36e4adfb66d966c5aef2d73deb6be716389dc9",
+			RepositoryHint: "hash=sha1%3A2b36e4adfb66d966c5aef2d73deb6be716389dc9&hash=sha256%3A95d4e6711e88ce78992c82c25bc03c8df9ecf5a357f0de0bec72a26db3399374",
 			Filepath:       "opt/gremlin-console/lib/commons-configuration-1.10.jar",
 		},
 		{
@@ -125,7 +125,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "2.6",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/lib/commons-lang-2.6.jar",
-			RepositoryHint: "sha1:0ce1edb914c94ebc388f086c6827e8bdeec71ac2",
+			RepositoryHint: "hash=sha1%3A0ce1edb914c94ebc388f086c6827e8bdeec71ac2&hash=sha256%3A50f11b09f877c294d56f24463f47d28f929cf5044f648661c0f0cfbae9a2f49c",
 			Filepath:       "opt/gremlin-console/lib/commons-lang-2.6.jar",
 		},
 		{
@@ -133,7 +133,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "3.8.1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/lib/commons-lang3-3.8.1.jar",
-			RepositoryHint: "sha1:6505a72a097d9270f7a9e7bf42c4238283247755",
+			RepositoryHint: "hash=sha1%3A6505a72a097d9270f7a9e7bf42c4238283247755&hash=sha256%3Adac807f65b07698ff39b1b07bfef3d87ae3fd46d91bbf8a2bc02b2a831616f68",
 			Filepath:       "opt/gremlin-console/lib/commons-lang3-3.8.1.jar",
 		},
 		{
@@ -141,7 +141,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "1.2",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/lib/commons-logging-1.2.jar",
-			RepositoryHint: "sha1:4bfc12adfe4842bf07b657f0369c4cb522955686",
+			RepositoryHint: "hash=sha1%3A4bfc12adfe4842bf07b657f0369c4cb522955686&hash=sha256%3Adaddea1ea0be0f56978ab3006b8ac92834afeefbd9b7e4e6316fca57df0fa636",
 			Filepath:       "opt/gremlin-console/lib/commons-logging-1.2.jar",
 		},
 		{
@@ -149,7 +149,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "0.4.8",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/lib/exp4j-0.4.8.jar",
-			RepositoryHint: "sha1:cf1cfc0f958077d86ac7452c7e36d944689b2ec4",
+			RepositoryHint: "hash=sha1%3Acf1cfc0f958077d86ac7452c7e36d944689b2ec4&hash=sha256%3A271f7824ee8a3468257bc0613afdabb67597af8389317643fa806b983b7ecb27",
 			Filepath:       "opt/gremlin-console/lib/exp4j-0.4.8.jar",
 		},
 		{
@@ -157,7 +157,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "3.4.8",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/lib/gremlin-console-3.4.8.jar",
-			RepositoryHint: "sha1:f001a2644ca44cf60fdde8dbd271e919168ec208",
+			RepositoryHint: "hash=sha1%3Af001a2644ca44cf60fdde8dbd271e919168ec208&hash=sha256%3A97ad8d11910c46b3a213bb7b674bf164c75a4ce6308341ac4a630050c54cf23c",
 			Filepath:       "opt/gremlin-console/lib/gremlin-console-3.4.8.jar",
 		},
 		{
@@ -165,7 +165,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "3.4.8",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/lib/gremlin-core-3.4.8.jar",
-			RepositoryHint: "sha1:7d6074aa75fc8e219fd7456fa94312ba52922dac",
+			RepositoryHint: "hash=sha1%3A7d6074aa75fc8e219fd7456fa94312ba52922dac&hash=sha256%3A5818f87798caa8cf70596eb34f18707c6a8d38655c457b07fc0c9a3dad93727d",
 			Filepath:       "opt/gremlin-console/lib/gremlin-core-3.4.8.jar",
 		},
 		{
@@ -173,7 +173,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "3.4.8",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/lib/gremlin-driver-3.4.8.jar",
-			RepositoryHint: "sha1:53a55a34441c49ad7b933a7ddb4276d3e81dbe72",
+			RepositoryHint: "hash=sha1%3A53a55a34441c49ad7b933a7ddb4276d3e81dbe72&hash=sha256%3Ad92b1dce6c0610a495473f1e5233905802b42cb280026903341c5063a1dd4ced",
 			Filepath:       "opt/gremlin-console/lib/gremlin-driver-3.4.8.jar",
 		},
 		{
@@ -181,7 +181,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "3.4.8",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/lib/gremlin-shaded-3.4.8.jar",
-			RepositoryHint: "sha1:eecca88aa8b7e6ca0d85821a0b7df9f9b873e95b",
+			RepositoryHint: "hash=sha1%3Aeecca88aa8b7e6ca0d85821a0b7df9f9b873e95b&hash=sha256%3A979d1fa7bd9b611df4beb693425a9b9037d47f2513aa178a40454946c0465324",
 			Filepath:       "opt/gremlin-console/lib/gremlin-shaded-3.4.8.jar",
 		},
 		{
@@ -189,7 +189,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "3.0.3",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/lib/gremlin-shaded-3.4.8.jar",
-			RepositoryHint: "sha1:eecca88aa8b7e6ca0d85821a0b7df9f9b873e95b",
+			RepositoryHint: "hash=sha1%3Aeecca88aa8b7e6ca0d85821a0b7df9f9b873e95b&hash=sha256%3A979d1fa7bd9b611df4beb693425a9b9037d47f2513aa178a40454946c0465324",
 			Filepath:       "opt/gremlin-console/lib/gremlin-shaded-3.4.8.jar",
 		},
 		{
@@ -197,7 +197,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "1.10.1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/lib/gremlin-shaded-3.4.8.jar",
-			RepositoryHint: "sha1:eecca88aa8b7e6ca0d85821a0b7df9f9b873e95b",
+			RepositoryHint: "hash=sha1%3Aeecca88aa8b7e6ca0d85821a0b7df9f9b873e95b&hash=sha256%3A979d1fa7bd9b611df4beb693425a9b9037d47f2513aa178a40454946c0465324",
 			Filepath:       "opt/gremlin-console/lib/gremlin-shaded-3.4.8.jar",
 		},
 		{
@@ -205,7 +205,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "1.3.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/lib/gremlin-shaded-3.4.8.jar",
-			RepositoryHint: "sha1:eecca88aa8b7e6ca0d85821a0b7df9f9b873e95b",
+			RepositoryHint: "hash=sha1%3Aeecca88aa8b7e6ca0d85821a0b7df9f9b873e95b&hash=sha256%3A979d1fa7bd9b611df4beb693425a9b9037d47f2513aa178a40454946c0465324",
 			Filepath:       "opt/gremlin-console/lib/gremlin-shaded-3.4.8.jar",
 		},
 		{
@@ -213,7 +213,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "2.9.10.5",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/lib/gremlin-shaded-3.4.8.jar",
-			RepositoryHint: "sha1:eecca88aa8b7e6ca0d85821a0b7df9f9b873e95b",
+			RepositoryHint: "hash=sha1%3Aeecca88aa8b7e6ca0d85821a0b7df9f9b873e95b&hash=sha256%3A979d1fa7bd9b611df4beb693425a9b9037d47f2513aa178a40454946c0465324",
 			Filepath:       "opt/gremlin-console/lib/gremlin-shaded-3.4.8.jar",
 		},
 		{
@@ -221,7 +221,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "2.9.10",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/lib/gremlin-shaded-3.4.8.jar",
-			RepositoryHint: "sha1:eecca88aa8b7e6ca0d85821a0b7df9f9b873e95b",
+			RepositoryHint: "hash=sha1%3Aeecca88aa8b7e6ca0d85821a0b7df9f9b873e95b&hash=sha256%3A979d1fa7bd9b611df4beb693425a9b9037d47f2513aa178a40454946c0465324",
 			Filepath:       "opt/gremlin-console/lib/gremlin-shaded-3.4.8.jar",
 		},
 		{
@@ -229,7 +229,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "2.9.10",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/lib/gremlin-shaded-3.4.8.jar",
-			RepositoryHint: "sha1:eecca88aa8b7e6ca0d85821a0b7df9f9b873e95b",
+			RepositoryHint: "hash=sha1%3Aeecca88aa8b7e6ca0d85821a0b7df9f9b873e95b&hash=sha256%3A979d1fa7bd9b611df4beb693425a9b9037d47f2513aa178a40454946c0465324",
 			Filepath:       "opt/gremlin-console/lib/gremlin-shaded-3.4.8.jar",
 		},
 		{
@@ -237,7 +237,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "2.5.11",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:opt/gremlin-console/lib/groovy-2.5.11-indy.jar",
-			RepositoryHint: "sha1:1d90cbcff0947aaf43f31741b48839e5fe190f13",
+			RepositoryHint: "hash=sha1%3A1d90cbcff0947aaf43f31741b48839e5fe190f13&hash=sha256%3A12266b841ec74ca0f0f4112d110f09c4fb48f9814ac6dcddfcca5353ba089e13",
 			Filepath:       "opt/gremlin-console/lib/groovy-2.5.11-indy.jar",
 		},
 		{
@@ -245,7 +245,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "2.5.11",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:opt/gremlin-console/lib/groovy-cli-picocli-2.5.11.jar",
-			RepositoryHint: "sha1:d612d63d4ef1083bc05fcadc233b3d8f201d10f2",
+			RepositoryHint: "hash=sha1%3Ad612d63d4ef1083bc05fcadc233b3d8f201d10f2&hash=sha256%3A5f8de2af3a68e3f9b2c69823fc72194fd95a75d5e7dd9e75d4cc8258ad3cb13e",
 			Filepath:       "opt/gremlin-console/lib/groovy-cli-picocli-2.5.11.jar",
 		},
 		{
@@ -253,7 +253,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "2.5.11",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:opt/gremlin-console/lib/groovy-console-2.5.11.jar",
-			RepositoryHint: "sha1:3db61e9f5806dbf999bbeb44bf6c532540abc731",
+			RepositoryHint: "hash=sha1%3A3db61e9f5806dbf999bbeb44bf6c532540abc731&hash=sha256%3A34f1dc144b2f052777afecc34f1749e2dc036a3032451d5dfd3a3a0a091f645b",
 			Filepath:       "opt/gremlin-console/lib/groovy-console-2.5.11.jar",
 		},
 		{
@@ -261,7 +261,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "2.5.11",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:opt/gremlin-console/lib/groovy-groovysh-2.5.11-indy.jar",
-			RepositoryHint: "sha1:c4c372f662fdfb5f298aee7484553379ef207d1b",
+			RepositoryHint: "hash=sha1%3Ac4c372f662fdfb5f298aee7484553379ef207d1b&hash=sha256%3A2d3c690577f7df053f25f3fb5f76f98471cfb7529bcbb4c3e47c22aa783f37d8",
 			Filepath:       "opt/gremlin-console/lib/groovy-groovysh-2.5.11-indy.jar",
 		},
 		{
@@ -269,7 +269,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "2.5.11",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:opt/gremlin-console/lib/groovy-json-2.5.11-indy.jar",
-			RepositoryHint: "sha1:50233b0100cdb17a90a49a8aaaa9f0d020608600",
+			RepositoryHint: "hash=sha1%3A50233b0100cdb17a90a49a8aaaa9f0d020608600&hash=sha256%3A8060e9492279cb5dfc0e9fd3a270aa937378bb36b776de1c38b5f43ea3d00ae0",
 			Filepath:       "opt/gremlin-console/lib/groovy-json-2.5.11-indy.jar",
 		},
 		{
@@ -277,7 +277,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "2.5.11",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:opt/gremlin-console/lib/groovy-jsr223-2.5.11-indy.jar",
-			RepositoryHint: "sha1:c95ee910c2e74cfc37c73a6510b8476b146f3d10",
+			RepositoryHint: "hash=sha1%3Ac95ee910c2e74cfc37c73a6510b8476b146f3d10&hash=sha256%3A1329e93f8e44834bb9bb4428e4b81733aa002cc76612b001e95a50941368b560",
 			Filepath:       "opt/gremlin-console/lib/groovy-jsr223-2.5.11-indy.jar",
 		},
 		{
@@ -285,7 +285,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "2.5.11",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:opt/gremlin-console/lib/groovy-swing-2.5.11.jar",
-			RepositoryHint: "sha1:bcb2614685279e845f075cd1a22fe6950ce960b2",
+			RepositoryHint: "hash=sha1%3Abcb2614685279e845f075cd1a22fe6950ce960b2&hash=sha256%3A13620f73aacf36421ea558b557f429689e2342388d278ee7090c6e6e7a8c8689",
 			Filepath:       "opt/gremlin-console/lib/groovy-swing-2.5.11.jar",
 		},
 		{
@@ -293,7 +293,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "2.5.11",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:opt/gremlin-console/lib/groovy-templates-2.5.11.jar",
-			RepositoryHint: "sha1:941001acfda010320e2426a3b8fe056d6a1eb8f1",
+			RepositoryHint: "hash=sha1%3A941001acfda010320e2426a3b8fe056d6a1eb8f1&hash=sha256%3A51680a972daf561e014fa43288f930adab7ca39850f50927ec30e933350e71cb",
 			Filepath:       "opt/gremlin-console/lib/groovy-templates-2.5.11.jar",
 		},
 		{
@@ -301,7 +301,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "2.5.11",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:opt/gremlin-console/lib/groovy-xml-2.5.11.jar",
-			RepositoryHint: "sha1:3b1e713e805d7ea354a83d1c9e17a0754ea74132",
+			RepositoryHint: "hash=sha1%3A3b1e713e805d7ea354a83d1c9e17a0754ea74132&hash=sha256%3A9b419bdf90668440bcfab475bcbd13ba77346345ff28fd9faf1b709e5096d96f",
 			Filepath:       "opt/gremlin-console/lib/groovy-xml-2.5.11.jar",
 		},
 		{
@@ -309,7 +309,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "0.7.1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/lib/hppc-0.7.1.jar",
-			RepositoryHint: "sha1:8b5057f74ea378c0150a1860874a3ebdcb713767",
+			RepositoryHint: "hash=sha1%3A8b5057f74ea378c0150a1860874a3ebdcb713767&hash=sha256%3A40d2a57f59e9eae7b018d3b4841954087ee40a5c1db6a54c3ea87742e3890391",
 			Filepath:       "opt/gremlin-console/lib/hppc-0.7.1.jar",
 		},
 		{
@@ -317,7 +317,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "4.5.8",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/lib/httpclient-4.5.8.jar",
-			RepositoryHint: "sha1:c27c9d6f15435dc2b6947112027b418b0eef32b9",
+			RepositoryHint: "hash=sha1%3Ac27c9d6f15435dc2b6947112027b418b0eef32b9&hash=sha256%3Abebc085fc7675c75111e98295b830565cf040dd118029d2c0bbfd0779cf685a4",
 			Filepath:       "opt/gremlin-console/lib/httpclient-4.5.8.jar",
 		},
 		{
@@ -325,7 +325,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "4.4.11",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/lib/httpcore-4.4.11.jar",
-			RepositoryHint: "sha1:de748cf874e4e193b42eceea9fe5574fabb9d4df",
+			RepositoryHint: "hash=sha1%3Ade748cf874e4e193b42eceea9fe5574fabb9d4df&hash=sha256%3Ad799522d579aac06b170603f8f080f6e3248dadc01f9652cdd7ea7bc318c21ce",
 			Filepath:       "opt/gremlin-console/lib/httpcore-4.4.11.jar",
 		},
 		{
@@ -333,7 +333,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "2.3.0.final_20130110142753",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:opt/gremlin-console/lib/ivy-2.3.0.jar",
-			RepositoryHint: "sha1:c5ebf1c253ad4959a29f4acfe696ee48cdd9f473",
+			RepositoryHint: "hash=sha1%3Ac5ebf1c253ad4959a29f4acfe696ee48cdd9f473&hash=sha256%3Aff3543305c62f23d1a4cafc66fab9c9f55ea169ccf2b6c040d3fa23254b86b18",
 			Filepath:       "opt/gremlin-console/lib/ivy-2.3.0.jar",
 		},
 		{
@@ -341,7 +341,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "1.8.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/lib/javapoet-1.8.0.jar",
-			RepositoryHint: "sha1:e858dc62ef484048540d27d36f3ec2177a3fa9b1",
+			RepositoryHint: "hash=sha1%3Ae858dc62ef484048540d27d36f3ec2177a3fa9b1&hash=sha256%3A8e108c92027bb428196f10fa11cffbe589f7648a6af2016d652279385fdfd789",
 			Filepath:       "opt/gremlin-console/lib/javapoet-1.8.0.jar",
 		},
 		{
@@ -349,7 +349,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "1.2",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/lib/javatuples-1.2.jar",
-			RepositoryHint: "sha1:507312ac4b601204a72a83380badbca82683dd36",
+			RepositoryHint: "hash=sha1%3A507312ac4b601204a72a83380badbca82683dd36&hash=sha256%3A2eda5b19d9820e1cc2f69fcd01639a715a673c11f8507e3d1ed593cf765d5e0a",
 			Filepath:       "opt/gremlin-console/lib/javatuples-1.2.jar",
 		},
 		{
@@ -357,7 +357,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "0.4",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/lib/jbcrypt-0.4.jar",
-			RepositoryHint: "sha1:af7e61017f73abb18ac4e036954f9f28c6366c07",
+			RepositoryHint: "hash=sha1%3Aaf7e61017f73abb18ac4e036954f9f28c6366c07&hash=sha256%3Ae183f6f59404fc1e12073cfea4ace7ea103c900463cd21fb609a7c617ecdf624",
 			Filepath:       "opt/gremlin-console/lib/jbcrypt-0.4.jar",
 		},
 		{
@@ -365,7 +365,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "0.14",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/lib/jcabi-log-0.14.jar",
-			RepositoryHint: "sha1:819a57348f2448f01d74f8a317dab61d6a90cac2",
+			RepositoryHint: "hash=sha1%3A819a57348f2448f01d74f8a317dab61d6a90cac2&hash=sha256%3A095815157128766570462d1df4cd7377a493427e6e0b88b9cd8ca0e9870951d3",
 			Filepath:       "opt/gremlin-console/lib/jcabi-log-0.14.jar",
 		},
 		{
@@ -373,7 +373,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "1.1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/lib/jcabi-manifests-1.1.jar",
-			RepositoryHint: "sha1:e4f4488c0e3905c6fab287aca2569928fe1712df",
+			RepositoryHint: "hash=sha1%3Ae4f4488c0e3905c6fab287aca2569928fe1712df&hash=sha256%3Affa9717ad78e630f210ecbe06c7108039ddaf6109725c2a139ef5d572b95c849",
 			Filepath:       "opt/gremlin-console/lib/jcabi-manifests-1.1.jar",
 		},
 		{
@@ -381,7 +381,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "1.7.25",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/lib/jcl-over-slf4j-1.7.25.jar",
-			RepositoryHint: "sha1:f8c32b13ff142a513eeb5b6330b1588dcb2c0461",
+			RepositoryHint: "hash=sha1%3Af8c32b13ff142a513eeb5b6330b1588dcb2c0461&hash=sha256%3A5e938457e79efcbfb3ab64bc29c43ec6c3b95fffcda3c155f4a86cc320c11e14",
 			Filepath:       "opt/gremlin-console/lib/jcl-over-slf4j-1.7.25.jar",
 		},
 		{
@@ -389,7 +389,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "2.14.6",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/lib/jline-2.14.6.jar",
-			RepositoryHint: "sha1:c3aeac59c022bdc497c8c48ed86fa50450e4896a",
+			RepositoryHint: "hash=sha1%3Ac3aeac59c022bdc497c8c48ed86fa50450e4896a&hash=sha256%3A97d1acaac82409be42e622d7a54d3ae9d08517e8aefdea3d2ba9791150c2f02d",
 			Filepath:       "opt/gremlin-console/lib/jline-2.14.6.jar",
 		},
 		{
@@ -397,7 +397,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "1.2.17",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/lib/log4j-1.2.17.jar",
-			RepositoryHint: "sha1:5af35056b4d257e4b64b9e8069c0746e8b08629f",
+			RepositoryHint: "hash=sha1%3A5af35056b4d257e4b64b9e8069c0746e8b08629f&hash=sha256%3A1d31696445697720527091754369082a6651bd49781b6005deb94e56753406f9",
 			Filepath:       "opt/gremlin-console/lib/log4j-1.2.17.jar",
 		},
 		{
@@ -405,7 +405,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "4.1.49.Final",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/lib/netty-all-4.1.49.Final.jar",
-			RepositoryHint: "sha1:ffe903492be79f5bd8348b04c958de3734a22c6b",
+			RepositoryHint: "hash=sha1%3Affe903492be79f5bd8348b04c958de3734a22c6b&hash=sha256%3Ac29dfc719c5f7de8d6c915bd0903128fa9ec61d5e49123d980485f3028f2c382",
 			Filepath:       "opt/gremlin-console/lib/netty-all-4.1.49.Final.jar",
 		},
 		{
@@ -413,7 +413,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "4.0.1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:opt/gremlin-console/lib/picocli-4.0.1.jar",
-			RepositoryHint: "sha1:282c164057d55e6b6af2de49e8930f3c760439da",
+			RepositoryHint: "hash=sha1%3A282c164057d55e6b6af2de49e8930f3c760439da&hash=sha256%3Aee8487de1e8389d466f3fdf5775f59048dc32e040d546da5cf1982e146b7ff81",
 			Filepath:       "opt/gremlin-console/lib/picocli-4.0.1.jar",
 		},
 		{
@@ -421,7 +421,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "1.7.25",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/lib/slf4j-api-1.7.25.jar",
-			RepositoryHint: "sha1:da76ca59f6a57ee3102f8f9bd9cee742973efa8a",
+			RepositoryHint: "hash=sha1%3Ada76ca59f6a57ee3102f8f9bd9cee742973efa8a&hash=sha256%3A18c4a0095d5c1da6b817592e767bb23d29dd2f560ad74df75ff3961dbde25b79",
 			Filepath:       "opt/gremlin-console/lib/slf4j-api-1.7.25.jar",
 		},
 		{
@@ -429,7 +429,7 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "1.7.25",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/lib/slf4j-log4j12-1.7.25.jar",
-			RepositoryHint: "sha1:110cefe2df103412849d72ef7a67e4e91e4266b4",
+			RepositoryHint: "hash=sha1%3A110cefe2df103412849d72ef7a67e4e91e4266b4&hash=sha256%3Addb343954deb6f046f862606c534178730c02ed23d0b7f6ca1012c1e3fa74273",
 			Filepath:       "opt/gremlin-console/lib/slf4j-log4j12-1.7.25.jar",
 		},
 		{
@@ -437,11 +437,19 @@ var tinkerpop = test.ScannerTestcase{
 			Version:        "1.15",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:opt/gremlin-console/lib/snakeyaml-1.15.jar",
-			RepositoryHint: "sha1:3b132bea69e8ee099f416044970997bde80f4ea6",
+			RepositoryHint: "hash=sha1%3A3b132bea69e8ee099f416044970997bde80f4ea6&hash=sha256%3A79ea8aac6590f49ee8390c2f17ed9343079e85b44158a097b301dfee42af86ec",
 			Filepath:       "opt/gremlin-console/lib/snakeyaml-1.15.jar",
 		},
 	},
 	Scanner: &java.Scanner{},
+}
+
+var jenkinsHashes = map[string]string{
+	"maven:usr/share/jenkins/jenkins.war":                               "hash=sha1%3Af9f22bab538db3c075251ae693a524204efdc32b&hash=sha256%3A4128e1d9ea5a541ba620a8e94a43010694ca11fdefa9881702f934d2c2c0b970",
+	"maven:usr/share/jenkins/jenkins.war:winstone.jar":                  "hash=sha1%3A40c26ecf0491aae65f2fe5c4d08c9352a846f412&hash=sha256%3A93f4ebde7229dc7e31226baaaffaddebe28765670dd9185465fda3f05f273ac3",
+	"maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar":     "hash=sha1%3Aec1386735dc81ac7f42a4958e1e980f8f89dee11&hash=sha256%3A1546082b7c4200550d58df675ea4624ebae6d55cb5b77d7ce6de4b1d12aa8682",
+	"maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/remoting-4.10.jar": "hash=sha1%3Ac9016b2501e2a3849e8bd14aa7866b3a5385b330&hash=sha256%3A7992c946401966a1b0601b0b803809a75af21761c15bdce1b7ba32d4d4527666",
+	"maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jansi-1.11.jar":    "hash=sha1%3A655c643309c2f45a56a747fda70e3fadf57e9f11&hash=sha256%3A9e82163ed2fc6257fe627132ce554726e796edee4e5efe9d9e523aee217d60b8",
 }
 
 var jenkins = test.ScannerTestcase{
@@ -454,7 +462,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.316",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war",
-			RepositoryHint: "sha1:f9f22bab538db3c075251ae693a524204efdc32b",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -462,7 +470,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "5.21",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
-			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:winstone.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -470,7 +478,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "9.4.43.v20210629",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
-			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:winstone.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -478,7 +486,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "3.1.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
-			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:winstone.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -486,7 +494,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "9.4.43.v20210629",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
-			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:winstone.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -494,7 +502,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "9.4.43.v20210629",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
-			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:winstone.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -502,7 +510,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "9.4.43.v20210629",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
-			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:winstone.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -510,7 +518,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "9.4.43.v20210629",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
-			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:winstone.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -518,7 +526,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "9.4.43.v20210629",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
-			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:winstone.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -526,7 +534,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "9.4.43.v20210629",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
-			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:winstone.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -534,7 +542,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "9.4.43.v20210629",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
-			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:winstone.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -542,7 +550,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "9.4.43.v20210629",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
-			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:winstone.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -550,7 +558,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "9.4.43.v20210629",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
-			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:winstone.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -558,7 +566,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "9.4.43.v20210629",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
-			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:winstone.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -566,7 +574,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "9.4.43.v20210629",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
-			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:winstone.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -574,7 +582,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "9.4.43.v20210629",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
-			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:winstone.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -582,7 +590,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.1.3.v20160715",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
-			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:winstone.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -590,7 +598,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "9.4.43.v20210629",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
-			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:winstone.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -598,7 +606,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "9.4.43.v20210629",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
-			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:winstone.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -606,7 +614,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "9.4.43.v20210629",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
-			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:winstone.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -614,7 +622,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "9.4.43.v20210629",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
-			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:winstone.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -622,7 +630,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "9.4.43.v20210629",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
-			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:winstone.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -630,7 +638,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "9.4.43.v20210629",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
-			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:winstone.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -638,7 +646,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "9.4.43.v20210629",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
-			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:winstone.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -646,7 +654,15 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:winstone.jar",
-			RepositoryHint: "sha1:40c26ecf0491aae65f2fe5c4d08c9352a846f412",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:winstone.jar"],
+			Filepath:       "usr/share/jenkins/jenkins.war",
+		},
+		{
+			Name:           "org.jenkins-ci.plugins.workflow:workflow-step-api",
+			Version:        "2.23",
+			Kind:           types.BinaryPackage,
+			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/workflow-step-api.hpi",
+			RepositoryHint: "hash=sha1%3Ab3eb4f90b8fcccba673cecb3b34cb9a19fa39772&hash=sha256%3Ae0e39cbe0c3ebfb2d3f80edfef470d3c7d033c7deafac8c6e553e7d391ea1287",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -654,15 +670,15 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.23",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/workflow-step-api.hpi:WEB-INF/lib/workflow-step-api.jar",
-			RepositoryHint: "sha1:b3eb4f90b8fcccba673cecb3b34cb9a19fa39772",
+			RepositoryHint: "hash=sha1%3A0d44c5b51eabfaa2669f426abb53d9ec2c8cd624&hash=sha256%3Af14cb7921abff61272bdba2ccf3e4ce087f264596b12a3fd117210f3c6b8a82b",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
-			Name:           "org.jenkins-ci.plugins.workflow:workflow-step-api",
-			Version:        "2.23",
+			Name:           "org.jenkins-ci.plugins:junit",
+			Version:        "1.29",
 			Kind:           types.BinaryPackage,
-			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/workflow-step-api.hpi:WEB-INF/lib/workflow-step-api.jar",
-			RepositoryHint: "sha1:b3eb4f90b8fcccba673cecb3b34cb9a19fa39772",
+			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/junit.hpi",
+			RepositoryHint: "hash=sha1%3Acb91bfc6d9833495462b82a95d937599ef11c1a9&hash=sha256%3Ace387ebc85e659660e3fb9fa405cbb8764d1e307a0161ae522caf13d60109cf4",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -670,23 +686,15 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.29",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/junit.hpi:WEB-INF/lib/junit.jar",
-			RepositoryHint: "sha1:cb91bfc6d9833495462b82a95d937599ef11c1a9",
-			Filepath:       "usr/share/jenkins/jenkins.war",
-		},
-		{
-			Name:           "org.jenkins-ci.plugins:junit",
-			Version:        "1.29",
-			Kind:           types.BinaryPackage,
-			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/junit.hpi:WEB-INF/lib/junit.jar",
-			RepositoryHint: "sha1:cb91bfc6d9833495462b82a95d937599ef11c1a9",
+			RepositoryHint: "hash=sha1%3A26efa6845141650c1426dd4793b8eada00c1553e&hash=sha256%3A907d28b4e2d94a6e477c7cb7c95e3b2a8263e83d83b09203bf4cd5fc82d8a7c8",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
 			Name:           "org.jenkins-ci.plugins:bouncycastle-api",
 			Version:        "2.20",
 			Kind:           types.BinaryPackage,
-			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/bouncycastle-api.hpi:WEB-INF/lib/bouncycastle-api.jar",
-			RepositoryHint: "sha1:1b22775d6f258b5be61d855d5cedb9cf935e2d1b",
+			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/bouncycastle-api.hpi",
+			RepositoryHint: "hash=sha1%3A1b22775d6f258b5be61d855d5cedb9cf935e2d1b&hash=sha256%3A8d01986d83dd2cd6acdb19c13f583c95aece51adfbd5f262938b1808a40ae0e0",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -694,7 +702,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.68",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/bouncycastle-api.hpi:WEB-INF/lib/bcprov-jdk15on-1.68.jar",
-			RepositoryHint: "sha1:1b22775d6f258b5be61d855d5cedb9cf935e2d1b",
+			RepositoryHint: "hash=sha1%3A46a080368d38b428d237a59458f9bc915222894d&hash=sha256%3Af732a46c8de7e2232f2007c682a21d1f4cc8a8a0149b6b7bd6aa1afdc65a0f8d",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -702,7 +710,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.68",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/bouncycastle-api.hpi:WEB-INF/lib/bcpkix-jdk15on-1.68.jar",
-			RepositoryHint: "sha1:1b22775d6f258b5be61d855d5cedb9cf935e2d1b",
+			RepositoryHint: "hash=sha1%3A81da950604ff0b2652348cbd2b48fde46ced9867&hash=sha256%3Afb8d0f8f673ad6e16c604732093d7aa31b26ff4e0bd9cae1d7f99984c06b8a0f",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -710,7 +718,15 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.20",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/bouncycastle-api.hpi:WEB-INF/lib/bouncycastle-api.jar",
-			RepositoryHint: "sha1:1b22775d6f258b5be61d855d5cedb9cf935e2d1b",
+			RepositoryHint: "hash=sha1%3A43879586f2bf20dee7de550c0650aaec25ea40c7&hash=sha256%3Ad502bc8b275cf00c5769bcf68ad1f3aac47121e28f37cfe47e956ff0861f10f8",
+			Filepath:       "usr/share/jenkins/jenkins.war",
+		},
+		{
+			Name:           "org.jenkins-ci.plugins:matrix-project",
+			Version:        "1.18",
+			Kind:           types.BinaryPackage,
+			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/matrix-project.hpi",
+			RepositoryHint: "hash=sha1%3Acffd146e62b20db3aaad544acca543bda9381903&hash=sha256%3Aa69da6850734c71092144aa28eaf6cb7e70afe7e6e0058a5f2ce9056775846dd",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -718,15 +734,15 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.18",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/matrix-project.hpi:WEB-INF/lib/matrix-project.jar",
-			RepositoryHint: "sha1:cffd146e62b20db3aaad544acca543bda9381903",
+			RepositoryHint: "hash=sha1%3A0f7b625146c72cc3cd5f4d495ab3328d53fe3594&hash=sha256%3A98921658dadffd7fc6278ea0335b760ce151766d37e1826d1db94eb28dcf9f38",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
-			Name:           "org.jenkins-ci.plugins:matrix-project",
-			Version:        "1.18",
+			Name:           "org.jenkins-ci.plugins:matrix-auth",
+			Version:        "2.6.6",
 			Kind:           types.BinaryPackage,
-			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/matrix-project.hpi:WEB-INF/lib/matrix-project.jar",
-			RepositoryHint: "sha1:cffd146e62b20db3aaad544acca543bda9381903",
+			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/matrix-auth.hpi",
+			RepositoryHint: "hash=sha1%3A060cd7df64ae6ece1805e4626efc97709aed61b9&hash=sha256%3A0e2a9c6258fff7e4965cb5b30e8d1ae66f41916192f4adb4f79aa0b12ad07be5",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -734,23 +750,15 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.6.6",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/matrix-auth.hpi:WEB-INF/lib/matrix-auth.jar",
-			RepositoryHint: "sha1:060cd7df64ae6ece1805e4626efc97709aed61b9",
-			Filepath:       "usr/share/jenkins/jenkins.war",
-		},
-		{
-			Name:           "org.jenkins-ci.plugins:matrix-auth",
-			Version:        "2.6.6",
-			Kind:           types.BinaryPackage,
-			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/matrix-auth.hpi:WEB-INF/lib/matrix-auth.jar",
-			RepositoryHint: "sha1:060cd7df64ae6ece1805e4626efc97709aed61b9",
+			RepositoryHint: "hash=sha1%3A58aeae141b75fc6d71943bce0f5a4b1742f0d136&hash=sha256%3A3eeda6b547a33ae7e85a828f5b6708b4133906669f61889aa2a9d0a7320f3978",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
 			Name:           "org.jenkins-ci.plugins:script-security",
 			Version:        "1.75",
 			Kind:           types.BinaryPackage,
-			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/script-security.hpi:WEB-INF/lib/script-security.jar",
-			RepositoryHint: "sha1:346cb1183d04bf076ffcb05ff0663eeda8075182",
+			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/script-security.hpi",
+			RepositoryHint: "hash=sha1%3A346cb1183d04bf076ffcb05ff0663eeda8075182&hash=sha256%3Ae3a9edc52ba8426695bba4a19c31ae41c3a4e96c20a47fcf5fe80e778519c4b8",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -758,7 +766,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.27",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/script-security.hpi:WEB-INF/lib/groovy-sandbox-1.27.jar",
-			RepositoryHint: "sha1:346cb1183d04bf076ffcb05ff0663eeda8075182",
+			RepositoryHint: "hash=sha1%3A1d1a200c062569d93af2e2174855866b04bff691&hash=sha256%3A592c99032542b99ceabe09748e6e2b5a6d5f8a2d990c7dbbad002806c6cc2058",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -766,7 +774,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "3.3.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/script-security.hpi:WEB-INF/lib/checker-qual-3.3.0.jar",
-			RepositoryHint: "sha1:346cb1183d04bf076ffcb05ff0663eeda8075182",
+			RepositoryHint: "hash=sha1%3Aabe016e33994fba7b5d8507da91b1a8aad48872f&hash=sha256%3A8264ec4bbecbfb921df444d666c4550383e2670dc0b54eb878d68252ba543a8a",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -774,7 +782,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.8.2",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/script-security.hpi:WEB-INF/lib/caffeine-2.8.2.jar",
-			RepositoryHint: "sha1:346cb1183d04bf076ffcb05ff0663eeda8075182",
+			RepositoryHint: "hash=sha1%3Add3fb55488b64495f81a5d2dba9c13d75f51bad7&hash=sha256%3A53ad30a9cc8a38965baa49864280cfe73c88371caf6680c519de42aaa36f77ae",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -782,7 +790,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.3.4",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/script-security.hpi:WEB-INF/lib/error_prone_annotations-2.3.4.jar",
-			RepositoryHint: "sha1:346cb1183d04bf076ffcb05ff0663eeda8075182",
+			RepositoryHint: "hash=sha1%3Adac170e4594de319655ffb62f41cbd6dbb5e601e&hash=sha256%3Abaf7d6ea97ce606c53e11b6854ba5f2ce7ef5c24dddf0afa18d1260bd25b002c",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -790,7 +798,15 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.75",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/script-security.hpi:WEB-INF/lib/script-security.jar",
-			RepositoryHint: "sha1:346cb1183d04bf076ffcb05ff0663eeda8075182",
+			RepositoryHint: "hash=sha1%3A07eff35d71705ff96b39a42a1cc16b9575f4718c&hash=sha256%3A711a4e95fce0092045d2856b607ce37a8416bfb094e29b586c41066805e67aa8",
+			Filepath:       "usr/share/jenkins/jenkins.war",
+		},
+		{
+			Name:           "org.jenkins-ci.plugins:mailer",
+			Version:        "1.32.1",
+			Kind:           types.BinaryPackage,
+			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/mailer.hpi",
+			RepositoryHint: "hash=sha1%3A07026888e4b109a66685364111229ab7b99ee4e8&hash=sha256%3A0b045ea87efc289fccad55ac51e4c903945d9683b71b48667e19440e42a2d368",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -798,15 +814,15 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.32.1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/mailer.hpi:WEB-INF/lib/mailer.jar",
-			RepositoryHint: "sha1:07026888e4b109a66685364111229ab7b99ee4e8",
+			RepositoryHint: "hash=sha1%3Acfa80f6daadc60a0c6effb2a8d9978a844503784&hash=sha256%3Ae471921b0a46ecc867fa4afebfc823c87b504e5917d72708838d2740e7557c08",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
-			Name:           "org.jenkins-ci.plugins:mailer",
-			Version:        "1.32.1",
+			Name:           "org.jenkins-ci.plugins:display-url-api",
+			Version:        "2.3.1",
 			Kind:           types.BinaryPackage,
-			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/mailer.hpi:WEB-INF/lib/mailer.jar",
-			RepositoryHint: "sha1:07026888e4b109a66685364111229ab7b99ee4e8",
+			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/display-url-api.hpi",
+			RepositoryHint: "hash=sha1%3Adc5918a37ef530866f6aeb84fe5b6afb177c1ac5&hash=sha256%3A1488cea95b8b0d1edd830e7aa49458bee6ccb0819171996aff291b13e9b99a3c",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -814,15 +830,15 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.3.1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/display-url-api.hpi:WEB-INF/lib/display-url-api.jar",
-			RepositoryHint: "sha1:dc5918a37ef530866f6aeb84fe5b6afb177c1ac5",
+			RepositoryHint: "hash=sha1%3A535972c62825ff07cdb3e28e4879fdc74384656f&hash=sha256%3Ab1529e8c77d074980a3bd838a7045edfa26340d3e7c34692ea17f8e6d980cce3",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
-			Name:           "org.jenkins-ci.plugins:display-url-api",
-			Version:        "2.3.1",
+			Name:           "org.jenkins-ci.plugins:antisamy-markup-formatter",
+			Version:        "1.1",
 			Kind:           types.BinaryPackage,
-			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/display-url-api.hpi:WEB-INF/lib/display-url-api.jar",
-			RepositoryHint: "sha1:dc5918a37ef530866f6aeb84fe5b6afb177c1ac5",
+			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/antisamy-markup-formatter.hpi",
+			RepositoryHint: "hash=sha1%3A61c4d370eec0566835f452cdcfdbb185b002c67e&hash=sha256%3A0eb8c567a08e3a18b775e08e982b45f2b6b64685f117eabe6f2a179af557144d",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -830,15 +846,15 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/antisamy-markup-formatter.hpi:WEB-INF/lib/antisamy-markup-formatter.jar",
-			RepositoryHint: "sha1:61c4d370eec0566835f452cdcfdbb185b002c67e",
+			RepositoryHint: "hash=sha1%3A25c51b6ef7e63a02ffc069ff4843d36c32949fd5&hash=sha256%3A4a97876e63fc06a35b8212af338ccaf7788200503bf66ca55cbabbf80fef62e7",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
-			Name:           "org.jenkins-ci.plugins:antisamy-markup-formatter",
-			Version:        "1.1",
+			Name:           "org.jenkins-ci.plugins:scm-api",
+			Version:        "2.6.5",
 			Kind:           types.BinaryPackage,
-			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/antisamy-markup-formatter.hpi:WEB-INF/lib/antisamy-markup-formatter.jar",
-			RepositoryHint: "sha1:61c4d370eec0566835f452cdcfdbb185b002c67e",
+			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/scm-api.hpi",
+			RepositoryHint: "hash=sha1%3A9ef1275c52b988af9da4fc491cb0894fa241bd14&hash=sha256%3A20adc461e6459098ffc538dace079d76b948f7ee6f86b247703720e803e2c840",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -846,23 +862,15 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.6.5",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/scm-api.hpi:WEB-INF/lib/scm-api.jar",
-			RepositoryHint: "sha1:9ef1275c52b988af9da4fc491cb0894fa241bd14",
-			Filepath:       "usr/share/jenkins/jenkins.war",
-		},
-		{
-			Name:           "org.jenkins-ci.plugins:scm-api",
-			Version:        "2.6.5",
-			Kind:           types.BinaryPackage,
-			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/scm-api.hpi:WEB-INF/lib/scm-api.jar",
-			RepositoryHint: "sha1:9ef1275c52b988af9da4fc491cb0894fa241bd14",
+			RepositoryHint: "hash=sha1%3A5f781f6165d94bf3fd3cc45e0134155825e2fe86&hash=sha256%3A9669c4691209ae059492630a6ffebc37f4790b981c5b1c3316dcdea0a049d3fd",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
 			Name:           "org.jenkins-ci.plugins:trilead-api",
 			Version:        "1.0.4",
 			Kind:           types.BinaryPackage,
-			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/trilead-api.hpi:WEB-INF/lib/trilead-api.jar",
-			RepositoryHint: "sha1:fa907c54fe14861b2170d4b463fd07df84a1551d",
+			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/trilead-api.hpi",
+			RepositoryHint: "hash=sha1%3Afa907c54fe14861b2170d4b463fd07df84a1551d&hash=sha256%3A2b78af329b54d4d5b31e0b7cf246e4ae8ae703177134ff6b8fcb9ee403ad36a2",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -870,7 +878,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "0.3.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/trilead-api.hpi:WEB-INF/lib/eddsa-0.3.0.jar",
-			RepositoryHint: "sha1:fa907c54fe14861b2170d4b463fd07df84a1551d",
+			RepositoryHint: "hash=sha1%3A1901c8d4d8bffb7d79027686cfb91e704217c3e1&hash=sha256%3A4dda1120db856640dbec04140ed23242215a075fe127bdefa0dcfa29fb31267d",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -878,7 +886,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.2",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/trilead-api.hpi:WEB-INF/lib/trilead-putty-extension-1.2.jar",
-			RepositoryHint: "sha1:fa907c54fe14861b2170d4b463fd07df84a1551d",
+			RepositoryHint: "hash=sha1%3A0f2f41517e1f73be8e319da27a69e0dc0c524bf6&hash=sha256%3Abda184d64b933a6f9c3588102e66f32f69d2e73575df486ff835c30695c432c6",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -886,7 +894,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.0.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "file:usr/share/jenkins/jenkins.war",
-			RepositoryHint: "sha1:fa907c54fe14861b2170d4b463fd07df84a1551d",
+			RepositoryHint: "hash=sha1%3Af37bba2b8b78fcc8111bb932318b621dcc6c5194&hash=sha256%3A5e1f9f07014cd9f4b8a517b18c2c9fff84a7e5a27116accc1f1cc22244e238c1",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -894,7 +902,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "build-217-jenkins-16",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/trilead-api.hpi:WEB-INF/lib/trilead-ssh2-build-217-jenkins-16.jar",
-			RepositoryHint: "sha1:fa907c54fe14861b2170d4b463fd07df84a1551d",
+			RepositoryHint: "hash=sha1%3A5c4ba36c75e9a0bc4f6c842028f6c71579fb1d4b&hash=sha256%3A52cccbf45bc83bcb353b9c93844ab8a40216bc8bd966bc0c724aa89d5ae129c6",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -902,15 +910,15 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.0.4",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/trilead-api.hpi:WEB-INF/lib/trilead-api.jar",
-			RepositoryHint: "sha1:fa907c54fe14861b2170d4b463fd07df84a1551d",
+			RepositoryHint: "hash=sha1%3A754348fe9f29a0020d355e981007bfd053754e69&hash=sha256%3A9083088d66466d0205923e05b87d7474d22ea97bf39bc1c07fa576cf8d0af8cc",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
 			Name:           "org.jenkins-ci.modules:sshd",
 			Version:        "3.0.3",
 			Kind:           types.BinaryPackage,
-			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/sshd.hpi:WEB-INF/lib/sshd.jar",
-			RepositoryHint: "sha1:e8be0e1230293cdb97252480eaba93d1b3663be3",
+			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/sshd.hpi",
+			RepositoryHint: "hash=sha1%3Ae8be0e1230293cdb97252480eaba93d1b3663be3&hash=sha256%3A9dd55d0f725e2d56b2c910da3a5da984b22a938a14d690221b61fdb365371c8f",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -918,7 +926,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "0.3.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/sshd.hpi:WEB-INF/lib/eddsa-0.3.0.jar",
-			RepositoryHint: "sha1:e8be0e1230293cdb97252480eaba93d1b3663be3",
+			RepositoryHint: "hash=sha1%3A1901c8d4d8bffb7d79027686cfb91e704217c3e1&hash=sha256%3A4dda1120db856640dbec04140ed23242215a075fe127bdefa0dcfa29fb31267d",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -926,7 +934,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.7.30",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/sshd.hpi:WEB-INF/lib/slf4j-api-1.7.30.jar",
-			RepositoryHint: "sha1:e8be0e1230293cdb97252480eaba93d1b3663be3",
+			RepositoryHint: "hash=sha1%3Ab5a4b6d16ab13e34a88fae84c35cd5d68cac922c&hash=sha256%3Acdba07964d1bb40a0761485c6b1e8c2f8fd9eb1d19c53928ac0d7f9510105c57",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -934,15 +942,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "3.0.3",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/sshd.hpi:WEB-INF/lib/sshd.jar",
-			RepositoryHint: "sha1:e8be0e1230293cdb97252480eaba93d1b3663be3",
-			Filepath:       "usr/share/jenkins/jenkins.war",
-		},
-		{
-			Name:           "io.github.stephenc.crypto:self-signed-cert-generator",
-			Version:        "1.0.0",
-			Kind:           types.BinaryPackage,
-			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/sshd.hpi:WEB-INF/lib/self-signed-cert-generator-1.0.0.jar",
-			RepositoryHint: "sha1:e8be0e1230293cdb97252480eaba93d1b3663be3",
+			RepositoryHint: "hash=sha1%3Ad83c57e06257218a6e17e6c58dfb050c17134e9a&hash=sha256%3Ac1036b86a2c583320f97872094ab6380918f77a988b18171ec1a8f315dc43ecd",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -950,7 +950,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.7.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/sshd.hpi:WEB-INF/lib/sshd-core-1.7.0.jar",
-			RepositoryHint: "sha1:e8be0e1230293cdb97252480eaba93d1b3663be3",
+			RepositoryHint: "hash=sha1%3A2e8b14f6d841b098e46bf407b6fdccab4c19fa41&hash=sha256%3A2b4793548bdf172705686c34615c5397b2258d07dd1492f4de936e09985aa3c7",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -958,7 +958,15 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.2",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/sshd.hpi:WEB-INF/lib/instance-identity-2.2.jar",
-			RepositoryHint: "sha1:e8be0e1230293cdb97252480eaba93d1b3663be3",
+			RepositoryHint: "hash=sha1%3A986e58370b11287dfa73a8fb2eac74e2dc4e2a23&hash=sha256%3Ac752b9d1cbfa600e7fd3387b779ed42ec96dcba6a6296c27a6ffdd1f8012f80b",
+			Filepath:       "usr/share/jenkins/jenkins.war",
+		},
+		{
+			Name:           "org.jenkins-ci.plugins:jdk-tool",
+			Version:        "1.0",
+			Kind:           types.BinaryPackage,
+			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/jdk-tool.hpi",
+			RepositoryHint: "hash=sha1%3Ae063550e164157d6ee90d78090860adc13961c9b&hash=sha256%3A0dc95b161301317101a2860ff85ce3b3766f710c4e7bf1d8549e05d771e35e77",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -966,15 +974,15 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/jdk-tool.hpi:WEB-INF/lib/jdk-tool.jar",
-			RepositoryHint: "sha1:e063550e164157d6ee90d78090860adc13961c9b",
+			RepositoryHint: "hash=sha1%3A1def30151b3250f86daa96829ff183c50d3d81f1&hash=sha256%3A1fcee68a5dd8c394b208d823183aebb5a6c0b4d1bcb10b80b5d2bea0e013473e",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
-			Name:           "org.jenkins-ci.plugins:jdk-tool",
-			Version:        "1.0",
+			Name:           "org.jenkins-ci.plugins:structs",
+			Version:        "1.23",
 			Kind:           types.BinaryPackage,
-			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/jdk-tool.hpi:WEB-INF/lib/jdk-tool.jar",
-			RepositoryHint: "sha1:e063550e164157d6ee90d78090860adc13961c9b",
+			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/structs.hpi",
+			RepositoryHint: "hash=sha1%3A37b98115acc372cbdc517217ad45c74bd965e570&hash=sha256%3A0d53d44b4ce7f887436921a81321f1738de7391a35912c1096fe412df4d6338a",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -982,15 +990,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.23",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/structs.hpi:WEB-INF/lib/structs.jar",
-			RepositoryHint: "sha1:37b98115acc372cbdc517217ad45c74bd965e570",
-			Filepath:       "usr/share/jenkins/jenkins.war",
-		},
-		{
-			Name:           "org.jenkins-ci.plugins:structs",
-			Version:        "1.23",
-			Kind:           types.BinaryPackage,
-			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/structs.hpi:WEB-INF/lib/structs.jar",
-			RepositoryHint: "sha1:37b98115acc372cbdc517217ad45c74bd965e570",
+			RepositoryHint: "hash=sha1%3A722ca3be263369bed2f939c34d0171f45b07d98f&hash=sha256%3A262ce574499cd7ec9388b616af94603dd28e8d338c5b1f0613dd1b4def10a401",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -998,15 +998,15 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.23",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/structs.hpi:WEB-INF/lib/symbol-annotation-1.23.jar",
-			RepositoryHint: "sha1:37b98115acc372cbdc517217ad45c74bd965e570",
+			RepositoryHint: "hash=sha1%3A725854f35540796aefcd6bc32a5d4c3b7c85fa9a&hash=sha256%3Acf31e7fe6e932aa0497bf9e8d2911df353e54fe9c0b41484172f0af0a622063b",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
 			Name:           "io.jenkins.plugins:jaxb",
 			Version:        "2.3.0",
 			Kind:           types.BinaryPackage,
-			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/jaxb.hpi:WEB-INF/lib/jaxb.jar",
-			RepositoryHint: "sha1:a3c9925e9eafdcadebaae750c523b7690cc0c890",
+			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/jaxb.hpi",
+			RepositoryHint: "hash=sha1%3Aa3c9925e9eafdcadebaae750c523b7690cc0c890&hash=sha256%3A8b77ecc43895aeee1196478bca981fefd020ceea795695fb1b0531390c3625d8",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1014,7 +1014,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "3.0.5",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/jaxb.hpi:WEB-INF/lib/jaxb-core-2.3.0.jar",
-			RepositoryHint: "sha1:a3c9925e9eafdcadebaae750c523b7690cc0c890",
+			RepositoryHint: "hash=sha1%3Ad044c784e41d026778693fb44a8026c1fd9a7506&hash=sha256%3A33061af8d2a07379d452f8f0fddcbbf518428dfd3b83d9e2d479c1948020795b",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1022,7 +1022,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.3.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/jaxb.hpi:WEB-INF/lib/jaxb-core-2.3.0.jar",
-			RepositoryHint: "sha1:a3c9925e9eafdcadebaae750c523b7690cc0c890",
+			RepositoryHint: "hash=sha1%3Ad044c784e41d026778693fb44a8026c1fd9a7506&hash=sha256%3A33061af8d2a07379d452f8f0fddcbbf518428dfd3b83d9e2d479c1948020795b",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1030,7 +1030,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.3.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/jaxb.hpi:WEB-INF/lib/jaxb-core-2.3.0.jar",
-			RepositoryHint: "sha1:a3c9925e9eafdcadebaae750c523b7690cc0c890",
+			RepositoryHint: "hash=sha1%3Ad044c784e41d026778693fb44a8026c1fd9a7506&hash=sha256%3A33061af8d2a07379d452f8f0fddcbbf518428dfd3b83d9e2d479c1948020795b",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1038,7 +1038,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.3.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/jaxb.hpi:WEB-INF/lib/jaxb-core-2.3.0.jar",
-			RepositoryHint: "sha1:a3c9925e9eafdcadebaae750c523b7690cc0c890",
+			RepositoryHint: "hash=sha1%3Ad044c784e41d026778693fb44a8026c1fd9a7506&hash=sha256%3A33061af8d2a07379d452f8f0fddcbbf518428dfd3b83d9e2d479c1948020795b",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1046,7 +1046,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.3.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/jaxb.hpi:WEB-INF/lib/jaxb.jar",
-			RepositoryHint: "sha1:a3c9925e9eafdcadebaae750c523b7690cc0c890",
+			RepositoryHint: "hash=sha1%3A47128940de9beec73496b3a366b6630df25e057e&hash=sha256%3A5e024c682c99a5b6b5f5083cca47e1f0b247620669087e3db33c35fbbe7f6f68",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1054,7 +1054,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.3.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/jaxb.hpi:WEB-INF/lib/jaxb-impl-2.3.0.jar",
-			RepositoryHint: "sha1:a3c9925e9eafdcadebaae750c523b7690cc0c890",
+			RepositoryHint: "hash=sha1%3A3a3c6a62719d967175b76b63925f1fb495f11437&hash=sha256%3Aedd691fc6ad7c7f3167e1a6833372367bedf6f4f2a4b8230df444a59bb3718b1",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1062,7 +1062,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.3.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/jaxb.hpi:WEB-INF/lib/jaxb-impl-2.3.0.jar",
-			RepositoryHint: "sha1:a3c9925e9eafdcadebaae750c523b7690cc0c890",
+			RepositoryHint: "hash=sha1%3A3a3c6a62719d967175b76b63925f1fb495f11437&hash=sha256%3Aedd691fc6ad7c7f3167e1a6833372367bedf6f4f2a4b8230df444a59bb3718b1",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1070,7 +1070,15 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.3.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/jaxb.hpi:WEB-INF/lib/jaxb-api-2.3.0.jar",
-			RepositoryHint: "sha1:a3c9925e9eafdcadebaae750c523b7690cc0c890",
+			RepositoryHint: "hash=sha1%3A99f802e0cb3e953ba3d6e698795c4aeb98d37c48&hash=sha256%3A883007989d373d19f352ba9792b25dec21dc7d0e205a710a93a3815101bb3d03",
+			Filepath:       "usr/share/jenkins/jenkins.war",
+		},
+		{
+			Name:           "org.jenkins-ci.plugins.workflow:workflow-api",
+			Version:        "2.42",
+			Kind:           types.BinaryPackage,
+			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/workflow-api.hpi",
+			RepositoryHint: "hash=sha1%3A9f1b255ba430a7d4210a23d0ae510f7c48600ffd&hash=sha256%3A31dbd413de8ba2ae585f37fd6a31a5a3e5067dd41b1ef8f74eab9e8a297f2c1c",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1078,23 +1086,15 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.42",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/workflow-api.hpi:WEB-INF/lib/workflow-api.jar",
-			RepositoryHint: "sha1:9f1b255ba430a7d4210a23d0ae510f7c48600ffd",
-			Filepath:       "usr/share/jenkins/jenkins.war",
-		},
-		{
-			Name:           "org.jenkins-ci.plugins.workflow:workflow-api",
-			Version:        "2.42",
-			Kind:           types.BinaryPackage,
-			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/workflow-api.hpi:WEB-INF/lib/workflow-api.jar",
-			RepositoryHint: "sha1:9f1b255ba430a7d4210a23d0ae510f7c48600ffd",
+			RepositoryHint: "hash=sha1%3A4416c4deef9636127fb4c4f3f7b5810a44809bf5&hash=sha256%3A69a6453e33ab3bb497c12452f7515eac63f643f29f1d3fb0f64bf8a6f4b52212",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
 			Name:           "org.jenkins-ci.plugins:windows-slaves",
 			Version:        "1.0",
 			Kind:           types.BinaryPackage,
-			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/windows-slaves.hpi:WEB-INF/lib/windows-slaves.jar",
-			RepositoryHint: "sha1:15d036e22a49ffa7b0cdb6c9777ce40d584e40ec",
+			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/windows-slaves.hpi",
+			RepositoryHint: "hash=sha1%3A15d036e22a49ffa7b0cdb6c9777ce40d584e40ec&hash=sha256%3A139b628df407177ea8e939b438bfbca5922e2b7e6a0ea2809c5ca895c671bf32",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1102,7 +1102,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/windows-slaves.hpi:WEB-INF/lib/tiger-types-1.1.jar",
-			RepositoryHint: "sha1:15d036e22a49ffa7b0cdb6c9777ce40d584e40ec",
+			RepositoryHint: "hash=sha1%3A579059e5452496fbfee814339f40abb44f219da4&hash=sha256%3A1a8f7a974923de515eb6d7934a430969e68348d47a162f073ce5a4c434dc0f58",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1110,7 +1110,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.3.17-kohsuke-1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/windows-slaves.hpi:WEB-INF/lib/jcifs-1.3.17-kohsuke-1.jar",
-			RepositoryHint: "sha1:15d036e22a49ffa7b0cdb6c9777ce40d584e40ec",
+			RepositoryHint: "hash=sha1%3A6c9114dc4075277d829ea09e15d6ffab52f2d0c0&hash=sha256%3A2c37dc3ebf9308cd86706ee7f5e20dd5458742c678222e948f1aa93ce52c179f",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1118,7 +1118,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/windows-slaves.hpi:WEB-INF/lib/jinterop-proxy-1.1.jar",
-			RepositoryHint: "sha1:15d036e22a49ffa7b0cdb6c9777ce40d584e40ec",
+			RepositoryHint: "hash=sha1%3Aaf1e27f84462979489e07abf6c913e59ddeee482&hash=sha256%3A84b0caf4f0f74808f3e44a0bbe27bcddfe2aaeb00cbfebabc7953316f50f0725",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1126,7 +1126,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.0.6-kohsuke-1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/windows-slaves.hpi:WEB-INF/lib/j-interopdeps-2.0.6-kohsuke-1.jar",
-			RepositoryHint: "sha1:15d036e22a49ffa7b0cdb6c9777ce40d584e40ec",
+			RepositoryHint: "hash=sha1%3A778400517a3419ce8c361498c194036534851736&hash=sha256%3Ab091c448eb7e14e44d62c7869bace267210c20d387c49f61f68a1d068abf3ea9",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1134,7 +1134,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.0.6-kohsuke-1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/windows-slaves.hpi:WEB-INF/lib/j-interop-2.0.6-kohsuke-1.jar",
-			RepositoryHint: "sha1:15d036e22a49ffa7b0cdb6c9777ce40d584e40ec",
+			RepositoryHint: "hash=sha1%3Ab2e243227608c1424ab0084564dc71659d273007&hash=sha256%3A994401c68a150bffe65718da044e57d1ba98e6266b7f0218b2968a14774fa477",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1142,7 +1142,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/windows-slaves.hpi:WEB-INF/lib/windows-slaves.jar",
-			RepositoryHint: "sha1:15d036e22a49ffa7b0cdb6c9777ce40d584e40ec",
+			RepositoryHint: "hash=sha1%3A630881b0bed43efb2f060f09fc7ec488544f5d5a&hash=sha256%3Ac79095d22b817982439cd2784e2055f5eb63e1310775601c22a7de4cb6fbe4f2",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1150,7 +1150,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.4",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/windows-slaves.hpi:WEB-INF/lib/windows-remote-command-1.4.jar",
-			RepositoryHint: "sha1:15d036e22a49ffa7b0cdb6c9777ce40d584e40ec",
+			RepositoryHint: "hash=sha1%3A920f7a32f8c826cebf0fa6f3ab563fc0f9ac8e32&hash=sha256%3A20ca3c0fcc406fb0be269dafa54b6daf12301861b676dd9f063ce642ec8562f7",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1158,7 +1158,15 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/windows-slaves.hpi:WEB-INF/lib/jinterop-wmi-1.1.jar",
-			RepositoryHint: "sha1:15d036e22a49ffa7b0cdb6c9777ce40d584e40ec",
+			RepositoryHint: "hash=sha1%3A893d41dc22322dcff83fb26e5664f8cd9a6be337&hash=sha256%3A9fa32975e4006bd00a193238d6f5e062c1068995177635af236f376399e44dc7",
+			Filepath:       "usr/share/jenkins/jenkins.war",
+		},
+		{
+			Name:           "org.jenkins-ci.plugins:command-launcher",
+			Version:        "1.2",
+			Kind:           types.BinaryPackage,
+			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/command-launcher.hpi",
+			RepositoryHint: "hash=sha1%3A4dd02e91f003be14b949b314636858b22741a2b8&hash=sha256%3Ac4f964c6deb599816f6740ef674cb6dd2644d5f1b4e7b886a948f778ec5c189e",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1166,15 +1174,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.2",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/command-launcher.hpi:WEB-INF/lib/command-launcher.jar",
-			RepositoryHint: "sha1:4dd02e91f003be14b949b314636858b22741a2b8",
-			Filepath:       "usr/share/jenkins/jenkins.war",
-		},
-		{
-			Name:           "org.jenkins-ci.plugins:command-launcher",
-			Version:        "1.2",
-			Kind:           types.BinaryPackage,
-			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/command-launcher.hpi:WEB-INF/lib/command-launcher.jar",
-			RepositoryHint: "sha1:4dd02e91f003be14b949b314636858b22741a2b8",
+			RepositoryHint: "hash=sha1%3A3af2e141774cb3a8bce6f74cf2c7addc130723ba&hash=sha256%3Adda2b14662d8765c09395ef7d7c5836eb7ab77651224c4b8a33354cb5c590918",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1182,7 +1182,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.10.11",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "file:usr/share/jenkins/jenkins.war",
-			RepositoryHint: "sha1:b875cd48a0bc955ae9c5c477ad991e1f26fb24d2",
+			RepositoryHint: "hash=sha1%3Ab875cd48a0bc955ae9c5c477ad991e1f26fb24d2&hash=sha256%3A88c0b89bbbaae01e0d9fcae93be792f5abbe3409106f8eee858fdf365dbc0754",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1190,7 +1190,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.4",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/commons-fileupload-1.4.jar",
-			RepositoryHint: "sha1:f95188e3d372e20e7328706c37ef366e5d7859b0",
+			RepositoryHint: "hash=sha1%3Af95188e3d372e20e7328706c37ef366e5d7859b0&hash=sha256%3Aa4ec02336f49253ea50405698b79232b8c5cbf02cb60df3a674d77a749a1def7",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1198,7 +1198,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "20110809",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/txw2-20110809.jar",
-			RepositoryHint: "sha1:46afa3f3c468680875adb8f2a26086a126c89902",
+			RepositoryHint: "hash=sha1%3A46afa3f3c468680875adb8f2a26086a126c89902&hash=sha256%3A3c535fd9d38ce20b8c9031086710f0e6f3175e1a638fa088b3de43e7193211d7",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1206,7 +1206,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.33",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/args4j-2.33.jar",
-			RepositoryHint: "sha1:bd87a75374a6d6523de82fef51fc3cfe9baf9fc9",
+			RepositoryHint: "hash=sha1%3Abd87a75374a6d6523de82fef51fc3cfe9baf9fc9&hash=sha256%3A91ddeaba0b24adce72291c618c00bbdce1c884755f6c4dba9c5c46e871c69ed6",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1214,7 +1214,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "5.3.9",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/spring-expression-5.3.9.jar",
-			RepositoryHint: "sha1:f5ca763cfb9d62d196efd5d25e8daca7d555ed75",
+			RepositoryHint: "hash=sha1%3Af5ca763cfb9d62d196efd5d25e8daca7d555ed75&hash=sha256%3A4dcd27638170fe0649c6e394c2668448af2f0473d5550407c0e82b73a497cb2a",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1222,7 +1222,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.7.32",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/log4j-over-slf4j-1.7.32.jar",
-			RepositoryHint: "sha1:152d3b5e2470bb8e898bd82886fc783361e2c32b",
+			RepositoryHint: "hash=sha1%3A152d3b5e2470bb8e898bd82886fc783361e2c32b&hash=sha256%3Acef183e051664d53cc8f046fb616ed39eab9e61631e13299c939c995c11e57e3",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1230,7 +1230,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.0.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jnr-a64asm-1.0.0.jar",
-			RepositoryHint: "sha1:0a1cb8dbe71b5a6a0288043c3ba3ca64545be165",
+			RepositoryHint: "hash=sha1%3A0a1cb8dbe71b5a6a0288043c3ba3ca64545be165&hash=sha256%3A53ae5ea7fa5c284e8279aa348e7b9de4548b0cae10bfd058fa217c791875e4cf",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1238,7 +1238,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/upstart-slave-installer-1.1.jar",
-			RepositoryHint: "sha1:a2ce1f49745d63c8520d50a0c6430afd377ece48",
+			RepositoryHint: "hash=sha1%3Aa2ce1f49745d63c8520d50a0c6430afd377ece48&hash=sha256%3Af410d30cc72b1eef36336693647143aca63ebd32db50dac3a41fdffcfc564692",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1246,7 +1246,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.4.12",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/groovy-all-2.4.12.jar",
-			RepositoryHint: "sha1:760afc568cbd94c09d78f801ce51aed1326710af",
+			RepositoryHint: "hash=sha1%3A760afc568cbd94c09d78f801ce51aed1326710af&hash=sha256%3A6a56af4bd48903d56bec62821876cadefafd007360cc6bd0d8f7aa8d72b38be4",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1254,7 +1254,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1593.v0e838714faae",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/stapler-1593.v0e838714faae.jar",
-			RepositoryHint: "sha1:fc5431d95cd9602a9ef20dd8d0da9e6903b8b98d",
+			RepositoryHint: "hash=sha1%3Afc5431d95cd9602a9ef20dd8d0da9e6903b8b98d&hash=sha256%3A7ca03683bd89d2a42eaee654284236afb9ac6e8f3754a242d7c00e028df5e4ff",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1262,7 +1262,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.14.6",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jline-2.14.6.jar",
-			RepositoryHint: "sha1:c3aeac59c022bdc497c8c48ed86fa50450e4896a",
+			RepositoryHint: "hash=sha1%3Ac3aeac59c022bdc497c8c48ed86fa50450e4896a&hash=sha256%3A97d1acaac82409be42e622d7a54d3ae9d08517e8aefdea3d2ba9791150c2f02d",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1270,7 +1270,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.1-jenkins-20120928",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/commons-jelly-1.1-jenkins-20120928.jar",
-			RepositoryHint: "sha1:2720a0d54b7f32479b08970d7738041362e1f410",
+			RepositoryHint: "hash=sha1%3A2720a0d54b7f32479b08970d7738041362e1f410&hash=sha256%3A73dc26fd3fb5b45006266cc2aa1d8cfa784d0e4406dc635881cf2670e502e97e",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1278,7 +1278,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.15",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/commons-codec-1.15.jar",
-			RepositoryHint: "sha1:49d94806b6e3dc933dacbd8acb0fdbab8ebd1e5d",
+			RepositoryHint: "hash=sha1%3A49d94806b6e3dc933dacbd8acb0fdbab8ebd1e5d&hash=sha256%3Ab3e9f6d63a790109bf0d056611fbed1cf69055826defeb9894a71369d246ed63",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1286,7 +1286,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.0.1-hudson-20071021",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/commons-jelly-tags-define-1.0.1-hudson-20071021.jar",
-			RepositoryHint: "sha1:8b952d0e504ee505d234853119e5648441894234",
+			RepositoryHint: "hash=sha1%3A8b952d0e504ee505d234853119e5648441894234&hash=sha256%3A943b68fe8ff055234b5799579e6dcc70ffa8e94a3f4c8f2fd10f77ced98b2c0d",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1294,7 +1294,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.2",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/windows-package-checker-1.2.jar",
-			RepositoryHint: "sha1:86b5d2f9023633808d65dbcfdfd50dc5ad3ca31f",
+			RepositoryHint: "hash=sha1%3A86b5d2f9023633808d65dbcfdfd50dc5ad3ca31f&hash=sha256%3A602f868ff050409f9cd5e9ced3a53c44f8ac7faca105b66d40a47dcc76f5a68f",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1302,7 +1302,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.0.2",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jnr-x86asm-1.0.2.jar",
-			RepositoryHint: "sha1:006936bbd6c5b235665d87bd450f5e13b52d4b48",
+			RepositoryHint: "hash=sha1%3A006936bbd6c5b235665d87bd450f5e13b52d4b48&hash=sha256%3A39f3675b910e6e9b93825f8284bec9f4ad3044cd20a6f7c8ff9e2f8695ebf21e",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1310,7 +1310,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.0.8-kohsuke-1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/j-interop-2.0.8-kohsuke-1.jar",
-			RepositoryHint: "sha1:7bcd527550b8415ba14c33a8ff00658c43d0c78e",
+			RepositoryHint: "hash=sha1%3A7bcd527550b8415ba14c33a8ff00658c43d0c78e&hash=sha256%3Acee09b12de8ade946b86abac1522676f44db37c09076994342b0aaa977a1fe97",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1318,7 +1318,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.9.4",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/commons-beanutils-1.9.4.jar",
-			RepositoryHint: "sha1:d52b9abcd97f38c81342bb7e7ae1eee9b73cba51",
+			RepositoryHint: "hash=sha1%3Ad52b9abcd97f38c81342bb7e7ae1eee9b73cba51&hash=sha256%3A7d938c81789028045c08c065e94be75fc280527620d5bd62b519d5838532368a",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1326,7 +1326,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.3.2",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/javax.annotation-api-1.3.2.jar",
-			RepositoryHint: "sha1:934c04d3cfef185a8008e7bf34331b79730a9d43",
+			RepositoryHint: "hash=sha1%3A934c04d3cfef185a8008e7bf34331b79730a9d43&hash=sha256%3Ae04ba5195bcd555dc95650f7cc614d151e4bcd52d29a10b8aa2197f3ab89ab9b",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1334,7 +1334,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.0.23",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jcommon-1.0.23.jar",
-			RepositoryHint: "sha1:a316f336ca996e0c6bec4e4fbd49be8f5e1c3968",
+			RepositoryHint: "hash=sha1%3Aa316f336ca996e0c6bec4e4fbd49be8f5e1c3968&hash=sha256%3A1e670402809484c71ec74d55b40022a4c4939c7911bd39ee5a0cfb3aaf56397c",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1342,7 +1342,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.3.5",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/jffi-1.3.5-native.jar",
-			RepositoryHint: "sha1:38602067b8cd1ed3dca6cbfcb3273fb24ab09a3f",
+			RepositoryHint: "hash=sha1%3A38602067b8cd1ed3dca6cbfcb3273fb24ab09a3f&hash=sha256%3Ab3c14bc153b67b5a92fba4c8ace68bd96d2d47bd2ea605f94e0c375c8ae6cecb",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1350,7 +1350,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "4.0.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/guice-4.0.jar",
-			RepositoryHint: "sha1:0f990a43d3725781b6db7cd0acf0a8b62dfd1649",
+			RepositoryHint: "hash=sha1%3A0f990a43d3725781b6db7cd0acf0a8b62dfd1649&hash=sha256%3Ab378ffc35e7f7125b3c5f3a461d4591ae1685e3c781392f0c854ed7b7581d6d2",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1358,7 +1358,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.3.18-kohsuke-1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jcifs-1.3.18-kohsuke-1.jar",
-			RepositoryHint: "sha1:35711c36411d962d7228b7e01ab2567ec213a9d3",
+			RepositoryHint: "hash=sha1%3A35711c36411d962d7228b7e01ab2567ec213a9d3&hash=sha256%3A309bba8d10c968520897d7223dccd5f280c7721503cc4e118af31a15dd13e1ef",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1366,7 +1366,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.31",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/localizer-1.31.jar",
-			RepositoryHint: "sha1:aa7560693502015b7747697fa5a4fd1da9a95ccd",
+			RepositoryHint: "hash=sha1%3Aaa7560693502015b7747697fa5a4fd1da9a95ccd&hash=sha256%3A160665408a2e2684ee4527d2efbe5dcb193d2e017010b35a74182cd319f2c5fe",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1374,7 +1374,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/commons-jelly-tags-fmt-1.0.jar",
-			RepositoryHint: "sha1:2107da38fdd287ab78a4fa65c1300b5ad9999274",
+			RepositoryHint: "hash=sha1%3A2107da38fdd287ab78a4fa65c1300b5ad9999274&hash=sha256%3A509e873164cf7c5b62b7a5285340ac0f59d92bbd861b78c91322a27e91f24638",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1382,7 +1382,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "20020414",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "file:usr/share/jenkins/jenkins.war",
-			RepositoryHint: "sha1:de7952cecd05b65e0e4370cc93fc03035175eef5",
+			RepositoryHint: "hash=sha1%3Ade7952cecd05b65e0e4370cc93fc03035175eef5&hash=sha256%3A2a2563efc911f431250214220570fac8ec3f43c3ec1e47328cee78062f81b218",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1390,7 +1390,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.7.32",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jcl-over-slf4j-1.7.32.jar",
-			RepositoryHint: "sha1:32c060250bcc5282cdbc1fd7008c12eb4ebad00e",
+			RepositoryHint: "hash=sha1%3A32c060250bcc5282cdbc1fd7008c12eb4ebad00e&hash=sha256%3A60f3bda5922e3912889cca1311d1b227753610bf60cb4e5e914e8b2eaa0326b4",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1398,7 +1398,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1593.v0e838714faae",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/stapler-groovy-1593.v0e838714faae.jar",
-			RepositoryHint: "sha1:700d2b6e99d7d8fb46746907105839dba51b1a20",
+			RepositoryHint: "hash=sha1%3A700d2b6e99d7d8fb46746907105839dba51b1a20&hash=sha256%3Ad765807409590308e96555cdebf375d2c838539045faad4a7837bc875d44019e",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1406,7 +1406,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.3.5",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jffi-1.3.5.jar",
-			RepositoryHint: "sha1:1dadd62fc8434d4ba6e3c78ed42e4852d79d3a46",
+			RepositoryHint: "hash=sha1%3A1dadd62fc8434d4ba6e3c78ed42e4852d79d3a46&hash=sha256%3Ad71bfdf7ab2222577547727fa64aa3c9dc26ebd4bda54ed4c93abb882e5f3866",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1414,7 +1414,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.9",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/memory-monitor-1.9.jar",
-			RepositoryHint: "sha1:1935bfb46474e3043ee2310a9bb790d42dde2ed7",
+			RepositoryHint: "hash=sha1%3A1935bfb46474e3043ee2310a9bb790d42dde2ed7&hash=sha256%3Aa57d4df8227dce7605be1514ba385859847bbc172dcade1e3439dc9b5e92399a",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1422,15 +1422,15 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.2",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/tiger-types-2.2.jar",
-			RepositoryHint: "sha1:7ddc6bbc8ca59be8879d3a943bf77517ec190f39",
+			RepositoryHint: "hash=sha1%3A7ddc6bbc8ca59be8879d3a943bf77517ec190f39&hash=sha256%3A37af58e5972b3a6678f0dca5932fae99cbe12c73f00f35b939c2ac27e791034c",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
 			Name:           "org.slf4j:slf4j-api",
-			Version:        "1.7.32",
+			Version:        "1.7.30",
 			Kind:           types.BinaryPackage,
-			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/slf4j-api-1.7.32.jar",
-			RepositoryHint: "sha1:cdcff33940d9f2de763bc41ea05a0be5941176c3",
+			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/detached-plugins/sshd.hpi:WEB-INF/lib/slf4j-api-1.7.30.jar",
+			RepositoryHint: "hash=sha1%3Ab5a4b6d16ab13e34a88fae84c35cd5d68cac922c&hash=sha256%3Acdba07964d1bb40a0761485c6b1e8c2f8fd9eb1d19c53928ac0d7f9510105c57",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1438,7 +1438,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jenkins-stapler-support-1.1.jar",
-			RepositoryHint: "sha1:95127e05b589288439684304a75474bb1261a11c",
+			RepositoryHint: "hash=sha1%3A95127e05b589288439684304a75474bb1261a11c&hash=sha256%3Aed30dcb0f5fe9efc6f15444a3e14f66639af1e3a44485244fb44d7807a5d4393",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1446,7 +1446,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.2",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/robust-http-client-1.2.jar",
-			RepositoryHint: "sha1:dee9fda92ad39a94a77ec6cf88300d4dd6db8a4d",
+			RepositoryHint: "hash=sha1%3Adee9fda92ad39a94a77ec6cf88300d4dd6db8a4d&hash=sha256%3A015fc9ea5bbf8da691aabd5ce14429627734dcaef9d8513834dd8885f2b79df1",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1454,7 +1454,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.11.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/commons-io-2.11.0.jar",
-			RepositoryHint: "sha1:a2503f302b11ebde7ebc3df41daebe0e4eea3689",
+			RepositoryHint: "hash=sha1%3Aa2503f302b11ebde7ebc3df41daebe0e4eea3689&hash=sha256%3A961b2f6d87dbacc5d54abf45ab7a6e2495f89b75598962d8c723cea9bc210908",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1462,7 +1462,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.2.2",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/mxparser-1.2.2.jar",
-			RepositoryHint: "sha1:476fb3b3bb3716cad797cd054ce45f89445794e9",
+			RepositoryHint: "hash=sha1%3A476fb3b3bb3716cad797cd054ce45f89445794e9&hash=sha256%3Aaeeee23a3303d811bca8790ea7f25b534314861c03cff36dafdcc2180969eb97",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1470,7 +1470,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "5.3.9",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/spring-core-5.3.9.jar",
-			RepositoryHint: "sha1:cfef19d1dfa41d56f8de66238dc015334997d573",
+			RepositoryHint: "hash=sha1%3Acfef19d1dfa41d56f8de66238dc015334997d573&hash=sha256%3A99fe2063bbde34050838eec09fb201a017982a7dfb39874d2aa5384ca5b7b9ac",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1478,7 +1478,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.1.3",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "file:usr/share/jenkins/jenkins.war",
-			RepositoryHint: "sha1:a75914155a9f5808963170ec20653668a2ffd2fd",
+			RepositoryHint: "hash=sha1%3Aa75914155a9f5808963170ec20653668a2ffd2fd&hash=sha256%3A549f3007c6290f6a901e57d1d331b4ed0e6bf7384f78bf10316ffceeca834de6",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1486,7 +1486,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/windows-slave-installer-2.0.jar",
-			RepositoryHint: "sha1:7dec945c7b97096c6bcd7ad06f43767c544bb66e",
+			RepositoryHint: "hash=sha1%3A7dec945c7b97096c6bcd7ad06f43767c544bb66e&hash=sha256%3Aeb1e1345bad8fd211ab4a256257a3c1ab0364bc772c6552424528a76913b74a6",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1494,7 +1494,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.5",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/stapler-adjunct-timeline-1.5.jar",
-			RepositoryHint: "sha1:3fa806cbb94679ceab9c1ecaaf5fea8207390cb7",
+			RepositoryHint: "hash=sha1%3A3fa806cbb94679ceab9c1ecaaf5fea8207390cb7&hash=sha256%3A5e9f38e58a37fdcdf737c22d87beef13a42186bfd10caa7a7b653d6fdad47df5",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1502,7 +1502,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.8",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jansi-1.11.jar",
-			RepositoryHint: "sha1:655c643309c2f45a56a747fda70e3fadf57e9f11",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jansi-1.11.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1510,7 +1510,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.5",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jansi-1.11.jar",
-			RepositoryHint: "sha1:655c643309c2f45a56a747fda70e3fadf57e9f11",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jansi-1.11.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1518,7 +1518,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.11",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jansi-1.11.jar",
-			RepositoryHint: "sha1:655c643309c2f45a56a747fda70e3fadf57e9f11",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jansi-1.11.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1526,7 +1526,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "9.2.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/asm-analysis-9.2.jar",
-			RepositoryHint: "sha1:7487dd756daf96cab9986e44b9d7bcb796a61c10",
+			RepositoryHint: "hash=sha1%3A7487dd756daf96cab9986e44b9d7bcb796a61c10&hash=sha256%3A878fbe521731c072d14d2d65b983b1beae6ad06fda0007b6a8bae81f73f433c4",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1534,7 +1534,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/embedded_su4j-1.1.jar",
-			RepositoryHint: "sha1:9404130cc4e60670429f1ab8dbf94d669012725d",
+			RepositoryHint: "hash=sha1%3A9404130cc4e60670429f1ab8dbf94d669012725d&hash=sha256%3A5ff5075959efd9c55296c8cfc6122ca3bdfd58cdc350ff12ff2659b260f7803e",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1542,7 +1542,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "3.1.10",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jnr-posix-3.1.10.jar",
-			RepositoryHint: "sha1:18f1ebd53c4a6d7d23487f8f73c3e6adc4cd6716",
+			RepositoryHint: "hash=sha1%3A18f1ebd53c4a6d7d23487f8f73c3e6adc4cd6716&hash=sha256%3A2b889cb68ef9bf8968938ff7c4150e4ad1d339edbc9b73bb4ac8c319b014cd62",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1550,7 +1550,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "0.10.2",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jnr-constants-0.10.2.jar",
-			RepositoryHint: "sha1:11a081b5482f415443d5e4b860b7a3cb62e319d3",
+			RepositoryHint: "hash=sha1%3A11a081b5482f415443d5e4b860b7a3cb62e319d3&hash=sha256%3A2edf67dd6dc5877ae73b33196f24c4e688fa45ec2c3de5f1fe76d839cb6eb898",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1558,7 +1558,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.25",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/access-modifier-annotation-1.25.jar",
-			RepositoryHint: "sha1:fab291c4249c077b9bcc48db313a2255df7408b8",
+			RepositoryHint: "hash=sha1%3Afab291c4249c077b9bcc48db313a2255df7408b8&hash=sha256%3A03d958dd984a59786201917cdec84b66da706c5a36886544655cfbeac491c245",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1566,7 +1566,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "5.3.9",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/spring-beans-5.3.9.jar",
-			RepositoryHint: "sha1:48600db2cb1abc0f7ef2b073f0c1abd78a83bcfc",
+			RepositoryHint: "hash=sha1%3A48600db2cb1abc0f7ef2b073f0c1abd78a83bcfc&hash=sha256%3A58db038ca3a63cad7e265164e5ea94682ce09af303554e275265c341f238e9a6",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1574,7 +1574,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.7",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/version-number-1.7.jar",
-			RepositoryHint: "sha1:e2cb3f1d3e296adf74463b046bf79f498cc9b937",
+			RepositoryHint: "hash=sha1%3Ae2cb3f1d3e296adf74463b046bf79f498cc9b937&hash=sha256%3A79728b080848e6889fff162b2b89b7ee25f4b691dd8db077d1e95057b73c129e",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1582,7 +1582,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.6",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/commons-lang-2.6.jar",
-			RepositoryHint: "sha1:0ce1edb914c94ebc388f086c6827e8bdeec71ac2",
+			RepositoryHint: "hash=sha1%3A0ce1edb914c94ebc388f086c6827e8bdeec71ac2&hash=sha256%3A50f11b09f877c294d56f24463f47d28f929cf5044f648661c0f0cfbae9a2f49c",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1590,7 +1590,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.0.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "file:usr/share/jenkins/jenkins.war",
-			RepositoryHint: "sha1:f37bba2b8b78fcc8111bb932318b621dcc6c5194",
+			RepositoryHint: "hash=sha1%3Af37bba2b8b78fcc8111bb932318b621dcc6c5194&hash=sha256%3A5e1f9f07014cd9f4b8a517b18c2c9fff84a7e5a27116accc1f1cc22244e238c1",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1598,7 +1598,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.2.7",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jnr-ffi-2.2.7.jar",
-			RepositoryHint: "sha1:73987a1153030a3f1fd6c304531235ad5a0abc74",
+			RepositoryHint: "hash=sha1%3A73987a1153030a3f1fd6c304531235ad5a0abc74&hash=sha256%3A5746d6c4aabba610746fe66aa3853ab918be07288686c4069f057e2c24628c3e",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1606,7 +1606,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.2",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/instance-identity-2.2.jar",
-			RepositoryHint: "sha1:986e58370b11287dfa73a8fb2eac74e2dc4e2a23",
+			RepositoryHint: "hash=sha1%3A986e58370b11287dfa73a8fb2eac74e2dc4e2a23&hash=sha256%3Ac752b9d1cbfa600e7fd3387b779ed42ec96dcba6a6296c27a6ffdd1f8012f80b",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1614,7 +1614,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.3.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "file:usr/share/jenkins/jenkins.war",
-			RepositoryHint: "sha1:ccbc77a5fd907ef863c29f3596c6f54ffa4e9442",
+			RepositoryHint: "hash=sha1%3Accbc77a5fd907ef863c29f3596c6f54ffa4e9442&hash=sha256%3Af264dd9f79a1fde10ce5ecc53221eff24be4c9331c830b7d52f2f08a7b633de2",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1622,7 +1622,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.2.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jaxen-1.2.0.jar",
-			RepositoryHint: "sha1:c10535a925bd35129a4329bc75065cc6b5293f2c",
+			RepositoryHint: "hash=sha1%3Ac10535a925bd35129a4329bc75065cc6b5293f2c&hash=sha256%3A70feef9dd75ad064def05a3ce8975aeba515ee7d1be146d12199c8828a64174c",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1630,7 +1630,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.1-jenkins-20111212",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/commons-jexl-1.1-jenkins-20111212.jar",
-			RepositoryHint: "sha1:0a990a77bea8c5a400d58a6f5d98122236300f7d",
+			RepositoryHint: "hash=sha1%3A0a990a77bea8c5a400d58a6f5d98122236300f7d&hash=sha256%3A3d1e5c11e50862187b13a267afaf14257276c4e311f35305630b3dd690e73eba",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1638,7 +1638,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.0.6",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/ezmorph-1.0.6.jar",
-			RepositoryHint: "sha1:01e55d2a0253ea37745d33062852fd2c90027432",
+			RepositoryHint: "hash=sha1%3A01e55d2a0253ea37745d33062852fd2c90027432&hash=sha256%3A2be06a2380f8656426b5c610db694bbd75314caf3e9191affcd7942721398ed7",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1646,7 +1646,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "5.3.9",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/spring-context-5.3.9.jar",
-			RepositoryHint: "sha1:887f4579ade4f47cf0102856f4f4c88eda8ec9d7",
+			RepositoryHint: "hash=sha1%3A887f4579ade4f47cf0102856f4f4c88eda8ec9d7&hash=sha256%3Aaa6c959cf5081bead41f609c5de47b475ae93dcb0067ffd89d139d46cc100008",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1654,7 +1654,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.4-jenkins-3",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/json-lib-2.4-jenkins-3.jar",
-			RepositoryHint: "sha1:83f848493c09c735861a90e91591499fb88d7fbb",
+			RepositoryHint: "hash=sha1%3A83f848493c09c735861a90e91591499fb88d7fbb&hash=sha256%3A744b05db03a1bd92f158dfe88d843e92d5001567789cb675369c3a9275156942",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1662,7 +1662,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "5.9.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/jna-5.9.0.jar",
-			RepositoryHint: "sha1:8f503e6d9b500ceff299052d6be75b38c7257758",
+			RepositoryHint: "hash=sha1%3A8f503e6d9b500ceff299052d6be75b38c7257758&hash=sha256%3Aeafcc780b445434d3c5ae7fa2fb6665de1a7560d537d2c408a8e80cd14d27161",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1670,7 +1670,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "5.3.9",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/spring-web-5.3.9.jar",
-			RepositoryHint: "sha1:88c920ec1bda67fea04daa8e16165777440df473",
+			RepositoryHint: "hash=sha1%3A88c920ec1bda67fea04daa8e16165777440df473&hash=sha256%3Ac8f11853b18f46d30a1bd263eec8de30efafaba5acfa412a2e62ea082b3aaa62",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1678,7 +1678,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "5.5.2",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/spring-security-core-5.5.2.jar",
-			RepositoryHint: "sha1:cbb11a2fd6e86c45249562b980ba532476d9cae6",
+			RepositoryHint: "hash=sha1%3Acbb11a2fd6e86c45249562b980ba532476d9cae6&hash=sha256%3A3b4e8ae54e604d866dea1d001a96a220c4044da54df9aa8d875bb705cc4c1a95",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1686,7 +1686,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "9.2.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/asm-util-9.2.jar",
-			RepositoryHint: "sha1:fbc178fc5ba3dab50fd7e8a5317b8b647c8e8946",
+			RepositoryHint: "hash=sha1%3Afbc178fc5ba3dab50fd7e8a5317b8b647c8e8946&hash=sha256%3Aff5b3cd331ae8a9a804768280da98f50f424fef23dd3c788bb320e08c94ee598",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1694,7 +1694,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.6.5",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jakarta.mail-1.6.5.jar",
-			RepositoryHint: "sha1:d08124137cf42397d00b71b5985fd1dc248ac07f",
+			RepositoryHint: "hash=sha1%3Ad08124137cf42397d00b71b5985fd1dc248ac07f&hash=sha256%3Af4b500a1dd9ffd03ed7d8b2062fa5fd10d5beca4c42611672764bf4365751b53",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1702,7 +1702,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.7",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/slave-installer-1.7.jar",
-			RepositoryHint: "sha1:921d195a7a3d2b8af9f0847099dbb9eb652c7bd8",
+			RepositoryHint: "hash=sha1%3A921d195a7a3d2b8af9f0847099dbb9eb652c7bd8&hash=sha256%3Ad618a26bbf25f60b38fd173b4d867e58405dfe2fa99429c21d92812c7eea7125",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1710,7 +1710,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.316",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jenkins-core-2.316.jar",
-			RepositoryHint: "sha1:4b047f12b03840fb7bee61d84c7f2678afb9e86a",
+			RepositoryHint: "hash=sha1%3A4b047f12b03840fb7bee61d84c7f2678afb9e86a&hash=sha256%3A37cfdb2e812e68a5fde4ebfda04ccbd4f584f350c6b5fd686b0a0f3b03cf85e5",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1718,7 +1718,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "9.2.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/asm-commons-9.2.jar",
-			RepositoryHint: "sha1:f4d7f0fc9054386f2893b602454d48e07d4fbead",
+			RepositoryHint: "hash=sha1%3Af4d7f0fc9054386f2893b602454d48e07d4fbead&hash=sha256%3Abe4ce53138a238bb522cd781cf91f3ba5ce2f6ca93ec62d46a162a127225e0a6",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1726,7 +1726,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.1.3-kohsuke-1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jzlib-1.1.3-kohsuke-1.jar",
-			RepositoryHint: "sha1:af5d27e1de29df05db95da5d76b546d075bc1bc5",
+			RepositoryHint: "hash=sha1%3Aaf5d27e1de29df05db95da5d76b546d075bc1bc5&hash=sha256%3Af38267efb47d15c7d39226ac6907eb5e5413f9139af9147701458dbd01d36e7e",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1734,7 +1734,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/commons-jelly-tags-xml-1.1.jar",
-			RepositoryHint: "sha1:cc0efc2ae0ff81ef7737afc786a0ce16a8540efc",
+			RepositoryHint: "hash=sha1%3Acc0efc2ae0ff81ef7737afc786a0ce16a8540efc&hash=sha256%3A416c0eb9a03cb6fe212982e133d0ddcbf204946e2c0006855f25f494f50646d8",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1742,7 +1742,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "9.2.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/asm-tree-9.2.jar",
-			RepositoryHint: "sha1:d96c99a30f5e1a19b0e609dbb19a44d8518ac01e",
+			RepositoryHint: "hash=sha1%3Ad96c99a30f5e1a19b0e609dbb19a44d8518ac01e&hash=sha256%3Aaabf9bd23091a4ebfc109c1f3ee7cf3e4b89f6ba2d3f51c5243f16b3cffae011",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1750,7 +1750,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1593.v0e838714faae",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/stapler-jelly-1593.v0e838714faae.jar",
-			RepositoryHint: "sha1:ce9a4f0f5c3eed64165c5915cf1fc2811448fc83",
+			RepositoryHint: "hash=sha1%3Ace9a4f0f5c3eed64165c5915cf1fc2811448fc83&hash=sha256%3Aa63febc94e1db446f7df4c2b37f1797a5ddb994ce9f3b760db053043d1d7b41a",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1758,7 +1758,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "9.2.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/asm-9.2.jar",
-			RepositoryHint: "sha1:81a03f76019c67362299c40e0ba13405f5467bff",
+			RepositoryHint: "hash=sha1%3A81a03f76019c67362299c40e0ba13405f5467bff&hash=sha256%3Ab9d4fe4d71938df38839f0eca42aaaa64cf8b313d678da036f0cb3ca199b47f5",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1766,7 +1766,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "3.2.2",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/commons-collections-3.2.2.jar",
-			RepositoryHint: "sha1:8ad72fe39fa8c91eaaf12aadb21e0c3661fe26d5",
+			RepositoryHint: "hash=sha1%3A8ad72fe39fa8c91eaaf12aadb21e0c3661fe26d5&hash=sha256%3Aeeeae917917144a68a741d4c0dff66aa5c5c5fd85593ff217bced3fc8ca783b8",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1774,7 +1774,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "5.5.2",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/spring-security-crypto-5.5.2.jar",
-			RepositoryHint: "sha1:83d2198c12e74dc78a6516563dcc3e989f134b54",
+			RepositoryHint: "hash=sha1%3A83d2198c12e74dc78a6516563dcc3e989f134b54&hash=sha256%3A790ca096bba516c91721dbfe0ea793d46a9f24a785e121413aac3946dd0f4808",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1782,7 +1782,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "5.3.9",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/spring-aop-5.3.9.jar",
-			RepositoryHint: "sha1:9bcad31a74e60d205500dd67d2220bd0195c63f8",
+			RepositoryHint: "hash=sha1%3A9bcad31a74e60d205500dd67d2220bd0195c63f8&hash=sha256%3Aa8997f8dcb2cd16d3bce26c669ea128688e18311eb93778830729b484850e5ee",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1790,7 +1790,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.21",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/commons-compress-1.21.jar",
-			RepositoryHint: "sha1:4ec95b60d4e86b5c95a0e919cb172a0af98011ef",
+			RepositoryHint: "hash=sha1%3A4ec95b60d4e86b5c95a0e919cb172a0af98011ef&hash=sha256%3A6aecfd5459728a595601cfa07258d131972ffc39b492eb48bdd596577a2f244a",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1798,7 +1798,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.5",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/crypto-util-1.5.jar",
-			RepositoryHint: "sha1:432ba8058e9a653fa191cdda3ed5fe4bb4fc4e53",
+			RepositoryHint: "hash=sha1%3A432ba8058e9a653fa191cdda3ed5fe4bb4fc4e53&hash=sha256%3A89e7df9dec879b34d96e84e64153d37c5d9003409842fcdd3d7f46949d6439ea",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1806,7 +1806,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.2.1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jakarta.activation-1.2.1.jar",
-			RepositoryHint: "sha1:8013606426a73d8ba6b568370877251e91a38b89",
+			RepositoryHint: "hash=sha1%3A8013606426a73d8ba6b568370877251e91a38b89&hash=sha256%3Ad84d4ba8b55cdb7fdcbb885e6939386367433f56f5ab8cfdc302a7c3587fa92b",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1814,7 +1814,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.2.7",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jakarta.servlet.jsp.jstl-api-1.2.7.jar",
-			RepositoryHint: "sha1:34a035507f0270f1c6b7722d728bd7b5a9bbac4c",
+			RepositoryHint: "hash=sha1%3A34a035507f0270f1c6b7722d728bd7b5a9bbac4c&hash=sha256%3A42ed486c8d782c64a35d7c7bea50a74c7e4d80f3fdc4ff39fb4629135b8286a9",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1822,7 +1822,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "5.0.1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "file:usr/share/jenkins/jenkins.war",
-			RepositoryHint: "sha1:71ab0620a41ed37f626b96d80c2a7c58165550df",
+			RepositoryHint: "hash=sha1%3A71ab0620a41ed37f626b96d80c2a7c58165550df&hash=sha256%3A442c6c06d4dfac1afba4ddd31eec54d3dcabc78a37d70baa81455d41b84fb967",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1830,7 +1830,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.3",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/stapler-adjunct-codemirror-1.3.jar",
-			RepositoryHint: "sha1:fd1d45544400d2a4da6dfee9e60edd4ec3368806",
+			RepositoryHint: "hash=sha1%3Afd1d45544400d2a4da6dfee9e60edd4ec3368806&hash=sha256%3A86805045ff832db5dd30bce3a3303c8004d2373a495556a06a61bc107518d7cc",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1838,7 +1838,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "4.10",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/remoting-4.10.jar",
-			RepositoryHint: "sha1:c9016b2501e2a3849e8bd14aa7866b3a5385b330",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/remoting-4.10.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1846,7 +1846,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.17",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/remoting-4.10.jar",
-			RepositoryHint: "sha1:c9016b2501e2a3849e8bd14aa7866b3a5385b330",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/remoting-4.10.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1854,7 +1854,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.17",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/remoting-4.10.jar",
-			RepositoryHint: "sha1:c9016b2501e2a3849e8bd14aa7866b3a5385b330",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/remoting-4.10.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1862,7 +1862,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.17",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/remoting-4.10.jar",
-			RepositoryHint: "sha1:c9016b2501e2a3849e8bd14aa7866b3a5385b330",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/remoting-4.10.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1870,7 +1870,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.17",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/remoting-4.10.jar",
-			RepositoryHint: "sha1:c9016b2501e2a3849e8bd14aa7866b3a5385b330",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/remoting-4.10.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1878,7 +1878,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/remoting-4.10.jar",
-			RepositoryHint: "sha1:c9016b2501e2a3849e8bd14aa7866b3a5385b330",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/remoting-4.10.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1886,7 +1886,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.17",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/remoting-4.10.jar",
-			RepositoryHint: "sha1:c9016b2501e2a3849e8bd14aa7866b3a5385b330",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/remoting-4.10.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1894,7 +1894,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/remoting-4.10.jar",
-			RepositoryHint: "sha1:c9016b2501e2a3849e8bd14aa7866b3a5385b330",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/remoting-4.10.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1902,7 +1902,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.33",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/remoting-4.10.jar",
-			RepositoryHint: "sha1:c9016b2501e2a3849e8bd14aa7866b3a5385b330",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/remoting-4.10.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1910,7 +1910,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.2",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/remoting-4.10.jar",
-			RepositoryHint: "sha1:c9016b2501e2a3849e8bd14aa7866b3a5385b330",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/remoting-4.10.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1918,7 +1918,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/symbol-annotation-1.1.jar",
-			RepositoryHint: "sha1:14fe06e7287a8aff81434a2fe8226744183fe955",
+			RepositoryHint: "hash=sha1%3A14fe06e7287a8aff81434a2fe8226744183fe955&hash=sha256%3A88ffb7b93d2fcff190cdb7fd56a4dbe933eb78ea63cff0aa12f92974aa527715",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1926,7 +1926,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.0.19",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/jfreechart-1.0.19.jar",
-			RepositoryHint: "sha1:ba9ee7dbb2e4c57a6901c79f614ed2dea9cc0e20",
+			RepositoryHint: "hash=sha1%3Aba9ee7dbb2e4c57a6901c79f614ed2dea9cc0e20&hash=sha256%3A153d077d6399776a45de97c555ad026eb6201d4bd8af86cfce7b8b4ccfa66263",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1934,7 +1934,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.21",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/bridge-method-annotation-1.21.jar",
-			RepositoryHint: "sha1:f380b42653f21c503036a31ff87c6970eeaad080",
+			RepositoryHint: "hash=sha1%3Af380b42653f21c503036a31ff87c6970eeaad080&hash=sha256%3A6812247ae8b75be24d8781db6776274ee6722d34b1dec7a45c14868a03dcf5d8",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1942,7 +1942,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.15",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/annotation-indexer-1.15.jar",
-			RepositoryHint: "sha1:b5e9548356e53060e7844b2e7fd235f112a6fb8f",
+			RepositoryHint: "hash=sha1%3Ab5e9548356e53060e7844b2e7fd235f112a6fb8f&hash=sha256%3A3665f1208f4fd5681650be392fc28820a0b29d573546e433ffd60ca72814ce03",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1950,7 +1950,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "file:usr/share/jenkins/jenkins.war",
-			RepositoryHint: "sha1:6975da39a7040257bd51d21a231b76c915872d38",
+			RepositoryHint: "hash=sha1%3A6975da39a7040257bd51d21a231b76c915872d38&hash=sha256%3A91c77044a50c481636c32d916fd89c9118a72195390452c81065080f957de7ff",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1958,7 +1958,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "4.4.1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/spotbugs-annotations-4.4.1.jar",
-			RepositoryHint: "sha1:a409167be27a1b197c0432ebfc421f8f79f9bf41",
+			RepositoryHint: "hash=sha1%3Aa409167be27a1b197c0432ebfc421f8f79f9bf41&hash=sha256%3Afa5d3b17d585868c74c0e25b3c57c17282f9a3328c73ea5259bfd9ac99c6933a",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1966,7 +1966,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.316",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
-			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1974,7 +1974,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.15",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
-			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1982,7 +1982,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.11.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
-			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1990,7 +1990,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.31",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
-			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -1998,7 +1998,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.7.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
-			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -2006,7 +2006,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.7.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
-			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -2014,7 +2014,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.7.32",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
-			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -2022,7 +2022,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.7.32",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
-			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -2030,7 +2030,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "0.3.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
-			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -2038,7 +2038,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.7.32",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
-			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -2046,7 +2046,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.0.1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
-			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -2054,7 +2054,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.0.1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
-			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -2062,7 +2062,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.0.1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
-			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -2070,7 +2070,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.0.1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
-			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -2078,7 +2078,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.0.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
-			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -2086,7 +2086,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "3.0.1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
-			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -2094,7 +2094,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.0.1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
-			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -2102,7 +2102,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.0.1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
-			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -2110,7 +2110,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.0.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
-			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -2118,7 +2118,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.6",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar",
-			RepositoryHint: "sha1:ec1386735dc81ac7f42a4958e1e980f8f89dee11",
+			RepositoryHint: jenkinsHashes["maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/cli-2.316.jar"],
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -2126,7 +2126,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "5.5.2",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "jar:usr/share/jenkins/jenkins.war:WEB-INF/lib/spring-security-web-5.5.2.jar",
-			RepositoryHint: "sha1:aa1b6fe3c48fbfbf47992633ff63b02208757d3a",
+			RepositoryHint: "hash=sha1%3Aaa1b6fe3c48fbfbf47992633ff63b02208757d3a&hash=sha256%3A7b1f8d1624a658c474544608dc31bed5de37ba11850101436fa05cbe1eb91060",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -2134,7 +2134,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "11.0.1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/guava-11.0.1.jar",
-			RepositoryHint: "sha1:57b40a943725d43610c898ac0169adf1b2d55742",
+			RepositoryHint: "hash=sha1%3A57b40a943725d43610c898ac0169adf1b2d55742&hash=sha256%3Aaa7cef9d2ba0110a2db7be0fb6e679cd71f6a26fc3ba9da7715f41d3300def1d",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -2142,7 +2142,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.4.18",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/xstream-1.4.18.jar",
-			RepositoryHint: "sha1:12eb80b4c4b83b184b669866f510a0eae13f9475",
+			RepositoryHint: "hash=sha1%3A12eb80b4c4b83b184b669866f510a0eae13f9475&hash=sha256%3A0af1a39b127fb2cae0d13de95cf13aaa4c9a7af525964573d3d278c06c4ececd",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -2150,7 +2150,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.2",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/launchd-slave-installer-1.2.jar",
-			RepositoryHint: "sha1:8ef06fc2a3d9436aa214e318c66cb6dc274440b8",
+			RepositoryHint: "hash=sha1%3A8ef06fc2a3d9436aa214e318c66cb6dc274440b8&hash=sha256%3A0eb89b3ae2eedc89d2d1b47fe60b6a05fc3c67f227a1635f5c2857664e68b616",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -2158,7 +2158,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.5",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/task-reactor-1.5.jar",
-			RepositoryHint: "sha1:62964c07bb64457bbbb5711482e9c79bab720f20",
+			RepositoryHint: "hash=sha1%3A62964c07bb64457bbbb5711482e9c79bab720f20&hash=sha256%3A24297110f2c197f563c912c61b49ce0239a95e64e99f681a6dcb6d901196f9a9",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -2166,7 +2166,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.0.8-kohsuke-1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/j-interopdeps-2.0.8-kohsuke-1.jar",
-			RepositoryHint: "sha1:0c6ae17b2cbb5e07e62fddab1cebadaf351a97c0",
+			RepositoryHint: "hash=sha1%3A0c6ae17b2cbb5e07e62fddab1cebadaf351a97c0&hash=sha256%3Ae48d0fc6233fc3afa5dc52d7fde679b6dad51dd58122c087ac4e31d1841f16e3",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -2174,7 +2174,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "3.1-jenkins-3",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/commons-httpclient-3.1-jenkins-3.jar",
-			RepositoryHint: "sha1:56110dc7f655c56c4e2ae8ae2bb055bf2282ba99",
+			RepositoryHint: "hash=sha1%3A56110dc7f655c56c4e2ae8ae2bb055bf2282ba99&hash=sha256%3A0be35956e9eab43d105711a0383a0f198d0ee07d19481bd30234be68ebe68b50",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -2182,7 +2182,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.7.32",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/slf4j-jdk14-1.7.32.jar",
-			RepositoryHint: "sha1:4d5bdc7da49cd69c25f7eed5ae0b259358c7edeb",
+			RepositoryHint: "hash=sha1%3A4d5bdc7da49cd69c25f7eed5ae0b259358c7edeb&hash=sha256%3A4e09fd5ace1d3e5d1c9571b8eb7b17a23149e5ac322c11314c688991e2eb6f0b",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -2190,7 +2190,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.11",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/libpam4j-1.11.jar",
-			RepositoryHint: "sha1:82cfca73e813c165c83b5d6b1d16808cb5291fe7",
+			RepositoryHint: "hash=sha1%3A82cfca73e813c165c83b5d6b1d16808cb5291fe7&hash=sha256%3A39b01f00383f02ccdec3e40878647a92fa10ed584013ec1a8b26c99491f71005",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -2198,7 +2198,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.10.11",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "file:usr/share/jenkins/jenkins.war",
-			RepositoryHint: "sha1:ea0a0475fb6dfcdcf48b30410fd9d4f5c80df07e",
+			RepositoryHint: "hash=sha1%3Aea0a0475fb6dfcdcf48b30410fd9d4f5c80df07e&hash=sha256%3Adab530df7a980b5ac8fd7e8d208243ae0d3ebd6de09b1aa2ce756360cc2ed256",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -2206,7 +2206,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "0.5",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/commons-discovery-0.5.jar",
-			RepositoryHint: "sha1:3a8ac816bbe02d2f88523ef22cbf2c4abd71d6a8",
+			RepositoryHint: "hash=sha1%3A3a8ac816bbe02d2f88523ef22cbf2c4abd71d6a8&hash=sha256%3Ae5b7d58ae62e5b309d5c0ffa5a5b1d9d1e0f0c4c3cc18d1fe3103fd29f90149d",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -2214,7 +2214,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.13",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/sezpoz-1.13.jar",
-			RepositoryHint: "sha1:822ac382900587d0a7d6aaec7b1859f1cf5de2fb",
+			RepositoryHint: "hash=sha1%3A822ac382900587d0a7d6aaec7b1859f1cf5de2fb&hash=sha256%3A3e0ebeab318e6c634b0ebc64e781b9ca63610b88b7ac09c0d185a313495748c9",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -2222,7 +2222,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.1.4c",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "file:usr/share/jenkins/jenkins.war",
-			RepositoryHint: "sha1:9b988ea84b9e4e9f1874e390ce099b8ac12cfff5",
+			RepositoryHint: "hash=sha1%3A9b988ea84b9e4e9f1874e390ce099b8ac12cfff5&hash=sha256%3A0341395a481bb887803957145a6a37879853dd625e9244c2ea2509d9bb7531b9",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -2230,7 +2230,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "2.7.7",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "file:usr/share/jenkins/jenkins.war",
-			RepositoryHint: "sha1:83cd2cd674a217ade95a4bb83a8a14f351f48bd0",
+			RepositoryHint: "hash=sha1%3A83cd2cd674a217ade95a4bb83a8a14f351f48bd0&hash=sha256%3A88fbda4b912596b9f56e8e12e580cc954bacfb51776ecfddd3e18fc1cf56dc4c",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -2238,7 +2238,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.0.0",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/self-signed-cert-generator-1.0.0.jar",
-			RepositoryHint: "sha1:45542f10d259405b42bf537afe30342575d37b18",
+			RepositoryHint: "hash=sha1%3A45542f10d259405b42bf537afe30342575d37b18&hash=sha256%3A14e8f963d1b60d727ff534da22c35ce61c12ab2002684a3c647ba59aaaf54a59",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -2246,7 +2246,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.1",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/systemd-slave-installer-1.1.jar",
-			RepositoryHint: "sha1:a9a4adb0480ec8942d031b0fff9005077b889875",
+			RepositoryHint: "hash=sha1%3Aa9a4adb0480ec8942d031b0fff9005077b889875&hash=sha256%3Ac10fa667c02d7a67bf35d664074ab994a928fee508fe66cb37f80c9edf27199a",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 		{
@@ -2254,7 +2254,7 @@ var jenkins = test.ScannerTestcase{
 			Version:        "1.28",
 			Kind:           types.BinaryPackage,
 			PackageDB:      "maven:usr/share/jenkins/jenkins.war:WEB-INF/lib/winp-1.28.jar",
-			RepositoryHint: "sha1:8dcfcc7214e73a906786b80704784d90fb593e75",
+			RepositoryHint: "hash=sha1%3A8dcfcc7214e73a906786b80704784d90fb593e75&hash=sha256%3A7a6f5b6e6d4294c3c7f9cb92920338193ef08c44fc0d638b539d3aae26fe567e",
 			Filepath:       "usr/share/jenkins/jenkins.war",
 		},
 	},
