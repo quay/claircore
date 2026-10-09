@@ -22,11 +22,12 @@ func _() {
 	_ = x[RepositoryName-12]
 	_ = x[RepositoryKey-13]
 	_ = x[HasFixedInVersion-14]
+	_ = x[CPECompare-15]
 }
 
-const _MatchConstraint_name = "PackageSourceNamePackageNamePackageModuleDistributionDIDDistributionNameDistributionVersionDistributionVersionCodeNameDistributionVersionIDDistributionArchDistributionCPEDistributionPrettyNameRepositoryNameRepositoryKeyHasFixedInVersion"
+const _MatchConstraint_name = "PackageSourceNamePackageNamePackageModuleDistributionDIDDistributionNameDistributionVersionDistributionVersionCodeNameDistributionVersionIDDistributionArchDistributionCPEDistributionPrettyNameRepositoryNameRepositoryKeyHasFixedInVersionCPECompare"
 
-var _MatchConstraint_index = [...]uint8{0, 17, 28, 41, 56, 72, 91, 118, 139, 155, 170, 192, 206, 219, 236}
+var _MatchConstraint_index = [...]uint8{0, 17, 28, 41, 56, 72, 91, 118, 139, 155, 170, 192, 206, 219, 236, 246}
 
 func (i MatchConstraint) String() string {
 	idx := int(i) - 1
