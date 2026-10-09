@@ -14,14 +14,15 @@ import (
 )
 
 func TestLayer(t *testing.T) {
-	ctx := context.Background()
+	ctx := test.RootContext(t)
 
 	// Tarish is a tar-ish file.
-	tarish := test.GenerateFixture(t, "tarish", time.Time{}, func(t testing.TB, f *os.File) {
+	mkTarish := func(t testing.TB, _ context.Context, f *os.File) {
 		if _, err := f.Write(make([]byte, 1024)); err != nil {
 			t.Fatal(err)
 		}
-	})
+	}
+	tarish := test.GenerateFixture(t, ctx, "tarish", time.Time{}, mkTarish)
 	// GoodLayer returns a layer that looks like a tar.
 	//
 	// This helper does not arrange for the Close method to be called.
@@ -65,6 +66,7 @@ func TestLayer(t *testing.T) {
 
 	t.Run("Init", func(t *testing.T) {
 		t.Run("Checksum", func(t *testing.T) {
+			ctx := test.Logging(t, ctx)
 			var l claircore.Layer
 			desc := claircore.LayerDescription{
 				Digest:    "sha256:" + strings.Repeat("00c0ffee", 9),
@@ -78,6 +80,7 @@ func TestLayer(t *testing.T) {
 			}
 		})
 		t.Run("MediaType", func(t *testing.T) {
+			ctx := test.Logging(t, ctx)
 			var l claircore.Layer
 			desc := claircore.LayerDescription{
 				Digest:    "sha256:" + strings.Repeat("00c0ffee", 8),
@@ -97,6 +100,7 @@ func TestLayer(t *testing.T) {
 			}
 		})
 		t.Run("DoubleInit", func(t *testing.T) {
+			ctx := test.Logging(t, ctx)
 			l := goodLayer(t)
 			t.Cleanup(func() {
 				if err := l.Close(); err != nil {
@@ -116,6 +120,7 @@ func TestLayer(t *testing.T) {
 			}
 		})
 		t.Run("FilesystemNoURI", func(t *testing.T) {
+			ctx := test.Logging(t, ctx)
 			var l claircore.Layer
 			desc := claircore.LayerDescription{
 				Digest:    "sha256:" + strings.Repeat("00c0ffee", 8),
@@ -128,6 +133,7 @@ func TestLayer(t *testing.T) {
 			}
 		})
 		t.Run("FilesystemBadURI", func(t *testing.T) {
+			ctx := test.Logging(t, ctx)
 			var l claircore.Layer
 			desc := claircore.LayerDescription{
 				Digest:    "sha256:" + strings.Repeat("00c0ffee", 8),
@@ -140,6 +146,7 @@ func TestLayer(t *testing.T) {
 			}
 		})
 		t.Run("FilesystemUnsopportedURI", func(t *testing.T) {
+			ctx := test.Logging(t, ctx)
 			var l claircore.Layer
 			desc := claircore.LayerDescription{
 				Digest:    "sha256:" + strings.Repeat("00c0ffee", 8),
@@ -151,7 +158,6 @@ func TestLayer(t *testing.T) {
 				t.Error("unexpected success")
 			}
 		})
-
 	})
 	t.Run("Close", func(t *testing.T) {
 		t.Run("Success", func(t *testing.T) {

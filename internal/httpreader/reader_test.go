@@ -147,9 +147,9 @@ func (s *noLengthServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func TestCompliant(t *testing.T) {
 	t.Parallel()
-	randfile := ensureRandfile(t)
+	ctx := test.RootContext(t)
+	randfile := ensureRandfile(t, ctx)
 
-	ctx := test.Logging(t)
 	h := fileserver(t, randfile)
 	srv := httptest.NewUnstartedServer(h)
 	srv.Config.BaseContext = func(_ net.Listener) context.Context {
@@ -213,8 +213,8 @@ func TestLengthSearch(t *testing.T) {
 
 func TestMulti(t *testing.T) {
 	t.Parallel()
-	randfile := ensureRandfile(t)
-	ctx := test.Logging(t)
+	ctx := test.RootContext(t)
+	randfile := ensureRandfile(t, ctx)
 	h := fileserver(t, randfile)
 	srv := httptest.NewUnstartedServer(h)
 	srv.Config.BaseContext = func(_ net.Listener) context.Context {
@@ -259,10 +259,10 @@ var (
 	randfileOnce sync.Once
 )
 
-func ensureRandfile(t testing.TB) string {
+func ensureRandfile(t testing.TB, ctx context.Context) string {
 	randfileOnce.Do(func() {
 		stamp := test.Modtime(t, ".")
-		randfilePath = test.GenerateFixture(t, "randfile", stamp, genRandfile)
+		randfilePath = test.GenerateFixture(t, ctx, "randfile", stamp, genRandfile)
 	})
 	if t.Failed() {
 		return ""
@@ -270,7 +270,7 @@ func ensureRandfile(t testing.TB) string {
 	return randfilePath
 }
 
-func genRandfile(t testing.TB, f *os.File) {
+func genRandfile(t testing.TB, _ context.Context, f *os.File) {
 	defer f.Close()
 	s := rand.NewSource(660096000)
 	rng := rand.New(s)

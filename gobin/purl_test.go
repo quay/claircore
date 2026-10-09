@@ -1,19 +1,20 @@
 package gobin
 
 import (
-	"context"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/toolkit/types"
 )
 
 func TestRoundTripIndexRecordGobin(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
+	ctx, span := tracer.Start(test.RootContext(t), t.Name())
+	defer span.End()
 
 	tests := []struct {
 		name string
@@ -81,6 +82,8 @@ func TestRoundTripIndexRecordGobin(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			ctx, span := tracer.Start(test.Logging(t, ctx), t.Name())
+			defer span.End()
 
 			// Align expected NormalizedVersion with ParsePURL behaviour.
 			if nv, err := ParseVersion(tc.ir.Package.Version); err == nil {
