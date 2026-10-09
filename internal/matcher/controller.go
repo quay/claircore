@@ -55,23 +55,14 @@ func (mc *Controller) Match(ctx context.Context, records []*claircore.IndexRecor
 		"opt-in", dbSide,
 		"authoritative", authoritative)
 
-	// query the vulnstore
-	vulns, err := mc.query(ctx, interested, dbSide)
+	// query the vulnstore. When the database filter is not authoritative,
+	// Get applies Vulnerable while scanning and drops the rows it rejects.
+	vulns, err := mc.query(ctx, interested, dbSide, authoritative)
 	if err != nil {
 		return nil, err
 	}
 	log.DebugContext(ctx, "query", "count", len(vulns))
-
-	if authoritative {
-		return vulns, nil
-	}
-	// filter the vulns
-	filteredVulns, err := mc.filter(ctx, interested, vulns)
-	if err != nil {
-		return nil, err
-	}
-	log.DebugContext(ctx, "filtered", "count", len(filteredVulns))
-	return filteredVulns, nil
+	return vulns, nil
 }
 
 // If RemoteMatcher exists, it will call the matcher service which runs on a remote
@@ -112,7 +103,10 @@ func (mc *Controller) findInterested(records []*claircore.IndexRecord) []*clairc
 
 // Query asks the Matcher how we should query the vulnstore then performs the query and returns all
 // matched vulnerabilities.
-func (mc *Controller) query(ctx context.Context, interested []*claircore.IndexRecord, dbSide bool) (map[string][]*claircore.Vulnerability, error) {
+//
+// When the database filter is not authoritative, Vulnerable runs inside Get
+// and the returned map already excludes rows it rejected.
+func (mc *Controller) query(ctx context.Context, interested []*claircore.IndexRecord, dbSide bool, authoritative bool) (map[string][]*claircore.Vulnerability, error) {
 	// ask the matcher how we should query the vulnstore
 	matchers := mc.m.Query()
 	getOpts := datastore.GetOpts{
@@ -120,38 +114,12 @@ func (mc *Controller) query(ctx context.Context, interested []*claircore.IndexRe
 		Debug:            true,
 		VersionFiltering: dbSide,
 	}
+	if !authoritative {
+		getOpts.Vulnerable = mc.m.Vulnerable
+	}
 	matches, err := mc.store.Get(ctx, interested, getOpts)
 	if err != nil {
 		return nil, err
 	}
 	return matches, nil
-}
-
-// Filter method asks the matcher if the given package is affected by the returned vulnerability. if so; its added to a result map where the key is the package ID
-// and the value is a Vulnerability. if not it is not added to the result.
-func (mc *Controller) filter(ctx context.Context, interested []*claircore.IndexRecord, vulns map[string][]*claircore.Vulnerability) (map[string][]*claircore.Vulnerability, error) {
-	filtered := map[string][]*claircore.Vulnerability{}
-	for _, record := range interested {
-		match, err := filterVulns(ctx, mc.m, record, vulns[record.Package.ID])
-		if err != nil {
-			return nil, err
-		}
-		filtered[record.Package.ID] = append(filtered[record.Package.ID], match...)
-	}
-	return filtered, nil
-}
-
-// filter returns only the vulnerabilities affected by the provided package.
-func filterVulns(ctx context.Context, m driver.Matcher, record *claircore.IndexRecord, vulns []*claircore.Vulnerability) ([]*claircore.Vulnerability, error) {
-	filtered := []*claircore.Vulnerability{}
-	for _, vuln := range vulns {
-		match, err := m.Vulnerable(ctx, record, vuln)
-		if err != nil {
-			return nil, err
-		}
-		if match {
-			filtered = append(filtered, vuln)
-		}
-	}
-	return filtered, nil
 }
