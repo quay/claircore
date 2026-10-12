@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strings"
 	"testing"
+	"unique"
 
 	"github.com/google/go-cmp/cmp"
 
@@ -27,7 +29,9 @@ var v3_10CommunityTruncatedVulns = []*claircore.Vulnerability{
 			Name: "botan",
 			Kind: types.SourcePackage,
 		},
-		Dist: dist310,
+		Dist:    dist310,
+		Self:    selfAlias("CVE-2018-20187"),
+		Aliases: cveAlias("CVE-2018-20187"),
 	},
 	{
 		Name:               "CVE-2018-12435",
@@ -39,7 +43,9 @@ var v3_10CommunityTruncatedVulns = []*claircore.Vulnerability{
 			Name: "botan",
 			Kind: types.SourcePackage,
 		},
-		Dist: dist310,
+		Dist:    dist310,
+		Self:    selfAlias("CVE-2018-12435"),
+		Aliases: cveAlias("CVE-2018-12435"),
 	},
 	{
 		Name:               "CVE-2018-9860",
@@ -51,7 +57,9 @@ var v3_10CommunityTruncatedVulns = []*claircore.Vulnerability{
 			Name: "botan",
 			Kind: types.SourcePackage,
 		},
-		Dist: dist310,
+		Dist:    dist310,
+		Self:    selfAlias("CVE-2018-9860"),
+		Aliases: cveAlias("CVE-2018-9860"),
 	},
 	{
 		Name:               "CVE-2018-9127",
@@ -63,7 +71,9 @@ var v3_10CommunityTruncatedVulns = []*claircore.Vulnerability{
 			Name: "botan",
 			Kind: types.SourcePackage,
 		},
-		Dist: dist310,
+		Dist:    dist310,
+		Self:    selfAlias("CVE-2018-9127"),
+		Aliases: cveAlias("CVE-2018-9127"),
 	},
 	{
 		Name:               "CVE-2019-9929",
@@ -75,7 +85,9 @@ var v3_10CommunityTruncatedVulns = []*claircore.Vulnerability{
 			Name: "cfengine",
 			Kind: types.SourcePackage,
 		},
-		Dist: dist310,
+		Dist:    dist310,
+		Self:    selfAlias("CVE-2019-9929"),
+		Aliases: cveAlias("CVE-2019-9929"),
 	},
 	{
 		Name:               "CVE-2017-6949",
@@ -87,7 +99,9 @@ var v3_10CommunityTruncatedVulns = []*claircore.Vulnerability{
 			Name: "chicken",
 			Kind: types.SourcePackage,
 		},
-		Dist: dist310,
+		Dist:    dist310,
+		Self:    selfAlias("CVE-2017-6949"),
+		Aliases: cveAlias("CVE-2017-6949"),
 	},
 	{
 		Name:               "CVE-2017-9334",
@@ -99,7 +113,9 @@ var v3_10CommunityTruncatedVulns = []*claircore.Vulnerability{
 			Name: "chicken",
 			Kind: types.SourcePackage,
 		},
-		Dist: dist310,
+		Dist:    dist310,
+		Self:    selfAlias("CVE-2017-9334"),
+		Aliases: cveAlias("CVE-2017-9334"),
 	},
 	{
 		Name:               "CVE-2016-6830",
@@ -111,7 +127,9 @@ var v3_10CommunityTruncatedVulns = []*claircore.Vulnerability{
 			Name: "chicken",
 			Kind: types.SourcePackage,
 		},
-		Dist: dist310,
+		Dist:    dist310,
+		Self:    selfAlias("CVE-2016-6830"),
+		Aliases: cveAlias("CVE-2016-6830"),
 	},
 	{
 		Name:               "CVE-2016-6831",
@@ -123,7 +141,9 @@ var v3_10CommunityTruncatedVulns = []*claircore.Vulnerability{
 			Name: "chicken",
 			Kind: types.SourcePackage,
 		},
-		Dist: dist310,
+		Dist:    dist310,
+		Self:    selfAlias("CVE-2016-6831"),
+		Aliases: cveAlias("CVE-2016-6831"),
 	},
 }
 
@@ -171,5 +191,25 @@ func TestParser(t *testing.T) {
 				t.Fatalf("security databases were not equal: \n%v", diff)
 			}
 		})
+	}
+}
+
+func selfAlias(id string) claircore.Alias {
+	return claircore.Alias{
+		Space: space,
+		Name:  id,
+	}
+}
+
+func cveAlias(id string) []claircore.Alias {
+	space, name, ok := strings.Cut(id, `-`)
+	if !ok || space != `CVE` {
+		panic("programmer error: bad CVE id")
+	}
+	return []claircore.Alias{
+		{
+			Space: unique.Make(`CVE`),
+			Name:  name,
+		},
 	}
 }

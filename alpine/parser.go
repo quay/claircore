@@ -5,15 +5,16 @@ import (
 	"encoding/json"
 	"io"
 	"log/slog"
+	"unique"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/libvuln/driver"
 	"github.com/quay/claircore/toolkit/types"
 )
 
-const (
-	cveURLPrefix = "https://security.alpinelinux.org/vuln/"
-)
+const cveURLPrefix = "https://security.alpinelinux.org/vuln/"
+
+var space = unique.Make(cveURLPrefix)
 
 var _ driver.Parser = (*updater)(nil)
 
@@ -50,15 +51,21 @@ func (u *updater) parse(ctx context.Context, sdb *SecurityDB) ([]*claircore.Vuln
 	return out, nil
 }
 
-// unpackSecFixes takes a map of secFixes and creates a claircore.Vulnerability for each all CVEs present.
-func unpackSecFixes(partial claircore.Vulnerability, secFixes map[string][]string) []*claircore.Vulnerability {
+// UnpackSecFixes creates a [claircore.Vulnerability] for every flaw ID on every
+// version.
+func unpackSecFixes(partial claircore.Vulnerability, secFixes map[string][]Flaw) []*claircore.Vulnerability {
 	out := []*claircore.Vulnerability{}
-	for fixedIn, IDs := range secFixes {
-		for _, id := range IDs {
+	for fixedIn, flaws := range secFixes {
+		for _, flaw := range flaws {
 			v := partial
-			v.Name = id
+			v.Name = flaw.String()
 			v.FixedInVersion = fixedIn
-			v.Links = cveURLPrefix + id
+			v.Links = cveURLPrefix + flaw.String()
+			self, aka := flaw.Aliases()
+			v.Self = self
+			if aka.Valid() {
+				v.Aliases = append(v.Aliases, aka)
+			}
 			out = append(out, &v)
 		}
 	}
