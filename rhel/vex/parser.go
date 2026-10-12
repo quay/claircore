@@ -125,7 +125,7 @@ func WithIgnoreKernelPackages() ParserOption {
 }
 
 // WithFixedInVersionCEL compiles expr and installs it as the FixedInVersion
-// rewrite program. See [FactoryConfig.FixedInVersionCEL] for the CEL variables.
+// program. See [FactoryConfig.FixedInVersionCEL] for semantics and variables.
 func WithFixedInVersionCEL(expr string) (ParserOption, error) {
 	prog, err := CompileFixedInVersionCEL(expr)
 	if err != nil {
@@ -605,16 +605,34 @@ func (s *status) PackageName() (string, error) {
 	return extractPackageName(s.PURL)
 }
 
-// FixedInVersion reports the "fixed in" version for p, applying any configured
-// CEL rewrite on the creator.
+// FixedInVersion reports the "fixed in" version for p.
+//
+// Stock extraction runs first. If it fails and no CEL is configured, that
+// error is returned and the status is skipped (for example OCI without tag=).
+//
+// When CEL is configured it always runs, with fixed_in set to the stock value
+// or "" on extract failure. A non-empty CEL result is used even if stock
+// extraction failed; an empty CEL result preserves the stock error (skip) or
+// the stock value.
 //
 // May be an empty string even if the returned [error] is nil.
 func (c *creator) FixedInVersion(p *packageurl.PackageURL) (string, error) {
-	v, err := extractFixedInVersion(p)
-	if err != nil || c.fixedInCEL == nil {
-		return v, err
+	stock, stockErr := extractFixedInVersion(p)
+	if c.fixedInCEL == nil {
+		return stock, stockErr
 	}
-	return EvalFixedInVersionCEL(c.fixedInCEL, p, v)
+
+	out, err := EvalFixedInVersionCEL(c.fixedInCEL, p, stock)
+	if err != nil {
+		return "", err
+	}
+	if out != "" {
+		return out, nil
+	}
+	if stockErr != nil {
+		return "", stockErr
+	}
+	return stock, nil
 }
 
 // Module reports the module name and any error encountered while trying to

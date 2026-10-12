@@ -18,7 +18,12 @@ import (
 //   - name (string): PURL name
 //   - version (string): PURL version field
 //   - qualifiers (map[string]string): PURL qualifiers
-//   - fixed_in (string): default FixedInVersion from stock extraction
+//   - fixed_in (string): stock FixedInVersion, or "" when stock extraction failed
+//
+// When configured on a [Parser]/[Updater], the expression always runs after a
+// best-effort stock extract. A non-empty result is used even if stock
+// extraction failed; an empty result skips the status on extract failure.
+// See [FactoryConfig.FixedInVersionCEL].
 //
 // The environment includes the CEL strings extension (startsWith,
 // substring, split etc.) and bindings to be able to set variables.

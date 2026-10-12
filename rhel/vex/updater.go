@@ -87,10 +87,14 @@ type FactoryConfig struct {
 	//
 	// Defaults to false. Toggling this forces a full archive re-ingest.
 	IgnoreKernelPackages bool `json:"ignore_kernel_packages" yaml:"ignore_kernel_packages"`
-	// FixedInVersionCEL is a CEL expression that must evaluate to a string and may
-	// rewrite the stock FixedInVersion extracted from a PURL. Empty means stock
-	// extraction only. Production expressions are defined by embedders.
-	// Changing this value forces a full archive re-ingest.
+	// FixedInVersionCEL is a CEL expression that must evaluate to a string.
+	// Empty means stock extraction only. Production expressions are defined by
+	// embedders. Changing this value forces a full archive re-ingest.
+	//
+	// When set, the expression always runs after a best-effort stock extract.
+	// On extract failure, fixed_in is "". A non-empty result is emitted as
+	// FixedInVersion; an empty result skips the status if stock extraction
+	// failed, otherwise the stock value is kept.
 	//
 	// Configured on the Factory and copied to the Updater by [Factory.UpdaterSet].
 	//
