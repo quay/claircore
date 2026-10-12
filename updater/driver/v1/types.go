@@ -26,11 +26,18 @@ type EnrichmentRecord struct {
 // ParsedVulnerabilities is an entity-component system describing discovered
 // vulnerabilities.
 type ParsedVulnerabilities struct {
-	Updater       string
+	// Updater is an ID for the Updater that produced this set of
+	// Vulnerabilities.
+	Updater string
+	// Vulnerability is the set of new and modified Vulnerabilities.
 	Vulnerability []Vulnerability
-	Package       []Package
-	Distribution  []Distribution
-	Repository    []Repository
+	// The following are indexed into via Vulnerability structs.
+	Package      []Package
+	Distribution []Distribution
+	Repository   []Repository
+	// Removed is a list of Vulnerabilities (the "Name" member) removed in the
+	// current set of Vulnerabilities.
+	Removed []string
 }
 
 // Vulnerability is all per-vulnerability information.
