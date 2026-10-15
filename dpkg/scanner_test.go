@@ -3,6 +3,7 @@ package dpkg
 import (
 	"archive/tar"
 	"bufio"
+	"context"
 	"errors"
 	"io"
 	"net/textproto"
@@ -843,9 +844,9 @@ func TestScanner(t *testing.T) {
 
 func TestExtraMetadata(t *testing.T) {
 	t.Parallel()
+	ctx := test.RootContext(t)
 	mod := test.Modtime(t, "scanner_test.go")
-	layerfile := test.GenerateFixture(t, `extrametadata.layer`, mod, extraMetadataSetup)
-	ctx := test.Logging(t)
+	layerfile := test.GenerateFixture(t, ctx, `extrametadata.layer`, mod, extraMetadataSetup)
 	var l claircore.Layer
 	var s Scanner
 
@@ -873,7 +874,7 @@ func TestExtraMetadata(t *testing.T) {
 }
 
 // ExtraMetadataSetup is a helper to craft a layer that trips PROJQUAY-1308.
-func extraMetadataSetup(t testing.TB, f *os.File) {
+func extraMetadataSetup(t testing.TB, _ context.Context, f *os.File) {
 	w := tar.NewWriter(f)
 	defer func() {
 		if err := w.Close(); err != nil {

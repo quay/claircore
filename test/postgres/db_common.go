@@ -12,6 +12,8 @@ import (
 	"github.com/jackc/pgx/v5/log/testingadapter"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/tracelog"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/quay/claircore/datastore/postgres/migrations"
 	"github.com/quay/claircore/datastore/postgres/types"
@@ -23,6 +25,8 @@ import (
 //
 // If any errors are encountered, the test is failed and exited.
 func TestMatcherDB(ctx context.Context, t testing.TB) *pgxpool.Pool {
+	ctx, span := tracer.Start(ctx, "TestMatcherDB")
+	defer span.End()
 	return testDB(ctx, t, dbMatcher)
 }
 
@@ -31,6 +35,8 @@ func TestMatcherDB(ctx context.Context, t testing.TB) *pgxpool.Pool {
 //
 // If any errors are encountered, the test is failed and exited.
 func TestIndexerDB(ctx context.Context, t testing.TB) *pgxpool.Pool {
+	ctx, span := tracer.Start(ctx, "TestIndexerDB")
+	defer span.End()
 	return testDB(ctx, t, dbIndexer)
 }
 
@@ -93,6 +99,7 @@ var extraSQL embed.FS
 // The "flavor" argument selects which prefix is added onto the file glob.
 func loadHelpers(ctx context.Context, t testing.TB, pool *pgxpool.Pool, flavor dbFlavor) {
 	t.Helper()
+	span := trace.SpanFromContext(ctx)
 	logprefix := [...]string{"global", "local"}
 	var look []fs.FS
 	if sys, err := fs.Sub(extraSQL, "sql"); err != nil {
@@ -104,6 +111,7 @@ func loadHelpers(ctx context.Context, t testing.TB, pool *pgxpool.Pool, flavor d
 	// is a helper library, this is different than you may expect.
 	if sys, err := fs.Sub(os.DirFS("."), "testdata"); err != nil {
 		t.Log("no testdata directory, skipping local loading")
+		span.AddEvent(`skip_local`)
 	} else {
 		look = append(look, sys)
 	}
@@ -126,6 +134,7 @@ func loadHelpers(ctx context.Context, t testing.TB, pool *pgxpool.Pool, flavor d
 			if err != nil {
 				panic(fmt.Sprintf("programmer error: %v", err))
 			}
+			span.AddEvent(`load_sql`, trace.WithAttributes(attribute.StringSlice(`files`, ms)))
 			for _, f := range ms {
 				b, err := fs.ReadFile(sys, f)
 				if err != nil {

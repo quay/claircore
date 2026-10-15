@@ -57,6 +57,8 @@ type MatcherGetCall struct {
 // [Jq]: https://jqlang.github.io/jq/
 func RunMatcherTests(ctx context.Context, t *testing.T, dir string, matchers ...driver.Matcher) {
 	t.Helper()
+	ctx, span := tracer.Start(ctx, "RunMatcherTests")
+	defer span.End()
 
 	ms, err := filepath.Glob(filepath.Join(dir, "*.txtar"))
 	if err != nil {
