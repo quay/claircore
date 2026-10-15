@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"slices"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -247,8 +248,8 @@ func (a *fetchDescriptor) DiscoverVersion(t testing.TB) {
 	} else {
 		prefix := a.Version + "."
 		vs := bom.Versioning.Versions
-		for i := len(vs) - 1; i >= 0; i-- {
-			v := vs[i]
+		for _, v := range slices.Backward(vs) {
+
 			if strings.HasPrefix(v, prefix) {
 				a.RealVersion = v
 				break

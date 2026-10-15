@@ -166,27 +166,7 @@ func (l *Layer) Close() error {
 // Deprecated: This function unconditionally errors and does nothing. Use the
 // [Layer.Init] method instead.
 func (l *Layer) SetLocal(_ string) error {
-	// TODO(hank) Just wrap errors.ErrUnsupported when updating to go1.21
-	return errUnsupported
-}
-
-type unsupported struct{}
-
-var errUnsupported = &unsupported{}
-
-func (*unsupported) Error() string {
-	return "unsupported operation"
-}
-func (*unsupported) Is(tgt error) bool {
-	// Hack for forwards compatibility: In go1.21, [errors.ErrUnsupported] was
-	// added and ideally we'd just use that. However, we're supporting go1.20
-	// until it's out of upstream support. This hack will make constructions
-	// like:
-	//
-	//	errors.Is(err, errors.ErrUnsupported)
-	//
-	// work as soon as a main module is built with go1.21.
-	return tgt.Error() == "unsupported operation"
+	return errors.ErrUnsupported
 }
 
 // Fetched reports whether the layer blob has been fetched locally.

@@ -178,7 +178,7 @@ func checkEqual(ctx context.Context, t *testing.T, tc testcase, lib *Libindex, i
 		cmp.FilterPath(func(p cmp.Path) bool {
 			s := p.Index(-3)
 			m := p.Last().String()
-			return m == ".Files" || (s.Type() == reflect.TypeOf((*claircore.Package)(nil)) &&
+			return m == ".Files" || (s.Type() == reflect.TypeFor[*claircore.Package]() &&
 				(m == ".RepositoryHint" || m == ".PackageDB"))
 		}, cmp.Ignore()),
 	}

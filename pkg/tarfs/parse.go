@@ -247,8 +247,8 @@ func parseNumber(b []byte) (int64, error) {
 // The entire-slice behavior handles the case where a fixed size header field is
 // fully populated.
 func cstring(b []byte) string {
-	if i := bytes.IndexByte(b, 0); i >= 0 {
-		return string(b[:i])
+	if before, _, ok := bytes.Cut(b, []byte{0}); ok {
+		return string(before)
 	}
 	return string(b)
 }

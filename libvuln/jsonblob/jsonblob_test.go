@@ -69,7 +69,7 @@ func TestRoundtrip(t *testing.T) {
 	eg, ctx := errgroup.WithContext(ctx)
 	eg.Go(func() error { defer w.Close(); return a.Store(w) })
 	eg.Go(func() error {
-		l, err := Load(ctx, io.TeeReader(r, &buf))
+		l, err := NewLoader(ctx, io.TeeReader(r, &buf))
 		if err != nil {
 			return err
 		}
