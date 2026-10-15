@@ -13,12 +13,23 @@ import (
 	"time"
 
 	"github.com/quay/claircore/toolkit/log"
+	"go.opentelemetry.io/contrib/bridges/otelslog"
 )
 
 var (
-	// Setup installs the test log handler exactly once.
-	setup = sync.OnceFunc(func() {
-		slog.SetDefault(slog.New(new(handler)))
+	// SetupSlog installs the test log handler exactly once.
+	setupSlog = sync.OnceFunc(func() {
+		var h slog.Handler
+		if p := mainSetup.LoggerProvider; p != nil {
+			h = slog.NewMultiHandler(
+				new(handler),
+				otelslog.NewHandler("github.com/quay/claircore/test", otelslog.WithLoggerProvider(p)),
+			)
+		} else {
+			h = new(handler)
+		}
+
+		slog.SetDefault(slog.New(h))
 	})
 
 	// Getwd caches [os.Getwd], since it may be called for every [slog.Record].
@@ -108,7 +119,7 @@ func (h handler) WithGroup(name string) slog.Handler {
 // Logging returns a [context.Context] that's set up to make the default
 // [slog.Logger] defer output to the provided [testing.TB] output.
 func Logging(t testing.TB, parent ...context.Context) context.Context {
-	setup()
+	setupSlog()
 	var ctx context.Context
 	if len(parent) > 0 {
 		ctx = parent[0]

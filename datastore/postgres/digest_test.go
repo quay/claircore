@@ -7,9 +7,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/quay/claircore"
+	"github.com/quay/claircore/test"
 )
 
 func TestDigestEncode(t *testing.T) {
+	t.Parallel()
+	_, span := tracer.Start(test.RootContext(t), t.Name())
+	defer span.End()
 	var ds digestSlice = []claircore.Digest{
 		claircore.MustParseDigest(`sha256:` + strings.Repeat(`a`, 64)),
 		claircore.MustParseDigest(`sha256:` + strings.Repeat(`b`, 64)),

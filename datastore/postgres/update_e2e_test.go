@@ -25,8 +25,10 @@ import (
 
 // TestUpdateE2E performs an end to end test of update operations and diffing
 func TestUpdateE2E(t *testing.T) {
-	integration.NeedDB(t)
-	ctx := t.Context()
+	t.Parallel()
+	ctx, span := tracer.Start(test.RootContext(t), t.Name())
+	defer span.End()
+	integration.NeedDB(t, ctx)
 
 	cases := []updateE2e{
 		{
@@ -83,7 +85,8 @@ func (e *updateE2e) Run(ctx context.Context) func(*testing.T) {
 		{"DeleteUpdateOperations", e.DeleteUpdateOperations},
 	}
 	return func(t *testing.T) {
-		ctx := test.Logging(t, ctx)
+		ctx, span := tracer.Start(test.Logging(t, ctx), t.Name())
+		defer span.End()
 		pool := pgtest.TestMatcherDB(ctx, t)
 		e.pool = pool
 		e.s = NewMatcherStore(pool)
@@ -117,7 +120,8 @@ var updateOpCmp = cmpopts.IgnoreFields(driver.UpdateOperation{}, "Date")
 func (e *updateE2e) Update(ctx context.Context) func(*testing.T) {
 	fp := driver.Fingerprint(uuid.New().String())
 	return func(t *testing.T) {
-		ctx := test.Logging(t, ctx)
+		ctx, span := tracer.Start(test.Logging(t, ctx), t.Name())
+		defer span.End()
 		e.updateOps = make([]driver.UpdateOperation, 0, e.Updates)
 		for _, vs := range e.vulns() {
 			ref, err := e.s.UpdateVulnerabilities(ctx, e.updater, fp, vs)
@@ -143,7 +147,8 @@ func (e *updateE2e) Update(ctx context.Context) func(*testing.T) {
 // operation returns the expected results.
 func (e *updateE2e) GetUpdateOperations(ctx context.Context) func(*testing.T) {
 	return func(t *testing.T) {
-		ctx := test.Logging(t, ctx)
+		ctx, span := tracer.Start(test.Logging(t, ctx), t.Name())
+		defer span.End()
 		out, err := e.s.GetUpdateOperations(ctx, driver.VulnerabilityKind, e.updater)
 		if err != nil {
 			t.Fatalf("failed to get UpdateOperations: %v", err)
@@ -178,7 +183,8 @@ type update struct {
 // and then an update to an whole updater set
 func (e *updateE2e) recordUpdaterStatus(ctx context.Context) func(*testing.T) {
 	return func(t *testing.T) {
-		ctx := test.Logging(t, ctx)
+		ctx, span := tracer.Start(test.Logging(t, ctx), t.Name())
+		defer span.End()
 		errorText := "test error"
 		firstUpdateDate := time.Date(2020, time.Month(1), 22, 2, 10, 30, 0, time.UTC)
 		secondUpdateDate := time.Date(2021, time.Month(2), 21, 1, 10, 30, 0, time.UTC)
@@ -255,7 +261,8 @@ func orNoIndex(a int) string {
 // independently calculated diffs.
 func (e *updateE2e) Diff(ctx context.Context) func(t *testing.T) {
 	return func(t *testing.T) {
-		ctx := test.Logging(t, ctx)
+		ctx, span := tracer.Start(test.Logging(t, ctx), t.Name())
+		defer span.End()
 		for n := range e.vulns() {
 			// This does a bunch of checks so that the first operation is
 			// compared appropriately.
@@ -343,7 +350,8 @@ func (e *updateE2e) DeleteUpdateOperations(ctx context.Context) func(*testing.T)
 			assocExists = `SELECT EXISTS(SELECT 1 FROM uo_vuln JOIN update_operation uo ON (uo_vuln.uo = uo.id) WHERE uo.ref = $1::uuid);`
 		)
 		var exists bool
-		ctx := test.Logging(t, ctx)
+		ctx, span := tracer.Start(test.Logging(t, ctx), t.Name())
+		defer span.End()
 		for _, op := range e.updateOps {
 			_, err := e.s.DeleteUpdateOperations(ctx, op.Ref)
 			if err != nil {

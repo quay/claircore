@@ -18,6 +18,9 @@ import (
 )
 
 func TestGetQueryBuilderDeterministicArgs(t *testing.T) {
+	t.Parallel()
+	ctx, span := tracer.Start(test.RootContext(t), t.Name())
+	defer span.End()
 	const (
 		preamble = `SELECT
 		"vuln"."id", "name", "description", "issued", "links", "severity", "normalized_severity", "package_name", "package_version",
@@ -224,6 +227,8 @@ func TestGetQueryBuilderDeterministicArgs(t *testing.T) {
 
 	for _, tt := range table {
 		t.Run(tt.name, func(t *testing.T) {
+			_, span := tracer.Start(ctx, t.Name())
+			defer span.End()
 			ir := tt.indexRecord()
 			opts := datastore.GetOpts{
 				Matchers:         tt.matchExps,
@@ -250,8 +255,10 @@ type testCase struct {
 // TestLatestVulns checks that only the lastest update operations are
 // considered when querying for vulns
 func TestLatestVulns(t *testing.T) {
-	integration.NeedDB(t)
-	ctx := test.Logging(t)
+	t.Parallel()
+	ctx, span := tracer.Start(test.RootContext(t), t.Name())
+	defer span.End()
+	integration.NeedDB(t, ctx)
 
 	cases := []testCase{
 		{

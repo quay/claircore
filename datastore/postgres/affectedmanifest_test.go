@@ -21,25 +21,28 @@ import (
 type affectedTest struct {
 	store        indexer.Store
 	pool         *pgxpool.Pool
-	ctx          context.Context
 	ir           claircore.IndexReport
 	v            *claircore.Vulnerability
 	isVulnerable bool
 }
 
-func (e *affectedTest) Run(t *testing.T) {
-	type subtest struct {
-		name string
-		do   func(t *testing.T)
-	}
-	subtests := [...]subtest{
-		{"IndexArtifacts", e.IndexArtifacts},
-		{"IndexManifest", e.IndexManifest},
-		{"AffectedManifests", e.AffectedManifests},
-	}
-	for _, subtest := range subtests {
-		if !t.Run(subtest.name, subtest.do) {
-			t.FailNow()
+func (e *affectedTest) Run(ctx context.Context) func(*testing.T) {
+	return func(t *testing.T) {
+		ctx, span := tracer.Start(ctx, t.Name())
+		defer span.End()
+		type subtest struct {
+			name string
+			do   func(t *testing.T)
+		}
+		subtests := [...]subtest{
+			{"IndexArtifacts", e.IndexArtifacts(ctx)},
+			{"IndexManifest", e.IndexManifest(ctx)},
+			{"AffectedManifests", e.AffectedManifests(ctx)},
+		}
+		for _, subtest := range subtests {
+			if !t.Run(subtest.name, subtest.do) {
+				t.FailNow()
+			}
 		}
 	}
 }
@@ -49,55 +52,43 @@ func (e *affectedTest) Run(t *testing.T) {
 //
 // this is required so foreign key constraints do not
 // fail in later tests.
-func (e *affectedTest) IndexArtifacts(t *testing.T) {
-	ctx := test.Logging(t, e.ctx)
-	const (
-		insertManifest = `
+func (e *affectedTest) IndexArtifacts(ctx context.Context) func(*testing.T) {
+	return func(t *testing.T) {
+		ctx, span := tracer.Start(test.Logging(t, ctx), t.Name())
+		defer span.End()
+		const (
+			insertManifest = `
 		INSERT INTO	manifest
 			(hash)
 		VALUES ($1)
 		ON CONFLICT DO NOTHING;
 		`
-		insertPkg = `
+			insertPkg = `
 		INSERT INTO package (name, kind, version, norm_kind, norm_version, module, arch, id)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		ON CONFLICT DO NOTHING;
 		`
-		insertDist = `
+			insertDist = `
 		INSERT INTO dist
 			(name, did, version, version_code_name, version_id, arch, cpe, pretty_name, id)
 		VALUES
 			($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		ON CONFLICT DO NOTHING;
 		`
-		insertRepo = `
+			insertRepo = `
 		INSERT INTO repo
 			(name, key, uri, id, cpe)
 		VALUES ($1, $2, $3, $4, $5)
 		ON CONFLICT DO NOTHING;
 		`
-	)
-	_, err := e.pool.Exec(ctx, insertManifest, e.ir.Hash.String())
-	if err != nil {
-		t.Fatalf("failed to insert manifest: %v", err)
-	}
-	for _, pkg := range e.ir.Packages {
-		_, err := e.pool.Exec(ctx, insertPkg,
-			pkg.Name,
-			pkg.Kind,
-			pkg.Version,
-			pkg.NormalizedVersion.Kind,
-			pkg.NormalizedVersion,
-			pkg.Module,
-			pkg.Arch,
-			pkg.ID,
 		)
+		_, err := e.pool.Exec(ctx, insertManifest, e.ir.Hash.String())
 		if err != nil {
-			t.Fatalf("failed to insert package: %v", err)
+			t.Fatalf("failed to insert manifest: %v", err)
 		}
-		if pkg.Source != nil {
-			pkg := pkg.Source
-			_, err := e.pool.Exec(ctx, insertPkg,
+		for _, pkg := range e.ir.Packages {
+			_, err := e.pool.Exec(
+				ctx, insertPkg,
 				pkg.Name,
 				pkg.Kind,
 				pkg.Version,
@@ -108,66 +99,91 @@ func (e *affectedTest) IndexArtifacts(t *testing.T) {
 				pkg.ID,
 			)
 			if err != nil {
-				t.Fatalf("failed to insert source package: %v", err)
+				t.Fatalf("failed to insert package: %v", err)
+			}
+			if pkg.Source != nil {
+				pkg := pkg.Source
+				_, err := e.pool.Exec(
+					ctx, insertPkg,
+					pkg.Name,
+					pkg.Kind,
+					pkg.Version,
+					pkg.NormalizedVersion.Kind,
+					pkg.NormalizedVersion,
+					pkg.Module,
+					pkg.Arch,
+					pkg.ID,
+				)
+				if err != nil {
+					t.Fatalf("failed to insert source package: %v", err)
+				}
 			}
 		}
-	}
-	for _, dist := range e.ir.Distributions {
-		_, err := e.pool.Exec(ctx, insertDist,
-			dist.Name,
-			dist.DID,
-			dist.Version,
-			dist.VersionCodeName,
-			dist.VersionID,
-			dist.Arch,
-			dist.CPE,
-			dist.PrettyName,
-			dist.ID,
-		)
-		if err != nil {
-			t.Fatalf("failed to insert dist: %v", err)
+		for _, dist := range e.ir.Distributions {
+			_, err := e.pool.Exec(
+				ctx, insertDist,
+				dist.Name,
+				dist.DID,
+				dist.Version,
+				dist.VersionCodeName,
+				dist.VersionID,
+				dist.Arch,
+				dist.CPE,
+				dist.PrettyName,
+				dist.ID,
+			)
+			if err != nil {
+				t.Fatalf("failed to insert dist: %v", err)
+			}
 		}
-	}
-	for _, repo := range e.ir.Repositories {
-		_, err := e.pool.Exec(ctx, insertRepo,
-			repo.Name,
-			repo.Key,
-			repo.URI,
-			repo.ID,
-			repo.CPE,
-		)
-		if err != nil {
-			t.Fatalf("failed to insert repo: %v", err)
+		for _, repo := range e.ir.Repositories {
+			_, err := e.pool.Exec(
+				ctx, insertRepo,
+				repo.Name,
+				repo.Key,
+				repo.URI,
+				repo.ID,
+				repo.CPE,
+			)
+			if err != nil {
+				t.Fatalf("failed to insert repo: %v", err)
+			}
 		}
 	}
 }
 
 // IndexManifest confirms the contents of a manifest
 // can be written to the manifest index table.
-func (e *affectedTest) IndexManifest(t *testing.T) {
-	ctx := test.Logging(t, e.ctx)
-	err := e.store.IndexManifest(ctx, &e.ir)
-	if err != nil {
-		t.Fatalf("failed to index manifest: %v", err)
+func (e *affectedTest) IndexManifest(ctx context.Context) func(*testing.T) {
+	return func(t *testing.T) {
+		ctx, span := tracer.Start(test.Logging(t, ctx), t.Name())
+		defer span.End()
+		err := e.store.IndexManifest(ctx, &e.ir)
+		if err != nil {
+			t.Fatalf("failed to index manifest: %v", err)
+		}
 	}
 }
 
 // AffectedManifests confirms each vulnerability
 // in the vulnereability report reports the associated
 // manifest is affected.
-func (e *affectedTest) AffectedManifests(t *testing.T) {
-	ctx := test.Logging(t, e.ctx)
-	hashes, err := e.store.AffectedManifests(ctx, *e.v)
-	if err != nil {
-		t.Fatalf("failed to retrieve affected manifest for vuln %s: %v", e.v.ID, err)
-	}
+func (e *affectedTest) AffectedManifests(ctx context.Context) func(*testing.T) {
+	return func(t *testing.T) {
+		ctx, span := tracer.Start(test.Logging(t, ctx), t.Name())
+		defer span.End()
+		hashes, err := e.store.AffectedManifests(ctx, *e.v)
+		if err != nil {
+			t.Fatalf("failed to retrieve affected manifest for vuln %s: %v", e.v.ID, err)
+		}
 
-	if len(hashes) == 0 && e.isVulnerable {
-		t.Fatalf("expected manifest to be vulnerable to %s for package %s", e.v.Name, e.v.Package.Name)
-	}
+		if len(hashes) == 0 && e.isVulnerable {
+			t.Fatalf("expected manifest to be vulnerable to %s for package %s", e.v.Name, e.v.Package.Name)
+		}
 
-	if len(hashes) == 1 && !e.isVulnerable {
-		t.Fatalf("expected manifest not to be vulnerable to %s for package %s", e.v.Name, e.v.Package.Name)
+		if len(hashes) == 1 && !e.isVulnerable {
+			t.Fatalf("expected manifest not to be vulnerable to %s for package %s", e.v.Name, e.v.Package.Name)
+		}
 	}
 }
 
@@ -179,14 +195,16 @@ type afTestCase struct {
 }
 
 func TestAffectedManifests(t *testing.T) {
-	ctx := test.Logging(t)
-	integration.NeedDB(t)
+	t.Parallel()
+	ctx, span := tracer.Start(test.RootContext(t), t.Name())
+	defer span.End()
+	integration.NeedDB(t, ctx)
 	pool := pgtest.TestIndexerDB(ctx, t)
 	store := NewIndexerStore(pool)
 
 	testCases := []afTestCase{
 		{
-			name: "rhel_simple_affected",
+			name: "RHELSimpleAffected",
 			vuln: &claircore.Vulnerability{
 				Name:           "CVE-123",
 				FixedInVersion: "10.32-4.el8_6",
@@ -204,7 +222,7 @@ func TestAffectedManifests(t *testing.T) {
 			indexReport:  "rhacs-main-rhel8.index.json",
 		},
 		{
-			name: "rhel_simple_not_affected_by_version",
+			name: "RHELSimpleNotAffectedByVersion",
 			vuln: &claircore.Vulnerability{
 				Name:           "CVE-123",
 				FixedInVersion: "10.32-2.el8_6",
@@ -222,7 +240,7 @@ func TestAffectedManifests(t *testing.T) {
 			indexReport:  "rhacs-main-rhel8.index.json",
 		},
 		{
-			name: "rhel_simple_not_affected_by_repo",
+			name: "RHELSimpleNotAffectedByRepo",
 			vuln: &claircore.Vulnerability{
 				Name:           "CVE-123",
 				FixedInVersion: "10.32-2.el8_6",
@@ -240,7 +258,7 @@ func TestAffectedManifests(t *testing.T) {
 			indexReport:  "rhacs-main-rhel8.index.json",
 		},
 		{
-			name: "go_simple_affected_by_version",
+			name: "GoSimpleAffectedByVersion",
 			vuln: &claircore.Vulnerability{
 				Name:           "CVE-123",
 				FixedInVersion: "v1.4.3",
@@ -261,7 +279,7 @@ func TestAffectedManifests(t *testing.T) {
 			indexReport:  "rhacs-main-rhel8.index.json",
 		},
 		{
-			name: "go_simple_not_affected_by_version",
+			name: "GoSimpleNotAffectedByVersion",
 			vuln: &claircore.Vulnerability{
 				Name:           "CVE-123",
 				FixedInVersion: "v1.4.1",
@@ -282,7 +300,7 @@ func TestAffectedManifests(t *testing.T) {
 			indexReport:  "rhacs-main-rhel8.index.json",
 		},
 		{
-			name: "debian_simple_affected",
+			name: "DebianSimpleAffected",
 			vuln: &claircore.Vulnerability{
 				Name:           "CVE-123",
 				FixedInVersion: "1.9-3+deb10u2",
@@ -301,7 +319,7 @@ func TestAffectedManifests(t *testing.T) {
 			indexReport:  "docker.io-library-debian-10.index.json",
 		},
 		{
-			name: "debian_not_affected_bad_dist",
+			name: "DebianNotAffectedBadDist",
 			vuln: &claircore.Vulnerability{
 				Name:           "CVE-123",
 				FixedInVersion: "1.9-3+deb10u2",
@@ -334,11 +352,10 @@ func TestAffectedManifests(t *testing.T) {
 		e2e := &affectedTest{
 			store:        store,
 			pool:         pool,
-			ctx:          ctx,
 			ir:           ir,
 			v:            tc.vuln,
 			isVulnerable: tc.isVulnerable,
 		}
-		t.Run(tc.name, e2e.Run)
+		t.Run(tc.name, e2e.Run(ctx))
 	}
 }
