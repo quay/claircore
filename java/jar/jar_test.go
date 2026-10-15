@@ -5,6 +5,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"compress/gzip"
+	"context"
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
@@ -260,53 +261,12 @@ func TestJARBadManifest(t *testing.T) {
 // them gracefully.
 func TestMalformed(t *testing.T) {
 	t.Parallel()
+	ctx := test.RootContext(t)
 
 	t.Run("BadOffset", func(t *testing.T) {
-		const (
-			jarName  = `malformed_zip.jar`
-			manifest = `testdata/malformed_zip.MF`
-		)
-		fn := test.GenerateFixture(t, jarName, test.Modtime(t, "jar_test.go"), func(t testing.TB, f *os.File) {
-			// Create the jar-like.
-			w := zip.NewWriter(f)
-			if _, err := w.Create(`META-INF/`); err != nil {
-				t.Fatal(err)
-			}
-			fw, err := w.Create(`META-INF/MANIFEST.MF`)
-			if err != nil {
-				t.Fatal(err)
-			}
-			mf, err := os.ReadFile(manifest)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if _, err := io.Copy(fw, bytes.NewReader(mf)); err != nil {
-				t.Fatal(err)
-			}
-			if err := w.Close(); err != nil {
-				t.Fatal(err)
-			}
-
-			// Then, corrupt it.
-			// Seek to the central directory footer:
-			pos, err := f.Seek(-0x16+0x10 /* sizeof(footer) + offset(dir_offset)*/, io.SeekEnd)
-			if err != nil {
-				t.Fatal(err)
-			}
-			b := make([]byte, 4)
-			if _, err := io.ReadFull(f, b); err != nil {
-				t.Fatal(err)
-			}
-			// Offset everything so the reader slowly descends into madness.
-			b[0] -= 7
-			if _, err := f.WriteAt(b, pos); err != nil {
-				t.Fatal(err)
-			}
-
-			if err := f.Sync(); err != nil {
-				t.Error(err)
-			}
-		})
+		const jarName = `malformed_zip.jar`
+		ctx := test.Logging(t, ctx)
+		fn := test.GenerateFixture(t, ctx, jarName, test.Modtime(t, "jar_test.go"), genBadOffset)
 
 		f, err := os.Open(fn)
 		if err != nil {
@@ -321,7 +281,6 @@ func TestMalformed(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		ctx := test.Logging(t)
 		infos, err := Parse(ctx, jarName, z)
 		t.Logf("returned error: %v", err)
 		switch {
@@ -335,73 +294,9 @@ func TestMalformed(t *testing.T) {
 	})
 
 	t.Run("Cursed", func(t *testing.T) {
-		// Why is the footer corrupted like that?
-		// No idea, we just found a jar in the wild that looked like this.
-		fn := test.GenerateFixture(t, `plantar.jar`, test.Modtime(t, "jar_test.go"), func(t testing.TB, f *os.File) {
-			const comment = "\x00"
-			// Create the jar-like.
-			w := zip.NewWriter(f)
-			fw, err := w.Create(`META-INF/MANIFEST.MF`)
-			if err != nil {
-				t.Fatal(err)
-			}
-			mf, err := os.Open("testdata/manifest/HdrHistogram-2.1.9.jar")
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer mf.Close()
-			if _, err := io.Copy(fw, mf); err != nil {
-				t.Fatal(err)
-			}
-			w.SetComment(comment)
-			if err := w.Close(); err != nil {
-				t.Fatal(err)
-			}
-			f.Write([]byte{0x00}) // Bonus!
-
-			// Then, corrupt it.
-			fi, err := f.Stat()
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			ft := make([]byte, 0x16+int64(len(comment))+1)
-			ftOff := fi.Size() - int64(len(ft))
-			ptrOff := ftOff + 16
-			szOff := ftOff + 12
-
-			info := func() {
-				if _, err := f.ReadAt(ft, ftOff); err != nil {
-					t.Error(err)
-				}
-				t.Logf("footer:\n%s", hex.Dump(ft))
-				b := make([]byte, 4)
-				if _, err := f.ReadAt(b, ptrOff); err != nil {
-					t.Fatal(err)
-				}
-				ptr := binary.LittleEndian.Uint32(b)
-				t.Logf("Central Directory pointer: 0x%08x", ptr)
-				b = b[:2]
-				if _, err := f.ReadAt(b, szOff); err != nil {
-					t.Fatal(err)
-				}
-				sz := binary.LittleEndian.Uint16(b)
-				t.Logf("Central Directory size:    %d", sz)
-			}
-
-			info()
-			if _, err := f.WriteAt([]byte{0xef, 0xbe, 0xad, 0xde}, ptrOff); err != nil {
-				t.Error(err)
-			}
-			if _, err := f.WriteAt([]byte{0x20, 0x00}, szOff); err != nil {
-				t.Error(err)
-			}
-			info()
-
-			if err := f.Sync(); err != nil {
-				t.Error(err)
-			}
-		})
+		const jarName = `malformed_zip.jar`
+		ctx := test.Logging(t, ctx)
+		fn := test.GenerateFixture(t, ctx, `plantar.jar`, test.Modtime(t, "jar_test.go"), genCursed)
 
 		f, err := os.Open(fn)
 		if err != nil {
@@ -421,6 +316,116 @@ func TestMalformed(t *testing.T) {
 			t.Fail()
 		}
 	})
+}
+
+func genBadOffset(t testing.TB, _ context.Context, f *os.File) {
+	// Create the jar-like.
+	w := zip.NewWriter(f)
+	if _, err := w.Create(`META-INF/`); err != nil {
+		t.Fatal(err)
+	}
+	fw, err := w.Create(`META-INF/MANIFEST.MF`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mf, err := os.ReadFile(`testdata/malformed_zip.MF`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := io.Copy(fw, bytes.NewReader(mf)); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	// Then, corrupt it.
+	// Seek to the central directory footer:
+	pos, err := f.Seek(-0x16+0x10 /* sizeof(footer) + offset(dir_offset)*/, io.SeekEnd)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b := make([]byte, 4)
+	if _, err := io.ReadFull(f, b); err != nil {
+		t.Fatal(err)
+	}
+	// Offset everything so the reader slowly descends into madness.
+	b[0] -= 7
+	if _, err := f.WriteAt(b, pos); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := f.Sync(); err != nil {
+		t.Error(err)
+	}
+}
+
+// Why is the footer corrupted like that?
+// No idea, we just found a jar in the wild that looked like this.
+func genCursed(t testing.TB, _ context.Context, f *os.File) {
+	const comment = "\x00"
+	// Create the jar-like.
+	w := zip.NewWriter(f)
+	fw, err := w.Create(`META-INF/MANIFEST.MF`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mf, err := os.Open("testdata/manifest/HdrHistogram-2.1.9.jar")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mf.Close()
+	if _, err := io.Copy(fw, mf); err != nil {
+		t.Fatal(err)
+	}
+	w.SetComment(comment)
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	f.Write([]byte{0x00}) // Bonus!
+
+	// Then, corrupt it.
+	fi, err := f.Stat()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ft := make([]byte, 0x16+int64(len(comment))+1)
+	ftOff := fi.Size() - int64(len(ft))
+	ptrOff := ftOff + 16
+	szOff := ftOff + 12
+
+	info := func() {
+		if _, err := f.ReadAt(ft, ftOff); err != nil {
+			t.Error(err)
+		}
+		t.Logf("footer:\n%s", hex.Dump(ft))
+		b := make([]byte, 4)
+		if _, err := f.ReadAt(b, ptrOff); err != nil {
+			t.Fatal(err)
+		}
+		ptr := binary.LittleEndian.Uint32(b)
+		t.Logf("Central Directory pointer: 0x%08x", ptr)
+		b = b[:2]
+		if _, err := f.ReadAt(b, szOff); err != nil {
+			t.Fatal(err)
+		}
+		sz := binary.LittleEndian.Uint16(b)
+		t.Logf("Central Directory size:    %d", sz)
+	}
+
+	info()
+	if _, err := f.WriteAt([]byte{0xef, 0xbe, 0xad, 0xde}, ptrOff); err != nil {
+		t.Error(err)
+	}
+	if _, err := f.WriteAt([]byte{0x20, 0x00}, szOff); err != nil {
+		t.Error(err)
+	}
+	info()
+
+	if err := f.Sync(); err != nil {
+		t.Error(err)
+	}
 }
 
 func TestManifestSectionReader(t *testing.T) {

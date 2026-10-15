@@ -2,6 +2,7 @@ package gobin
 
 import (
 	"archive/tar"
+	"context"
 	"io"
 	"os"
 	"os/exec"
@@ -15,35 +16,11 @@ import (
 )
 
 func TestEmptyFile(t *testing.T) {
-	ctx := test.Logging(t)
+	ctx, span := tracer.Start(test.RootContext(t), t.Name())
+	defer span.End()
 
 	mod := test.Modtime(t, "gobin_test.go") // Needs to be the name of this file.
-	p := test.GenerateFixture(t, "nothing.tar", mod, func(t testing.TB, tf *os.File) {
-		tmpdir := t.TempDir()
-		f, err := os.Create(filepath.Join(tmpdir, "nothing"))
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer f.Close()
-		fi, err := f.Stat()
-		if err != nil {
-			t.Fatal(err)
-		}
-		// Create the tar stuff
-		tw := tar.NewWriter(tf)
-		defer tw.Close()
-		hdr, err := tar.FileInfoHeader(fi, "")
-		if err != nil {
-			t.Fatal(err)
-		}
-		hdr.Name = "./bin/nothing"
-		if err := tw.WriteHeader(hdr); err != nil {
-			t.Error(err)
-		}
-		if _, err := io.Copy(tw, f); err != nil {
-			t.Error(err)
-		}
-	})
+	p := test.GenerateFixture(t, ctx, "nothing.tar", mod, genEmptyFile)
 	f, err := os.Open(p)
 	if err != nil {
 		t.Fatal(err)
@@ -72,61 +49,11 @@ func TestEmptyFile(t *testing.T) {
 }
 
 func TestScanner(t *testing.T) {
-	ctx := test.Logging(t)
+	ctx, span := tracer.Start(test.RootContext(t), t.Name())
+	defer span.End()
 
 	mod := test.Modtime(t, "gobin_test.go") // Needs to be the name of this file.
-	p := test.GenerateFixture(t, t.Name()+".tar", mod, func(t testing.TB, tf *os.File) {
-		tmpdir := t.TempDir()
-
-		// Build a go binary.
-		outname := filepath.Join(tmpdir, "bisect")
-		cmd := exec.CommandContext(ctx, "go", "build", "-o", outname, "github.com/quay/claircore/test/bisect")
-		cmd.Env = append(cmd.Environ(), "GOOS=linux", "GOARCH=amd64") // build a Linux amd64 ELF exe, supported by clair. Unit tests may be running on another architecture
-		out, err := cmd.CombinedOutput()
-		if len(out) != 0 {
-			t.Logf("%q", string(out))
-		}
-		if err != nil {
-			t.Fatal(err)
-		}
-		inf, err := os.Open(outname)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer inf.Close()
-		fi, err := inf.Stat()
-		if err != nil {
-			t.Fatal(err)
-		}
-		t.Logf("wrote binary to: %s", inf.Name())
-		t.Cleanup(func() {
-			if !t.Failed() {
-				return
-			}
-			cmd := exec.CommandContext(ctx, "go", "version", "-m", inf.Name())
-			out, err := cmd.CombinedOutput()
-			if err != nil {
-				t.Logf("error looking at toolchain reporting: %v", err)
-				return
-			}
-			t.Logf("version information reported by toolchain:\n%s", string(out))
-		})
-
-		// Write a tarball with the binary.
-		tw := tar.NewWriter(tf)
-		defer tw.Close()
-		hdr, err := tar.FileInfoHeader(fi, "")
-		if err != nil {
-			t.Fatal(err)
-		}
-		hdr.Name = "./bin/bisect"
-		if err := tw.WriteHeader(hdr); err != nil {
-			t.Error(err)
-		}
-		if _, err := io.Copy(tw, inf); err != nil {
-			t.Error(err)
-		}
-	})
+	p := test.GenerateFixture(t, ctx, t.Name()+".tar", mod, genScanner)
 	f, err := os.Open(p)
 	if err != nil {
 		t.Fatal(err)
@@ -175,5 +102,89 @@ func TestScanner(t *testing.T) {
 			continue
 		}
 		t.Errorf("unexpected entry: %v", v)
+	}
+}
+
+func genEmptyFile(t testing.TB, _ context.Context, tf *os.File) {
+	_, span := tracer.Start(ctx, `genEmptyFile`)
+	defer span.End()
+	tmpdir := t.TempDir()
+	f, err := os.Create(filepath.Join(tmpdir, "nothing"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	fi, err := f.Stat()
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Create the tar stuff
+	tw := tar.NewWriter(tf)
+	defer tw.Close()
+	hdr, err := tar.FileInfoHeader(fi, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	hdr.Name = "./bin/nothing"
+	if err := tw.WriteHeader(hdr); err != nil {
+		t.Error(err)
+	}
+	if _, err := io.Copy(tw, f); err != nil {
+		t.Error(err)
+	}
+}
+
+func genScanner(t testing.TB, ctx context.Context, tf *os.File) {
+	ctx, span := tracer.Start(ctx, `genScanner`)
+	defer span.End()
+	tmpdir := t.TempDir()
+
+	// Build a go binary.
+	outname := filepath.Join(tmpdir, "bisect")
+	cmd := exec.CommandContext(ctx, "go", "build", "-o", outname, "github.com/quay/claircore/test/bisect")
+	cmd.Env = append(cmd.Environ(), "GOOS=linux", "GOARCH=amd64") // build a Linux amd64 ELF exe, supported by clair. Unit tests may be running on another architecture
+	out, err := cmd.CombinedOutput()
+	if len(out) != 0 {
+		t.Logf("%q", string(out))
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	inf, err := os.Open(outname)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer inf.Close()
+	fi, err := inf.Stat()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("wrote binary to: %s", inf.Name())
+	t.Cleanup(func() {
+		if !t.Failed() {
+			return
+		}
+		cmd := exec.CommandContext(ctx, "go", "version", "-m", inf.Name())
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Logf("error looking at toolchain reporting: %v", err)
+			return
+		}
+		t.Logf("version information reported by toolchain:\n%s", string(out))
+	})
+
+	// Write a tarball with the binary.
+	tw := tar.NewWriter(tf)
+	defer tw.Close()
+	hdr, err := tar.FileInfoHeader(fi, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	hdr.Name = "./bin/bisect"
+	if err := tw.WriteHeader(hdr); err != nil {
+		t.Error(err)
+	}
+	if _, err := io.Copy(tw, inf); err != nil {
+		t.Error(err)
 	}
 }
