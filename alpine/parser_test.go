@@ -1,7 +1,6 @@
 package alpine
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"sort"
@@ -129,7 +128,8 @@ var v3_10CommunityTruncatedVulns = []*claircore.Vulnerability{
 
 func TestParser(t *testing.T) {
 	t.Parallel()
-	ctx := test.Logging(t)
+	ctx, span := tracer.Start(test.RootContext(t), t.Name())
+	defer span.End()
 	table := []struct {
 		release  release
 		repo     string
@@ -144,18 +144,18 @@ func TestParser(t *testing.T) {
 		},
 	}
 
-	for _, test := range table {
-		t.Run(test.testFile, func(t *testing.T) {
-			ctx, done := context.WithCancel(ctx)
-			t.Cleanup(done)
+	for _, tc := range table {
+		t.Run(tc.testFile, func(t *testing.T) {
+			ctx, span := tracer.Start(test.Logging(t, ctx), t.Name())
+			defer span.End()
 
-			path := fmt.Sprintf("testdata/%s", test.testFile)
+			path := fmt.Sprintf("testdata/%s", tc.testFile)
 			f, err := os.Open(path)
 			if err != nil {
 				t.Fatalf("failed to open test data: %v", path)
 			}
 
-			u := &updater{release: test.release, repo: test.repo}
+			u := &updater{release: tc.release, repo: tc.repo}
 			vulns, err := u.Parse(ctx, f)
 			if err != nil {
 				t.Fatalf("failed to parse: %v", err)
@@ -163,11 +163,11 @@ func TestParser(t *testing.T) {
 
 			sort.SliceStable(vulns,
 				func(i, j int) bool { return vulns[i].Name < vulns[j].Name })
-			sort.SliceStable(test.expected,
-				func(i, j int) bool { return test.expected[i].Name < test.expected[j].Name })
+			sort.SliceStable(tc.expected,
+				func(i, j int) bool { return tc.expected[i].Name < tc.expected[j].Name })
 
-			if !cmp.Equal(vulns, test.expected) {
-				diff := cmp.Diff(vulns, test.expected)
+			if !cmp.Equal(vulns, tc.expected) {
+				diff := cmp.Diff(vulns, tc.expected)
 				t.Fatalf("security databases were not equal: \n%v", diff)
 			}
 		})

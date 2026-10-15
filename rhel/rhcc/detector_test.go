@@ -2,6 +2,7 @@ package rhcc
 
 import (
 	"archive/tar"
+	"context"
 	"io"
 	"os"
 	"strings"
@@ -246,7 +247,7 @@ func TestPackageDetector(t *testing.T) {
 		t.Run(tt.Name, func(t *testing.T) {
 			ctx := test.Logging(t)
 			mod := test.Modtime(t, tt.LabelsFile)
-			a.GenerateLayer(t, tt.Name, mod, genLayerFunc(tt.LabelsFile, tt.LabelsPath))
+			a.GenerateLayer(t, ctx, tt.Name, mod, genLayerFunc(tt.LabelsFile, tt.LabelsPath))
 
 			r := a.Realizer(ctx).(*test.CachedRealizer)
 			defer func() {
@@ -346,7 +347,7 @@ func TestRepositoryDetector(t *testing.T) {
 		t.Run(tt.Name, func(t *testing.T) {
 			ctx := test.Logging(t)
 			mod := test.Modtime(t, tt.LabelsFile)
-			a.GenerateLayer(t, tt.Name, mod, genLayerFunc(tt.LabelsFile, tt.LabelsPath))
+			a.GenerateLayer(t, ctx, tt.Name, mod, genLayerFunc(tt.LabelsFile, tt.LabelsPath))
 
 			r := a.Realizer(ctx).(*test.CachedRealizer)
 			defer func() {
@@ -376,8 +377,8 @@ func TestRepositoryDetector(t *testing.T) {
 	}
 }
 
-func genLayerFunc(path string, imgPath string) func(t testing.TB, w *os.File) {
-	return func(t testing.TB, w *os.File) {
+func genLayerFunc(path string, imgPath string) func(testing.TB, context.Context, *os.File) {
+	return func(t testing.TB, _ context.Context, w *os.File) {
 		dockerfile, err := os.Open(path)
 		if err != nil {
 			t.Fatal(err)

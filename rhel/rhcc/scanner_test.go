@@ -2,6 +2,7 @@ package rhcc
 
 import (
 	"archive/tar"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -244,7 +245,7 @@ func TestContainerScanner(t *testing.T) {
 		t.Run(tt.Name, func(t *testing.T) {
 			ctx := test.Logging(t)
 			mod := test.Modtime(t, tt.Dockerfile)
-			a.GenerateLayer(t, tt.Name, mod, func(t testing.TB, w *os.File) {
+			a.GenerateLayer(t, ctx, tt.Name, mod, func(t testing.TB, _ context.Context, w *os.File) {
 				dockerfile, err := os.Open(tt.Dockerfile)
 				if err != nil {
 					t.Fatal(err)

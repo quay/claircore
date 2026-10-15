@@ -14,7 +14,8 @@ import (
 )
 
 func TestScanFs(t *testing.T) {
-	ctx := test.Logging(t)
+	ctx, span := tracer.Start(test.RootContext(t), t.Name())
+	defer span.End()
 
 	td := os.DirFS("testdata")
 	ms, err := fs.Glob(td, "3.*")
@@ -42,6 +43,8 @@ func scanFsTestcase(ctx context.Context, sys fs.FS) func(*testing.T) {
 		err = json.Unmarshal(in, &want)
 	}
 	return func(t *testing.T) {
+		ctx, span := tracer.Start(test.Logging(t, ctx), t.Name())
+		defer span.End()
 		if err != nil {
 			t.Fatal(err)
 		}
