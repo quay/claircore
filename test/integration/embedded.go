@@ -3,6 +3,7 @@ package integration
 import (
 	"archive/tar"
 	"archive/zip"
+	"context"
 	"encoding/xml"
 	"errors"
 	"fmt"
@@ -71,7 +72,7 @@ func init() {
 	}
 }
 
-func startEmbedded(t testing.TB) func() {
+func startEmbedded(ctx context.Context, t testing.TB) func() {
 	if os.Getuid() == 0 {
 		// Print warning to prevent wary travelers needing to go spelunking in
 		// the logs.
@@ -85,13 +86,15 @@ func startEmbedded(t testing.TB) func() {
 		t.FailNow()
 	}
 	return func() {
+		ctx, span := tracer.Start(ctx, "startEmbedded")
+		defer span.End()
 		pkgDB = &Engine{}
-		if err := pkgDB.Start(t); err != nil {
+		if err := pkgDB.Start(ctx, t); err != nil {
 			t.Log("unclean shutdown?", err)
 			if err := pkgDB.Stop(); err != nil {
 				t.Fatal(err)
 			}
-			if err := pkgDB.Start(t); err != nil {
+			if err := pkgDB.Start(ctx, t); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -136,8 +139,11 @@ const bomURL = `https://repo1.maven.org/maven2/io/zonky/test/postgres/embedded-p
 
 var versionRE = regexp.MustCompile(`^[0-9]+((\.[0-9]+){2})?$`)
 
-func (a *fetchDescriptor) DiscoverVersion(t testing.TB) {
+func (a *fetchDescriptor) DiscoverVersion(ctx context.Context, t testing.TB) {
+	_, span := tracer.Start(ctx, "fetchDescriptor.DiscoverVersion")
+	defer span.End()
 	if a.cached.Load() {
+		span.AddEvent("CacheHit")
 		// Should be fine.
 		return
 	}
@@ -160,6 +166,7 @@ func (a *fetchDescriptor) DiscoverVersion(t testing.TB) {
 		}
 	}()
 	if testing.Short() {
+		span.AddEvent("Skip")
 		t.Skip("asked for short tests")
 	}
 
@@ -263,8 +270,11 @@ func (a *fetchDescriptor) DiscoverVersion(t testing.TB) {
 	shouldFetch = errors.Is(linkErr, os.ErrNotExist)
 }
 
-func (a *fetchDescriptor) FetchArchive(t testing.TB) {
+func (a *fetchDescriptor) FetchArchive(ctx context.Context, t testing.TB) {
+	ctx, span := tracer.Start(ctx, "fetchDescriptor.FetchArchive")
+	defer span.End()
 	if a.cached.Load() {
+		span.AddEvent("CacheHit")
 		return
 	}
 	p := a.Realpath(t)
