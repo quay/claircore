@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -19,8 +20,10 @@ type Engine struct {
 	dataDir string
 }
 
-func (e *Engine) init(t testing.TB) {
-	embedDB.FetchArchive(t)
+func (e *Engine) init(ctx context.Context, t testing.TB) {
+	ctx, span := tracer.Start(ctx, "Engine.init")
+	defer span.End()
+	embedDB.FetchArchive(ctx, t)
 	d := embedDB.Realpath(t)
 	if _, err := os.Stat(d); err != nil {
 		t.Error(err)
@@ -74,8 +77,10 @@ func (e *Engine) init(t testing.TB) {
 // Start configures and starts the database engine.
 //
 // This should not be called multiple times.
-func (e *Engine) Start(t testing.TB) error {
-	e.init(t)
+func (e *Engine) Start(ctx context.Context, t testing.TB) error {
+	ctx, span := tracer.Start(ctx, "Engine.Start")
+	defer span.End()
+	e.init(ctx, t)
 	logfile := filepath.Join(e.dataDir, "log")
 	if err := os.Truncate(logfile, 0); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return err
