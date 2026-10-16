@@ -495,21 +495,99 @@ func TestInnerJar(t *testing.T) {
 		{
 			Name:    "jackson-annotations",
 			Version: "2.13.0",
+			Kind:    SourceName,
 			Source:  ".",
 		},
 		{
 			Name:    "log4j-api",
 			Version: "2.14",
+			Kind:    SourceName,
 			Source:  ".",
 		},
 		{
 			Name:    "log4j",
 			Version: "2.14.0",
+			Kind:    SourceName,
 			Source:  ".",
 		},
 	}
 
-	if !cmp.Equal(got, want, cmpopts.IgnoreFields(Info{}, "SHA")) {
+	if !cmp.Equal(got, want, cmpopts.IgnoreFields(Info{}, "SHA1", "SHA256")) {
 		t.Error(cmp.Diff(got, want))
 	}
+}
+
+func TestExtractSBOM(t *testing.T) {
+	t.Parallel()
+	ctx := test.Logging(t)
+
+	t.Run("gz", func(t *testing.T) {
+		var raw bytes.Buffer
+		zw := gzip.NewWriter(&raw)
+		if _, err := zw.Write([]byte("{")); err != nil {
+			t.Fatal(err)
+		}
+		if err := zw.Close(); err != nil {
+			t.Fatal(err)
+		}
+		z := zipMember(t, "META-INF/sbom/app.cdx.json.gz", raw.Bytes())
+		_, err := extractSBOM(ctx, srcPath{"app.jar"}, z)
+		if errors.Is(err, errUnpopulated) {
+			t.Fatal("gz member was skipped")
+		}
+	})
+
+	t.Run("gzipSuffix", func(t *testing.T) {
+		z := zipMember(t, "META-INF/sbom/app.cdx.json.gzip", []byte("{}"))
+		_, err := extractSBOM(ctx, srcPath{"app.jar"}, z)
+		if !errors.Is(err, errUnpopulated) {
+			t.Fatalf("got %v, want unpopulated", err)
+		}
+	})
+
+	t.Run("declaredSize", func(t *testing.T) {
+		z := zipMember(t, "META-INF/sbom/app.cdx.json", []byte("{}"))
+		z.File[0].UncompressedSize64 = 1 << 62
+		_, err := extractSBOM(ctx, srcPath{"app.jar"}, z)
+		if !errors.Is(err, errSBOMTooLarge) {
+			t.Fatalf("got %v", err)
+		}
+	})
+
+	t.Run("gzipExpansion", func(t *testing.T) {
+		var raw bytes.Buffer
+		zw := gzip.NewWriter(&raw)
+		if _, err := zw.Write(bytes.Repeat([]byte{0}, maxEmbeddedSBOM+1)); err != nil {
+			t.Fatal(err)
+		}
+		if err := zw.Close(); err != nil {
+			t.Fatal(err)
+		}
+		z := zipMember(t, "META-INF/sbom/app.cdx.json.gz", raw.Bytes())
+		_, err := extractSBOM(ctx, srcPath{"app.jar"}, z)
+		if !errors.Is(err, errSBOMTooLarge) {
+			t.Fatalf("got %v", err)
+		}
+	})
+}
+
+func zipMember(t *testing.T, name string, body []byte) *zip.Reader {
+	t.Helper()
+	var buf bytes.Buffer
+	w := zip.NewWriter(&buf)
+	fw, err := w.Create(name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := fw.Write(body); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	r, err := zip.NewReader(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return r
 }
