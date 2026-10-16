@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -116,13 +118,53 @@ type link struct {
 
 type imagesResponse struct {
 	Data []struct {
-		ID     string         `json:"_id"`
-		Links  imageInfoLinks `json:"_links"`
-		Parsed struct {
+		ID           string         `json:"_id"`
+		Links        imageInfoLinks `json:"_links"`
+		CreationDate string         `json:"creation_date"` // For debugging
+		Parsed       struct {
 			Layers []claircore.Digest `json:"layers"`
 		} `json:"parsed_data"`
 	} `json:"data"`
 }
+
+var (
+	// This is the query parameter for the "images" request.
+	imageQuery = sync.OnceValue(func() string {
+		return (url.Values{
+			"page_size": {"1"},
+			"page":      {"0"},
+			"include": {strings.Join([]string{
+				"data._id", // Links come along for free
+				"data.creation_date",
+				"data.parsed_data.layers",
+			}, ",")},
+			"filter":  {"deleted!=true"},
+			"sort_by": {"creation_date[desc]"},
+		}).Encode()
+	})
+	// This is the query parameter for the "fetch"/"repositories" request.
+	fetchQuery = sync.OnceValue(func() string {
+		return (url.Values{
+			// It's impossible to just select the links, so exclude some
+			// excessively large stuff:
+			"exclude": {strings.Join([]string{
+				"application_categories",
+				"build_categories",
+				"content_stream_grades",
+				"display_data",
+				"release_categories",
+			}, ",")},
+		}).Encode()
+	})
+	// This is the query parameter for the "rpm-manifest" request.
+	manifestQuery = sync.OnceValue(func() string {
+		return (url.Values{
+			"include": {strings.Join([]string{
+				"rpms",
+			}, ",")},
+		}).Encode()
+	})
+)
 
 func (doc hydraDoc) Run(dir string) func(*testing.T) {
 	root := url.URL{
@@ -134,12 +176,21 @@ func (doc hydraDoc) Run(dir string) func(*testing.T) {
 		t.Parallel()
 		ctx := test.Logging(t)
 		try := 1
+		defer func() {
+			if t.Failed() {
+				t.Log("ℹ️\tHTTP Requests are in reverse order")
+				if !testing.Verbose() {
+					t.Log("ℹ️\tuse \"-v\" flag to not truncate responses")
+				}
+			}
+		}()
 
 	Retry:
 		fetchURL, err := root.Parse(path.Join("/api/containers/", "v1/repositories/id/", doc.ID))
 		if err != nil {
 			t.Fatal(err)
 		}
+		fetchURL.RawQuery = fetchQuery()
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, fetchURL.String(), nil)
 		if err != nil {
 			t.Fatal(err)
@@ -173,12 +224,7 @@ func (doc hydraDoc) Run(dir string) func(*testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		imageURL.RawQuery = (url.Values{
-			"page_size": {"1"},
-			"page":      {"0"},
-			"exclude":   {"data.repositories.comparison.advisory_rpm_mapping,data.brew,data.cpe_ids,data.top_layer_id"},
-			"filter":    {"deleted!=true"},
-		}).Encode()
+		imageURL.RawQuery = imageQuery()
 		req, err = http.NewRequestWithContext(ctx, http.MethodGet, imageURL.String(), nil)
 		if err != nil {
 			t.Fatal(err)
@@ -198,11 +244,14 @@ func (doc hydraDoc) Run(dir string) func(*testing.T) {
 			t.Fatalf("%s: %v", imageURL.String(), err)
 		}
 		defer logResponse(t, res.Request.URL.Path, buf)()
+		img := &image.Data[0]
+		t.Logf("found image %q (%s)", img.ID, img.CreationDate)
 
-		manifestURL, err := fetchURL.Parse(path.Join("/api/containers/", image.Data[0].Links.RpmManifest.Href))
+		manifestURL, err := fetchURL.Parse(path.Join("/api/containers/", img.Links.RpmManifest.Href))
 		if err != nil {
 			t.Fatal(err)
 		}
+		manifestURL.RawQuery = manifestQuery()
 		req, err = http.NewRequestWithContext(ctx, http.MethodGet, manifestURL.String(), nil)
 		if err != nil {
 			t.Fatal(err)
@@ -273,6 +322,17 @@ func logResponse(t *testing.T, u string, b *bytes.Buffer) func() {
 		if !t.Failed() {
 			return
 		}
-		t.Logf("%s response:\t%q", u, b.String())
+		const etc = `[...]`
+		const lim = 2048 - len(etc)
+		trunc := !testing.Verbose() && b.Len() > lim
+		var format strings.Builder
+		format.WriteString("%s response")
+		if trunc {
+			format.WriteString(" (truncated)")
+			b.Truncate(lim)
+			b.WriteString(etc)
+		}
+		format.WriteString(":\n%s")
+		t.Logf(format.String(), u, b.String())
 	}
 }
