@@ -70,7 +70,12 @@ func TestDebian(t *testing.T) {
 
 func TestOracle(t *testing.T) {
 	ctx := test.Logging(t)
-	set, err := oracle.UpdaterSet(ctx)
+	fac := new(oracle.Factory)
+	err := fac.Configure(ctx, noopConfigure, pkgClient)
+	if err != nil {
+		t.Fatal(err)
+	}
+	set, err := fac.UpdaterSet(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
