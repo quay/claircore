@@ -1,0 +1,65 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "version": 1,
+  "metadata": {
+    "component": {
+      "type": "application",
+      "bom-ref": "pkg:maven/org.acme/rhbq-false-positive-reproducer-app@1.0.0-SNAPSHOT?type=jar",
+      "name": "rhbq-false-positive-reproducer-app",
+      "version": "1.0.0-SNAPSHOT",
+      "purl": "pkg:maven/org.acme/rhbq-false-positive-reproducer-app@1.0.0-SNAPSHOT?type=jar"
+    }
+  },
+  "components": [
+    {
+      "type": "application",
+      "bom-ref": "pkg:maven/org.acme/rhbq-false-positive-reproducer-app@1.0.0-SNAPSHOT?type=jar",
+      "group": "org.acme",
+      "name": "rhbq-false-positive-reproducer-app",
+      "version": "1.0.0-SNAPSHOT",
+      "purl": "pkg:maven/org.acme/rhbq-false-positive-reproducer-app@1.0.0-SNAPSHOT?type=jar"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:maven/io.smallrye/smallrye-graphql@2.17.0.redhat-00003?type=jar",
+      "group": "io.smallrye",
+      "name": "smallrye-graphql",
+      "version": "2.17.0.redhat-00003",
+      "purl": "pkg:maven/io.smallrye/smallrye-graphql@2.17.0.redhat-00003?type=jar"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:maven/io.quarkus/quarkus-cyclonedx@3.33.3.redhat-00005?type=jar",
+      "group": "io.quarkus",
+      "name": "quarkus-cyclonedx",
+      "version": "3.33.3.redhat-00005",
+      "purl": "pkg:maven/io.quarkus/quarkus-cyclonedx@3.33.3.redhat-00005?type=jar"
+    },
+    {
+      "type": "framework",
+      "scope": "excluded",
+      "bom-ref": "pkg:maven/com.redhat.quarkus.platform/quarkus-bom@3.33.3.SP1-redhat-00002?type=pom",
+      "group": "com.redhat.quarkus.platform",
+      "name": "quarkus-bom",
+      "version": "3.33.3.SP1-redhat-00002",
+      "purl": "pkg:maven/com.redhat.quarkus.platform/quarkus-bom@3.33.3.SP1-redhat-00002?type=pom",
+      "cpe": "cpe:/a:redhat:quarkus:3.33"
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "pkg:maven/org.acme/rhbq-false-positive-reproducer-app@1.0.0-SNAPSHOT?type=jar",
+      "dependsOn": [
+        "pkg:maven/com.redhat.quarkus.platform/quarkus-bom@3.33.3.SP1-redhat-00002?type=pom",
+        "pkg:maven/io.quarkus/quarkus-cyclonedx@3.33.3.redhat-00005?type=jar"
+      ]
+    },
+    {
+      "ref": "pkg:maven/com.redhat.quarkus.platform/quarkus-bom@3.33.3.SP1-redhat-00002?type=pom",
+      "provides": [
+        "pkg:maven/io.smallrye/smallrye-graphql@2.17.0.redhat-00003?type=jar"
+      ]
+    }
+  ]
+}
