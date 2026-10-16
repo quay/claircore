@@ -162,7 +162,9 @@ func extractManifest(ctx context.Context, name srcPath, z *zip.Reader) (Info, er
 	mf, err := z.Open(manifestPath)
 	switch {
 	case errors.Is(err, nil):
-	case errors.Is(err, fs.ErrNotExist), errors.Is(err, zip.ErrFormat):
+	case errors.Is(err, fs.ErrNotExist),
+		errors.Is(err, zip.ErrFormat),
+		errors.Is(err, zip.ErrChecksum):
 		err = notAJar(name, err)
 		fallthrough
 	default:
@@ -171,7 +173,14 @@ func extractManifest(ctx context.Context, name srcPath, z *zip.Reader) (Info, er
 	defer mf.Close()
 	var i Info
 	err = i.parseManifest(ctx, mf)
-	if err != nil {
+	switch {
+	case errors.Is(err, nil):
+	case errors.Is(err, fs.ErrNotExist),
+		errors.Is(err, zip.ErrFormat),
+		errors.Is(err, zip.ErrChecksum):
+		err = notAJar(name, err)
+		fallthrough
+	default:
 		return Info{}, mkErr("parsing manifest", err)
 	}
 	name.Push(manifestPath)
@@ -221,7 +230,11 @@ func extractProperties(ctx context.Context, name srcPath, z *zip.Reader) ([]Info
 		}
 		err = ret[i].parseProperties(ctx, f)
 		f.Close()
-		if err != nil {
+		switch {
+		case errors.Is(err, nil):
+		case errors.Is(err, zip.ErrFormat), errors.Is(err, zip.ErrChecksum):
+			return nil, mkErr("properties", notAJar(name, err))
+		default:
 			return nil, mkErr("failed parsing properties", err)
 		}
 		name.Push(p)
@@ -259,7 +272,11 @@ func extractInner(ctx context.Context, p srcPath, z *zip.Reader) ([]Info, error)
 		buf.Grow(int(fi.Size()))
 		h.Reset()
 		sz, err := buf.ReadFrom(io.TeeReader(rc, h))
-		if err != nil {
+		switch {
+		case errors.Is(err, nil):
+		case errors.Is(err, zip.ErrFormat), errors.Is(err, zip.ErrChecksum):
+			return mkErr("inner", notAJar(p, err))
+		default:
 			return mkErr("failed buffering file", err)
 		}
 		bs := buf.Bytes()
