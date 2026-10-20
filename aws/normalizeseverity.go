@@ -1,6 +1,10 @@
 package aws
 
-import "github.com/quay/claircore"
+import (
+	"strings"
+
+	"github.com/quay/claircore"
+)
 
 const (
 	Low       = "low"
@@ -12,7 +16,7 @@ const (
 // NormalizeSeverity takes a aws.Severity and normalizes it to
 // a claircore.Severity.
 func NormalizeSeverity(severity string) claircore.Severity {
-	switch severity {
+	switch strings.ToLower(severity) {
 	case Low:
 		return claircore.Low
 	case Medium:
