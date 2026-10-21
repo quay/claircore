@@ -79,6 +79,9 @@ type RepositoryScannerConfig struct {
 	//
 	// This should be provided to avoid any network traffic.
 	Repo2CPEMappingFile string `json:"repo2cpe_mapping_file" yaml:"repo2cpe_mapping_file"`
+	// MaxRetries bounds retries after the initial mapping download request.
+	// Zero or negative disables retries. The default is zero.
+	MaxRetries int `json:"max_retries" yaml:"max_retries"`
 	// Timeout controls the timeout for any remote calls this package makes.
 	//
 	// The default is 10 seconds.
@@ -140,6 +143,7 @@ func (r *RepositoryScanner) Configure(ctx context.Context, f indexer.ConfigDeser
 		}
 	}
 	r.upd = common.NewUpdater(r.cfg.Repo2CPEMappingURL, mf)
+	r.upd.MaxRetries = r.cfg.MaxRetries
 	tctx, done := context.WithTimeout(ctx, r.cfg.Timeout)
 	defer done()
 	r.upd.Get(tctx, c)
