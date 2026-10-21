@@ -26,9 +26,9 @@ const (
 	// BaseURL is the base url for the Red Hat VEX security data.
 	//
 	//doc:url updater
-	BaseURL = "https://security.access.redhat.com/data/csaf/v2/vex/"
+	BaseURL = "https://security.access.redhat.com/data/csaf/v2/vex-feed/"
 
-	defaultCompressedFileTimeout = 2 * time.Minute
+	defaultCompressedFileTimeout = 5 * time.Minute
 	latestFile                   = "archive_latest.txt"
 	changesFile                  = "changes.csv"
 	deletionsFile                = "deletions.csv"

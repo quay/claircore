@@ -137,7 +137,7 @@ func docLinkFromBase(base *url.URL, name string) string {
 // NewParser creates a new Parser with initialised caches.
 //
 // The default base URL is [BaseURL]. Callers that ingest a different feed
-// (for example the beta vex-feed) should pass [WithBaseURL].
+// should pass [WithBaseURL].
 func NewParser(opts ...ParserOption) *Parser {
 	base, err := url.Parse(BaseURL)
 	if err != nil {
