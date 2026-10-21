@@ -66,6 +66,12 @@ func TestSBOMPackageName(t *testing.T) {
 		if len(bp.CPEs) != 1 || hint.Get("cpe") != bp.CPEs[0].String() {
 			t.Fatalf("cpe hint: got %q", hint["cpe"])
 		}
+		if bp.Location == "" || hint.Get("path") != bp.Location {
+			t.Fatalf("path hint: got %q", hint.Get("path"))
+		}
+		if sum := bp.Hashes[bom.HashSHA256]; len(sum) == 0 || hint.Get("sha256") != hex.EncodeToString(sum) {
+			t.Fatalf("sha256 hint: got %q", hint.Get("sha256"))
+		}
 		if hint.Has("hash") {
 			t.Fatalf("hash hint: got %q", hint["hash"])
 		}
@@ -160,11 +166,10 @@ func TestEmbeddedSBOMNotReplacedByMavenSearch(t *testing.T) {
 	}
 }
 
-// TestSBOMSkipsCoveredJars builds a directory layer and checks the three
-// layer-SBOM skip rules: a jar is dropped when its path matches a component
-// location, a jar is dropped when only its digest matches, and an SBOM inside
-// a jar does not cause another jar to be dropped.
-func TestSBOMSkipsCoveredJars(t *testing.T) {
+// TestSBOMKeepsNamedJars builds a directory layer and checks that a layer
+// SBOM and the JARs it names are both recorded. Coverage is applied later,
+// once every layer is visible.
+func TestSBOMKeepsNamedJars(t *testing.T) {
 	ctx := test.Logging(t)
 	root := t.TempDir()
 
@@ -243,16 +248,12 @@ func TestSBOMSkipsCoveredJars(t *testing.T) {
 		}
 	}
 
+	if pkg, ok := gotFile["file:aaa-app-1.0.jar"]; ok {
+		t.Errorf("carrier was indexed from the archive: %s %s", pkg.PackageDB, pkg.Name)
+	}
 	for _, db := range []string{
 		"file:lib/covered-1.0.jar",
 		"file:lib/hashed-1.0.jar",
-		"file:aaa-app-1.0.jar",
-	} {
-		if pkg, ok := gotFile[db]; ok {
-			t.Errorf("jar was indexed from the archive: %s %s", pkg.PackageDB, pkg.Name)
-		}
-	}
-	for _, db := range []string{
 		"file:lib/other-1.0.jar",
 		"file:lib/sibling-1.0.jar",
 	} {
@@ -260,15 +261,15 @@ func TestSBOMSkipsCoveredJars(t *testing.T) {
 			t.Errorf("missing jar %s", db)
 		}
 	}
-	assertSBOM(t, gotSBOM["sbom:sbom.cdx.json:lib/covered-1.0.jar"], "org.example:covered", "lib/covered-1.0.jar")
-	assertSBOM(t, gotSBOM["sbom:meta/app.cdx.json:elsewhere/hashed-1.0.jar"], "org.example:hashed", "meta/elsewhere/hashed-1.0.jar")
-	assertSBOM(t, gotSBOM["sbom:aaa-app-1.0.jar:META-INF/sbom/dependency.cdx.json:lib/sibling-1.0.jar"], "org.example:embedded", "aaa-app-1.0.jar")
-	if len(gotFile) != 2 || len(gotSBOM) != 3 {
+	assertSBOM(t, gotSBOM["sbom:sbom.cdx.json:lib/covered-1.0.jar"], "org.example:covered", "lib/covered-1.0.jar", "lib/covered-1.0.jar", sha256Hex(covered))
+	assertSBOM(t, gotSBOM["sbom:meta/app.cdx.json:elsewhere/hashed-1.0.jar"], "org.example:hashed", "meta/elsewhere/hashed-1.0.jar", "meta/elsewhere/hashed-1.0.jar", sha256Hex(hashed))
+	assertSBOM(t, gotSBOM["sbom:aaa-app-1.0.jar:META-INF/sbom/dependency.cdx.json:lib/sibling-1.0.jar"], "org.example:embedded", "aaa-app-1.0.jar", "lib/sibling-1.0.jar", sha256Hex(sibling))
+	if len(gotFile) != 4 || len(gotSBOM) != 3 {
 		t.Fatalf("got %d file packages and %d sbom packages", len(gotFile), len(gotSBOM))
 	}
 }
 
-func assertSBOM(t *testing.T, pkg *claircore.Package, name, filepath string) {
+func assertSBOM(t *testing.T, pkg *claircore.Package, name, filepath, coveredPath, sha256sum string) {
 	t.Helper()
 	if pkg == nil {
 		t.Fatalf("missing sbom package %s", name)
@@ -278,6 +279,19 @@ func assertSBOM(t *testing.T, pkg *claircore.Package, name, filepath string) {
 	}
 	if pkg.Filepath != filepath {
 		t.Fatalf("filepath: got %q, want %q", pkg.Filepath, filepath)
+	}
+	hint, err := url.ParseQuery(pkg.RepositoryHint)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if hint.Get("cpe") == "" {
+		t.Fatal("missing cpe hint")
+	}
+	if hint.Get("path") != coveredPath {
+		t.Fatalf("path hint: got %q, want %q", hint.Get("path"), coveredPath)
+	}
+	if hint.Get("sha256") != sha256sum {
+		t.Fatalf("sha256 hint: got %q, want %q", hint.Get("sha256"), sha256sum)
 	}
 }
 

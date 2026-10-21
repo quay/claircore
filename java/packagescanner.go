@@ -8,6 +8,7 @@ import (
 	"context"
 	"crypto/sha1"
 	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -22,7 +23,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"unique"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -82,7 +82,7 @@ type Scanner struct {
 func (*Scanner) Name() string { return "java" }
 
 // Version implements scanner.VersionedScanner.
-func (*Scanner) Version() string { return "9" }
+func (*Scanner) Version() string { return "10" }
 
 // Kind implements scanner.VersionedScanner.
 func (*Scanner) Kind() string { return "package" }
@@ -141,6 +141,7 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 	h1, h256 := sha1.New(), sha256.New()
 	hs := io.MultiWriter(h1, h256)
 	ck1 := make([]byte, 0, sha1.Size)
+	ck256 := make([]byte, 0, sha256.Size)
 	doSearch := s.root != nil
 	defer putBuf(buf)
 	set, err := rpm.NewPathSet(ctx, layer)
@@ -149,11 +150,6 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 	}
 	seed := maphash.MakeSeed()
 	sbomDup := make(map[uint64]struct{})
-	sbomPath := make(map[uint64]struct{})
-	sbomHash := map[unique.Handle[string]]map[uint64]struct{}{
-		bom.HashSHA1:   make(map[uint64]struct{}),
-		bom.HashSHA256: make(map[uint64]struct{}),
-	}
 
 	seq, walkErr := walkInteresting(ctx, sys)
 	var sboms, jars []string
@@ -223,15 +219,6 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 			if err != nil {
 				return nil, err
 			}
-			n := path.Join(dir, bp.Location)
-			sbomPath[maphash.String(seed, n)] = struct{}{}
-			for k, b := range bp.Hashes {
-				h, ok := sbomHash[k]
-				if !ok {
-					continue
-				}
-				h[maphash.Bytes(seed, b)] = struct{}{}
-			}
 			var pkg claircore.Package
 			if err := bom.PopulatePackage(&pkg, bp, p); err != nil {
 				return nil, err
@@ -241,17 +228,9 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 	}
 	for _, p := range jars {
 		log := slog.With("path", p)
-		if coveredSBOMPath(seed, p, sbomPath) {
-			log.DebugContext(ctx, "skipping jar covered by sbom path")
-			continue
-		}
 		sz, err := read(p)
 		if err != nil {
 			return nil, err
-		}
-		if coveredSBOMHash(seed, h1.Sum(nil), h256.Sum(nil), sbomHash) {
-			log.DebugContext(ctx, "skipping jar covered by sbom hash")
-			continue
 		}
 		// Let the zip reader determine if this is actually a valid zip file.
 		// We cannot just check the header, as it's possible the jar file
@@ -278,6 +257,7 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 			return nil, err
 		}
 		ck1 := h1.Sum(ck1)
+		ck256 := h256.Sum(ck256)
 		ps := make([]*claircore.Package, len(infos))
 		for j := range infos {
 			i := &infos[j]
@@ -306,13 +286,31 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 				for _, w := range i.CPEs {
 					hint.Add("cpe", w.String())
 				}
+				// An embedded document names files outside this archive by the
+				// occurrence location, not by a path joined onto the member.
+				if i.Location != "" {
+					hint.Set("path", i.Location)
+				}
+				if len(i.SHA1) != 0 {
+					hint.Set("sha1", hex.EncodeToString(i.SHA1))
+				}
+				if len(i.SHA256) != 0 {
+					hint.Set("sha256", hex.EncodeToString(i.SHA256))
+				}
 				pkg.RepositoryHint = hint.Encode()
 			} else {
 				b := ck1
 				if len(i.SHA1) != 0 {
 					b = i.SHA1
 				}
-				pkg.RepositoryHint = fmt.Sprintf(`sha1:%40x`, b)
+				sum := ck256
+				if len(i.SHA256) != 0 {
+					sum = i.SHA256
+				}
+				hint := url.Values{}
+				hint.Set("sha1", hex.EncodeToString(b))
+				hint.Set("sha256", hex.EncodeToString(sum))
+				pkg.RepositoryHint = hint.Encode()
 			}
 			if len(i.CPEs) == 1 {
 				pkg.CPE = i.CPEs[0]
@@ -350,19 +348,6 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 		ret = append(ret, ps...)
 	}
 	return ret, nil
-}
-
-func coveredSBOMPath(seed maphash.Seed, p string, paths map[uint64]struct{}) bool {
-	_, ok := paths[maphash.String(seed, p)]
-	return ok
-}
-
-func coveredSBOMHash(seed maphash.Seed, sha1Sum, sha256Sum []byte, hashes map[unique.Handle[string]]map[uint64]struct{}) bool {
-	if _, ok := hashes[bom.HashSHA1][maphash.Bytes(seed, sha1Sum)]; ok {
-		return true
-	}
-	_, ok := hashes[bom.HashSHA256][maphash.Bytes(seed, sha256Sum)]
-	return ok
 }
 
 // DefaultRepository implements [indexer.DefaultRepoScanner].

@@ -1,6 +1,7 @@
 package bom
 
 import (
+	"encoding/hex"
 	"net/url"
 	"path"
 	"unique"
@@ -40,6 +41,17 @@ func PopulatePackage(pkg *claircore.Package, bp Package, sbomFile string) error 
 	hint := url.Values{}
 	for _, w := range bp.CPEs {
 		hint.Add("cpe", w.String())
+	}
+	// path is the layer path a JAR scan should not also report. The coalescer
+	// reads it back with the component digests.
+	if bp.Location != "" {
+		hint.Set("path", n)
+	}
+	if sum := bp.Hashes[HashSHA1]; len(sum) != 0 {
+		hint.Set("sha1", hex.EncodeToString(sum))
+	}
+	if sum := bp.Hashes[HashSHA256]; len(sum) != 0 {
+		hint.Set("sha256", hex.EncodeToString(sum))
 	}
 	if len(bp.CPEs) == 1 {
 		pkg.CPE = bp.CPEs[0]
