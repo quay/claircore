@@ -44,7 +44,11 @@ func (u *Updater) DeltaParse(ctx context.Context, contents io.ReadCloser) ([]*cl
 	out := map[string][]*claircore.Vulnerability{}
 	deleted := []string{}
 
-	p := NewParser()
+	var opts []ParserOption
+	if u.url != nil {
+		opts = append(opts, WithBaseURL(u.url))
+	}
+	p := NewParser(opts...)
 	r := bufio.NewReader(snappy.NewReader(contents))
 	sz := 0
 	for b, err := r.ReadBytes('\n'); err == nil; b, err = r.ReadBytes('\n') {
@@ -88,14 +92,26 @@ type Parser struct {
 	threatImpact     *threatImpactIndex
 	remediation      *remediationIndex
 	defaultComponent *defaultComponentIndex
+	base             *url.URL
 	productIDInLinks bool
 }
 
 // ParserOption is a functional option for [Parser].
 type ParserOption func(*Parser)
 
+// WithBaseURL sets the VEX feed base URL used to construct a document self-link
+// when a CSAF document omits document.references. The URL must include a
+// trailing slash, as with [BaseURL].
+func WithBaseURL(u *url.URL) ParserOption {
+	return func(p *Parser) { p.base = u }
+}
+
 // WithProductIDInLinks makes the parser embed the VEX product ID as a URL
 // fragment on the self-link of each produced [claircore.Vulnerability].
+//
+// When the CSAF document has no self reference, the link is constructed from
+// the parser's base URL and the document tracking ID. Some feeds (for example
+// the Red Hat beta VEX feed) omit document.references.
 //
 // This is intended for use in acceptance tests, where the product ID is needed
 // to correlate matcher results back to expected fixture entries.
@@ -103,8 +119,31 @@ func WithProductIDInLinks() ParserOption {
 	return func(p *Parser) { p.productIDInLinks = true }
 }
 
+// DocLinkFromBase constructs the canonical document URL for a VEX tracking ID
+// (for example CVE-2023-4911 → {base}2023/cve-2023-4911.json).
+// Returns an empty string if the base is nil or the name is not a CVE ID.
+func docLinkFromBase(base *url.URL, name string) string {
+	if base == nil {
+		return ""
+	}
+	lower := strings.ToLower(name)
+	parts := strings.SplitN(lower, "-", 3) // cve, year, rest
+	if len(parts) != 3 || parts[0] != "cve" {
+		return ""
+	}
+	return base.JoinPath(parts[1], lower+".json").String()
+}
+
 // NewParser creates a new Parser with initialised caches.
+//
+// The default base URL is [BaseURL]. Callers that ingest a different feed
+// should pass [WithBaseURL].
 func NewParser(opts ...ParserOption) *Parser {
+	base, err := url.Parse(BaseURL)
+	if err != nil {
+		// BaseURL is a package constant; a parse failure is a programmer error.
+		panic("vex: invalid BaseURL: " + err.Error())
+	}
 	p := &Parser{
 		product:          newProductIndex(),
 		rc:               newRepoCache(),
@@ -112,6 +151,7 @@ func NewParser(opts ...ParserOption) *Parser {
 		threatImpact:     newThreatImpactIndex(),
 		remediation:      newRemediationIndex(),
 		defaultComponent: newDefaultComponentIndex(),
+		base:             base,
 	}
 	for _, o := range opts {
 		o(p)
@@ -302,6 +342,12 @@ func (p *Parser) creator(name string, doc *csaf.CSAF) *creator {
 		if r.Category == "self" {
 			selfLink = r.URL
 		}
+	}
+	// Some CSAF documents (for example the Red Hat beta VEX feed) omit the
+	// self reference. Construct the canonical document URL from the feed base
+	// and tracking ID so Links still carry a stable VEX doc URL.
+	if selfLink == "" {
+		selfLink = docLinkFromBase(p.base, name)
 	}
 	return &creator{
 		docName:          name,
@@ -851,6 +897,12 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v *csaf.Vulnerabilit
 		if err != nil {
 			return nil, err
 		}
+		// Skip source RPMs: they share a Key with no-arch binary siblings when
+		// arch is ignored, and would otherwise set Arch=src (no binary match)
+		// or, if ignored in extractArch, emit duplicate binary vulns.
+		if isSourceArch(st.PURL) {
+			continue
+		}
 
 		key := st.Key()
 		vuln, created := lookup(key)
@@ -961,6 +1013,9 @@ func (c *creator) knownNotAffectedVulnerabilities(ctx context.Context, v *csaf.V
 	for st, err := range c.Status(ctx, v, csaf.ProductStatusKnownNotAffected) {
 		if err != nil {
 			return nil, err
+		}
+		if isSourceArch(st.PURL) {
+			continue
 		}
 
 		key := st.Key()
@@ -1218,4 +1273,12 @@ func extractArch(p *packageurl.PackageURL) string {
 	default:
 		return arch
 	}
+}
+
+// IsSourceArch reports whether the pURL names a source RPM (arch=src/nosrc).
+// Those are not installable binary arches and must not create or reshape
+// binary-package vulnerabilities.
+func isSourceArch(p *packageurl.PackageURL) bool {
+	arch, _ := qualifier(p, "arch")
+	return arch == "src" || arch == "nosrc"
 }
