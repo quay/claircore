@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -31,6 +32,7 @@ func TestMain(m *testing.M) {
 
 func TestApply(t *testing.T) {
 	integration.NeedDB(t)
+	t.Parallel()
 	t.Run("Matcher", runMigration(Matcher))
 	t.Run("Indexer", runMigration(Indexer))
 	if t.Failed() {
@@ -39,7 +41,7 @@ func TestApply(t *testing.T) {
 	}
 }
 
-func runMigration(f func(context.Context, *pgx.ConnConfig) error) func(*testing.T) {
+func runMigration(setup func(context.Context, *pgx.ConnConfig) error) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx := test.Logging(t)
 		db, err := integration.NewDB(ctx, t)
@@ -50,7 +52,7 @@ func runMigration(f func(context.Context, *pgx.ConnConfig) error) func(*testing.
 
 		poolcfg := db.Config()
 		cfg := poolcfg.ConnConfig
-		if err := f(ctx, cfg); err != nil {
+		if err := setup(ctx, cfg); err != nil {
 			t.Fatal(err)
 		}
 
@@ -143,5 +145,45 @@ func checkSchema(which string, cfg *pgx.ConnConfig) func(*testing.T) {
 				t.Error(err)
 			}
 		}
+	}
+}
+
+// TestRead tests reading back the migrations.
+func TestRead(t *testing.T) {
+	integration.NeedDB(t)
+	t.Parallel()
+	ctx := test.Logging(t)
+	db, err := integration.NewDB(ctx, t)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close(ctx, t)
+	poolcfg := db.Config()
+	cfg := poolcfg.ConnConfig
+	conn, err := pgx.ConnectConfig(ctx, cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close(ctx)
+
+	now := time.Now().Round(time.Microsecond) // Round to PostgreSQL's resolution
+	// This query selects a NULL for the nullable column.
+	const query = `SELECT 1, $1::TIMESTAMPTZ, NULL, TRUE UNION ALL SELECT 2, $1::TIMESTAMPTZ, $1::TIMESTAMPTZ, FALSE;`
+	rows, err := conn.Query(ctx, query, now)
+	if err != nil {
+		err := fmt.Errorf("failed to query migrations: %w", err)
+		t.Fatal(err)
+	}
+	got, err := pgx.CollectRows(rows, pgx.RowToStructByPos[migrationState])
+	if err != nil {
+		err := fmt.Errorf("failed to read migrations: %w", err)
+		t.Fatal(err)
+	}
+	want := []migrationState{
+		{ID: 1, Created: now, Finished: nil, App: true},
+		{ID: 2, Created: now, Finished: &now, App: false},
+	}
+	if !cmp.Equal(got, want) {
+		t.Error(cmp.Diff(got, want))
 	}
 }

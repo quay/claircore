@@ -156,7 +156,10 @@
 //	     JOIN public.vuln v ON ((uo_vuln.vuln = v.id)));
 //
 //	CREATE TABLE public.libvuln_migrations (
-//	    version integer NOT NULL
+//	    version integer NOT NULL,
+//	    application_work_required boolean DEFAULT false NOT NULL,
+//	    created_at timestamp with time zone DEFAULT transaction_timestamp() NOT NULL,
+//	    finished_at timestamp with time zone
 //	);
 //
 //	CREATE TABLE public.uo_enrich (
