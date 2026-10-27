@@ -251,6 +251,12 @@ func TestIsCPEStringSubsetMatch(t *testing.T) {
 			vulnCPE:   cpe.MustUnbind("cpe:/a:redhat:openshift:4.%02::el8"),
 			match:     false,
 		},
+		{
+			name:      "WrongACSMinor",
+			recordCPE: cpe.MustUnbind("cpe:/a:redhat:advanced_cluster_security:4.10::el8"),
+			vulnCPE:   cpe.MustUnbind("cpe:/a:redhat:advanced_cluster_security:4.1"),
+			match:     false,
+		},
 	}
 
 	for _, tc := range testcases {
