@@ -159,8 +159,13 @@ func (s *Scanner) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircor
 	var sboms, jars []string
 	for k, p := range seq {
 		if set.Contains(p) {
-			slog.DebugContext(ctx, "file from an rpm", "path", p)
-			continue
+			// Don't skip identification outright: an RPM may bundle a
+			// vendored/shaded Java artifact under its own NEVRA, in which
+			// case RPM-level vulnerability data won't reflect the bundled
+			// artifact's own CVE history. Still attempt Java-level
+			// identification so a Maven-sourced match can surface
+			// alongside whatever RPM-level data exists.
+			slog.DebugContext(ctx, "file from an rpm; identifying anyway", "path", p)
 		}
 		switch k {
 		case fileSBoM:
