@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"path"
@@ -14,6 +15,42 @@ import (
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/toolkit/types"
 )
+
+// openJDK17Layer has several Java artifacts installed via RPM: some
+// identifiable via pom.properties, some only via their manifest. See
+// [TestRPMOwnedJarIdentified] and [TestRPMOwnedJarIdentifiedViaSearch].
+var openJDK17Layer = test.LayerRef{
+	Registry: "registry.access.redhat.com",
+	Name:     "ubi9/openjdk-17",
+	Digest:   `sha256:ab14a75f4830a083c9f3c9c010c5210c78985a495d716160d67a3dcc8a5e02e9`,
+}
+
+// FetchLayer realizes the layer described by ref using the test caching
+// machinery, registering cleanup with t.
+func fetchLayer(ctx context.Context, t *testing.T, ref test.LayerRef) *claircore.Layer {
+	t.Helper()
+	a := test.NewCachedArena(t)
+	a.LoadLayerFromRegistry(ctx, t, ref)
+	r := a.Realizer(ctx).(*test.CachedRealizer)
+	t.Cleanup(func() {
+		if err := r.Close(); err != nil {
+			t.Error(err)
+		}
+	})
+
+	ls, err := r.RealizeDescriptions(ctx, []claircore.LayerDescription{
+		{
+			Digest:    ref.Digest,
+			URI:       "http://example.com",
+			MediaType: test.MediaType,
+			Headers:   make(map[string][]string),
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return &ls[0]
+}
 
 // TestDisableAPI runs the java scanner over some layers known to have java
 // packages installed.
@@ -49,6 +86,119 @@ func TestScan(t *testing.T) {
 	ctx := context.Background()
 	t.Run(path.Base(tinkerpop.Name), tinkerpop.Run(ctx))
 	t.Run(path.Base(jenkins.Name), jenkins.RunSubset(ctx, 226))
+}
+
+// TestRPMOwnedJarIdentified verifies that a jar installed by an RPM package is
+// still identified by the scanner, instead of being skipped outright just
+// because the RPM database reports it as owned.
+//
+// An RPM can bundle a Java artifact under its own NEVRA, so RPM-level
+// vulnerability data doesn't necessarily reflect the bundled artifact's own
+// CVE history -- skipping Java-level identification entirely left that
+// artifact invisible to both paths. See "usr/share/java/commons-codec.jar" in
+// this layer, which is owned by the "apache-commons-codec" RPM and carries
+// its own Maven pom.properties.
+func TestRPMOwnedJarIdentified(t *testing.T) {
+	ctx := test.Logging(t)
+	l := fetchLayer(ctx, t, openJDK17Layer)
+
+	scanner := &java.Scanner{}
+	pkgs, err := scanner.Scan(ctx, l)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	const (
+		wantPath    = "usr/share/java/commons-codec.jar"
+		wantName    = "commons-codec:commons-codec"
+		wantVersion = "1.17.1"
+	)
+	var found *claircore.Package
+	for _, p := range pkgs {
+		if p.Filepath == wantPath {
+			found = p
+			break
+		}
+	}
+	if found == nil {
+		t.Fatalf("expected a package at %q (RPM-owned), found none among %d packages -- Java identification appears to be skipped for RPM-owned files", wantPath, len(pkgs))
+	}
+	if got, want := found.Name, wantName; got != want {
+		t.Errorf("got Name %q, want %q", got, want)
+	}
+	if got, want := found.Version, wantVersion; got != want {
+		t.Errorf("got Version %q, want %q", got, want)
+	}
+}
+
+// TestRPMOwnedJarIdentifiedViaSearch covers the other half of the fix: an
+// RPM-owned jar with no pom.properties, which can only be identified via the
+// Maven search API fallback. Before the fix, this jar was skipped before
+// jar.Parse ever ran, so the search gate was never reached at all for
+// RPM-owned files -- this is precisely the combination (RPM-owned, no
+// pom.properties, identification depends on the search API) that made
+// real-world vendored jars like Tomcat's invisible.
+//
+// "usr/share/java/guice/google-guice.jar" in this layer is owned by the
+// "google-guice" RPM, has a manifest but no pom.properties, and its
+// Implementation-Title doesn't contain spaces, so it resolves via the
+// manifest heuristic and reaches the search gate. The search API itself is
+// stubbed out locally (see [TestDisableAPI]) to keep this test hermetic;
+// real-world resolution against Maven Central is out of scope here.
+func TestRPMOwnedJarIdentifiedViaSearch(t *testing.T) {
+	const (
+		wantPath    = "usr/share/java/guice/google-guice.jar"
+		wantSHA1    = "5060a54ff504273b682bbec9b02e6952176f2522"
+		wantGroup   = "com.google.inject"
+		wantArti    = "guice"
+		wantName    = wantGroup + ":" + wantArti
+		wantVersion = "5.1.0"
+	)
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.URL.Query().Get("q") != "1:"+wantSHA1 {
+			fmt.Fprint(w, `{"response":{"docs":[]}}`)
+			return
+		}
+		fmt.Fprintf(w, `{"response":{"docs":[{"id":%q,"g":%q,"a":%q,"v":%q}]}}`,
+			wantName+":"+wantVersion, wantGroup, wantArti, wantVersion)
+	}))
+	t.Cleanup(srv.Close)
+
+	ctx := test.Logging(t)
+	scanner := &java.Scanner{}
+	var buf bytes.Buffer
+	cfg := &java.ScannerConfig{API: srv.URL}
+	if err := json.NewEncoder(&buf).Encode(&cfg); err != nil {
+		t.Fatal(err)
+	}
+	if err := scanner.Configure(ctx, json.NewDecoder(&buf).Decode, srv.Client()); err != nil {
+		t.Fatal("error while configuring scanner", err)
+	}
+
+	l := fetchLayer(ctx, t, openJDK17Layer)
+	pkgs, err := scanner.Scan(ctx, l)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var found *claircore.Package
+	for _, p := range pkgs {
+		if p.Filepath == wantPath {
+			found = p
+			break
+		}
+	}
+	if found == nil {
+		t.Fatalf("expected a package at %q (RPM-owned, manifest-only), found none among %d packages -- Java identification appears to be skipped for RPM-owned files", wantPath, len(pkgs))
+	}
+	if got, want := found.Name, wantName; got != want {
+		t.Errorf("got Name %q, want %q", got, want)
+	}
+	if got, want := found.Version, wantVersion; got != want {
+		t.Errorf("got Version %q, want %q", got, want)
+	}
 }
 
 var tinkerpop = test.ScannerTestcase{
