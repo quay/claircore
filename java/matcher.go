@@ -58,7 +58,13 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 			return false, err
 		}
 		// If the package's version is less than the introduced version, it's not vulnerable.
-		if rv.Compare(iv) < 0 {
+		// EquivalentModuloClassifier guards against versions like "12.10.0" being
+		// read as strictly less than "12.10.0.jre11": some Maven artifacts (e.g.
+		// per-JDK-target builds) publish an unrecognized version-string suffix
+		// identically across every build of a given release, which the indexer
+		// can't always recover, so a lossy installed version can't be told apart
+		// from the classified one it actually is.
+		if rv.Compare(iv) < 0 && !rv.EquivalentModuloClassifier(iv) {
 			return false, nil
 		}
 	}
@@ -75,7 +81,9 @@ func (*Matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 			return false, err
 		}
 		// The package is affected if its version is less than the fixed version.
-		return rv.Compare(fv) < 0, nil
+		// See the EquivalentModuloClassifier note above; the same ambiguity
+		// applies symmetrically to the fixed boundary.
+		return rv.Compare(fv) < 0 && !rv.EquivalentModuloClassifier(fv), nil
 	case lastAffected != "":
 		la, err := maven.ParseVersion(lastAffected)
 		if err != nil {

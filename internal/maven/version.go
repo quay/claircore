@@ -315,3 +315,48 @@ var qualifiers = map[string]string{
 // means arbitrary qualifiers sort after all known qualifiers, and lexically
 // within the set of unknown qualifiers.
 const unknownQualifier = 7
+
+// EquivalentModuloClassifier reports whether "v" and "long" name the same
+// underlying release, where "long" carries an extra trailing qualifier that
+// isn't one of the recognized Maven qualifiers above.
+//
+// Some published artifacts encode build-variant information (most commonly a
+// JDK-target classifier, e.g. ".jre11") directly in the version string
+// instead of as a proper Maven classifier, and do so identically across
+// every variant of a given release. Maven's ordering algorithm sorts any
+// unrecognized qualifier after every known one, so an otherwise-identical
+// unqualified version always compares as strictly less than its
+// classifier-suffixed sibling, even though they're the same release.
+//
+// This only fires when the extra suffix doesn't resolve to a recognized
+// qualifier, so genuine pre/post-release ordering (-rc1, -SNAPSHOT, -sp1,
+// and a longer purely-numeric version) is left untouched.
+func (v *Version) EquivalentModuloClassifier(long *Version) bool {
+	vs, ls := v.orig, long.orig
+	if len(ls) <= len(vs) || !strings.HasPrefix(ls, vs) {
+		return false
+	}
+	switch ls[len(vs)] {
+	case '.', '-':
+	default:
+		return false
+	}
+	return hasUnrecognizedQualifier(ls[len(vs)+1:])
+}
+
+// HasUnrecognizedQualifier reports whether "suffix" begins with a token that
+// isn't one of the qualifiers Maven's own versioning vocabulary recognizes.
+//
+// A suffix beginning with a digit is treated as a genuinely more specific
+// numeric version component, not a qualifier, and reported as recognized.
+func hasUnrecognizedQualifier(suffix string) bool {
+	i := 0
+	for i < len(suffix) && !unicode.IsDigit(rune(suffix[i])) {
+		i++
+	}
+	if i == 0 {
+		return false
+	}
+	_, known := qualifiers[strings.ToLower(suffix[:i])]
+	return !known
+}
