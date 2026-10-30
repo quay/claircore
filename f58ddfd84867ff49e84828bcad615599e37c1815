@@ -4,5 +4,5 @@ The java package and repository indexers can now read CycloneDX files that defin
 java artifacts. These definitions are considered the source of truth over java
 artifacts manually found on the filesystem (providing paths or hashes match).
 The rhel-vex updater will now ingest maven advisories and the rhel/java matcher
-will be able to match the artifacts defined in the SBOM to advisories ingested
-from the Red Hat VEX data.
+can now match artifacts defined in the SBOM to advisories ingested from the Red Hat
+VEX data.
