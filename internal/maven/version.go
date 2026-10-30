@@ -315,3 +315,62 @@ var qualifiers = map[string]string{
 // means arbitrary qualifiers sort after all known qualifiers, and lexically
 // within the set of unknown qualifiers.
 const unknownQualifier = 7
+
+// EquivalentModuloClassifier reports whether "v" and "long" name the same
+// underlying release, where "long" carries an extra trailing JDK-target
+// classifier (e.g. "jre11", "jdk17") folded into the version string.
+//
+// Some published artifacts encode build-variant information this way
+// instead of as a proper Maven classifier, and do so identically across
+// every JDK-target variant of a given release. Maven's ordering algorithm
+// sorts any unrecognized qualifier after every known one, so an
+// otherwise-identical unqualified version always compares as strictly less
+// than its classifier-suffixed sibling, even though they're the same
+// release.
+//
+// This is scoped narrowly to the JDK-target-classifier shape, rather than
+// any suffix outside Maven's recognized qualifier set, so it doesn't risk
+// treating two versions as equivalent when an unrecognized suffix turns out
+// to carry real meaning -- e.g. a hypothetical "-hardened" or "-fips" tag
+// denoting a separately-patched, non-simultaneous variant. Genuine
+// pre/post-release ordering (-rc1, -SNAPSHOT, -sp1, and a longer
+// purely-numeric version) is also left untouched, since those already
+// resolve to a recognized qualifier.
+func (v *Version) EquivalentModuloClassifier(long *Version) bool {
+	vs, ls := v.orig, long.orig
+	if len(ls) <= len(vs) || !strings.HasPrefix(ls, vs) {
+		return false
+	}
+	switch ls[len(vs)] {
+	case '.', '-':
+	default:
+		return false
+	}
+	return isJDKClassifierSuffix(ls[len(vs)+1:])
+}
+
+// IsJDKClassifierSuffix reports whether "suffix" begins with a JDK-target
+// classifier token ("jre" or "jdk") immediately followed by a version
+// number, e.g. "jre11" or "jdk17-preview".
+//
+// This intentionally doesn't match any qualifier outside Maven's recognized
+// set -- only this specific, well-understood shape, which by construction
+// can't denote a real maturity/security distinction (a "jre11" build and a
+// "jre17" build of the same release are the same source code, compiled for
+// different JDK targets) -- and generalizes to any JDK version number
+// without needing updates as new ones ship.
+func isJDKClassifierSuffix(suffix string) bool {
+	i := 0
+	for i < len(suffix) && !unicode.IsDigit(rune(suffix[i])) {
+		i++
+	}
+	if i == 0 || i == len(suffix) {
+		return false
+	}
+	switch strings.ToLower(suffix[:i]) {
+	case "jre", "jdk":
+		return true
+	default:
+		return false
+	}
+}
