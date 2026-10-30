@@ -346,6 +346,31 @@ func TestVulnerable(t *testing.T) {
 			},
 			want: true,
 		},
+		{
+			// An unrecognized qualifier that isn't shaped like a JDK-target
+			// classifier (jre/jdk + digits) must not be short-circuited
+			// either, since it might denote a genuinely separate,
+			// non-simultaneous variant rather than a sibling build.
+			name: "unrecognized non-JDK qualifier must not be short-circuited",
+			record: &claircore.IndexRecord{
+				Package: &claircore.Package{
+					Name:    "com.example:widget",
+					Version: "1.2.3",
+					Kind:    types.BinaryPackage,
+				},
+			},
+			vuln: &claircore.Vulnerability{
+				Updater:     "osv",
+				Name:        "GHSA-1111-1111-1111",
+				Description: "fictitious vulnerability for test purposes",
+				Package: &claircore.Package{
+					Name:           "com.example:widget",
+					RepositoryHint: "Maven",
+				},
+				FixedInVersion: "fixed=1.2.3-hardened",
+			},
+			want: true,
+		},
 	}
 
 	for _, testcase := range testcases {

@@ -88,6 +88,36 @@ func TestEquivalentModuloClassifier(t *testing.T) {
 			want:  true,
 		},
 		{
+			name:  "jdk classifier, not just jre",
+			short: "1.0",
+			long:  "1.0.jdk17",
+			want:  true,
+		},
+		{
+			name:  "classifier matching is case-insensitive",
+			short: "12.10.2",
+			long:  "12.10.2.JRE11",
+			want:  true,
+		},
+		{
+			// This is the key risk-reduction case: an unrecognized qualifier
+			// that *isn't* shaped like a JDK-target classifier must not be
+			// short-circuited, since it might carry real meaning (e.g. a
+			// separately-patched, non-simultaneous variant). Only scoping to
+			// "any unrecognized qualifier" (rather than specifically
+			// "jre"/"jdk") would have incorrectly treated this as equivalent.
+			name:  "unrecognized non-JDK qualifier must not be short-circuited",
+			short: "1.2.3",
+			long:  "1.2.3-hardened",
+			want:  false,
+		},
+		{
+			name:  "unrecognized non-JDK qualifier (nested) must not be short-circuited",
+			short: "1.2.3",
+			long:  "1.2.3.hotfix1",
+			want:  false,
+		},
+		{
 			name:  "recognized qualifier: service pack must not be short-circuited",
 			short: "1.2.3",
 			long:  "1.2.3-sp1",
