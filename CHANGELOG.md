@@ -1,3 +1,17 @@
+<a name="v1.6.2"></a>
+## [v1.6.2] - 2026-10-30
+[v1.6.2]: https://github.com/quay/claircore/compare/v1.6.1...v1.6.2
+
+- java: add CycloneDX indexing, Red Hat VEX maven ingestion and java/rhel matching
+  <details>
+  The java package and repository indexers can now read CycloneDX files that define
+  java artifacts. These definitions are considered the source of truth over java
+  artifacts manually found on the filesystem (providing paths or hashes match).
+  The rhel-vex updater will now ingest maven advisories and the rhel/java matcher
+  can now match artifacts defined in the SBOM to advisories ingested from the Red Hat
+  VEX data.
+  </details>
+
 <a name="v1.6.1"></a>
 ## [v1.6.1] - 2026-10-08
 [v1.6.1]: https://github.com/quay/claircore/compare/v1.6.0...v1.6.1
