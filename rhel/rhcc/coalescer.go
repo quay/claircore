@@ -2,6 +2,7 @@ package rhcc
 
 import (
 	"context"
+	"slices"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -24,8 +25,8 @@ func (c *coalescer) Coalesce(ctx context.Context, ls []*indexer.LayerArtifacts) 
 
 	// We need to find the last layer that has rhcc content.
 	lastRHCCLayer := true
-	for i := len(ls) - 1; i >= 0; i-- {
-		l := ls[i]
+	for _, l := range slices.Backward(ls) {
+
 		if len(l.Repos) == 0 {
 			continue
 		}

@@ -56,13 +56,6 @@ func (d *dir) ReadDir(n int) ([]fs.DirEntry, error) {
 	return es[:end], nil
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
 type dirent struct{ *tar.Header }
 
 var _ fs.DirEntry = dirent{}

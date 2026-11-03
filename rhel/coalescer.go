@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"net/url"
+	"slices"
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
@@ -54,13 +55,13 @@ func (*Coalescer) Coalesce(ctx context.Context, artifacts []*indexer.LayerArtifa
 	// With [ENGCMP-5332], this shouldn't be needed, so check back in 5 years.
 	//
 	// [ENGCMP-5332]: https://issues.redhat.com/browse/ENGCMP-5332
-	for i := len(artifacts) - 1; i >= 0; i-- {
-		lr := filterRedHatRepos(artifacts[i].Repos)
+	for _, artifact := range slices.Backward(artifacts) {
+		lr := filterRedHatRepos(artifact.Repos)
 		if len(lr) != 0 {
 			prev = lr
 			continue
 		}
-		artifacts[i].Repos = append(artifacts[i].Repos, prev...)
+		artifact.Repos = append(artifact.Repos, prev...)
 	}
 	// This dance with copying the product information in both directions means
 	// that if Red Hat product information is found, it "taints" all the layers.
