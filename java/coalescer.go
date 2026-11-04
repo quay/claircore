@@ -6,9 +6,12 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/package-url/packageurl-go"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
 	rheljava "github.com/quay/claircore/rhel/java"
+	rhelnpm "github.com/quay/claircore/rhel/npm"
 )
 
 type coalescer struct{}
@@ -140,12 +143,20 @@ func sbomRepositoryIDs(ctx context.Context, pkg *claircore.Package, repos []*cla
 	if len(wants) == 0 {
 		return nil
 	}
+	var key string
+	switch q.Get("type") {
+	case packageurl.TypeNPM:
+		key = rhelnpm.RepositoryKey
+	default:
+		// Maven, and a hint recorded before the type field existed.
+		key = rheljava.RepositoryKey
+	}
 	var ids []string
 	seen := make(map[string]struct{}, len(wants))
 	for _, want := range wants {
 		var matched bool
 		for _, r := range repos {
-			if r.Key != rheljava.RepositoryKey {
+			if r.Key != key {
 				continue
 			}
 			if r.Name != want && r.CPE.String() != want {

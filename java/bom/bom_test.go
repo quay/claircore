@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"encoding/hex"
 	"errors"
+	"net/url"
 	"os"
 	"slices"
 	"testing"
 
 	"github.com/CycloneDX/cyclonedx-go"
 
+	"github.com/quay/claircore"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/toolkit/types/cpe"
 )
@@ -328,6 +330,7 @@ func TestNestedComponents(t *testing.T) {
 		"org.example:held":   "6",
 		"org.example:rich":   "1",
 		"org.example:extra":  "9",
+		":js-cookie":         "3.0.8",
 	}
 	if len(got) != len(want) {
 		t.Fatalf("packages: got %v", got)
@@ -487,6 +490,71 @@ func TestNestedFrameworkCPE(t *testing.T) {
 	}
 	if len(got) != 3 {
 		t.Fatalf("packages: %v", got)
+	}
+}
+
+func TestNPMDirectDependency(t *testing.T) {
+	ctx := test.Logging(t)
+	const doc = `{
+	  "bomFormat": "CycloneDX",
+	  "specVersion": "1.6",
+	  "metadata": {"component": {
+	    "type": "application",
+	    "name": "app",
+	    "bom-ref": "app",
+	    "cpe": "cpe:/a:redhat:jboss_enterprise_application_platform:8.1"
+	  }},
+	  "components": [
+	    {"type": "library", "bom-ref": "pkg:maven/org.example/lib@1", "name": "lib", "purl": "pkg:maven/org.example/lib@1"},
+	    {"type": "library", "bom-ref": "pkg:npm/js-cookie@3.0.8", "name": "js-cookie", "purl": "pkg:npm/js-cookie@3.0.8"},
+	    {"type": "library", "bom-ref": "pkg:npm/%40angular/core@9.1.0", "name": "@angular/core", "purl": "pkg:npm/%40angular/core@9.1.0"},
+	    {"type": "library", "bom-ref": "pkg:generic/foo@1", "name": "foo", "purl": "pkg:generic/foo@1"}
+	  ],
+	  "dependencies": [{"ref": "app", "dependsOn": [
+	    "pkg:maven/org.example/lib@1",
+	    "pkg:npm/js-cookie@3.0.8",
+	    "pkg:npm/%40angular/core@9.1.0",
+	    "pkg:generic/foo@1"
+	  ]}]
+	}`
+	seq, err := LoadCDX(ctx, bytes.NewReader([]byte(doc)), cyclonedx.BOMFileFormatJSON)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantCPE := cpe.MustUnbind("cpe:/a:redhat:jboss_enterprise_application_platform:8.1").String()
+	got := map[string]string{}
+	for p, err := range seq {
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(p.CPEs) != 1 || p.CPEs[0].String() != wantCPE {
+			t.Fatalf("%s cpes: %v", p.PURL, p.CPEs)
+		}
+		var pkg claircore.Package
+		if err := PopulatePackage(&pkg, p, "sbom.cdx.json"); err != nil {
+			t.Fatal(err)
+		}
+		hint, err := url.ParseQuery(pkg.RepositoryHint)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if hint.Get("type") != p.PURL.Type {
+			t.Fatalf("%s type hint: %q", pkg.Name, hint.Get("type"))
+		}
+		got[pkg.Name] = pkg.Version
+	}
+	want := map[string]string{
+		"org.example:lib": "1",
+		"js-cookie":       "3.0.8",
+		"@angular:core":   "9.1.0",
+	}
+	if len(got) != len(want) {
+		t.Fatalf("packages: got %v", got)
+	}
+	for name, ver := range want {
+		if got[name] != ver {
+			t.Errorf("%s: got %q, want %q", name, got[name], ver)
+		}
 	}
 }
 
