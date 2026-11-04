@@ -111,9 +111,9 @@ func LoadCDX(ctx context.Context, r io.ReaderAt, format cyclonedx.BOMFileFormat)
 		return nil, fmt.Errorf("java/bom: missing dependencies of root component %q", root.BOMRef)
 	}
 
-	// Product frameworks (scope excluded, with a CPE) attribute Maven purls
-	// through their provides lists. A document with none of those keeps the
-	// single root CPE on each direct dependency.
+	// Product frameworks (scope excluded, with a CPE) attribute Maven and npm
+	// purls through their provides lists. A document with none of those keeps
+	// the single root CPE on each direct dependency.
 	frameworks := make(map[string][]cpe.WFN)
 	for i := range cmps {
 		cm := &cmps[i]
@@ -170,7 +170,7 @@ func LoadCDX(ctx context.Context, r io.ReaderAt, format cyclonedx.BOMFileFormat)
 			if cm == nil {
 				return yield(Package{}, errors.New("java/bom: missing component"))
 			}
-			if !strings.HasPrefix(cm.PackageURL, `pkg:maven/`) {
+			if !indexPURL(cm.PackageURL) {
 				skip.Add(cm.PackageURL)
 				return true
 			}
@@ -228,7 +228,7 @@ func LoadCDX(ctx context.Context, r io.ReaderAt, format cyclonedx.BOMFileFormat)
 				return
 			}
 			for _, ref := range *dep.Dependencies {
-				if !strings.HasPrefix(ref, `pkg:maven/`) {
+				if !indexPURL(ref) {
 					skip.Add(ref)
 					continue
 				}
@@ -254,6 +254,11 @@ func LoadCDX(ctx context.Context, r io.ReaderAt, format cyclonedx.BOMFileFormat)
 
 func excludedFramework(cm *cyclonedx.Component) bool {
 	return cm.Type == cyclonedx.ComponentTypeFramework && cm.Scope == cyclonedx.ScopeExcluded
+}
+
+// indexPURL reports whether a CycloneDX purl is recorded as a package.
+func indexPURL(purl string) bool {
+	return strings.HasPrefix(purl, "pkg:maven/") || strings.HasPrefix(purl, "pkg:npm/")
 }
 
 // productWFNs returns the product CPEs on a framework component.
