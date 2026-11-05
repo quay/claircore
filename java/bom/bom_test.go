@@ -2,6 +2,7 @@ package bom
 
 import (
 	"bytes"
+	"encoding/hex"
 	"errors"
 	"os"
 	"slices"
@@ -82,7 +83,7 @@ func TestLoad(t *testing.T) {
 	}
 	out := slices.Collect(seq)
 	got := len(out)
-	const want = 639
+	const want = 676
 	t.Logf("got: %d, want: %d", got, want)
 	if got != want {
 		t.Error()
@@ -229,6 +230,186 @@ func TestProvidesMultipleProducts(t *testing.T) {
 	}
 	if _, ok := got["com.redhat.quarkus.platform:quarkus-bom"]; ok {
 		t.Fatal("framework was indexed")
+	}
+	if len(got) != 3 {
+		t.Fatalf("packages: %v", got)
+	}
+}
+
+func TestNestedComponents(t *testing.T) {
+	ctx := test.Logging(t)
+	const doc = `{
+	  "bomFormat": "CycloneDX",
+	  "specVersion": "1.6",
+	  "metadata": {"component": {
+	    "type": "application",
+	    "name": "app",
+	    "bom-ref": "app",
+	    "cpe": "cpe:/a:redhat:jboss_enterprise_application_platform:8.1"
+	  }},
+	  "components": [
+	    {
+	      "type": "library",
+	      "bom-ref": "parent",
+	      "name": "parent",
+	      "purl": "pkg:maven/org.example/parent@1",
+	      "components": [
+	        {"type": "library", "bom-ref": "child", "name": "child", "purl": "pkg:maven/org.example/child@2"},
+	        {"type": "library", "bom-ref": "both", "name": "both", "purl": "pkg:maven/org.example/both@4"},
+	        {"type": "library", "bom-ref": "cookie", "name": "js-cookie", "purl": "pkg:npm/js-cookie@3.0.8"}
+	      ]
+	    },
+	    {"type": "library", "bom-ref": "both", "name": "both", "purl": "pkg:maven/org.example/both@4"},
+	    {"type": "library", "bom-ref": "holder", "name": "holder", "purl": "pkg:maven/org.example/holder@5"},
+	    {
+	      "type": "library",
+	      "bom-ref": "holder",
+	      "name": "holder",
+	      "purl": "pkg:maven/org.example/holder@5",
+	      "components": [
+	        {"type": "library", "bom-ref": "held", "name": "held", "purl": "pkg:maven/org.example/held@6"}
+	      ]
+	    },
+	    {
+	      "type": "library",
+	      "bom-ref": "mod",
+	      "name": "mod",
+	      "purl": "pkg:generic/mod@1",
+	      "components": [
+	        {"type": "library", "bom-ref": "inner", "name": "inner", "purl": "pkg:maven/org.example/inner@3"},
+	        {"type": "library", "bom-ref": "pkg:maven/org.example/rich@1", "name": "rich", "purl": "pkg:maven/org.example/rich@1"}
+	      ]
+	    },
+	    {
+	      "type": "library",
+	      "bom-ref": "pkg:maven/org.example/rich@1",
+	      "name": "rich",
+	      "purl": "pkg:maven/org.example/rich@1",
+	      "hashes": [{"alg": "SHA-256", "content": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}],
+	      "evidence": {"occurrences": [{"location": "lib/rich-1.jar"}]},
+	      "components": [
+	        {"type": "library", "bom-ref": "extra", "name": "extra", "purl": "pkg:maven/org.example/extra@9"}
+	      ]
+	    }
+	  ],
+	  "dependencies": [{"ref": "app", "dependsOn": ["parent", "both", "mod", "holder", "pkg:maven/org.example/rich@1"]}]
+	}`
+	seq, err := LoadCDX(ctx, bytes.NewReader([]byte(doc)), cyclonedx.BOMFileFormatJSON)
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantCPE := cpe.MustUnbind("cpe:/a:redhat:jboss_enterprise_application_platform:8.1").String()
+	got := map[string]string{}
+	var rich Package
+	var sawRich bool
+	for p, err := range seq {
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(p.CPEs) != 1 || p.CPEs[0].String() != wantCPE {
+			t.Fatalf("%s cpes: %v", p.PURL, p.CPEs)
+		}
+		name := p.PURL.Namespace + ":" + p.PURL.Name
+		if _, ok := got[name]; ok {
+			t.Fatalf("duplicate %s", name)
+		}
+		got[name] = p.PURL.Version
+		if name == "org.example:rich" {
+			rich = p
+			sawRich = true
+		}
+	}
+	want := map[string]string{
+		"org.example:parent": "1",
+		"org.example:child":  "2",
+		"org.example:inner":  "3",
+		"org.example:both":   "4",
+		"org.example:holder": "5",
+		"org.example:held":   "6",
+		"org.example:rich":   "1",
+		"org.example:extra":  "9",
+	}
+	if len(got) != len(want) {
+		t.Fatalf("packages: got %v", got)
+	}
+	for name, ver := range want {
+		if got[name] != ver {
+			t.Errorf("%s: got %q, want %q", name, got[name], ver)
+		}
+	}
+	if !sawRich {
+		t.Fatal("missing rich")
+	}
+	if rich.Location != "lib/rich-1.jar" {
+		t.Fatalf("rich location: got %q", rich.Location)
+	}
+	sum := hex.EncodeToString(rich.Hashes[HashSHA256])
+	if sum != "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" {
+		t.Fatalf("rich sha256: got %q", sum)
+	}
+}
+
+func TestNestedFrameworkCPE(t *testing.T) {
+	ctx := test.Logging(t)
+	const doc = `{
+	  "bomFormat": "CycloneDX",
+	  "specVersion": "1.6",
+	  "metadata": {"component": {"type": "application", "name": "app", "bom-ref": "app"}},
+	  "components": [
+	    {
+	      "type": "library",
+	      "bom-ref": "parent",
+	      "name": "parent",
+	      "purl": "pkg:maven/a/parent@1",
+	      "components": [
+	        {"type": "library", "bom-ref": "child", "name": "child", "purl": "pkg:maven/a/child@2"},
+	        {"type": "library", "bom-ref": "listed", "name": "listed", "purl": "pkg:maven/a/listed@3"}
+	      ]
+	    },
+	    {"type": "library", "bom-ref": "listed", "name": "listed", "purl": "pkg:maven/a/listed@3"},
+	    {
+	      "type": "framework",
+	      "scope": "excluded",
+	      "bom-ref": "fw",
+	      "name": "quarkus-bom",
+	      "cpe": "cpe:/a:redhat:quarkus:3",
+	      "purl": "pkg:maven/com.redhat.quarkus.platform/quarkus-bom@1?type=pom"
+	    }
+	  ],
+	  "dependencies": [
+	    {"ref": "app", "dependsOn": ["parent", "fw"]},
+	    {"ref": "fw", "provides": ["parent", "listed"]}
+	  ]
+	}`
+	seq, err := LoadCDX(ctx, bytes.NewReader([]byte(doc)), cyclonedx.BOMFileFormatJSON)
+	if err != nil {
+		t.Fatal(err)
+	}
+	q := cpe.MustUnbind("cpe:/a:redhat:quarkus:3").String()
+	got := map[string][]string{}
+	for p, err := range seq {
+		if err != nil {
+			t.Fatal(err)
+		}
+		name := p.PURL.Namespace + ":" + p.PURL.Name
+		if _, ok := got[name]; ok {
+			t.Fatalf("duplicate %s", name)
+		}
+		for _, w := range p.CPEs {
+			got[name] = append(got[name], w.String())
+		}
+		if _, ok := got[name]; !ok {
+			got[name] = nil
+		}
+	}
+	if !slices.Equal(got["a:parent"], []string{q}) {
+		t.Fatalf("parent: %v", got["a:parent"])
+	}
+	if !slices.Equal(got["a:child"], []string{q}) {
+		t.Fatalf("child: %v", got["a:child"])
+	}
+	if !slices.Equal(got["a:listed"], []string{q}) {
+		t.Fatalf("listed: %v", got["a:listed"])
 	}
 	if len(got) != 3 {
 		t.Fatalf("packages: %v", got)
