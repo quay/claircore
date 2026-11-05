@@ -114,6 +114,12 @@ func LoadCDX(ctx context.Context, r io.ReaderAt, format cyclonedx.BOMFileFormat)
 	// Product frameworks (scope excluded, with a CPE) attribute Maven purls
 	// through their provides lists. A document with none of those keeps the
 	// single root CPE on each direct dependency.
+	//
+	// The result is a flat list of packages. A nested component becomes its
+	// own package. The parent link is used once, to copy that parent's CPEs
+	// onto the child, and is not stored. Children are not moved onto another
+	// copy of the parent. A bom-ref is one package. When a top-level copy
+	// exists, that copy is recorded, so its path and hash are kept.
 	frameworks := make(map[string][]cpe.WFN)
 	for i := range cmps {
 		cm := &cmps[i]
@@ -161,14 +167,48 @@ func LoadCDX(ctx context.Context, r io.ReaderAt, format cyclonedx.BOMFileFormat)
 			}
 			slog.DebugContext(ctx, "skipped some purls", "skipped", &skip)
 		}()
+		// Top-level components are stored first. A nested copy of the same
+		// bom-ref is stored only when no top-level copy exists.
 		c := make(map[string]*cyclonedx.Component, len(cmps))
 		for i := range cmps {
-			r := &cmps[i]
-			c[r.BOMRef] = r
+			cm := &cmps[i]
+			if cm.BOMRef == "" {
+				continue
+			}
+			if _, ok := c[cm.BOMRef]; !ok {
+				c[cm.BOMRef] = cm
+			}
 		}
-		emit := func(cm *cyclonedx.Component, cpes []cpe.WFN) bool {
+		var add func(*cyclonedx.Component)
+		add = func(cm *cyclonedx.Component) {
+			if cm == nil {
+				return
+			}
+			if cm.BOMRef != "" {
+				if _, ok := c[cm.BOMRef]; !ok {
+					c[cm.BOMRef] = cm
+				}
+			}
+			if cm.Components == nil {
+				return
+			}
+			for i := range *cm.Components {
+				add(&(*cm.Components)[i])
+			}
+		}
+		for i := range cmps {
+			add(&cmps[i])
+		}
+		cpesOf := map[string][]cpe.WFN{}
+		record := func(cm *cyclonedx.Component, cpes []cpe.WFN) bool {
 			if cm == nil {
 				return yield(Package{}, errors.New("java/bom: missing component"))
+			}
+			if cm.BOMRef != "" {
+				if _, ok := cpesOf[cm.BOMRef]; ok {
+					return true
+				}
+				cpesOf[cm.BOMRef] = cpes
 			}
 			if !strings.HasPrefix(cm.PackageURL, `pkg:maven/`) {
 				skip.Add(cm.PackageURL)
@@ -221,29 +261,70 @@ func LoadCDX(ctx context.Context, r io.ReaderAt, format cyclonedx.BOMFileFormat)
 			}
 			return true
 		}
-
+		// Record direct dependencies first and remember the CPEs for each
+		// bom-ref. A component that is also nested keeps the top-level
+		// copy's path, hash, and CPEs. This pass does not read children.
 		if len(frameworks) == 0 {
 			dep := &deps[depidx]
-			if dep.Dependencies == nil {
-				return
+			if dep.Dependencies != nil {
+				for _, ref := range *dep.Dependencies {
+					cm := c[ref]
+					if cm == nil && !strings.HasPrefix(ref, `pkg:maven/`) {
+						skip.Add(ref)
+						continue
+					}
+					if !record(cm, rootWFNs) {
+						return
+					}
+				}
 			}
-			for _, ref := range *dep.Dependencies {
-				if !strings.HasPrefix(ref, `pkg:maven/`) {
-					skip.Add(ref)
+		} else {
+			for i := range cmps {
+				cm := &cmps[i]
+				if cm.BOMRef == root.BOMRef || excludedFramework(cm) {
 					continue
 				}
-				if !emit(c[ref], rootWFNs) {
+				if !record(cm, attr[cm.BOMRef]) {
 					return
 				}
 			}
-			return
+		}
+		// The same bom-ref can appear twice. The top-level copy is the package
+		// that is kept. Visit every copy anyway and emit each child as its
+		// own package, using the CPEs already saved for the enclosing bom-ref.
+		// A component with no bom-ref keeps no entry. Its children use the
+		// CPEs saved for the enclosing component that has one.
+		var nested func(*cyclonedx.Component, []cpe.WFN, bool) bool
+		nested = func(cm *cyclonedx.Component, cpes []cpe.WFN, recorded bool) bool {
+			if cm == nil || cm.Components == nil {
+				return true
+			}
+			if cm.BOMRef != "" {
+				if saved, ok := cpesOf[cm.BOMRef]; ok {
+					cpes, recorded = saved, true
+				}
+			}
+			for i := range *cm.Components {
+				ch := &(*cm.Components)[i]
+				if recorded && !record(ch, cpes) {
+					return false
+				}
+				if !nested(ch, cpes, recorded) {
+					return false
+				}
+			}
+			return true
 		}
 		for i := range cmps {
 			cm := &cmps[i]
-			if cm.BOMRef == root.BOMRef || excludedFramework(cm) {
-				continue
+			cpes, recorded := cpesOf[cm.BOMRef]
+			// A top-level component with no bom-ref was recorded on the
+			// framework path and has no cpesOf entry. Its children use the
+			// CPEs passed to record.
+			if !recorded && cm.BOMRef == "" && len(frameworks) != 0 && cm.BOMRef != root.BOMRef && !excludedFramework(cm) {
+				cpes, recorded = attr[cm.BOMRef], true
 			}
-			if !emit(cm, attr[cm.BOMRef]) {
+			if !nested(cm, cpes, recorded) {
 				return
 			}
 		}
