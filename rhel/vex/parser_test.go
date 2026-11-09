@@ -380,20 +380,20 @@ func TestParse(t *testing.T) {
 		{
 			name:            "cve-2022-1705",
 			filenames:       []string{"testdata/cve-2022-1705.json"},
-			expectedVulns:   2004,
+			expectedVulns:   1636,
 			expectedDeleted: 0,
 		},
 		{
 			name:             "cve-2024-24786",
 			filenames:        []string{"testdata/cve-2024-24786.json"},
-			expectedVulns:    1828,
+			expectedVulns:    1755,
 			expectedDeleted:  0,
 			expectedAncestry: 732,
 		},
 		{
 			name:            "cve-2022-38752",
 			filenames:       []string{"testdata/cve-2022-38752.json"},
-			expectedVulns:   1788,
+			expectedVulns:   1494,
 			expectedDeleted: 0,
 		},
 		{
@@ -405,13 +405,13 @@ func TestParse(t *testing.T) {
 		{
 			name:            "cve-2024-24786-new-module-format",
 			filenames:       []string{"testdata/cve-2024-24786-1.json"},
-			expectedVulns:   2722,
+			expectedVulns:   2652,
 			expectedDeleted: 0,
 		},
 		{
 			name:            "cve-2023-38545",
 			filenames:       []string{"testdata/cve-2023-38545.json"},
-			expectedVulns:   269,
+			expectedVulns:   265,
 			expectedDeleted: 0,
 		},
 		{
@@ -688,6 +688,160 @@ func TestExtractPackageName(t *testing.T) {
 			}
 			if v != tc.want {
 				t.Fatalf("expected name %v but got %v", tc.want, v)
+			}
+		})
+	}
+}
+
+func TestCreatorDocLink(t *testing.T) {
+	const name = "CVE-2023-4911"
+	defaultURL := "https://security.access.redhat.com/data/csaf/v2/vex-feed/2023/cve-2023-4911.json"
+	legacyBase, err := url.Parse("https://security.access.redhat.com/data/csaf/v2/vex/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	legacyURL := "https://security.access.redhat.com/data/csaf/v2/vex/2023/cve-2023-4911.json"
+
+	t.Run("constructs from default base when self missing", func(t *testing.T) {
+		doc := &csaf.CSAF{}
+		doc.Document.Tracking.ID = name
+		c := NewParser().creator(name, doc)
+		if c.docLink != defaultURL {
+			t.Fatalf("got docLink %q, want %q", c.docLink, defaultURL)
+		}
+	})
+
+	t.Run("constructs from configured base when self missing", func(t *testing.T) {
+		doc := &csaf.CSAF{}
+		doc.Document.Tracking.ID = name
+		c := NewParser(WithBaseURL(legacyBase)).creator(name, doc)
+		if c.docLink != legacyURL {
+			t.Fatalf("got docLink %q, want %q", c.docLink, legacyURL)
+		}
+	})
+
+	t.Run("prefers document self reference", func(t *testing.T) {
+		doc := &csaf.CSAF{}
+		doc.Document.Tracking.ID = name
+		doc.Document.References = []csaf.Reference{{
+			Category: "self",
+			URL:      legacyURL,
+		}}
+		c := NewParser().creator(name, doc)
+		if c.docLink != legacyURL {
+			t.Fatalf("got docLink %q, want %q", c.docLink, legacyURL)
+		}
+	})
+
+	t.Run("empty when base nil and self missing", func(t *testing.T) {
+		doc := &csaf.CSAF{}
+		doc.Document.Tracking.ID = name
+		c := NewParser(WithBaseURL(nil)).creator(name, doc)
+		if c.docLink != "" {
+			t.Fatalf("got docLink %q, want empty", c.docLink)
+		}
+	})
+}
+
+func TestDocLinkFromBase(t *testing.T) {
+	t.Parallel()
+	base, err := url.Parse(BaseURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tests := []struct {
+		name string
+		id   string
+		want string
+	}{
+		{
+			name: "cve",
+			id:   "CVE-2023-4911",
+			want: "https://security.access.redhat.com/data/csaf/v2/vex-feed/2023/cve-2023-4911.json",
+		},
+		{
+			name: "non-cve",
+			id:   "RHSA-2023:1234",
+			want: "",
+		},
+		{
+			name: "empty",
+			id:   "",
+			want: "",
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := docLinkFromBase(base, tc.id)
+			if got != tc.want {
+				t.Fatalf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	if got := docLinkFromBase(nil, "CVE-2023-4911"); got != "" {
+		t.Fatalf("nil base: got %q, want empty", got)
+	}
+}
+
+func TestExtractArch(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name string
+		purl packageurl.PackageURL
+		want string
+	}{
+		{
+			name: "no arch",
+			purl: packageurl.PackageURL{Type: packageurl.TypeRPM, Namespace: "redhat", Name: "binutils", Version: "2.45.1-5.1.hum1"},
+			want: "",
+		},
+		{
+			name: "x86_64",
+			purl: packageurl.PackageURL{
+				Type: packageurl.TypeRPM, Namespace: "redhat", Name: "binutils", Version: "2.45.1-5.1.hum1",
+				Qualifiers: packageurl.QualifiersFromMap(map[string]string{"arch": "x86_64"}),
+			},
+			want: "amd64|x86_64",
+		},
+		{
+			name: "aarch64",
+			purl: packageurl.PackageURL{
+				Type: packageurl.TypeRPM, Namespace: "redhat", Name: "binutils", Version: "2.45.1-5.1.hum1",
+				Qualifiers: packageurl.QualifiersFromMap(map[string]string{"arch": "aarch64"}),
+			},
+			want: "aarch64",
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := extractArch(&tc.purl)
+			if got != tc.want {
+				t.Fatalf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestIsSourceArch(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name string
+		arch string
+		want bool
+	}{
+		{name: "empty", arch: "", want: false},
+		{name: "x86_64", arch: "x86_64", want: false},
+		{name: "src", arch: "src", want: true},
+		{name: "nosrc", arch: "nosrc", want: true},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			p := &packageurl.PackageURL{Type: packageurl.TypeRPM, Name: "binutils"}
+			if tc.arch != "" {
+				p.Qualifiers = packageurl.QualifiersFromMap(map[string]string{"arch": tc.arch})
+			}
+			if got := isSourceArch(p); got != tc.want {
+				t.Fatalf("got %v, want %v", got, tc.want)
 			}
 		})
 	}
