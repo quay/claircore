@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/quay/claircore/libvuln/driver"
+	"github.com/quay/claircore/test/integration"
 )
 
 var (
@@ -23,5 +24,8 @@ func TestMain(m *testing.M) {
 	if !*enable {
 		os.Exit(0)
 	}
-	os.Exit(m.Run())
+	var c int
+	defer func() { os.Exit(c) }()
+	defer integration.DBSetup()()
+	c = m.Run()
 }
