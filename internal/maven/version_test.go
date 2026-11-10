@@ -62,6 +62,121 @@ func TestVersions(t *testing.T) {
 	})
 }
 
+func TestEquivalentModuloClassifier(t *testing.T) {
+	tt := []struct {
+		name  string
+		short string
+		long  string
+		want  bool
+	}{
+		{
+			name:  "unrecognized JDK classifier",
+			short: "12.10.2",
+			long:  "12.10.2.jre11",
+			want:  true,
+		},
+		{
+			name:  "unrecognized classifier on introduced boundary",
+			short: "12.10.0",
+			long:  "12.10.0.jre11",
+			want:  true,
+		},
+		{
+			name:  "nested unrecognized qualifier (preview-style)",
+			short: "8.3.0",
+			long:  "8.3.0.jre11-preview",
+			want:  true,
+		},
+		{
+			name:  "jdk classifier, not just jre",
+			short: "1.0",
+			long:  "1.0.jdk17",
+			want:  true,
+		},
+		{
+			name:  "classifier matching is case-insensitive",
+			short: "12.10.2",
+			long:  "12.10.2.JRE11",
+			want:  true,
+		},
+		{
+			// This is the key risk-reduction case: an unrecognized qualifier
+			// that *isn't* shaped like a JDK-target classifier must not be
+			// short-circuited, since it might carry real meaning (e.g. a
+			// separately-patched, non-simultaneous variant). Only scoping to
+			// "any unrecognized qualifier" (rather than specifically
+			// "jre"/"jdk") would have incorrectly treated this as equivalent.
+			name:  "unrecognized non-JDK qualifier must not be short-circuited",
+			short: "1.2.3",
+			long:  "1.2.3-hardened",
+			want:  false,
+		},
+		{
+			name:  "unrecognized non-JDK qualifier (nested) must not be short-circuited",
+			short: "1.2.3",
+			long:  "1.2.3.hotfix1",
+			want:  false,
+		},
+		{
+			name:  "recognized qualifier: service pack must not be short-circuited",
+			short: "1.2.3",
+			long:  "1.2.3-sp1",
+			want:  false,
+		},
+		{
+			name:  "recognized qualifier: release candidate must not be short-circuited",
+			short: "1.2.3",
+			long:  "1.2.3-rc1",
+			want:  false,
+		},
+		{
+			name:  "recognized qualifier: SNAPSHOT must not be short-circuited",
+			short: "1.2.3",
+			long:  "1.2.3-SNAPSHOT",
+			want:  false,
+		},
+		{
+			name:  "longer numeric version is a real distinct version, not a classifier",
+			short: "1.2.3",
+			long:  "1.2.3.4",
+			want:  false,
+		},
+		{
+			name:  "not a prefix at all",
+			short: "12.10.1",
+			long:  "12.10.2.jre11",
+			want:  false,
+		},
+		{
+			name:  "identical versions",
+			short: "12.10.2",
+			long:  "12.10.2",
+			want:  false,
+		},
+		{
+			name:  "short is longer than long",
+			short: "12.10.2.jre11",
+			long:  "12.10.2",
+			want:  false,
+		},
+	}
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			short, err := ParseVersion(tc.short)
+			if err != nil {
+				t.Fatal(err)
+			}
+			long, err := ParseVersion(tc.long)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := short.EquivalentModuloClassifier(long); got != tc.want {
+				t.Errorf("EquivalentModuloClassifier(%q, %q) = %v, want %v", tc.short, tc.long, got, tc.want)
+			}
+		})
+	}
+}
+
 type CompareTestcase struct {
 	A  string
 	Op int

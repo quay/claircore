@@ -188,6 +188,189 @@ func TestVulnerable(t *testing.T) {
 			},
 			want: true,
 		},
+		// The following cases cover CVE-2025-59250 / GHSA-m494-w24q-6f7w
+		// (com.microsoft.sqlserver:mssql-jdbc). Microsoft publishes separate
+		// Maven coordinates per JDK-target classifier (.jre8/.jre11/.jre17)
+		// for a given release, but the jar's own embedded pom.properties
+		// records only the bare numeric version, identically across every
+		// classified build. The ranges below are reproduced verbatim from
+		// the real OSV advisory data.
+		{
+			name: "mssql-jdbc/installed is the fixed build, classifier lost at indexing (reported false positive)",
+			record: &claircore.IndexRecord{
+				Package: &claircore.Package{
+					Name:    "com.microsoft.sqlserver:mssql-jdbc",
+					Version: "12.10.2",
+					Kind:    types.BinaryPackage,
+				},
+			},
+			vuln: &claircore.Vulnerability{
+				Updater:     "osv",
+				Name:        "GHSA-m494-w24q-6f7w",
+				Description: "JDBC Driver for SQL Server has improper input validation issue",
+				Package: &claircore.Package{
+					Name:           "com.microsoft.sqlserver:mssql-jdbc",
+					RepositoryHint: "Maven",
+				},
+				FixedInVersion: "introduced=12.10.0.jre11&fixed=12.10.2.jre11",
+			},
+			want: false,
+		},
+		{
+			name: "mssql-jdbc/second affected release line, same shape (customer-observed)",
+			record: &claircore.IndexRecord{
+				Package: &claircore.Package{
+					Name:    "com.microsoft.sqlserver:mssql-jdbc",
+					Version: "13.2.1",
+					Kind:    types.BinaryPackage,
+				},
+			},
+			vuln: &claircore.Vulnerability{
+				Updater:     "osv",
+				Name:        "GHSA-m494-w24q-6f7w",
+				Description: "JDBC Driver for SQL Server has improper input validation issue",
+				Package: &claircore.Package{
+					Name:           "com.microsoft.sqlserver:mssql-jdbc",
+					RepositoryHint: "Maven",
+				},
+				FixedInVersion: "introduced=13.2.0.jre11&fixed=13.2.1.jre11",
+			},
+			want: false,
+		},
+		{
+			name: "mssql-jdbc/installed is exactly the truncated introduced boundary (pre-existing latent false negative)",
+			record: &claircore.IndexRecord{
+				Package: &claircore.Package{
+					Name:    "com.microsoft.sqlserver:mssql-jdbc",
+					Version: "12.10.0",
+					Kind:    types.BinaryPackage,
+				},
+			},
+			vuln: &claircore.Vulnerability{
+				Updater:     "osv",
+				Name:        "GHSA-m494-w24q-6f7w",
+				Description: "JDBC Driver for SQL Server has improper input validation issue",
+				Package: &claircore.Package{
+					Name:           "com.microsoft.sqlserver:mssql-jdbc",
+					RepositoryHint: "Maven",
+				},
+				FixedInVersion: "introduced=12.10.0.jre11&fixed=12.10.2.jre11",
+			},
+			want: true,
+		},
+		{
+			name: "mssql-jdbc/genuinely older version must still be reported vulnerable",
+			record: &claircore.IndexRecord{
+				Package: &claircore.Package{
+					Name:    "com.microsoft.sqlserver:mssql-jdbc",
+					Version: "12.10.1",
+					Kind:    types.BinaryPackage,
+				},
+			},
+			vuln: &claircore.Vulnerability{
+				Updater:     "osv",
+				Name:        "GHSA-m494-w24q-6f7w",
+				Description: "JDBC Driver for SQL Server has improper input validation issue",
+				Package: &claircore.Package{
+					Name:           "com.microsoft.sqlserver:mssql-jdbc",
+					RepositoryHint: "Maven",
+				},
+				FixedInVersion: "introduced=12.10.0.jre11&fixed=12.10.2.jre11",
+			},
+			want: true,
+		},
+		{
+			name: "mssql-jdbc/genuinely newer version must still be reported not vulnerable",
+			record: &claircore.IndexRecord{
+				Package: &claircore.Package{
+					Name:    "com.microsoft.sqlserver:mssql-jdbc",
+					Version: "12.10.3",
+					Kind:    types.BinaryPackage,
+				},
+			},
+			vuln: &claircore.Vulnerability{
+				Updater:     "osv",
+				Name:        "GHSA-m494-w24q-6f7w",
+				Description: "JDBC Driver for SQL Server has improper input validation issue",
+				Package: &claircore.Package{
+					Name:           "com.microsoft.sqlserver:mssql-jdbc",
+					RepositoryHint: "Maven",
+				},
+				FixedInVersion: "introduced=12.10.0.jre11&fixed=12.10.2.jre11",
+			},
+			want: false,
+		},
+		{
+			name: "mssql-jdbc/below the introduced range entirely",
+			record: &claircore.IndexRecord{
+				Package: &claircore.Package{
+					Name:    "com.microsoft.sqlserver:mssql-jdbc",
+					Version: "11.9.9",
+					Kind:    types.BinaryPackage,
+				},
+			},
+			vuln: &claircore.Vulnerability{
+				Updater:     "osv",
+				Name:        "GHSA-m494-w24q-6f7w",
+				Description: "JDBC Driver for SQL Server has improper input validation issue",
+				Package: &claircore.Package{
+					Name:           "com.microsoft.sqlserver:mssql-jdbc",
+					RepositoryHint: "Maven",
+				},
+				FixedInVersion: "introduced=12.10.0.jre11&fixed=12.10.2.jre11",
+			},
+			want: false,
+		},
+		{
+			// A real Maven qualifier (here, "sp" for "service pack") must
+			// keep normal ordering semantics: unlike an unrecognized
+			// classifier, "-sp1" genuinely denotes a later, separately
+			// released patch, not a simultaneously-published sibling build.
+			name: "recognized qualifier (service pack) must not be short-circuited",
+			record: &claircore.IndexRecord{
+				Package: &claircore.Package{
+					Name:    "com.example:widget",
+					Version: "1.2.3",
+					Kind:    types.BinaryPackage,
+				},
+			},
+			vuln: &claircore.Vulnerability{
+				Updater:     "osv",
+				Name:        "GHSA-0000-0000-0000",
+				Description: "fictitious vulnerability for test purposes",
+				Package: &claircore.Package{
+					Name:           "com.example:widget",
+					RepositoryHint: "Maven",
+				},
+				FixedInVersion: "fixed=1.2.3-sp1",
+			},
+			want: true,
+		},
+		{
+			// An unrecognized qualifier that isn't shaped like a JDK-target
+			// classifier (jre/jdk + digits) must not be short-circuited
+			// either, since it might denote a genuinely separate,
+			// non-simultaneous variant rather than a sibling build.
+			name: "unrecognized non-JDK qualifier must not be short-circuited",
+			record: &claircore.IndexRecord{
+				Package: &claircore.Package{
+					Name:    "com.example:widget",
+					Version: "1.2.3",
+					Kind:    types.BinaryPackage,
+				},
+			},
+			vuln: &claircore.Vulnerability{
+				Updater:     "osv",
+				Name:        "GHSA-1111-1111-1111",
+				Description: "fictitious vulnerability for test purposes",
+				Package: &claircore.Package{
+					Name:           "com.example:widget",
+					RepositoryHint: "Maven",
+				},
+				FixedInVersion: "fixed=1.2.3-hardened",
+			},
+			want: true,
+		},
 	}
 
 	for _, testcase := range testcases {
