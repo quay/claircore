@@ -10,7 +10,7 @@
 //	);
 //
 //	CREATE TABLE public.alias (
-//	    id integer NOT NULL,
+//	    id bigint NOT NULL,
 //	    namespace integer NOT NULL,
 //	    name text NOT NULL
 //	);
@@ -196,14 +196,14 @@
 //
 //	CREATE TABLE public.vulnerability_alias (
 //	    vulnerability bigint NOT NULL,
-//	    alias integer NOT NULL
+//	    alias bigint NOT NULL
 //	);
 //
 //	COMMENT ON TABLE public.vulnerability_alias IS 'Pivot table linking vulnerabilities to aliases.';
 //
 //	CREATE TABLE public.vulnerability_self (
 //	    vulnerability bigint NOT NULL,
-//	    self integer NOT NULL
+//	    self bigint NOT NULL
 //	);
 //
 //	COMMENT ON TABLE public.vulnerability_self IS 'Indicates the "self" alias for a vulnerability.';
