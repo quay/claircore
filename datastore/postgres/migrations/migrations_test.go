@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"os"
 	"os/exec"
 	"path"
@@ -36,6 +37,47 @@ func TestApply(t *testing.T) {
 	if t.Failed() {
 		t.Log("To update this test, re-run with `-artifacts` and copy the generated files out:")
 		t.Log("\tgo test -artifacts || cp _artifacts/datastore/postgres/migrations/TestApply__*/*/*_doc.go ./")
+	}
+}
+
+// TestAliasSequence checks that the sequence backing alias.id is a bigint
+// after the migrations have run.
+func TestAliasSequence(t *testing.T) {
+	integration.NeedDB(t)
+	ctx := test.Logging(t)
+	db, err := integration.NewDB(ctx, t)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close(ctx, t)
+
+	cfg := db.Config().ConnConfig
+	if err := Matcher(ctx, cfg); err != nil {
+		t.Fatal(err)
+	}
+
+	pool, err := pgxpool.NewWithConfig(ctx, db.Config())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer pool.Close()
+
+	var dataType string
+	var maxValue int64
+	err = pool.QueryRow(ctx, `
+		SELECT data_type, max_value
+		FROM pg_sequences
+		WHERE schemaname = 'public' AND sequencename = 'alias_id_seq';
+	`).Scan(&dataType, &maxValue)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	if dataType != "bigint" {
+		t.Errorf("alias_id_seq data type: got %q, want %q", dataType, "bigint")
+	}
+	if maxValue != math.MaxInt64 {
+		t.Errorf("alias_id_seq max_value: got %d, want %d", maxValue, math.MaxInt64)
 	}
 }
 

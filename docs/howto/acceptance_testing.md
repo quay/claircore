@@ -39,7 +39,7 @@ without requiring access to the analyzer's internal implementation.
 
 ## Prerequisites
 
-- **Go 1.25+** installed
+- **Go 1.26+** installed
 - **Container registry access** with push permissions (for creating fixtures)
 
 Note: The integration tests use embedded PostgreSQL binaries that are downloaded
