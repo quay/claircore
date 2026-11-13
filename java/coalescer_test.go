@@ -8,6 +8,7 @@ import (
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
 	rheljava "github.com/quay/claircore/rhel/java"
+	rhelnpm "github.com/quay/claircore/rhel/npm"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/toolkit/types/cpe"
 )
@@ -122,10 +123,10 @@ func TestCoalescerDropsCoveredJars(t *testing.T) {
 	}
 	jarPkg := func(id, name, db, filepath, sum string) *claircore.Package {
 		return &claircore.Package{
-			ID:             id,
-			Name:           name,
-			PackageDB:      db,
-			Filepath:       filepath,
+			ID:        id,
+			Name:      name,
+			PackageDB: db,
+			Filepath:  filepath,
 			RepositoryHint: url.Values{
 				"sha1":   {"0123456789abcdef0123456789abcdef01234567"},
 				"sha256": {sum},
@@ -207,6 +208,37 @@ func TestCoalescerDropsCoveredJars(t *testing.T) {
 			t.Fatalf("sbom repositories: %v", got)
 		}
 	})
+}
+
+func TestCoalescerNPMRepository(t *testing.T) {
+	t.Parallel()
+	ctx := test.Logging(t)
+	w := cpe.MustUnbind("cpe:/a:redhat:jboss_enterprise_application_platform:8.1")
+	javaRepo := &claircore.Repository{ID: "1", Name: w.String(), Key: rheljava.RepositoryKey, CPE: w}
+	npmRepo := &claircore.Repository{ID: "2", Name: w.String(), Key: rhelnpm.RepositoryKey, CPE: w}
+	mavenPkg := &claircore.Package{
+		ID:             "10",
+		Name:           "org.example:lib",
+		PackageDB:      "sbom:app.cdx.json",
+		RepositoryHint: url.Values{"cpe": {w.String()}, "type": {"maven"}}.Encode(),
+	}
+	npmPkg := &claircore.Package{
+		ID:             "11",
+		Name:           "js-cookie",
+		PackageDB:      "sbom:app.cdx.json:web/js-cookie",
+		RepositoryHint: url.Values{"cpe": {w.String()}, "type": {"npm"}}.Encode(),
+	}
+	ir := coalesce(t, ctx, []*indexer.LayerArtifacts{{
+		Hash:  test.RandomSHA256Digest(t),
+		Pkgs:  []*claircore.Package{mavenPkg, npmPkg},
+		Repos: []*claircore.Repository{javaRepo, npmRepo},
+	}})
+	if got := ir.Environments[mavenPkg.ID][0].RepositoryIDs; len(got) != 1 || got[0] != javaRepo.ID {
+		t.Fatalf("maven repositories: %v", got)
+	}
+	if got := ir.Environments[npmPkg.ID][0].RepositoryIDs; len(got) != 1 || got[0] != npmRepo.ID {
+		t.Fatalf("npm repositories: %v", got)
+	}
 }
 
 func coalesce(t *testing.T, ctx context.Context, ls []*indexer.LayerArtifacts) *claircore.IndexReport {

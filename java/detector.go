@@ -9,19 +9,23 @@ import (
 	"io"
 	"log/slog"
 
+	"github.com/package-url/packageurl-go"
+
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/indexer"
 	"github.com/quay/claircore/java/bom"
 	"github.com/quay/claircore/java/jar"
 	rheljava "github.com/quay/claircore/rhel/java"
+	rhelnpm "github.com/quay/claircore/rhel/npm"
 	"github.com/quay/claircore/rpm"
 	"github.com/quay/claircore/toolkit/types/cpe"
 )
 
 var _ indexer.RepositoryScanner = (*Detector)(nil)
 
-// Detector records one repository per Red Hat product CPE discovered in a
-// Java SBOM. The package scanner cannot return those repositories itself:
+// Detector records a repository per Red Hat product CPE discovered in a
+// Java SBOM. Maven and npm components use different repository keys. The
+// package scanner cannot return those repositories itself:
 // [DefaultRepository] is a single Maven Central repository for the layer.
 type Detector struct{}
 
@@ -29,7 +33,7 @@ type Detector struct{}
 func (*Detector) Name() string { return "java" }
 
 // Version implements [indexer.VersionedScanner].
-func (*Detector) Version() string { return "1" }
+func (*Detector) Version() string { return "2" }
 
 // Kind implements [indexer.VersionedScanner].
 func (*Detector) Kind() string { return "repository" }
@@ -47,15 +51,19 @@ func (*Detector) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore
 	if err != nil {
 		return nil, fmt.Errorf("java: unable to check RPM db: %w", err)
 	}
-	seen := make(map[string]*claircore.Repository)
-	add := func(w cpe.WFN) {
-		s := w.String()
-		if _, ok := seen[s]; ok {
+	type repoKey struct {
+		cpe string
+		key string
+	}
+	seen := make(map[repoKey]*claircore.Repository)
+	add := func(w cpe.WFN, key string) {
+		k := repoKey{w.String(), key}
+		if _, ok := seen[k]; ok {
 			return
 		}
-		seen[s] = &claircore.Repository{
-			Name: s,
-			Key:  rheljava.RepositoryKey,
+		seen[k] = &claircore.Repository{
+			Name: k.cpe,
+			Key:  key,
 			CPE:  w,
 		}
 	}
@@ -92,8 +100,12 @@ func (*Detector) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore
 				if err != nil {
 					return nil, err
 				}
+				key := rheljava.RepositoryKey
+				if bp.PURL.Type == packageurl.TypeNPM {
+					key = rhelnpm.RepositoryKey
+				}
 				for _, w := range bp.CPEs {
-					add(w)
+					add(w, key)
 				}
 			}
 		case fileJAR:
@@ -107,7 +119,7 @@ func (*Detector) Scan(ctx context.Context, layer *claircore.Layer) ([]*claircore
 				return nil, err
 			}
 			for _, w := range wfns {
-				add(w)
+				add(w, rheljava.RepositoryKey)
 			}
 		default:
 			panic("unreachable")

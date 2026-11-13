@@ -17,6 +17,7 @@ import (
 
 	"github.com/quay/claircore"
 	"github.com/quay/claircore/rhel/java"
+	"github.com/quay/claircore/rhel/npm"
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/toolkit/types"
 	"github.com/quay/claircore/toolkit/types/cpe"
@@ -545,6 +546,63 @@ func TestParseMaven(t *testing.T) {
 	}
 }
 
+func TestParseNPM(t *testing.T) {
+	ctx := test.Logging(t)
+	b, err := os.ReadFile("testdata/cve-2026-npm.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	vulns, err := NewParser().Parse(ctx, b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	eap81 := cpe.MustUnbind("cpe:/a:redhat:jboss_enterprise_application_platform:8.1")
+	eap74 := cpe.MustUnbind("cpe:/a:redhat:jboss_enterprise_application_platform_els:7.4")
+
+	got := map[string]string{}
+	for _, v := range vulns {
+		if v.Package == nil {
+			t.Fatalf("missing package: %+v", v)
+		}
+		if v.Invert {
+			t.Errorf("%s: known_not_affected was ingested", v.Package.Name)
+		}
+		if v.Package.Kind != types.BinaryPackage {
+			t.Errorf("%s kind: got %s, want binary", v.Package.Name, v.Package.Kind)
+		}
+		if v.Repo == nil || v.Repo.Key != npm.RepositoryKey {
+			t.Errorf("%s repo: %+v", v.Package.Name, v.Repo)
+		}
+		switch v.Package.Name {
+		case "js-cookie", "@grpc:grpc-js":
+			if v.FixedInVersion != "" {
+				t.Errorf("%s fixed: got %q", v.Package.Name, v.FixedInVersion)
+			}
+			if v.Repo.Name != eap81.String() {
+				t.Errorf("%s repo name: got %q", v.Package.Name, v.Repo.Name)
+			}
+		case "tough-cookie":
+			if v.FixedInVersion != "4.1.3" {
+				t.Errorf("tough-cookie fixed: got %q", v.FixedInVersion)
+			}
+			if v.Repo.Name != eap74.String() {
+				t.Errorf("tough-cookie repo name: got %q", v.Repo.Name)
+			}
+		default:
+			t.Errorf("unexpected package %q", v.Package.Name)
+		}
+		got[v.Package.Name] = v.FixedInVersion
+	}
+	for _, name := range []string{"js-cookie", "@grpc:grpc-js", "tough-cookie"} {
+		if _, ok := got[name]; !ok {
+			t.Errorf("missing %s", name)
+		}
+	}
+	if len(got) != 3 {
+		t.Fatalf("packages: %v", got)
+	}
+}
+
 func TestExtractVersion(t *testing.T) {
 	testcases := []struct {
 		name        string
@@ -631,6 +689,15 @@ func TestExtractVersion(t *testing.T) {
 				Name:      "netty-codec",
 			},
 			want: "",
+		},
+		{
+			name: "npm_version",
+			purl: packageurl.PackageURL{
+				Type:    packageurl.TypeNPM,
+				Name:    "tough-cookie",
+				Version: "4.1.3",
+			},
+			want: "4.1.3",
 		},
 		{
 			name: "unsupported_type",
@@ -760,6 +827,23 @@ func TestExtractPackageName(t *testing.T) {
 				Name: "netty-codec",
 			},
 			want: "netty-codec",
+		},
+		{
+			name: "npm_scoped",
+			purl: packageurl.PackageURL{
+				Type:      packageurl.TypeNPM,
+				Namespace: "@grpc",
+				Name:      "grpc-js",
+			},
+			want: "@grpc:grpc-js",
+		},
+		{
+			name: "npm_without_namespace",
+			purl: packageurl.PackageURL{
+				Type: packageurl.TypeNPM,
+				Name: "js-cookie",
+			},
+			want: "js-cookie",
 		},
 		{
 			name: "unsupported_type",

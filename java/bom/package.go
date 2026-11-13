@@ -39,6 +39,8 @@ func PopulatePackage(pkg *claircore.Package, bp Package, sbomFile string) error 
 	// Package.CPE is not stored, and it only holds one name. The coalescer
 	// reads every cpe value back when it chooses product repositories.
 	hint := url.Values{}
+	// type selects the product CPE repository. Maven and npm do not share one.
+	hint.Set("type", bp.PURL.Type)
 	for _, w := range bp.CPEs {
 		hint.Add("cpe", w.String())
 	}
