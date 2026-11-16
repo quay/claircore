@@ -122,10 +122,10 @@ func TestCoalescerDropsCoveredJars(t *testing.T) {
 	}
 	jarPkg := func(id, name, db, filepath, sum string) *claircore.Package {
 		return &claircore.Package{
-			ID:             id,
-			Name:           name,
-			PackageDB:      db,
-			Filepath:       filepath,
+			ID:        id,
+			Name:      name,
+			PackageDB: db,
+			Filepath:  filepath,
 			RepositoryHint: url.Values{
 				"sha1":   {"0123456789abcdef0123456789abcdef01234567"},
 				"sha256": {sum},
@@ -207,6 +207,46 @@ func TestCoalescerDropsCoveredJars(t *testing.T) {
 			t.Fatalf("sbom repositories: %v", got)
 		}
 	})
+}
+
+func TestCoalescerUnprovidedSBOMUsesMaven(t *testing.T) {
+	t.Parallel()
+	ctx := test.Logging(t)
+	w := cpe.MustUnbind("cpe:/a:redhat:quarkus:3")
+	cpeRepo := &claircore.Repository{ID: "1", Name: w.String(), Key: rheljava.RepositoryKey, CPE: w}
+	maven := Repository
+	maven.ID = "2"
+	nocpe := &claircore.Package{
+		ID:        "10",
+		Name:      "org.example:lib",
+		PackageDB: "sbom:app.cdx.json:lib/lib.jar",
+		RepositoryHint: url.Values{
+			"path": {"lib/lib.jar"},
+		}.Encode(),
+	}
+	jar := &claircore.Package{
+		ID:        "11",
+		Name:      "lib",
+		PackageDB: "jar:lib/lib.jar",
+		Filepath:  "lib/lib.jar",
+	}
+	ir := coalesce(t, ctx, []*indexer.LayerArtifacts{{
+		Hash:  test.RandomSHA256Digest(t),
+		Pkgs:  []*claircore.Package{nocpe, jar},
+		Repos: []*claircore.Repository{cpeRepo, &maven},
+	}})
+	if _, ok := ir.Packages[jar.ID]; ok {
+		t.Fatal("jar named by the sbom was kept")
+	}
+	if got := ir.Environments[nocpe.ID][0].RepositoryIDs; len(got) != 1 || got[0] != maven.ID {
+		t.Fatalf("repositories: %v", got)
+	}
+	if repo := ir.Repositories[maven.ID]; repo == nil || repo.Name != maven.Name {
+		t.Fatalf("maven repository: %+v", repo)
+	}
+	if _, ok := ir.Repositories[cpeRepo.ID]; ok {
+		t.Fatal("product repository recorded for a package with no CPE")
+	}
 }
 
 func coalesce(t *testing.T, ctx context.Context, ls []*indexer.LayerArtifacts) *claircore.IndexReport {

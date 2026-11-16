@@ -42,7 +42,12 @@ func (*coalescer) Coalesce(ctx context.Context, ls []*indexer.LayerArtifacts) (*
 			ir.Packages[pkg.ID] = pkg
 			rs := mavenIDs
 			if strings.HasPrefix(pkg.PackageDB, "sbom:") {
-				rs = sbomRepositoryIDs(ctx, pkg, l.Repos)
+				// A component with no path or digest does not cover its JAR,
+				// so both records can match when this package stays on Maven Central.
+				ids := sbomRepositoryIDs(ctx, pkg, l.Repos)
+				if len(ids) > 0 || hintHasCPE(pkg) {
+					rs = ids
+				}
 			}
 			for _, id := range rs {
 				if repo := repositoryByID(l.Repos, id); repo != nil {
@@ -128,6 +133,17 @@ func (c sbomClaims) covers(pkg *claircore.Package) bool {
 		}
 	}
 	return false
+}
+
+// hintHasCPE reports whether the repository hint names a product CPE.
+// When no repository matches, a true result leaves the package unattached.
+// A hint that fails to parse returns true so it stays off Maven Central.
+func hintHasCPE(pkg *claircore.Package) bool {
+	q, err := url.ParseQuery(pkg.RepositoryHint)
+	if err != nil {
+		return true
+	}
+	return len(q["cpe"]) > 0
 }
 
 func sbomRepositoryIDs(ctx context.Context, pkg *claircore.Package, repos []*claircore.Repository) []string {
