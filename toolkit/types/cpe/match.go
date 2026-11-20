@@ -10,7 +10,7 @@ func Compare(src, tgt WFN) Relations {
 	// Per Section 5.4.2 of the CPE Naming specification, "any" and "unset" are
 	// equivalent when reading from a WFN.
 	var m [NumAttr]Relation
-	for i := 0; i < NumAttr; i++ {
+	for i := range NumAttr {
 		sv, tv := src.Attr[i], tgt.Attr[i]
 		// This encodes table 6-2 of the matching spec.
 		if tv.Kind == ValueSet && hasWildcard(tv.V) {
@@ -131,7 +131,7 @@ type Relations [NumAttr]Relation
 
 // IsSuperset reports whether the source and target are a "non-proper" superset.
 func (rs Relations) IsSuperset() bool {
-	for i := 0; i < NumAttr; i++ {
+	for i := range NumAttr {
 		if r := rs[i]; r != Equal && r != Superset {
 			return false
 		}
@@ -141,7 +141,7 @@ func (rs Relations) IsSuperset() bool {
 
 // IsSubset reports whether the source and target are a "non-proper" subset.
 func (rs Relations) IsSubset() bool {
-	for i := 0; i < NumAttr; i++ {
+	for i := range NumAttr {
 		if r := rs[i]; r != Equal && r != Subset {
 			return false
 		}
@@ -151,7 +151,7 @@ func (rs Relations) IsSubset() bool {
 
 // IsEqual reports whether the source and target are equal.
 func (rs Relations) IsEqual() bool {
-	for i := 0; i < NumAttr; i++ {
+	for i := range NumAttr {
 		if rs[i] != Equal {
 			return false
 		}
@@ -161,7 +161,7 @@ func (rs Relations) IsEqual() bool {
 
 // IsDisjoint reports whether the source and target are disjoint or mutually exclusive.
 func (rs Relations) IsDisjoint() bool {
-	for i := 0; i < NumAttr; i++ {
+	for i := range NumAttr {
 		if rs[i] == Disjoint {
 			return true
 		}

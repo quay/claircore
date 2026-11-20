@@ -121,8 +121,7 @@ func (d *Decoder) parseDocument(ctx context.Context, doc *v2_3.Document) (*clair
 
 			records, err := d.PURLConverter.Parse(ctx, pu)
 			if err != nil {
-				var unhandled purl.ErrUnhandledPurl
-				if errors.As(err, &unhandled) {
+				if unhandled, ok := errors.AsType[purl.ErrUnhandledPurl](err); ok {
 					slog.WarnContext(ctx, "unregistered PURL type",
 						"purl", ref.Locator,
 						"type", unhandled.Type,
