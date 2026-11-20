@@ -1,3 +1,9 @@
+<a name="v1.6.5"></a>
+## [v1.6.5] - 2026-11-20
+[v1.6.5]: https://github.com/quay/claircore/compare/v1.6.4...v1.6.5
+
+Nothing interesting happened this release.
+
 <a name="v1.6.4"></a>
 ## [v1.6.4] - 2026-11-17
 [v1.6.4]: https://github.com/quay/claircore/compare/v1.6.3...v1.6.4
