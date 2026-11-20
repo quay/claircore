@@ -10,7 +10,9 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/quay/claircore/pkg/tmp"
 
@@ -20,6 +22,48 @@ import (
 	"github.com/quay/claircore/test"
 	"github.com/quay/claircore/toolkit/types/cpe"
 )
+
+func TestRepositoryScannerConfigureRetries(t *testing.T) {
+	t.Parallel()
+	var calls atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if calls.Add(1) == 1 {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			return
+		}
+		io.WriteString(w, `{"data":{"content-set":{"cpes":["cpe:/o:redhat:enterprise_linux:9::server"]}}}`)
+	}))
+	defer srv.Close()
+
+	ctx := test.Logging(t)
+	cfg := RepositoryScannerConfig{
+		Repo2CPEMappingURL: srv.URL,
+		MaxRetries:         1,
+		Timeout:            2 * time.Minute,
+	}
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(cfg); err != nil {
+		t.Fatal(err)
+	}
+	scanner := new(RepositoryScanner)
+	if err := scanner.Configure(ctx, json.NewDecoder(&buf).Decode, srv.Client()); err != nil {
+		t.Fatal(err)
+	}
+	v, err := scanner.upd.Get(ctx, srv.Client())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := calls.Load(); got != 2 {
+		t.Errorf("requests = %d, want 2", got)
+	}
+	m := v.(*mappingFile)
+	if m == nil {
+		t.Fatal("mapping not downloaded")
+	}
+	if cpes, ok := m.GetOne(ctx, "content-set"); !ok || len(cpes) != 1 {
+		t.Errorf("unexpected downloaded mapping: %v", m)
+	}
+}
 
 func TestRepositoryScanner(t *testing.T) {
 	t.Parallel()
