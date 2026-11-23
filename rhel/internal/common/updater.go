@@ -14,11 +14,20 @@ import (
 	"golang.org/x/time/rate"
 )
 
+const (
+	initialRetryWait = 10 * time.Second
+	maxRetryWait     = time.Minute
+)
+
 // Interval is how often we attempt to update the mapping file.
 var interval = rate.Every(24 * time.Hour)
 
 // Updater returns a value that's periodically updated.
 type Updater struct {
+	// MaxRetries bounds retries after the initial request. Zero or negative disables retries.
+	// Set MaxRetries before calling Get or Fetch.
+	MaxRetries int
+
 	url          string
 	typ          reflect.Type
 	value        atomic.Value
@@ -56,8 +65,8 @@ func (u *Updater) Get(ctx context.Context, c *http.Client) (any, error) {
 	return u.value.Load(), err
 }
 
-// Fetch attempts to perform an atomic update of the mapping file.
-//
+// Fetch atomically updates the mapping file, retrying request errors and HTTP 429
+// or 5xx (except 501) up to MaxRetries times within the context's deadline.
 // Fetch is safe to call concurrently.
 func (u *Updater) Fetch(ctx context.Context, c *http.Client) error {
 	log := slog.With("url", u.url)
@@ -73,7 +82,32 @@ func (u *Updater) Fetch(ctx context.Context, c *http.Client) error {
 	}
 	u.mu.RUnlock()
 
-	resp, err := c.Do(req)
+	var resp *http.Response
+	wait := initialRetryWait
+	for attempt := 0; ; attempt++ {
+		resp, err = c.Do(req)
+		retry := err != nil
+		if err == nil {
+			serverError := resp.StatusCode >= 500 && resp.StatusCode != http.StatusNotImplemented
+			retry = resp.StatusCode == http.StatusTooManyRequests || serverError
+		}
+		if !retry || attempt >= u.MaxRetries {
+			break
+		}
+		if err == nil {
+			resp.Body.Close()
+		}
+
+		log.DebugContext(ctx, "retrying mapping file download", "retry", attempt+1, "wait", wait)
+		t := time.NewTimer(wait)
+		select {
+		case <-ctx.Done():
+			t.Stop()
+			return ctx.Err()
+		case <-t.C:
+		}
+		wait = min(2*wait, maxRetryWait)
+	}
 	if err != nil {
 		return err
 	}
