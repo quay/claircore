@@ -136,21 +136,18 @@ DO
 	var ref uuid.UUID
 	var enCt int
 
-	err := s.pool.AcquireFunc(ctx, func(conn *pgxpool.Conn) error {
+	// The update_operation must be created in the same transaction as its
+	// enrichments. Otherwise a concurrent refresh of latest_update_operations
+	// can select it before any of its enrichments are committed.
+	err := pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
 		start := time.Now()
-		if err := s.pool.QueryRow(ctx, create, name, string(fp)).Scan(&id, &ref); err != nil {
-			return err
+		if err := tx.QueryRow(ctx, create, name, string(fp)).Scan(&id, &ref); err != nil {
+			return fmt.Errorf("failed to create update_operation: %w", err)
 		}
 		updateEnrichmentsCounter.WithLabelValues("create").Add(1)
 		updateEnrichmentsDuration.WithLabelValues("create").Observe(time.Since(start).Seconds())
 		slog.DebugContext(ctx, "update_operation created", "ref", ref)
-		return nil
-	})
-	if err != nil {
-		return uuid.Nil, fmt.Errorf("failed to create update_operation: %w", err)
-	}
 
-	err = pgx.BeginFunc(ctx, s.pool, func(tx pgx.Tx) error {
 		var err error
 		var batch pgx.Batch
 		flush := func() (err error) {
@@ -159,7 +156,7 @@ DO
 			batch.QueuedQueries = batch.QueuedQueries[:0]
 			return err
 		}
-		start := time.Now()
+		start = time.Now()
 
 		defer func() {
 			updateEnrichmentsCounter.WithLabelValues("insert_batch").Add(1)
