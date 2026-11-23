@@ -141,6 +141,13 @@ func (u *Updater) Fetch(ctx context.Context, hint driver.Fingerprint) (io.ReadCl
 			if h.Typeflag != tar.TypeReg {
 				continue
 			}
+			if path.Dir(h.Name) == "." {
+				// We've seen feed metadata (e.g., changes.csv, deletions.csv, index.txt) sit
+				// at the archive root. In case we skip something we didn't intend to, let's
+				// make sure that behavior is logged more often than not.
+				slog.WarnContext(ctx, "skipping root-level archive entry", "name", h.Name)
+				continue
+			}
 			year, err := strconv.ParseInt(path.Dir(h.Name), 10, 64)
 			if err != nil {
 				return nil, hint, fmt.Errorf("error parsing year %w", err)
