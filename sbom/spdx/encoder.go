@@ -153,7 +153,7 @@ func (e *Encoder) parseIndexReport(ctx context.Context, ir *claircore.IndexRepor
 		DocumentNamespace: e.DocumentNamespace,
 		CreationInfo: &v2_3.CreationInfo{
 			Creators: creators,
-			Created:  time.Now().Format("2006-01-02T15:04:05Z"),
+			Created:  time.Now().UTC().Format("2006-01-02T15:04:05Z"),
 		},
 		DocumentComment: e.DocumentComment,
 	}
