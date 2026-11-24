@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -90,5 +91,33 @@ func TestEncoder(t *testing.T) {
 				t.Error(cmp.Diff(got, want, ignoreCreatedTimestamp))
 			}
 		})
+	}
+}
+
+// The "created" timestamp is labeled as UTC, whatever the local time zone is.
+func TestEncoderCreatedUTC(t *testing.T) {
+	ctx := test.Logging(t)
+	local := time.Local
+	time.Local = time.FixedZone("test", -12*60*60)
+	t.Cleanup(func() { time.Local = local })
+
+	e := &Encoder{Version: V2_3, Format: FormatJSON}
+	before := time.Now().Truncate(time.Second)
+	var buf bytes.Buffer
+	if err := e.Encode(ctx, &buf, &claircore.IndexReport{}); err != nil {
+		t.Fatal(err)
+	}
+	after := time.Now()
+
+	var doc struct {
+		CreationInfo struct {
+			Created time.Time `json:"created"`
+		} `json:"creationInfo"`
+	}
+	if err := json.NewDecoder(&buf).Decode(&doc); err != nil {
+		t.Fatal(err)
+	}
+	if got := doc.CreationInfo.Created; got.Before(before) || got.After(after) {
+		t.Errorf("got: %v, want between %v and %v", got, before.UTC(), after.UTC())
 	}
 }
