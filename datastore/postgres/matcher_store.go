@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -32,7 +33,7 @@ func InitPostgresMatcherStore(ctx context.Context, pool *pgxpool.Pool, doMigrati
 type MatcherStore struct {
 	pool *pgxpool.Pool
 	// Initialized is used as an atomic bool for tracking initialization.
-	initialized uint32
+	initialized atomic.Uint32
 }
 
 func NewMatcherStore(pool *pgxpool.Pool) *MatcherStore {

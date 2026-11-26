@@ -182,12 +182,12 @@ func (d *client) doAuth(ctx context.Context, c *http.Client, name, h string) err
 	attrs := map[string]string{}
 	fs := strings.SplitSeq(strings.TrimPrefix(h, `Bearer `), ",")
 	for f := range fs {
-		i := strings.IndexByte(f, '=')
-		if i == -1 {
+		before, after, ok := strings.Cut(f, "=")
+		if !ok {
 			return errors.New("even weirder header")
 		}
-		k := f[:i]
-		v := strings.Trim(f[i+1:], `"`)
+		k := before
+		v := strings.Trim(after, `"`)
 		attrs[k] = v
 	}
 
