@@ -40,6 +40,11 @@ func (*matcher) Query() []driver.MatchConstraint {
 // Vulnerable implements [driver.Matcher].
 func (*matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, vuln *claircore.Vulnerability) (bool, error) {
 	var err error
+	if record.Repository.Name == GoldRepo.Name && vuln.Invert && vuln.FixedInVersion != "" {
+		// A fixed-build assertion needs product context. The legacy catch-all
+		// repository cannot establish that context, so retain upstream findings.
+		return false, nil
+	}
 	if record.Repository.Name != GoldRepo.Name {
 		// This is not a gold repo record, so we need to check if the CPE matches.
 		vuln.Repo.CPE, err = cpe.Unbind(vuln.Repo.Name)
@@ -54,10 +59,9 @@ func (*matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 
 	slog.DebugContext(ctx, "comparing versions", "record", record.Package.Version, "vulnerability", vuln.FixedInVersion)
 
-	// For known_not_affected assertions (Invert == true), the package name match
-	// from the DB query is sufficient. No version comparison is needed because the
-	// VEX assertion covers the entire container, not a specific version.
-	if vuln.Invert {
+	// Unversioned known_not_affected assertions cover the matched container.
+	// Assertions derived from fixed records must also meet the version boundary.
+	if vuln.Invert && vuln.FixedInVersion == "" {
 		return true, nil
 	}
 
@@ -75,7 +79,11 @@ func (*matcher) Vulnerable(ctx context.Context, record *claircore.IndexRecord, v
 	if err != nil {
 		return false, fmt.Errorf("rhcc: unable to parse vulnerability version %q: %w", vuln.FixedInVersion, err)
 	}
-	return rpmver.Compare(&pkgVer, &fixedVer) == -1, nil
+	cmp := rpmver.Compare(&pkgVer, &fixedVer)
+	if vuln.Invert {
+		return cmp >= 0, nil
+	}
+	return cmp < 0, nil
 }
 
 // Implement version filtering to have the database only return results for the

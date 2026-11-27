@@ -381,20 +381,20 @@ func TestParse(t *testing.T) {
 		{
 			name:            "cve-2022-1705",
 			filenames:       []string{"testdata/cve-2022-1705.json"},
-			expectedVulns:   1009,
+			expectedVulns:   1233,
 			expectedDeleted: 0,
 		},
 		{
 			name:             "cve-2024-24786",
 			filenames:        []string{"testdata/cve-2024-24786.json"},
-			expectedVulns:    1337,
+			expectedVulns:    1606,
 			expectedDeleted:  0,
-			expectedAncestry: 732,
+			expectedAncestry: 1001,
 		},
 		{
 			name:            "cve-2022-38752",
 			filenames:       []string{"testdata/cve-2022-38752.json"},
-			expectedVulns:   22,
+			expectedVulns:   23,
 			expectedDeleted: 0,
 		},
 		{
@@ -406,7 +406,7 @@ func TestParse(t *testing.T) {
 		{
 			name:            "cve-2024-24786-new-module-format",
 			filenames:       []string{"testdata/cve-2024-24786-1.json"},
-			expectedVulns:   2179,
+			expectedVulns:   2527,
 			expectedDeleted: 0,
 		},
 		{
