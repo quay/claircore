@@ -35,7 +35,6 @@ func Match(ctx context.Context, ir *claircore.IndexReport, matchers []driver.Mat
 		Repositories:           ir.Repositories,
 		Vulnerabilities:        map[string]*claircore.Vulnerability{},
 		PackageVulnerabilities: map[string][]string{},
-		PackageNotVulnerable:   map[string][]string{},
 	}
 	lim := runtime.GOMAXPROCS(0)
 
@@ -75,6 +74,9 @@ func Match(ctx context.Context, ir *claircore.IndexReport, matchers []driver.Mat
 			for _, vuln := range vulns {
 				vr.Vulnerabilities[vuln.ID] = vuln
 				if vuln.Invert {
+					if vr.PackageNotVulnerable == nil {
+						vr.PackageNotVulnerable = make(map[string][]string)
+					}
 					vr.PackageNotVulnerable[pkgID] = append(vr.PackageNotVulnerable[pkgID], vuln.ID)
 				} else {
 					vr.PackageVulnerabilities[pkgID] = append(vr.PackageVulnerabilities[pkgID], vuln.ID)
