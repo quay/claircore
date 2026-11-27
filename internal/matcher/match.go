@@ -73,7 +73,14 @@ func Match(ctx context.Context, ir *claircore.IndexReport, matchers []driver.Mat
 		for pkgID, vulns := range vulnsByPackage {
 			for _, vuln := range vulns {
 				vr.Vulnerabilities[vuln.ID] = vuln
-				vr.PackageVulnerabilities[pkgID] = append(vr.PackageVulnerabilities[pkgID], vuln.ID)
+				if vuln.Invert {
+					if vr.PackageNotVulnerable == nil {
+						vr.PackageNotVulnerable = make(map[string][]string)
+					}
+					vr.PackageNotVulnerable[pkgID] = append(vr.PackageNotVulnerable[pkgID], vuln.ID)
+				} else {
+					vr.PackageVulnerabilities[pkgID] = append(vr.PackageVulnerabilities[pkgID], vuln.ID)
+				}
 			}
 		}
 	}

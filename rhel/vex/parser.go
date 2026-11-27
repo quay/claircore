@@ -1040,6 +1040,7 @@ func (c *creator) fixedVulnerabilities(ctx context.Context, v *csaf.Vulnerabilit
 	ranger.resetLowest()
 
 	out := slices.Collect(backing.All())
+	out = append(out, fixedContainerAssertions(out)...)
 	slices.SortFunc(out, vulnCmp)
 	return out, nil
 }
